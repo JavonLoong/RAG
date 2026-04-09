@@ -1,0 +1,44 @@
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - deploy
+  # - release
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: build
+  tags:
+    - jn
+  script:
+    - echo "Compiling the code..."
+    - sudo docker build -t algokit-example:latest .
+    - echo "Compile complete."
+
+
+deploy-job:      # This job runs in the deploy stage.
+  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+  environment: production
+  tags:
+    - jn
+  script:
+    - echo "Deploying application..."
+    - export CI_UID=$(id -u gitlab-runner)
+    - export CI_GID=$(id -g gitlab-runner)
+    - sudo docker run -d --name algokit-example-container algokit-example:latest
+    - sleep 60
+    - sudo docker logs algokit-example-container
+    - sudo docker rm -f algokit-example-container || true
+    - echo "Application successfully deployed."
+
+# release-job:
+#   stage: release
+#   tags:
+#     - jn
+#   script:
+#     - echo "Saving Docker image to tar..."
+#     - TAR_DIR="/home/gitlab-runner/tars"
+#     - mkdir -p $TAR_DIR
+#     - TAR_FILE="$TAR_DIR/algokit-example.tar"
+#     - sudo docker save algokit-example -o $TAR_FILE
+#     - sudo chmod 777 $TAR_FILE
+#     - echo "Release Job Complete."
+#   only:
+#     - main
