@@ -36,10 +36,12 @@ const sourceColors = {
 
 const state = {
   page: "overview",
-  online: false,
-  demoMode: true,
+  online: true,
+  localMode: true,
   stats: null,
   uploads: [],
+  records: [],
+  chunks: [],
   lastProcess: null,
   benchmark: null,
   lastLatency: 182,
@@ -66,53 +68,21 @@ const els = {
   toast: $("toast")
 };
 
-const demoStats = {
-  status: "ok",
-  collections: [
-    {
-      name: "power_equipment",
-      count: 5230,
-      estimated_tokens: 1200000,
-      source_type_counts: { PDF: 3100, Text: 1800, JSON: 960, Other: 330 }
-    },
-    {
-      name: "maintenance_cases",
-      count: 1680,
-      estimated_tokens: 420000,
-      source_type_counts: { PDF: 860, Text: 410, JSON: 280, DOCX: 130 }
-    },
-    {
-      name: "benchmark_power_equipment",
-      count: 640,
-      estimated_tokens: 146000,
-      source_type_counts: { Text: 540, JSON: 100 }
-    }
-  ],
-  total_documents: 7550,
-  total_tokens_estimate: 1766000,
-  storage_size_mb: 986.4,
-  embedding_dim: 1024,
-  source_type_breakdown: { PDF: 3960, Text: 2750, JSON: 1340, DOCX: 130, Other: 330 }
+const engineDefaults = {
+  dimension: 512,
+  chunkSize: 500,
+  overlap: 50
 };
 
-const demoSearchCorpus = [
-  {
-    text: "燃气轮机异常振动诊断通常需要结合轴承温度、转速偏差、频谱峰值和润滑状态联合判断。",
-    metadata: { filename: "LM2500_振动诊断手册.pdf", source_kind: "PDF", source_file: "LM2500_振动诊断手册.pdf" }
-  },
-  {
-    text: "压气机喘振多发生于进气畸变、叶片污染或控制逻辑切换不稳定阶段，可通过历史工况回放辅助排查。",
-    metadata: { filename: "压气机故障案例.json", source_kind: "JSON", source_file: "压气机故障案例.json" }
-  },
-  {
-    text: "动力装备知识库需要把上传、分块、向量化、检索与性能验证整合为统一控制台，以便运维追踪。",
-    metadata: { filename: "系统设计说明.docx", source_kind: "DOCX", source_file: "系统设计说明.docx" }
-  },
-  {
-    text: "检索性能评估建议同时观察平均延迟、P95 延迟、查询吞吐和批量写入速度。",
-    metadata: { filename: "benchmark_notes.txt", source_kind: "Text", source_file: "benchmark_notes.txt" }
-  }
-];
+const defaultStats = {
+  status: "idle",
+  collections: [],
+  total_documents: 0,
+  total_tokens_estimate: 0,
+  storage_size_mb: 0,
+  embedding_dim: engineDefaults.dimension,
+  source_type_breakdown: {}
+};
 
 function seededActivities() {
   return [
@@ -146,6 +116,319 @@ function showToast(message, tone = "success") {
   state.toastTimer = window.setTimeout(() => {
     els.toast.className = "toast";
   }, 2600);
+}
+
+if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
+  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+}
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function tokenize(text) {
+  return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
+}
+
+function estimateTokens(text) {
+  return Math.max(1, Math.round(normalizeText(text).length / 1.7));
+}
+
+function simpleHash(input) {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createEmbedding(text, dimension = engineDefaults.dimension) {
+  const vector = new Float32Array(dimension);
+  const tokens = tokenize(text);
+  if (!tokens.length) return vector;
+  for (const token of tokens) {
+    const hash = simpleHash(token);
+    const index = hash % dimension;
+    const sign = ((hash >>> 1) & 1) === 0 ? 1 : -1;
+    const weight = 1 + Math.min(token.length, 8) / 8;
+    vector[index] += sign * weight;
+  }
+  let norm = 0;
+  for (const value of vector) norm += value * value;
+  norm = Math.sqrt(norm);
+  if (!norm) return vector;
+  for (let index = 0; index < vector.length; index += 1) {
+    vector[index] /= norm;
+  }
+  return vector;
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  const size = Math.min(a.length, b.length);
+  for (let index = 0; index < size; index += 1) {
+    dot += a[index] * b[index];
+    normA += a[index] * a[index];
+    normB += b[index] * b[index];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB) || 1;
+  return dot / denom;
+}
+
+function sourceKindFromName(name) {
+  const ext = fileExtension(name);
+  if (ext === "json") return "JSON";
+  if (ext === "pdf") return "PDF";
+  if (ext === "docx") return "DOCX";
+  if (ext === "md" || ext === "markdown") return "Markdown";
+  if (ext === "csv") return "CSV";
+  if (ext === "tsv") return "TSV";
+  if (ext === "log") return "Log";
+  return "Text";
+}
+
+function splitTextWithOverlap(text, chunkSize = engineDefaults.chunkSize, overlap = engineDefaults.overlap) {
+  const cleaned = normalizeText(text);
+  if (!cleaned) return [];
+  if (cleaned.length <= chunkSize) return [cleaned];
+  const markers = ["\n\n", "\n", "。", "！", "？", "；", ";", "，", ",", " "];
+  const output = [];
+  let start = 0;
+  while (start < cleaned.length) {
+    const maxEnd = Math.min(cleaned.length, start + chunkSize);
+    let end = maxEnd;
+    if (maxEnd < cleaned.length) {
+      const minEnd = Math.min(maxEnd, start + Math.max(Math.floor(chunkSize / 2), chunkSize - overlap));
+      let best = -1;
+      for (const marker of markers) {
+        const idx = cleaned.lastIndexOf(marker, maxEnd);
+        if (idx >= minEnd) best = Math.max(best, idx + marker.length);
+      }
+      if (best > start) end = best;
+    }
+    const piece = cleaned.slice(start, end).trim();
+    if (piece) output.push(piece);
+    if (end >= cleaned.length) break;
+    start = Math.max(start + 1, end - overlap);
+    while (/\s/.test(cleaned[start] || "")) start += 1;
+  }
+  return output;
+}
+
+function flattenJson(value, path = [], lines = []) {
+  if (value == null) return lines;
+  if (typeof value === "string") {
+    const cleaned = normalizeText(value);
+    if (cleaned.length >= 2) {
+      const label = path.filter(Boolean).slice(-2).join(" / ");
+      lines.push(label ? `${label}: ${cleaned}` : cleaned);
+    }
+    return lines;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    const label = path.filter(Boolean).slice(-2).join(" / ");
+    lines.push(label ? `${label}: ${String(value)}` : String(value));
+    return lines;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenJson(item, [...path, `item ${index + 1}`], lines));
+    return lines;
+  }
+  if (typeof value === "object") {
+    const title = ["title", "heading", "name", "section", "chapter"].map((key) => value[key]).find((entry) => typeof entry === "string" && normalizeText(entry));
+    if (title) lines.push(normalizeText(title));
+    Object.entries(value).forEach(([key, nested]) => {
+      if (title && normalizeText(String(nested)) === normalizeText(title)) return;
+      flattenJson(nested, [...path, key], lines);
+    });
+  }
+  return lines;
+}
+
+function parseTabularText(text, delimiter) {
+  const parsed = globalThis.Papa?.parse(text, { delimiter, skipEmptyLines: true })?.data || [];
+  if (!parsed.length) return "";
+  const header = parsed[0];
+  const rows = parsed.slice(1).map((row, rowIndex) => {
+    const pairs = row.map((cell, index) => `${header[index] || `Column ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
+    return `Row ${rowIndex + 1}: ${pairs}`;
+  });
+  return normalizeText([`Columns: ${header.join(" | ")}`, ...rows].join("\n\n"));
+}
+
+async function parsePdfFile(file) {
+  const data = await file.arrayBuffer();
+  const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+  const records = [];
+  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
+    const page = await pdf.getPage(pageIndex);
+    const textContent = await page.getTextContent();
+    const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
+    if (!pageText) continue;
+    records.push({
+      record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+      filename: relativePathOf(file),
+      source_file: relativePathOf(file),
+      source_kind: "PDF",
+      page_num: pageIndex,
+      text: pageText
+    });
+  }
+  if (!records.length) throw new Error("PDF 未提取到可用文本，可能是扫描件或图片型 PDF");
+  return records;
+}
+
+async function parseDocxFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  let raw = "";
+  if (globalThis.mammoth?.extractRawText) {
+    raw = (await globalThis.mammoth.extractRawText({ arrayBuffer })).value || "";
+  } else if (globalThis.mammoth?.convertToHtml) {
+    raw = (await globalThis.mammoth.convertToHtml({ arrayBuffer })).value || "";
+  }
+  const text = normalizeText(raw.replace(/<[^>]+>/g, " "));
+  if (!text) throw new Error("DOCX 未提取到可用文本");
+  return [{
+    record_id: `${relativePathOf(file)}::doc`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: "DOCX",
+    page_num: null,
+    text
+  }];
+}
+
+async function parseJsonFile(file) {
+  const payload = JSON.parse(await file.text());
+  const text = normalizeText(flattenJson(payload).join("\n\n"));
+  if (!text) throw new Error("JSON 未提取到可用文本");
+  return [{
+    record_id: `${relativePathOf(file)}::json`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: "JSON",
+    page_num: null,
+    text
+  }];
+}
+
+async function parseTextLikeFile(file) {
+  const text = normalizeText(await file.text());
+  if (!text) throw new Error("文本文件为空");
+  return [{
+    record_id: `${relativePathOf(file)}::text`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: sourceKindFromName(relativePathOf(file)),
+    page_num: null,
+    text
+  }];
+}
+
+async function parseTabularFile(file, delimiter) {
+  const text = parseTabularText(await file.text(), delimiter);
+  if (!text) throw new Error("表格文件为空");
+  return [{
+    record_id: `${relativePathOf(file)}::table`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: sourceKindFromName(relativePathOf(file)),
+    page_num: null,
+    text
+  }];
+}
+
+async function parseFileRecords(file) {
+  const ext = fileExtension(relativePathOf(file));
+  if (ext === "pdf") return parsePdfFile(file);
+  if (ext === "docx") return parseDocxFile(file);
+  if (ext === "json") return parseJsonFile(file);
+  if (ext === "csv") return parseTabularFile(file, ",");
+  if (ext === "tsv") return parseTabularFile(file, "\t");
+  return parseTextLikeFile(file);
+}
+
+function makeChunks(records) {
+  const chunks = [];
+  records.forEach((record) => {
+    const pieces = splitTextWithOverlap(record.text);
+    pieces.forEach((piece, index) => {
+      const vector = createEmbedding(piece);
+      chunks.push({
+        chunk_id: `${record.record_id}::${index}`,
+        text: piece,
+        vector,
+        metadata: {
+          source_file: record.source_file,
+          filename: record.filename,
+          source_kind: record.source_kind,
+          page_num: record.page_num,
+          chunk_index: index,
+          char_count: piece.length,
+          estimated_tokens: estimateTokens(piece)
+        }
+      });
+    });
+  });
+  return chunks;
+}
+
+function buildQualityReport(records, chunks) {
+  const docs = records.map((record, index) => {
+    const shortBlocks = splitTextWithOverlap(record.text, 40, 0).filter((item) => item.length < 5).length;
+    return {
+      doc_id: index + 1,
+      filenames: [record.filename],
+      block_count: splitTextWithOverlap(record.text, 160, 0).length,
+      short_blocks: shortBlocks
+    };
+  });
+  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `doc${item.doc_id}: ${item.short_blocks} 个极短文本块（<5字符）`);
+  return {
+    documents: docs,
+    chunks: {
+      total_chunks: chunks.length,
+      avg_length: chunks.length ? Math.round(chunks.reduce((sum, chunk) => sum + chunk.text.length, 0) / chunks.length) : 0,
+      min_length: chunks.length ? Math.min(...chunks.map((chunk) => chunk.text.length)) : 0,
+      max_length: chunks.length ? Math.max(...chunks.map((chunk) => chunk.text.length)) : 0
+    },
+    issues,
+    issue_count: issues.length
+  };
+}
+
+function buildLocalStats() {
+  if (!state.chunks.length) return structuredClone(defaultStats);
+  const byKind = {};
+  state.chunks.forEach((chunk) => {
+    const kind = chunk.metadata.source_kind || "Other";
+    byKind[kind] = (byKind[kind] || 0) + 1;
+  });
+  const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata.estimated_tokens || 0), 0);
+  const storageBytes = state.uploads.reduce((sum, file) => sum + Number(file.file?.size || 0), 0);
+  const uniqueFiles = new Set(state.records.map((record) => record.source_file));
+  return {
+    status: "ok",
+    collections: [{
+      name: "browser_local_index",
+      count: state.chunks.length,
+      estimated_tokens: totalTokens,
+      source_type_counts: byKind
+    }],
+    total_documents: uniqueFiles.size,
+    total_tokens_estimate: totalTokens,
+    storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(2)),
+    embedding_dim: engineDefaults.dimension,
+    source_type_breakdown: byKind
+  };
 }
 
 function escapeHtml(value) {
@@ -199,7 +482,7 @@ function setPage(page) {
 
 function updateStatus(online) {
   state.online = !!online;
-  els.statusText.textContent = online ? "后端在线，上传与检索链路可用" : "后端离线，请检查服务";
+  els.statusText.textContent = online ? "浏览器本地引擎在线，上传与检索链路可用" : "浏览器本地引擎异常";
   els.sysStatus.className = `status-dot ${online ? "" : "danger"}`.trim();
   const pillDot = els.statusPill?.querySelector(".status-dot");
   if (pillDot) pillDot.className = `status-dot ${online ? "" : "danger"}`.trim();
@@ -217,25 +500,28 @@ function seedSeries(length, start, variation, clampMin) {
 
 function buildOverviewModel() {
   const stats = state.stats || {};
+  const hasIndexedData = state.chunks.length > 0;
   const liveDocs = Number(stats.total_documents || 0);
   const liveTokens = Number(stats.total_tokens_estimate || 0);
   const liveCollections = Number((stats.collections || []).length || 0);
   const liveStorage = Number(stats.storage_size_mb || 0);
-  const docTarget = Math.max(liveDocs, 5230);
-  const tokenTarget = Math.max(liveTokens, 1_200_000);
-  const collectionTarget = Math.max(liveCollections, 6);
+  const docTarget = hasIndexedData ? liveDocs : Math.max(liveDocs, 5230);
+  const tokenTarget = hasIndexedData ? liveTokens : Math.max(liveTokens, 1_200_000);
+  const collectionTarget = hasIndexedData ? Math.max(liveCollections, 1) : Math.max(liveCollections, 6);
   const latency = Math.max(120, Math.min(420, Math.round(state.lastLatency || 182)));
-  const breakdown = { PDF: 3100, Text: 1800, Other: 330, ...(stats.source_type_breakdown || {}) };
-  const pdf = Math.max(Number(breakdown.PDF || 0), 3100);
-  const text = Math.max(Number(breakdown.Text || 0), 1800);
-  const json = Math.max(Number(breakdown.JSON || 0), 960);
-  const other = Math.max(Number(breakdown.Other || 0), 330);
+  const breakdown = hasIndexedData
+    ? { ...(stats.source_type_breakdown || {}) }
+    : { PDF: 3100, Text: 1800, JSON: 960, Other: 330, ...(stats.source_type_breakdown || {}) };
+  const pdf = hasIndexedData ? Number(breakdown.PDF || 0) : Math.max(Number(breakdown.PDF || 0), 3100);
+  const text = hasIndexedData ? Number(breakdown.Text || 0) : Math.max(Number(breakdown.Text || 0), 1800);
+  const json = hasIndexedData ? Number(breakdown.JSON || 0) : Math.max(Number(breakdown.JSON || 0), 960);
+  const other = hasIndexedData ? Number(breakdown.Other || 0) : Math.max(Number(breakdown.Other || 0), 330);
   return {
     docTarget,
     tokenTarget,
     collectionTarget,
     latency,
-    storage: Math.max(liveStorage, 36.8 * 1024),
+    storage: hasIndexedData ? liveStorage : Math.max(liveStorage, 36.8 * 1024),
     precision: state.benchmark?.avg_query_latency_ms ? Math.max(93.8, 99.2 - state.benchmark.avg_query_latency_ms / 80) : 97.4,
     throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/h` : "42.8k/h",
     breakdown: { PDF: pdf, Text: text, JSON: json, Other: other }
@@ -273,8 +559,10 @@ function renderOverview() {
   $("miniThroughput").textContent = model.throughput;
   $("miniPrecision").textContent = `${model.precision.toFixed(1)}%`;
   $("searchPulse").textContent = `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10`;
-  $("overviewSummary").textContent = `当前共 ${Number((state.stats?.collections || []).length || 0)} 个集合，按来源类型聚合显示结构比例。`;
-  $("collectionSummaryPill").textContent = state.stats?.status === "ok" ? "实时结构" : "演示密度";
+  $("overviewSummary").textContent = state.chunks.length
+    ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个 chunks，按来源类型聚合显示结构比例。`
+    : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
+  $("collectionSummaryPill").textContent = state.chunks.length ? "Browser-local index" : "等待本地索引";
 
   renderSparkline("sparkDocs", seedSeries(12, 2200, 160, 1200));
   renderSparkline("sparkTokens", seedSeries(12, 480, 70, 320));
@@ -361,7 +649,7 @@ function renderCollections() {
       return `<span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span>`;
     }).join("");
     return `<div class="collection-item">
-      <div class="collection-head"><span class="collection-name">${escapeHtml(collection.name)}</span><button class="ghost-btn delete-collection" data-name="${escapeHtml(collection.name)}" type="button">删除</button></div>
+      <div class="collection-head"><span class="collection-name">${escapeHtml(collection.name)}</span><button class="ghost-btn delete-collection" data-name="${escapeHtml(collection.name)}" type="button">清空</button></div>
       <div class="collection-meta"><span>${Number(collection.count || 0).toLocaleString("zh-CN")} chunks</span><span>${formatCompact(collection.estimated_tokens || 0)} tokens</span></div>
       <div class="collection-bars">${bars || '<span style="width:100%;"></span>'}</div>
     </div>`;
@@ -387,7 +675,7 @@ function renderQueue() {
   if (!queue || !meta || !pill) return;
   const files = state.uploads || [];
   pill.textContent = `${files.length} files`;
-  meta.textContent = files.length ? `上传目录中共有 ${files.length} 个待处理文件。` : "等待同步上传目录。";
+  meta.textContent = files.length ? `当前浏览器会话中共有 ${files.length} 个文件，处理不会写入 GitHub 仓库。` : "等待拖入文件或文件夹，分析只在当前浏览器会话中进行。";
   if (!files.length) {
     queue.innerHTML = `<div class="empty-state">拖入文件或文件夹后，待处理队列会显示在这里。</div>`;
     return;
@@ -502,116 +790,98 @@ async function apiJson(url, options = {}) {
 }
 
 async function refreshHealth() {
-  try {
-    const payload = await apiJson("/api/health");
-    state.demoMode = false;
-    updateStatus(payload.status === "ok");
-  } catch (error) {
-    state.demoMode = true;
-    updateStatus(true);
-    pushActivity({ level: "warning", title: "已切换演示模式", desc: "当前站点运行在静态 GitHub Pages，无需后端即可查看控制台交互。", user: "pages" });
-  }
+  state.localMode = true;
+  updateStatus(true);
+  els.statusText.textContent = "浏览器本地引擎在线，文件只在当前浏览器会话中处理";
 }
 
 async function refreshStats() {
-  if (state.demoMode) {
-    state.stats = structuredClone(demoStats);
-  } else {
-    try {
-      state.stats = await apiJson("/api/stats");
-    } catch (error) {
-      state.stats = structuredClone(demoStats);
-      state.demoMode = true;
-      showToast(`统计接口不可用，已切换到演示模式`, "warning");
-    }
-  }
+  state.stats = buildLocalStats();
   renderOverview();
 }
 
 async function refreshUploads() {
-  if (state.demoMode) {
-    state.uploads = state.uploads || [];
-  } else {
-    try {
-      const payload = await apiJson("/api/uploads");
-      state.uploads = payload.files || [];
-    } catch (error) {
-      state.demoMode = true;
-      state.uploads = [];
-      showToast(`队列接口不可用，已切换到演示模式`, "warning");
-    }
-  }
+  state.uploads = state.uploads || [];
   renderQueue();
 }
 
 async function refreshAll() {
   await Promise.all([refreshHealth(), refreshStats(), refreshUploads()]);
-  els.refreshStamp.textContent = `最近同步 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+  els.refreshStamp.textContent = `本地引擎已就绪 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
   renderAll();
 }
 
 async function deleteCollection(name) {
-  if (state.demoMode) {
-    state.stats.collections = (state.stats.collections || []).filter((item) => item.name !== name);
-    pushActivity({ level: "warning", title: "演示集合已移除", desc: `${name} 已从静态展示列表移除。`, user: "pages", duration: "0.2s" });
-    renderOverview();
-    return;
-  }
-  await apiJson(`/api/collections/${encodeURIComponent(name)}`, { method: "DELETE" });
-  pushActivity({ level: "warning", title: "集合已删除", desc: `${name} 已从向量库移除。`, user: "ops", duration: "0.8s" });
-  showToast(`已删除集合 ${name}`, "warning");
+  state.records = [];
+  state.chunks = [];
+  state.lastProcess = null;
+  state.benchmark = null;
+  pushActivity({ level: "warning", title: "本地索引已清空", desc: `${name} 已从当前浏览器会话中移除。`, user: "browser", duration: "0.2s" });
+  showToast("已清空当前浏览器索引", "warning");
   await refreshStats();
+  renderProcessLog();
+  renderQuality();
+  renderSearchResults();
+  renderBenchmark();
 }
 
 async function runProcess() {
-  if (state.demoMode) {
-    const result = {
-      files_succeeded: state.uploads.length,
-      files_failed: 0,
-      chunks_written: state.uploads.length * 6,
-      elapsed_s: 1.8,
-      file_summaries: state.uploads.map((file, index) => ({
-        source_file: file.filename,
-        source_kind: file.source_kind,
-        status: "ok",
-        records_extracted: index + 1
-      })),
-      quality_report: {
-        issue_count: 1,
-        issues: ["doc2: 发现 1 个极短文本块，已建议人工复核"],
-        documents: state.uploads.slice(0, 4).map((file, index) => ({ doc_id: index + 1, filenames: [file.filename], block_count: 12 + index * 2, short_blocks: index === 1 ? 1 : 0 })),
-        chunks: { total_chunks: state.uploads.length * 6, avg_length: 418 }
-      }
-    };
-    state.lastProcess = result;
-    renderProcessLog(result);
-    renderQuality(result);
-    pushActivity({ level: "success", title: "演示入库完成", desc: `模拟处理 ${result.files_succeeded} 个文件，生成 ${result.chunks_written} 个 chunks。`, user: "pages", duration: "1.8s" });
-    showToast("静态演示模式：已完成模拟入库", "success");
-    renderOverview();
+  if (!state.uploads.length) {
+    showToast("请先拖入或选择文件", "warning");
     return;
   }
-  setProgress("processFill", 18);
-  try {
-    const result = await apiJson("/api/process", { method: "POST" });
-    state.lastProcess = result;
-    setProgress("processFill", 100);
-    pushActivity({
-      level: result.files_failed ? "warning" : "success",
-      title: "入库流程完成",
-      desc: `成功 ${result.files_succeeded} 个，失败 ${result.files_failed} 个，写入 ${result.chunks_written} 个 chunks。`,
-      user: "pipeline",
-      duration: `${Number(result.elapsed_s || 0).toFixed(1)}s`
-    });
-    renderProcessLog(result);
-    renderQuality(result);
-    await Promise.all([refreshStats(), refreshUploads()]);
-    showToast(result.files_failed ? "入库完成，存在部分失败文件" : "入库完成", result.files_failed ? "warning" : "success");
-  } catch (error) {
-    setProgress("processFill", 0);
-    pushActivity({ level: "danger", title: "入库流程失败", desc: error.message, user: "pipeline", duration: "0.0s" });
-    showToast(`处理失败：${error.message}`, "danger");
+  const started = performance.now();
+  const allRecords = [];
+  const fileSummaries = [];
+  setProgress("processFill", 8);
+  for (let index = 0; index < state.uploads.length; index += 1) {
+    const upload = state.uploads[index];
+    try {
+      const records = await parseFileRecords(upload.file);
+      upload.records = records;
+      allRecords.push(...records);
+      fileSummaries.push({
+        source_file: upload.filename,
+        source_kind: upload.source_kind,
+        status: "ok",
+        records_extracted: records.length
+      });
+    } catch (error) {
+      fileSummaries.push({
+        source_file: upload.filename,
+        source_kind: upload.source_kind,
+        status: "error",
+        records_extracted: 0,
+        error: error.message
+      });
+    }
+    setProgress("processFill", 8 + ((index + 1) / state.uploads.length) * 58);
   }
+  state.records = allRecords;
+  state.chunks = makeChunks(allRecords);
+  const result = {
+    files_processed: state.uploads.length,
+    files_succeeded: fileSummaries.filter((item) => item.status === "ok").length,
+    files_failed: fileSummaries.filter((item) => item.status === "error").length,
+    records_processed: allRecords.length,
+    chunks_written: state.chunks.length,
+    elapsed_s: Number(((performance.now() - started) / 1000).toFixed(2)),
+    file_summaries: fileSummaries,
+    quality_report: buildQualityReport(allRecords, state.chunks)
+  };
+  state.lastProcess = result;
+  setProgress("processFill", 100);
+  renderProcessLog(result);
+  renderQuality(result);
+  await refreshStats();
+  pushActivity({
+    level: result.files_failed ? "warning" : "success",
+    title: "浏览器本地分析完成",
+    desc: `成功 ${result.files_succeeded} 个，失败 ${result.files_failed} 个，生成 ${result.chunks_written} 个 chunks。`,
+    user: "browser",
+    duration: `${result.elapsed_s}s`
+  });
+  showToast(result.files_failed ? "本地分析完成，存在部分失败文件" : "本地分析完成", result.files_failed ? "warning" : "success");
 }
 
 async function runSearch() {
@@ -621,69 +891,42 @@ async function runSearch() {
     showToast("请输入检索问题", "warning");
     return;
   }
-  if (state.demoMode) {
-    const ranked = demoSearchCorpus
-      .map((item) => {
-        const score = query.split(/\s+/).reduce((sum, token) => sum + (item.text.includes(token) ? 0.18 : 0.04), 0.18);
-        return {
-          text: item.text,
-          distance: Number((1 - Math.min(score, 0.96)).toFixed(4)),
-          score: Number(Math.min(score, 0.96).toFixed(4)),
-          metadata: item.metadata
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
-    const result = {
-      collection: "power_equipment",
-      results: ranked,
-      latency_ms: 96 + Math.round(Math.random() * 40)
-    };
-    state.lastLatency = result.latency_ms;
-    renderSearchResults(result);
-    renderOverview();
-    pushActivity({ level: "success", title: "演示检索完成", desc: `${query} 返回 ${ranked.length} 条静态结果。`, user: "pages", duration: `${result.latency_ms}ms` });
+  if (!state.chunks.length) {
+    renderSearchResults({ results: [], message: "当前还没有本地索引，请先拖入文件并完成分析。" });
     return;
   }
-  try {
-    const result = await apiJson(`/api/search?q=${encodeURIComponent(query)}&top_k=${encodeURIComponent(topK)}`);
-    state.lastLatency = Number(result.latency_ms || state.lastLatency);
-    renderSearchResults(result);
-    renderOverview();
-    pushActivity({
-      level: "success",
-      title: "检索完成",
-      desc: `${query} 返回 ${result.results?.length || 0} 条结果。`,
-      user: "search",
-      duration: `${Number(result.latency_ms || 0).toFixed(1)}ms`
-    });
-  } catch (error) {
-    renderSearchResults({ results: [], message: error.message });
-    pushActivity({ level: "danger", title: "检索失败", desc: error.message, user: "search", duration: "0.0ms" });
-    showToast(`检索失败：${error.message}`, "danger");
-  }
+  const started = performance.now();
+  const queryVector = createEmbedding(query);
+  const ranked = state.chunks
+    .map((chunk) => {
+      const similarity = cosineSimilarity(queryVector, chunk.vector);
+      return {
+        text: chunk.text,
+        distance: Number((1 - similarity).toFixed(4)),
+        score: Number(((similarity + 1) / 2).toFixed(4)),
+        metadata: chunk.metadata
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+  const result = {
+    collection: "browser_local_index",
+    results: ranked,
+    latency_ms: Number((performance.now() - started).toFixed(1))
+  };
+  state.lastLatency = result.latency_ms;
+  renderSearchResults(result);
+  renderOverview();
+  pushActivity({
+    level: "success",
+    title: "浏览器本地检索完成",
+    desc: `${query} 返回 ${ranked.length} 条结果。`,
+    user: "browser",
+    duration: `${result.latency_ms}ms`
+  });
 }
 
 async function runBenchmark() {
-  if (state.demoMode) {
-    state.benchmark = {
-      insert_seconds: 2.48,
-      insert_docs_per_second: 201.6,
-      query_seconds: 1.14,
-      query_qps: 43.9,
-      avg_query_latency_ms: 87.2,
-      p95_query_latency_ms: 126.4,
-      embedding_backend: "sentence-transformer",
-      embedding_model: "BAAI/bge-m3"
-    };
-    $("benchLog").textContent = "静态演示模式：已生成一组 benchmark 示例读数。";
-    setProgress("benchFill", 100);
-    state.lastLatency = state.benchmark.avg_query_latency_ms;
-    renderBenchmark();
-    renderOverview();
-    pushActivity({ level: "success", title: "演示 Benchmark 完成", desc: "已用静态数据更新吞吐与延迟读数。", user: "pages", duration: "1.1s" });
-    return;
-  }
   const payload = {
     document_count: Number($("benchDocs")?.value || 500),
     batch_size: Number($("benchBatch")?.value || 100),
@@ -691,31 +934,51 @@ async function runBenchmark() {
     top_k: Number($("benchTopK")?.value || 5)
   };
   setProgress("benchFill", 18);
-  $("benchLog").textContent = "Benchmark 运行中，请稍候。";
-  try {
-    state.benchmark = await apiJson("/api/benchmark", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    state.lastLatency = Number(state.benchmark.avg_query_latency_ms || state.lastLatency);
-    setProgress("benchFill", 100);
-    $("benchLog").textContent = `测试完成：平均延迟 ${state.benchmark.avg_query_latency_ms} ms，P95 ${state.benchmark.p95_query_latency_ms} ms。`;
-    renderBenchmark();
-    renderOverview();
-    pushActivity({
-      level: "success",
-      title: "Benchmark 完成",
-      desc: `写入 ${state.benchmark.insert_docs_per_second} docs/s，查询 ${state.benchmark.query_qps} qps。`,
-      user: "bench",
-      duration: `${Number(state.benchmark.query_seconds || 0).toFixed(2)}s`
-    });
-  } catch (error) {
-    setProgress("benchFill", 0);
-    $("benchLog").textContent = `Benchmark 失败：${error.message}`;
-    pushActivity({ level: "danger", title: "Benchmark 失败", desc: error.message, user: "bench", duration: "0.0s" });
-    showToast(`Benchmark 失败：${error.message}`, "danger");
+  $("benchLog").textContent = "本地 benchmark 运行中，请稍候。";
+  const synthetic = Array.from({ length: payload.document_count }, (_, index) => ({
+    id: `synthetic-${index}`,
+    text: `文档 ${index}：燃气轮机维护、压气机工况、振动诊断、润滑状态、检索性能评估与知识库索引。`
+  }));
+  const insertStarted = performance.now();
+  const embedded = synthetic.map((item) => ({ ...item, vector: createEmbedding(item.text) }));
+  const insertSeconds = (performance.now() - insertStarted) / 1000;
+  setProgress("benchFill", 58);
+  const latencies = [];
+  const queryStarted = performance.now();
+  for (let index = 0; index < payload.query_count; index += 1) {
+    const query = createEmbedding(`燃气轮机检索查询 ${index}`);
+    const started = performance.now();
+    embedded
+      .map((item) => cosineSimilarity(query, item.vector))
+      .sort((a, b) => b - a)
+      .slice(0, payload.top_k);
+    latencies.push(performance.now() - started);
   }
+  const querySeconds = (performance.now() - queryStarted) / 1000;
+  const ordered = [...latencies].sort((a, b) => a - b);
+  const p95 = ordered[Math.max(0, Math.min(ordered.length - 1, Math.round((ordered.length - 1) * 0.95)))] || 0;
+  state.benchmark = {
+    insert_seconds: Number(insertSeconds.toFixed(4)),
+    insert_docs_per_second: Number((payload.document_count / Math.max(insertSeconds, 0.001)).toFixed(2)),
+    query_seconds: Number(querySeconds.toFixed(4)),
+    query_qps: Number((payload.query_count / Math.max(querySeconds, 0.001)).toFixed(2)),
+    avg_query_latency_ms: Number((latencies.reduce((sum, item) => sum + item, 0) / Math.max(latencies.length, 1)).toFixed(3)),
+    p95_query_latency_ms: Number(p95.toFixed(3)),
+    embedding_backend: "browser-hashing",
+    embedding_model: `hashing-${engineDefaults.dimension}`
+  };
+  state.lastLatency = Number(state.benchmark.avg_query_latency_ms || state.lastLatency);
+  setProgress("benchFill", 100);
+  $("benchLog").textContent = `本地测试完成：平均延迟 ${state.benchmark.avg_query_latency_ms} ms，P95 ${state.benchmark.p95_query_latency_ms} ms。`;
+  renderBenchmark();
+  renderOverview();
+  pushActivity({
+    level: "success",
+    title: "浏览器本地 Benchmark 完成",
+    desc: `写入 ${state.benchmark.insert_docs_per_second} docs/s，查询 ${state.benchmark.query_qps} qps。`,
+    user: "browser",
+    duration: `${Number(state.benchmark.query_seconds || 0).toFixed(2)}s`
+  });
 }
 
 function dedupeFiles(files) {
@@ -781,50 +1044,29 @@ async function uploadFiles(files) {
     showToast("未检测到可上传的受支持文件", "warning");
     return;
   }
-  if (state.demoMode) {
-    const mapped = supported.map((file) => ({
-      filename: relativePathOf(file).replaceAll("/", "__"),
-      size_kb: Number((file.size / 1024).toFixed(1)),
-      modified: Math.floor((file.lastModified || Date.now()) / 1000),
-      source_kind: fileExtension(relativePathOf(file)) === "json" ? "JSON" : fileExtension(relativePathOf(file)) === "pdf" ? "PDF" : fileExtension(relativePathOf(file)) === "docx" ? "DOCX" : "Text"
-    }));
-    state.uploads = [...state.uploads, ...mapped];
-    renderQueue();
-    pushActivity({ level: "success", title: "文件已加入演示队列", desc: `本次加入 ${mapped.length} 个文件。`, user: "pages", duration: `${mapped.length} files` });
-    if (skipped > 0) showToast(`已加入 ${mapped.length} 个演示文件，跳过 ${skipped} 个不支持文件`, "warning");
-    else showToast(`已加入 ${mapped.length} 个演示文件`, "success");
-    return;
-  }
-  setProgress("processFill", 10);
-  for (let index = 0; index < supported.length; index += 1) {
-    const file = supported[index];
-    const form = new FormData();
-    form.append("file", file, file.name);
-    form.append("relative_path", relativePathOf(file));
-    try {
-      const payload = await apiJson("/api/upload", { method: "POST", body: form });
-      pushActivity({
-        level: "success",
-        title: "文件已进入队列",
-        desc: `${payload.display_name} 已识别为 ${payload.source_kind}。`,
-        user: "upload",
-        duration: `${payload.size_kb} KB`
-      });
-      setProgress("processFill", ((index + 1) / supported.length) * 72);
-    } catch (error) {
-      pushActivity({
-        level: "danger",
-        title: "上传失败",
-        desc: `${relativePathOf(file)}：${error.message}`,
-        user: "upload",
-        duration: "0.0s"
-      });
-    }
-  }
+  const mapped = supported.map((file) => ({
+    file,
+    filename: relativePathOf(file).replaceAll("/", "__"),
+    display_name: relativePathOf(file),
+    size_kb: Number((file.size / 1024).toFixed(1)),
+    modified: Math.floor((file.lastModified || Date.now()) / 1000),
+    source_kind: sourceKindFromName(relativePathOf(file))
+  }));
+  const keyed = new Map(state.uploads.map((item) => [item.filename, item]));
+  mapped.forEach((item) => keyed.set(item.filename, item));
+  state.uploads = Array.from(keyed.values());
   await refreshUploads();
   setProgress("processFill", 0);
-  if (skipped > 0) showToast(`上传完成，已跳过 ${skipped} 个不支持文件`, "warning");
-  else showToast(`已上传 ${supported.length} 个文件`, "success");
+  pushActivity({
+    level: "success",
+    title: "文件已加入本地队列",
+    desc: `本次加入 ${mapped.length} 个文件，分析将只在当前浏览器中进行。`,
+    user: "browser",
+    duration: `${mapped.length} files`
+  });
+  if (skipped > 0) showToast(`已加入 ${mapped.length} 个文件，跳过 ${skipped} 个不支持文件`, "warning");
+  else showToast(`已加入 ${mapped.length} 个文件，开始本地分析`, "success");
+  await runProcess();
 }
 
 function bindDropzone() {
