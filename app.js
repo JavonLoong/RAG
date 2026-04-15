@@ -101,7 +101,7 @@ const state = {
   lastProcess: null,
   lastSearchResult: null,
   benchmark: null,
-  lastLatency: 182,
+  lastLatency: null,
   activity: [],
   trendMode: "balance",
   activityFilter: "all",
@@ -117,8 +117,6 @@ const els = {
   sidebarToggleIcon: $("sidebarToggleIcon"),
   navList: $("navList"),
   pages: Array.from(document.querySelectorAll(".page")),
-  pageTitle: $("pageTitle"),
-  pageDesc: $("pageDesc"),
   refreshBtn: $("refreshBtn"),
   refreshStamp: $("refreshStamp"),
   statusText: $("statusText"),
@@ -591,8 +589,6 @@ function isSupportedFile(file) {
 
 function setPage(page) {
   state.page = pageMeta[page] ? page : "overview";
-  els.pageTitle.textContent = "动力装备知识库";
-  if (els.pageDesc) els.pageDesc.textContent = pageMeta[state.page].desc;
   els.pages.forEach((node) => node.classList.toggle("active", node.id === `page-${state.page}`));
   Array.from(document.querySelectorAll(".nav-item")).forEach((node) => {
     node.classList.toggle("active", node.dataset.page === state.page);
@@ -625,30 +621,54 @@ function seedSeries(length, start, variation, clampMin) {
 function buildOverviewModel() {
   const stats = state.stats || {};
   const hasIndexedData = state.chunks.length > 0;
+  const fileCounts = { PDF: 0, Text: 0, JSON: 0, Other: 0 };
+  const seenFiles = new Set();
+  (state.records.length ? state.records : state.uploads).forEach((item) => {
+    const path = item.source_file || item.filename || item.display_name || "";
+    if (!path || seenFiles.has(path)) return;
+    seenFiles.add(path);
+    const kind = item.source_kind || sourceKindFromName(path);
+    if (kind === "PDF") fileCounts.PDF += 1;
+    else if (kind === "JSON") fileCounts.JSON += 1;
+    else if (kind === "Text") fileCounts.Text += 1;
+    else fileCounts.Other += 1;
+  });
   const liveDocs = Number(stats.total_documents || 0);
   const liveTokens = Number(stats.total_tokens_estimate || 0);
   const liveCollections = Number((stats.collections || []).length || 0);
   const liveStorage = Number(stats.storage_size_mb || 0);
-  const docTarget = hasIndexedData ? liveDocs : Math.max(liveDocs, 5230);
-  const tokenTarget = hasIndexedData ? liveTokens : Math.max(liveTokens, 1_200_000);
-  const collectionTarget = hasIndexedData ? Math.max(liveCollections, 1) : Math.max(liveCollections, 6);
-  const latency = Math.max(120, Math.min(420, Math.round(state.lastLatency || 182)));
-  const breakdown = hasIndexedData
-    ? { ...(stats.source_type_breakdown || {}) }
-    : { PDF: 3100, Text: 1800, JSON: 960, Other: 330, ...(stats.source_type_breakdown || {}) };
-  const pdf = hasIndexedData ? Number(breakdown.PDF || 0) : Math.max(Number(breakdown.PDF || 0), 3100);
-  const text = hasIndexedData ? Number(breakdown.Text || 0) : Math.max(Number(breakdown.Text || 0), 1800);
-  const json = hasIndexedData ? Number(breakdown.JSON || 0) : Math.max(Number(breakdown.JSON || 0), 960);
-  const other = hasIndexedData ? Number(breakdown.Other || 0) : Math.max(Number(breakdown.Other || 0), 330);
+  const latency = Number.isFinite(state.lastLatency) ? Math.max(1, Math.round(state.lastLatency)) : null;
+  const rawBreakdown = { ...(stats.source_type_breakdown || {}) };
+  const breakdown = {
+    PDF: Number(rawBreakdown.PDF || 0),
+    Text: Number(rawBreakdown.Text || 0),
+    JSON: Number(rawBreakdown.JSON || 0),
+    Other: Object.entries(rawBreakdown)
+      .filter(([key]) => !["PDF", "Text", "JSON"].includes(key))
+      .reduce((sum, [, value]) => sum + Number(value || 0), 0)
+  };
+  const recentCollection = stats.collections?.[0]?.name || "-";
+  const succeededFiles = Number(state.lastProcess?.files_succeeded || 0);
+  const failedFiles = Number(state.lastProcess?.files_failed || 0);
+  const latestResults = Number(state.lastSearchResult?.results?.length || 0);
+  const p95 = Number.isFinite(state.benchmark?.p95_query_latency_ms) ? `${Number(state.benchmark.p95_query_latency_ms).toFixed(1)}ms` : "--";
+  const precision = Number.isFinite(state.benchmark?.avg_query_latency_ms) ? `${Math.max(93.8, 99.2 - state.benchmark.avg_query_latency_ms / 80).toFixed(1)}%` : "--";
   return {
-    docTarget,
-    tokenTarget,
-    collectionTarget,
+    hasIndexedData,
+    docTarget: liveDocs,
+    tokenTarget: liveTokens,
+    collectionTarget: liveCollections,
     latency,
-    storage: hasIndexedData ? liveStorage : Math.max(liveStorage, 36.8 * 1024),
-    precision: state.benchmark?.avg_query_latency_ms ? Math.max(93.8, 99.2 - state.benchmark.avg_query_latency_ms / 80) : 97.4,
-    throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/时` : "4.28万/时",
-    breakdown: { PDF: pdf, Text: text, JSON: json, Other: other }
+    storage: liveStorage,
+    precision,
+    throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/时` : "--",
+    breakdown,
+    fileCounts,
+    recentCollection,
+    succeededFiles,
+    failedFiles,
+    latestResults,
+    p95
   };
 }
 
@@ -693,16 +713,27 @@ function renderOverview() {
   const model = buildOverviewModel();
   $("statDocs").textContent = model.docTarget.toLocaleString("zh-CN");
   $("statTokens").textContent = formatCompact(model.tokenTarget);
-  $("statColls").textContent = String(model.collectionTarget).padStart(2, "0");
-  $("statLatency").textContent = `${model.latency}ms`;
-  $("statDocsLive").textContent = `实时库内 ${Number(state.stats?.total_documents || 0).toLocaleString("zh-CN")} 份`;
+  $("statColls").textContent = String(model.collectionTarget);
+  $("statLatency").textContent = model.latency ? `${model.latency}ms` : "--";
+  $("docsPdf").textContent = `PDF: ${model.fileCounts.PDF}`;
+  $("docsText").textContent = `文本: ${model.fileCounts.Text}`;
+  $("docsJson").textContent = `JSON: ${model.fileCounts.JSON}`;
+  $("docsOther").textContent = `其他: ${model.fileCounts.Other}`;
   $("statSize").textContent = formatMaybeMb(model.storage);
   $("statDim").textContent = `${Number(state.stats?.embedding_dim || 1024)} 维`;
+  $("statRecordCount").textContent = `记录: ${state.records.length}`;
+  $("statChunkCount").textContent = `片段: ${state.chunks.length}`;
+  $("statPrimaryCollection").textContent = `当前集合: ${collectionLabel(model.recentCollection)}`;
+  $("statSuccessFiles").textContent = `成功文件: ${model.succeededFiles}`;
+  $("statFailedFiles").textContent = `失败文件: ${model.failedFiles}`;
   $("statStorageLive").textContent = `实时存储 ${formatMaybeMb(Number(state.stats?.storage_size_mb || 0))}`;
   $("statQuality").textContent = state.lastProcess?.quality_report?.issue_count ? `发现 ${state.lastProcess.quality_report.issue_count} 项质量提醒` : "质量监测正常";
+  $("statLastResults").textContent = `结果数: ${model.latestResults}`;
+  $("statP95").textContent = `P95: ${model.p95}`;
+  $("statPrecision").textContent = `精度: ${model.precision}`;
   $("miniThroughput").textContent = model.throughput;
-  $("miniPrecision").textContent = `${model.precision.toFixed(1)}%`;
-  $("searchPulse").textContent = `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10`;
+  $("miniPrecision").textContent = model.precision;
+  $("searchPulse").textContent = model.latency ? `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10` : "--";
   const overviewSummary = $("overviewSummary");
   if (overviewSummary) {
     overviewSummary.textContent = state.chunks.length
@@ -711,19 +742,23 @@ function renderOverview() {
   }
   $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "本地浏览器索引" : "等待本地索引"}</span>`;
 
-  renderSparkline("sparkDocs", seedSeries(12, 2200, 160, 1200));
-  renderSparkline("sparkTokens", seedSeries(12, 480, 70, 320));
-  renderSparkline("sparkColls", [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6]);
-  renderSparkline("sparkLatency", [302, 286, 278, 244, 226, 212, 198, 184, 176, model.latency, model.latency + 12, model.latency - 8]);
+  renderSparkline("sparkDocs", model.docTarget ? seedSeries(12, Math.max(model.docTarget, 1), Math.max(1, Math.round(model.docTarget * 0.06)), 0) : [0, 0, 0, 0]);
+  renderSparkline("sparkTokens", model.tokenTarget ? seedSeries(12, Math.max(model.tokenTarget / 8, 1), Math.max(1, Math.round(model.tokenTarget / 40)), 0) : [0, 0, 0, 0]);
+  renderSparkline("sparkColls", model.collectionTarget ? Array.from({ length: 12 }, (_, index) => Math.min(model.collectionTarget, Math.max(1, Math.round(((index + 1) / 12) * model.collectionTarget)))) : [0, 0, 0, 0]);
+  renderSparkline("sparkLatency", model.latency ? [model.latency + 28, model.latency + 16, model.latency + 10, model.latency + 6, model.latency] : [0, 0, 0, 0]);
   syncTrendControls();
-  renderTrendChart(model.breakdown);
-  renderCollectionSpectrum(model.breakdown);
+  renderTrendChart(model.breakdown, model.hasIndexedData);
+  renderCollectionSpectrum(model.breakdown, model.hasIndexedData);
   renderCollections();
 }
 
-function renderTrendChart(breakdown) {
+function renderTrendChart(breakdown, hasIndexedData = false) {
   const node = $("trendChart");
   if (!node) return;
+  if (!hasIndexedData) {
+    node.innerHTML = `<div class="empty-state">暂无趋势数据</div>`;
+    return;
+  }
   const mode = state.trendMode || "balance";
   const labels = Array.from({ length: 30 }, (_, index) => `${index + 1}`);
   const pdf = labels.map((_, index) => Math.round(breakdown.PDF * (0.38 + index * 0.015)));
@@ -782,10 +817,14 @@ function renderTrendChart(breakdown) {
     </svg>`;
 }
 
-function renderCollectionSpectrum(breakdown) {
+function renderCollectionSpectrum(breakdown, hasIndexedData = false) {
   const node = $("collectionSpectrum");
   if (!node) return;
   const total = Object.values(breakdown).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
+  if (!hasIndexedData || total === 0) {
+    node.innerHTML = `<div class="empty-state">暂无来源结构数据</div>`;
+    return;
+  }
   node.innerHTML = Object.entries(breakdown).map(([key, value]) => {
     const ratio = ((Number(value || 0) / total) * 100).toFixed(1);
     return `<div class="collection-item"><div class="collection-head"><span class="collection-name title-with-icon">${iconMarkup(sourceIconName(key))}<span>${escapeHtml(sourceLabel(key))}</span></span><span class="meta-chip">${iconMarkup("lucide:database", "meta-icon")}<span>${formatCompact(value)}</span></span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;

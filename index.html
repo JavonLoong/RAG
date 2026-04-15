@@ -51,10 +51,6 @@
 
     <div class="app-main">
       <header class="topbar">
-        <div class="topbar-copy">
-          <h1 id="pageTitle">动力装备知识库</h1>
-        </div>
-
         <form class="topbar-search" id="globalSearchForm">
           <span class="input-icon" aria-hidden="true"><iconify-icon icon="lucide:search"></iconify-icon></span>
           <input id="globalSearchInput" type="search" placeholder="全局搜索页面、日志、操作节点">
@@ -79,60 +75,6 @@
 
             <div class="overview-grid">
               <div class="stack">
-                <div class="metric-grid">
-                  <article class="panel metric-card">
-                    <div class="metric-top">
-                      <div>
-                        <p class="card-kicker">文档载荷</p>
-                        <div class="metric-value" id="statDocs">5,230</div>
-                      </div>
-                      <svg class="sparkline" id="sparkDocs" viewBox="0 0 96 32"></svg>
-                    </div>
-                    <div class="metric-subgrid">
-                      <span>PDF: 3,100</span><span>文本: 1,800</span><span>其他: 330</span><span id="statDocsLive">实时库内 0</span>
-                    </div>
-                  </article>
-
-                  <article class="panel metric-card">
-                    <div class="metric-top">
-                      <div>
-                        <p class="card-kicker">词元规模</p>
-                        <div class="metric-value" id="statTokens">1.2M</div>
-                      </div>
-                      <svg class="sparkline" id="sparkTokens" viewBox="0 0 96 32"></svg>
-                    </div>
-                    <div class="metric-subgrid">
-                      <span>输入: 800K</span><span>输出: 400K</span><span id="statSize">36.8 GB</span><span id="statDim">1024 维</span>
-                    </div>
-                  </article>
-
-                  <article class="panel metric-card">
-                    <div class="metric-top">
-                      <div>
-                        <p class="card-kicker">集合数量</p>
-                        <div class="metric-value" id="statColls">06</div>
-                      </div>
-                      <svg class="sparkline" id="sparkColls" viewBox="0 0 96 32"></svg>
-                    </div>
-                    <div class="metric-subgrid">
-                      <span>主库: power_equipment</span><span>副本: 2</span><span>试验库: 3</span><span id="statStorageLive">索引层已同步</span>
-                    </div>
-                  </article>
-
-                  <article class="panel metric-card">
-                    <div class="metric-top">
-                      <div>
-                        <p class="card-kicker">检索健康</p>
-                        <div class="metric-value" id="statLatency">182ms</div>
-                      </div>
-                      <svg class="sparkline" id="sparkLatency" viewBox="0 0 96 32"></svg>
-                    </div>
-                    <div class="metric-subgrid">
-                      <span>精确度: 97.4%</span><span>召回率: 94.8%</span><span>P95: 268ms</span><span id="statQuality">质量监测正常</span>
-                    </div>
-                  </article>
-                </div>
-
                 <article class="panel">
                   <div class="panel-head">
                     <div>
@@ -174,8 +116,8 @@
                 </article>
 
                 <div class="mini-grid">
-                  <article class="panel mini-card"><p class="card-kicker">吞吐脉冲</p><div class="mini-value" id="miniThroughput">4.28万/时</div><p>当前小时写入吞吐，用来观察批处理压力。</p></article>
-                  <article class="panel mini-card"><p class="card-kicker">结果精度</p><div class="mini-value" id="miniPrecision">97.4%</div><p>结合检索得分与最近一次压测结果估算精度带。</p></article>
+                  <article class="panel mini-card"><p class="card-kicker">吞吐脉冲</p><div class="mini-value" id="miniThroughput">--</div><p>当前小时写入吞吐。</p></article>
+                  <article class="panel mini-card"><p class="card-kicker">结果精度</p><div class="mini-value" id="miniPrecision">--</div><p>最近一次压测结果。</p></article>
                 </div>
               </div>
 
@@ -201,9 +143,63 @@
 
                 <article class="panel mini-card">
                   <p class="card-kicker">导航脉冲</p>
-                  <div class="mini-value" id="searchPulse">6.2 / 10</div>
+                  <div class="mini-value" id="searchPulse">--</div>
                 </article>
               </div>
+            </div>
+
+            <div class="metric-grid metric-grid--summary">
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">文档数</p>
+                    <div class="metric-value" id="statDocs">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkDocs" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="docsPdf">PDF: 0</span><span id="docsText">文本: 0</span><span id="docsJson">JSON: 0</span><span id="docsOther">其他: 0</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">词元数</p>
+                    <div class="metric-value" id="statTokens">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkTokens" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statSize">0.0 MB</span><span id="statDim">512 维</span><span id="statRecordCount">记录: 0</span><span id="statChunkCount">片段: 0</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">集合数</p>
+                    <div class="metric-value" id="statColls">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkColls" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statPrimaryCollection">当前集合: -</span><span id="statSuccessFiles">成功文件: 0</span><span id="statFailedFiles">失败文件: 0</span><span id="statStorageLive">实时存储 0.0 MB</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">检索延迟</p>
+                    <div class="metric-value" id="statLatency">--</div>
+                  </div>
+                  <svg class="sparkline" id="sparkLatency" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statLastResults">结果数: 0</span><span id="statP95">P95: --</span><span id="statPrecision">精度: --</span><span id="statQuality">质量监测正常</span>
+                </div>
+              </article>
             </div>
           </div>
         </section>
