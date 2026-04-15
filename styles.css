@@ -174,7 +174,7 @@ iconify-icon {
   border: 1px solid var(--line);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
   display: grid;
-  grid-template-columns: 38px 1fr auto;
+  grid-template-columns: 38px 1fr;
   gap: 12px;
   align-items: center;
   text-align: left;
@@ -213,13 +213,8 @@ iconify-icon {
 }
 
 .nav-glyph iconify-icon { font-size: 18px; }
-.nav-kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.nav-copy { min-width: 0; display: flex; align-items: center; }
 .nav-copy strong { display: block; font-size: 14px; font-weight: 650; }
-.nav-item.active .nav-kicker,
-.nav-item.active .nav-copy span { color: rgba(255, 255, 255, 0.72); }
-.nav-arrow { color: var(--muted); display: inline-flex; align-items: center; justify-content: center; }
-.nav-arrow iconify-icon { font-size: 16px; }
-.nav-item.active .nav-arrow { color: rgba(255, 255, 255, 0.78); }
 
 .sidebar-footer {
   justify-content: space-between;

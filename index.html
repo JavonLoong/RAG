@@ -25,7 +25,7 @@
           </div>
           <div class="brand-copy">
             <strong>动力装备知识库</strong>
-            <span>工业知识检索控制台</span>
+            <span>本地工作台</span>
           </div>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
@@ -34,11 +34,11 @@
       </div>
 
       <div class="nav-list" id="navList">
-        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">01</span><strong>系统总览</strong><span>状态与趋势</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">02</span><strong>数据接入</strong><span>上传与入库</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">03</span><strong>语义检索</strong><span>问题与结果</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">04</span><strong>系统结构</strong><span>流程与阶段</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">05</span><strong>性能基准</strong><span>压测与读数</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><strong>系统总览</strong></span></button>
+        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><strong>数据接入</strong></span></button>
+        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><strong>语义检索</strong></span></button>
+        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><strong>系统结构</strong></span></button>
+        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><strong>性能基准</strong></span></button>
       </div>
 
       <div class="sidebar-footer">
@@ -53,9 +53,9 @@
     <div class="app-main">
       <header class="topbar">
         <div class="topbar-copy">
-          <p class="eyebrow">动力装备知识库</p>
-          <h1 id="pageTitle">系统总览</h1>
-          <p id="pageDesc">查看知识库状态、检索结果与实时处理日志。</p>
+          <p class="eyebrow">本地运行</p>
+          <h1 id="pageTitle">动力装备知识库</h1>
+          <p id="pageDesc">状态、日志和趋势都在这里。</p>
         </div>
 
         <form class="topbar-search" id="globalSearchForm">
@@ -74,13 +74,10 @@
         <section class="page active" id="page-overview">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">总览控制台</p>
-              <h3>把上传、分块、向量化、检索与性能验证整合到一个统一工作台。</h3>
-              <p>左侧聚焦数据概览与集合状态，中间查看趋势和图表，右侧持续显示实时操作日志，方便快速掌握当前处理进度。</p>
+              <h3>今天的状态、趋势和日志。</h3>
               <div class="hero-actions">
                 <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
                 <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
-                <span class="hero-chip"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>支持目录上传 / 本地分析 / 实时检索</span></span>
               </div>
             </article>
 
@@ -220,18 +217,11 @@
         </section>
         <section class="page" id="page-data">
           <div class="page-stack">
-            <article class="panel hero-card">
-              <p class="card-kicker">入库工作台</p>
-              <h3>上传、预检、分块与质量评估在同一条操作链内完成。</h3>
-              <p>支持直接拖入单个文件或整个文件夹。只要文件夹中包含受支持的 JSON、PDF、DOCX、TXT、Markdown、CSV、TSV、LOG 文件，界面会自动识别并附带相对路径上传。</p>
-            </article>
-
             <div class="data-grid">
               <div class="stack">
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">接入面板</p>
                       <h3>文件与文件夹接入</h3>
                       <p>支持拖拽目录、点击选择目录，上传时自动携带原始相对路径。</p>
                     </div>
@@ -240,7 +230,6 @@
                   <div class="queue-dropzone" id="dropZone">
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
-                      <p class="card-kicker">目录上传</p>
                       <h3>拖入整个文件夹也能识别</h3>
                       <p>前端会递归解析目录，并只上传受支持的文档类型。</p>
                       <div class="queue-actions">
@@ -260,7 +249,6 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">队列状态</p>
                       <h3>上传队列</h3>
                       <p id="uploadQueueMeta">等待同步上传目录。</p>
                     </div>
@@ -278,7 +266,6 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">待处理文件</p>
                       <h3>待处理文件列表</h3>
                       <p>上传目录中的文件会按来源类型自动归类。</p>
                     </div>
@@ -290,7 +277,6 @@
                 <article class="panel" id="qualityCard">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">质量报告</p>
                       <h3>分块与质量摘要</h3>
                       <p>处理结果会在这里显示平均 chunk 长度、问题数量和按文档分布。</p>
                     </div>
@@ -304,19 +290,12 @@
         </section>
         <section class="page" id="page-search">
           <div class="page-stack">
-            <article class="panel hero-card">
-              <p class="card-kicker">语义检索</p>
-              <h3>面向复杂工业知识的语义检索工作台。</h3>
-              <p>支持调整返回条数、查看得分、来源文件与来源类型，并将延迟自动写回总览指标与活动流。</p>
-            </article>
-
             <div class="search-layout">
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">检索配置</p>
                     <h3>检索配置</h3>
-                      <p>输入查询词后将使用当前默认集合发起检索。</p>
+                    <p>输入查询词后将使用当前默认集合发起检索。</p>
                   </div>
                 </div>
                 <div class="search-row">
@@ -330,9 +309,8 @@
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">检索结果</p>
                     <h3>结果列表</h3>
-                      <p>展示相似度、距离、来源文件以及片段元数据。</p>
+                    <p>展示相似度、距离、来源文件以及片段元数据。</p>
                   </div>
                 </div>
                 <div class="results-list" id="searchResults"></div>
@@ -343,12 +321,6 @@
 
         <section class="page" id="page-architecture">
           <div class="page-stack">
-            <article class="panel hero-card">
-              <p class="card-kicker">流程拓扑</p>
-              <h3>系统结构以流程视图展示各处理阶段。</h3>
-              <p>从上传、解析、清洗、分块、向量化到检索与压测，每个阶段都保持可见和可验证。</p>
-            </article>
-
             <div class="arch-grid" id="archGrid">
               <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><h4>01 上传与预检</h4></div><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
               <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:file-type-2"></iconify-icon></span><h4>02 解析与清洗</h4></div><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
@@ -360,19 +332,12 @@
 
         <section class="page" id="page-benchmark">
           <div class="page-stack">
-            <article class="panel hero-card">
-              <p class="card-kicker">压测面板</p>
-              <h3>集中查看写入、查询与 P95 延迟。</h3>
-              <p>该页面用于运行本地压测，并把关键指标写回总览页的健康卡片。</p>
-            </article>
-
             <div class="benchmark-grid">
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">压测配置</p>
-                    <h3>运行参数</h3>
-                    <p>推荐先用中等规模验证链路，再扩大文档量观察吞吐拐点。</p>
+                      <h3>运行参数</h3>
+                      <p>推荐先用中等规模验证链路，再扩大文档量观察吞吐拐点。</p>
                   </div>
                 </div>
                 <div class="form-grid">
@@ -389,9 +354,8 @@
               <article class="panel" id="benchResults">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">结果概览</p>
-                    <h3>性能读数</h3>
-                    <p>写入吞吐、查询吞吐与平均 / P95 延迟都会在这里展示。</p>
+                      <h3>性能读数</h3>
+                      <p>写入吞吐、查询吞吐与平均 / P95 延迟都会在这里展示。</p>
                   </div>
                 </div>
                 <div class="empty-state" id="benchEmpty">尚未运行压测。</div>

@@ -1,23 +1,23 @@
 const pageMeta = {
   overview: {
     title: "系统总览",
-    desc: "查看知识库状态、检索节奏与实时运维流。"
+    desc: "状态、趋势和日志都在这里。"
   },
   data: {
     title: "数据接入",
-    desc: "支持文件与文件夹拖拽上传，并将解析、分块与质量评估收敛为一条处理链。"
+    desc: "拖入文件或文件夹后会自动进入本地队列。"
   },
   search: {
     title: "语义检索",
-    desc: "查看返回结果、来源类型与检索延迟，并把结果脉冲实时写回总览仪表。"
+    desc: "输入问题后直接查看结果、来源和延迟。"
   },
   architecture: {
     title: "系统结构",
-    desc: "从上传、解析、分块、向量化到检索和压测，按处理流程展示。"
+    desc: "按阶段检查上传、解析、分块和检索链路。"
   },
   benchmark: {
     title: "性能基准",
-    desc: "跟踪写入吞吐、查询吞吐和 P95 延迟，评估链路在高负载下的稳定性。"
+    desc: "运行压测后查看吞吐、平均延迟和 P95。"
   }
 };
 
@@ -591,7 +591,7 @@ function isSupportedFile(file) {
 
 function setPage(page) {
   state.page = pageMeta[page] ? page : "overview";
-  els.pageTitle.textContent = pageMeta[state.page].title;
+  els.pageTitle.textContent = "动力装备知识库";
   els.pageDesc.textContent = pageMeta[state.page].desc;
   els.pages.forEach((node) => node.classList.toggle("active", node.id === `page-${state.page}`));
   Array.from(document.querySelectorAll(".nav-item")).forEach((node) => {
