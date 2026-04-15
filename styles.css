@@ -92,7 +92,10 @@ iconify-icon {
 }
 
 .sidebar.is-collapsed .brand-main {
+  width: 46px;
+  min-width: 46px;
   flex: 0 0 46px;
+  gap: 0;
   justify-content: center;
 }
 
@@ -137,6 +140,7 @@ iconify-icon {
   width: 46px;
   height: 46px;
   flex-basis: 46px;
+  aspect-ratio: 1 / 1;
   border-radius: 18px;
 }
 
@@ -165,7 +169,13 @@ iconify-icon {
   opacity: 0;
   pointer-events: none;
   width: 0;
+  min-width: 0;
   overflow: hidden;
+}
+
+.sidebar.is-collapsed .brand-copy,
+.sidebar.is-collapsed .nav-copy {
+  display: none;
 }
 
 .sidebar-toggle {
@@ -235,6 +245,7 @@ iconify-icon {
 .nav-copy strong { display: block; font-size: 14px; font-weight: 650; }
 
 .sidebar.is-collapsed .nav-list {
+  width: 100%;
   justify-items: center;
   gap: 14px;
 }
@@ -242,7 +253,10 @@ iconify-icon {
 .sidebar.is-collapsed .nav-item {
   width: 64px;
   height: 64px;
+  min-width: 64px;
+  aspect-ratio: 1 / 1;
   padding: 0;
+  margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,6 +268,7 @@ iconify-icon {
 .sidebar.is-collapsed .nav-glyph {
   width: 40px;
   height: 40px;
+  flex: 0 0 40px;
   margin: 0;
 }
 
