@@ -479,7 +479,7 @@ iconify-icon {
 }
 
 .overview-grid {
-  grid-template-columns: minmax(300px, 1.02fr) minmax(460px, 1.18fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(360px, 1.08fr) minmax(440px, 1.14fr) minmax(300px, 0.98fr);
   align-items: start;
 }
 
@@ -489,17 +489,30 @@ iconify-icon {
 .arch-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
 .metric-grid,
 .quality-grid,
-.mini-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+.mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .form-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
 .search-row { grid-template-columns: minmax(280px, 1fr) 120px auto; gap: 12px; }
 .bench-grid { grid-template-columns: repeat(4, minmax(120px, 1fr)); margin-top: 18px; }
 
-.metric-card { padding: 22px; display: grid; gap: 12px; }
+.metric-card {
+  min-height: 176px;
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
 .metric-top,
 .collection-head,
 .activity-head,
 .queue-head,
 .result-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.metric-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+.metric-top > div { min-width: 0; }
 .metric-value { font-size: clamp(28px, 3vw, 40px); font-weight: 720; line-height: 1; letter-spacing: -0.05em; }
 .mini-value { font-size: 26px; font-weight: 700; }
 .metric-subgrid,
@@ -507,8 +520,30 @@ iconify-icon {
 .activity-meta,
 .queue-meta,
 .search-meta { justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--ink-soft); font-size: 12px; }
+.metric-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  align-items: start;
+}
+.metric-card .card-kicker {
+  margin-bottom: 8px;
+  font-size: 10px;
+  line-height: 1.22;
+  letter-spacing: 0.16em;
+}
+.metric-subgrid span {
+  line-height: 1.4;
+  min-width: 0;
+}
 .result-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; color: var(--ink-soft); font-size: 12px; }
-.sparkline { width: 96px; height: 32px; }
+.sparkline {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  justify-self: stretch;
+  align-self: start;
+}
 .chart-card { min-height: 420px; }
 .chart-surface { min-height: 320px; }
 .legend-row { gap: 16px; flex-wrap: wrap; color: var(--ink-soft); font-size: 12px; margin-top: 16px; }
