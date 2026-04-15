@@ -2,34 +2,43 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>动力装备知识库控制台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
+  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="./app.js" defer></script>
+  <script src="./app.js" charset="utf-8" defer></script>
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-main">
-          <div class="brand-mark">KE</div>
+          <div class="brand-mark" aria-hidden="true">
+            <iconify-icon icon="lucide:database"></iconify-icon>
+          </div>
           <div class="brand-copy">
             <strong>动力装备知识库</strong>
             <span>Industrial RAG Command Console</span>
           </div>
         </div>
-        <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航"></button>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
+          <iconify-icon id="sidebarToggleIcon" icon="lucide:chevrons-left"></iconify-icon>
+        </button>
       </div>
 
       <div class="nav-list" id="navList">
-        <button class="nav-item active" data-page="overview"><span class="nav-glyph"></span><span class="nav-copy"><span class="nav-kicker">01</span><strong>系统总览</strong><span>Overview</span></span><span class="nav-arrow">+</span></button>
-        <button class="nav-item" data-page="data"><span class="nav-glyph"></span><span class="nav-copy"><span class="nav-kicker">02</span><strong>数据接入</strong><span>Upload & ingest</span></span><span class="nav-arrow">+</span></button>
-        <button class="nav-item" data-page="search"><span class="nav-glyph"></span><span class="nav-copy"><span class="nav-kicker">03</span><strong>语义检索</strong><span>Semantic retrieval</span></span><span class="nav-arrow">+</span></button>
-        <button class="nav-item" data-page="architecture"><span class="nav-glyph"></span><span class="nav-copy"><span class="nav-kicker">04</span><strong>系统结构</strong><span>Pipeline & topology</span></span><span class="nav-arrow">+</span></button>
-        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"></span><span class="nav-copy"><span class="nav-kicker">05</span><strong>性能基准</strong><span>Benchmark</span></span><span class="nav-arrow">+</span></button>
+        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">01</span><strong>系统总览</strong><span>Overview</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">02</span><strong>数据接入</strong><span>Upload & ingest</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">03</span><strong>语义检索</strong><span>Semantic retrieval</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">04</span><strong>系统结构</strong><span>Pipeline & topology</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">05</span><strong>性能基准</strong><span>Benchmark</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
       </div>
 
       <div class="sidebar-footer">
@@ -50,13 +59,14 @@
         </div>
 
         <form class="topbar-search" id="globalSearchForm">
+          <span class="input-icon" aria-hidden="true"><iconify-icon icon="lucide:search"></iconify-icon></span>
           <input id="globalSearchInput" type="search" placeholder="全局搜索页面、日志、操作节点">
         </form>
 
         <div class="topbar-actions">
-          <div class="status-pill" id="statusPill"><span class="status-dot warning"></span><span id="refreshStamp">等待首次同步</span></div>
-          <button class="ghost-btn" id="refreshBtn" type="button">刷新数据</button>
-          <div class="user-chip"><strong>OPS</strong><span class="muted">系统管理员</span></div>
+          <div class="status-pill" id="statusPill"><iconify-icon icon="lucide:shield-check"></iconify-icon><span class="status-dot warning"></span><span id="refreshStamp">等待首次同步</span></div>
+          <button class="ghost-btn" id="refreshBtn" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新数据</span></button>
+          <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>OPS</strong><span class="muted">系统管理员</span></div>
         </div>
       </header>
 
@@ -68,9 +78,9 @@
               <h3>把上传、分块、向量化、检索与性能验证整合进一个更安静、更清晰的纯白指挥台。</h3>
               <p>新的界面采用三列 Bento 布局：左侧聚焦数据概览与集合状态，中间承载高密度折线图和数据分布，右侧持续显示实时操作日志。所有高亮只使用 Klein Blue，让复杂系统也保持克制和可读。</p>
               <div class="hero-actions">
-                <button class="btn" data-jump="data" type="button">上传并入库</button>
-                <button class="ghost-btn" data-jump="search" type="button">开始检索</button>
-                <span class="hero-chip">Pure white / Bento / Swiss grid</span>
+                <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
+                <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                <span class="hero-chip"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>Pure white / Bento / Swiss grid</span></span>
               </div>
             </article>
 
@@ -214,16 +224,17 @@
                   </div>
                   <div class="queue-dropzone" id="dropZone">
                     <div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
                       <p class="card-kicker">Folder-aware upload</p>
                       <h3>拖入整个文件夹也能识别</h3>
                       <p>前端会递归解析目录，并只上传受支持的文档类型。</p>
                       <div class="queue-actions">
-                        <button class="btn" id="pickFilesButton" type="button">选择文件</button>
-                        <button class="ghost-btn" id="pickFolderButton" type="button">选择文件夹</button>
-                        <button class="ghost-btn" id="dropBrowseButton" type="button">浏览队列</button>
+                        <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>浏览队列</span></button>
                       </div>
                       <div class="queue-actions">
-                        <button class="ghost-btn" id="dropFolderButton" type="button">递归识别目录</button>
+                        <button class="ghost-btn" id="dropFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>递归识别目录</span></button>
                       </div>
                     </div>
                   </div>
@@ -239,8 +250,8 @@
                       <p id="uploadQueueMeta">等待同步上传目录。</p>
                     </div>
                     <div class="queue-actions">
-                      <button class="ghost-btn" id="reloadQueueButton" type="button">刷新队列</button>
-                      <button class="btn" id="btnProcess" type="button">处理并入库</button>
+                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新队列</span></button>
+                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理并入库</span></button>
                     </div>
                   </div>
                   <div class="progress" id="processProgress"><div class="progress-bar" id="processFill"></div></div>
@@ -296,7 +307,7 @@
                 <div class="search-row">
                   <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
                   <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="5">
-                  <button class="btn" id="btnSearch" type="button">开始检索</button>
+                  <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
                 </div>
                 <div class="search-meta" id="searchMeta">等待检索输入。</div>
               </article>
@@ -324,10 +335,10 @@
             </article>
 
             <div class="arch-grid" id="archGrid">
-              <article class="panel arch-item"><h4>01 上传与预检</h4><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
-              <article class="panel arch-item"><h4>02 解析与清洗</h4><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
-              <article class="panel arch-item"><h4>03 分块与向量化</h4><p>标题触发分块和多级断点切分同时保留，chunk metadata 额外记录来源扩展名与来源类型。</p></article>
-              <article class="panel arch-item"><h4>04 检索与基准</h4><p>语义检索、延迟统计与 synthetic benchmark 集成在同一控制台中，便于做链路回归和性能观察。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><h4>01 上传与预检</h4></div><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:file-type-2"></iconify-icon></span><h4>02 解析与清洗</h4></div><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:database"></iconify-icon></span><h4>03 分块与向量化</h4></div><p>标题触发分块和多级断点切分同时保留，chunk metadata 额外记录来源扩展名与来源类型。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:gauge"></iconify-icon></span><h4>04 检索与基准</h4></div><p>语义检索、延迟统计与 synthetic benchmark 集成在同一控制台中，便于做链路回归和性能观察。</p></article>
             </div>
           </div>
         </section>
@@ -356,7 +367,7 @@
                   <div class="field"><label for="benchTopK">Top K</label><input class="form-control" id="benchTopK" type="number" min="1" max="20" value="5"></div>
                 </div>
                 <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" id="benchFill"></div></div></div>
-                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button">开始 Benchmark</button></div>
+                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button"><iconify-icon icon="lucide:square-activity"></iconify-icon><span>开始 Benchmark</span></button></div>
                 <div class="search-meta" id="benchLog">等待测试开始。</div>
               </article>
 

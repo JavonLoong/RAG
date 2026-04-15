@@ -34,6 +34,37 @@ const sourceColors = {
   Log: "rgba(17, 24, 39, 0.22)"
 };
 
+const sourceIcons = {
+  PDF: "lucide:file-text",
+  Text: "lucide:file",
+  JSON: "lucide:file-type-2",
+  Other: "lucide:file",
+  Markdown: "lucide:file-text",
+  CSV: "lucide:file-spreadsheet",
+  TSV: "lucide:file-spreadsheet",
+  DOCX: "lucide:file-badge-2",
+  Log: "lucide:file-text"
+};
+
+const levelIcons = {
+  success: "lucide:badge-check",
+  warning: "lucide:triangle-alert",
+  danger: "lucide:x"
+};
+
+const benchmarkIcons = {
+  "写入耗时": "lucide:clock-3",
+  "写入吞吐": "lucide:database",
+  "查询耗时": "lucide:clock-3",
+  "查询吞吐": "lucide:bar-chart",
+  "平均延迟": "lucide:activity",
+  "P95 延迟": "lucide:gauge",
+  Embedding: "lucide:workflow",
+  Model: "lucide:database"
+};
+
+const textEncodingCandidates = ["utf-8", "gb18030", "utf-16le", "big5"];
+
 const state = {
   page: "overview",
   online: true,
@@ -54,6 +85,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   sidebar: $("sidebar"),
   sidebarToggle: $("sidebarToggle"),
+  sidebarToggleIcon: $("sidebarToggleIcon"),
   navList: $("navList"),
   pages: Array.from(document.querySelectorAll(".page")),
   pageTitle: $("pageTitle"),
@@ -83,6 +115,18 @@ const defaultStats = {
   embedding_dim: engineDefaults.dimension,
   source_type_breakdown: {}
 };
+
+function iconMarkup(icon, className = "meta-icon") {
+  return icon ? `<iconify-icon class="${className}" icon="${icon}" aria-hidden="true"></iconify-icon>` : "";
+}
+
+function sourceIconName(kind) {
+  return sourceIcons[kind] || sourceIcons.Other;
+}
+
+function levelIconName(level) {
+  return levelIcons[level] || levelIcons.success;
+}
 
 function seededActivities() {
   return [
@@ -129,6 +173,39 @@ function normalizeText(value) {
     .replace(/[ \t]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function stripBom(text) {
+  return String(text ?? "").replace(/^\uFEFF/, "");
+}
+
+function decodeArrayBuffer(buffer, encoding) {
+  try {
+    return new TextDecoder(encoding, { fatal: false }).decode(buffer);
+  } catch {
+    return "";
+  }
+}
+
+function scoreDecodedText(text) {
+  const candidate = stripBom(String(text ?? ""));
+  if (!candidate.trim()) return Number.NEGATIVE_INFINITY;
+  const total = candidate.length || 1;
+  const replacementCount = (candidate.match(/\uFFFD/g) || []).length;
+  const nullCount = (candidate.match(/\u0000/g) || []).length;
+  const controlCount = (candidate.match(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
+  const readableCount = (candidate.match(/[\p{L}\p{N}\p{P}\p{S}\s]/gu) || []).length;
+  const cjkCount = (candidate.match(/[\u3400-\u9FFF]/g) || []).length;
+  return (readableCount / total) + Math.min(cjkCount / total, 0.24) - ((replacementCount * 5) + (nullCount * 5) + (controlCount * 3)) / total;
+}
+
+async function readFileTextSafely(file) {
+  const buffer = await file.arrayBuffer();
+  const best = textEncodingCandidates
+    .map((encoding) => ({ encoding, text: decodeArrayBuffer(buffer, encoding) }))
+    .filter((candidate) => candidate.text)
+    .sort((a, b) => scoreDecodedText(b.text) - scoreDecodedText(a.text))[0];
+  return stripBom(best?.text || "");
 }
 
 function tokenize(text) {
@@ -307,7 +384,7 @@ async function parseDocxFile(file) {
 }
 
 async function parseJsonFile(file) {
-  const payload = JSON.parse(await file.text());
+  const payload = JSON.parse(stripBom(await readFileTextSafely(file)));
   const text = normalizeText(flattenJson(payload).join("\n\n"));
   if (!text) throw new Error("JSON 未提取到可用文本");
   return [{
@@ -321,7 +398,7 @@ async function parseJsonFile(file) {
 }
 
 async function parseTextLikeFile(file) {
-  const text = normalizeText(await file.text());
+  const text = normalizeText(await readFileTextSafely(file));
   if (!text) throw new Error("文本文件为空");
   return [{
     record_id: `${relativePathOf(file)}::text`,
@@ -334,7 +411,7 @@ async function parseTextLikeFile(file) {
 }
 
 async function parseTabularFile(file, delimiter) {
-  const text = parseTabularText(await file.text(), delimiter);
+  const text = parseTabularText(await readFileTextSafely(file), delimiter);
   if (!text) throw new Error("表格文件为空");
   return [{
     record_id: `${relativePathOf(file)}::table`,
@@ -480,6 +557,11 @@ function setPage(page) {
   });
 }
 
+function syncSidebarToggleIcon() {
+  if (!els.sidebarToggleIcon) return;
+  els.sidebarToggleIcon.setAttribute("icon", els.sidebar.classList.contains("is-collapsed") ? "lucide:chevrons-right" : "lucide:chevrons-left");
+}
+
 function updateStatus(online) {
   state.online = !!online;
   els.statusText.textContent = online ? "浏览器本地引擎在线，上传与检索链路可用" : "浏览器本地引擎异常";
@@ -562,7 +644,7 @@ function renderOverview() {
   $("overviewSummary").textContent = state.chunks.length
     ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个 chunks，按来源类型聚合显示结构比例。`
     : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
-  $("collectionSummaryPill").textContent = state.chunks.length ? "Browser-local index" : "等待本地索引";
+  $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "Browser-local index" : "等待本地索引"}</span>`;
 
   renderSparkline("sparkDocs", seedSeries(12, 2200, 160, 1200));
   renderSparkline("sparkTokens", seedSeries(12, 480, 70, 320));
@@ -629,7 +711,7 @@ function renderCollectionSpectrum(breakdown) {
   const total = Object.values(breakdown).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
   node.innerHTML = Object.entries(breakdown).map(([key, value]) => {
     const ratio = ((Number(value || 0) / total) * 100).toFixed(1);
-    return `<div class="collection-item"><div class="collection-head"><span class="collection-name">${escapeHtml(key)}</span><span>${formatCompact(value)}</span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;
+    return `<div class="collection-item"><div class="collection-head"><span class="collection-name title-with-icon">${iconMarkup(sourceIconName(key))}<span>${escapeHtml(key)}</span></span><span class="meta-chip">${iconMarkup("lucide:database", "meta-icon")}<span>${formatCompact(value)}</span></span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;
   }).join("");
 }
 
@@ -648,8 +730,9 @@ function renderCollections() {
       const ratio = Math.max(8, (Number(value || 0) / total) * 100);
       return `<span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span>`;
     }).join("");
+    const safeName = escapeHtml(collection.name);
     return `<div class="collection-item">
-      <div class="collection-head"><span class="collection-name">${escapeHtml(collection.name)}</span><button class="ghost-btn delete-collection" data-name="${escapeHtml(collection.name)}" type="button">清空</button></div>
+      <div class="collection-head"><span class="collection-name title-with-icon" title="${safeName}">${iconMarkup("lucide:database")}<span>${safeName}</span></span><button class="ghost-btn delete-collection" data-name="${safeName}" type="button">${iconMarkup("lucide:refresh-cw", "meta-icon")}<span>清空</span></button></div>
       <div class="collection-meta"><span>${Number(collection.count || 0).toLocaleString("zh-CN")} chunks</span><span>${formatCompact(collection.estimated_tokens || 0)} tokens</span></div>
       <div class="collection-bars">${bars || '<span style="width:100%;"></span>'}</div>
     </div>`;
@@ -662,7 +745,7 @@ function renderActivity() {
   const items = (state.activity.length ? state.activity : seededActivities()).slice(0, 10);
   node.innerHTML = items.map((item) => `
     <div class="activity-item">
-      <div class="activity-head"><span class="status-dot ${item.level === "warning" ? "warning" : item.level === "danger" ? "danger" : ""}"></span><span class="activity-title">${escapeHtml(item.title)}</span></div>
+      <div class="activity-head"><span class="status-dot ${item.level === "warning" ? "warning" : item.level === "danger" ? "danger" : ""}"></span><span class="activity-title title-with-icon">${iconMarkup(levelIconName(item.level))}<span>${escapeHtml(item.title)}</span></span></div>
       <p>${escapeHtml(item.desc)}</p>
       <div class="activity-meta"><span>用户 ${escapeHtml(item.user)}</span><span>${escapeHtml(item.duration)}</span><span>${escapeHtml(item.time)}</span></div>
     </div>`).join("");
@@ -674,7 +757,7 @@ function renderQueue() {
   const pill = $("queueCountPill");
   if (!queue || !meta || !pill) return;
   const files = state.uploads || [];
-  pill.textContent = `${files.length} files`;
+  pill.innerHTML = `${iconMarkup("lucide:inbox", "meta-icon")}<span>${files.length} files</span>`;
   meta.textContent = files.length ? `当前浏览器会话中共有 ${files.length} 个文件，处理不会写入 GitHub 仓库。` : "等待拖入文件或文件夹，分析只在当前浏览器会话中进行。";
   if (!files.length) {
     queue.innerHTML = `<div class="empty-state">拖入文件或文件夹后，待处理队列会显示在这里。</div>`;
@@ -682,7 +765,7 @@ function renderQueue() {
   }
   queue.innerHTML = files.map((file) => `
     <div class="queue-item">
-      <div class="queue-head"><span class="queue-name">${escapeHtml(prettyStoredName(file.filename))}</span><span>${escapeHtml(file.source_kind || "Other")}</span></div>
+      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.filename))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.filename))}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(file.source_kind || "Other")}</span></span></div>
       <div class="queue-meta"><span>${Number(file.size_kb || 0).toFixed(1)} KB</span><span>${new Date((file.modified || 0) * 1000).toLocaleString("zh-CN")}</span></div>
     </div>`).join("");
 }
@@ -696,7 +779,7 @@ function renderProcessLog(result = state.lastProcess) {
   }
   node.innerHTML = result.file_summaries.map((file) => `
     <div class="queue-item">
-      <div class="queue-head"><span class="queue-name">${escapeHtml(prettyStoredName(file.source_file))}</span><span class="status-dot ${file.status === "error" ? "danger" : ""} ${file.status === "warning" ? "warning" : ""}"></span></div>
+      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.source_file))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.source_file))}</span></span><span class="status-dot ${file.status === "error" ? "danger" : ""} ${file.status === "warning" ? "warning" : ""}"></span></div>
       <p>${file.status === "ok" ? "解析成功并已进入分块流程。" : escapeHtml(file.error || "处理失败")}</p>
       <div class="queue-meta"><span>${escapeHtml(file.source_kind || "Other")}</span><span>${Number(file.records_extracted || 0)} records</span></div>
     </div>`).join("");
@@ -736,9 +819,9 @@ function renderSearchResults(result) {
   meta.textContent = `集合 ${result.collection} · ${result.results.length} 条结果 · ${result.latency_ms} ms`;
   node.innerHTML = result.results.map((item, index) => `
     <div class="result-card">
-      <div class="result-head"><span class="result-title">结果 ${index + 1}</span><span class="result-score">${Number(item.score || 0).toFixed(4)}</span></div>
+      <div class="result-head"><span class="result-title title-with-icon">${iconMarkup("lucide:search")}<span>结果 ${index + 1}</span></span><span class="result-score">${Number(item.score || 0).toFixed(4)}</span></div>
       <p>${escapeHtml(item.text)}</p>
-      <div class="result-meta"><span>${escapeHtml(item.metadata?.filename || item.metadata?.source_file || "unknown")}</span><span>${escapeHtml(item.metadata?.source_kind || "Other")}</span><span>distance ${Number(item.distance || 0).toFixed(4)}</span></div>
+      <div class="result-meta"><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.filename || item.metadata?.source_file || "unknown")}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.source_kind || "Other")}</span></span><span class="meta-chip">${iconMarkup("lucide:gauge")}<span>distance ${Number(item.distance || 0).toFixed(4)}</span></span></div>
     </div>`).join("");
 }
 
@@ -753,7 +836,7 @@ function renderBenchmark() {
   }
   empty.style.display = "none";
   const result = state.benchmark;
-  grid.innerHTML = [
+  const entries = [
     ["写入耗时", `${Number(result.insert_seconds || 0).toFixed(2)}s`],
     ["写入吞吐", `${Number(result.insert_docs_per_second || 0).toFixed(1)} docs/s`],
     ["查询耗时", `${Number(result.query_seconds || 0).toFixed(2)}s`],
@@ -762,7 +845,8 @@ function renderBenchmark() {
     ["P95 延迟", `${Number(result.p95_query_latency_ms || 0).toFixed(1)} ms`],
     ["Embedding", escapeHtml(result.embedding_backend || "-")],
     ["Model", escapeHtml(result.embedding_model || "-")]
-  ].map(([label, value]) => `<div class="bench-card"><h4>${label}</h4><div class="mini-value">${value}</div></div>`).join("");
+  ];
+  grid.innerHTML = entries.map(([label, value]) => `<div class="bench-card"><div class="bench-label">${iconMarkup(benchmarkIcons[label] || "lucide:database")}<span>${label}</span></div><div class="mini-value">${value}</div></div>`).join("");
 }
 
 function renderAll() {
@@ -1087,7 +1171,10 @@ function bindDropzone() {
 
 function bindEvents() {
   state.activity = seededActivities();
-  els.sidebarToggle?.addEventListener("click", () => els.sidebar.classList.toggle("is-collapsed"));
+  els.sidebarToggle?.addEventListener("click", () => {
+    els.sidebar.classList.toggle("is-collapsed");
+    syncSidebarToggleIcon();
+  });
   els.refreshBtn?.addEventListener("click", refreshAll);
   els.navList?.addEventListener("click", async (event) => {
     const target = event.target.closest(".nav-item");
@@ -1138,6 +1225,7 @@ function bindEvents() {
 
 async function init() {
   bindEvents();
+  syncSidebarToggleIcon();
   renderAll();
   await refreshAll();
 }
