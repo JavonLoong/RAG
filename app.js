@@ -13,7 +13,7 @@ const pageMeta = {
   },
   architecture: {
     title: "系统结构",
-    desc: "从上传、解析、分块、向量化到检索和 benchmark，统一在白底高密度框架内可视化。"
+    desc: "从上传、解析、分块、向量化到检索和压测，统一在白底高密度框架内可视化。"
   },
   benchmark: {
     title: "性能基准",
@@ -32,6 +32,18 @@ const sourceColors = {
   TSV: "rgba(0, 47, 167, 0.28)",
   DOCX: "rgba(0, 47, 167, 0.76)",
   Log: "rgba(17, 24, 39, 0.22)"
+};
+
+const sourceLabels = {
+  PDF: "PDF",
+  Text: "文本",
+  JSON: "JSON",
+  Other: "其他",
+  Markdown: "Markdown",
+  CSV: "CSV",
+  TSV: "TSV",
+  DOCX: "DOCX",
+  Log: "日志"
 };
 
 const sourceIcons = {
@@ -59,11 +71,24 @@ const benchmarkIcons = {
   "查询吞吐": "lucide:bar-chart",
   "平均延迟": "lucide:activity",
   "P95 延迟": "lucide:gauge",
-  Embedding: "lucide:workflow",
-  Model: "lucide:database"
+  "向量方式": "lucide:workflow",
+  "模型标识": "lucide:database"
 };
 
 const textEncodingCandidates = ["utf-8", "gb18030", "utf-16le", "big5"];
+
+const trendModeLabels = {
+  balance: "综合视图",
+  volume: "增量视图",
+  latency: "延迟视图"
+};
+
+const activityFilterLabels = {
+  all: "全部日志",
+  success: "成功日志",
+  warning: "预警日志",
+  danger: "异常日志"
+};
 
 const state = {
   page: "overview",
@@ -74,9 +99,13 @@ const state = {
   records: [],
   chunks: [],
   lastProcess: null,
+  lastSearchResult: null,
   benchmark: null,
   lastLatency: 182,
   activity: [],
+  trendMode: "balance",
+  activityFilter: "all",
+  expandedResults: new Set(),
   toastTimer: null
 };
 
@@ -124,8 +153,20 @@ function sourceIconName(kind) {
   return sourceIcons[kind] || sourceIcons.Other;
 }
 
+function sourceLabel(kind) {
+  return sourceLabels[kind] || sourceLabels.Other;
+}
+
 function levelIconName(level) {
   return levelIcons[level] || levelIcons.success;
+}
+
+function collectionLabel(name) {
+  return name === "browser_local_index" ? "本地浏览器索引" : String(name || "未命名集合");
+}
+
+function trimFixed(value, digits = 1) {
+  return String(Number(value.toFixed(digits)));
 }
 
 function seededActivities() {
@@ -316,7 +357,7 @@ function flattenJson(value, path = [], lines = []) {
     return lines;
   }
   if (Array.isArray(value)) {
-    value.forEach((item, index) => flattenJson(item, [...path, `item ${index + 1}`], lines));
+    value.forEach((item, index) => flattenJson(item, [...path, `第 ${index + 1} 项`], lines));
     return lines;
   }
   if (typeof value === "object") {
@@ -335,10 +376,10 @@ function parseTabularText(text, delimiter) {
   if (!parsed.length) return "";
   const header = parsed[0];
   const rows = parsed.slice(1).map((row, rowIndex) => {
-    const pairs = row.map((cell, index) => `${header[index] || `Column ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
-    return `Row ${rowIndex + 1}: ${pairs}`;
+    const pairs = row.map((cell, index) => `${header[index] || `字段 ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
+    return `第 ${rowIndex + 1} 行: ${pairs}`;
   });
-  return normalizeText([`Columns: ${header.join(" | ")}`, ...rows].join("\n\n"));
+  return normalizeText([`字段: ${header.join(" | ")}`, ...rows].join("\n\n"));
 }
 
 async function parsePdfFile(file) {
@@ -468,7 +509,7 @@ function buildQualityReport(records, chunks) {
       short_blocks: shortBlocks
     };
   });
-  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `doc${item.doc_id}: ${item.short_blocks} 个极短文本块（<5字符）`);
+  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少于 5 个字符）`);
   return {
     documents: docs,
     chunks: {
@@ -519,8 +560,9 @@ function escapeHtml(value) {
 
 function formatCompact(value) {
   const num = Number(value || 0);
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  if (Math.abs(num) >= 100_000_000) return `${trimFixed(num / 100_000_000, 1)}亿`;
+  if (Math.abs(num) >= 10_000) return `${trimFixed(num / 10_000, num >= 100_000 ? 1 : 2)}万`;
+  if (Math.abs(num) >= 1_000) return Math.round(num).toLocaleString("zh-CN");
   return `${Math.round(num)}`;
 }
 
@@ -605,7 +647,7 @@ function buildOverviewModel() {
     latency,
     storage: hasIndexedData ? liveStorage : Math.max(liveStorage, 36.8 * 1024),
     precision: state.benchmark?.avg_query_latency_ms ? Math.max(93.8, 99.2 - state.benchmark.avg_query_latency_ms / 80) : 97.4,
-    throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/h` : "42.8k/h",
+    throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/时` : "4.28万/时",
     breakdown: { PDF: pdf, Text: text, JSON: json, Other: other }
   };
 }
@@ -627,13 +669,33 @@ function renderSparkline(id, values) {
   node.innerHTML = `<path d="${sparklinePath(values)}" fill="none" stroke="rgba(0,47,167,0.92)" stroke-width="2.4" stroke-linecap="round"></path>`;
 }
 
+function syncSegmentGroup(groupId, key, activeValue) {
+  const group = $(groupId);
+  if (!group) return;
+  Array.from(group.querySelectorAll("button")).forEach((button) => {
+    button.classList.toggle("active", button.dataset[key] === activeValue);
+  });
+}
+
+function syncTrendControls() {
+  const summary = $("trendSummaryPill");
+  if (summary) summary.textContent = `${trendModeLabels[state.trendMode] || "综合视图"} · 近 30 天`;
+  syncSegmentGroup("trendModeGroup", "trendMode", state.trendMode);
+}
+
+function syncActivityControls(count) {
+  const summary = $("activitySummaryPill");
+  if (summary) summary.textContent = `${activityFilterLabels[state.activityFilter] || "全部日志"} · ${count} 条`;
+  syncSegmentGroup("activityFilterGroup", "activityFilter", state.activityFilter);
+}
+
 function renderOverview() {
   const model = buildOverviewModel();
   $("statDocs").textContent = model.docTarget.toLocaleString("zh-CN");
   $("statTokens").textContent = formatCompact(model.tokenTarget);
   $("statColls").textContent = String(model.collectionTarget).padStart(2, "0");
   $("statLatency").textContent = `${model.latency}ms`;
-  $("statDocsLive").textContent = `实时库内 ${Number(state.stats?.total_documents || 0)}`;
+  $("statDocsLive").textContent = `实时库内 ${Number(state.stats?.total_documents || 0).toLocaleString("zh-CN")} 份`;
   $("statSize").textContent = formatMaybeMb(model.storage);
   $("statDim").textContent = `${Number(state.stats?.embedding_dim || 1024)} 维`;
   $("statStorageLive").textContent = `实时存储 ${formatMaybeMb(Number(state.stats?.storage_size_mb || 0))}`;
@@ -642,14 +704,15 @@ function renderOverview() {
   $("miniPrecision").textContent = `${model.precision.toFixed(1)}%`;
   $("searchPulse").textContent = `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10`;
   $("overviewSummary").textContent = state.chunks.length
-    ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个 chunks，按来源类型聚合显示结构比例。`
+    ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个片段，按来源类型聚合显示结构比例。`
     : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
-  $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "Browser-local index" : "等待本地索引"}</span>`;
+  $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "本地浏览器索引" : "等待本地索引"}</span>`;
 
   renderSparkline("sparkDocs", seedSeries(12, 2200, 160, 1200));
   renderSparkline("sparkTokens", seedSeries(12, 480, 70, 320));
   renderSparkline("sparkColls", [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6]);
   renderSparkline("sparkLatency", [302, 286, 278, 244, 226, 212, 198, 184, 176, model.latency, model.latency + 12, model.latency - 8]);
+  syncTrendControls();
   renderTrendChart(model.breakdown);
   renderCollectionSpectrum(model.breakdown);
   renderCollections();
@@ -658,6 +721,7 @@ function renderOverview() {
 function renderTrendChart(breakdown) {
   const node = $("trendChart");
   if (!node) return;
+  const mode = state.trendMode || "balance";
   const labels = Array.from({ length: 30 }, (_, index) => `${index + 1}`);
   const pdf = labels.map((_, index) => Math.round(breakdown.PDF * (0.38 + index * 0.015)));
   const text = labels.map((_, index) => Math.round(breakdown.Text * (0.34 + index * 0.013)));
@@ -668,6 +732,12 @@ function renderTrendChart(breakdown) {
   const barWidth = 18;
   const gap = 8;
   const chartHeight = 280;
+  const latencyMin = Math.min(...latency);
+  const latencyMax = Math.max(...latency);
+  const latencyBaseY = 132;
+  const lineOpacity = mode === "volume" ? 0.34 : 1;
+  const lineWidth = mode === "latency" ? 3.6 : mode === "volume" ? 2.2 : 3;
+  const barOpacity = mode === "latency" ? 0.24 : mode === "volume" ? 1 : 0.92;
   const bars = labels.map((label, index) => {
     const x = 24 + index * (barWidth + gap);
     const segments = [
@@ -680,19 +750,21 @@ function renderTrendChart(breakdown) {
     const rects = segments.map((segment) => {
       const height = (segment.value / maxStack) * 220;
       offset -= height;
-      return `<rect x="${x}" y="${offset.toFixed(1)}" width="${barWidth}" height="${height.toFixed(1)}" rx="6" fill="${sourceColors[segment.key] || sourceColors.Other}"><title>Day ${label} ${segment.key}: ${segment.value}</title></rect>`;
+      return `<rect x="${x}" y="${offset.toFixed(1)}" width="${barWidth}" height="${height.toFixed(1)}" rx="6" fill="${sourceColors[segment.key] || sourceColors.Other}" fill-opacity="${barOpacity}"><title>第 ${label} 天 ${sourceLabel(segment.key)}：${segment.value}</title></rect>`;
     }).join("");
     return rects;
   }).join("");
   const latencyPath = latency.map((value, index) => {
     const x = 33 + index * (barWidth + gap);
-    const y = 38 + ((value - Math.min(...latency)) / Math.max(1, Math.max(...latency) - Math.min(...latency))) * 80;
+    const y = 38 + ((value - latencyMin) / Math.max(1, latencyMax - latencyMin)) * 80;
     return `${index === 0 ? "M" : "L"}${x},${y.toFixed(1)}`;
   }).join(" ");
+  const areaPath = `${latencyPath} L ${33 + (labels.length - 1) * (barWidth + gap)},${latencyBaseY} L 33,${latencyBaseY} Z`;
   const points = latency.map((value, index) => {
     const x = 33 + index * (barWidth + gap);
-    const y = 38 + ((value - Math.min(...latency)) / Math.max(1, Math.max(...latency) - Math.min(...latency))) * 80;
-    return `<circle cx="${x}" cy="${y.toFixed(1)}" r="3.2" fill="#002fa7"><title>Day ${index + 1} latency: ${value} ms</title></circle>`;
+    const y = 38 + ((value - latencyMin) / Math.max(1, latencyMax - latencyMin)) * 80;
+    const radius = mode === "latency" ? 3.8 : 3.2;
+    return `<circle cx="${x}" cy="${y.toFixed(1)}" r="${radius}" fill="#002fa7" fill-opacity="${mode === "volume" ? 0.42 : 1}"><title>第 ${index + 1} 天延迟：${value} 毫秒</title></circle>`;
   }).join("");
   node.innerHTML = `
     <svg viewBox="0 0 820 320" aria-label="trend chart">
@@ -700,8 +772,10 @@ function renderTrendChart(breakdown) {
       <line x1="24" y1="280" x2="796" y2="280" stroke="rgba(17,24,39,0.08)"></line>
       <line x1="24" y1="40" x2="796" y2="40" stroke="rgba(17,24,39,0.05)"></line>
       ${bars}
-      <path d="${latencyPath}" fill="none" stroke="#002fa7" stroke-width="3" stroke-linecap="round"></path>
+      ${mode === "latency" ? `<path d="${areaPath}" fill="rgba(0,47,167,0.08)"></path>` : ""}
+      <path d="${latencyPath}" fill="none" stroke="#002fa7" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="round"></path>
       ${points}
+      <text x="796" y="24" text-anchor="end" fill="rgba(17,24,39,0.56)" font-size="11" font-weight="600">${trendModeLabels[mode] || "综合视图"}</text>
     </svg>`;
 }
 
@@ -711,7 +785,7 @@ function renderCollectionSpectrum(breakdown) {
   const total = Object.values(breakdown).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
   node.innerHTML = Object.entries(breakdown).map(([key, value]) => {
     const ratio = ((Number(value || 0) / total) * 100).toFixed(1);
-    return `<div class="collection-item"><div class="collection-head"><span class="collection-name title-with-icon">${iconMarkup(sourceIconName(key))}<span>${escapeHtml(key)}</span></span><span class="meta-chip">${iconMarkup("lucide:database", "meta-icon")}<span>${formatCompact(value)}</span></span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;
+    return `<div class="collection-item"><div class="collection-head"><span class="collection-name title-with-icon">${iconMarkup(sourceIconName(key))}<span>${escapeHtml(sourceLabel(key))}</span></span><span class="meta-chip">${iconMarkup("lucide:database", "meta-icon")}<span>${formatCompact(value)}</span></span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;
   }).join("");
 }
 
@@ -730,10 +804,10 @@ function renderCollections() {
       const ratio = Math.max(8, (Number(value || 0) / total) * 100);
       return `<span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span>`;
     }).join("");
-    const safeName = escapeHtml(collection.name);
+    const safeName = escapeHtml(collectionLabel(collection.name));
     return `<div class="collection-item">
       <div class="collection-head"><span class="collection-name title-with-icon" title="${safeName}">${iconMarkup("lucide:database")}<span>${safeName}</span></span><button class="ghost-btn delete-collection" data-name="${safeName}" type="button">${iconMarkup("lucide:refresh-cw", "meta-icon")}<span>清空</span></button></div>
-      <div class="collection-meta"><span>${Number(collection.count || 0).toLocaleString("zh-CN")} chunks</span><span>${formatCompact(collection.estimated_tokens || 0)} tokens</span></div>
+      <div class="collection-meta"><span>${Number(collection.count || 0).toLocaleString("zh-CN")} 个片段</span><span>${formatCompact(collection.estimated_tokens || 0)} 词元</span></div>
       <div class="collection-bars">${bars || '<span style="width:100%;"></span>'}</div>
     </div>`;
   }).join("");
@@ -742,12 +816,19 @@ function renderCollections() {
 function renderActivity() {
   const node = $("activityFeed");
   if (!node) return;
-  const items = (state.activity.length ? state.activity : seededActivities()).slice(0, 10);
+  const allItems = state.activity.length ? state.activity : seededActivities();
+  const filteredItems = state.activityFilter === "all" ? allItems : allItems.filter((item) => item.level === state.activityFilter);
+  const items = filteredItems.slice(0, 10);
+  syncActivityControls(filteredItems.length);
+  if (!items.length) {
+    node.innerHTML = `<div class="empty-state">当前筛选条件下还没有日志，切换状态后会自动刷新。</div>`;
+    return;
+  }
   node.innerHTML = items.map((item) => `
     <div class="activity-item">
       <div class="activity-head"><span class="status-dot ${item.level === "warning" ? "warning" : item.level === "danger" ? "danger" : ""}"></span><span class="activity-title title-with-icon">${iconMarkup(levelIconName(item.level))}<span>${escapeHtml(item.title)}</span></span></div>
       <p>${escapeHtml(item.desc)}</p>
-      <div class="activity-meta"><span>用户 ${escapeHtml(item.user)}</span><span>${escapeHtml(item.duration)}</span><span>${escapeHtml(item.time)}</span></div>
+      <div class="activity-meta"><span>操作方 ${escapeHtml(item.user)}</span><span>耗时 ${escapeHtml(item.duration)}</span><span>${escapeHtml(item.time)}</span></div>
     </div>`).join("");
 }
 
@@ -757,7 +838,7 @@ function renderQueue() {
   const pill = $("queueCountPill");
   if (!queue || !meta || !pill) return;
   const files = state.uploads || [];
-  pill.innerHTML = `${iconMarkup("lucide:inbox", "meta-icon")}<span>${files.length} files</span>`;
+  pill.innerHTML = `${iconMarkup("lucide:inbox", "meta-icon")}<span>${files.length} 个文件</span>`;
   meta.textContent = files.length ? `当前浏览器会话中共有 ${files.length} 个文件，处理不会写入 GitHub 仓库。` : "等待拖入文件或文件夹，分析只在当前浏览器会话中进行。";
   if (!files.length) {
     queue.innerHTML = `<div class="empty-state">拖入文件或文件夹后，待处理队列会显示在这里。</div>`;
@@ -765,7 +846,7 @@ function renderQueue() {
   }
   queue.innerHTML = files.map((file) => `
     <div class="queue-item">
-      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.filename))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.filename))}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(file.source_kind || "Other")}</span></span></div>
+      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.filename))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.filename))}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(sourceLabel(file.source_kind || "Other"))}</span></span></div>
       <div class="queue-meta"><span>${Number(file.size_kb || 0).toFixed(1)} KB</span><span>${new Date((file.modified || 0) * 1000).toLocaleString("zh-CN")}</span></div>
     </div>`).join("");
 }
@@ -781,7 +862,7 @@ function renderProcessLog(result = state.lastProcess) {
     <div class="queue-item">
       <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.source_file))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.source_file))}</span></span><span class="status-dot ${file.status === "error" ? "danger" : ""} ${file.status === "warning" ? "warning" : ""}"></span></div>
       <p>${file.status === "ok" ? "解析成功并已进入分块流程。" : escapeHtml(file.error || "处理失败")}</p>
-      <div class="queue-meta"><span>${escapeHtml(file.source_kind || "Other")}</span><span>${Number(file.records_extracted || 0)} records</span></div>
+      <div class="queue-meta"><span>${escapeHtml(sourceLabel(file.source_kind || "Other"))}</span><span>${Number(file.records_extracted || 0)} 条记录</span></div>
     </div>`).join("");
 }
 
@@ -798,30 +879,32 @@ function renderQuality(result = state.lastProcess) {
   const issues = quality.issues || [];
   node.innerHTML = `
     <div class="mini-grid">
-      <div class="queue-item"><div class="queue-name">Total chunks</div><div class="mini-value">${Number(chunkInfo.total_chunks || 0).toLocaleString("zh-CN")}</div></div>
-      <div class="queue-item"><div class="queue-name">Avg length</div><div class="mini-value">${Number(chunkInfo.avg_length || 0)}</div></div>
-      <div class="queue-item"><div class="queue-name">Issue count</div><div class="mini-value">${Number(quality.issue_count || 0)}</div></div>
-      <div class="queue-item"><div class="queue-name">Documents</div><div class="mini-value">${docs.length}</div></div>
+      <div class="queue-item"><div class="queue-name">片段总数</div><div class="mini-value">${Number(chunkInfo.total_chunks || 0).toLocaleString("zh-CN")}</div></div>
+      <div class="queue-item"><div class="queue-name">平均长度</div><div class="mini-value">${Number(chunkInfo.avg_length || 0)}</div></div>
+      <div class="queue-item"><div class="queue-name">问题数量</div><div class="mini-value">${Number(quality.issue_count || 0)}</div></div>
+      <div class="queue-item"><div class="queue-name">文档数量</div><div class="mini-value">${docs.length}</div></div>
     </div>
     ${issues.length ? issues.map((issue) => `<div class="queue-item"><div class="queue-name">质量提醒</div><p>${escapeHtml(issue)}</p></div>`).join("") : '<div class="queue-item"><div class="queue-name">质量状态</div><p>未发现需要阻断处理的质量问题。</p></div>'}
-    ${docs.slice(0, 4).map((doc) => `<div class="queue-item"><div class="queue-head"><span class="queue-name">doc ${doc.doc_id}</span><span>${Number(doc.block_count || 0)} blocks</span></div><div class="queue-meta"><span>${escapeHtml((doc.filenames || []).join(", "))}</span><span>短块 ${Number(doc.short_blocks || 0)}</span></div></div>`).join("")}`;
+    ${docs.slice(0, 4).map((doc) => `<div class="queue-item"><div class="queue-head"><span class="queue-name">文档 ${doc.doc_id}</span><span>${Number(doc.block_count || 0)} 个区块</span></div><div class="queue-meta"><span>${escapeHtml((doc.filenames || []).join(", "))}</span><span>短块 ${Number(doc.short_blocks || 0)}</span></div></div>`).join("")}`;
 }
 
-function renderSearchResults(result) {
+function renderSearchResults(result = state.lastSearchResult) {
   const node = $("searchResults");
   const meta = $("searchMeta");
   if (!node || !meta) return;
+  if (typeof result !== "undefined") state.lastSearchResult = result;
   if (!result?.results?.length) {
     node.innerHTML = `<div class="empty-state">暂无结果，试试输入更明确的设备、故障或工艺关键词。</div>`;
     meta.textContent = result?.message || "等待检索输入。";
     return;
   }
-  meta.textContent = `集合 ${result.collection} · ${result.results.length} 条结果 · ${result.latency_ms} ms`;
+  meta.textContent = `集合 ${collectionLabel(result.collection)} · ${result.results.length} 条结果 · ${result.latency_ms} 毫秒`;
   node.innerHTML = result.results.map((item, index) => `
-    <div class="result-card">
+    <div class="result-card ${state.expandedResults.has(index) ? "is-expanded" : ""}">
       <div class="result-head"><span class="result-title title-with-icon">${iconMarkup("lucide:search")}<span>结果 ${index + 1}</span></span><span class="result-score">${Number(item.score || 0).toFixed(4)}</span></div>
-      <p>${escapeHtml(item.text)}</p>
-      <div class="result-meta"><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.filename || item.metadata?.source_file || "unknown")}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.source_kind || "Other")}</span></span><span class="meta-chip">${iconMarkup("lucide:gauge")}<span>distance ${Number(item.distance || 0).toFixed(4)}</span></span></div>
+      <p class="result-body">${escapeHtml(item.text)}</p>
+      <div class="result-meta"><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.filename || item.metadata?.source_file || "未命名文件")}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(sourceLabel(item.metadata?.source_kind || "Other"))}</span></span><span class="meta-chip">${iconMarkup("lucide:gauge")}<span>距离 ${Number(item.distance || 0).toFixed(4)}</span></span></div>
+      <button class="result-toggle" data-toggle-result="${index}" type="button">${state.expandedResults.has(index) ? "收起详情" : "展开详情"}</button>
     </div>`).join("");
 }
 
@@ -838,13 +921,13 @@ function renderBenchmark() {
   const result = state.benchmark;
   const entries = [
     ["写入耗时", `${Number(result.insert_seconds || 0).toFixed(2)}s`],
-    ["写入吞吐", `${Number(result.insert_docs_per_second || 0).toFixed(1)} docs/s`],
+    ["写入吞吐", `${Number(result.insert_docs_per_second || 0).toFixed(1)} 条/秒`],
     ["查询耗时", `${Number(result.query_seconds || 0).toFixed(2)}s`],
-    ["查询吞吐", `${Number(result.query_qps || 0).toFixed(1)} qps`],
+    ["查询吞吐", `${Number(result.query_qps || 0).toFixed(1)} 次/秒`],
     ["平均延迟", `${Number(result.avg_query_latency_ms || 0).toFixed(1)} ms`],
     ["P95 延迟", `${Number(result.p95_query_latency_ms || 0).toFixed(1)} ms`],
-    ["Embedding", escapeHtml(result.embedding_backend || "-")],
-    ["Model", escapeHtml(result.embedding_model || "-")]
+    ["向量方式", escapeHtml(result.embedding_backend || "-")],
+    ["模型标识", escapeHtml(result.embedding_model || "-")]
   ];
   grid.innerHTML = entries.map(([label, value]) => `<div class="bench-card"><div class="bench-label">${iconMarkup(benchmarkIcons[label] || "lucide:database")}<span>${label}</span></div><div class="mini-value">${value}</div></div>`).join("");
 }
@@ -899,8 +982,10 @@ async function deleteCollection(name) {
   state.records = [];
   state.chunks = [];
   state.lastProcess = null;
+  state.lastSearchResult = null;
+  state.expandedResults = new Set();
   state.benchmark = null;
-  pushActivity({ level: "warning", title: "本地索引已清空", desc: `${name} 已从当前浏览器会话中移除。`, user: "browser", duration: "0.2s" });
+  pushActivity({ level: "warning", title: "本地索引已清空", desc: `${name} 已从当前浏览器会话中移除。`, user: "本地引擎", duration: "0.2s" });
   showToast("已清空当前浏览器索引", "warning");
   await refreshStats();
   renderProcessLog();
@@ -961,8 +1046,8 @@ async function runProcess() {
   pushActivity({
     level: result.files_failed ? "warning" : "success",
     title: "浏览器本地分析完成",
-    desc: `成功 ${result.files_succeeded} 个，失败 ${result.files_failed} 个，生成 ${result.chunks_written} 个 chunks。`,
-    user: "browser",
+    desc: `成功 ${result.files_succeeded} 个，失败 ${result.files_failed} 个，生成 ${result.chunks_written} 个片段。`,
+    user: "本地引擎",
     duration: `${result.elapsed_s}s`
   });
   showToast(result.files_failed ? "本地分析完成，存在部分失败文件" : "本地分析完成", result.files_failed ? "warning" : "success");
@@ -999,13 +1084,14 @@ async function runSearch() {
     latency_ms: Number((performance.now() - started).toFixed(1))
   };
   state.lastLatency = result.latency_ms;
+  state.expandedResults = new Set();
   renderSearchResults(result);
   renderOverview();
   pushActivity({
     level: "success",
     title: "浏览器本地检索完成",
     desc: `${query} 返回 ${ranked.length} 条结果。`,
-    user: "browser",
+    user: "本地引擎",
     duration: `${result.latency_ms}ms`
   });
 }
@@ -1018,7 +1104,7 @@ async function runBenchmark() {
     top_k: Number($("benchTopK")?.value || 5)
   };
   setProgress("benchFill", 18);
-  $("benchLog").textContent = "本地 benchmark 运行中，请稍候。";
+  $("benchLog").textContent = "本地压测运行中，请稍候。";
   const synthetic = Array.from({ length: payload.document_count }, (_, index) => ({
     id: `synthetic-${index}`,
     text: `文档 ${index}：燃气轮机维护、压气机工况、振动诊断、润滑状态、检索性能评估与知识库索引。`
@@ -1053,14 +1139,14 @@ async function runBenchmark() {
   };
   state.lastLatency = Number(state.benchmark.avg_query_latency_ms || state.lastLatency);
   setProgress("benchFill", 100);
-  $("benchLog").textContent = `本地测试完成：平均延迟 ${state.benchmark.avg_query_latency_ms} ms，P95 ${state.benchmark.p95_query_latency_ms} ms。`;
+  $("benchLog").textContent = `本地压测完成：平均延迟 ${state.benchmark.avg_query_latency_ms} 毫秒，P95 ${state.benchmark.p95_query_latency_ms} 毫秒。`;
   renderBenchmark();
   renderOverview();
   pushActivity({
     level: "success",
-    title: "浏览器本地 Benchmark 完成",
-    desc: `写入 ${state.benchmark.insert_docs_per_second} docs/s，查询 ${state.benchmark.query_qps} qps。`,
-    user: "browser",
+    title: "浏览器本地压测完成",
+    desc: `写入 ${state.benchmark.insert_docs_per_second} 条/秒，查询 ${state.benchmark.query_qps} 次/秒。`,
+    user: "本地引擎",
     duration: `${Number(state.benchmark.query_seconds || 0).toFixed(2)}s`
   });
 }
@@ -1145,8 +1231,8 @@ async function uploadFiles(files) {
     level: "success",
     title: "文件已加入本地队列",
     desc: `本次加入 ${mapped.length} 个文件，分析将只在当前浏览器中进行。`,
-    user: "browser",
-    duration: `${mapped.length} files`
+    user: "本地引擎",
+    duration: `${mapped.length} 个文件`
   });
   if (skipped > 0) showToast(`已加入 ${mapped.length} 个文件，跳过 ${skipped} 个不支持文件`, "warning");
   else showToast(`已加入 ${mapped.length} 个文件，开始本地分析`, "success");
@@ -1186,6 +1272,25 @@ function bindEvents() {
     if (jump) setPage(jump.dataset.jump);
     const del = event.target.closest(".delete-collection");
     if (del) await deleteCollection(del.dataset.name);
+    const resultToggle = event.target.closest("[data-toggle-result]");
+    if (resultToggle) {
+      const index = Number(resultToggle.dataset.toggleResult);
+      if (Number.isFinite(index)) {
+        if (state.expandedResults.has(index)) state.expandedResults.delete(index);
+        else state.expandedResults.add(index);
+        renderSearchResults();
+      }
+    }
+    const trendModeButton = event.target.closest("[data-trend-mode]");
+    if (trendModeButton) {
+      state.trendMode = trendModeButton.dataset.trendMode || "balance";
+      renderOverview();
+    }
+    const activityFilterButton = event.target.closest("[data-activity-filter]");
+    if (activityFilterButton) {
+      state.activityFilter = activityFilterButton.dataset.activityFilter || "all";
+      renderActivity();
+    }
   });
   els.globalSearchForm?.addEventListener("submit", (event) => {
     event.preventDefault();

@@ -25,7 +25,7 @@
           </div>
           <div class="brand-copy">
             <strong>动力装备知识库</strong>
-            <span>Industrial RAG Command Console</span>
+            <span>工业知识检索控制台</span>
           </div>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
@@ -34,11 +34,11 @@
       </div>
 
       <div class="nav-list" id="navList">
-        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">01</span><strong>系统总览</strong><span>Overview</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">02</span><strong>数据接入</strong><span>Upload & ingest</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">03</span><strong>语义检索</strong><span>Semantic retrieval</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">04</span><strong>系统结构</strong><span>Pipeline & topology</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
-        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">05</span><strong>性能基准</strong><span>Benchmark</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">01</span><strong>系统总览</strong><span>状态与趋势</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">02</span><strong>数据接入</strong><span>上传与入库</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">03</span><strong>语义检索</strong><span>问题与结果</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">04</span><strong>系统结构</strong><span>流程与阶段</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
+        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><span class="nav-kicker">05</span><strong>性能基准</strong><span>压测与读数</span></span><span class="nav-arrow"><iconify-icon icon="lucide:chevron-right"></iconify-icon></span></button>
       </div>
 
       <div class="sidebar-footer">
@@ -53,7 +53,7 @@
     <div class="app-main">
       <header class="topbar">
         <div class="topbar-copy">
-          <p class="eyebrow">Klein Blue Industrial Surface</p>
+          <p class="eyebrow">克莱因蓝工业控制台</p>
           <h1 id="pageTitle">系统总览</h1>
           <p id="pageDesc">以更高信息密度的白底布局重新组织知识库状态、检索节奏与实时运维流。</p>
         </div>
@@ -66,7 +66,7 @@
         <div class="topbar-actions">
           <div class="status-pill" id="statusPill"><iconify-icon icon="lucide:shield-check"></iconify-icon><span class="status-dot warning"></span><span id="refreshStamp">等待首次同步</span></div>
           <button class="ghost-btn" id="refreshBtn" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新数据</span></button>
-          <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>OPS</strong><span class="muted">系统管理员</span></div>
+          <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>运维</strong><span class="muted">系统管理员</span></div>
         </div>
       </header>
 
@@ -74,13 +74,13 @@
         <section class="page active" id="page-overview">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">Command Surface</p>
+              <p class="card-kicker">总览控制台</p>
               <h3>把上传、分块、向量化、检索与性能验证整合进一个更安静、更清晰的纯白指挥台。</h3>
-              <p>新的界面采用三列 Bento 布局：左侧聚焦数据概览与集合状态，中间承载高密度折线图和数据分布，右侧持续显示实时操作日志。所有高亮只使用 Klein Blue，让复杂系统也保持克制和可读。</p>
+              <p>新的界面采用三列便当盒布局：左侧聚焦数据概览与集合状态，中间承载高密度折线图和数据分布，右侧持续显示实时操作日志。所有高亮只使用克莱因蓝，让复杂系统也保持克制和可读。</p>
               <div class="hero-actions">
                 <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
                 <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
-                <span class="hero-chip"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>Pure white / Bento / Swiss grid</span></span>
+                <span class="hero-chip"><iconify-icon icon="lucide:shield-check"></iconify-icon><span>纯白底 / 便当盒 / 瑞士网格</span></span>
               </div>
             </article>
 
@@ -90,20 +90,20 @@
                   <article class="panel metric-card">
                     <div class="metric-top">
                       <div>
-                        <p class="card-kicker">Document load</p>
+                        <p class="card-kicker">文档载荷</p>
                         <div class="metric-value" id="statDocs">5,230</div>
                       </div>
                       <svg class="sparkline" id="sparkDocs" viewBox="0 0 96 32"></svg>
                     </div>
                     <div class="metric-subgrid">
-                      <span>PDF: 3,100</span><span>Text: 1,800</span><span>Other: 330</span><span id="statDocsLive">实时库内 0</span>
+                      <span>PDF: 3,100</span><span>文本: 1,800</span><span>其他: 330</span><span id="statDocsLive">实时库内 0</span>
                     </div>
                   </article>
 
                   <article class="panel metric-card">
                     <div class="metric-top">
                       <div>
-                        <p class="card-kicker">Token volume</p>
+                        <p class="card-kicker">词元规模</p>
                         <div class="metric-value" id="statTokens">1.2M</div>
                       </div>
                       <svg class="sparkline" id="sparkTokens" viewBox="0 0 96 32"></svg>
@@ -116,7 +116,7 @@
                   <article class="panel metric-card">
                     <div class="metric-top">
                       <div>
-                        <p class="card-kicker">Collections</p>
+                        <p class="card-kicker">集合数量</p>
                         <div class="metric-value" id="statColls">06</div>
                       </div>
                       <svg class="sparkline" id="sparkColls" viewBox="0 0 96 32"></svg>
@@ -129,7 +129,7 @@
                   <article class="panel metric-card">
                     <div class="metric-top">
                       <div>
-                        <p class="card-kicker">Retrieval health</p>
+                        <p class="card-kicker">检索健康</p>
                         <div class="metric-value" id="statLatency">182ms</div>
                       </div>
                       <svg class="sparkline" id="sparkLatency" viewBox="0 0 96 32"></svg>
@@ -143,7 +143,7 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Collection status</p>
+                      <p class="card-kicker">集合状态</p>
                       <h3>集合与来源结构</h3>
                       <p id="overviewSummary">展示当前向量集合、来源类型占比与可用性状态。</p>
                     </div>
@@ -159,25 +159,32 @@
                 <article class="panel chart-card">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">System snapshot trend</p>
+                      <p class="card-kicker">趋势快照</p>
                       <h3>索引增长与检索延迟</h3>
                       <p>过去 30 天的数据写入状态叠加检索延迟曲线，悬停可查看每日装载明细。</p>
                     </div>
-                    <span class="pill">30-day view</span>
+                    <div class="panel-tools">
+                      <span class="pill" id="trendSummaryPill">近 30 天</span>
+                      <div class="segment-group" id="trendModeGroup">
+                        <button class="segment-btn active" type="button" data-trend-mode="balance">综合</button>
+                        <button class="segment-btn" type="button" data-trend-mode="volume">增量</button>
+                        <button class="segment-btn" type="button" data-trend-mode="latency">延迟</button>
+                      </div>
+                    </div>
                   </div>
                   <div class="chart-surface" id="trendChart"></div>
                   <div class="legend-row">
                     <span class="legend-item"><span class="legend-swatch pdf"></span>PDF</span>
-                    <span class="legend-item"><span class="legend-swatch text"></span>Text</span>
+                    <span class="legend-item"><span class="legend-swatch text"></span>文本</span>
                     <span class="legend-item"><span class="legend-swatch json"></span>JSON</span>
-                    <span class="legend-item"><span class="legend-swatch other"></span>Other</span>
-                    <span class="legend-item"><span class="legend-swatch" style="background:var(--accent);"></span>Latency</span>
+                    <span class="legend-item"><span class="legend-swatch other"></span>其他</span>
+                    <span class="legend-item"><span class="legend-swatch" style="background:var(--accent);"></span>延迟</span>
                   </div>
                 </article>
 
                 <div class="mini-grid">
-                  <article class="panel mini-card"><p class="card-kicker">Activation</p><div class="mini-value" id="miniThroughput">42.8k/h</div><p>当前小时向量写入吞吐，适合观察批处理压力。</p></article>
-                  <article class="panel mini-card"><p class="card-kicker">Precision lane</p><div class="mini-value" id="miniPrecision">97.4%</div><p>结合检索结果得分与最近一次 benchmark 输出的精度带。</p></article>
+                  <article class="panel mini-card"><p class="card-kicker">吞吐脉冲</p><div class="mini-value" id="miniThroughput">4.28万/时</div><p>当前小时写入吞吐，用来观察批处理压力。</p></article>
+                  <article class="panel mini-card"><p class="card-kicker">结果精度</p><div class="mini-value" id="miniPrecision">97.4%</div><p>结合检索得分与最近一次压测结果估算精度带。</p></article>
                 </div>
               </div>
 
@@ -185,19 +192,27 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Live activity</p>
+                      <p class="card-kicker">实时日志</p>
                       <h3>实时操作日志</h3>
                       <p>颜色状态点用于区分成功、警告与失败，并追加操作用户与耗时。</p>
                     </div>
-                    <span class="pill">Dense feed</span>
+                    <div class="panel-tools">
+                      <span class="pill" id="activitySummaryPill">全部日志</span>
+                      <div class="segment-group" id="activityFilterGroup">
+                        <button class="segment-btn active" type="button" data-activity-filter="all">全部</button>
+                        <button class="segment-btn" type="button" data-activity-filter="success">成功</button>
+                        <button class="segment-btn" type="button" data-activity-filter="warning">预警</button>
+                        <button class="segment-btn" type="button" data-activity-filter="danger">异常</button>
+                      </div>
+                    </div>
                   </div>
                   <div class="activity-feed" id="activityFeed"></div>
                 </article>
 
                 <article class="panel mini-card">
-                  <p class="card-kicker">Search pulse</p>
+                  <p class="card-kicker">导航脉冲</p>
                   <div class="mini-value" id="searchPulse">6.2 / 10</div>
-                  <p>全局搜索会在这里显示最后一次导航跳转或检索脉冲。</p>
+                  <p>这里显示最近一次全局搜索跳转或检索活跃度。</p>
                 </article>
               </div>
             </div>
@@ -206,7 +221,7 @@
         <section class="page" id="page-data">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">Ingestion workspace</p>
+              <p class="card-kicker">入库工作台</p>
               <h3>上传、预检、分块与质量评估在同一条操作链内完成。</h3>
               <p>支持直接拖入单个文件或整个文件夹。只要文件夹中包含受支持的 JSON、PDF、DOCX、TXT、Markdown、CSV、TSV、LOG 文件，界面会自动识别并附带相对路径上传。</p>
             </article>
@@ -216,7 +231,7 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Drop surface</p>
+                      <p class="card-kicker">接入面板</p>
                       <h3>文件与文件夹接入</h3>
                       <p>支持拖拽目录、点击选择目录，上传时自动携带原始相对路径。</p>
                     </div>
@@ -225,7 +240,7 @@
                   <div class="queue-dropzone" id="dropZone">
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
-                      <p class="card-kicker">Folder-aware upload</p>
+                      <p class="card-kicker">目录上传</p>
                       <h3>拖入整个文件夹也能识别</h3>
                       <p>前端会递归解析目录，并只上传受支持的文档类型。</p>
                       <div class="queue-actions">
@@ -245,7 +260,7 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Queue status</p>
+                      <p class="card-kicker">队列状态</p>
                       <h3>上传队列</h3>
                       <p id="uploadQueueMeta">等待同步上传目录。</p>
                     </div>
@@ -263,11 +278,11 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Pending files</p>
+                      <p class="card-kicker">待处理文件</p>
                       <h3>待处理文件列表</h3>
                       <p>上传目录中的文件会按来源类型自动归类。</p>
                     </div>
-                    <span class="pill" id="queueCountPill">0 files</span>
+                    <span class="pill" id="queueCountPill">0 个文件</span>
                   </div>
                   <div class="queue-list" id="queueList"></div>
                 </article>
@@ -275,11 +290,11 @@
                 <article class="panel" id="qualityCard">
                   <div class="panel-head">
                     <div>
-                      <p class="card-kicker">Quality report</p>
+                      <p class="card-kicker">质量报告</p>
                       <h3>分块与质量摘要</h3>
                       <p>处理结果会在这里显示平均 chunk 长度、问题数量和按文档分布。</p>
                     </div>
-                    <span class="pill">Post-ingest</span>
+                    <span class="pill">处理后</span>
                   </div>
                   <div class="quality-report" id="qualityReport"></div>
                 </article>
@@ -290,18 +305,18 @@
         <section class="page" id="page-search">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">Semantic retrieval</p>
+              <p class="card-kicker">语义检索</p>
               <h3>面向复杂工业知识的高密度语义检索工作台。</h3>
-              <p>支持调整 Top-K、查看得分、来源文件与来源类型，并将延迟自动写回总览指标与活动流。</p>
+              <p>支持调整返回条数、查看得分、来源文件与来源类型，并将延迟自动写回总览指标与活动流。</p>
             </article>
 
             <div class="search-layout">
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">Query console</p>
+                    <p class="card-kicker">检索配置</p>
                     <h3>检索配置</h3>
-                    <p>输入查询词后将使用当前默认集合发起检索。</p>
+                      <p>输入查询词后将使用当前默认集合发起检索。</p>
                   </div>
                 </div>
                 <div class="search-row">
@@ -315,9 +330,9 @@
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">Result deck</p>
+                    <p class="card-kicker">检索结果</p>
                     <h3>结果列表</h3>
-                    <p>展示相似度、距离、来源文件以及 chunk 元数据。</p>
+                      <p>展示相似度、距离、来源文件以及片段元数据。</p>
                   </div>
                 </div>
                 <div class="results-list" id="searchResults"></div>
@@ -329,16 +344,16 @@
         <section class="page" id="page-architecture">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">Pipeline topology</p>
+              <p class="card-kicker">流程拓扑</p>
               <h3>系统结构保留为白底、高密度、可复核的工业流程视图。</h3>
-              <p>从上传、解析、清洗、分块、向量化到检索与 benchmark，每个阶段都保持可见和可验证。</p>
+              <p>从上传、解析、清洗、分块、向量化到检索与压测，每个阶段都保持可见和可验证。</p>
             </article>
 
             <div class="arch-grid" id="archGrid">
               <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><h4>01 上传与预检</h4></div><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
               <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:file-type-2"></iconify-icon></span><h4>02 解析与清洗</h4></div><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
               <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:database"></iconify-icon></span><h4>03 分块与向量化</h4></div><p>标题触发分块和多级断点切分同时保留，chunk metadata 额外记录来源扩展名与来源类型。</p></article>
-              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:gauge"></iconify-icon></span><h4>04 检索与基准</h4></div><p>语义检索、延迟统计与 synthetic benchmark 集成在同一控制台中，便于做链路回归和性能观察。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:gauge"></iconify-icon></span><h4>04 检索与基准</h4></div><p>语义检索、延迟统计与本地压测集成在同一控制台中，便于做链路回归和性能观察。</p></article>
             </div>
           </div>
         </section>
@@ -346,16 +361,16 @@
         <section class="page" id="page-benchmark">
           <div class="page-stack">
             <article class="panel hero-card">
-              <p class="card-kicker">Benchmark surface</p>
+              <p class="card-kicker">压测面板</p>
               <h3>用统一的白底高密度视图观察写入、查询与 P95 延迟。</h3>
-              <p>该页面直接调用后端 benchmark API，并把关键指标写回总览页的健康卡片。</p>
+              <p>该页面用于运行本地压测，并把关键指标写回总览页的健康卡片。</p>
             </article>
 
             <div class="benchmark-grid">
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">Synthetic setup</p>
+                    <p class="card-kicker">压测配置</p>
                     <h3>运行参数</h3>
                     <p>推荐先用中等规模验证链路，再扩大文档量观察吞吐拐点。</p>
                   </div>
@@ -364,22 +379,22 @@
                   <div class="field"><label for="benchDocs">文档数</label><input class="form-control" id="benchDocs" type="number" min="50" max="5000" value="500"></div>
                   <div class="field"><label for="benchBatch">批大小</label><input class="form-control" id="benchBatch" type="number" min="10" max="1000" value="100"></div>
                   <div class="field"><label for="benchQueries">查询数</label><input class="form-control" id="benchQueries" type="number" min="10" max="1000" value="50"></div>
-                  <div class="field"><label for="benchTopK">Top K</label><input class="form-control" id="benchTopK" type="number" min="1" max="20" value="5"></div>
+                  <div class="field"><label for="benchTopK">返回条数</label><input class="form-control" id="benchTopK" type="number" min="1" max="20" value="5"></div>
                 </div>
                 <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" id="benchFill"></div></div></div>
-                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button"><iconify-icon icon="lucide:square-activity"></iconify-icon><span>开始 Benchmark</span></button></div>
-                <div class="search-meta" id="benchLog">等待测试开始。</div>
+                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button"><iconify-icon icon="lucide:square-activity"></iconify-icon><span>开始压测</span></button></div>
+                <div class="search-meta" id="benchLog">等待压测开始。</div>
               </article>
 
               <article class="panel" id="benchResults">
                 <div class="panel-head">
                   <div>
-                    <p class="card-kicker">Result overview</p>
+                    <p class="card-kicker">结果概览</p>
                     <h3>性能读数</h3>
                     <p>写入吞吐、查询吞吐与平均 / P95 延迟都会在这里展示。</p>
                   </div>
                 </div>
-                <div class="empty-state" id="benchEmpty">尚未运行 benchmark。</div>
+                <div class="empty-state" id="benchEmpty">尚未运行压测。</div>
                 <div class="bench-grid" id="benchGrid"></div>
               </article>
             </div>
