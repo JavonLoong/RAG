@@ -103,6 +103,7 @@ const state = {
   benchmark: null,
   lastLatency: null,
   activity: [],
+  timeline: [],
   trendMode: "balance",
   activityFilter: "all",
   expandedResults: new Set(),
@@ -157,6 +158,84 @@ function sourceLabel(kind) {
 
 function levelIconName(level) {
   return levelIcons[level] || levelIcons.success;
+}
+
+const jsonTextKeys = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer"]);
+
+function pushUniqueLine(lines, seen, text) {
+  const cleaned = normalizeText(text);
+  if (!cleaned || cleaned.length < 2) return;
+  if (seen.has(cleaned)) return;
+  seen.add(cleaned);
+  lines.push(cleaned);
+}
+
+function looksLikeAnnotationTask(value) {
+  return !!value && typeof value === "object" && (
+    Array.isArray(value.annotations) ||
+    Array.isArray(value.predictions)
+  );
+}
+
+function extractAnnotationPayload(payload) {
+  const tasks = Array.isArray(payload) ? payload : [payload];
+  const lines = [];
+  const seen = new Set();
+  tasks.forEach((task) => {
+    const filename = normalizeText(task?.data?.filename || "");
+    if (filename) pushUniqueLine(lines, seen, filename);
+    const groups = [
+      ...(Array.isArray(task?.annotations) ? task.annotations : []),
+      ...(Array.isArray(task?.predictions) ? task.predictions : [])
+    ];
+    groups.forEach((group) => {
+      const results = Array.isArray(group?.result) ? group.result : [];
+      results.forEach((item) => {
+        const values = item?.value || {};
+        const textCandidates = [
+          ...(Array.isArray(values.text) ? values.text : []),
+          ...(Array.isArray(values.choices) ? values.choices : []),
+          ...(Array.isArray(values.labels) ? values.labels : [])
+        ];
+        textCandidates.forEach((entry) => pushUniqueLine(lines, seen, entry));
+      });
+    });
+  });
+  return lines;
+}
+
+function flattenMeaningfulJson(value, lines = [], seen = new Set()) {
+  if (value == null) return lines;
+  if (typeof value === "string") {
+    pushUniqueLine(lines, seen, value);
+    return lines;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return lines;
+  if (Array.isArray(value)) {
+    value.forEach((item) => flattenMeaningfulJson(item, lines, seen));
+    return lines;
+  }
+  if (typeof value === "object") {
+    Object.entries(value).forEach(([key, nested]) => {
+      const keyName = String(key || "").toLowerCase();
+      if (jsonTextKeys.has(keyName)) {
+        flattenMeaningfulJson(nested, lines, seen);
+        return;
+      }
+      if (["title", "heading", "name", "section", "chapter", "keywords"].includes(keyName)) {
+        flattenMeaningfulJson(nested, lines, seen);
+      }
+      if (nested && typeof nested === "object") flattenMeaningfulJson(nested, lines, seen);
+    });
+  }
+  return lines;
+}
+
+function extractJsonTextLines(payload) {
+  if (looksLikeAnnotationTask(payload) || (Array.isArray(payload) && payload.some(looksLikeAnnotationTask))) {
+    return extractAnnotationPayload(payload);
+  }
+  return flattenMeaningfulJson(payload);
 }
 
 function collectionLabel(name) {
@@ -377,36 +456,6 @@ function splitTextWithOverlap(text, chunkSize = engineDefaults.chunkSize, overla
   return output;
 }
 
-function flattenJson(value, path = [], lines = []) {
-  if (value == null) return lines;
-  if (typeof value === "string") {
-    const cleaned = normalizeText(value);
-    if (cleaned.length >= 2) {
-      const label = path.filter(Boolean).slice(-2).join(" / ");
-      lines.push(label ? `${label}: ${cleaned}` : cleaned);
-    }
-    return lines;
-  }
-  if (typeof value === "number" || typeof value === "boolean") {
-    const label = path.filter(Boolean).slice(-2).join(" / ");
-    lines.push(label ? `${label}: ${String(value)}` : String(value));
-    return lines;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => flattenJson(item, [...path, `第 ${index + 1} 项`], lines));
-    return lines;
-  }
-  if (typeof value === "object") {
-    const title = ["title", "heading", "name", "section", "chapter"].map((key) => value[key]).find((entry) => typeof entry === "string" && normalizeText(entry));
-    if (title) lines.push(normalizeText(title));
-    Object.entries(value).forEach(([key, nested]) => {
-      if (title && normalizeText(String(nested)) === normalizeText(title)) return;
-      flattenJson(nested, [...path, key], lines);
-    });
-  }
-  return lines;
-}
-
 function parseTabularText(text, delimiter) {
   const parsed = globalThis.Papa?.parse(text, { delimiter, skipEmptyLines: true })?.data || [];
   if (!parsed.length) return "";
@@ -462,7 +511,7 @@ async function parseDocxFile(file) {
 
 async function parseJsonFile(file) {
   const payload = await parseJsonWithEncodingFallback(file);
-  const text = normalizeText(flattenJson(payload).join("\n\n"));
+  const text = normalizeText(extractJsonTextLines(payload).join("\n\n"));
   if (!text) throw new Error("JSON 未提取到可用文本");
   return [{
     record_id: `${relativePathOf(file)}::json`,
@@ -516,10 +565,13 @@ function makeChunks(records) {
     const pieces = splitTextWithOverlap(record.text);
     pieces.forEach((piece, index) => {
       const vector = createEmbedding(piece);
+      const tokens = Array.from(new Set(tokenize(piece)));
       chunks.push({
         chunk_id: `${record.record_id}::${index}`,
         text: piece,
         vector,
+        tokens,
+        normalizedText: piece.toLowerCase(),
         metadata: {
           source_file: record.source_file,
           filename: record.filename,
@@ -710,6 +762,51 @@ function buildOverviewModel() {
   };
 }
 
+function buildTrendBreakdown(stats = state.stats) {
+  const rawBreakdown = { ...(stats?.source_type_breakdown || {}) };
+  return {
+    PDF: Number(rawBreakdown.PDF || 0),
+    Text: Number(rawBreakdown.Text || 0),
+    JSON: Number(rawBreakdown.JSON || 0),
+    Other: Object.entries(rawBreakdown)
+      .filter(([key]) => !["PDF", "Text", "JSON"].includes(key))
+      .reduce((sum, [, value]) => sum + Number(value || 0), 0)
+  };
+}
+
+function captureTimelineSnapshot(label = "刷新") {
+  const stats = state.stats || defaultStats;
+  const breakdown = buildTrendBreakdown(stats);
+  const snapshot = {
+    label,
+    time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
+    docs: Number(stats.total_documents || 0),
+    tokens: Number(stats.total_tokens_estimate || 0),
+    latency: Number.isFinite(state.lastLatency) ? Number(state.lastLatency) : null,
+    breakdown
+  };
+  const fingerprint = JSON.stringify({
+    docs: snapshot.docs,
+    tokens: snapshot.tokens,
+    latency: snapshot.latency,
+    breakdown: snapshot.breakdown
+  });
+  const previous = state.timeline[state.timeline.length - 1];
+  if (previous?.fingerprint === fingerprint) {
+    previous.label = snapshot.label;
+    previous.time = snapshot.time;
+    return;
+  }
+  state.timeline = [...state.timeline, { ...snapshot, fingerprint }].slice(-12);
+}
+
+function meaningfulTimelineSnapshots() {
+  return state.timeline.filter((item) => {
+    const total = Object.values(item.breakdown || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+    return total > 0 || Number(item.docs || 0) > 0 || Number(item.tokens || 0) > 0 || Number.isFinite(item.latency);
+  });
+}
+
 function sparklinePath(values, width = 96, height = 32) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -737,7 +834,10 @@ function syncSegmentGroup(groupId, key, activeValue) {
 
 function syncTrendControls() {
   const summary = $("trendSummaryPill");
-  if (summary) summary.textContent = `${trendModeLabels[state.trendMode] || "综合视图"} · 近 30 天`;
+  if (summary) {
+    const snapshotCount = Math.max(1, meaningfulTimelineSnapshots().length);
+    summary.textContent = `${trendModeLabels[state.trendMode] || "综合视图"} · 当前会话 ${snapshotCount} 次`;
+  }
   syncSegmentGroup("trendModeGroup", "trendMode", state.trendMode);
 }
 
@@ -785,33 +885,37 @@ function renderOverview() {
   renderSparkline("sparkColls", model.collectionTarget ? Array.from({ length: 12 }, (_, index) => Math.min(model.collectionTarget, Math.max(1, Math.round(((index + 1) / 12) * model.collectionTarget)))) : [0, 0, 0, 0]);
   renderSparkline("sparkLatency", model.latency ? [model.latency + 28, model.latency + 16, model.latency + 10, model.latency + 6, model.latency] : [0, 0, 0, 0]);
   syncTrendControls();
-  renderTrendChart(model.breakdown, model.hasIndexedData);
+  renderTrendChart();
   renderCollectionSpectrum(model.breakdown, model.hasIndexedData);
   renderCollections();
 }
 
-function renderTrendChart(breakdown, hasIndexedData = false) {
+function renderTrendChart() {
   const node = $("trendChart");
   if (!node) return;
-  if (!hasIndexedData) {
-    node.innerHTML = `<div class="empty-state">暂无趋势数据</div>`;
+  const snapshots = meaningfulTimelineSnapshots();
+  if (!snapshots.length) {
+    node.innerHTML = `<div class="empty-state">完成一次入库或检索后，这里会显示本次会话的变化</div>`;
     return;
   }
   const mode = state.trendMode || "balance";
-  const labels = Array.from({ length: 30 }, (_, index) => `${index + 1}`);
-  const pdf = labels.map((_, index) => Math.round(breakdown.PDF * (0.38 + index * 0.015)));
-  const text = labels.map((_, index) => Math.round(breakdown.Text * (0.34 + index * 0.013)));
-  const json = labels.map((_, index) => Math.round(breakdown.JSON * (0.3 + index * 0.014)));
-  const other = labels.map((_, index) => Math.round(breakdown.Other * (0.44 + index * 0.01)));
-  const latency = labels.map((_, index) => Math.round(230 - Math.sin(index / 4) * 26 - index * 2.2));
-  const maxStack = Math.max(...labels.map((_, index) => pdf[index] + text[index] + json[index] + other[index]));
-  const barWidth = 18;
-  const gap = 8;
+  const labels = snapshots.map((item, index) => item.label || item.time || `步骤 ${index + 1}`);
+  const pdf = snapshots.map((item) => Number(item.breakdown?.PDF || 0));
+  const text = snapshots.map((item) => Number(item.breakdown?.Text || 0));
+  const json = snapshots.map((item) => Number(item.breakdown?.JSON || 0));
+  const other = snapshots.map((item) => Number(item.breakdown?.Other || 0));
+  const latency = snapshots.map((item) => Number.isFinite(item.latency) ? Number(item.latency) : null);
+  const maxStack = Math.max(1, ...snapshots.map((_, index) => pdf[index] + text[index] + json[index] + other[index]));
+  const innerWidth = 772;
+  const gap = snapshots.length > 7 ? 10 : 16;
+  const barWidth = Math.max(28, Math.min(48, (innerWidth - gap * Math.max(snapshots.length - 1, 0)) / Math.max(snapshots.length, 1)));
   const chartHeight = 280;
-  const latencyMin = Math.min(...latency);
-  const latencyMax = Math.max(...latency);
+  const latencyValues = latency.filter((value) => Number.isFinite(value));
+  const hasLatency = latencyValues.length > 0;
+  const latencyMin = hasLatency ? Math.min(...latencyValues) : 0;
+  const latencyMax = hasLatency ? Math.max(...latencyValues) : 1;
   const latencyBaseY = 132;
-  const lineOpacity = mode === "volume" ? 0.34 : 1;
+  const lineOpacity = hasLatency ? (mode === "volume" ? 0.34 : 1) : 0;
   const lineWidth = mode === "latency" ? 3.6 : mode === "volume" ? 2.2 : 3;
   const barOpacity = mode === "latency" ? 0.24 : mode === "volume" ? 1 : 0.92;
   const bars = labels.map((label, index) => {
@@ -826,21 +930,27 @@ function renderTrendChart(breakdown, hasIndexedData = false) {
     const rects = segments.map((segment) => {
       const height = (segment.value / maxStack) * 220;
       offset -= height;
-      return `<rect x="${x}" y="${offset.toFixed(1)}" width="${barWidth}" height="${height.toFixed(1)}" rx="6" fill="${sourceColors[segment.key] || sourceColors.Other}" fill-opacity="${barOpacity}"><title>第 ${label} 天 ${sourceLabel(segment.key)}：${segment.value}</title></rect>`;
+      return `<rect x="${x}" y="${offset.toFixed(1)}" width="${barWidth}" height="${height.toFixed(1)}" rx="6" fill="${sourceColors[segment.key] || sourceColors.Other}" fill-opacity="${barOpacity}"><title>${label} ${sourceLabel(segment.key)}：${segment.value}</title></rect>`;
     }).join("");
     return rects;
   }).join("");
-  const latencyPath = latency.map((value, index) => {
+  const latencyPoints = latency.map((value, index) => {
+    if (!Number.isFinite(value)) return null;
     const x = 33 + index * (barWidth + gap);
     const y = 38 + ((value - latencyMin) / Math.max(1, latencyMax - latencyMin)) * 80;
-    return `${index === 0 ? "M" : "L"}${x},${y.toFixed(1)}`;
-  }).join(" ");
-  const areaPath = `${latencyPath} L ${33 + (labels.length - 1) * (barWidth + gap)},${latencyBaseY} L 33,${latencyBaseY} Z`;
-  const points = latency.map((value, index) => {
-    const x = 33 + index * (barWidth + gap);
-    const y = 38 + ((value - latencyMin) / Math.max(1, latencyMax - latencyMin)) * 80;
+    return { x, y, value, index };
+  });
+  const latencyPath = latencyPoints.reduce((path, point) => {
+    if (!point) return path;
+    return `${path} ${path ? "L" : "M"}${point.x},${point.y.toFixed(1)}`.trim();
+  }, "");
+  const areaPath = latencyPath
+    ? `${latencyPath} L ${33 + (labels.length - 1) * (barWidth + gap)},${latencyBaseY} L 33,${latencyBaseY} Z`
+    : "";
+  const points = latencyPoints.map((point) => {
+    if (!point) return "";
     const radius = mode === "latency" ? 3.8 : 3.2;
-    return `<circle cx="${x}" cy="${y.toFixed(1)}" r="${radius}" fill="#002fa7" fill-opacity="${mode === "volume" ? 0.42 : 1}"><title>第 ${index + 1} 天延迟：${value} 毫秒</title></circle>`;
+    return `<circle cx="${point.x}" cy="${point.y.toFixed(1)}" r="${radius}" fill="#002fa7" fill-opacity="${mode === "volume" ? 0.42 : 1}"><title>${labels[point.index]} 延迟：${point.value} 毫秒</title></circle>`;
   }).join("");
   node.innerHTML = `
     <svg viewBox="0 0 820 320" aria-label="trend chart">
@@ -848,10 +958,10 @@ function renderTrendChart(breakdown, hasIndexedData = false) {
       <line x1="24" y1="280" x2="796" y2="280" stroke="rgba(17,24,39,0.08)"></line>
       <line x1="24" y1="40" x2="796" y2="40" stroke="rgba(17,24,39,0.05)"></line>
       ${bars}
-      ${mode === "latency" ? `<path d="${areaPath}" fill="rgba(0,47,167,0.08)"></path>` : ""}
-      <path d="${latencyPath}" fill="none" stroke="#002fa7" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="round"></path>
+      ${mode === "latency" && areaPath ? `<path d="${areaPath}" fill="rgba(0,47,167,0.08)"></path>` : ""}
+      ${latencyPath ? `<path d="${latencyPath}" fill="none" stroke="#002fa7" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="round"></path>` : ""}
       ${points}
-      <text x="796" y="24" text-anchor="end" fill="rgba(17,24,39,0.56)" font-size="11" font-weight="600">${trendModeLabels[mode] || "综合视图"}</text>
+      <text x="796" y="24" text-anchor="end" fill="rgba(17,24,39,0.56)" font-size="11" font-weight="600">当前会话</text>
     </svg>`;
 }
 
@@ -1042,8 +1152,9 @@ async function refreshHealth() {
   els.statusText.textContent = "浏览器本地引擎在线，文件只在当前浏览器会话中处理";
 }
 
-async function refreshStats() {
+async function refreshStats(label = "刷新") {
   state.stats = buildLocalStats();
+  captureTimelineSnapshot(label);
   renderOverview();
 }
 
@@ -1061,13 +1172,14 @@ async function refreshAll() {
 async function deleteCollection(name) {
   state.records = [];
   state.chunks = [];
+  state.timeline = [];
   state.lastProcess = null;
   state.lastSearchResult = null;
   state.expandedResults = new Set();
   state.benchmark = null;
   pushActivity({ level: "warning", title: "本地索引已清空", desc: `${name} 已从当前浏览器会话中移除。`, user: "本地引擎", duration: "0.2s" });
   showToast("已清空当前浏览器索引", "warning");
-  await refreshStats();
+  await refreshStats("清空");
   renderProcessLog();
   renderQuality();
   renderSearchResults();
@@ -1122,7 +1234,7 @@ async function runProcess() {
   setProgress("processFill", 100);
   renderProcessLog(result);
   renderQuality(result);
-  await refreshStats();
+  await refreshStats("入库");
   pushActivity({
     level: result.files_failed ? "warning" : "success",
     title: "浏览器本地分析完成",
@@ -1146,13 +1258,20 @@ async function runSearch() {
   }
   const started = performance.now();
   const queryVector = createEmbedding(query);
+  const normalizedQuery = normalizeText(query).toLowerCase();
+  const queryTokens = Array.from(new Set(tokenize(query))).filter((token) => token.length > 1);
   const ranked = state.chunks
     .map((chunk) => {
       const similarity = cosineSimilarity(queryVector, chunk.vector);
+      const semanticScore = (similarity + 1) / 2;
+      const overlapCount = queryTokens.reduce((sum, token) => sum + (chunk.tokens?.includes(token) ? 1 : 0), 0);
+      const overlapScore = queryTokens.length ? overlapCount / queryTokens.length : 0;
+      const phraseBonus = normalizedQuery && chunk.normalizedText.includes(normalizedQuery) ? 0.12 : 0;
+      const score = Math.min(0.9999, semanticScore * 0.7 + overlapScore * 0.24 + phraseBonus);
       return {
         text: chunk.text,
-        distance: Number((1 - similarity).toFixed(4)),
-        score: Number(((similarity + 1) / 2).toFixed(4)),
+        distance: Number((1 - score).toFixed(4)),
+        score: Number(score.toFixed(4)),
         metadata: chunk.metadata
       };
     })
@@ -1164,6 +1283,7 @@ async function runSearch() {
     latency_ms: Number((performance.now() - started).toFixed(1))
   };
   state.lastLatency = result.latency_ms;
+  captureTimelineSnapshot("检索");
   state.expandedResults = new Set();
   renderSearchResults(result);
   renderOverview();
@@ -1218,6 +1338,7 @@ async function runBenchmark() {
     embedding_model: `hashing-${engineDefaults.dimension}`
   };
   state.lastLatency = Number(state.benchmark.avg_query_latency_ms || state.lastLatency);
+  captureTimelineSnapshot("压测");
   setProgress("benchFill", 100);
   $("benchLog").textContent = `本地压测完成：平均延迟 ${state.benchmark.avg_query_latency_ms} 毫秒，P95 ${state.benchmark.p95_query_latency_ms} 毫秒。`;
   renderBenchmark();
