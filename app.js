@@ -1,7 +1,7 @@
 const pageMeta = {
   overview: {
     title: "系统总览",
-    desc: "以更高信息密度的白底布局重新组织知识库状态、检索节奏与实时运维流。"
+    desc: "查看知识库状态、检索节奏与实时运维流。"
   },
   data: {
     title: "数据接入",
@@ -9,11 +9,11 @@ const pageMeta = {
   },
   search: {
     title: "语义检索",
-    desc: "查看 Top-K 结果、来源类型与检索延迟，并把结果脉冲实时写回总览仪表。"
+    desc: "查看返回结果、来源类型与检索延迟，并把结果脉冲实时写回总览仪表。"
   },
   architecture: {
     title: "系统结构",
-    desc: "从上传、解析、分块、向量化到检索和压测，统一在白底高密度框架内可视化。"
+    desc: "从上传、解析、分块、向量化到检索和压测，按处理流程展示。"
   },
   benchmark: {
     title: "性能基准",
@@ -794,7 +794,7 @@ function renderCollections() {
   if (!list) return;
   const collections = state.stats?.collections || [];
   if (!collections.length) {
-    list.innerHTML = `<div class="empty-state">当前没有实时集合，界面已切换到高密度示例态。</div>`;
+    list.innerHTML = `<div class="empty-state">当前没有实时集合，等待本地索引建立。</div>`;
     return;
   }
   list.innerHTML = collections.map((collection) => {
