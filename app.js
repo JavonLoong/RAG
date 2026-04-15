@@ -226,6 +226,28 @@ function decodeArrayBuffer(buffer, encoding) {
   }
 }
 
+function hasUtf16Bom(bytes) {
+  return bytes?.length >= 2 && (
+    (bytes[0] === 0xFF && bytes[1] === 0xFE) ||
+    (bytes[0] === 0xFE && bytes[1] === 0xFF)
+  );
+}
+
+function inferPreferredEncodings(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  if (hasUtf16Bom(bytes)) return ["utf-16le", "utf-8", "gb18030", "big5"];
+  const probeLength = Math.min(bytes.length, 128);
+  let oddNulls = 0;
+  let evenNulls = 0;
+  for (let index = 0; index < probeLength; index += 1) {
+    if (bytes[index] !== 0) continue;
+    if (index % 2 === 0) evenNulls += 1;
+    else oddNulls += 1;
+  }
+  if (oddNulls >= 8 && oddNulls > evenNulls * 3) return ["utf-16le", "utf-8", "gb18030", "big5"];
+  return ["utf-8", "gb18030", "big5", "utf-16le"];
+}
+
 function scoreDecodedText(text) {
   const candidate = stripBom(String(text ?? ""));
   if (!candidate.trim()) return Number.NEGATIVE_INFINITY;
@@ -240,11 +262,27 @@ function scoreDecodedText(text) {
 
 async function readFileTextSafely(file) {
   const buffer = await file.arrayBuffer();
-  const best = textEncodingCandidates
+  const best = inferPreferredEncodings(buffer)
     .map((encoding) => ({ encoding, text: decodeArrayBuffer(buffer, encoding) }))
     .filter((candidate) => candidate.text)
     .sort((a, b) => scoreDecodedText(b.text) - scoreDecodedText(a.text))[0];
   return stripBom(best?.text || "");
+}
+
+async function parseJsonWithEncodingFallback(file) {
+  const buffer = await file.arrayBuffer();
+  const attempts = inferPreferredEncodings(buffer)
+    .map((encoding) => ({ encoding, text: stripBom(decodeArrayBuffer(buffer, encoding)) }))
+    .filter((candidate) => candidate.text);
+  let lastError = null;
+  for (const candidate of attempts) {
+    try {
+      return JSON.parse(candidate.text);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("JSON 解析失败");
 }
 
 function tokenize(text) {
@@ -423,7 +461,7 @@ async function parseDocxFile(file) {
 }
 
 async function parseJsonFile(file) {
-  const payload = JSON.parse(stripBom(await readFileTextSafely(file)));
+  const payload = await parseJsonWithEncodingFallback(file);
   const text = normalizeText(flattenJson(payload).join("\n\n"));
   if (!text) throw new Error("JSON 未提取到可用文本");
   return [{
