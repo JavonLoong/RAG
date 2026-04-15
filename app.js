@@ -592,7 +592,7 @@ function isSupportedFile(file) {
 function setPage(page) {
   state.page = pageMeta[page] ? page : "overview";
   els.pageTitle.textContent = "动力装备知识库";
-  els.pageDesc.textContent = pageMeta[state.page].desc;
+  if (els.pageDesc) els.pageDesc.textContent = pageMeta[state.page].desc;
   els.pages.forEach((node) => node.classList.toggle("active", node.id === `page-${state.page}`));
   Array.from(document.querySelectorAll(".nav-item")).forEach((node) => {
     node.classList.toggle("active", node.dataset.page === state.page);
@@ -703,9 +703,12 @@ function renderOverview() {
   $("miniThroughput").textContent = model.throughput;
   $("miniPrecision").textContent = `${model.precision.toFixed(1)}%`;
   $("searchPulse").textContent = `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10`;
-  $("overviewSummary").textContent = state.chunks.length
-    ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个片段，按来源类型聚合显示结构比例。`
-    : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
+  const overviewSummary = $("overviewSummary");
+  if (overviewSummary) {
+    overviewSummary.textContent = state.chunks.length
+      ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个片段，按来源类型聚合显示结构比例。`
+      : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
+  }
   $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "本地浏览器索引" : "等待本地索引"}</span>`;
 
   renderSparkline("sparkDocs", seedSeries(12, 2200, 160, 1200));

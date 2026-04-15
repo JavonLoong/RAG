@@ -25,7 +25,6 @@
           </div>
           <div class="brand-copy">
             <strong>动力装备知识库</strong>
-            <span>本地工作台</span>
           </div>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
@@ -53,9 +52,7 @@
     <div class="app-main">
       <header class="topbar">
         <div class="topbar-copy">
-          <p class="eyebrow">本地运行</p>
           <h1 id="pageTitle">动力装备知识库</h1>
-          <p id="pageDesc">状态、日志和趋势都在这里。</p>
         </div>
 
         <form class="topbar-search" id="globalSearchForm">
@@ -74,7 +71,6 @@
         <section class="page active" id="page-overview">
           <div class="page-stack">
             <article class="panel hero-card">
-              <h3>今天的状态、趋势和日志。</h3>
               <div class="hero-actions">
                 <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
                 <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
@@ -142,7 +138,6 @@
                     <div>
                       <p class="card-kicker">集合状态</p>
                       <h3>集合与来源结构</h3>
-                      <p id="overviewSummary">展示当前向量集合、来源类型占比与可用性状态。</p>
                     </div>
                     <span class="pill" id="collectionSummaryPill">实时结构</span>
                   </div>
@@ -158,7 +153,6 @@
                     <div>
                       <p class="card-kicker">趋势快照</p>
                       <h3>索引增长与检索延迟</h3>
-                      <p>过去 30 天的数据写入状态叠加检索延迟曲线，悬停可查看每日装载明细。</p>
                     </div>
                     <div class="panel-tools">
                       <span class="pill" id="trendSummaryPill">近 30 天</span>
@@ -191,7 +185,6 @@
                     <div>
                       <p class="card-kicker">实时日志</p>
                       <h3>实时操作日志</h3>
-                      <p>颜色状态点用于区分成功、警告与失败，并追加操作用户与耗时。</p>
                     </div>
                     <div class="panel-tools">
                       <span class="pill" id="activitySummaryPill">全部日志</span>
@@ -209,7 +202,6 @@
                 <article class="panel mini-card">
                   <p class="card-kicker">导航脉冲</p>
                   <div class="mini-value" id="searchPulse">6.2 / 10</div>
-                  <p>这里显示最近一次全局搜索跳转或检索活跃度。</p>
                 </article>
               </div>
             </div>
@@ -223,7 +215,6 @@
                   <div class="panel-head">
                     <div>
                       <h3>文件与文件夹接入</h3>
-                      <p>支持拖拽目录、点击选择目录，上传时自动携带原始相对路径。</p>
                     </div>
                     <span class="pill">.json .pdf .docx .txt .md .csv .tsv .log</span>
                   </div>
@@ -231,7 +222,6 @@
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
                       <h3>拖入整个文件夹也能识别</h3>
-                      <p>前端会递归解析目录，并只上传受支持的文档类型。</p>
                       <div class="queue-actions">
                         <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
                         <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
@@ -267,7 +257,6 @@
                   <div class="panel-head">
                     <div>
                       <h3>待处理文件列表</h3>
-                      <p>上传目录中的文件会按来源类型自动归类。</p>
                     </div>
                     <span class="pill" id="queueCountPill">0 个文件</span>
                   </div>
@@ -278,7 +267,6 @@
                   <div class="panel-head">
                     <div>
                       <h3>分块与质量摘要</h3>
-                      <p>处理结果会在这里显示平均 chunk 长度、问题数量和按文档分布。</p>
                     </div>
                     <span class="pill">处理后</span>
                   </div>
@@ -295,7 +283,6 @@
                 <div class="panel-head">
                   <div>
                     <h3>检索配置</h3>
-                    <p>输入查询词后将使用当前默认集合发起检索。</p>
                   </div>
                 </div>
                 <div class="search-row">
@@ -310,7 +297,6 @@
                 <div class="panel-head">
                   <div>
                     <h3>结果列表</h3>
-                    <p>展示相似度、距离、来源文件以及片段元数据。</p>
                   </div>
                 </div>
                 <div class="results-list" id="searchResults"></div>
@@ -336,8 +322,7 @@
               <article class="panel">
                 <div class="panel-head">
                   <div>
-                      <h3>运行参数</h3>
-                      <p>推荐先用中等规模验证链路，再扩大文档量观察吞吐拐点。</p>
+                    <h3>运行参数</h3>
                   </div>
                 </div>
                 <div class="form-grid">
@@ -354,8 +339,7 @@
               <article class="panel" id="benchResults">
                 <div class="panel-head">
                   <div>
-                      <h3>性能读数</h3>
-                      <p>写入吞吐、查询吞吐与平均 / P95 延迟都会在这里展示。</p>
+                    <h3>性能读数</h3>
                   </div>
                 </div>
                 <div class="empty-state" id="benchEmpty">尚未运行压测。</div>
