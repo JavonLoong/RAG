@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>周会老师课题组调研报告 · 纪文龙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f8f6f3;--card:#fff;--text:#1a1a2e;--sub:#555;--muted:#999;
+  --accent:#c0392b;--blue:#2c5aa0;--green:#1a8a5c;--orange:#d4710a;--purple:#6c3483;--teal:#117a8b;
+  --shadow:0 2px 12px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.08);
+}
+body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased;}
+
+/* ===== 封面区 ===== */
+.cover{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 40%,#0f3460 100%);
+  color:#fff;padding:60px 40px 50px;text-align:center;position:relative;overflow:hidden;
+}
+.cover::before{
+  content:'';position:absolute;top:-50%;right:-30%;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(192,57,43,.15) 0%,transparent 70%);
+}
+.cover::after{
+  content:'';position:absolute;bottom:-40%;left:-20%;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(44,90,160,.12) 0%,transparent 70%);
+}
+.cover *{position:relative;z-index:1;}
+.cover .label{font-size:12px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:16px;}
+.cover h1{font-family:'Noto Serif SC',serif;font-size:42px;font-weight:700;letter-spacing:3px;}
+.cover h1 span{color:#ff6b6b;}
+.cover .subtitle{font-size:15px;color:rgba(255,255,255,.6);margin-top:10px;font-weight:300;}
+.cover .meta{margin-top:24px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap;}
+.cover .meta-item{
+  background:rgba(255,255,255,.08);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 16px;
+  font-size:12px;color:rgba(255,255,255,.8);
+}
+.cover .author-bar{
+  margin-top:30px;font-size:13px;color:rgba(255,255,255,.4);
+  border-top:1px solid rgba(255,255,255,.08);padding-top:16px;
+}
+
+/* ===== 容器 ===== */
+.container{max-width:1080px;margin:0 auto;padding:0 24px;}
+
+/* ===== 章节标题 ===== */
+.section{padding:48px 0 20px;}
+.section-head{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+.section-num{
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.section-head h2{font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700;color:var(--text);}
+.section-head .line{flex:1;height:1px;background:linear-gradient(90deg,#ddd,transparent);}
+
+/* ===== 基本信息 ===== */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.profile-card{background:var(--card);border-radius:14px;padding:24px 28px;box-shadow:var(--shadow);border:1px solid #eee;}
+.profile-card h3{font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;border-bottom:1px solid #f0f0f0;padding-bottom:8px;}
+.info-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;}
+.info-row .label{color:var(--sub);font-weight:400;}
+.info-row .value{font-weight:600;color:var(--text);text-align:right;}
+.timeline-mini{position:relative;padding-left:20px;border-left:2px solid #e0e0e0;}
+.tl-item{margin-bottom:14px;position:relative;}
+.tl-item::before{
+  content:'';position:absolute;left:-25px;top:6px;width:10px;height:10px;
+  border-radius:50%;border:2px solid var(--blue);background:#fff;
+}
+.tl-item .tl-date{font-size:11px;color:var(--muted);font-weight:600;}
+.tl-item .tl-text{font-size:13px;color:var(--text);}
+
+/* ===== 荣誉标签 ===== */
+.honors{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.honor-tag{
+  background:linear-gradient(135deg,#fef9e7,#fdebd0);border:1px solid #f0c27f;
+  border-radius:20px;padding:4px 12px;font-size:11px;color:#7d5a29;font-weight:500;
+}
+.honor-tag.top{background:linear-gradient(135deg,#fce4ec,#f8bbd0);border-color:#e91e63;color:#880e4f;}
+
+/* ===== 研究方向 ===== */
+.dir-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.dir-card{
+  background:var(--card);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);
+  border-left:4px solid;transition:transform .2s,box-shadow .2s;
+}
+.dir-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.dir-card.c1{border-color:var(--green);}
+.dir-card.c2{border-color:var(--blue);}
+.dir-card.c3{border-color:var(--orange);}
+.dir-card.c4{border-color:var(--purple);}
+.dir-card h3{font-size:16px;font-weight:700;margin-bottom:8px;}
+.dir-card.c1 h3{color:var(--green);}
+.dir-card.c2 h3{color:var(--blue);}
+.dir-card.c3 h3{color:var(--orange);}
+.dir-card.c4 h3{color:var(--purple);}
+.dir-card p{font-size:13px;color:var(--sub);line-height:1.8;}
+.dir-card .keywords{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.dir-card .kw{
+  background:#f0f0f0;border-radius:4px;padding:2px 8px;font-size:10px;
+  color:var(--sub);font-weight:500;
+}
+.dir-card .hot{position:absolute;top:12px;right:16px;background:var(--accent);color:#fff;font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700;}
+
+/* ===== 论文 ===== */
+.paper-list{display:flex;flex-direction:column;gap:12px;}
+.paper{
+  background:var(--card);border-radius:12px;padding:18px 22px;box-shadow:var(--shadow);
+  display:flex;gap:16px;align-items:flex-start;border:1px solid #eee;
+  transition:transform .15s,border-color .2s;cursor:pointer;text-decoration:none;color:inherit;
+}
+.paper:hover{transform:translateX(4px);border-color:var(--accent);}
+.paper::after{content:'\2197';position:absolute;top:12px;right:14px;font-size:14px;color:var(--muted);opacity:0;transition:opacity .2s;}
+.paper:hover::after{opacity:1;}
+.paper{position:relative;}
+.paper .yr{
+  flex-shrink:0;width:52px;height:52px;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px;line-height:1.2;
+}
+.paper .yr.y2026{background:linear-gradient(135deg,var(--accent),#e74c3c);}
+.paper .yr.y2025{background:linear-gradient(135deg,var(--blue),#3498db);}
+.paper .yr.y2024{background:linear-gradient(135deg,#7f8c8d,#95a5a6);}
+.paper .yr.classic{background:linear-gradient(135deg,var(--orange),#f39c12);}
+.paper .info h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.paper .info .journal{font-size:12px;color:var(--accent);font-weight:600;}
+.paper .info p{font-size:12px;color:var(--sub);margin-top:4px;}
+.paper .tag-row{display:flex;gap:5px;margin-top:6px;}
+.paper .ptag{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;}
+.paper .ptag.iccu{background:#e8f4fd;color:var(--blue);}
+.paper .ptag.bio{background:#e8f8f0;color:var(--green);}
+.paper .ptag.h2{background:#fef5e7;color:var(--orange);}
+.paper .ptag.review{background:#f4ecf7;color:var(--purple);}
+
+/* ===== 团队 ===== */
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.team-card{background:var(--card);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);border:1px solid #eee;}
+.team-card h3{font-size:14px;font-weight:700;color:var(--teal);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.team-card h3 .icon{font-size:18px;}
+.member{padding:6px 0;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:center;}
+.member:last-child{border:none;}
+.member .name{font-size:13px;font-weight:600;color:var(--text);}
+.member .role{font-size:11px;color:var(--muted);background:#f5f5f5;padding:2px 8px;border-radius:10px;}
+
+/* ===== SRT 项目 ===== */
+.srt-section{
+  background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;
+  border-radius:20px;padding:36px 32px;margin:40px 0;box-shadow:var(--shadow-lg);
+  position:relative;overflow:hidden;
+}
+.srt-section::before{
+  content:'';position:absolute;top:-30%;right:-10%;width:300px;height:300px;
+  background:radial-gradient(circle,rgba(255,107,107,.1),transparent 70%);
+}
+.srt-section *{position:relative;}
+.srt-section h2{font-family:'Noto Serif SC',serif;font-size:20px;margin-bottom:6px;}
+.srt-section .srt-sub{color:rgba(255,255,255,.5);font-size:13px;margin-bottom:20px;}
+.srt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.srt-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;}
+.srt-item h4{font-size:13px;color:#ff6b6b;font-weight:600;margin-bottom:6px;}
+.srt-item p{font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;}
+.srt-item .number{font-size:28px;font-weight:900;color:#ff6b6b;margin-bottom:4px;}
+.srt-timeline{margin-top:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.srt-phase{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;text-align:center;}
+.srt-phase .ph-num{font-size:20px;font-weight:900;color:#ff6b6b;}
+.srt-phase .ph-date{font-size:10px;color:rgba(255,255,255,.4);margin:2px 0 6px;}
+.srt-phase .ph-text{font-size:11px;color:rgba(255,255,255,.65);line-height:1.5;}
+
+/* ===== 我的匹配度 ===== */
+.match{
+  background:var(--card);border-radius:16px;padding:28px 32px;box-shadow:var(--shadow);
+  border:2px solid var(--green);margin:30px 0;
+}
+.match h3{font-size:18px;font-weight:700;color:var(--green);margin-bottom:16px;}
+.match-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.match-item{text-align:center;padding:16px;background:#f0faf5;border-radius:10px;}
+.match-item .score{font-size:32px;font-weight:900;color:var(--green);}
+.match-item .desc{font-size:12px;color:var(--sub);margin-top:4px;}
+.match-item .detail{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;}
+
+/* ===== 页脚 ===== */
+.footer{text-align:center;padding:40px 0 30px;color:var(--muted);font-size:12px;}
+.footer .sig{font-size:14px;color:var(--text);font-weight:600;margin-bottom:4px;}
+
+/* ===== 响应式 ===== */
+@media(max-width:768px){
+  .profile-grid,.dir-grid,.srt-grid,.match-grid{grid-template-columns:1fr;}
+  .team-grid{grid-template-columns:1fr;}
+  .srt-timeline{grid-template-columns:repeat(2,1fr);}
+  .cover h1{font-size:28px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<div class="cover">
+  <div class="label">Structured Research Intelligence Report</div>
+  <h1><span>周会</span>老师课题组<br>深度调研知识图谱</h1>
+  <div class="subtitle">清华大学 · 能源与动力工程系 · 碳中和技术与可再生能源利用</div>
+  <div class="meta">
+    <span class="meta-item">🏅 2024 北京市杰出青年基金</span>
+    <span class="meta-item">📰 CCST 期刊执行主编</span>
+    <span class="meta-item">🌍 国际碳捕集协会副主席</span>
+    <span class="meta-item">📊 7000+ 学术引用</span>
+  </div>
+  <div class="author-bar">调研人：纪文龙（行健书院 烽火4班） · 2026年3月26日</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== 第一章：个人画像 ==================== -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-num" style="background:var(--accent);">1</div>
+    <h2>导师个人画像</h2>
+    <div class="line"></div>
+  </div>
+
+  <div class="profile-grid">
+    <div class="profile-card">
+      <h3>基本信息</h3>
+      <div class="info-row"><span class="label">姓名</span><span class="value">周会 (Hui Zhou)</span></div>
+      <div class="info-row"><span class="label">性别</span><span class="value">男</span></div>
+      <div class="info-row"><span class="label">职称</span><span class="value">副教授 · 博士生导师 · 特别研究员</span></div>
+      <div class="info-row"><span class="label">院系</span><span class="value">清华大学 能源与动力工程系</span></div>
+      <div class="info-row"><span class="label">行政兼职</span><span class="value">教务处副处长 · 2字班班主任</span></div>
+      <div class="info-row"><span class="label">学历</span><span class="value">清华大学 博士（动力工程及工程热物理）</span></div>
+    </div>
+
+    <div class="profile-card">
+      <h3>学术履历</h3>
+      <div class="timeline-mini">
+        <div class="tl-item"><div class="tl-date">2015.09 — 2017.07</div><div class="tl-text">🇺🇸 哥伦比亚大学 · 地球与环境工程系 · 博士后</div></div>
+        <div class="tl-item"><div class="tl-date">2017.07 — 2018.09</div><div class="tl-text">🇺🇸 美国能源部 Ames 国家实验室 · 博士后</div></div>
+        <div class="tl-item"><div class="tl-date">2018.10 — 2021.05</div><div class="tl-text">🇨🇭 ETH Zurich · 机械与过程工程系 · <b>欧盟玛丽居里学者</b></div></div>
+        <div class="tl-item"><div class="tl-date">2021.07 — 2023.06</div><div class="tl-text">🇨🇳 清华大学能动系 · 助理教授</div></div>
+        <div class="tl-item"><div class="tl-date">2023.06 — 至今</div><div class="tl-text">🇨🇳 清华大学能动系 · <b>副教授 · 博导</b></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 荣誉 -->
+  <div class="profile-card" style="margin-top:16px;">
+    <h3>荣誉与获奖</h3>
+    <div class="honors">
+      <span class="honor-tag top">2024 北京市杰出青年基金</span>
+      <span class="honor-tag top">2024 侯德榜化工科学技术奖青年奖</span>
+      <span class="honor-tag top">2024 ACS Sustainable Chemistry & Engineering 讲席奖</span>
+      <span class="honor-tag top">2023 强国青年科学家</span>
+      <span class="honor-tag">2022 J. Mater. Chem. 新锐奖</span>
+      <span class="honor-tag">2021 中国十大新锐科技人物</span>
+      <span class="honor-tag">2020 MCAA 最佳创新者奖</span>
+      <span class="honor-tag">2019 Arthur C. Stern 杰出论文奖</span>
+      <span class="honor-tag">2018 欧盟玛丽居里学者奖</span>
+      <span class="honor-tag">2015 清华优博一等奖</span>
+      <span class="honor-tag">2014 清华学术新秀</span>
+      <span class="honor-tag">国家高层次人才引进计划</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 第二章：研究方向 × 代表论文（融合版） ==================== -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-num" style="background:var(--blue);">2</div>
+    <h2>核心研究方向与代表论文</h2>
+    <div class="line"></div>
+  </div>
+
+  <!-- ---- 方向A: 生物质 ---- -->
+  <div class="dir-card c1" style="margin-bottom:16px;">
+    <h3>🌿 方向A · 生物质/废弃物资源化</h3>
+    <p>通过水热液化、热解、气化等热化学手段对生物质和固体废弃物进行高值化利用，实现"变废为宝"。近期在木质素制备尼龙前驱物方向取得突破。</p>
+    <div class="keywords">
+      <span class="kw">水热液化</span><span class="kw">热解</span><span class="kw">气化</span>
+      <span class="kw">木质素化学</span><span class="kw">生物炭</span><span class="kw">PET回收</span>
+    </div>
+    <div class="paper-list" style="margin-top:14px;">
+      <a class="paper" href="https://doi.org/10.1002/adma.202307412" target="_blank">
+        <div class="yr y2024">2024</div>
+        <div class="info">
+          <div class="journal">Advanced Materials · <span style="color:var(--accent);font-weight:700;">高被引论文</span></div>
+          <h4>Towards Negative Emissions: Hydrothermal Carbonization of Biomass for Sustainable Carbon Materials</h4>
+          <p>生物质水热碳化制备可持续碳材料的里程碑式综述，为 SRT 生物炭数据库项目提供直接文献基础。</p>
+          <div class="tag-row"><span class="ptag review">综述</span><span class="ptag bio">水热碳化</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1038/s41467-022-31352-x" target="_blank">
+        <div class="yr classic">2022</div>
+        <div class="info">
+          <div class="journal">Nature Communications</div>
+          <h4>Decoupled Temperature and Pressure Hydrothermal Synthesis of Carbon Sub-micron Spheres from Cellulose</h4>
+          <p>提出 DTPH 工艺，实现纤维素快速低温水热碳化制碳亚微米球。</p>
+          <div class="tag-row"><span class="ptag bio">水热碳化</span><span class="ptag h2">Nature子刊</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.crsus.2025.100344" target="_blank">
+        <div class="yr y2025">2025</div>
+        <div class="info">
+          <div class="journal">Cell Reports Sustainability</div>
+          <h4>Renewable Production of Nylon Precursors from Lignin</h4>
+          <p>从木质素出发制备尼龙前驱物，实现生物质高值化的交叉突破。</p>
+          <div class="tag-row"><span class="ptag bio">木质素</span><span class="ptag bio">高值化利用</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.xinn.2025.101079" target="_blank">
+        <div class="yr y2025">2025</div>
+        <div class="info">
+          <div class="journal">The Innovation (Cell Press)</div>
+          <h4>Enhancing carbon-negative emission technologies through biomass integration</h4>
+          <p>系统梳理生物质赋能碳负排放技术路径的旗舰综述。</p>
+          <div class="tag-row"><span class="ptag review">综述</span><span class="ptag bio">碳负排放</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ---- 方向B: CO₂ 捕集 ---- -->
+  <div class="dir-card c2" style="position:relative;margin-bottom:16px;">
+    <span class="hot" style="position:absolute;">🔥 最活跃方向</span>
+    <h3>🏭 方向B · CO₂ 捕集与转化 (ICCU)</h3>
+    <p>开发双功能催化-吸附材料（BSCMs），实现一体化碳捕集与原位转化。2026年连续发表含硫/含氮真实烟气条件下 ICCU 的机理研究，直接推动工业化。</p>
+    <div class="keywords">
+      <span class="kw">BSCMs</span><span class="kw">ICCU</span><span class="kw">DRM干重整</span>
+      <span class="kw">Ni-Ca材料</span><span class="kw">Ca-Fe材料</span><span class="kw">CO₂加氢</span>
+    </div>
+    <div class="paper-list" style="margin-top:14px;">
+      <a class="paper" href="https://doi.org/10.1039/D5IM00087D" target="_blank">
+        <div class="yr y2026">2026</div>
+        <div class="info">
+          <div class="journal">Industrial Chemistry & Materials (RSC)</div>
+          <h4>Integrated CO₂ capture and methane dry reforming over Ni-Ca dual functional material under SO₂/NO₂-containing flue gas: a mechanistic study</h4>
+          <p>首次系统研究含硫/含氮真实烟气条件对 ICCU-DRM 的影响机理。</p>
+          <div class="tag-row"><span class="ptag iccu">ICCU</span><span class="ptag iccu">双功能材料</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.seppur.2025.135624" target="_blank">
+        <div class="yr y2025">2025<br>.10</div>
+        <div class="info">
+          <div class="journal">Separation and Purification Technology</div>
+          <h4>Engineering solid-waste-derived Ca-Fe dual functional sorbents-catalysts for integrated CO₂ capture and conversion to syngas</h4>
+          <p>利用固废制备 Ca-Fe 双功能吸附-催化材料，实现一体化 CO₂ 捕集与转化。</p>
+          <div class="tag-row"><span class="ptag iccu">ICCU</span><span class="ptag bio">废弃物利用</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.ccst.2023.100178" target="_blank">
+        <div class="yr y2024">2024</div>
+        <div class="info">
+          <div class="journal">Carbon Capture Science & Technology</div>
+          <h4>A comprehensive review of carbon capture science and technologies</h4>
+          <p>作为期刊执行主编主导的碳捕集全面综述，奠定领域话语权。</p>
+          <div class="tag-row"><span class="ptag review">综述</span><span class="ptag iccu">碳捕集</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ---- 方向C: 氢能 ---- -->
+  <div class="dir-card c3" style="margin-bottom:16px;">
+    <h3>⚡ 方向C · 可再生氢能</h3>
+    <p>利用生物质气化和化学链技术制备氢气/合成气。近期使用层状钙钛矿材料开发了高效选择性化学链制氢方案。</p>
+    <div class="keywords">
+      <span class="kw">化学链</span><span class="kw">制氢</span><span class="kw">合成气</span>
+      <span class="kw">钙钛矿材料</span><span class="kw">城市固废气化</span>
+    </div>
+    <div class="paper-list" style="margin-top:14px;">
+      <a class="paper" href="https://doi.org/10.1016/j.biortech.2026.134385" target="_blank">
+        <div class="yr y2026">2026<br>.03</div>
+        <div class="info">
+          <div class="journal">Bioresource Technology</div>
+          <h4>Sr-enriched R-P type layered perovskite for biomass to syngas conversion with exceptional efficiency via chemical looping</h4>
+          <p>开发富锶 Ruddlesden-Popper 层状钙钛矿，通过化学链实现生物质高效制合成气。</p>
+          <div class="tag-row"><span class="ptag bio">生物质</span><span class="ptag h2">制氢</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.jechem.2024.05.018" target="_blank">
+        <div class="yr y2024">2024</div>
+        <div class="info">
+          <div class="journal">Journal of Energy Chemistry</div>
+          <h4>Upcycling municipal solid waste to sustainable hydrogen via two-stage gasification-reforming</h4>
+          <p>两段式气化-重整工艺将城市固废升级为可持续氢气。</p>
+          <div class="tag-row"><span class="ptag h2">制氢</span><span class="ptag bio">固废利用</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ---- 方向D: 催化 ---- -->
+  <div class="dir-card c4" style="margin-bottom:16px;">
+    <h3>🔬 方向D · 能源多相催化</h3>
+    <p>设计高性能催化材料（Ni/CeO₂、钙钛矿等），服务于生物质转化和 CO₂ 利用过程中的关键催化反应，解决催化剂烧结失活等工业难题。</p>
+    <div class="keywords">
+      <span class="kw">Ni/CeO₂</span><span class="kw">钙钛矿</span><span class="kw">催化机理</span>
+      <span class="kw">碳酸钼</span><span class="kw">抗硫催化</span>
+    </div>
+    <div class="paper-list" style="margin-top:14px;">
+      <a class="paper" href="https://doi.org/10.1016/j.fuel.2023.130087" target="_blank">
+        <div class="yr y2024">2024</div>
+        <div class="info">
+          <div class="journal">Fuel</div>
+          <h4>CO rich syngas production from catalytic CO₂ gasification-reforming of biomass components on Ni/CeO₂</h4>
+          <p>Ni/CeO₂ 催化体系实现生物质组分 CO₂ 气化重整产富 CO 合成气。</p>
+          <div class="tag-row"><span class="ptag h2">合成气</span><span class="ptag iccu">CO₂气化</span></div>
+        </div>
+      </a>
+      <a class="paper" href="https://doi.org/10.1016/j.apenergy.2024.122975" target="_blank">
+        <div class="yr y2024">2024</div>
+        <div class="info">
+          <div class="journal">Applied Energy</div>
+          <h4>Synergistic interactions between cellulose and plastics during CO₂ gasification-catalytic reforming on Ni/CeO₂ nanorod catalyst</h4>
+          <p>揭示纤维素与塑料在 Ni/CeO₂ 纳米棒催化剂上 CO₂ 气化协同机理。</p>
+          <div class="tag-row"><span class="ptag iccu">CO₂气化</span><span class="ptag bio">协同效应</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== 第四章：团队 ==================== -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-num" style="background:var(--teal);">3</div>
+    <h2>团队架构与合作网络</h2>
+    <div class="line"></div>
+  </div>
+
+  <div class="team-grid">
+    <div class="team-card">
+      <h3><span class="icon">🏠</span>核心团队</h3>
+      <div class="member"><span class="name">张衍国 教授</span><span class="role">大组负责人</span></div>
+      <div class="member"><span class="name">周会 副教授</span><span class="role">独立PI · 博导</span></div>
+      <div class="member"><span class="name">李清海 副研究员</span><span class="role">日常科研指导</span></div>
+      <div class="member"><span class="name">别璇 博士后</span><span class="role">前沿一作主力</span></div>
+      <div class="member"><span class="name">曹海山 副教授</span><span class="role">SRT指导·吸附材料</span></div>
+    </div>
+    <div class="team-card">
+      <h3><span class="icon">🤝</span>外部合作</h3>
+      <div class="member"><span class="name">张亚运</span><span class="role">华东理工大学</span></div>
+      <div class="member"><span class="name">Bradley Ladewig</span><span class="role">国际合作</span></div>
+      <div class="member"><span class="name">多名博士生共作</span><span class="role">论文合作</span></div>
+    </div>
+    <div class="team-card">
+      <h3><span class="icon">🏛️</span>平台资源</h3>
+      <div class="member"><span class="name">教育部重点实验室</span><span class="role">热科学·动力工程</span></div>
+      <div class="member"><span class="name">CCST 期刊</span><span class="role">执行主编</span></div>
+      <div class="member"><span class="name">国际碳捕集协会</span><span class="role">副主席</span></div>
+      <div class="member"><span class="name">美国化学会</span><span class="role">ACS年会生物质分论坛主席</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 第五章：SRT项目 ==================== -->
+<div class="section">
+  <div class="section-head">
+    <div class="section-num" style="background:var(--accent);">4</div>
+    <h2>SRT 项目解读</h2>
+    <div class="line"></div>
+  </div>
+
+  <div class="srt-section">
+    <h2>🎯 基于人工智能的生物炭材料数据库构建与性能预测研究</h2>
+    <div class="srt-sub">普通SRT项目 · 2026.04 — 2027.04 · 接纳 1 人 · 2 学分 · 资助 ¥5000</div>
+
+    <div class="srt-grid">
+      <div class="srt-item">
+        <h4>📚 项目核心</h4>
+        <p>用 NLP 技术自动提取生物炭文献数据，构建涵盖制备参数、结构特征、应用性能的多维度数据库。再用机器学习（随机森林/神经网络）建立性能预测模型。</p>
+      </div>
+      <div class="srt-item">
+        <h4>🎯 预期成果</h4>
+        <p>≥2000 条高质量数据 + 可视化查询界面<br>≥2 种性能预测模型（R²≥0.85）<br>软件著作权 1 项 + SCI 论文 1 篇</p>
+      </div>
+      <div class="srt-item">
+        <h4>🔗 与课题组的关联</h4>
+        <p>直接服务于周会老师"生物质资源化"方向的<b>生物炭</b>研究（Adv Materials 高被引综述）。数据库将加速其团队在水热碳化/热解领域的材料筛选。</p>
+      </div>
+      <div class="srt-item">
+        <h4>💻 技术栈需求</h4>
+        <p>Python · NLP（文献解析）· 机器学习（sklearn/PyTorch）· 数据库设计 · Web可视化 · 云计算/GPU</p>
+      </div>
+    </div>
+
+    <div class="srt-timeline">
+      <div class="srt-phase">
+        <div class="ph-num">P1</div>
+        <div class="ph-date">2026.04 — 06</div>
+        <div class="ph-text">文献调研<br>NLP工具开发<br>数据清洗</div>
+      </div>
+      <div class="srt-phase">
+        <div class="ph-num">P2</div>
+        <div class="ph-date">2026.07 — 09</div>
+        <div class="ph-text">数据库构建<br>可视化界面<br>质量审核</div>
+      </div>
+      <div class="srt-phase">
+        <div class="ph-num">P3</div>
+        <div class="ph-date">2026.10 — 01</div>
+        <div class="ph-text">ML模型训练<br>性能预测<br>反向设计验证</div>
+      </div>
+      <div class="srt-phase">
+        <div class="ph-num">P4</div>
+        <div class="ph-date">2027.02 — 04</div>
+        <div class="ph-text">论文撰写<br>软著申请<br>结题报告</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 个人介绍 + 匹配度（大改版） ===== -->
+  <div style="margin-top:36px;">
+    <!-- 个人简介卡片 -->
+    <div style="background:var(--card);border-radius:16px;padding:28px 32px;box-shadow:var(--shadow-lg);border:2px solid var(--blue);margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:700;color:var(--blue);margin-bottom:16px;">👤 关于我 · 纪文龙</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <div class="info-row"><span class="label">院系</span><span class="value">清华大学 行健书院 烽火4班</span></div>
+          <div class="info-row"><span class="label">年级</span><span class="value">2024级 本科在读</span></div>
+          <div class="info-row"><span class="label">GitHub</span><span class="value"><a href="https://github.com/JavonLoong" target="_blank" style="color:var(--blue);text-decoration:none;">github.com/JavonLoong</a></span></div>
+        </div>
+        <div>
+          <div class="info-row"><span class="label">SRT 经历</span><span class="value">曹海山副教授课题组（已完成）</span></div>
+          <div class="info-row"><span class="label">技术栈</span><span class="value">Python · NLP · ML · Web · 数据库</span></div>
+          <div class="info-row"><span class="label">自我定位</span><span class="value">工程实现型，擅长数据 → 系统落地</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 核心：项目需求 vs 我的能力 逐项对照 -->
+    <div class="match" style="border-color:var(--green);">
+      <h3 style="color:var(--green);">🎯 项目需求 × 我的能力 · 逐项匹配</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">以下将 SRT 项目的 5 项核心技术需求与我的已有能力一一对照</p>
+
+      <!-- 匹配项1 -->
+      <div style="background:#f0faf5;border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--green);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--green);">① NLP 文献自动提取</span>
+          <span style="font-size:10px;background:var(--green);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;">高度匹配</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          <b>项目要求：</b>用 NLP 技术从学术论文中自动提取生物炭制备参数与性能数据<br>
+          <b>我的基础：</b>在曹海山老师 SRT 中已完成 CO₂ 吸附材料文献的<b>结构化数据采集</b>工作：使用 Python 编写脚本，通过 PyPDF2/pdfplumber 解析 PDF 论文，结合正则表达式与关键词匹配从表格和正文中批量抽取材料参数（如比表面积、孔径、吸附量等），并导出为结构化 Excel/CSV 数据
+        </div>
+      </div>
+
+      <!-- 匹配项2 -->
+      <div style="background:#f0faf5;border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--green);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--green);">② 机器学习建模</span>
+          <span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;">积极学习中</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          <b>项目要求：</b>构建随机森林 / 神经网络模型预测生物炭性能（R²≥0.85）<br>
+          <b>我的基础：</b>已学习 Python 数据分析全套工具链（NumPy/Pandas/Matplotlib），对 scikit-learn 的随机森林、回归模型有<b>基本了解</b>，正在系统学习机器学习课程。具备快速上手新框架的能力，有信心在项目进展中达成建模目标
+        </div>
+      </div>
+
+      <!-- 匹配项3 -->
+      <div style="background:#f0faf5;border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--green);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--green);">③ 数据库设计与构建</span>
+          <span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;">愿意深入</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          <b>项目要求：</b>构建包含 ≥2000 条记录的生物炭多维度数据库<br>
+          <b>我的基础：</b>在前期 SRT 数据采集过程中使用过 Excel 和 CSV 进行多维度材料数据的组织与管理，了解数据结构化的基本原则。目前正在自学 SQLite 与关系型数据库设计，<b>计划在项目 P1 阶段完成数据库 Schema 设计</b>，能够快速上手
+        </div>
+      </div>
+
+      <!-- 匹配项4 -->
+      <div style="background:#e8f4fd;border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--blue);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--blue);">④ Web 可视化查询界面</span>
+          <span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;">核心优势</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          <b>项目要求：</b>开发可视化查询界面供团队使用<br>
+          <b>我的基础：</b>具备完整的前后端开发能力（HTML/CSS/JS + Python Flask），已独立开发并部署过 <a href="https://github.com/JavonLoong/mooncake" target="_blank" style="color:var(--blue);">GitHub 开源项目</a>。<b>本调研报告页面即为个人独立制作</b>，可直观体现 Web 工程化能力
+        </div>
+      </div>
+
+      <!-- 匹配项5 -->
+      <div style="background:#fef5e7;border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--orange);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--orange);">⑤ 领域理解与科研素养</span>
+          <span style="font-size:10px;background:var(--orange);color:#fff;padding:2px 8px;border-radius:10px;font-weight:600;">深度调研</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          <b>项目要求：</b>理解生物炭材料的制备-结构-性能关系<br>
+          <b>我的基础：</b>已重点精读周会老师课题组与生物炭相关的 <b>4 篇代表论文</b>（包括 Adv Materials 高被引综述、Nature Communications 等），深入理解水热碳化、热解等工艺与生物炭性能参数的映射关系。前期 SRT 中在曹海山老师指导下积累了对 CO₂ 吸附材料的文献综合分析能力
+        </div>
+      </div>
+    </div>
+
+    <!-- 我能为课题组做什么 -->
+    <div style="background:linear-gradient(135deg,#1a8a5c,#27ae60);color:#fff;border-radius:16px;padding:28px 32px;margin-top:20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-30%;right:-10%;width:250px;height:250px;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%);"></div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:14px;position:relative;">💡 我能为课题组提供什么</h3>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;position:relative;">
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">🔧 工程化落地能力</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);line-height:1.6;">将文献数据从"散落在论文中"到"可查询、可预测的数据库系统"，完成完整的产品化交付</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">📊 数据驱动的研究辅助</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);line-height:1.6;">通过 ML 模型为课题组的生物炭实验提供材料筛选建议，缩短"trial-and-error"周期</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">🌐 可交付的软件成果</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);line-height:1.6;">瞄准 SCI 论文 1 篇 + 软件著作权 1 项的目标，按四阶段时间线稳步推进</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">⏰ 充足的时间投入</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);line-height:1.6;">作为低年级本科生，课业压力可控，能够保证每周≥10小时的稳定科研投入</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ==================== 页脚 ==================== -->
+<div class="footer">
+  <div class="sig">纪文龙 · 清华大学 行健书院 烽火4班</div>
+  <p>本报告基于公开学术数据与文献调研整理 · 2026年3月26日</p>
+</div>
+
+</body>
+</html>

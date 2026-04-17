@@ -1,0 +1,802 @@
+[
+  {
+    "id": 10301,
+    "annotations": [
+      {
+        "id": 11301,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.925044465785692,
+              "y": 5.14,
+              "width": 68.16362922368239,
+              "height": 3.3032027276665734,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_cebb21e5d9",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.925044465785692,
+              "y": 5.14,
+              "width": 68.16362922368239,
+              "height": 3.3032027276665734,
+              "rotation": 0,
+              "text": [
+                "工业锅炉安全操作指南"
+              ]
+            },
+            "id": "ls_cebb21e5d9",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.717538851434565,
+              "y": 19.66,
+              "width": 69.8370259378973,
+              "height": 3.3365097384024938,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_2091cabb95",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.717538851434565,
+              "y": 19.66,
+              "width": 69.8370259378973,
+              "height": 3.3365097384024938,
+              "rotation": 0,
+              "text": [
+                "本指南适用于额定蒸发量10t/h~75t/h的燃气/燃油工业锅炉。操作人员必须持有国家质检总局颁发的《特种设备作业人员证》（锅炉G1等级）方可独立操作。"
+              ]
+            },
+            "id": "ls_2091cabb95",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 25.6878968758705,
+              "y": 35.16,
+              "width": 49.933112830591234,
+              "height": 5.683343265652923,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_bd1f0196d7",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 25.6878968758705,
+              "y": 35.16,
+              "width": 49.933112830591234,
+              "height": 5.683343265652923,
+              "rotation": 0,
+              "text": [
+                "锅炉房应保持良好通风，燃气检测报警装置应处于正常工作状态。锅炉房内严禁堆放易燃物品，消防器材应配置齐全并定期检查。"
+              ]
+            },
+            "id": "ls_bd1f0196d7",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.67243610640943,
+              "y": 46.18,
+              "width": 69.91141726406244,
+              "height": 4.7640248832134775,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_ef062c0de3",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.67243610640943,
+              "y": 46.18,
+              "width": 69.91141726406244,
+              "height": 4.7640248832134775,
+              "rotation": 0,
+              "text": [
+                "安全管理制度：\n1. 交接班检查制度\n2. 巡回检查制度（每小时一次）\n3. 水质化验制度（每班两次）\n4. 紧急停炉处置预案\n5. 定期检验与维修档案"
+              ]
+            },
+            "id": "ls_ef062c0de3",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc103_p1.png",
+      "doc_id": 103,
+      "page_num": 1,
+      "total_pages": 4,
+      "filename": "工业锅炉安全操作指南.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10302,
+    "annotations": [
+      {
+        "id": 11302,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.52435979951533,
+              "y": 5.78,
+              "width": 47.615461581965725,
+              "height": 6.0612765392007475,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_52483c996c",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.52435979951533,
+              "y": 5.78,
+              "width": 47.615461581965725,
+              "height": 6.0612765392007475,
+              "rotation": 0,
+              "text": [
+                "水处理与水质管理"
+              ]
+            },
+            "id": "ls_52483c996c",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.83179333052864,
+              "y": 16.15,
+              "width": 44.52733896697055,
+              "height": 3.068439946956873,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_c42830ef48",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.83179333052864,
+              "y": 16.15,
+              "width": 44.52733896697055,
+              "height": 3.068439946956873,
+              "rotation": 0,
+              "text": [
+                "给水水质直接影响锅炉安全运行寿命。未经处理的原水含有的钙镁离子在高温下会形成水垢，导致传热恶化、管壁过热甚至爆管事故。"
+              ]
+            },
+            "id": "ls_c42830ef48",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.815078847151227,
+              "y": 24.82,
+              "width": 62.727029442865366,
+              "height": 7.016262930081564,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_0f442e4a6b",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.815078847151227,
+              "y": 24.82,
+              "width": 62.727029442865366,
+              "height": 7.016262930081564,
+              "rotation": 0,
+              "text": [
+                "给水应经过软化或除盐处理，确保硬度≤0.03mmol/L，溶解氧≤15μg/L。炉内加药处理可采用磷酸三钠法维持pH值在10~12范围内，防止碱腐蚀。"
+              ]
+            },
+            "id": "ls_0f442e4a6b",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 25.464626200567352,
+              "y": 37.62,
+              "width": 68.33290306672376,
+              "height": 3.6616536236385135,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_7557c273da",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 25.464626200567352,
+              "y": 37.62,
+              "width": 68.33290306672376,
+              "height": 3.6616536236385135,
+              "rotation": 0,
+              "text": [
+                "定期排污是保持水质的重要手段。连续排污阀应根据含盐量自动调节开度，定期排污（底部排污）应在低负荷时进行，每次排污时间不超过30秒。"
+              ]
+            },
+            "id": "ls_7557c273da",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc103_p2.png",
+      "doc_id": 103,
+      "page_num": 2,
+      "total_pages": 4,
+      "filename": "工业锅炉安全操作指南.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10303,
+    "annotations": [
+      {
+        "id": 11303,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.723657051299654,
+              "y": 6.78,
+              "width": 68.28983080728827,
+              "height": 3.667427095534843,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_940c651dea",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.723657051299654,
+              "y": 6.78,
+              "width": 68.28983080728827,
+              "height": 3.667427095534843,
+              "rotation": 0,
+              "text": [
+                "燃烧调整与节能"
+              ]
+            },
+            "id": "ls_940c651dea",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.98347449055747,
+              "y": 18.52,
+              "width": 53.165201442751986,
+              "height": 6.3388064742011725,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_993839bab3",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.98347449055747,
+              "y": 18.52,
+              "width": 53.165201442751986,
+              "height": 6.3388064742011725,
+              "rotation": 0,
+              "text": [
+                "合理的过量空气系数对锅炉效率至关重要。燃天然气锅炉推荐过量空气系数为1.05~1.15，燃油锅炉为1.10~1.20。烟气含氧量应控制在2~4%。"
+              ]
+            },
+            "id": "ls_993839bab3",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.685456717538045,
+              "y": 35.77,
+              "width": 60.97407634692564,
+              "height": 2.937831056171956,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_bb649168a9",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.685456717538045,
+              "y": 35.77,
+              "width": 60.97407634692564,
+              "height": 2.937831056171956,
+              "rotation": 0,
+              "text": [
+                "采用变频调速风机和氧量修正控制可有效提高燃烧效率。低氮燃烧器(FGR)配合烟气再循环可将NOx排放降至30mg/Nm³以下。"
+              ]
+            },
+            "id": "ls_bb649168a9",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 13.89751573541966,
+              "y": 50.65,
+              "width": 56.15779144269214,
+              "height": 3.593095250450686,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_765f3c2ecb",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 13.89751573541966,
+              "y": 50.65,
+              "width": 56.15779144269214,
+              "height": 3.593095250450686,
+              "rotation": 0,
+              "text": [
+                "锅炉效率影响因素：\n- 排烟温度每升高15°C，效率下降约1%\n- 过量空气每增加10%，效率下降约0.5%\n- 给水温度每提高6°C，节能约1%\n- 散热损失占额定功率的1~3%"
+              ]
+            },
+            "id": "ls_765f3c2ecb",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc103_p3.png",
+      "doc_id": 103,
+      "page_num": 3,
+      "total_pages": 4,
+      "filename": "工业锅炉安全操作指南.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10304,
+    "annotations": [
+      {
+        "id": 11304,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.383983524655847,
+              "y": 8.45,
+              "width": 44.184118638438775,
+              "height": 5.106367457865039,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_e097f090ef",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.383983524655847,
+              "y": 8.45,
+              "width": 44.184118638438775,
+              "height": 5.106367457865039,
+              "rotation": 0,
+              "text": [
+                "常见故障与应急处理"
+              ]
+            },
+            "id": "ls_e097f090ef",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.651161662913722,
+              "y": 21.18,
+              "width": 45.218222013203224,
+              "height": 3.1246287040198832,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_8654a71d91",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.651161662913722,
+              "y": 21.18,
+              "width": 45.218222013203224,
+              "height": 3.1246287040198832,
+              "rotation": 0,
+              "text": [
+                "锅炉缺水是最危险的事故之一。轻微缺水（水位低于最低可见水位但高于水冷壁上集箱）时，应紧急关闭燃烧器并逐步给水恢复。严重缺水时严禁向锅炉注水，必须紧急停炉自然冷却。"
+              ]
+            },
+            "id": "ls_8654a71d91",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 26.035259133344077,
+              "y": 31.67,
+              "width": 44.488401143955635,
+              "height": 6.9583440210549865,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_28d110aea0",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 26.035259133344077,
+              "y": 31.67,
+              "width": 44.488401143955635,
+              "height": 6.9583440210549865,
+              "rotation": 0,
+              "text": [
+                "满水事故的处理：关小给水阀，开大连续排污阀，同时加强底部排污。如水位在玻璃管中已不可见，应立即停炉检查蒸汽管道和用汽设备是否进水。"
+              ]
+            },
+            "id": "ls_28d110aea0",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.755128364203856,
+              "y": 40.19,
+              "width": 45.2931402133566,
+              "height": 3.4762255172553673,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_546aec3e01",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.755128364203856,
+              "y": 40.19,
+              "width": 45.2931402133566,
+              "height": 3.4762255172553673,
+              "rotation": 0,
+              "text": [
+                "炉膛爆燃（爆燧）多因未完成吹扫就点火引起。处理原则：立即切断燃料，停止送风但保持引风，检查炉膛及尾部烟道有无变形损坏，确认安全后重新按规程启动。"
+              ]
+            },
+            "id": "ls_546aec3e01",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc103_p4.png",
+      "doc_id": 103,
+      "page_num": 4,
+      "total_pages": 4,
+      "filename": "工业锅炉安全操作指南.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

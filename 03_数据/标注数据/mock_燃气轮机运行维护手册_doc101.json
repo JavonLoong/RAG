@@ -1,0 +1,1162 @@
+[
+  {
+    "id": 10101,
+    "annotations": [
+      {
+        "id": 11101,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.92405760701222,
+              "y": 9.0,
+              "width": 45.45457350489999,
+              "height": 6.553288245658161,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_e75d396834",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.92405760701222,
+              "y": 9.0,
+              "width": 45.45457350489999,
+              "height": 6.553288245658161,
+              "rotation": 0,
+              "text": [
+                "燃气轮机运行维护手册"
+              ]
+            },
+            "id": "ls_e75d396834",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.402962039446102,
+              "y": 25.49,
+              "width": 68.35811480294132,
+              "height": 7.380453099912737,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_9dbe4a7fe6",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.402962039446102,
+              "y": 25.49,
+              "width": 68.35811480294132,
+              "height": 7.380453099912737,
+              "rotation": 0,
+              "text": [
+                "第一章 概述"
+              ]
+            },
+            "id": "ls_9dbe4a7fe6",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 12.688919760982763,
+              "y": 34.82,
+              "width": 59.59382782823529,
+              "height": 4.731048056940354,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_5d15249cee",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 12.688919760982763,
+              "y": 34.82,
+              "width": 59.59382782823529,
+              "height": 4.731048056940354,
+              "rotation": 0,
+              "text": [
+                "燃气轮机是一种以连续流动的气体为介质、把燃料的化学能转变为热能、再转变为机械功的旋转式动力装置。广泛应用于发电、舰船推进以及工业驱动等领域。"
+              ]
+            },
+            "id": "ls_5d15249cee",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.239658019818165,
+              "y": 43.13,
+              "width": 58.29996247382154,
+              "height": 6.337575921902539,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_9776914faf",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.239658019818165,
+              "y": 43.13,
+              "width": 58.29996247382154,
+              "height": 6.337575921902539,
+              "rotation": 0,
+              "text": [
+                "本手册适用于LM2500系列燃气轮机的日常运行、维护保养及故障排除操作。操作人员应在充分阅读本手册后方可进行相关作业。"
+              ]
+            },
+            "id": "ls_9776914faf",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p1.png",
+      "doc_id": 101,
+      "page_num": 1,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10102,
+    "annotations": [
+      {
+        "id": 11102,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.51818435760469,
+              "y": 9.24,
+              "width": 49.022429635837085,
+              "height": 2.560285892869251,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_dccfd3ba9d",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.51818435760469,
+              "y": 9.24,
+              "width": 49.022429635837085,
+              "height": 2.560285892869251,
+              "rotation": 0,
+              "text": [
+                "第二章 系统组成"
+              ]
+            },
+            "id": "ls_dccfd3ba9d",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.393194367756543,
+              "y": 24.34,
+              "width": 53.87765984896899,
+              "height": 7.885552673215857,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_db1498d461",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.393194367756543,
+              "y": 24.34,
+              "width": 53.87765984896899,
+              "height": 7.885552673215857,
+              "rotation": 0,
+              "text": [
+                "燃气轮机主要由压气机、燃烧室和涡轮三大核心部件组成。压气机负责将空气压缩至设计压比，燃烧室将燃料与高压空气混合燃烧，涡轮则从高温高压燃气中提取功。"
+              ]
+            },
+            "id": "ls_db1498d461",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.445861830427646,
+              "y": 39.31,
+              "width": 52.04115728257252,
+              "height": 3.8688019252468586,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_83463c7160",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.445861830427646,
+              "y": 39.31,
+              "width": 52.04115728257252,
+              "height": 3.8688019252468586,
+              "rotation": 0,
+              "text": [
+                "核心部件清单：\n1. 轴流式压气机（16级）\n2. 环形燃烧室\n3. 两级高压涡轮\n4. 五级低压动力涡轮"
+              ]
+            },
+            "id": "ls_83463c7160",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.82196132419842,
+              "y": 50.34,
+              "width": 43.938967184046206,
+              "height": 3.2396751955021044,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_b3bb7b3876",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.82196132419842,
+              "y": 50.34,
+              "width": 43.938967184046206,
+              "height": 3.2396751955021044,
+              "rotation": 0,
+              "text": [
+                "辅助系统包括燃油供给系统、滑油系统、启动系统、控制与保护系统等。各系统协同工作确保燃气轮机在额定工况下安全稳定运行。"
+              ]
+            },
+            "id": "ls_b3bb7b3876",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p2.png",
+      "doc_id": 101,
+      "page_num": 2,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10103,
+    "annotations": [
+      {
+        "id": 11103,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 22.05519732526692,
+              "y": 6.4,
+              "width": 56.605670713943695,
+              "height": 5.477916636482215,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_c4aea616c5",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 22.05519732526692,
+              "y": 6.4,
+              "width": 56.605670713943695,
+              "height": 5.477916636482215,
+              "rotation": 0,
+              "text": [
+                "第三章 运行操作规程"
+              ]
+            },
+            "id": "ls_c4aea616c5",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.032960994369592,
+              "y": 15.9,
+              "width": 53.733183557624194,
+              "height": 6.297749744855336,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_fea1c6f169",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.032960994369592,
+              "y": 15.9,
+              "width": 53.733183557624194,
+              "height": 6.297749744855336,
+              "rotation": 0,
+              "text": [
+                "燃气轮机启动前应完成以下检查：确认燃油压力在0.8~1.2MPa范围内，滑油温度不低于35°C，冷却水系统正常供水，排气温度传感器工作正常。"
+              ]
+            },
+            "id": "ls_fea1c6f169",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 11.03248065803836,
+              "y": 31.99,
+              "width": 68.8079321652812,
+              "height": 3.9412931802611344,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_be8de40c26",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 11.03248065803836,
+              "y": 31.99,
+              "width": 68.8079321652812,
+              "height": 3.9412931802611344,
+              "rotation": 0,
+              "text": [
+                "启动步骤：\n1. 接通控制电源，确认仪表自检通过\n2. 启动滑油泵，建立油压\n3. 盘车检查，确认转子无卡涩\n4. 启动启机/发电机，驱动压气机至点火转速\n5. 开启燃油阀，点火器点火\n6. 确认火焰检测器显示着火\n7. 加速至怠速转速，稳定运行5分钟"
+              ]
+            },
+            "id": "ls_be8de40c26",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.942770704746074,
+              "y": 45.41,
+              "width": 52.034186492458474,
+              "height": 4.015324092320526,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_6154028129",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 29.942770704746074,
+              "y": 45.41,
+              "width": 52.034186492458474,
+              "height": 4.015324092320526,
+              "rotation": 0,
+              "text": [
+                "正常停机应按负荷递减程序执行，严禁在满负荷状态下直接切断燃油。紧急停机仅在出现超温、超速、失火或振动超限等危急情况下使用。"
+              ]
+            },
+            "id": "ls_6154028129",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p3.png",
+      "doc_id": 101,
+      "page_num": 3,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10104,
+    "annotations": [
+      {
+        "id": 11104,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.356921061560936,
+              "y": 7.18,
+              "width": 47.853755318993926,
+              "height": 7.467538591005105,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_f68d6fc383",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.356921061560936,
+              "y": 7.18,
+              "width": 47.853755318993926,
+              "height": 7.467538591005105,
+              "rotation": 0,
+              "text": [
+                "第四章 定期维护保养"
+              ]
+            },
+            "id": "ls_f68d6fc383",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.123601899006893,
+              "y": 21.93,
+              "width": 64.52557720714793,
+              "height": 4.94866123138242,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_f3f8925898",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.123601899006893,
+              "y": 21.93,
+              "width": 64.52557720714793,
+              "height": 4.94866123138242,
+              "rotation": 0,
+              "text": [
+                "A级保养每运行250小时执行一次，主要内容包括：检查进气滤清器压差、清洁压气机前三级叶片积垢、检查所有温度和压力传感器读数、记录振动数据趋势。"
+              ]
+            },
+            "id": "ls_f3f8925898",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.487181855089958,
+              "y": 30.76,
+              "width": 62.67314406155513,
+              "height": 4.376739154598861,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_7971be6e7d",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.487181855089958,
+              "y": 30.76,
+              "width": 62.67314406155513,
+              "height": 4.376739154598861,
+              "rotation": 0,
+              "text": [
+                "B级保养每运行2000小时执行一次。在A级保养基础上增加：燃烧室内窥镜检查、热通道部件寿命评估、滑油取样化验分析、控制系统软件版本核查与更新。"
+              ]
+            },
+            "id": "ls_7971be6e7d",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 22.56099233501297,
+              "y": 38.85,
+              "width": 63.3348023590796,
+              "height": 6.4458234859100365,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_fdaadce3a8",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 22.56099233501297,
+              "y": 38.85,
+              "width": 63.3348023590796,
+              "height": 6.4458234859100365,
+              "rotation": 0,
+              "text": [
+                "关键监测参数阈值：\n- 排气温度散布度：≤25°C\n- 轴承振动：≤25.4mm/s\n- 滑油金属颗粒：≤5ppm\n- 压气机效率衰减：≤3%"
+              ]
+            },
+            "id": "ls_fdaadce3a8",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p4.png",
+      "doc_id": 101,
+      "page_num": 4,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10105,
+    "annotations": [
+      {
+        "id": 11105,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.442194044362074,
+              "y": 9.35,
+              "width": 62.75051661037376,
+              "height": 5.800454916026915,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_cffc831d36",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.442194044362074,
+              "y": 9.35,
+              "width": 62.75051661037376,
+              "height": 5.800454916026915,
+              "rotation": 0,
+              "text": [
+                "第五章 故障诊断与排除"
+              ]
+            },
+            "id": "ls_cffc831d36",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 13.18011335158469,
+              "y": 22.15,
+              "width": 62.417599517974736,
+              "height": 6.480451258319384,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_4d8f367581",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 13.18011335158469,
+              "y": 22.15,
+              "width": 62.417599517974736,
+              "height": 6.480451258319384,
+              "rotation": 0,
+              "text": [
+                "故障诊断应遵循\"症状-机理-定位-处置\"四步法。常见故障模式包括：压气机喘振、燃烧室热点、涡轮叶片裂纹、轴承磨损和控制系统失灵。"
+              ]
+            },
+            "id": "ls_4d8f367581",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.86375526091245,
+              "y": 37.66,
+              "width": 54.37388756607354,
+              "height": 2.574179380816944,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_e899b91bc3",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.86375526091245,
+              "y": 37.66,
+              "width": 54.37388756607354,
+              "height": 2.574179380816944,
+              "rotation": 0,
+              "text": [
+                "压气机喘振的典型症状为：运行中出现周期性\"砰砰\"声响，排气温度急剧波动，压气机出口压力大幅下降。处置方法：立即降低负荷至喘振线以下，检查进气系统是否有异物堵塞。"
+              ]
+            },
+            "id": "ls_e899b91bc3",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.1034847387508,
+              "y": 47.12,
+              "width": 67.69560644054337,
+              "height": 5.5326733282065845,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_56cbdfff86",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 21.1034847387508,
+              "y": 47.12,
+              "width": 67.69560644054337,
+              "height": 5.5326733282065845,
+              "rotation": 0,
+              "text": [
+                "涡轮叶片蠕变裂纹的检测依赖定期内窥镜检查和硼酸荧光渗透探伤。当裂纹长度超过5mm或叶片伸长量超过设计余量的50%时，必须更换叶片。"
+              ]
+            },
+            "id": "ls_56cbdfff86",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p5.png",
+      "doc_id": 101,
+      "page_num": 5,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 5,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10106,
+    "annotations": [
+      {
+        "id": 11106,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.04395367665288,
+              "y": 7.26,
+              "width": 64.56798908181858,
+              "height": 3.4289985607107893,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_69134ee117",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.04395367665288,
+              "y": 7.26,
+              "width": 64.56798908181858,
+              "height": 3.4289985607107893,
+              "rotation": 0,
+              "text": [
+                "第六章 备件管理与技术资料"
+              ]
+            },
+            "id": "ls_69134ee117",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.809996850614606,
+              "y": 21.12,
+              "width": 60.978702753045724,
+              "height": 3.7699896605812953,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_f5722a0fe0",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.809996850614606,
+              "y": 21.12,
+              "width": 60.978702753045724,
+              "height": 3.7699896605812953,
+              "rotation": 0,
+              "text": [
+                "建议按照设备运行时间和关键部件寿命周期，建立三级备件储备体系。一级备件（消耗件）如O型密封圈、滤芯等应保持充足库存；二级备件（轮换件）如燃烧室筒体、喷嘴组件应有至少一套在库。"
+              ]
+            },
+            "id": "ls_f5722a0fe0",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.075167944699395,
+              "y": 38.82,
+              "width": 46.58850264491993,
+              "height": 4.9215497434572795,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_c28411ecea",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 24.075167944699395,
+              "y": 38.82,
+              "width": 46.58850264491993,
+              "height": 4.9215497434572795,
+              "rotation": 0,
+              "text": [
+                "关键备件清单：\n- 高压涡轮第一级叶片组\n- 燃烧室过渡段\n- 主燃油喷嘴（24支/套）\n- 轴承组件（前/后/动力涡轮）\n- 数字控制单元(DCU)备用模块"
+              ]
+            },
+            "id": "ls_c28411ecea",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 6
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc101_p6.png",
+      "doc_id": 101,
+      "page_num": 6,
+      "total_pages": 6,
+      "filename": "燃气轮机运行维护手册.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 6,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

@@ -1,0 +1,11 @@
+chromadb==0.5.3
+langchain==0.3.7
+langchain-chroma==0.1.4
+sentence-transformers==3.2.1
+transformers==4.46.3
+torch==2.5.1
+python-docx==1.1.2
+orjson==3.10.11
+tqdm==4.67.1
+pydantic==2.9.2
+numpy==1.26.4

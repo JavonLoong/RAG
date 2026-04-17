@@ -1,0 +1,335 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper,landscape]{article}
+
+% --- 中文支持 ---
+\usepackage[UTF8,heading=true]{ctex}
+\setCJKmainfont{SimSun}[BoldFont=SimHei,ItalicFont=KaiTi]
+\setCJKsansfont{SimHei}
+\setCJKmonofont{FangSong}
+
+% --- 页面布局 ---
+\usepackage[top=12mm,bottom=12mm,left=12mm,right=12mm]{geometry}
+\pagestyle{empty}
+
+% --- 颜色系统 ---
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\definecolor{primary}{HTML}{1565C0}
+\definecolor{primaryLight}{HTML}{42A5F5}
+\definecolor{primaryDark}{HTML}{0D47A1}
+\definecolor{accent}{HTML}{FF6F00}
+\definecolor{accentLight}{HTML}{FFA726}
+\definecolor{success}{HTML}{2E7D32}
+\definecolor{successLight}{HTML}{66BB6A}
+\definecolor{danger}{HTML}{C62828}
+\definecolor{dangerLight}{HTML}{EF5350}
+\definecolor{purple}{HTML}{6A1B9A}
+\definecolor{purpleLight}{HTML}{AB47BC}
+\definecolor{teal}{HTML}{00695C}
+\definecolor{tealLight}{HTML}{26A69A}
+\definecolor{bgPage}{HTML}{F5F7FA}
+\definecolor{bgCard}{HTML}{FFFFFF}
+\definecolor{gray80}{HTML}{424242}
+\definecolor{gray60}{HTML}{757575}
+\definecolor{gray40}{HTML}{BDBDBD}
+\definecolor{gray20}{HTML}{E0E0E0}
+
+% --- TikZ ---
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shadows.blur,calc,shapes.geometric,
+  fit,backgrounds,decorations.pathreplacing,patterns,fadings}
+
+% --- 其他包 ---
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{anyfontsize}
+\usepackage{hyperref}
+\hypersetup{colorlinks=false}
+
+% --- 全局样式 ---
+\tikzset{
+  card/.style={
+    rectangle, rounded corners=6pt, draw=gray20, line width=0.4pt, fill=bgCard,
+    inner sep=8pt, align=center,
+    blur shadow={shadow blur steps=6,shadow xshift=0.6pt,shadow yshift=-0.8pt,
+      shadow blur radius=2pt,shadow opacity=12}
+  },
+  iconCircle/.style={
+    circle, minimum size=14mm, fill=#1, text=white,
+    font=\Large, inner sep=0pt
+  },
+  iconCircle/.default=primary,
+  bigIconCircle/.style={
+    circle, minimum size=18mm, fill=#1, text=white,
+    font=\LARGE, inner sep=0pt
+  },
+  bigIconCircle/.default=primary,
+  phase/.style={
+    rectangle, rounded corners=4pt, minimum width=145mm, minimum height=16mm,
+    fill=#1, text=white, font=\sffamily\bfseries\normalsize,
+    inner xsep=10pt, align=left,
+    blur shadow={shadow blur steps=4,shadow xshift=0.4pt,shadow yshift=-0.6pt,
+      shadow blur radius=1.5pt,shadow opacity=10}
+  },
+  phase/.default=primary,
+  badge/.style={
+    rectangle, rounded corners=2pt, minimum height=6mm,
+    fill=#1, text=white, font=\sffamily\bfseries\tiny,
+    inner xsep=5pt, inner ysep=1pt
+  },
+  badge/.default=primary,
+  statbox/.style={
+    rectangle, rounded corners=6pt, draw=gray20, fill=bgCard, line width=0.4pt,
+    minimum width=55mm, minimum height=30mm, align=center,
+    blur shadow={shadow blur steps=5,shadow xshift=0.4pt,shadow yshift=-0.6pt,
+      shadow blur radius=1.5pt,shadow opacity=10}
+  },
+}
+
+\newcommand{\pagemark}[1]{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=south east,font=\sffamily\tiny\color{gray40}]
+      at ([xshift=-8mm,yshift=8mm]current page.south east) {#1};
+  \end{tikzpicture}%
+}
+
+\begin{document}
+
+% ========================================
+% PAGE 1: 封面
+% ========================================
+\begin{tikzpicture}[remember picture,overlay]
+  % 渐变背景
+  \shade[left color=primaryDark,right color=primaryLight]
+    (current page.south west) rectangle (current page.north east);
+  % 装饰圆
+  \fill[white,opacity=0.04] ([xshift=5cm,yshift=-3cm]current page.north east) circle(10cm);
+  \fill[white,opacity=0.03] ([xshift=-6cm,yshift=2cm]current page.south west) circle(8cm);
+
+  % 顶部标签
+  \node[rectangle,rounded corners=3pt,inner sep=5pt] at ([yshift=5cm]current page.center) {
+    \color{white}\sffamily\small\faDatabase\quad plant-graph-rag \; / \; 动力装备知识图谱RAG系统
+  };
+
+  % 主标题
+  \node[text width=20cm,align=center] at ([yshift=1.8cm]current page.center) {
+    {\color{white}\sffamily\fontsize{42}{50}\selectfont\bfseries 第一阶段进展汇报}\\[6pt]
+    {\color{white}\sffamily\fontsize{22}{28}\selectfont 向量化存储 Pipeline 全流程跑通}
+  };
+
+  % 分割线
+  \draw[white,opacity=0.4,line width=0.8pt]
+    ([xshift=-7cm,yshift=-0.5cm]current page.center)--([xshift=7cm,yshift=-0.5cm]current page.center);
+
+  % 元信息
+  \node[text width=14cm,align=center] at ([yshift=-1.8cm]current page.center) {
+    {\color{white}\sffamily\normalsize \faUser\; 纪文龙 \qquad \faCalendar\; 2026-04-10 \qquad \faCodeBranch\; jiwenlong/vectorize-pipeline}
+  };
+
+  % 底部四个数据卡片 — 用scope+opacity分离填充和文字
+  % 卡片1: 246
+  \begin{scope}[shift={([xshift=-9cm,yshift=-4.5cm]current page.center)}]
+    \fill[white,opacity=0.15,rounded corners=6pt] (-26mm,-11mm) rectangle (26mm,11mm);
+    \node[align=center] at (0,0) {
+      {\color{white}\sffamily\bfseries\fontsize{28}{34}\selectfont 246}\\[2pt]
+      {\color{white}\sffamily\small 标注文本块}
+    };
+  \end{scope}
+  % 卡片2: 21
+  \begin{scope}[shift={([xshift=-3cm,yshift=-4.5cm]current page.center)}]
+    \fill[white,opacity=0.15,rounded corners=6pt] (-26mm,-11mm) rectangle (26mm,11mm);
+    \node[align=center] at (0,0) {
+      {\color{white}\sffamily\bfseries\fontsize{28}{34}\selectfont 21}\\[2pt]
+      {\color{white}\sffamily\small 向量化Chunk}
+    };
+  \end{scope}
+  % 卡片3: 1024
+  \begin{scope}[shift={([xshift=3cm,yshift=-4.5cm]current page.center)}]
+    \fill[white,opacity=0.15,rounded corners=6pt] (-26mm,-11mm) rectangle (26mm,11mm);
+    \node[align=center] at (0,0) {
+      {\color{white}\sffamily\bfseries\fontsize{28}{34}\selectfont 1024}\\[2pt]
+      {\color{white}\sffamily\small 向量维度}
+    };
+  \end{scope}
+  % 卡片4: 5/5
+  \begin{scope}[shift={([xshift=9cm,yshift=-4.5cm]current page.center)}]
+    \fill[white,opacity=0.15,rounded corners=6pt] (-26mm,-11mm) rectangle (26mm,11mm);
+    \node[align=center] at (0,0) {
+      {\color{white}\sffamily\bfseries\fontsize{28}{34}\selectfont 5/5}\\[2pt]
+      {\color{white}\sffamily\small 检索测试通过}
+    };
+  \end{scope}
+\end{tikzpicture}
+\pagemark{1 / 4}
+
+% ========================================
+% PAGE 2: Pipeline 流程图
+% ========================================
+\clearpage
+\begin{tikzpicture}[remember picture,overlay]
+  % 页眉
+  \fill[primary] (current page.north west) rectangle ([yshift=-2.2cm]current page.north east);
+  \node[anchor=west,font=\sffamily\LARGE\bfseries\color{white}]
+    at ([xshift=2cm,yshift=-1.1cm]current page.north west) {\faCogs\; Pipeline 全流程};
+
+  % 浅灰背景
+  \fill[bgPage] ([yshift=-2.2cm]current page.north west) rectangle (current page.south east);
+
+  % 流程图：4个阶段
+  \node[card,minimum width=52mm,minimum height=65mm] (s1) at ([xshift=-9.5cm,yshift=1cm]current page.center) {};
+  \node[bigIconCircle=primary] at ([yshift=12mm]s1.center) {\faFileCode};
+  \node[font=\sffamily\bfseries\large\color{gray80}] at ([yshift=-4mm]s1.center) {Step 1};
+  \node[font=\sffamily\normalsize\color{primary}] at ([yshift=-12mm]s1.center) {解析JSON};
+  \node[font=\sffamily\small\color{gray60},text width=45mm,align=center] at ([yshift=-22mm]s1.center) {Label Studio导出\\246个标注块};
+
+  \node[card,minimum width=52mm,minimum height=65mm] (s2) at ([xshift=-3.2cm,yshift=1cm]current page.center) {};
+  \node[bigIconCircle=accent] at ([yshift=12mm]s2.center) {\faCut};
+  \node[font=\sffamily\bfseries\large\color{gray80}] at ([yshift=-4mm]s2.center) {Step 2};
+  \node[font=\sffamily\normalsize\color{accent}] at ([yshift=-12mm]s2.center) {文本分块};
+  \node[font=\sffamily\small\color{gray60},text width=45mm,align=center] at ([yshift=-22mm]s2.center) {500字符/50重叠\\Title触发新chunk};
+
+  \node[card,minimum width=52mm,minimum height=65mm] (s3) at ([xshift=3.2cm,yshift=1cm]current page.center) {};
+  \node[bigIconCircle=success] at ([yshift=12mm]s3.center) {\faProjectDiagram};
+  \node[font=\sffamily\bfseries\large\color{gray80}] at ([yshift=-4mm]s3.center) {Step 3};
+  \node[font=\sffamily\normalsize\color{success}] at ([yshift=-12mm]s3.center) {BGE-m3向量化};
+  \node[font=\sffamily\small\color{gray60},text width=45mm,align=center] at ([yshift=-22mm]s3.center) {1024维向量\\余弦相似度};
+
+  \node[card,minimum width=52mm,minimum height=65mm] (s4) at ([xshift=9.5cm,yshift=1cm]current page.center) {};
+  \node[bigIconCircle=purple] at ([yshift=12mm]s4.center) {\faDatabase};
+  \node[font=\sffamily\bfseries\large\color{gray80}] at ([yshift=-4mm]s4.center) {Step 4};
+  \node[font=\sffamily\normalsize\color{purple}] at ([yshift=-12mm]s4.center) {Chroma存储};
+  \node[font=\sffamily\small\color{gray60},text width=45mm,align=center] at ([yshift=-22mm]s4.center) {持久化索引\\21个chunk入库};
+
+  % 箭头连接
+  \draw[-{Stealth[length=5pt]},primary,line width=2pt] (s1.east) -- (s2.west);
+  \draw[-{Stealth[length=5pt]},accent,line width=2pt] (s2.east) -- (s3.west);
+  \draw[-{Stealth[length=5pt]},success,line width=2pt] (s3.east) -- (s4.west);
+
+  % 底部任务完成状态
+  \node[rectangle,rounded corners=6pt,fill=success!10,draw=success!40,line width=0.6pt,
+    minimum width=250mm,minimum height=18mm,align=center]
+    at ([yshift=-5.2cm]current page.center) {
+    {\sffamily\bfseries\large\color{success} \faCheckCircle\; 全部4个步骤已完成}
+    \qquad
+    {\sffamily\normalsize\color{gray60} 详见 运行结果.txt}
+  };
+\end{tikzpicture}
+\pagemark{2 / 4}
+
+% ========================================
+% PAGE 3: 数据质量问题
+% ========================================
+\clearpage
+\begin{tikzpicture}[remember picture,overlay]
+  % 页眉
+  \fill[accent] (current page.north west) rectangle ([yshift=-2.2cm]current page.north east);
+  \node[anchor=west,font=\sffamily\LARGE\bfseries\color{white}]
+    at ([xshift=2cm,yshift=-1.1cm]current page.north west) {\faExclamationTriangle\; 数据质量分析};
+
+  \fill[bgPage] ([yshift=-2.2cm]current page.north west) rectangle (current page.south east);
+
+  % 问题1 卡片
+  \node[card,minimum width=120mm,minimum height=70mm] (q1) at ([xshift=-5.5cm,yshift=0.5cm]current page.center) {};
+  \node[font=\sffamily\bfseries\Large\color{danger},anchor=north] at ([yshift=-4mm]q1.north) {\faTimesCircle\; 问题1：极短文本碎片};
+  \node[font=\sffamily\normalsize\color{gray80},text width=100mm,align=left,anchor=north] at ([yshift=-16mm]q1.north) {
+    OCR标注时bbox切割过细，\\
+    导致7个文本块不足5个字符：\\[4pt]
+    {\color{danger}\texttt{"程体系。"}\quad\texttt{"建方法"}\quad\texttt{"印证。"}}\\[4pt]
+    {\color{gray60}\small 占比2.8\%，影响检索匹配准确率}
+  };
+  \node[badge=danger,anchor=south] at ([yshift=4mm]q1.south) {根因：双栏PDF的bbox跨列切断};
+
+  % 问题2 卡片
+  \node[card,minimum width=120mm,minimum height=70mm] (q2) at ([xshift=5.5cm,yshift=0.5cm]current page.center) {};
+  \node[font=\sffamily\bfseries\Large\color{danger},anchor=north] at ([yshift=-4mm]q2.north) {\faTimesCircle\; 问题2：双栏文本交叉};
+  \node[font=\sffamily\normalsize\color{gray80},text width=100mm,align=left,anchor=north] at ([yshift=-16mm]q2.north) {
+    按纵坐标排序时，左右栏重叠\\
+    导致 chunk 内容不连贯：\\[4pt]
+    {\color{gray60}\small 左栏第3行 $\rightarrow$ 右栏第1行 $\rightarrow$ 左栏第4行}\\[4pt]
+    {\color{danger}\sffamily\bfseries 影响严重：LLM无法理解上下文}
+  };
+  \node[badge=danger,anchor=south] at ([yshift=4mm]q2.south) {根因：排序未区分x坐标（栏位）};
+
+  % 解决方案
+  \node[rectangle,rounded corners=6pt,fill=success!10,draw=success!40,line width=0.6pt,
+    minimum width=250mm,minimum height=22mm,align=center]
+    at ([yshift=-5cm]current page.center) {
+    {\sffamily\bfseries\large\color{success} \faLightbulb\; 改进方案}
+    \qquad
+    {\sffamily\normalsize\color{gray80}
+    1. 加入x坐标区分左右栏 \quad
+    2. 合并极短块到相邻段落 \quad
+    3. 反馈给郭老师优化标注}
+  };
+\end{tikzpicture}
+\pagemark{3 / 4}
+
+% ========================================
+% PAGE 4: 下一步计划
+% ========================================
+\clearpage
+\begin{tikzpicture}[remember picture,overlay]
+  % 页眉
+  \fill[teal] (current page.north west) rectangle ([yshift=-2.2cm]current page.north east);
+  \node[anchor=west,font=\sffamily\LARGE\bfseries\color{white}]
+    at ([xshift=2cm,yshift=-1.1cm]current page.north west) {\faRoad\; 下一步计划};
+
+  \fill[bgPage] ([yshift=-2.2cm]current page.north west) rectangle (current page.south east);
+
+  % 时间线
+  \begin{scope}[shift={([xshift=-5cm,yshift=3cm]current page.center)}]
+    \draw[gray20, line width=4pt] (0,0) -- (0, -8.5);
+
+    % 节点1: 本周
+    \node[circle, fill=success, minimum size=7mm, draw=bgPage, line width=2pt] (t1) at (0, 0) {};
+    \node[anchor=east, font=\sffamily\bfseries\large\color{success}] at ([xshift=-0.6cm]t1.west) {本周};
+    \node[anchor=west, rectangle, fill=white, draw=gray20, rounded corners=4pt,
+      text width=14cm, inner sep=6pt, line width=0.4pt,
+      blur shadow={shadow blur steps=4,shadow opacity=8}]
+      at ([xshift=1cm]t1.east) {
+      {\sffamily\bfseries\color{success} \faCheckCircle\; 已全部完成}\\[2mm]
+      {\sffamily\small\color{gray60}
+        \faCheck\; Pipeline跑通 \quad
+        \faCheck\; 数据质量分析 \quad
+        \faCheck\; 向量化存储 \quad
+        \faCheck\; 代码推送GitLab \quad
+        \faCheck\; 汇报材料
+      }
+    };
+
+    % 节点2: 2-4周
+    \node[circle, fill=primary, minimum size=7mm, draw=bgPage, line width=2pt] (t2) at (0, -3) {};
+    \node[anchor=east, font=\sffamily\bfseries\large\color{primary}] at ([xshift=-0.6cm]t2.west) {2-4周};
+    \node[anchor=west, rectangle, fill=white, draw=gray20, rounded corners=4pt,
+      text width=14cm, inner sep=6pt, line width=0.4pt,
+      blur shadow={shadow blur steps=4,shadow opacity=8}]
+      at ([xshift=1cm]t2.east) {
+      {\sffamily\bfseries\color{primary} \faArrowRight\; 中期任务}\\[2mm]
+      {\sffamily\small\color{gray80}
+        P0: 全量1000本手册跑Pipeline\\
+        P1: BM25关键词检索（混合检索）\\
+        P1: LangGraph问答流程搭建\\
+        P2: 接入智谱/千问API
+      }
+    };
+
+    % 节点3: 暑假前
+    \node[circle, fill=purple, minimum size=7mm, draw=bgPage, line width=2pt] (t3) at (0, -6.5) {};
+    \node[anchor=east, font=\sffamily\bfseries\large\color{purple}] at ([xshift=-0.6cm]t3.west) {暑假前};
+    \node[anchor=west, rectangle, fill=white, draw=gray20, rounded corners=4pt,
+      text width=14cm, inner sep=6pt, line width=0.4pt,
+      blur shadow={shadow blur steps=4,shadow opacity=8}]
+      at ([xshift=1cm]t3.east) {
+      {\sffamily\bfseries\color{purple} \faFlask\; 研究性任务（独立负责）}\\[2mm]
+      {\sffamily\small\color{gray80}
+        故障因果知识图谱构建（Graph RAG）\\
+        多步Agent推理框架（LangGraph）\\
+        中文QA评测数据集 + 对照实验\\
+        {\bfseries\color{purple} 目标：1篇SCI论文（6-7月）}
+      }
+    };
+  \end{scope}
+\end{tikzpicture}
+\pagemark{4 / 4}
+
+\end{document}

@@ -1,0 +1,45 @@
+\frametitle{端到端 RAG 问答}
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={rectangle, rounded corners=5pt, draw=#1, fill=#1!8,
+    minimum width=32mm, minimum height=15mm, align=center, font=\small},
+  arr/.style={-{Stealth[length=4pt]}, line width=1.2pt, #1},
+]
+  \node[box=mainblue] (q) at (0,0) {\faUser\; \textbf{用户提问}\\[2pt]{\scriptsize "知识体系如何构建？"}};
+  \node[box=badred!80] (r) at (4.5,0) {\faSearch\; \textbf{混合检索}\\[2pt]{\scriptsize Top-3 相关段落}};
+  \node[box=purp] (c) at (9,0) {\faLayerGroup\; \textbf{拼接上下文}\\[2pt]{\scriptsize 来源+页码+原文}};
+  \node[box=goodgreen] (a) at (13,0) {\faRobot\; \textbf{生成答案}\\[2pt]{\scriptsize 智谱/千问 API}};
+
+  \draw[arr=mainblue] (q) -- (r);
+  \draw[arr=badred] (r) -- (c);
+  \draw[arr=purp] (c) -- (a);
+
+  % 状态标注
+  \node[font=\scriptsize\bfseries\color{goodgreen}] at (2.25, -1.3) {\faCheckCircle\; 已完成};
+  \node[font=\scriptsize\bfseries\color{goodgreen}] at (6.75, -1.3) {\faCheckCircle\; 已完成};
+  \node[font=\scriptsize\bfseries\color{goodgreen}] at (11, -1.3) {\faCheckCircle\; 框架就绪};
+  \node[font=\scriptsize\bfseries\color{accentorg}] at (13, -1.3) {\faClock\; 待接入API};
+\end{tikzpicture}
+\end{center}
+
+\vspace{4mm}
+
+\begin{columns}[T]
+\column{0.55\textwidth}
+\begin{block}{当前能力}
+\begin{itemize}
+  \item 输入问题 $\to$ 检索Top-3段落
+  \item 自动标注来源页码和相关度
+  \item 展示原文片段
+\end{itemize}
+\end{block}
+
+\column{0.42\textwidth}
+\begin{block}{运行命令}
+{\ttfamily\scriptsize
+python 向量化存储.py \textbackslash{}\\
+~~--vectorize \textbackslash{}\\
+~~--ask "你的问题"
+}
+\end{block}
+\end{columns}
