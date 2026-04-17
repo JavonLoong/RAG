@@ -1,0 +1,21 @@
+INFO:     127.0.0.1:1819 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1831 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1832 - "GET /static/index.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1831 - "GET /static/index.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1832 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:1832 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1831 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1832 - "GET /api/uploads HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1944 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1992 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1992 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1996 - "GET /api/uploads HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3545 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3545 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3547 - "GET /api/uploads HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5019 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5019 - "GET /static/index.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5020 - "GET /static/index.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5020 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5019 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5020 - "GET /api/uploads HTTP/1.1" 200 OK

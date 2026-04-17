@@ -1,0 +1,311 @@
+% !TEX program = xelatex
+\documentclass[a4paper, 11pt]{ctexart}
+\usepackage[margin=2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{array}
+\usepackage{amsmath}
+
+\definecolor{tsinghua}{RGB}{102, 8, 116}
+\definecolor{bglight}{RGB}{247, 245, 248}
+\titleformat{\section}[block]{\Large\bfseries\color{tsinghua}}{\thesection}{1em}{}
+\titleformat{\subsection}[block]{\large\bfseries\color{tsinghua!80!black}}{\thesubsection}{1em}{}
+\linespread{1.35}
+\setlist[itemize]{itemsep=4pt, parsep=0pt, topsep=4pt}
+\hypersetup{colorlinks=true, linkcolor=tsinghua, urlcolor=tsinghua}
+
+\title{\vspace{-1.5cm}\color{tsinghua}\textbf{方向 C：面向动力装备的知识图谱增强检索与智能诊断Agent}\\\Large{—— "鸿雁计划"科创基金细化企划书 v2}}
+\author{\textbf{汇报人：纪文龙} \\ \small 清华大学行健书院 2024级本科生}
+\date{\small 2026年4月}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{tcolorbox}[colback=tsinghua!5, colframe=tsinghua!50, title=\textbf{一句话概括}, fonttitle=\bfseries]
+以RAG（检索增强生成）为基础工具，研究三个问题：\textbf{（1）工业文档检索的特殊困难怎么解决？（2）多步Agent推理比单轮问答好多少？（3）工业安全场景需要什么样的评估指标？}——用对照实验给出量化答案，产出1篇SCI论文 + 首个中文动力设备故障诊断问答数据集。
+\end{tcolorbox}
+
+% ================================================================
+\section{核心定位：RAG是工具，研究问题才是目标}
+% ================================================================
+
+\subsection{项目的基本逻辑}
+
+在目前的开源社区支持下（LangChain、LlamaIndex、Chroma等），搭建一个基础的RAG系统已经\textbf{不难、不慢}——这不是我们的研究贡献。
+
+我们的研究贡献在于：在搭好RAG之后，围绕动力设备故障诊断这一场景，\textbf{回答三个有科学价值的研究问题}，并用严格的对照实验给出\textbf{可量化的效果}。
+
+\begin{tcolorbox}[colback=bglight, colframe=tsinghua!30, arc=2mm]
+\textbf{类比}：PyTorch是工具，不是论文。但用PyTorch训练模型、发现规律、解决新问题——那是论文。同理，RAG是工具，用RAG回答领域内尚未解决的问题——那才是论文。
+\end{tcolorbox}
+
+\subsection{为什么这个方向"对将来帮助更大"？}
+
+\begin{itemize}
+    \item \textbf{技术栈的未来价值}：LLM/RAG/Agent 是未来 5--10 年工业AI的核心技术路线。掌握它比学一种具体的CNN架构更有长期回报。
+    \item \textbf{技能的可迁移性}：学会构建领域知识库、设计AI问答评估体系，这些能力横跨所有行业——医疗、法律、制造、能源都需要。
+    \item \textbf{个人技术优势}：Web开发能力在系统演示和原型搭建上有直接用武之地。
+\end{itemize}
+
+
+% ================================================================
+\section{当前技术前沿与文献空白}
+% ================================================================
+
+\subsection{2024--2025年，这个方向发生了什么？}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{p{3.5cm} p{5cm} p{4.5cm}}
+    \toprule
+    \textbf{趋势} & \textbf{代表性工作} & \textbf{对我们的启示} \\
+    \midrule
+    知识图谱增强RAG & KBS 2025：Graph RAG用于高铁转向架故障诊断（DOI: 10.1016/j.knosys.2025.114855） & 证明KG+RAG+故障诊断可发Q1 \\
+    多Agent诊断系统 & MAKG（2026）：多Agent+KG协同，90.1\%推理准确率 & 多Agent路线已有先例 \\
+    领域检索评估 & PARAM（arXiv 2025）：振动数据序列化+RAG自动维修建议 & 聚焦评估和可信度是差异化方向 \\
+    制造业GraphRAG & Electronics 2025：Document GraphRAG用于制造业QA & Q2级别难度可控 \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{我们能填补什么空白？}
+
+\begin{tcolorbox}[colback=bglight, colframe=tsinghua!30, arc=2mm]
+上述已发表工作有三个共同缺陷：\textbf{（1）没有针对工业文档检索的失败案例分析}——都是直接报好结果，不解释"为什么通用RAG在工业领域不够好"；\textbf{（2）没有多步Agent与单轮RAG的严格对照实验}——无法量化Agent到底带来多大收益；\textbf{（3）没有工业安全场景的专用评估指标}——都用通用NLP指标，不考虑安全约束。
+
+此外，\textbf{中文动力设备故障诊断的问答评测数据集目前为空白}。
+\end{tcolorbox}
+
+
+% ================================================================
+\section{三个研究问题}
+% ================================================================
+
+\subsection{RQ1：工业文档检索有什么特殊困难？针对性改进能提升多少？}
+
+\textbf{研究动机}：我们不会凭空说"需要知识图谱增强"。而是先搭一个基础RAG，观察它在动力设备场景中\textbf{具体在哪些类型的问题上表现不好}，分析原因，再针对性地提出改进方案。
+
+\textbf{预期发现的三类典型检索失败}：
+\begin{itemize}
+    \item \textbf{因果链断裂}：用户问"汽轮机振动大怎么排查？"，基础RAG找到了振动相关段落，但没能把"不平衡 → 对中检查 → 动平衡"这条完整的排查链路检索出来。原因：因果关系分散在多个文档段落中。
+    \item \textbf{跨文档推理失败}：答案需要综合3份不同文档的信息（设备手册+历史案例+行业标准），但基础RAG只检索到了其中一份。
+    \item \textbf{术语不对等}：用户说"机组抢振"，文档中写的是"转子不平衡导致的强制振动"——语义相同但措辞不同，向量检索匹配不上。
+\end{itemize}
+
+\textbf{针对性改进方案}：
+\begin{enumerate}
+    \item 针对因果链断裂 → 构建\textbf{故障因果知识图谱}（设备→部件→故障→原因→方案），用图遍历补全因果链
+    \item 针对跨文档推理 → \textbf{三路混合检索}：向量检索 + BM25关键词检索 + 知识图谱子图查询，结果加权融合后用Reranker精排
+    \item 针对术语不对等 → 构建\textbf{领域同义词表} + LLM驱动的\textbf{Query改写}
+\end{enumerate}
+
+\textbf{实验设计}：
+\begin{itemize}
+    \item 对照组：基础RAG（纯向量检索 + 固定分块）
+    \item 实验组：改进RAG（知识图谱 + 混合检索 + Query改写）
+    \item 测试集：100--200道领域问题（事实型/诊断型/方法型三类）
+    \item 指标：\textbf{Hit Rate@5}（前5个检索结果中有没有正确答案）、\textbf{MRR}（正确答案平均排在第几位）、\textbf{Chain Completeness}（新指标：检索结果是否覆盖完整的"症状→原因→方案"链条）
+\end{itemize}
+
+\textbf{可衡量的效果}：改进后检索准确率比基础RAG提升 $\geq 5\%$（参考KBS 2025论文，类似改进通常在10--20\%量级）。Chain Completeness是我们提出的\textbf{新评估指标}，本身即为学术贡献。
+
+
+\subsection{RQ2：多步Agent推理比单轮问答好多少？}
+
+\textbf{研究动机}：真实的故障排查本质上是\textbf{多步信息收集 + 假设检验 + 逐步排除}的过程。一线工程师请教老师傅时，老师傅会先问"什么时候出现的？""负荷多少？"——这种\textbf{迭代式追问}是单轮RAG无法实现的。
+
+\textbf{Agent工具集设计}：
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{p{3.5cm} p{4cm} p{5cm}}
+    \toprule
+    \textbf{工具名} & \textbf{功能} & \textbf{实现方式} \\
+    \midrule
+    search\_knowledge & 知识库检索 & RQ1的混合检索 \\
+    get\_fault\_chain & 获取故障因果链 & 知识图谱子图查询 \\
+    query\_specs & 查设备参数 & 结构化数据库SQL查询 \\
+    ask\_user & 追问用户细节 & LLM生成追问问题 \\
+    generate\_diagnosis & 综合诊断 & LLM推理+引用来源 \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{实验设计——三级难度 × 三种系统的对照实验}：
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabular}{p{1.5cm} p{4cm} p{3.5cm} p{3.5cm}}
+    \toprule
+    \textbf{难度} & \textbf{问题特征} & \textbf{示例} & \textbf{预期结果} \\
+    \midrule
+    简单 & 单因素，答案在单篇文档中 & "XX型轴承额定温升?" & 三种系统差异小 \\
+    中等 & 需结合2--3个信息源 & "3号机组振动偏高的可能原因?" & Agent小幅领先 \\
+    复杂 & 多因素交叉、信息不完整 & "异常声响+排气温度偏高，如何排查?" & \textbf{Agent显著领先} \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{基线A}：纯大模型直接回答（不检索）
+    \item \textbf{基线B}：单轮RAG（检索一次 → 生成答案）
+    \item \textbf{实验组C}：多步Agent（可检索、追问、调用工具、多轮推理）
+\end{itemize}
+
+\textbf{评估方式}：
+\begin{itemize}
+    \item 诊断准确率（与标准答案对比）
+    \item 推理合理性（邀请刘老师/课题组博士生盲评打分，1--5分量表）
+    \item 按难度分层统计——\textbf{核心预期结论}："在复杂多因素故障场景中，多步Agent的诊断准确率比单轮RAG提升 $Y\%$"
+\end{itemize}
+
+
+
+\subsection{RQ3：工业安全场景需要什么样的评估指标？}
+
+\textbf{研究动机}：现有RAG评估框架（RAGAS等）只关注"答案和文档是否一致"，不关注\textbf{工业安全约束}。但在动力设备领域，一个"看似合理但参数错误"的回答可能导致安全事故。通用指标无法捕捉这类风险。
+
+\textbf{具体研究步骤}：
+
+\begin{enumerate}
+    \item \textbf{发现问题}：用通用RAGAS指标（Faithfulness、Answer Relevancy）评估系统，同时请领域专家评分。对比两者结果，\textbf{找出"RAGAS给高分但专家说不对"的案例}——这些案例揭示了通用指标在工业领域的盲点。
+    
+    \item \textbf{提出补充指标}：
+    \begin{itemize}
+        \item \textbf{参数一致性}：回答中引用的数值（温度、转速、压力等）是否与知识库中的记录一致
+        \item \textbf{因果逻辑一致性}：诊断链条的"原因→结果"是否符合知识图谱中的因果关系
+        \item \textbf{安全拒答率}：面对超出知识范围的问题，系统正确拒绝回答（而非编造）的比例
+    \end{itemize}
+    
+    \item \textbf{验证指标有效性}：以专家评分为ground truth，计算我们的指标与专家评分的\textbf{Spearman相关系数}，并与RAGAS的通用指标对比。
+\end{enumerate}
+
+\textbf{可衡量的效果}：预期结论——"我们提出的工业领域评估指标与专家评分的相关系数为 $r_s \approx 0.85$，而通用RAGAS指标仅为 $r_s \approx 0.60$"。
+
+
+% ================================================================
+\section{论文贡献总结}
+% ================================================================
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\small
+\begin{tabular}{p{0.5cm} p{6cm} p{2.5cm} p{2.5cm}}
+    \toprule
+    \textbf{\#} & \textbf{贡献内容} & \textbf{贡献类型} & \textbf{创新程度} \\
+    \midrule
+    1 & 系统分析工业文档检索的三类特殊困难，提出图谱增强的混合检索策略并验证有效性 & 方法 + 实验 & 中--高 \\
+    2 & 多步Agent诊断推理 vs 单轮RAG的严格对照实验，按难度分层量化Agent的改进幅度 & 实验 & 中 \\
+    3 & 提出 Chain Completeness、参数一致性、安全拒答率等领域特定评估指标，验证其优于通用指标 & 指标/方法论 & 高 \\
+    4 & 构建首个\textbf{中文动力设备故障诊断问答评测数据集}（200+问答对，含三种难度、三种类型） & 数据集/资源 & 很高 \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
+\begin{tcolorbox}[colback=bglight, colframe=tsinghua!30, arc=2mm]
+\textbf{发表定位}：投向 \textit{Expert Systems with Applications}（IF$\sim$8.5）或 \textit{Knowledge-Based Systems}（IF$\sim$8.1）。这两个Q1期刊在2024-2025年大量接收KG+RAG+工业应用类论文（如KBS 2025已发表"Graph RAG for Train Bogies"同类工作）。
+
+\textbf{保底策略}：即使RQ2/RQ3做得不够深，仅凭贡献1（检索改进实验）+ 贡献4（中文Benchmark），也足以投 \textit{Applied Sciences} 或 \textit{Electronics}（Q2）。
+\end{tcolorbox}
+
+
+% ================================================================
+\section{预期成果}
+% ================================================================
+
+\begin{itemize}
+    \item \textbf{1篇SCI论文}：Q1期刊（KBS/ESWA）为目标，Q2为保底。
+    \item \textbf{1个评测数据集}：首个中文动力设备故障诊断QA Benchmark（200+问答对），按学术规范标准化后开源，可供后续研究者使用。
+    \item \textbf{1套演示系统}：Web界面的对话式诊断助手——输入故障描述，输出带引用来源的诊断建议 + Agent推理过程可视化。
+    \item \textbf{鸿雁计划结题}：完整结题报告 + 上述成果。
+\end{itemize}
+
+
+% ================================================================
+\section{W1--W30 逐周工作计划}
+% ================================================================
+
+每周投入 \textbf{8 小时}，分 6 阶段。整体逻辑：\textbf{搭工具（快速） → 发现问题 → 设计方案 → 对照实验 → 写论文}。
+
+\subsection{阶段一：技术调研 + 快速搭建基础RAG（W1--W5，4月）}
+
+\noindent\textit{阶段目标}：搞懂前沿、跑通工具链、得到一个"能用但不完美"的基础RAG——它的不完美恰好是后续研究的起点。
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W1] \textbf{文献精读}。精读5篇核心论文：(1) KBS 2025 Graph RAG for Train Bogies；(2) PARAM框架（arXiv 2025）；(3) MAKG多Agent框架（2026）；(4) RAG最新综述；(5) 刘老师课题组的故障诊断代表论文。输出：2页技术调研摘要发刘老师。
+\item[W2] \textbf{数据盘点与收集}。与课题组博士生沟通，梳理可用文档（技术手册、故障案例库、行业标准、论文）。整理一份"知识资源清单"，明确数据量和格式。同时下载公开国标/行标作为补充。
+\item[W3] \textbf{搭建基础RAG}。用LangChain + Chroma向量数据库 + Qwen大模型（或开源替代），跑通完整Pipeline：文档加载 → 分块 → Embedding → 存储 → 检索 → 生成回答。先导入20份文档做验证。
+\item[W4] \textbf{导入全部数据}。文档预处理Pipeline开发（PDF/Word → 文本 → 清洗 → 分块 → 标注元数据）。目标：处理全部可用文档（预计100--500份）。
+\item[W5] \textbf{基础RAG效果摸底}。编写50道领域测试问题，跑一轮基础RAG，\textbf{手动分析失败案例}——记录"问了什么""检索到了什么""哪里不对"。这些失败案例就是RQ1的出发点。输出：基础RAG效果报告，发刘老师确认下一步。
+\end{description}
+
+\subsection{阶段二：构建评测数据集 + 知识图谱（W6--W10，5--6月）}
+
+\noindent\textit{阶段目标}：建成中文QA评测数据集（论文贡献4）和故障因果知识图谱（为RQ1服务）。
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W6] \textbf{设计评测数据集}。定义题目分类体系：按难度（简单/中等/复杂）× 类型（事实型/诊断型/方法型），每类至少30题。编写标注指南，确保每道题包含：问题、标准答案、引用来源、难度标签、类型标签。
+\item[W7] \textbf{编写评测数据集（上）}。从故障案例和论文中提取100道问题。每道题人工编写标准答案和引用来源。
+\item[W8] \textbf{编写评测数据集（下）}。再编写100道，完成200+题目。部分题目请课题组博士生校验。
+\item[W9] \textbf{构建故障因果知识图谱}。定义本体（设备类型→部件→故障模式→原因→症状→维修方案）。用LLM从文档中半自动抽取三元组，人工校验正确性。存入Neo4j或NetworkX。
+\item[W10] \textbf{阶段验证 + 汇报}。用评测数据集正式测试基础RAG，记录各项指标。把结果和知识图谱构建情况发刘老师。
+\end{description}
+
+\subsection{阶段三：核心研发——RQ1检索改进 + RQ2 Agent搭建（W11--W15，7月）}
+
+\noindent\textit{这是最关键的阶段}：实现创新方案，初步验证有效性。
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W11] \textbf{实现混合检索}。(1) BM25关键词检索（Elasticsearch或rank\_bm25库）；(2) 知识图谱子图查询——用户Query经LLM抽取实体后查图谱关联节点；(3) 三路结果加权融合 + Reranker精排（bge-reranker模型）。
+\item[W12] \textbf{实现Query改写与同义词表}。用LLM将短问题扩展为详细检索Query；构建领域同义词映射表（如"抢振"→"转子不平衡导致的强制振动"）。在评测数据集上测试改进效果。
+\item[W13] \textbf{搭建多步Agent框架}。基于LangGraph实现ReAct模式Agent：Reasoning（思考）→ Action（调用工具）→ Observation（观察结果）循环。定义5个工具（见RQ2工具表）。在10道复杂题上手动调试。
+\item[W14] \textbf{Agent策略设计}。设计追问逻辑（信息不足时主动求证）、置信度判断逻辑（低置信时标注"仅供参考"）、安全兜底逻辑（涉及危险操作时附加警告）。
+\item[W15] \textbf{初步验证 + 向刘老师汇报}。改进RAG vs 基础RAG的初步对比；Agent vs 单轮RAG的初步对比。写中期报告。
+\end{description}
+
+\subsection{阶段四：大规模对照实验——出论文数据（W16--W20，8--9月）}
+
+\noindent\textit{阶段目标}：用严格的对照实验回答RQ1--RQ3，产出论文所需的全部数据和图表。
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W16] \textbf{RQ1完整实验}。基础RAG vs 改进RAG，在200+题评测集上跑完整对比。记录Hit Rate@5、MRR、Chain Completeness。做消融实验：去掉KG / 去掉BM25 / 去掉Reranker，分别看效果变化。
+\item[W17] \textbf{RQ2完整实验}。纯LLM vs 单轮RAG vs 多步Agent，三种系统 × 三级难度 = 9组实验。每组在对应难度的测试题上跑，记录准确率。
+\item[W18] \textbf{RQ2专家评估}。邀请刘老师和2--3位博士生，对50道复杂诊断题的回答做盲评打分（1--5分：准确性、完整性、推理合理性）。计算评分者间一致性（Cohen's Kappa）。
+\item[W19] \textbf{RQ3评估指标实验}。(1) 用RAGAS评分 + 我们的三个指标同时评估系统；(2) 以专家评分为ground truth；(3) 计算每种指标与专家评分的Spearman相关系数。
+\item[W20] \textbf{结果整理}。汇总全部实验数据，画论文图表：检索对比柱状图、Agent推理流程Case Study、评估指标相关系数对比图、数据集统计信息表。
+\end{description}
+
+\subsection{阶段五：写论文 + 搭演示系统（W21--W25，10--11月）}
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W21] \textbf{搭Web演示界面}。用Streamlit或Gradio：左侧输入故障描述、右侧显示诊断回答（含引用来源链接），底部展示Agent的推理过程（检索了什么、调用了什么工具、为什么追问）。
+\item[W22] 和刘老师确认论文结构和目标期刊；写第1章（动力设备智能运维背景、现有RAG在工业场景的不足、我们的研究问题）。
+\item[W23] 第2章（相关工作：RAG技术、知识图谱、Agent框架在工业领域的应用现状），重点对比KBS 2025和PARAM。
+\item[W24] 第3章（系统设计：基础RAG → 失败分析 → 改进方案，包含混合检索架构图、Agent工具链图、评估指标定义）。
+\item[W25] 第4章（实验结果：RQ1/RQ2/RQ3的全部对比表、消融分析、Case Study、专家评估结果）。
+\end{description}
+
+\subsection{阶段六：投稿 + 结题（W26--W30，12--1月）}
+
+\begin{description}[style=nextline, leftmargin=1.2cm, labelwidth=1cm, font=\bfseries\color{tsinghua}]
+\item[W26] 第5章（结论、局限性、未来工作） + 全文润色。整理评测数据集，准备开源（GitHub + 数据说明文档）。
+\item[W27] 给刘老师审改，根据反馈补充实验或修改论述。
+\item[W28] 按目标期刊模板排版，提交投稿。
+\item[W29] 写鸿雁计划结题报告（约15页）。
+\item[W30] 提交结题材料包，项目完成。
+\end{description}
+
+\end{document}

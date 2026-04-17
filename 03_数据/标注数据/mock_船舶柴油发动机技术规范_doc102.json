@@ -1,0 +1,1002 @@
+[
+  {
+    "id": 10201,
+    "annotations": [
+      {
+        "id": 11201,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.892684313557368,
+              "y": 6.87,
+              "width": 57.25875971315255,
+              "height": 6.857283181640687,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_ca487a785b",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.892684313557368,
+              "y": 6.87,
+              "width": 57.25875971315255,
+              "height": 6.857283181640687,
+              "rotation": 0,
+              "text": [
+                "船舶柴油发动机技术规范"
+              ]
+            },
+            "id": "ls_ca487a785b",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.382724000108695,
+              "y": 16.9,
+              "width": 69.66335653706562,
+              "height": 7.5345674255735595,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_ecf0748e3b",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.382724000108695,
+              "y": 16.9,
+              "width": 69.66335653706562,
+              "height": 7.5345674255735595,
+              "rotation": 0,
+              "text": [
+                "第一章 总则"
+              ]
+            },
+            "id": "ls_ecf0748e3b",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.18399861922237,
+              "y": 32.53,
+              "width": 65.51013408630058,
+              "height": 4.241526768615293,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_332a4146d9",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 20.18399861922237,
+              "y": 32.53,
+              "width": 65.51013408630058,
+              "height": 4.241526768615293,
+              "rotation": 0,
+              "text": [
+                "本技术规范适用于船舶主推进用中速柴油发动机，包括型号为MAN 9L32/44CR及Wärtsilä 8L46F系列。本规范规定了发动机的性能指标、安装要求、调试程序和验收标准。"
+              ]
+            },
+            "id": "ls_332a4146d9",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.82937773430324,
+              "y": 40.61,
+              "width": 61.71891664459169,
+              "height": 5.003339531060211,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_9e13d2cc49",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.82937773430324,
+              "y": 40.61,
+              "width": 61.71891664459169,
+              "height": 5.003339531060211,
+              "rotation": 0,
+              "text": [
+                "发动机额定功率范围为4500kW~8000kW，额定转速720~750rpm，适用于万吨级散货船及集装箱船的主推进系统。"
+              ]
+            },
+            "id": "ls_9e13d2cc49",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc102_p1.png",
+      "doc_id": 102,
+      "page_num": 1,
+      "total_pages": 5,
+      "filename": "船舶柴油发动机技术规范.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10202,
+    "annotations": [
+      {
+        "id": 11202,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.500462200578664,
+              "y": 8.56,
+              "width": 67.75859764889248,
+              "height": 7.080328079824536,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_53ef35a38e",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 18.500462200578664,
+              "y": 8.56,
+              "width": 67.75859764889248,
+              "height": 7.080328079824536,
+              "rotation": 0,
+              "text": [
+                "第二章 性能指标"
+              ]
+            },
+            "id": "ls_53ef35a38e",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.317519361208827,
+              "y": 24.52,
+              "width": 46.426736786246096,
+              "height": 4.084443853514346,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_037af83542",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 19.317519361208827,
+              "y": 24.52,
+              "width": 46.426736786246096,
+              "height": 4.084443853514346,
+              "rotation": 0,
+              "text": [
+                "发动机应在额定工况下满足以下性能要求：燃油消耗率不高于175g/kWh（ISO标准工况），机械效率不低于92%，排放满足IMO Tier III标准。"
+              ]
+            },
+            "id": "ls_037af83542",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.416750146519757,
+              "y": 38.41,
+              "width": 57.97295743126252,
+              "height": 6.4781385855161435,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_e6fdeae130",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.416750146519757,
+              "y": 38.41,
+              "width": 57.97295743126252,
+              "height": 6.4781385855161435,
+              "rotation": 0,
+              "text": [
+                "关键性能参数：\n1. 额定功率：6480kW@720rpm\n2. 平均有效压力：25.5bar\n3. 最高爆发压力：200bar\n4. 增压压比：4.5:1\n5. 冷却水进口温度：36°C\n6. 滑油消耗率：≤0.6g/kWh"
+              ]
+            },
+            "id": "ls_e6fdeae130",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.20878403490269,
+              "y": 53.79,
+              "width": 66.33026454206673,
+              "height": 2.8341332320513963,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_a55d37ccf4",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.20878403490269,
+              "y": 53.79,
+              "width": 66.33026454206673,
+              "height": 2.8341332320513963,
+              "rotation": 0,
+              "text": [
+                "发动机应具备110%超负荷运行能力，持续时间不超过1小时/次，累计不超过100小时/年。超负荷运行期间各气缸排气温度不应超过限定值的95%。"
+              ]
+            },
+            "id": "ls_a55d37ccf4",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc102_p2.png",
+      "doc_id": 102,
+      "page_num": 2,
+      "total_pages": 5,
+      "filename": "船舶柴油发动机技术规范.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10203,
+    "annotations": [
+      {
+        "id": 11203,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.30786970793006,
+              "y": 8.9,
+              "width": 67.45917033444917,
+              "height": 5.467510296837792,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_113f422a92",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.30786970793006,
+              "y": 8.9,
+              "width": 67.45917033444917,
+              "height": 5.467510296837792,
+              "rotation": 0,
+              "text": [
+                "第三章 燃油系统"
+              ]
+            },
+            "id": "ls_113f422a92",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 10.767793249194657,
+              "y": 25.09,
+              "width": 42.64208497525393,
+              "height": 5.933765835343049,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_ace84949d7",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 10.767793249194657,
+              "y": 25.09,
+              "width": 42.64208497525393,
+              "height": 5.933765835343049,
+              "rotation": 0,
+              "text": [
+                "主机燃油系统采用共轨式电子喷射(CR)，喷射压力范围600~2000bar，可精确控制喷射正时和持续时间。系统具备多次喷射功能，支持预喷、主喷和后喷的灵活组合。"
+              ]
+            },
+            "id": "ls_ace84949d7",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.589508828373512,
+              "y": 40.62,
+              "width": 63.71493909695708,
+              "height": 4.528826599316236,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_428fff54a2",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.589508828373512,
+              "y": 40.62,
+              "width": 63.71493909695708,
+              "height": 4.528826599316236,
+              "rotation": 0,
+              "text": [
+                "燃油分油机处理能力应满足主机最大耗油量的1.2倍。重油预热温度应达到使燃油粘度降至12~15cSt的水平。燃油日用柜应设低液位报警和自动切换装置。"
+              ]
+            },
+            "id": "ls_428fff54a2",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.639839957239467,
+              "y": 49.03,
+              "width": 49.66575360330922,
+              "height": 4.665744047402384,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_1a797c9b2c",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 27.639839957239467,
+              "y": 49.03,
+              "width": 49.66575360330922,
+              "height": 4.665744047402384,
+              "rotation": 0,
+              "text": [
+                "燃油品质要求：\n- 硫含量：≤0.50% m/m（符合MARPOL要求）\n- 灰分：≤0.04%\n- 钒：≤150mg/kg\n- 水分：≤0.5% v/v\n- 十六烷值指数：≥35"
+              ]
+            },
+            "id": "ls_1a797c9b2c",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc102_p3.png",
+      "doc_id": 102,
+      "page_num": 3,
+      "total_pages": 5,
+      "filename": "船舶柴油发动机技术规范.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10204,
+    "annotations": [
+      {
+        "id": 11204,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.673096625714265,
+              "y": 9.0,
+              "width": 59.559287225809015,
+              "height": 5.915790449702502,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_a5d3421d6f",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 15.673096625714265,
+              "y": 9.0,
+              "width": 59.559287225809015,
+              "height": 5.915790449702502,
+              "rotation": 0,
+              "text": [
+                "第四章 冷却与润滑系统"
+              ]
+            },
+            "id": "ls_a5d3421d6f",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 26.981005732855593,
+              "y": 22.55,
+              "width": 68.69020582512526,
+              "height": 4.612153059512447,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_91db070b8e",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 26.981005732855593,
+              "y": 22.55,
+              "width": 68.69020582512526,
+              "height": 4.612153059512447,
+              "rotation": 0,
+              "text": [
+                "冷却系统分为高温和低温两个循环回路。高温回路冷却气缸套和气缸盖，设计温度差不超过8°C。低温回路冷却增压空气和滑油，通过中央冷却器与海水换热。"
+              ]
+            },
+            "id": "ls_91db070b8e",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.7881267011483,
+              "y": 31.51,
+              "width": 59.07390598626037,
+              "height": 6.455976575611668,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_36fa317aa8",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 16.7881267011483,
+              "y": 31.51,
+              "width": 59.07390598626037,
+              "height": 6.455976575611668,
+              "rotation": 0,
+              "text": [
+                "主轴承和连杆轴承采用强制润滑，滑油压力在额定转速下应保持3.5~4.5bar。气缸注油系统采用电子控制定量注油器，气缸油消耗率约0.7~1.0g/kWh。"
+              ]
+            },
+            "id": "ls_36fa317aa8",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.24449340670687,
+              "y": 48.28,
+              "width": 55.406980240037754,
+              "height": 7.2111997841035365,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_f474c0711f",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.24449340670687,
+              "y": 48.28,
+              "width": 55.406980240037754,
+              "height": 7.2111997841035365,
+              "rotation": 0,
+              "text": [
+                "滑油净化系统应采用自清式分离器，处理能力满足滑油总量在24小时内至少净化3次。滑油更换周期根据化验结果确定，通常为每8000~12000运行小时。"
+              ]
+            },
+            "id": "ls_f474c0711f",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc102_p4.png",
+      "doc_id": 102,
+      "page_num": 4,
+      "total_pages": 5,
+      "filename": "船舶柴油发动机技术规范.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10205,
+    "annotations": [
+      {
+        "id": 11205,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.348985441542492,
+              "y": 6.52,
+              "width": 43.296825944643736,
+              "height": 5.870394874595863,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Title"
+              ]
+            },
+            "id": "ls_879b571b5e",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 28.348985441542492,
+              "y": 6.52,
+              "width": 43.296825944643736,
+              "height": 5.870394874595863,
+              "rotation": 0,
+              "text": [
+                "第五章 监测与控制"
+              ]
+            },
+            "id": "ls_879b571b5e",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 12.096033176000766,
+              "y": 17.0,
+              "width": 55.98235135742762,
+              "height": 5.7492306172743834,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_bff10f0090",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 12.096033176000766,
+              "y": 17.0,
+              "width": 55.98235135742762,
+              "height": 5.7492306172743834,
+              "rotation": 0,
+              "text": [
+                "发动机管理系统(EMS)应实现对所有关键参数的实时采集、显示和记录。系统应具备自动启动/停机序列控制、负荷分配、故障诊断和远程监控功能。"
+              ]
+            },
+            "id": "ls_bff10f0090",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.584282854514674,
+              "y": 25.64,
+              "width": 45.73048336461193,
+              "height": 4.095582791198257,
+              "rotation": 0,
+              "rectanglelabels": [
+                "Para"
+              ]
+            },
+            "id": "ls_6e7beaf584",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 14.584282854514674,
+              "y": 25.64,
+              "width": 45.73048336461193,
+              "height": 4.095582791198257,
+              "rotation": 0,
+              "text": [
+                "传感器冗余配置要求：每缸至少配置两个独立的排气温度传感器，主轴承温度采用双通道测量，转速传感器设三取二逻辑。所有安全保护动作应有独立的硬线回路。"
+              ]
+            },
+            "id": "ls_6e7beaf584",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.911677877939816,
+              "y": 42.88,
+              "width": 65.37836993942958,
+              "height": 4.976089913747904,
+              "rotation": 0,
+              "rectanglelabels": [
+                "List"
+              ]
+            },
+            "id": "ls_bcd779ed7b",
+            "from_name": "bbox",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1748,
+            "original_height": 2339,
+            "image_rotation": 0,
+            "value": {
+              "x": 23.911677877939816,
+              "y": 42.88,
+              "width": 65.37836993942958,
+              "height": 4.976089913747904,
+              "rotation": 0,
+              "text": [
+                "保护停机条件（部分）：\n- 滑油压力低：≤2.0bar（延时5秒）\n- 转速超速：110% 额定转速\n- 冷却水温度高：≥95°C\n- 曲轴箱油雾浓度超限\n- 轴承温度高：≥85°C"
+              ]
+            },
+            "id": "ls_bcd779ed7b",
+            "from_name": "transcription",
+            "to_name": "image",
+            "type": "textarea",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-04-12T10:00:00.000000Z",
+        "updated_at": "2026-04-12T10:30:00.000000Z",
+        "lead_time": 120.0,
+        "prediction": {},
+        "result_count": 8
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/upload/doc102_p5.png",
+      "doc_id": 102,
+      "page_num": 5,
+      "total_pages": 5,
+      "filename": "船舶柴油发动机技术规范.pdf"
+    },
+    "meta": {},
+    "created_at": "2026-04-12T09:00:00.000000Z",
+    "updated_at": "2026-04-12T10:30:00.000000Z",
+    "inner_id": 5,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 2,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

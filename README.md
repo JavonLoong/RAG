@@ -1,16 +1,61 @@
-# algokit-example
+# 🔬 RAG项目 — 动力装备知识库与智能体
 
-[![Release](https://img.shields.io/github/v/release/guojh/algokit-example)](https://img.shields.io/github/v/release/guojh/algokit-example)
-[![Build status](https://img.shields.io/github/actions/workflow/status/guojh/algokit-example/main.yml?branch=main)](https://github.com/guojh/algokit-example/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/guojh/algokit-example/branch/main/graph/badge.svg)](https://codecov.io/gh/guojh/algokit-example)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/guojh/algokit-example)](https://img.shields.io/github/commit-activity/m/guojh/algokit-example)
-[![License](https://img.shields.io/github/license/guojh/algokit-example)](https://img.shields.io/github/license/guojh/algokit-example)
-
-This is a template repository for algorithm kits development.
-
-- **Github repository**: <https://github.com/guojh/algokit-example/>
-- **Documentation** <https://guojh.github.io/algokit-example/>
+> **项目负责人**: 刘超老师  
+> **创建日期**: 2026-04-13  
+> **原始路径**: `D:\虚拟C盘\导师\刘超\方向C_RAG项目`
 
 ---
 
-Repository initiated with [fpgmaas/cookiecutter-uv](https://github.com/fpgmaas/cookiecutter-uv).
+## 📁 目录结构
+
+```
+RAG项目_动力装备知识库/
+│
+├── 01_企划书/                    # 项目企划书（v1 ~ v3，含 PDF & LaTeX 源文件）
+│   ├── 方向C_动力装备知识库与智能体_企划书.pdf
+│   ├── 方向C_动力装备知识库与智能体_企划书_v2.pdf
+│   └── 方向C_动力装备知识库与智能体_企划书_v3.pdf
+│
+├── 02_代码/                      # 全部代码资源
+│   ├── plant-graph-rag/          # 📦 主仓库（Git 团队协作）
+│   │   ├── src/                  #    源代码（algokit_example, guojihong, jiwenlong）
+│   │   ├── tests/                #    测试
+│   │   ├── docs/                 #    文档
+│   │   └── pyproject.toml        #    项目配置
+│   └── 个人代码/                  # 🧑‍💻 个人实验代码
+│       ├── 郭继鸿/               #    parse_labelstudio.py 等
+│       └── 纪文龙/               #    向量化存储.py、保存结果.py 等
+│
+├── 03_数据/                      # 数据资源
+│   ├── 标注数据/                  #    Label Studio 导出的标注 JSON
+│   └── 向量数据库/                #    ChromaDB 向量存储（sqlite3 + 索引）
+│
+├── 04_参考资料/                   # 📚 技术参考文档
+│   └── Agentic_RAG系统开发.docx
+│
+├── 05_组会记录/                   # 📋 组会记录
+│   └── 2026-04-09_第一次组会/     #    汇报PPT、讲稿、分工待办、聊天记录等
+│
+└── 06_成果展示/                   # 🏆 群组分享文件
+    ├── project-1-at-2026-04-09-07-02-f7d8cb93.json
+    └── requirements.txt
+```
+
+## 🔗 说明
+
+- 本文件夹中的子目录均为 **目录联接（Junction）**，指向 `D:\虚拟C盘\导师\刘超\方向C_RAG项目` 下的原始文件
+- 在此文件夹中修改文件 = 直接修改原始文件，**不会产生重复副本**
+- 新增组会记录时，请在 `05_组会记录/` 下按 `YYYY-MM-DD_主题` 格式创建子文件夹
+
+## 🚀 快速开始
+
+```bash
+# 进入主仓库
+cd 02_代码/plant-graph-rag
+
+# 安装依赖（使用 uv）
+uv sync
+
+# 运行代码
+python -m guojihong
+```
