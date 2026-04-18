@@ -1,49 +1,48 @@
-site_name: algokit-example
-repo_url: https://github.com/guojh/algokit-example
-site_url: https://guojh.github.io/algokit-example
-site_description: This is a template repository for algorithm kits development.
-site_author: Ranhui
-edit_uri: edit/main/docs/
-repo_name: guojh/algokit-example
-copyright: Maintained by <a href="https://guojh.com">guojh</a>.
+site_name: Power Equipment RAG Workspace
+repo_url: http://117.78.35.35/rag1/plant-graph-rag
+site_description: Workspace documentation for the power-equipment RAG console, prototype pipeline, and archived experiments.
+site_author: Power Equipment RAG Team
+edit_uri: edit/jiwenlong/vectorize-pipeline/docs/
+repo_name: rag1/plant-graph-rag
 
 nav:
-  - Home: index.md
-  - Modules: modules.md
+  - Overview: index.md
+  - Repository Layout: repository-layout.md
+  - Pipeline Prototype: pipeline-prototype.md
+
 plugins:
   - search
   - mkdocstrings:
       handlers:
         python:
-          paths: ["src/algokit_example"]
+          paths: ["src"]
+
 theme:
   name: material
-  feature:
-    tabs: true
+  features:
+    - navigation.tabs
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: white
-      accent: deep orange
+      accent: blue
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: black
-      accent: deep orange
+      accent: blue
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   icon:
-    repo: fontawesome/brands/github
+    repo: fontawesome/brands/gitlab
 
 extra:
   social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/guojh/algokit-example
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/algokit-example
+    - icon: fontawesome/brands/gitlab
+      link: http://117.78.35.35/rag1/plant-graph-rag
 
 markdown_extensions:
   - toc:

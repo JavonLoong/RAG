@@ -31,10 +31,35 @@ import orjson
 from pathlib import Path
 from dataclasses import dataclass, field
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SAMPLE_PATHS = (
+    REPO_ROOT
+    / "apps"
+    / "jiwenlong-rag-console"
+    / "data"
+    / "uploads"
+    / "新建文件夹__project-1-at-2026-04-09-07-02-f7d8cb93.json",
+    REPO_ROOT
+    / "apps"
+    / "jiwenlong-rag-console"
+    / "data"
+    / "mock-data"
+    / "project-1-at-2026-04-09-07-02-f7d8cb93.json",
+)
+
 
 # ============================================================
 # 数据结构
 # ============================================================
+
+
+def resolve_default_json_path() -> Path | None:
+    """Return the first available sample JSON file in the workspace."""
+
+    for candidate in DEFAULT_SAMPLE_PATHS:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 @dataclass
@@ -266,7 +291,7 @@ def chunk_document(
 def vectorize_and_store(
     chunks: list[Chunk],
     collection_name: str = "equipment_manuals",
-    chroma_path: str = "./向量数据库",
+    chroma_path: str = "./local_chroma_db",
 ):
     """BGE-m3 向量化 → Chroma 持久化存储。"""
     from sentence_transformers import SentenceTransformer
@@ -510,15 +535,15 @@ def quality_report(documents: dict[int, Document], chunks: list[Chunk]):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="纪文龙 — 向量化存储 Pipeline v2.0")
+    default_json_path = resolve_default_json_path()
+
+    parser = argparse.ArgumentParser(
+        description="Power RAG pipeline prototype for Label Studio parsing, chunking, vectorization, and retrieval."
+    )
     parser.add_argument(
         "--json",
-        default=str(
-            Path(__file__).parent.parent.parent
-            / "数据"
-            / "project-1-at-2026-04-09-07-02-f7d8cb93.json"
-        ),
-        help="Label Studio JSON 文件路径",
+        default=str(default_json_path) if default_json_path else None,
+        help="Label Studio JSON 文件路径；不传时自动尝试使用工作区内的样例文件",
     )
     parser.add_argument("--max-chars", type=int, default=500, help="分块最大字符数")
     parser.add_argument("--overlap", type=int, default=50, help="分块重叠字符数")
@@ -528,11 +553,21 @@ def main():
     parser.add_argument("--query", type=str, default=None, help="自定义检索查询")
     args = parser.parse_args()
 
+    if not args.json:
+        print("❌ 未找到默认样例 JSON，请使用 --json 显式指定输入文件。")
+        print("   推荐位置：apps/jiwenlong-rag-console/data/uploads/")
+        return
+
+    json_path = Path(args.json)
+    if not json_path.exists():
+        print(f"❌ JSON 文件不存在: {json_path}")
+        return
+
     # Step 1: 解析
     print("=" * 60)
     print("Step 1: 解析 Label Studio JSON")
     print("=" * 60)
-    documents = parse_json(args.json)
+    documents = parse_json(json_path)
 
     for doc_id, doc in documents.items():
         blocks = doc.ordered_blocks()
@@ -601,8 +636,8 @@ def main():
                 print(answer)
     else:
         print("\n💡 提示: 添加 --vectorize 启用向量化, --search 启用检索Demo")
-        print("   完整运行: python 源代码/纪文龙/向量化存储.py --vectorize --search")
-        print("   RAG问答: python 源代码/纪文龙/向量化存储.py --vectorize --ask \"你的问题\"")
+        print("   完整运行: python -m power_rag_pipeline.pipeline --vectorize --search")
+        print("   RAG问答: python -m power_rag_pipeline.pipeline --vectorize --ask \"你的问题\"")
 
 
 if __name__ == "__main__":

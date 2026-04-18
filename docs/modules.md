@@ -1,1 +1,0 @@
-::: algokit_example.foo

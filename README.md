@@ -1,61 +1,98 @@
-# 🔬 RAG项目 — 动力装备知识库与智能体
+# Power Equipment RAG Workspace
 
-> **项目负责人**: 刘超老师  
-> **创建日期**: 2026-04-13  
-> **原始路径**: `D:\虚拟C盘\导师\刘超\方向C_RAG项目`
+这是一个围绕“动力装备知识库 / RAG / 检索增强应用”整理后的工作区仓库。
 
----
+当前仓库不再把根目录伪装成模板项目，而是明确分成三类内容：
 
-## 📁 目录结构
+- `apps/`：可直接运行、可演示、可持续维护的应用
+- `src/` + `tests/`：仍保留在根仓的原型代码与基础测试
+- `archive/`：历史代码、旧实验和保留材料
 
+## 当前推荐入口
+
+主入口是纪文龙的控制台应用：
+
+- [apps/jiwenlong-rag-console](apps/jiwenlong-rag-console/)
+- 启动脚本：[start_local.bat](apps/jiwenlong-rag-console/start_local.bat)
+- 后端入口：[server.py](apps/jiwenlong-rag-console/server.py)
+
+## 仓库结构
+
+```text
+power-equipment-rag-workspace/
+├─ apps/
+│  └─ jiwenlong-rag-console/        # 当前主应用，前后端一体的 Chroma RAG 控制台
+├─ src/
+│  └─ power_rag_pipeline/           # 根仓保留的轻量原型包
+├─ tests/
+│  └─ test_power_rag_pipeline.py    # 根仓原型的基础测试
+├─ docs/
+│  ├─ index.md                      # 文档首页
+│  ├─ repository-layout.md          # 仓库结构说明
+│  ├─ pipeline-prototype.md         # 原型包 API 文档页
+│  └─ diagrams/
+│     └─ logic-structure.html       # 逻辑结构图
+├─ archive/
+│  ├─ README.md                     # 归档说明
+│  └─ legacy-code/
+│     ├─ plant-graph-rag/           # 历史 gitlink / 子仓快照
+│     └─ guo-demo/                  # 郭老师的早期实验脚本与页面
+├─ .devcontainer/
+├─ pyproject.toml
+├─ Dockerfile
+├─ Makefile
+├─ mkdocs.yml
+└─ .gitlab-ci.yml
 ```
-RAG项目_动力装备知识库/
-│
-├── 01_企划书/                    # 项目企划书（v1 ~ v3，含 PDF & LaTeX 源文件）
-│   ├── 方向C_动力装备知识库与智能体_企划书.pdf
-│   ├── 方向C_动力装备知识库与智能体_企划书_v2.pdf
-│   └── 方向C_动力装备知识库与智能体_企划书_v3.pdf
-│
-├── 02_代码/                      # 全部代码资源
-│   ├── plant-graph-rag/          # 📦 主仓库（Git 团队协作）
-│   │   ├── src/                  #    源代码（algokit_example, guojihong, jiwenlong）
-│   │   ├── tests/                #    测试
-│   │   ├── docs/                 #    文档
-│   │   └── pyproject.toml        #    项目配置
-│   └── 个人代码/                  # 🧑‍💻 个人实验代码
-│       ├── 郭继鸿/               #    parse_labelstudio.py 等
-│       └── 纪文龙/               #    向量化存储.py、保存结果.py 等
-│
-├── 03_数据/                      # 数据资源
-│   ├── 标注数据/                  #    Label Studio 导出的标注 JSON
-│   └── 向量数据库/                #    ChromaDB 向量存储（sqlite3 + 索引）
-│
-├── 04_参考资料/                   # 📚 技术参考文档
-│   └── Agentic_RAG系统开发.docx
-│
-├── 05_组会记录/                   # 📋 组会记录
-│   └── 2026-04-09_第一次组会/     #    汇报PPT、讲稿、分工待办、聊天记录等
-│
-└── 06_成果展示/                   # 🏆 群组分享文件
-    ├── project-1-at-2026-04-09-07-02-f7d8cb93.json
-    └── requirements.txt
-```
 
-## 🔗 说明
+## 快速开始
 
-- 本文件夹中的子目录均为 **目录联接（Junction）**，指向 `D:\虚拟C盘\导师\刘超\方向C_RAG项目` 下的原始文件
-- 在此文件夹中修改文件 = 直接修改原始文件，**不会产生重复副本**
-- 新增组会记录时，请在 `05_组会记录/` 下按 `YYYY-MM-DD_主题` 格式创建子文件夹
-
-## 🚀 快速开始
+### 1. 安装依赖
 
 ```bash
-# 进入主仓库
-cd 02_代码/plant-graph-rag
-
-# 安装依赖（使用 uv）
 uv sync
-
-# 运行代码
-python -m guojihong
 ```
+
+### 2. 启动主应用
+
+Windows：
+
+```text
+apps/jiwenlong-rag-console/start_local.bat
+```
+
+命令行：
+
+```powershell
+cd "D:\虚拟C盘\RAG项目_动力装备知识库\apps\jiwenlong-rag-console"
+$env:PYTHONPATH="$PWD\chroma_rag_poc\src"
+python server.py
+```
+
+访问：
+
+- 前端：`http://localhost:8000`
+- API 文档：`http://localhost:8000/docs`
+
+### 3. 查看根仓原型包
+
+```bash
+uv run python -m power_rag_pipeline.pipeline --help
+```
+
+说明：
+
+- 根仓原型包主要用于保留早期 Label Studio -> 分块 -> 向量化 -> 检索的单文件实现思路
+- 日常演示和继续开发，优先使用 `apps/jiwenlong-rag-console`
+
+## 文档
+
+- 仓库结构说明：[`docs/repository-layout.md`](docs/repository-layout.md)
+- 原型包 API：[`docs/pipeline-prototype.md`](docs/pipeline-prototype.md)
+- 逻辑结构图：[`docs/diagrams/logic-structure.html`](docs/diagrams/logic-structure.html)
+
+## 说明
+
+- `archive/` 下的内容默认视为历史材料，不作为当前主线开发入口
+- 运行时产生的向量库、上传文件、benchmark 数据不提交到 Git
+- 仓库根部的 CI / Docker / 文档配置已经统一改为指向当前工作区结构
