@@ -144,7 +144,7 @@ flowchart TD
     subgraph USER["👤 用户层"]
         BROWSER["🌐 浏览器前端\nindex.html / js / css"]
         CLI["⌨️ CLI 命令行\n__main__.py"]
-        BAT["🖱️ 双击启动.bat"]
+        BAT["🖱️ start_local.bat"]
     end
 
     subgraph API_LAYER["🔌 接入层"]
@@ -172,7 +172,7 @@ flowchart TD
 
     subgraph STORAGE["💾 存储层"]
         CHROMA[("ChromaDB\ncosine 空间\n持久化存储")]
-        UPLOADS["uploads/\n上传暂存"]
+        UPLOADS["data/uploads/\n上传暂存"]
     end
 
     %% 用户入口

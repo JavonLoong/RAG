@@ -29,7 +29,7 @@ from .parsing import (
 )
 from .text_utils import format_megabytes, get_directory_size, safe_collection_name
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PERSIST_DIR = PROJECT_ROOT / "data" / "chroma"
 DEFAULT_UPLOAD_DIR = PROJECT_ROOT / "data" / "uploads"
 

@@ -185,7 +185,7 @@ def _run_demo(args):
         records = load_json_directory(args.json_dir)
     else:
         # 默认查找数据目录
-        default_dir = Path(__file__).resolve().parents[4] / "03_数据" / "标注数据"
+        default_dir = Path(__file__).resolve().parents[5] / "03_数据" / "标注数据"
         if default_dir.exists():
             print(f"📂 自动发现数据目录: {default_dir}")
             records = load_json_directory(str(default_dir))

@@ -1,19 +1,20 @@
 """将Pipeline运行结果保存为UTF-8文本文件"""
 import sys, io, os
+from pathlib import Path
 
 # 先设置编码
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(os.path.dirname(script_dir))
-output_path = os.path.join(script_dir, "运行结果.txt")
+script_dir = Path(__file__).resolve().parent
+app_dir = script_dir.parent
+repo_dir = app_dir.parents[1]
+output_path = str(app_dir / "data" / "legacy_run_results.txt")
 
 # 直接用orjson和底层函数，不导入整个pipeline模块（避免stdout冲突）
 import orjson
-from pathlib import Path
 from dataclasses import dataclass, field
 
-json_path = os.path.join(root_dir, "数据", "project-1-at-2026-04-09-07-02-f7d8cb93.json")
+json_path = str(repo_dir / "06_成果展示" / "project-1-at-2026-04-09-07-02-f7d8cb93.json")
 
 # 打开输出文件
 f = open(output_path, 'w', encoding='utf-8')
@@ -178,7 +179,7 @@ texts = [c["text"] for c in all_chunks]
 p(f"向量化 {len(texts)} 个文本块...")
 embeddings = model.encode(texts, show_progress_bar=True, normalize_embeddings=True, batch_size=32)
 
-chroma_path = os.path.join(root_dir, "向量数据库")
+chroma_path = str(app_dir / "data" / "chroma")
 p(f"写入 Chroma 数据库 ({chroma_path})...")
 client = chromadb.PersistentClient(path=chroma_path)
 try:

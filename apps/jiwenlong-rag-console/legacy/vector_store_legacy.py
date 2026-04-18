@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 # 将新模块加入 Python 路径
-_src_dir = Path(__file__).parent / "chroma_rag_poc" / "src"
+_src_dir = Path(__file__).resolve().parent.parent / "chroma_rag_poc" / "src"
 if str(_src_dir) not in sys.path:
     sys.path.insert(0, str(_src_dir))
 

@@ -257,7 +257,7 @@ def generate_task(doc_meta: dict, page_num: int, blocks: list, task_id_base: int
 
 
 def main():
-    output_dir = Path(__file__).parent.parent.parent.parent / "03_数据" / "标注数据"
+    output_dir = Path(__file__).resolve().parent.parent / "data" / "mock-data"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for doc_meta in MOCK_DOCS:

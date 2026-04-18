@@ -15,14 +15,15 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 # 把新模块加入路径
-_src_dir = Path(__file__).parent / "chroma_rag_poc" / "src"
+_src_dir = Path(__file__).resolve().parent.parent / "chroma_rag_poc" / "src"
 if str(_src_dir) not in sys.path:
     sys.path.insert(0, str(_src_dir))
 
-BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR.parents[2] / "03_数据" / "标注数据"
-PERSIST_DIR = BASE_DIR / "向量数据库"
-UPLOAD_DIR = BASE_DIR / "uploads"
+BASE_DIR = Path(__file__).resolve().parent.parent
+LEGACY_DATA_DIR = BASE_DIR.parents[1] / "03_数据" / "标注数据"
+UPLOAD_DIR = BASE_DIR / "data" / "uploads"
+DATA_DIR = LEGACY_DATA_DIR if LEGACY_DATA_DIR.exists() else UPLOAD_DIR
+PERSIST_DIR = BASE_DIR / "data" / "chroma"
 
 
 # ============================================================
@@ -341,7 +342,7 @@ def do_benchmark():
     print(f"\n  总耗时: {elapsed:.1f}s")
 
     # 保存报告
-    report_path = BASE_DIR / "benchmark_report.json"
+    report_path = BASE_DIR / "data" / "benchmark_report.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"  {C.DIM}报告已保存: {report_path}{C.RESET}")

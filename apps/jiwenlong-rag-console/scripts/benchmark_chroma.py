@@ -447,9 +447,8 @@ class ChromaBenchmark:
 
         # 保存 JSON 报告
         if output_path is None:
-            output_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "benchmark_report.json",
+            output_path = str(
+                Path(__file__).resolve().parent.parent / "data" / "benchmark_report.json"
             )
 
         with open(output_path, "w", encoding="utf-8") as f:
@@ -493,8 +492,8 @@ def main():
     sizes = [int(x.strip()) for x in args.sizes.split(",")]
 
     bench = ChromaBenchmark(
-        chroma_path=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "benchmark_db",
+        chroma_path=str(
+            Path(__file__).resolve().parent.parent / "data" / "benchmark-db"
         )
     )
 

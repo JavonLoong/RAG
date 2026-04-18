@@ -28,3 +28,17 @@ desktop.ini
 
 # Uploads temp
 # uploads/
+
+# Jiwenlong RAG console runtime data
+apps/jiwenlong-rag-console/data/uploads/*
+!apps/jiwenlong-rag-console/data/uploads/.gitkeep
+apps/jiwenlong-rag-console/data/chroma/*
+!apps/jiwenlong-rag-console/data/chroma/.gitkeep
+apps/jiwenlong-rag-console/data/mock-data/*
+!apps/jiwenlong-rag-console/data/mock-data/.gitkeep
+apps/jiwenlong-rag-console/data/benchmark-db/
+apps/jiwenlong-rag-console/data/benchmark_report.json
+apps/jiwenlong-rag-console/frontend/target_*
+apps/jiwenlong-rag-console/chroma_rag_poc/server.out.log
+apps/jiwenlong-rag-console/chroma_rag_poc/server.err.log
+apps/jiwenlong-rag-console/chroma_rag_poc/data/chroma/*
