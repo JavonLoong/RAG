@@ -109,20 +109,6 @@ def create_app(
             return FileResponse(index_path, media_type="text/html; charset=utf-8")
         return JSONResponse({"message": "前端文件未找到，请检查 frontend/index.html"}, status_code=404)
 
-    def _frontend_asset_response(filename: str, media_type: str):
-        asset_path = FRONTEND_DIR / filename
-        if asset_path.exists():
-            return FileResponse(asset_path, media_type=media_type)
-        return JSONResponse({"message": f"前端资源未找到: {filename}"}, status_code=404)
-
-    @app.get("/app.js")
-    async def frontend_app_js():
-        return _frontend_asset_response("app.js", "application/javascript; charset=utf-8")
-
-    @app.get("/styles.css")
-    async def frontend_styles():
-        return _frontend_asset_response("styles.css", "text/css; charset=utf-8")
-
     # ----------------------------------------------------------
     # 健康检查（来自项目2）
     # ----------------------------------------------------------
