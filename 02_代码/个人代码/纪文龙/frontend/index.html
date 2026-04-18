@@ -1,1066 +1,353 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>动力装备知识库 — RAG 全功能控制面板</title>
-    <style>
-        /* ====== 全局 ====== */
-        :root {
-            --bg-dark: #0a0e17;
-            --bg-card: #111827;
-            --bg-card-hover: #1a2332;
-            --bg-input: #1e293b;
-            --border: #1e3a5f;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59,130,246,0.3);
-            --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
-            --accent-red: #ef4444;
-            --accent-purple: #8b5cf6;
-            --accent-cyan: #06b6d4;
-            --text: #e2e8f0;
-            --text-dim: #94a3b8;
-            --text-muted: #64748b;
-            --radius: 12px;
-            --shadow: 0 4px 24px rgba(0,0,0,0.4);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(139,92,246,0.04) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        /* ====== 顶部导航 ====== */
-        .topbar {
-            background: rgba(17,24,39,0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            height: 64px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .topbar-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        .topbar-logo span { font-size: 24px; }
-        .topbar-version {
-            background: var(--accent);
-            color: #fff;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-        .topbar-status {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--accent-green);
-        }
-        .status-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--accent-green);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        /* ====== 标签导航 ====== */
-        .tabs {
-            display: flex;
-            gap: 4px;
-            padding: 12px 24px;
-            background: rgba(17,24,39,0.6);
-            border-bottom: 1px solid rgba(30,58,95,0.5);
-            overflow-x: auto;
-        }
-        .tab-btn {
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
-            color: var(--text-dim);
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .tab-btn:hover { background: var(--bg-card); color: var(--text); }
-        .tab-btn.active {
-            background: var(--accent);
-            color: #fff;
-            box-shadow: 0 2px 12px var(--accent-glow);
-        }
-        .tab-btn .tab-emoji { font-size: 16px; }
-
-        /* ====== 页面容器 ====== */
-        .page { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ====== 卡片 ====== */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-        }
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .card-title .emoji { font-size: 20px; }
-
-        /* ====== 统计数字 ====== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        .stat-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(59,130,246,0.15);
-        }
-        .stat-icon { font-size: 28px; margin-bottom: 8px; }
-        .stat-value { font-size: 32px; font-weight: 800; color: var(--accent); }
-        .stat-label { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
-
-        /* ====== 双栏布局 ====== */
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
-
-        /* ====== 按钮 ====== */
-        .btn {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary { background: var(--accent); color: #fff; }
-        .btn-primary:hover { background: #2563eb; box-shadow: 0 4px 16px var(--accent-glow); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-green { background: var(--accent-green); color: #fff; }
-        .btn-green:hover { background: #059669; }
-        .btn-yellow { background: var(--accent-yellow); color: #000; }
-        .btn-yellow:hover { background: #d97706; }
-        .btn-danger { background: var(--accent-red); color: #fff; }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-        }
-        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-
-        /* ====== 输入框 ====== */
-        input[type="text"], input[type="number"], select {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus { border-color: var(--accent); }
-
-        /* ====== 上传区域 ====== */
-        .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius);
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(59,130,246,0.03);
-        }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent);
-            background: rgba(59,130,246,0.08);
-        }
-        .drop-zone .emoji { font-size: 40px; display: block; margin-bottom: 12px; }
-        .drop-zone input[type="file"] { display: none; }
-
-        /* ====== 文件列表 ====== */
-        .file-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            background: var(--bg-input);
-            transition: background 0.2s;
-        }
-        .file-item:hover { background: var(--bg-card-hover); }
-        .file-name { flex: 1; font-size: 14px; }
-        .file-size { color: var(--text-muted); font-size: 13px; }
-        .file-del {
-            color: var(--accent-red);
-            cursor: pointer;
-            font-size: 18px;
-            transition: transform 0.2s;
-        }
-        .file-del:hover { transform: scale(1.2); }
-
-        /* ====== 搜索结果 ====== */
-        .result-item {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: border-color 0.2s;
-        }
-        .result-item:hover { border-color: var(--accent); }
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .result-rank {
-            background: var(--accent);
-            color: #fff;
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .result-score {
-            font-size: 13px;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-        .score-high { background: rgba(16,185,129,0.15); color: var(--accent-green); }
-        .score-mid  { background: rgba(245,158,11,0.15); color: var(--accent-yellow); }
-        .score-low  { background: rgba(239,68,68,0.15); color: var(--accent-red); }
-        .result-text {
-            font-size: 14px;
-            line-height: 1.7;
-            color: var(--text-dim);
-            margin-bottom: 10px;
-        }
-        .result-meta {
-            display: flex;
-            gap: 16px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* ====== 架构图 ====== */
-        .arch-flow {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0;
-        }
-        .arch-step {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 28px;
-            text-align: center;
-            width: 80%;
-            max-width: 500px;
-            transition: all 0.3s;
-        }
-        .arch-step:hover {
-            border-color: var(--accent);
-            transform: scale(1.02);
-            box-shadow: 0 4px 20px var(--accent-glow);
-        }
-        .arch-step .step-title { font-weight: 700; font-size: 15px; }
-        .arch-step .step-module { color: var(--accent-green); font-size: 13px; font-family: monospace; }
-        .arch-step .step-desc { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
-        .arch-arrow {
-            font-size: 24px;
-            color: var(--accent);
-            margin: -2px 0;
-        }
-
-        /* ====== 模块列表 ====== */
-        .module-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 12px;
-        }
-        .module-item {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px;
-            transition: border-color 0.2s;
-        }
-        .module-item:hover { border-color: var(--accent-purple); }
-        .module-name { color: var(--accent-green); font-family: monospace; font-weight: 700; }
-        .module-desc { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
-        .module-origin {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-top: 6px;
-            display: inline-block;
-        }
-        .origin-p1 { background: rgba(59,130,246,0.15); color: var(--accent); }
-        .origin-p2 { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
-        .origin-merge { background: rgba(16,185,129,0.15); color: var(--accent-green); }
-
-        /* ====== 基准测试 ====== */
-        .bench-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-        }
-        .bench-metric {
-            background: var(--bg-input);
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-        }
-        .bench-value { font-size: 28px; font-weight: 800; }
-        .bench-unit { font-size: 12px; color: var(--text-muted); }
-        .bench-label { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
-
-        /* ====== 加载动画 ====== */
-        .spinner {
-            display: inline-block;
-            width: 16px; height: 16px;
-            border: 2px solid transparent;
-            border-top: 2px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ====== 状态提示 ====== */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 14px 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            z-index: 1000;
-            display: none;
-            animation: slideUp 0.3s ease;
-            max-width: 400px;
-        }
-        .toast.show { display: block; }
-        .toast.success { border-color: var(--accent-green); }
-        .toast.error { border-color: var(--accent-red); }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* ====== 空状态 ====== */
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-        .empty-state .emoji { font-size: 40px; display: block; margin-bottom: 12px; }
-
-        /* ====== 进度条 ====== */
-        .progress-bar {
-            height: 6px;
-            background: var(--bg-input);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 16px 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-purple));
-            border-radius: 3px;
-            transition: width 0.5s ease;
-            width: 0%;
-        }
-
-        /* ====== 日志面板 ====== */
-        .log-panel {
-            background: #0d1117;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            max-height: 300px;
-            overflow-y: auto;
-            color: var(--text-dim);
-        }
-        .log-panel .log-ok { color: var(--accent-green); }
-        .log-panel .log-warn { color: var(--accent-yellow); }
-        .log-panel .log-err { color: var(--accent-red); }
-        .log-panel .log-info { color: var(--accent-cyan); }
-        .log-panel .log-time { color: var(--text-muted); }
-
-        /* ====== 集合详情 ====== */
-        .coll-item {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 10px;
-        }
-        .coll-name { font-weight: 700; font-size: 15px; color: var(--accent-cyan); }
-        .coll-meta { display: flex; gap: 24px; margin-top: 8px; font-size: 13px; color: var(--text-dim); }
-        .coll-sources { margin-top: 8px; }
-        .coll-source { font-size: 13px; color: var(--text-muted); padding: 2px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>动力装备知识库控制台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="./app.js" charset="utf-8" defer></script>
 </head>
 <body>
-    <!-- ====== 顶部导航 ====== -->
-    <div class="topbar">
-        <div class="topbar-logo">
-            <span>🔬</span> 动力装备知识库
-            <span class="topbar-version">v2.0</span>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-main">
+          <div class="brand-mark" aria-hidden="true">
+            <iconify-icon icon="lucide:database"></iconify-icon>
+          </div>
+          <div class="brand-copy">
+            <strong>动力装备知识库</strong>
+          </div>
         </div>
-        <div class="topbar-status">
-            <span class="status-dot"></span>
-            <span id="sysStatus">系统就绪</span>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
+          <iconify-icon id="sidebarToggleIcon" icon="lucide:chevrons-left"></iconify-icon>
+        </button>
+      </div>
+
+      <div class="nav-list" id="navList">
+        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><strong>系统总览</strong></span></button>
+        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><strong>数据接入</strong></span></button>
+        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><strong>语义检索</strong></span></button>
+        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><strong>系统结构</strong></span></button>
+        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><strong>性能基准</strong></span></button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div>
+          <strong>后端状态</strong>
+          <p id="statusText">正在检查服务链路</p>
         </div>
+        <span class="status-dot warning" id="sysStatus"></span>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="topbar">
+        <form class="topbar-search" id="globalSearchForm">
+          <span class="input-icon" aria-hidden="true"><iconify-icon icon="lucide:search"></iconify-icon></span>
+          <input id="globalSearchInput" type="search" placeholder="全局搜索页面、日志、操作节点">
+        </form>
+
+        <div class="topbar-actions">
+          <div class="status-pill" id="statusPill"><iconify-icon icon="lucide:shield-check"></iconify-icon><span class="status-dot warning"></span><span id="refreshStamp">等待首次同步</span></div>
+          <button class="ghost-btn" id="refreshBtn" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新数据</span></button>
+          <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>运维</strong><span class="muted">系统管理员</span></div>
+        </div>
+      </header>
+
+      <main class="page-stack">
+        <section class="page active" id="page-overview">
+          <div class="page-stack">
+            <article class="panel hero-card">
+              <div class="hero-actions">
+                <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
+                <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+              </div>
+            </article>
+
+            <div class="overview-grid">
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <p class="card-kicker">集合状态</p>
+                      <h3>集合与来源结构</h3>
+                    </div>
+                    <span class="pill" id="collectionSummaryPill">实时结构</span>
+                  </div>
+                  <div class="spectrum" id="collectionSpectrum"></div>
+                  <div class="queue-hint">来源类型比例来自最新统计采样，删除集合后会自动刷新。</div>
+                  <div class="chart-surface" id="collList"></div>
+                </article>
+              </div>
+
+              <div class="stack">
+                <article class="panel chart-card">
+                  <div class="panel-head">
+                    <div>
+                      <p class="card-kicker">趋势快照</p>
+                      <h3>索引增长与检索延迟</h3>
+                    </div>
+                    <div class="panel-tools">
+                      <span class="pill" id="trendSummaryPill">当前会话</span>
+                      <div class="segment-group" id="trendModeGroup">
+                        <button class="segment-btn active" type="button" data-trend-mode="balance">综合</button>
+                        <button class="segment-btn" type="button" data-trend-mode="volume">增量</button>
+                        <button class="segment-btn" type="button" data-trend-mode="latency">延迟</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="chart-surface" id="trendChart"></div>
+                  <div class="legend-row">
+                    <span class="legend-item"><span class="legend-swatch pdf"></span>PDF</span>
+                    <span class="legend-item"><span class="legend-swatch text"></span>文本</span>
+                    <span class="legend-item"><span class="legend-swatch json"></span>JSON</span>
+                    <span class="legend-item"><span class="legend-swatch other"></span>其他</span>
+                    <span class="legend-item"><span class="legend-swatch" style="background:var(--accent);"></span>延迟</span>
+                  </div>
+                </article>
+
+                <div class="mini-grid">
+                  <article class="panel mini-card"><p class="card-kicker">吞吐脉冲</p><div class="mini-value" id="miniThroughput">--</div><p>当前小时写入吞吐。</p></article>
+                  <article class="panel mini-card"><p class="card-kicker">结果精度</p><div class="mini-value" id="miniPrecision">--</div><p>最近一次压测结果。</p></article>
+                </div>
+              </div>
+
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <p class="card-kicker">实时日志</p>
+                      <h3>实时操作日志</h3>
+                    </div>
+                    <div class="panel-tools">
+                      <span class="pill" id="activitySummaryPill">全部日志</span>
+                      <div class="segment-group" id="activityFilterGroup">
+                        <button class="segment-btn active" type="button" data-activity-filter="all">全部</button>
+                        <button class="segment-btn" type="button" data-activity-filter="success">成功</button>
+                        <button class="segment-btn" type="button" data-activity-filter="warning">预警</button>
+                        <button class="segment-btn" type="button" data-activity-filter="danger">异常</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="activity-feed" id="activityFeed"></div>
+                </article>
+
+                <article class="panel mini-card">
+                  <p class="card-kicker">导航脉冲</p>
+                  <div class="mini-value" id="searchPulse">--</div>
+                </article>
+              </div>
+            </div>
+
+            <div class="metric-grid metric-grid--summary">
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">文档数</p>
+                    <div class="metric-value" id="statDocs">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkDocs" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="docsPdf">PDF: 0</span><span id="docsText">文本: 0</span><span id="docsJson">JSON: 0</span><span id="docsOther">其他: 0</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">词元数</p>
+                    <div class="metric-value" id="statTokens">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkTokens" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statSize">0.0 MB</span><span id="statDim">512 维</span><span id="statRecordCount">记录: 0</span><span id="statChunkCount">片段: 0</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">集合数</p>
+                    <div class="metric-value" id="statColls">0</div>
+                  </div>
+                  <svg class="sparkline" id="sparkColls" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statPrimaryCollection">当前集合: -</span><span id="statSuccessFiles">成功文件: 0</span><span id="statFailedFiles">失败文件: 0</span><span id="statStorageLive">实时存储 0.0 MB</span>
+                </div>
+              </article>
+
+              <article class="panel metric-card">
+                <div class="metric-top">
+                  <div>
+                    <p class="card-kicker">检索延迟</p>
+                    <div class="metric-value" id="statLatency">--</div>
+                  </div>
+                  <svg class="sparkline" id="sparkLatency" viewBox="0 0 96 32"></svg>
+                </div>
+                <div class="metric-subgrid">
+                  <span id="statLastResults">结果数: 0</span><span id="statP95">P95: --</span><span id="statPrecision">精度: --</span><span id="statQuality">质量监测正常</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+        <section class="page" id="page-data">
+          <div class="page-stack">
+            <div class="data-grid">
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>文件与文件夹接入</h3>
+                    </div>
+                    <span class="pill">.json .pdf .docx .txt .md .csv .tsv .log</span>
+                  </div>
+                  <div class="queue-dropzone" id="dropZone">
+                    <div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
+                      <h3>拖入整个文件夹也能识别</h3>
+                      <div class="queue-actions">
+                        <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>浏览队列</span></button>
+                      </div>
+                      <div class="queue-actions">
+                        <button class="ghost-btn" id="dropFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>递归识别目录</span></button>
+                      </div>
+                    </div>
+                  </div>
+                  <input class="hidden-input" id="fileInput" type="file" multiple accept=".json,.pdf,.docx,.txt,.md,.markdown,.csv,.tsv,.log">
+                  <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>上传队列</h3>
+                      <p id="uploadQueueMeta">等待同步上传目录。</p>
+                    </div>
+                    <div class="queue-actions">
+                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新队列</span></button>
+                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理并入库</span></button>
+                    </div>
+                  </div>
+                  <div class="progress" id="processProgress"><div class="progress-bar" id="processFill"></div></div>
+                  <div class="queue-list" id="processLog"></div>
+                </article>
+              </div>
+
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>待处理文件列表</h3>
+                    </div>
+                    <span class="pill" id="queueCountPill">0 个文件</span>
+                  </div>
+                  <div class="queue-list" id="queueList"></div>
+                </article>
+
+                <article class="panel" id="qualityCard">
+                  <div class="panel-head">
+                    <div>
+                      <h3>分块与质量摘要</h3>
+                    </div>
+                    <span class="pill">处理后</span>
+                  </div>
+                  <div class="quality-report" id="qualityReport"></div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="page" id="page-search">
+          <div class="page-stack">
+            <div class="search-layout">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h3>检索配置</h3>
+                  </div>
+                </div>
+                <div class="search-row">
+                  <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
+                  <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="5">
+                  <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                </div>
+                <div class="search-meta" id="searchMeta">等待检索输入。</div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h3>结果列表</h3>
+                  </div>
+                </div>
+                <div class="results-list" id="searchResults"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-architecture">
+          <div class="page-stack">
+            <div class="arch-grid" id="archGrid">
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><h4>01 上传与预检</h4></div><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:file-type-2"></iconify-icon></span><h4>02 解析与清洗</h4></div><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:database"></iconify-icon></span><h4>03 分块与向量化</h4></div><p>标题触发分块和多级断点切分同时保留，chunk metadata 额外记录来源扩展名与来源类型。</p></article>
+              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:gauge"></iconify-icon></span><h4>04 检索与基准</h4></div><p>语义检索、延迟统计与本地压测集成在同一控制台中，便于做链路回归和性能观察。</p></article>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-benchmark">
+          <div class="page-stack">
+            <div class="benchmark-grid">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h3>运行参数</h3>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <div class="field"><label for="benchDocs">文档数</label><input class="form-control" id="benchDocs" type="number" min="50" max="5000" value="500"></div>
+                  <div class="field"><label for="benchBatch">批大小</label><input class="form-control" id="benchBatch" type="number" min="10" max="1000" value="100"></div>
+                  <div class="field"><label for="benchQueries">查询数</label><input class="form-control" id="benchQueries" type="number" min="10" max="1000" value="50"></div>
+                  <div class="field"><label for="benchTopK">返回条数</label><input class="form-control" id="benchTopK" type="number" min="1" max="20" value="5"></div>
+                </div>
+                <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" id="benchFill"></div></div></div>
+                <div class="queue-actions" style="justify-content:flex-start;margin-top:18px;"><button class="btn" id="btnBench" type="button"><iconify-icon icon="lucide:square-activity"></iconify-icon><span>开始压测</span></button></div>
+                <div class="search-meta" id="benchLog">等待压测开始。</div>
+              </article>
+
+              <article class="panel" id="benchResults">
+                <div class="panel-head">
+                  <div>
+                    <h3>性能读数</h3>
+                  </div>
+                </div>
+                <div class="empty-state" id="benchEmpty">尚未运行压测。</div>
+                <div class="bench-grid" id="benchGrid"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
 
-    <!-- ====== 标签导航 ====== -->
-    <div class="tabs" id="tabNav">
-        <button class="tab-btn active" data-page="overview"><span class="tab-emoji">📊</span> 总览</button>
-        <button class="tab-btn" data-page="data"><span class="tab-emoji">📂</span> 数据管理</button>
-        <button class="tab-btn" data-page="search"><span class="tab-emoji">🔍</span> 语义检索</button>
-        <button class="tab-btn" data-page="arch"><span class="tab-emoji">🏗️</span> 系统架构</button>
-        <button class="tab-btn" data-page="bench"><span class="tab-emoji">🏆</span> 性能测试</button>
-    </div>
-
-    <!-- ====== 页面1: 总览 ====== -->
-    <div class="page active" id="page-overview">
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" id="statDocs">-</div><div class="stat-label">文档块数</div></div>
-            <div class="stat-card"><div class="stat-icon">🔤</div><div class="stat-value" id="statTokens">-</div><div class="stat-label">TOKENS (估)</div></div>
-            <div class="stat-card"><div class="stat-icon">💾</div><div class="stat-value" id="statSize">-</div><div class="stat-label">存储空间</div></div>
-            <div class="stat-card"><div class="stat-icon">📐</div><div class="stat-value" id="statDim">-</div><div class="stat-label">向量维度</div></div>
-            <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value" id="statColls">-</div><div class="stat-label">集合数</div></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span class="emoji">📚</span> 数据库集合详情</div>
-            <div id="collList"><div class="empty-state"><span class="spinner"></span> 加载中...</div></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span class="emoji">🔗</span> 快捷操作</div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="switchTab('data')">📂 上传数据</button>
-                <button class="btn btn-green" onclick="switchTab('search')">🔍 搜索测试</button>
-                <button class="btn btn-yellow" onclick="switchTab('bench')">🏆 性能测试</button>
-                <button class="btn btn-outline" onclick="switchTab('arch')">🏗️ 系统架构</button>
-                <button class="btn btn-outline" onclick="window.open('/docs','_blank')">📖 API 文档</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ====== 页面2: 数据管理 ====== -->
-    <div class="page" id="page-data">
-        <div class="two-col">
-            <div>
-                <div class="card">
-                    <div class="card-title"><span class="emoji">📤</span> 文件上传</div>
-                    <div class="drop-zone" id="dropZone">
-                        <span class="emoji">📁</span>
-                        <div>拖拽或点击上传 Label Studio JSON 文件</div>
-                        <div style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">支持多文件同时上传</div>
-                        <input type="file" id="fileInput" accept=".json" multiple>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title"><span class="emoji">📋</span> 已上传文件</div>
-                    <div id="fileList"><div class="empty-state">暂无文件</div></div>
-                </div>
-            </div>
-            <div>
-                <div class="card">
-                    <div class="card-title"><span class="emoji">⚡</span> 处理入库</div>
-                    <p style="color: var(--text-dim); margin-bottom: 16px; font-size: 14px;">
-                        将已上传的文件进行：解析 → 清洗 → 智能分块 → 向量化 → 存入 ChromaDB
-                    </p>
-                    <button class="btn btn-primary" id="btnProcess" onclick="doProcess()" style="width: 100%; justify-content: center; padding: 14px;">
-                        ⚡ 开始处理
-                    </button>
-                    <div class="progress-bar" id="processProgress" style="display:none;">
-                        <div class="progress-fill" id="processFill"></div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title"><span class="emoji">📝</span> 处理日志</div>
-                    <div class="log-panel" id="processLog">
-                        <span class="log-info">等待处理命令...</span>
-                    </div>
-                </div>
-
-                <div class="card" id="qualityCard" style="display: none;">
-                    <div class="card-title"><span class="emoji">📋</span> 数据质量报告</div>
-                    <div id="qualityReport"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ====== 页面3: 语义检索 ====== -->
-    <div class="page" id="page-search">
-        <div class="card">
-            <div class="card-title"><span class="emoji">🔍</span> 语义检索</div>
-            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <input type="text" id="searchInput" placeholder="输入查询，如：燃气轮机故障诊断、压气机喘振、叶片裂纹检测..." style="flex:1">
-                <select id="searchTopK" style="width: 100px;">
-                    <option value="3">Top 3</option>
-                    <option value="5" selected>Top 5</option>
-                    <option value="10">Top 10</option>
-                </select>
-                <button class="btn btn-primary" id="btnSearch" onclick="doSearch()">🔍 搜索</button>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-                <button class="btn btn-outline" onclick="quickSearch('燃气轮机故障诊断')">燃气轮机故障诊断</button>
-                <button class="btn btn-outline" onclick="quickSearch('压气机喘振原因')">压气机喘振原因</button>
-                <button class="btn btn-outline" onclick="quickSearch('叶片裂纹检测方法')">叶片裂纹检测方法</button>
-                <button class="btn btn-outline" onclick="quickSearch('锅炉安全操作规程')">锅炉安全操作规程</button>
-                <button class="btn btn-outline" onclick="quickSearch('柴油发动机技术规范')">柴油发动机技术规范</button>
-            </div>
-        </div>
-
-        <div id="searchResults">
-            <div class="empty-state"><span class="emoji">💡</span> 输入关键词或点击上方示例开始语义检索</div>
-        </div>
-    </div>
-
-    <!-- ====== 页面4: 系统架构 ====== -->
-    <div class="page" id="page-arch">
-        <div class="two-col">
-            <div class="card">
-                <div class="card-title"><span class="emoji">🔄</span> 数据流全景</div>
-                <div class="arch-flow">
-                    <div class="arch-step" style="border-color: var(--accent-yellow);">
-                        <div class="step-title">📄 PDF 技术手册</div>
-                        <div class="step-desc">Label Studio 人工标注</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step">
-                        <div class="step-title">📥 JSON 标注文件</div>
-                        <div class="step-module">parsing.py</div>
-                        <div class="step-desc">自动格式检测 + 坐标排序 + 内容去重</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step">
-                        <div class="step-title">🧹 数据清洗</div>
-                        <div class="step-module">cleaning.py</div>
-                        <div class="step-desc">OCR 碎片短文本自动合并</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step">
-                        <div class="step-title">✂️ 智能分块</div>
-                        <div class="step-module">chunking.py</div>
-                        <div class="step-desc">Title 触发分块 + 多级语义断点</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step">
-                        <div class="step-title">🧮 向量化</div>
-                        <div class="step-module">embeddings.py</div>
-                        <div class="step-desc">BGE-m3 → 1024 维向量 (cosine 距离)</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step" style="border-color: var(--accent-green);">
-                        <div class="step-title">🗄️ ChromaDB 向量数据库</div>
-                        <div class="step-module">pipeline.py</div>
-                        <div class="step-desc">持久化 + 增量更新 + 自动去重</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step" style="border-color: var(--accent-purple);">
-                        <div class="step-title">🔍 混合检索</div>
-                        <div class="step-module">retrieval.py</div>
-                        <div class="step-desc">语义检索 + BM25 关键词 + RRF 融合排序</div>
-                    </div>
-                    <div class="arch-arrow">↓</div>
-                    <div class="arch-step" style="border-color: var(--accent-cyan); opacity: 0.6;">
-                        <div class="step-title">🤖 RAG 问答 (规划中)</div>
-                        <div class="step-module">rag.py</div>
-                        <div class="step-desc">接入 DeepSeek / Qwen API 生成回答</div>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <div class="card">
-                    <div class="card-title"><span class="emoji">📦</span> 模块清单 (12个)</div>
-                    <div class="module-grid">
-                        <div class="module-item"><div class="module-name">schemas.py</div><div class="module-desc">数据结构 (TextBlock / ChunkRecord)</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">text_utils.py</div><div class="module-desc">Unicode 规范化 / SHA256 / Token 估算</div><span class="module-origin origin-p2">项目2</span></div>
-                        <div class="module-item"><div class="module-name">parsing.py</div><div class="module-desc">JSON 解析 + 格式自动检测 + 去重</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">cleaning.py</div><div class="module-desc">OCR 碎片短文本合并</div><span class="module-origin origin-p1">项目1</span></div>
-                        <div class="module-item"><div class="module-name">chunking.py</div><div class="module-desc">Title 触发 + 多级语义断点</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">embeddings.py</div><div class="module-desc">BGE-m3 向量化 + hashing 降级</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">retrieval.py</div><div class="module-desc">BM25 + 语义 + RRF 混合检索</div><span class="module-origin origin-p1">项目1</span></div>
-                        <div class="module-item"><div class="module-name">rag.py</div><div class="module-desc">端到端 RAG 问答 (预留)</div><span class="module-origin origin-p1">项目1</span></div>
-                        <div class="module-item"><div class="module-name">pipeline.py</div><div class="module-desc">ChromaDB 管理 + 流程编排</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">api.py</div><div class="module-desc">FastAPI + Pydantic 校验</div><span class="module-origin origin-merge">合并</span></div>
-                        <div class="module-item"><div class="module-name">benchmark.py</div><div class="module-desc">合成数据性能基准测试</div><span class="module-origin origin-p2">项目2</span></div>
-                        <div class="module-item"><div class="module-name">__main__.py</div><div class="module-desc">CLI 入口 (6 个子命令)</div><span class="module-origin origin-merge">合并</span></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title"><span class="emoji">📐</span> 技术指标</div>
-                    <table style="width: 100%; font-size: 14px;">
-                        <tr><td style="padding: 8px; color: var(--text-dim);">向量模型</td><td style="padding: 8px; font-weight: 600;">BGE-m3 (BAAI)</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">向量维度</td><td style="padding: 8px; font-weight: 600;">1024</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">分块大小</td><td style="padding: 8px; font-weight: 600;">500 字符 (可配置)</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">重叠大小</td><td style="padding: 8px; font-weight: 600;">50 字符</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">距离度量</td><td style="padding: 8px; font-weight: 600;">Cosine</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">检索方式</td><td style="padding: 8px; font-weight: 600;">语义 + BM25 + RRF</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">向量数据库</td><td style="padding: 8px; font-weight: 600;">ChromaDB</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">后端框架</td><td style="padding: 8px; font-weight: 600;">FastAPI + Uvicorn</td></tr>
-                        <tr><td style="padding: 8px; color: var(--text-dim);">测试用例</td><td style="padding: 8px; font-weight: 600;">8 / 8 通过 ✅</td></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ====== 页面5: 性能测试 ====== -->
-    <div class="page" id="page-bench">
-        <div class="card">
-            <div class="card-title"><span class="emoji">🏆</span> 性能基准测试</div>
-            <p style="color: var(--text-dim); margin-bottom: 16px; font-size: 14px;">
-                使用合成数据测试 ChromaDB 的写入和查询性能。测试完成后自动清理。
-            </p>
-            <div style="display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 16px;">
-                <div><label style="font-size: 12px; color: var(--text-muted);">文档数</label><input type="number" id="benchDocs" value="500" style="width: 100px;"></div>
-                <div><label style="font-size: 12px; color: var(--text-muted);">批大小</label><input type="number" id="benchBatch" value="100" style="width: 100px;"></div>
-                <div><label style="font-size: 12px; color: var(--text-muted);">查询数</label><input type="number" id="benchQueries" value="50" style="width: 100px;"></div>
-                <button class="btn btn-yellow" id="btnBench" onclick="doBenchmark()">🏆 开始测试</button>
-            </div>
-            <div class="progress-bar" id="benchProgress" style="display: none;">
-                <div class="progress-fill" id="benchFill"></div>
-            </div>
-        </div>
-
-        <div id="benchResults" style="display: none;">
-            <div class="bench-grid" id="benchGrid"></div>
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-title"><span class="emoji">📝</span> 测试详情</div>
-                <div class="log-panel" id="benchLog"></div>
-            </div>
-        </div>
-
-        <div id="benchEmpty">
-            <div class="empty-state"><span class="emoji">⏱️</span> 点击"开始测试"运行性能基准</div>
-        </div>
-    </div>
-
-    <!-- ====== Toast ====== -->
-    <div class="toast" id="toast"></div>
-
-    <script>
-        const API = '';
-
-        // =============== Tab 切换 ===============
-        function switchTab(page) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelector(`[data-page="${page}"]`).classList.add('active');
-            document.getElementById(`page-${page}`).classList.add('active');
-        }
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => switchTab(btn.dataset.page));
-        });
-
-        // =============== Toast ===============
-        function showToast(msg, type = 'info', duration = 4000) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = `toast show ${type}`;
-            setTimeout(() => t.classList.remove('show'), duration);
-        }
-
-        // =============== 统计 ===============
-        async function refreshStats() {
-            try {
-                const res = await fetch(`${API}/api/stats`);
-                const data = await res.json();
-                document.getElementById('statDocs').textContent = data.total_documents.toLocaleString();
-                document.getElementById('statTokens').textContent = data.total_tokens_estimate.toLocaleString();
-                document.getElementById('statSize').textContent = data.storage_size_mb + ' MB';
-                document.getElementById('statDim').textContent = data.embedding_dim || '-';
-
-                // 只统计有数据的集合数
-                const activeCols = (data.collections || []).filter(c => c.count > 0);
-                document.getElementById('statColls').textContent = activeCols.length;
-
-                // 集合详情
-                const collHtml = (data.collections || []).map(c => {
-                    if (c.count === 0) {
-                        return `
-                            <div class="coll-item" style="opacity: 0.5;">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <div class="coll-name">📚 ${c.name} <span style="font-size:12px; color:var(--text-muted);">(空)</span></div>
-                                    <button class="btn btn-danger" style="padding:4px 12px; font-size:12px;" onclick="deleteColl('${c.name}')">删除空集合</button>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    return `
-                        <div class="coll-item">
-                            <div class="coll-name">📚 ${c.name}</div>
-                            <div class="coll-meta">
-                                <span>📦 ${c.count} 条记录</span>
-                                <span>📝 ${c.estimated_chars.toLocaleString()} 字符</span>
-                                <span>🔤 ${c.estimated_tokens.toLocaleString()} tokens</span>
-                            </div>
-                            ${c.sources?.length ? `<div class="coll-sources">${c.sources.map(s => `<div class="coll-source">📄 ${s}</div>`).join('')}</div>` : ''}
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('collList').innerHTML = collHtml || '<div class="empty-state">暂无集合</div>';
-
-                // 更新状态
-                document.getElementById('sysStatus').textContent = '系统就绪';
-                document.getElementById('sysStatus').style.color = 'var(--accent-green)';
-            } catch (e) {
-                document.getElementById('sysStatus').textContent = '未连接';
-                document.getElementById('sysStatus').style.color = 'var(--accent-red)';
-                document.getElementById('collList').innerHTML = `
-                    <div class="empty-state">
-                        <span class="emoji">⚠️</span>
-                        <div style="margin-top:8px">无法连接后端服务器</div>
-                        <div style="color:var(--text-muted); font-size:13px; margin-top:8px;">
-                            请先双击 <b>双击启动.bat</b> 启动服务<br>
-                            然后访问 <b>http://localhost:8000</b>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        async function deleteColl(name) {
-            if (!confirm(`确认删除集合 "${name}"？`)) return;
-            try {
-                const res = await fetch(`${API}/api/collections/${name}`, { method: 'DELETE' });
-                if (res.ok) {
-                    showToast(`🗑️ 集合 ${name} 已删除`, 'success');
-                    refreshStats();
-                } else {
-                    const data = await res.json();
-                    showToast(`❌ ${data.detail}`, 'error');
-                }
-            } catch (e) {
-                showToast('❌ 删除失败', 'error');
-            }
-        }
-
-        // =============== 文件上传 ===============
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        });
-        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-
-        async function handleFiles(files) {
-            for (const file of files) {
-                if (!file.name.endsWith('.json')) {
-                    showToast(`❌ ${file.name} 不是 JSON 文件`, 'error');
-                    continue;
-                }
-                const formData = new FormData();
-                formData.append('file', file);
-                try {
-                    const res = await fetch(`${API}/api/upload`, { method: 'POST', body: formData });
-                    const data = await res.json();
-                    if (res.ok) {
-                        showToast(`✅ ${file.name} 上传成功 (${data.size_kb} KB)`, 'success');
-                    } else {
-                        showToast(`❌ ${data.detail}`, 'error');
-                    }
-                } catch (e) {
-                    showToast(`❌ 上传失败: ${e.message}`, 'error');
-                }
-            }
-            loadFileList();
-        }
-
-        async function loadFileList() {
-            try {
-                const res = await fetch(`${API}/api/uploads`);
-                const data = await res.json();
-                if (!data.files?.length) {
-                    document.getElementById('fileList').innerHTML = '<div class="empty-state">暂无上传文件</div>';
-                    return;
-                }
-                document.getElementById('fileList').innerHTML = data.files.map(f => `
-                    <div class="file-item">
-                        <span>📄</span>
-                        <span class="file-name">${f.filename}</span>
-                        <span class="file-size">${f.size_kb} KB</span>
-                        <span class="file-del" onclick="deleteFile('${f.filename}')">✕</span>
-                    </div>
-                `).join('');
-            } catch (e) {}
-        }
-
-        async function deleteFile(filename) {
-            if (!confirm(`确认删除 ${filename}?`)) return;
-            try {
-                await fetch(`${API}/api/uploads/${filename}`, { method: 'DELETE' });
-                showToast(`🗑️ ${filename} 已删除`, 'success');
-                loadFileList();
-            } catch (e) {
-                showToast('❌ 删除失败', 'error');
-            }
-        }
-
-        // =============== 处理入库 ===============
-        async function doProcess() {
-            const btn = document.getElementById('btnProcess');
-            const log = document.getElementById('processLog');
-            const progress = document.getElementById('processProgress');
-            const fill = document.getElementById('processFill');
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> 处理中...';
-            progress.style.display = 'block';
-            fill.style.width = '30%';
-            log.innerHTML = `<span class="log-time">[${new Date().toLocaleTimeString()}]</span> <span class="log-info">开始处理: 解析 → 清洗 → 分块 → 向量化 → 存储</span>\n`;
-
-            try {
-                fill.style.width = '60%';
-                const res = await fetch(`${API}/api/process`, { method: 'POST' });
-                const data = await res.json();
-                fill.style.width = '100%';
-
-                if (res.ok) {
-                    log.innerHTML += `<span class="log-time">[${new Date().toLocaleTimeString()}]</span> <span class="log-ok">✅ 处理完成!</span>\n`;
-                    log.innerHTML += `<span class="log-info">   文件数: ${data.files_processed}</span>\n`;
-                    log.innerHTML += `<span class="log-info">   记录数: ${data.records_processed}</span>\n`;
-                    log.innerHTML += `<span class="log-info">   Chunk 数: ${data.chunks_written}</span>\n`;
-                    if (data.cleaning) {
-                        log.innerHTML += `<span class="log-info">   碎片合并: ${data.cleaning.fragments_merged} 个</span>\n`;
-                    }
-                    log.innerHTML += `<span class="log-info">   耗时: ${data.elapsed_s}s</span>\n`;
-
-                    if (data.quality_report) {
-                        document.getElementById('qualityCard').style.display = 'block';
-                        const q = data.quality_report;
-                        let qhtml = `<div style="font-size: 14px;">`;
-                        if (q.issues?.length) {
-                            qhtml += q.issues.map(i => `<div style="color: var(--accent-yellow); margin: 4px 0;">⚠️ ${i}</div>`).join('');
-                        } else {
-                            qhtml += `<div style="color: var(--accent-green);">✅ 未发现明显问题</div>`;
-                        }
-                        qhtml += `</div>`;
-                        document.getElementById('qualityReport').innerHTML = qhtml;
-                    }
-
-                    showToast(`✅ 处理完成: ${data.chunks_written} 个 chunk 已入库`, 'success');
-                    refreshStats();
-                } else {
-                    log.innerHTML += `<span class="log-err">❌ ${data.detail}</span>\n`;
-                    showToast(`❌ ${data.detail}`, 'error');
-                }
-            } catch (e) {
-                log.innerHTML += `<span class="log-err">❌ 处理失败: ${e.message}</span>\n`;
-                showToast('❌ 处理失败', 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '⚡ 开始处理';
-            setTimeout(() => { fill.style.width = '0%'; progress.style.display = 'none'; }, 2000);
-        }
-
-        // =============== 搜索 ===============
-        function quickSearch(q) {
-            document.getElementById('searchInput').value = q;
-            doSearch();
-        }
-
-        async function doSearch() {
-            const q = document.getElementById('searchInput').value.trim();
-            if (!q) return;
-            const topK = document.getElementById('searchTopK').value;
-            const container = document.getElementById('searchResults');
-            container.innerHTML = '<div class="empty-state"><span class="spinner"></span> 检索中...</div>';
-
-            try {
-                const res = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}&top_k=${topK}`);
-                const data = await res.json();
-
-                if (!res.ok) {
-                    container.innerHTML = `<div class="empty-state"><span class="emoji">⚠️</span> ${data.detail}</div>`;
-                    return;
-                }
-                if (!data.results?.length) {
-                    container.innerHTML = '<div class="empty-state"><span class="emoji">🔍</span> 未找到相关结果。请先上传数据并处理入库。</div>';
-                    return;
-                }
-
-                container.innerHTML = data.results.map((r, i) => {
-                    const sim = (r.similarity * 100).toFixed(1);
-                    const scoreClass = sim > 60 ? 'score-high' : sim > 40 ? 'score-mid' : 'score-low';
-                    const text = r.text.substring(0, 350) + (r.text.length > 350 ? '...' : '');
-                    return `
-                        <div class="result-item">
-                            <div class="result-header">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    <span class="result-rank">${i+1}</span>
-                                    <span style="font-weight:600;">匹配 #${i+1}</span>
-                                </div>
-                                <span class="result-score ${scoreClass}">相似度 ${sim}%</span>
-                            </div>
-                            <div class="result-text">${text}</div>
-                            <div class="result-meta">
-                                <span>📄 ${r.metadata?.filename || '—'}</span>
-                                <span>📑 第${r.metadata?.page_nums || '?'}页</span>
-                                <span>📊 距离 ${r.distance?.toFixed(4) || '—'}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('') + `
-                    <div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 13px;">
-                        🕐 检索耗时 ${data.latency_ms}ms · 数据库 ${data.total_in_db || '?'} 条 · 模型 ${data.embedding_model || 'BGE-m3'}
-                    </div>
-                `;
-            } catch (e) {
-                container.innerHTML = `<div class="empty-state"><span class="emoji">❌</span> 检索失败: ${e.message}</div>`;
-            }
-        }
-
-        document.getElementById('searchInput').addEventListener('keydown', e => {
-            if (e.key === 'Enter') doSearch();
-        });
-
-        // =============== 性能测试 ===============
-        async function doBenchmark() {
-            const btn = document.getElementById('btnBench');
-            const progress = document.getElementById('benchProgress');
-            const fill = document.getElementById('benchFill');
-            const docs = parseInt(document.getElementById('benchDocs').value);
-            const batch = parseInt(document.getElementById('benchBatch').value);
-            const queries = parseInt(document.getElementById('benchQueries').value);
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> 测试中...';
-            progress.style.display = 'block';
-            fill.style.width = '50%';
-            document.getElementById('benchEmpty').style.display = 'none';
-
-            try {
-                const res = await fetch(`${API}/api/benchmark`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        collection: 'benchmark_test',
-                        document_count: docs,
-                        batch_size: batch,
-                        query_count: queries,
-                        backend: 'hashing',
-                        cleanup: true,
-                    }),
-                });
-                fill.style.width = '100%';
-                const data = await res.json();
-
-                if (res.ok) {
-                    document.getElementById('benchResults').style.display = 'block';
-                    document.getElementById('benchGrid').innerHTML = `
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--accent-green)">${data.insert_docs_per_second?.toFixed(0) || '-'}</div><div class="bench-unit">docs/sec</div><div class="bench-label">插入吞吐</div></div>
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--accent-cyan)">${data.query_qps?.toFixed(1) || '-'}</div><div class="bench-unit">QPS</div><div class="bench-label">查询吞吐</div></div>
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--accent-yellow)">${data.avg_query_latency_ms?.toFixed(1) || '-'}</div><div class="bench-unit">ms</div><div class="bench-label">平均延迟</div></div>
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--accent-purple)">${data.p95_query_latency_ms?.toFixed(1) || '-'}</div><div class="bench-unit">ms</div><div class="bench-label">P95 延迟</div></div>
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--text)">${data.document_count || '-'}</div><div class="bench-unit">docs</div><div class="bench-label">文档数</div></div>
-                        <div class="bench-metric"><div class="bench-value" style="color:var(--text)">${data.insert_seconds?.toFixed(2) || '-'}</div><div class="bench-unit">sec</div><div class="bench-label">插入耗时</div></div>
-                    `;
-                    document.getElementById('benchLog').innerHTML =
-                        `<span class="log-ok">✅ 测试完成</span>\n` +
-                        `<span class="log-info">插入: ${data.document_count} 文档, 批大小 ${data.batch_size}, 耗时 ${data.insert_seconds?.toFixed(2)}s</span>\n` +
-                        `<span class="log-info">查询: ${data.query_count} 次, Top-${data.top_k}, 平均 ${data.avg_query_latency_ms?.toFixed(1)}ms</span>\n` +
-                        `<span class="log-info">后端: ${data.embedding_backend || 'hashing'}</span>\n`;
-                    showToast('✅ 性能测试完成', 'success');
-                } else {
-                    showToast(`❌ ${data.detail}`, 'error');
-                }
-            } catch (e) {
-                showToast(`❌ 测试失败: ${e.message}`, 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '🏆 开始测试';
-            setTimeout(() => { fill.style.width = '0%'; progress.style.display = 'none'; }, 2000);
-        }
-
-        // =============== 初始化 ===============
-        refreshStats();
-        loadFileList();
-        setInterval(refreshStats, 30000);
-    </script>
+  <div class="toast" id="toast"></div>
 </body>
 </html>
