@@ -1230,7 +1230,7 @@ function resolveEls() {
     toast: $("toast")
   };
 }
-function escapeHtml(value) {function escapeHtml(value) {
+function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -1952,7 +1952,7 @@ function renderProcessSummary() {
   els.processLog.innerHTML = items.join("");
 }
 
-function renderQualityReport() {function renderQualityReport() {
+function renderQualityReport() {
   if (!els.qualityReport) return;
   const report = state.lastProcess?.quality_report;
   if (!report) {
@@ -2089,7 +2089,7 @@ function renderAll() {
   renderBenchmark();
 }
 
-async function refreshHealth() {async function refreshHealth() {
+async function refreshHealth() {
   try {
     const payload = await requestJson("/api/health", {}, 15000);
     state.online = payload.status === "ok";
@@ -2125,7 +2125,7 @@ async function refreshUploads() {
   renderProcessedUploads();
 }
 
-async function refreshAll() {async function refreshAll() {
+async function refreshAll() {
   setStatusLevel("warning");
   if (els.refreshStamp) els.refreshStamp.textContent = "正在同步...";
   try {
@@ -2288,7 +2288,7 @@ async function runProcess() {
   }
 }
 
-async function runSearch() {async function runSearch() {
+async function runSearch() {
   const query = String(els.searchInput?.value || "").trim();
   if (!query) {
     showToast("请输入检索问题。", "warning");
@@ -2557,7 +2557,7 @@ function bindEvents() {
   });
 }
 
-async function init() {async function init() {
+async function init() {
   resolveEls();
   syncSidebarToggleIcon();
   bindEvents();
