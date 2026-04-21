@@ -1,642 +1,159 @@
-const pageMeta = {
-  overview: {
-    title: "系统总览",
-    desc: "状态、趋势和日志都在这里。"
-  },
-  data: {
-    title: "数据接入",
-    desc: "拖入文件或文件夹后会自动进入本地队列。"
-  },
-  search: {
-    title: "语义检索",
-    desc: "输入问题后直接查看结果、来源和延迟。"
-  },
-  architecture: {
-    title: "系统结构",
-    desc: "按阶段检查上传、解析、分块和检索链路。"
-  },
-  benchmark: {
-    title: "性能基准",
-    desc: "运行压测后查看吞吐、平均延迟和 P95。"
-  }
-};
+const API_BASE = (window.location.protocol === "file:" || window.location.hostname.endsWith("github.io")) ? "http://localhost:8000" : "";
 
-const supportedExtensions = new Set(["json", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log"]);
-const sourceColors = {
-  PDF: "rgba(0, 47, 167, 0.92)",
-  Text: "rgba(0, 47, 167, 0.62)",
-  JSON: "rgba(0, 47, 167, 0.36)",
-  Other: "rgba(17, 24, 39, 0.14)",
-  Markdown: "rgba(0, 47, 167, 0.5)",
-  CSV: "rgba(0, 47, 167, 0.44)",
-  TSV: "rgba(0, 47, 167, 0.28)",
-  DOCX: "rgba(0, 47, 167, 0.76)",
-  Log: "rgba(17, 24, 39, 0.22)"
-};
-
-const sourceLabels = {
+const SOURCE_LABELS = {
   PDF: "PDF",
   Text: "文本",
   JSON: "JSON",
-  Other: "其他",
   Markdown: "Markdown",
   CSV: "CSV",
   TSV: "TSV",
   DOCX: "DOCX",
-  Log: "日志"
+  Log: "日志",
+  Other: "其他"
 };
 
-const sourceIcons = {
-  PDF: "lucide:file-text",
-  Text: "lucide:file",
-  JSON: "lucide:file-type-2",
-  Other: "lucide:file",
-  Markdown: "lucide:file-text",
-  CSV: "lucide:file-spreadsheet",
-  TSV: "lucide:file-spreadsheet",
-  DOCX: "lucide:file-badge-2",
-  Log: "lucide:file-text"
+const SOURCE_COLORS = {
+  PDF: "rgba(0, 47, 167, 0.92)",
+  Text: "rgba(0, 47, 167, 0.68)",
+  JSON: "rgba(0, 47, 167, 0.42)",
+  Markdown: "rgba(15, 98, 254, 0.72)",
+  CSV: "rgba(37, 99, 235, 0.54)",
+  TSV: "rgba(59, 130, 246, 0.42)",
+  DOCX: "rgba(37, 99, 235, 0.82)",
+  Log: "rgba(15, 23, 42, 0.28)",
+  Other: "rgba(17, 24, 39, 0.16)"
 };
 
-const levelIcons = {
-  success: "lucide:badge-check",
-  warning: "lucide:triangle-alert",
-  danger: "lucide:x"
-};
+const BENCHMARK_CARDS = [
+  { key: "insert_seconds", label: "写入耗时", icon: "lucide:clock-3", formatter: (value) => `${formatDecimal(value, 3)} s` },
+  { key: "insert_docs_per_second", label: "写入吞吐", icon: "lucide:database", formatter: (value) => `${formatDecimal(value, 2)} docs/s` },
+  { key: "query_seconds", label: "查询耗时", icon: "lucide:timer-reset", formatter: (value) => `${formatDecimal(value, 3)} s` },
+  { key: "query_qps", label: "检索 QPS", icon: "lucide:bar-chart-3", formatter: (value) => `${formatDecimal(value, 2)} qps` },
+  { key: "avg_query_latency_ms", label: "平均延迟", icon: "lucide:activity", formatter: (value) => `${formatDecimal(value, 3)} ms` },
+  { key: "p95_query_latency_ms", label: "P95 延迟", icon: "lucide:gauge", formatter: (value) => `${formatDecimal(value, 3)} ms` },
+  { key: "embedding_backend", label: "向量后端", icon: "lucide:workflow", formatter: (value) => String(value || "-") },
+  { key: "embedding_model", label: "模型标识", icon: "lucide:database-zap", formatter: (value) => String(value || "-") }
+];
 
-const benchmarkIcons = {
-  "写入耗时": "lucide:clock-3",
-  "写入吞吐": "lucide:database",
-  "查询耗时": "lucide:clock-3",
-  "查询吞吐": "lucide:bar-chart",
-  "平均延迟": "lucide:activity",
-  "P95 延迟": "lucide:gauge",
-  "向量方式": "lucide:workflow",
-  "模型标识": "lucide:database"
-};
-
-const textEncodingCandidates = ["utf-8", "gb18030", "utf-16le", "big5"];
-
-const trendModeLabels = {
-  balance: "综合视图",
-  volume: "增量视图",
-  latency: "延迟视图"
-};
-
-const activityFilterLabels = {
-  all: "全部日志",
-  success: "成功日志",
-  warning: "预警日志",
-  danger: "异常日志"
-};
+const SUPPORTED_EXTENSIONS = new Set(["json", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log"]);
 
 const state = {
+  online: false,
+  version: "",
   page: "overview",
-  online: true,
-  localMode: true,
   stats: null,
+  primaryCollection: "",
+  primaryStats: null,
   uploads: [],
-  records: [],
-  chunks: [],
+  pendingUploads: [],
+  processedUploads: [],
+  selectedUploads: new Set(),
+  selectedProcessedUploads: new Set(),
+  processedEditMode: false,
   lastProcess: null,
-  lastSearchResult: null,
+  lastSearch: null,
   benchmark: null,
-  lastLatency: null,
   activity: [],
   timeline: [],
+  expandedResults: new Set(),
   trendMode: "balance",
   activityFilter: "all",
-  expandedResults: new Set(),
   toastTimer: null
 };
 
 const $ = (id) => document.getElementById(id);
 
-const els = {
-  sidebar: $("sidebar"),
-  sidebarToggle: $("sidebarToggle"),
-  sidebarToggleIcon: $("sidebarToggleIcon"),
-  navList: $("navList"),
-  pages: Array.from(document.querySelectorAll(".page")),
-  refreshBtn: $("refreshBtn"),
-  refreshStamp: $("refreshStamp"),
-  statusText: $("statusText"),
-  sysStatus: $("sysStatus"),
-  statusPill: $("statusPill"),
-  globalSearchForm: $("globalSearchForm"),
-  globalSearchInput: $("globalSearchInput"),
-  toast: $("toast")
-};
+let els = {};
 
-const engineDefaults = {
-  dimension: 512,
-  chunkSize: 500,
-  overlap: 50
-};
-
-const defaultStats = {
-  status: "idle",
-  collections: [],
-  total_documents: 0,
-  total_tokens_estimate: 0,
-  storage_size_mb: 0,
-  embedding_dim: engineDefaults.dimension,
-  source_type_breakdown: {}
-};
-
-function iconMarkup(icon, className = "meta-icon") {
-  return icon ? `<iconify-icon class="${className}" icon="${icon}" aria-hidden="true"></iconify-icon>` : "";
-}
-
-function sourceIconName(kind) {
-  return sourceIcons[kind] || sourceIcons.Other;
-}
-
-function sourceLabel(kind) {
-  return sourceLabels[kind] || sourceLabels.Other;
-}
-
-function levelIconName(level) {
-  return levelIcons[level] || levelIcons.success;
-}
-
-const jsonTextKeys = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer"]);
-
-function pushUniqueLine(lines, seen, text) {
-  const cleaned = normalizeText(text);
-  if (!cleaned || cleaned.length < 2) return;
-  if (seen.has(cleaned)) return;
-  seen.add(cleaned);
-  lines.push(cleaned);
-}
-
-function looksLikeAnnotationTask(value) {
-  return !!value && typeof value === "object" && (
-    Array.isArray(value.annotations) ||
-    Array.isArray(value.predictions)
-  );
-}
-
-function extractAnnotationPayload(payload) {
-  const tasks = Array.isArray(payload) ? payload : [payload];
-  const lines = [];
-  const seen = new Set();
-  tasks.forEach((task) => {
-    const filename = normalizeText(task?.data?.filename || "");
-    if (filename) pushUniqueLine(lines, seen, filename);
-    const groups = [
-      ...(Array.isArray(task?.annotations) ? task.annotations : []),
-      ...(Array.isArray(task?.predictions) ? task.predictions : [])
-    ];
-    groups.forEach((group) => {
-      const results = Array.isArray(group?.result) ? group.result : [];
-      results.forEach((item) => {
-        const values = item?.value || {};
-        const textCandidates = [
-          ...(Array.isArray(values.text) ? values.text : []),
-          ...(Array.isArray(values.choices) ? values.choices : []),
-          ...(Array.isArray(values.labels) ? values.labels : [])
-        ];
-        textCandidates.forEach((entry) => pushUniqueLine(lines, seen, entry));
-      });
-    });
-  });
-  return lines;
-}
-
-function flattenMeaningfulJson(value, lines = [], seen = new Set()) {
-  if (value == null) return lines;
-  if (typeof value === "string") {
-    pushUniqueLine(lines, seen, value);
-    return lines;
-  }
-  if (typeof value === "number" || typeof value === "boolean") return lines;
-  if (Array.isArray(value)) {
-    value.forEach((item) => flattenMeaningfulJson(item, lines, seen));
-    return lines;
-  }
-  if (typeof value === "object") {
-    Object.entries(value).forEach(([key, nested]) => {
-      const keyName = String(key || "").toLowerCase();
-      if (jsonTextKeys.has(keyName)) {
-        flattenMeaningfulJson(nested, lines, seen);
-        return;
-      }
-      if (["title", "heading", "name", "section", "chapter", "keywords"].includes(keyName)) {
-        flattenMeaningfulJson(nested, lines, seen);
-      }
-      if (nested && typeof nested === "object") flattenMeaningfulJson(nested, lines, seen);
-    });
-  }
-  return lines;
-}
-
-function extractJsonTextLines(payload) {
-  if (looksLikeAnnotationTask(payload) || (Array.isArray(payload) && payload.some(looksLikeAnnotationTask))) {
-    return extractAnnotationPayload(payload);
-  }
-  return flattenMeaningfulJson(payload);
-}
-
-function collectionLabel(name) {
-  return name === "browser_local_index" ? "本地浏览器索引" : String(name || "未命名集合");
-}
-
-function trimFixed(value, digits = 1) {
-  return String(Number(value.toFixed(digits)));
-}
-
-function seededActivities() {
-  return [
-    { level: "success", title: "索引批处理完成", desc: "LM2500 维护工艺包完成分块与写入。", user: "ops.bot", time: "08:42", duration: "2.8s" },
-    { level: "success", title: "延迟回归通过", desc: "检索链路 P95 控制在 268ms 内。", user: "qa.rag", time: "08:29", duration: "184ms" },
-    { level: "warning", title: "目录上传待确认", desc: "检测到 1 个不支持文件，已自动跳过。", user: "ingest", time: "08:11", duration: "0.6s" },
-    { level: "success", title: "质量规则已刷新", desc: "短文本块检测与来源类型聚合已同步。", user: "system", time: "07:54", duration: "1.1s" },
-    { level: "danger", title: "损坏 JSON 被隔离", desc: "单文件解析失败，但本批次其余文档继续处理。", user: "parser", time: "07:33", duration: "0.2s" }
-  ];
-}
-
-function pushActivity(item) {
-  const stamp = new Date();
-  state.activity.unshift({
-    level: item.level || "success",
-    title: item.title,
-    desc: item.desc || "",
-    user: item.user || "system",
-    time: `${String(stamp.getHours()).padStart(2, "0")}:${String(stamp.getMinutes()).padStart(2, "0")}`,
-    duration: item.duration || "-"
-  });
-  state.activity = state.activity.slice(0, 16);
-  renderActivity();
-}
-
-function showToast(message, tone = "success") {
-  if (!els.toast) return;
-  els.toast.textContent = message;
-  els.toast.className = `toast show ${tone}`;
-  window.clearTimeout(state.toastTimer);
-  state.toastTimer = window.setTimeout(() => {
-    els.toast.className = "toast";
-  }, 2600);
-}
-
-if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
-  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
-}
-
-function normalizeText(value) {
-  return String(value ?? "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\u00a0/g, " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function stripBom(text) {
-  return String(text ?? "").replace(/^\uFEFF/, "");
-}
-
-function decodeArrayBuffer(buffer, encoding) {
-  try {
-    return new TextDecoder(encoding, { fatal: false }).decode(buffer);
-  } catch {
-    return "";
-  }
-}
-
-function hasUtf16Bom(bytes) {
-  return bytes?.length >= 2 && (
-    (bytes[0] === 0xFF && bytes[1] === 0xFE) ||
-    (bytes[0] === 0xFE && bytes[1] === 0xFF)
-  );
-}
-
-function inferPreferredEncodings(buffer) {
-  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  if (hasUtf16Bom(bytes)) return ["utf-16le", "utf-8", "gb18030", "big5"];
-  const probeLength = Math.min(bytes.length, 128);
-  let oddNulls = 0;
-  let evenNulls = 0;
-  for (let index = 0; index < probeLength; index += 1) {
-    if (bytes[index] !== 0) continue;
-    if (index % 2 === 0) evenNulls += 1;
-    else oddNulls += 1;
-  }
-  if (oddNulls >= 8 && oddNulls > evenNulls * 3) return ["utf-16le", "utf-8", "gb18030", "big5"];
-  return ["utf-8", "gb18030", "big5", "utf-16le"];
-}
-
-function scoreDecodedText(text) {
-  const candidate = stripBom(String(text ?? ""));
-  if (!candidate.trim()) return Number.NEGATIVE_INFINITY;
-  const total = candidate.length || 1;
-  const replacementCount = (candidate.match(/\uFFFD/g) || []).length;
-  const nullCount = (candidate.match(/\u0000/g) || []).length;
-  const controlCount = (candidate.match(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
-  const readableCount = (candidate.match(/[\p{L}\p{N}\p{P}\p{S}\s]/gu) || []).length;
-  const cjkCount = (candidate.match(/[\u3400-\u9FFF]/g) || []).length;
-  return (readableCount / total) + Math.min(cjkCount / total, 0.24) - ((replacementCount * 5) + (nullCount * 5) + (controlCount * 3)) / total;
-}
-
-async function readFileTextSafely(file) {
-  const buffer = await file.arrayBuffer();
-  const best = inferPreferredEncodings(buffer)
-    .map((encoding) => ({ encoding, text: decodeArrayBuffer(buffer, encoding) }))
-    .filter((candidate) => candidate.text)
-    .sort((a, b) => scoreDecodedText(b.text) - scoreDecodedText(a.text))[0];
-  return stripBom(best?.text || "");
-}
-
-async function parseJsonWithEncodingFallback(file) {
-  const buffer = await file.arrayBuffer();
-  const attempts = inferPreferredEncodings(buffer)
-    .map((encoding) => ({ encoding, text: stripBom(decodeArrayBuffer(buffer, encoding)) }))
-    .filter((candidate) => candidate.text);
-  let lastError = null;
-  for (const candidate of attempts) {
-    try {
-      return JSON.parse(candidate.text);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || new Error("JSON 解析失败");
-}
-
-function tokenize(text) {
-  return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
-}
-
-function estimateTokens(text) {
-  return Math.max(1, Math.round(normalizeText(text).length / 1.7));
-}
-
-function simpleHash(input) {
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function createEmbedding(text, dimension = engineDefaults.dimension) {
-  const vector = new Float32Array(dimension);
-  const tokens = tokenize(text);
-  if (!tokens.length) return vector;
-  for (const token of tokens) {
-    const hash = simpleHash(token);
-    const index = hash % dimension;
-    const sign = ((hash >>> 1) & 1) === 0 ? 1 : -1;
-    const weight = 1 + Math.min(token.length, 8) / 8;
-    vector[index] += sign * weight;
-  }
-  let norm = 0;
-  for (const value of vector) norm += value * value;
-  norm = Math.sqrt(norm);
-  if (!norm) return vector;
-  for (let index = 0; index < vector.length; index += 1) {
-    vector[index] /= norm;
-  }
-  return vector;
-}
-
-function cosineSimilarity(a, b) {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  const size = Math.min(a.length, b.length);
-  for (let index = 0; index < size; index += 1) {
-    dot += a[index] * b[index];
-    normA += a[index] * a[index];
-    normB += b[index] * b[index];
-  }
-  const denom = Math.sqrt(normA) * Math.sqrt(normB) || 1;
-  return dot / denom;
-}
-
-function sourceKindFromName(name) {
-  const ext = fileExtension(name);
-  if (ext === "json") return "JSON";
-  if (ext === "pdf") return "PDF";
-  if (ext === "docx") return "DOCX";
-  if (ext === "md" || ext === "markdown") return "Markdown";
-  if (ext === "csv") return "CSV";
-  if (ext === "tsv") return "TSV";
-  if (ext === "log") return "Log";
-  return "Text";
-}
-
-function splitTextWithOverlap(text, chunkSize = engineDefaults.chunkSize, overlap = engineDefaults.overlap) {
-  const cleaned = normalizeText(text);
-  if (!cleaned) return [];
-  if (cleaned.length <= chunkSize) return [cleaned];
-  const markers = ["\n\n", "\n", "。", "！", "？", "；", ";", "，", ",", " "];
-  const output = [];
-  let start = 0;
-  while (start < cleaned.length) {
-    const maxEnd = Math.min(cleaned.length, start + chunkSize);
-    let end = maxEnd;
-    if (maxEnd < cleaned.length) {
-      const minEnd = Math.min(maxEnd, start + Math.max(Math.floor(chunkSize / 2), chunkSize - overlap));
-      let best = -1;
-      for (const marker of markers) {
-        const idx = cleaned.lastIndexOf(marker, maxEnd);
-        if (idx >= minEnd) best = Math.max(best, idx + marker.length);
-      }
-      if (best > start) end = best;
-    }
-    const piece = cleaned.slice(start, end).trim();
-    if (piece) output.push(piece);
-    if (end >= cleaned.length) break;
-    start = Math.max(start + 1, end - overlap);
-    while (/\s/.test(cleaned[start] || "")) start += 1;
-  }
-  return output;
-}
-
-function parseTabularText(text, delimiter) {
-  const parsed = globalThis.Papa?.parse(text, { delimiter, skipEmptyLines: true })?.data || [];
-  if (!parsed.length) return "";
-  const header = parsed[0];
-  const rows = parsed.slice(1).map((row, rowIndex) => {
-    const pairs = row.map((cell, index) => `${header[index] || `字段 ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
-    return `第 ${rowIndex + 1} 行: ${pairs}`;
-  });
-  return normalizeText([`字段: ${header.join(" | ")}`, ...rows].join("\n\n"));
-}
-
-async function parsePdfFile(file) {
-  const data = await file.arrayBuffer();
-  const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
-  const records = [];
-  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
-    const page = await pdf.getPage(pageIndex);
-    const textContent = await page.getTextContent();
-    const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
-    if (!pageText) continue;
-    records.push({
-      record_id: `${relativePathOf(file)}::page-${pageIndex}`,
-      filename: relativePathOf(file),
-      source_file: relativePathOf(file),
-      source_kind: "PDF",
-      page_num: pageIndex,
-      text: pageText
-    });
-  }
-  if (!records.length) throw new Error("PDF 未提取到可用文本，可能是扫描件或图片型 PDF");
-  return records;
-}
-
-async function parseDocxFile(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  let raw = "";
-  if (globalThis.mammoth?.extractRawText) {
-    raw = (await globalThis.mammoth.extractRawText({ arrayBuffer })).value || "";
-  } else if (globalThis.mammoth?.convertToHtml) {
-    raw = (await globalThis.mammoth.convertToHtml({ arrayBuffer })).value || "";
-  }
-  const text = normalizeText(raw.replace(/<[^>]+>/g, " "));
-  if (!text) throw new Error("DOCX 未提取到可用文本");
-  return [{
-    record_id: `${relativePathOf(file)}::doc`,
-    filename: relativePathOf(file),
-    source_file: relativePathOf(file),
-    source_kind: "DOCX",
-    page_num: null,
-    text
-  }];
-}
-
-async function parseJsonFile(file) {
-  const payload = await parseJsonWithEncodingFallback(file);
-  const text = normalizeText(extractJsonTextLines(payload).join("\n\n"));
-  if (!text) throw new Error("JSON 未提取到可用文本");
-  return [{
-    record_id: `${relativePathOf(file)}::json`,
-    filename: relativePathOf(file),
-    source_file: relativePathOf(file),
-    source_kind: "JSON",
-    page_num: null,
-    text
-  }];
-}
-
-async function parseTextLikeFile(file) {
-  const text = normalizeText(await readFileTextSafely(file));
-  if (!text) throw new Error("文本文件为空");
-  return [{
-    record_id: `${relativePathOf(file)}::text`,
-    filename: relativePathOf(file),
-    source_file: relativePathOf(file),
-    source_kind: sourceKindFromName(relativePathOf(file)),
-    page_num: null,
-    text
-  }];
-}
-
-async function parseTabularFile(file, delimiter) {
-  const text = parseTabularText(await readFileTextSafely(file), delimiter);
-  if (!text) throw new Error("表格文件为空");
-  return [{
-    record_id: `${relativePathOf(file)}::table`,
-    filename: relativePathOf(file),
-    source_file: relativePathOf(file),
-    source_kind: sourceKindFromName(relativePathOf(file)),
-    page_num: null,
-    text
-  }];
-}
-
-async function parseFileRecords(file) {
-  const ext = fileExtension(relativePathOf(file));
-  if (ext === "pdf") return parsePdfFile(file);
-  if (ext === "docx") return parseDocxFile(file);
-  if (ext === "json") return parseJsonFile(file);
-  if (ext === "csv") return parseTabularFile(file, ",");
-  if (ext === "tsv") return parseTabularFile(file, "\t");
-  return parseTextLikeFile(file);
-}
-
-function makeChunks(records) {
-  const chunks = [];
-  records.forEach((record) => {
-    const pieces = splitTextWithOverlap(record.text);
-    pieces.forEach((piece, index) => {
-      const vector = createEmbedding(piece);
-      const tokens = Array.from(new Set(tokenize(piece)));
-      chunks.push({
-        chunk_id: `${record.record_id}::${index}`,
-        text: piece,
-        vector,
-        tokens,
-        normalizedText: piece.toLowerCase(),
-        metadata: {
-          source_file: record.source_file,
-          filename: record.filename,
-          source_kind: record.source_kind,
-          page_num: record.page_num,
-          chunk_index: index,
-          char_count: piece.length,
-          estimated_tokens: estimateTokens(piece)
-        }
-      });
-    });
-  });
-  return chunks;
-}
-
-function buildQualityReport(records, chunks) {
-  const docs = records.map((record, index) => {
-    const shortBlocks = splitTextWithOverlap(record.text, 40, 0).filter((item) => item.length < 5).length;
-    return {
-      doc_id: index + 1,
-      filenames: [record.filename],
-      block_count: splitTextWithOverlap(record.text, 160, 0).length,
-      short_blocks: shortBlocks
-    };
-  });
-  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少于 5 个字符）`);
-  return {
-    documents: docs,
-    chunks: {
-      total_chunks: chunks.length,
-      avg_length: chunks.length ? Math.round(chunks.reduce((sum, chunk) => sum + chunk.text.length, 0) / chunks.length) : 0,
-      min_length: chunks.length ? Math.min(...chunks.map((chunk) => chunk.text.length)) : 0,
-      max_length: chunks.length ? Math.max(...chunks.map((chunk) => chunk.text.length)) : 0
-    },
-    issues,
-    issue_count: issues.length
+function resolveEls() {
+  els = {
+    sidebar: $("sidebar"),
+    sidebarToggle: $("sidebarToggle"),
+    sidebarToggleIcon: $("sidebarToggleIcon"),
+    navList: $("navList"),
+    pages: Array.from(document.querySelectorAll(".page")),
+    refreshBtn: $("refreshBtn"),
+    refreshStamp: $("refreshStamp"),
+    statusText: $("statusText"),
+    sysStatus: $("sysStatus"),
+    statusPill: $("statusPill"),
+    globalSearchForm: $("globalSearchForm"),
+    globalSearchInput: $("globalSearchInput"),
+    collectionSummaryPill: $("collectionSummaryPill"),
+    collectionSpectrum: $("collectionSpectrum"),
+    collList: $("collList"),
+    trendSummaryPill: $("trendSummaryPill"),
+    trendModeGroup: $("trendModeGroup"),
+    trendChart: $("trendChart"),
+    miniThroughput: $("miniThroughput"),
+    miniPrecision: $("miniPrecision"),
+    activityFilterGroup: $("activityFilterGroup"),
+    activityFeed: $("activityFeed"),
+    searchPulse: $("searchPulse"),
+    statDocs: $("statDocs"),
+    sparkDocs: $("sparkDocs"),
+    docsPdf: $("docsPdf"),
+    docsText: $("docsText"),
+    docsJson: $("docsJson"),
+    docsOther: $("docsOther"),
+    statTokens: $("statTokens"),
+    sparkTokens: $("sparkTokens"),
+    statSize: $("statSize"),
+    statDim: $("statDim"),
+    statRecordCount: $("statRecordCount"),
+    statChunkCount: $("statChunkCount"),
+    statColls: $("statColls"),
+    sparkColls: $("sparkColls"),
+    statPrimaryCollection: $("statPrimaryCollection"),
+    statSuccessFiles: $("statSuccessFiles"),
+    statFailedFiles: $("statFailedFiles"),
+    statStorageLive: $("statStorageLive"),
+    statLatency: $("statLatency"),
+    sparkLatency: $("sparkLatency"),
+    statLastResults: $("statLastResults"),
+    statP95: $("statP95"),
+    statPrecision: $("statPrecision"),
+    statQuality: $("statQuality"),
+    dropZone: $("dropZone"),
+    pickFilesButton: $("pickFilesButton"),
+    pickFolderButton: $("pickFolderButton"),
+    dropBrowseButton: $("dropBrowseButton"),
+    dropFolderButton: $("dropFolderButton"),
+    fileInput: $("fileInput"),
+    folderInput: $("folderInput"),
+    uploadQueueMeta: $("uploadQueueMeta"),
+    reloadQueueButton: $("reloadQueueButton"),
+    selectAllUploads: $("selectAllUploads"),
+    clearUploadSelection: $("clearUploadSelection"),
+    btnProcess: $("btnProcess"),
+    processProgress: $("processProgress"),
+    processFill: $("processFill"),
+    processLog: $("processLog"),
+    queueCountPill: $("queueCountPill"),
+    queueList: $("queueList"),
+    processedMeta: $("processedMeta"),
+    processedCountPill: $("processedCountPill"),
+    processedEditButton: $("processedEditButton"),
+    processedDeleteButton: $("processedDeleteButton"),
+    processedList: $("processedList"),
+    qualityReport: $("qualityReport"),
+    searchInput: $("searchInput"),
+    searchTopK: $("searchTopK"),
+    btnSearch: $("btnSearch"),
+    searchMeta: $("searchMeta"),
+    searchResults: $("searchResults"),
+    benchDocs: $("benchDocs"),
+    benchBatch: $("benchBatch"),
+    benchQueries: $("benchQueries"),
+    benchTopK: $("benchTopK"),
+    benchFill: $("benchFill"),
+    btnBench: $("btnBench"),
+    benchLog: $("benchLog"),
+    benchEmpty: $("benchEmpty"),
+    benchGrid: $("benchGrid"),
+    toast: $("toast")
   };
 }
-
-function buildLocalStats() {
-  if (!state.chunks.length) return structuredClone(defaultStats);
-  const byKind = {};
-  state.chunks.forEach((chunk) => {
-    const kind = chunk.metadata.source_kind || "Other";
-    byKind[kind] = (byKind[kind] || 0) + 1;
-  });
-  const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata.estimated_tokens || 0), 0);
-  const storageBytes = state.uploads.reduce((sum, file) => sum + Number(file.file?.size || 0), 0);
-  const uniqueFiles = new Set(state.records.map((record) => record.source_file));
-  return {
-    status: "ok",
-    collections: [{
-      name: "browser_local_index",
-      count: state.chunks.length,
-      estimated_tokens: totalTokens,
-      source_type_counts: byKind
-    }],
-    total_documents: uniqueFiles.size,
-    total_tokens_estimate: totalTokens,
-    storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(2)),
-    embedding_dim: engineDefaults.dimension,
-    source_type_breakdown: byKind
-  };
-}
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -646,892 +163,1330 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function formatCompact(value) {
-  const num = Number(value || 0);
-  if (Math.abs(num) >= 100_000_000) return `${trimFixed(num / 100_000_000, 1)}亿`;
-  if (Math.abs(num) >= 10_000) return `${trimFixed(num / 10_000, num >= 100_000 ? 1 : 2)}万`;
-  if (Math.abs(num) >= 1_000) return Math.round(num).toLocaleString("zh-CN");
-  return `${Math.round(num)}`;
+function formatNumber(value) {
+  return new Intl.NumberFormat("zh-CN").format(Number(value || 0));
 }
 
-function formatMaybeMb(value) {
-  const num = Number(value || 0);
-  if (num >= 1024) return `${(num / 1024).toFixed(1)} GB`;
-  return `${num.toFixed(1)} MB`;
+function formatDecimal(value, digits = 2) {
+  const numeric = Number(value || 0);
+  return Number.isFinite(numeric) ? numeric.toFixed(digits) : "0.00";
 }
 
-function prettyStoredName(name) {
-  return String(name || "").replaceAll("__", " / ");
+function formatPercent(value, digits = 1) {
+  const numeric = Number(value || 0);
+  return `${(numeric * 100).toFixed(digits)}%`;
 }
 
-function relativePathOf(file) {
-  return file.webkitRelativePath || file.__relativePath || file.relativePath || file.name;
+function formatMegabytes(value) {
+  return `${formatDecimal(value || 0, 2)} MB`;
 }
 
-function fileExtension(name) {
-  const parts = String(name || "").toLowerCase().split(".");
-  return parts.length > 1 ? parts.pop() : "";
+function normalizeTime(value) {
+  const numeric = Number(value || 0);
+  if (!numeric) return null;
+  return numeric < 1e12 ? numeric * 1000 : numeric;
 }
 
-function isSupportedFile(file) {
-  return supportedExtensions.has(fileExtension(relativePathOf(file)));
+function formatClock(value) {
+  const time = normalizeTime(value);
+  if (!time) return "--";
+  return new Date(time).toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function snapshotClock() {
+  return new Date().toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+}
+
+function normalizeKind(kind) {
+  const raw = String(kind || "").trim();
+  if (!raw) return "Other";
+  const normalized = raw.toLowerCase();
+  if (normalized === "pdf") return "PDF";
+  if (["text", "txt", "plain"].includes(normalized)) return "Text";
+  if (normalized === "json") return "JSON";
+  if (["markdown", "md"].includes(normalized)) return "Markdown";
+  if (normalized === "csv") return "CSV";
+  if (normalized === "tsv") return "TSV";
+  if (normalized === "docx") return "DOCX";
+  if (normalized === "log") return "Log";
+  return raw in SOURCE_LABELS ? raw : "Other";
+}
+
+function kindLabel(kind) {
+  return SOURCE_LABELS[normalizeKind(kind)] || SOURCE_LABELS.Other;
+}
+
+function sourceColor(kind) {
+  return SOURCE_COLORS[normalizeKind(kind)] || SOURCE_COLORS.Other;
+}
+
+function iconMarkup(icon, className = "") {
+  return icon ? `<iconify-icon class="${className}" icon="${icon}"></iconify-icon>` : "";
+}
+
+function summarizeName(filename) {
+  return String(filename || "").replaceAll("__", " / ");
+}
+
+function uploadDisplayName(itemOrFilename) {
+  if (typeof itemOrFilename === "string") {
+    const found = (state.uploads || []).find((item) => item.filename === itemOrFilename);
+    return found?.display_name ? String(found.display_name) : summarizeName(itemOrFilename);
+  }
+  if (itemOrFilename?.display_name) return String(itemOrFilename.display_name);
+  return summarizeName(itemOrFilename?.filename || "");
+}
+
+function splitUploadPath(value) {
+  const normalized = String(value || "").replaceAll("\\", "/");
+  const parts = normalized.split("/").filter(Boolean);
+  return {
+    file: parts.length ? parts[parts.length - 1] : normalized,
+    folder: parts.length > 1 ? parts.slice(0, -1).join(" / ") : "根目录"
+  };
+}
+
+function statusTagMarkup(status) {
+  const normalized = status === "processed" ? "processed" : "uploaded";
+  const label = normalized === "processed" ? "已处理" : "待处理";
+  const cls = normalized === "processed" ? "status-tag success" : "status-tag";
+  return `<span class="${cls}">${label}</span>`;
+}
+
+function getPendingUploads() {
+  return Array.isArray(state.pendingUploads) ? state.pendingUploads : [];
+}
+
+function getProcessedUploads() {
+  return Array.isArray(state.processedUploads) ? state.processedUploads : [];
+}
+
+function syncUploadSelections() {
+  const pendingNames = new Set(getPendingUploads().map((item) => item.filename));
+  const processedNames = new Set(getProcessedUploads().map((item) => item.filename));
+  state.selectedUploads = new Set(Array.from(state.selectedUploads).filter((name) => pendingNames.has(name)));
+  state.selectedProcessedUploads = new Set(Array.from(state.selectedProcessedUploads).filter((name) => processedNames.has(name)));
+  if (!getProcessedUploads().length) {
+    state.processedEditMode = false;
+    state.selectedProcessedUploads.clear();
+  }
+}
+function averageScore(results) {
+  if (!Array.isArray(results) || !results.length) return 0;
+  return results.reduce((sum, item) => sum + Number(item?.score || 0), 0) / results.length;
+}
+
+function choosePrimaryCollection(collections) {
+  const list = Array.isArray(collections) ? collections.slice() : [];
+  if (!list.length) return "";
+  if (state.primaryCollection && list.some((item) => item.name === state.primaryCollection)) {
+    return state.primaryCollection;
+  }
+  const nonBenchmark = list
+    .filter((item) => !String(item.name || "").startsWith("benchmark"))
+    .sort((left, right) => Number(right.count || 0) - Number(left.count || 0));
+  if (nonBenchmark.length) return nonBenchmark[0].name;
+  list.sort((left, right) => Number(right.count || 0) - Number(left.count || 0));
+  return list[0]?.name || "";
+}
+
+function statsBreakdown(stats) {
+  const raw = stats?.source_type_breakdown || {};
+  const breakdown = { PDF: 0, Text: 0, JSON: 0, Other: 0 };
+  Object.entries(raw).forEach(([key, value]) => {
+    const kind = normalizeKind(key);
+    if (kind === "PDF") breakdown.PDF += Number(value || 0);
+    else if (kind === "Text" || kind === "Markdown" || kind === "DOCX" || kind === "Log") breakdown.Text += Number(value || 0);
+    else if (kind === "JSON") breakdown.JSON += Number(value || 0);
+    else breakdown.Other += Number(value || 0);
+  });
+  return breakdown;
+}
+
+function dotClass(level) {
+  return level === "success" ? "status-dot" : `status-dot ${level}`;
+}
+
+function setStatusLevel(level) {
+  const pillDot = els.statusPill?.querySelector(".status-dot");
+  if (els.sysStatus) els.sysStatus.className = dotClass(level);
+  if (pillDot) pillDot.className = dotClass(level);
+}
+
+function showToast(message, level = "success") {
+  if (!els.toast) return;
+  clearTimeout(state.toastTimer);
+  els.toast.textContent = message;
+  els.toast.className = `toast ${level} show`.trim();
+  state.toastTimer = window.setTimeout(() => {
+    els.toast.className = "toast";
+  }, 2800);
+}
+
+function addActivity(level, title, detail) {
+  state.activity.unshift({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    level,
+    title,
+    detail,
+    at: Date.now()
+  });
+  state.activity = state.activity.slice(0, 30);
+  renderActivityFeed();
+}
+
+function rememberTimeline(reason) {
+  if (!state.stats) return;
+  const breakdown = statsBreakdown(state.stats);
+  const snapshot = {
+    reason,
+    label: snapshotClock(),
+    docs: Number(state.stats.total_documents || 0),
+    tokens: Number(state.stats.total_tokens_estimate || 0),
+    collections: Number((state.stats.collections || []).length),
+    latency: Number(state.lastSearch?.latency_ms || state.benchmark?.avg_query_latency_ms || 0),
+    pdf: Number(breakdown.PDF || 0),
+    text: Number(breakdown.Text || 0),
+    json: Number(breakdown.JSON || 0),
+    other: Number(breakdown.Other || 0)
+  };
+
+  const last = state.timeline[state.timeline.length - 1];
+  if (
+    last &&
+    last.docs === snapshot.docs &&
+    last.tokens === snapshot.tokens &&
+    last.collections === snapshot.collections &&
+    Math.abs(last.latency - snapshot.latency) < 0.001 &&
+    last.reason === snapshot.reason
+  ) {
+    return;
+  }
+
+  state.timeline.push(snapshot);
+  state.timeline = state.timeline.slice(-10);
+}
+
+function apiUrl(path) {
+  return `${API_BASE}${path}`;
+}
+
+async function requestJson(path, options = {}, timeoutMs = 120000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(apiUrl(path), {
+      ...options,
+      signal: controller.signal
+    });
+    const isJson = response.headers.get("content-type")?.includes("application/json");
+    const payload = isJson ? await response.json() : await response.text();
+    if (!response.ok) {
+      const detail = typeof payload === "object" ? (payload.detail || payload.message || JSON.stringify(payload)) : payload;
+      throw new Error(detail || `请求失败: ${response.status}`);
+    }
+    return payload;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function renderEmpty(container, message) {
+  if (!container) return;
+  container.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
 }
 
 function setPage(page) {
-  state.page = pageMeta[page] ? page : "overview";
-  els.pages.forEach((node) => node.classList.toggle("active", node.id === `page-${state.page}`));
-  Array.from(document.querySelectorAll(".nav-item")).forEach((node) => {
-    node.classList.toggle("active", node.dataset.page === state.page);
+  state.page = page;
+  els.pages.forEach((element) => {
+    element.classList.toggle("active", element.id === `page-${page}`);
+  });
+  els.navList?.querySelectorAll(".nav-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.page === page);
   });
 }
 
 function syncSidebarToggleIcon() {
-  if (!els.sidebarToggleIcon) return;
-  els.sidebarToggleIcon.setAttribute("icon", els.sidebar.classList.contains("is-collapsed") ? "lucide:chevrons-right" : "lucide:chevrons-left");
+  if (!els.sidebarToggleIcon || !els.sidebar) return;
+  els.sidebarToggleIcon.setAttribute(
+    "icon",
+    els.sidebar.classList.contains("is-collapsed") ? "lucide:chevrons-right" : "lucide:chevrons-left"
+  );
 }
 
-function updateStatus(online) {
-  state.online = !!online;
-  els.statusText.textContent = online ? "浏览器本地引擎在线，上传与检索链路可用" : "浏览器本地引擎异常";
-  els.sysStatus.className = `status-dot ${online ? "" : "danger"}`.trim();
-  const pillDot = els.statusPill?.querySelector(".status-dot");
-  if (pillDot) pillDot.className = `status-dot ${online ? "" : "danger"}`.trim();
-}
-
-function seedSeries(length, start, variation, clampMin) {
-  const values = [];
-  let current = start;
-  for (let index = 0; index < length; index += 1) {
-    current = Math.max(clampMin, current + Math.round(Math.sin(index / 2.5) * variation + (index % 4 === 0 ? variation * 0.8 : variation * 0.35)));
-    values.push(current);
-  }
-  return values;
-}
-
-function buildOverviewModel() {
-  const stats = state.stats || {};
-  const hasIndexedData = state.chunks.length > 0;
-  const fileCounts = { PDF: 0, Text: 0, JSON: 0, Other: 0 };
-  const seenFiles = new Set();
-  (state.records.length ? state.records : state.uploads).forEach((item) => {
-    const path = item.source_file || item.filename || item.display_name || "";
-    if (!path || seenFiles.has(path)) return;
-    seenFiles.add(path);
-    const kind = item.source_kind || sourceKindFromName(path);
-    if (kind === "PDF") fileCounts.PDF += 1;
-    else if (kind === "JSON") fileCounts.JSON += 1;
-    else if (kind === "Text") fileCounts.Text += 1;
-    else fileCounts.Other += 1;
-  });
-  const liveDocs = Number(stats.total_documents || 0);
-  const liveTokens = Number(stats.total_tokens_estimate || 0);
-  const liveCollections = Number((stats.collections || []).length || 0);
-  const liveStorage = Number(stats.storage_size_mb || 0);
-  const latency = Number.isFinite(state.lastLatency) ? Math.max(1, Math.round(state.lastLatency)) : null;
-  const rawBreakdown = { ...(stats.source_type_breakdown || {}) };
-  const breakdown = {
-    PDF: Number(rawBreakdown.PDF || 0),
-    Text: Number(rawBreakdown.Text || 0),
-    JSON: Number(rawBreakdown.JSON || 0),
-    Other: Object.entries(rawBreakdown)
-      .filter(([key]) => !["PDF", "Text", "JSON"].includes(key))
-      .reduce((sum, [, value]) => sum + Number(value || 0), 0)
-  };
-  const recentCollection = stats.collections?.[0]?.name || "-";
-  const succeededFiles = Number(state.lastProcess?.files_succeeded || 0);
-  const failedFiles = Number(state.lastProcess?.files_failed || 0);
-  const latestResults = Number(state.lastSearchResult?.results?.length || 0);
-  const p95 = Number.isFinite(state.benchmark?.p95_query_latency_ms) ? `${Number(state.benchmark.p95_query_latency_ms).toFixed(1)}ms` : "--";
-  const precision = Number.isFinite(state.benchmark?.avg_query_latency_ms) ? `${Math.max(93.8, 99.2 - state.benchmark.avg_query_latency_ms / 80).toFixed(1)}%` : "--";
-  return {
-    hasIndexedData,
-    docTarget: liveDocs,
-    tokenTarget: liveTokens,
-    collectionTarget: liveCollections,
-    latency,
-    storage: liveStorage,
-    precision,
-    throughput: state.benchmark?.insert_docs_per_second ? `${formatCompact(state.benchmark.insert_docs_per_second * 3600)}/时` : "--",
-    breakdown,
-    fileCounts,
-    recentCollection,
-    succeededFiles,
-    failedFiles,
-    latestResults,
-    p95
-  };
-}
-
-function buildTrendBreakdown(stats = state.stats) {
-  const rawBreakdown = { ...(stats?.source_type_breakdown || {}) };
-  return {
-    PDF: Number(rawBreakdown.PDF || 0),
-    Text: Number(rawBreakdown.Text || 0),
-    JSON: Number(rawBreakdown.JSON || 0),
-    Other: Object.entries(rawBreakdown)
-      .filter(([key]) => !["PDF", "Text", "JSON"].includes(key))
-      .reduce((sum, [, value]) => sum + Number(value || 0), 0)
-  };
-}
-
-function captureTimelineSnapshot(label = "刷新") {
-  const stats = state.stats || defaultStats;
-  const breakdown = buildTrendBreakdown(stats);
-  const snapshot = {
-    label,
-    time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
-    docs: Number(stats.total_documents || 0),
-    tokens: Number(stats.total_tokens_estimate || 0),
-    latency: Number.isFinite(state.lastLatency) ? Number(state.lastLatency) : null,
-    breakdown
-  };
-  const fingerprint = JSON.stringify({
-    docs: snapshot.docs,
-    tokens: snapshot.tokens,
-    latency: snapshot.latency,
-    breakdown: snapshot.breakdown
-  });
-  const previous = state.timeline[state.timeline.length - 1];
-  if (previous?.fingerprint === fingerprint) {
-    previous.label = snapshot.label;
-    previous.time = snapshot.time;
+function renderSparkline(svg, values, color) {
+  if (!svg) return;
+  const points = Array.isArray(values) ? values : [];
+  if (!points.length) {
+    svg.innerHTML = "";
     return;
   }
-  state.timeline = [...state.timeline, { ...snapshot, fingerprint }].slice(-12);
-}
-
-function meaningfulTimelineSnapshots() {
-  return state.timeline.filter((item) => {
-    const total = Object.values(item.breakdown || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-    return total > 0 || Number(item.docs || 0) > 0 || Number(item.tokens || 0) > 0 || Number.isFinite(item.latency);
-  });
-}
-
-function sparklinePath(values, width = 96, height = 32) {
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = Math.max(1, max - min);
-  return values.map((value, index) => {
-    const x = (index / Math.max(values.length - 1, 1)) * width;
-    const y = height - ((value - min) / range) * (height - 6) - 3;
-    return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+  const width = 96;
+  const height = 32;
+  const max = Math.max(...points, 1);
+  const min = Math.min(...points, 0);
+  const span = max - min || 1;
+  const coordinates = points.map((value, index) => {
+    const x = points.length === 1 ? width / 2 : (index / (points.length - 1)) * width;
+    const y = height - ((value - min) / span) * (height - 6) - 3;
+    return `${x},${y}`;
   }).join(" ");
+  svg.innerHTML = `
+    <polyline
+      points="${coordinates}"
+      fill="none"
+      stroke="${color}"
+      stroke-width="3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></polyline>
+  `;
 }
 
-function renderSparkline(id, values) {
-  const node = $(id);
-  if (!node) return;
-  node.innerHTML = `<path d="${sparklinePath(values)}" fill="none" stroke="rgba(0,47,167,0.92)" stroke-width="2.4" stroke-linecap="round"></path>`;
-}
-
-function syncSegmentGroup(groupId, key, activeValue) {
-  const group = $(groupId);
-  if (!group) return;
-  Array.from(group.querySelectorAll("button")).forEach((button) => {
-    button.classList.toggle("active", button.dataset[key] === activeValue);
-  });
-}
-
-function syncTrendControls() {
-  const summary = $("trendSummaryPill");
-  if (summary) {
-    const snapshotCount = Math.max(1, meaningfulTimelineSnapshots().length);
-    summary.textContent = `${trendModeLabels[state.trendMode] || "综合视图"} · 当前会话 ${snapshotCount} 次`;
+function renderStatus() {
+  if (!els.statusText || !els.refreshStamp) return;
+  if (state.online) {
+    els.statusText.textContent = `后端在线${state.version ? ` · v${state.version}` : ""}，上传与检索链路可用`;
+    els.refreshStamp.textContent = `最近同步 ${snapshotClock()}`;
+    setStatusLevel("success");
+  } else {
+    els.statusText.textContent = "后端未连接，请先启动 http://localhost:8000";
+    els.refreshStamp.textContent = "等待后端连接";
+    setStatusLevel("danger");
   }
-  syncSegmentGroup("trendModeGroup", "trendMode", state.trendMode);
 }
 
-function syncActivityControls(count) {
-  const summary = $("activitySummaryPill");
-  if (summary) summary.textContent = `${activityFilterLabels[state.activityFilter] || "全部日志"} · ${count} 条`;
-  syncSegmentGroup("activityFilterGroup", "activityFilter", state.activityFilter);
-}
-
-function renderOverview() {
-  const model = buildOverviewModel();
-  $("statDocs").textContent = model.docTarget.toLocaleString("zh-CN");
-  $("statTokens").textContent = formatCompact(model.tokenTarget);
-  $("statColls").textContent = String(model.collectionTarget);
-  $("statLatency").textContent = model.latency ? `${model.latency}ms` : "--";
-  $("docsPdf").textContent = `PDF: ${model.fileCounts.PDF}`;
-  $("docsText").textContent = `文本: ${model.fileCounts.Text}`;
-  $("docsJson").textContent = `JSON: ${model.fileCounts.JSON}`;
-  $("docsOther").textContent = `其他: ${model.fileCounts.Other}`;
-  $("statSize").textContent = formatMaybeMb(model.storage);
-  $("statDim").textContent = `${Number(state.stats?.embedding_dim || 1024)} 维`;
-  $("statRecordCount").textContent = `记录: ${state.records.length}`;
-  $("statChunkCount").textContent = `片段: ${state.chunks.length}`;
-  $("statPrimaryCollection").textContent = `当前集合: ${collectionLabel(model.recentCollection)}`;
-  $("statSuccessFiles").textContent = `成功文件: ${model.succeededFiles}`;
-  $("statFailedFiles").textContent = `失败文件: ${model.failedFiles}`;
-  $("statStorageLive").textContent = `实时存储 ${formatMaybeMb(Number(state.stats?.storage_size_mb || 0))}`;
-  $("statQuality").textContent = state.lastProcess?.quality_report?.issue_count ? `发现 ${state.lastProcess.quality_report.issue_count} 项质量提醒` : "质量监测正常";
-  $("statLastResults").textContent = `结果数: ${model.latestResults}`;
-  $("statP95").textContent = `P95: ${model.p95}`;
-  $("statPrecision").textContent = `精度: ${model.precision}`;
-  $("miniThroughput").textContent = model.throughput;
-  $("miniPrecision").textContent = model.precision;
-  $("searchPulse").textContent = model.latency ? `${Math.max(5.1, Math.min(9.8, 10 - model.latency / 120)).toFixed(1)} / 10` : "--";
-  const overviewSummary = $("overviewSummary");
-  if (overviewSummary) {
-    overviewSummary.textContent = state.chunks.length
-      ? `当前浏览器内已索引 ${state.records.length} 份文档记录和 ${state.chunks.length} 个片段，按来源类型聚合显示结构比例。`
-      : `当前尚未在浏览器内建立索引，拖入文件后会在本地完成解析、分块与检索。`;
+function renderCollectionSpectrum() {
+  if (!els.collectionSpectrum || !els.collectionSummaryPill) return;
+  const collections = state.stats?.collections || [];
+  if (!collections.length) {
+    els.collectionSummaryPill.textContent = "暂无集合";
+    renderEmpty(els.collectionSpectrum, "当前还没有向量集合，先去上传并处理文件。");
+    return;
   }
-  $("collectionSummaryPill").innerHTML = `${iconMarkup("lucide:database", "meta-icon")}<span>${state.chunks.length ? "本地浏览器索引" : "等待本地索引"}</span>`;
 
-  renderSparkline("sparkDocs", model.docTarget ? seedSeries(12, Math.max(model.docTarget, 1), Math.max(1, Math.round(model.docTarget * 0.06)), 0) : [0, 0, 0, 0]);
-  renderSparkline("sparkTokens", model.tokenTarget ? seedSeries(12, Math.max(model.tokenTarget / 8, 1), Math.max(1, Math.round(model.tokenTarget / 40)), 0) : [0, 0, 0, 0]);
-  renderSparkline("sparkColls", model.collectionTarget ? Array.from({ length: 12 }, (_, index) => Math.min(model.collectionTarget, Math.max(1, Math.round(((index + 1) / 12) * model.collectionTarget)))) : [0, 0, 0, 0]);
-  renderSparkline("sparkLatency", model.latency ? [model.latency + 28, model.latency + 16, model.latency + 10, model.latency + 6, model.latency] : [0, 0, 0, 0]);
-  syncTrendControls();
-  renderTrendChart();
-  renderCollectionSpectrum(model.breakdown, model.hasIndexedData);
-  renderCollections();
+  const total = collections.reduce((sum, item) => sum + Number(item.count || 0), 0) || 1;
+  els.collectionSummaryPill.textContent = `${collections.length} 个集合`;
+
+  const bars = collections.map((item) => {
+    const count = Number(item.count || 0);
+    const width = Math.max(8, Math.round((count / total) * 100));
+    const active = item.name === state.primaryCollection;
+    return `
+      <div
+        title="${escapeHtml(item.name)}: ${formatNumber(count)}"
+        style="flex:${width} 1 0;min-width:28px;height:16px;border-radius:999px;background:${active ? "rgba(0, 47, 167, 0.92)" : "rgba(15, 23, 42, 0.16)"};"
+      ></div>
+    `;
+  }).join("");
+
+  const labels = collections.map((item) => `
+    <span>
+      ${escapeHtml(item.name)}
+      ${item.name === state.primaryCollection ? "· 默认" : ""}
+    </span>
+  `).join("");
+
+  els.collectionSpectrum.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;">${bars}</div>
+    <div class="metric-subgrid">${labels}</div>
+  `;
+}
+
+function renderCollectionList() {
+  if (!els.collList) return;
+  const collections = state.stats?.collections || [];
+  if (!collections.length) {
+    renderEmpty(els.collList, "还没有可管理的集合。");
+    return;
+  }
+
+  els.collList.innerHTML = collections.map((item) => {
+    const typeCounts = item.source_type_counts || {};
+    const meta = Object.entries(typeCounts)
+      .slice(0, 4)
+      .map(([kind, count]) => `<span>${escapeHtml(kindLabel(kind))}: ${formatNumber(count)}</span>`)
+      .join("");
+
+    return `
+      <article class="collection-item">
+        <div class="collection-head">
+          <div>
+            <div class="queue-name">${escapeHtml(item.name)}</div>
+            <p>${formatNumber(item.count || 0)} 个向量片段 · 约 ${formatNumber(item.estimated_tokens || 0)} tokens</p>
+          </div>
+          <span class="pill">${item.name === state.primaryCollection ? "默认集合" : `${formatNumber((item.sources || []).length)} 个来源`}</span>
+        </div>
+        <div class="queue-meta">
+          <span>估算字符 ${formatNumber(item.estimated_chars || 0)}</span>
+          <span>${meta || "待补充来源信息"}</span>
+        </div>
+        <div class="queue-actions">
+          <button class="ghost-btn" type="button" data-set-collection="${escapeHtml(item.name)}">设为默认</button>
+          <button class="ghost-btn" type="button" data-delete-collection="${escapeHtml(item.name)}">删除集合</button>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderTrendChart() {
-  const node = $("trendChart");
-  if (!node) return;
-  const snapshots = meaningfulTimelineSnapshots();
-  if (!snapshots.length) {
-    node.innerHTML = `<div class="empty-state">完成一次入库或检索后，这里会显示本次会话的变化</div>`;
+  if (!els.trendChart || !els.trendSummaryPill) return;
+  if (!state.timeline.length) {
+    els.trendSummaryPill.textContent = "等待数据";
+    renderEmpty(els.trendChart, "刷新统计、检索或压测后，这里会显示会话趋势。");
+    renderSparkline(els.sparkDocs, [], "#002fa7");
+    renderSparkline(els.sparkTokens, [], "#1d4ed8");
+    renderSparkline(els.sparkColls, [], "#0f172a");
+    renderSparkline(els.sparkLatency, [], "#d97706");
     return;
   }
-  const mode = state.trendMode || "balance";
-  const labels = snapshots.map((item, index) => item.label || item.time || `步骤 ${index + 1}`);
-  const pdf = snapshots.map((item) => Number(item.breakdown?.PDF || 0));
-  const text = snapshots.map((item) => Number(item.breakdown?.Text || 0));
-  const json = snapshots.map((item) => Number(item.breakdown?.JSON || 0));
-  const other = snapshots.map((item) => Number(item.breakdown?.Other || 0));
-  const latency = snapshots.map((item) => Number.isFinite(item.latency) ? Number(item.latency) : null);
-  const maxStack = Math.max(1, ...snapshots.map((_, index) => pdf[index] + text[index] + json[index] + other[index]));
-  const innerWidth = 772;
-  const gap = snapshots.length > 7 ? 10 : 16;
-  const barWidth = Math.max(28, Math.min(48, (innerWidth - gap * Math.max(snapshots.length - 1, 0)) / Math.max(snapshots.length, 1)));
-  const chartHeight = 280;
-  const latencyValues = latency.filter((value) => Number.isFinite(value));
-  const hasLatency = latencyValues.length > 0;
-  const latencyMin = hasLatency ? Math.min(...latencyValues) : 0;
-  const latencyMax = hasLatency ? Math.max(...latencyValues) : 1;
-  const latencyBaseY = 132;
-  const lineOpacity = hasLatency ? (mode === "volume" ? 0.34 : 1) : 0;
-  const lineWidth = mode === "latency" ? 3.6 : mode === "volume" ? 2.2 : 3;
-  const barOpacity = mode === "latency" ? 0.24 : mode === "volume" ? 1 : 0.92;
-  const bars = labels.map((label, index) => {
-    const x = 24 + index * (barWidth + gap);
-    const segments = [
-      { value: other[index], key: "Other" },
-      { value: json[index], key: "JSON" },
-      { value: text[index], key: "Text" },
-      { value: pdf[index], key: "PDF" }
-    ];
-    let offset = chartHeight;
-    const rects = segments.map((segment) => {
-      const height = (segment.value / maxStack) * 220;
-      offset -= height;
-      return `<rect x="${x}" y="${offset.toFixed(1)}" width="${barWidth}" height="${height.toFixed(1)}" rx="6" fill="${sourceColors[segment.key] || sourceColors.Other}" fill-opacity="${barOpacity}"><title>${label} ${sourceLabel(segment.key)}：${segment.value}</title></rect>`;
-    }).join("");
-    return rects;
+
+  const timeline = state.timeline.slice(-8);
+  const docsValues = timeline.map((item) => item.docs);
+  const tokenValues = timeline.map((item) => item.tokens);
+  const collectionValues = timeline.map((item) => item.collections);
+  const latencyValues = timeline.map((item) => item.latency);
+
+  renderSparkline(els.sparkDocs, docsValues, "#002fa7");
+  renderSparkline(els.sparkTokens, tokenValues, "#1d4ed8");
+  renderSparkline(els.sparkColls, collectionValues, "#0f172a");
+  renderSparkline(els.sparkLatency, latencyValues, "#d97706");
+
+  let series;
+  let summary;
+  if (state.trendMode === "volume") {
+    series = timeline.map((item) => item.docs);
+    summary = "文档增量";
+  } else if (state.trendMode === "latency") {
+    series = timeline.map((item) => item.latency);
+    summary = "检索延迟";
+  } else {
+    series = timeline.map((item) => item.tokens);
+    summary = "向量规模";
+  }
+
+  els.trendSummaryPill.textContent = summary;
+  const max = Math.max(...series, 1);
+  const bars = timeline.map((item, index) => {
+    const value = series[index];
+    const height = Math.max(18, Math.round((value / max) * 160));
+    const label = state.trendMode === "latency"
+      ? `${formatDecimal(value, 2)} ms`
+      : state.trendMode === "volume"
+        ? `${formatNumber(value)} 条`
+        : `${formatNumber(value)} tk`;
+
+    return `
+      <div style="display:grid;gap:10px;align-content:end;">
+        <div style="height:180px;display:flex;align-items:flex-end;">
+          <div style="width:100%;min-width:36px;height:${height}px;border-radius:14px 14px 10px 10px;background:linear-gradient(180deg, rgba(0,47,167,0.92), rgba(15,98,254,0.36));"></div>
+        </div>
+        <div class="queue-meta">
+          <span>${escapeHtml(item.label)}</span>
+          <span>${escapeHtml(label)}</span>
+        </div>
+      </div>
+    `;
   }).join("");
-  const latencyPoints = latency.map((value, index) => {
-    if (!Number.isFinite(value)) return null;
-    const x = 33 + index * (barWidth + gap);
-    const y = 38 + ((value - latencyMin) / Math.max(1, latencyMax - latencyMin)) * 80;
-    return { x, y, value, index };
-  });
-  const latencyPath = latencyPoints.reduce((path, point) => {
-    if (!point) return path;
-    return `${path} ${path ? "L" : "M"}${point.x},${point.y.toFixed(1)}`.trim();
-  }, "");
-  const areaPath = latencyPath
-    ? `${latencyPath} L ${33 + (labels.length - 1) * (barWidth + gap)},${latencyBaseY} L 33,${latencyBaseY} Z`
-    : "";
-  const points = latencyPoints.map((point) => {
-    if (!point) return "";
-    const radius = mode === "latency" ? 3.8 : 3.2;
-    return `<circle cx="${point.x}" cy="${point.y.toFixed(1)}" r="${radius}" fill="#002fa7" fill-opacity="${mode === "volume" ? 0.42 : 1}"><title>${labels[point.index]} 延迟：${point.value} 毫秒</title></circle>`;
-  }).join("");
-  node.innerHTML = `
-    <svg viewBox="0 0 820 320" aria-label="trend chart">
-      <rect x="0" y="0" width="820" height="320" rx="24" fill="rgba(247,248,250,0.4)"></rect>
-      <line x1="24" y1="280" x2="796" y2="280" stroke="rgba(17,24,39,0.08)"></line>
-      <line x1="24" y1="40" x2="796" y2="40" stroke="rgba(17,24,39,0.05)"></line>
+
+  els.trendChart.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(${timeline.length}, minmax(48px, 1fr));gap:14px;align-items:end;">
       ${bars}
-      ${mode === "latency" && areaPath ? `<path d="${areaPath}" fill="rgba(0,47,167,0.08)"></path>` : ""}
-      ${latencyPath ? `<path d="${latencyPath}" fill="none" stroke="#002fa7" stroke-opacity="${lineOpacity}" stroke-width="${lineWidth}" stroke-linecap="round"></path>` : ""}
-      ${points}
-      <text x="796" y="24" text-anchor="end" fill="rgba(17,24,39,0.56)" font-size="11" font-weight="600">当前会话</text>
-    </svg>`;
-}
-
-function renderCollectionSpectrum(breakdown, hasIndexedData = false) {
-  const node = $("collectionSpectrum");
-  if (!node) return;
-  const total = Object.values(breakdown).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
-  if (!hasIndexedData || total === 0) {
-    node.innerHTML = `<div class="empty-state">暂无来源结构数据</div>`;
-    return;
-  }
-  node.innerHTML = Object.entries(breakdown).map(([key, value]) => {
-    const ratio = ((Number(value || 0) / total) * 100).toFixed(1);
-    return `<div class="collection-item"><div class="collection-head"><span class="collection-name title-with-icon">${iconMarkup(sourceIconName(key))}<span>${escapeHtml(sourceLabel(key))}</span></span><span class="meta-chip">${iconMarkup("lucide:database", "meta-icon")}<span>${formatCompact(value)}</span></span></div><div class="collection-meta"><span>占比 ${ratio}%</span><span>来源类型</span></div><div class="collection-bars"><span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span></div></div>`;
-  }).join("");
-}
-
-function renderCollections() {
-  const list = $("collList");
-  if (!list) return;
-  const collections = state.stats?.collections || [];
-  if (!collections.length) {
-    list.innerHTML = `<div class="empty-state">当前没有实时集合，等待本地索引建立。</div>`;
-    return;
-  }
-  list.innerHTML = collections.map((collection) => {
-    const counts = collection.source_type_counts || {};
-    const total = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0) || 1;
-    const bars = Object.entries(counts).map(([key, value]) => {
-      const ratio = Math.max(8, (Number(value || 0) / total) * 100);
-      return `<span style="width:${ratio}%;background:${sourceColors[key] || sourceColors.Other};"></span>`;
-    }).join("");
-    const safeName = escapeHtml(collectionLabel(collection.name));
-    return `<div class="collection-item">
-      <div class="collection-head"><span class="collection-name title-with-icon" title="${safeName}">${iconMarkup("lucide:database")}<span>${safeName}</span></span><button class="ghost-btn delete-collection" data-name="${safeName}" type="button">${iconMarkup("lucide:refresh-cw", "meta-icon")}<span>清空</span></button></div>
-      <div class="collection-meta"><span>${Number(collection.count || 0).toLocaleString("zh-CN")} 个片段</span><span>${formatCompact(collection.estimated_tokens || 0)} 词元</span></div>
-      <div class="collection-bars">${bars || '<span style="width:100%;"></span>'}</div>
-    </div>`;
-  }).join("");
-}
-
-function renderActivity() {
-  const node = $("activityFeed");
-  if (!node) return;
-  const allItems = state.activity.length ? state.activity : seededActivities();
-  const filteredItems = state.activityFilter === "all" ? allItems : allItems.filter((item) => item.level === state.activityFilter);
-  const items = filteredItems.slice(0, 10);
-  syncActivityControls(filteredItems.length);
-  if (!items.length) {
-    node.innerHTML = `<div class="empty-state">当前筛选条件下还没有日志，切换状态后会自动刷新。</div>`;
-    return;
-  }
-  node.innerHTML = items.map((item) => `
-    <div class="activity-item">
-      <div class="activity-head"><span class="status-dot ${item.level === "warning" ? "warning" : item.level === "danger" ? "danger" : ""}"></span><span class="activity-title title-with-icon">${iconMarkup(levelIconName(item.level))}<span>${escapeHtml(item.title)}</span></span></div>
-      <p>${escapeHtml(item.desc)}</p>
-      <div class="activity-meta"><span>操作方 ${escapeHtml(item.user)}</span><span>耗时 ${escapeHtml(item.duration)}</span><span>${escapeHtml(item.time)}</span></div>
-    </div>`).join("");
-}
-
-function renderQueue() {
-  const queue = $("queueList");
-  const meta = $("uploadQueueMeta");
-  const pill = $("queueCountPill");
-  if (!queue || !meta || !pill) return;
-  const files = state.uploads || [];
-  pill.innerHTML = `${iconMarkup("lucide:inbox", "meta-icon")}<span>${files.length} 个文件</span>`;
-  meta.textContent = files.length ? `当前浏览器会话中共有 ${files.length} 个文件，处理不会写入 GitHub 仓库。` : "等待拖入文件或文件夹，分析只在当前浏览器会话中进行。";
-  if (!files.length) {
-    queue.innerHTML = `<div class="empty-state">拖入文件或文件夹后，待处理队列会显示在这里。</div>`;
-    return;
-  }
-  queue.innerHTML = files.map((file) => `
-    <div class="queue-item">
-      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.filename))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.filename))}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(sourceLabel(file.source_kind || "Other"))}</span></span></div>
-      <div class="queue-meta"><span>${Number(file.size_kb || 0).toFixed(1)} KB</span><span>${new Date((file.modified || 0) * 1000).toLocaleString("zh-CN")}</span></div>
-    </div>`).join("");
-}
-
-function renderProcessLog(result = state.lastProcess) {
-  const node = $("processLog");
-  if (!node) return;
-  if (!result?.file_summaries?.length) {
-    node.innerHTML = `<div class="empty-state">处理日志会在文件入库后显示。</div>`;
-    return;
-  }
-  node.innerHTML = result.file_summaries.map((file) => `
-    <div class="queue-item">
-      <div class="queue-head"><span class="queue-name title-with-icon" title="${escapeHtml(prettyStoredName(file.source_file))}">${iconMarkup(sourceIconName(file.source_kind || "Other"))}<span>${escapeHtml(prettyStoredName(file.source_file))}</span></span><span class="status-dot ${file.status === "error" ? "danger" : ""} ${file.status === "warning" ? "warning" : ""}"></span></div>
-      <p>${file.status === "ok" ? "解析成功并已进入分块流程。" : escapeHtml(file.error || "处理失败")}</p>
-      <div class="queue-meta"><span>${escapeHtml(sourceLabel(file.source_kind || "Other"))}</span><span>${Number(file.records_extracted || 0)} 条记录</span></div>
-    </div>`).join("");
-}
-
-function renderQuality(result = state.lastProcess) {
-  const node = $("qualityReport");
-  if (!node) return;
-  if (!result?.quality_report) {
-    node.innerHTML = `<div class="empty-state">暂无质量报告，完成一次处理后这里会自动更新。</div>`;
-    return;
-  }
-  const quality = result.quality_report;
-  const docs = quality.documents || [];
-  const chunkInfo = quality.chunks || {};
-  const issues = quality.issues || [];
-  node.innerHTML = `
-    <div class="mini-grid">
-      <div class="queue-item"><div class="queue-name">片段总数</div><div class="mini-value">${Number(chunkInfo.total_chunks || 0).toLocaleString("zh-CN")}</div></div>
-      <div class="queue-item"><div class="queue-name">平均长度</div><div class="mini-value">${Number(chunkInfo.avg_length || 0)}</div></div>
-      <div class="queue-item"><div class="queue-name">问题数量</div><div class="mini-value">${Number(quality.issue_count || 0)}</div></div>
-      <div class="queue-item"><div class="queue-name">文档数量</div><div class="mini-value">${docs.length}</div></div>
     </div>
-    ${issues.length ? issues.map((issue) => `<div class="queue-item"><div class="queue-name">质量提醒</div><p>${escapeHtml(issue)}</p></div>`).join("") : '<div class="queue-item"><div class="queue-name">质量状态</div><p>未发现需要阻断处理的质量问题。</p></div>'}
-    ${docs.slice(0, 4).map((doc) => `<div class="queue-item"><div class="queue-head"><span class="queue-name">文档 ${doc.doc_id}</span><span>${Number(doc.block_count || 0)} 个区块</span></div><div class="queue-meta"><span>${escapeHtml((doc.filenames || []).join(", "))}</span><span>短块 ${Number(doc.short_blocks || 0)}</span></div></div>`).join("")}`;
+  `;
 }
 
-function renderSearchResults(result = state.lastSearchResult) {
-  const node = $("searchResults");
-  const meta = $("searchMeta");
-  if (!node || !meta) return;
-  if (typeof result !== "undefined") state.lastSearchResult = result;
-  if (!result?.results?.length) {
-    node.innerHTML = `<div class="empty-state">暂无结果，试试输入更明确的设备、故障或工艺关键词。</div>`;
-    meta.textContent = result?.message || "等待检索输入。";
+function renderActivityFeed() {
+  if (!els.activityFeed) return;
+  const items = state.activityFilter === "all"
+    ? state.activity
+    : state.activity.filter((item) => item.level === state.activityFilter);
+  if (!items.length) {
+    renderEmpty(els.activityFeed, "当前没有活动日志。");
     return;
   }
-  meta.textContent = `集合 ${collectionLabel(result.collection)} · ${result.results.length} 条结果 · ${result.latency_ms} 毫秒`;
-  node.innerHTML = result.results.map((item, index) => `
-    <div class="result-card ${state.expandedResults.has(index) ? "is-expanded" : ""}">
-      <div class="result-head"><span class="result-title title-with-icon">${iconMarkup("lucide:search")}<span>结果 ${index + 1}</span></span><span class="result-score">${Number(item.score || 0).toFixed(4)}</span></div>
-      <p class="result-body">${escapeHtml(item.text)}</p>
-      <div class="result-meta"><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(item.metadata?.filename || item.metadata?.source_file || "未命名文件")}</span></span><span class="meta-chip">${iconMarkup(sourceIconName(item.metadata?.source_kind || "Other"))}<span>${escapeHtml(sourceLabel(item.metadata?.source_kind || "Other"))}</span></span><span class="meta-chip">${iconMarkup("lucide:gauge")}<span>距离 ${Number(item.distance || 0).toFixed(4)}</span></span></div>
-      <button class="result-toggle" data-toggle-result="${index}" type="button">${state.expandedResults.has(index) ? "收起详情" : "展开详情"}</button>
-    </div>`).join("");
+
+  els.activityFeed.innerHTML = items.map((item) => `
+    <article class="activity-item">
+      <div class="activity-head">
+        <span class="${dotClass(item.level)}"></span>
+        <div class="activity-title">${escapeHtml(item.title)}</div>
+      </div>
+      <p>${escapeHtml(item.detail)}</p>
+      <div class="activity-meta">
+        <span>${formatClock(item.at)}</span>
+        <span>${item.level === "success" ? "成功" : item.level === "warning" ? "提醒" : "异常"}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderSummaryMetrics() {
+  const stats = state.stats || {};
+  const primary = state.primaryStats || {};
+  const breakdown = statsBreakdown(stats);
+  const searchResults = state.lastSearch?.results || [];
+  const searchScore = averageScore(searchResults);
+  const throughput = state.benchmark?.insert_docs_per_second
+    ? `${formatDecimal(state.benchmark.insert_docs_per_second, 1)} docs/s`
+    : state.lastProcess?.chunks_written && state.lastProcess?.elapsed_s
+      ? `${formatDecimal(Number(state.lastProcess.chunks_written) / Math.max(Number(state.lastProcess.elapsed_s), 1), 1)} chunks/s`
+      : "--";
+
+  if (els.statDocs) els.statDocs.textContent = formatNumber(stats.total_documents || 0);
+  if (els.docsPdf) els.docsPdf.textContent = `PDF: ${formatNumber(breakdown.PDF || 0)}`;
+  if (els.docsText) els.docsText.textContent = `文本: ${formatNumber(breakdown.Text || 0)}`;
+  if (els.docsJson) els.docsJson.textContent = `JSON: ${formatNumber(breakdown.JSON || 0)}`;
+  if (els.docsOther) els.docsOther.textContent = `其他: ${formatNumber(breakdown.Other || 0)}`;
+  if (els.statTokens) els.statTokens.textContent = formatNumber(stats.total_tokens_estimate || 0);
+  if (els.statSize) els.statSize.textContent = formatMegabytes(stats.storage_size_mb || 0);
+  if (els.statDim) els.statDim.textContent = `${formatNumber(stats.embedding_dim || 0)} 维`;
+  if (els.statRecordCount) els.statRecordCount.textContent = `记录: ${formatNumber(primary.record_count || 0)}`;
+  if (els.statChunkCount) els.statChunkCount.textContent = `片段: ${formatNumber(primary.chunk_count || 0)}`;
+  if (els.statColls) els.statColls.textContent = formatNumber((stats.collections || []).length);
+  if (els.statPrimaryCollection) els.statPrimaryCollection.textContent = `当前集合: ${state.primaryCollection || "-"}`;
+  if (els.statSuccessFiles) els.statSuccessFiles.textContent = `成功文件: ${formatNumber(state.lastProcess?.files_succeeded || 0)}`;
+  if (els.statFailedFiles) els.statFailedFiles.textContent = `失败文件: ${formatNumber(state.lastProcess?.files_failed || 0)}`;
+  if (els.statStorageLive) els.statStorageLive.textContent = `实时存储 ${formatMegabytes(stats.storage_size_mb || 0)}`;
+
+  if (els.statLatency) {
+    const latency = state.lastSearch?.latency_ms ?? state.benchmark?.avg_query_latency_ms;
+    els.statLatency.textContent = Number.isFinite(latency) ? `${formatDecimal(latency, 2)} ms` : "--";
+  }
+  if (els.statLastResults) els.statLastResults.textContent = `结果数: ${formatNumber(searchResults.length)}`;
+  if (els.statP95) {
+    const p95 = state.benchmark?.p95_query_latency_ms;
+    els.statP95.textContent = `P95: ${Number.isFinite(p95) ? `${formatDecimal(p95, 2)} ms` : "--"}`;
+  }
+  if (els.statPrecision) els.statPrecision.textContent = `精度: ${searchResults.length ? formatPercent(searchScore, 1) : "--"}`;
+  if (els.statQuality) els.statQuality.textContent = state.lastProcess?.quality_report?.issue_count ? `质量告警 ${state.lastProcess.quality_report.issue_count} 条` : "质量监测正常";
+  if (els.miniThroughput) els.miniThroughput.textContent = throughput;
+  if (els.miniPrecision) els.miniPrecision.textContent = searchResults.length ? formatPercent(searchScore, 1) : "--";
+  if (els.searchPulse) els.searchPulse.textContent = searchResults.length ? `${searchResults.length} hits` : (state.online ? "等待检索" : "后端离线");
+}
+
+function renderUploads() {
+  if (!els.queueList || !els.uploadQueueMeta || !els.queueCountPill) return;
+
+  const uploads = Array.isArray(state.uploads) ? state.uploads : [];
+  const pending = getPendingUploads();
+  const processed = getProcessedUploads();
+  const selectedCount = Array.from(state.selectedUploads).filter((name) => pending.some((item) => item.filename === name)).length;
+
+  els.queueCountPill.textContent = `${formatNumber(uploads.length)} 个文件`;
+  if (els.selectAllUploads) els.selectAllUploads.disabled = !pending.length;
+  if (els.clearUploadSelection) els.clearUploadSelection.disabled = !selectedCount;
+  if (els.btnProcess && els.btnProcess.dataset.busy !== "true") {
+    els.btnProcess.disabled = !selectedCount;
+  }
+
+  els.uploadQueueMeta.textContent = uploads.length
+    ? `上传目录共 ${formatNumber(uploads.length)} 个文件，待处理 ${formatNumber(pending.length)} 个，已处理 ${formatNumber(processed.length)} 个。${selectedCount ? ` 已勾选 ${formatNumber(selectedCount)} 个待处理文件。` : ""}`
+    : "上传文件或文件夹后，这里会显示整个上传目录。";
+
+  if (!uploads.length) {
+    renderEmpty(els.queueList, "上传后，这里会显示整个上传目录；勾选待处理文件再入库。");
+    return;
+  }
+
+  els.queueList.innerHTML = uploads.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isProcessed = item.status === "processed";
+    const isSelected = !isProcessed && state.selectedUploads.has(item.filename);
+    const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
+    const recordMeta = isProcessed
+      ? `${formatNumber(item.last_records || 0)} 条记录 · ${formatNumber(item.last_chunks || 0)} 个片段`
+      : "勾选后可加入本次处理";
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""} ${isProcessed ? "is-processed" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
+              <input type="checkbox" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+              <span></span>
+            </label>
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${formatDecimal(item.size_kb || 0, 1)} KB</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup(item.status)}
+            <span class="pill">${formatClock(stamp)}</span>
+          </div>
+        </div>
+        <div class="queue-meta">
+          <span>存储名 ${escapeHtml(item.filename)}</span>
+          <span>${recordMeta}</span>
+        </div>
+        ${item.last_error ? `<div class="queue-hint danger-text">${escapeHtml(item.last_error)}</div>` : ""}
+        <div class="queue-actions is-tight">
+          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">移出目录</button>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderProcessedUploads() {
+  if (!els.processedList || !els.processedMeta || !els.processedCountPill) return;
+
+  const processed = getProcessedUploads();
+  if (!processed.length && state.processedEditMode) {
+    state.processedEditMode = false;
+    state.selectedProcessedUploads.clear();
+  }
+
+  const selectedCount = state.selectedProcessedUploads.size;
+  els.processedCountPill.textContent = `${formatNumber(processed.length)} 个文件`;
+  els.processedMeta.textContent = processed.length
+    ? `这里展示已经完成入库的文件。${state.processedEditMode ? ` 已勾选 ${formatNumber(selectedCount)} 个文件准备删除。` : " 删除时会同步清理对应向量。"}`
+    : "处理完成的文件会自动进入这里。";
+
+  if (els.processedEditButton) {
+    els.processedEditButton.disabled = !processed.length && !state.processedEditMode;
+    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "完成" : "编辑"}</span>`;
+  }
+  if (els.processedDeleteButton) {
+    els.processedDeleteButton.hidden = !state.processedEditMode;
+    els.processedDeleteButton.disabled = !selectedCount;
+  }
+
+  if (!processed.length) {
+    renderEmpty(els.processedList, "处理完成的文件会显示在这里，和上传目录分开展示。");
+    return;
+  }
+
+  els.processedList.innerHTML = processed.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isSelected = state.selectedProcessedUploads.has(item.filename);
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            ${state.processedEditMode ? `
+              <label class="check-chip">
+                <input type="checkbox" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+                <span></span>
+              </label>
+            ` : ""}
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))}</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup("processed")}
+            <span class="pill">${formatClock(item.processed_at || item.modified)}</span>
+          </div>
+        </div>
+        <div class="queue-meta">
+          <span>集合 ${escapeHtml(item.last_collection || "power_equipment")}</span>
+          <span>${formatNumber(item.last_records || 0)} 条记录</span>
+          <span>${formatNumber(item.last_chunks || 0)} 个片段</span>
+        </div>
+        <div class="queue-hint">删除时会同步移除该文件及其向量数据。</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderProcessSummary() {
+  if (!els.processLog) return;
+  const result = state.lastProcess;
+  if (!result) {
+    renderEmpty(els.processLog, "勾选待处理文件并完成入库后，这里会显示本次处理摘要。");
+    return;
+  }
+
+  const summaries = Array.isArray(result.file_summaries) ? result.file_summaries : [];
+  const requested = Array.isArray(result.requested_filenames) ? result.requested_filenames : [];
+  const skipped = Array.isArray(result.skipped_already_processed) ? result.skipped_already_processed : [];
+  const items = [
+    `
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">本次处理摘要</div>
+            <p>${formatNumber(result.records_processed || 0)} 条记录，${formatNumber(result.chunks_written || 0)} 个片段入库</p>
+          </div>
+          <span class="pill">${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+        </div>
+        <div class="queue-meta">
+          <span>请求 ${formatNumber(requested.length)} 个</span>
+          <span>成功 ${formatNumber(result.files_succeeded || 0)} 个</span>
+          <span>失败 ${formatNumber(result.files_failed || 0)} 个</span>
+          <span>跳过 ${formatNumber(skipped.length)} 个</span>
+        </div>
+      </article>
+    `
+  ];
+
+  summaries.forEach((item) => {
+    const displayName = uploadDisplayName(item.source_file);
+    const pathInfo = splitUploadPath(displayName);
+    items.push(`
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+            <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${item.status === "ok" ? "提取成功" : "提取失败"}</p>
+          </div>
+          <span class="pill">${item.status === "ok" ? `${formatNumber(item.records_extracted || 0)} 条` : "error"}</span>
+        </div>
+        <div class="queue-meta">
+          <span>${item.status === "ok" ? "已标记为已处理" : "未写入向量库"}</span>
+          <span>${item.status === "ok" ? `记录 ${formatNumber(item.records_extracted || 0)}` : escapeHtml(item.error || "处理失败")}</span>
+        </div>
+      </article>
+    `);
+  });
+
+  if (skipped.length) {
+    items.push(`
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">已跳过文件</div>
+            <p>这些文件之前已经处理过，本次不会重复扫描。</p>
+          </div>
+          <span class="pill">${formatNumber(skipped.length)} 个</span>
+        </div>
+        <div class="queue-meta">
+          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "无")}</span>
+        </div>
+      </article>
+    `);
+  }
+
+  els.processLog.innerHTML = items.join("");
+}
+
+function renderQualityReport() {
+  if (!els.qualityReport) return;
+  const report = state.lastProcess?.quality_report;
+  if (!report) {
+    renderEmpty(els.qualityReport, "处理完成后，会显示分块统计和质量问题摘要。");
+    return;
+  }
+
+  const chunks = report.chunks || {};
+  const docs = Array.isArray(report.documents) ? report.documents : [];
+  const issues = Array.isArray(report.issues) ? report.issues : [];
+  const docItems = docs.slice(0, 4).map((item) => `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">${escapeHtml((item.filenames || []).map(summarizeName).join(" / ") || `doc${item.doc_id}`)}</div>
+          <p>${formatNumber(item.block_count || 0)} 个 block</p>
+        </div>
+        <span class="pill">${formatNumber(item.short_blocks || 0)} 短块</span>
+      </div>
+      <div class="queue-meta">
+        <span>${Object.entries(item.label_distribution || {}).map(([key, value]) => `${key}:${value}`).join(" · ") || "无标签统计"}</span>
+      </div>
+    </article>
+  `).join("");
+
+  const issueItems = issues.slice(0, 4).map((issue) => `<span>${escapeHtml(issue)}</span>`).join("");
+  els.qualityReport.innerHTML = `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">分块统计</div>
+          <p>平均长度 ${formatNumber(chunks.avg_length || 0)}，最短 ${formatNumber(chunks.min_length || 0)}，最长 ${formatNumber(chunks.max_length || 0)}</p>
+        </div>
+        <span class="pill">${formatNumber(chunks.total_chunks || 0)} chunks</span>
+      </div>
+      <div class="queue-meta">
+        <span>问题数 ${formatNumber(report.issue_count || 0)}</span>
+        <span>${issueItems || "未检测到明显质量问题"}</span>
+      </div>
+    </article>
+    ${docItems || '<div class="empty-state">暂无文档级质量摘要。</div>'}
+  `;
+}
+
+function renderSearchResults() {
+  if (!els.searchMeta || !els.searchResults) return;
+  const payload = state.lastSearch;
+  if (!payload) {
+    els.searchMeta.textContent = "等待检索输入。";
+    renderEmpty(els.searchResults, "输入问题后，这里会显示相似片段、来源与得分。");
+    return;
+  }
+
+  const results = Array.isArray(payload.results) ? payload.results : [];
+  const score = averageScore(results);
+  els.searchMeta.textContent = [
+    `集合 ${payload.collection || state.primaryCollection || "-"}`,
+    `延迟 ${formatDecimal(payload.latency_ms || 0, 2)} ms`,
+    `结果 ${formatNumber(results.length)}`,
+    payload.embedding_backend ? `后端 ${payload.embedding_backend}` : ""
+  ].filter(Boolean).join(" · ");
+
+  if (!results.length) {
+    renderEmpty(els.searchResults, payload.message || "没有检索到结果。");
+    if (els.statPrecision) els.statPrecision.textContent = score ? `精度: ${formatPercent(score, 1)}` : "精度: --";
+    return;
+  }
+
+  els.searchResults.innerHTML = results.map((item, index) => {
+    const key = `${payload.query}-${index}-${item?.metadata?.chunk_index || 0}`;
+    const expanded = state.expandedResults.has(key);
+    const metadata = item.metadata || {};
+    return `
+      <article class="result-card ${expanded ? "is-expanded" : ""}">
+        <div class="result-head">
+          <div>
+            <div class="result-title">${escapeHtml(summarizeName(metadata.filename || metadata.source_file || `结果 ${index + 1}`))}</div>
+            <div class="result-meta">
+              <span>${escapeHtml(kindLabel(metadata.source_kind))}</span>
+              <span>score ${formatPercent(item.score || 0, 1)}</span>
+              <span>distance ${formatDecimal(item.distance || 0, 4)}</span>
+              <span>chunk ${formatNumber(metadata.chunk_index || 0)}</span>
+            </div>
+          </div>
+          <div class="result-score">${formatPercent(item.score || 0, 1)}</div>
+        </div>
+        <p class="result-body">${escapeHtml(item.text || "")}</p>
+        <div class="queue-meta">
+          <span>record ${escapeHtml(metadata.record_id || "-")}</span>
+          <span>tokens ${formatNumber(metadata.estimated_tokens || 0)}</span>
+          <span>pages ${escapeHtml(String(metadata.page_nums || "-"))}</span>
+        </div>
+        <button class="result-toggle" type="button" data-result-toggle="${escapeHtml(key)}">${expanded ? "收起" : "展开全文"}</button>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderBenchmark() {
-  const empty = $("benchEmpty");
-  const grid = $("benchGrid");
-  if (!empty || !grid) return;
-  if (!state.benchmark) {
-    empty.style.display = "block";
-    grid.innerHTML = "";
+  if (!els.benchGrid || !els.benchLog || !els.benchEmpty) return;
+  const benchmark = state.benchmark;
+  if (!benchmark) {
+    els.benchLog.textContent = "等待压测开始。";
+    els.benchEmpty.style.display = "";
+    els.benchGrid.innerHTML = "";
     return;
   }
-  empty.style.display = "none";
-  const result = state.benchmark;
-  const entries = [
-    ["写入耗时", `${Number(result.insert_seconds || 0).toFixed(2)}s`],
-    ["写入吞吐", `${Number(result.insert_docs_per_second || 0).toFixed(1)} 条/秒`],
-    ["查询耗时", `${Number(result.query_seconds || 0).toFixed(2)}s`],
-    ["查询吞吐", `${Number(result.query_qps || 0).toFixed(1)} 次/秒`],
-    ["平均延迟", `${Number(result.avg_query_latency_ms || 0).toFixed(1)} ms`],
-    ["P95 延迟", `${Number(result.p95_query_latency_ms || 0).toFixed(1)} ms`],
-    ["向量方式", escapeHtml(result.embedding_backend || "-")],
-    ["模型标识", escapeHtml(result.embedding_model || "-")]
-  ];
-  grid.innerHTML = entries.map(([label, value]) => `<div class="bench-card"><div class="bench-label">${iconMarkup(benchmarkIcons[label] || "lucide:database")}<span>${label}</span></div><div class="mini-value">${value}</div></div>`).join("");
+
+  els.benchEmpty.style.display = "none";
+  els.benchLog.textContent = `集合 ${benchmark.collection} · 写入 ${formatDecimal(benchmark.insert_seconds, 3)} s · 平均延迟 ${formatDecimal(benchmark.avg_query_latency_ms, 3)} ms`;
+  els.benchGrid.innerHTML = BENCHMARK_CARDS.map((card) => `
+    <article class="bench-card">
+      <div class="bench-label">
+        ${iconMarkup(card.icon)}
+        <span>${escapeHtml(card.label)}</span>
+      </div>
+      <div class="metric-value">${escapeHtml(card.formatter(benchmark[card.key]))}</div>
+    </article>
+  `).join("");
 }
 
 function renderAll() {
-  renderOverview();
-  renderActivity();
-  renderQueue();
-  renderProcessLog();
-  renderQuality();
+  renderStatus();
+  renderCollectionSpectrum();
+  renderCollectionList();
+  renderTrendChart();
+  renderActivityFeed();
+  renderSummaryMetrics();
+  renderUploads();
+  renderProcessedUploads();
+  renderProcessSummary();
+  renderQualityReport();
   renderSearchResults();
   renderBenchmark();
-}
-
-function setProgress(id, value) {
-  const node = $(id);
-  if (node) node.style.width = `${Math.max(0, Math.min(100, value))}%`;
-}
-
-async function apiJson(url, options = {}) {
-  const response = await fetch(url, options);
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.detail || payload.message || `Request failed: ${response.status}`);
-  }
-  return payload;
 }
 
 async function refreshHealth() {
-  state.localMode = true;
-  updateStatus(true);
-  els.statusText.textContent = "浏览器本地引擎在线，文件只在当前浏览器会话中处理";
+  try {
+    const payload = await requestJson("/api/health", {}, 15000);
+    state.online = payload.status === "ok";
+    state.version = payload.version || "";
+  } catch (error) {
+    state.online = false;
+    state.version = "";
+  }
+  renderStatus();
 }
 
-async function refreshStats(label = "刷新") {
-  state.stats = buildLocalStats();
-  captureTimelineSnapshot(label);
-  renderOverview();
+async function refreshStats() {
+  const stats = await requestJson("/api/stats");
+  state.stats = stats;
+  state.primaryCollection = choosePrimaryCollection(stats.collections);
+  state.primaryStats = state.primaryCollection
+    ? await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`)
+    : null;
+  rememberTimeline("stats");
+  renderCollectionSpectrum();
+  renderCollectionList();
+  renderTrendChart();
+  renderSummaryMetrics();
 }
 
 async function refreshUploads() {
-  state.uploads = state.uploads || [];
-  renderQueue();
+  const payload = await requestJson("/api/uploads");
+  state.uploads = Array.isArray(payload.files) ? payload.files : [];
+  state.pendingUploads = Array.isArray(payload.pending) ? payload.pending : state.uploads.filter((item) => item.status !== "processed");
+  state.processedUploads = Array.isArray(payload.processed) ? payload.processed : state.uploads.filter((item) => item.status === "processed");
+  syncUploadSelections();
+  renderUploads();
+  renderProcessedUploads();
 }
 
 async function refreshAll() {
-  await Promise.all([refreshHealth(), refreshStats(), refreshUploads()]);
-  els.refreshStamp.textContent = `本地引擎已就绪 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
-  renderAll();
+  setStatusLevel("warning");
+  if (els.refreshStamp) els.refreshStamp.textContent = "正在同步...";
+  try {
+    await refreshHealth();
+    if (!state.online) {
+      renderAll();
+      return;
+    }
+    await Promise.all([refreshStats(), refreshUploads()]);
+    renderAll();
+  } catch (error) {
+    addActivity("danger", "同步失败", error.message || String(error));
+    showToast(error.message || "同步失败", "danger");
+  } finally {
+    renderStatus();
+  }
 }
 
-async function deleteCollection(name) {
-  state.records = [];
-  state.chunks = [];
-  state.timeline = [];
-  state.lastProcess = null;
-  state.lastSearchResult = null;
-  state.expandedResults = new Set();
-  state.benchmark = null;
-  pushActivity({ level: "warning", title: "本地索引已清空", desc: `${name} 已从当前浏览器会话中移除。`, user: "本地引擎", duration: "0.2s" });
-  showToast("已清空当前浏览器索引", "warning");
-  await refreshStats("清空");
-  renderProcessLog();
-  renderQuality();
-  renderSearchResults();
-  renderBenchmark();
+function isSupportedFile(file) {
+  const name = String(file?.name || "");
+  const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  return SUPPORTED_EXTENSIONS.has(ext);
+}
+
+async function uploadFiles(fileList) {
+  const files = Array.from(fileList || []).filter(isSupportedFile);
+  if (!files.length) {
+    showToast("没有可上传的受支持文件。", "warning");
+    return;
+  }
+
+  addActivity("warning", "开始上传", `待上传 ${files.length} 个文件`);
+  let successCount = 0;
+  let failedCount = 0;
+
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    if (els.uploadQueueMeta) {
+      els.uploadQueueMeta.textContent = `正在上传 ${index + 1}/${files.length}: ${file.name}`;
+    }
+
+    const form = new FormData();
+    form.append("file", file, file.name);
+    form.append("relative_path", file.webkitRelativePath || file.name);
+
+    try {
+      await requestJson("/api/upload", {
+        method: "POST",
+        body: form
+      }, 120000);
+      successCount += 1;
+    } catch (error) {
+      failedCount += 1;
+      addActivity("danger", "上传失败", `${file.name}: ${error.message || error}`);
+    }
+  }
+
+  await refreshUploads();
+  const message = `上传完成，成功 ${successCount} 个，失败 ${failedCount} 个`;
+  addActivity(failedCount ? "warning" : "success", "上传完成", message);
+  showToast(message, failedCount ? "warning" : "success");
+}
+
+async function deleteUpload(filename, options = {}) {
+  const purgeVectors = Boolean(options.purgeVectors);
+  const suffix = purgeVectors ? "?purge_vectors=true" : "";
+  await requestJson(`/api/uploads/${encodeURIComponent(filename)}${suffix}`, { method: "DELETE" });
+  addActivity("success", purgeVectors ? "已删除处理文件" : "已移出上传目录", splitUploadPath(uploadDisplayName(filename)).file);
+  if (purgeVectors) {
+    await Promise.all([refreshUploads(), refreshStats()]);
+  } else {
+    await refreshUploads();
+  }
+  showToast(purgeVectors ? `已删除 ${splitUploadPath(uploadDisplayName(filename)).file} 并清理向量` : `已移除 ${splitUploadPath(uploadDisplayName(filename)).file}`, "success");
+}
+
+async function deleteProcessedUploads(filenames) {
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+  if (!selected.length) {
+    showToast("请先勾选要删除的已处理文件。", "warning");
+    return;
+  }
+  if (!window.confirm(`确认删除 ${selected.length} 个已处理文件，并同步清理对应向量吗？`)) return;
+
+  const result = await requestJson("/api/uploads/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filenames: selected, purge_vectors: true })
+  }, 120000);
+
+  addActivity("success", "已删除处理文件", `删除 ${selected.length} 个文件，清理 ${formatNumber(result.chunks_deleted || 0)} 个片段`);
+  state.selectedProcessedUploads.clear();
+  state.processedEditMode = false;
+  await Promise.all([refreshUploads(), refreshStats()]);
+  renderProcessSummary();
+  renderQualityReport();
+  renderSummaryMetrics();
+  showToast(`已删除 ${selected.length} 个文件，并同步清理向量数据。`, "success");
+}
+
+function toggleProcessedEditMode(force) {
+  state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
+  if (!state.processedEditMode) state.selectedProcessedUploads.clear();
+  renderProcessedUploads();
 }
 
 async function runProcess() {
-  if (!state.uploads.length) {
-    showToast("请先拖入或选择文件", "warning");
+  const selected = getPendingUploads()
+    .filter((item) => state.selectedUploads.has(item.filename))
+    .map((item) => item.filename);
+
+  if (!selected.length) {
+    showToast("请先在上传目录里勾选要处理的文件。", "warning");
     return;
   }
-  const started = performance.now();
-  const allRecords = [];
-  const fileSummaries = [];
-  setProgress("processFill", 8);
-  for (let index = 0; index < state.uploads.length; index += 1) {
-    const upload = state.uploads[index];
-    try {
-      const records = await parseFileRecords(upload.file);
-      upload.records = records;
-      allRecords.push(...records);
-      fileSummaries.push({
-        source_file: upload.filename,
-        source_kind: upload.source_kind,
-        status: "ok",
-        records_extracted: records.length
-      });
-    } catch (error) {
-      fileSummaries.push({
-        source_file: upload.filename,
-        source_kind: upload.source_kind,
-        status: "error",
-        records_extracted: 0,
-        error: error.message
-      });
-    }
-    setProgress("processFill", 8 + ((index + 1) / state.uploads.length) * 58);
+
+  if (els.btnProcess) {
+    els.btnProcess.disabled = true;
+    els.btnProcess.dataset.busy = "true";
   }
-  state.records = allRecords;
-  state.chunks = makeChunks(allRecords);
-  const result = {
-    files_processed: state.uploads.length,
-    files_succeeded: fileSummaries.filter((item) => item.status === "ok").length,
-    files_failed: fileSummaries.filter((item) => item.status === "error").length,
-    records_processed: allRecords.length,
-    chunks_written: state.chunks.length,
-    elapsed_s: Number(((performance.now() - started) / 1000).toFixed(2)),
-    file_summaries: fileSummaries,
-    quality_report: buildQualityReport(allRecords, state.chunks)
-  };
-  state.lastProcess = result;
-  setProgress("processFill", 100);
-  renderProcessLog(result);
-  renderQuality(result);
-  await refreshStats("入库");
-  pushActivity({
-    level: result.files_failed ? "warning" : "success",
-    title: "浏览器本地分析完成",
-    desc: `成功 ${result.files_succeeded} 个，失败 ${result.files_failed} 个，生成 ${result.chunks_written} 个片段。`,
-    user: "本地引擎",
-    duration: `${result.elapsed_s}s`
-  });
-  showToast(result.files_failed ? "本地分析完成，存在部分失败文件" : "本地分析完成", result.files_failed ? "warning" : "success");
+  if (els.processFill) els.processFill.style.width = "18%";
+  if (els.processLog) renderEmpty(els.processLog, "正在处理选中的文件，请稍候...");
+
+  try {
+    addActivity("warning", "开始入库处理", `本次处理 ${selected.length} 个勾选文件`);
+    const result = await requestJson("/api/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filenames: selected,
+        collection: state.primaryCollection || "power_equipment"
+      })
+    }, 300000);
+
+    state.lastProcess = result;
+    if (els.processFill) els.processFill.style.width = "100%";
+
+    addActivity(
+      result.files_failed ? "warning" : "success",
+      "处理完成",
+      `成功 ${result.files_succeeded || 0} 个文件，写入 ${result.chunks_written || 0} 个片段`
+    );
+
+    await Promise.all([refreshStats(), refreshUploads()]);
+    renderProcessSummary();
+    renderQualityReport();
+    renderSummaryMetrics();
+    showToast(`处理完成，成功 ${result.files_succeeded || 0} 个，跳过 ${((result.skipped_already_processed || []).length || 0)} 个已处理文件。`, "success");
+  } catch (error) {
+    if (els.processFill) els.processFill.style.width = "0%";
+    addActivity("danger", "处理失败", error.message || String(error));
+    renderProcessSummary();
+    showToast(error.message || "处理失败", "danger");
+  } finally {
+    if (els.btnProcess) {
+      delete els.btnProcess.dataset.busy;
+      els.btnProcess.disabled = false;
+    }
+    renderUploads();
+  }
 }
 
 async function runSearch() {
-  const query = $("searchInput")?.value?.trim();
-  const topK = Number($("searchTopK")?.value || 5);
+  const query = String(els.searchInput?.value || "").trim();
   if (!query) {
-    showToast("请输入检索问题", "warning");
+    showToast("请输入检索问题。", "warning");
     return;
   }
-  if (!state.chunks.length) {
-    renderSearchResults({ results: [], message: "当前还没有本地索引，请先拖入文件并完成分析。" });
-    return;
+
+  if (els.searchMeta) els.searchMeta.textContent = "正在检索...";
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      top_k: String(Number(els.searchTopK?.value || 5))
+    });
+    if (state.primaryCollection) params.set("collection", state.primaryCollection);
+
+    const result = await requestJson(`/api/search?${params.toString()}`);
+    state.lastSearch = result;
+    rememberTimeline("search");
+    renderSearchResults();
+    renderTrendChart();
+    renderSummaryMetrics();
+    addActivity(
+      result.results?.length ? "success" : "warning",
+      "检索完成",
+      `查询“${query}”返回 ${result.results?.length || 0} 条结果`
+    );
+    showToast(`检索完成，返回 ${result.results?.length || 0} 条结果。`, "success");
+  } catch (error) {
+    addActivity("danger", "检索失败", error.message || String(error));
+    state.lastSearch = {
+      query,
+      results: [],
+      message: error.message || "检索失败"
+    };
+    renderSearchResults();
+    showToast(error.message || "检索失败", "danger");
   }
-  const started = performance.now();
-  const queryVector = createEmbedding(query);
-  const normalizedQuery = normalizeText(query).toLowerCase();
-  const queryTokens = Array.from(new Set(tokenize(query))).filter((token) => token.length > 1);
-  const ranked = state.chunks
-    .map((chunk) => {
-      const similarity = cosineSimilarity(queryVector, chunk.vector);
-      const semanticScore = (similarity + 1) / 2;
-      const overlapCount = queryTokens.reduce((sum, token) => sum + (chunk.tokens?.includes(token) ? 1 : 0), 0);
-      const overlapScore = queryTokens.length ? overlapCount / queryTokens.length : 0;
-      const phraseBonus = normalizedQuery && chunk.normalizedText.includes(normalizedQuery) ? 0.12 : 0;
-      const score = Math.min(0.9999, semanticScore * 0.7 + overlapScore * 0.24 + phraseBonus);
-      return {
-        text: chunk.text,
-        distance: Number((1 - score).toFixed(4)),
-        score: Number(score.toFixed(4)),
-        metadata: chunk.metadata
-      };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK);
-  const result = {
-    collection: "browser_local_index",
-    results: ranked,
-    latency_ms: Number((performance.now() - started).toFixed(1))
-  };
-  state.lastLatency = result.latency_ms;
-  captureTimelineSnapshot("检索");
-  state.expandedResults = new Set();
-  renderSearchResults(result);
-  renderOverview();
-  pushActivity({
-    level: "success",
-    title: "浏览器本地检索完成",
-    desc: `${query} 返回 ${ranked.length} 条结果。`,
-    user: "本地引擎",
-    duration: `${result.latency_ms}ms`
-  });
+}
+
+async function deleteCollection(name) {
+  await requestJson(`/api/collections/${encodeURIComponent(name)}`, { method: "DELETE" });
+  if (state.primaryCollection === name) {
+    state.primaryCollection = "";
+    state.primaryStats = null;
+  }
+  addActivity("success", "集合已删除", name);
+  await refreshStats();
+  showToast(`已删除集合 ${name}`, "success");
 }
 
 async function runBenchmark() {
   const payload = {
-    document_count: Number($("benchDocs")?.value || 500),
-    batch_size: Number($("benchBatch")?.value || 100),
-    query_count: Number($("benchQueries")?.value || 50),
-    top_k: Number($("benchTopK")?.value || 5)
+    collection: `benchmark_${Date.now()}`,
+    document_count: Number(els.benchDocs?.value || 500),
+    batch_size: Number(els.benchBatch?.value || 100),
+    query_count: Number(els.benchQueries?.value || 50),
+    top_k: Number(els.benchTopK?.value || 5),
+    backend: "hashing",
+    cleanup: true
   };
-  setProgress("benchFill", 18);
-  $("benchLog").textContent = "本地压测运行中，请稍候。";
-  const synthetic = Array.from({ length: payload.document_count }, (_, index) => ({
-    id: `synthetic-${index}`,
-    text: `文档 ${index}：燃气轮机维护、压气机工况、振动诊断、润滑状态、检索性能评估与知识库索引。`
-  }));
-  const insertStarted = performance.now();
-  const embedded = synthetic.map((item) => ({ ...item, vector: createEmbedding(item.text) }));
-  const insertSeconds = (performance.now() - insertStarted) / 1000;
-  setProgress("benchFill", 58);
-  const latencies = [];
-  const queryStarted = performance.now();
-  for (let index = 0; index < payload.query_count; index += 1) {
-    const query = createEmbedding(`燃气轮机检索查询 ${index}`);
-    const started = performance.now();
-    embedded
-      .map((item) => cosineSimilarity(query, item.vector))
-      .sort((a, b) => b - a)
-      .slice(0, payload.top_k);
-    latencies.push(performance.now() - started);
+
+  if (els.btnBench) els.btnBench.disabled = true;
+  if (els.benchFill) els.benchFill.style.width = "18%";
+  if (els.benchLog) els.benchLog.textContent = "压测运行中...";
+
+  try {
+    addActivity("warning", "开始压测", `${payload.document_count} 文档 / ${payload.query_count} 查询`);
+    const result = await requestJson("/api/benchmark", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }, 300000);
+
+    state.benchmark = result;
+    if (els.benchFill) els.benchFill.style.width = "100%";
+    rememberTimeline("benchmark");
+    renderBenchmark();
+    renderTrendChart();
+    renderSummaryMetrics();
+    addActivity("success", "压测完成", `写入 ${result.insert_docs_per_second} docs/s，检索 ${result.query_qps} qps`);
+    showToast("压测完成，指标已更新。", "success");
+  } catch (error) {
+    if (els.benchFill) els.benchFill.style.width = "0%";
+    addActivity("danger", "压测失败", error.message || String(error));
+    showToast(error.message || "压测失败", "danger");
+  } finally {
+    if (els.btnBench) els.btnBench.disabled = false;
   }
-  const querySeconds = (performance.now() - queryStarted) / 1000;
-  const ordered = [...latencies].sort((a, b) => a - b);
-  const p95 = ordered[Math.max(0, Math.min(ordered.length - 1, Math.round((ordered.length - 1) * 0.95)))] || 0;
-  state.benchmark = {
-    insert_seconds: Number(insertSeconds.toFixed(4)),
-    insert_docs_per_second: Number((payload.document_count / Math.max(insertSeconds, 0.001)).toFixed(2)),
-    query_seconds: Number(querySeconds.toFixed(4)),
-    query_qps: Number((payload.query_count / Math.max(querySeconds, 0.001)).toFixed(2)),
-    avg_query_latency_ms: Number((latencies.reduce((sum, item) => sum + item, 0) / Math.max(latencies.length, 1)).toFixed(3)),
-    p95_query_latency_ms: Number(p95.toFixed(3)),
-    embedding_backend: "browser-hashing",
-    embedding_model: `hashing-${engineDefaults.dimension}`
-  };
-  state.lastLatency = Number(state.benchmark.avg_query_latency_ms || state.lastLatency);
-  captureTimelineSnapshot("压测");
-  setProgress("benchFill", 100);
-  $("benchLog").textContent = `本地压测完成：平均延迟 ${state.benchmark.avg_query_latency_ms} 毫秒，P95 ${state.benchmark.p95_query_latency_ms} 毫秒。`;
-  renderBenchmark();
-  renderOverview();
-  pushActivity({
-    level: "success",
-    title: "浏览器本地压测完成",
-    desc: `写入 ${state.benchmark.insert_docs_per_second} 条/秒，查询 ${state.benchmark.query_qps} 次/秒。`,
-    user: "本地引擎",
-    duration: `${Number(state.benchmark.query_seconds || 0).toFixed(2)}s`
+}
+
+function activateGroupButton(group, matcher) {
+  group?.querySelectorAll(".segment-btn").forEach((button) => {
+    button.classList.toggle("active", matcher(button));
   });
 }
 
-function dedupeFiles(files) {
-  const seen = new Set();
-  return files.filter((file) => {
-    const key = `${relativePathOf(file)}__${file.size}__${file.lastModified}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
+function handleGlobalCommand(event) {
+  event.preventDefault();
+  const query = String(els.globalSearchInput?.value || "").trim();
+  if (!query) return;
 
-function walkEntry(entry, prefix = "") {
-  return new Promise((resolve) => {
-    if (!entry) {
-      resolve([]);
-      return;
-    }
-    if (entry.isFile) {
-      entry.file((file) => {
-        file.__relativePath = `${prefix}${file.name}`;
-        resolve([file]);
-      }, () => resolve([]));
-      return;
-    }
-    if (!entry.isDirectory) {
-      resolve([]);
-      return;
-    }
-    const reader = entry.createReader();
-    const collected = [];
-    const basePrefix = `${prefix}${entry.name}/`;
-    const readBatch = () => {
-      reader.readEntries(async (entries) => {
-        if (!entries.length) {
-          const nested = await Promise.all(collected.map((child) => walkEntry(child, basePrefix)));
-          resolve(nested.flat());
-          return;
-        }
-        collected.push(...entries);
-        readBatch();
-      }, () => resolve([]));
-    };
-    readBatch();
-  });
-}
-
-async function filesFromDrop(dataTransfer) {
-  const items = Array.from(dataTransfer?.items || []);
-  const supportsEntries = items.some((item) => typeof item.webkitGetAsEntry === "function");
-  if (supportsEntries) {
-    const entries = items.map((item) => item.webkitGetAsEntry()).filter(Boolean);
-    const nested = await Promise.all(entries.map((entry) => walkEntry(entry)));
-    return dedupeFiles(nested.flat());
-  }
-  return dedupeFiles(Array.from(dataTransfer?.files || []));
-}
-
-async function uploadFiles(files) {
-  const supported = dedupeFiles(files).filter(isSupportedFile);
-  const skipped = files.length - supported.length;
-  if (!supported.length) {
-    showToast("未检测到可上传的受支持文件", "warning");
+  if (/上传|数据|队列|文件/.test(query)) {
+    setPage("data");
     return;
   }
-  const mapped = supported.map((file) => ({
-    file,
-    filename: relativePathOf(file).replaceAll("/", "__"),
-    display_name: relativePathOf(file),
-    size_kb: Number((file.size / 1024).toFixed(1)),
-    modified: Math.floor((file.lastModified || Date.now()) / 1000),
-    source_kind: sourceKindFromName(relativePathOf(file))
-  }));
-  const keyed = new Map(state.uploads.map((item) => [item.filename, item]));
-  mapped.forEach((item) => keyed.set(item.filename, item));
-  state.uploads = Array.from(keyed.values());
-  await refreshUploads();
-  setProgress("processFill", 0);
-  pushActivity({
-    level: "success",
-    title: "文件已加入本地队列",
-    desc: `本次加入 ${mapped.length} 个文件，分析将只在当前浏览器中进行。`,
-    user: "本地引擎",
-    duration: `${mapped.length} 个文件`
-  });
-  if (skipped > 0) showToast(`已加入 ${mapped.length} 个文件，跳过 ${skipped} 个不支持文件`, "warning");
-  else showToast(`已加入 ${mapped.length} 个文件，开始本地分析`, "success");
-  await runProcess();
-}
+  if (/架构|流程|结构/.test(query)) {
+    setPage("architecture");
+    return;
+  }
+  if (/压测|性能|benchmark/.test(query)) {
+    setPage("benchmark");
+    return;
+  }
+  if (/概览|总览|统计/.test(query)) {
+    setPage("overview");
+    return;
+  }
 
-function bindDropzone() {
-  const zone = $("dropZone");
-  if (!zone) return;
-  ["dragenter", "dragover"].forEach((type) => zone.addEventListener(type, (event) => {
-    event.preventDefault();
-    zone.classList.add("is-dragging");
-  }));
-  ["dragleave", "dragend"].forEach((type) => zone.addEventListener(type, () => zone.classList.remove("is-dragging")));
-  zone.addEventListener("drop", async (event) => {
-    event.preventDefault();
-    zone.classList.remove("is-dragging");
-    const files = await filesFromDrop(event.dataTransfer);
-    await uploadFiles(files);
-  });
+  setPage("search");
+  if (els.searchInput) els.searchInput.value = query;
+  runSearch();
 }
 
 function bindEvents() {
-  state.activity = seededActivities();
   els.sidebarToggle?.addEventListener("click", () => {
-    els.sidebar.classList.toggle("is-collapsed");
+    els.sidebar?.classList.toggle("is-collapsed");
     syncSidebarToggleIcon();
   });
+
+  els.navList?.addEventListener("click", (event) => {
+    const button = event.target.closest(".nav-item");
+    if (!button) return;
+    setPage(button.dataset.page);
+  });
+
+  document.querySelectorAll("[data-jump]").forEach((button) => {
+    button.addEventListener("click", () => setPage(button.dataset.jump));
+  });
+
   els.refreshBtn?.addEventListener("click", refreshAll);
-  els.navList?.addEventListener("click", async (event) => {
-    const target = event.target.closest(".nav-item");
-    if (!target) return;
-    setPage(target.dataset.page);
+  els.globalSearchForm?.addEventListener("submit", handleGlobalCommand);
+
+  els.pickFilesButton?.addEventListener("click", () => els.fileInput?.click());
+  els.pickFolderButton?.addEventListener("click", () => els.folderInput?.click());
+  els.dropFolderButton?.addEventListener("click", () => els.folderInput?.click());
+  els.dropBrowseButton?.addEventListener("click", () => els.queueList?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  els.reloadQueueButton?.addEventListener("click", refreshUploads);
+  els.selectAllUploads?.addEventListener("click", () => {
+    state.selectedUploads = new Set(getPendingUploads().map((item) => item.filename));
+    renderUploads();
   });
-  document.body.addEventListener("click", async (event) => {
-    const jump = event.target.closest("[data-jump]");
-    if (jump) setPage(jump.dataset.jump);
-    const del = event.target.closest(".delete-collection");
-    if (del) await deleteCollection(del.dataset.name);
-    const resultToggle = event.target.closest("[data-toggle-result]");
-    if (resultToggle) {
-      const index = Number(resultToggle.dataset.toggleResult);
-      if (Number.isFinite(index)) {
-        if (state.expandedResults.has(index)) state.expandedResults.delete(index);
-        else state.expandedResults.add(index);
-        renderSearchResults();
-      }
-    }
-    const trendModeButton = event.target.closest("[data-trend-mode]");
-    if (trendModeButton) {
-      state.trendMode = trendModeButton.dataset.trendMode || "balance";
-      renderOverview();
-    }
-    const activityFilterButton = event.target.closest("[data-activity-filter]");
-    if (activityFilterButton) {
-      state.activityFilter = activityFilterButton.dataset.activityFilter || "all";
-      renderActivity();
-    }
+  els.clearUploadSelection?.addEventListener("click", () => {
+    state.selectedUploads.clear();
+    renderUploads();
   });
-  els.globalSearchForm?.addEventListener("submit", (event) => {
+  els.processedEditButton?.addEventListener("click", () => toggleProcessedEditMode());
+  els.processedDeleteButton?.addEventListener("click", async () => {
+    await deleteProcessedUploads(Array.from(state.selectedProcessedUploads));
+  });
+
+  els.fileInput?.addEventListener("change", async (event) => {
+    await uploadFiles(event.target.files);
+    event.target.value = "";
+  });
+
+  els.folderInput?.addEventListener("change", async (event) => {
+    await uploadFiles(event.target.files);
+    event.target.value = "";
+  });
+
+  els.dropZone?.addEventListener("dragover", (event) => {
     event.preventDefault();
-    const query = els.globalSearchInput?.value?.trim().toLowerCase() || "";
-    if (!query) return;
-    const page = Object.keys(pageMeta).find((key) => key.includes(query) || pageMeta[key].title.includes(query) || pageMeta[key].desc.includes(query));
-    if (page) {
-      setPage(page);
-      pushActivity({ level: "success", title: "全局搜索跳转", desc: `已定位到 ${pageMeta[page].title} 页面。`, user: "global", duration: "0.1s" });
+    els.dropZone.classList.add("is-dragging");
+  });
+
+  els.dropZone?.addEventListener("dragleave", () => {
+    els.dropZone.classList.remove("is-dragging");
+  });
+
+  els.dropZone?.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    els.dropZone.classList.remove("is-dragging");
+    await uploadFiles(event.dataTransfer?.files);
+  });
+
+  els.btnProcess?.addEventListener("click", runProcess);
+
+  els.searchInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runSearch();
+    }
+  });
+  els.btnSearch?.addEventListener("click", runSearch);
+
+  els.btnBench?.addEventListener("click", runBenchmark);
+
+  els.collList?.addEventListener("click", async (event) => {
+    const selectButton = event.target.closest("[data-set-collection]");
+    const deleteButton = event.target.closest("[data-delete-collection]");
+
+    if (selectButton) {
+      state.primaryCollection = selectButton.dataset.setCollection;
+      state.primaryStats = await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
+      renderCollectionList();
+      renderSummaryMetrics();
+      showToast(`默认集合已切换为 ${state.primaryCollection}`, "success");
       return;
     }
-    setPage("search");
-    $("searchInput").value = query;
-    runSearch();
+
+    if (deleteButton) {
+      const name = deleteButton.dataset.deleteCollection;
+      if (!window.confirm(`确认删除集合 ${name} 吗？`)) return;
+      await deleteCollection(name);
+    }
   });
-  $("pickFilesButton")?.addEventListener("click", () => $("fileInput").click());
-  $("pickFolderButton")?.addEventListener("click", () => $("folderInput").click());
-  $("dropFolderButton")?.addEventListener("click", () => $("folderInput").click());
-  $("dropBrowseButton")?.addEventListener("click", () => setPage("data"));
-  $("reloadQueueButton")?.addEventListener("click", refreshUploads);
-  $("btnProcess")?.addEventListener("click", runProcess);
-  $("btnSearch")?.addEventListener("click", runSearch);
-  $("btnBench")?.addEventListener("click", runBenchmark);
-  $("fileInput")?.addEventListener("change", async (event) => {
-    await uploadFiles(Array.from(event.target.files || []));
-    event.target.value = "";
+
+  els.queueList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-upload-select]");
+    if (!input) return;
+    const name = input.dataset.uploadSelect;
+    if (input.checked) state.selectedUploads.add(name);
+    else state.selectedUploads.delete(name);
+    renderUploads();
   });
-  $("folderInput")?.addEventListener("change", async (event) => {
-    await uploadFiles(Array.from(event.target.files || []));
-    event.target.value = "";
+
+  els.queueList?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-delete-upload]");
+    if (!button) return;
+    await deleteUpload(button.dataset.deleteUpload);
   });
-  $("searchInput")?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") runSearch();
+
+  els.processedList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-processed-select]");
+    if (!input) return;
+    const name = input.dataset.processedSelect;
+    if (input.checked) state.selectedProcessedUploads.add(name);
+    else state.selectedProcessedUploads.delete(name);
+    renderProcessedUploads();
   });
-  bindDropzone();
+
+  els.searchResults?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-result-toggle]");
+    if (!button) return;
+    const key = button.dataset.resultToggle;
+    if (state.expandedResults.has(key)) state.expandedResults.delete(key);
+    else state.expandedResults.add(key);
+    renderSearchResults();
+  });
+
+  els.trendModeGroup?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-trend-mode]");
+    if (!button) return;
+    state.trendMode = button.dataset.trendMode;
+    activateGroupButton(els.trendModeGroup, (item) => item.dataset.trendMode === state.trendMode);
+    renderTrendChart();
+  });
+
+  els.activityFilterGroup?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-activity-filter]");
+    if (!button) return;
+    state.activityFilter = button.dataset.activityFilter;
+    activateGroupButton(els.activityFilterGroup, (item) => item.dataset.activityFilter === state.activityFilter);
+    renderActivityFeed();
+  });
 }
 
 async function init() {
-  bindEvents();
+  resolveEls();
   syncSidebarToggleIcon();
+  bindEvents();
+  setPage("overview");
+  addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
   renderAll();
   await refreshAll();
 }

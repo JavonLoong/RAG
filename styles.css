@@ -952,3 +952,108 @@ svg { width: 100%; height: auto; display: block; }
   .search-row,
   .bench-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Upload directory workflow */
+.queue-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.queue-title-row,
+.queue-badge-row {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.queue-title-row {
+  flex: 1 1 auto;
+  align-items: flex-start;
+}
+
+.queue-badge-row {
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.check-chip {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  margin-top: 2px;
+}
+
+.check-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.check-chip span {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: transparent;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.check-chip input:checked + span {
+  background: linear-gradient(135deg, var(--accent), #4d76e3);
+  transform: scale(1.03);
+}
+
+.check-chip.is-disabled {
+  opacity: 0.45;
+  background: var(--panel-2);
+}
+
+.check-chip.is-disabled input {
+  cursor: not-allowed;
+}
+
+.queue-item.is-selected {
+  border-color: rgba(0, 47, 167, 0.22);
+  box-shadow: 0 16px 34px rgba(0, 47, 167, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.queue-item.is-processed {
+  background: linear-gradient(180deg, rgba(0, 47, 167, 0.03), rgba(255, 255, 255, 0.96));
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 47, 167, 0.08);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.status-tag.success {
+  background: rgba(45, 157, 87, 0.12);
+  color: var(--success);
+}
+
+.queue-actions.is-tight {
+  justify-content: flex-end;
+}
+
+.danger-text {
+  color: var(--danger);
+}

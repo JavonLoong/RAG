@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="./app.js" charset="utf-8" defer></script>
+  <script src="./app.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -221,7 +221,7 @@
                       <div class="queue-actions">
                         <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
                         <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
-                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>浏览队列</span></button>
+                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>查看上传目录</span></button>
                       </div>
                       <div class="queue-actions">
                         <button class="ghost-btn" id="dropFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>递归识别目录</span></button>
@@ -235,15 +235,28 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>上传队列</h3>
-                      <p id="uploadQueueMeta">等待同步上传目录。</p>
+                      <h3>上传目录</h3>
+                      <p id="uploadQueueMeta">上传文件后，这里会显示整个上传目录；勾选待处理文件再入库。</p>
                     </div>
-                    <div class="queue-actions">
-                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新队列</span></button>
-                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理并入库</span></button>
+                    <div class="queue-toolbar">
+                      <span class="pill" id="queueCountPill">0 个文件</span>
+                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新目录</span></button>
+                      <button class="ghost-btn" id="selectAllUploads" type="button"><iconify-icon icon="lucide:check-check"></iconify-icon><span>全选待处理</span></button>
+                      <button class="ghost-btn" id="clearUploadSelection" type="button"><iconify-icon icon="lucide:eraser"></iconify-icon><span>清空选择</span></button>
+                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理选中文件</span></button>
                     </div>
                   </div>
                   <div class="progress" id="processProgress"><div class="progress-bar" id="processFill"></div></div>
+                  <div class="queue-list" id="queueList"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>本次处理摘要</h3>
+                      <p>成功、失败与跳过信息会显示在这里。</p>
+                    </div>
+                  </div>
                   <div class="queue-list" id="processLog"></div>
                 </article>
               </div>
@@ -252,11 +265,16 @@
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>待处理文件列表</h3>
+                      <h3>已处理文件</h3>
+                      <p id="processedMeta">处理完成后，会自动进入这里。</p>
                     </div>
-                    <span class="pill" id="queueCountPill">0 个文件</span>
+                    <div class="queue-toolbar">
+                      <span class="pill" id="processedCountPill">0 个文件</span>
+                      <button class="ghost-btn" id="processedEditButton" type="button"><iconify-icon icon="lucide:pencil-line"></iconify-icon><span>编辑</span></button>
+                      <button class="ghost-btn" id="processedDeleteButton" type="button" hidden><iconify-icon icon="lucide:trash-2"></iconify-icon><span>删除所选</span></button>
+                    </div>
                   </div>
-                  <div class="queue-list" id="queueList"></div>
+                  <div class="queue-list" id="processedList"></div>
                 </article>
 
                 <article class="panel" id="qualityCard">
@@ -271,8 +289,7 @@
               </div>
             </div>
           </div>
-        </section>
-        <section class="page" id="page-search">
+        </section>        <section class="page" id="page-search">
           <div class="page-stack">
             <div class="search-layout">
               <article class="panel">
