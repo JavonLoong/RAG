@@ -1,10 +1,18 @@
-const API_BASE = (window.location.protocol === "file:" || window.location.hostname.endsWith("github.io")) ? "http://localhost:8000" : "";
+if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
+  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+}
+
+const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
+const API_BASE = "";
+const LOCAL_COLLECTION_NAME = "browser_local_index";
+const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
 
 const SOURCE_LABELS = {
   PDF: "PDF",
   Text: "文本",
   JSON: "JSON",
   Markdown: "Markdown",
+  Code: "??",
   CSV: "CSV",
   TSV: "TSV",
   DOCX: "DOCX",
@@ -17,6 +25,7 @@ const SOURCE_COLORS = {
   Text: "rgba(0, 47, 167, 0.68)",
   JSON: "rgba(0, 47, 167, 0.42)",
   Markdown: "rgba(15, 98, 254, 0.72)",
+  Code: "rgba(15, 23, 42, 0.82)",
   CSV: "rgba(37, 99, 235, 0.54)",
   TSV: "rgba(59, 130, 246, 0.42)",
   DOCX: "rgba(37, 99, 235, 0.82)",
@@ -35,10 +44,14 @@ const BENCHMARK_CARDS = [
   { key: "embedding_model", label: "模型标识", icon: "lucide:database-zap", formatter: (value) => String(value || "-") }
 ];
 
-const SUPPORTED_EXTENSIONS = new Set(["json", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log"]);
+const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer", "source", "input", "output"]);
+const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
+const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
+const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
 
 const state = {
   online: false,
+  localMode: FORCE_LOCAL_RUNTIME,
   version: "",
   page: "overview",
   stats: null,
@@ -47,6 +60,8 @@ const state = {
   uploads: [],
   pendingUploads: [],
   processedUploads: [],
+  records: [],
+  chunks: [],
   selectedUploads: new Set(),
   selectedProcessedUploads: new Set(),
   processedEditMode: false,
@@ -64,6 +79,721 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 let els = {};
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function stripBom(text) {
+  return String(text ?? "").replace(/^\uFEFF/, "");
+}
+
+function decodeArrayBuffer(buffer, encoding) {
+  try {
+    return new TextDecoder(encoding, { fatal: false }).decode(buffer);
+  } catch {
+    return "";
+  }
+}
+
+function hasUtf16Bom(bytes) {
+  return bytes?.length >= 2 && (
+    (bytes[0] === 0xFF && bytes[1] === 0xFE) ||
+    (bytes[0] === 0xFE && bytes[1] === 0xFF)
+  );
+}
+
+function scoreDecodedText(text) {
+  const candidate = stripBom(String(text ?? ""));
+  if (!candidate.trim()) return Number.NEGATIVE_INFINITY;
+  const total = candidate.length || 1;
+  const replacementCount = (candidate.match(/\uFFFD/g) || []).length;
+  const nullCount = (candidate.match(/\u0000/g) || []).length;
+  const controlCount = (candidate.match(/[\u0001-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
+  const readableCount = (candidate.match(/[\p{L}\p{N}\p{P}\p{S}\s]/gu) || []).length;
+  const cjkCount = (candidate.match(/[\u3400-\u9FFF]/g) || []).length;
+  return (readableCount / total) + Math.min(cjkCount / total, 0.24) - ((replacementCount * 5) + (nullCount * 5) + (controlCount * 3)) / total;
+}
+
+function inferPreferredEncodings(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  if (hasUtf16Bom(bytes)) return ["utf-16le", "utf-8", "gb18030", "big5"];
+  const probeLength = Math.min(bytes.length, 128);
+  let oddNulls = 0;
+  let evenNulls = 0;
+  for (let index = 0; index < probeLength; index += 1) {
+    if (bytes[index] !== 0) continue;
+    if (index % 2 === 0) evenNulls += 1;
+    else oddNulls += 1;
+  }
+  if (oddNulls >= 8 && oddNulls > evenNulls * 3) return ["utf-16le", "utf-8", "gb18030", "big5"];
+  return ["utf-8", "gb18030", "big5", "utf-16le"];
+}
+
+async function readFileTextSafely(file) {
+  const buffer = await file.arrayBuffer();
+  const best = inferPreferredEncodings(buffer)
+    .map((encoding) => ({ encoding, text: decodeArrayBuffer(buffer, encoding) }))
+    .filter((candidate) => candidate.text)
+    .sort((a, b) => scoreDecodedText(b.text) - scoreDecodedText(a.text))[0];
+  return stripBom(best?.text || "");
+}
+
+async function parseJsonWithEncodingFallback(file) {
+  const buffer = await file.arrayBuffer();
+  const attempts = inferPreferredEncodings(buffer)
+    .map((encoding) => ({ encoding, text: stripBom(decodeArrayBuffer(buffer, encoding)) }))
+    .filter((candidate) => candidate.text);
+  let lastError = null;
+  for (const candidate of attempts) {
+    try {
+      return JSON.parse(candidate.text);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("JSON 解析失败");
+}
+
+function pushUniqueLine(lines, seen, text) {
+  const cleaned = normalizeText(text);
+  if (!cleaned || cleaned.length < 2) return;
+  if (seen.has(cleaned)) return;
+  seen.add(cleaned);
+  lines.push(cleaned);
+}
+
+function looksLikeAnnotationTask(value) {
+  return !!value && typeof value === "object" && (
+    Array.isArray(value.annotations) ||
+    Array.isArray(value.predictions)
+  );
+}
+
+function extractAnnotationPayload(payload) {
+  const tasks = Array.isArray(payload) ? payload : [payload];
+  const lines = [];
+  const seen = new Set();
+  tasks.forEach((task) => {
+    const filename = normalizeText(task?.data?.filename || "");
+    if (filename) pushUniqueLine(lines, seen, filename);
+    const groups = [
+      ...(Array.isArray(task?.annotations) ? task.annotations : []),
+      ...(Array.isArray(task?.predictions) ? task.predictions : [])
+    ];
+    groups.forEach((group) => {
+      const results = Array.isArray(group?.result) ? group.result : [];
+      results.forEach((item) => {
+        const values = item?.value || {};
+        const textCandidates = [
+          ...(Array.isArray(values.text) ? values.text : []),
+          ...(Array.isArray(values.choices) ? values.choices : []),
+          ...(Array.isArray(values.labels) ? values.labels : [])
+        ];
+        textCandidates.forEach((entry) => pushUniqueLine(lines, seen, entry));
+      });
+    });
+  });
+  return lines;
+}
+
+function flattenMeaningfulJson(value, lines = [], seen = new Set()) {
+  if (value == null) return lines;
+  if (typeof value === "string") {
+    pushUniqueLine(lines, seen, value);
+    return lines;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return lines;
+  if (Array.isArray(value)) {
+    value.forEach((item) => flattenMeaningfulJson(item, lines, seen));
+    return lines;
+  }
+  if (typeof value === "object") {
+    Object.entries(value).forEach(([key, nested]) => {
+      const keyName = String(key || "").toLowerCase();
+      if (JSON_TEXT_KEYS.has(keyName)) {
+        flattenMeaningfulJson(nested, lines, seen);
+        return;
+      }
+      if (["title", "heading", "name", "section", "chapter", "keywords"].includes(keyName)) {
+        flattenMeaningfulJson(nested, lines, seen);
+      }
+      if (nested && typeof nested === "object") flattenMeaningfulJson(nested, lines, seen);
+    });
+  }
+  return lines;
+}
+
+function extractJsonTextLines(payload) {
+  if (looksLikeAnnotationTask(payload) || (Array.isArray(payload) && payload.some(looksLikeAnnotationTask))) {
+    return extractAnnotationPayload(payload);
+  }
+  return flattenMeaningfulJson(payload);
+}
+
+function tokenize(text) {
+  return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
+}
+
+function estimateTokens(text) {
+  return Math.max(1, Math.round(normalizeText(text).length / 1.7));
+}
+
+function simpleHash(input) {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createEmbedding(text, dimension = ENGINE_DEFAULTS.dimension) {
+  const vector = new Float32Array(dimension);
+  const tokens = tokenize(text);
+  if (!tokens.length) return vector;
+  for (const token of tokens) {
+    const hash = simpleHash(token);
+    const index = hash % dimension;
+    const sign = ((hash >>> 1) & 1) === 0 ? 1 : -1;
+    const weight = 1 + Math.min(token.length, 8) / 8;
+    vector[index] += sign * weight;
+  }
+  let norm = 0;
+  for (const value of vector) norm += value * value;
+  norm = Math.sqrt(norm);
+  if (!norm) return vector;
+  for (let index = 0; index < vector.length; index += 1) {
+    vector[index] /= norm;
+  }
+  return vector;
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  const size = Math.min(a.length, b.length);
+  for (let index = 0; index < size; index += 1) {
+    dot += a[index] * b[index];
+    normA += a[index] * a[index];
+    normB += b[index] * b[index];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB) || 1;
+  return dot / denom;
+}
+
+function relativePathOf(file) {
+  return file.webkitRelativePath || file.__relativePath || file.relativePath || file.name;
+}
+
+function fileExtension(name) {
+  const parts = String(name || "").toLowerCase().split(".");
+  return parts.length > 1 ? parts.pop() : "";
+}
+
+function splitTextWithOverlap(text, chunkSize = ENGINE_DEFAULTS.chunkSize, overlap = ENGINE_DEFAULTS.overlap) {
+  const cleaned = normalizeText(text);
+  if (!cleaned) return [];
+  if (cleaned.length <= chunkSize) return [cleaned];
+  const markers = ["\n\n", "\n", "。", "！", "？", "；", ";", "，", ",", " "];
+  const output = [];
+  let start = 0;
+  while (start < cleaned.length) {
+    const maxEnd = Math.min(cleaned.length, start + chunkSize);
+    let end = maxEnd;
+    if (maxEnd < cleaned.length) {
+      const minEnd = Math.min(maxEnd, start + Math.max(Math.floor(chunkSize / 2), chunkSize - overlap));
+      let best = -1;
+      for (const marker of markers) {
+        const idx = cleaned.lastIndexOf(marker, maxEnd);
+        if (idx >= minEnd) best = Math.max(best, idx + marker.length);
+      }
+      if (best > start) end = best;
+    }
+    const piece = cleaned.slice(start, end).trim();
+    if (piece) output.push(piece);
+    if (end >= cleaned.length) break;
+    start = Math.max(start + 1, end - overlap);
+    while (/\s/.test(cleaned[start] || "")) start += 1;
+  }
+  return output;
+}
+
+function parseTabularText(text, delimiter) {
+  const parsed = globalThis.Papa?.parse(text, { delimiter, skipEmptyLines: true })?.data || [];
+  if (!parsed.length) return "";
+  const header = parsed[0];
+  const rows = parsed.slice(1).map((row, rowIndex) => {
+    const pairs = row.map((cell, index) => `${header[index] || `字段 ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
+    return `第 ${rowIndex + 1} 行: ${pairs}`;
+  });
+  return normalizeText([`字段: ${header.join(" | ")}`, ...rows].join("\n\n"));
+}
+
+async function parsePdfFile(file) {
+  const data = await file.arrayBuffer();
+  const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+  const records = [];
+  for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
+    const page = await pdf.getPage(pageIndex);
+    const textContent = await page.getTextContent();
+    const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
+    if (!pageText) continue;
+    records.push({
+      record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+      filename: relativePathOf(file),
+      source_file: relativePathOf(file),
+      source_kind: "PDF",
+      page_num: pageIndex,
+      text: pageText
+    });
+  }
+  if (!records.length) throw new Error("PDF 未提取到可用文本，可能是扫描件或图片型 PDF");
+  return records;
+}
+
+async function parseDocxFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  let raw = "";
+  if (globalThis.mammoth?.extractRawText) {
+    raw = (await globalThis.mammoth.extractRawText({ arrayBuffer })).value || "";
+  } else if (globalThis.mammoth?.convertToHtml) {
+    raw = (await globalThis.mammoth.convertToHtml({ arrayBuffer })).value || "";
+  }
+  const text = normalizeText(raw.replace(/<[^>]+>/g, " "));
+  if (!text) throw new Error("DOCX 未提取到可用文本");
+  return [{
+    record_id: `${relativePathOf(file)}::doc`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: "DOCX",
+    page_num: null,
+    text
+  }];
+}
+
+async function parseJsonFile(file) {
+  const payload = await parseJsonWithEncodingFallback(file);
+  const text = normalizeText(extractJsonTextLines(payload).join("\n\n"));
+  if (!text) throw new Error("JSON 未提取到可用文本");
+  return [{
+    record_id: `${relativePathOf(file)}::json`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: "JSON",
+    page_num: null,
+    text
+  }];
+}
+
+async function parseTextLikeFile(file) {
+  const text = normalizeText(await readFileTextSafely(file));
+  if (!text) throw new Error("文本文件为空");
+  return [{
+    record_id: `${relativePathOf(file)}::text`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: sourceKindFromName(relativePathOf(file)),
+    page_num: null,
+    text
+  }];
+}
+
+async function parseTabularFile(file, delimiter) {
+  const text = parseTabularText(await readFileTextSafely(file), delimiter);
+  if (!text) throw new Error("表格文件为空");
+  return [{
+    record_id: `${relativePathOf(file)}::table`,
+    filename: relativePathOf(file),
+    source_file: relativePathOf(file),
+    source_kind: sourceKindFromName(relativePathOf(file)),
+    page_num: null,
+    text
+  }];
+}
+
+async function parseFileRecords(file) {
+  const ext = fileExtension(relativePathOf(file));
+  if (ext === "pdf") return parsePdfFile(file);
+  if (ext === "docx") return parseDocxFile(file);
+  if (ext === "json") return parseJsonFile(file);
+  if (ext === "csv") return parseTabularFile(file, ",");
+  if (ext === "tsv") return parseTabularFile(file, "\t");
+  return parseTextLikeFile(file);
+}
+
+function makeChunks(records) {
+  const chunks = [];
+  records.forEach((record) => {
+    const pieces = splitTextWithOverlap(record.text);
+    pieces.forEach((piece, index) => {
+      const vector = createEmbedding(piece);
+      const tokens = Array.from(new Set(tokenize(piece)));
+      chunks.push({
+        chunk_id: `${record.record_id}::${index}`,
+        text: piece,
+        vector,
+        tokens,
+        normalizedText: piece.toLowerCase(),
+        metadata: {
+          source_file: record.source_file,
+          filename: record.filename,
+          source_kind: record.source_kind,
+          page_num: record.page_num,
+          chunk_index: index,
+          char_count: piece.length,
+          estimated_tokens: estimateTokens(piece)
+        }
+      });
+    });
+  });
+  return chunks;
+}
+
+function buildQualityReport(records, chunks) {
+  const docs = records.map((record, index) => {
+    const shortBlocks = splitTextWithOverlap(record.text, 40, 0).filter((item) => item.length < 5).length;
+    return {
+      doc_id: index + 1,
+      filenames: [record.filename],
+      block_count: splitTextWithOverlap(record.text, 160, 0).length,
+      short_blocks: shortBlocks
+    };
+  });
+  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少于 5 个字符）`);
+  return {
+    documents: docs,
+    chunks: {
+      total_chunks: chunks.length,
+      avg_length: chunks.length ? Math.round(chunks.reduce((sum, chunk) => sum + chunk.text.length, 0) / chunks.length) : 0,
+      min_length: chunks.length ? Math.min(...chunks.map((chunk) => chunk.text.length)) : 0,
+      max_length: chunks.length ? Math.max(...chunks.map((chunk) => chunk.text.length)) : 0
+    },
+    issues,
+    issue_count: issues.length
+  };
+}
+
+function dedupeFiles(files) {
+  const seen = new Set();
+  return files.filter((file) => {
+    const key = `${relativePathOf(file)}__${file.size}__${file.lastModified}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function walkEntry(entry, prefix = "") {
+  return new Promise((resolve) => {
+    if (!entry) {
+      resolve([]);
+      return;
+    }
+    if (entry.isFile) {
+      entry.file((file) => {
+        file.__relativePath = `${prefix}${file.name}`;
+        resolve([file]);
+      }, () => resolve([]));
+      return;
+    }
+    if (!entry.isDirectory) {
+      resolve([]);
+      return;
+    }
+    const reader = entry.createReader();
+    const collected = [];
+    const basePrefix = `${prefix}${entry.name}/`;
+    const readBatch = () => {
+      reader.readEntries(async (entries) => {
+        if (!entries.length) {
+          const nested = await Promise.all(collected.map((child) => walkEntry(child, basePrefix)));
+          resolve(nested.flat());
+          return;
+        }
+        collected.push(...entries);
+        readBatch();
+      }, () => resolve([]));
+    };
+    readBatch();
+  });
+}
+
+async function filesFromDrop(dataTransfer) {
+  const items = Array.from(dataTransfer?.items || []);
+  const supportsEntries = items.some((item) => typeof item.webkitGetAsEntry === "function");
+  if (supportsEntries) {
+    const entries = items.map((item) => item.webkitGetAsEntry()).filter(Boolean);
+    const nested = await Promise.all(entries.map((entry) => walkEntry(entry)));
+    return dedupeFiles(nested.flat());
+  }
+  return dedupeFiles(Array.from(dataTransfer?.files || []));
+}
+
+
+function cloneDefaultStats() { return typeof structuredClone === "function" ? structuredClone(DEFAULT_STATS) : JSON.parse(JSON.stringify(DEFAULT_STATS)); }
+function sourceKindFromName(name) { const ext = fileExtension(name); if (["json", "ipynb"].includes(ext)) return "JSON"; if (ext === "pdf") return "PDF"; if (ext === "docx") return "DOCX"; if (ext === "md" || ext === "markdown") return "Markdown"; if (ext === "csv") return "CSV"; if (ext === "tsv") return "TSV"; if (ext === "log") return "Log"; if (CODE_EXTENSIONS.has(ext)) return "Code"; return "Text"; }
+function purgeLocalVectorsByFilename(filenames) { const selected = new Set((filenames || []).filter(Boolean)); if (!selected.size) return; state.records = state.records.filter((record) => !selected.has(record.stored_filename)); state.chunks = state.chunks.filter((chunk) => !selected.has(chunk.metadata?.stored_filename)); state.lastSearch = null; }
+function buildLocalStats() { if (!state.chunks.length) return cloneDefaultStats(); const byKind = {}; state.chunks.forEach((chunk) => { const kind = chunk.metadata?.source_kind || "Other"; byKind[kind] = (byKind[kind] || 0) + 1; }); const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata?.estimated_tokens || 0), 0); const totalChars = state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0), 0); const storageBytes = state.uploads.reduce((sum, item) => sum + Number(item.file?.size || 0), 0) + state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0) * 2 + Number(chunk.vector?.byteLength || 0), 0); const sources = getProcessedUploads().map((item) => item.display_name || item.filename); return { status: "ok", collections: [{ name: LOCAL_COLLECTION_NAME, count: state.chunks.length, estimated_tokens: totalTokens, estimated_chars: totalChars, source_type_counts: byKind, sources }], total_documents: state.records.length, total_tokens_estimate: totalTokens, storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(3)), embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: byKind }; }
+
+function buildLocalUploadItem(file) {
+  const displayName = relativePathOf(file);
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    file,
+    filename: displayName.split("\\").join("/").split("/").join("__"),
+    display_name: displayName,
+    size_kb: Number((file.size / 1024).toFixed(1)),
+    modified: Math.floor((file.lastModified || Date.now()) / 1000),
+    uploaded_at: now,
+    processed_at: null,
+    source_kind: sourceKindFromName(displayName),
+    status: "uploaded",
+    last_collection: null,
+    last_records: 0,
+    last_chunks: 0,
+    last_error: null
+  };
+}
+
+function upsertUploadItem(item) { state.uploads = [item, ...(state.uploads || []).filter((entry) => entry.filename !== item.filename)]; }
+function refreshLocalUploadBuckets() { state.uploads = Array.isArray(state.uploads) ? state.uploads.slice().sort((a, b) => Number(b.uploaded_at || b.modified || 0) - Number(a.uploaded_at || a.modified || 0)) : []; state.pendingUploads = state.uploads.filter((item) => item.status !== "processed"); state.processedUploads = state.uploads.filter((item) => item.status === "processed"); syncUploadSelections(); }
+async function refreshLocalStats() { state.stats = buildLocalStats(); state.primaryCollection = choosePrimaryCollection(state.stats.collections); state.primaryStats = state.primaryCollection ? { record_count: state.records.length, chunk_count: state.chunks.length } : null; rememberTimeline("stats"); renderCollectionSpectrum(); renderCollectionList(); renderTrendChart(); renderSummaryMetrics(); }
+
+async function deleteLocalUpload(filename, options = {}) {
+  state.uploads = (state.uploads || []).filter((item) => item.filename !== filename);
+  if (options.purgeVectors) {
+    purgeLocalVectorsByFilename([filename]);
+    await refreshLocalStats();
+  }
+  refreshLocalUploadBuckets();
+  renderUploads();
+  renderProcessedUploads();
+  renderProcessSummary();
+  renderQualityReport();
+  renderSearchResults();
+  const label = splitUploadPath(uploadDisplayName(filename)).file;
+  addActivity("success", options.purgeVectors ? "Processed file removed" : "Removed from upload directory", label);
+  showToast(options.purgeVectors ? `Removed ${label} and cleared local index.` : `Removed ${label}.`, "success");
+}
+
+
+async function deleteLocalProcessedUploads(filenames) {
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+  if (!selected.length) {
+    showToast("Select processed files first.", "warning");
+    return;
+  }
+  if (!window.confirm(`Delete ${selected.length} processed files and clear their local vectors?`)) return;
+  purgeLocalVectorsByFilename(selected);
+  state.uploads = (state.uploads || []).filter((item) => !selected.includes(item.filename));
+  state.selectedProcessedUploads.clear();
+  state.processedEditMode = false;
+  refreshLocalUploadBuckets();
+  await refreshLocalStats();
+  renderProcessSummary();
+  renderQualityReport();
+  renderSearchResults();
+  addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared local vectors.`);
+  showToast(`Deleted ${selected.length} processed files.`, "success");
+}
+
+
+async function deleteLocalCollection(name) {
+  state.records = [];
+  state.chunks = [];
+  state.timeline = [];
+  state.lastProcess = null;
+  state.lastSearch = null;
+  state.expandedResults = new Set();
+  state.benchmark = null;
+  state.uploads = (state.uploads || []).map((item) => ({
+    ...item,
+    status: "uploaded",
+    processed_at: null,
+    last_collection: null,
+    last_records: 0,
+    last_chunks: 0,
+    last_error: null
+  }));
+  refreshLocalUploadBuckets();
+  await refreshLocalStats();
+  renderProcessSummary();
+  renderQualityReport();
+  renderSearchResults();
+  renderBenchmark();
+  addActivity("warning", "Local index cleared", `${name} was removed from this browser session.`);
+  showToast("Local index cleared.", "warning");
+}
+
+
+async function runLocalProcess() {
+  const selectedItems = getPendingUploads().filter((item) => state.selectedUploads.has(item.filename));
+  if (!selectedItems.length) {
+    showToast("Select files to process first.", "warning");
+    return;
+  }
+  if (els.btnProcess) {
+    els.btnProcess.disabled = true;
+    els.btnProcess.dataset.busy = "true";
+  }
+  if (els.processFill) els.processFill.style.width = "18%";
+  if (els.processLog) renderEmpty(els.processLog, "Browser-local processing is running...");
+  const started = performance.now();
+  const fileSummaries = [];
+  const nextRecords = [];
+  const nextChunks = [];
+  const succeeded = [];
+  let failed = 0;
+  try {
+    addActivity("warning", "Local processing started", `Processing ${selectedItems.length} selected files.`);
+    for (let index = 0; index < selectedItems.length; index += 1) {
+      const item = selectedItems[index];
+      try {
+        const parsed = await parseFileRecords(item.file);
+        const records = parsed.map((record) => ({
+          ...record,
+          stored_filename: item.filename,
+          filename: item.display_name || record.filename || item.filename,
+          source_file: item.display_name || record.source_file || item.filename,
+          source_kind: record.source_kind || item.source_kind
+        }));
+        const chunks = makeChunks(records);
+        nextRecords.push(...records);
+        nextChunks.push(...chunks);
+        succeeded.push(item.filename);
+        fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "ok", records_extracted: records.length, error: null });
+        Object.assign(item, { status: "processed", processed_at: Math.floor(Date.now() / 1000), last_collection: LOCAL_COLLECTION_NAME, last_records: records.length, last_chunks: chunks.length, last_error: null });
+      } catch (error) {
+        failed += 1;
+        fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "error", records_extracted: 0, error: error.message || String(error) });
+        Object.assign(item, { status: "uploaded", processed_at: null, last_collection: null, last_records: 0, last_chunks: 0, last_error: error.message || String(error) });
+      }
+      if (els.processFill) els.processFill.style.width = `${Math.min(100, 18 + Math.round(((index + 1) / selectedItems.length) * 82))}%`;
+    }
+    purgeLocalVectorsByFilename(succeeded);
+    state.records = [...state.records, ...nextRecords];
+    state.chunks = [...state.chunks, ...nextChunks];
+    refreshLocalUploadBuckets();
+    state.selectedUploads.clear();
+    state.lastProcess = {
+      collection: LOCAL_COLLECTION_NAME,
+      requested_filenames: selectedItems.map((item) => item.filename),
+      skipped_already_processed: [],
+      files_succeeded: succeeded.length,
+      files_failed: failed,
+      records_processed: nextRecords.length,
+      chunks_written: nextChunks.length,
+      elapsed_s: Number(((performance.now() - started) / 1000).toFixed(2)),
+      file_summaries: fileSummaries,
+      quality_report: buildQualityReport(nextRecords, nextChunks),
+      embedding_backend: "browser-local"
+    };
+    await refreshLocalStats();
+    renderUploads();
+    renderProcessedUploads();
+    renderProcessSummary();
+    renderQualityReport();
+    renderSummaryMetrics();
+    addActivity(failed ? "warning" : "success", "Local processing finished", `Succeeded on ${succeeded.length} files and generated ${nextChunks.length} chunks.`);
+    showToast(`Local processing finished. Success: ${succeeded.length}, failed: ${failed}.`, failed ? "warning" : "success");
+  } catch (error) {
+    if (els.processFill) els.processFill.style.width = "0%";
+    addActivity("danger", "Processing failed", error.message || String(error));
+    renderProcessSummary();
+    showToast(error.message || "Processing failed.", "danger");
+  } finally {
+    if (els.btnProcess) {
+      delete els.btnProcess.dataset.busy;
+      els.btnProcess.disabled = false;
+    }
+    renderUploads();
+  }
+}
+
+
+async function runLocalSearch() {
+  const query = String(els.searchInput?.value || "").trim();
+  if (!query) {
+    showToast("Enter a search query first.", "warning");
+    return;
+  }
+  if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
+  const topK = Number(els.searchTopK?.value || 5);
+  const started = performance.now();
+  if (!state.chunks.length) {
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "No local index yet. Process files first." };
+    renderSearchResults();
+    showToast("Process files before searching.", "warning");
+    return;
+  }
+  const queryVector = createEmbedding(query);
+  const normalizedQuery = normalizeText(query).toLowerCase();
+  const queryTokens = Array.from(new Set(tokenize(query))).filter((token) => token.length > 1);
+  const results = state.chunks.map((chunk) => {
+    const similarity = cosineSimilarity(queryVector, chunk.vector);
+    const semanticScore = (similarity + 1) / 2;
+    const overlapCount = queryTokens.reduce((sum, token) => sum + (chunk.tokens?.includes(token) ? 1 : 0), 0);
+    const overlapScore = queryTokens.length ? overlapCount / queryTokens.length : 0;
+    const phraseBonus = normalizedQuery && chunk.normalizedText.includes(normalizedQuery) ? 0.12 : 0;
+    const score = Math.min(0.9999, semanticScore * 0.7 + overlapScore * 0.24 + phraseBonus);
+    return { text: chunk.text, distance: Number((1 - score).toFixed(4)), score: Number(score.toFixed(4)), metadata: chunk.metadata };
+  }).sort((a, b) => b.score - a.score).slice(0, topK);
+  state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: Number((performance.now() - started).toFixed(2)), results, embedding_backend: "browser-local" };
+  rememberTimeline("search");
+  renderSearchResults();
+  renderTrendChart();
+  renderSummaryMetrics();
+  addActivity(results.length ? "success" : "warning", "Local search finished", `Query ?${query}? returned ${results.length} results.`);
+  showToast(`Search finished. ${results.length} results returned.`, "success");
+}
+
+
+async function runLocalBenchmark() {
+  const payload = { document_count: Number(els.benchDocs?.value || 500), query_count: Number(els.benchQueries?.value || 50), top_k: Number(els.benchTopK?.value || 5) };
+  if (els.btnBench) els.btnBench.disabled = true;
+  if (els.benchFill) els.benchFill.style.width = "18%";
+  if (els.benchLog) els.benchLog.textContent = "Running browser-local benchmark...";
+  try {
+    addActivity("warning", "Local benchmark started", `${payload.document_count} docs / ${payload.query_count} queries`);
+    const synthetic = Array.from({ length: payload.document_count }, (_, i) => ({ text: `Power equipment benchmark sample ${i} with turbine, engine and maintenance content.` }));
+    const insertStarted = performance.now();
+    const embedded = synthetic.map((item) => ({ ...item, vector: createEmbedding(item.text) }));
+    const insertSeconds = (performance.now() - insertStarted) / 1000;
+    if (els.benchFill) els.benchFill.style.width = "58%";
+    const latencies = [];
+    const queryStarted = performance.now();
+    for (let i = 0; i < payload.query_count; i += 1) {
+      const query = createEmbedding(`Local benchmark query ${i}`);
+      const started = performance.now();
+      embedded.map((item) => cosineSimilarity(query, item.vector)).sort((a, b) => b - a).slice(0, payload.top_k);
+      latencies.push(performance.now() - started);
+    }
+    const querySeconds = (performance.now() - queryStarted) / 1000;
+    const ordered = [...latencies].sort((a, b) => a - b);
+    const p95 = ordered[Math.max(0, Math.min(ordered.length - 1, Math.round((ordered.length - 1) * 0.95)))] || 0;
+    state.benchmark = { collection: `${LOCAL_COLLECTION_NAME}_benchmark`, insert_seconds: Number(insertSeconds.toFixed(4)), insert_docs_per_second: Number((payload.document_count / Math.max(insertSeconds, 0.001)).toFixed(2)), query_seconds: Number(querySeconds.toFixed(4)), query_qps: Number((payload.query_count / Math.max(querySeconds, 0.001)).toFixed(2)), avg_query_latency_ms: Number((latencies.reduce((sum, value) => sum + value, 0) / Math.max(latencies.length, 1)).toFixed(3)), p95_query_latency_ms: Number(p95.toFixed(3)), embedding_backend: "browser-local", embedding_model: `hash-${ENGINE_DEFAULTS.dimension}d` };
+    if (els.benchFill) els.benchFill.style.width = "100%";
+    rememberTimeline("benchmark");
+    renderBenchmark();
+    renderTrendChart();
+    renderSummaryMetrics();
+    addActivity("success", "Local benchmark finished", `Average latency ${formatDecimal(state.benchmark.avg_query_latency_ms, 3)} ms.`);
+    showToast("Browser-local benchmark finished.", "success");
+  } catch (error) {
+    if (els.benchFill) els.benchFill.style.width = "0%";
+    addActivity("danger", "Benchmark failed", error.message || String(error));
+    showToast(error.message || "Benchmark failed.", "danger");
+  } finally {
+    if (els.btnBench) els.btnBench.disabled = false;
+  }
+}
 
 function resolveEls() {
   els = {
@@ -214,6 +944,7 @@ function normalizeKind(kind) {
   if (["text", "txt", "plain"].includes(normalized)) return "Text";
   if (normalized === "json") return "JSON";
   if (["markdown", "md"].includes(normalized)) return "Markdown";
+  if (normalized === "code") return "Code";
   if (normalized === "csv") return "CSV";
   if (normalized === "tsv") return "TSV";
   if (normalized === "docx") return "DOCX";
@@ -305,7 +1036,7 @@ function statsBreakdown(stats) {
   Object.entries(raw).forEach(([key, value]) => {
     const kind = normalizeKind(key);
     if (kind === "PDF") breakdown.PDF += Number(value || 0);
-    else if (kind === "Text" || kind === "Markdown" || kind === "DOCX" || kind === "Log") breakdown.Text += Number(value || 0);
+    else if (kind === "Text" || kind === "Markdown" || kind === "DOCX" || kind === "Log" || kind === "Code") breakdown.Text += Number(value || 0);
     else if (kind === "JSON") breakdown.JSON += Number(value || 0);
     else breakdown.Other += Number(value || 0);
   });
@@ -452,15 +1183,21 @@ function renderSparkline(svg, values, color) {
   `;
 }
 
+
+
 function renderStatus() {
   if (!els.statusText || !els.refreshStamp) return;
-  if (state.online) {
-    els.statusText.textContent = `后端在线${state.version ? ` · v${state.version}` : ""}，上传与检索链路可用`;
-    els.refreshStamp.textContent = `最近同步 ${snapshotClock()}`;
+  if (state.localMode) {
+    els.statusText.textContent = "Browser-local runtime is ready. No localhost:8000 server is required.";
+    els.refreshStamp.textContent = `Local session ${snapshotClock()}`;
+    setStatusLevel("success");
+  } else if (state.online) {
+    els.statusText.textContent = `Backend connected${state.version ? ` ? v${state.version}` : ""}. Upload and retrieval are available.`;
+    els.refreshStamp.textContent = `Last sync ${snapshotClock()}`;
     setStatusLevel("success");
   } else {
-    els.statusText.textContent = "后端未连接，请先启动 http://localhost:8000";
-    els.refreshStamp.textContent = "等待后端连接";
+    els.statusText.textContent = "Backend unavailable. Start http://localhost:8000 to use server mode.";
+    els.refreshStamp.textContent = "Waiting for backend";
     setStatusLevel("danger");
   }
 }
@@ -1013,19 +1750,30 @@ function renderAll() {
   renderBenchmark();
 }
 
+
 async function refreshHealth() {
+  if (FORCE_LOCAL_RUNTIME) {
+    state.localMode = true;
+    state.online = true;
+    state.version = "browser-local";
+    renderStatus();
+    return;
+  }
   try {
     const payload = await requestJson("/api/health", {}, 15000);
+    state.localMode = false;
     state.online = payload.status === "ok";
     state.version = payload.version || "";
   } catch (error) {
-    state.online = false;
-    state.version = "";
+    state.localMode = true;
+    state.online = true;
+    state.version = "browser-local";
   }
   renderStatus();
 }
 
 async function refreshStats() {
+  if (state.localMode) { await refreshLocalStats(); return; }
   const stats = await requestJson("/api/stats");
   state.stats = stats;
   state.primaryCollection = choosePrimaryCollection(stats.collections);
@@ -1040,6 +1788,7 @@ async function refreshStats() {
 }
 
 async function refreshUploads() {
+  if (state.localMode) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
   const payload = await requestJson("/api/uploads");
   state.uploads = Array.isArray(payload.files) ? payload.files : [];
   state.pendingUploads = Array.isArray(payload.pending) ? payload.pending : state.uploads.filter((item) => item.status !== "processed");
@@ -1069,45 +1818,65 @@ async function refreshAll() {
 }
 
 function isSupportedFile(file) {
-  const name = String(file?.name || "");
-  const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  const ext = fileExtension(relativePathOf(file));
   return SUPPORTED_EXTENSIONS.has(ext);
 }
 
+
+
 async function uploadFiles(fileList) {
-  const files = Array.from(fileList || []).filter(isSupportedFile);
+  const incoming = dedupeFiles(Array.from(fileList || []));
+  const files = incoming.filter(isSupportedFile);
+  const skippedCount = incoming.length - files.length;
   if (!files.length) {
-    showToast("\u6ca1\u6709\u53ef\u4e0a\u4f20\u7684\u53d7\u652f\u6301\u6587\u4ef6\u3002", "warning");
+    showToast("No supported files were found.", "warning");
     return;
   }
 
-  addActivity("warning", "\u5f00\u59cb\u4e0a\u4f20", `\u5f85\u4e0a\u4f20 ${files.length} \u4e2a\u6587\u4ef6`);
+  addActivity("warning", state.localMode ? "Local ingest started" : "Upload started", `Queued ${files.length} files${skippedCount ? `, skipped ${skippedCount} unsupported files` : ""}.`);
+  if (state.localMode) {
+    let replacedCount = 0;
+    files.forEach((file, index) => {
+      if (els.uploadQueueMeta) els.uploadQueueMeta.textContent = `Adding to local directory ${index + 1}/${files.length}: ${relativePathOf(file)}`;
+      const nextItem = buildLocalUploadItem(file);
+      const existing = (state.uploads || []).find((item) => item.filename === nextItem.filename);
+      if (existing?.status === "processed") {
+        purgeLocalVectorsByFilename([existing.filename]);
+        replacedCount += 1;
+      }
+      upsertUploadItem(nextItem);
+    });
+    refreshLocalUploadBuckets();
+    await refreshLocalStats();
+    renderUploads();
+    renderProcessedUploads();
+    const summary = `Added ${files.length} files${replacedCount ? `, replaced ${replacedCount} previously processed files` : ""}${skippedCount ? `, skipped ${skippedCount} unsupported files` : ""}.`;
+    addActivity(skippedCount ? "warning" : "success", "Local directory updated", summary);
+    showToast(summary, skippedCount ? "warning" : "success");
+    return;
+  }
+
   let successCount = 0;
   let failedCount = 0;
-
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     if (els.uploadQueueMeta) {
-      els.uploadQueueMeta.textContent = `\u6b63\u5728\u4e0a\u4f20 ${index + 1}/${files.length}: ${file.name}`;
+      els.uploadQueueMeta.textContent = `Uploading ${index + 1}/${files.length}: ${relativePathOf(file)}`;
     }
 
     const form = new FormData();
     form.append("file", file, file.name);
-    form.append("relative_path", file.webkitRelativePath || file.name);
+    form.append("relative_path", relativePathOf(file));
 
     try {
-      const uploaded = await requestJson("/api/upload", {
-        method: "POST",
-        body: form
-      }, 120000);
+      const uploaded = await requestJson("/api/upload", { method: "POST", body: form }, 120000);
       successCount += 1;
-
       const now = Math.floor(Date.now() / 1000);
       const nextItem = {
         filename: uploaded.filename,
-        display_name: uploaded.display_name || file.webkitRelativePath || file.name,
+        display_name: uploaded.display_name || relativePathOf(file),
         size_kb: uploaded.size_kb ?? Number((file.size / 1024).toFixed(1)),
-        source_kind: uploaded.source_kind || file.name.split('.').pop()?.toUpperCase() || "Other",
+        source_kind: uploaded.source_kind || sourceKindFromName(relativePathOf(file)),
         modified: now,
         uploaded_at: now,
         processed_at: null,
@@ -1117,45 +1886,53 @@ async function uploadFiles(fileList) {
         last_chunks: 0,
         last_error: null
       };
-
       state.uploads = [nextItem, ...(state.uploads || []).filter((item) => item.filename !== nextItem.filename)];
       state.pendingUploads = state.uploads.filter((item) => item.status !== "processed");
       state.processedUploads = state.uploads.filter((item) => item.status === "processed");
       syncUploadSelections();
       renderUploads();
+      renderProcessedUploads();
     } catch (error) {
       failedCount += 1;
-      addActivity("danger", "\u4e0a\u4f20\u5931\u8d25", `${file.name}: ${error.message || error}`);
+      addActivity("danger", "Upload failed", `${relativePathOf(file)}: ${error.message || error}`);
     }
   }
 
   await refreshUploads();
-  const message = `\u4e0a\u4f20\u5b8c\u6210\uff0c\u6210\u529f ${successCount} \u4e2a\uff0c\u5931\u8d25 ${failedCount} \u4e2a`;
-  addActivity(failedCount ? "warning" : "success", "\u4e0a\u4f20\u5b8c\u6210", message);
-  showToast(message, failedCount ? "warning" : "success");
+  const message = `Upload complete. Success ${successCount}, failed ${failedCount}${skippedCount ? `, skipped ${skippedCount}` : ""}.`;
+  addActivity(failedCount || skippedCount ? "warning" : "success", "Upload complete", message);
+  showToast(message, failedCount || skippedCount ? "warning" : "success");
 }
 
-
 async function deleteUpload(filename, options = {}) {
+  if (state.localMode) {
+    await deleteLocalUpload(filename, options);
+    return;
+  }
   const purgeVectors = Boolean(options.purgeVectors);
   const suffix = purgeVectors ? "?purge_vectors=true" : "";
   await requestJson(`/api/uploads/${encodeURIComponent(filename)}${suffix}`, { method: "DELETE" });
-  addActivity("success", purgeVectors ? "已删除处理文件" : "已移出上传目录", splitUploadPath(uploadDisplayName(filename)).file);
+  addActivity("success", purgeVectors ? "Processed file removed" : "Removed from upload directory", splitUploadPath(uploadDisplayName(filename)).file);
   if (purgeVectors) {
     await Promise.all([refreshUploads(), refreshStats()]);
   } else {
     await refreshUploads();
   }
-  showToast(purgeVectors ? `已删除 ${splitUploadPath(uploadDisplayName(filename)).file} 并清理向量` : `已移除 ${splitUploadPath(uploadDisplayName(filename)).file}`, "success");
+  showToast(purgeVectors ? `Removed ${splitUploadPath(uploadDisplayName(filename)).file} and cleared vectors.` : `Removed ${splitUploadPath(uploadDisplayName(filename)).file}.`, "success");
 }
 
+
 async function deleteProcessedUploads(filenames) {
-  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
-  if (!selected.length) {
-    showToast("请先勾选要删除的已处理文件。", "warning");
+  if (state.localMode) {
+    await deleteLocalProcessedUploads(filenames);
     return;
   }
-  if (!window.confirm(`确认删除 ${selected.length} 个已处理文件，并同步清理对应向量吗？`)) return;
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+  if (!selected.length) {
+    showToast("Select processed files first.", "warning");
+    return;
+  }
+  if (!window.confirm(`Delete ${selected.length} processed files and clear their vectors?`)) return;
 
   const result = await requestJson("/api/uploads/delete", {
     method: "POST",
@@ -1163,14 +1940,14 @@ async function deleteProcessedUploads(filenames) {
     body: JSON.stringify({ filenames: selected, purge_vectors: true })
   }, 120000);
 
-  addActivity("success", "已删除处理文件", `删除 ${selected.length} 个文件，清理 ${formatNumber(result.chunks_deleted || 0)} 个片段`);
+  addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared ${formatNumber(result.chunks_deleted || 0)} chunks.`);
   state.selectedProcessedUploads.clear();
   state.processedEditMode = false;
   await Promise.all([refreshUploads(), refreshStats()]);
   renderProcessSummary();
   renderQualityReport();
   renderSummaryMetrics();
-  showToast(`已删除 ${selected.length} 个文件，并同步清理向量数据。`, "success");
+  showToast(`Deleted ${selected.length} processed files.`, "success");
 }
 
 function toggleProcessedEditMode(force) {
@@ -1180,6 +1957,10 @@ function toggleProcessedEditMode(force) {
 }
 
 async function runProcess() {
+  if (state.localMode) {
+    await runLocalProcess();
+    return;
+  }
   const selected = getPendingUploads()
     .filter((item) => state.selectedUploads.has(item.filename))
     .map((item) => item.filename);
@@ -1236,6 +2017,10 @@ async function runProcess() {
 }
 
 async function runSearch() {
+  if (state.localMode) {
+    await runLocalSearch();
+    return;
+  }
   const query = String(els.searchInput?.value || "").trim();
   if (!query) {
     showToast("请输入检索问题。", "warning");
@@ -1275,6 +2060,10 @@ async function runSearch() {
 }
 
 async function deleteCollection(name) {
+  if (state.localMode) {
+    await deleteLocalCollection(name);
+    return;
+  }
   await requestJson(`/api/collections/${encodeURIComponent(name)}`, { method: "DELETE" });
   if (state.primaryCollection === name) {
     state.primaryCollection = "";
@@ -1286,6 +2075,10 @@ async function deleteCollection(name) {
 }
 
 async function runBenchmark() {
+  if (state.localMode) {
+    await runLocalBenchmark();
+    return;
+  }
   const payload = {
     collection: `benchmark_${Date.now()}`,
     document_count: Number(els.benchDocs?.value || 500),
@@ -1419,7 +2212,8 @@ function bindEvents() {
   els.dropZone?.addEventListener("drop", async (event) => {
     event.preventDefault();
     els.dropZone.classList.remove("is-dragging");
-    await uploadFiles(event.dataTransfer?.files);
+    const dropped = await filesFromDrop(event.dataTransfer);
+    await uploadFiles(dropped);
   });
 
   els.btnProcess?.addEventListener("click", runProcess);
@@ -1440,7 +2234,7 @@ function bindEvents() {
 
     if (selectButton) {
       state.primaryCollection = selectButton.dataset.setCollection;
-      state.primaryStats = await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
+      state.primaryStats = state.localMode ? { record_count: state.records.length, chunk_count: state.chunks.length } : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
       renderCollectionList();
       renderSummaryMetrics();
       showToast(`默认集合已切换为 ${state.primaryCollection}`, "success");

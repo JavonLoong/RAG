@@ -8,12 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="styles.css">
+
   <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="./app.js"></script>
+  <script src="app.js"></script>
+
 </head>
 <body>
   <div class="app-shell">
@@ -212,7 +214,7 @@
                     <div>
                       <h3>文件与文件夹接入</h3>
                     </div>
-                    <span class="pill">.json .pdf .docx .txt .md .csv .tsv .log</span>
+                    <span class="pill">json pdf docx txt md csv tsv log + code/config</span>
                   </div>
                   <div class="queue-dropzone" id="dropZone">
                     <div>
@@ -228,7 +230,7 @@
                       </div>
                     </div>
                   </div>
-                  <input class="hidden-input" id="fileInput" type="file" multiple accept=".json,.pdf,.docx,.txt,.md,.markdown,.csv,.tsv,.log">
+                  <input class="hidden-input" id="fileInput" type="file" multiple>
                   <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory>
                 </article>
 
