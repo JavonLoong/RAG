@@ -1077,18 +1077,18 @@ function isSupportedFile(file) {
 async function uploadFiles(fileList) {
   const files = Array.from(fileList || []).filter(isSupportedFile);
   if (!files.length) {
-    showToast("没有可上传的受支持文件。", "warning");
+    showToast("\u6ca1\u6709\u53ef\u4e0a\u4f20\u7684\u53d7\u652f\u6301\u6587\u4ef6\u3002", "warning");
     return;
   }
 
-  addActivity("warning", "开始上传", `待上传 ${files.length} 个文件`);
+  addActivity("warning", "\u5f00\u59cb\u4e0a\u4f20", `\u5f85\u4e0a\u4f20 ${files.length} \u4e2a\u6587\u4ef6`);
   let successCount = 0;
   let failedCount = 0;
 
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     if (els.uploadQueueMeta) {
-      els.uploadQueueMeta.textContent = `正在上传 ${index + 1}/${files.length}: ${file.name}`;
+      els.uploadQueueMeta.textContent = `\u6b63\u5728\u4e0a\u4f20 ${index + 1}/${files.length}: ${file.name}`;
     }
 
     const form = new FormData();
@@ -1096,22 +1096,45 @@ async function uploadFiles(fileList) {
     form.append("relative_path", file.webkitRelativePath || file.name);
 
     try {
-      await requestJson("/api/upload", {
+      const uploaded = await requestJson("/api/upload", {
         method: "POST",
         body: form
       }, 120000);
       successCount += 1;
+
+      const now = Math.floor(Date.now() / 1000);
+      const nextItem = {
+        filename: uploaded.filename,
+        display_name: uploaded.display_name || file.webkitRelativePath || file.name,
+        size_kb: uploaded.size_kb ?? Number((file.size / 1024).toFixed(1)),
+        source_kind: uploaded.source_kind || file.name.split('.').pop()?.toUpperCase() || "Other",
+        modified: now,
+        uploaded_at: now,
+        processed_at: null,
+        status: "uploaded",
+        last_collection: null,
+        last_records: 0,
+        last_chunks: 0,
+        last_error: null
+      };
+
+      state.uploads = [nextItem, ...(state.uploads || []).filter((item) => item.filename !== nextItem.filename)];
+      state.pendingUploads = state.uploads.filter((item) => item.status !== "processed");
+      state.processedUploads = state.uploads.filter((item) => item.status === "processed");
+      syncUploadSelections();
+      renderUploads();
     } catch (error) {
       failedCount += 1;
-      addActivity("danger", "上传失败", `${file.name}: ${error.message || error}`);
+      addActivity("danger", "\u4e0a\u4f20\u5931\u8d25", `${file.name}: ${error.message || error}`);
     }
   }
 
   await refreshUploads();
-  const message = `上传完成，成功 ${successCount} 个，失败 ${failedCount} 个`;
-  addActivity(failedCount ? "warning" : "success", "上传完成", message);
+  const message = `\u4e0a\u4f20\u5b8c\u6210\uff0c\u6210\u529f ${successCount} \u4e2a\uff0c\u5931\u8d25 ${failedCount} \u4e2a`;
+  addActivity(failedCount ? "warning" : "success", "\u4e0a\u4f20\u5b8c\u6210", message);
   showToast(message, failedCount ? "warning" : "success");
 }
+
 
 async function deleteUpload(filename, options = {}) {
   const purgeVectors = Boolean(options.purgeVectors);
