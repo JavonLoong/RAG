@@ -964,6 +964,110 @@ svg { width: 100%; height: auto; display: block; }
   .bench-grid { grid-template-columns: 1fr; }
 }
 
+
+/* Upload directory workflow */
+.queue-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.queue-title-row,
+.queue-badge-row {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.queue-title-row {
+  flex: 1 1 auto;
+  align-items: flex-start;
+}
+
+.queue-badge-row {
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.check-chip {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  margin-top: 2px;
+}
+
+.check-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.check-chip span {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: transparent;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.check-chip input:checked + span {
+  background: linear-gradient(135deg, var(--accent), #4d76e3);
+  transform: scale(1.03);
+}
+
+.check-chip.is-disabled {
+  opacity: 0.45;
+  background: var(--panel-2);
+}
+
+.check-chip.is-disabled input {
+  cursor: not-allowed;
+}
+
+.queue-item.is-selected {
+  border-color: rgba(0, 47, 167, 0.22);
+  box-shadow: 0 16px 34px rgba(0, 47, 167, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.queue-item.is-processed {
+  background: linear-gradient(180deg, rgba(0, 47, 167, 0.03), rgba(255, 255, 255, 0.96));
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 47, 167, 0.08);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.status-tag.success {
+  background: rgba(45, 157, 87, 0.12);
+  color: var(--success);
+}
+
+.queue-actions.is-tight {
+  justify-content: flex-end;
+}
+
+.danger-text {
+  color: var(--danger);
+}
 </style>
   <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
@@ -1017,6 +1121,11 @@ const state = {
   primaryCollection: "",
   primaryStats: null,
   uploads: [],
+  pendingUploads: [],
+  processedUploads: [],
+  selectedUploads: new Set(),
+  selectedProcessedUploads: new Set(),
+  processedEditMode: false,
   lastProcess: null,
   lastSearch: null,
   benchmark: null,
@@ -1090,12 +1199,19 @@ function resolveEls() {
     folderInput: $("folderInput"),
     uploadQueueMeta: $("uploadQueueMeta"),
     reloadQueueButton: $("reloadQueueButton"),
+    selectAllUploads: $("selectAllUploads"),
+    clearUploadSelection: $("clearUploadSelection"),
     btnProcess: $("btnProcess"),
     processProgress: $("processProgress"),
     processFill: $("processFill"),
     processLog: $("processLog"),
     queueCountPill: $("queueCountPill"),
     queueList: $("queueList"),
+    processedMeta: $("processedMeta"),
+    processedCountPill: $("processedCountPill"),
+    processedEditButton: $("processedEditButton"),
+    processedDeleteButton: $("processedDeleteButton"),
+    processedList: $("processedList"),
     qualityReport: $("qualityReport"),
     searchInput: $("searchInput"),
     searchTopK: $("searchTopK"),
@@ -1114,8 +1230,7 @@ function resolveEls() {
     toast: $("toast")
   };
 }
-
-function escapeHtml(value) {
+function escapeHtml(value) {function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -1198,6 +1313,49 @@ function summarizeName(filename) {
   return String(filename || "").replaceAll("__", " / ");
 }
 
+function uploadDisplayName(itemOrFilename) {
+  if (typeof itemOrFilename === "string") {
+    const found = (state.uploads || []).find((item) => item.filename === itemOrFilename);
+    return found?.display_name ? String(found.display_name) : summarizeName(itemOrFilename);
+  }
+  if (itemOrFilename?.display_name) return String(itemOrFilename.display_name);
+  return summarizeName(itemOrFilename?.filename || "");
+}
+
+function splitUploadPath(value) {
+  const normalized = String(value || "").replaceAll("\\", "/");
+  const parts = normalized.split("/").filter(Boolean);
+  return {
+    file: parts.length ? parts[parts.length - 1] : normalized,
+    folder: parts.length > 1 ? parts.slice(0, -1).join(" / ") : "根目录"
+  };
+}
+
+function statusTagMarkup(status) {
+  const normalized = status === "processed" ? "processed" : "uploaded";
+  const label = normalized === "processed" ? "已处理" : "待处理";
+  const cls = normalized === "processed" ? "status-tag success" : "status-tag";
+  return `<span class="${cls}">${label}</span>`;
+}
+
+function getPendingUploads() {
+  return Array.isArray(state.pendingUploads) ? state.pendingUploads : [];
+}
+
+function getProcessedUploads() {
+  return Array.isArray(state.processedUploads) ? state.processedUploads : [];
+}
+
+function syncUploadSelections() {
+  const pendingNames = new Set(getPendingUploads().map((item) => item.filename));
+  const processedNames = new Set(getProcessedUploads().map((item) => item.filename));
+  state.selectedUploads = new Set(Array.from(state.selectedUploads).filter((name) => pendingNames.has(name)));
+  state.selectedProcessedUploads = new Set(Array.from(state.selectedProcessedUploads).filter((name) => processedNames.has(name)));
+  if (!getProcessedUploads().length) {
+    state.processedEditMode = false;
+    state.selectedProcessedUploads.clear();
+  }
+}
 function averageScore(results) {
   if (!Array.isArray(results) || !results.length) return 0;
   return results.reduce((sum, item) => sum + Number(item?.score || 0), 0) / results.length;
@@ -1595,45 +1753,145 @@ function renderSummaryMetrics() {
 
 function renderUploads() {
   if (!els.queueList || !els.uploadQueueMeta || !els.queueCountPill) return;
-  const uploads = state.uploads || [];
+
+  const uploads = Array.isArray(state.uploads) ? state.uploads : [];
+  const pending = getPendingUploads();
+  const processed = getProcessedUploads();
+  const selectedCount = Array.from(state.selectedUploads).filter((name) => pending.some((item) => item.filename === name)).length;
+
   els.queueCountPill.textContent = `${formatNumber(uploads.length)} 个文件`;
+  if (els.selectAllUploads) els.selectAllUploads.disabled = !pending.length;
+  if (els.clearUploadSelection) els.clearUploadSelection.disabled = !selectedCount;
+  if (els.btnProcess && els.btnProcess.dataset.busy !== "true") {
+    els.btnProcess.disabled = !selectedCount;
+  }
+
   els.uploadQueueMeta.textContent = uploads.length
-    ? `当前待处理队列 ${formatNumber(uploads.length)} 个文件，最近更新时间 ${formatClock(uploads[0]?.modified)}`
-    : "等待同步上传目录。";
+    ? `上传目录共 ${formatNumber(uploads.length)} 个文件，待处理 ${formatNumber(pending.length)} 个，已处理 ${formatNumber(processed.length)} 个。${selectedCount ? ` 已勾选 ${formatNumber(selectedCount)} 个待处理文件。` : ""}`
+    : "上传文件或文件夹后，这里会显示整个上传目录。";
+
   if (!uploads.length) {
-    renderEmpty(els.queueList, "上传文件或目录后，这里会显示待处理队列。");
+    renderEmpty(els.queueList, "上传后，这里会显示整个上传目录；勾选待处理文件再入库。");
     return;
   }
 
-  els.queueList.innerHTML = uploads.map((item) => `
-    <article class="queue-item">
-      <div class="queue-head">
-        <div>
-          <div class="queue-name">${escapeHtml(summarizeName(item.filename))}</div>
-          <p>${escapeHtml(kindLabel(item.source_kind))} · ${formatDecimal(item.size_kb || 0, 1)} KB</p>
+  els.queueList.innerHTML = uploads.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isProcessed = item.status === "processed";
+    const isSelected = !isProcessed && state.selectedUploads.has(item.filename);
+    const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
+    const recordMeta = isProcessed
+      ? `${formatNumber(item.last_records || 0)} 条记录 · ${formatNumber(item.last_chunks || 0)} 个片段`
+      : "勾选后可加入本次处理";
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""} ${isProcessed ? "is-processed" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
+              <input type="checkbox" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+              <span></span>
+            </label>
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${formatDecimal(item.size_kb || 0, 1)} KB</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup(item.status)}
+            <span class="pill">${formatClock(stamp)}</span>
+          </div>
         </div>
-        <span class="pill">${formatClock(item.modified)}</span>
-      </div>
-      <div class="queue-meta">
-        <span>存储名 ${escapeHtml(item.filename)}</span>
-        <span>就绪</span>
-      </div>
-      <div class="queue-actions">
-        <button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">移除</button>
-      </div>
-    </article>
-  `).join("");
+        <div class="queue-meta">
+          <span>存储名 ${escapeHtml(item.filename)}</span>
+          <span>${recordMeta}</span>
+        </div>
+        ${item.last_error ? `<div class="queue-hint danger-text">${escapeHtml(item.last_error)}</div>` : ""}
+        <div class="queue-actions is-tight">
+          ${isProcessed ? "" : `<button class="ghost-btn" type="button" data-delete-upload="${escapeHtml(item.filename)}">移出目录</button>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderProcessedUploads() {
+  if (!els.processedList || !els.processedMeta || !els.processedCountPill) return;
+
+  const processed = getProcessedUploads();
+  if (!processed.length && state.processedEditMode) {
+    state.processedEditMode = false;
+    state.selectedProcessedUploads.clear();
+  }
+
+  const selectedCount = state.selectedProcessedUploads.size;
+  els.processedCountPill.textContent = `${formatNumber(processed.length)} 个文件`;
+  els.processedMeta.textContent = processed.length
+    ? `这里展示已经完成入库的文件。${state.processedEditMode ? ` 已勾选 ${formatNumber(selectedCount)} 个文件准备删除。` : " 删除时会同步清理对应向量。"}`
+    : "处理完成的文件会自动进入这里。";
+
+  if (els.processedEditButton) {
+    els.processedEditButton.disabled = !processed.length && !state.processedEditMode;
+    els.processedEditButton.innerHTML = `${iconMarkup(state.processedEditMode ? "lucide:x" : "lucide:pencil-line")}<span>${state.processedEditMode ? "完成" : "编辑"}</span>`;
+  }
+  if (els.processedDeleteButton) {
+    els.processedDeleteButton.hidden = !state.processedEditMode;
+    els.processedDeleteButton.disabled = !selectedCount;
+  }
+
+  if (!processed.length) {
+    renderEmpty(els.processedList, "处理完成的文件会显示在这里，和上传目录分开展示。");
+    return;
+  }
+
+  els.processedList.innerHTML = processed.map((item) => {
+    const displayName = uploadDisplayName(item);
+    const pathInfo = splitUploadPath(displayName);
+    const isSelected = state.selectedProcessedUploads.has(item.filename);
+
+    return `
+      <article class="queue-item ${isSelected ? "is-selected" : ""}">
+        <div class="queue-head">
+          <div class="queue-title-row">
+            ${state.processedEditMode ? `
+              <label class="check-chip">
+                <input type="checkbox" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+                <span></span>
+              </label>
+            ` : ""}
+            <div>
+              <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+              <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))}</p>
+            </div>
+          </div>
+          <div class="queue-badge-row">
+            ${statusTagMarkup("processed")}
+            <span class="pill">${formatClock(item.processed_at || item.modified)}</span>
+          </div>
+        </div>
+        <div class="queue-meta">
+          <span>集合 ${escapeHtml(item.last_collection || "power_equipment")}</span>
+          <span>${formatNumber(item.last_records || 0)} 条记录</span>
+          <span>${formatNumber(item.last_chunks || 0)} 个片段</span>
+        </div>
+        <div class="queue-hint">删除时会同步移除该文件及其向量数据。</div>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderProcessSummary() {
   if (!els.processLog) return;
   const result = state.lastProcess;
   if (!result) {
-    renderEmpty(els.processLog, "上传后点击“处理并入库”，这里会显示处理摘要。");
+    renderEmpty(els.processLog, "勾选待处理文件并完成入库后，这里会显示本次处理摘要。");
     return;
   }
 
   const summaries = Array.isArray(result.file_summaries) ? result.file_summaries : [];
+  const requested = Array.isArray(result.requested_filenames) ? result.requested_filenames : [];
+  const skipped = Array.isArray(result.skipped_already_processed) ? result.skipped_already_processed : [];
   const items = [
     `
       <article class="queue-item">
@@ -1645,35 +1903,56 @@ function renderProcessSummary() {
           <span class="pill">${formatDecimal(result.elapsed_s || 0, 1)} s</span>
         </div>
         <div class="queue-meta">
-          <span>成功 ${formatNumber(result.files_succeeded || 0)}</span>
-          <span>失败 ${formatNumber(result.files_failed || 0)}</span>
-          <span>集合 power_equipment</span>
+          <span>请求 ${formatNumber(requested.length)} 个</span>
+          <span>成功 ${formatNumber(result.files_succeeded || 0)} 个</span>
+          <span>失败 ${formatNumber(result.files_failed || 0)} 个</span>
+          <span>跳过 ${formatNumber(skipped.length)} 个</span>
         </div>
       </article>
     `
   ];
 
   summaries.forEach((item) => {
+    const displayName = uploadDisplayName(item.source_file);
+    const pathInfo = splitUploadPath(displayName);
     items.push(`
       <article class="queue-item">
         <div class="queue-head">
           <div>
-            <div class="queue-name">${escapeHtml(summarizeName(item.source_file))}</div>
-            <p>${escapeHtml(kindLabel(item.source_kind))} · ${item.status === "ok" ? "提取成功" : "提取失败"}</p>
+            <div class="queue-name">${escapeHtml(pathInfo.file)}</div>
+            <p>${escapeHtml(pathInfo.folder)} · ${escapeHtml(kindLabel(item.source_kind))} · ${item.status === "ok" ? "提取成功" : "提取失败"}</p>
           </div>
           <span class="pill">${item.status === "ok" ? `${formatNumber(item.records_extracted || 0)} 条` : "error"}</span>
         </div>
         <div class="queue-meta">
-          <span>${item.status === "ok" ? "已解析" : escapeHtml(item.error || "处理失败")}</span>
+          <span>${item.status === "ok" ? "已标记为已处理" : "未写入向量库"}</span>
+          <span>${item.status === "ok" ? `记录 ${formatNumber(item.records_extracted || 0)}` : escapeHtml(item.error || "处理失败")}</span>
         </div>
       </article>
     `);
   });
 
+  if (skipped.length) {
+    items.push(`
+      <article class="queue-item">
+        <div class="queue-head">
+          <div>
+            <div class="queue-name">已跳过文件</div>
+            <p>这些文件之前已经处理过，本次不会重复扫描。</p>
+          </div>
+          <span class="pill">${formatNumber(skipped.length)} 个</span>
+        </div>
+        <div class="queue-meta">
+          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "无")}</span>
+        </div>
+      </article>
+    `);
+  }
+
   els.processLog.innerHTML = items.join("");
 }
 
-function renderQualityReport() {
+function renderQualityReport() {function renderQualityReport() {
   if (!els.qualityReport) return;
   const report = state.lastProcess?.quality_report;
   if (!report) {
@@ -1803,13 +2082,14 @@ function renderAll() {
   renderActivityFeed();
   renderSummaryMetrics();
   renderUploads();
+  renderProcessedUploads();
   renderProcessSummary();
   renderQualityReport();
   renderSearchResults();
   renderBenchmark();
 }
 
-async function refreshHealth() {
+async function refreshHealth() {async function refreshHealth() {
   try {
     const payload = await requestJson("/api/health", {}, 15000);
     state.online = payload.status === "ok";
@@ -1838,10 +2118,14 @@ async function refreshStats() {
 async function refreshUploads() {
   const payload = await requestJson("/api/uploads");
   state.uploads = Array.isArray(payload.files) ? payload.files : [];
+  state.pendingUploads = Array.isArray(payload.pending) ? payload.pending : state.uploads.filter((item) => item.status !== "processed");
+  state.processedUploads = Array.isArray(payload.processed) ? payload.processed : state.uploads.filter((item) => item.status === "processed");
+  syncUploadSelections();
   renderUploads();
+  renderProcessedUploads();
 }
 
-async function refreshAll() {
+async function refreshAll() {async function refreshAll() {
   setStatusLevel("warning");
   if (els.refreshStamp) els.refreshStamp.textContent = "正在同步...";
   try {
@@ -1905,26 +2189,77 @@ async function uploadFiles(fileList) {
   showToast(message, failedCount ? "warning" : "success");
 }
 
-async function deleteUpload(filename) {
-  await requestJson(`/api/uploads/${encodeURIComponent(filename)}`, { method: "DELETE" });
-  addActivity("success", "已移除上传文件", summarizeName(filename));
-  await refreshUploads();
-  showToast(`已移除 ${summarizeName(filename)}`, "success");
+async function deleteUpload(filename, options = {}) {
+  const purgeVectors = Boolean(options.purgeVectors);
+  const suffix = purgeVectors ? "?purge_vectors=true" : "";
+  await requestJson(`/api/uploads/${encodeURIComponent(filename)}${suffix}`, { method: "DELETE" });
+  addActivity("success", purgeVectors ? "已删除处理文件" : "已移出上传目录", splitUploadPath(uploadDisplayName(filename)).file);
+  if (purgeVectors) {
+    await Promise.all([refreshUploads(), refreshStats()]);
+  } else {
+    await refreshUploads();
+  }
+  showToast(purgeVectors ? `已删除 ${splitUploadPath(uploadDisplayName(filename)).file} 并清理向量` : `已移除 ${splitUploadPath(uploadDisplayName(filename)).file}`, "success");
+}
+
+async function deleteProcessedUploads(filenames) {
+  const selected = Array.from(new Set((filenames || []).filter(Boolean)));
+  if (!selected.length) {
+    showToast("请先勾选要删除的已处理文件。", "warning");
+    return;
+  }
+  if (!window.confirm(`确认删除 ${selected.length} 个已处理文件，并同步清理对应向量吗？`)) return;
+
+  const result = await requestJson("/api/uploads/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filenames: selected, purge_vectors: true })
+  }, 120000);
+
+  addActivity("success", "已删除处理文件", `删除 ${selected.length} 个文件，清理 ${formatNumber(result.chunks_deleted || 0)} 个片段`);
+  state.selectedProcessedUploads.clear();
+  state.processedEditMode = false;
+  await Promise.all([refreshUploads(), refreshStats()]);
+  renderProcessSummary();
+  renderQualityReport();
+  renderSummaryMetrics();
+  showToast(`已删除 ${selected.length} 个文件，并同步清理向量数据。`, "success");
+}
+
+function toggleProcessedEditMode(force) {
+  state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
+  if (!state.processedEditMode) state.selectedProcessedUploads.clear();
+  renderProcessedUploads();
 }
 
 async function runProcess() {
-  if (!state.uploads.length) {
-    showToast("队列为空，请先上传文件。", "warning");
+  const selected = getPendingUploads()
+    .filter((item) => state.selectedUploads.has(item.filename))
+    .map((item) => item.filename);
+
+  if (!selected.length) {
+    showToast("请先在上传目录里勾选要处理的文件。", "warning");
     return;
   }
 
-  if (els.btnProcess) els.btnProcess.disabled = true;
+  if (els.btnProcess) {
+    els.btnProcess.disabled = true;
+    els.btnProcess.dataset.busy = "true";
+  }
   if (els.processFill) els.processFill.style.width = "18%";
-  if (els.processLog) renderEmpty(els.processLog, "正在处理，请稍候...");
+  if (els.processLog) renderEmpty(els.processLog, "正在处理选中的文件，请稍候...");
 
   try {
-    addActivity("warning", "开始入库处理", `本次处理 ${state.uploads.length} 个文件`);
-    const result = await requestJson("/api/process", { method: "POST" }, 300000);
+    addActivity("warning", "开始入库处理", `本次处理 ${selected.length} 个勾选文件`);
+    const result = await requestJson("/api/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filenames: selected,
+        collection: state.primaryCollection || "power_equipment"
+      })
+    }, 300000);
+
     state.lastProcess = result;
     if (els.processFill) els.processFill.style.width = "100%";
 
@@ -1934,23 +2269,26 @@ async function runProcess() {
       `成功 ${result.files_succeeded || 0} 个文件，写入 ${result.chunks_written || 0} 个片段`
     );
 
-    await refreshStats();
-    await refreshUploads();
+    await Promise.all([refreshStats(), refreshUploads()]);
     renderProcessSummary();
     renderQualityReport();
     renderSummaryMetrics();
-    showToast("处理完成，统计信息已刷新。", "success");
+    showToast(`处理完成，成功 ${result.files_succeeded || 0} 个，跳过 ${((result.skipped_already_processed || []).length || 0)} 个已处理文件。`, "success");
   } catch (error) {
     if (els.processFill) els.processFill.style.width = "0%";
     addActivity("danger", "处理失败", error.message || String(error));
     renderProcessSummary();
     showToast(error.message || "处理失败", "danger");
   } finally {
-    if (els.btnProcess) els.btnProcess.disabled = false;
+    if (els.btnProcess) {
+      delete els.btnProcess.dataset.busy;
+      els.btnProcess.disabled = false;
+    }
+    renderUploads();
   }
 }
 
-async function runSearch() {
+async function runSearch() {async function runSearch() {
   const query = String(els.searchInput?.value || "").trim();
   if (!query) {
     showToast("请输入检索问题。", "warning");
@@ -2099,6 +2437,18 @@ function bindEvents() {
   els.dropFolderButton?.addEventListener("click", () => els.folderInput?.click());
   els.dropBrowseButton?.addEventListener("click", () => els.queueList?.scrollIntoView({ behavior: "smooth", block: "start" }));
   els.reloadQueueButton?.addEventListener("click", refreshUploads);
+  els.selectAllUploads?.addEventListener("click", () => {
+    state.selectedUploads = new Set(getPendingUploads().map((item) => item.filename));
+    renderUploads();
+  });
+  els.clearUploadSelection?.addEventListener("click", () => {
+    state.selectedUploads.clear();
+    renderUploads();
+  });
+  els.processedEditButton?.addEventListener("click", () => toggleProcessedEditMode());
+  els.processedDeleteButton?.addEventListener("click", async () => {
+    await deleteProcessedUploads(Array.from(state.selectedProcessedUploads));
+  });
 
   els.fileInput?.addEventListener("change", async (event) => {
     await uploadFiles(event.target.files);
@@ -2157,10 +2507,28 @@ function bindEvents() {
     }
   });
 
+  els.queueList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-upload-select]");
+    if (!input) return;
+    const name = input.dataset.uploadSelect;
+    if (input.checked) state.selectedUploads.add(name);
+    else state.selectedUploads.delete(name);
+    renderUploads();
+  });
+
   els.queueList?.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-delete-upload]");
     if (!button) return;
     await deleteUpload(button.dataset.deleteUpload);
+  });
+
+  els.processedList?.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-processed-select]");
+    if (!input) return;
+    const name = input.dataset.processedSelect;
+    if (input.checked) state.selectedProcessedUploads.add(name);
+    else state.selectedProcessedUploads.delete(name);
+    renderProcessedUploads();
   });
 
   els.searchResults?.addEventListener("click", (event) => {
@@ -2189,7 +2557,7 @@ function bindEvents() {
   });
 }
 
-async function init() {
+async function init() {async function init() {
   resolveEls();
   syncSidebarToggleIcon();
   bindEvents();
@@ -2409,7 +2777,7 @@ window.addEventListener("DOMContentLoaded", init);
                       <div class="queue-actions">
                         <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
                         <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
-                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>浏览队列</span></button>
+                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>查看上传目录</span></button>
                       </div>
                       <div class="queue-actions">
                         <button class="ghost-btn" id="dropFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>递归识别目录</span></button>
@@ -2423,15 +2791,28 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>上传队列</h3>
-                      <p id="uploadQueueMeta">等待同步上传目录。</p>
+                      <h3>上传目录</h3>
+                      <p id="uploadQueueMeta">上传文件后，这里会显示整个上传目录；勾选待处理文件再入库。</p>
                     </div>
-                    <div class="queue-actions">
-                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新队列</span></button>
-                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理并入库</span></button>
+                    <div class="queue-toolbar">
+                      <span class="pill" id="queueCountPill">0 个文件</span>
+                      <button class="ghost-btn" id="reloadQueueButton" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新目录</span></button>
+                      <button class="ghost-btn" id="selectAllUploads" type="button"><iconify-icon icon="lucide:check-check"></iconify-icon><span>全选待处理</span></button>
+                      <button class="ghost-btn" id="clearUploadSelection" type="button"><iconify-icon icon="lucide:eraser"></iconify-icon><span>清空选择</span></button>
+                      <button class="btn" id="btnProcess" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理选中文件</span></button>
                     </div>
                   </div>
                   <div class="progress" id="processProgress"><div class="progress-bar" id="processFill"></div></div>
+                  <div class="queue-list" id="queueList"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>本次处理摘要</h3>
+                      <p>成功、失败与跳过信息会显示在这里。</p>
+                    </div>
+                  </div>
                   <div class="queue-list" id="processLog"></div>
                 </article>
               </div>
@@ -2440,11 +2821,16 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>待处理文件列表</h3>
+                      <h3>已处理文件</h3>
+                      <p id="processedMeta">处理完成后，会自动进入这里。</p>
                     </div>
-                    <span class="pill" id="queueCountPill">0 个文件</span>
+                    <div class="queue-toolbar">
+                      <span class="pill" id="processedCountPill">0 个文件</span>
+                      <button class="ghost-btn" id="processedEditButton" type="button"><iconify-icon icon="lucide:pencil-line"></iconify-icon><span>编辑</span></button>
+                      <button class="ghost-btn" id="processedDeleteButton" type="button" hidden><iconify-icon icon="lucide:trash-2"></iconify-icon><span>删除所选</span></button>
+                    </div>
                   </div>
-                  <div class="queue-list" id="queueList"></div>
+                  <div class="queue-list" id="processedList"></div>
                 </article>
 
                 <article class="panel" id="qualityCard">
@@ -2459,8 +2845,7 @@ window.addEventListener("DOMContentLoaded", init);
               </div>
             </div>
           </div>
-        </section>
-        <section class="page" id="page-search">
+        </section>        <section class="page" id="page-search">
           <div class="page-stack">
             <div class="search-layout">
               <article class="panel">

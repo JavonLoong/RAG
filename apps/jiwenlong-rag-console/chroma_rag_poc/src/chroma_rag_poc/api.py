@@ -3,23 +3,23 @@ FastAPI 后端 — 合并两版
 
 项目2: 工厂模式 create_app() + Pydantic 校验 + benchmark API
 项目1: 分步 API (上传→处理→统计→检索) + 前端静态文件挂载
-新增: /api/hybrid-search 混合检索 + /api/health 健康检查
+新增: 上传状态清单、按勾选处理、已处理文件批量删除
 """
 from __future__ import annotations
 
-import os
 import time
 from datetime import datetime
 from pathlib import Path
 
+import orjson
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .parsing import get_source_kind, is_supported_source, supported_source_extensions
 from .benchmark import run_synthetic_benchmark
+from .parsing import get_source_kind, is_supported_source, supported_source_extensions
 from .pipeline import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_UPLOAD_DIR,
@@ -33,6 +33,7 @@ PACKAGE_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend
 WORKSPACE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
 FRONTEND_DIR = WORKSPACE_FRONTEND_DIR if WORKSPACE_FRONTEND_DIR.exists() else PACKAGE_FRONTEND_DIR
 SUPPORTED_EXTENSIONS_LABEL = ", ".join(supported_source_extensions())
+UPLOAD_MANIFEST_NAME = ".upload-manifest.json"
 
 
 def _safe_upload_name(raw_name: str) -> str:
@@ -48,9 +49,168 @@ def normalize_upload_name(raw_name: str) -> str:
     return flat.replace("/", "__").replace("\\", "__")
 
 
-# ============================================================
-# Pydantic 请求模型（来自项目2）
-# ============================================================
+def _manifest_path(upload_dir: Path) -> Path:
+    return Path(upload_dir) / UPLOAD_MANIFEST_NAME
+
+
+def _read_upload_manifest(upload_dir: Path) -> dict[str, dict]:
+    manifest_path = _manifest_path(upload_dir)
+    if not manifest_path.exists():
+        return {}
+    try:
+        payload = orjson.loads(manifest_path.read_bytes())
+    except Exception:
+        return {}
+
+    if isinstance(payload, dict):
+        files = payload.get("files", payload)
+        if isinstance(files, dict):
+            return {
+                str(filename): entry
+                for filename, entry in files.items()
+                if isinstance(filename, str) and isinstance(entry, dict)
+            }
+    return {}
+
+
+def _write_upload_manifest(upload_dir: Path, entries: dict[str, dict]) -> None:
+    manifest_path = _manifest_path(upload_dir)
+    manifest_path.write_bytes(
+        orjson.dumps(
+            {"files": entries},
+            option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS,
+        )
+    )
+
+
+def _supported_upload_paths(upload_dir: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in Path(upload_dir).iterdir()
+        if path.is_file() and path.name != UPLOAD_MANIFEST_NAME and is_supported_source(path.name)
+    )
+
+
+def _guess_display_name(filename: str) -> str:
+    return filename.replace("__", "/")
+
+
+def _collect_upload_entries(upload_dir: Path) -> list[dict]:
+    upload_dir = Path(upload_dir)
+    manifest = _read_upload_manifest(upload_dir)
+    synced: dict[str, dict] = {}
+
+    for file_path in _supported_upload_paths(upload_dir):
+        stat = file_path.stat()
+        existing = manifest.get(file_path.name, {})
+        status = str(existing.get("status") or "uploaded")
+        if status not in {"uploaded", "processed"}:
+            status = "uploaded"
+
+        entry = {
+            "filename": file_path.name,
+            "display_name": str(existing.get("display_name") or _guess_display_name(file_path.name)),
+            "size_kb": round(stat.st_size / 1024, 1),
+            "modified": stat.st_mtime,
+            "uploaded_at": float(existing.get("uploaded_at") or stat.st_mtime),
+            "processed_at": existing.get("processed_at"),
+            "status": status,
+            "source_kind": str(existing.get("source_kind") or get_source_kind(file_path.name)),
+            "last_collection": existing.get("last_collection"),
+            "last_records": int(existing.get("last_records") or 0),
+            "last_chunks": int(existing.get("last_chunks") or 0),
+            "last_error": existing.get("last_error"),
+        }
+        synced[file_path.name] = entry
+
+    _write_upload_manifest(upload_dir, synced)
+
+    return sorted(
+        synced.values(),
+        key=lambda item: (
+            0 if item.get("status") != "processed" else 1,
+            str(item.get("display_name") or item.get("filename") or "").lower(),
+        ),
+    )
+
+
+def _update_upload_entry(upload_dir: Path, filename: str, **updates) -> dict:
+    upload_dir = Path(upload_dir)
+    manifest = _read_upload_manifest(upload_dir)
+    current = dict(manifest.get(filename, {}))
+    current.update({key: value for key, value in updates.items() if value is not None})
+    manifest[filename] = current
+    _write_upload_manifest(upload_dir, manifest)
+    return current
+
+
+def _remove_upload_entries(upload_dir: Path, filenames: list[str]) -> None:
+    upload_dir = Path(upload_dir)
+    manifest = _read_upload_manifest(upload_dir)
+    for filename in filenames:
+        manifest.pop(filename, None)
+    _write_upload_manifest(upload_dir, manifest)
+
+
+def _mark_process_result(upload_dir: Path, result: dict, collection_name: str) -> None:
+    upload_dir = Path(upload_dir)
+    manifest = _read_upload_manifest(upload_dir)
+    now = time.time()
+
+    for item in result.get("file_summaries", []):
+        filename = str(item.get("source_file") or "").strip()
+        if not filename:
+            continue
+        current = dict(manifest.get(filename, {}))
+        current["status"] = "processed" if item.get("status") == "ok" else "uploaded"
+        current["processed_at"] = now if item.get("status") == "ok" else current.get("processed_at")
+        current["last_collection"] = collection_name
+        current["last_records"] = int(item.get("records_extracted") or 0)
+        current["last_chunks"] = int(result.get("chunks_written") or 0) if item.get("status") == "ok" else 0
+        current["last_error"] = None if item.get("status") == "ok" else item.get("error")
+        manifest[filename] = current
+
+    _write_upload_manifest(upload_dir, manifest)
+
+
+def _purge_vectors_by_source_files(persist_dir: Path, filenames: list[str]) -> dict:
+    import chromadb
+    from chromadb.config import Settings
+
+    requested = [str(name).strip() for name in filenames if str(name).strip()]
+    if not requested:
+        return {"chunks_deleted": 0, "collections": {}}
+
+    client = chromadb.PersistentClient(
+        path=str(persist_dir),
+        settings=Settings(anonymized_telemetry=False, is_persistent=True),
+    )
+    deleted_total = 0
+    deleted_by_collection: dict[str, int] = {}
+
+    try:
+        for coll in client.list_collections():
+            collection = client.get_collection(name=coll.name)
+            collection_deleted = 0
+            for filename in requested:
+                try:
+                    payload = collection.get(where={"source_file": filename})
+                except Exception:
+                    payload = {"ids": []}
+                ids = payload.get("ids") or []
+                if ids:
+                    collection.delete(ids=ids)
+                    collection_deleted += len(ids)
+            if collection_deleted:
+                deleted_by_collection[coll.name] = collection_deleted
+                deleted_total += collection_deleted
+    finally:
+        try:
+            client._system.stop()
+        except Exception:
+            pass
+
+    return {"chunks_deleted": deleted_total, "collections": deleted_by_collection}
 
 
 class SearchRequest(BaseModel):
@@ -70,9 +230,14 @@ class BenchmarkRequest(BaseModel):
     cleanup: bool = True
 
 
-# ============================================================
-# App 工厂（来自项目2 + 项目1 API 扩展）
-# ============================================================
+class ProcessRequest(BaseModel):
+    filenames: list[str] = Field(default_factory=list)
+    collection: str = "power_equipment"
+
+
+class DeleteUploadsRequest(BaseModel):
+    filenames: list[str] = Field(default_factory=list)
+    purge_vectors: bool = False
 
 
 def create_app(
@@ -83,7 +248,7 @@ def create_app(
     app = FastAPI(
         title="动力装备知识库管理系统",
         description="文件上传、向量化、ChromaDB 管理、混合检索、RAG 问答",
-        version="2.0.0",
+        version="2.1.0",
     )
 
     app.add_middleware(
@@ -98,10 +263,6 @@ def create_app(
     app.state.persist_dir.mkdir(parents=True, exist_ok=True)
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
 
-    # ----------------------------------------------------------
-    # 前端入口
-    # ----------------------------------------------------------
-
     @app.get("/")
     async def index():
         index_path = FRONTEND_DIR / "index.html"
@@ -109,17 +270,9 @@ def create_app(
             return FileResponse(index_path, media_type="text/html; charset=utf-8")
         return JSONResponse({"message": "前端文件未找到，请检查 frontend/index.html"}, status_code=404)
 
-    # ----------------------------------------------------------
-    # 健康检查（来自项目2）
-    # ----------------------------------------------------------
-
     @app.get("/api/health")
     async def health():
-        return {"status": "ok", "version": "2.0.0"}
-
-    # ----------------------------------------------------------
-    # 文件上传（来自项目1）
-    # ----------------------------------------------------------
+        return {"status": "ok", "version": "2.1.0"}
 
     @app.post("/api/upload")
     async def upload_file(
@@ -127,7 +280,7 @@ def create_app(
         file: UploadFile = File(...),
         relative_path: str | None = Form(default=None),
     ):
-        """上传单个文档到待处理队列。"""
+        """上传单个文档到上传目录。"""
         source_name = Path(file.filename or "upload.bin").name
         if not is_supported_source(source_name):
             raise HTTPException(
@@ -143,6 +296,19 @@ def create_app(
         stored_name = _safe_upload_name(relative_path or source_name)
         save_path = request.app.state.upload_dir / stored_name
         save_path.write_bytes(content)
+        _update_upload_entry(
+            request.app.state.upload_dir,
+            stored_name,
+            display_name=display_name,
+            status="uploaded",
+            uploaded_at=time.time(),
+            processed_at=None,
+            source_kind=get_source_kind(source_name),
+            last_collection=None,
+            last_records=0,
+            last_chunks=0,
+            last_error=None,
+        )
 
         return {
             "status": "ok",
@@ -154,56 +320,114 @@ def create_app(
 
     @app.get("/api/uploads")
     async def list_uploads(request: Request):
-        """列出已上传的文件"""
-        files = []
-        for f in sorted(path for path in request.app.state.upload_dir.iterdir() if path.is_file()):
-            stat = f.stat()
-            files.append({
-                "filename": f.name,
-                "size_kb": round(stat.st_size / 1024, 1),
-                "modified": stat.st_mtime,
-                "source_kind": get_source_kind(f.name),
-            })
-        return {"files": files, "count": len(files)}
+        """列出上传目录与已处理状态。"""
+        files = _collect_upload_entries(request.app.state.upload_dir)
+        pending = [item for item in files if item.get("status") != "processed"]
+        processed = [item for item in files if item.get("status") == "processed"]
+        return {
+            "files": files,
+            "pending": pending,
+            "processed": processed,
+            "count": len(files),
+            "pending_count": len(pending),
+            "processed_count": len(processed),
+        }
 
     @app.delete("/api/uploads/{filename}")
-    async def delete_upload(request: Request, filename: str):
-        """删除已上传的文件"""
+    async def delete_upload(request: Request, filename: str, purge_vectors: bool = False):
+        """删除单个上传文件；如需要可同步删库。"""
         fpath = request.app.state.upload_dir / filename
-        if not fpath.exists():
+        manifest = _read_upload_manifest(request.app.state.upload_dir)
+        if not fpath.exists() and filename not in manifest:
             raise HTTPException(status_code=404, detail="文件不存在")
-        fpath.unlink()
-        return {"status": "ok", "deleted": filename}
 
-    # ----------------------------------------------------------
-    # 处理流程（来自项目1 + 项目2 合并）
-    # ----------------------------------------------------------
+        purge_result = {"chunks_deleted": 0, "collections": {}}
+        if purge_vectors:
+            purge_result = _purge_vectors_by_source_files(request.app.state.persist_dir, [filename])
+
+        if fpath.exists():
+            fpath.unlink()
+        _remove_upload_entries(request.app.state.upload_dir, [filename])
+        return {"status": "ok", "deleted": filename, **purge_result}
+
+    @app.post("/api/uploads/delete")
+    async def delete_uploads(request: Request, payload: DeleteUploadsRequest):
+        filenames = [str(name).strip() for name in payload.filenames if str(name).strip()]
+        if not filenames:
+            raise HTTPException(status_code=400, detail="没有选中的文件")
+
+        purge_result = {"chunks_deleted": 0, "collections": {}}
+        if payload.purge_vectors:
+            purge_result = _purge_vectors_by_source_files(request.app.state.persist_dir, filenames)
+
+        deleted: list[str] = []
+        for filename in filenames:
+            fpath = request.app.state.upload_dir / filename
+            if fpath.exists():
+                fpath.unlink()
+            deleted.append(filename)
+
+        _remove_upload_entries(request.app.state.upload_dir, deleted)
+        return {"status": "ok", "deleted": deleted, **purge_result}
 
     @app.post("/api/process")
-    async def process_files(request: Request, mode: str = "replace"):
-        """处理所有已上传文件：解析→清洗→分块→向量化→存入 ChromaDB"""
-        upload_files = [path for path in request.app.state.upload_dir.iterdir() if path.is_file()]
+    async def process_files(
+        request: Request,
+        payload: ProcessRequest | None = None,
+        mode: str = "replace",
+    ):
+        """处理选中的未处理文件；默认只处理未处理文件，不会重复扫已处理文件。"""
+        del mode  # 保留兼容参数，当前不再依赖 replace/append 模式
+
+        entries = _collect_upload_entries(request.app.state.upload_dir)
+        by_name = {entry["filename"]: entry for entry in entries}
+        requested = [str(name).strip() for name in (payload.filenames if payload else []) if str(name).strip()]
+
+        if requested:
+            selected_entries = [
+                by_name[name]
+                for name in requested
+                if name in by_name and by_name[name].get("status") != "processed"
+            ]
+            skipped_processed = [
+                name
+                for name in requested
+                if name in by_name and by_name[name].get("status") == "processed"
+            ]
+        else:
+            selected_entries = [entry for entry in entries if entry.get("status") != "processed"]
+            skipped_processed = []
+
+        upload_files = [
+            request.app.state.upload_dir / entry["filename"]
+            for entry in selected_entries
+            if (request.app.state.upload_dir / entry["filename"]).exists()
+        ]
         if not upload_files:
-            raise HTTPException(status_code=400, detail="没有已上传的可处理文件")
+            raise HTTPException(status_code=400, detail="没有可处理的待处理文件")
 
         t0 = time.time()
         try:
             payloads = [(f.name, f.read_bytes()) for f in upload_files]
+            collection_name = (payload.collection if payload else "power_equipment").strip() or "power_equipment"
 
             result = ingest_source_payloads(
                 payloads=payloads,
                 persist_dir=request.app.state.persist_dir,
-                collection_name="power_equipment",
+                collection_name=collection_name,
+            )
+            _mark_process_result(
+                request.app.state.upload_dir,
+                result=result,
+                collection_name=collection_name,
             )
             result["elapsed_s"] = round(time.time() - t0, 1)
+            result["requested_filenames"] = [f.name for f in upload_files]
+            result["skipped_already_processed"] = skipped_processed
             return result
 
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"处理失败: {e}")
-
-    # ----------------------------------------------------------
-    # 一步式入库（来自项目2）
-    # ----------------------------------------------------------
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"处理失败: {exc}") from exc
 
     @app.post("/api/ingest")
     async def ingest(
@@ -215,7 +439,7 @@ def create_app(
         backend: str = Form("hashing"),
         model_name: str = Form("BAAI/bge-m3"),
     ):
-        """上传并一步入库（来自项目2）"""
+        """上传并一步入库（保留项目2接口）。"""
         if not files:
             raise HTTPException(status_code=400, detail="No files uploaded")
 
@@ -237,6 +461,19 @@ def create_app(
             saved_name = f"{timestamp}-{index}-{_safe_upload_name(source_name)}"
             target = request.app.state.upload_dir / saved_name
             target.write_bytes(raw_bytes)
+            _update_upload_entry(
+                request.app.state.upload_dir,
+                saved_name,
+                display_name=source_name,
+                status="uploaded",
+                uploaded_at=time.time(),
+                processed_at=None,
+                source_kind=get_source_kind(source_name),
+                last_collection=None,
+                last_records=0,
+                last_chunks=0,
+                last_error=None,
+            )
             saved_files.append(str(target))
 
         if not payloads:
@@ -255,12 +492,13 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+        _mark_process_result(
+            request.app.state.upload_dir,
+            result=result,
+            collection_name=collection,
+        )
         result["saved_files"] = saved_files
         return result
-
-    # ----------------------------------------------------------
-    # 统计信息
-    # ----------------------------------------------------------
 
     @app.get("/api/stats")
     async def stats(request: Request, collection: str | None = None):
@@ -272,10 +510,6 @@ def create_app(
             )
         return get_all_stats(persist_dir=request.app.state.persist_dir)
 
-    # ----------------------------------------------------------
-    # 检索
-    # ----------------------------------------------------------
-
     @app.get("/api/search")
     async def search_get(request: Request, q: str = "", top_k: int = 5, collection: str = ""):
         """语义检索 (GET) — 自动检测有数据的集合"""
@@ -283,8 +517,6 @@ def create_app(
             raise HTTPException(status_code=400, detail="查询不能为空")
 
         t0 = time.time()
-
-        # 自动检测集合：优先用指定的，否则找第一个有数据的集合
         search_collection = collection.strip() if collection.strip() else None
         if not search_collection:
             all_stats = get_all_stats(persist_dir=request.app.state.persist_dir)
@@ -323,10 +555,6 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # ----------------------------------------------------------
-    # 性能基准测试（来自项目2）
-    # ----------------------------------------------------------
-
     @app.post("/api/benchmark")
     async def benchmark(request: Request, payload: BenchmarkRequest):
         """运行合成性能基准测试"""
@@ -345,15 +573,12 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    # ----------------------------------------------------------
-    # 集合管理
-    # ----------------------------------------------------------
-
     @app.delete("/api/collections/{name}")
     async def delete_collection(request: Request, name: str):
         """删除指定集合"""
         import chromadb
         from chromadb.config import Settings
+
         persist_dir = request.app.state.persist_dir
         client = chromadb.PersistentClient(
             path=str(persist_dir),
@@ -370,15 +595,10 @@ def create_app(
             except Exception:
                 pass
 
-    # ----------------------------------------------------------
-    # 挂载前端静态文件
-    # ----------------------------------------------------------
-
     if FRONTEND_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
     return app
 
 
-# 默认应用实例
 app = create_app()
