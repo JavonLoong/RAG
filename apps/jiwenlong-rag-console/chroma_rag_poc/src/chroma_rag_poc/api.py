@@ -34,6 +34,7 @@ WORKSPACE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
 FRONTEND_DIR = WORKSPACE_FRONTEND_DIR if WORKSPACE_FRONTEND_DIR.exists() else PACKAGE_FRONTEND_DIR
 SUPPORTED_EXTENSIONS_LABEL = ", ".join(supported_source_extensions())
 UPLOAD_MANIFEST_NAME = ".upload-manifest.json"
+WINDOWS_INVALID_UPLOAD_CHARS = set('<>:"/\\|?*')
 
 
 def _safe_upload_name(raw_name: str) -> str:
@@ -41,12 +42,25 @@ def _safe_upload_name(raw_name: str) -> str:
     return clean[:220] if len(clean) > 220 else clean
 
 
+def _sanitize_upload_part(part: str) -> str:
+    cleaned = "".join(
+        "_" if char in WINDOWS_INVALID_UPLOAD_CHARS or ord(char) < 32 else char
+        for char in str(part)
+    )
+    cleaned = cleaned.strip().strip(".")
+    return cleaned or "item"
+
+
 def normalize_upload_name(raw_name: str) -> str:
-    parts = [part.strip() for part in Path(raw_name).parts if part not in {"", ".", ".."}]
+    raw = str(raw_name or "").replace("\x00", "")
+    parts = [
+        _sanitize_upload_part(part.strip())
+        for part in Path(raw).parts
+        if part not in {"", ".", ".."}
+    ]
     if not parts:
         return f"upload-{int(time.time())}.bin"
-    flat = "__".join(parts)
-    return flat.replace("/", "__").replace("\\", "__")
+    return "__".join(parts)
 
 
 def _manifest_path(upload_dir: Path) -> Path:
