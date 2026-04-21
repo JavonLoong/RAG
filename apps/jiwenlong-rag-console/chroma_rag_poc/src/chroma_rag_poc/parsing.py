@@ -20,6 +20,9 @@ from .text_utils import normalize_text, stable_hash
 
 SUPPORTED_SOURCE_EXTENSIONS: dict[str, str] = {
     ".json": "JSON",
+    ".jsonl": "JSON",
+    ".ndjson": "JSON",
+    ".ipynb": "JSON",
     ".pdf": "PDF",
     ".docx": "DOCX",
     ".txt": "Text",
@@ -28,7 +31,59 @@ SUPPORTED_SOURCE_EXTENSIONS: dict[str, str] = {
     ".csv": "CSV",
     ".tsv": "TSV",
     ".log": "Log",
+    ".py": "Code",
+    ".js": "Code",
+    ".mjs": "Code",
+    ".cjs": "Code",
+    ".ts": "Code",
+    ".tsx": "Code",
+    ".jsx": "Code",
+    ".java": "Code",
+    ".c": "Code",
+    ".cc": "Code",
+    ".cpp": "Code",
+    ".cxx": "Code",
+    ".h": "Code",
+    ".hh": "Code",
+    ".hpp": "Code",
+    ".hxx": "Code",
+    ".cs": "Code",
+    ".go": "Code",
+    ".rs": "Code",
+    ".php": "Code",
+    ".rb": "Code",
+    ".swift": "Code",
+    ".kt": "Code",
+    ".kts": "Code",
+    ".scala": "Code",
+    ".sql": "Code",
+    ".sh": "Code",
+    ".bash": "Code",
+    ".zsh": "Code",
+    ".ps1": "Code",
+    ".bat": "Code",
+    ".cmd": "Code",
+    ".html": "Code",
+    ".htm": "Code",
+    ".css": "Code",
+    ".scss": "Code",
+    ".sass": "Code",
+    ".less": "Code",
+    ".xml": "Code",
+    ".yaml": "Code",
+    ".yml": "Code",
+    ".toml": "Code",
+    ".ini": "Code",
+    ".cfg": "Code",
+    ".conf": "Code",
+    ".properties": "Code",
+    ".vue": "Code",
+    ".svelte": "Code",
 }
+
+STRUCTURED_JSON_EXTENSIONS = {".json", ".ipynb"}
+TABULAR_SOURCE_EXTENSIONS = {".csv", ".tsv"}
+TEXT_PAYLOAD_EXTENSIONS = set(SUPPORTED_SOURCE_EXTENSIONS) - STRUCTURED_JSON_EXTENSIONS - TABULAR_SOURCE_EXTENSIONS - {".pdf", ".docx"}
 
 TITLE_KEYS = (
     "title",
@@ -97,20 +152,21 @@ def get_source_kind(source_name: str) -> str:
     return SUPPORTED_SOURCE_EXTENSIONS.get(Path(source_name).suffix.lower(), "Other")
 
 
+
 def load_source_payload(raw_bytes: bytes, source_name: str) -> list[SourceRecord]:
-    """按文件扩展名分派解析器。"""
+    """????????????"""
     suffix = Path(source_name).suffix.lower()
-    if suffix == ".json":
+    if suffix in STRUCTURED_JSON_EXTENSIONS:
         return load_json_payload(raw_bytes, source_name=source_name)
     if suffix == ".pdf":
         return _load_pdf_payload(raw_bytes, source_name=source_name)
     if suffix == ".docx":
         return _load_docx_payload(raw_bytes, source_name=source_name)
-    if suffix in {".txt", ".md", ".markdown", ".log"}:
+    if suffix in TEXT_PAYLOAD_EXTENSIONS:
         return _load_text_payload(raw_bytes, source_name=source_name)
-    if suffix in {".csv", ".tsv"}:
-        return _load_tabular_payload(raw_bytes, source_name=source_name, delimiter="\t" if suffix == ".tsv" else ",")
-    raise ValueError(f"暂不支持的文件类型: {suffix or 'unknown'}")
+    if suffix in TABULAR_SOURCE_EXTENSIONS:
+        return _load_tabular_payload(raw_bytes, source_name=source_name, delimiter="	" if suffix == ".tsv" else ",")
+    raise ValueError(f"?????????: {suffix or 'unknown'}")
 
 
 def load_source_file(source_path: str | Path) -> list[SourceRecord]:
