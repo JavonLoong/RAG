@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GraphRAG 调研大纲</title>
+  <style>
+    :root {
+      --paper: #f7f5ee;
+      --ink: #202521;
+      --muted: #68716b;
+      --line: #d9d9cf;
+      --panel: rgba(255, 255, 255, 0.82);
+      --jade: #137169;
+      --blue: #315f91;
+      --red: #ad4a34;
+      --gold: #8d7226;
+      --shadow: 0 20px 64px rgba(32, 37, 33, 0.12);
+      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+      --sans: "Aptos", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(115deg, rgba(141, 114, 38, 0.12), transparent 32%),
+        linear-gradient(245deg, rgba(19, 113, 105, 0.10), transparent 38%),
+        repeating-linear-gradient(90deg, rgba(32, 37, 33, 0.026) 0 1px, transparent 1px 88px),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.7;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:focus-visible {
+      outline: 3px solid rgba(49, 95, 145, 0.35);
+      outline-offset: 4px;
+    }
+
+    .shell {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(32, 37, 33, 0.10);
+      background: rgba(247, 245, 238, 0.90);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar .shell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      gap: 18px;
+    }
+
+    .brand strong {
+      font-family: var(--serif);
+      font-size: 21px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      min-height: 38px;
+      padding: 7px 11px;
+      border: 1px solid rgba(32, 37, 33, 0.12);
+      background: rgba(255, 255, 255, 0.55);
+      color: #424b45;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .hero {
+      padding: 72px 0 46px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-family: var(--serif);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 920px;
+      font-size: clamp(42px, 6vw, 76px);
+      font-weight: 800;
+    }
+
+    .hero p {
+      max-width: 780px;
+      margin: 22px 0 0;
+      color: #48524d;
+      font-size: 18px;
+    }
+
+    section.block {
+      padding: 36px 0;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .kicker {
+      color: var(--jade);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      font-size: clamp(30px, 4vw, 48px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel {
+      padding: 24px;
+      border: 1px solid rgba(32, 37, 33, 0.12);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel h3 {
+      margin-bottom: 12px;
+      font-size: 24px;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      position: relative;
+      margin: 10px 0;
+      padding-left: 19px;
+      color: #4c5650;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      top: 0.78em;
+      left: 0;
+      width: 8px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 18px;
+      padding: 22px;
+      border: 1px solid rgba(32, 37, 33, 0.12);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+    }
+
+    .stage mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 64px;
+      background: rgba(141, 114, 38, 0.14);
+      color: var(--gold);
+      font: 800 20px var(--serif);
+    }
+
+    .stage h3 {
+      margin-bottom: 7px;
+      font-size: 23px;
+    }
+
+    .stage p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .deliverable {
+      border-top: 4px solid var(--jade);
+    }
+
+    .reading {
+      border-top: 4px solid var(--gold);
+    }
+
+    .question {
+      border-top: 4px solid var(--blue);
+    }
+
+    .footer {
+      padding: 34px 0 46px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid rgba(32, 37, 33, 0.10);
+      margin-top: 40px;
+    }
+
+    @media (max-width: 900px) {
+      .topbar {
+        position: static;
+      }
+
+      .topbar .shell,
+      .section-head {
+        align-items: flex-start;
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      .topbar .shell {
+        display: flex;
+        padding: 14px 0;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .grid,
+      .grid.two {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: min(100% - 26px, 1160px);
+      }
+
+      h1 {
+        font-size: 40px;
+      }
+
+      .stage {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell">
+      <a class="brand" href="index.html"><strong>GraphRAG 调研大纲</strong></a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#goals">目标</a>
+        <a href="#reading">阅读</a>
+        <a href="#route">路线</a>
+        <a href="#discussion">讨论</a>
+        <a href="explainer.html">解释手册</a>
+        <a href="kg_demo.html">图谱演示</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero shell">
+      <p class="eyebrow">Research Outline</p>
+      <h1>这页只回答：调研要怎么推进。</h1>
+      <p>它不是概念解释页，而是调研任务的组织页：我们要看什么资料、回答什么问题、产出什么结论，以及怎样做一个小 POC。</p>
+    </section>
+
+    <section class="block shell" id="goals">
+      <div class="section-head">
+        <div class="kicker">01 Goals</div>
+        <h2>调研目标和边界</h2>
+      </div>
+      <div class="grid">
+        <article class="panel deliverable">
+          <h3>核心问题</h3>
+          <ul>
+            <li>GraphRAG 相比普通 RAG 解决什么问题？</li>
+            <li>知识图谱在其中承担什么角色？</li>
+            <li>哪些场景值得投入建图成本？</li>
+          </ul>
+        </article>
+        <article class="panel deliverable">
+          <h3>工具判断</h3>
+          <ul>
+            <li>Microsoft GraphRAG 是否适合理解完整流程？</li>
+            <li>Neo4j GraphRAG 是否适合落地？</li>
+            <li>LlamaIndex / LangChain 是否适合快速集成？</li>
+          </ul>
+        </article>
+        <article class="panel deliverable">
+          <h3>最终产出</h3>
+          <ul>
+            <li>一页结论摘要</li>
+            <li>三条工具路线对比</li>
+            <li>一个小型 POC 方案</li>
+            <li>风险和评估指标清单</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="block shell" id="reading">
+      <div class="section-head">
+        <div class="kicker">02 Reading</div>
+        <h2>阅读顺序</h2>
+      </div>
+      <div class="grid">
+        <article class="panel reading">
+          <h3>20 分钟</h3>
+          <ul>
+            <li>看今晚发言稿：`00_tonight_talk_track.md`</li>
+            <li>看解释手册里的核心结论</li>
+            <li>打开三种图谱演示，理解差别</li>
+          </ul>
+        </article>
+        <article class="panel reading">
+          <h3>1 小时</h3>
+          <ul>
+            <li>读 Microsoft GraphRAG 论文摘要和方法</li>
+            <li>读 Microsoft GraphRAG README</li>
+            <li>读 Neo4j KG Builder 文档</li>
+          </ul>
+        </article>
+        <article class="panel reading">
+          <h3>做 Demo 前</h3>
+          <ul>
+            <li>整理 10 到 30 篇小数据集</li>
+            <li>设计普通 RAG 不容易完整回答的问题</li>
+            <li>确定实体类型、关系类型和评估表</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="block shell" id="route">
+      <div class="section-head">
+        <div class="kicker">03 Route</div>
+        <h2>调研与 POC 路线</h2>
+      </div>
+      <div class="timeline">
+        <article class="stage">
+          <mark>一</mark>
+          <div>
+            <h3>概念对齐</h3>
+            <p>先把知识图谱、RAG、GraphRAG 的关系讲清楚，避免把知识图谱误解成一张展示图片。</p>
+          </div>
+        </article>
+        <article class="stage">
+          <mark>二</mark>
+          <div>
+            <h3>工具跑通</h3>
+            <p>先看 Microsoft GraphRAG 的完整流程，再看 Neo4j 的落库形态，最后用 LlamaIndex / LangChain 做快速集成判断。</p>
+          </div>
+        </article>
+        <article class="stage">
+          <mark>三</mark>
+          <div>
+            <h3>效果对比</h3>
+            <p>同一批文档分别跑普通 RAG 和 GraphRAG，重点比较复杂问题的答案完整性、引用准确性、成本和延迟。</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="block shell" id="discussion">
+      <div class="section-head">
+        <div class="kicker">04 Discussion</div>
+        <h2>今晚讨论提纲</h2>
+      </div>
+      <div class="grid two">
+        <article class="panel question">
+          <h3>可以直接抛出的问题</h3>
+          <ul>
+            <li>我们的场景是单文档问答，还是跨文档综合分析？</li>
+            <li>是否已有稳定的实体类型和关系类型？</li>
+            <li>复杂问题用什么指标评估？</li>
+            <li>demo 先选 Microsoft GraphRAG 还是 Neo4j？</li>
+          </ul>
+        </article>
+        <article class="panel question">
+          <h3>建议结论</h3>
+          <p>GraphRAG 值得作为 POC 方向，但不建议一开始就当成完整系统建设。先用小数据集验证它在跨文档、多跳关系、全局归纳问题上的提升，再决定是否投入 schema、实体归一和图谱更新能力。</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell">解释概念请看 `explainer.html`，现场演示请看 `kg_demo.html`。</div>
+  </footer>
+</body>
+</html>
