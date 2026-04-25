@@ -16,9 +16,9 @@ COPY . /app
 RUN uv sync --no-group dev --frozen --prerelease=allow
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV PYTHONPATH="/app/apps/jiwenlong-rag-console/chroma_rag_poc/src"
+ENV PYTHONPATH="/app/api_server/current_console/chroma_rag_poc/src"
 
-WORKDIR /app/apps/jiwenlong-rag-console
+WORKDIR /app/api_server/current_console
 
 EXPOSE 8000
 

@@ -1,39 +1,42 @@
-# GraphRAG 调研阅读包
+# GraphRAG 调研交付包
 
-这个文件夹把 GraphRAG 调研需要看的资料分成三类：
+这个文件夹现在按会议要求分成三层，不再把所有内容混成“阅读顺序”：
 
-- `00_tonight_talk_track.md`：今晚交流直接照着讲。
-- `01_graphrag_research_brief.md`：GraphRAG 核心概念和技术路线。
-- `02_tool_comparison.md`：典型工具对比，方便回答“我们该试哪个”。
-- `03_poc_plan.md`：后续做小 demo 的方案。
-- `04_source_links.md`：所有来源链接和本地文件对应关系。
-- `papers/`：论文和白皮书 PDF。
-- `official_docs/`：官方文档、项目 README、工具网页快照。
+- `research_outline.html`：给老师看的后续计划。重点是当前情况、下次交付物、补进度时间表、希望老师确认的问题。
+- `explainer.html`：概念解释页。解释知识图谱不是图片、Graph 与 GraphRAG 的关系，以及 token、POC、LLM、schema、chunk、三元组等易卡概念。
+- `kg_demo.html`：三条工具线演示。分别说明 Microsoft GraphRAG、Neo4j GraphRAG、LlamaIndex/LangChain 是什么、适合验证什么，不做“谁最好”的简单结论。
 
-## 最短阅读顺序
+## 最小 POC
 
-如果只有 20 分钟：
+本轮新增的最小知识图谱样例放在：
 
-1. 看 `00_tonight_talk_track.md`
-2. 看 `01_graphrag_research_brief.md` 的“核心结论”
-3. 看 `02_tool_comparison.md` 的表格
+- `../../kg_pipeline/poc/README.md`
+- `../../kg_pipeline/poc/sample_text.md`
+- `../../kg_pipeline/poc/schema.json`
+- `../../kg_pipeline/poc/triples.json`
+- `../../kg_pipeline/poc/triples.csv`
+- `../../kg_pipeline/poc/manual_review.csv`
+- `../../kg_pipeline/poc/graph_demo.html`
 
-如果有 1 小时：
+这个 POC 明确标注为 `rule-based/manual baseline`：当前只用人工和简单规则整理样例，没有调用 LLM，也不假装已经跑通完整 GraphRAG。
 
-1. 看 `papers/2404.16130_microsoft_graphrag_from_local_to_global.pdf` 的 Abstract 和方法部分
-2. 看 `official_docs/microsoft_graphrag_README.md`
-3. 看 `official_docs/neo4j_kg_builder_user_guide.html`
-4. 看 `03_poc_plan.md`
+## 汇报建议
 
-如果要后续真正做 demo：
+下次会议建议按这个顺序讲：
 
-1. 先试 Microsoft GraphRAG，理解完整 indexing/query 流程。
-2. 再试 Neo4j GraphRAG，把实体、关系、chunk 存到图数据库。
-3. 如果时间不够，用 LlamaIndex 或 LangChain 做轻量验证。
+1. 本周因为期中考试，实际推进有限。
+2. 当前先聚焦 graph construction，也就是从领域文本抽实体关系并建一个可检查的图。
+3. 展示 `kg_pipeline/poc/graph_demo.html`，说明样例文本、schema、三元组和人工评审表。
+4. 请老师确认：是否先做 graph、是否可以先用公开/模拟文本、评估更看实体关系准确性还是最终问答效果、后续是否需要 Neo4j。
 
-## 我的建议
+## 资料入口
 
-今晚不要把重点放在“GraphRAG 一定比 RAG 强”上，而是说清楚边界：
+原有调研资料仍保留在本文件夹中：
 
-GraphRAG 适合多文档、多跳关系、全局主题归纳、实体关系追踪；如果只是单文档事实问答，普通 RAG 或 hybrid RAG 往往更简单、更便宜。
-
+- `00_tonight_talk_track.md`
+- `01_graphrag_research_brief.md`
+- `02_tool_comparison.md`
+- `03_poc_plan.md`
+- `04_source_links.md`
+- `papers/`
+- `official_docs/`

@@ -1,0 +1,391 @@
+"""
+单元测试 — 基于项目2 + 增强
+
+覆盖：解析、清洗、分块、入库、检索、API、基准测试
+"""
+from __future__ import annotations
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+import orjson
+from fastapi.testclient import TestClient
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = PROJECT_ROOT / "src"
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from chroma_rag_poc.api import create_app, _resolve_log_path
+from chroma_rag_poc.benchmark import run_synthetic_benchmark
+from chroma_rag_poc.chunking import chunk_records, split_text_with_overlap
+from chroma_rag_poc.cleaning import clean_records
+from chroma_rag_poc.embeddings import HashingEmbeddingFunction, create_embedding_backend
+from chroma_rag_poc.observability import OperationLogger
+from chroma_rag_poc.parsing import load_json_payload
+from chroma_rag_poc.pipeline import get_collection_stats, ingest_json_payloads, query_collection, quality_report
+
+
+def build_label_studio_payload() -> bytes:
+    payload = [
+        {
+            "id": 1,
+            "annotations": [
+                {
+                    "id": 10,
+                    "result": [
+                        {
+                            "id": "a1",
+                            "type": "rectanglelabels",
+                            "value": {"x": 10, "y": 10, "rectanglelabels": ["Title"]},
+                        },
+                        {
+                            "id": "a1",
+                            "type": "textarea",
+                            "value": {"text": ["燃气轮机健康管理"]},
+                        },
+                        {
+                            "id": "a2",
+                            "type": "rectanglelabels",
+                            "value": {"x": 10, "y": 20, "rectanglelabels": ["Para"]},
+                        },
+                        {
+                            "id": "a2",
+                            "type": "textarea",
+                            "value": {"text": ["燃气轮机的状态监测应覆盖振动、温度、压力和润滑状态。"]},
+                        },
+                        {
+                            "id": "a3",
+                            "type": "rectanglelabels",
+                            "value": {"x": 10, "y": 30, "rectanglelabels": ["Para"]},
+                        },
+                        {
+                            "id": "a3",
+                            "type": "textarea",
+                            "value": {"text": ["压气机喘振通常与进气畸变、叶片污染和控制策略有关。"]},
+                        },
+                        {
+                            "id": "a4",
+                            "type": "rectanglelabels",
+                            "value": {"x": 10, "y": 40, "rectanglelabels": ["List"]},
+                        },
+                        {
+                            "id": "a4",
+                            "type": "textarea",
+                            "value": {"text": ["检查进气过滤系统"]},
+                        },
+                    ],
+                }
+            ],
+            "data": {
+                "filename": "demo.pdf",
+                "page_num": 1,
+                "total_pages": 1,
+                "doc_id": 1,
+            },
+        }
+    ]
+    return orjson.dumps(payload)
+
+
+def build_generic_payload() -> bytes:
+    payload = [
+        {
+            "id": "g-1",
+            "title": "维护建议",
+            "content": "检索链路需要同时测试写入速度、查询速度和容量统计。",
+        }
+    ]
+    return orjson.dumps(payload)
+
+
+class PipelineTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        self.persist_dir = Path(self.tempdir.name) / "chroma"
+        self.upload_dir = Path(self.tempdir.name) / "uploads"
+        self.persist_dir.mkdir(parents=True, exist_ok=True)
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        try:
+            self.tempdir.cleanup()
+        except PermissionError:
+            pass
+
+    def test_parse_label_studio(self) -> None:
+        """Label Studio 格式解析 + List 标签支持"""
+        records = load_json_payload(build_label_studio_payload(), "test.json")
+        self.assertGreaterEqual(len(records), 1)
+        # 验证 List 标签被正确解析
+        blocks = records[0].blocks
+        list_blocks = [b for b in blocks if b.block_type == "List"]
+        self.assertGreaterEqual(len(list_blocks), 1, "应该识别 List 标签")
+
+    def test_parse_generic_json(self) -> None:
+        """通用 JSON 格式自动检测"""
+        records = load_json_payload(build_generic_payload(), "generic.json")
+        self.assertGreaterEqual(len(records), 1)
+
+    def test_clean_records(self) -> None:
+        """短文本合并测试"""
+        from chroma_rag_poc.schemas import SourceRecord, TextBlock
+        short_record = SourceRecord(
+            source_file="test",
+            record_id="test::1",
+            filename="test.json",
+            page_num=1,
+            text="AB长文本测试内容CDEF",
+            blocks=[
+                TextBlock(text="AB", block_type="Para", order=0, y=0),
+                TextBlock(text="长文本测试内容CDEF长文本测试内容CDEF", block_type="Para", order=1, y=10),
+            ],
+        )
+        cleaned = clean_records([short_record], min_chars=10)
+        # 短块 "AB" 应该被合并
+        self.assertEqual(len(cleaned[0].blocks), 1)
+
+    def test_split_text_with_overlap(self) -> None:
+        """多级断点分块测试"""
+        text = "第一段内容。第二段内容。第三段内容。第四段内容。"
+        chunks = split_text_with_overlap(text, chunk_size=12, overlap=4)
+        self.assertGreaterEqual(len(chunks), 2)
+        self.assertTrue(all(chunks))
+
+    def test_ingest_search_and_stats(self) -> None:
+        """完整入库→检索→统计流程"""
+        result = ingest_json_payloads(
+            payloads=[
+                ("labelstudio.json", build_label_studio_payload()),
+                ("generic.json", build_generic_payload()),
+            ],
+            persist_dir=self.persist_dir,
+            collection_name="test_collection",
+            chunk_size=40,
+            overlap=10,
+            backend="hashing",
+        )
+        self.assertEqual(result["files_processed"], 2)
+        self.assertGreaterEqual(result["records_processed"], 2)
+        self.assertGreaterEqual(result["chunks_written"], 1)
+
+        # 统计
+        stats = get_collection_stats(
+            persist_dir=self.persist_dir,
+            collection_name="test_collection",
+        )
+        self.assertGreater(stats["chunk_count"], 0)
+
+        # 检索
+        search = query_collection(
+            query_text="压气机喘振原因",
+            persist_dir=self.persist_dir,
+            collection_name="test_collection",
+            top_k=3,
+        )
+        self.assertTrue(search["results"])
+
+    def test_quality_report(self) -> None:
+        """数据质量报告"""
+        records = load_json_payload(build_label_studio_payload(), "test.json")
+        from chroma_rag_poc.chunking import chunk_records
+        chunks = chunk_records(records, chunk_size=100, overlap=10)
+        report = quality_report(records, chunks)
+        self.assertIn("documents", report)
+        self.assertIn("chunks", report)
+
+    def test_api_ingest_and_search(self) -> None:
+        """API 集成测试"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        # 健康检查
+        response = client.get("/api/health")
+        self.assertEqual(response.status_code, 200)
+
+        # 入库
+        response = client.post(
+            "/api/ingest",
+            data={
+                "collection": "api-demo",
+                "chunk_size": "50",
+                "overlap": "10",
+                "backend": "hashing",
+                "model_name": "BAAI/bge-small-zh-v1.5",
+            },
+            files=[
+                ("files", ("demo.json", build_label_studio_payload(), "application/json")),
+            ],
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreaterEqual(payload["chunks_written"], 1)
+        self.assertTrue(payload.get("log_file"))
+        self.assertNotIn("log_path", payload)
+
+        logs = client.get("/api/logs")
+        self.assertEqual(logs.status_code, 200)
+        self.assertIn(payload["log_file"], [item["filename"] for item in logs.json()["logs"]])
+
+        log_text = client.get(f"/api/logs/{payload['log_file']}")
+        self.assertEqual(log_text.status_code, 200)
+        self.assertIn("ingest_start", log_text.text)
+
+        # 检索
+        search = client.post(
+            "/api/search",
+            json={"collection": "api-demo", "query": "状态监测", "top_k": 2},
+        )
+        self.assertEqual(search.status_code, 200)
+        search_payload = search.json()
+        self.assertTrue(search_payload["results"])
+        self.assertTrue(search_payload.get("log_file"))
+        self.assertNotIn("log_path", search_payload)
+
+    def test_api_upload_process_writes_log(self) -> None:
+        """分步上传和处理时写入可追踪的 .log 文件"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        upload = client.post(
+            "/api/upload",
+            files={"file": ("ops.txt", "设备维护需要记录温度、压力和振动趋势。".encode("utf-8"), "text/plain")},
+        )
+        self.assertEqual(upload.status_code, 200)
+        uploaded = upload.json()
+        self.assertTrue(uploaded.get("log_file"))
+        self.assertNotIn("log_path", uploaded)
+
+        process = client.post(
+            "/api/process",
+            json={"filenames": [uploaded["filename"]], "collection": "process-demo"},
+        )
+        self.assertEqual(process.status_code, 200)
+        result = process.json()
+        self.assertTrue(result.get("log_file"))
+        self.assertNotIn("log_path", result)
+        self.assertGreaterEqual(result["chunks_written"], 1)
+
+        log_text = client.get(f"/api/logs/{result['log_file']}")
+        self.assertEqual(log_text.status_code, 200)
+        self.assertIn("process_selection", log_text.text)
+        self.assertIn("ingest_result", log_text.text)
+
+        uploads = client.get("/api/uploads")
+        self.assertEqual(uploads.status_code, 200)
+        processed = uploads.json()["processed"]
+        self.assertEqual(processed[0]["last_log_file"], result["log_file"])
+
+    def test_observability_hardening_edges(self) -> None:
+        """日志和文件名边界不能悄悄越界或写出重复结束事件"""
+        hasher = HashingEmbeddingFunction(dimension=16)
+        single_query_vector = hasher.embed_query("abc")
+        self.assertEqual(len(single_query_vector), 16)
+        batch_query_vectors = hasher.embed_query(["abc", "def"])
+        self.assertEqual(len(batch_query_vectors), 2)
+        self.assertEqual(len(batch_query_vectors[0]), 16)
+
+        log_dir = Path(self.tempdir.name) / "logs"
+        logger = OperationLogger(log_dir, "unit")
+        logger.close(status="ok")
+        logger.close(status="error")
+        log_text = logger.file_path.read_text(encoding="utf-8")
+        end_lines = [line for line in log_text.splitlines() if " operation_end " in line]
+        self.assertEqual(len(end_lines), 1)
+        self.assertIn("operation_close_ignored", log_text)
+
+        with self.assertRaises(Exception) as invalid_log:
+            _resolve_log_path(log_dir, "../secret.log")
+        self.assertEqual(getattr(invalid_log.exception, "status_code", None), 400)
+
+        with self.assertRaises(ValueError):
+            create_embedding_backend(backend="typo-backend")
+
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        outside = Path(self.tempdir.name) / "outside.txt"
+        outside.write_text("keep", encoding="utf-8")
+        response = client.post("/api/uploads/delete", json={"filenames": ["../outside.txt"]})
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(outside.exists())
+
+        cross_origin_logs = client.get("/api/logs", headers={"origin": "http://evil.example"})
+        self.assertEqual(cross_origin_logs.status_code, 403)
+
+        stats_response = client.get("/api/stats")
+        self.assertEqual(stats_response.status_code, 200)
+        stats_payload = stats_response.json()
+        self.assertTrue(stats_payload.get("log_file"))
+        self.assertNotIn("log_path", stats_payload)
+
+        empty_search = client.get("/api/search?q=")
+        self.assertEqual(empty_search.status_code, 400)
+        self.assertIn(".log", empty_search.json()["detail"])
+
+        bad_persist = Path(self.tempdir.name) / "not-a-dir"
+        bad_persist.write_text("not a directory", encoding="utf-8")
+        broken_app = create_app(
+            persist_dir=self.persist_dir,
+            upload_dir=Path(self.tempdir.name) / "broken-uploads",
+        )
+        broken_app.state.persist_dir = bad_persist
+        broken_client = TestClient(broken_app)
+        broken_stats = broken_client.get("/api/stats?collection=broken")
+        self.assertEqual(broken_stats.status_code, 500)
+        self.assertIn(".log", broken_stats.json()["detail"])
+
+    def test_benchmark(self) -> None:
+        """性能基准测试"""
+        log_dir = Path(self.tempdir.name) / "logs"
+        logger = OperationLogger(log_dir, "benchmark-test")
+        result = run_synthetic_benchmark(
+            persist_dir=self.persist_dir,
+            collection_name="bench-demo",
+            document_count=120,
+            batch_size=30,
+            query_count=20,
+            cleanup=True,
+            operation_logger=logger,
+        )
+        logger.close(status="ok")
+        self.assertGreater(result["insert_docs_per_second"], 0)
+        self.assertGreater(result["query_qps"], 0)
+        log_text = logger.file_path.read_text(encoding="utf-8")
+        self.assertIn("benchmark_start", log_text)
+        self.assertIn("benchmark_insert", log_text)
+        self.assertIn("benchmark_query", log_text)
+
+    def test_api_benchmark_writes_log(self) -> None:
+        """/api/benchmark 返回日志文件名，且日志接口可读取完整压测事件"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        response = client.post(
+            "/api/benchmark",
+            json={
+                "collection": "bench-api-demo",
+                "document_count": 50,
+                "batch_size": 25,
+                "query_count": 10,
+                "top_k": 3,
+                "backend": "hashing",
+                "cleanup": True,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload.get("log_file"))
+        self.assertNotIn("log_path", payload)
+        self.assertGreater(payload["insert_docs_per_second"], 0)
+        self.assertGreater(payload["query_qps"], 0)
+
+        log_text = client.get(f"/api/logs/{payload['log_file']}")
+        self.assertEqual(log_text.status_code, 200)
+        self.assertIn("benchmark_start", log_text.text)
+        self.assertIn("benchmark_result", log_text.text)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -15,7 +15,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: ["src"]
+          paths: ["data_pipeline/prototype"]
 
 theme:
   name: material

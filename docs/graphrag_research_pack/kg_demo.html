@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>三种 GraphRAG 知识图谱演示</title>
+  <title>三条 GraphRAG 工具线演示</title>
   <style>
     :root {
       --paper: #f7f6f1;
@@ -11,29 +11,25 @@
       --soft-ink: #47514c;
       --muted: #727a75;
       --line: #d7d9cf;
-      --panel: rgba(255, 255, 255, 0.82);
-      --jade: #147269;
+      --panel: rgba(255, 255, 255, 0.84);
+      --green: #147269;
       --blue: #335f91;
       --red: #ad4a34;
       --gold: #8d7226;
-      --mint: #dcece7;
-      --sky: #e5edf7;
-      --rose: #f3e1db;
+      --purple: #6f5b9a;
       --shadow: 0 22px 70px rgba(32, 37, 34, 0.12);
       --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
       --sans: "Aptos", "Segoe UI", "Microsoft YaHei UI", sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       color: var(--ink);
       background:
-        linear-gradient(110deg, rgba(20, 114, 105, 0.1), transparent 34%),
-        linear-gradient(250deg, rgba(173, 74, 52, 0.1), transparent 36%),
+        linear-gradient(110deg, rgba(20, 114, 105, 0.09), transparent 34%),
+        linear-gradient(250deg, rgba(173, 74, 52, 0.09), transparent 36%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.44), transparent 42%),
         repeating-linear-gradient(90deg, rgba(32, 37, 34, 0.025) 0 1px, transparent 1px 92px),
         var(--paper);
@@ -41,20 +37,9 @@
       line-height: 1.7;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button {
-      font: inherit;
-    }
-
-    a:focus-visible,
-    button:focus-visible {
-      outline: 3px solid rgba(51, 95, 145, 0.35);
-      outline-offset: 3px;
-    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(51, 95, 145, 0.35); outline-offset: 3px; }
 
     .shell {
       width: min(1240px, calc(100% - 40px));
@@ -71,10 +56,10 @@
     }
 
     .topbar .shell {
+      min-height: 66px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 66px;
       gap: 18px;
     }
 
@@ -82,6 +67,7 @@
       display: flex;
       align-items: baseline;
       gap: 10px;
+      white-space: nowrap;
     }
 
     .brand strong {
@@ -92,31 +78,29 @@
     .brand span {
       color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0;
     }
 
-    .back-link {
-      display: inline-flex;
-      align-items: center;
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       gap: 8px;
-      min-height: 40px;
-      padding: 8px 12px;
-      border: 1px solid rgba(32, 37, 34, 0.14);
-      background: rgba(255, 255, 255, 0.58);
-      color: var(--soft-ink);
-      font-weight: 700;
     }
 
-    .back-link svg {
-      width: 17px;
-      height: 17px;
-      stroke: currentColor;
+    .nav a {
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid rgba(32, 37, 34, 0.12);
+      background: rgba(255, 255, 255, 0.60);
+      color: #404845;
+      font-size: 14px;
+      font-weight: 700;
     }
 
     .hero {
-      padding: 62px 0 28px;
+      padding: 68px 0 36px;
     }
 
     .eyebrow {
@@ -124,7 +108,7 @@
       align-items: center;
       gap: 10px;
       margin: 0 0 16px;
-      color: var(--jade);
+      color: var(--green);
       font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
@@ -135,12 +119,10 @@
       content: "";
       width: 42px;
       height: 1px;
-      background: var(--jade);
+      background: currentColor;
     }
 
-    h1,
-    h2,
-    h3 {
+    h1, h2, h3 {
       margin: 0;
       font-family: var(--serif);
       line-height: 1.18;
@@ -153,8 +135,11 @@
       font-weight: 800;
     }
 
+    h2 { font-size: clamp(28px, 4vw, 46px); }
+    h3 { font-size: 23px; }
+
     .hero p {
-      max-width: 820px;
+      max-width: 860px;
       margin: 22px 0 0;
       color: var(--soft-ink);
       font-size: 18px;
@@ -162,37 +147,31 @@
 
     .demo-shell {
       display: grid;
-      grid-template-columns: 260px minmax(420px, 1fr) 320px;
+      grid-template-columns: 280px minmax(420px, 1fr) 330px;
       gap: 18px;
       align-items: stretch;
-      padding: 24px 0 72px;
+      padding: 24px 0 48px;
     }
 
-    .rail,
-    .stage,
-    .inspector,
-    .doc-strip,
-    .comparison {
+    .rail, .stage, .inspector, .sample, .matrix {
       border: 1px solid rgba(32, 37, 34, 0.11);
       background: var(--panel);
       box-shadow: var(--shadow);
     }
 
-    .rail,
-    .inspector {
-      min-height: 620px;
+    .rail, .inspector {
+      min-height: 640px;
       padding: 18px;
     }
 
-    .rail h2,
-    .inspector h2 {
+    .rail h2, .inspector h2 {
       margin-bottom: 14px;
       font-size: 22px;
     }
 
     .mode-button {
       width: 100%;
-      min-height: 94px;
+      min-height: 120px;
       margin-bottom: 10px;
       padding: 14px;
       border: 1px solid rgba(32, 37, 34, 0.13);
@@ -225,52 +204,34 @@
       display: block;
       margin-top: 8px;
       color: inherit;
-      opacity: 0.78;
+      opacity: 0.82;
       font-size: 13px;
       line-height: 1.45;
     }
 
-    .legend {
-      display: grid;
-      gap: 8px;
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 1px solid rgba(32, 37, 34, 0.1);
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
+    .note {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid rgba(173, 74, 52, 0.16);
+      background: rgba(242, 225, 219, 0.60);
+      color: #5c3b31;
       font-size: 13px;
+      font-weight: 700;
+      line-height: 1.5;
     }
-
-    .dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex: 0 0 auto;
-    }
-
-    .dot.doc { background: var(--gold); }
-    .dot.entity { background: var(--jade); }
-    .dot.issue { background: var(--red); }
-    .dot.action { background: var(--blue); }
-    .dot.community { background: #6f5b9a; }
 
     .stage {
       position: relative;
-      min-height: 620px;
+      min-height: 640px;
       overflow: hidden;
     }
 
-    .stage-header {
+    .stage-head {
       position: absolute;
       top: 18px;
       left: 18px;
       right: 18px;
-      z-index: 2;
+      z-index: 3;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -279,10 +240,10 @@
     }
 
     .stage-title {
-      max-width: 520px;
+      max-width: 540px;
       padding: 14px 16px;
       border: 1px solid rgba(32, 37, 34, 0.1);
-      background: rgba(247, 246, 241, 0.88);
+      background: rgba(247, 246, 241, 0.90);
       backdrop-filter: blur(10px);
     }
 
@@ -297,52 +258,114 @@
       line-height: 1.5;
     }
 
-    .query-chip {
-      max-width: 260px;
+    .purpose {
+      max-width: 240px;
       padding: 12px 14px;
       border: 1px solid rgba(20, 114, 105, 0.18);
-      background: rgba(220, 236, 231, 0.9);
+      background: rgba(220, 236, 231, 0.92);
       color: #26443f;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       line-height: 1.45;
     }
 
-    #graphCanvas {
-      display: block;
-      width: 100%;
-      height: 620px;
-      background:
-        radial-gradient(circle at 28% 28%, rgba(20, 114, 105, 0.09), transparent 24%),
-        radial-gradient(circle at 78% 62%, rgba(173, 74, 52, 0.08), transparent 27%),
-        rgba(255, 255, 255, 0.28);
-    }
-
-    .node-tip {
+    .graph-area {
       position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 28% 28%, rgba(20, 114, 105, 0.08), transparent 24%),
+        radial-gradient(circle at 78% 62%, rgba(173, 74, 52, 0.08), transparent 27%),
+        rgba(255, 255, 255, 0.24);
+    }
+
+    .graph-area svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .edge {
+      stroke: rgba(32, 37, 34, 0.34);
+      stroke-width: 1.6;
+      marker-end: url(#arrow);
+    }
+
+    .edge-label {
+      fill: rgba(64, 72, 68, 0.86);
+      font: 700 11px var(--sans);
+      paint-order: stroke;
+      stroke: rgba(247, 246, 241, 0.88);
+      stroke-width: 5px;
+      stroke-linejoin: round;
+    }
+
+    .node {
+      position: absolute;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 96px;
+      min-height: 56px;
+      padding: 9px;
+      color: #fff;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.22;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 16px 38px rgba(32, 37, 34, 0.18);
+    }
+
+    .node.doc { background: var(--gold); }
+    .node.entity { background: var(--green); }
+    .node.issue { background: var(--red); }
+    .node.action { background: var(--blue); }
+    .node.community { background: var(--purple); }
+
+    .node small {
+      display: block;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .legend {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
       z-index: 3;
-      display: none;
-      max-width: 260px;
-      padding: 12px 14px;
-      border: 1px solid rgba(32, 37, 34, 0.15);
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 18px 42px rgba(32, 37, 34, 0.15);
-      pointer-events: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid rgba(32, 37, 34, 0.10);
+      background: rgba(247, 246, 241, 0.90);
     }
 
-    .node-tip strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--serif);
-      line-height: 1.2;
-    }
-
-    .node-tip span {
-      display: block;
-      margin-top: 6px;
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
+      font-weight: 800;
     }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      display: inline-block;
+    }
+
+    .dot.doc { background: var(--gold); }
+    .dot.entity { background: var(--green); }
+    .dot.issue { background: var(--red); }
+    .dot.action { background: var(--blue); }
+    .dot.community { background: var(--purple); }
 
     .inspector-section {
       padding: 16px 0;
@@ -356,7 +379,7 @@
 
     .inspector h3 {
       margin-bottom: 8px;
-      color: var(--jade);
+      color: var(--green);
       font: 800 13px var(--sans);
       text-transform: uppercase;
       letter-spacing: 0;
@@ -368,15 +391,13 @@
       font-size: 14px;
     }
 
-    .path-list,
-    .bullet-list {
+    .list {
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    .path-list li,
-    .bullet-list li {
+    .list li {
       position: relative;
       margin: 10px 0;
       padding-left: 17px;
@@ -384,8 +405,7 @@
       font-size: 14px;
     }
 
-    .path-list li::before,
-    .bullet-list li::before {
+    .list li::before {
       content: "";
       position: absolute;
       top: 0.78em;
@@ -413,18 +433,16 @@
       padding-bottom: 72px;
     }
 
-    .doc-strip,
-    .comparison {
+    .sample, .matrix {
       padding: 24px;
     }
 
-    .doc-strip h2,
-    .comparison h2 {
+    .sample h2, .matrix h2 {
       margin-bottom: 18px;
       font-size: 27px;
     }
 
-    .doc-grid {
+    .sample-text {
       display: grid;
       gap: 12px;
     }
@@ -448,48 +466,40 @@
       font-size: 14px;
     }
 
-    .compare-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.72);
     }
 
-    .compare {
-      min-height: 188px;
-      padding: 16px;
-      border: 1px solid rgba(32, 37, 34, 0.1);
-      background: rgba(255, 255, 255, 0.65);
-    }
-
-    .compare h3 {
-      margin-bottom: 10px;
-      font-size: 19px;
-    }
-
-    .compare p {
-      margin: 0;
-      color: var(--muted);
+    th, td {
+      padding: 13px 12px;
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      text-align: left;
+      vertical-align: top;
       font-size: 14px;
     }
 
+    th {
+      color: var(--green);
+      background: rgba(220, 236, 231, 0.58);
+      font-weight: 800;
+    }
+
+    td { color: var(--soft-ink); }
+
     @media (max-width: 1080px) {
-      .demo-shell {
+      .demo-shell, .below {
         grid-template-columns: 1fr;
       }
-
-      .rail,
-      .inspector,
-      .stage {
+      .rail, .inspector, .stage {
         min-height: auto;
       }
-
-      .mode-button {
-        min-height: 78px;
+      .stage {
+        min-height: 640px;
       }
-
-      .below,
-      .compare-grid {
-        grid-template-columns: 1fr;
+      .mode-button {
+        min-height: 88px;
       }
     }
 
@@ -497,36 +507,38 @@
       .shell {
         width: min(100% - 26px, 1240px);
       }
-
       .topbar {
         position: static;
       }
-
       .topbar .shell {
         align-items: flex-start;
         flex-direction: column;
         padding: 14px 0;
       }
-
+      .nav {
+        justify-content: flex-start;
+      }
       h1 {
         font-size: 40px;
       }
-
-      .hero {
-        padding-top: 42px;
-      }
-
-      .stage-header {
+      .stage-head {
         position: relative;
-        top: auto;
-        left: auto;
-        right: auto;
+        inset: auto;
         padding: 16px;
         flex-direction: column;
       }
-
-      #graphCanvas {
-        height: 520px;
+      .graph-area {
+        position: relative;
+        height: 560px;
+      }
+      .legend {
+        position: static;
+        margin: 0 16px 16px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
       }
     }
   </style>
@@ -535,120 +547,130 @@
   <header class="topbar">
     <div class="shell">
       <a class="brand" href="#top">
-        <strong>三种知识图谱演示</strong>
+        <strong>三条工具线演示</strong>
         <span>GraphRAG Demo</span>
       </a>
-      <a class="back-link" href="index.html">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6M9 12h12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        返回入口
-      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="research_outline.html">后续计划</a>
+        <a href="explainer.html">概念解释</a>
+        <a href="../../kg_pipeline/poc/graph_demo.html">POC 图谱</a>
+      </nav>
     </div>
   </header>
 
   <main id="top">
-    <section class="hero">
-      <div class="shell">
-        <p class="eyebrow">Same Corpus, Three Graphs</p>
-        <h1>同一批文档，三条工具路线会长成三种“图”。</h1>
-        <p>
-          下面不是把知识图谱当图片看，而是演示三种系统各自会关心什么数据结构：Microsoft GraphRAG 关心社区摘要和全局/局部检索，Neo4j GraphRAG 关心可落库的节点关系 schema，LlamaIndex / LangChain 关心快速把文档变成可查询的图索引。
-        </p>
-      </div>
+    <section class="hero shell">
+      <p class="eyebrow">Three Tool Lines, Three Validation Goals</p>
+      <h1>三条线不是排名，而是三种验证视角。</h1>
+      <p>同一段燃气轮机/设备故障样例，可以用 Microsoft GraphRAG 看完整方法流程，用 Neo4j GraphRAG 看图数据库落地，用 LlamaIndex/LangChain 看如何快速接入已有 RAG pipeline。这里不下“谁最好”的结论，只说明各自适合验证什么。</p>
     </section>
 
-    <section class="shell demo-shell" aria-label="三种知识图谱演示台">
+    <section class="shell demo-shell" aria-label="三条工具线演示台">
       <aside class="rail">
-        <h2>选择视角</h2>
+        <h2>选择工具线</h2>
         <button class="mode-button active" type="button" data-mode="microsoft">
           <strong>Microsoft GraphRAG</strong>
-          <span>实体、关系、社区报告，用来支持全局归纳和局部实体问答。</span>
+          <span>验证完整 indexing/query 方法：实体、关系、社区报告、global/local search。</span>
         </button>
         <button class="mode-button" type="button" data-mode="neo4j">
           <strong>Neo4j GraphRAG</strong>
-          <span>把知识落成图数据库 schema，用 Cypher 精确查询路径。</span>
+          <span>验证图数据库落地：节点标签、边类型、属性、Cypher 查询和可视化。</span>
         </button>
         <button class="mode-button" type="button" data-mode="llama">
           <strong>LlamaIndex / LangChain</strong>
-          <span>快速抽三元组和属性图，接入已有 RAG pipeline。</span>
+          <span>验证轻量集成：三元组/属性图抽取、图检索器、和现有 RAG 链路衔接。</span>
         </button>
-
-        <div class="legend" aria-label="节点图例">
-          <div class="legend-item"><span class="dot doc"></span>文档 / Chunk</div>
-          <div class="legend-item"><span class="dot entity"></span>实体 / 设备</div>
-          <div class="legend-item"><span class="dot issue"></span>故障 / 原因</div>
-          <div class="legend-item"><span class="dot action"></span>动作 / 方案</div>
-          <div class="legend-item"><span class="dot community"></span>社区 / 摘要</div>
-        </div>
+        <div class="note">当前 POC 是 rule-based/manual baseline，没有调用 LLM。这里展示的是后续可验证路线，不是已完成的自动抽取结果。</div>
       </aside>
 
-      <section class="stage">
-        <div class="stage-header">
+      <section class="stage" aria-label="工具线图谱演示">
+        <div class="stage-head">
           <div class="stage-title">
-            <h2 id="modeTitle">Microsoft GraphRAG：社区摘要视角</h2>
-            <p id="modeSummary">先从文档抽取实体和关系，再形成实体社区与社区报告；查询时可以走 global search 或 local/entity search。</p>
+            <h2 id="modeTitle"></h2>
+            <p id="modeSummary"></p>
           </div>
-          <div class="query-chip" id="queryChip">演示问题：FJ-17 齿轮箱过温可能由什么导致，建议怎么处理？</div>
+          <div class="purpose" id="modePurpose"></div>
         </div>
-        <canvas id="graphCanvas" aria-label="知识图谱画布"></canvas>
-        <div class="node-tip" id="nodeTip"></div>
+        <div class="graph-area" id="graphArea">
+          <svg id="edgeLayer" role="img" aria-label="关系边"></svg>
+          <div class="legend">
+            <span><i class="dot doc"></i>文档/Chunk</span>
+            <span><i class="dot entity"></i>实体/设备</span>
+            <span><i class="dot issue"></i>故障/原因</span>
+            <span><i class="dot action"></i>动作/索引</span>
+            <span><i class="dot community"></i>社区/答案</span>
+          </div>
+        </div>
       </section>
 
       <aside class="inspector">
-        <h2>当前图谱怎么读</h2>
+        <h2>当前线怎么验证</h2>
         <div class="inspector-section">
-          <h3>它把什么当成图</h3>
-          <p id="graphMeaning">图由实体、关系、文档片段和社区报告组成。社区报告像“主题层摘要”，能回答全局问题。</p>
+          <h3>它是什么</h3>
+          <p id="whatText"></p>
         </div>
         <div class="inspector-section">
-          <h3>回答路径</h3>
-          <ul class="path-list" id="answerPath"></ul>
+          <h3>适合验证什么</h3>
+          <ul class="list" id="validateList"></ul>
         </div>
         <div class="inspector-section">
-          <h3>典型表示</h3>
-          <pre id="codeBlock"></pre>
+          <h3>最小输出</h3>
+          <pre id="outputBlock"></pre>
         </div>
         <div class="inspector-section">
-          <h3>适合讲法</h3>
-          <ul class="bullet-list" id="talkPoints"></ul>
+          <h3>不该期待什么</h3>
+          <ul class="list" id="riskList"></ul>
         </div>
       </aside>
     </section>
 
     <section class="shell below">
-      <article class="doc-strip">
-        <h2>样例语料</h2>
-        <div class="doc-grid">
+      <article class="sample">
+        <h2>共同样例语料</h2>
+        <div class="sample-text">
           <div class="doc">
-            <strong>运行日报 D1</strong>
-            <span>华北风场 FJ-17 在 14:30 出现齿轮箱温度升高，传感器 T-Gearbox-02 报警。</span>
+            <strong>运行记录 D1</strong>
+            <span>GT-07 燃气轮机在升负荷过程中压气机出口温度偏高，同时振动值升至 7.2 mm/s。</span>
           </div>
           <div class="doc">
-            <strong>维修记录 D2</strong>
-            <span>检查发现润滑油粘度偏低，滤芯堵塞。维修人员更换润滑油并清理滤芯。</span>
+            <strong>检修记录 D2</strong>
+            <span>检查发现进气滤网堵塞，压气机叶片表面积灰。清理滤网并安排叶片离线清洗后，温度恢复正常。</span>
           </div>
           <div class="doc">
             <strong>技术手册 D3</strong>
-            <span>齿轮箱过温常见原因包括润滑不足、油路堵塞和传感器误报；建议检查油位、油品和滤芯状态。</span>
+            <span>压气机出口温度偏高常见原因包括进气阻力增大、叶片污染和温度传感器漂移。建议检查滤网、清洗叶片并校验传感器。</span>
           </div>
         </div>
       </article>
 
-      <article class="comparison">
-        <h2>三条线的差异</h2>
-        <div class="compare-grid">
-          <div class="compare">
-            <h3>Microsoft</h3>
-            <p>更像“完整 GraphRAG 方法论”：索引阶段抽实体关系并生成社区摘要，查询阶段区分全局和局部检索。</p>
-          </div>
-          <div class="compare">
-            <h3>Neo4j</h3>
-            <p>更像“工程落地形态”：节点、边、属性都进图数据库，可以用 Cypher 做精确路径查询和可视化。</p>
-          </div>
-          <div class="compare">
-            <h3>LlamaIndex / LangChain</h3>
-            <p>更像“快速集成方式”：从现有 RAG pipeline 里抽三元组或 property graph，先跑起来验证效果。</p>
-          </div>
-        </div>
+      <article class="matrix">
+        <h2>三条线的验证边界</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>路线</th>
+              <th>它更像什么</th>
+              <th>本阶段看什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Microsoft GraphRAG</td>
+              <td>完整 GraphRAG 方法流程</td>
+              <td>实体/关系/社区摘要是否能支持全局和局部问题。</td>
+            </tr>
+            <tr>
+              <td>Neo4j GraphRAG</td>
+              <td>图数据库工程落地</td>
+              <td>schema 是否清晰，路径查询和可视化是否方便人工检查。</td>
+            </tr>
+            <tr>
+              <td>LlamaIndex / LangChain</td>
+              <td>现有 RAG 项目的快速集成层</td>
+              <td>能否低成本抽三元组/属性图，并与向量检索一起召回上下文。</td>
+            </tr>
+          </tbody>
+        </table>
       </article>
     </section>
   </main>
@@ -656,302 +678,185 @@
   <script>
     const modes = {
       microsoft: {
-        title: "Microsoft GraphRAG：社区摘要视角",
-        summary: "先从文档抽取实体和关系，再形成实体社区与社区报告；查询时可以走 global search 或 local/entity search。",
-        meaning: "图由实体、关系、文档片段和社区报告组成。社区报告像“主题层摘要”，能回答全局问题。",
-        code: `Community Report: 风机传动系统异常
-
-Entities:
-  FJ-17, 华北风场, 齿轮箱过温, 润滑油粘度偏低, 滤芯堵塞
-
-Relationships:
-  FJ-17 --located_in--> 华北风场
-  FJ-17 --has_issue--> 齿轮箱过温
-  齿轮箱过温 --possible_cause--> 润滑油粘度偏低
-  齿轮箱过温 --possible_cause--> 滤芯堵塞`,
-        path: [
-          "local/entity search 找到 FJ-17 及其邻居关系。",
-          "community report 提供“传动系统异常”的全局摘要。",
-          "答案融合 D1、D2、D3 的证据，输出原因和处理建议。"
+        title: "Microsoft GraphRAG：方法流程视角",
+        summary: "把文档抽成实体、关系和社区报告，再区分 global search 与 local/entity search。",
+        purpose: "验证：完整 GraphRAG 流程是否适合我们的文档。",
+        what: "它更像一套从文档建图到基于图检索生成的完整方法。重点是 indexing、实体关系抽取、社区摘要和查询策略。",
+        validate: [
+          "实体和关系抽取是否能覆盖设备、故障、原因和措施。",
+          "community report 是否能帮助回答跨文档归纳问题。",
+          "local search 是否能围绕 GT-07 找到可靠邻居证据。"
         ],
-        points: [
-          "适合理解完整 GraphRAG 流程。",
-          "重点不是图数据库，而是 indexing、社区摘要和查询策略。",
-          "适合回答全局归纳和跨文档问题。"
+        output: `entities.parquet / relationships.parquet
+community_reports.parquet
+
+Global query:
+  这批记录中压气机异常的主因有哪些？
+
+Local query:
+  GT-07 温度偏高可能由什么导致？`,
+        risks: [
+          "不等于已经有图数据库落地。",
+          "不保证少量文档时一定比普通 RAG 更划算。",
+          "抽取质量仍依赖模型、prompt、schema 和人工评审。"
         ],
         nodes: [
-          ["c1", "风机传动系统异常", "community", 0.48, 0.18, "社区报告：汇总过温、润滑、滤芯、维修动作。"],
-          ["d1", "运行日报 D1", "doc", 0.16, 0.34, "来源文档：14:30 传感器报警。"],
-          ["d2", "维修记录 D2", "doc", 0.18, 0.62, "来源文档：检查与维修动作。"],
-          ["d3", "技术手册 D3", "doc", 0.28, 0.82, "来源文档：常见原因和建议。"],
-          ["a1", "FJ-17", "entity", 0.50, 0.44, "设备实体：华北风场的一台风机。"],
-          ["s1", "华北风场", "entity", 0.73, 0.34, "场站实体。"],
-          ["f1", "齿轮箱过温", "issue", 0.58, 0.62, "故障实体：温度升高。"],
-          ["r1", "润滑油粘度偏低", "issue", 0.78, 0.57, "可能原因。"],
-          ["r2", "滤芯堵塞", "issue", 0.76, 0.76, "可能原因。"],
-          ["m1", "更换润滑油", "action", 0.48, 0.84, "维修动作。"]
+          ["c", "压气机异常社区", "community", 50, 18],
+          ["d1", "运行记录 D1", "doc", 18, 36],
+          ["d2", "检修记录 D2", "doc", 18, 62],
+          ["d3", "技术手册 D3", "doc", 28, 82],
+          ["asset", "GT-07", "entity", 50, 44],
+          ["fault", "出口温度偏高", "issue", 58, 62],
+          ["cause1", "滤网堵塞", "issue", 78, 50],
+          ["cause2", "叶片积灰", "issue", 78, 70],
+          ["action", "清理/清洗", "action", 50, 84]
         ],
         edges: [
-          ["c1", "a1", "mentions"], ["c1", "f1", "summarizes"], ["c1", "r1", "summarizes"], ["c1", "r2", "summarizes"],
-          ["d1", "a1", "extracts"], ["d1", "f1", "extracts"], ["d2", "r1", "extracts"], ["d2", "r2", "extracts"], ["d2", "m1", "extracts"], ["d3", "f1", "explains"],
-          ["a1", "s1", "located_in"], ["a1", "f1", "has_issue"], ["f1", "r1", "possible_cause"], ["f1", "r2", "possible_cause"], ["r1", "m1", "mitigated_by"]
+          ["c", "asset", "mentions"], ["c", "fault", "summarizes"], ["c", "cause1", "summarizes"], ["c", "cause2", "summarizes"],
+          ["d1", "asset", "extracts"], ["d1", "fault", "extracts"], ["d2", "cause1", "extracts"], ["d2", "cause2", "extracts"], ["d3", "fault", "explains"],
+          ["asset", "fault", "has_issue"], ["fault", "cause1", "possible_cause"], ["fault", "cause2", "possible_cause"], ["cause1", "action", "mitigated_by"], ["cause2", "action", "mitigated_by"]
         ]
       },
       neo4j: {
         title: "Neo4j GraphRAG：图数据库视角",
-        summary: "把文档、chunk、实体、故障、原因、动作都落成节点和边；查询时用 Cypher 精确找路径。",
-        meaning: "图是可持久化、可查询的数据库结构。节点有 label，边有 type，属性记录来源、时间、置信度。",
-        code: `MATCH (a:Asset {id: "FJ-17"})-[:HAS_ISSUE]->(f:Fault)
+        summary: "把 Document、Chunk、Asset、Fault、Cause、Action 落成可查询节点和边。",
+        purpose: "验证：schema、Cypher 路径查询和可视化是否好用。",
+        what: "它更像工程落地形态。Neo4j 负责保存和查询图结构，GraphRAG 相关能力围绕图数据库、向量索引和 LLM 集成展开。",
+        validate: [
+          "节点标签和关系类型是否足够表达设备故障场景。",
+          "Cypher 能否稳定查出 GT-07 -> 故障 -> 原因 -> 处理措施。",
+          "来源、证据、置信度等属性是否方便人工审计。"
+        ],
+        output: `MATCH (a:Asset {id: "GT-07"})-[:HAS_FAULT]->(f:Fault)
 OPTIONAL MATCH (f)-[:HAS_CAUSE]->(c:Cause)
 OPTIONAL MATCH (c)-[:MITIGATED_BY]->(m:Action)
 RETURN a.id, f.name, collect(c.name), collect(m.name)`,
-        path: [
-          "从 Asset 节点 FJ-17 出发，沿 HAS_ISSUE 找到 Fault。",
-          "沿 HAS_CAUSE 找到润滑油粘度偏低、滤芯堵塞。",
-          "沿 MITIGATED_BY 找到更换润滑油、清理滤芯等动作。"
-        ],
-        points: [
-          "适合落地到图数据库和业务系统。",
-          "schema 明确，关系可控，方便做可视化和审计。",
-          "需要设计标签、边类型、属性和更新策略。"
+        risks: [
+          "Neo4j 本身不是自动抽取器，需要先有抽取流程。",
+          "schema 设计不好会导致后期查询和维护困难。",
+          "部署图数据库会引入额外环境和运维成本。"
         ],
         nodes: [
-          ["doc", ":Document\nD1/D2/D3", "doc", 0.15, 0.18, "文档节点，保存来源和元数据。"],
-          ["chunk", ":Chunk", "doc", 0.15, 0.48, "切分后的文本片段。"],
-          ["asset", ":Asset\nFJ-17", "entity", 0.42, 0.34, "设备节点。"],
-          ["site", ":Site\n华北风场", "entity", 0.68, 0.22, "场站节点。"],
-          ["fault", ":Fault\n齿轮箱过温", "issue", 0.55, 0.54, "故障节点。"],
-          ["cause1", ":Cause\n润滑油粘度偏低", "issue", 0.78, 0.47, "原因节点。"],
-          ["cause2", ":Cause\n滤芯堵塞", "issue", 0.78, 0.68, "原因节点。"],
-          ["action1", ":Action\n更换润滑油", "action", 0.52, 0.82, "处理动作。"],
-          ["action2", ":Action\n清理滤芯", "action", 0.78, 0.86, "处理动作。"]
+          ["doc", ":Document", "doc", 16, 22],
+          ["chunk", ":Chunk", "doc", 16, 52],
+          ["asset", ":Asset\nGT-07", "entity", 42, 34],
+          ["system", ":Component\n压气机", "entity", 68, 24],
+          ["fault", ":Fault\n出口温度偏高", "issue", 54, 56],
+          ["cause1", ":Cause\n滤网堵塞", "issue", 78, 48],
+          ["cause2", ":Cause\n叶片积灰", "issue", 78, 70],
+          ["action1", ":Action\n清理滤网", "action", 48, 84],
+          ["action2", ":Action\n清洗叶片", "action", 78, 86]
         ],
         edges: [
           ["doc", "chunk", "CONTAINS"], ["chunk", "asset", "MENTIONS"], ["chunk", "fault", "MENTIONS"], ["chunk", "cause1", "MENTIONS"], ["chunk", "cause2", "MENTIONS"],
-          ["asset", "site", "LOCATED_IN"], ["asset", "fault", "HAS_ISSUE"], ["fault", "cause1", "HAS_CAUSE"], ["fault", "cause2", "HAS_CAUSE"], ["cause1", "action1", "MITIGATED_BY"], ["cause2", "action2", "MITIGATED_BY"]
+          ["asset", "system", "HAS_COMPONENT"], ["asset", "fault", "HAS_FAULT"], ["fault", "cause1", "HAS_CAUSE"], ["fault", "cause2", "HAS_CAUSE"], ["cause1", "action1", "MITIGATED_BY"], ["cause2", "action2", "MITIGATED_BY"]
         ]
       },
       llama: {
         title: "LlamaIndex / LangChain：快速集成视角",
-        summary: "从文档中快速抽取三元组或 property graph，接到已有向量检索与问答链路里。",
-        meaning: "图更像 RAG pipeline 里的一个索引组件。它未必一开始就有严格 schema，但能快速把文本关系显式化。",
-        code: `triplets = [
-  ("FJ-17", "出现", "齿轮箱过温"),
-  ("齿轮箱过温", "可能原因", "润滑油粘度偏低"),
-  ("齿轮箱过温", "可能原因", "滤芯堵塞"),
-  ("润滑油粘度偏低", "处理建议", "更换润滑油")
+        summary: "把三元组或 property graph 作为现有 RAG pipeline 的一个索引组件。",
+        purpose: "验证：能否低成本跑通抽取和混合召回。",
+        what: "它更像应用框架层。可以调用 LLMGraphTransformer、PropertyGraphIndex、Graph Retriever 等能力，把图关系接入已有向量检索和问答链路。",
+        validate: [
+          "能否快速从样例文本抽出可审查三元组。",
+          "图索引是否能与向量索引一起召回原文证据。",
+          "少量代码能否集成到已有 RAG 项目，而不是重搭系统。"
+        ],
+        output: `triplets = [
+  ("GT-07", "出现故障", "压气机出口温度偏高"),
+  ("压气机出口温度偏高", "可能原因", "进气滤网堵塞"),
+  ("进气滤网堵塞", "处理建议", "清理滤网")
 ]
 
 retriever = graph_index.as_retriever()`,
-        path: [
-          "加载文档后，用 LLMGraphTransformer 或 PropertyGraphIndex 抽取关系。",
-          "将图索引与向量索引结合，按问题召回相关三元组和原文 chunk。",
-          "把三元组作为结构化上下文交给 LLM 生成答案。"
-        ],
-        points: [
-          "适合快速接入已有 RAG 项目。",
-          "初期成本低，方便做 demo 和横向对比。",
-          "后续若要生产化，需要补 schema、去重、置信度和评估。"
+        risks: [
+          "快速 demo 不代表生产质量稳定。",
+          "默认抽取可能 schema 松散，需要后续约束和去重。",
+          "如果不做人工评审，容易把幻觉关系带入答案。"
         ],
         nodes: [
-          ["q", "用户问题", "community", 0.16, 0.22, "自然语言问题进入 retriever。"],
-          ["idx", "Graph Index", "action", 0.43, 0.22, "属性图或三元组索引。"],
-          ["vec", "Vector Index", "doc", 0.68, 0.22, "普通向量索引可并行召回文本块。"],
-          ["t1", "FJ-17 -> 齿轮箱过温", "entity", 0.35, 0.50, "三元组：设备出现故障。"],
-          ["t2", "过温 -> 润滑油粘度偏低", "issue", 0.63, 0.48, "三元组：故障到原因。"],
-          ["t3", "过温 -> 滤芯堵塞", "issue", 0.62, 0.66, "三元组：故障到原因。"],
-          ["t4", "粘度偏低 -> 更换润滑油", "action", 0.38, 0.78, "三元组：原因到处理。"],
-          ["ans", "LLM 答案", "community", 0.78, 0.82, "融合图关系和原文 chunk 后生成。"]
+          ["q", "用户问题", "community", 16, 24],
+          ["vec", "Vector Index", "doc", 40, 22],
+          ["graph", "Graph Index", "action", 64, 22],
+          ["t1", "GT-07 -> 温度偏高", "entity", 34, 52],
+          ["t2", "温度偏高 -> 滤网堵塞", "issue", 62, 50],
+          ["t3", "温度偏高 -> 叶片积灰", "issue", 62, 68],
+          ["t4", "滤网堵塞 -> 清理滤网", "action", 38, 82],
+          ["ans", "LLM 答案", "community", 78, 82]
         ],
         edges: [
-          ["q", "idx", "query"], ["q", "vec", "hybrid"], ["idx", "t1", "retrieve"], ["idx", "t2", "retrieve"], ["idx", "t3", "retrieve"], ["idx", "t4", "retrieve"], ["vec", "t2", "source"], ["t1", "t2", "expand"], ["t1", "t3", "expand"], ["t2", "t4", "expand"], ["t2", "ans", "context"], ["t3", "ans", "context"], ["t4", "ans", "context"]
+          ["q", "vec", "hybrid"], ["q", "graph", "query"], ["graph", "t1", "retrieve"], ["graph", "t2", "retrieve"], ["graph", "t3", "retrieve"], ["graph", "t4", "retrieve"],
+          ["vec", "t2", "source"], ["t1", "t2", "expand"], ["t1", "t3", "expand"], ["t2", "t4", "expand"], ["t2", "ans", "context"], ["t3", "ans", "context"], ["t4", "ans", "context"]
         ]
       }
     };
 
-    const colors = {
-      doc: "#8d7226",
-      entity: "#147269",
-      issue: "#ad4a34",
-      action: "#335f91",
-      community: "#6f5b9a"
-    };
-
-    const canvas = document.getElementById("graphCanvas");
-    const ctx = canvas.getContext("2d");
-    const tip = document.getElementById("nodeTip");
+    const graphArea = document.getElementById("graphArea");
+    const edgeLayer = document.getElementById("edgeLayer");
     let activeMode = "microsoft";
-    let renderNodes = [];
-    let width = 0;
-    let height = 0;
 
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      width = Math.max(1, rect.width);
-      height = Math.max(1, rect.height);
-      canvas.width = width * ratio;
-      canvas.height = height * ratio;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      setMode(activeMode, false);
+    function setTextList(id, items) {
+      document.getElementById(id).innerHTML = items.map((item) => `<li>${item}</li>`).join("");
     }
 
-    function nodeRadius(type) {
-      if (type === "community") return 34;
-      if (type === "doc") return 26;
-      return 29;
-    }
+    function renderGraph(mode) {
+      const data = modes[mode];
+      graphArea.querySelectorAll(".node").forEach((node) => node.remove());
+      edgeLayer.innerHTML = `<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="rgba(32,37,34,0.38)"></path></marker></defs>`;
+      const map = Object.fromEntries(data.nodes.map(([id, label, type, x, y]) => [id, { label, type, x, y }]));
 
-    function wrapLines(text, maxChars) {
-      const normalized = text.split("\n");
-      const lines = [];
-      normalized.forEach((part) => {
-        if (part.length <= maxChars) {
-          lines.push(part);
-          return;
-        }
-        for (let i = 0; i < part.length; i += maxChars) {
-          lines.push(part.slice(i, i + maxChars));
-        }
-      });
-      return lines.slice(0, 3);
-    }
+      data.edges.forEach(([from, to, label]) => {
+        const a = map[from];
+        const b = map[to];
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("class", "edge");
+        line.setAttribute("x1", `${a.x}%`);
+        line.setAttribute("y1", `${a.y}%`);
+        line.setAttribute("x2", `${b.x}%`);
+        line.setAttribute("y2", `${b.y}%`);
+        edgeLayer.appendChild(line);
 
-    function drawArrow(from, to, label) {
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const distance = Math.hypot(dx, dy) || 1;
-      const start = nodeRadius(from.type) + 4;
-      const end = nodeRadius(to.type) + 6;
-      const sx = from.x + (dx / distance) * start;
-      const sy = from.y + (dy / distance) * start;
-      const tx = to.x - (dx / distance) * end;
-      const ty = to.y - (dy / distance) * end;
-      const angle = Math.atan2(ty - sy, tx - sx);
-
-      ctx.strokeStyle = "rgba(32, 37, 34, 0.28)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(tx, ty);
-      ctx.stroke();
-
-      ctx.fillStyle = "rgba(32, 37, 34, 0.42)";
-      ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.lineTo(tx - 8 * Math.cos(angle - Math.PI / 7), ty - 8 * Math.sin(angle - Math.PI / 7));
-      ctx.lineTo(tx - 8 * Math.cos(angle + Math.PI / 7), ty - 8 * Math.sin(angle + Math.PI / 7));
-      ctx.closePath();
-      ctx.fill();
-
-      const mx = (sx + tx) / 2;
-      const my = (sy + ty) / 2;
-      ctx.font = "11px Aptos, Segoe UI, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      const textWidth = ctx.measureText(label).width + 12;
-      ctx.fillStyle = "rgba(247, 246, 241, 0.9)";
-      ctx.fillRect(mx - textWidth / 2, my - 10, textWidth, 20);
-      ctx.fillStyle = "rgba(71, 81, 76, 0.86)";
-      ctx.fillText(label, mx, my);
-    }
-
-    function drawGraph() {
-      ctx.clearRect(0, 0, width, height);
-      const data = modes[activeMode];
-      const nodeMap = Object.fromEntries(renderNodes.map((node) => [node.id, node]));
-
-      data.edges.forEach(([source, target, label]) => {
-        drawArrow(nodeMap[source], nodeMap[target], label);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("class", "edge-label");
+        text.setAttribute("x", `${(a.x + b.x) / 2}%`);
+        text.setAttribute("y", `${(a.y + b.y) / 2}%`);
+        text.setAttribute("text-anchor", "middle");
+        text.textContent = label;
+        edgeLayer.appendChild(text);
       });
 
-      renderNodes.forEach((node) => {
-        const radius = nodeRadius(node.type);
-        ctx.save();
-        ctx.shadowColor = "rgba(32, 37, 34, 0.2)";
-        ctx.shadowBlur = 18;
-        ctx.shadowOffsetY = 8;
-        ctx.fillStyle = colors[node.type];
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.fillStyle = "#fff";
-        ctx.font = "700 12px Aptos, Segoe UI, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        wrapLines(node.label, node.label.length > 12 ? 7 : 8).forEach((line, index, lines) => {
-          ctx.fillText(line, node.x, node.y + (index - (lines.length - 1) / 2) * 14);
-        });
+      data.nodes.forEach(([id, label, type, x, y]) => {
+        const node = document.createElement("div");
+        node.className = `node ${type}`;
+        node.style.left = `${x}%`;
+        node.style.top = `${y}%`;
+        node.innerHTML = label.split("\n").map((part, index) => index === 0 ? part : `<small>${part}</small>`).join("");
+        node.title = id;
+        graphArea.appendChild(node);
       });
     }
 
-    function setMode(mode, updateButtons = true) {
+    function setMode(mode) {
       activeMode = mode;
       const data = modes[mode];
       document.getElementById("modeTitle").textContent = data.title;
       document.getElementById("modeSummary").textContent = data.summary;
-      document.getElementById("graphMeaning").textContent = data.meaning;
-      document.getElementById("codeBlock").textContent = data.code;
-      document.getElementById("answerPath").innerHTML = data.path.map((item) => `<li>${item}</li>`).join("");
-      document.getElementById("talkPoints").innerHTML = data.points.map((item) => `<li>${item}</li>`).join("");
-
-      renderNodes = data.nodes.map(([id, label, type, x, y, detail]) => ({
-        id,
-        label,
-        type,
-        detail,
-        x: Math.max(64, Math.min(width - 64, x * width)),
-        y: Math.max(96, Math.min(height - 64, y * height))
-      }));
-
-      if (updateButtons) {
-        document.querySelectorAll(".mode-button").forEach((button) => {
-          button.classList.toggle("active", button.dataset.mode === mode);
-        });
-      }
-      drawGraph();
-    }
-
-    function findNode(event) {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      return renderNodes.find((node) => Math.hypot(node.x - x, node.y - y) <= nodeRadius(node.type) + 6);
+      document.getElementById("modePurpose").textContent = data.purpose;
+      document.getElementById("whatText").textContent = data.what;
+      document.getElementById("outputBlock").textContent = data.output;
+      setTextList("validateList", data.validate);
+      setTextList("riskList", data.risks);
+      document.querySelectorAll(".mode-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+      renderGraph(mode);
     }
 
     document.querySelectorAll(".mode-button").forEach((button) => {
       button.addEventListener("click", () => setMode(button.dataset.mode));
     });
 
-    canvas.addEventListener("mousemove", (event) => {
-      const node = findNode(event);
-      if (!node) {
-        tip.style.display = "none";
-        canvas.style.cursor = "default";
-        return;
-      }
-      canvas.style.cursor = "pointer";
-      tip.style.display = "block";
-      tip.style.left = `${event.offsetX + 16}px`;
-      tip.style.top = `${event.offsetY + 16}px`;
-      tip.innerHTML = `<strong>${node.label}</strong><span>${node.detail}</span>`;
-    });
-
-    canvas.addEventListener("mouseleave", () => {
-      tip.style.display = "none";
-      canvas.style.cursor = "default";
-    });
-
-    window.addEventListener("resize", resizeCanvas, { passive: true });
-    resizeCanvas();
+    setMode(activeMode);
   </script>
 </body>
 </html>

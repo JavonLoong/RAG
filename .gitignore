@@ -29,17 +29,19 @@ desktop.ini
 # Uploads temp
 # uploads/
 
-# Jiwenlong RAG console runtime data
-apps/jiwenlong-rag-console/data/uploads/*
-!apps/jiwenlong-rag-console/data/uploads/.gitkeep
-apps/jiwenlong-rag-console/data/chroma/*
-!apps/jiwenlong-rag-console/data/chroma/.gitkeep
-apps/jiwenlong-rag-console/data/mock-data/*
-!apps/jiwenlong-rag-console/data/mock-data/.gitkeep
-apps/jiwenlong-rag-console/data/benchmark-db/
-apps/jiwenlong-rag-console/data/benchmark_report.json
-apps/jiwenlong-rag-console/frontend/target_*
-apps/jiwenlong-rag-console/chroma_rag_poc/server.out.log
-apps/jiwenlong-rag-console/chroma_rag_poc/server.err.log
-apps/jiwenlong-rag-console/chroma_rag_poc/data/chroma/*
+# Current RAG console runtime data
+storage_layer/runtime/current_console/uploads/*
+!storage_layer/runtime/current_console/uploads/.gitkeep
+storage_layer/runtime/current_console/chroma/*
+!storage_layer/runtime/current_console/chroma/.gitkeep
+storage_layer/runtime/current_console/logs/*
+!storage_layer/runtime/current_console/logs/.gitkeep
+storage_layer/runtime/current_console/mock-data/*
+!storage_layer/runtime/current_console/mock-data/.gitkeep
+storage_layer/runtime/current_console/benchmark-db/
+storage_layer/runtime/current_console/benchmark_report.json
+frontend_app/current_console/target_*
+api_server/current_console/chroma_rag_poc/server.out.log
+api_server/current_console/chroma_rag_poc/server.err.log
+storage_layer/runtime/chroma_rag_poc_package/chroma/*
 local_chroma_db/

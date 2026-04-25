@@ -3,56 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GraphRAG 概念解释手册</title>
+  <title>知识图谱与 GraphRAG 概念解释</title>
   <style>
     :root {
       --paper: #f6f7f3;
-      --panel: #ffffff;
       --ink: #202426;
       --muted: #69706c;
       --line: #d9ded7;
-      --jade: #17756f;
-      --cobalt: #315f9d;
-      --vermilion: #b64a34;
-      --brass: #927227;
-      --mint: #d9ece6;
-      --bluewash: #e7edf7;
-      --rosewash: #f5e3dc;
+      --panel: rgba(255, 255, 255, 0.86);
+      --green: #17756f;
+      --blue: #315f9d;
+      --red: #b64a34;
+      --gold: #927227;
+      --purple: #6f5b9a;
+      --wash-green: #d9ece6;
+      --wash-blue: #e7edf7;
+      --wash-red: #f5e3dc;
       --shadow: 0 18px 60px rgba(32, 36, 38, 0.12);
       --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
       --sans: "Aptos", "Segoe UI", "Microsoft YaHei UI", sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
       color: var(--ink);
       background:
-        linear-gradient(115deg, rgba(23, 117, 111, 0.07), transparent 32%),
-        linear-gradient(245deg, rgba(182, 74, 52, 0.08), transparent 38%),
-        repeating-linear-gradient(90deg, rgba(32, 36, 38, 0.025) 0 1px, transparent 1px 84px),
+        linear-gradient(116deg, rgba(23, 117, 111, 0.08), transparent 32%),
+        linear-gradient(244deg, rgba(182, 74, 52, 0.08), transparent 38%),
+        repeating-linear-gradient(90deg, rgba(32, 36, 38, 0.025) 0 1px, transparent 1px 86px),
         var(--paper);
       font-family: var(--sans);
       line-height: 1.7;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    a:focus-visible,
-    button:focus-visible {
-      outline: 3px solid rgba(49, 95, 157, 0.35);
-      outline-offset: 3px;
-    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(49, 95, 157, 0.35); outline-offset: 3px; }
 
     .shell {
       width: min(1180px, calc(100% - 40px));
@@ -64,75 +53,61 @@
       top: 0;
       z-index: 20;
       border-bottom: 1px solid rgba(32, 36, 38, 0.08);
-      background: rgba(246, 247, 243, 0.88);
+      background: rgba(246, 247, 243, 0.90);
       backdrop-filter: blur(16px);
     }
 
     .topbar .shell {
+      min-height: 68px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 68px;
       gap: 20px;
     }
 
     .brand {
       display: flex;
       align-items: baseline;
-      gap: 12px;
-      min-width: 220px;
+      gap: 10px;
+      white-space: nowrap;
     }
 
     .brand strong {
       font-family: var(--serif);
       font-size: 20px;
-      font-weight: 700;
     }
 
     .brand span {
       color: var(--muted);
       font-size: 12px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0;
     }
 
     .nav {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 6px;
+      gap: 7px;
     }
 
     .nav a {
-      padding: 8px 10px;
-      border: 1px solid transparent;
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid rgba(32, 36, 38, 0.12);
+      background: rgba(255, 255, 255, 0.60);
       color: #404845;
       font-size: 14px;
-      transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
-    }
-
-    .nav a:hover,
-    .nav a.active {
-      border-color: rgba(23, 117, 111, 0.22);
-      background: rgba(255, 255, 255, 0.62);
-      color: var(--jade);
+      font-weight: 700;
     }
 
     .hero {
-      position: relative;
-      overflow: hidden;
-      min-height: calc(100vh - 68px);
-      padding: 72px 0 46px;
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid rgba(32, 36, 38, 0.08);
-    }
-
-    .hero-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
-      gap: 46px;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 40px;
       align-items: center;
+      padding: 72px 0 48px;
+      min-height: calc(100vh - 68px);
     }
 
     .eyebrow {
@@ -140,9 +115,9 @@
       align-items: center;
       gap: 10px;
       margin: 0 0 18px;
-      color: var(--jade);
+      color: var(--green);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0;
     }
@@ -151,12 +126,11 @@
       content: "";
       width: 42px;
       height: 1px;
-      background: var(--jade);
+      background: currentColor;
     }
 
-    h1,
-    h2,
-    h3 {
+    h1, h2, h3 {
+      margin: 0;
       font-family: var(--serif);
       line-height: 1.16;
       letter-spacing: 0;
@@ -164,530 +138,264 @@
 
     h1 {
       max-width: 760px;
-      margin: 0;
-      font-size: clamp(42px, 6vw, 82px);
+      font-size: clamp(42px, 6vw, 80px);
       font-weight: 800;
     }
 
+    h2 { font-size: clamp(30px, 4vw, 52px); }
+    h3 { font-size: 24px; }
+
     .hero-copy {
-      max-width: 690px;
-      margin: 26px 0 0;
+      max-width: 760px;
+      margin: 24px 0 0;
       color: #46504c;
       font-size: 18px;
     }
 
-    .hero-actions {
+    .hero-links {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin: 34px 0 0;
+      gap: 10px;
+      margin-top: 28px;
     }
 
     .action {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      min-height: 44px;
-      padding: 10px 15px;
+      min-height: 42px;
+      padding: 9px 13px;
       border: 1px solid rgba(32, 36, 38, 0.16);
-      background: rgba(255, 255, 255, 0.68);
+      background: rgba(255, 255, 255, 0.72);
       color: #26312d;
-      font-weight: 700;
-      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      font-weight: 800;
     }
 
-    .action svg {
-      width: 18px;
-      height: 18px;
-      flex: 0 0 auto;
-      stroke: currentColor;
+    .quick-panel {
+      padding: 24px;
+      border: 1px solid rgba(32, 36, 38, 0.12);
+      border-top: 4px solid var(--red);
+      background: var(--panel);
+      box-shadow: var(--shadow);
     }
 
-    .action:hover {
-      transform: translateY(-2px);
-      border-color: rgba(23, 117, 111, 0.4);
-      box-shadow: 0 12px 30px rgba(23, 117, 111, 0.12);
+    .quick-panel h2 {
+      margin-bottom: 12px;
+      font-size: 27px;
     }
 
-    .action.primary {
-      background: var(--ink);
-      color: #fff;
-      border-color: var(--ink);
-    }
-
-    .hero-visual {
-      position: relative;
-      min-height: 540px;
-      border-left: 1px solid rgba(32, 36, 38, 0.12);
-      padding-left: 34px;
-    }
-
-    #graphCanvas {
-      position: absolute;
-      inset: -30px -24px -30px 8px;
-      width: calc(100% + 16px);
-      height: calc(100% + 60px);
-    }
-
-    .graph-labels {
-      position: relative;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      height: 100%;
-      align-content: center;
-    }
-
-    .signal {
-      min-height: 124px;
-      padding: 18px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(255, 255, 255, 0.74);
-      box-shadow: 0 14px 40px rgba(32, 36, 38, 0.08);
-      backdrop-filter: blur(8px);
-    }
-
-    .signal:nth-child(2) {
-      margin-top: 42px;
-    }
-
-    .signal:nth-child(3) {
-      margin-top: -22px;
-    }
-
-    .signal strong {
-      display: block;
-      color: var(--jade);
-      font-family: var(--serif);
-      font-size: 22px;
-      line-height: 1.2;
-    }
-
-    .signal span {
-      display: block;
-      margin-top: 10px;
+    .quick-panel p {
+      margin: 0;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 15px;
     }
 
-    section {
-      padding: 76px 0;
+    section { padding: 58px 0; }
+
+    .band {
+      border-top: 1px solid rgba(32, 36, 38, 0.08);
+      border-bottom: 1px solid rgba(32, 36, 38, 0.08);
+      background: linear-gradient(90deg, rgba(231, 237, 247, 0.78), rgba(217, 236, 230, 0.56), rgba(245, 227, 220, 0.62));
     }
 
     .section-head {
       display: grid;
-      grid-template-columns: minmax(190px, 0.34fr) minmax(0, 0.66fr);
-      gap: 34px;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 30px;
       align-items: end;
-      margin-bottom: 30px;
+      margin-bottom: 26px;
     }
 
     .kicker {
-      color: var(--vermilion);
+      color: var(--red);
       font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0;
     }
 
-    h2 {
-      margin: 0;
-      font-size: clamp(30px, 4vw, 52px);
-    }
-
     .section-lede {
-      margin: 0;
+      margin: 12px 0 0;
       color: var(--muted);
       font-size: 17px;
     }
 
-    .verdict-grid {
+    .truth-grid {
       display: grid;
-      grid-template-columns: 1.08fr 0.92fr;
-      gap: 18px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
 
-    .statement {
-      padding: 34px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
+    .truth {
+      min-height: 240px;
+      padding: 26px;
+      border: 1px solid rgba(32, 36, 38, 0.12);
       background: var(--panel);
       box-shadow: var(--shadow);
     }
 
-    .statement h3 {
-      margin: 0 0 16px;
-      font-size: 30px;
+    .truth:nth-child(1) { border-top: 4px solid var(--green); }
+    .truth:nth-child(2) { border-top: 4px solid var(--blue); }
+    .truth:nth-child(3) { border-top: 4px solid var(--gold); }
+
+    .truth p {
+      margin: 14px 0 0;
+      color: var(--muted);
     }
 
-    .statement p {
-      margin: 0;
-      color: #3f4844;
-      font-size: 17px;
-    }
-
-    .fit-list {
+    .term-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
     }
 
-    .mini-panel {
-      padding: 24px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(255, 255, 255, 0.76);
-    }
-
-    .mini-panel.good {
-      border-top: 4px solid var(--jade);
-    }
-
-    .mini-panel.warn {
-      border-top: 4px solid var(--vermilion);
-    }
-
-    .mini-panel h3 {
-      margin: 0 0 14px;
-      font-size: 22px;
-    }
-
-    .mini-panel ul,
-    .source-group ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .mini-panel li,
-    .source-group li {
+    .flip-card {
       position: relative;
-      padding-left: 17px;
-      margin: 10px 0;
-      color: #49524e;
+      min-height: 210px;
+      padding: 0;
+      border: 1px solid rgba(32, 36, 38, 0.12);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      perspective: 1000px;
+      text-align: left;
     }
 
-    .mini-panel li::before,
-    .source-group li::before {
-      content: "";
+    .flip-inner {
       position: absolute;
-      left: 0;
-      top: 0.75em;
-      width: 7px;
-      height: 1px;
-      background: currentColor;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 320ms ease;
     }
 
-    .process-band {
-      border-top: 1px solid rgba(32, 36, 38, 0.1);
-      border-bottom: 1px solid rgba(32, 36, 38, 0.1);
-      background:
-        linear-gradient(90deg, rgba(231, 237, 247, 0.82), rgba(217, 236, 230, 0.55), rgba(245, 227, 220, 0.68)),
-        rgba(255, 255, 255, 0.4);
+    .flip-card.is-flipped .flip-inner { transform: rotateY(180deg); }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px;
+      border-top: 4px solid var(--green);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 14px 42px rgba(32, 36, 38, 0.10);
+      backface-visibility: hidden;
     }
 
-    .pipeline {
+    .face.back {
+      transform: rotateY(180deg);
+      border-top-color: var(--red);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .face strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 27px;
+      line-height: 1.18;
+    }
+
+    .face span {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .face p {
+      margin: 12px 0 0;
+      color: #46504c;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .flow {
       display: grid;
-      grid-template-columns: repeat(9, minmax(98px, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 1px;
-      overflow-x: auto;
       border: 1px solid rgba(32, 36, 38, 0.12);
       background: rgba(32, 36, 38, 0.12);
+      overflow-x: auto;
     }
 
     .step {
-      min-width: 118px;
-      min-height: 164px;
-      padding: 18px 14px;
-      background: rgba(255, 255, 255, 0.76);
+      min-width: 170px;
+      min-height: 178px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.82);
     }
 
     .step code {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
-      margin-bottom: 18px;
-      border: 1px solid rgba(32, 36, 38, 0.2);
-      color: var(--cobalt);
-      font-family: var(--sans);
-      font-weight: 800;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(32, 36, 38, 0.22);
+      color: var(--blue);
+      font: 800 14px var(--sans);
     }
 
     .step strong {
       display: block;
       font-family: var(--serif);
-      font-size: 19px;
-      line-height: 1.22;
+      font-size: 20px;
     }
 
     .step span {
       display: block;
       margin-top: 10px;
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.55;
+      font-size: 14px;
     }
 
-    .talk-grid {
+    .example {
       display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-columns: 0.95fr 1.05fr;
       gap: 18px;
+      align-items: stretch;
     }
 
-    .tabs {
-      display: grid;
-      gap: 10px;
-      align-content: start;
-    }
-
-    .tab-button {
-      width: 100%;
-      min-height: 54px;
-      border: 1px solid rgba(32, 36, 38, 0.14);
-      background: rgba(255, 255, 255, 0.72);
-      color: #3f4743;
-      font: 700 15px var(--sans);
-      text-align: left;
-      padding: 14px 16px;
-      cursor: pointer;
-      transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
-    }
-
-    .tab-button.active {
-      border-color: var(--ink);
-      background: var(--ink);
-      color: #fff;
-    }
-
-    .talk-panel {
-      display: none;
-      min-height: 276px;
-      padding: 30px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
+    .box {
+      padding: 24px;
+      border: 1px solid rgba(32, 36, 38, 0.12);
       background: var(--panel);
       box-shadow: var(--shadow);
     }
 
-    .talk-panel.active {
-      display: block;
-      animation: rise 320ms ease both;
+    .box.green { border-top: 4px solid var(--green); }
+    .box.blue { border-top: 4px solid var(--blue); }
+
+    pre {
+      overflow-x: auto;
+      margin: 14px 0 0;
+      padding: 16px;
+      border: 1px solid rgba(32, 36, 38, 0.12);
+      background: #1f2522;
+      color: #edf2ed;
+      font: 13px/1.65 "Cascadia Mono", Consolas, monospace;
+      white-space: pre;
     }
 
-    .talk-panel p {
-      margin: 0 0 18px;
-      color: #3f4844;
-      font-size: 18px;
-    }
-
-    .talk-panel p:last-child {
-      margin-bottom: 0;
-    }
-
-    .filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .filter-button {
-      min-height: 40px;
-      padding: 8px 13px;
-      border: 1px solid rgba(32, 36, 38, 0.15);
-      background: rgba(255, 255, 255, 0.72);
-      color: #44504b;
-      font: 700 14px var(--sans);
-      cursor: pointer;
-    }
-
-    .filter-button.active {
-      background: var(--jade);
-      color: #fff;
-      border-color: var(--jade);
-    }
-
-    .tool-grid {
+    .talk-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
 
-    .tool-card {
-      min-height: 238px;
+    .talk {
       padding: 22px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(255, 255, 255, 0.78);
-      transition: transform 160ms ease, box-shadow 160ms ease;
+      border: 1px solid rgba(32, 36, 38, 0.12);
+      background: rgba(255, 255, 255, 0.82);
     }
 
-    .tool-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 42px rgba(32, 36, 38, 0.1);
-    }
+    .talk:nth-child(1) { border-top: 4px solid var(--green); }
+    .talk:nth-child(2) { border-top: 4px solid var(--blue); }
+    .talk:nth-child(3) { border-top: 4px solid var(--red); }
 
-    .tool-card.is-hidden {
-      display: none;
-    }
-
-    .tool-card h3 {
-      margin: 0 0 12px;
-      color: #25302c;
-      font-size: 22px;
-    }
-
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 0 0 14px;
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding: 3px 8px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(246, 247, 243, 0.9);
-      color: #525b57;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .tool-card p {
-      margin: 0 0 12px;
-      color: #4b5651;
-      font-size: 14px;
-    }
-
-    .tool-card p:last-child {
-      margin-bottom: 0;
-    }
-
-    .poc {
-      display: grid;
-      grid-template-columns: 0.92fr 1.08fr;
-      gap: 22px;
-      align-items: start;
-    }
-
-    .phase-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .phase {
-      display: grid;
-      grid-template-columns: 62px minmax(0, 1fr);
-      gap: 16px;
-      padding: 20px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(255, 255, 255, 0.78);
-    }
-
-    .phase mark {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      background: var(--bluewash);
-      color: var(--cobalt);
-      font: 800 18px var(--serif);
-    }
-
-    .phase h3 {
-      margin: 0 0 8px;
-      font-size: 21px;
-    }
-
-    .phase p {
-      margin: 0;
+    .talk p {
+      margin: 10px 0 0;
       color: var(--muted);
-      font-size: 14px;
-    }
-
-    .metric-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-    }
-
-    .metric-table th,
-    .metric-table td {
-      padding: 16px 18px;
-      border: 1px solid rgba(32, 36, 38, 0.1);
-      text-align: left;
-      vertical-align: top;
-    }
-
-    .metric-table th {
-      color: var(--jade);
-      font: 800 14px var(--sans);
-      text-transform: uppercase;
-      letter-spacing: 0;
-      background: rgba(217, 236, 230, 0.48);
-    }
-
-    .metric-table td {
-      color: #48534f;
-      font-size: 14px;
-    }
-
-    .source-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .source-group {
-      padding: 22px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(255, 255, 255, 0.78);
-    }
-
-    .source-group h3 {
-      margin: 0 0 14px;
-      font-size: 21px;
-    }
-
-    .source-group a {
-      color: #285b86;
-      border-bottom: 1px solid rgba(40, 91, 134, 0.28);
-    }
-
-    .source-group a:hover {
-      color: var(--vermilion);
-      border-color: rgba(182, 74, 52, 0.35);
-    }
-
-    .questions {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .question {
-      min-height: 156px;
-      padding: 20px;
-      border: 1px solid rgba(32, 36, 38, 0.11);
-      background: rgba(32, 36, 38, 0.92);
-      color: #fff;
-    }
-
-    .question strong {
-      display: block;
-      margin-bottom: 10px;
-      color: #d9ece6;
-      font-family: var(--serif);
-      font-size: 20px;
-      line-height: 1.2;
-    }
-
-    .question span {
-      color: rgba(255, 255, 255, 0.78);
-      font-size: 14px;
     }
 
     .footer {
@@ -697,479 +405,240 @@
       border-top: 1px solid rgba(32, 36, 38, 0.08);
     }
 
-    @keyframes rise {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 1020px) {
-      .hero-grid,
-      .verdict-grid,
-      .section-head,
-      .talk-grid,
-      .poc {
+    @media (max-width: 1060px) {
+      .hero, .section-head, .example {
         grid-template-columns: 1fr;
       }
-
-      .hero {
-        min-height: auto;
-      }
-
-      .hero-visual {
-        min-height: 430px;
-        border-left: 0;
-        border-top: 1px solid rgba(32, 36, 38, 0.12);
-        padding: 30px 0 0;
-      }
-
-      #graphCanvas {
-        inset: 0;
-        width: 100%;
-        height: 100%;
-      }
-
-      .tool-grid,
-      .source-grid {
+      .term-grid, .truth-grid, .talk-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-
-      .questions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .hero { min-height: auto; }
     }
 
     @media (max-width: 720px) {
-      .shell {
-        width: min(100% - 26px, 1180px);
-      }
-
-      .topbar {
-        position: static;
-      }
-
+      .shell { width: min(100% - 26px, 1180px); }
+      .topbar { position: static; }
       .topbar .shell {
         align-items: flex-start;
         flex-direction: column;
         padding: 14px 0;
       }
-
-      .nav {
-        justify-content: flex-start;
-      }
-
-      .hero {
-        padding-top: 42px;
-      }
-
-      h1 {
-        font-size: 42px;
-      }
-
-      .hero-copy,
-      .talk-panel p {
-        font-size: 16px;
-      }
-
-      .graph-labels,
-      .fit-list,
-      .tool-grid,
-      .source-grid,
-      .questions {
+      .nav { justify-content: flex-start; }
+      .term-grid, .truth-grid, .talk-grid {
         grid-template-columns: 1fr;
       }
-
-      .signal:nth-child(2),
-      .signal:nth-child(3) {
-        margin-top: 0;
-      }
-
-      section {
-        padding: 54px 0;
-      }
-
-      .statement,
-      .talk-panel {
-        padding: 24px;
-      }
-
-      .metric-table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-    }
-
-    @media print {
-      .topbar,
-      #graphCanvas,
-      .hero-actions,
-      .filter-bar {
-        display: none;
-      }
-
-      body {
-        background: #fff;
-      }
-
-      section,
-      .hero {
-        padding: 32px 0;
-      }
-
-      .tool-card.is-hidden {
-        display: block;
-      }
+      h1 { font-size: 42px; }
+      section { padding: 46px 0; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="shell">
-      <a class="brand" href="#top" aria-label="返回顶部">
+      <a class="brand" href="#top">
         <strong>GraphRAG</strong>
         <span>Concept Explainer</span>
       </a>
       <nav class="nav" aria-label="页面导航">
-        <a href="#verdict">结论</a>
-        <a href="#process">流程</a>
-        <a href="#talk">发言稿</a>
-        <a href="#tools">工具</a>
-        <a href="#poc">POC</a>
-        <a href="#sources">资料</a>
+        <a href="#truths">三件事</a>
+        <a href="#terms">易卡概念</a>
+        <a href="#flow">流程关系</a>
+        <a href="#example">样例</a>
+        <a href="research_outline.html">后续计划</a>
+        <a href="kg_demo.html">工具演示</a>
       </nav>
     </div>
   </header>
 
   <main id="top">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="shell hero-grid">
-        <div>
-          <p class="eyebrow">概念解释手册</p>
-          <h1 id="hero-title">把知识图谱和 GraphRAG 的关系讲清楚。</h1>
-          <p class="hero-copy">
-            这页负责解释概念：知识图谱不是一张图片，而是实体、关系和属性组成的数据结构；GraphRAG 则是利用这种结构来增强检索和生成的 RAG 方法。
-          </p>
-          <div class="hero-actions">
-            <a class="action primary" href="#talk">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5h8M8 12h8M8 19h5M4 4v16" stroke-width="2" stroke-linecap="round"/></svg>
-              今晚发言稿
-            </a>
-            <a class="action" href="research_outline.html">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-width="2" stroke-linecap="round"/></svg>
-              调研大纲
-            </a>
-            <a class="action" href="kg_demo.html">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v6M12 15v6M5.8 6.5l5.2 3M13 14l5.2 3M18.2 6.5l-5.2 3M11 14l-5.2 3" stroke-width="2" stroke-linecap="round"/><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM4.5 15.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM19.5 15.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM4.5 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM19.5 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" stroke-width="2"/></svg>
-              三种图谱演示
-            </a>
-            <a class="action" href="papers/2404.16130_microsoft_graphrag_from_local_to_global.pdf">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM14 2v6h6" stroke-width="2" stroke-linejoin="round"/></svg>
-              Microsoft 论文
-            </a>
-            <a class="action" href="#sources">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5" stroke-width="2" stroke-linecap="round"/></svg>
-              本地资料入口
-            </a>
-          </div>
-        </div>
-
-        <div class="hero-visual" aria-label="GraphRAG 知识流可视化">
-          <canvas id="graphCanvas"></canvas>
-          <div class="graph-labels">
-            <article class="signal">
-              <strong>Document</strong>
-              <span>资料不再只是碎片，而是可以追溯来源的知识单元。</span>
-            </article>
-            <article class="signal">
-              <strong>Entity</strong>
-              <span>人、组织、设备、事件和概念被抽取成可连接节点。</span>
-            </article>
-            <article class="signal">
-              <strong>Relation</strong>
-              <span>关系让模型看到跨 chunk、跨文档的隐含路径。</span>
-            </article>
-            <article class="signal">
-              <strong>Community</strong>
-              <span>社区摘要承担全局归纳，适合回答主题和趋势问题。</span>
-            </article>
-          </div>
+    <section class="hero shell">
+      <div>
+        <p class="eyebrow">概念解释手册</p>
+        <h1>先把“图”和 GraphRAG 的边界讲清楚。</h1>
+        <p class="hero-copy">这页不是给老师看的工作计划，而是现场解释概念时的备忘：知识图谱是可查询的数据结构，Graph 是知识结构，GraphRAG 是把这个结构用于检索增强生成的一套方法。</p>
+        <div class="hero-links">
+          <a class="action" href="research_outline.html">返回后续计划</a>
+          <a class="action" href="../../kg_pipeline/poc/graph_demo.html">打开最小 POC 图谱</a>
         </div>
       </div>
+      <aside class="quick-panel">
+        <h2>一句话校准</h2>
+        <p>当前最该验证的是 graph construction：能不能从燃气轮机/设备故障文本中抽出设备、部件、故障、原因和措施之间的可靠关系。GraphRAG 问答可以排在后面。</p>
+      </aside>
     </section>
 
-    <section id="verdict">
+    <section class="band" id="truths">
       <div class="shell">
         <div class="section-head">
-          <div class="kicker">01 Verdict</div>
+          <div class="kicker">01 Three Truths</div>
           <div>
-            <h2>先讲边界，再讲方案。</h2>
-            <p class="section-lede">GraphRAG 的投入比普通 RAG 更高，所以调研重点不是“更先进”，而是“什么时候值得”。</p>
+            <h2>最容易混淆的三件事。</h2>
+            <p class="section-lede">先把这三句话说稳，后面工具路线就不会混成一团。</p>
           </div>
         </div>
-        <div class="verdict-grid">
-          <article class="statement">
-            <h3>一句话判断</h3>
-            <p>
-              如果项目目标是让模型读几份文档回答具体问题，普通 RAG 足够；如果目标是理解一批资料中的实体关系、主题结构和跨文档关联，GraphRAG 值得做 POC。
-            </p>
+        <div class="truth-grid">
+          <article class="truth">
+            <h3>知识图谱不是图片</h3>
+            <p>图片只是展示方式。真正的知识图谱是实体、关系、属性和来源证据组成的数据结构，可以保存、查询、过滤、审计和更新。</p>
           </article>
-          <div class="fit-list">
-            <article class="mini-panel good">
-              <h3>适合</h3>
-              <ul>
-                <li>多文档综合分析</li>
-                <li>多跳关系查询</li>
-                <li>实体关联追踪</li>
-                <li>全局主题归纳</li>
-              </ul>
-            </article>
-            <article class="mini-panel warn">
-              <h3>谨慎</h3>
-              <ul>
-                <li>单篇文档事实问答</li>
-                <li>关系结构不明显的小数据集</li>
-                <li>低延迟、低成本的简单问答</li>
-                <li>缺少评估集的直接落地</li>
-              </ul>
-            </article>
-          </div>
+          <article class="truth">
+            <h3>Graph 先于 GraphRAG</h3>
+            <p>Graph 是“知识如何连起来”；GraphRAG 是“检索和生成时如何利用这些连接”。如果图都还没抽可靠，问答效果很难稳定。</p>
+          </article>
+          <article class="truth">
+            <h3>工具不是同一类东西</h3>
+            <p>Microsoft GraphRAG 更像完整方法流程，Neo4j 更像图数据库落地，LlamaIndex/LangChain 更像应用框架和快速集成方式。</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="process-band" id="process">
+    <section class="shell" id="terms">
+      <div class="section-head">
+        <div class="kicker">02 Click Cards</div>
+        <div>
+          <h2>点击卡片翻面，解释容易卡住的词。</h2>
+          <p class="section-lede">这些词在汇报里不用讲很深，但要能用一句话讲准。</p>
+        </div>
+      </div>
+      <div class="term-grid" aria-label="概念翻卡">
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>知识图谱</strong><span>Knowledge Graph</span></span>
+            <span class="face back"><strong>结构化知识</strong><p>把“燃气轮机”“压气机”“轴承过温”“润滑不足”等实体，用“包含”“出现”“可能原因”“处理建议”等关系连起来。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>Graph</strong><span>图结构</span></span>
+            <span class="face back"><strong>节点和边</strong><p>节点通常是实体或文档片段，边是实体之间的关系。它可以存在 JSON、CSV、图数据库或内存对象里。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>GraphRAG</strong><span>图增强 RAG</span></span>
+            <span class="face back"><strong>用图帮助问答</strong><p>先抽实体关系建图，再用图检索相关实体、路径、社区摘要和原文证据，最后交给 LLM 生成答案。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>RAG</strong><span>检索增强生成</span></span>
+            <span class="face back"><strong>先找资料再回答</strong><p>普通 RAG 常用向量检索找相似文本块；GraphRAG 在此之外引入实体关系和图遍历。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>LLM</strong><span>大语言模型</span></span>
+            <span class="face back"><strong>不是数据库</strong><p>LLM 可用于抽实体、抽关系、归一化、写摘要和生成答案，但它可能漏抽或幻觉，所以需要 schema 和人工评审。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>token</strong><span>模型计量单位</span></span>
+            <span class="face back"><strong>成本和上下文</strong><p>token 可粗略理解为模型处理文本的单位。文档越长、抽取越多、摘要越多，时间和费用越高。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>POC</strong><span>概念验证</span></span>
+            <span class="face back"><strong>小而可检查</strong><p>POC 不是完整系统，而是用小样例证明路线是否值得继续。当前 POC 先用手工/规则基线。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>Schema</strong><span>图谱约束</span></span>
+            <span class="face back"><strong>抽什么和怎么连</strong><p>schema 规定实体类型、关系类型、属性和证据字段。没有 schema，抽取结果容易变成不可比较的散乱文本。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>chunk</strong><span>文本切片</span></span>
+            <span class="face back"><strong>关系抽取的上下文</strong><p>chunk 太短会丢上下文，太长会增加成本。复杂版式文档还要注意双栏、表格和 OCR 顺序。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>三元组</strong><span>subject-predicate-object</span></span>
+            <span class="face back"><strong>最小关系表达</strong><p>例如“齿轮箱过温 --可能原因--> 润滑不足”。它是最小 POC 里最容易人工检查的输出形式。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>置信度</strong><span>confidence</span></span>
+            <span class="face back"><strong>不是准确率</strong><p>置信度只是抽取过程给出的可信提示。最终仍要看证据是否支持，以及人工评审是否通过。</p></span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-inner">
+            <span class="face front"><strong>人工评审</strong><span>manual review</span></span>
+            <span class="face back"><strong>POC 必需</strong><p>最小样例里要逐条检查关系：原文是否支持、关系类型是否合适、实体边界是否准确、是否需要合并同义词。</p></span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section class="band" id="flow">
       <div class="shell">
         <div class="section-head">
-          <div class="kicker">02 Pipeline</div>
+          <div class="kicker">03 Flow</div>
           <div>
-            <h2>从文档到答案的九步。</h2>
-            <p class="section-lede">GraphRAG 最核心的变化，是先把知识结构组织出来，再按结构检索和聚合。</p>
+            <h2>Graph 与 GraphRAG 的关系。</h2>
+            <p class="section-lede">下次会议更应该先展示前两步，后面几步作为路线规划。</p>
           </div>
         </div>
-        <div class="pipeline" aria-label="GraphRAG 流程">
-          <div class="step"><code>01</code><strong>文档加载</strong><span>PDF、网页、Markdown、业务文档进入资料池。</span></div>
-          <div class="step"><code>02</code><strong>文档切分</strong><span>切成 chunk，并保留来源、页码和上下文。</span></div>
-          <div class="step"><code>03</code><strong>实体抽取</strong><span>抽取人、组织、设备、事件、概念等节点。</span></div>
-          <div class="step"><code>04</code><strong>关系抽取</strong><span>识别属于、导致、影响、依赖、提到等关系。</span></div>
-          <div class="step"><code>05</code><strong>图谱构建</strong><span>把 document、chunk、entity、relationship 组织为图。</span></div>
-          <div class="step"><code>06</code><strong>实体归一</strong><span>合并别名、同义词、大小写差异和重复节点。</span></div>
-          <div class="step"><code>07</code><strong>社区发现</strong><span>找出相关实体群组，形成更高层级的主题结构。</span></div>
-          <div class="step"><code>08</code><strong>社区摘要</strong><span>为实体群组生成可检索、可引用的摘要。</span></div>
-          <div class="step"><code>09</code><strong>混合查询</strong><span>结合向量检索、图遍历、实体检索和摘要生成答案。</span></div>
+        <div class="flow" aria-label="GraphRAG 概念流程">
+          <div class="step"><code>01</code><strong>文本</strong><span>燃气轮机说明、维修记录、报警日志、技术手册。</span></div>
+          <div class="step"><code>02</code><strong>抽取</strong><span>识别实体、关系、属性和来源证据。</span></div>
+          <div class="step"><code>03</code><strong>Graph</strong><span>形成可检查、可查询、可更新的知识结构。</span></div>
+          <div class="step"><code>04</code><strong>检索</strong><span>按实体、路径、社区摘要和原文 chunk 召回上下文。</span></div>
+          <div class="step"><code>05</code><strong>生成</strong><span>把结构化关系和原文证据交给 LLM 生成答案。</span></div>
         </div>
       </div>
     </section>
 
-    <section id="talk">
+    <section class="shell" id="example">
+      <div class="section-head">
+        <div class="kicker">04 Example</div>
+        <div>
+          <h2>一个最小关系例子。</h2>
+          <p class="section-lede">它不是最终效果，只是让老师能检查“关系是否来自文本”。</p>
+        </div>
+      </div>
+      <div class="example">
+        <article class="box green">
+          <h3>样例文本</h3>
+          <p>GT-07 燃气轮机在升负荷过程中压气机出口温度偏高，同时振动值升至 7.2 mm/s。检修记录显示进气滤网堵塞，清理滤网并复位温度传感器后，温度恢复正常。</p>
+        </article>
+        <article class="box blue">
+          <h3>可检查三元组</h3>
+          <pre>GT-07 --类型--> 燃气轮机
+GT-07 --出现故障--> 压气机出口温度偏高
+GT-07 --出现故障--> 振动值升高
+压气机出口温度偏高 --可能原因--> 进气滤网堵塞
+进气滤网堵塞 --处理建议--> 清理滤网
+温度传感器 --处理建议--> 复位温度传感器</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="band">
       <div class="shell">
         <div class="section-head">
-          <div class="kicker">03 Talk Track</div>
-          <div>
-            <h2>今晚可以直接这样讲。</h2>
-            <p class="section-lede">按时间选择版本，越往后越适合展开讨论。</p>
-          </div>
+          <div class="kicker">05 Talk Track</div>
+          <h2>现场可用的三种说法。</h2>
         </div>
         <div class="talk-grid">
-          <div class="tabs" role="tablist" aria-label="发言版本">
-            <button class="tab-button active" type="button" data-tab="short" role="tab" aria-selected="true">30 秒版</button>
-            <button class="tab-button" type="button" data-tab="medium" role="tab" aria-selected="false">2 分钟版</button>
-            <button class="tab-button" type="button" data-tab="long" role="tab" aria-selected="false">5 分钟版</button>
-            <button class="tab-button" type="button" data-tab="questions" role="tab" aria-selected="false">可抛问题</button>
-          </div>
-          <div>
-            <article class="talk-panel active" data-panel="short" role="tabpanel">
-              <p>我这边快速调研了一下 GraphRAG。它不是简单替代普通 RAG，而是在传统向量检索之外，引入知识图谱，把文档里的实体、关系、事件等结构化出来。</p>
-              <p>它更适合多文档、多跳关系和全局归纳类问题，比如“这批文档的主要主题是什么”“某个实体和哪些事件有关”“跨文档有哪些隐藏关联”。</p>
-            </article>
-            <article class="talk-panel" data-panel="medium" role="tabpanel">
-              <p>GraphRAG 的典型流程是：文档切分、实体和关系抽取、构建知识图谱、实体去重和归一、图聚类或社区发现、生成社区摘要，最后查询时结合向量检索、图遍历和社区摘要。</p>
-              <p>相比普通 RAG，它的优势是能保留跨 chunk、跨文档的关系，适合回答更复杂的问题；缺点是建图成本高，实体和关系抽取质量不稳定，图谱更新和评估也更复杂。</p>
-              <p>工具上建议先看三条线：Microsoft GraphRAG 适合理解完整流程；Neo4j GraphRAG 适合落地到图数据库；LlamaIndex 或 LangChain 适合快速集成到已有 RAG 项目。</p>
-            </article>
-            <article class="talk-panel" data-panel="long" role="tabpanel">
-              <p>我的初步结论是：GraphRAG 的价值主要体现在“关系”和“全局视角”上。普通 RAG 往往是从问题出发，找最相似的几个文本块，然后交给 LLM 总结；但如果问题涉及多个实体、多个文件或者整体主题，单纯相似度检索可能召回不完整。</p>
-              <p>GraphRAG 会先离线构建一个图结构。图里一般有 Document、Chunk、Entity、Relationship、Community 等节点或数据表。实体和关系来自 LLM 或信息抽取模型，community summary 则用于回答全局性问题。</p>
-              <p>但它也有明显风险：实体重复、关系幻觉、schema 不稳定、跨 chunk 关系丢失、增量更新成本高。所以建议先做小 POC，不要一开始追求完整系统。</p>
-            </article>
-            <article class="talk-panel" data-panel="questions" role="tabpanel">
-              <div class="questions">
-                <div class="question"><strong>场景</strong><span>我们更偏问单个文件细节，还是跨文档综合分析？</span></div>
-                <div class="question"><strong>Schema</strong><span>是否已有稳定的实体类型和关系类型？</span></div>
-                <div class="question"><strong>评估</strong><span>看答案完整性、引用准确性、成本、延迟，还是人工评分？</span></div>
-                <div class="question"><strong>Demo</strong><span>先用 Microsoft GraphRAG，还是 Neo4j GraphRAG？</span></div>
-              </div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="tools">
-      <div class="shell">
-        <div class="section-head">
-          <div class="kicker">04 Tools</div>
-          <div>
-            <h2>工具路线不要铺太散。</h2>
-            <p class="section-lede">先抓住完整流程、图数据库落地和快速集成三条主线，其他工具作为补充。</p>
-          </div>
-        </div>
-        <div class="filter-bar" aria-label="工具筛选">
-          <button class="filter-button active" type="button" data-filter="all">全部</button>
-          <button class="filter-button" type="button" data-filter="primary">优先调研</button>
-          <button class="filter-button" type="button" data-filter="production">落地集成</button>
-          <button class="filter-button" type="button" data-filter="extract">抽取工具</button>
-          <button class="filter-button" type="button" data-filter="advanced">扩展方向</button>
-        </div>
-        <div class="tool-grid">
-          <article class="tool-card" data-category="primary production">
-            <h3>Microsoft GraphRAG</h3>
-            <div class="tag-row"><span class="tag">完整流程</span><span class="tag">社区摘要</span><span class="tag">Global Search</span></div>
-            <p>最适合理解标准 GraphRAG 为什么这样设计，包含 indexing、query、community report、local/global/DRIFT search。</p>
-            <p><strong>建议：</strong>首选调研对象。</p>
+          <article class="talk">
+            <h3>说知识图谱</h3>
+            <p>知识图谱不是可视化图片，图片只是把图谱画出来。真正重要的是实体、关系、属性和证据能被系统查询和维护。</p>
           </article>
-          <article class="tool-card" data-category="primary production">
-            <h3>Neo4j GraphRAG</h3>
-            <div class="tag-row"><span class="tag">图数据库</span><span class="tag">Cypher</span><span class="tag">KG Builder</span></div>
-            <p>适合把 Document、Chunk、Entity、Relationship 存进 Neo4j，方便查询、可视化和工程落地。</p>
-            <p><strong>建议：</strong>首选落地对象。</p>
+          <article class="talk">
+            <h3>说 GraphRAG</h3>
+            <p>GraphRAG 不是替代所有 RAG，而是在普通检索之外增加图结构，适合多实体、多跳关系和跨文档归纳。</p>
           </article>
-          <article class="tool-card" data-category="production">
-            <h3>LlamaIndex PropertyGraphIndex</h3>
-            <div class="tag-row"><span class="tag">Python POC</span><span class="tag">Property Graph</span></div>
-            <p>和 LlamaIndex ingestion/query 体系结合较好，适合快速验证图谱索引和查询。</p>
-            <p><strong>建议：</strong>适合时间紧时做轻量 demo。</p>
-          </article>
-          <article class="tool-card" data-category="production">
-            <h3>LangChain + Neo4j</h3>
-            <div class="tag-row"><span class="tag">LLMGraphTransformer</span><span class="tag">集成灵活</span></div>
-            <p>适合已有 LangChain 项目，用 LLM 生成图文档并写入 Neo4j。</p>
-            <p><strong>风险：</strong>质量高度依赖 prompt、模型和 schema 约束。</p>
-          </article>
-          <article class="tool-card" data-category="advanced">
-            <h3>LightRAG</h3>
-            <div class="tag-row"><span class="tag">轻量</span><span class="tag">速度</span></div>
-            <p>强调 simple and fast 的 RAG 变体，和 Microsoft GraphRAG 思路不完全相同。</p>
-            <p><strong>建议：</strong>作为扩展调研。</p>
-          </article>
-          <article class="tool-card" data-category="advanced">
-            <h3>Graphiti</h3>
-            <div class="tag-row"><span class="tag">Temporal KG</span><span class="tag">Agent Memory</span></div>
-            <p>面向动态、时间感知知识图谱，适合 agent memory 和持续变化的数据。</p>
-            <p><strong>建议：</strong>作为高级方向。</p>
-          </article>
-          <article class="tool-card" data-category="extract">
-            <h3>spaCy</h3>
-            <div class="tag-row"><span class="tag">NER</span><span class="tag">依存句法</span><span class="tag">规则</span></div>
-            <p>工程稳定、可训练、可加规则，适合实体预处理，但不是完整 GraphRAG 框架。</p>
-          </article>
-          <article class="tool-card" data-category="extract">
-            <h3>Stanford CoreNLP OpenIE</h3>
-            <div class="tag-row"><span class="tag">三元组</span><span class="tag">传统抽取</span></div>
-            <p>不依赖 LLM，可作为 baseline；语义质量和领域适配需要单独评估。</p>
-          </article>
-          <article class="tool-card" data-category="extract">
-            <h3>REBEL</h3>
-            <div class="tag-row"><span class="tag">关系抽取</span><span class="tag">模型对照</span></div>
-            <p>端到端抽取关系三元组，英文更合适，可作为 LLM 抽取效果的对照。</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="poc" class="process-band">
-      <div class="shell">
-        <div class="section-head">
-          <div class="kicker">05 POC</div>
-          <div>
-            <h2>用小数据集先验真价值。</h2>
-            <p class="section-lede">GraphRAG 的价值要靠复杂问题体现，POC 应该直接对比普通 RAG 和 GraphRAG。</p>
-          </div>
-        </div>
-        <div class="poc">
-          <div class="phase-list">
-            <article class="phase">
-              <mark>一</mark>
-              <div>
-                <h3>跑通 Microsoft GraphRAG</h3>
-                <p>重点看 entities、relationships、community reports 的输出质量。</p>
-              </div>
-            </article>
-            <article class="phase">
-              <mark>二</mark>
-              <div>
-                <h3>落库到 Neo4j</h3>
-                <p>观察图结构是否可查、可视化、可解释，是否能支持业务问题。</p>
-              </div>
-            </article>
-            <article class="phase">
-              <mark>三</mark>
-              <div>
-                <h3>和普通 RAG 对比</h3>
-                <p>如果复杂问题提升不明显，回到 hybrid RAG；如果提升明显，再投入 schema 和评估。</p>
-              </div>
-            </article>
-          </div>
-          <table class="metric-table">
-            <thead>
-              <tr>
-                <th>评估维度</th>
-                <th>观察点</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>答案完整性</td><td>是否覆盖问题多个方面，尤其是跨文档证据。</td></tr>
-              <tr><td>引用准确性</td><td>是否能回到原文来源，而不是只给抽象结论。</td></tr>
-              <tr><td>关系可信度</td><td>实体和关系是否真实来自文本，是否存在幻觉关系。</td></tr>
-              <tr><td>成本与延迟</td><td>建图 token 成本、查询 token 成本、索引时间和查询时间。</td></tr>
-              <tr><td>维护成本</td><td>新增文档后是否容易更新，社区摘要是否需要重算。</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="sources">
-      <div class="shell">
-        <div class="section-head">
-          <div class="kicker">06 Sources</div>
-          <div>
-            <h2>资料入口已经放好。</h2>
-            <p class="section-lede">优先读 Microsoft GraphRAG，再读 Neo4j，最后补 LlamaIndex、LangChain 和抽取工具。</p>
-          </div>
-        </div>
-        <div class="source-grid">
-          <article class="source-group">
-            <h3>必读</h3>
-            <ul>
-              <li><a href="papers/2404.16130_microsoft_graphrag_from_local_to_global.pdf">Microsoft GraphRAG 论文</a></li>
-              <li><a href="official_docs/microsoft_graphrag_README.md">Microsoft GraphRAG README</a></li>
-              <li><a href="official_docs/microsoft_graphrag_index_overview.html">Indexing Overview</a></li>
-              <li><a href="official_docs/microsoft_graphrag_drift_search_blog.html">DRIFT Search Blog</a></li>
-            </ul>
-          </article>
-          <article class="source-group">
-            <h3>落地工具</h3>
-            <ul>
-              <li><a href="papers/neo4j_developers_guide_graphrag.pdf">Neo4j Developer's Guide</a></li>
-              <li><a href="official_docs/neo4j_kg_builder_user_guide.html">Neo4j KG Builder</a></li>
-              <li><a href="official_docs/llamaindex_property_graph_index.html">LlamaIndex PropertyGraphIndex</a></li>
-              <li><a href="official_docs/langchain_neo4j_provider.html">LangChain Neo4j Provider</a></li>
-            </ul>
-          </article>
-          <article class="source-group">
-            <h3>扩展与抽取</h3>
-            <ul>
-              <li><a href="papers/2410.05779_lightrag_simple_fast_rag.pdf">LightRAG 论文</a></li>
-              <li><a href="official_docs/graphiti_README.md">Graphiti README</a></li>
-              <li><a href="official_docs/spacy_linguistic_features.html">spaCy 文档</a></li>
-              <li><a href="papers/2021_rebel_relation_extraction_by_end_to_end_language_generation.pdf">REBEL 论文</a></li>
-            </ul>
+          <article class="talk">
+            <h3>说当前任务</h3>
+            <p>当前阶段先证明能否抽出可靠 graph，再决定是否进入完整 GraphRAG 问答、Neo4j 落库或框架集成。</p>
           </article>
         </div>
       </div>
@@ -1177,121 +646,16 @@
   </main>
 
   <footer class="footer">
-    <div class="shell">
-      GraphRAG Research Pack, prepared for discussion. Local files are stored beside this page.
-    </div>
+    <div class="shell">概念解释页只负责“讲清楚”。后续计划见 research_outline.html，三条工具线见 kg_demo.html，最小 POC 见 kg_pipeline/poc/。</div>
   </footer>
 
   <script>
-    const canvas = document.getElementById("graphCanvas");
-    const ctx = canvas.getContext("2d");
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let width = 0;
-    let height = 0;
-    let nodes = [];
-
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      width = Math.max(1, rect.width);
-      height = Math.max(1, rect.height);
-      canvas.width = width * ratio;
-      canvas.height = height * ratio;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      nodes = Array.from({ length: 28 }, (_, index) => ({
-        x: 40 + Math.random() * Math.max(80, width - 80),
-        y: 40 + Math.random() * Math.max(80, height - 80),
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: (Math.random() - 0.5) * 0.22,
-        r: index % 7 === 0 ? 4.8 : 3.2,
-        tone: index % 3
-      }));
-    }
-
-    function drawGraph() {
-      ctx.clearRect(0, 0, width, height);
-      ctx.lineWidth = 1;
-
-      for (let i = 0; i < nodes.length; i += 1) {
-        for (let j = i + 1; j < nodes.length; j += 1) {
-          const a = nodes[i];
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const distance = Math.hypot(dx, dy);
-          if (distance < 150) {
-            const alpha = (1 - distance / 150) * 0.22;
-            ctx.strokeStyle = `rgba(32, 36, 38, ${alpha})`;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      nodes.forEach((node) => {
-        const colors = ["23, 117, 111", "49, 95, 157", "182, 74, 52"];
-        ctx.fillStyle = `rgba(${colors[node.tone]}, 0.78)`;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (!prefersReducedMotion) {
-          node.x += node.vx;
-          node.y += node.vy;
-          if (node.x < 20 || node.x > width - 20) node.vx *= -1;
-          if (node.y < 20 || node.y > height - 20) node.vy *= -1;
-        }
-      });
-
-      if (!prefersReducedMotion) {
-        requestAnimationFrame(drawGraph);
-      }
-    }
-
-    resizeCanvas();
-    drawGraph();
-    window.addEventListener("resize", () => {
-      resizeCanvas();
-      drawGraph();
-    }, { passive: true });
-
-    document.querySelectorAll(".tab-button").forEach((button) => {
-      button.addEventListener("click", () => {
-        const target = button.dataset.tab;
-        document.querySelectorAll(".tab-button").forEach((item) => {
-          item.classList.toggle("active", item === button);
-          item.setAttribute("aria-selected", item === button ? "true" : "false");
-        });
-        document.querySelectorAll(".talk-panel").forEach((panel) => {
-          panel.classList.toggle("active", panel.dataset.panel === target);
-        });
+    document.querySelectorAll(".flip-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const flipped = card.classList.toggle("is-flipped");
+        card.setAttribute("aria-pressed", flipped ? "true" : "false");
       });
     });
-
-    document.querySelectorAll(".filter-button").forEach((button) => {
-      button.addEventListener("click", () => {
-        const filter = button.dataset.filter;
-        document.querySelectorAll(".filter-button").forEach((item) => item.classList.toggle("active", item === button));
-        document.querySelectorAll(".tool-card").forEach((card) => {
-          const visible = filter === "all" || card.dataset.category.split(" ").includes(filter);
-          card.classList.toggle("is-hidden", !visible);
-        });
-      });
-    });
-
-    const navLinks = Array.from(document.querySelectorAll(".nav a"));
-    const sections = navLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          navLinks.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`));
-        }
-      });
-    }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
-
-    sections.forEach((section) => observer.observe(section));
   </script>
 </body>
 </html>

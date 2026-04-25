@@ -61,10 +61,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/power_rag_pipeline"]
+packages = ["data_pipeline/prototype/power_rag_pipeline"]
 
 [tool.mypy]
-files = ["src", "tests"]
+files = ["data_pipeline/prototype", "tests"]
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
@@ -74,7 +74,8 @@ warn_unused_ignores = true
 show_error_codes = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/integration", "tests/regression", "tests/performance"]
+python_files = ["test_*.py"]
 
 [tool.ruff]
 target-version = "py310"
