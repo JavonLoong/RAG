@@ -48,10 +48,55 @@ const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summa
 const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
 const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
+const PUBLIC_DEMO_COLLECTION = "gas_turbine_ocr_demo_snapshot";
+const PUBLIC_DEMO_UPDATED_AT = 1779033600;
+const PUBLIC_DEMO_FILES = [
+  { filename: "ocr_ready__gas_turbine_combustion_3rd.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气涡轮发动机燃烧 第3版.txt", size_kb: 9120, records: 442, chunks: 760, low_confidence: 1, avg_confidence: 0.724 },
+  { filename: "ocr_ready__advanced_gas_turbine_combustor.txt", display_name: "第一梯队_OCR质量较放心_4本/先进燃气轮机燃烧室.txt", size_kb: 12680, records: 603, chunks: 980, low_confidence: 5, avg_confidence: 0.714 },
+  { filename: "ocr_ready__gas_turbine_principle_structure_application_1.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机原理、结构与应用 上.txt", size_kb: 10140, records: 485, chunks: 820, low_confidence: 0, avg_confidence: 0.715 },
+  { filename: "ocr_ready__nanjing_gas_turbine_research_institute.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机（南京燃气轮机研究所编）.txt", size_kb: 1420, records: 62, chunks: 95, low_confidence: 1, avg_confidence: 0.764 }
+];
+const PUBLIC_DEMO_STATS = {
+  status: "public-demo",
+  collections: [{
+    name: PUBLIC_DEMO_COLLECTION,
+    count: 2655,
+    estimated_tokens: 1186000,
+    estimated_chars: 1740000,
+    source_type_counts: { PDF: 4, Text: 4, JSON: 2 },
+    sources: PUBLIC_DEMO_FILES.map((item) => item.display_name)
+  }],
+  total_documents: 4,
+  total_tokens_estimate: 1186000,
+  storage_size_mb: 33.56,
+  embedding_dim: ENGINE_DEFAULTS.dimension,
+  source_type_breakdown: { PDF: 4, Text: 4, JSON: 2 }
+};
+const PUBLIC_DEMO_SEARCH_RESULTS = [
+  {
+    text: "燃气轮机燃烧室的主要问题包括稳定燃烧、点火、燃烧效率、温度场均匀性以及污染物排放控制。检索时应同时保留原文证据和页码，便于后续人工复核。",
+    score: 0.842,
+    distance: 0.158,
+    metadata: { filename: "先进燃气轮机燃烧室.txt", source_kind: "Text", chunk_index: 128, record_id: "demo-advanced-combustor-p128", estimated_tokens: 96, page_nums: "128" }
+  },
+  {
+    text: "OCR 后的扫描书先进入文本块，再按 chunk 切分，随后进入向量检索或知识图谱抽取。两栏版面、低置信度页和公式密集页需要单独标记风险。",
+    score: 0.811,
+    distance: 0.189,
+    metadata: { filename: "燃气涡轮发动机燃烧 第3版.txt", source_kind: "Text", chunk_index: 64, record_id: "demo-combustion-p064", estimated_tokens: 88, page_nums: "64" }
+  },
+  {
+    text: "知识图谱抽取阶段更关注实体、关系、属性和 evidence 的一致性。关系粒度过粗会丢信息，过细则接近句子谓语翻译，后续检索价值有限。",
+    score: 0.786,
+    distance: 0.214,
+    metadata: { filename: "KG / GraphRAG POC 记录.json", source_kind: "JSON", chunk_index: 12, record_id: "demo-kg-poc-012", estimated_tokens: 82, page_nums: "-" }
+  }
+];
 
 const state = {
   online: false,
   localMode: FORCE_LOCAL_RUNTIME,
+  publicDemo: false,
   version: "",
   page: "overview",
   stats: null,
@@ -538,9 +583,108 @@ async function filesFromDrop(dataTransfer) {
 
 
 function cloneDefaultStats() { return typeof structuredClone === "function" ? structuredClone(DEFAULT_STATS) : JSON.parse(JSON.stringify(DEFAULT_STATS)); }
+function clonePublicDemoStats() { return typeof structuredClone === "function" ? structuredClone(PUBLIC_DEMO_STATS) : JSON.parse(JSON.stringify(PUBLIC_DEMO_STATS)); }
 function sourceKindFromName(name) { const ext = fileExtension(name); if (["json", "ipynb"].includes(ext)) return "JSON"; if (ext === "pdf") return "PDF"; if (ext === "docx") return "DOCX"; if (ext === "md" || ext === "markdown") return "Markdown"; if (ext === "csv") return "CSV"; if (ext === "tsv") return "TSV"; if (ext === "log") return "Log"; if (CODE_EXTENSIONS.has(ext)) return "Code"; return "Text"; }
 function purgeLocalVectorsByFilename(filenames) { const selected = new Set((filenames || []).filter(Boolean)); if (!selected.size) return; state.records = state.records.filter((record) => !selected.has(record.stored_filename)); state.chunks = state.chunks.filter((chunk) => !selected.has(chunk.metadata?.stored_filename)); state.lastSearch = null; }
 function buildLocalStats() { if (!state.chunks.length) return cloneDefaultStats(); const byKind = {}; state.chunks.forEach((chunk) => { const kind = chunk.metadata?.source_kind || "Other"; byKind[kind] = (byKind[kind] || 0) + 1; }); const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata?.estimated_tokens || 0), 0); const totalChars = state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0), 0); const storageBytes = state.uploads.reduce((sum, item) => sum + Number(item.file?.size || 0), 0) + state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0) * 2 + Number(chunk.vector?.byteLength || 0), 0); const sources = getProcessedUploads().map((item) => item.display_name || item.filename); return { status: "ok", collections: [{ name: LOCAL_COLLECTION_NAME, count: state.chunks.length, estimated_tokens: totalTokens, estimated_chars: totalChars, source_type_counts: byKind, sources }], total_documents: state.records.length, total_tokens_estimate: totalTokens, storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(3)), embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: byKind }; }
+
+function buildPublicDemoUploads() {
+  return PUBLIC_DEMO_FILES.map((item, index) => ({
+    filename: item.filename,
+    display_name: item.display_name,
+    size_kb: item.size_kb,
+    modified: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
+    uploaded_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
+    processed_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 1800),
+    source_kind: "Text",
+    status: "processed",
+    last_collection: PUBLIC_DEMO_COLLECTION,
+    last_records: item.records,
+    last_chunks: item.chunks,
+    last_error: null
+  }));
+}
+
+function buildPublicDemoProcessResult() {
+  const records = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.records, 0);
+  const chunks = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.chunks, 0);
+  return {
+    requested_filenames: PUBLIC_DEMO_FILES.map((item) => item.filename),
+    records_processed: records,
+    chunks_written: chunks,
+    files_succeeded: PUBLIC_DEMO_FILES.length,
+    files_failed: 0,
+    elapsed_s: 184.6,
+    skipped_already_processed: [],
+    file_summaries: PUBLIC_DEMO_FILES.map((item) => ({
+      source_file: item.filename,
+      source_kind: "Text",
+      status: "ok",
+      records_extracted: item.records
+    })),
+    quality_report: {
+      chunks: { total_chunks: chunks, avg_length: 655, min_length: 118, max_length: 914 },
+      documents: PUBLIC_DEMO_FILES.map((item, index) => ({
+        doc_id: index + 1,
+        filenames: [item.filename],
+        block_count: item.records,
+        short_blocks: item.low_confidence,
+        label_distribution: { ocr_page: item.records, low_confidence: item.low_confidence }
+      })),
+      issues: [
+        "公开页只展示质量较稳定的 OCR 文本样例，不包含完整 1.31G 原始材料。",
+        "两栏页、公式密集页和低置信度页仍需要后续复核。"
+      ],
+      issue_count: 2
+    }
+  };
+}
+
+function activatePublicDemoSnapshot() {
+  state.publicDemo = true;
+  state.localMode = true;
+  state.online = true;
+  state.version = "public-demo";
+  state.stats = clonePublicDemoStats();
+  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
+  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
+  state.uploads = buildPublicDemoUploads();
+  state.pendingUploads = [];
+  state.processedUploads = state.uploads.slice();
+  state.lastProcess = buildPublicDemoProcessResult();
+  state.benchmark = {
+    collection: PUBLIC_DEMO_COLLECTION,
+    insert_seconds: 184.6,
+    insert_docs_per_second: 8.62,
+    query_seconds: 0.48,
+    query_qps: 20.83,
+    avg_query_latency_ms: 46.2,
+    p95_query_latency_ms: 71.5,
+    embedding_backend: "snapshot",
+    embedding_model: `hash-${ENGINE_DEFAULTS.dimension}d demo`
+  };
+  state.timeline = [
+    { reason: "ocr", label: "OCR", docs: 4, tokens: 320000, collections: 1, latency: 0, pdf: 4, text: 0, json: 0, other: 0 },
+    { reason: "chunk", label: "分块", docs: 4, tokens: 780000, collections: 1, latency: 0, pdf: 4, text: 4, json: 0, other: 0 },
+    { reason: "index", label: "索引", docs: 4, tokens: 1186000, collections: 1, latency: 46.2, pdf: 4, text: 4, json: 2, other: 0 }
+  ];
+  state.activity = [
+    { id: "demo-1", level: "success", title: "公开演示快照", detail: "已展示 4 本 OCR 质量较放心的燃气轮机材料。", at: Date.now() - 1000 * 60 * 8 },
+    { id: "demo-2", level: "success", title: "OCR 质量检查", detail: "总页数 5483 页已完成，公开页先放较稳定样例。", at: Date.now() - 1000 * 60 * 16 },
+    { id: "demo-3", level: "warning", title: "后端未部署到 Pages", detail: "GitHub Pages 只托管静态页，真实 ChromaDB 需要单独后端。", at: Date.now() - 1000 * 60 * 25 }
+  ];
+}
+
+async function refreshPublicDemoStats() {
+  state.stats = clonePublicDemoStats();
+  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
+  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
+  rememberTimeline("stats");
+  renderCollectionSpectrum();
+  renderCollectionList();
+  renderTrendChart();
+  renderSummaryMetrics();
+}
 
 function buildLocalUploadItem(file) {
   const displayName = relativePathOf(file);
@@ -727,6 +871,27 @@ async function runLocalSearch() {
   if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
   const topK = Number(els.searchTopK?.value || 5);
   const started = performance.now();
+  if (state.publicDemo && !state.chunks.length) {
+    const results = PUBLIC_DEMO_SEARCH_RESULTS.slice(0, topK).map((item, index) => ({
+      ...item,
+      score: Number(Math.max(0.1, item.score - index * 0.018).toFixed(4)),
+      distance: Number(Math.min(0.99, item.distance + index * 0.018).toFixed(4))
+    }));
+    state.lastSearch = {
+      query,
+      collection: PUBLIC_DEMO_COLLECTION,
+      latency_ms: Number((performance.now() - started + 38.6).toFixed(2)),
+      results,
+      embedding_backend: "public-demo"
+    };
+    rememberTimeline("search");
+    renderSearchResults();
+    renderTrendChart();
+    renderSummaryMetrics();
+    addActivity("success", "演示检索完成", `查询“${query}”返回 ${results.length} 条样例证据。`);
+    showToast(`演示检索完成，返回 ${results.length} 条样例。`, "success");
+    return;
+  }
   if (!state.chunks.length) {
     state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "No local index yet. Process files first." };
     renderSearchResults();
@@ -1187,7 +1352,11 @@ function renderSparkline(svg, values, color) {
 
 function renderStatus() {
   if (!els.statusText || !els.refreshStamp) return;
-  if (state.localMode) {
+  if (state.publicDemo) {
+    els.statusText.textContent = "公开演示快照已加载。GitHub Pages 只展示成果，真实 ChromaDB 需要后端服务。";
+    els.refreshStamp.textContent = `Demo snapshot ${snapshotClock()}`;
+    setStatusLevel("success");
+  } else if (state.localMode) {
     els.statusText.textContent = "Browser-local runtime is ready. No localhost:8000 server is required.";
     els.refreshStamp.textContent = `Local session ${snapshotClock()}`;
     setStatusLevel("success");
@@ -1753,9 +1922,12 @@ function renderAll() {
 
 async function refreshHealth() {
   if (FORCE_LOCAL_RUNTIME) {
-    state.localMode = true;
-    state.online = true;
-    state.version = "browser-local";
+    if (/\.github\.io$/i.test(window.location.hostname)) activatePublicDemoSnapshot();
+    else {
+      state.localMode = true;
+      state.online = true;
+      state.version = "browser-local";
+    }
     renderStatus();
     return;
   }
@@ -1773,6 +1945,7 @@ async function refreshHealth() {
 }
 
 async function refreshStats() {
+  if (state.publicDemo) { await refreshPublicDemoStats(); return; }
   if (state.localMode) { await refreshLocalStats(); return; }
   const stats = await requestJson("/api/stats");
   state.stats = stats;
@@ -1788,6 +1961,7 @@ async function refreshStats() {
 }
 
 async function refreshUploads() {
+  if (state.publicDemo) { state.pendingUploads = []; state.processedUploads = state.uploads.slice(); renderUploads(); renderProcessedUploads(); return; }
   if (state.localMode) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
   const payload = await requestJson("/api/uploads");
   state.uploads = Array.isArray(payload.files) ? payload.files : [];
@@ -1825,6 +1999,10 @@ function isSupportedFile(file) {
 
 
 async function uploadFiles(fileList) {
+  if (state.publicDemo) {
+    showToast("公开演示页不接收上传；真实上传需要后端服务。", "warning");
+    return;
+  }
   const incoming = dedupeFiles(Array.from(fileList || []));
   const files = incoming.filter(isSupportedFile);
   const skippedCount = incoming.length - files.length;
@@ -1905,6 +2083,10 @@ async function uploadFiles(fileList) {
 }
 
 async function deleteUpload(filename, options = {}) {
+  if (state.publicDemo) {
+    showToast("公开演示页不删除样例文件。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalUpload(filename, options);
     return;
@@ -1923,6 +2105,10 @@ async function deleteUpload(filename, options = {}) {
 
 
 async function deleteProcessedUploads(filenames) {
+  if (state.publicDemo) {
+    showToast("公开演示页不删除样例文件。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalProcessedUploads(filenames);
     return;
@@ -1951,12 +2137,20 @@ async function deleteProcessedUploads(filenames) {
 }
 
 function toggleProcessedEditMode(force) {
+  if (state.publicDemo) {
+    showToast("公开演示页只展示成果，不编辑样例文件。", "warning");
+    return;
+  }
   state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
   if (!state.processedEditMode) state.selectedProcessedUploads.clear();
   renderProcessedUploads();
 }
 
 async function runProcess() {
+  if (state.publicDemo) {
+    showToast("公开演示页已预置处理摘要；真实入库需要后端服务。", "warning");
+    return;
+  }
   if (state.localMode) {
     await runLocalProcess();
     return;
@@ -2060,6 +2254,10 @@ async function runSearch() {
 }
 
 async function deleteCollection(name) {
+  if (state.publicDemo) {
+    showToast("公开演示集合不能在 Pages 上删除。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalCollection(name);
     return;
@@ -2075,6 +2273,11 @@ async function deleteCollection(name) {
 }
 
 async function runBenchmark() {
+  if (state.publicDemo) {
+    renderBenchmark();
+    showToast("公开页显示的是演示压测快照。", "success");
+    return;
+  }
   if (state.localMode) {
     await runLocalBenchmark();
     return;
@@ -2234,7 +2437,11 @@ function bindEvents() {
 
     if (selectButton) {
       state.primaryCollection = selectButton.dataset.setCollection;
-      state.primaryStats = state.localMode ? { record_count: state.records.length, chunk_count: state.chunks.length } : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
+      state.primaryStats = state.publicDemo
+        ? { record_count: 1592, chunk_count: 2655 }
+        : state.localMode
+          ? { record_count: state.records.length, chunk_count: state.chunks.length }
+          : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
       renderCollectionList();
       renderSummaryMetrics();
       showToast(`默认集合已切换为 ${state.primaryCollection}`, "success");
@@ -2303,9 +2510,14 @@ async function init() {
   syncSidebarToggleIcon();
   bindEvents();
   setPage("overview");
-  addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
+  if (FORCE_LOCAL_RUNTIME && /\.github\.io$/i.test(window.location.hostname)) {
+    activatePublicDemoSnapshot();
+  } else {
+    addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
+  }
   renderAll();
   await refreshAll();
 }
 
 window.addEventListener("DOMContentLoaded", init);
+
