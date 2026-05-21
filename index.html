@@ -1140,7 +1140,7 @@ svg { width: 100%; height: auto; display: block; }
   word-break: break-word;
 }
 .ask-answer:empty::before {
-  content: "尚未生成回答。设置 LLM 后，先检索再提问。";
+  content: "尚未生成回答。提问后会先检索证据，再调用 LLM。";
   color: var(--muted);
 }
 .ask-answer.is-streaming::after {
@@ -1286,6 +1286,7 @@ if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
 }
 
 const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
+const DEFAULT_PUBLIC_DEMO = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
 const API_BASE = "";
 const LOCAL_COLLECTION_NAME = "browser_local_index";
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
@@ -1519,7 +1520,67 @@ const PUBLIC_DEMO_SEARCH_RESULTS = [
     distance: 0.214,
     metadata: { filename: "KG / GraphRAG POC 记录.json", source_kind: "JSON", chunk_index: 12, record_id: "demo-kg-poc-012", estimated_tokens: 82, page_nums: "-" }
   }
-];
+,
+  {
+    text: "GT-07 燃气轮机升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s，DCS 触发“压气机出口温度偏高”报警。运行员记录：燃烧室火焰稳定，未见明显燃烧波动。",
+    score: 0.84,
+    distance: 0.16,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 21, record_id: "demo-gt07-fault-021", estimated_tokens: 112, page_nums: "POC-1" }
+  },
+  {
+    text: "停机检查发现，进气滤网压差偏高，滤网局部堵塞；压气机前三级叶片表面积灰明显。检修人员清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器 TT-COMP-02。复机后，压气机出口温度回落至 438°C，振动值降至 3.1 mm/s。",
+    score: 0.83,
+    distance: 0.17,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 22, record_id: "demo-gt07-repair-022", estimated_tokens: 118, page_nums: "POC-2" }
+  },
+  {
+    text: "压气机出口温度偏高的常见原因包括进气阻力增大、压气机叶片污染和温度传感器漂移。建议检查进气滤网压差，清理或更换滤网，清洗压气机叶片，并对温度传感器进行校验。若振动值持续偏高，应进一步检查轴承状态和联轴器对中情况。",
+    score: 0.82,
+    distance: 0.18,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 23, record_id: "demo-gt07-manual-023", estimated_tokens: 115, page_nums: "POC-3" }
+  },
+  {
+    text: "紧急停机仅在出现超温、超速、失火或振动超限等危急情况下使用。正常停机应按负荷递减程序执行，严禁在满负荷状态下直接切断燃油。",
+    score: 0.8,
+    distance: 0.2,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 56, record_id: "demo-maint-emergency-stop-056", estimated_tokens: 78, page_nums: "5.6" }
+  },
+  {
+    text: "故障诊断应遵循“症状-机理-定位-处置”四步法。常见故障模式包括：压气机喘振、燃烧室热点、涡轮叶片裂纹、轴承磨损和控制系统失灵。",
+    score: 0.79,
+    distance: 0.21,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 88, record_id: "demo-maint-diagnosis-088", estimated_tokens: 84, page_nums: "5.8" }
+  },
+  {
+    text: "压气机喘振的典型症状为：运行中出现周期性“砰砰”声响，排气温度急剧波动，压气机出口压力大幅下降。处置方法：立即降低负荷至喘振线以下，检查进气系统是否有异物堵塞。",
+    score: 0.78,
+    distance: 0.22,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 92, record_id: "demo-maint-surge-092", estimated_tokens: 96, page_nums: "5.9" }
+  },
+  {
+    text: "关键监测参数阈值包括：排气温度散布度不大于 25°C，轴承振动不大于 25.4 mm/s，滑油金属颗粒不大于 5 ppm，压气机效率衰减不大于 3%。这些指标可作为运行异常和早期故障诊断线索。",
+    score: 0.77,
+    distance: 0.23,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 76, record_id: "demo-maint-thresholds-076", estimated_tokens: 94, page_nums: "5.7" }
+  },
+  {
+    text: "燃气轮机燃烧室工作在连续高速气流中，燃烧火焰不易稳定，容易被吹灭；燃料在燃烧区停留时间较短，容易出现燃烧不完全。因此必须采取措施确保燃烧过程稳定、完全，并控制出口温度场。",
+    score: 0.76,
+    distance: 0.24,
+    metadata: { filename: "燃气轮机与联合循环装置_燃烧室工作特点.txt", source_kind: "Text", chunk_index: 118, record_id: "demo-combustor-stability-118", estimated_tokens: 103, page_nums: "燃烧室" }
+  },
+  {
+    text: "燃气轮机结构强度故障是指发生在燃气轮机机械结构和部件中的形变或机械损伤，会引起机组不正常振动并影响正常运行；由于机组尺寸大、转速高，这些机械故障可能导致破坏性机械损伤、停机甚至机组报废。",
+    score: 0.75,
+    distance: 0.25,
+    metadata: { filename: "燃气轮机可靠性维护理论及应用.txt", source_kind: "Text", chunk_index: 130, record_id: "demo-structure-fault-130", estimated_tokens: 112, page_nums: "第6章" }
+  },
+  {
+    text: "知识图谱抽取中，GT-07 燃气轮机与“压气机出口温度偏高”“振动值升高”等故障/症状相连；进气滤网堵塞、压气机叶片污染、温度传感器漂移被记录为可能原因；清理滤网、清洗叶片、校验传感器是推荐处理动作。",
+    score: 0.74,
+    distance: 0.26,
+    metadata: { filename: "四本书 KG / 故障 POC 三元组.csv", source_kind: "CSV", chunk_index: 14, record_id: "demo-kg-fault-triples-014", estimated_tokens: 105, page_nums: "triples" }
+  }];
 
 const state = {
   online: false,
@@ -1711,6 +1772,70 @@ function extractJsonTextLines(payload) {
 
 function tokenize(text) {
   return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
+}
+
+function cjkNgrams(text, min = 2, max = 4) {
+  const chars = normalizeText(text).replace(/[^\u3400-\u9FFF]/g, "");
+  const grams = [];
+  for (let size = min; size <= max; size += 1) {
+    for (let index = 0; index <= chars.length - size; index += 1) {
+      grams.push(chars.slice(index, index + size));
+    }
+  }
+  return grams;
+}
+
+function demoSearchTerms(text) {
+  const terms = new Set([...tokenize(text), ...cjkNgrams(text)]);
+  const normalized = normalizeText(text);
+  const expansions = [
+    { keys: ["爆炸", "炸了", "坏了", "事故", "危险"], add: ["故障", "危急", "紧急停机", "超温", "超速", "失火", "振动超限", "燃烧室热点", "喘振", "回火", "熄火", "轴承磨损", "叶片裂纹"] },
+    { keys: ["燃烧", "燃烧室", "火焰"], add: ["热点", "失火", "熄火", "回火", "吹灭", "燃烧不完全", "温度场", "燃烧稳定"] },
+    { keys: ["振动", "抖", "异响"], add: ["轴承", "联轴器", "叶片裂纹", "结构强度故障", "机械损伤", "振动超限"] },
+    { keys: ["温度", "过热", "超温"], add: ["排气温度", "压气机出口温度", "燃烧室热点", "温度散布度", "传感器漂移"] }
+  ];
+  expansions.forEach((group) => {
+    if (group.keys.some((key) => normalized.includes(key))) {
+      group.add.forEach((term) => {
+        terms.add(term.toLowerCase());
+        cjkNgrams(term).forEach((gram) => terms.add(gram));
+      });
+    }
+  });
+  return terms;
+}
+
+function rankPublicDemoResults(query, topK) {
+  const queryTerms = demoSearchTerms(query);
+  const queryText = normalizeText(query).toLowerCase();
+  return PUBLIC_DEMO_SEARCH_RESULTS
+    .map((item, index) => {
+      const haystack = normalizeText([
+        item.text,
+        item.metadata?.filename,
+        item.metadata?.source_kind,
+        item.metadata?.record_id
+      ].filter(Boolean).join(" ")).toLowerCase();
+      const itemTerms = demoSearchTerms(haystack);
+      let overlap = 0;
+      queryTerms.forEach((term) => {
+        if (term.length >= 2 && (itemTerms.has(term) || haystack.includes(term))) overlap += 1;
+      });
+      const overlapScore = queryTerms.size ? overlap / queryTerms.size : 0;
+      const phraseBonus = queryText && haystack.includes(queryText) ? 0.18 : 0;
+      const prior = Number(item.score || 0.6) * 0.18;
+      const score = Math.min(0.98, 0.22 + overlapScore * 0.68 + phraseBonus + prior);
+      return {
+        ...item,
+        score: Number(score.toFixed(4)),
+        distance: Number(Math.max(0.02, 1 - score).toFixed(4)),
+        _rankIndex: index
+      };
+    })
+    .filter((item) => item.score >= 0.3)
+    .sort((a, b) => (b.score - a.score) || (a._rankIndex - b._rankIndex))
+    .slice(0, topK)
+    .map(({ _rankIndex, ...item }) => item);
 }
 
 function estimateTokens(text) {
@@ -2103,6 +2228,14 @@ function activatePublicDemoSnapshot() {
   ];
 }
 
+function activateDemoSnapshotForEmptyLocalIndex() {
+  if (!FORCE_LOCAL_RUNTIME || state.publicDemo || state.chunks.length) return false;
+  activatePublicDemoSnapshot();
+  addActivity("warning", "自动切换演示快照", "当前浏览器没有本地索引，已使用内置样例数据。");
+  renderAll();
+  return true;
+}
+
 async function refreshPublicDemoStats() {
   state.stats = clonePublicDemoStats();
   state.primaryCollection = PUBLIC_DEMO_COLLECTION;
@@ -2301,12 +2434,9 @@ async function runLocalSearch() {
   if (els.searchMeta) els.searchMeta.textContent = "正在本地检索...";
   const topK = Number(els.searchTopK?.value || 5);
   const started = performance.now();
+  activateDemoSnapshotForEmptyLocalIndex();
   if (state.publicDemo && !state.chunks.length) {
-    const results = PUBLIC_DEMO_SEARCH_RESULTS.slice(0, topK).map((item, index) => ({
-      ...item,
-      score: Number(Math.max(0.1, item.score - index * 0.018).toFixed(4)),
-      distance: Number(Math.min(0.99, item.distance + index * 0.018).toFixed(4))
-    }));
+    const results = rankPublicDemoResults(query, topK);
     state.lastSearch = {
       query,
       collection: PUBLIC_DEMO_COLLECTION,
@@ -3380,7 +3510,7 @@ function renderAll() {
 
 async function refreshHealth() {
   if (FORCE_LOCAL_RUNTIME) {
-    if (/\.github\.io$/i.test(window.location.hostname)) activatePublicDemoSnapshot();
+    if (DEFAULT_PUBLIC_DEMO) activatePublicDemoSnapshot();
     else {
       state.localMode = true;
       state.online = true;
@@ -4412,7 +4542,7 @@ async function init() {
   loadLLMSettings();
   populateBaseUrlDatalist();
   setPage("overview");
-  if (FORCE_LOCAL_RUNTIME && /\.github\.io$/i.test(window.location.hostname)) {
+  if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO) {
     activatePublicDemoSnapshot();
   } else {
     addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
