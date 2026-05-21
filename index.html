@@ -2295,10 +2295,10 @@ async function runLocalProcess() {
 async function runLocalSearch() {
   const query = String(els.searchInput?.value || "").trim();
   if (!query) {
-    showToast("Enter a search query first.", "warning");
+    showToast("请先输入检索问题。", "warning");
     return;
   }
-  if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
+  if (els.searchMeta) els.searchMeta.textContent = "正在本地检索...";
   const topK = Number(els.searchTopK?.value || 5);
   const started = performance.now();
   if (state.publicDemo && !state.chunks.length) {
@@ -2323,9 +2323,9 @@ async function runLocalSearch() {
     return;
   }
   if (!state.chunks.length) {
-    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "No local index yet. Process files first." };
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先处理文件，或打开 GitHub Pages 演示快照。" };
     renderSearchResults();
-    showToast("Process files before searching.", "warning");
+    showToast("当前没有本地索引，请先处理文件。", "warning");
     return;
   }
   const queryVector = createEmbedding(query);
@@ -4109,14 +4109,14 @@ async function ensureAskContext(question) {
   }
 
   if (els.searchInput) els.searchInput.value = question;
-  if (els.searchMeta) els.searchMeta.textContent = "??? RAG ?????????...";
+  if (els.searchMeta) els.searchMeta.textContent = "正在为 RAG 问答自动检索上下文...";
   await runSearch();
 
   const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
   if (!results.length) {
-    const message = "????? chunk / ?????????????????????????????????";
+    const message = "没有从本地 chunk / 知识库中检索到可用证据，已停止调用大模型，避免按模型自带知识回答。";
     if (els.askAnswer) els.askAnswer.textContent = message;
-    addActivity("warning", "RAG ??????", question.slice(0, 80));
+    addActivity("warning", "RAG 问答缺少证据", question.slice(0, 80));
     showToast(message, "warning");
     return false;
   }
