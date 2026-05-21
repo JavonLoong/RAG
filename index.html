@@ -1072,6 +1072,97 @@ svg { width: 100%; height: auto; display: block; }
 .llm-status.is-error { color: var(--danger); }
 .llm-status.is-error::before { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
 
+/* ── Input history dropdown ── */
+.input-history-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.input-history-wrap .form-control { width: 100%; }
+.input-history-dropdown {
+  display: none;
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 4px;
+}
+.input-history-dropdown.is-open { display: block; }
+.input-history-dropdown .history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  overflow: hidden;
+}
+.input-history-dropdown .history-item span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.input-history-dropdown .history-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+.input-history-dropdown .history-item .history-delete {
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  transition: color var(--transition-fast);
+}
+.input-history-dropdown .history-item .history-delete:hover {
+  color: var(--danger);
+}
+.input-history-dropdown .history-empty {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+.input-history-dropdown .history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.input-history-dropdown .history-clear-all {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.input-history-dropdown .history-clear-all:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
 .ask-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1463,6 +1554,113 @@ const MODEL_CATALOG = [
 ];
 
 const LLM_STORAGE_KEY = "rag_llm_settings_v1";
+const LLM_HISTORY_KEY = "rag_llm_input_history_v1";
+const LLM_HISTORY_MAX = 10;
+
+function loadInputHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(LLM_HISTORY_KEY) || "{}");
+  } catch { return {}; }
+}
+
+function saveInputHistoryEntry(field, value) {
+  const v = String(value || "").trim();
+  if (!v) return;
+  const store = loadInputHistory();
+  const list = Array.isArray(store[field]) ? store[field] : [];
+  const filtered = list.filter((item) => item !== v);
+  filtered.unshift(v);
+  store[field] = filtered.slice(0, LLM_HISTORY_MAX);
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function removeInputHistoryEntry(field, value) {
+  const store = loadInputHistory();
+  const list = Array.isArray(store[field]) ? store[field] : [];
+  store[field] = list.filter((item) => item !== value);
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function clearInputHistory(field) {
+  const store = loadInputHistory();
+  store[field] = [];
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function getInputHistory(field) {
+  const store = loadInputHistory();
+  return Array.isArray(store[field]) ? store[field] : [];
+}
+
+function renderHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
+  const items = getInputHistory(field);
+  if (!items.length) {
+    dropdownEl.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  const header = `<div class="history-header"><span>历史记录</span><button class="history-clear-all" data-history-clear="${escapeHtml(field)}">清空</button></div>`;
+  const rows = items.map((item) => {
+    const display = maskValue ? item.slice(0, 6) + "••••••" + item.slice(-4) : item;
+    return `<button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}"><span title="${escapeHtml(item)}">${escapeHtml(display)}</span><iconify-icon class="history-delete" icon="lucide:x" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}"></iconify-icon></button>`;
+  }).join("");
+  dropdownEl.innerHTML = header + rows;
+}
+
+function openHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
+  renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+  dropdownEl.classList.add("is-open");
+}
+
+function closeAllHistoryDropdowns() {
+  document.querySelectorAll(".input-history-dropdown.is-open").forEach((el) => el.classList.remove("is-open"));
+}
+
+function initInputHistory(inputEl, dropdownEl, field, maskValue = false) {
+  if (!inputEl || !dropdownEl) return;
+
+  inputEl.addEventListener("focus", () => {
+    closeAllHistoryDropdowns();
+    openHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+  });
+
+  inputEl.addEventListener("blur", (event) => {
+    // Save to history on blur if value is non-empty
+    const v = inputEl.value.trim();
+    if (v) saveInputHistoryEntry(field, v);
+    // Delay close so click on dropdown item fires first
+    setTimeout(() => {
+      if (!dropdownEl.contains(document.activeElement)) {
+        dropdownEl.classList.remove("is-open");
+      }
+    }, 200);
+  });
+
+  dropdownEl.addEventListener("mousedown", (event) => {
+    event.preventDefault(); // prevent blur on input
+
+    const deleteIcon = event.target.closest("[data-history-delete]");
+    if (deleteIcon) {
+      removeInputHistoryEntry(deleteIcon.dataset.historyDeleteField, deleteIcon.dataset.historyDelete);
+      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+      return;
+    }
+
+    const clearBtn = event.target.closest("[data-history-clear]");
+    if (clearBtn) {
+      clearInputHistory(clearBtn.dataset.historyClear);
+      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+      return;
+    }
+
+    const item = event.target.closest("[data-history-value]");
+    if (item) {
+      inputEl.value = item.dataset.historyValue;
+      dropdownEl.classList.remove("is-open");
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+}
 
 function cleanLLMEndpoint(value) {
   return String(value || "").trim().replace(/\s*\(.+$/, "").replace(/\/+$/, "");
@@ -4171,8 +4369,163 @@ function saveLLMSettings() {
   try {
     const cfg = readLLMSettings();
     localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
+    // Save non-empty values to input history
+    if (cfg.baseUrl) addInputHistory('baseUrl', cfg.baseUrl);
+    if (cfg.apiKey) addInputHistory('apiKey', cfg.apiKey);
+    if (cfg.model) addInputHistory('model', cfg.model);
   } catch {}
   updateLLMStatus();
+}
+
+// ─── Input History System ───
+const INPUT_HISTORY_KEY = 'rag_input_history_v1';
+const MAX_HISTORY_ITEMS = 15;
+
+function getInputHistory() {
+  try {
+    const raw = localStorage.getItem(INPUT_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : { baseUrl: [], apiKey: [], model: [] };
+  } catch { return { baseUrl: [], apiKey: [], model: [] }; }
+}
+
+function saveInputHistory(history) {
+  try { localStorage.setItem(INPUT_HISTORY_KEY, JSON.stringify(history)); } catch {}
+}
+
+function addInputHistory(field, value) {
+  const val = String(value || '').trim();
+  if (!val) return;
+  const history = getInputHistory();
+  if (!Array.isArray(history[field])) history[field] = [];
+  // Remove duplicate then prepend
+  history[field] = [val, ...history[field].filter((item) => item !== val)].slice(0, MAX_HISTORY_ITEMS);
+  saveInputHistory(history);
+}
+
+function removeInputHistory(field, value) {
+  const history = getInputHistory();
+  if (!Array.isArray(history[field])) return;
+  history[field] = history[field].filter((item) => item !== value);
+  saveInputHistory(history);
+}
+
+function clearInputHistory(field) {
+  const history = getInputHistory();
+  if (field) { history[field] = []; }
+  else { history.baseUrl = []; history.apiKey = []; history.model = []; }
+  saveInputHistory(history);
+}
+
+function maskApiKey(key) {
+  const s = String(key || '');
+  if (s.length <= 8) return '••••••••';
+  return s.slice(0, 4) + '••••••••' + s.slice(-4);
+}
+
+function renderInputHistoryDropdown(field, dropdownEl, inputEl) {
+  if (!dropdownEl) return;
+  const history = getInputHistory();
+  const items = Array.isArray(history[field]) ? history[field] : [];
+  if (!items.length) {
+    dropdownEl.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  const fieldLabel = field === 'baseUrl' ? 'URL' : field === 'apiKey' ? 'Key' : '模型';
+  const headerHtml = `
+    <div class="history-header">
+      <span>历史${fieldLabel}（${items.length}）</span>
+      <button class="history-clear-all" type="button" data-history-clear="${escapeHtml(field)}">全部清除</button>
+    </div>
+  `;
+  const itemsHtml = items.map((item) => {
+    const display = field === 'apiKey' ? maskApiKey(item) : item;
+    return `
+      <button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}">
+        <span title="${escapeHtml(item)}">${escapeHtml(display)}</span>
+        <span class="history-delete" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}" title="删除此项">✕</span>
+      </button>
+    `;
+  }).join('');
+  dropdownEl.innerHTML = headerHtml + itemsHtml;
+}
+
+function openHistoryDropdown(field) {
+  const map = {
+    baseUrl: { dropdown: document.getElementById('historyBaseUrl'), input: els.llmBaseUrl },
+    apiKey: { dropdown: document.getElementById('historyApiKey'), input: els.llmApiKey },
+    model: { dropdown: document.getElementById('historyModel'), input: els.llmModel }
+  };
+  // Close all first
+  Object.values(map).forEach(({ dropdown }) => { if (dropdown) dropdown.classList.remove('is-open'); });
+  const target = map[field];
+  if (!target?.dropdown) return;
+  renderInputHistoryDropdown(field, target.dropdown, target.input);
+  target.dropdown.classList.add('is-open');
+}
+
+function closeAllHistoryDropdowns() {
+  document.querySelectorAll('.input-history-dropdown').forEach((el) => el.classList.remove('is-open'));
+}
+
+function bindInputHistoryEvents() {
+  // Open on focus
+  els.llmBaseUrl?.addEventListener('focus', () => openHistoryDropdown('baseUrl'));
+  els.llmApiKey?.addEventListener('focus', () => openHistoryDropdown('apiKey'));
+  els.llmModel?.addEventListener('focus', () => openHistoryDropdown('model'));
+
+  // Click handlers on dropdowns (delegated)
+  document.addEventListener('click', (event) => {
+    // Handle select history item
+    const deleteBtn = event.target.closest('[data-history-delete]');
+    if (deleteBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const value = deleteBtn.dataset.historyDelete;
+      const field = deleteBtn.dataset.historyDeleteField;
+      removeInputHistory(field, value);
+      openHistoryDropdown(field); // Re-render
+      return;
+    }
+
+    const clearBtn = event.target.closest('[data-history-clear]');
+    if (clearBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const field = clearBtn.dataset.historyClear;
+      clearInputHistory(field);
+      openHistoryDropdown(field); // Re-render
+      showToast('历史记录已清除', 'success');
+      return;
+    }
+
+    const historyItem = event.target.closest('[data-history-value]');
+    if (historyItem) {
+      event.preventDefault();
+      const value = historyItem.dataset.historyValue;
+      const field = historyItem.dataset.historyField;
+      const inputMap = { baseUrl: els.llmBaseUrl, apiKey: els.llmApiKey, model: els.llmModel };
+      const input = inputMap[field];
+      if (input) {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      closeAllHistoryDropdowns();
+      saveLLMSettings();
+      return;
+    }
+
+    // Close dropdowns when clicking outside
+    if (!event.target.closest('.input-history-wrap')) {
+      closeAllHistoryDropdowns();
+    }
+  });
+}
+
+function refreshLLMConfig() {
+  loadLLMSettings();
+  populateLLMProviderSelect();
+  populateBaseUrlDatalist();
+  showToast('LLM 配置已刷新', 'success');
 }
 
 function openModelCatalog() {
@@ -4480,6 +4833,27 @@ function bindEvents() {
 
   els.btnModelCatalog?.addEventListener("click", openModelCatalog);
   document.getElementById("btnClearLlm")?.addEventListener("click", clearLLMSettings);
+  document.getElementById("btnRefreshLlm")?.addEventListener("click", refreshLLMConfig);
+
+  // Refresh button reloads saved LLM settings
+  document.getElementById("btnRefreshLlm")?.addEventListener("click", () => {
+    loadLLMSettings();
+    populateLLMProviderSelect();
+    populateBaseUrlDatalist();
+    showToast("LLM 配置已从本地存储刷新", "success");
+  });
+
+  // Input history for Base URL, API Key, Model
+  initInputHistory(els.llmBaseUrl, document.getElementById("historyBaseUrl"), "baseUrl", false);
+  initInputHistory(els.llmApiKey, document.getElementById("historyApiKey"), "apiKey", true);
+  initInputHistory(els.llmModel, document.getElementById("historyModel"), "model", false);
+
+  // Close history dropdowns on outside click
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".input-history-wrap")) {
+      closeAllHistoryDropdowns();
+    }
+  });
   els.modelCatalog?.addEventListener("click", (event) => {
     if (event.target.closest("[data-modal-close]")) {
       closeModelCatalog();
@@ -4586,6 +4960,7 @@ async function init() {
   populateLLMProviderSelect();
   loadLLMSettings();
   populateBaseUrlDatalist();
+  bindInputHistoryEvents();
   setPage("overview");
   if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO) {
     activatePublicDemoSnapshot();
@@ -4886,6 +5261,9 @@ window.addEventListener("DOMContentLoaded", init);
                       <h3>LLM 配置 <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(可选)</span></h3>
                       <p>OpenAI 兼容端点。配置后可用于下方 RAG 问答。API Key 仅保存在浏览器 localStorage，不会上传。</p>
                     </div>
+                    <div class="panel-tools">
+                      <button class="ghost-btn" id="btnRefreshLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                    </div>
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
@@ -4897,19 +5275,28 @@ window.addEventListener("DOMContentLoaded", init);
                     <div class="field field--wide">
                       <label for="llmBaseUrl">API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(从常用模型自动填入，也可手动输入)</span></label>
                       <div class="input-with-action">
-                        <input class="form-control" id="llmBaseUrl" type="text" list="llmBaseUrlList" placeholder="选择或输入 API 地址，如 https://api.openai.com/v1" autocomplete="off">
-                        <datalist id="llmBaseUrlList"></datalist>
+                        <div class="input-history-wrap">
+                          <input class="form-control" id="llmBaseUrl" type="text" list="llmBaseUrlList" placeholder="选择或输入 API 地址，如 https://api.openai.com/v1" autocomplete="off">
+                          <datalist id="llmBaseUrlList"></datalist>
+                          <div class="input-history-dropdown" id="historyBaseUrl"></div>
+                        </div>
                         <button class="ghost-btn" id="btnClearLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
                       </div>
                     </div>
                     <div class="field field--wide">
                       <label for="llmApiKey">API Key <span style="font-size:10px;color:var(--muted);font-weight:400">(可选 · 本地 Ollama 无需填入)</span></label>
-                      <input class="form-control" id="llmApiKey" type="password" placeholder="sk-... 或留空" autocomplete="off">
+                      <div class="input-history-wrap">
+                        <input class="form-control" id="llmApiKey" type="password" placeholder="sk-... 或留空" autocomplete="off">
+                        <div class="input-history-dropdown" id="historyApiKey"></div>
+                      </div>
                     </div>
                     <div class="field field--wide">
                       <label for="llmModel">Model</label>
                       <div class="input-with-action">
-                        <input class="form-control" id="llmModel" type="text" placeholder="gemini-3.5-flash" autocomplete="off">
+                        <div class="input-history-wrap">
+                          <input class="form-control" id="llmModel" type="text" placeholder="gemini-3.5-flash" autocomplete="off">
+                          <div class="input-history-dropdown" id="historyModel"></div>
+                        </div>
                         <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
                       </div>
                     </div>
