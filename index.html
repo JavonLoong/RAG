@@ -4078,7 +4078,7 @@ function buildAskMessages(question) {
   const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
   if (!results.length) {
     return [
-      { role: "system", content: "你是动力装备知识库助手。当前没有可用上下文，请如实告知用户，并尝试给出通用建议。" },
+      { role: "system", content: "你是动力装备知识库的检索增强助手。当前没有检索到可用证据，必须说明无法基于本地知识库回答，不得使用模型自带知识扩展回答。" },
       { role: "user", content: question }
     ];
   }
@@ -4092,13 +4092,35 @@ function buildAskMessages(question) {
   return [
     {
       role: "system",
-      content: "你是动力装备知识库的检索增强助手。根据下面提供的上下文回答用户问题，引用关键内容时标注【片段 N】。若上下文不足以回答，请明确指出。"
+      content: "你是动力装备知识库的检索增强助手。只能根据下面提供的本地 chunk、知识图谱线索或 evidence 回答用户问题，引用关键内容时标注【片段 N】。如果上下文不足以回答，必须明确说没有足够证据，不得使用模型自带知识补全。"
     },
     {
       role: "user",
       content: `## 上下文\n${context}\n\n## 问题\n${question}`
     }
   ];
+}
+
+async function ensureAskContext(question) {
+  const currentResults = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+  const currentQuery = String(state.lastSearch?.query || "").trim();
+  if (currentResults.length && currentQuery === question) {
+    return true;
+  }
+
+  if (els.searchInput) els.searchInput.value = question;
+  if (els.searchMeta) els.searchMeta.textContent = "??? RAG ?????????...";
+  await runSearch();
+
+  const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+  if (!results.length) {
+    const message = "????? chunk / ?????????????????????????????????";
+    if (els.askAnswer) els.askAnswer.textContent = message;
+    addActivity("warning", "RAG ??????", question.slice(0, 80));
+    showToast(message, "warning");
+    return false;
+  }
+  return true;
 }
 
 async function runAsk() {
@@ -4123,6 +4145,8 @@ async function runAsk() {
     return;
   }
   const url = `${baseUrl}/chat/completions`;
+  const hasContext = await ensureAskContext(question);
+  if (!hasContext) return;
   const messages = buildAskMessages(question);
 
   if (els.askAnswer) {
@@ -4746,7 +4770,7 @@ window.addEventListener("DOMContentLoaded", init);
                   <div class="panel-head">
                     <div>
                       <h3>RAG 问答</h3>
-                      <p>使用上方检索结果作为上下文，调用已配置的 LLM 回答。</p>
+                      <p>提问时会先自动检索本地 chunk / 知识库证据，再调用已配置的 LLM 回答。</p>
                     </div>
                     <div class="panel-tools">
                       <button class="ghost-btn" id="btnClearAnswer" type="button"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>清空</span></button>
