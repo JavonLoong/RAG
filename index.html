@@ -186,42 +186,6 @@ iconify-icon {
   color: #fff;
 }
 
-.appbar-search {
-  position: relative;
-  flex: 1 1 200px;
-  max-width: 360px;
-  min-width: 0;
-}
-
-.appbar-search iconify-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-  font-size: 15px;
-  pointer-events: none;
-}
-
-.appbar-search input {
-  width: 100%;
-  border-radius: 7px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 6px 10px 6px 32px;
-  color: var(--ink);
-  font-size: 13px;
-  transition: background var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.appbar-search input::placeholder { color: var(--muted); }
-
-.appbar-search input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35), inset 0 0 0 1px var(--accent);
-  border-color: transparent;
-}
-
 .appbar-actions {
   display: flex;
   align-items: center;
@@ -881,9 +845,6 @@ svg { width: 100%; height: auto; display: block; }
   .bench-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 640px) {
-  .appbar-search { order: 99; flex: 1 1 100%; max-width: none; }
-}
 
 
 /* Upload directory workflow */
@@ -1132,10 +1093,9 @@ svg { width: 100%; height: auto; display: block; }
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--line);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ink);
   min-height: 80px;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -1143,7 +1103,86 @@ svg { width: 100%; height: auto; display: block; }
   content: "尚未生成回答。提问后会先检索证据，再调用 LLM。";
   color: var(--muted);
 }
-.ask-answer.is-streaming::after {
+.ask-answer > *:first-child { margin-top: 0; }
+.ask-answer > *:last-child { margin-bottom: 0; }
+.ask-answer p { margin: 0 0 10px; }
+.ask-answer h1,
+.ask-answer h2,
+.ask-answer h3,
+.ask-answer h4 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.ask-answer h1 { font-size: 16px; }
+.ask-answer h2 { font-size: 15px; }
+.ask-answer h3 { font-size: 14px; }
+.ask-answer h4 { font-size: 13px; color: var(--ink-soft); }
+.ask-answer strong { font-weight: 600; color: var(--ink); }
+.ask-answer em { font-style: italic; color: var(--ink-soft); }
+.ask-answer ul,
+.ask-answer ol { margin: 0 0 10px; padding-left: 20px; }
+.ask-answer li { margin: 3px 0; }
+.ask-answer li > p { margin: 0; }
+.ask-answer a {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: rgba(10, 132, 255, 0.4);
+  text-underline-offset: 2px;
+}
+.ask-answer a:hover { text-decoration-color: var(--accent-2); }
+.ask-answer code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: var(--accent-2);
+}
+.ask-answer pre {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ask-answer pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+}
+.ask-answer blockquote {
+  margin: 10px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(10,132,255,0.06);
+  color: var(--ink-soft);
+}
+.ask-answer hr {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+}
+.ask-answer table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.ask-answer th,
+.ask-answer td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  text-align: left;
+}
+.ask-answer th { background: rgba(255,255,255,0.05); font-weight: 600; }
+.ask-answer.is-streaming:not(.has-content)::after,
+.ask-answer.is-streaming.has-content > *:last-child::after {
   content: "▍";
   display: inline-block;
   margin-left: 2px;
@@ -1280,6 +1319,8 @@ svg { width: 100%; height: auto; display: block; }
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script>
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
   globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
@@ -2529,8 +2570,6 @@ function resolveEls() {
     statusText: $("statusText"),
     sysStatus: $("sysStatus"),
     statusPill: $("statusPill"),
-    globalSearchForm: $("globalSearchForm"),
-    globalSearchInput: $("globalSearchInput"),
     collectionSummaryPill: $("collectionSummaryPill"),
     collectionSpectrum: $("collectionSpectrum"),
     collList: $("collList"),
@@ -3918,29 +3957,6 @@ function activateGroupButton(group, matcher) {
   });
 }
 
-function handleGlobalCommand(event) {
-  event.preventDefault();
-  const query = String(els.globalSearchInput?.value || "").trim();
-  if (!query) return;
-
-  if (/上传|数据|队列|文件/.test(query)) {
-    setPage("data");
-    return;
-  }
-  if (/压测|性能|benchmark/.test(query)) {
-    setPage("benchmark");
-    return;
-  }
-  if (/概览|总览|统计/.test(query)) {
-    setPage("overview");
-    return;
-  }
-
-  setPage("search");
-  if (els.searchInput) els.searchInput.value = query;
-  runSearch();
-}
-
 // ─── LLM + RAG ask ───
 
 function readLLMSettings() {
@@ -4245,7 +4261,7 @@ async function ensureAskContext(question) {
   const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
   if (!results.length) {
     const message = "没有从本地 chunk / 知识库中检索到可用证据，已停止调用大模型，避免按模型自带知识回答。";
-    if (els.askAnswer) els.askAnswer.textContent = message;
+    renderAnswerMarkdown(message);
     addActivity("warning", "RAG 问答缺少证据", question.slice(0, 80));
     showToast(message, "warning");
     return false;
@@ -4279,8 +4295,9 @@ async function runAsk() {
   if (!hasContext) return;
   const messages = buildAskMessages(question);
 
+  let accumulated = "";
+  resetAskAnswer();
   if (els.askAnswer) {
-    els.askAnswer.textContent = "";
     els.askAnswer.classList.add("is-streaming");
   }
   if (els.btnAsk) els.btnAsk.disabled = true;
@@ -4308,8 +4325,8 @@ async function runAsk() {
 
     if (!response.body || !response.body.getReader) {
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || "";
-      if (els.askAnswer) els.askAnswer.textContent = content;
+      accumulated = data.choices?.[0]?.message?.content || "";
+      renderAnswerMarkdown(accumulated);
     } else {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -4329,21 +4346,22 @@ async function runAsk() {
           try {
             const json = JSON.parse(payload);
             const delta = json.choices?.[0]?.delta?.content || json.choices?.[0]?.message?.content || "";
-            if (delta && els.askAnswer) {
-              els.askAnswer.textContent += delta;
+            if (delta) {
+              accumulated += delta;
+              renderAnswerMarkdown(accumulated);
               received = true;
             }
           } catch {}
         }
       }
-      if (!received && els.askAnswer && !els.askAnswer.textContent) {
-        els.askAnswer.textContent = "(模型未返回内容)";
+      if (!received && !accumulated) {
+        renderAnswerMarkdown("_(模型未返回内容)_");
       }
     }
     addActivity("success", "LLM 回答完成", `${cfg.model} · ${question.slice(0, 60)}`);
   } catch (error) {
     const message = error?.message || String(error);
-    if (els.askAnswer) els.askAnswer.textContent = `调用失败：${message}`;
+    renderAnswerMarkdown(`**调用失败：** ${message}`);
     addActivity("danger", "LLM 调用失败", message);
     showToast(message, "danger");
   } finally {
@@ -4352,8 +4370,32 @@ async function runAsk() {
   }
 }
 
+function resetAskAnswer() {
+  if (!els.askAnswer) return;
+  els.askAnswer.innerHTML = "";
+  els.askAnswer.classList.remove("has-content");
+}
+
+function renderAnswerMarkdown(markdown) {
+  if (!els.askAnswer) return;
+  const text = String(markdown || "");
+  let html;
+  try {
+    if (globalThis.marked?.parse) {
+      const raw = globalThis.marked.parse(text, { breaks: true, gfm: true });
+      html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+    } else {
+      html = escapeHtml(text).replaceAll("\n", "<br>");
+    }
+  } catch {
+    html = escapeHtml(text).replaceAll("\n", "<br>");
+  }
+  els.askAnswer.innerHTML = html;
+  els.askAnswer.classList.toggle("has-content", text.trim().length > 0);
+}
+
 function clearAnswer() {
-  if (els.askAnswer) els.askAnswer.textContent = "";
+  resetAskAnswer();
 }
 
 function bindEvents() {
@@ -4368,7 +4410,6 @@ function bindEvents() {
   });
 
   els.refreshBtn?.addEventListener("click", refreshAll);
-  els.globalSearchForm?.addEventListener("submit", handleGlobalCommand);
 
   els.pickFilesButton?.addEventListener("click", () => els.fileInput?.click());
   els.pickFolderButton?.addEventListener("click", () => els.folderInput?.click());
@@ -4571,11 +4612,6 @@ window.addEventListener("DOMContentLoaded", init);
         <button class="nav-item" data-page="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
         <button class="nav-item" data-page="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
       </nav>
-
-      <form class="appbar-search" id="globalSearchForm">
-        <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
-        <input id="globalSearchInput" type="search" placeholder="搜索页面 / 日志 / 操作">
-      </form>
 
       <div class="appbar-actions">
         <div class="status-pill" id="statusPill" title="">
