@@ -1332,75 +1332,69 @@ const MODEL_CATALOG = [
     label: "OpenAI",
     endpoint: "https://api.openai.com/v1",
     models: [
-      { name: "gpt-4o", desc: "旗舰多模态" },
-      { name: "gpt-4o-mini", desc: "高性价比" },
-      { name: "gpt-4-turbo", desc: "通用强模型" },
-      { name: "gpt-3.5-turbo", desc: "经典轻量" },
-      { name: "o1", desc: "推理增强" },
-      { name: "o1-mini", desc: "推理轻量" }
+      { name: "gpt-5.5", desc: "旗舰 Agent" },
+      { name: "gpt-5.5-instant", desc: "高速日用" },
+      { name: "gpt-5.5-pro", desc: "深度推理" },
+      { name: "o3-pro", desc: "推理增强" },
+      { name: "o3-mini", desc: "推理轻量" }
     ]
   },
   {
     label: "Anthropic Claude",
     endpoint: "https://api.anthropic.com/v1 (需兼容代理)",
     models: [
-      { name: "claude-3-5-sonnet-20241022", desc: "Sonnet 3.5" },
-      { name: "claude-3-5-haiku-20241022", desc: "Haiku 3.5" },
-      { name: "claude-3-opus-20240229", desc: "Opus 3" }
+      { name: "claude-opus-4-7", desc: "Opus 4.7 旗舰" },
+      { name: "claude-sonnet-4-6", desc: "Sonnet 4.6 均衡" }
     ]
   },
   {
     label: "Google Gemini",
     endpoint: "https://generativelanguage.googleapis.com/v1beta",
     models: [
-      { name: "gemini-2.0-flash-exp", desc: "Flash 2.0" },
-      { name: "gemini-1.5-pro", desc: "Pro 1.5" },
-      { name: "gemini-1.5-flash", desc: "Flash 1.5" }
+      { name: "gemini-3.5-flash", desc: "Flash 3.5 最新" },
+      { name: "gemini-3.1-pro-preview", desc: "Pro 3.1 推理" }
     ]
   },
   {
     label: "xAI Grok",
     endpoint: "https://api.x.ai/v1",
     models: [
-      { name: "grok-2-latest", desc: "Grok 2" },
-      { name: "grok-2-mini", desc: "Grok 2 Mini" }
+      { name: "grok-4.3", desc: "旗舰 1M 上下文" },
+      { name: "grok-build-0.1", desc: "工程编码" }
     ]
   },
   {
     label: "DeepSeek 深度求索",
     endpoint: "https://api.deepseek.com/v1",
     models: [
-      { name: "deepseek-chat", desc: "V3 通用" },
-      { name: "deepseek-reasoner", desc: "R1 推理" }
+      { name: "deepseek-v4-pro", desc: "V4 Pro 旗舰" },
+      { name: "deepseek-v4-flash", desc: "V4 Flash 高性价比" }
     ]
   },
   {
     label: "通义千问 (阿里)",
     endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     models: [
+      { name: "qwen3.7-max", desc: "最新旗舰 Agent" },
       { name: "qwen-max", desc: "旗舰" },
       { name: "qwen-plus", desc: "增强" },
-      { name: "qwen-turbo", desc: "高速" },
-      { name: "qwen2.5-72b-instruct", desc: "开源 72B" },
-      { name: "qwen2.5-coder-32b-instruct", desc: "代码 32B" }
+      { name: "qwen-turbo", desc: "高速" }
     ]
   },
   {
     label: "智谱 GLM",
     endpoint: "https://open.bigmodel.cn/api/paas/v4",
     models: [
-      { name: "glm-4-plus", desc: "旗舰" },
-      { name: "glm-4-air", desc: "性价比" },
-      { name: "glm-4-flash", desc: "免费 Flash" },
-      { name: "glm-4-long", desc: "长上下文 1M" }
+      { name: "glm-5.1", desc: "最新旗舰" },
+      { name: "glm-5-turbo", desc: "高速 Agent" },
+      { name: "glm-4-flash", desc: "免费 Flash" }
     ]
   },
   {
     label: "Moonshot Kimi 月之暗面",
     endpoint: "https://api.moonshot.cn/v1",
     models: [
-      { name: "moonshot-v1-8k", desc: "8k 上下文" },
-      { name: "moonshot-v1-32k", desc: "32k 上下文" },
+      { name: "kimi-k2.6", desc: "K2.6 旗舰 Agent" },
       { name: "moonshot-v1-128k", desc: "128k 上下文" }
     ]
   },
@@ -1408,34 +1402,25 @@ const MODEL_CATALOG = [
     label: "Doubao 豆包 (字节)",
     endpoint: "https://ark.cn-beijing.volces.com/api/v3",
     models: [
-      { name: "doubao-1-5-pro-32k", desc: "Pro 1.5" },
-      { name: "doubao-pro-32k", desc: "Pro 32k" },
-      { name: "doubao-lite-32k", desc: "Lite 32k" }
+      { name: "doubao-seed-2.0-pro", desc: "Seed 2.0 Pro" },
+      { name: "doubao-seed-2.0-lite", desc: "Seed 2.0 全模态" },
+      { name: "doubao-1-5-pro-32k", desc: "Pro 1.5" }
     ]
   },
   {
     label: "MiniMax",
     endpoint: "https://api.minimax.chat/v1",
     models: [
-      { name: "abab6.5s-chat", desc: "abab6.5s" },
       { name: "MiniMax-Text-01", desc: "Text-01" }
-    ]
-  },
-  {
-    label: "Baichuan 百川",
-    endpoint: "https://api.baichuan-ai.com/v1",
-    models: [
-      { name: "Baichuan4-Turbo", desc: "Turbo" },
-      { name: "Baichuan4-Air", desc: "Air" }
     ]
   },
   {
     label: "本地 / Ollama",
     endpoint: "http://localhost:11434/v1",
     models: [
-      { name: "llama3.3", desc: "Llama 3.3" },
-      { name: "qwen2.5", desc: "Qwen 2.5" },
+      { name: "qwen3", desc: "Qwen 3" },
       { name: "deepseek-r1", desc: "DeepSeek R1" },
+      { name: "llama3.3", desc: "Llama 3.3" },
       { name: "mistral", desc: "Mistral" }
     ]
   }
@@ -3797,15 +3782,37 @@ function updateLLMStatus() {
   if (!els.llmStatus) return;
   const cfg = readLLMSettings();
   els.llmStatus.classList.remove("is-ready", "is-error");
-  if (cfg.apiKey && cfg.model) {
+  if (cfg.model) {
     const base = cfg.baseUrl || "https://api.openai.com/v1";
-    els.llmStatus.textContent = `已就绪 · ${cfg.model} · ${base}`;
+    const keyHint = cfg.apiKey ? "Key ✓" : "无 Key";
+    els.llmStatus.textContent = `已就绪 · ${cfg.model} · ${base} · ${keyHint}`;
     els.llmStatus.classList.add("is-ready");
-  } else if (cfg.apiKey || cfg.model || cfg.baseUrl) {
-    els.llmStatus.textContent = "尚未完整 · 请填入 API Key 与 Model";
+  } else if (cfg.apiKey || cfg.baseUrl) {
+    els.llmStatus.textContent = "请填入 Model 名称";
   } else {
-    els.llmStatus.textContent = "未配置 · 填入 API Key 与 Model 后即可问答";
+    els.llmStatus.textContent = "未配置 · 可选填，配置后可使用 RAG 问答";
   }
+}
+
+function populateBaseUrlDatalist() {
+  const datalist = document.getElementById("llmBaseUrlList");
+  if (!datalist) return;
+  const seen = new Set();
+  datalist.innerHTML = MODEL_CATALOG
+    .map((g) => g.endpoint.replace(/\s*\(.+$/, ""))
+    .filter((url) => { if (seen.has(url)) return false; seen.add(url); return true; })
+    .map((url) => `<option value="${url}">`)
+    .join("");
+}
+
+function clearLLMSettings() {
+  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
+  if (els.llmApiKey) els.llmApiKey.value = "";
+  if (els.llmModel) els.llmModel.value = "";
+  if (els.llmTemperature) els.llmTemperature.value = "0.3";
+  if (els.llmMaxTokens) els.llmMaxTokens.value = "1024";
+  saveLLMSettings();
+  showToast("LLM 配置已清空", "success");
 }
 
 function loadLLMSettings() {
@@ -3910,8 +3917,8 @@ async function runAsk() {
     showToast("请输入问题。", "warning");
     return;
   }
-  if (!cfg.apiKey || !cfg.model) {
-    showToast("请先填入 API Key 与 Model。", "warning");
+  if (!cfg.model) {
+    showToast("请先在 LLM 配置中填入 Model 名称。", "warning");
     return;
   }
   const baseUrl = cfg.baseUrl || "https://api.openai.com/v1";
@@ -4072,6 +4079,7 @@ function bindEvents() {
   });
 
   els.btnModelCatalog?.addEventListener("click", openModelCatalog);
+  document.getElementById("btnClearLlm")?.addEventListener("click", clearLLMSettings);
   els.modelCatalog?.addEventListener("click", (event) => {
     if (event.target.closest("[data-modal-close]")) {
       closeModelCatalog();
@@ -4176,6 +4184,7 @@ async function init() {
   resolveEls();
   bindEvents();
   loadLLMSettings();
+  populateBaseUrlDatalist();
   setPage("overview");
   if (FORCE_LOCAL_RUNTIME && /\.github\.io$/i.test(window.location.hostname)) {
     activatePublicDemoSnapshot();
@@ -4478,23 +4487,27 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>LLM 配置</h3>
-                      <p>OpenAI 兼容端点。配置后可用于下方 RAG 问答。API Key 仅保存在浏览器 localStorage。</p>
+                      <h3>LLM 配置 <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(可选)</span></h3>
+                      <p>OpenAI 兼容端点。配置后可用于下方 RAG 问答。API Key 仅保存在浏览器 localStorage，不会上传。</p>
                     </div>
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
-                      <label for="llmBaseUrl">API Base URL</label>
-                      <input class="form-control" id="llmBaseUrl" type="url" placeholder="https://api.openai.com/v1" autocomplete="off">
+                      <label for="llmBaseUrl">API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(从常用模型自动填入，也可手动输入)</span></label>
+                      <div class="input-with-action">
+                        <input class="form-control" id="llmBaseUrl" type="text" list="llmBaseUrlList" placeholder="选择或输入 API 地址，如 https://api.openai.com/v1" autocomplete="off">
+                        <datalist id="llmBaseUrlList"></datalist>
+                        <button class="ghost-btn" id="btnClearLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                      </div>
                     </div>
                     <div class="field field--wide">
-                      <label for="llmApiKey">API Key</label>
-                      <input class="form-control" id="llmApiKey" type="password" placeholder="sk-..." autocomplete="off">
+                      <label for="llmApiKey">API Key <span style="font-size:10px;color:var(--muted);font-weight:400">(可选 · 本地 Ollama 无需填入)</span></label>
+                      <input class="form-control" id="llmApiKey" type="password" placeholder="sk-... 或留空" autocomplete="off">
                     </div>
                     <div class="field field--wide">
                       <label for="llmModel">Model</label>
                       <div class="input-with-action">
-                        <input class="form-control" id="llmModel" type="text" placeholder="gpt-4o-mini" autocomplete="off">
+                        <input class="form-control" id="llmModel" type="text" placeholder="gpt-5.5-instant" autocomplete="off">
                         <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
                       </div>
                     </div>
@@ -4507,7 +4520,7 @@ window.addEventListener("DOMContentLoaded", init);
                       <input class="form-control" id="llmMaxTokens" type="number" min="64" max="32768" step="64" value="1024">
                     </div>
                   </div>
-                  <div class="llm-status" id="llmStatus">未配置 · 填入 API Key 与 Model 后即可问答</div>
+                  <div class="llm-status" id="llmStatus">未配置 · 可选填，配置后可使用 RAG 问答</div>
                 </article>
               </div>
 
