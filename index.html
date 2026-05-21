@@ -1329,104 +1329,148 @@ const BENCHMARK_CARDS = [
 
 const MODEL_CATALOG = [
   {
+    id: "openai",
     label: "OpenAI",
     endpoint: "https://api.openai.com/v1",
+    requiresKey: true,
     models: [
-      { name: "gpt-5.5", desc: "旗舰 Agent" },
-      { name: "gpt-5.5-instant", desc: "高速日用" },
-      { name: "gpt-5.5-pro", desc: "深度推理" },
-      { name: "o3-pro", desc: "推理增强" },
-      { name: "o3-mini", desc: "推理轻量" }
+      { name: "gpt-5.5", desc: "flagship reasoning and coding" },
+      { name: "gpt-5.4", desc: "lower cost frontier model" },
+      { name: "gpt-5.4-mini", desc: "fast and economical" },
+      { name: "gpt-5.4-nano", desc: "lowest latency/cost" }
     ]
   },
   {
-    label: "Anthropic Claude",
-    endpoint: "https://api.anthropic.com/v1 (需兼容代理)",
-    models: [
-      { name: "claude-opus-4-7", desc: "Opus 4.7 旗舰" },
-      { name: "claude-sonnet-4-6", desc: "Sonnet 4.6 均衡" }
-    ]
-  },
-  {
+    id: "gemini",
     label: "Google Gemini",
-    endpoint: "https://generativelanguage.googleapis.com/v1beta",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai",
+    requiresKey: true,
     models: [
-      { name: "gemini-3.5-flash", desc: "Flash 3.5 最新" },
-      { name: "gemini-3.1-pro-preview", desc: "Pro 3.1 推理" }
+      { name: "gemini-3.5-flash", desc: "stable frontier flash" },
+      { name: "gemini-3.1-pro-preview", desc: "advanced reasoning preview" },
+      { name: "gemini-3-flash-preview", desc: "frontier flash preview" },
+      { name: "gemini-2.5-pro", desc: "strong reasoning" },
+      { name: "gemini-2.5-flash", desc: "balanced price/performance" }
     ]
   },
   {
-    label: "xAI Grok",
-    endpoint: "https://api.x.ai/v1",
+    id: "deepseek",
+    label: "DeepSeek",
+    endpoint: "https://api.deepseek.com",
+    requiresKey: true,
     models: [
-      { name: "grok-4.3", desc: "旗舰 1M 上下文" },
-      { name: "grok-build-0.1", desc: "工程编码" }
+      { name: "deepseek-v4-pro", desc: "thinking / high quality" },
+      { name: "deepseek-v4-flash", desc: "fast / cost effective" }
     ]
   },
   {
-    label: "DeepSeek 深度求索",
-    endpoint: "https://api.deepseek.com/v1",
-    models: [
-      { name: "deepseek-v4-pro", desc: "V4 Pro 旗舰" },
-      { name: "deepseek-v4-flash", desc: "V4 Flash 高性价比" }
-    ]
-  },
-  {
-    label: "通义千问 (阿里)",
-    endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    models: [
-      { name: "qwen3.7-max", desc: "最新旗舰 Agent" },
-      { name: "qwen-max", desc: "旗舰" },
-      { name: "qwen-plus", desc: "增强" },
-      { name: "qwen-turbo", desc: "高速" }
-    ]
-  },
-  {
-    label: "智谱 GLM",
-    endpoint: "https://open.bigmodel.cn/api/paas/v4",
-    models: [
-      { name: "glm-5.1", desc: "最新旗舰" },
-      { name: "glm-5-turbo", desc: "高速 Agent" },
-      { name: "glm-4-flash", desc: "免费 Flash" }
-    ]
-  },
-  {
-    label: "Moonshot Kimi 月之暗面",
+    id: "kimi",
+    label: "Kimi",
     endpoint: "https://api.moonshot.cn/v1",
+    requiresKey: true,
     models: [
-      { name: "kimi-k2.6", desc: "K2.6 旗舰 Agent" },
-      { name: "moonshot-v1-128k", desc: "128k 上下文" }
+      { name: "kimi-k2.5", desc: "agent, coding, long context" },
+      { name: "kimi-k2-turbo-preview", desc: "fast K2 preview" },
+      { name: "kimi-k2-thinking", desc: "thinking mode" }
     ]
   },
   {
-    label: "Doubao 豆包 (字节)",
+    id: "qwen",
+    label: "Qwen / DashScope",
+    endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    requiresKey: true,
+    models: [
+      { name: "qwen-max", desc: "flagship" },
+      { name: "qwen-plus", desc: "balanced" },
+      { name: "qwen-turbo", desc: "fast" }
+    ]
+  },
+  {
+    id: "zhipu",
+    label: "Zhipu GLM",
+    endpoint: "https://open.bigmodel.cn/api/paas/v4",
+    requiresKey: true,
+    models: [
+      { name: "glm-5.1", desc: "latest GLM" },
+      { name: "glm-5-turbo", desc: "fast GLM" },
+      { name: "glm-4-flash", desc: "lightweight GLM" }
+    ]
+  },
+  {
+    id: "doubao",
+    label: "Doubao / Ark",
     endpoint: "https://ark.cn-beijing.volces.com/api/v3",
+    requiresKey: true,
     models: [
       { name: "doubao-seed-2.0-pro", desc: "Seed 2.0 Pro" },
-      { name: "doubao-seed-2.0-lite", desc: "Seed 2.0 全模态" },
-      { name: "doubao-1-5-pro-32k", desc: "Pro 1.5" }
+      { name: "doubao-seed-2.0-lite", desc: "Seed 2.0 Lite" }
     ]
   },
   {
-    label: "MiniMax",
-    endpoint: "https://api.minimax.chat/v1",
-    models: [
-      { name: "MiniMax-Text-01", desc: "Text-01" }
-    ]
-  },
-  {
-    label: "本地 / Ollama",
+    id: "ollama",
+    label: "Local Ollama",
     endpoint: "http://localhost:11434/v1",
+    requiresKey: false,
     models: [
-      { name: "qwen3", desc: "Qwen 3" },
-      { name: "deepseek-r1", desc: "DeepSeek R1" },
-      { name: "llama3.3", desc: "Llama 3.3" },
-      { name: "mistral", desc: "Mistral" }
+      { name: "qwen3", desc: "local Qwen" },
+      { name: "deepseek-r1", desc: "local reasoning" },
+      { name: "llama3.3", desc: "local Llama" },
+      { name: "mistral", desc: "local Mistral" }
     ]
   }
 ];
 
 const LLM_STORAGE_KEY = "rag_llm_settings_v1";
+
+function cleanLLMEndpoint(value) {
+  return String(value || "").trim().replace(/\s*\(.+$/, "").replace(/\/+$/, "");
+}
+
+function normalizeKnownLLMEndpoint(value) {
+  const endpoint = cleanLLMEndpoint(value);
+  if (endpoint === "https://generativelanguage.googleapis.com/v1beta") {
+    return "https://generativelanguage.googleapis.com/v1beta/openai";
+  }
+  return endpoint;
+}
+
+function getLLMProvider(providerId) {
+  if (providerId === "custom") {
+    return { id: "custom", label: "自定义", endpoint: "", requiresKey: true };
+  }
+  return MODEL_CATALOG.find((provider) => provider.id === providerId) || null;
+}
+
+function inferLLMProvider(modelName) {
+  const model = String(modelName || "").toLowerCase();
+  if (!model) return null;
+  if (model.startsWith("gemini-")) return getLLMProvider("gemini");
+  if (model.startsWith("deepseek-")) return getLLMProvider("deepseek");
+  if (model.startsWith("kimi-") || model.startsWith("moonshot-")) return getLLMProvider("kimi");
+  if (model.startsWith("qwen")) return getLLMProvider("qwen");
+  if (model.startsWith("glm-")) return getLLMProvider("zhipu");
+  if (model.startsWith("doubao-")) return getLLMProvider("doubao");
+  if (["llama", "mistral", "qwen", "deepseek-r1"].some((prefix) => model.startsWith(prefix))) return getLLMProvider("ollama");
+  if (model.startsWith("gpt-") || /^o\d/.test(model) || model.startsWith("chatgpt-")) return getLLMProvider("openai");
+  return null;
+}
+
+function getLLMProviderMeta(cfg) {
+  const selected = getLLMProvider(cfg?.provider);
+  if (selected) return selected;
+  return inferLLMProvider(cfg?.model) || selected || getLLMProvider("openai");
+}
+
+function resolveLLMEndpoint(cfg) {
+  const custom = cleanLLMEndpoint(cfg?.baseUrl);
+  if (custom) return custom;
+  const provider = getLLMProviderMeta(cfg);
+  return cleanLLMEndpoint(provider?.endpoint || "https://api.openai.com/v1");
+}
+
+function providerNeedsKey(provider) {
+  return provider?.requiresKey !== false;
+}
 
 const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer", "source", "input", "output"]);
 const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
@@ -2421,6 +2465,7 @@ function resolveEls() {
     searchMeta: $("searchMeta"),
     searchResults: $("searchResults"),
     llmBaseUrl: $("llmBaseUrl"),
+    llmProvider: $("llmProvider"),
     llmApiKey: $("llmApiKey"),
     llmModel: $("llmModel"),
     llmTemperature: $("llmTemperature"),
@@ -3883,6 +3928,152 @@ async function pickModelFromCatalog(modelName, endpoint) {
   closeModelCatalog();
 }
 
+function readLLMSettings() {
+  return {
+    provider: els.llmProvider?.value || "auto",
+    baseUrl: normalizeKnownLLMEndpoint(els.llmBaseUrl?.value || ""),
+    apiKey: (els.llmApiKey?.value || "").trim(),
+    model: (els.llmModel?.value || "").trim(),
+    temperature: Number(els.llmTemperature?.value || 0.3),
+    maxTokens: Math.max(64, Number(els.llmMaxTokens?.value || 1024))
+  };
+}
+
+function normalizeLLMFormCopy() {
+  const providerLabel = document.querySelector('label[for="llmProvider"]');
+  if (providerLabel) providerLabel.textContent = "模型服务";
+  const baseLabel = document.querySelector('label[for="llmBaseUrl"]');
+  if (baseLabel) {
+    baseLabel.innerHTML = 'API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(可不填；需要改代理时再填)</span>';
+  }
+  if (els.llmBaseUrl) els.llmBaseUrl.placeholder = "不填则自动使用所选服务商地址";
+  if (els.llmModel) els.llmModel.placeholder = "例如 gemini-3.5-flash";
+}
+
+function populateLLMProviderSelect() {
+  normalizeLLMFormCopy();
+  if (!els.llmProvider) return;
+  const current = els.llmProvider.value || "auto";
+  els.llmProvider.innerHTML = [
+    '<option value="auto">自动识别模型服务</option>',
+    ...MODEL_CATALOG.map((provider) => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`),
+    '<option value="custom">自定义 OpenAI 兼容地址</option>'
+  ].join("");
+  els.llmProvider.value = getLLMProvider(current) || current === "auto" ? current : "auto";
+}
+
+function updateLLMStatus() {
+  if (!els.llmStatus) return;
+  const cfg = readLLMSettings();
+  const provider = getLLMProviderMeta(cfg);
+  const endpoint = resolveLLMEndpoint(cfg);
+  const needsKey = providerNeedsKey(provider);
+  els.llmStatus.classList.remove("is-ready", "is-error");
+  if (cfg.model && needsKey && !cfg.apiKey) {
+    els.llmStatus.textContent = `缺 API Key · ${cfg.model} · ${provider?.label || "自定义"} · ${endpoint}`;
+    els.llmStatus.classList.add("is-error");
+  } else if (cfg.model) {
+    const keyHint = needsKey ? "Key 已填" : "本地模型无需 Key";
+    els.llmStatus.textContent = `已就绪 · ${cfg.model} · ${provider?.label || "自定义"} · ${endpoint} · ${keyHint}`;
+    els.llmStatus.classList.add("is-ready");
+  } else if (cfg.apiKey || cfg.baseUrl || cfg.provider !== "auto") {
+    els.llmStatus.textContent = "请选择或填入 Model";
+  } else {
+    els.llmStatus.textContent = "未配置 · 选择模型服务和模型名后可使用 RAG 问答";
+  }
+}
+
+function populateBaseUrlDatalist() {
+  const datalist = document.getElementById("llmBaseUrlList");
+  if (!datalist) return;
+  const seen = new Set();
+  datalist.innerHTML = MODEL_CATALOG
+    .map((provider) => cleanLLMEndpoint(provider.endpoint))
+    .filter((url) => { if (!url || seen.has(url)) return false; seen.add(url); return true; })
+    .map((url) => `<option value="${escapeHtml(url)}">`)
+    .join("");
+}
+
+function clearLLMSettings() {
+  if (els.llmProvider) els.llmProvider.value = "auto";
+  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
+  if (els.llmApiKey) els.llmApiKey.value = "";
+  if (els.llmModel) els.llmModel.value = "";
+  if (els.llmTemperature) els.llmTemperature.value = "0.3";
+  if (els.llmMaxTokens) els.llmMaxTokens.value = "1024";
+  saveLLMSettings();
+  showToast("LLM 配置已清空", "success");
+}
+
+function loadLLMSettings() {
+  try {
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (els.llmProvider) els.llmProvider.value = data.provider || "auto";
+      if (els.llmBaseUrl) els.llmBaseUrl.value = normalizeKnownLLMEndpoint(data.baseUrl || "");
+      if (els.llmApiKey) els.llmApiKey.value = data.apiKey || "";
+      if (els.llmModel) els.llmModel.value = data.model || "";
+      if (els.llmTemperature && data.temperature != null) els.llmTemperature.value = data.temperature;
+      if (els.llmMaxTokens && data.maxTokens != null) els.llmMaxTokens.value = data.maxTokens;
+    }
+  } catch {}
+  updateLLMStatus();
+}
+
+function saveLLMSettings() {
+  try {
+    const cfg = readLLMSettings();
+    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
+  } catch {}
+  updateLLMStatus();
+}
+
+function openModelCatalog() {
+  if (!els.modelCatalog || !els.modelCatalogBody) return;
+  els.modelCatalogBody.innerHTML = MODEL_CATALOG.map((group) => {
+    const cleanEndpoint = cleanLLMEndpoint(group.endpoint);
+    const items = group.models.map((model) => `
+      <button class="model-row" type="button"
+              data-provider-id="${escapeHtml(group.id)}"
+              data-model-name="${escapeHtml(model.name)}"
+              data-endpoint="${escapeHtml(cleanEndpoint)}">
+        <span class="model-name">${escapeHtml(model.name)}</span>
+        <span class="model-desc">${escapeHtml(model.desc || "")}</span>
+        <iconify-icon class="model-copy" icon="lucide:clipboard-copy"></iconify-icon>
+      </button>
+    `).join("");
+    return `
+      <div class="model-group">
+        <div class="model-group-label">
+          <span>${escapeHtml(group.label)}</span>
+          <span class="endpoint">${escapeHtml(cleanEndpoint || "manual")}</span>
+        </div>
+        ${items}
+      </div>
+    `;
+  }).join("");
+  els.modelCatalog.hidden = false;
+}
+
+async function pickModelFromCatalog(modelName, endpoint, providerId) {
+  if (els.llmModel) els.llmModel.value = modelName;
+  if (els.llmProvider && providerId) els.llmProvider.value = providerId;
+  if (els.llmBaseUrl && providerId) {
+    els.llmBaseUrl.value = "";
+  } else if (els.llmBaseUrl && !els.llmBaseUrl.value.trim() && endpoint) {
+    els.llmBaseUrl.value = endpoint;
+  }
+  saveLLMSettings();
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(modelName);
+    copied = true;
+  } catch {}
+  showToast(copied ? `已复制并填入：${modelName}` : `已填入：${modelName}`, "success");
+  closeModelCatalog();
+}
+
 function buildAskMessages(question) {
   const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
   if (!results.length) {
@@ -3921,7 +4112,16 @@ async function runAsk() {
     showToast("请先在 LLM 配置中填入 Model 名称。", "warning");
     return;
   }
-  const baseUrl = cfg.baseUrl || "https://api.openai.com/v1";
+  const provider = getLLMProviderMeta(cfg);
+  const baseUrl = resolveLLMEndpoint(cfg);
+  if (!baseUrl) {
+    showToast("请选择模型服务，或填写 OpenAI 兼容 API 地址。", "warning");
+    return;
+  }
+  if (providerNeedsKey(provider) && !cfg.apiKey) {
+    showToast("远程模型需要 API Key；本地 Ollama 才可以不填。", "warning");
+    return;
+  }
   const url = `${baseUrl}/chat/completions`;
   const messages = buildAskMessages(question);
 
@@ -3936,7 +4136,7 @@ async function runAsk() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${cfg.apiKey}`
+        ...(cfg.apiKey ? { "Authorization": `Bearer ${cfg.apiKey}` } : {})
       },
       body: JSON.stringify({
         model: cfg.model,
@@ -4071,6 +4271,7 @@ function bindEvents() {
   els.btnSearch?.addEventListener("click", runSearch);
 
   ["input", "change"].forEach((evt) => {
+    els.llmProvider?.addEventListener(evt, saveLLMSettings);
     els.llmBaseUrl?.addEventListener(evt, saveLLMSettings);
     els.llmApiKey?.addEventListener(evt, saveLLMSettings);
     els.llmModel?.addEventListener(evt, saveLLMSettings);
@@ -4087,7 +4288,7 @@ function bindEvents() {
     }
     const row = event.target.closest("[data-model-name]");
     if (!row) return;
-    pickModelFromCatalog(row.dataset.modelName, row.dataset.endpoint);
+    pickModelFromCatalog(row.dataset.modelName, row.dataset.endpoint, row.dataset.providerId);
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && els.modelCatalog && !els.modelCatalog.hidden) {
@@ -4183,6 +4384,7 @@ function bindEvents() {
 async function init() {
   resolveEls();
   bindEvents();
+  populateLLMProviderSelect();
   loadLLMSettings();
   populateBaseUrlDatalist();
   setPage("overview");
@@ -4493,6 +4695,12 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
+                      <label for="llmProvider">模型服务</label>
+                      <select class="form-control" id="llmProvider">
+                        <option value="auto">自动识别模型服务</option>
+                      </select>
+                    </div>
+                    <div class="field field--wide">
                       <label for="llmBaseUrl">API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(从常用模型自动填入，也可手动输入)</span></label>
                       <div class="input-with-action">
                         <input class="form-control" id="llmBaseUrl" type="text" list="llmBaseUrlList" placeholder="选择或输入 API 地址，如 https://api.openai.com/v1" autocomplete="off">
@@ -4507,7 +4715,7 @@ window.addEventListener("DOMContentLoaded", init);
                     <div class="field field--wide">
                       <label for="llmModel">Model</label>
                       <div class="input-with-action">
-                        <input class="form-control" id="llmModel" type="text" placeholder="gpt-5.5-instant" autocomplete="off">
+                        <input class="form-control" id="llmModel" type="text" placeholder="gemini-3.5-flash" autocomplete="off">
                         <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
                       </div>
                     </div>
