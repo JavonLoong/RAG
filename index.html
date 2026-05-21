@@ -4494,7 +4494,7 @@ function bindEvents() {
   els.btnAsk?.addEventListener("click", runAsk);
   els.btnClearAnswer?.addEventListener("click", clearAnswer);
   els.askInput?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
       event.preventDefault();
       runAsk();
     }
@@ -4926,15 +4926,6 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>结果列表</h3>
-                    </div>
-                  </div>
-                  <div class="results-list" id="searchResults"></div>
-                </article>
-
-                <article class="panel">
-                  <div class="panel-head">
-                    <div>
                       <h3>RAG 问答</h3>
                       <p>提问时会先自动检索本地 chunk / 知识库证据，再调用已配置的 LLM 回答。</p>
                     </div>
@@ -4943,10 +4934,19 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div class="ask-row">
-                    <textarea class="form-control" id="askInput" rows="2" placeholder="基于上方检索结果向模型提问"></textarea>
+                    <textarea class="form-control" id="askInput" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
                     <button class="btn" id="btnAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
                   </div>
                   <div class="ask-answer" id="askAnswer"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>结果列表</h3>
+                    </div>
+                  </div>
+                  <div class="results-list" id="searchResults"></div>
                 </article>
               </div>
             </div>
