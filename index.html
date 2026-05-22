@@ -2397,7 +2397,8 @@ function buildPublicDemoUploads() {
     last_collection: PUBLIC_DEMO_COLLECTION,
     last_records: item.records,
     last_chunks: item.chunks,
-    last_error: null
+    last_error: null,
+    is_demo_sample: true
   }));
 }
 
@@ -2480,9 +2481,33 @@ function activateDemoSnapshotForEmptyLocalIndex() {
 }
 
 async function refreshPublicDemoStats() {
-  state.stats = clonePublicDemoStats();
-  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
-  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
+  const processed = (state.uploads || []).filter((item) => item.status === "processed");
+  const records = processed.reduce((sum, item) => sum + Number(item.last_records || 0), 0);
+  const chunks = processed.reduce((sum, item) => sum + Number(item.last_chunks || 0), 0);
+  const storageMb = processed.reduce((sum, item) => sum + Number(item.size_kb || 0), 0) / 1024;
+  const byKind = {};
+  processed.forEach((item) => {
+    const kind = item.source_kind || "Text";
+    byKind[kind] = (byKind[kind] || 0) + 1;
+  });
+  state.stats = {
+    status: "public-demo",
+    collections: processed.length ? [{
+      name: PUBLIC_DEMO_COLLECTION,
+      count: chunks,
+      estimated_tokens: Math.round(chunks * 446.7),
+      estimated_chars: Math.round(chunks * 655.4),
+      source_type_counts: byKind,
+      sources: processed.map((item) => item.display_name || item.filename)
+    }] : [],
+    total_documents: processed.length,
+    total_tokens_estimate: Math.round(chunks * 446.7),
+    storage_size_mb: Number(storageMb.toFixed(2)),
+    embedding_dim: ENGINE_DEFAULTS.dimension,
+    source_type_breakdown: byKind
+  };
+  state.primaryCollection = processed.length ? PUBLIC_DEMO_COLLECTION : "";
+  state.primaryStats = processed.length ? { record_count: records, chunk_count: chunks } : null;
   rememberTimeline("stats");
   renderCollectionSpectrum();
   renderCollectionList();
@@ -2519,7 +2544,8 @@ async function deleteLocalUpload(filename, options = {}) {
   state.uploads = (state.uploads || []).filter((item) => item.filename !== filename);
   if (options.purgeVectors) {
     purgeLocalVectorsByFilename([filename]);
-    await refreshLocalStats();
+    if (state.publicDemo) await refreshPublicDemoStats();
+    else await refreshLocalStats();
   }
   refreshLocalUploadBuckets();
   renderUploads();
@@ -2545,7 +2571,8 @@ async function deleteLocalProcessedUploads(filenames) {
   state.selectedProcessedUploads.clear();
   state.processedEditMode = false;
   refreshLocalUploadBuckets();
-  await refreshLocalStats();
+  if (state.publicDemo) await refreshPublicDemoStats();
+  else await refreshLocalStats();
   renderProcessSummary();
   renderQualityReport();
   renderSearchResults();
@@ -2645,7 +2672,8 @@ async function runLocalProcess() {
       quality_report: buildQualityReport(nextRecords, nextChunks),
       embedding_backend: "browser-local"
     };
-    await refreshLocalStats();
+    if (state.publicDemo) await refreshPublicDemoStats();
+    else await refreshLocalStats();
     renderUploads();
     renderProcessedUploads();
     renderProcessSummary();
@@ -3790,7 +3818,7 @@ async function refreshStats() {
 }
 
 async function refreshUploads() {
-  if (state.publicDemo) { state.pendingUploads = []; state.processedUploads = state.uploads.slice(); renderUploads(); renderProcessedUploads(); return; }
+  if (state.publicDemo) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
   if (state.localMode) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
   const payload = await requestJson("/api/uploads");
   state.uploads = Array.isArray(payload.files) ? payload.files : [];
@@ -3828,10 +3856,6 @@ function isSupportedFile(file) {
 
 
 async function uploadFiles(fileList) {
-  if (state.publicDemo) {
-    showToast("公开演示页不接收上传；真实上传需要后端服务。", "warning");
-    return;
-  }
   const incoming = dedupeFiles(Array.from(fileList || []));
   const files = incoming.filter(isSupportedFile);
   const skippedCount = incoming.length - files.length;
@@ -3854,7 +3878,8 @@ async function uploadFiles(fileList) {
       upsertUploadItem(nextItem);
     });
     refreshLocalUploadBuckets();
-    await refreshLocalStats();
+    if (state.publicDemo) await refreshPublicDemoStats();
+    else await refreshLocalStats();
     renderUploads();
     renderProcessedUploads();
     const summary = `Added ${files.length} files${replacedCount ? `, replaced ${replacedCount} previously processed files` : ""}${skippedCount ? `, skipped ${skippedCount} unsupported files` : ""}.`;
@@ -3913,10 +3938,6 @@ async function uploadFiles(fileList) {
 }
 
 async function deleteUpload(filename, options = {}) {
-  if (state.publicDemo) {
-    showToast("公开演示页不删除样例文件。", "warning");
-    return;
-  }
   if (state.localMode) {
     await deleteLocalUpload(filename, options);
     return;
@@ -3935,10 +3956,6 @@ async function deleteUpload(filename, options = {}) {
 
 
 async function deleteProcessedUploads(filenames) {
-  if (state.publicDemo) {
-    showToast("公开演示页不删除样例文件。", "warning");
-    return;
-  }
   if (state.localMode) {
     await deleteLocalProcessedUploads(filenames);
     return;
@@ -3967,20 +3984,12 @@ async function deleteProcessedUploads(filenames) {
 }
 
 function toggleProcessedEditMode(force) {
-  if (state.publicDemo) {
-    showToast("公开演示页只展示成果，不编辑样例文件。", "warning");
-    return;
-  }
   state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
   if (!state.processedEditMode) state.selectedProcessedUploads.clear();
   renderProcessedUploads();
 }
 
 async function runProcess() {
-  if (state.publicDemo) {
-    showToast("公开演示页已预置处理摘要；真实入库需要后端服务。", "warning");
-    return;
-  }
   if (state.localMode) {
     await runLocalProcess();
     return;
