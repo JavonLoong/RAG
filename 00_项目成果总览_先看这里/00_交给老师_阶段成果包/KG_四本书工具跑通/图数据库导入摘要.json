@@ -1,0 +1,30 @@
+{
+  "sqlite_path": "D:\\虚拟C盘\\RAG\\storage_layer\\runtime\\four_books_graph_store\\graph_store.sqlite",
+  "node_count": 102,
+  "edge_count": 240,
+  "evidence_count": 240,
+  "relation_counts": {
+    "HAS_COMPONENT": 24,
+    "HAS_FUNCTION": 12,
+    "HAS_PARAMETER": 85,
+    "HAS_PROBLEM": 51,
+    "HAS_SUBTYPE": 20,
+    "IMPROVED_BY": 18,
+    "RELATED_TO": 11,
+    "USES_FUEL": 19
+  },
+  "entity_type_counts": {
+    "Component": 8,
+    "Concept": 14,
+    "Equipment": 5,
+    "Fuel": 8,
+    "Method": 15,
+    "Parameter": 35,
+    "Problem": 5,
+    "Property": 12
+  },
+  "source_input": "D:\\虚拟C盘\\RAG\\kg_pipeline\\experiments\\four_books_kg_construction\\poc_run\\triples.json",
+  "cypher_path": "D:\\虚拟C盘\\RAG\\storage_layer\\runtime\\four_books_graph_store\\neo4j_import.cypher",
+  "neo4j_status": "cypher_file_generated_not_executed",
+  "summary_path": "D:\\虚拟C盘\\RAG\\storage_layer\\runtime\\four_books_graph_store\\import_summary.json"
+}

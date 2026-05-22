@@ -1,0 +1,1199 @@
+{
+  "generated_at": "2026-05-18T01:34:57",
+  "ocr_root": "D:\\虚拟C盘\\RAG\\data_pipeline\\ocr_layout_aware_tesseract_night_corrected\\tsinghua_gas_turbine_books",
+  "pdf_count": 13,
+  "total_pages": 5483,
+  "pages_ocr_done": 5483,
+  "pages_with_text": 5481,
+  "error_count": 0,
+  "char_count": 14836326,
+  "line_count": 169946,
+  "char_count_p50": 954,
+  "char_count_p90": 8341,
+  "line_count_p50": 30,
+  "line_count_p90": 42,
+  "confidence_available": true,
+  "avg_confidence_mean": 0.6851,
+  "avg_confidence_p10": 0.4703,
+  "confidence_note": "Confidence values are present; they are useful as rough risk indicators, not final correctness proof.",
+  "risk_flag_counts": {
+    "版面顺序high": 1104,
+    "版面顺序medium": 62,
+    "平均置信度偏低": 344,
+    "文字极短": 63,
+    "短行过多": 78,
+    "无文字": 2,
+    "长文本但标点很少": 1
+  },
+  "layout_risk_counts": {
+    "low": 4317,
+    "high": 1104,
+    "medium": 62
+  },
+  "risk_examples": [
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 11,
+      "char_count": 2133,
+      "line_count": 68,
+      "avg_confidence": 0.7327,
+      "cjk_ratio": 0.2291,
+      "symbol_ratio": 0.0021,
+      "punctuation_count": 71,
+      "short_line_ratio": 0.0147,
+      "ending_punct_ratio": 0.4706,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "6.11 6.12 单个简单直射喷嘴90*喷射在亚声速、室温和横向空气流中下游 6.13 F395)fn FAS Ted 25 St PES SF AH as TY 6.14 6.15 6.16 6.17 6.18 6.19 第7章 7.1 7.2 a3 7.4 7.5 7.6 7.7 第8章 8.| 8.2 8.3 8.4 8.5 8.6 8.7 8.8..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 13,
+      "char_count": 761,
+      "line_count": 71,
+      "avg_confidence": 0.703,
+      "cjk_ratio": 0.4024,
+      "symbol_ratio": 0.006,
+      "punctuation_count": 68,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.507,
+      "mojibake_hits": 0,
+      "layout_risk": "medium",
+      "risk_flags": [
+        "版面顺序medium"
+      ],
+      "preview": "12 10 ARBRE ATH 111结束请 第13章燃烧室总压损失“… 13.1 AH RB 13.2”无用总压损失与有用总压损失 13.3 ASE SFA FICS ACHE AC,的确定 15.4 AREA OIRO OR 13.5“火焰简加热总压损失 13.6“火焰简冷态总压损失的组成~ 13.7讨论 第14章”燃烧室噪声排放“…， 14.1 se..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 15,
+      "char_count": 1790,
+      "line_count": 45,
+      "avg_confidence": 0.6399,
+      "cjk_ratio": 0.1334,
+      "symbol_ratio": 0.0064,
+      "punctuation_count": 64,
+      "short_line_ratio": 0.0222,
+      "ending_punct_ratio": 0.4889,
+      "mojibake_hits": 0,
+      "layout_risk": "medium",
+      "risk_flags": [
+        "版面顺序medium"
+      ],
+      "preview": "19.4 19,5 19.6 19.7 19.8 19.9 19.10 19,11 19,12 19.13 #208 20.1 20.2 20.3 20.4 20.5 20.6 20.7 20.8 20.9 20.10 20.11 燃油沉积试验See cee cae ccc beceedneaseteeaerveecer sence sceacssieve..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 42,
+      "char_count": 971,
+      "line_count": 33,
+      "avg_confidence": 0.8752,
+      "cjk_ratio": 0.7764,
+      "symbol_ratio": 0.0064,
+      "punctuation_count": 96,
+      "short_line_ratio": 0.0303,
+      "ending_punct_ratio": 0.2424,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "人燃烧。这样变动太大，先不改。保持现有的火焰简内燃烧组织，只改扩压融。 3.4前置扩压器设计 这是对常规燃烧室，扩压器进口Ma不高、不分叉的前置扩压器而言的。 机的情况，如CF6-50、CF6-80、JT100D-2、RB211等。注意， 设计者有他自己的考虑。 承肋是必须考虑的。 的考虑: 器进口平均直径之上，所以外壁扩张角常常大于内壁扩张角。 中又改变..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 43,
+      "char_count": 861,
+      "line_count": 39,
+      "avg_confidence": 0.7948,
+      "cjk_ratio": 0.7161,
+      "symbol_ratio": 0.0137,
+      "punctuation_count": 53,
+      "short_line_ratio": 0.0256,
+      "ending_punct_ratio": 0.2821,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "28先进燃气轮机燃烧室 2.0 T T rT T a6 A, ji 1 3 5 7 9 20 L/h, 线是在周疝均匀、径癌边界层型的速度分布下做的。 进行流场显示及空气流动性能试验。 以下讨论前置扩压器的设计。 (1)分又前置扩压器设计 环腔燃烧室是好的设计。 分叉前置扩压器有两点意义: 均可做到。 气流很难进入外环腔的位置，所以分又有利于总压损失的减少..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 52,
+      "char_count": 780,
+      "line_count": 34,
+      "avg_confidence": 0.7783,
+      "cjk_ratio": 0.5946,
+      "symbol_ratio": 0.0082,
+      "punctuation_count": 72,
+      "short_line_ratio": 0.0588,
+      "ending_punct_ratio": 0.5588,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "3.6.2旋流器的气动参数一一旋流数9， (swirl number) 其中:C一一旋流器出口射流推力; 7一一旋流器出口射流扭矩; 径。 后来奇吉尔(Chigier)和比尔(Beer)把旋流数定义为 其中:，G,——§fi oy AY Ah fe)aE; C,一一轴向推力。 他们将C.和C,表达如下 其中:天-一速度的轴向分量; 歼一一速度的切向分量。 ..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 80,
+      "char_count": 730,
+      "line_count": 32,
+      "avg_confidence": 0.7106,
+      "cjk_ratio": 0.5931,
+      "symbol_ratio": 0.0014,
+      "punctuation_count": 62,
+      "short_line_ratio": 0.0625,
+      "ending_punct_ratio": 0.4062,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "XY 分布方程为 而有所不同，最常见的是: Du:体积平均直径。 径。Do最恰当地表达了雾化细度。 SMD也是4的函数 式中:了了一一伽玛函数。 用单一的参数来表征雾化进行CFD计算较为方便，但是是不正确的。 SMD/天也是4的函数 x 以上方程的推导从略，读者可以参阅参考文献【24]。用MMD及4来表征的R-R C=MD 需要说明平均直径与代表性尺寸是不..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 89,
+      "char_count": 661,
+      "line_count": 35,
+      "avg_confidence": 0.8314,
+      "cjk_ratio": 0.7593,
+      "symbol_ratio": 0.0065,
+      "punctuation_count": 33,
+      "short_line_ratio": 0.0857,
+      "ending_punct_ratio": 0.1429,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "74先进燃气轮机燃烧室 140 120 =100 =SS_ ?80 60 140 120 S 100 80 4.5”空气助雾化简单离心式喷嘴 良好，而是燃烧室设计上的考虑。 组织上要重新考虑〈(见第7章)。 至尾始终工作，是“长明灯”,在各种工况下要稳定火焰，尤其在低工况下。 一全-一Sbar—R 6bar 日 图4-12简单离心式喷嘴液体压力降对SMD的..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 94,
+      "char_count": 792,
+      "line_count": 38,
+      "avg_confidence": 0.7387,
+      "cjk_ratio": 0.5751,
+      "symbol_ratio": 0.0997,
+      "punctuation_count": 48,
+      "short_line_ratio": 0.0526,
+      "ending_punct_ratio": 0.1316,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "50 距离，最后因为要与主模尺寸一致，又加了一个带角度的扩张段。 仍由要求的流量来决定。没有空气时，喷雾锥角常用90。。 |SS| (a)(b)(ec) oe oe orn eel a See eee eee leer ae|||||| =全- |>a 20 F Soap-=p~~4=e--= 上一一-ao||||||| 10一一一十一一一圭一一一一上一一..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 103,
+      "char_count": 495,
+      "line_count": 32,
+      "avg_confidence": 0.8121,
+      "cjk_ratio": 0.6138,
+      "symbol_ratio": 0.0045,
+      "punctuation_count": 30,
+      "short_line_ratio": 0.25,
+      "ending_punct_ratio": 0.125,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "。液体-气体相对速度不变。 在以上条件下，内外雾化空气的比例有三种组合，见表4-2。 65.2 34.8 36 64 14.4 的外雾化空气是必不可少的。 70 60 4 50+ =40 be= 20 10 APIP=4% 矿=常数，Prf=300psi 表4-2一定条件下的内外雾化空气的比例组合 试验结果如图4-29所示。很明显，内雾化空气占的比例高时S..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 110,
+      "char_count": 22179,
+      "line_count": 13,
+      "avg_confidence": 0.5872,
+      "cjk_ratio": 0.0397,
+      "symbol_ratio": 0.0005,
+      "punctuation_count": 600,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.0769,
+      "mojibake_hits": 0,
+      "layout_risk": "medium",
+      "risk_flags": [
+        "版面顺序medium"
+      ],
+      "preview": "leat【以停留时间来表达)/me ar,0K,Jos}| 由试验数据可以得出以下有意义的结论: (1)液雾尺寸分布非常细 雾化细。例如，在12har，700K CH, 5 1 14 3 2 11 297 322 10 10 82.116653 J=3, 5 1 14 3 2 12 317 320 20 12 44.259247 460. 5 1 14 3..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 125,
+      "char_count": 694,
+      "line_count": 34,
+      "avg_confidence": 0.8301,
+      "cjk_ratio": 0.7382,
+      "symbol_ratio": 0.0152,
+      "punctuation_count": 55,
+      "short_line_ratio": 0.0588,
+      "ending_punct_ratio": 0.2647,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "110先进燃气轮机燃烧室 卷吸的小液滴进入涡旋Ors 气流结构沿着跨流运动\\\\\\\\ 系式。 伦泽托的关系式为 方程(4-20)，只是加以改进。 所预计的偏大。 我们逐项讨论方程(4-20)。 gia\\}大液滴穿透远些 雾化空气ae we小液滴生成 最终生成:油-气混合物 (a) D向视图主旋流器主油 4 Cb)在工业燃气轮机低污染 预混主模上的结构 也不同..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 131,
+      "char_count": 487,
+      "line_count": 35,
+      "avg_confidence": 0.7743,
+      "cjk_ratio": 0.3381,
+      "symbol_ratio": 0.0214,
+      "punctuation_count": 34,
+      "short_line_ratio": 0.0571,
+      "ending_punct_ratio": 0.1429,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "116先进燃气轮机燃烧室 0.12 377515 con on| 4.94 0.17 :|4.064 0.105 36 1.27 SiH ee D 0.3354 239377 Rif 12.27 式中:ALR一一质量流量的气液比; 一一叱部截面的长度; 九一一叱部直径; 及一一喷嘴腔压力，kPa。 试验的6种喷嘴流量系数方程如下所示。 喷嘴A 表4-7流量..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 132,
+      "char_count": 701,
+      "line_count": 39,
+      "avg_confidence": 0.7642,
+      "cjk_ratio": 0.3011,
+      "symbol_ratio": 0.0015,
+      "punctuation_count": 78,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.3333,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "喷嘴B 喷嘴C 喷嘴D 喷嘴E 喷嘴了 +3.5%.这些关系式适合于以下范围 0.2<X<0.6 0.6<X<2 0.2<X<0.6 0.6<X<2 0.2<X<0.6 0.55<X<2 0.2<X<0.55 0.55<X<2 0.2<X<0.55 0.55<X<2 这些试验流量系数关系式是从共计1500个试验数据点归纳得出的，最大偏差 第4章燃油喷射与雾..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 141,
+      "char_count": 813,
+      "line_count": 35,
+      "avg_confidence": 0.7676,
+      "cjk_ratio": 0.5202,
+      "symbol_ratio": 0.0026,
+      "punctuation_count": 108,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.6571,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "126先进燃气轮机燃烧室 正常沸点温度，对正庚烷是371.6K。 正庚烷的物性如下: 临界温度T.,=540.3K; 临界压力p,=2740kPa; TAY BY AR BEI Ly,=317.8kJ/kg; 分子量=100.205; 常温(288K)下密度=687.8kg/m*, 有了液滴表面饱和蒸气压，可以确定 式中:Mi，HM.,一一燃油、空气的分子..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 142,
+      "char_count": 1048,
+      "line_count": 39,
+      "avg_confidence": 0.7759,
+      "cjk_ratio": 0.6723,
+      "symbol_ratio": 0.002,
+      "punctuation_count": 107,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.4872,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "式中:cuwr，Awr一一空气的比定压热容、导热系数，以定性温度也来计算; 者和勒菲沃也做过考察，推荐用173准则，这个推荐也被广泛接受'”'。 确定空气及燃油蒸气比定压热容及导热系数随温度的变化，这将在后面讨论。 质数By GFE BORE”。 w\"1-Y,7 L 将多代入方程(5-15)，得出 pM,L pa Moc,(7%—-Ta) 也是液体温度的函..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 143,
+      "char_count": 826,
+      "line_count": 36,
+      "avg_confidence": 0.8074,
+      "cjk_ratio": 0.5852,
+      "symbol_ratio": 0.0038,
+      "punctuation_count": 96,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.5,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "128先进燃气轮机燃烧室 啊。如果将压力对稳态蒸发常数的影响表示为 式中:mn一一稳态蒸发党数的压力指数。 为0.15~0.25是相符的。 5.5”单组分单个液滴非稳态(AR)蒸发计算 个液滴蒸发计算的一部分。 首先讨论基本方程。 定如下 sh,Nu{GINB EMR(Nusselt)数; /一一换热系数。 从气相回液滴表面的传热速率是 将方程(5-26)..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 145,
+      "char_count": 856,
+      "line_count": 36,
+      "avg_confidence": 0.7453,
+      "cjk_ratio": 0.6025,
+      "symbol_ratio": 0.0074,
+      "punctuation_count": 95,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.5278,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "130先进燃气轮机燃烧室 5.6 SHIGA AL 对流有自然对流和强迫对流之分，这里只讨论强迫对流的影响。 下，稳态蒸发在总寿命中所占的比重缩小了。 对扩散为蒸发速率控制过程 对通常传热为蒸发速率控制过程(Pr比Se好算) 式中:Re,以液滴直径为特征尺寸的雷诺数; 了一一液滴与周围气体的相对速度。 ew. KF pw,等的计算下文讨论。 1/3准则，其..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 151,
+      "char_count": 4525,
+      "line_count": 19,
+      "avg_confidence": 0.61,
+      "cjk_ratio": 0.0425,
+      "symbol_ratio": 0.0034,
+      "punctuation_count": 129,
+      "short_line_ratio": 0.0526,
+      "ending_punct_ratio": 0.1053,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "136先进燃气轮机燃烧室 1.5广1.5 T..=1600K E E 3 T..=1200K 3 _gens 0.3 =10@10 T..=1600K 一 0 1000 2000 0 1000 2000 图$-7环境压力和温度对JP-5稳态蒸发图5-8环境压力和温度对DF-2稳态蒸发 常数的影响〈单组分简化处理)常数的影响〔(单组分简化处理) T,.=20..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 154,
+      "char_count": 750,
+      "line_count": 35,
+      "avg_confidence": 0.8581,
+      "cjk_ratio": 0.6497,
+      "symbol_ratio": 0.0,
+      "punctuation_count": 58,
+      "short_line_ratio": 0.0571,
+      "ending_punct_ratio": 0.3143,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "发时间估计问题不大。但如果要估计燃油蒸气浓度的分布，那就差很大。 气压的方程为 物性 大气压沸点TVK 临界温度了/K 临界压力pe/kPa Typ PT AR BEA Ly,/(kJLkg) 分子量(平均) 密度(288K)/(kgym3) 5.11多组分燃油饱和葵气压方程及蒸气分子量方程 对。他们也注意到燃油的挥发性，燃油蒸气压，对低温下点火有极大的影..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 156,
+      "char_count": 750,
+      "line_count": 39,
+      "avg_confidence": 0.7445,
+      "cjk_ratio": 0.3382,
+      "symbol_ratio": 0.0132,
+      "punctuation_count": 53,
+      "short_line_ratio": 0.1026,
+      "ending_punct_ratio": 0.2308,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "xf JP-4 对扩散阻力无穷大: 已蒸发分数，因为其组成总是一样的，所以由=f(T.)。 其他和蒸气压方程以如下形式表达 式中:内一一“洋葱”模式的饱和蒸气压，kPa。 Ft fA SS WES-4。 600K。可以看出两者很相近，相差不到3%。 700 600| 500|| 这o 2全 ip se|e单组分简化处理 PRE o 5扩散阻力无穷大 200..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 157,
+      "char_count": 795,
+      "line_count": 34,
+      "avg_confidence": 0.83,
+      "cjk_ratio": 0.293,
+      "symbol_ratio": 0.0027,
+      "punctuation_count": 77,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.2941,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "142先进燃气轮机燃烧室 发分数(EVAP)而变，它与仍留在液滴中尚待蒸发的组分组成和分子量不同。 Xt Jet A-1 Xt DF-2 xt JP-4 如果是“洋葱”模式，其蒸发的分子量对一种燃油是常值 Xf Jet A-1 Xt DF-2 Xt JP-4 RY(EVAP=1)另有一个分子量(见表5-5)。 留在液滴中尚未蒸发的组分的分子量，其通用的表达..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 162,
+      "char_count": 997,
+      "line_count": 35,
+      "avg_confidence": 0.8212,
+      "cjk_ratio": 0.6882,
+      "symbol_ratio": 0.0021,
+      "punctuation_count": 119,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.4571,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "7.都是针对留在液滴中的组成，称为or。 5.13.2临界温度了.. 气压为临界压力。但这是对单一组成的液体而言的。 作者建议临界温度可如下计算〈相当简单而又相当准确) M，相应的临界温度为 5.13.3临界压力P。 合的临界压力p。。 作者建议如下计算 对于留在液滴内的燃油 7..，pu是用来确定多组分燃油的蒸发计算中的物性用，基本合理即可。 EVAP到..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 164,
+      "char_count": 783,
+      "line_count": 36,
+      "avg_confidence": 0.715,
+      "cjk_ratio": 0.5503,
+      "symbol_ratio": 0.0082,
+      "punctuation_count": 80,
+      "short_line_ratio": 0.0833,
+      "ending_punct_ratio": 0.3333,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "较得出。最后，对留在液滴内的燃油密度方程为 Piss-(到se Prox.fav 5.13.5留在液滴内部的燃油比热容 用以下方法计算。 将比定压热容Cy say以工程单位KJ/(kg+K)来表达 7 0.45 25.2(1-7 j DJ) fav 9 (或Wey).Tsay(HT...).Per,fav(或pe)9 5.13.6”多组分燃油的蒸发潜热 对..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 165,
+      "char_count": 3537,
+      "line_count": 30,
+      "avg_confidence": 0.5501,
+      "cjk_ratio": 0.1036,
+      "symbol_ratio": 0.0004,
+      "punctuation_count": 129,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.4333,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "150 sence Mia UA ANAS,GR Re A SA 8 38 PR BRGHRER EAC,MURR ATI,TAR UTEEHC, BSR,an A AA TK a SOU,AARNE 3个因素变化: (1)波体温度; (2)系统压力; (3)菩发的液体组成，体现在Me，wn。 注意到蒸发潜热只是对正在落发着的组分而言的- 对低压系统，建议..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 166,
+      "char_count": 775,
+      "line_count": 36,
+      "avg_confidence": 0.6978,
+      "cjk_ratio": 0.4965,
+      "symbol_ratio": 0.0069,
+      "punctuation_count": 96,
+      "short_line_ratio": 0.1667,
+      "ending_punct_ratio": 0.25,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "即这里莹气分压与总压之比并不等于蒸气的摩尔分数，即 要引入一个新的关系式 WICHITA ACS量分数的关系，还是没变 “I~ 工程计算。作者的做法如下。 第一，从计算表明，丈随组成的变化不大，这样可以用下式表示 第三，将计算的结果用曲线拟合，得到拟合曲线的方程 以后做蒸发计算，就不必再去仔细计算，直接用这个拟合方程就可以了。 这里只列出最后的拟合方程 1..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 169,
+      "char_count": 765,
+      "line_count": 37,
+      "avg_confidence": 0.8018,
+      "cjk_ratio": 0.2664,
+      "symbol_ratio": 0.0042,
+      "punctuation_count": 106,
+      "short_line_ratio": 0.027,
+      "ending_punct_ratio": 0.6757,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "154先进燃气轮机燃烧室 Ly,=262kJ/kg,T.,=687.9K，Tu=497K。 液相比定压热容 Xf Jet A-1,Posy=802.Skg/m’, 液相密度 算时不同。 气相物性如下: 空气比定压热容 式中:7一一参考状态温度，由1/3准则确定。 空气[动力]黏度 燃油蒸气比定压热容 燃油蒸气[动力]黏度 1/3准则方程(5-16)和方程(..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 171,
+      "char_count": 522,
+      "line_count": 34,
+      "avg_confidence": 0.6491,
+      "cjk_ratio": 0.4065,
+      "symbol_ratio": 0.013,
+      "punctuation_count": 52,
+      "short_line_ratio": 0.2353,
+      "ending_punct_ratio": 0.2353,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "156先进燃气轮机燃烧室 90 i多 80广oh 70 >60 60| 40|人二 30要 2*. =， 20|t. 100十Td I 50 ae|4 本 * “ 三 二 10全| 全 0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 ie}Ta]/ms FAS—16 Jet A—1燃油单组分处理的多组分燃油蒸发液滴蒸发历..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 173,
+      "char_count": 537,
+      "line_count": 30,
+      "avg_confidence": 0.6287,
+      "cjk_ratio": 0.3768,
+      "symbol_ratio": 0.0547,
+      "punctuation_count": 40,
+      "short_line_ratio": 0.0333,
+      "ending_punct_ratio": 0.1667,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "158先进燃气轮机燃烧室 550-十六]=i a pe :450 Pa riA|||tt 400 ca os‘00 eee ee 100 ss ee ee ee e,i[||[er|[|[|| ot|fe|ft 过程越来越大。 u 500 Lee aoe||| 图5-18 Jet A-1燃油无穷质量扩散的多组分液滴蒸发计算液滴温度随时间变化 (起始直径S0..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 181,
+      "char_count": 9141,
+      "line_count": 6,
+      "avg_confidence": 0.2834,
+      "cjk_ratio": 0.0212,
+      "symbol_ratio": 0.0008,
+      "punctuation_count": 240,
+      "short_line_ratio": 0.1667,
+      "ending_punct_ratio": 0.0,
+      "mojibake_hits": 0,
+      "layout_risk": "low",
+      "risk_flags": [
+        "平均置信度偏低"
+      ],
+      "preview": "166 MARL o Pl s 3 1 16 4 0 0 127 192 28 36 -1 4 1 16 4 1 0 127 192 28 36 -1 5 1 16 4 1 1 127 192 28 36 35.324203 is 3 1 16 5 0 0 145 219 100 23 -1 4 1 16 5 1 0 145 219 100 23 -1 5..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 184,
+      "char_count": 853,
+      "line_count": 33,
+      "avg_confidence": 0.8323,
+      "cjk_ratio": 0.6491,
+      "symbol_ratio": 0.0049,
+      "punctuation_count": 77,
+      "short_line_ratio": 0.0606,
+      "ending_punct_ratio": 0.4848,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "式中:S=本广一一横截面面积。 将式(6-2)代入式(6-3)得 其中 中:普朗特(Prandtl)方程很简单〈与试验数据相符不好) BAZAR(Langmuir)的方程(与试验相符，但不适合积分运算) 梅勒(Mellor)的方程为〈Re小时，不回到24/Re，只适合Re<200,Ki) 有时被称为“标准”液滴阻力系数方程。 积分，是很重要的。 帆特南方程..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 190,
+      "char_count": 12626,
+      "line_count": 23,
+      "avg_confidence": 0.6679,
+      "cjk_ratio": 0.0584,
+      "symbol_ratio": 0.0001,
+      "punctuation_count": 377,
+      "short_line_ratio": 0.0435,
+      "ending_punct_ratio": 0.5652,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "第6章MiP NDT RIS 党”不到。曾经有人试图定义一个“液雾阻力系数'*1 5 1 5 1 2 19 374 94 11 28 80.428230 ， 5 1 5 1 2 20 384 101 17 11 92.447563 这 5 1 5 1 2 21 408 101 69 12 96.466942 实际 5 1 5 1 2 22 426 94 1..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 195,
+      "char_count": 618,
+      "line_count": 29,
+      "avg_confidence": 0.7719,
+      "cjk_ratio": 0.4161,
+      "symbol_ratio": 0.0161,
+      "punctuation_count": 62,
+      "short_line_ratio": 0.1724,
+      "ending_punct_ratio": 0.2069,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "180先进燃气轮机燃烧室 在计算液滴轨人迹时，在>*方向某一个位置 来。 %=0,¥)=0,=5D,c=21+Gre}. 140+= E 120+dl i 100 pe 60|Pa 40 20 用。 6-12相同,不同忆,的液滴分布对应的尺见表6-2。 {424 y>>0.5D,时，可以忽略(0.05D,)?,RAT LOK y Fr rl EG R Sp..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 202,
+      "char_count": 848,
+      "line_count": 30,
+      "avg_confidence": 0.885,
+      "cjk_ratio": 0.8115,
+      "symbol_ratio": 0.0024,
+      "punctuation_count": 69,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.3667,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "的斜面上捕获更多的液体。 捕获的问题。这里说明的是基本分析，影响因素及试验结果。 获率为 式中:Cno一由液滴轨迹线与固体斜壁面相交而定义的撞壁率; Q@.一一固体斜壁面对液体的捕获率; 0一一斜表面的角度。 (a) 1一喷嘴;2一扇片状喷雾; [65，66]中所讨论的是没有蒸发的情况，实际上有车发，穿透变差，会在喷射一边 在上节中提到主预混模出口，内壁或..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 204,
+      "char_count": 479,
+      "line_count": 31,
+      "avg_confidence": 0.8109,
+      "cjk_ratio": 0.5986,
+      "symbol_ratio": 0.0023,
+      "punctuation_count": 41,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.2903,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "形成贴壁空气膜 (a)(b)(c) 对壁加空气小孔，直径0.5mm， 就有一部分非旋流气 4排，每排30个 流，轴向进入 (a)(b)(c) —=由喷口径向向外喷出， 穿透一导管，进入旋流Ie, 内壁有非旋流保护 (a)(b)(e) 喷嘴下游，4排小孔， Dele\"GEE peters um AR尺寸减小 1%本JANE AR 图6-23 ETA SE B..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 210,
+      "char_count": 811,
+      "line_count": 38,
+      "avg_confidence": 0.8049,
+      "cjk_ratio": 0.5683,
+      "symbol_ratio": 0.0028,
+      "punctuation_count": 54,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.2632,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "径向位置/mm径向位置/mm ALR=239 ALR=4.67 相射流在横向气流中穿透可以有一个两相的J，记为贱，它的定义为 式中:dings Vi——3 ES it et RE; mt+Vg—AIPA TH Tt Ht THE; 4一一两相流面积; p.，太一一横向气流的密度与速度。 该试验在气相射流中多了液相，总的说穿透增大，有两个显著特点; (1)在..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 213,
+      "char_count": 1154,
+      "line_count": 36,
+      "avg_confidence": 0.7705,
+      "cjk_ratio": 0.6186,
+      "symbol_ratio": 0.0045,
+      "punctuation_count": 139,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.2222,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "198 seams emi 但是，过分强调了预混模内混合的重要性。事实上预混模出口没有 充分混合，并不一定NO,就高。 对称的)就是其分布不均匀性的表征。而这个平均的当量比定义为 式中，w一当地的油气当量比: 一平均的油气当量比.。 这样一个分布用一个不均布参数来代表其不均匀性 到r=r，w,=1.55。如果是这样的不均匀分布，S=0.5。 假设在一个单管..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 220,
+      "char_count": 1292,
+      "line_count": 51,
+      "avg_confidence": 0.6029,
+      "cjk_ratio": 0.3228,
+      "symbol_ratio": 0.0456,
+      "punctuation_count": 65,
+      "short_line_ratio": 0.0392,
+      "ending_punct_ratio": 0.2157,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "愉，V一一气体、液体速度; Dy喷孔直径; R一一在扇片液雾中沿径向的距离。 部完成，这都很合理。 ~||1| 水1 1|||| ad ar re ee rr ae 在侧向(2轴方向)的展开 =1到zx=15作一条直线，该直线就是扇片液体在z方向的边界。这样提出 液滴起始尺寸分布采用经验关系式吕4 在参考文献[30]中，径向距离尺是沿轨迹经过的距离，在参考..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 221,
+      "char_count": 511,
+      "line_count": 35,
+      "avg_confidence": 0.7418,
+      "cjk_ratio": 0.4837,
+      "symbol_ratio": 0.0195,
+      "punctuation_count": 40,
+      "short_line_ratio": 0.1714,
+      "ending_punct_ratio": 0.4286,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "206先进燃气轮机燃烧室 式中:oA TAT TH; 内一一液体【动力]黏度。 同时现在有更好的起始液雾数据。 起始雾化分数沿径向距离的分布 al-二| dR 这样在下游某一个位置上液体分布的通量(单位面积流量) 式中:Sgn URE UCSB AIRBASE As A 液滴运动轨迹方程写为 式中:m一一液滴质量。 阻力系数用的是 或者 由运动轨迹可以导出..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 222,
+      "char_count": 532,
+      "line_count": 39,
+      "avg_confidence": 0.7464,
+      "cjk_ratio": 0.3906,
+      "symbol_ratio": 0.0107,
+      "punctuation_count": 25,
+      "short_line_ratio": 0.1026,
+      "ending_punct_ratio": 0.0769,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "»(2)所对应的y，这个yy可以用一个无量纲的组合参数来归纳，即 Pp Vi 由图6-38看出计算的与试验的yw相符得非常好。 A计算 A和100 中10试验曲线的拟合=x 到x=z x x三 x By 50*= 0 3 4 5 67 8 9 10 p,ve 2,(%/cm?)x 1 x 0.5 -20 0 20-20 0 20 2/mm z/mm |加 ..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 225,
+      "char_count": 1001,
+      "line_count": 40,
+      "avg_confidence": 0.8444,
+      "cjk_ratio": 0.613,
+      "symbol_ratio": 0.0084,
+      "punctuation_count": 79,
+      "short_line_ratio": 0.075,
+      "ending_punct_ratio": 0.175,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "210先进燃气轮机燃烧室 应。 以下讨论计算结果。 的分布。 100mm，而在图6-42中，最高点在30mm。也就是径向散布小多了。 穿透少，分布更集中。不同参数的影响都与参考文献[71]定性一致。 40 S»»= ~~20;:z=0 Q燃油蒸气 10广 蒸发计算沿用第5章所述将多组分简化为单组分燃油的处理，包括强迫对流效 计算的工况为:燃油Ip-5,2H..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 237,
+      "char_count": 1055,
+      "line_count": 36,
+      "avg_confidence": 0.9097,
+      "cjk_ratio": 0.8518,
+      "symbol_ratio": 0.001,
+      "punctuation_count": 80,
+      "short_line_ratio": 0.0,
+      "ending_punct_ratio": 0.3333,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "222先进燃气轮机燃烧室 比较强，强旋流带火焰“冲”到火焰简壁再转弯变直。 力学流态。 气)一起燃烧，基本上是扩散燃烧。 7.4常规的燃烧组织不适合于先进燃烧室的原因 先进燃烧室有两类:低污染燃烧室，高油气比燃烧室。 带有主燃孔射流空气，那燃烧空气分数不可能达到这个水平。 以下举例来看一下常规燃烧组织中的空气分配。 这种情况大体上适合于30%燃烧空气的燃烧..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 243,
+      "char_count": 12590,
+      "line_count": 13,
+      "avg_confidence": 0.4722,
+      "cjk_ratio": 0.0315,
+      "symbol_ratio": 0.0006,
+      "punctuation_count": 316,
+      "short_line_ratio": 0.0769,
+      "ending_punct_ratio": 0.2308,
+      "mojibake_hits": 0,
+      "layout_risk": "medium",
+      "risk_flags": [
+        "版面顺序medium"
+      ],
+      "preview": "228 sense OLA 200 2000} 10 1600 1200 1000 ~ema erm) PP 100KPa(10am) 03 04 0S 06 07 08 09 1@11 42 13 1a 1S reese 疼$-1 RANE Taam,ECE 200~1000K FERGIE 5 1 13 1 2 11 419 328 24 28 0.0..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 251,
+      "char_count": 657,
+      "line_count": 43,
+      "avg_confidence": 0.7823,
+      "cjk_ratio": 0.4883,
+      "symbol_ratio": 0.0067,
+      "punctuation_count": 62,
+      "short_line_ratio": 0.0465,
+      "ending_punct_ratio": 0.186,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "236先进燃气轮机燃烧室 100 99.9十 99.8县 99.7+* =99.6 3 99.5 99.3 99.2 99.1 99.0 L 99.5 99.0+? 98.5*°. 98.0+-*口7 x 97.5[5 96.0上 95.5 95.0 94.5| 94.0 还有两个次要的理由: #99.4+> 地97.0去#FAR=0.0151 40 45..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 254,
+      "char_count": 503,
+      "line_count": 30,
+      "avg_confidence": 0.7143,
+      "cjk_ratio": 0.4397,
+      "symbol_ratio": 0.0179,
+      "punctuation_count": 41,
+      "short_line_ratio": 0.0667,
+      "ending_punct_ratio": 0.1667,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "99.95 e 99.9 99.8 97%是绝对行不通的。这样修改设计: 100— i ee a...||| S 96 RK 95 Ap/p=3.1%,FAR 0.0233 ee ed 92 ee ee o|||| 20 25 30 35 40 Blt APB% 使燃烧的混气浓度变富一些，用259%的冷却空气; = -ett 11 图8-13高空最大巡航状..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 261,
+      "char_count": 584,
+      "line_count": 31,
+      "avg_confidence": 0.8446,
+      "cjk_ratio": 0.7637,
+      "symbol_ratio": 0.0057,
+      "punctuation_count": 31,
+      "short_line_ratio": 0.0645,
+      "ending_punct_ratio": 0.129,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "246先进燃气轮机燃烧室 C1)对一个热的发动机可以用更长的 于转时间 (2)所示的起动时间是一个“典型” 情况 开始转动 0 10 20 30 40 50 60 起动开始点火起动机切断 对双轴涡轮喷气或涡轮风扇 时间，把油吹出去。 过程中最关键的一步。这时燃烧室流出热气经过涡轮，涡轮开始发出功率。 起动机在帮忙，起动机还没有脱开。起动机何时脱开如图9-2..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 268,
+      "char_count": 699,
+      "line_count": 34,
+      "avg_confidence": 0.7047,
+      "cjk_ratio": 0.4943,
+      "symbol_ratio": 0.0178,
+      "punctuation_count": 40,
+      "short_line_ratio": 0.0588,
+      "ending_punct_ratio": 0.1471,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "2.0[[LTTTTI 1 TIT rT ytiig a 1.0-~)由主燃区空气流量及主燃区|一王工三门下天及[一TTAD7 0二一条二全全下个人全一人二二二州=了下全1 3.1 图9-6常规燃烧室火焰稳定及点火包线忆3 0.100 Pa 芭0.010 0.001 i 1 1 t 1上4 图9-7修正参考速度/(ft/s) 说的不一样。实际上，当空气平均..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 310,
+      "char_count": 668,
+      "line_count": 27,
+      "avg_confidence": 0.7955,
+      "cjk_ratio": 0.7984,
+      "symbol_ratio": 0.0,
+      "punctuation_count": 49,
+      "short_line_ratio": 0.037,
+      "ending_punct_ratio": 0.1111,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "图10-18是在图10-17的FAR基 总的PAR=0.0377。这时红色的扩散机 mate,这就是以后作者所 混合 配给它什么空气，燃烧需要的空 么地方扩散横烧，也就是说对火焰阵面来 意义的《由于直喷的速度加大，被主模火 图10-18“30%扩散直噬与70%IEA (1)可以有效地压抑燃烧不稳定性; 《2)对安排喷嘴有方便之处，还有供调整出口温度分布之用..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 346,
+      "char_count": 627,
+      "line_count": 26,
+      "avg_confidence": 0.7978,
+      "cjk_ratio": 0.745,
+      "symbol_ratio": 0.0033,
+      "punctuation_count": 53,
+      "short_line_ratio": 0.0769,
+      "ending_punct_ratio": 0.2692,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "12.7”作者研发的冷却方式 是针对环形燃烧室内壁的冷却方式。 12.7.1针对单管火焰简及环形燃烧室外壁的发散小孔冷却 膜，在第2排发散小孔处，已经形成均匀气膜;，(2)减少CO的生成。 党é _—“a E-E 几何设计包括以下一些因素。 形燃烧室火焰简外壁,，刀=20in，25in，30in。 (2)发散小孔直径，典型的&=0.02in。 作者在长时间..."
+    },
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 356,
+      "char_count": 1004,
+      "line_count": 36,
+      "avg_confidence": 0.8491,
+      "cjk_ratio": 0.6034,
+      "symbol_ratio": 0.0031,
+      "punctuation_count": 116,
+      "short_line_ratio": 0.0833,
+      "ending_punct_ratio": 0.3889,
+      "mojibake_hits": 0,
+      "layout_risk": "high",
+      "risk_flags": [
+        "版面顺序high"
+      ],
+      "preview": "来焊接方便。 少。 12.8.2”热燃气壁绝热涂料 在火焰简热燃气壁加绝热涂料，是几十年来燃气轮机燃烧室经常用的措施。 对于多层多孔板，实际上无法加涂料。 算下文再说。这里只先说一下涂料有关的热物性(除了表面辐射系数之外)。 表12-2和表12-3。 538 0.645 0.582 20.5 0.628 871 0.675 0.593 24.3 0.674..."
+    }
+  ],
+  "documents": [
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 603,
+      "pages_ocr_done": 603,
+      "pages_with_text": 603,
+      "char_count": 1672703,
+      "line_count": 16695,
+      "error_count": 0,
+      "risk_pages": 86,
+      "risk_flags": {
+        "版面顺序high": 78,
+        "版面顺序medium": 4,
+        "平均置信度偏低": 5
+      },
+      "avg_chars_per_text_page": 2774.0
+    },
+    {
+      "source_file": "大型燃气-蒸汽联合循环电厂培训教材 M701F燃气轮机汽轮机分册 (深圳能源集团月亮湾燃机电厂，中国电机工程学会燃气轮机发电专业委员会编 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 410,
+      "pages_ocr_done": 410,
+      "pages_with_text": 410,
+      "char_count": 852281,
+      "line_count": 11548,
+      "error_count": 0,
+      "risk_pages": 64,
+      "risk_flags": {
+        "版面顺序high": 36,
+        "文字极短": 20,
+        "平均置信度偏低": 15,
+        "版面顺序medium": 2,
+        "短行过多": 4
+      },
+      "avg_chars_per_text_page": 2078.7
+    },
+    {
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 442,
+      "pages_ocr_done": 442,
+      "pages_with_text": 442,
+      "char_count": 1078898,
+      "line_count": 12502,
+      "error_count": 0,
+      "risk_pages": 45,
+      "risk_flags": {
+        "版面顺序high": 43,
+        "版面顺序medium": 1,
+        "平均置信度偏低": 1
+      },
+      "avg_chars_per_text_page": 2440.9
+    },
+    {
+      "source_file": "燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 423,
+      "pages_ocr_done": 423,
+      "pages_with_text": 422,
+      "char_count": 1636396,
+      "line_count": 20880,
+      "error_count": 0,
+      "risk_pages": 228,
+      "risk_flags": {
+        "文字极短": 2,
+        "平均置信度偏低": 147,
+        "版面顺序medium": 21,
+        "版面顺序high": 133,
+        "短行过多": 48,
+        "无文字": 1
+      },
+      "avg_chars_per_text_page": 3877.7
+    },
+    {
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 62,
+      "pages_ocr_done": 62,
+      "pages_with_text": 62,
+      "char_count": 223142,
+      "line_count": 2066,
+      "error_count": 0,
+      "risk_pages": 18,
+      "risk_flags": {
+        "版面顺序high": 15,
+        "版面顺序medium": 2,
+        "平均置信度偏低": 1
+      },
+      "avg_chars_per_text_page": 3599.1
+    },
+    {
+      "source_file": "燃气轮机 (燃气轮机基本情况编写组编写) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 161,
+      "pages_ocr_done": 161,
+      "pages_with_text": 161,
+      "char_count": 580879,
+      "line_count": 5109,
+      "error_count": 0,
+      "risk_pages": 20,
+      "risk_flags": {
+        "平均置信度偏低": 5,
+        "版面顺序high": 14,
+        "版面顺序medium": 2,
+        "短行过多": 3
+      },
+      "avg_chars_per_text_page": 3607.9
+    },
+    {
+      "source_file": "燃气轮机与燃气-蒸汽联合循环装置 上 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 493,
+      "pages_ocr_done": 493,
+      "pages_with_text": 493,
+      "char_count": 1600632,
+      "line_count": 18259,
+      "error_count": 0,
+      "risk_pages": 168,
+      "risk_flags": {
+        "文字极短": 1,
+        "版面顺序medium": 2,
+        "版面顺序high": 158,
+        "平均置信度偏低": 10
+      },
+      "avg_chars_per_text_page": 3246.7
+    },
+    {
+      "source_file": "燃气轮机与燃气-蒸汽联合循环装置 下 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 325,
+      "pages_ocr_done": 325,
+      "pages_with_text": 325,
+      "char_count": 972274,
+      "line_count": 11271,
+      "error_count": 0,
+      "risk_pages": 79,
+      "risk_flags": {
+        "版面顺序high": 69,
+        "平均置信度偏低": 9,
+        "版面顺序medium": 3
+      },
+      "avg_chars_per_text_page": 2991.6
+    },
+    {
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 485,
+      "pages_ocr_done": 485,
+      "pages_with_text": 485,
+      "char_count": 1393699,
+      "line_count": 14789,
+      "error_count": 0,
+      "risk_pages": 163,
+      "risk_flags": {
+        "文字极短": 1,
+        "版面顺序high": 156,
+        "版面顺序medium": 6
+      },
+      "avg_chars_per_text_page": 2873.6
+    },
+    {
+      "source_file": "燃气轮机原理、结构与应用 下 (沈阳黎明航空发动机（集团）有限责任公司编著, Pdg2Pic) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 478,
+      "pages_ocr_done": 478,
+      "pages_with_text": 478,
+      "char_count": 1437366,
+      "line_count": 15089,
+      "error_count": 0,
+      "risk_pages": 162,
+      "risk_flags": {
+        "文字极短": 1,
+        "版面顺序high": 128,
+        "平均置信度偏低": 39,
+        "短行过多": 1,
+        "版面顺序medium": 1
+      },
+      "avg_chars_per_text_page": 3007.0
+    },
+    {
+      "source_file": "燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 263,
+      "pages_ocr_done": 263,
+      "pages_with_text": 263,
+      "char_count": 574173,
+      "line_count": 9237,
+      "error_count": 0,
+      "risk_pages": 107,
+      "risk_flags": {
+        "版面顺序high": 75,
+        "平均置信度偏低": 49,
+        "短行过多": 10,
+        "版面顺序medium": 5,
+        "文字极短": 2,
+        "长文本但标点很少": 1
+      },
+      "avg_chars_per_text_page": 2183.2
+    },
+    {
+      "source_file": "美国飞机燃气涡轮发动机发展史 (James St. Peter) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 813,
+      "pages_ocr_done": 813,
+      "pages_with_text": 812,
+      "char_count": 1368816,
+      "line_count": 18076,
+      "error_count": 0,
+      "risk_pages": 186,
+      "risk_flags": {
+        "版面顺序high": 104,
+        "版面顺序medium": 10,
+        "平均置信度偏低": 42,
+        "文字极短": 36,
+        "短行过多": 12,
+        "无文字": 1
+      },
+      "avg_chars_per_text_page": 1685.7
+    },
+    {
+      "source_file": "航空燃气轮机涡轮气体动力学：流动机理及气动设计=TURBINE AERODYNAMICS FOR AERO-ENGINE：FLOW ANALYSIS AND AERODYNAMICS DESIGN (邹正平，王松涛，刘火星，杨策，张... (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "status": "success",
+      "engine": "tesseract",
+      "layout_aware": true,
+      "total_pages": 525,
+      "pages_ocr_done": 525,
+      "pages_with_text": 525,
+      "char_count": 1445067,
+      "line_count": 14425,
+      "error_count": 0,
+      "risk_pages": 118,
+      "risk_flags": {
+        "平均置信度偏低": 21,
+        "版面顺序high": 95,
+        "版面顺序medium": 3
+      },
+      "avg_chars_per_text_page": 2752.5
+    }
+  ]
+}

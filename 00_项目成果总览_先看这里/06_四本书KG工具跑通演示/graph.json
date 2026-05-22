@@ -1,0 +1,3065 @@
+{
+  "schema": {
+    "entity_types": {
+      "Equipment": "燃气轮机、燃烧室、压气机、涡轮等设备或系统。",
+      "Component": "设备部件、子系统或结构单元。",
+      "Fuel": "燃料类别或具体燃料。",
+      "Parameter": "热效率、压比、功率、温度、排放等参数。",
+      "Problem": "回火、熄火、振荡、结焦、污染排放等问题。",
+      "Method": "冷却、预混燃烧、分级燃烧、联合循环等方法。",
+      "Property": "优点、性能特征、约束或要求。",
+      "Concept": "技术概念、类别、术语或抽象对象。"
+    },
+    "relation_types": {
+      "HAS_COMPONENT": "主体设备包含某个部件或子系统。",
+      "USES_FUEL": "设备或燃烧室使用某类燃料。",
+      "HAS_PARAMETER": "设备、部件或过程关联某个参数。",
+      "HAS_PROBLEM": "设备、部件或过程存在某类问题或风险。",
+      "IMPROVED_BY": "某个性能或对象可由某方法改善。",
+      "REDUCED_BY": "某个排放、损失或风险可由某方法降低。",
+      "HAS_FUNCTION": "部件或系统承担某个功能。",
+      "HAS_SUBTYPE": "概念、设备或结构拥有下位类型。",
+      "RELATED_TO": "证据中存在明确共现，但关系暂时不细分。"
+    }
+  },
+  "nodes": [
+    {
+      "id": "燃气轮机",
+      "label": "燃气轮机",
+      "type": "Equipment",
+      "degree": 92
+    },
+    {
+      "id": "燃烧室",
+      "label": "燃烧室",
+      "type": "Component",
+      "degree": 61
+    },
+    {
+      "id": "排放",
+      "label": "排放",
+      "type": "Parameter",
+      "degree": 47
+    },
+    {
+      "id": "涡轮",
+      "label": "涡轮",
+      "type": "Component",
+      "degree": 23
+    },
+    {
+      "id": "功率",
+      "label": "功率",
+      "type": "Parameter",
+      "degree": 18
+    },
+    {
+      "id": "污染",
+      "label": "污染",
+      "type": "Problem",
+      "degree": 18
+    },
+    {
+      "id": "透平",
+      "label": "透平",
+      "type": "Component",
+      "degree": 18
+    },
+    {
+      "id": "压气机",
+      "label": "压气机",
+      "type": "Component",
+      "degree": 17
+    },
+    {
+      "id": "联合循环",
+      "label": "联合循环",
+      "type": "Method",
+      "degree": 17
+    },
+    {
+      "id": "燃烧过程",
+      "label": "燃烧过程",
+      "type": "Equipment",
+      "degree": 11
+    },
+    {
+      "id": "冷却",
+      "label": "冷却",
+      "type": "Method",
+      "degree": 9
+    },
+    {
+      "id": "工业燃气轮机",
+      "label": "工业燃气轮机",
+      "type": "Equipment",
+      "degree": 9
+    },
+    {
+      "id": "寿命",
+      "label": "寿命",
+      "type": "Parameter",
+      "degree": 7
+    },
+    {
+      "id": "天然气",
+      "label": "天然气",
+      "type": "Fuel",
+      "degree": 5
+    },
+    {
+      "id": "氧化",
+      "label": "氧化",
+      "type": "Problem",
+      "degree": 5
+    },
+    {
+      "id": "热效率",
+      "label": "热效率",
+      "type": "Parameter",
+      "degree": 5
+    },
+    {
+      "id": "燃烧效率",
+      "label": "燃烧效率",
+      "type": "Parameter",
+      "degree": 5
+    },
+    {
+      "id": "CO",
+      "label": "CO",
+      "type": "Parameter",
+      "degree": 4
+    },
+    {
+      "id": "压力损失",
+      "label": "压力损失",
+      "type": "Parameter",
+      "degree": 4
+    },
+    {
+      "id": "发电机组",
+      "label": "发电机组",
+      "type": "Equipment",
+      "degree": 4
+    },
+    {
+      "id": "气体燃料",
+      "label": "气体燃料",
+      "type": "Fuel",
+      "degree": 4
+    },
+    {
+      "id": "压比",
+      "label": "压比",
+      "type": "Parameter",
+      "degree": 3
+    },
+    {
+      "id": "叶片",
+      "label": "叶片",
+      "type": "Component",
+      "degree": 3
+    },
+    {
+      "id": "柴油",
+      "label": "柴油",
+      "type": "Fuel",
+      "degree": 3
+    },
+    {
+      "id": "液体燃料",
+      "label": "液体燃料",
+      "type": "Fuel",
+      "degree": 3
+    },
+    {
+      "id": "联合循环 / 功率",
+      "label": "联合循环 / 功率",
+      "type": "Method",
+      "degree": 3
+    },
+    {
+      "id": "可靠性",
+      "label": "可靠性",
+      "type": "Parameter",
+      "degree": 2
+    },
+    {
+      "id": "排放 = 25ppm",
+      "label": "排放 = 25ppm",
+      "type": "Parameter",
+      "degree": 2
+    },
+    {
+      "id": "涡轮进口温度",
+      "label": "涡轮进口温度",
+      "type": "Parameter",
+      "degree": 2
+    },
+    {
+      "id": "温度场",
+      "label": "温度场",
+      "type": "Parameter",
+      "degree": 2
+    },
+    {
+      "id": "联合循环 / 热效率",
+      "label": "联合循环 / 热效率",
+      "type": "Method",
+      "degree": 2
+    },
+    {
+      "id": "转子",
+      "label": "转子",
+      "type": "Component",
+      "degree": 2
+    },
+    {
+      "id": "2~3",
+      "label": "2~3",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "2一4个串联的机体",
+      "label": "2一4个串联的机体",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "CO = 1",
+      "label": "CO = 1",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "CO = 25ppm",
+      "label": "CO = 25ppm",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "不同类型喷嘴的性能",
+      "label": "不同类型喷嘴的性能",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "不稳定",
+      "label": "不稳定",
+      "type": "Problem",
+      "degree": 1
+    },
+    {
+      "id": "两半以便拆装",
+      "label": "两半以便拆装",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "主燃烧室在极宽的大小功率工作范围稳定工作",
+      "label": "主燃烧室在极宽的大小功率工作范围稳定工作",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "以获得不同的变工况性能",
+      "label": "以获得不同的变工况性能",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "低污染燃烧",
+      "label": "低污染燃烧",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "低污染燃烧 / 燃烧效率",
+      "label": "低污染燃烧 / 燃烧效率",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "六油老化",
+      "label": "六油老化",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "冷却 / 排放",
+      "label": "冷却 / 排放",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "冷却 / 透平进口温度",
+      "label": "冷却 / 透平进口温度",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "功率 = 12",
+      "label": "功率 = 12",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "功率 = 125",
+      "label": "功率 = 125",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "功率 = 2.5",
+      "label": "功率 = 2.5",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "功率 = 3",
+      "label": "功率 = 3",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "功率 = 480MW",
+      "label": "功率 = 480MW",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加",
+      "label": "可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "可靠性 = 99%",
+      "label": "可靠性 = 99%",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "合理的基础",
+      "label": "合理的基础",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "四办等不同输系方案的燃气轮机",
+      "label": "四办等不同输系方案的燃气轮机",
+      "type": "Equipment",
+      "degree": 1
+    },
+    {
+      "id": "回火",
+      "label": "回火",
+      "type": "Problem",
+      "degree": 1
+    },
+    {
+      "id": "地面慢车状态燃烧效率大于99%",
+      "label": "地面慢车状态燃烧效率大于99%",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "均匀混合的热气",
+      "label": "均匀混合的热气",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "基本设计特征",
+      "label": "基本设计特征",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "寿命 = 2000",
+      "label": "寿命 = 2000",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "射流",
+      "label": "射流",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)",
+      "label": "将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "工业燃气渴轮发动机上使用的不同类型",
+      "label": "工业燃气渴轮发动机上使用的不同类型",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "德国",
+      "label": "德国",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "总压损失",
+      "label": "总压损失",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "总压损失 = 4.5%",
+      "label": "总压损失 = 4.5%",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "总压损失 = 6%",
+      "label": "总压损失 = 6%",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "扩压器",
+      "label": "扩压器",
+      "type": "Component",
+      "degree": 1
+    },
+    {
+      "id": "指导",
+      "label": "指导",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "排放 = 1",
+      "label": "排放 = 1",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "排放 = 20",
+      "label": "排放 = 20",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "排气温度",
+      "label": "排气温度",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "旋流器",
+      "label": "旋流器",
+      "type": "Component",
+      "degree": 1
+    },
+    {
+      "id": "概括地讨论航空",
+      "label": "概括地讨论航空",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "比功率",
+      "label": "比功率",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "水煤浆",
+      "label": "水煤浆",
+      "type": "Fuel",
+      "degree": 1
+    },
+    {
+      "id": "油膜破碎机理",
+      "label": "油膜破碎机理",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "波音787飞机的GEnx发动机上",
+      "label": "波音787飞机的GEnx发动机上",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "焦炉煤气",
+      "label": "焦炉煤气",
+      "type": "Fuel",
+      "degree": 1
+    },
+    {
+      "id": "熄火",
+      "label": "熄火",
+      "type": "Problem",
+      "degree": 1
+    },
+    {
+      "id": "燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性",
+      "label": "燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "燃气涡轮发动机的传统液体与气体燃料(石油基)的物理与化学特性",
+      "label": "燃气涡轮发动机的传统液体与气体燃料(石油基)的物理与化学特性",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "燃烧室的不同类型",
+      "label": "燃烧室的不同类型",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "燃烧所需的容积",
+      "label": "燃烧所需的容积",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "燃烧效率 = 99%",
+      "label": "燃烧效率 = 99%",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "稳定性",
+      "label": "稳定性",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "空气冷却",
+      "label": "空气冷却",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "空气冷却 / 寿命",
+      "label": "空气冷却 / 寿命",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "第1章介绍败烧室的主要性能要求",
+      "label": "第1章介绍败烧室的主要性能要求",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "组成分贡双条三办",
+      "label": "组成分贡双条三办",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "结构",
+      "label": "结构",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "结构特征等内容",
+      "label": "结构特征等内容",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "结构的燃烧室",
+      "label": "结构的燃烧室",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "联合循环 / 可靠性",
+      "label": "联合循环 / 可靠性",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "联合循环 / 排放",
+      "label": "联合循环 / 排放",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "英国",
+      "label": "英国",
+      "type": "Concept",
+      "degree": 1
+    },
+    {
+      "id": "蒸汽冷却",
+      "label": "蒸汽冷却",
+      "type": "Method",
+      "degree": 1
+    },
+    {
+      "id": "评定燃烧室工作是否正常",
+      "label": "评定燃烧室工作是否正常",
+      "type": "Property",
+      "degree": 1
+    },
+    {
+      "id": "透平进口温度",
+      "label": "透平进口温度",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "透平进口温度 = 1207",
+      "label": "透平进口温度 = 1207",
+      "type": "Parameter",
+      "degree": 1
+    },
+    {
+      "id": "重油",
+      "label": "重油",
+      "type": "Fuel",
+      "degree": 1
+    },
+    {
+      "id": "高炉煤气",
+      "label": "高炉煤气",
+      "type": "Fuel",
+      "degree": 1
+    }
+  ],
+  "links": [
+    {
+      "source": "燃气轮机",
+      "target": "压气机",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等",
+      "triple_id": "FBKG-0001",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "燃烧室",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等",
+      "triple_id": "FBKG-0002",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等",
+      "triple_id": "FBKG-0003",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等",
+      "triple_id": "FBKG-0004",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "涡轮",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "中文版序燃气涌轮发动机主灼烧室是洪气涡轮发动机核心机的主要部件之一，将压气机压缩后的空气与江油充分混合、燃烧，将燃料中的化学能转化为热能",
+      "triple_id": "FBKG-0005",
+      "confidence": 0.8,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "压气机",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0006",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "燃烧室",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0007",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "叶片",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0008",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0009",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0010",
+      "confidence": 0.7,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0011",
+      "confidence": 0.7,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0012",
+      "confidence": 0.7,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0013",
+      "confidence": 0.7,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "功率",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0014",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "功率",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0015",
+      "confidence": 0.72,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环 / 功率",
+      "predicate": "RELATED_TO",
+      "evidence": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃气轮机在各应用部门中的新进展等,使读者能了解当今燃气轮机的发展水平",
+      "triple_id": "FBKG-0016",
+      "confidence": 0.58,
+      "source_page": 4,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "氧化",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "燃烧室内涉及了放流、回流、燃料/空气射流、燃料雾化、藻发、注流燃烧、置烟的生成/氧化，以及对流和辐射换热等多种复杂的物理和化学过程，而这些单一过程又相互烛合和干拢",
+      "triple_id": "FBKG-0017",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "燃烧室的作用是将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)",
+      "triple_id": "FBKG-0018",
+      "confidence": 0.74,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "热效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "随着技术进步和发展，燃气轮机越来越多地为人们所揭示和了解，它不但具有重量轻、体积小、启动快、运行维护方便、便于集中控制、少用水或不用水的优点，而且随着热效率不断提高和采用燃气-蒸汽联合循环的方式运行，联合循环发电装置的热效率已超过大功率高参数火电机组的水平",
+      "triple_id": "FBKG-0019",
+      "confidence": 0.79,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "随着技术进步和发展，燃气轮机越来越多地为人们所揭示和了解，它不但具有重量轻、体积小、启动快、运行维护方便、便于集中控制、少用水或不用水的优点，而且随着热效率不断提高和采用燃气-蒸汽联合循环的方式运行，联合循环发电装置的热效率已超过大功率高参数火电机组的水平",
+      "triple_id": "FBKG-0020",
+      "confidence": 0.79,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "热效率",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "随着技术进步和发展，燃气轮机越来越多地为人们所揭示和了解，它不但具有重量轻、体积小、启动快、运行维护方便、便于集中控制、少用水或不用水的优点，而且随着热效率不断提高和采用燃气-蒸汽联合循环的方式运行，联合循环发电装置的热效率已超过大功率高参数火电机组的水平",
+      "triple_id": "FBKG-0021",
+      "confidence": 0.8,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环 / 热效率",
+      "predicate": "RELATED_TO",
+      "evidence": "随着技术进步和发展，燃气轮机越来越多地为人们所揭示和了解，它不但具有重量轻、体积小、启动快、运行维护方便、便于集中控制、少用水或不用水的优点，而且随着热效率不断提高和采用燃气-蒸汽联合循环的方式运行，联合循环发电装置的热效率已超过大功率高参数火电机组的水平",
+      "triple_id": "FBKG-0022",
+      "confidence": 0.67,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "可靠性",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "既要满足点火迅速可靠、燃烧稳定安全、流体流动损失小、出口温度场品质好、排气污染小等和要求，又要满足结构紧凑、质量轻、寿命长、可靠性高竺要求",
+      "triple_id": "FBKG-0023",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "温度场",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "既要满足点火迅速可靠、燃烧稳定安全、流体流动损失小、出口温度场品质好、排气污染小等和要求，又要满足结构紧凑、质量轻、寿命长、可靠性高竺要求",
+      "triple_id": "FBKG-0024",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "既要满足点火迅速可靠、燃烧稳定安全、流体流动损失小、出口温度场品质好、排气污染小等和要求，又要满足结构紧凑、质量轻、寿命长、可靠性高竺要求",
+      "triple_id": "FBKG-0025",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "既要满足点火迅速可靠、燃烧稳定安全、流体流动损失小、出口温度场品质好、排气污染小等和要求，又要满足结构紧凑、质量轻、寿命长、可靠性高竺要求",
+      "triple_id": "FBKG-0026",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "均匀混合的热气",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "燃烧室接受压气机流出的高压空气，通过燃油燃烧产生热能，为涡轮提供均匀混合的热气",
+      "triple_id": "FBKG-0027",
+      "confidence": 0.74,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "压气机",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "他的设计由往复式压气机、燃烧室和透平组成，其压气机由透平通过传动机构带动,具有现代燃气轮机的特征",
+      "triple_id": "FBKG-0028",
+      "confidence": 0.73,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "燃烧室",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "他的设计由往复式压气机、燃烧室和透平组成，其压气机由透平通过传动机构带动,具有现代燃气轮机的特征",
+      "triple_id": "FBKG-0029",
+      "confidence": 0.73,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "他的设计由往复式压气机、燃烧室和透平组成，其压气机由透平通过传动机构带动,具有现代燃气轮机的特征",
+      "triple_id": "FBKG-0030",
+      "confidence": 0.73,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "气体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0031",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "液体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0032",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "焦炉煤气",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0033",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "高炉煤气",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0034",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "天然气",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0035",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "水煤浆",
+      "predicate": "USES_FUEL",
+      "evidence": "并且燃气轮机可以燃用多种燃料，其中有液体燃料，包括各种轻油和重油及原油，气体燃料，包括天然气、油田伴生气、矿井瓦斯气、高炉煤气、焦炉煤气和石油化工流程中的过程气等，固体燃料，包括直接燃煤粉和水煤浆及将煤气化、液化后作此，六、七十年代工业发达的国家，燃气轮机工业发展迅速，装机容量增长.幅度较大,1964年至1976年，年平均增长率为30%",
+      "triple_id": "FBKG-0036",
+      "confidence": 0.84,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "压力损失",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0037",
+      "confidence": 0.76,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃烧效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0038",
+      "confidence": 0.76,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0039",
+      "confidence": 0.76,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0040",
+      "confidence": 0.76,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "压力损失",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0041",
+      "confidence": 0.75,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0042",
+      "confidence": 0.75,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求",
+      "triple_id": "FBKG-0043",
+      "confidence": 0.75,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "1在19世纪,曾有许多人提出多种燃气轮机设计方案,其中最著名的是德国人斯托尔2%(F.Stolze)F 1872年提出的热空气轮机失败的原因仍然是部件效率低和进入透平的气体温度不高所致",
+      "triple_id": "FBKG-0044",
+      "confidence": 0.73,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "发电机组",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "表1-1国外燃气轮发电机组订货情况根据用户的具体要求，从表1-2，表1-3中明显看出对燃气轮机的功率等级方面的需求情况",
+      "triple_id": "FBKG-0045",
+      "confidence": 0.79,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率 = 12",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "目前世界最大功率有12万千瓦带基本负荷的燃气轮机，预计在十年内，通过提高初温、压比和空气流量，功率可以达到20万千瓦",
+      "triple_id": "FBKG-0046",
+      "confidence": 0.79,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "压比",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "目前世界最大功率有12万千瓦带基本负荷的燃气轮机，预计在十年内，通过提高初温、压比和空气流量，功率可以达到20万千瓦",
+      "triple_id": "FBKG-0047",
+      "confidence": 0.79,
+      "source_page": 5,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "作者多年来一直从事燃烧室研究、教学、试验和技术研发等方面的工作，在燃烧室技术〈低污染燃烧技术、高温升攀烧技术、双燃料烧技术等)方面取得了公认的成就",
+      "triple_id": "FBKG-0048",
+      "confidence": 0.75,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "为保证主燃烧室在极宽的大小功率工作范围稳定工作，必须采用先进的气动和结构设计技术，并探索新的燃烧组织方式",
+      "triple_id": "FBKG-0049",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "主燃烧室在极宽的大小功率工作范围稳定工作",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "为保证主燃烧室在极宽的大小功率工作范围稳定工作，必须采用先进的气动和结构设计技术，并探索新的燃烧组织方式",
+      "triple_id": "FBKG-0050",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "燃烧室",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "《先进碳气轮机榴烧室》是作者的最新著作，本书内容非常丰富，不仅涉及到燃烧室的设计要求、燃烧室内气体流动、燃烧室气体动力学、喷归、燃油雾化、燃油蒸发、油气混合、燃烧室冷却、低污染燃烧技术、振功燃娆、燃烧效率、火烙稳定等基础知识和设计研发过程中的基本知识和问题，而且全面描述了包括低污染燃烧室、高温升燃烧室、工业燃气轮机、燃烧室气动热力设计和试验等炮烧室研发过程中涉及到的每一方面和环节",
+      "triple_id": "FBKG-0051",
+      "confidence": 0.78,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "燃烧效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《先进碳气轮机榴烧室》是作者的最新著作，本书内容非常丰富，不仅涉及到燃烧室的设计要求、燃烧室内气体流动、燃烧室气体动力学、喷归、燃油雾化、燃油蒸发、油气混合、燃烧室冷却、低污染燃烧技术、振功燃娆、燃烧效率、火烙稳定等基础知识和设计研发过程中的基本知识和问题，而且全面描述了包括低污染燃烧室、高温升燃烧室、工业燃气轮机、燃烧室气动热力设计和试验等炮烧室研发过程中涉及到的每一方面和环节",
+      "triple_id": "FBKG-0052",
+      "confidence": 0.76,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "《先进碳气轮机榴烧室》是作者的最新著作，本书内容非常丰富，不仅涉及到燃烧室的设计要求、燃烧室内气体流动、燃烧室气体动力学、喷归、燃油雾化、燃油蒸发、油气混合、燃烧室冷却、低污染燃烧技术、振功燃娆、燃烧效率、火烙稳定等基础知识和设计研发过程中的基本知识和问题，而且全面描述了包括低污染燃烧室、高温升燃烧室、工业燃气轮机、燃烧室气动热力设计和试验等炮烧室研发过程中涉及到的每一方面和环节",
+      "triple_id": "FBKG-0053",
+      "confidence": 0.75,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "低污染燃烧 / 燃烧效率",
+      "predicate": "RELATED_TO",
+      "evidence": "《先进碳气轮机榴烧室》是作者的最新著作，本书内容非常丰富，不仅涉及到燃烧室的设计要求、燃烧室内气体流动、燃烧室气体动力学、喷归、燃油雾化、燃油蒸发、油气混合、燃烧室冷却、低污染燃烧技术、振功燃娆、燃烧效率、火烙稳定等基础知识和设计研发过程中的基本知识和问题，而且全面描述了包括低污染燃烧室、高温升燃烧室、工业燃气轮机、燃烧室气动热力设计和试验等炮烧室研发过程中涉及到的每一方面和环节",
+      "triple_id": "FBKG-0054",
+      "confidence": 0.64,
+      "source_page": 8,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "但由于部件效率低和进入透平的气体温度低,机组无法独立工作对外输出BEA 20世纪,人们继续努力发展燃气轮机",
+      "triple_id": "FBKG-0055",
+      "confidence": 0.73,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "具有新堪料、新技术、新工艺、新材料(如陶瓷基复合材料)HAMLMATHA HM,在民用沉扇发动机燃烧室方面，为满足不断完善、严格的国际民航组织(ICAO)排放条例要求，通用电气公司、首拉特-惠特尼公司、罗泵斯-罗伊斯公司、国际航空发动机公司和CFM国际公司等国际著名发动机公司的发动机燃烧室广泛采用了燃油喷射、组织顽烧、低排放扩压器、火焙简冷却等低排放燃烧宝设计技术",
+      "triple_id": "FBKG-0056",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "具有新堪料、新技术、新工艺、新材料(如陶瓷基复合材料)HAMLMATHA HM,在民用沉扇发动机燃烧室方面，为满足不断完善、严格的国际民航组织(ICAO)排放条例要求，通用电气公司、首拉特-惠特尼公司、罗泵斯-罗伊斯公司、国际航空发动机公司和CFM国际公司等国际著名发动机公司的发动机燃烧室广泛采用了燃油喷射、组织顽烧、低排放扩压器、火焙简冷却等低排放燃烧宝设计技术",
+      "triple_id": "FBKG-0057",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "冷却 / 排放",
+      "predicate": "RELATED_TO",
+      "evidence": "具有新堪料、新技术、新工艺、新材料(如陶瓷基复合材料)HAMLMATHA HM,在民用沉扇发动机燃烧室方面，为满足不断完善、严格的国际民航组织(ICAO)排放条例要求，通用电气公司、首拉特-惠特尼公司、罗泵斯-罗伊斯公司、国际航空发动机公司和CFM国际公司等国际著名发动机公司的发动机燃烧室广泛采用了燃油喷射、组织顽烧、低排放扩压器、火焙简冷却等低排放燃烧宝设计技术",
+      "triple_id": "FBKG-0058",
+      "confidence": 0.66,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率 = 125",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "电站功率为125万千瓦，由25人台燃气轮机组成，其中由16台5万千瓦组成的80万千瓦燃气轮机电站是1984年建成的",
+      "triple_id": "FBKG-0059",
+      "confidence": 0.78,
+      "source_page": 6,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "其中，通用电气公司最新的双环预混(TAPS)燃烧组织技术，已用于波音787飞机的GEnx发动机上，代表了目菌燃烧室污染排放设计技术的最高水平",
+      "triple_id": "FBKG-0060",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "其中，通用电气公司最新的双环预混(TAPS)燃烧组织技术，已用于波音787飞机的GEnx发动机上，代表了目菌燃烧室污染排放设计技术的最高水平",
+      "triple_id": "FBKG-0061",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "其中，通用电气公司最新的双环预混(TAPS)燃烧组织技术，已用于波音787飞机的GEnx发动机上，代表了目菌燃烧室污染排放设计技术的最高水平",
+      "triple_id": "FBKG-0062",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "波音787飞机的GEnx发动机上",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "其中，通用电气公司最新的双环预混(TAPS)燃烧组织技术，已用于波音787飞机的GEnx发动机上，代表了目菌燃烧室污染排放设计技术的最高水平",
+      "triple_id": "FBKG-0063",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率 = 2.5",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "功率小于2.5万千责时制成双壬式，超过2.5万千瓦多制成音轴式,，目前燃气轮机制造企业西欧有25家，美国有10家，加拿大有2家",
+      "triple_id": "FBKG-0064",
+      "confidence": 0.68,
+      "source_page": 8,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "同时为了满足长寿命的要求，先进民用涡扇发动机业烧室采用了多孔壁发散冷却、浮动壁冷却结构或多孔层板冷却等先进冷却技术，并且正在研制陶瓷基复合材料等耐温水平更高、密度",
+      "triple_id": "FBKG-0065",
+      "confidence": 0.78,
+      "source_page": 9,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "随着先进左烧室的发展，一个低污染燃烧宣或一个高油气比燃烧室，可以与图1-1有相当大的不同，不同之处为(1)前置扩压器改变，可采用分又形多流路扩压器和与压气机出口导向叶片(OGY)相组合的扩压器，或采用扩压-空气分配器方案",
+      "triple_id": "FBKG-0066",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "该机组发展上述机组部件效率低,主要是压气机效率低,当时仅60%左右或更低,压气机耗功大而使机组无法输出功率或仅有少量功率输出",
+      "triple_id": "FBKG-0067",
+      "confidence": 0.71,
+      "source_page": 12,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "扩压器",
+      "target": "燃烧所需的容积",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "但不论如何变化,燃烧室不能缺少以下部分:(1)扩压器一进口空气扩压及分配室气流动的装置二(2)Aims(3)火焰简一一提供燃烧所需的容积",
+      "triple_id": "FBKG-0068",
+      "confidence": 0.71,
+      "source_page": 16,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "但是初温的提高有待高温材料的性能改进和热部件冷却技术的进步",
+      "triple_id": "FBKG-0069",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "柴油",
+      "predicate": "USES_FUEL",
+      "evidence": "另外由于燃用柴油老化较困难、发烟较大、火焰较长，需要控制燃烧宝氨氧化物(NO.)HbA,F烟、积宕，改善出口温度场品质、壁温、起动点火性能等",
+      "triple_id": "FBKG-0070",
+      "confidence": 0.82,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "温度场",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "另外由于燃用柴油老化较困难、发烟较大、火焰较长，需要控制燃烧宝氨氧化物(NO.)HbA,F烟、积宕，改善出口温度场品质、壁温、起动点火性能等",
+      "triple_id": "FBKG-0071",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "氧化",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "另外由于燃用柴油老化较困难、发烟较大、火焰较长，需要控制燃烧宝氨氧化物(NO.)HbA,F烟、积宕，改善出口温度场品质、壁温、起动点火性能等",
+      "triple_id": "FBKG-0072",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "涡轮",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "《8)燃烧室出口到渴轮的通路12发动机循环参数及工况发动机循环参数及工况是燃烧室设计研发最重要的依据，通常由总体性能部门给发动机循环主要规定了最大起飞推力、压比、涡轮进口温度及其对应的工涡",
+      "triple_id": "FBKG-0073",
+      "confidence": 0.77,
+      "source_page": 17,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "涡轮进口温度",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《8)燃烧室出口到渴轮的通路12发动机循环参数及工况发动机循环参数及工况是燃烧室设计研发最重要的依据，通常由总体性能部门给发动机循环主要规定了最大起飞推力、压比、涡轮进口温度及其对应的工涡",
+      "triple_id": "FBKG-0074",
+      "confidence": 0.75,
+      "source_page": 17,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "压比",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《8)燃烧室出口到渴轮的通路12发动机循环参数及工况发动机循环参数及工况是燃烧室设计研发最重要的依据，通常由总体性能部门给发动机循环主要规定了最大起飞推力、压比、涡轮进口温度及其对应的工涡",
+      "triple_id": "FBKG-0075",
+      "confidence": 0.75,
+      "source_page": 17,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "叶片",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "叶片冷却技术发展表明:，无冷却的燃气轮机由于受到耐热材料的限制，初温只能达到900C左右，而采用冷却技术使透平叶片冷却，则初温可达到1200C左右",
+      "triple_id": "FBKG-0076",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "叶片冷却技术发展表明:，无冷却的燃气轮机由于受到耐热材料的限制，初温只能达到900C左右，而采用冷却技术使透平叶片冷却，则初温可达到1200C左右",
+      "triple_id": "FBKG-0077",
+      "confidence": 0.77,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "气体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0078",
+      "confidence": 0.82,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "液体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0079",
+      "confidence": 0.82,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "CO",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0080",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0081",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0082",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "氧化",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0083",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "而工业燃气涡轮发动机通常用气体燃料、液体燃料，甚至采用国体燃料，主要围绕降低氮氧化物、一氧化碳(CO)HARRAH化合物(UHC)等燃烧污染物排放等技术开展研究工作",
+      "triple_id": "FBKG-0084",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "冷却的目的是既降低了整个零件的温度水平，又降低了局部温度梯度",
+      "triple_id": "FBKG-0085",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放 = 25ppm",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "这方面，以干低NO,排放(DLN)燃烧技术的发展最为成熟、应用最为广泛，完全满足目前ENO,排放量控制在25ppm(15%0,)的排放要求",
+      "triple_id": "FBKG-0086",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "这方面，以干低NO,排放(DLN)燃烧技术的发展最为成熟、应用最为广泛，完全满足目前ENO,排放量控制在25ppm(15%0,)的排放要求",
+      "triple_id": "FBKG-0087",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "为了保持热部件的寿命，需将热部件的工作温度降到527一627 Co目前实用的冷却方法仍采用空气冷却，即用从压气机引出来的冷却空气对高温部件进行强迫对流和冲击冷却",
+      "triple_id": "FBKG-0088",
+      "confidence": 0.74,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "空气冷却 / 寿命",
+      "predicate": "RELATED_TO",
+      "evidence": "为了保持热部件的寿命，需将热部件的工作温度降到527一627 Co目前实用的冷却方法仍采用空气冷却，即用从压气机引出来的冷却空气对高温部件进行强迫对流和冲击冷却",
+      "triple_id": "FBKG-0089",
+      "confidence": 0.63,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "CO = 25ppm",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "通用电气公司在其LM系列燃气江轮发动机上取得NO,Fo CO排放量均为25ppm的业绩之后，又在下级燃烧室达到NO,和CO排放量均为9gppm、在下级燃烧室达到NO,和CO排放量分别为gppm和3ppm的高度，可以说已经般到了常规问烧技术的极限",
+      "triple_id": "FBKG-0090",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放 = 25ppm",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "通用电气公司在其LM系列燃气江轮发动机上取得NO,Fo CO排放量均为25ppm的业绩之后，又在下级燃烧室达到NO,和CO排放量均为9gppm、在下级燃烧室达到NO,和CO排放量分别为gppm和3ppm的高度，可以说已经般到了常规问烧技术的极限",
+      "triple_id": "FBKG-0091",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "通用电气公司在其LM系列燃气江轮发动机上取得NO,Fo CO排放量均为25ppm的业绩之后，又在下级燃烧室达到NO,和CO排放量均为9gppm、在下级燃烧室达到NO,和CO排放量分别为gppm和3ppm的高度，可以说已经般到了常规问烧技术的极限",
+      "triple_id": "FBKG-0092",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "发电机组",
+      "target": "涡轮",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "该风气轮机发电机组装在一地下电站中,作为备用发电宙组使用,见图1.4同一年,由德国人奥海因(V.Ohain)设计的、推力为4900N的He-S3B涡轮喷气发动机通过了地面试车,并装在飞机上试飞成功.鉴于1939年有上述两种不同用镍的燃气轮机被成功地应用,人们就把1939年视为机气轮机发展获得成功的年份",
+      "triple_id": "FBKG-0093",
+      "confidence": 0.77,
+      "source_page": 13,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "热效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "用荧汽冷却的历史最短，但因其具有较好的传热特性，已普遍引起有关国家的重视，现已作为提高热效率的重要技术途径而用于高温的燃气-荧汽联合循环装置地加以研究",
+      "triple_id": "FBKG-0094",
+      "confidence": 0.74,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "热效率",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "用荧汽冷却的历史最短，但因其具有较好的传热特性，已普遍引起有关国家的重视，现已作为提高热效率的重要技术途径而用于高温的燃气-荧汽联合循环装置地加以研究",
+      "triple_id": "FBKG-0095",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "热效率",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "用荧汽冷却的历史最短，但因其具有较好的传热特性，已普遍引起有关国家的重视，现已作为提高热效率的重要技术途径而用于高温的燃气-荧汽联合循环装置地加以研究",
+      "triple_id": "FBKG-0096",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "联合循环 / 热效率",
+      "predicate": "RELATED_TO",
+      "evidence": "用荧汽冷却的历史最短，但因其具有较好的传热特性，已普遍引起有关国家的重视，现已作为提高热效率的重要技术途径而用于高温的燃气-荧汽联合循环装置地加以研究",
+      "triple_id": "FBKG-0097",
+      "confidence": 0.63,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "指导",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "本书的英文版是美国CRC出版集团出版的《燃气涡轮发动机燃烧》(第3版)教科书，由世界燃烧学界泰寸A.日勒菲沃(Arhur HL Lefebvre)的学生D.R.44(Dilip R.Ballal)在其老师摆写的前两版的基础上撰写而万本书的一个明确目的，是为航空发动机和地面炉气涡轮发动机的设计者、制造者和操作者提供指导",
+      "triple_id": "FBKG-0098",
+      "confidence": 0.75,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "总压损失",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "pa,一一火简进口总压，即mm减去扩压器总压损失",
+      "triple_id": "FBKG-0099",
+      "confidence": 0.7,
+      "source_page": 18,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "透平进口温度 = 1207",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "切汽冷却叶片的水平，目前已达到概念设计阶段，美国处于领先的地位，目前目标是研制能在透平进口温度为1207一1427人CC级下工作的透平叶片",
+      "triple_id": "FBKG-0100",
+      "confidence": 0.74,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "冷却 / 透平进口温度",
+      "predicate": "RELATED_TO",
+      "evidence": "切汽冷却叶片的水平，目前已达到概念设计阶段，美国处于领先的地位，目前目标是研制能在透平进口温度为1207一1427人CC级下工作的透平叶片",
+      "triple_id": "FBKG-0101",
+      "confidence": 0.63,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "第1章介绍败烧室的主要性能要求",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0102",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "基本设计特征",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0103",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃烧室的不同类型",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0104",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "结构",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0105",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "英国",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0106",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "德国",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章介绍败烧室的主要性能要求和基本设计特征，燃烧室的不同类型和结构，以及英国、德国和美国燃烧室发展的历史",
+      "triple_id": "FBKG-0107",
+      "confidence": 0.72,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "2~3",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "现广泛应用的榴气-东汽联合循环(简称联合循环)就是这种循环L212 WAPERS图1.3所示为单轴购气轮机,是最简单的轴系方案,此外,还有压气机分为2~3 hasae",
+      "triple_id": "FBKG-0108",
+      "confidence": 0.7,
+      "source_page": 13,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "蒸汽冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "气冷、水冷和从汽冷却这三种方法，就改善燃气轮机的热力参数而言，以采用蒸汽冷却效果最好",
+      "triple_id": "FBKG-0109",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "气冷、水冷和从汽冷却这三种方法，就改善燃气轮机的热力参数而言，以采用蒸汽冷却效果最好",
+      "triple_id": "FBKG-0110",
+      "confidence": 0.76,
+      "source_page": 9,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "第2章介绍燃气涡轮发动机燃烧的基本问题，包括讽流火焰、全局反应加率和点火理论，还包括油渍落发和喷射蒸发的内容，强调喷射蒜发和油滴寿命时间的比值特征",
+      "triple_id": "FBKG-0111",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "联的机体,透平分为2一4个串联的机体,组成分贡双条三办和四办等不同输系方案的燃气轮机,以获得不同的变工况性能",
+      "triple_id": "FBKG-0112",
+      "confidence": 0.74,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "2一4个串联的机体",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "联的机体,透平分为2一4个串联的机体,组成分贡双条三办和四办等不同输系方案的燃气轮机,以获得不同的变工况性能",
+      "triple_id": "FBKG-0113",
+      "confidence": 0.67,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "组成分贡双条三办",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "联的机体,透平分为2一4个串联的机体,组成分贡双条三办和四办等不同输系方案的燃气轮机,以获得不同的变工况性能",
+      "triple_id": "FBKG-0114",
+      "confidence": 0.67,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "四办等不同输系方案的燃气轮机",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "联的机体,透平分为2一4个串联的机体,组成分贡双条三办和四办等不同输系方案的燃气轮机,以获得不同的变工况性能",
+      "triple_id": "FBKG-0115",
+      "confidence": 0.67,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "以获得不同的变工况性能",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "联的机体,透平分为2一4个串联的机体,组成分贡双条三办和四办等不同输系方案的燃气轮机,以获得不同的变工况性能",
+      "triple_id": "FBKG-0116",
+      "confidence": 0.67,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "图1.5为现用的七种轴系方案的燃气轮机,其中压气机和透平代号中H为高压.I为中压\\L为低压.为动力.而各个方案代号的含义为,在便数字为风气轮机的独立转轴数目,右侧英文符号为输出功率轴的压气机和地及",
+      "triple_id": "FBKG-0117",
+      "confidence": 0.72,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "也有的利用余热损妨产生的入汽广入灵气花机全将家进口以提高功率和效率，如初温为1204的简单揪环光气纶机，注入由余热销护产生的记汽(此汽压力为2.254光由，温度510C)",
+      "triple_id": "FBKG-0118",
+      "confidence": 0.67,
+      "source_page": 10,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "压力损失",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "第4章介绍了气动设计需要了解的回流、射流和混合以及各类气孔〔包括空气旋流器)的流量系数方面的知识，并且在商烧室尺寸、压力损失和出口温度分布之间建立联系，从而为良好的气动设计提供合理的基础",
+      "triple_id": "FBKG-0119",
+      "confidence": 0.77,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "压力损失",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第4章介绍了气动设计需要了解的回流、射流和混合以及各类气孔〔包括空气旋流器)的流量系数方面的知识，并且在商烧室尺寸、压力损失和出口温度分布之间建立联系，从而为良好的气动设计提供合理的基础",
+      "triple_id": "FBKG-0120",
+      "confidence": 0.76,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "旋流器",
+      "target": "合理的基础",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "第4章介绍了气动设计需要了解的回流、射流和混合以及各类气孔〔包括空气旋流器)的流量系数方面的知识，并且在商烧室尺寸、压力损失和出口温度分布之间建立联系，从而为良好的气动设计提供合理的基础",
+      "triple_id": "FBKG-0121",
+      "confidence": 0.75,
+      "source_page": 10,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "透平",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "例如2/LL为两个转轴,由低压压气机与低压透平轴输出功率",
+      "triple_id": "FBKG-0122",
+      "confidence": 0.74,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "例如2/LL为两个转轴,由低压压气机与低压透平轴输出功率",
+      "triple_id": "FBKG-0123",
+      "confidence": 0.72,
+      "source_page": 14,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "稳定性",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "中文版序目第5章介绍姑烧效率、稳定性和点火性能，将这3个问题集中到一章进行阐述，以使读者更清晰地理解占烧性能的3个不同方面的关系",
+      "triple_id": "FBKG-0124",
+      "confidence": 0.74,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "两半以便拆装",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "压气机ORAL VP arEK DS A LN,ASC区AS iy A前轴承图1.6重型结构燃气轮机AHay KN<=\"SA PS)人|Tse eeWE Oe SG‘P Gok‘i of a,:ed一于ws Ned<3 in vets图1.7航机改型的燃气轮机缸分为两半以便拆装",
+      "triple_id": "FBKG-0125",
+      "confidence": 0.64,
+      "source_page": 15,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0126",
+      "confidence": 0.74,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0127",
+      "confidence": 0.73,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "排放",
+      "target": "六油老化",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0128",
+      "confidence": 0.69,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "排放",
+      "target": "射流",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0129",
+      "confidence": 0.69,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "排放",
+      "target": "油膜破碎机理",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0130",
+      "confidence": 0.69,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "排放",
+      "target": "不同类型喷嘴的性能",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0131",
+      "confidence": 0.69,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "排放",
+      "target": "结构特征等内容",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第6章介绍燃油喷射，指出燃料的准备过程在实现低排放问烧过程中所超的重要作用，内容包括六油老化、射流和油膜破碎机理、不同类型喷嘴的性能和结构特征等内容",
+      "triple_id": "FBKG-0132",
+      "confidence": 0.69,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "转子",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "当改考需加装式用适溃时,一是按轻型Ce透平转子,使机组成为轻重结构混合型",
+      "triple_id": "FBKG-0133",
+      "confidence": 0.71,
+      "source_page": 15,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "第9章介绍排放，主要包括污染排放相关问题和已制定的标准、污染物生成机理和降低传统赵气涡轮发动机污染物排放的方法、可变几何结构和分级概烧在通过控制火焰温度降低排放方面的应用、干低氮氧化物排放和超低氨所化物排放问烧宝设计及实现超低气氧化物排放的方法",
+      "triple_id": "FBKG-0134",
+      "confidence": 0.74,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第9章介绍排放，主要包括污染排放相关问题和已制定的标准、污染物生成机理和降低传统赵气涡轮发动机污染物排放的方法、可变几何结构和分级概烧在通过控制火焰温度降低排放方面的应用、干低氮氧化物排放和超低氨所化物排放问烧宝设计及实现超低气氧化物排放的方法",
+      "triple_id": "FBKG-0135",
+      "confidence": 0.73,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "氧化",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第9章介绍排放，主要包括污染排放相关问题和已制定的标准、污染物生成机理和降低传统赵气涡轮发动机污染物排放的方法、可变几何结构和分级概烧在通过控制火焰温度降低排放方面的应用、干低氮氧化物排放和超低氨所化物排放问烧宝设计及实现超低气氧化物排放的方法",
+      "triple_id": "FBKG-0136",
+      "confidence": 0.73,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第9章介绍排放，主要包括污染排放相关问题和已制定的标准、污染物生成机理和降低传统赵气涡轮发动机污染物排放的方法、可变几何结构和分级概烧在通过控制火焰温度降低排放方面的应用、干低氮氧化物排放和超低氨所化物排放问烧宝设计及实现超低气氧化物排放的方法",
+      "triple_id": "FBKG-0137",
+      "confidence": 0.73,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "另有按直面下大要求设计的、功洒为1万kW左右及其以下的机组大多亦为轻型结构,采用轴向装配,但用滑动轴承支承转子以期达到长寿命,显然其质量比航机重",
+      "triple_id": "FBKG-0138",
+      "confidence": 0.69,
+      "source_page": 15,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "为此，改进燃烧室设计，发展低污染的燃烧室已势在必行",
+      "triple_id": "FBKG-0139",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "第10章介绍用于燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性，评价替代洪料〈合成)和传统赫代混合坝料的特性，描述这些不同的托料及其混合物对燃烧室性能、设计和排放的影响",
+      "triple_id": "FBKG-0140",
+      "confidence": 0.74,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "第10章介绍用于燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性，评价替代洪料〈合成)和传统赫代混合坝料的特性，描述这些不同的托料及其混合物对燃烧室性能、设计和排放的影响",
+      "triple_id": "FBKG-0141",
+      "confidence": 0.73,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "第10章介绍用于燃气涡轮发动机的传统液体与气体坝料〈石油基)的物理与化学特性，评价替代洪料〈合成)和传统赫代混合坝料的特性，描述这些不同的托料及其混合物对燃烧室性能、设计和排放的影响",
+      "triple_id": "FBKG-0142",
+      "confidence": 0.72,
+      "source_page": 11,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃烧效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "1.4性能参数及工作评定参数性能参数表征燃烧室性能的好坏，而工作评定参数是用来评定燃烧室工作是否正常，性能参数和工作评定参数包括以下参数.【1)燃烧效率表征贷烧是否完全，可以有物理因素导致棋烧不完全，如区化不好等也可以有化",
+      "triple_id": "FBKG-0143",
+      "confidence": 0.74,
+      "source_page": 19,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "评定燃烧室工作是否正常",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "1.4性能参数及工作评定参数性能参数表征燃烧室性能的好坏，而工作评定参数是用来评定燃烧室工作是否正常，性能参数和工作评定参数包括以下参数.【1)燃烧效率表征贷烧是否完全，可以有物理因素导致棋烧不完全，如区化不好等也可以有化",
+      "triple_id": "FBKG-0144",
+      "confidence": 0.71,
+      "source_page": 19,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "撕气涡轮发动机技术的发展要持续满足21世纪推力、功率、灼油效率和低污染排放的要求",
+      "triple_id": "FBKG-0145",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "撕气涡轮发动机技术的发展要持续满足21世纪推力、功率、灼油效率和低污染排放的要求",
+      "triple_id": "FBKG-0146",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "撕气涡轮发动机技术的发展要持续满足21世纪推力、功率、灼油效率和低污染排放的要求",
+      "triple_id": "FBKG-0147",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "撕气涡轮发动机技术的发展要持续满足21世纪推力、功率、灼油效率和低污染排放的要求",
+      "triple_id": "FBKG-0148",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃烧效率 = 99%",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "燃媒室在大状态下的燃烧效率问题已经基本解决燃烧室研发要解决的是如何保证地面慢车状态燃烧效率大于99%，因为这与减少污染排放有直接的关系",
+      "triple_id": "FBKG-0149",
+      "confidence": 0.76,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "燃媒室在大状态下的燃烧效率问题已经基本解决燃烧室研发要解决的是如何保证地面慢车状态燃烧效率大于99%，因为这与减少污染排放有直接的关系",
+      "triple_id": "FBKG-0150",
+      "confidence": 0.76,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "燃媒室在大状态下的燃烧效率问题已经基本解决燃烧室研发要解决的是如何保证地面慢车状态燃烧效率大于99%，因为这与减少污染排放有直接的关系",
+      "triple_id": "FBKG-0151",
+      "confidence": 0.75,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "燃媒室在大状态下的燃烧效率问题已经基本解决燃烧室研发要解决的是如何保证地面慢车状态燃烧效率大于99%，因为这与减少污染排放有直接的关系",
+      "triple_id": "FBKG-0152",
+      "confidence": 0.75,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "地面慢车状态燃烧效率大于99%",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "燃媒室在大状态下的燃烧效率问题已经基本解决燃烧室研发要解决的是如何保证地面慢车状态燃烧效率大于99%，因为这与减少污染排放有直接的关系",
+      "triple_id": "FBKG-0153",
+      "confidence": 0.74,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "发电机组",
+      "target": "可靠性 = 99%",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《2)体积小,占地面积小,用于车.船等运输机械时可节省空间作其他用途用《3)起动快,从冷态起动至带满负荷,视机组功率的大小及结构型式的不同在数分钟至半小时之间,在紧急情况下很多机组的起动时间可缩短约一半左右-A)安装周期短,对于燃气轮机电站,在做好基础设施等准备工作后,的气轮机发电机组可在1一2个月内安装好并投入运行发电.《5)运行平稳可靠性高,大量机组可靠性达99%,即机组的事故停机率仅为1%",
+      "triple_id": "FBKG-0154",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "发电机组",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《2)体积小,占地面积小,用于车.船等运输机械时可节省空间作其他用途用《3)起动快,从冷态起动至带满负荷,视机组功率的大小及结构型式的不同在数分钟至半小时之间,在紧急情况下很多机组的起动时间可缩短约一半左右-A)安装周期短,对于燃气轮机电站,在做好基础设施等准备工作后,的气轮机发电机组可在1一2个月内安装好并投入运行发电.《5)运行平稳可靠性高,大量机组可靠性达99%,即机组的事故停机率仅为1%",
+      "triple_id": "FBKG-0155",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "燃烧效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在不喷水的情况下，这种燃烧室具有很高的燃烧效率和很低的No.的排放量",
+      "triple_id": "FBKG-0156",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在不喷水的情况下，这种燃烧室具有很高的燃烧效率和很低的No.的排放量",
+      "triple_id": "FBKG-0157",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "在不喷水的情况下，这种燃烧室具有很高的燃烧效率和很低的No.的排放量",
+      "triple_id": "FBKG-0158",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《6)效率高,现简单循环燃气轮机效率最高已达42.9%6,而联合循环机组效率最高已5 58%,后者是目前各种热力机械中所达到的最高效率值.《7)污染排放低,其NO",
+      "triple_id": "FBKG-0159",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "《6)效率高,现简单循环燃气轮机效率最高已达42.9%6,而联合循环机组效率最高已5 58%,后者是目前各种热力机械中所达到的最高效率值.《7)污染排放低,其NO",
+      "triple_id": "FBKG-0160",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "《6)效率高,现简单循环燃气轮机效率最高已达42.9%6,而联合循环机组效率最高已5 58%,后者是目前各种热力机械中所达到的最高效率值.《7)污染排放低,其NO",
+      "triple_id": "FBKG-0161",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环 / 排放",
+      "predicate": "RELATED_TO",
+      "evidence": "《6)效率高,现简单循环燃气轮机效率最高已达42.9%6,而联合循环机组效率最高已5 58%,后者是目前各种热力机械中所达到的最高效率值.《7)污染排放低,其NO",
+      "triple_id": "FBKG-0162",
+      "confidence": 0.61,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "燃烧室",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "又如美国1983年底提出的专利,确定两级燃烧系统为一种新型燃烧系统，它在燃用各种气体燃料和花偏油时，在各种工况范围内都能保证可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加紧进行之中,如美国GE公司进行了初步设计和试验,在出力为8万千瓦的重型燃气轮机上，当采用低氮份的石油荧馏燃料(含氨量为500ppmv以下),催化反应出口温度为1097~1427C,在基本负荷条件下,No,生成物不超过20ppm,而燃烧效率和一般燃烧室相同",
+      "triple_id": "FBKG-0163",
+      "confidence": 0.81,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "气体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "又如美国1983年底提出的专利,确定两级燃烧系统为一种新型燃烧系统，它在燃用各种气体燃料和花偏油时，在各种工况范围内都能保证可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加紧进行之中,如美国GE公司进行了初步设计和试验,在出力为8万千瓦的重型燃气轮机上，当采用低氮份的石油荧馏燃料(含氨量为500ppmv以下),催化反应出口温度为1097~1427C,在基本负荷条件下,No,生成物不超过20ppm,而燃烧效率和一般燃烧室相同",
+      "triple_id": "FBKG-0164",
+      "confidence": 0.83,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "燃烧效率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "又如美国1983年底提出的专利,确定两级燃烧系统为一种新型燃烧系统，它在燃用各种气体燃料和花偏油时，在各种工况范围内都能保证可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加紧进行之中,如美国GE公司进行了初步设计和试验,在出力为8万千瓦的重型燃气轮机上，当采用低氮份的石油荧馏燃料(含氨量为500ppmv以下),催化反应出口温度为1097~1427C,在基本负荷条件下,No,生成物不超过20ppm,而燃烧效率和一般燃烧室相同",
+      "triple_id": "FBKG-0165",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "又如美国1983年底提出的专利,确定两级燃烧系统为一种新型燃烧系统，它在燃用各种气体燃料和花偏油时，在各种工况范围内都能保证可以明显减少有害成份析出BAKU RE.催化型燃烧室的试验研究工作亦在加紧进行之中,如美国GE公司进行了初步设计和试验,在出力为8万千瓦的重型燃气轮机上，当采用低氮份的石油荧馏燃料(含氨量为500ppmv以下),催化反应出口温度为1097~1427C,在基本负荷条件下,No,生成物不超过20ppm,而燃烧效率和一般燃烧室相同",
+      "triple_id": "FBKG-0166",
+      "confidence": 0.76,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "因此，当今的燃气轮机塔称高效率的热机1 3.1.2”环保性能如何保护清洁的环境是当今社会发展中的一个重大课题,必须在发展中高度重视这一同是,应尽可能焉小有害人类信康的污染物的排放",
+      "triple_id": "FBKG-0167",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "因此，当今的燃气轮机塔称高效率的热机1 3.1.2”环保性能如何保护清洁的环境是当今社会发展中的一个重大课题,必须在发展中高度重视这一同是,应尽可能焉小有害人类信康的污染物的排放",
+      "triple_id": "FBKG-0168",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "因此，当今的燃气轮机塔称高效率的热机1 3.1.2”环保性能如何保护清洁的环境是当今社会发展中的一个重大课题,必须在发展中高度重视这一同是,应尽可能焉小有害人类信康的污染物的排放",
+      "triple_id": "FBKG-0169",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "透平进口温度",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "热电联供的能力亦将随着透平进口温度的提高而使透平排气温度稍加提高而增大",
+      "triple_id": "FBKG-0170",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "排气温度",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "热电联供的能力亦将随着透平进口温度的提高而使透平排气温度稍加提高而增大",
+      "triple_id": "FBKG-0171",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "回火",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "因此，在多燃料性能、回火、高室非设计点册烧效率和减少带气膜冷却火焰简故障研究方面的修改最少",
+      "triple_id": "FBKG-0172",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "因此，在多燃料性能、回火、高室非设计点册烧效率和减少带气膜冷却火焰简故障研究方面的修改最少",
+      "triple_id": "FBKG-0173",
+      "confidence": 0.79,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "总压损失 = 6%",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "《2)总压损失系数整个燃妙室系统的总压损失大约为6%，但目前由于扩压器进口Ma不断提高，所以总压损失为7%~8%也是可以接受的",
+      "triple_id": "FBKG-0174",
+      "confidence": 0.76,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "CO = 1",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "下于热机来说,主要是NO:\\CO和二©),nti“EMR a HR ER REE NO和CO CT 1 OPREINO,排放的浓度低于20m/a MRA HE LTS Se HE RA ES BL EA AE保的要求.rs",
+      "triple_id": "FBKG-0175",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放 = 20",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "下于热机来说,主要是NO:\\CO和二©),nti“EMR a HR ER REE NO和CO CT 1 OPREINO,排放的浓度低于20m/a MRA HE LTS Se HE RA ES BL EA AE保的要求.rs",
+      "triple_id": "FBKG-0176",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "下于热机来说,主要是NO:\\CO和二©),nti“EMR a HR ER REE NO和CO CT 1 OPREINO,排放的浓度低于20m/a MRA HE LTS Se HE RA ES BL EA AE保的要求.rs",
+      "triple_id": "FBKG-0177",
+      "confidence": 0.73,
+      "source_page": 16,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "比功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "由于航空发动机具有轻便、灵巧等独特的优点，近年来在工业燃气轮机生产中广泛采用航空方面的技术，从而使燃气轮机的比功率大大提高，而总重量却大大减小",
+      "triple_id": "FBKG-0178",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "由于航空发动机具有轻便、灵巧等独特的优点，近年来在工业燃气轮机生产中广泛采用航空方面的技术，从而使燃气轮机的比功率大大提高，而总重量却大大减小",
+      "triple_id": "FBKG-0179",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "涡轮进口温度",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0180",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "CO",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0181",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "压比",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0182",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0183",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0184",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "压气机",
+      "target": "氧化",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "在寻求达到更高燃油效率和更低二氧化碳(CO,)排放的过程中，过去10年里，压气机增压比和涡轮进口温度逐渐增长",
+      "triple_id": "FBKG-0185",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "总压损失 = 4.5%",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "对新发动机楼烧室而言，总压损失系数为4.5%的燃烧室是不现实的，可导致燃烧室工作不稳定",
+      "triple_id": "FBKG-0186",
+      "confidence": 0.76,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "不稳定",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "对新发动机楼烧室而言，总压损失系数为4.5%的燃烧室是不现实的，可导致燃烧室工作不稳定",
+      "triple_id": "FBKG-0187",
+      "confidence": 0.75,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放 = 1",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "然而气体和微粒的排放减少了1/3或更多，并且完全低于2006年7月制定的排放规定",
+      "triple_id": "FBKG-0188",
+      "confidence": 0.78,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "然而气体和微粒的排放减少了1/3或更多，并且完全低于2006年7月制定的排放规定",
+      "triple_id": "FBKG-0189",
+      "confidence": 0.77,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "舰船用燃气轮机的发展到目前为止已有三十余年的历史，已研制了许多不同功率等级的燃气轮机动力装置",
+      "triple_id": "FBKG-0190",
+      "confidence": 0.78,
+      "source_page": 13,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "液体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "最重要的更改是新加入了第10章“赫代烘料”和本专著副标题“替代WA Sa”.AT,BMA RTA AA EO Ob a SE Oo,HERA AT进行基于煤炭、生物和其他原料的赫代液体燃料的研究",
+      "triple_id": "FBKG-0191",
+      "confidence": 0.83,
+      "source_page": 12,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "转子",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "其中最佳径向温度分布曲线由涡轮设计部门确定〈主要针对涡轮转子)",
+      "triple_id": "FBKG-0192",
+      "confidence": 0.78,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "可靠性",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "由于灼气轮机和联合循环电站发电效率高,污染排放低、可靠性高,建设周期短,在国外其造价还远低于顽煤的秦汽电站,因而使其在各类电站中所占的比重不断加大.美国在20世纪80年代后期,燃气轮机年生产容量就超过了汽轮机",
+      "triple_id": "FBKG-0193",
+      "confidence": 0.76,
+      "source_page": 17,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "由于灼气轮机和联合循环电站发电效率高,污染排放低、可靠性高,建设周期短,在国外其造价还远低于顽煤的秦汽电站,因而使其在各类电站中所占的比重不断加大.美国在20世纪80年代后期,燃气轮机年生产容量就超过了汽轮机",
+      "triple_id": "FBKG-0194",
+      "confidence": 0.76,
+      "source_page": 17,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "由于灼气轮机和联合循环电站发电效率高,污染排放低、可靠性高,建设周期短,在国外其造价还远低于顽煤的秦汽电站,因而使其在各类电站中所占的比重不断加大.美国在20世纪80年代后期,燃气轮机年生产容量就超过了汽轮机",
+      "triple_id": "FBKG-0195",
+      "confidence": 0.75,
+      "source_page": 17,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "由于灼气轮机和联合循环电站发电效率高,污染排放低、可靠性高,建设周期短,在国外其造价还远低于顽煤的秦汽电站,因而使其在各类电站中所占的比重不断加大.美国在20世纪80年代后期,燃气轮机年生产容量就超过了汽轮机",
+      "triple_id": "FBKG-0196",
+      "confidence": 0.75,
+      "source_page": 17,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环 / 可靠性",
+      "predicate": "RELATED_TO",
+      "evidence": "由于灼气轮机和联合循环电站发电效率高,污染排放低、可靠性高,建设周期短,在国外其造价还远低于顽煤的秦汽电站,因而使其在各类电站中所占的比重不断加大.美国在20世纪80年代后期,燃气轮机年生产容量就超过了汽轮机",
+      "triple_id": "FBKG-0197",
+      "confidence": 0.64,
+      "source_page": 17,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "苏联小功率机仪作气据艇和快艇主机，未作巡航机用:，苏联五十年代研制划发展的M 2型和M 3型中等功率燃气轮机，人性能较差,美国研制的LM1500型机仅在水屠艇上用过，目前止在研制LM1600型机，以提高中挡功率燃气轮机的性能",
+      "triple_id": "FBKG-0198",
+      "confidence": 0.78,
+      "source_page": 13,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "英国在七十年代中期开始研制“斯贝”SM型机:大功率舰用燃气轮机均由航空型改装过来的，其中以美国LM2500型最为鞠进，装舰台数占首位，使用范围广，可以从290下殿艇到万吨以上航空母舰上使用，国外舰用燃气轮机系刻见表1-8所示",
+      "triple_id": "FBKG-0199",
+      "confidence": 0.78,
+      "source_page": 13,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率 = 3",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "二、燃气轮机在海上平台上的应用从海底开采石油和天然气需要有浮动的或非浮动的海上平台，在这种拉台上装有和泵、卜气机、发电机、钻孔装置等作业设备、这些设备的功率订达到3~+万千朱，通党采用工业型燃气轮机和航空改型燃气轮机作为动力源",
+      "triple_id": "FBKG-0200",
+      "confidence": 0.78,
+      "source_page": 13,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "第二章“燃气-蒸汽联合循环一、引言燃气-蒸汽联合循环〈以下简称联合循环)，是指蒸汽轮机循环〈Rankine循环)和燃气轮机循环(Brayton循环)的组合，因此，联合循环就是取燃气轮机循环的高温吸热和蒸汽轮机循环的低温放热之长，从而大大提高循环效率，即提高能源利用率",
+      "triple_id": "FBKG-0201",
+      "confidence": 0.8,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "气体燃料",
+      "predicate": "USES_FUEL",
+      "evidence": "0 MAURIE RADAR(33版因此，第10章首先介绍了用于燃气涡轮发动机的传统液体与气体燃料(石油基)的物理与化学特性",
+      "triple_id": "FBKG-0202",
+      "confidence": 0.81,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "涡轮",
+      "target": "燃气涡轮发动机的传统液体与气体燃料(石油基)的物理与化学特性",
+      "predicate": "HAS_FUNCTION",
+      "evidence": "0 MAURIE RADAR(33版因此，第10章首先介绍了用于燃气涡轮发动机的传统液体与气体燃料(石油基)的物理与化学特性",
+      "triple_id": "FBKG-0203",
+      "confidence": 0.74,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "熄火",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "对军用发动机，要求在发射导弹时燃烧室吸和导弹燃烧尾气而不熄火，通常由模拟试验来检查",
+      "triple_id": "FBKG-0204",
+      "confidence": 0.75,
+      "source_page": 20,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "天然气",
+      "predicate": "USES_FUEL",
+      "evidence": "英国J.B燃气轮机工程公司对燃气轮机初温为1000C的联合循环〈以油和天然气为燃料)在能源的利用方面作过如下分析:(1)简单循环的燃气轮机发电厂，燃料能量中30%%转换为电力，其中70%为热损失",
+      "triple_id": "FBKG-0205",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "其次，评价了替代洪料〔(合成)和传统替代混合燃料的特性，描述了这些不同的燃料及其混合物对燃烧室性能、设计和排放的影响，并作为飞行器燃料的特殊需求和工业燃气涡轮发动机抑料上过到问题的参考按照不背离第1版和第2版中高度成熟的原则，我将相关素材更新到2009年",
+      "triple_id": "FBKG-0206",
+      "confidence": 0.76,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "其次，评价了替代洪料〔(合成)和传统替代混合燃料的特性，描述了这些不同的燃料及其混合物对燃烧室性能、设计和排放的影响，并作为飞行器燃料的特殊需求和工业燃气涡轮发动机抑料上过到问题的参考按照不背离第1版和第2版中高度成熟的原则，我将相关素材更新到2009年",
+      "triple_id": "FBKG-0207",
+      "confidence": 0.75,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "我希望第3版能够很好地被燃气涡轮发动机燃烧室、燃料和排放方面的研究团体所接受",
+      "triple_id": "FBKG-0208",
+      "confidence": 0.76,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "我希望第3版能够很好地被燃气涡轮发动机燃烧室、燃料和排放方面的研究团体所接受",
+      "triple_id": "FBKG-0209",
+      "confidence": 0.75,
+      "source_page": 13,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "空气冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "图中的透平叶片冷却是指将透平叶片设计成内部有冷却空气流道的“空心?叶片,用空气冷却来降低叶片的工作温度使之在更高的燃气初温下运行,详见6.3",
+      "triple_id": "FBKG-0210",
+      "confidence": 0.72,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "图中的透平叶片冷却是指将透平叶片设计成内部有冷却空气流道的“空心?叶片,用空气冷却来降低叶片的工作温度使之在更高的燃气初温下运行,详见6.3",
+      "triple_id": "FBKG-0211",
+      "confidence": 0.72,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "寿命",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "(10)燃烧富寿命以大修之间的循环数(或小时)来表征",
+      "triple_id": "FBKG-0212",
+      "confidence": 0.75,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "从图看出,当在20世纪60年代透平采用叶片冷却后号出现了跳跃,相应地因也出现了跳跃,说明透平采用叶片冷却对提高机组效率是十分有效的",
+      "triple_id": "FBKG-0213",
+      "confidence": 0.72,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "寿命 = 2000",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "对军用航室发动机颂烧室，亦希望大修寿命在2000h以Es对工业燃气轮机，要求达到30000h,,CL)am BL AE ABERS AMIE AMAR OAL,AR HEREC Ac FO BLL TAF MOT,1.5”航空燃气轮机主燃烧室的发展就20世纪后几十年而言，燃烧室技术的发展已有论述",
+      "triple_id": "FBKG-0214",
+      "confidence": 0.75,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "叶片",
+      "predicate": "HAS_COMPONENT",
+      "evidence": "以透平采用叶片冷却前后为分界线,在这之前蕊的逐年提高仅由研制新的叶片用高温材料来实现,在这之后好的逐年提高则是由研制新的高温材料与改进叶片冷却技术两者共同来实现",
+      "triple_id": "FBKG-0215",
+      "confidence": 0.73,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "透平",
+      "target": "冷却",
+      "predicate": "IMPROVED_BY",
+      "evidence": "以透平采用叶片冷却前后为分界线,在这之前蕊的逐年提高仅由研制新的叶片用高温材料来实现,在这之后好的逐年提高则是由研制新的高温材料与改进叶片冷却技术两者共同来实现",
+      "triple_id": "FBKG-0216",
+      "confidence": 0.72,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "当今燃伐室的发展可归纳如下:《1)对民航发动机和工业燃气轮机燃烧室，以低污染燃烧的发展为主，同时要减少燃油【或燃料)消耗",
+      "triple_id": "FBKG-0217",
+      "confidence": 0.74,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "工业燃气轮机",
+      "target": "低污染燃烧",
+      "predicate": "IMPROVED_BY",
+      "evidence": "当今燃伐室的发展可归纳如下:《1)对民航发动机和工业燃气轮机燃烧室，以低污染燃烧的发展为主，同时要减少燃油【或燃料)消耗",
+      "triple_id": "FBKG-0218",
+      "confidence": 0.76,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "天然气",
+      "predicate": "USES_FUEL",
+      "evidence": "其次由于主要燃用天然气还可以减小温室气体CO,的排放",
+      "triple_id": "FBKG-0219",
+      "confidence": 0.75,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "CO",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "其次由于主要燃用天然气还可以减小温室气体CO,的排放",
+      "triple_id": "FBKG-0220",
+      "confidence": 0.7,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "其次由于主要燃用天然气还可以减小温室气体CO,的排放",
+      "triple_id": "FBKG-0221",
+      "confidence": 0.7,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "其次由于主要燃用天然气还可以减小温室气体CO,的排放",
+      "triple_id": "FBKG-0222",
+      "confidence": 0.7,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "功率",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "与同功率蒸汽动力厂相比，投资可减少30~50%，建设周期可缩短20%%，用水量可减少1/2到2/3，占地面积和对大气的污染都有减少，所以近一、二十年联合循环在国外得到了普遍采用",
+      "triple_id": "FBKG-0223",
+      "confidence": 0.78,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "与同功率蒸汽动力厂相比，投资可减少30~50%，建设周期可缩短20%%，用水量可减少1/2到2/3，占地面积和对大气的污染都有减少，所以近一、二十年联合循环在国外得到了普遍采用",
+      "triple_id": "FBKG-0224",
+      "confidence": 0.78,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "功率",
+      "target": "联合循环",
+      "predicate": "IMPROVED_BY",
+      "evidence": "与同功率蒸汽动力厂相比，投资可减少30~50%，建设周期可缩短20%%，用水量可减少1/2到2/3，占地面积和对大气的污染都有减少，所以近一、二十年联合循环在国外得到了普遍采用",
+      "triple_id": "FBKG-0225",
+      "confidence": 0.8,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "联合循环 / 功率",
+      "predicate": "RELATED_TO",
+      "evidence": "与同功率蒸汽动力厂相比，投资可减少30~50%，建设周期可缩短20%%，用水量可减少1/2到2/3，占地面积和对大气的污染都有减少，所以近一、二十年联合循环在国外得到了普遍采用",
+      "triple_id": "FBKG-0226",
+      "confidence": 0.67,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "概括地讨论航空",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章基本概念11绪论编写本绪论的主要目的是探讨焕气涡轮发动机燃烧室的主要设计要求，以及概括地讨论航空和工业燃气渴轮发动机上使用的不同类型和结构的燃烧室",
+      "triple_id": "FBKG-0227",
+      "confidence": 0.73,
+      "source_page": 20,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "工业燃气渴轮发动机上使用的不同类型",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章基本概念11绪论编写本绪论的主要目的是探讨焕气涡轮发动机燃烧室的主要设计要求，以及概括地讨论航空和工业燃气渴轮发动机上使用的不同类型和结构的燃烧室",
+      "triple_id": "FBKG-0228",
+      "confidence": 0.73,
+      "source_page": 20,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧室",
+      "target": "结构的燃烧室",
+      "predicate": "HAS_SUBTYPE",
+      "evidence": "第1章基本概念11绪论编写本绪论的主要目的是探讨焕气涡轮发动机燃烧室的主要设计要求，以及概括地讨论航空和工业燃气渴轮发动机上使用的不同类型和结构的燃烧室",
+      "triple_id": "FBKG-0229",
+      "confidence": 0.73,
+      "source_page": 20,
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "污染",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "值得说明的是，减少燃油〈或燃料)消耗亦大大有利于减少污染",
+      "triple_id": "FBKG-0230",
+      "confidence": 0.74,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "功率 = 480MW",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "目前,功率为480MW的、燃气轮机中透平叶片采用蒜汽冷却的联合循环即将投运,其效率可达60%",
+      "triple_id": "FBKG-0231",
+      "confidence": 0.7,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "联合循环 / 功率",
+      "predicate": "RELATED_TO",
+      "evidence": "目前,功率为480MW的、燃气轮机中透平叶片采用蒜汽冷却的联合循环即将投运,其效率可达60%",
+      "triple_id": "FBKG-0232",
+      "confidence": 0.59,
+      "source_page": 19,
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "天然气",
+      "predicate": "USES_FUEL",
+      "evidence": "联合循环用在改造老的蒸汽轮机电站，扩大动力,提高热能利用率,对于燃料为天然气或轻柴油的发电厂最有利",
+      "triple_id": "FBKG-0233",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "柴油",
+      "predicate": "USES_FUEL",
+      "evidence": "联合循环用在改造老的蒸汽轮机电站，扩大动力,提高热能利用率,对于燃料为天然气或轻柴油的发电厂最有利",
+      "triple_id": "FBKG-0234",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "CO",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "减少CO排放，也基本上车降低构油《或顽料)消耗来实现",
+      "triple_id": "FBKG-0235",
+      "confidence": 0.75,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃气轮机",
+      "target": "排放",
+      "predicate": "HAS_PARAMETER",
+      "evidence": "减少CO排放，也基本上车降低构油《或顽料)消耗来实现",
+      "triple_id": "FBKG-0236",
+      "confidence": 0.75,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "燃烧过程",
+      "target": "排放",
+      "predicate": "HAS_PROBLEM",
+      "evidence": "减少CO排放，也基本上车降低构油《或顽料)消耗来实现",
+      "triple_id": "FBKG-0237",
+      "confidence": 0.74,
+      "source_page": 21,
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "天然气",
+      "predicate": "USES_FUEL",
+      "evidence": "直至现在，联合循环主要还以天然气，轻柴油或重油为燃料",
+      "triple_id": "FBKG-0238",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "柴油",
+      "predicate": "USES_FUEL",
+      "evidence": "直至现在，联合循环主要还以天然气，轻柴油或重油为燃料",
+      "triple_id": "FBKG-0239",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    },
+    {
+      "source": "联合循环",
+      "target": "重油",
+      "predicate": "USES_FUEL",
+      "evidence": "直至现在，联合循环主要还以天然气，轻柴油或重油为燃料",
+      "triple_id": "FBKG-0240",
+      "confidence": 0.83,
+      "source_page": 16,
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    }
+  ],
+  "summary": {
+    "node_count": 102,
+    "triple_count": 240,
+    "relation_counts": {
+      "HAS_COMPONENT": 24,
+      "IMPROVED_BY": 18,
+      "HAS_PARAMETER": 85,
+      "HAS_PROBLEM": 51,
+      "RELATED_TO": 11,
+      "HAS_FUNCTION": 12,
+      "USES_FUEL": 19,
+      "HAS_SUBTYPE": 20
+    },
+    "entity_type_counts": {
+      "Equipment": 5,
+      "Component": 8,
+      "Parameter": 35,
+      "Problem": 5,
+      "Method": 15,
+      "Fuel": 8,
+      "Concept": 14,
+      "Property": 12
+    }
+  }
+}

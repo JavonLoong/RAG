@@ -1,0 +1,7 @@
+﻿source_file,page_num,flags,accepted,reason,original_score,best_score,original_avg_confidence,chosen_avg_confidence,original_char_count,chosen_char_count,candidate_count,elapsed_s
+"美国飞机燃气涡轮发动机发展史 (James St. Peter) (z-library.sk, 1lib.sk, z-lib.sk).pdf",372,文字极短、平均置信度偏低、短行过多,True,quality_improved,24.8067,75.2475,0.4204,0.4323,25,818,5,3.32
+"燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",2,文字极短、平均置信度偏低,True,quality_improved,26.91,81.23,0.4462,0.7837,21,49,5,8.345
+"燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",56,文字极短、平均置信度偏低,True,quality_improved,40.41,100.0353,0.4315,0.3334,14,3449,5,22.966
+"燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",329,文字极短、平均置信度偏低,True,quality_improved,34.5967,108.8652,0.3942,0.4168,14,7306,5,21.408
+"燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",226,文字极短、平均置信度偏低,True,quality_improved,45.52,80.5168,0.3744,0.3765,27,927,5,18.646
+"燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",227,文字极短、平均置信度偏低,True,quality_improved,30.08,77.6244,0.394,0.3621,17,842,5,18.808

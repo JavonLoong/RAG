@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-05-18T00:27:10",
+  "output_root": "D:\\虚拟C盘\\RAG\\data_pipeline\\ocr_layout_aware_tesseract_night_probe\\tsinghua_gas_turbine_books",
+  "target_pages": 6,
+  "attempted_pages": 6,
+  "accepted_pages": 6,
+  "flag_counts": {
+    "文字极短": 6,
+    "平均置信度偏低": 6,
+    "短行过多": 1
+  },
+  "avg_original_score": 33.7206,
+  "avg_best_score": 87.2532,
+  "avg_original_confidence": 0.4101,
+  "avg_chosen_confidence": 0.4508,
+  "results": [
+    {
+      "source_file": "美国飞机燃气涡轮发动机发展史 (James St. Peter) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 372,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低",
+        "短行过多"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 24.8067,
+      "best_score": 75.2475,
+      "original_avg_confidence": 0.4204,
+      "chosen_avg_confidence": 0.4323,
+      "original_char_count": 25,
+      "chosen_char_count": 818,
+      "candidate_count": 5,
+      "elapsed_s": 3.32
+    },
+    {
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 2,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 26.91,
+      "best_score": 81.23,
+      "original_avg_confidence": 0.4462,
+      "chosen_avg_confidence": 0.7837,
+      "original_char_count": 21,
+      "chosen_char_count": 49,
+      "candidate_count": 5,
+      "elapsed_s": 8.345
+    },
+    {
+      "source_file": "燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 56,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 40.41,
+      "best_score": 100.0353,
+      "original_avg_confidence": 0.4315,
+      "chosen_avg_confidence": 0.3334,
+      "original_char_count": 14,
+      "chosen_char_count": 3449,
+      "candidate_count": 5,
+      "elapsed_s": 22.966
+    },
+    {
+      "source_file": "燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 329,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 34.5967,
+      "best_score": 108.8652,
+      "original_avg_confidence": 0.3942,
+      "chosen_avg_confidence": 0.4168,
+      "original_char_count": 14,
+      "chosen_char_count": 7306,
+      "candidate_count": 5,
+      "elapsed_s": 21.408
+    },
+    {
+      "source_file": "燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 226,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 45.52,
+      "best_score": 80.5168,
+      "original_avg_confidence": 0.3744,
+      "chosen_avg_confidence": 0.3765,
+      "original_char_count": 27,
+      "chosen_char_count": 927,
+      "candidate_count": 5,
+      "elapsed_s": 18.646
+    },
+    {
+      "source_file": "燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "page_num": 227,
+      "flags": [
+        "文字极短",
+        "平均置信度偏低"
+      ],
+      "accepted": true,
+      "reason": "quality_improved",
+      "original_score": 30.08,
+      "best_score": 77.6244,
+      "original_avg_confidence": 0.394,
+      "chosen_avg_confidence": 0.3621,
+      "original_char_count": 17,
+      "chosen_char_count": 842,
+      "candidate_count": 5,
+      "elapsed_s": 18.808
+    }
+  ]
+}

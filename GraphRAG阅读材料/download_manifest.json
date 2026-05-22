@@ -1,0 +1,26 @@
+﻿[
+    {
+        "file":  "01_Microsoft_GraphRAG_From_Local_to_Global.pdf",
+        "url":  "https://arxiv.org/pdf/2404.16130",
+        "bytes":  6893854,
+        "downloaded_at":  "2026-05-09T03:22:09"
+    },
+    {
+        "file":  "02_GraphRAG_Survey_Retrieval_Augmented_Generation_with_Graphs.pdf",
+        "url":  "https://arxiv.org/pdf/2501.00309",
+        "bytes":  8896579,
+        "downloaded_at":  "2026-05-09T03:22:17"
+    },
+    {
+        "file":  "03_Neo4j_GraphRAG_Python_Documentation.html",
+        "url":  "https://neo4j.com/docs/neo4j-graphrag-python/current/index.html",
+        "bytes":  28745,
+        "downloaded_at":  "2026-05-09T03:22:19"
+    },
+    {
+        "file":  "04_LlamaIndex_Property_Graph_Index_Documentation.html",
+        "url":  "https://docs.llamaindex.ai/en/stable/module_guides/indexing/lpg_index_guide/",
+        "bytes":  371274,
+        "downloaded_at":  "2026-05-09T03:22:20"
+    }
+]

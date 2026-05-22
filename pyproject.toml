@@ -35,9 +35,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "http://117.78.35.35/rag1/plant-graph-rag"
-Repository = "http://117.78.35.35/rag1/plant-graph-rag"
-Documentation = "http://117.78.35.35/rag1/plant-graph-rag"
+Homepage = "https://github.com/JavonLoong/RAG"
+Repository = "https://github.com/JavonLoong/RAG"
+Documentation = "https://github.com/JavonLoong/RAG"
 
 [project.scripts]
 power-rag-prototype = "power_rag_pipeline.pipeline:main"

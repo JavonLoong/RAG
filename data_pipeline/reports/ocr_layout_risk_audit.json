@@ -1,0 +1,450 @@
+{
+  "generated_at": "2026-05-15T22:10:34",
+  "samples_per_pdf": 1,
+  "render_scale": 0.75,
+  "note": "This is a sampled layout audit. It re-runs OCR on sampled pages and uses OCR boxes to estimate two-column reading-order risk.",
+  "documents": [
+    {
+      "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 603,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 40,
+          "left_only_boxes": 5,
+          "right_only_boxes": 1,
+          "wide_or_center_boxes": 34,
+          "two_column_candidate": false,
+          "left_right_transitions": 1,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLLLL",
+          "text_preview": [
+            "第10章火格稳定与炮火",
+            "287",
+            "要说明的是，在进近时真实的工况并不见得与30%工况一样。但考核试验点，在",
+            "燃烧室试验时，在发动机试验时，在30%工况进行。",
+            "现在要讨论为什么进近雷雨熄火对以前的常规燃烧室（也要试验）问题并不那么",
+            "严重，面对低污染燃烧室就变得严重了。",
+            "因为常规燃烧室中是扩散燃烧。众所周知，扩散火焰的火焰稳定性远比预混燃烧的",
+            "好。其次，在常规燃烧室中主燃区空气分数只在30%左右。主燃区的平均燃烧油气比"
+          ],
+          "image_width": 447,
+          "image_height": 642,
+          "page_num": 302
+        }
+      ]
+    },
+    {
+      "source_file": "大型燃气-蒸汽联合循环电厂培训教材 M701F燃气轮机汽轮机分册 (深圳能源集团月亮湾燃机电厂，中国电机工程学会燃气轮机发电专业委员会编 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 410,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 17,
+          "left_only_boxes": 5,
+          "right_only_boxes": 2,
+          "wide_or_center_boxes": 10,
+          "two_column_candidate": false,
+          "left_right_transitions": 4,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "LLRLLRL",
+          "text_preview": [
+            "M701F燃气轮机/汽轮机分册",
+            "有一定数量的迷宫状通道，每个通道又有一定数量的转弯，当高速流体流经这些弯道后，经过",
+            "能量的转换，使得流速降低。转弯数量的设置取决于阀门前后压差要求，而通道数量的设置",
+            "取决于阀门通流能力的要求。",
+            "网体别面面",
+            "A口",
+            "图5.75高压旁路润",
+            "1,8法兰；2—垫片；3阔芯;4—连宫减压件；5—密封环；6—导套："
+          ],
+          "image_width": 447,
+          "image_height": 634,
+          "page_num": 206
+        }
+      ]
+    },
+    {
+      "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 442,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 29,
+          "left_only_boxes": 5,
+          "right_only_boxes": 2,
+          "wide_or_center_boxes": 22,
+          "two_column_candidate": false,
+          "left_right_transitions": 2,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLLLLR",
+          "text_preview": [
+            "第6章爆油喷射",
+            "203",
+            "动的旋转气流所环绕。本质上来说，它与外掺混的空气输助喷嘴一致；唯一的区别是，",
+            "雾化空气是持续供给的，面不是仅需要时才供给。它与混合式空气雾化喷嘴也有许多共",
+            "同之处，其区别在于后者的压力离心式喷嘴在高功率状态下只提供一小部分燃油，面",
+            "ABS则是在所有状态下燃油均由离心式喷嘴提供。根据本杰明（Benjamin）等人（”的",
+            "研究，ABS喷嘴对于航空发动机来说具有以下优点：",
+            "（1）它们比预膜式空气雾化喷嘴更易制造，成本更低。"
+          ],
+          "image_width": 447,
+          "image_height": 642,
+          "page_num": 222
+        }
+      ]
+    },
+    {
+      "source_file": "燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 423,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 24,
+          "left_only_boxes": 3,
+          "right_only_boxes": 0,
+          "wide_or_center_boxes": 21,
+          "two_column_candidate": false,
+          "left_right_transitions": 0,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "LLL",
+          "text_preview": [
+            "总之，卡诺循环和卡诺定理提供了热机的最高标准和改善热机",
+            "效率的途径，从此可以看出卡诺循环的巨大理论价值。：",
+            "最后必须指出：卡诺借环虽是实际数机循环的最高理想，但是",
+            "到目前为止，人们还汉能造成完全按照卡诺信环工作的熟视。主要",
+            "原因是：1、以气体为工质的定温过程是不易实现的：2、为使卡",
+            "诺循环热效率高：T：与T。的差别就要大这就需要雀大的还力",
+            "整秉领大的容积压综比（即图4-7中V与VA相整很大）这",
+            "样的机器就必须造得极其庞大以致失去了实用价留。"
+          ],
+          "image_width": 447,
+          "image_height": 633,
+          "page_num": 212
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 62,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 37,
+          "left_only_boxes": 6,
+          "right_only_boxes": 0,
+          "wide_or_center_boxes": 31,
+          "two_column_candidate": false,
+          "left_right_transitions": 0,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "LLLLLL",
+          "text_preview": [
+            "第四章高温材料",
+            "现代工业燃气轮机正向着出力大、效率高、消耗低和寿命长的方向发展。航空燃气轮机",
+            "的先进技术已意来愈多地引入工业燃气轮机的设计中，工业燃气轮机造平进口温度和压气机",
+            "压比在不断地提高，因而对高温材料（主要是高温合金）提出了更高的要求。材料不仅要长",
+            "期经受极高的燃气温度，还要承受急剧增加的机械负荷，这就要求高温合金不断提高使用温",
+            "度和承受应力。改进劳性能，增加长时间工作稳定性，并改着在各种环境下的适应能力。",
+            "因此，需要人们不断地开发新的材料，发展新的工艺，以满足日益宠展的各种燃气轮机的要",
+            "求。口前，国外正在进行的一些研究项目主要有以下凡个方面"
+          ],
+          "image_width": 363,
+          "image_height": 550,
+          "page_num": 32
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机 (燃气轮机基本情况编写组编写) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 161,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 31,
+          "left_only_boxes": 3,
+          "right_only_boxes": 0,
+          "wide_or_center_boxes": 28,
+          "two_column_candidate": false,
+          "left_right_transitions": 0,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "LLL",
+          "text_preview": [
+            "第四章制造工艺",
+            "第一节叶片",
+            "燃气轮机的叶片数量相当多，如美国GE公司的PG5301机组，其叶片总数达2450片：",
+            "型线复杂，一般都是扭由叶片：且材料都是高强度、高韧性、高温合金，切前性能差。因此",
+            "机械加工量很大，约占机组总加工量的30～35%。过去是用方钢作毛坯，以靠模铣床铣制成",
+            "型，砂轮手工抛光，材料利用率和生产效率很低，且叶片精度不易保证。随着燃气轮机的高",
+            "速发展，叶片毛坯已采用精密模最和精密铸造，型线部分可达到少无余量：机械加工广泛采",
+            "用多轴液压仿型铣床、数控机床、电解加工机尿、控床和其他专用高效机床：使叶片机械加"
+          ],
+          "image_width": 381,
+          "image_height": 549,
+          "page_num": 81
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机与燃气-蒸汽联合循环装置 上 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 493,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 33,
+          "left_only_boxes": 2,
+          "right_only_boxes": 1,
+          "wide_or_center_boxes": 30,
+          "two_column_candidate": false,
+          "left_right_transitions": 1,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLL",
+          "text_preview": [
+            "第八章然气轮机结构2",
+            "PG9171（E）型燃气轮机中压气机转子的拉杆数目为14根，为了保证转子运行的安全和可靠，各",
+            "轮盘之间必须具有足够的压紧力，每根拉杆的预紧力可达30一40t转子的组装工作必须由制造厂来",
+            "承担。",
+            "如图8-20所示，PG9197（E）型机组压气机的动叶系采用输向装配式的瓶尾形叶根，叶根装在轮",
+            "盘的叶根糖中，一般采用有间晾的配合，这样可以降低加工精度，且使于装拆，并能避免叶根槽产生预",
+            "应力，旋转时叶片能自动调位，叶片的轴间定位是采用轮缘冲锡的镇紧结构。",
+            "（5）整烧室采用逆流式分管型结构型式，如图8-92所示，这样能缩短整台机组的轴向长度，有利"
+          ],
+          "image_width": 447,
+          "image_height": 640,
+          "page_num": 247
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机与燃气-蒸汽联合循环装置 下 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 325,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 11,
+          "left_only_boxes": 4,
+          "right_only_boxes": 1,
+          "wide_or_center_boxes": 6,
+          "two_column_candidate": false,
+          "left_right_transitions": 1,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "LLLLR",
+          "text_preview": [
+            "636",
+            "燃气轮机与燃气一蒸汽联合循环策置",
+            "图21-7GUD1SV94.3机组布置的缺例图",
+            "1是气轮机：2空进道：3发电机间线：4高压属汽造平5中压/低压离尺连平",
+            "1",
+            "13",
+            "OOO",
+            "21-8Kng'sLy燃气一汽联合循环电厂的平面布置"
+          ],
+          "image_width": 447,
+          "image_height": 642,
+          "page_num": 163
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 485,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 1,
+      "risk_counts": {
+        "高": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 33,
+          "left_only_boxes": 10,
+          "right_only_boxes": 7,
+          "wide_or_center_boxes": 16,
+          "two_column_candidate": true,
+          "left_right_transitions": 5,
+          "layout_order_risk": "高",
+          "zone_sequence_preview": "LLLLLRRRLLLLRRRLR",
+          "text_preview": [
+            "0.8",
+            "0.6",
+            "0.4",
+            "0.2",
+            "0.2",
+            "3.5",
+            "9.4",
+            "0.5"
+          ],
+          "image_width": 447,
+          "image_height": 635,
+          "page_num": 243
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机原理、结构与应用 下 (沈阳黎明航空发动机（集团）有限责任公司编著, Pdg2Pic) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 478,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 20,
+          "left_only_boxes": 3,
+          "right_only_boxes": 1,
+          "wide_or_center_boxes": 16,
+          "two_column_candidate": false,
+          "left_right_transitions": 1,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLL",
+          "text_preview": [
+            "1016虹杆与惠度不均匀度的美系求塞图",
+            "倍号，不均匀度减少，这个简单结论对一般的机械式、液压式和电气式反读都是适用的。",
+            "P",
+            "11=33 2-1=13 38=9% 48=0%",
+            "10.17不民&不为度路静物在",
+            "不过，必须指出，不是调节系统中所有反键的增强与前弱都会影响不均匀度，有些反",
+            "的增强与前剂会使改变，有些却不会，面只对调节这橙起作用，这要看这些反雷在账",
+            "统中的位置并做具体分析才能决定，如对围10.14所示的调节系统，改变杠杆比EF/BF"
+          ],
+          "image_width": 360,
+          "image_height": 512,
+          "page_num": 240
+        }
+      ]
+    },
+    {
+      "source_file": "燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 263,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 19,
+          "left_only_boxes": 5,
+          "right_only_boxes": 2,
+          "wide_or_center_boxes": 12,
+          "two_column_candidate": false,
+          "left_right_transitions": 2,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLLLLR",
+          "text_preview": [
+            "第5章基干气路验城的燃气轮机维护策明",
+            "如可能发生压气机叶片结垢放障严重程度 5%压气机硬硫润隙增大放障严重程度",
+            "50%,压气机叶片班损和病蚀故障严重程度 50%压机叶片受外求物损布放障严重程",
+            "度0%的情况此时的压气机折合旗量特性将下降 6%,面压气机效半特性将下降2%",
+            "5.3, 4路故障诊斯实例",
+            "本节分别以线性气路分析算法和基于数据的气路分析算法为例，应用5.3.1",
+            "节所提列的方法，进行气路故障诊断",
+            "5, 3., 4, 1线性气,路分析"
+          ],
+          "image_width": 350,
+          "image_height": 498,
+          "page_num": 132
+        }
+      ]
+    },
+    {
+      "source_file": "美国飞机燃气涡轮发动机发展史 (James St. Peter) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 813,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 21,
+          "left_only_boxes": 3,
+          "right_only_boxes": 1,
+          "wide_or_center_boxes": 17,
+          "two_column_candidate": false,
+          "left_right_transitions": 1,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLL",
+          "text_preview": [
+            "国涡案发动机的发展",
+            "OV10飞机于1967年8月6日进行飞行，1968年2月 23日开始交付",
+            "空军和海军陆战队。1968年，0V-10A飞机在越南战场服役（7 月服",
+            "投于海军）。最终，有128架空军的和114浆海军陆战队的 0V10A飞",
+            "机经历了越南成争。",
+            "图119_北关航空0V-10*野马”",
+            "（关国空车供图)",
+            "T76很快成为艾雷赛奇公司非尼克斯工厂的主要生产任务，达到总"
+          ],
+          "image_width": 337,
+          "image_height": 501,
+          "page_num": 407
+        }
+      ]
+    },
+    {
+      "source_file": "航空燃气轮机涡轮气体动力学：流动机理及气动设计=TURBINE AERODYNAMICS FOR AERO-ENGINE：FLOW ANALYSIS AND AERODYNAMICS DESIGN (邹正平，王松涛，刘火星，杨策，张... (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+      "total_pages": 525,
+      "sampled_pages": 1,
+      "two_column_sample_pages": 0,
+      "risk_counts": {
+        "低": 1
+      },
+      "pages": [
+        {
+          "text_boxes": 38,
+          "left_only_boxes": 4,
+          "right_only_boxes": 2,
+          "wide_or_center_boxes": 32,
+          "two_column_candidate": false,
+          "left_right_transitions": 2,
+          "layout_order_risk": "低",
+          "zone_sequence_preview": "RLLLLR",
+          "text_preview": [
+            "243",
+            "重要意文，",
+            "叶型损失为叶片表面边界层、尾逐以及猫流耗散等带来的流动损失，其大小主",
+            "要取决于叶片表画势流速度、叶片表面粗糙度、雷诺数以及叶片表面积等因素：除了",
+            "边界层损失以外，叶片尾缘边界层脱落生成的涡系以及尾连与主流的掺混也会带来",
+            "尾缘损失和尾迹掺温损失：在跨声速润轮中还存在激波边界层相互作用引起的损",
+            "失等，这些都可归类于叶型损失，此外，由于流体黏性和通道中压强梯度的存在，涡",
+            "轮项区充润者复杂的旋涡，冀涡之间及浆涡与主流之间的相互作用会引起产重的二"
+          ],
+          "image_width": 342,
+          "image_height": 513,
+          "page_num": 263
+        }
+      ]
+    }
+  ]
+}

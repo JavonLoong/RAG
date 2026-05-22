@@ -22,6 +22,11 @@ desktop.ini
 *.bin
 *.pt
 *.onnx
+*.pdf
+*.zip
+*.sqlite3
+*.sqlite
+*.db
 
 # ChromaDB local storage (optional - uncomment if needed)
 # chroma_data/
@@ -45,3 +50,30 @@ api_server/current_console/chroma_rag_poc/server.out.log
 api_server/current_console/chroma_rag_poc/server.err.log
 storage_layer/runtime/chroma_rag_poc_package/chroma/*
 local_chroma_db/
+
+# Local runtime/data artifacts generated during OCR, Chroma and browser checks
+.codex_temp_*/
+.pytest_cache/
+.ruff_cache/
+tmp_inspect_chroma/
+graph.html
+local-*.png
+page-rag-screenshot.png
+data_pipeline/raw/
+data_pipeline/ocr/
+data_pipeline/ocr_layout_aware/
+data_pipeline/ocr_layout_aware_tesseract/
+data_pipeline/ocr_layout_aware_tesseract_highres_refined/
+data_pipeline/ocr_layout_aware_tesseract_highres_refined_pass2/
+data_pipeline/ocr_layout_aware_tesseract_night_corrected/
+data_pipeline/ocr_layout_aware_tesseract_night_probe/
+data_pipeline/ocr_layout_aware_tesseract_probe/
+data_pipeline/ocr_text_cleaned/
+data_pipeline/reports/*.jsonl
+storage_layer/runtime/
+observability/logs/
+observability/reports/
+00_项目成果总览_先看这里/01_资料输入_14本PDF和问答JSON/
+00_项目成果总览_先看这里/02_OCR结果_13本扫描PDF/
+00_项目成果总览_先看这里/03_普通RAG数据库_14本资料/
+tools/tessdata/

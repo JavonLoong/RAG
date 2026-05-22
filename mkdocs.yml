@@ -1,9 +1,9 @@
 site_name: Power Equipment RAG Workspace
-repo_url: http://117.78.35.35/rag1/plant-graph-rag
+repo_url: https://github.com/JavonLoong/RAG
 site_description: Workspace documentation for the power-equipment RAG console, prototype pipeline, and archived experiments.
 site_author: Power Equipment RAG Team
 edit_uri: edit/jiwenlong/vectorize-pipeline/docs/
-repo_name: rag1/plant-graph-rag
+repo_name: JavonLoong/RAG
 
 nav:
   - Overview: index.md
@@ -37,12 +37,12 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   icon:
-    repo: fontawesome/brands/gitlab
+    repo: fontawesome/brands/github
 
 extra:
   social:
-    - icon: fontawesome/brands/gitlab
-      link: http://117.78.35.35/rag1/plant-graph-rag
+    - icon: fontawesome/brands/github
+      link: https://github.com/JavonLoong/RAG
 
 markdown_extensions:
   - toc:

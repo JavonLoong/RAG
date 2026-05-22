@@ -1,0 +1,38 @@
+[
+  {
+    "book_id": "01_燃气涡轮发动机燃烧_第3版",
+    "title": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+    "pages_jsonl": "D:\\虚拟C盘\\RAG\\00_项目成果总览_先看这里\\02_OCR结果_13本扫描PDF\\第一梯队_OCR质量较放心_4本\\01_燃气涡轮发动机燃烧_第3版\\pages.jsonl",
+    "total_pages": 442,
+    "pages_with_text": 442,
+    "char_count": 1078898,
+    "error_count": 0
+  },
+  {
+    "book_id": "02_先进燃气轮机燃烧室",
+    "title": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+    "pages_jsonl": "D:\\虚拟C盘\\RAG\\00_项目成果总览_先看这里\\02_OCR结果_13本扫描PDF\\第一梯队_OCR质量较放心_4本\\02_先进燃气轮机燃烧室\\pages.jsonl",
+    "total_pages": 603,
+    "pages_with_text": 603,
+    "char_count": 1672703,
+    "error_count": 0
+  },
+  {
+    "book_id": "03_燃气轮机原理结构与应用_上",
+    "title": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+    "pages_jsonl": "D:\\虚拟C盘\\RAG\\00_项目成果总览_先看这里\\02_OCR结果_13本扫描PDF\\第一梯队_OCR质量较放心_4本\\03_燃气轮机原理结构与应用_上\\pages.jsonl",
+    "total_pages": 485,
+    "pages_with_text": 485,
+    "char_count": 1393699,
+    "error_count": 0
+  },
+  {
+    "book_id": "04_燃气轮机_南京燃气轮机研究所编",
+    "title": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+    "pages_jsonl": "D:\\虚拟C盘\\RAG\\00_项目成果总览_先看这里\\02_OCR结果_13本扫描PDF\\第一梯队_OCR质量较放心_4本\\04_燃气轮机_南京燃气轮机研究所编\\pages.jsonl",
+    "total_pages": 62,
+    "pages_with_text": 62,
+    "char_count": 223142,
+    "error_count": 0
+  }
+]
