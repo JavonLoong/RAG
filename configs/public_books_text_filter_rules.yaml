@@ -1,0 +1,86 @@
+version: 1
+name: public_books_labelstudio_text_filter
+source: "Label Studio image-page annotations from public books"
+
+snapshot_policy:
+  use_latest_snapshot_only: true
+  reason: "Exports are cumulative snapshots; ingesting all snapshots would duplicate earlier tasks."
+
+git_policy:
+  commit_json_files: false
+  allowed_public_artifacts:
+    - md
+    - csv
+    - html
+    - svg
+    - yaml
+
+labels:
+  Para:
+    action: accept
+    min_chars: 20
+    notes: "Main body text. Merge adjacent Para blocks on the same page by layout order before ChromaDB ingestion."
+  List:
+    action: accept
+    min_chars: 20
+    notes: "List items can be body evidence if they contain real domain content, not table-of-contents fragments."
+  Title:
+    action: metadata
+    min_chars: 4
+    notes: "Use as section/book metadata. Long titles can help chunk context but should not be the only evidence."
+  Figure:
+    action: review
+    min_chars: 12
+    notes: "Keep figure captions only. Do not treat a figure caption as full body evidence without nearby Para text."
+  Table:
+    action: review
+    min_chars: 30
+    notes: "Tables need manual check or table-aware parsing before ingestion."
+  Formula:
+    action: review
+    min_chars: 1
+    notes: "Formula text needs surrounding explanation. Formula-only chunks are weak for retrieval."
+
+reject_rules:
+  empty_text: true
+  page_number_only: true
+  min_body_chars: 20
+  repeated_short_text_threshold: 8
+  max_symbol_noise_ratio: 0.45
+  reject_if_no_domain_information_for:
+    - Table
+    - Figure
+    - Formula
+
+review_rules:
+  short_domain_text_chars:
+    min: 8
+    max_exclusive: 20
+  table_requires_manual_check: true
+  formula_requires_context: true
+  high_symbol_noise_requires_manual_check: true
+  suspicious_layout_requires_manual_check: true
+
+merge_rules:
+  group_by:
+    - filename
+    - page_num
+  sort_by:
+    - y
+    - x
+  merge_adjacent_labels:
+    - Para
+    - List
+  keep_as_metadata:
+    - Title
+    - Figure
+  chunk_target_chars: 500
+  chunk_overlap_chars: 80
+
+feedback_to_labelers:
+  - "Para 只标正文，不要标页码、页眉、目录碎片、审核栏、批准栏。"
+  - "Title 只标章节标题或小节标题。"
+  - "Figure 只标图题或图注，不要框整张图。"
+  - "Table 只保留有故障、机理、参数价值的表格；复杂表格需要人工复核。"
+  - "Formula 只标公式本体，公式解释应标成 Para。"
+  - "OCR 明显错字、乱码、左右栏串行时，需要标记为待修正，不能直接入库。"

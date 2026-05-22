@@ -24,6 +24,7 @@ desktop.ini
 *.onnx
 *.pdf
 *.zip
+*.json
 *.sqlite3
 *.sqlite
 *.db
