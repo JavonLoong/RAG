@@ -2671,7 +2671,7 @@ async function runLocalSearch() {
     return;
   }
   if (els.searchMeta) els.searchMeta.textContent = "正在本地检索...";
-  const topK = Number(els.searchTopK?.value || 5);
+  const topK = Number(els.searchTopK?.value || 20);
   const started = performance.now();
   activateDemoSnapshotForEmptyLocalIndex();
   if (state.publicDemo && !state.chunks.length) {
@@ -4051,7 +4051,7 @@ async function runSearch() {
   try {
     const params = new URLSearchParams({
       q: query,
-      top_k: String(Number(els.searchTopK?.value || 5))
+      top_k: String(Number(els.searchTopK?.value || 20))
     });
     if (state.primaryCollection) params.set("collection", state.primaryCollection);
 
@@ -5249,7 +5249,7 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="search-row">
                     <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
-                    <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="5">
+                    <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="20">
                     <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
                   </div>
                   <div class="search-meta" id="searchMeta">等待检索输入。</div>
