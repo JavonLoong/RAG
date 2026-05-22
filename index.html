@@ -7,32 +7,55 @@
   <title>动力装备知识库控制台</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
 @charset "UTF-8";
 
 :root {
-  --bg: #ffffff;
-  --panel: #fcfcfd;
-  --panel-2: #f7f8fa;
-  --line: rgba(17, 24, 39, 0.06);
-  --line-strong: rgba(17, 24, 39, 0.1);
-  --ink: #111111;
-  --ink-soft: #4b5563;
-  --muted: #8a94a6;
-  --accent: #002fa7;
-  --accent-soft: rgba(0, 47, 167, 0.08);
-  --success: #2d9d57;
-  --warning: #d97706;
-  --danger: #c2410c;
-  --shadow: 0 24px 48px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.02);
-  --radius-xl: 28px;
-  --radius-lg: 22px;
-  --radius-md: 18px;
-  --radius-sm: 14px;
-  --sidebar-width: 280px;
-  --sidebar-collapsed: 96px;
-  --font-sans: "Inter", "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  /* macOS system dark palette */
+  --bg: #1C1C1E;
+  --bg-wash: radial-gradient(ellipse at 0% 0%, rgba(64, 65, 76, 0.35) 0%, transparent 55%),
+              radial-gradient(ellipse at 100% 100%, rgba(48, 49, 58, 0.30) 0%, transparent 55%),
+              #1C1C1E;
+  --panel: rgba(44, 44, 48, 0.72);
+  --panel-solid: #2C2C30;
+  --panel-2: rgba(58, 58, 62, 0.55);
+  --panel-3: rgba(72, 72, 76, 0.5);
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.10);
+  --ink: #F5F5F7;
+  --ink-soft: rgba(235, 235, 245, 0.62);
+  --muted: rgba(235, 235, 245, 0.4);
+  --accent: #0A84FF;
+  --accent-2: #5AC8FA;
+  --accent-soft: rgba(10, 132, 255, 0.14);
+  --success: #30D158;
+  --success-soft: rgba(48, 209, 88, 0.14);
+  --warning: #FFD60A;
+  --warning-soft: rgba(255, 214, 10, 0.14);
+  --danger: #FF453A;
+  --danger-soft: rgba(255, 69, 58, 0.14);
+  /* unified accent for navigation (macOS uses one system accent) */
+  --nav-overview: var(--accent);
+  --nav-data: var(--accent);
+  --nav-search: var(--accent);
+  --nav-arch: var(--accent);
+  --nav-bench: var(--accent);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(0, 0, 0, 0.5);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 0.5px rgba(0, 0, 0, 0.5);
+  --vibrancy: saturate(180%) blur(40px);
+  --vibrancy-light: saturate(140%) blur(20px);
+  --radius-xl: 18px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 7px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", "Menlo", monospace;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-fast: 140ms var(--ease-out);
+  --transition-smooth: 320ms var(--ease-out);
 }
 
 * { box-sizing: border-box; }
@@ -50,8 +73,10 @@ html, body {
 }
 
 body {
-  letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
+  letter-spacing: -0.005em;
+  background: var(--bg-wash);
+  background-attachment: fixed;
+  position: relative;
 }
 
 button, input, textarea, select { font: inherit; }
@@ -70,53 +95,109 @@ iconify-icon {
 .app-shell {
   min-height: 100vh;
   display: flex;
-  gap: 24px;
-  padding: 20px;
-}
-
-.sidebar {
-  width: var(--sidebar-width);
-  flex: 0 0 var(--sidebar-width);
-  background: rgba(252, 252, 253, 0.94);
-  border: 1px solid var(--line);
-  border-radius: 32px;
-  box-shadow: var(--shadow);
-  padding: 24px 18px;
-  position: sticky;
-  top: 20px;
-  height: calc(100vh - 40px);
-  display: flex;
   flex-direction: column;
-  gap: 24px;
-  transition: width 180ms ease, flex-basis 180ms ease, padding 180ms ease;
+  gap: 12px;
+  padding: 12px;
+  position: relative;
+  z-index: 1;
 }
 
-.sidebar.is-collapsed {
-  width: var(--sidebar-collapsed);
-  flex-basis: var(--sidebar-collapsed);
-  padding-inline: 12px;
+/* ── Top app bar (horizontal) ── */
+.appbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px 6px 14px;
+  background: var(--panel);
+  backdrop-filter: var(--vibrancy);
+  -webkit-backdrop-filter: var(--vibrancy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  flex-wrap: wrap;
 }
 
-.sidebar.is-collapsed .brand {
-  justify-content: space-between;
+.appbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+
+.appbar-brand strong {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #0A84FF, #0064D6);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.brand-mark iconify-icon { font-size: 15px; }
+
+/* horizontal nav */
+.appbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.appbar-nav .nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 7px;
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.appbar-nav .nav-item iconify-icon { font-size: 15px; }
+
+.appbar-nav .nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+}
+
+.appbar-nav .nav-item.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.appbar-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
-.sidebar.is-collapsed .brand-main {
-  width: 46px;
-  min-width: 46px;
-  flex: 0 0 46px;
-  gap: 0;
-  justify-content: center;
-}
-
-.brand,
-.brand-main,
-.sidebar-footer,
-.topbar-actions,
-.topbar,
 .status-pill,
 .user-chip,
+.pill,
+.hero-chip,
 .legend-item,
 .legend-row,
 .panel-head,
@@ -132,36 +213,6 @@ iconify-icon {
   align-items: center;
 }
 
-.brand { justify-content: space-between; gap: 12px; }
-.brand-main { gap: 12px; min-width: 0; }
-
-.brand-mark {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent) 0%, #2d5bdb 100%);
-  box-shadow: 0 12px 30px rgba(0, 47, 167, 0.18);
-}
-
-.sidebar.is-collapsed .brand-mark {
-  width: 46px;
-  height: 46px;
-  flex-basis: 46px;
-  aspect-ratio: 1 / 1;
-  border-radius: 18px;
-}
-
-.brand-mark iconify-icon { font-size: 22px; }
-
-.brand-copy { min-width: 0; transition: opacity 160ms ease; }
-.brand-copy strong { display: block; font-size: 14px; font-weight: 650; }
-.brand-copy span,
-.sidebar-footer p,
-.eyebrow,
 .card-kicker,
 .queue-hint,
 .muted,
@@ -173,186 +224,38 @@ iconify-icon {
   line-height: 1.5;
 }
 
-.sidebar.is-collapsed .brand-copy,
-.sidebar.is-collapsed .nav-copy,
-.sidebar.is-collapsed .sidebar-footer p,
-.sidebar.is-collapsed .nav-kicker {
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.sidebar.is-collapsed .brand-copy,
-.sidebar.is-collapsed .nav-copy {
-  display: none;
-}
-
-.sidebar-toggle {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-}
-
-.sidebar-toggle:hover { border-color: var(--line-strong); }
-.sidebar-toggle iconify-icon { font-size: 18px; color: var(--ink-soft); }
-
-.nav-list { display: grid; gap: 10px; }
-
-.nav-item {
-  width: 100%;
-  padding: 14px;
-  border-radius: 22px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
-  display: grid;
-  grid-template-columns: 38px 1fr;
-  gap: 12px;
-  align-items: center;
-  text-align: left;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-}
-
-.nav-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.05);
-  border-color: rgba(0, 47, 167, 0.16);
-}
-
-.nav-item.active {
-  background: linear-gradient(180deg, rgba(0, 47, 167, 0.96), rgba(0, 47, 167, 0.88));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 22px 40px rgba(0, 47, 167, 0.18);
-}
-
-.nav-glyph {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: var(--accent);
-  background: linear-gradient(180deg, rgba(0, 47, 167, 0.06), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(0, 47, 167, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.nav-item.active .nav-glyph {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-
-.nav-glyph iconify-icon { font-size: 18px; }
-.nav-copy { min-width: 0; display: flex; align-items: center; }
-.nav-copy strong { display: block; font-size: 14px; font-weight: 650; }
-
-.sidebar.is-collapsed .nav-list {
-  width: 100%;
-  justify-items: center;
-  gap: 14px;
-}
-
-.sidebar.is-collapsed .nav-item {
-  width: 64px;
-  height: 64px;
-  min-width: 64px;
-  aspect-ratio: 1 / 1;
-  padding: 0;
-  margin-inline: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  grid-template-columns: none;
-  gap: 0;
-  border-radius: 24px;
-}
-
-.sidebar.is-collapsed .nav-glyph {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  margin: 0;
-}
-
-.sidebar.is-collapsed .nav-item.active {
-  box-shadow: 0 18px 36px rgba(0, 47, 167, 0.18);
-}
-
-.sidebar-footer {
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  margin-top: auto;
-}
-
-.sidebar-footer strong { display: block; font-size: 13px; }
-
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   display: inline-block;
   background: var(--success);
-  box-shadow: 0 0 0 4px rgba(45, 157, 87, 0.12);
+  box-shadow: 0 0 0 3px var(--success-soft);
 }
 
-.status-dot.warning { background: var(--warning); box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12); }
-.status-dot.danger { background: var(--danger); box-shadow: 0 0 0 4px rgba(194, 65, 12, 0.12); }
+.status-dot.warning { background: var(--warning); box-shadow: 0 0 0 3px var(--warning-soft); }
+.status-dot.danger { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
 
 .app-main {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 4px 6px 20px 0;
+  gap: 16px;
+  min-width: 0;
 }
 
-.topbar {
-  justify-content: flex-end;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 12px 8px 0;
-}
-
-.topbar-copy { min-width: 280px; }
-.eyebrow { letter-spacing: 0.12em; text-transform: none; font-weight: 600; margin: 0 0 10px; }
-
-.topbar-copy h1 {
-  margin: 0;
-  font-size: clamp(28px, 3vw, 40px);
-  line-height: 1.06;
-  font-weight: 720;
-}
-
-.topbar-copy p {
-  margin: 10px 0 0;
-  color: var(--ink-soft);
-  max-width: 740px;
-}
-
+/* ── Chips & pills ── */
 .status-pill,
 .user-chip,
 .pill,
 .hero-chip {
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 6px;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .status-pill iconify-icon,
@@ -361,54 +264,45 @@ iconify-icon {
 .hero-chip iconify-icon,
 .btn iconify-icon,
 .ghost-btn iconify-icon {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .hero-chip {
   background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 650;
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   border-color: transparent;
 }
 
-.topbar-search {
-  flex: 1 1 320px;
-  max-width: 420px;
-  position: relative;
-}
-
-.topbar-search input,
+/* ── Form inputs (pages other than appbar) ── */
 .form-control,
 .search-input,
 .search-select {
   width: 100%;
-  border-radius: 18px;
+  border-radius: 8px;
   border: 1px solid var(--line);
-  background: rgba(252, 252, 253, 0.98);
-  padding: 14px 16px 14px 44px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 7px 12px;
   color: var(--ink);
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.03);
+  font-size: 13px;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.search-row .search-input { padding-left: 16px; }
-.search-select,
-.form-control {
-  padding-left: 16px;
+.form-control::placeholder,
+.search-input::placeholder {
+  color: var(--muted);
 }
 
-.input-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(17, 24, 39, 0.42);
-  pointer-events: none;
+.form-control:focus,
+.search-input:focus,
+.search-select:focus {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35), inset 0 0 0 1px var(--accent);
+  border-color: transparent;
 }
-
-.input-icon iconify-icon { font-size: 18px; }
-
-.topbar-actions { gap: 12px; flex-wrap: wrap; }
 
 .btn,
 .ghost-btn,
@@ -416,65 +310,74 @@ iconify-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  border-radius: 18px;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+  border-radius: 8px;
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
 .btn {
-  padding: 13px 18px;
-  background: linear-gradient(180deg, var(--accent), #1845be);
+  padding: 7px 14px;
+  background: linear-gradient(180deg, #1E90FF 0%, #0A84FF 100%);
   color: #fff;
-  box-shadow: 0 18px 34px rgba(0, 47, 167, 0.16);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25), inset 0 0.5px 0 rgba(255,255,255,0.25);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: -0.005em;
 }
 
-.btn:hover { transform: translateY(-1px); box-shadow: 0 20px 38px rgba(0, 47, 167, 0.22); }
+.btn:hover { background: linear-gradient(180deg, #2C9BFF 0%, #1A8FFF 100%); }
+.btn:active { transform: scale(0.97); filter: brightness(0.9); }
 
 .ghost-btn,
 .icon-btn {
-  padding: 12px 16px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.03);
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.06);
+  transition: background var(--transition-fast);
 }
 
 .ghost-btn:hover,
 .icon-btn:hover {
-  border-color: rgba(0, 47, 167, 0.18);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+}
+.ghost-btn:active,
+.icon-btn:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .log-link {
-  color: var(--accent);
-  font-weight: 700;
+  color: var(--accent-2);
+  font-weight: 500;
   text-decoration: none;
 }
+.log-link:hover { text-decoration: underline; }
 
 .icon-btn {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
-.surface-icon,
-.arch-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
+.surface-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
-  background: linear-gradient(180deg, rgba(0, 47, 167, 0.08), rgba(255, 255, 255, 0.96));
-  border: 1px solid rgba(0, 47, 167, 0.08);
-  box-shadow: 0 12px 28px rgba(0, 47, 167, 0.08);
+  color: var(--accent-2);
+  background: var(--accent-soft);
 }
 
 .surface-icon { margin-inline: auto; }
-.surface-icon iconify-icon,
-.arch-icon iconify-icon { font-size: 22px; }
+.surface-icon iconify-icon { font-size: 18px; }
 
 .page { display: none; }
 .page.active { display: block; }
@@ -485,41 +388,36 @@ iconify-icon {
 .results-list,
 .activity-feed,
 .queue-list,
-.quality-report,
-.arch-list {
+.quality-report {
   display: grid;
   gap: 12px;
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--panel);
+  backdrop-filter: var(--vibrancy);
+  -webkit-backdrop-filter: var(--vibrancy);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow);
-  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
   position: relative;
   overflow: hidden;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
-.panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at top right, rgba(0, 47, 167, 0.05), transparent 34%);
-  opacity: 0.8;
-}
-
+.panel::before { display: none; }
 .panel > * { position: relative; z-index: 1; }
 .panel:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 47, 167, 0.1);
-  box-shadow: 0 26px 52px rgba(15, 23, 42, 0.05), 0 6px 16px rgba(15, 23, 42, 0.03);
+  border-color: rgba(255, 255, 255, 0.10);
 }
-.hero-card { padding: 28px; }
-.card-kicker { margin: 0 0 10px; letter-spacing: 0.12em; text-transform: none; font-weight: 600; }
-.panel-head { justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.hero-card {
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(56, 56, 60, 0.75), rgba(38, 38, 42, 0.7));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.card-kicker { margin: 0 0 6px; letter-spacing: 0; text-transform: none; font-weight: 500; font-size: 11px; color: var(--ink-soft); }
+.panel-head { justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
 .panel-head > div { min-width: 0; flex: 1 1 260px; }
 .panel-tools {
   display: flex;
@@ -533,57 +431,69 @@ iconify-icon {
 .hero-card h3,
 .panel h4 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 680;
-  letter-spacing: -0.03em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+
+.hero-card h3 {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
 .panel-head p,
 .hero-card p,
 .panel p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--ink-soft);
-  line-height: 1.7;
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.hero-card p {
+  font-size: 14px;
+  max-width: 540px;
+  line-height: 1.55;
 }
 
 .hero-actions { gap: 12px; flex-wrap: wrap; margin-top: 22px; }
 .segment-group {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(247, 248, 250, 0.92);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+  gap: 0;
+  padding: 2px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  border: none;
 }
 
 .segment-btn {
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: 4px 10px;
+  border-radius: 5px;
   color: var(--ink-soft);
   font-size: 12px;
-  font-weight: 650;
-  line-height: 1;
-  transition: background 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: all var(--transition-fast);
 }
 
 .segment-btn:hover {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.9);
 }
 
 .segment-btn.active {
-  color: var(--accent);
-  background: #fff;
-  box-shadow: 0 8px 18px rgba(0, 47, 167, 0.08);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0.5px 1px rgba(0,0,0,0.2);
 }
 
 .overview-grid,
 .data-grid,
 .search-layout,
 .benchmark-grid,
-.arch-grid,
 .metric-grid,
 .quality-grid,
 .mini-grid,
@@ -601,8 +511,7 @@ iconify-icon {
 
 .data-grid { grid-template-columns: minmax(420px, 1.2fr) minmax(320px, 0.8fr); }
 .search-layout { grid-template-columns: minmax(320px, 0.88fr) minmax(420px, 1.12fr); }
-.benchmark-grid,
-.arch-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+.benchmark-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
 .metric-grid,
 .quality-grid,
 .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -612,10 +521,10 @@ iconify-icon {
 .bench-grid { grid-template-columns: repeat(4, minmax(120px, 1fr)); margin-top: 18px; }
 
 .metric-card {
-  min-height: 176px;
-  padding: 22px;
+  min-height: 140px;
+  padding: 18px;
   display: grid;
-  gap: 14px;
+  gap: 10px;
   align-content: start;
 }
 .metric-top,
@@ -630,8 +539,8 @@ iconify-icon {
   gap: 12px;
 }
 .metric-top > div { min-width: 0; }
-.metric-value { font-size: clamp(28px, 3vw, 40px); font-weight: 720; line-height: 1; letter-spacing: -0.05em; }
-.mini-value { font-size: 26px; font-weight: 700; }
+.metric-value { font-size: clamp(24px, 2.4vw, 32px); font-weight: 600; line-height: 1.05; letter-spacing: -0.025em; color: var(--ink); }
+.mini-value { font-size: 22px; font-weight: 600; color: var(--ink); }
 .metric-subgrid,
 .collection-meta,
 .activity-meta,
@@ -644,10 +553,11 @@ iconify-icon {
   align-items: start;
 }
 .metric-card .card-kicker {
-  margin-bottom: 8px;
-  font-size: 10px;
-  line-height: 1.22;
-  letter-spacing: 0.16em;
+  margin-bottom: 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .metric-subgrid span {
   line-height: 1.4;
@@ -666,47 +576,42 @@ iconify-icon {
 .legend-row { gap: 16px; flex-wrap: wrap; color: var(--ink-soft); font-size: 12px; margin-top: 16px; }
 .legend-item { gap: 8px; }
 .legend-swatch { width: 10px; height: 10px; border-radius: 999px; }
-.legend-swatch.pdf { background: rgba(0, 47, 167, 0.92); }
-.legend-swatch.text { background: rgba(0, 47, 167, 0.62); }
-.legend-swatch.json { background: rgba(0, 47, 167, 0.36); }
-.legend-swatch.other { background: rgba(17, 24, 39, 0.14); }
+.legend-swatch.pdf { background: #0A84FF; }
+.legend-swatch.text { background: #FF9F0A; }
+.legend-swatch.json { background: #30D158; }
+.legend-swatch.other { background: var(--muted); }
 
 .mini-card { padding: 20px; }
 .collection-item,
 .activity-item,
 .queue-item,
 .result-card,
-.arch-item,
 .bench-card {
-  padding: 18px 18px 16px;
-  border-radius: 20px;
-  background: var(--panel);
-  border: 1px solid rgba(17, 24, 39, 0.04);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .collection-item:hover,
 .activity-item:hover,
 .queue-item:hover,
 .result-card:hover,
-.arch-item:hover,
-.bench-card:hover,
-.metric-card:hover {
-  transform: translateY(-1px);
-  border-color: rgba(0, 47, 167, 0.12);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.84);
+.bench-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-strong);
 }
+.metric-card:hover { background: transparent; }
 
 .collection-name,
 .activity-title,
 .queue-name,
-.result-title { font-size: 14px; font-weight: 650; }
+.result-title { font-size: 13px; font-weight: 600; letter-spacing: -0.008em; color: var(--ink); }
 
 .title-with-icon,
 .meta-chip,
-.bench-label,
-.arch-head {
+.bench-label {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -714,8 +619,7 @@ iconify-icon {
 }
 
 .title-with-icon iconify-icon,
-.bench-label iconify-icon,
-.arch-head iconify-icon {
+.bench-label iconify-icon {
   font-size: 16px;
   color: var(--accent);
   margin-top: 1px;
@@ -727,33 +631,33 @@ iconify-icon {
 
 .meta-chip {
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(0, 47, 167, 0.07);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 650;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
   line-height: 1.4;
 }
 
 .meta-chip iconify-icon { font-size: 14px; }
-.result-score { font-size: 12px; font-weight: 700; color: var(--accent); }
+.result-score { font-size: 12px; font-weight: 600; color: var(--accent-2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .bench-label {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--ink-soft);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 500;
 }
 
-.collection-bars { margin-top: 14px; display: flex; gap: 8px; height: 8px; }
-.collection-bars span { border-radius: 999px; background: rgba(0, 47, 167, 0.18); }
+.collection-bars { margin-top: 12px; display: flex; gap: 4px; height: 5px; }
+.collection-bars span { border-radius: 999px; background: var(--accent-soft); }
 
 .activity-item { display: grid; gap: 8px; }
 .activity-head { justify-content: flex-start; }
 .queue-item p,
 .activity-item p,
-.result-card p,
-.arch-item p { margin: 0; color: var(--ink-soft); line-height: 1.65; }
+.result-card p { margin: 0; color: var(--ink-soft); line-height: 1.65; }
 .result-body {
   display: -webkit-box;
   overflow: hidden;
@@ -776,26 +680,25 @@ iconify-icon {
 }
 
 .result-toggle:hover {
-  color: #1845be;
+  color: var(--accent);
   text-decoration: underline;
 }
 
 .queue-dropzone {
-  min-height: 220px;
+  min-height: 200px;
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 26px;
-  background: linear-gradient(180deg, rgba(247, 248, 250, 0.94), rgba(255, 255, 255, 0.92));
-  border: 1px dashed rgba(0, 47, 167, 0.18);
-  border-radius: 28px;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 14px;
+  transition: all 200ms var(--ease-out);
 }
 
 .queue-dropzone.is-dragging {
-  border-color: rgba(0, 47, 167, 0.46);
-  background: linear-gradient(180deg, rgba(0, 47, 167, 0.06), rgba(255, 255, 255, 0.96));
-  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .queue-dropzone > div { min-width: 0; }
@@ -817,40 +720,37 @@ iconify-icon {
 }
 
 .progress {
-  height: 10px;
+  height: 4px;
   border-radius: 999px;
-  background: rgba(17, 24, 39, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .progress-bar {
   width: 0;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #4d76e3);
-  transition: width 220ms ease;
+  background: linear-gradient(90deg, #0A84FF, #5AC8FA);
+  transition: width 300ms var(--ease-out);
+  border-radius: 999px;
 }
 
 .empty-state {
   padding: 22px;
-  border-radius: 22px;
-  background: var(--panel);
-  color: var(--ink-soft);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
   text-align: center;
+  font-size: 12px;
 }
 
-.field { display: grid; gap: 8px; }
-.field label { font-size: 12px; font-weight: 650; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-.arch-head { margin-bottom: 10px; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 11px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0; text-transform: none; }
 
 .app-main,
 .page-stack,
 .stack,
 .panel,
 .hero-card,
-.topbar-copy,
-.topbar-actions,
-.brand-copy,
-.nav-copy,
 .metric-top > div,
 .collection-head > *,
 .activity-head > *,
@@ -860,7 +760,6 @@ iconify-icon {
 .activity-item,
 .result-card,
 .collection-item,
-.arch-item,
 .bench-card,
 .status-pill,
 .user-chip,
@@ -869,12 +768,6 @@ iconify-icon {
   min-width: 0;
 }
 
-.brand-copy strong,
-.brand-copy span,
-.nav-copy strong,
-.nav-copy span,
-.topbar-copy h1,
-.topbar-copy p,
 .panel-head h2,
 .panel-head h3,
 .hero-card h3,
@@ -902,26 +795,30 @@ iconify-icon {
 }
 .toast {
   position: fixed;
-  right: 28px;
-  bottom: 28px;
+  right: 20px;
+  bottom: 20px;
   min-width: 260px;
-  max-width: 420px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  color: #fff;
-  background: rgba(17, 24, 39, 0.92);
-  box-shadow: 0 22px 48px rgba(17, 24, 39, 0.16);
+  max-width: 400px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--ink);
+  background: rgba(50, 50, 54, 0.85);
+  backdrop-filter: var(--vibrancy);
+  -webkit-backdrop-filter: var(--vibrancy);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(16px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transform: translateY(12px) scale(0.96);
+  transition: all 280ms var(--ease-out);
   z-index: 80;
+  font-size: 13px;
 }
 
-.toast.show { opacity: 1; transform: translateY(0); }
-.toast.success { background: rgba(0, 47, 167, 0.92); }
-.toast.warning { background: rgba(217, 119, 6, 0.94); }
-.toast.danger { background: rgba(194, 65, 12, 0.94); }
+.toast.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.toast.success { border-color: rgba(48, 209, 88, 0.4); }
+.toast.warning { border-color: rgba(255, 214, 10, 0.4); }
+.toast.danger { border-color: rgba(255, 69, 58, 0.4); }
 
 svg { width: 100%; height: auto; display: block; }
 
@@ -929,38 +826,16 @@ svg { width: 100%; height: auto; display: block; }
   .overview-grid,
   .data-grid,
   .search-layout,
-  .benchmark-grid,
-  .arch-grid { grid-template-columns: 1fr; }
+  .benchmark-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 1100px) {
-  .app-shell { padding: 12px; gap: 12px; }
-
-  .sidebar {
-    position: fixed;
-    left: 12px;
-    top: 12px;
-    bottom: 12px;
-    z-index: 40;
-    height: auto;
-  }
-
-  .sidebar.is-collapsed {
-    transform: translateX(calc(-100% - 12px));
-    width: var(--sidebar-width);
-    flex-basis: var(--sidebar-width);
-    padding-inline: 18px;
-  }
-
-  .sidebar.is-collapsed .brand-copy,
-  .sidebar.is-collapsed .nav-copy,
-  .sidebar.is-collapsed .sidebar-footer p,
-  .sidebar.is-collapsed .nav-kicker {
-    opacity: 1;
-    width: auto;
-  }
-
-  .app-main { padding-left: 0; }
+@media (max-width: 900px) {
+  .appbar { gap: 10px; padding: 6px 8px; }
+  .appbar-brand { padding-right: 8px; }
+  .appbar-brand strong { display: none; }
+  .appbar-nav .nav-item span { display: none; }
+  .appbar-nav .nav-item { padding: 6px 8px; }
+  .user-chip strong { display: none; }
   .metric-grid,
   .metric-grid--summary,
   .quality-grid,
@@ -969,6 +844,7 @@ svg { width: 100%; height: auto; display: block; }
   .search-row,
   .bench-grid { grid-template-columns: 1fr; }
 }
+
 
 
 /* Upload directory workflow */
@@ -1000,16 +876,17 @@ svg { width: 100%; height: auto; display: block; }
 }
 
 .check-chip {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.06);
   position: relative;
   margin-top: 2px;
+  transition: all var(--transition-fast);
 }
 
 .check-chip input {
@@ -1020,16 +897,15 @@ svg { width: 100%; height: auto; display: block; }
 }
 
 .check-chip span {
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
   background: transparent;
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background 140ms ease;
 }
 
 .check-chip input:checked + span {
-  background: linear-gradient(135deg, var(--accent), #4d76e3);
-  transform: scale(1.03);
+  background: var(--accent);
 }
 
 .check-chip.is-disabled {
@@ -1042,28 +918,29 @@ svg { width: 100%; height: auto; display: block; }
 }
 
 .queue-item.is-selected {
-  border-color: rgba(0, 47, 167, 0.22);
-  box-shadow: 0 16px 34px rgba(0, 47, 167, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  border-color: rgba(10, 132, 255, 0.4);
+  background: var(--accent-soft);
 }
 
 .queue-item.is-processed {
-  background: linear-gradient(180deg, rgba(0, 47, 167, 0.03), rgba(255, 255, 255, 0.96));
+  background: var(--success-soft);
+  border-color: rgba(48, 209, 88, 0.25);
 }
 
 .status-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(0, 47, 167, 0.08);
+  background: var(--accent-soft);
   color: var(--accent);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 650;
 }
 
 .status-tag.success {
-  background: rgba(45, 157, 87, 0.12);
+  background: var(--success-soft);
   color: var(--success);
 }
 
@@ -1074,17 +951,474 @@ svg { width: 100%; height: auto; display: block; }
 .danger-text {
   color: var(--danger);
 }
+
+/* ── Page transitions ── */
+.page { animation: none; }
+.page.active {
+  display: block;
+  animation: page-in 0.32s var(--ease-out) both;
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Skeleton loading ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--panel-2) 30%, var(--panel) 50%, var(--panel-2) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Metric value (mono numerals) ── */
+.metric-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  animation: val-in 0.3s var(--ease-out);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+@keyframes val-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mini-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+/* ── Scrollbar (macOS overlay) ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+/* ── Card kickers ── */
+.card-kicker {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* ── Selection highlight ── */
+::selection {
+  background: rgba(10, 132, 255, 0.35);
+  color: var(--ink);
+}
+
+/* ── Result toggle ── */
+.result-toggle:hover { color: var(--accent-2); }
+
+/* ── Subtle text balance ── */
+.hero-card p,
+.panel-head p {
+  text-wrap: pretty;
+}
+
+/* ─────── LLM config + RAG ask ─────── */
+.llm-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.llm-form .field--wide { grid-column: 1 / -1; }
+
+.input-with-action {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+.input-with-action .form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.input-with-action .ghost-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.llm-status {
+  margin-top: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.llm-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--muted);
+  flex: 0 0 6px;
+}
+.llm-status.is-ready { color: var(--success); }
+.llm-status.is-ready::before { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.llm-status.is-error { color: var(--danger); }
+.llm-status.is-error::before { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+
+/* ── Input history dropdown ── */
+.input-history-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.input-history-wrap .form-control { width: 100%; }
+.input-history-dropdown {
+  display: none;
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 4px;
+}
+.input-history-dropdown.is-open { display: block; }
+.input-history-dropdown .history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  overflow: hidden;
+}
+.input-history-dropdown .history-item span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.input-history-dropdown .history-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+.input-history-dropdown .history-item .history-delete {
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  transition: color var(--transition-fast);
+}
+.input-history-dropdown .history-item .history-delete:hover {
+  color: var(--danger);
+}
+.input-history-dropdown .history-empty {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+.input-history-dropdown .history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.input-history-dropdown .history-clear-all {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.input-history-dropdown .history-clear-all:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.ask-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+.ask-row textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.ask-row .btn { align-self: stretch; }
+
+.ask-answer {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+  min-height: 80px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.ask-answer:empty::before {
+  content: "尚未生成回答。提问后会先检索证据，再调用 LLM。";
+  color: var(--muted);
+}
+.ask-answer > *:first-child { margin-top: 0; }
+.ask-answer > *:last-child { margin-bottom: 0; }
+.ask-answer p { margin: 0 0 10px; }
+.ask-answer h1,
+.ask-answer h2,
+.ask-answer h3,
+.ask-answer h4 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.ask-answer h1 { font-size: 16px; }
+.ask-answer h2 { font-size: 15px; }
+.ask-answer h3 { font-size: 14px; }
+.ask-answer h4 { font-size: 13px; color: var(--ink-soft); }
+.ask-answer strong { font-weight: 600; color: var(--ink); }
+.ask-answer em { font-style: italic; color: var(--ink-soft); }
+.ask-answer ul,
+.ask-answer ol { margin: 0 0 10px; padding-left: 20px; }
+.ask-answer li { margin: 3px 0; }
+.ask-answer li > p { margin: 0; }
+.ask-answer a {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: rgba(10, 132, 255, 0.4);
+  text-underline-offset: 2px;
+}
+.ask-answer a:hover { text-decoration-color: var(--accent-2); }
+.ask-answer code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  color: var(--accent-2);
+}
+.ask-answer pre {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ask-answer pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+}
+.ask-answer blockquote {
+  margin: 10px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(10,132,255,0.06);
+  color: var(--ink-soft);
+}
+.ask-answer hr {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+}
+.ask-answer table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.ask-answer th,
+.ask-answer td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  text-align: left;
+}
+.ask-answer th { background: rgba(255,255,255,0.05); font-weight: 600; }
+.ask-answer.is-streaming:not(.has-content)::after,
+.ask-answer.is-streaming.has-content > *:last-child::after {
+  content: "▍";
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--accent-2);
+  animation: cursor-blink 1s steps(1) infinite;
+}
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ─────── Modal ─────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.modal[hidden] { display: none; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.modal-content {
+  position: relative;
+  width: min(600px, 100%);
+  max-height: 80vh;
+  background: rgba(50,50,54,0.92);
+  backdrop-filter: var(--vibrancy);
+  -webkit-backdrop-filter: var(--vibrancy);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modal-in 220ms var(--ease-out);
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.012em; }
+.modal-head p { margin: 4px 0 0; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+.modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px 14px 20px;
+}
+
+.model-group { margin-top: 14px; }
+.model-group:first-child { margin-top: 4px; }
+.model-group-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.model-group-label .endpoint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+.model-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--ink);
+}
+.model-row:hover {
+  background: rgba(10,132,255,0.16);
+}
+.model-row .model-name {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.model-row .model-desc {
+  font-size: 11px;
+  color: var(--muted);
+  flex: 0 0 auto;
+  text-align: right;
+}
+.model-row .model-copy {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 14px;
+  display: inline-flex;
+}
+.model-row:hover .model-copy { color: var(--accent-2); }
 </style>
   <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script>
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
   globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
 }
 
 const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
+const DEFAULT_PUBLIC_DEMO = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
 const API_BASE = "";
 const LOCAL_COLLECTION_NAME = "browser_local_index";
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
@@ -1103,16 +1437,16 @@ const SOURCE_LABELS = {
 };
 
 const SOURCE_COLORS = {
-  PDF: "rgba(0, 47, 167, 0.92)",
-  Text: "rgba(0, 47, 167, 0.68)",
-  JSON: "rgba(0, 47, 167, 0.42)",
-  Markdown: "rgba(15, 98, 254, 0.72)",
-  Code: "rgba(15, 23, 42, 0.82)",
-  CSV: "rgba(37, 99, 235, 0.54)",
-  TSV: "rgba(59, 130, 246, 0.42)",
-  DOCX: "rgba(37, 99, 235, 0.82)",
-  Log: "rgba(15, 23, 42, 0.28)",
-  Other: "rgba(17, 24, 39, 0.16)"
+  PDF: "#0A84FF",
+  Text: "#FF9F0A",
+  JSON: "#30D158",
+  Markdown: "#BF5AF2",
+  Code: "#64D2FF",
+  CSV: "#FFD60A",
+  TSV: "#FF9F0A",
+  DOCX: "#5E5CE6",
+  Log: "#8E8E93",
+  Other: "#48484A"
 };
 
 const BENCHMARK_CARDS = [
@@ -1126,14 +1460,371 @@ const BENCHMARK_CARDS = [
   { key: "embedding_model", label: "模型标识", icon: "lucide:database-zap", formatter: (value) => String(value || "-") }
 ];
 
+const MODEL_CATALOG = [
+  {
+    id: "openai",
+    label: "OpenAI",
+    endpoint: "https://api.openai.com/v1",
+    requiresKey: true,
+    models: [
+      { name: "gpt-5.5", desc: "flagship reasoning and coding" },
+      { name: "gpt-5.4", desc: "lower cost frontier model" },
+      { name: "gpt-5.4-mini", desc: "fast and economical" },
+      { name: "gpt-5.4-nano", desc: "lowest latency/cost" }
+    ]
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/openai",
+    requiresKey: true,
+    models: [
+      { name: "gemini-3.5-flash", desc: "stable frontier flash" },
+      { name: "gemini-3.1-pro-preview", desc: "advanced reasoning preview" },
+      { name: "gemini-3-flash-preview", desc: "frontier flash preview" },
+      { name: "gemini-2.5-pro", desc: "strong reasoning" },
+      { name: "gemini-2.5-flash", desc: "balanced price/performance" }
+    ]
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    endpoint: "https://api.deepseek.com",
+    requiresKey: true,
+    models: [
+      { name: "deepseek-v4-pro", desc: "thinking / high quality" },
+      { name: "deepseek-v4-flash", desc: "fast / cost effective" }
+    ]
+  },
+  {
+    id: "kimi",
+    label: "Kimi",
+    endpoint: "https://api.moonshot.cn/v1",
+    requiresKey: true,
+    models: [
+      { name: "kimi-k2.5", desc: "agent, coding, long context" },
+      { name: "kimi-k2-turbo-preview", desc: "fast K2 preview" },
+      { name: "kimi-k2-thinking", desc: "thinking mode" }
+    ]
+  },
+  {
+    id: "qwen",
+    label: "Qwen / DashScope",
+    endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    requiresKey: true,
+    models: [
+      { name: "qwen-max", desc: "flagship" },
+      { name: "qwen-plus", desc: "balanced" },
+      { name: "qwen-turbo", desc: "fast" }
+    ]
+  },
+  {
+    id: "zhipu",
+    label: "Zhipu GLM",
+    endpoint: "https://open.bigmodel.cn/api/paas/v4",
+    requiresKey: true,
+    models: [
+      { name: "glm-5.1", desc: "latest GLM" },
+      { name: "glm-5-turbo", desc: "fast GLM" },
+      { name: "glm-4-flash", desc: "lightweight GLM" }
+    ]
+  },
+  {
+    id: "doubao",
+    label: "Doubao / Ark",
+    endpoint: "https://ark.cn-beijing.volces.com/api/v3",
+    requiresKey: true,
+    models: [
+      { name: "doubao-seed-2.0-pro", desc: "Seed 2.0 Pro" },
+      { name: "doubao-seed-2.0-lite", desc: "Seed 2.0 Lite" }
+    ]
+  },
+  {
+    id: "ollama",
+    label: "Local Ollama",
+    endpoint: "http://localhost:11434/v1",
+    requiresKey: false,
+    models: [
+      { name: "qwen3", desc: "local Qwen" },
+      { name: "deepseek-r1", desc: "local reasoning" },
+      { name: "llama3.3", desc: "local Llama" },
+      { name: "mistral", desc: "local Mistral" }
+    ]
+  }
+];
+
+const LLM_STORAGE_KEY = "rag_llm_settings_v1";
+const LLM_HISTORY_KEY = "rag_llm_input_history_v1";
+const LLM_HISTORY_MAX = 10;
+
+function loadInputHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(LLM_HISTORY_KEY) || "{}");
+  } catch { return {}; }
+}
+
+function saveInputHistoryEntry(field, value) {
+  const v = String(value || "").trim();
+  if (!v) return;
+  const store = loadInputHistory();
+  const list = Array.isArray(store[field]) ? store[field] : [];
+  const filtered = list.filter((item) => item !== v);
+  filtered.unshift(v);
+  store[field] = filtered.slice(0, LLM_HISTORY_MAX);
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function removeInputHistoryEntry(field, value) {
+  const store = loadInputHistory();
+  const list = Array.isArray(store[field]) ? store[field] : [];
+  store[field] = list.filter((item) => item !== value);
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function clearInputHistory(field) {
+  const store = loadInputHistory();
+  store[field] = [];
+  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
+}
+
+function getInputHistory(field) {
+  const store = loadInputHistory();
+  return Array.isArray(store[field]) ? store[field] : [];
+}
+
+function renderHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
+  const items = getInputHistory(field);
+  if (!items.length) {
+    dropdownEl.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  const header = `<div class="history-header"><span>历史记录</span><button class="history-clear-all" data-history-clear="${escapeHtml(field)}">清空</button></div>`;
+  const rows = items.map((item) => {
+    const display = maskValue ? item.slice(0, 6) + "••••••" + item.slice(-4) : item;
+    return `<button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}"><span title="${escapeHtml(item)}">${escapeHtml(display)}</span><iconify-icon class="history-delete" icon="lucide:x" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}"></iconify-icon></button>`;
+  }).join("");
+  dropdownEl.innerHTML = header + rows;
+}
+
+function openHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
+  renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+  dropdownEl.classList.add("is-open");
+}
+
+function closeAllHistoryDropdowns() {
+  document.querySelectorAll(".input-history-dropdown.is-open").forEach((el) => el.classList.remove("is-open"));
+}
+
+function initInputHistory(inputEl, dropdownEl, field, maskValue = false) {
+  if (!inputEl || !dropdownEl) return;
+
+  inputEl.addEventListener("focus", () => {
+    closeAllHistoryDropdowns();
+    openHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+  });
+
+  inputEl.addEventListener("blur", (event) => {
+    // Save to history on blur if value is non-empty
+    const v = inputEl.value.trim();
+    if (v) saveInputHistoryEntry(field, v);
+    // Delay close so click on dropdown item fires first
+    setTimeout(() => {
+      if (!dropdownEl.contains(document.activeElement)) {
+        dropdownEl.classList.remove("is-open");
+      }
+    }, 200);
+  });
+
+  dropdownEl.addEventListener("mousedown", (event) => {
+    event.preventDefault(); // prevent blur on input
+
+    const deleteIcon = event.target.closest("[data-history-delete]");
+    if (deleteIcon) {
+      removeInputHistoryEntry(deleteIcon.dataset.historyDeleteField, deleteIcon.dataset.historyDelete);
+      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+      return;
+    }
+
+    const clearBtn = event.target.closest("[data-history-clear]");
+    if (clearBtn) {
+      clearInputHistory(clearBtn.dataset.historyClear);
+      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
+      return;
+    }
+
+    const item = event.target.closest("[data-history-value]");
+    if (item) {
+      inputEl.value = item.dataset.historyValue;
+      dropdownEl.classList.remove("is-open");
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+}
+
+function cleanLLMEndpoint(value) {
+  return String(value || "").trim().replace(/\s*\(.+$/, "").replace(/\/+$/, "");
+}
+
+function normalizeKnownLLMEndpoint(value) {
+  const endpoint = cleanLLMEndpoint(value);
+  if (endpoint === "https://generativelanguage.googleapis.com/v1beta") {
+    return "https://generativelanguage.googleapis.com/v1beta/openai";
+  }
+  return endpoint;
+}
+
+function getLLMProvider(providerId) {
+  if (providerId === "custom") {
+    return { id: "custom", label: "自定义", endpoint: "", requiresKey: true };
+  }
+  return MODEL_CATALOG.find((provider) => provider.id === providerId) || null;
+}
+
+function inferLLMProvider(modelName) {
+  const model = String(modelName || "").toLowerCase();
+  if (!model) return null;
+  if (model.startsWith("gemini-")) return getLLMProvider("gemini");
+  if (model.startsWith("deepseek-")) return getLLMProvider("deepseek");
+  if (model.startsWith("kimi-") || model.startsWith("moonshot-")) return getLLMProvider("kimi");
+  if (model.startsWith("qwen")) return getLLMProvider("qwen");
+  if (model.startsWith("glm-")) return getLLMProvider("zhipu");
+  if (model.startsWith("doubao-")) return getLLMProvider("doubao");
+  if (["llama", "mistral", "qwen", "deepseek-r1"].some((prefix) => model.startsWith(prefix))) return getLLMProvider("ollama");
+  if (model.startsWith("gpt-") || /^o\d/.test(model) || model.startsWith("chatgpt-")) return getLLMProvider("openai");
+  return null;
+}
+
+function getLLMProviderMeta(cfg) {
+  const selected = getLLMProvider(cfg?.provider);
+  if (selected) return selected;
+  return inferLLMProvider(cfg?.model) || selected || getLLMProvider("openai");
+}
+
+function resolveLLMEndpoint(cfg) {
+  const custom = cleanLLMEndpoint(cfg?.baseUrl);
+  if (custom) return custom;
+  const provider = getLLMProviderMeta(cfg);
+  return cleanLLMEndpoint(provider?.endpoint || "https://api.openai.com/v1");
+}
+
+function providerNeedsKey(provider) {
+  return provider?.requiresKey !== false;
+}
+
 const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summary", "abstract", "caption", "paragraph", "sentence", "question", "answer", "source", "input", "output"]);
 const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
 const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
+const PUBLIC_DEMO_COLLECTION = "gas_turbine_ocr_demo_snapshot";
+const PUBLIC_DEMO_UPDATED_AT = 1779033600;
+const PUBLIC_DEMO_FILES = [
+  { filename: "ocr_ready__gas_turbine_combustion_3rd.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气涡轮发动机燃烧 第3版.txt", size_kb: 9120, records: 442, chunks: 760, low_confidence: 1, avg_confidence: 0.724 },
+  { filename: "ocr_ready__advanced_gas_turbine_combustor.txt", display_name: "第一梯队_OCR质量较放心_4本/先进燃气轮机燃烧室.txt", size_kb: 12680, records: 603, chunks: 980, low_confidence: 5, avg_confidence: 0.714 },
+  { filename: "ocr_ready__gas_turbine_principle_structure_application_1.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机原理、结构与应用 上.txt", size_kb: 10140, records: 485, chunks: 820, low_confidence: 0, avg_confidence: 0.715 },
+  { filename: "ocr_ready__nanjing_gas_turbine_research_institute.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机（南京燃气轮机研究所编）.txt", size_kb: 1420, records: 62, chunks: 95, low_confidence: 1, avg_confidence: 0.764 }
+];
+const PUBLIC_DEMO_STATS = {
+  status: "public-demo",
+  collections: [{
+    name: PUBLIC_DEMO_COLLECTION,
+    count: 2655,
+    estimated_tokens: 1186000,
+    estimated_chars: 1740000,
+    source_type_counts: { PDF: 4, Text: 4, JSON: 2 },
+    sources: PUBLIC_DEMO_FILES.map((item) => item.display_name)
+  }],
+  total_documents: 4,
+  total_tokens_estimate: 1186000,
+  storage_size_mb: 33.56,
+  embedding_dim: ENGINE_DEFAULTS.dimension,
+  source_type_breakdown: { PDF: 4, Text: 4, JSON: 2 }
+};
+const PUBLIC_DEMO_SEARCH_RESULTS = [
+  {
+    text: "燃气轮机燃烧室的主要问题包括稳定燃烧、点火、燃烧效率、温度场均匀性以及污染物排放控制。检索时应同时保留原文证据和页码，便于后续人工复核。",
+    score: 0.842,
+    distance: 0.158,
+    metadata: { filename: "先进燃气轮机燃烧室.txt", source_kind: "Text", chunk_index: 128, record_id: "demo-advanced-combustor-p128", estimated_tokens: 96, page_nums: "128" }
+  },
+  {
+    text: "OCR 后的扫描书先进入文本块，再按 chunk 切分，随后进入向量检索或知识图谱抽取。两栏版面、低置信度页和公式密集页需要单独标记风险。",
+    score: 0.811,
+    distance: 0.189,
+    metadata: { filename: "燃气涡轮发动机燃烧 第3版.txt", source_kind: "Text", chunk_index: 64, record_id: "demo-combustion-p064", estimated_tokens: 88, page_nums: "64" }
+  },
+  {
+    text: "知识图谱抽取阶段更关注实体、关系、属性和 evidence 的一致性。关系粒度过粗会丢信息，过细则接近句子谓语翻译，后续检索价值有限。",
+    score: 0.786,
+    distance: 0.214,
+    metadata: { filename: "KG / GraphRAG POC 记录.json", source_kind: "JSON", chunk_index: 12, record_id: "demo-kg-poc-012", estimated_tokens: 82, page_nums: "-" }
+  }
+,
+  {
+    text: "GT-07 燃气轮机升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s，DCS 触发“压气机出口温度偏高”报警。运行员记录：燃烧室火焰稳定，未见明显燃烧波动。",
+    score: 0.84,
+    distance: 0.16,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 21, record_id: "demo-gt07-fault-021", estimated_tokens: 112, page_nums: "POC-1" }
+  },
+  {
+    text: "停机检查发现，进气滤网压差偏高，滤网局部堵塞；压气机前三级叶片表面积灰明显。检修人员清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器 TT-COMP-02。复机后，压气机出口温度回落至 438°C，振动值降至 3.1 mm/s。",
+    score: 0.83,
+    distance: 0.17,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 22, record_id: "demo-gt07-repair-022", estimated_tokens: 118, page_nums: "POC-2" }
+  },
+  {
+    text: "压气机出口温度偏高的常见原因包括进气阻力增大、压气机叶片污染和温度传感器漂移。建议检查进气滤网压差，清理或更换滤网，清洗压气机叶片，并对温度传感器进行校验。若振动值持续偏高，应进一步检查轴承状态和联轴器对中情况。",
+    score: 0.82,
+    distance: 0.18,
+    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 23, record_id: "demo-gt07-manual-023", estimated_tokens: 115, page_nums: "POC-3" }
+  },
+  {
+    text: "紧急停机仅在出现超温、超速、失火或振动超限等危急情况下使用。正常停机应按负荷递减程序执行，严禁在满负荷状态下直接切断燃油。",
+    score: 0.8,
+    distance: 0.2,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 56, record_id: "demo-maint-emergency-stop-056", estimated_tokens: 78, page_nums: "5.6" }
+  },
+  {
+    text: "故障诊断应遵循“症状-机理-定位-处置”四步法。常见故障模式包括：压气机喘振、燃烧室热点、涡轮叶片裂纹、轴承磨损和控制系统失灵。",
+    score: 0.79,
+    distance: 0.21,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 88, record_id: "demo-maint-diagnosis-088", estimated_tokens: 84, page_nums: "5.8" }
+  },
+  {
+    text: "压气机喘振的典型症状为：运行中出现周期性“砰砰”声响，排气温度急剧波动，压气机出口压力大幅下降。处置方法：立即降低负荷至喘振线以下，检查进气系统是否有异物堵塞。",
+    score: 0.78,
+    distance: 0.22,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 92, record_id: "demo-maint-surge-092", estimated_tokens: 96, page_nums: "5.9" }
+  },
+  {
+    text: "关键监测参数阈值包括：排气温度散布度不大于 25°C，轴承振动不大于 25.4 mm/s，滑油金属颗粒不大于 5 ppm，压气机效率衰减不大于 3%。这些指标可作为运行异常和早期故障诊断线索。",
+    score: 0.77,
+    distance: 0.23,
+    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 76, record_id: "demo-maint-thresholds-076", estimated_tokens: 94, page_nums: "5.7" }
+  },
+  {
+    text: "燃气轮机燃烧室工作在连续高速气流中，燃烧火焰不易稳定，容易被吹灭；燃料在燃烧区停留时间较短，容易出现燃烧不完全。因此必须采取措施确保燃烧过程稳定、完全，并控制出口温度场。",
+    score: 0.76,
+    distance: 0.24,
+    metadata: { filename: "燃气轮机与联合循环装置_燃烧室工作特点.txt", source_kind: "Text", chunk_index: 118, record_id: "demo-combustor-stability-118", estimated_tokens: 103, page_nums: "燃烧室" }
+  },
+  {
+    text: "燃气轮机结构强度故障是指发生在燃气轮机机械结构和部件中的形变或机械损伤，会引起机组不正常振动并影响正常运行；由于机组尺寸大、转速高，这些机械故障可能导致破坏性机械损伤、停机甚至机组报废。",
+    score: 0.75,
+    distance: 0.25,
+    metadata: { filename: "燃气轮机可靠性维护理论及应用.txt", source_kind: "Text", chunk_index: 130, record_id: "demo-structure-fault-130", estimated_tokens: 112, page_nums: "第6章" }
+  },
+  {
+    text: "知识图谱抽取中，GT-07 燃气轮机与“压气机出口温度偏高”“振动值升高”等故障/症状相连；进气滤网堵塞、压气机叶片污染、温度传感器漂移被记录为可能原因；清理滤网、清洗叶片、校验传感器是推荐处理动作。",
+    score: 0.74,
+    distance: 0.26,
+    metadata: { filename: "四本书 KG / 故障 POC 三元组.csv", source_kind: "CSV", chunk_index: 14, record_id: "demo-kg-fault-triples-014", estimated_tokens: 105, page_nums: "triples" }
+  }];
 
 const state = {
   online: false,
   localMode: FORCE_LOCAL_RUNTIME,
+  publicDemo: false,
   version: "",
   page: "overview",
   stats: null,
@@ -1320,6 +2011,70 @@ function extractJsonTextLines(payload) {
 
 function tokenize(text) {
   return normalizeText(text).toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [];
+}
+
+function cjkNgrams(text, min = 2, max = 4) {
+  const chars = normalizeText(text).replace(/[^\u3400-\u9FFF]/g, "");
+  const grams = [];
+  for (let size = min; size <= max; size += 1) {
+    for (let index = 0; index <= chars.length - size; index += 1) {
+      grams.push(chars.slice(index, index + size));
+    }
+  }
+  return grams;
+}
+
+function demoSearchTerms(text) {
+  const terms = new Set([...tokenize(text), ...cjkNgrams(text)]);
+  const normalized = normalizeText(text);
+  const expansions = [
+    { keys: ["爆炸", "炸了", "坏了", "事故", "危险"], add: ["故障", "危急", "紧急停机", "超温", "超速", "失火", "振动超限", "燃烧室热点", "喘振", "回火", "熄火", "轴承磨损", "叶片裂纹"] },
+    { keys: ["燃烧", "燃烧室", "火焰"], add: ["热点", "失火", "熄火", "回火", "吹灭", "燃烧不完全", "温度场", "燃烧稳定"] },
+    { keys: ["振动", "抖", "异响"], add: ["轴承", "联轴器", "叶片裂纹", "结构强度故障", "机械损伤", "振动超限"] },
+    { keys: ["温度", "过热", "超温"], add: ["排气温度", "压气机出口温度", "燃烧室热点", "温度散布度", "传感器漂移"] }
+  ];
+  expansions.forEach((group) => {
+    if (group.keys.some((key) => normalized.includes(key))) {
+      group.add.forEach((term) => {
+        terms.add(term.toLowerCase());
+        cjkNgrams(term).forEach((gram) => terms.add(gram));
+      });
+    }
+  });
+  return terms;
+}
+
+function rankPublicDemoResults(query, topK) {
+  const queryTerms = demoSearchTerms(query);
+  const queryText = normalizeText(query).toLowerCase();
+  return PUBLIC_DEMO_SEARCH_RESULTS
+    .map((item, index) => {
+      const haystack = normalizeText([
+        item.text,
+        item.metadata?.filename,
+        item.metadata?.source_kind,
+        item.metadata?.record_id
+      ].filter(Boolean).join(" ")).toLowerCase();
+      const itemTerms = demoSearchTerms(haystack);
+      let overlap = 0;
+      queryTerms.forEach((term) => {
+        if (term.length >= 2 && (itemTerms.has(term) || haystack.includes(term))) overlap += 1;
+      });
+      const overlapScore = queryTerms.size ? overlap / queryTerms.size : 0;
+      const phraseBonus = queryText && haystack.includes(queryText) ? 0.18 : 0;
+      const prior = Number(item.score || 0.6) * 0.18;
+      const score = Math.min(0.98, 0.22 + overlapScore * 0.68 + phraseBonus + prior);
+      return {
+        ...item,
+        score: Number(score.toFixed(4)),
+        distance: Number(Math.max(0.02, 1 - score).toFixed(4)),
+        _rankIndex: index
+      };
+    })
+    .filter((item) => item.score >= 0.3)
+    .sort((a, b) => (b.score - a.score) || (a._rankIndex - b._rankIndex))
+    .slice(0, topK)
+    .map(({ _rankIndex, ...item }) => item);
 }
 
 function estimateTokens(text) {
@@ -1620,9 +2375,116 @@ async function filesFromDrop(dataTransfer) {
 
 
 function cloneDefaultStats() { return typeof structuredClone === "function" ? structuredClone(DEFAULT_STATS) : JSON.parse(JSON.stringify(DEFAULT_STATS)); }
+function clonePublicDemoStats() { return typeof structuredClone === "function" ? structuredClone(PUBLIC_DEMO_STATS) : JSON.parse(JSON.stringify(PUBLIC_DEMO_STATS)); }
 function sourceKindFromName(name) { const ext = fileExtension(name); if (["json", "ipynb"].includes(ext)) return "JSON"; if (ext === "pdf") return "PDF"; if (ext === "docx") return "DOCX"; if (ext === "md" || ext === "markdown") return "Markdown"; if (ext === "csv") return "CSV"; if (ext === "tsv") return "TSV"; if (ext === "log") return "Log"; if (CODE_EXTENSIONS.has(ext)) return "Code"; return "Text"; }
 function purgeLocalVectorsByFilename(filenames) { const selected = new Set((filenames || []).filter(Boolean)); if (!selected.size) return; state.records = state.records.filter((record) => !selected.has(record.stored_filename)); state.chunks = state.chunks.filter((chunk) => !selected.has(chunk.metadata?.stored_filename)); state.lastSearch = null; }
 function buildLocalStats() { if (!state.chunks.length) return cloneDefaultStats(); const byKind = {}; state.chunks.forEach((chunk) => { const kind = chunk.metadata?.source_kind || "Other"; byKind[kind] = (byKind[kind] || 0) + 1; }); const totalTokens = state.chunks.reduce((sum, chunk) => sum + Number(chunk.metadata?.estimated_tokens || 0), 0); const totalChars = state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0), 0); const storageBytes = state.uploads.reduce((sum, item) => sum + Number(item.file?.size || 0), 0) + state.chunks.reduce((sum, chunk) => sum + Number(chunk.text?.length || 0) * 2 + Number(chunk.vector?.byteLength || 0), 0); const sources = getProcessedUploads().map((item) => item.display_name || item.filename); return { status: "ok", collections: [{ name: LOCAL_COLLECTION_NAME, count: state.chunks.length, estimated_tokens: totalTokens, estimated_chars: totalChars, source_type_counts: byKind, sources }], total_documents: state.records.length, total_tokens_estimate: totalTokens, storage_size_mb: Number((storageBytes / (1024 * 1024)).toFixed(3)), embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: byKind }; }
+
+function buildPublicDemoUploads() {
+  return PUBLIC_DEMO_FILES.map((item, index) => ({
+    filename: item.filename,
+    display_name: item.display_name,
+    size_kb: item.size_kb,
+    modified: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
+    uploaded_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
+    processed_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 1800),
+    source_kind: "Text",
+    status: "processed",
+    last_collection: PUBLIC_DEMO_COLLECTION,
+    last_records: item.records,
+    last_chunks: item.chunks,
+    last_error: null
+  }));
+}
+
+function buildPublicDemoProcessResult() {
+  const records = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.records, 0);
+  const chunks = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.chunks, 0);
+  return {
+    requested_filenames: PUBLIC_DEMO_FILES.map((item) => item.filename),
+    records_processed: records,
+    chunks_written: chunks,
+    files_succeeded: PUBLIC_DEMO_FILES.length,
+    files_failed: 0,
+    elapsed_s: 184.6,
+    skipped_already_processed: [],
+    file_summaries: PUBLIC_DEMO_FILES.map((item) => ({
+      source_file: item.filename,
+      source_kind: "Text",
+      status: "ok",
+      records_extracted: item.records
+    })),
+    quality_report: {
+      chunks: { total_chunks: chunks, avg_length: 655, min_length: 118, max_length: 914 },
+      documents: PUBLIC_DEMO_FILES.map((item, index) => ({
+        doc_id: index + 1,
+        filenames: [item.filename],
+        block_count: item.records,
+        short_blocks: item.low_confidence,
+        label_distribution: { ocr_page: item.records, low_confidence: item.low_confidence }
+      })),
+      issues: [
+        "公开页只展示质量较稳定的 OCR 文本样例，不包含完整 1.31G 原始材料。",
+        "两栏页、公式密集页和低置信度页仍需要后续复核。"
+      ],
+      issue_count: 2
+    }
+  };
+}
+
+function activatePublicDemoSnapshot() {
+  state.publicDemo = true;
+  state.localMode = true;
+  state.online = true;
+  state.version = "public-demo";
+  state.stats = clonePublicDemoStats();
+  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
+  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
+  state.uploads = buildPublicDemoUploads();
+  state.pendingUploads = [];
+  state.processedUploads = state.uploads.slice();
+  state.lastProcess = buildPublicDemoProcessResult();
+  state.benchmark = {
+    collection: PUBLIC_DEMO_COLLECTION,
+    insert_seconds: 184.6,
+    insert_docs_per_second: 8.62,
+    query_seconds: 0.48,
+    query_qps: 20.83,
+    avg_query_latency_ms: 46.2,
+    p95_query_latency_ms: 71.5,
+    embedding_backend: "snapshot",
+    embedding_model: `hash-${ENGINE_DEFAULTS.dimension}d demo`
+  };
+  state.timeline = [
+    { reason: "ocr", label: "OCR", docs: 4, tokens: 320000, collections: 1, latency: 0, pdf: 4, text: 0, json: 0, other: 0 },
+    { reason: "chunk", label: "分块", docs: 4, tokens: 780000, collections: 1, latency: 0, pdf: 4, text: 4, json: 0, other: 0 },
+    { reason: "index", label: "索引", docs: 4, tokens: 1186000, collections: 1, latency: 46.2, pdf: 4, text: 4, json: 2, other: 0 }
+  ];
+  state.activity = [
+    { id: "demo-1", level: "success", title: "公开演示快照", detail: "已展示 4 本 OCR 质量较放心的燃气轮机材料。", at: Date.now() - 1000 * 60 * 8 },
+    { id: "demo-2", level: "success", title: "OCR 质量检查", detail: "总页数 5483 页已完成，公开页先放较稳定样例。", at: Date.now() - 1000 * 60 * 16 },
+    { id: "demo-3", level: "warning", title: "后端未部署到 Pages", detail: "GitHub Pages 只托管静态页，真实 ChromaDB 需要单独后端。", at: Date.now() - 1000 * 60 * 25 }
+  ];
+}
+
+function activateDemoSnapshotForEmptyLocalIndex() {
+  if (!FORCE_LOCAL_RUNTIME || state.publicDemo || state.chunks.length) return false;
+  activatePublicDemoSnapshot();
+  addActivity("warning", "自动切换演示快照", "当前浏览器没有本地索引，已使用内置样例数据。");
+  renderAll();
+  return true;
+}
+
+async function refreshPublicDemoStats() {
+  state.stats = clonePublicDemoStats();
+  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
+  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
+  rememberTimeline("stats");
+  renderCollectionSpectrum();
+  renderCollectionList();
+  renderTrendChart();
+  renderSummaryMetrics();
+}
 
 function buildLocalUploadItem(file) {
   const displayName = relativePathOf(file);
@@ -1805,16 +2667,34 @@ async function runLocalProcess() {
 async function runLocalSearch() {
   const query = String(els.searchInput?.value || "").trim();
   if (!query) {
-    showToast("Enter a search query first.", "warning");
+    showToast("请先输入检索问题。", "warning");
     return;
   }
-  if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
+  if (els.searchMeta) els.searchMeta.textContent = "正在本地检索...";
   const topK = Number(els.searchTopK?.value || 5);
   const started = performance.now();
-  if (!state.chunks.length) {
-    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "No local index yet. Process files first." };
+  activateDemoSnapshotForEmptyLocalIndex();
+  if (state.publicDemo && !state.chunks.length) {
+    const results = rankPublicDemoResults(query, topK);
+    state.lastSearch = {
+      query,
+      collection: PUBLIC_DEMO_COLLECTION,
+      latency_ms: Number((performance.now() - started + 38.6).toFixed(2)),
+      results,
+      embedding_backend: "public-demo"
+    };
+    rememberTimeline("search");
     renderSearchResults();
-    showToast("Process files before searching.", "warning");
+    renderTrendChart();
+    renderSummaryMetrics();
+    addActivity("success", "演示检索完成", `查询“${query}”返回 ${results.length} 条样例证据。`);
+    showToast(`演示检索完成，返回 ${results.length} 条样例。`, "success");
+    return;
+  }
+  if (!state.chunks.length) {
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先处理文件，或打开 GitHub Pages 演示快照。" };
+    renderSearchResults();
+    showToast("当前没有本地索引，请先处理文件。", "warning");
     return;
   }
   const queryVector = createEmbedding(query);
@@ -1881,9 +2761,6 @@ async function runLocalBenchmark() {
 
 function resolveEls() {
   els = {
-    sidebar: $("sidebar"),
-    sidebarToggle: $("sidebarToggle"),
-    sidebarToggleIcon: $("sidebarToggleIcon"),
     navList: $("navList"),
     pages: Array.from(document.querySelectorAll(".page")),
     refreshBtn: $("refreshBtn"),
@@ -1891,8 +2768,6 @@ function resolveEls() {
     statusText: $("statusText"),
     sysStatus: $("sysStatus"),
     statusPill: $("statusPill"),
-    globalSearchForm: $("globalSearchForm"),
-    globalSearchInput: $("globalSearchInput"),
     collectionSummaryPill: $("collectionSummaryPill"),
     collectionSpectrum: $("collectionSpectrum"),
     collList: $("collList"),
@@ -1956,6 +2831,20 @@ function resolveEls() {
     btnSearch: $("btnSearch"),
     searchMeta: $("searchMeta"),
     searchResults: $("searchResults"),
+    llmBaseUrl: $("llmBaseUrl"),
+    llmProvider: $("llmProvider"),
+    llmApiKey: $("llmApiKey"),
+    llmModel: $("llmModel"),
+    llmTemperature: $("llmTemperature"),
+    llmMaxTokens: $("llmMaxTokens"),
+    llmStatus: $("llmStatus"),
+    btnModelCatalog: $("btnModelCatalog"),
+    modelCatalog: $("modelCatalog"),
+    modelCatalogBody: $("modelCatalogBody"),
+    askInput: $("askInput"),
+    btnAsk: $("btnAsk"),
+    btnClearAnswer: $("btnClearAnswer"),
+    askAnswer: $("askAnswer"),
     benchDocs: $("benchDocs"),
     benchBatch: $("benchBatch"),
     benchQueries: $("benchQueries"),
@@ -2223,19 +3112,17 @@ function renderEmpty(container, message) {
 function setPage(page) {
   state.page = page;
   els.pages.forEach((element) => {
-    element.classList.toggle("active", element.id === `page-${page}`);
+    const isActive = element.id === `page-${page}`;
+    element.classList.toggle("active", isActive);
+    if (isActive) {
+      element.style.animation = "none";
+      element.offsetHeight;
+      element.style.animation = "";
+    }
   });
   els.navList?.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("active", button.dataset.page === page);
   });
-}
-
-function syncSidebarToggleIcon() {
-  if (!els.sidebarToggleIcon || !els.sidebar) return;
-  els.sidebarToggleIcon.setAttribute(
-    "icon",
-    els.sidebar.classList.contains("is-collapsed") ? "lucide:chevrons-right" : "lucide:chevrons-left"
-  );
 }
 
 function renderSparkline(svg, values, color) {
@@ -2270,20 +3157,31 @@ function renderSparkline(svg, values, color) {
 
 
 function renderStatus() {
-  if (!els.statusText || !els.refreshStamp) return;
-  if (state.localMode) {
-    els.statusText.textContent = "Browser-local runtime is ready. No localhost:8000 server is required.";
-    els.refreshStamp.textContent = `Local session ${snapshotClock()}`;
-    setStatusLevel("success");
+  if (!els.refreshStamp) return;
+  let statusMessage;
+  let stamp;
+  let level;
+  if (state.publicDemo) {
+    statusMessage = "公开演示快照已加载。GitHub Pages 只展示成果，真实 ChromaDB 需要后端服务。";
+    stamp = `Demo snapshot ${snapshotClock()}`;
+    level = "success";
+  } else if (state.localMode) {
+    statusMessage = "Browser-local runtime is ready. No localhost:8000 server is required.";
+    stamp = `Local session ${snapshotClock()}`;
+    level = "success";
   } else if (state.online) {
-    els.statusText.textContent = `Backend connected${state.version ? ` ? v${state.version}` : ""}. Upload and retrieval are available.`;
-    els.refreshStamp.textContent = `Last sync ${snapshotClock()}`;
-    setStatusLevel("success");
+    statusMessage = `Backend connected${state.version ? ` · v${state.version}` : ""}. Upload and retrieval are available.`;
+    stamp = `Last sync ${snapshotClock()}`;
+    level = "success";
   } else {
-    els.statusText.textContent = "Backend unavailable. Start http://localhost:8000 to use server mode.";
-    els.refreshStamp.textContent = "Waiting for backend";
-    setStatusLevel("danger");
+    statusMessage = "Backend unavailable. Start http://localhost:8000 to use server mode.";
+    stamp = "Waiting for backend";
+    level = "danger";
   }
+  if (els.statusText) els.statusText.textContent = statusMessage;
+  els.refreshStamp.textContent = stamp;
+  if (els.statusPill) els.statusPill.title = statusMessage;
+  setStatusLevel(level);
 }
 
 function renderCollectionSpectrum() {
@@ -2305,7 +3203,7 @@ function renderCollectionSpectrum() {
     return `
       <div
         title="${escapeHtml(item.name)}: ${formatNumber(count)}"
-        style="flex:${width} 1 0;min-width:28px;height:16px;border-radius:999px;background:${active ? "rgba(0, 47, 167, 0.92)" : "rgba(15, 23, 42, 0.16)"};"
+        style="flex:${width} 1 0;min-width:28px;height:10px;border-radius:999px;background:${active ? "var(--accent)" : "var(--line-strong)"}"
       ></div>
     `;
   }).join("");
@@ -2365,10 +3263,10 @@ function renderTrendChart() {
   if (!state.timeline.length) {
     els.trendSummaryPill.textContent = "等待数据";
     renderEmpty(els.trendChart, "刷新统计、检索或压测后，这里会显示会话趋势。");
-    renderSparkline(els.sparkDocs, [], "#002fa7");
-    renderSparkline(els.sparkTokens, [], "#1d4ed8");
-    renderSparkline(els.sparkColls, [], "#0f172a");
-    renderSparkline(els.sparkLatency, [], "#d97706");
+    renderSparkline(els.sparkDocs, [], "#0A84FF");
+    renderSparkline(els.sparkTokens, [], "#BF5AF2");
+    renderSparkline(els.sparkColls, [], "#30D158");
+    renderSparkline(els.sparkLatency, [], "#FF9F0A");
     return;
   }
 
@@ -2378,10 +3276,10 @@ function renderTrendChart() {
   const collectionValues = timeline.map((item) => item.collections);
   const latencyValues = timeline.map((item) => item.latency);
 
-  renderSparkline(els.sparkDocs, docsValues, "#002fa7");
-  renderSparkline(els.sparkTokens, tokenValues, "#1d4ed8");
-  renderSparkline(els.sparkColls, collectionValues, "#0f172a");
-  renderSparkline(els.sparkLatency, latencyValues, "#d97706");
+  renderSparkline(els.sparkDocs, docsValues, "#0A84FF");
+  renderSparkline(els.sparkTokens, tokenValues, "#BF5AF2");
+  renderSparkline(els.sparkColls, collectionValues, "#30D158");
+  renderSparkline(els.sparkLatency, latencyValues, "#FF9F0A");
 
   let series;
   let summary;
@@ -2410,7 +3308,7 @@ function renderTrendChart() {
     return `
       <div style="display:grid;gap:10px;align-content:end;">
         <div style="height:180px;display:flex;align-items:flex-end;">
-          <div style="width:100%;min-width:36px;height:${height}px;border-radius:14px 14px 10px 10px;background:linear-gradient(180deg, rgba(0,47,167,0.92), rgba(15,98,254,0.36));"></div>
+          <div style="width:100%;min-width:36px;height:${height}px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#5AC8FA,#0A84FF);"></div>
         </div>
         <div class="queue-meta">
           <span>${escapeHtml(item.label)}</span>
@@ -2849,9 +3747,12 @@ function renderAll() {
 
 async function refreshHealth() {
   if (FORCE_LOCAL_RUNTIME) {
-    state.localMode = true;
-    state.online = true;
-    state.version = "browser-local";
+    if (DEFAULT_PUBLIC_DEMO) activatePublicDemoSnapshot();
+    else {
+      state.localMode = true;
+      state.online = true;
+      state.version = "browser-local";
+    }
     renderStatus();
     return;
   }
@@ -2869,6 +3770,7 @@ async function refreshHealth() {
 }
 
 async function refreshStats() {
+  if (state.publicDemo) { await refreshPublicDemoStats(); return; }
   if (state.localMode) { await refreshLocalStats(); return; }
   const stats = await requestJson("/api/stats");
   state.stats = stats;
@@ -2884,6 +3786,7 @@ async function refreshStats() {
 }
 
 async function refreshUploads() {
+  if (state.publicDemo) { state.pendingUploads = []; state.processedUploads = state.uploads.slice(); renderUploads(); renderProcessedUploads(); return; }
   if (state.localMode) { refreshLocalUploadBuckets(); renderUploads(); renderProcessedUploads(); return; }
   const payload = await requestJson("/api/uploads");
   state.uploads = Array.isArray(payload.files) ? payload.files : [];
@@ -2921,6 +3824,10 @@ function isSupportedFile(file) {
 
 
 async function uploadFiles(fileList) {
+  if (state.publicDemo) {
+    showToast("公开演示页不接收上传；真实上传需要后端服务。", "warning");
+    return;
+  }
   const incoming = dedupeFiles(Array.from(fileList || []));
   const files = incoming.filter(isSupportedFile);
   const skippedCount = incoming.length - files.length;
@@ -3002,6 +3909,10 @@ async function uploadFiles(fileList) {
 }
 
 async function deleteUpload(filename, options = {}) {
+  if (state.publicDemo) {
+    showToast("公开演示页不删除样例文件。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalUpload(filename, options);
     return;
@@ -3020,6 +3931,10 @@ async function deleteUpload(filename, options = {}) {
 
 
 async function deleteProcessedUploads(filenames) {
+  if (state.publicDemo) {
+    showToast("公开演示页不删除样例文件。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalProcessedUploads(filenames);
     return;
@@ -3048,12 +3963,20 @@ async function deleteProcessedUploads(filenames) {
 }
 
 function toggleProcessedEditMode(force) {
+  if (state.publicDemo) {
+    showToast("公开演示页只展示成果，不编辑样例文件。", "warning");
+    return;
+  }
   state.processedEditMode = typeof force === "boolean" ? force : !state.processedEditMode;
   if (!state.processedEditMode) state.selectedProcessedUploads.clear();
   renderProcessedUploads();
 }
 
 async function runProcess() {
+  if (state.publicDemo) {
+    showToast("公开演示页已预置处理摘要；真实入库需要后端服务。", "warning");
+    return;
+  }
   if (state.localMode) {
     await runLocalProcess();
     return;
@@ -3157,6 +4080,10 @@ async function runSearch() {
 }
 
 async function deleteCollection(name) {
+  if (state.publicDemo) {
+    showToast("公开演示集合不能在 Pages 上删除。", "warning");
+    return;
+  }
   if (state.localMode) {
     await deleteLocalCollection(name);
     return;
@@ -3172,6 +4099,11 @@ async function deleteCollection(name) {
 }
 
 async function runBenchmark() {
+  if (state.publicDemo) {
+    renderBenchmark();
+    showToast("公开页显示的是演示压测快照。", "success");
+    return;
+  }
   if (state.localMode) {
     await runLocalBenchmark();
     return;
@@ -3223,39 +4155,607 @@ function activateGroupButton(group, matcher) {
   });
 }
 
-function handleGlobalCommand(event) {
-  event.preventDefault();
-  const query = String(els.globalSearchInput?.value || "").trim();
-  if (!query) return;
+// ─── LLM + RAG ask ───
 
-  if (/上传|数据|队列|文件/.test(query)) {
-    setPage("data");
-    return;
-  }
-  if (/架构|流程|结构/.test(query)) {
-    setPage("architecture");
-    return;
-  }
-  if (/压测|性能|benchmark/.test(query)) {
-    setPage("benchmark");
-    return;
-  }
-  if (/概览|总览|统计/.test(query)) {
-    setPage("overview");
-    return;
-  }
+function readLLMSettings() {
+  return {
+    baseUrl: (els.llmBaseUrl?.value || "").trim().replace(/\/+$/, ""),
+    apiKey: (els.llmApiKey?.value || "").trim(),
+    model: (els.llmModel?.value || "").trim(),
+    temperature: Number(els.llmTemperature?.value || 0.7),
+    maxTokens: Math.max(64, Number(els.llmMaxTokens?.value || 131072))
+  };
+}
 
-  setPage("search");
-  if (els.searchInput) els.searchInput.value = query;
-  runSearch();
+function updateLLMStatus() {
+  if (!els.llmStatus) return;
+  const cfg = readLLMSettings();
+  els.llmStatus.classList.remove("is-ready", "is-error");
+  if (cfg.model) {
+    const base = cfg.baseUrl || "https://api.openai.com/v1";
+    const keyHint = cfg.apiKey ? "Key ✓" : "无 Key";
+    els.llmStatus.textContent = `已就绪 · ${cfg.model} · ${base} · ${keyHint}`;
+    els.llmStatus.classList.add("is-ready");
+  } else if (cfg.apiKey || cfg.baseUrl) {
+    els.llmStatus.textContent = "请填入 Model 名称";
+  } else {
+    els.llmStatus.textContent = "未配置 · 可选填，配置后可使用 RAG 问答";
+  }
+}
+
+function populateBaseUrlDatalist() {
+  const datalist = document.getElementById("llmBaseUrlList");
+  if (!datalist) return;
+  const seen = new Set();
+  datalist.innerHTML = MODEL_CATALOG
+    .map((g) => g.endpoint.replace(/\s*\(.+$/, ""))
+    .filter((url) => { if (seen.has(url)) return false; seen.add(url); return true; })
+    .map((url) => `<option value="${url}">`)
+    .join("");
+}
+
+function clearLLMSettings() {
+  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
+  if (els.llmApiKey) els.llmApiKey.value = "";
+  if (els.llmModel) els.llmModel.value = "";
+  if (els.llmTemperature) els.llmTemperature.value = "0.7";
+  if (els.llmMaxTokens) els.llmMaxTokens.value = "131072";
+  saveLLMSettings();
+  showToast("LLM 配置已清空", "success");
+}
+
+function loadLLMSettings() {
+  try {
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (els.llmBaseUrl) els.llmBaseUrl.value = data.baseUrl || "";
+      if (els.llmApiKey) els.llmApiKey.value = data.apiKey || "";
+      if (els.llmModel) els.llmModel.value = data.model || "";
+      if (els.llmTemperature && data.temperature != null) els.llmTemperature.value = data.temperature;
+      if (els.llmMaxTokens && data.maxTokens != null) els.llmMaxTokens.value = data.maxTokens;
+    }
+  } catch {}
+  updateLLMStatus();
+}
+
+function saveLLMSettings() {
+  try {
+    const cfg = readLLMSettings();
+    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
+  } catch {}
+  updateLLMStatus();
+}
+
+function openModelCatalog() {
+  if (!els.modelCatalog || !els.modelCatalogBody) return;
+  els.modelCatalogBody.innerHTML = MODEL_CATALOG.map((group) => {
+    const cleanEndpoint = group.endpoint.replace(/\s*\(.+$/, "");
+    const items = group.models.map((m) => `
+      <button class="model-row" type="button"
+              data-model-name="${escapeHtml(m.name)}"
+              data-endpoint="${escapeHtml(cleanEndpoint)}">
+        <span class="model-name">${escapeHtml(m.name)}</span>
+        <span class="model-desc">${escapeHtml(m.desc || "")}</span>
+        <iconify-icon class="model-copy" icon="lucide:clipboard-copy"></iconify-icon>
+      </button>
+    `).join("");
+    return `
+      <div class="model-group">
+        <div class="model-group-label">
+          <span>${escapeHtml(group.label)}</span>
+          <span class="endpoint">${escapeHtml(group.endpoint)}</span>
+        </div>
+        ${items}
+      </div>
+    `;
+  }).join("");
+  els.modelCatalog.hidden = false;
+}
+
+function closeModelCatalog() {
+  if (els.modelCatalog) els.modelCatalog.hidden = true;
+}
+
+async function pickModelFromCatalog(modelName, endpoint) {
+  if (els.llmModel) els.llmModel.value = modelName;
+  if (els.llmBaseUrl && !els.llmBaseUrl.value.trim() && endpoint) {
+    els.llmBaseUrl.value = endpoint;
+  }
+  saveLLMSettings();
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(modelName);
+    copied = true;
+  } catch {}
+  showToast(copied ? `已复制并填入：${modelName}` : `已填入：${modelName}`, "success");
+  closeModelCatalog();
+}
+
+function readLLMSettings() {
+  return {
+    provider: els.llmProvider?.value || "auto",
+    baseUrl: normalizeKnownLLMEndpoint(els.llmBaseUrl?.value || ""),
+    apiKey: (els.llmApiKey?.value || "").trim(),
+    model: (els.llmModel?.value || "").trim(),
+    temperature: Number(els.llmTemperature?.value || 0.7),
+    maxTokens: Math.max(64, Number(els.llmMaxTokens?.value || 131072))
+  };
+}
+
+function normalizeLLMFormCopy() {
+  const providerLabel = document.querySelector('label[for="llmProvider"]');
+  if (providerLabel) providerLabel.textContent = "模型服务";
+  const baseLabel = document.querySelector('label[for="llmBaseUrl"]');
+  if (baseLabel) {
+    baseLabel.innerHTML = 'API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(可不填；需要改代理时再填)</span>';
+  }
+  if (els.llmBaseUrl) els.llmBaseUrl.placeholder = "不填则自动使用所选服务商地址";
+  if (els.llmModel) els.llmModel.placeholder = "例如 gemini-3.5-flash";
+}
+
+function populateLLMProviderSelect() {
+  normalizeLLMFormCopy();
+  if (!els.llmProvider) return;
+  const current = els.llmProvider.value || "auto";
+  els.llmProvider.innerHTML = [
+    '<option value="auto">自动识别模型服务</option>',
+    ...MODEL_CATALOG.map((provider) => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`),
+    '<option value="custom">自定义 OpenAI 兼容地址</option>'
+  ].join("");
+  els.llmProvider.value = getLLMProvider(current) || current === "auto" ? current : "auto";
+}
+
+function updateLLMStatus() {
+  if (!els.llmStatus) return;
+  const cfg = readLLMSettings();
+  const provider = getLLMProviderMeta(cfg);
+  const endpoint = resolveLLMEndpoint(cfg);
+  const needsKey = providerNeedsKey(provider);
+  els.llmStatus.classList.remove("is-ready", "is-error");
+  if (cfg.model && needsKey && !cfg.apiKey) {
+    els.llmStatus.textContent = `缺 API Key · ${cfg.model} · ${provider?.label || "自定义"} · ${endpoint}`;
+    els.llmStatus.classList.add("is-error");
+  } else if (cfg.model) {
+    const keyHint = needsKey ? "Key 已填" : "本地模型无需 Key";
+    els.llmStatus.textContent = `已就绪 · ${cfg.model} · ${provider?.label || "自定义"} · ${endpoint} · ${keyHint}`;
+    els.llmStatus.classList.add("is-ready");
+  } else if (cfg.apiKey || cfg.baseUrl || cfg.provider !== "auto") {
+    els.llmStatus.textContent = "请选择或填入 Model";
+  } else {
+    els.llmStatus.textContent = "未配置 · 选择模型服务和模型名后可使用 RAG 问答";
+  }
+}
+
+function populateBaseUrlDatalist() {
+  const datalist = document.getElementById("llmBaseUrlList");
+  if (!datalist) return;
+  const seen = new Set();
+  datalist.innerHTML = MODEL_CATALOG
+    .map((provider) => cleanLLMEndpoint(provider.endpoint))
+    .filter((url) => { if (!url || seen.has(url)) return false; seen.add(url); return true; })
+    .map((url) => `<option value="${escapeHtml(url)}">`)
+    .join("");
+}
+
+function clearLLMSettings() {
+  if (els.llmProvider) els.llmProvider.value = "auto";
+  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
+  if (els.llmApiKey) els.llmApiKey.value = "";
+  if (els.llmModel) els.llmModel.value = "";
+  if (els.llmTemperature) els.llmTemperature.value = "0.7";
+  if (els.llmMaxTokens) els.llmMaxTokens.value = "131072";
+  saveLLMSettings();
+  showToast("LLM 配置已清空", "success");
+}
+
+function loadLLMSettings() {
+  try {
+    const raw = localStorage.getItem(LLM_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (els.llmProvider) els.llmProvider.value = data.provider || "auto";
+      if (els.llmBaseUrl) els.llmBaseUrl.value = normalizeKnownLLMEndpoint(data.baseUrl || "");
+      if (els.llmApiKey) els.llmApiKey.value = data.apiKey || "";
+      if (els.llmModel) els.llmModel.value = data.model || "";
+      if (els.llmTemperature && data.temperature != null) els.llmTemperature.value = data.temperature;
+      if (els.llmMaxTokens && data.maxTokens != null) els.llmMaxTokens.value = data.maxTokens;
+    }
+  } catch {}
+  updateLLMStatus();
+}
+
+function saveLLMSettings() {
+  try {
+    const cfg = readLLMSettings();
+    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
+    // Save non-empty values to input history
+    if (cfg.baseUrl) addInputHistory('baseUrl', cfg.baseUrl);
+    if (cfg.apiKey) addInputHistory('apiKey', cfg.apiKey);
+    if (cfg.model) addInputHistory('model', cfg.model);
+  } catch {}
+  updateLLMStatus();
+}
+
+// ─── Input History System ───
+const INPUT_HISTORY_KEY = 'rag_input_history_v1';
+const MAX_HISTORY_ITEMS = 15;
+
+function getInputHistory() {
+  try {
+    const raw = localStorage.getItem(INPUT_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : { baseUrl: [], apiKey: [], model: [] };
+  } catch { return { baseUrl: [], apiKey: [], model: [] }; }
+}
+
+function saveInputHistory(history) {
+  try { localStorage.setItem(INPUT_HISTORY_KEY, JSON.stringify(history)); } catch {}
+}
+
+function addInputHistory(field, value) {
+  const val = String(value || '').trim();
+  if (!val) return;
+  const history = getInputHistory();
+  if (!Array.isArray(history[field])) history[field] = [];
+  // Remove duplicate then prepend
+  history[field] = [val, ...history[field].filter((item) => item !== val)].slice(0, MAX_HISTORY_ITEMS);
+  saveInputHistory(history);
+}
+
+function removeInputHistory(field, value) {
+  const history = getInputHistory();
+  if (!Array.isArray(history[field])) return;
+  history[field] = history[field].filter((item) => item !== value);
+  saveInputHistory(history);
+}
+
+function clearInputHistory(field) {
+  const history = getInputHistory();
+  if (field) { history[field] = []; }
+  else { history.baseUrl = []; history.apiKey = []; history.model = []; }
+  saveInputHistory(history);
+}
+
+function maskApiKey(key) {
+  const s = String(key || '');
+  if (s.length <= 8) return '••••••••';
+  return s.slice(0, 4) + '••••••••' + s.slice(-4);
+}
+
+function renderInputHistoryDropdown(field, dropdownEl, inputEl) {
+  if (!dropdownEl) return;
+  const history = getInputHistory();
+  const items = Array.isArray(history[field]) ? history[field] : [];
+  if (!items.length) {
+    dropdownEl.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+  const fieldLabel = field === 'baseUrl' ? 'URL' : field === 'apiKey' ? 'Key' : '模型';
+  const headerHtml = `
+    <div class="history-header">
+      <span>历史${fieldLabel}（${items.length}）</span>
+      <button class="history-clear-all" type="button" data-history-clear="${escapeHtml(field)}">全部清除</button>
+    </div>
+  `;
+  const itemsHtml = items.map((item) => {
+    const display = field === 'apiKey' ? maskApiKey(item) : item;
+    return `
+      <button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}">
+        <span title="${escapeHtml(item)}">${escapeHtml(display)}</span>
+        <span class="history-delete" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}" title="删除此项">✕</span>
+      </button>
+    `;
+  }).join('');
+  dropdownEl.innerHTML = headerHtml + itemsHtml;
+}
+
+function openHistoryDropdown(field) {
+  const map = {
+    baseUrl: { dropdown: document.getElementById('historyBaseUrl'), input: els.llmBaseUrl },
+    apiKey: { dropdown: document.getElementById('historyApiKey'), input: els.llmApiKey },
+    model: { dropdown: document.getElementById('historyModel'), input: els.llmModel }
+  };
+  // Close all first
+  Object.values(map).forEach(({ dropdown }) => { if (dropdown) dropdown.classList.remove('is-open'); });
+  const target = map[field];
+  if (!target?.dropdown) return;
+  renderInputHistoryDropdown(field, target.dropdown, target.input);
+  target.dropdown.classList.add('is-open');
+}
+
+function closeAllHistoryDropdowns() {
+  document.querySelectorAll('.input-history-dropdown').forEach((el) => el.classList.remove('is-open'));
+}
+
+function bindInputHistoryEvents() {
+  // Open on focus
+  els.llmBaseUrl?.addEventListener('focus', () => openHistoryDropdown('baseUrl'));
+  els.llmApiKey?.addEventListener('focus', () => openHistoryDropdown('apiKey'));
+  els.llmModel?.addEventListener('focus', () => openHistoryDropdown('model'));
+
+  // Click handlers on dropdowns (delegated)
+  document.addEventListener('click', (event) => {
+    // Handle select history item
+    const deleteBtn = event.target.closest('[data-history-delete]');
+    if (deleteBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const value = deleteBtn.dataset.historyDelete;
+      const field = deleteBtn.dataset.historyDeleteField;
+      removeInputHistory(field, value);
+      openHistoryDropdown(field); // Re-render
+      return;
+    }
+
+    const clearBtn = event.target.closest('[data-history-clear]');
+    if (clearBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const field = clearBtn.dataset.historyClear;
+      clearInputHistory(field);
+      openHistoryDropdown(field); // Re-render
+      showToast('历史记录已清除', 'success');
+      return;
+    }
+
+    const historyItem = event.target.closest('[data-history-value]');
+    if (historyItem) {
+      event.preventDefault();
+      const value = historyItem.dataset.historyValue;
+      const field = historyItem.dataset.historyField;
+      const inputMap = { baseUrl: els.llmBaseUrl, apiKey: els.llmApiKey, model: els.llmModel };
+      const input = inputMap[field];
+      if (input) {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      closeAllHistoryDropdowns();
+      saveLLMSettings();
+      return;
+    }
+
+    // Close dropdowns when clicking outside
+    if (!event.target.closest('.input-history-wrap')) {
+      closeAllHistoryDropdowns();
+    }
+  });
+}
+
+function refreshLLMConfig() {
+  loadLLMSettings();
+  populateLLMProviderSelect();
+  populateBaseUrlDatalist();
+  showToast('LLM 配置已刷新', 'success');
+}
+
+function openModelCatalog() {
+  if (!els.modelCatalog || !els.modelCatalogBody) return;
+  els.modelCatalogBody.innerHTML = MODEL_CATALOG.map((group) => {
+    const cleanEndpoint = cleanLLMEndpoint(group.endpoint);
+    const items = group.models.map((model) => `
+      <button class="model-row" type="button"
+              data-provider-id="${escapeHtml(group.id)}"
+              data-model-name="${escapeHtml(model.name)}"
+              data-endpoint="${escapeHtml(cleanEndpoint)}">
+        <span class="model-name">${escapeHtml(model.name)}</span>
+        <span class="model-desc">${escapeHtml(model.desc || "")}</span>
+        <iconify-icon class="model-copy" icon="lucide:clipboard-copy"></iconify-icon>
+      </button>
+    `).join("");
+    return `
+      <div class="model-group">
+        <div class="model-group-label">
+          <span>${escapeHtml(group.label)}</span>
+          <span class="endpoint">${escapeHtml(cleanEndpoint || "manual")}</span>
+        </div>
+        ${items}
+      </div>
+    `;
+  }).join("");
+  els.modelCatalog.hidden = false;
+}
+
+async function pickModelFromCatalog(modelName, endpoint, providerId) {
+  if (els.llmModel) els.llmModel.value = modelName;
+  if (els.llmProvider && providerId) els.llmProvider.value = providerId;
+  if (els.llmBaseUrl && providerId) {
+    els.llmBaseUrl.value = "";
+  } else if (els.llmBaseUrl && !els.llmBaseUrl.value.trim() && endpoint) {
+    els.llmBaseUrl.value = endpoint;
+  }
+  saveLLMSettings();
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(modelName);
+    copied = true;
+  } catch {}
+  showToast(copied ? `已复制并填入：${modelName}` : `已填入：${modelName}`, "success");
+  closeModelCatalog();
+}
+
+function buildAskMessages(question) {
+  const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+  if (!results.length) {
+    return [
+      { role: "system", content: "你是动力装备知识库的检索增强助手。当前没有检索到可用证据，必须说明无法基于本地知识库回答，不得使用模型自带知识扩展回答。" },
+      { role: "user", content: question }
+    ];
+  }
+  const context = results.slice(0, 8).map((item, idx) => {
+    const text = item.text || item.content || item.chunk || item.snippet || "";
+    const meta = item.metadata || {};
+    const source = meta.source || meta.filename || meta.title || item.source || `chunk-${idx + 1}`;
+    return `【片段 ${idx + 1}｜来源: ${source}】\n${String(text).slice(0, 1200)}`;
+  }).join("\n\n---\n\n");
+
+  return [
+    {
+      role: "system",
+      content: "你是动力装备知识库的检索增强助手。只能根据下面提供的本地 chunk、知识图谱线索或 evidence 回答用户问题，引用关键内容时标注【片段 N】。如果上下文不足以回答，必须明确说没有足够证据，不得使用模型自带知识补全。"
+    },
+    {
+      role: "user",
+      content: `## 上下文\n${context}\n\n## 问题\n${question}`
+    }
+  ];
+}
+
+async function ensureAskContext(question) {
+  // 每次问答都强制重新检索，确保获取最新、最相关的上下文
+  if (els.searchInput) els.searchInput.value = question;
+  if (els.searchMeta) els.searchMeta.textContent = "正在为 RAG 问答自动检索上下文...";
+  await runSearch();
+
+  const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
+  if (!results.length) {
+    const message = "没有从本地 chunk / 知识库中检索到可用证据，已停止调用大模型，避免按模型自带知识回答。";
+    if (els.askAnswer) els.askAnswer.textContent = message;
+    addActivity("warning", "RAG 问答缺少证据", question.slice(0, 80));
+    showToast(message, "warning");
+    return false;
+  }
+  return true;
+}
+
+async function runAsk() {
+  const cfg = readLLMSettings();
+  const question = (els.askInput?.value || "").trim();
+  if (!question) {
+    showToast("请输入问题。", "warning");
+    return;
+  }
+  if (!cfg.model) {
+    showToast("请先在 LLM 配置中填入 Model 名称。", "warning");
+    return;
+  }
+  const provider = getLLMProviderMeta(cfg);
+  const baseUrl = resolveLLMEndpoint(cfg);
+  if (!baseUrl) {
+    showToast("请选择模型服务，或填写 OpenAI 兼容 API 地址。", "warning");
+    return;
+  }
+  if (providerNeedsKey(provider) && !cfg.apiKey) {
+    showToast("远程模型需要 API Key；本地 Ollama 才可以不填。", "warning");
+    return;
+  }
+  const url = `${baseUrl}/chat/completions`;
+  const hasContext = await ensureAskContext(question);
+  if (!hasContext) return;
+  const messages = buildAskMessages(question);
+
+  let accumulated = "";
+  resetAskAnswer();
+  if (els.askAnswer) {
+    els.askAnswer.classList.add("is-streaming");
+  }
+  if (els.btnAsk) els.btnAsk.disabled = true;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(cfg.apiKey ? { "Authorization": `Bearer ${cfg.apiKey}` } : {})
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages,
+        temperature: cfg.temperature,
+        max_tokens: cfg.maxTokens,
+        stream: true
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(`HTTP ${response.status} ${response.statusText}${errText ? ` · ${errText.slice(0, 240)}` : ""}`);
+    }
+
+    if (!response.body || !response.body.getReader) {
+      const data = await response.json();
+      accumulated = data.choices?.[0]?.message?.content || "";
+      renderAnswerMarkdown(accumulated);
+    } else {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let received = false;
+      let wasTruncated = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line || !line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const json = JSON.parse(payload);
+            const delta = json.choices?.[0]?.delta?.content || json.choices?.[0]?.message?.content || "";
+            if (delta) {
+              accumulated += delta;
+              renderAnswerMarkdown(accumulated);
+              received = true;
+            }
+            // 检测是否因 max_tokens 截断
+            const finishReason = json.choices?.[0]?.finish_reason;
+            if (finishReason === "length") wasTruncated = true;
+          } catch {}
+        }
+      }
+      if (!received && !accumulated) {
+        renderAnswerMarkdown("_(模型未返回内容)_");
+      }
+      if (wasTruncated && accumulated) {
+        accumulated += "\n\n---\n⚠️ **回答被截断**：已达到 Max Tokens 上限（当前设为 " + cfg.maxTokens + "）。请在 LLM 配置中调高 Max Tokens 值后重新提问。";
+        renderAnswerMarkdown(accumulated);
+        showToast("回答被截断，请调高 Max Tokens 设置。", "warning");
+      }
+    }
+    addActivity("success", "LLM 回答完成", `${cfg.model} · ${question.slice(0, 60)}`);
+  } catch (error) {
+    const message = error?.message || String(error);
+    renderAnswerMarkdown(`**调用失败：** ${message}`);
+    addActivity("danger", "LLM 调用失败", message);
+    showToast(message, "danger");
+  } finally {
+    if (els.askAnswer) els.askAnswer.classList.remove("is-streaming");
+    if (els.btnAsk) els.btnAsk.disabled = false;
+  }
+}
+
+function resetAskAnswer() {
+  if (!els.askAnswer) return;
+  els.askAnswer.innerHTML = "";
+  els.askAnswer.classList.remove("has-content");
+}
+
+function renderAnswerMarkdown(markdown) {
+  if (!els.askAnswer) return;
+  const text = String(markdown || "");
+  let html;
+  try {
+    if (globalThis.marked?.parse) {
+      const raw = globalThis.marked.parse(text, { breaks: true, gfm: true });
+      html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+    } else {
+      html = escapeHtml(text).replaceAll("\n", "<br>");
+    }
+  } catch {
+    html = escapeHtml(text).replaceAll("\n", "<br>");
+  }
+  els.askAnswer.innerHTML = html;
+  els.askAnswer.classList.toggle("has-content", text.trim().length > 0);
+}
+
+function clearAnswer() {
+  resetAskAnswer();
 }
 
 function bindEvents() {
-  els.sidebarToggle?.addEventListener("click", () => {
-    els.sidebar?.classList.toggle("is-collapsed");
-    syncSidebarToggleIcon();
-  });
-
   els.navList?.addEventListener("click", (event) => {
     const button = event.target.closest(".nav-item");
     if (!button) return;
@@ -3267,7 +4767,6 @@ function bindEvents() {
   });
 
   els.refreshBtn?.addEventListener("click", refreshAll);
-  els.globalSearchForm?.addEventListener("submit", handleGlobalCommand);
 
   els.pickFilesButton?.addEventListener("click", () => els.fileInput?.click());
   els.pickFolderButton?.addEventListener("click", () => els.folderInput?.click());
@@ -3323,6 +4822,62 @@ function bindEvents() {
   });
   els.btnSearch?.addEventListener("click", runSearch);
 
+  ["input", "change"].forEach((evt) => {
+    els.llmProvider?.addEventListener(evt, saveLLMSettings);
+    els.llmBaseUrl?.addEventListener(evt, saveLLMSettings);
+    els.llmApiKey?.addEventListener(evt, saveLLMSettings);
+    els.llmModel?.addEventListener(evt, saveLLMSettings);
+    els.llmTemperature?.addEventListener(evt, saveLLMSettings);
+    els.llmMaxTokens?.addEventListener(evt, saveLLMSettings);
+  });
+
+  els.btnModelCatalog?.addEventListener("click", openModelCatalog);
+  document.getElementById("btnClearLlm")?.addEventListener("click", clearLLMSettings);
+  document.getElementById("btnRefreshLlm")?.addEventListener("click", refreshLLMConfig);
+
+  // Refresh button reloads saved LLM settings
+  document.getElementById("btnRefreshLlm")?.addEventListener("click", () => {
+    loadLLMSettings();
+    populateLLMProviderSelect();
+    populateBaseUrlDatalist();
+    showToast("LLM 配置已从本地存储刷新", "success");
+  });
+
+  // Input history for Base URL, API Key, Model
+  initInputHistory(els.llmBaseUrl, document.getElementById("historyBaseUrl"), "baseUrl", false);
+  initInputHistory(els.llmApiKey, document.getElementById("historyApiKey"), "apiKey", true);
+  initInputHistory(els.llmModel, document.getElementById("historyModel"), "model", false);
+
+  // Close history dropdowns on outside click
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".input-history-wrap")) {
+      closeAllHistoryDropdowns();
+    }
+  });
+  els.modelCatalog?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-modal-close]")) {
+      closeModelCatalog();
+      return;
+    }
+    const row = event.target.closest("[data-model-name]");
+    if (!row) return;
+    pickModelFromCatalog(row.dataset.modelName, row.dataset.endpoint, row.dataset.providerId);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && els.modelCatalog && !els.modelCatalog.hidden) {
+      closeModelCatalog();
+    }
+  });
+
+  els.btnAsk?.addEventListener("click", runAsk);
+  els.btnClearAnswer?.addEventListener("click", clearAnswer);
+  els.askInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      runAsk();
+    }
+  });
+
   els.btnBench?.addEventListener("click", runBenchmark);
 
   els.collList?.addEventListener("click", async (event) => {
@@ -3331,7 +4886,11 @@ function bindEvents() {
 
     if (selectButton) {
       state.primaryCollection = selectButton.dataset.setCollection;
-      state.primaryStats = state.localMode ? { record_count: state.records.length, chunk_count: state.chunks.length } : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
+      state.primaryStats = state.publicDemo
+        ? { record_count: 1592, chunk_count: 2655 }
+        : state.localMode
+          ? { record_count: state.records.length, chunk_count: state.chunks.length }
+          : await requestJson(`/api/stats?collection=${encodeURIComponent(state.primaryCollection)}`);
       renderCollectionList();
       renderSummaryMetrics();
       showToast(`默认集合已切换为 ${state.primaryCollection}`, "success");
@@ -3397,10 +4956,17 @@ function bindEvents() {
 
 async function init() {
   resolveEls();
-  syncSidebarToggleIcon();
   bindEvents();
+  populateLLMProviderSelect();
+  loadLLMSettings();
+  populateBaseUrlDatalist();
+  bindInputHistoryEvents();
   setPage("overview");
-  addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
+  if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO) {
+    activatePublicDemoSnapshot();
+  } else {
+    addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
+  }
   renderAll();
   await refreshAll();
 }
@@ -3411,59 +4977,45 @@ window.addEventListener("DOMContentLoaded", init);
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-main">
-          <div class="brand-mark" aria-hidden="true">
-            <iconify-icon icon="lucide:database"></iconify-icon>
-          </div>
-          <div class="brand-copy">
-            <strong>动力装备知识库</strong>
-          </div>
+    <header class="appbar">
+      <div class="appbar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <iconify-icon icon="lucide:database"></iconify-icon>
         </div>
-        <button class="sidebar-toggle" id="sidebarToggle" aria-label="切换导航">
-          <iconify-icon id="sidebarToggleIcon" icon="lucide:chevrons-left"></iconify-icon>
-        </button>
+        <strong>动力装备知识库</strong>
       </div>
 
-      <div class="nav-list" id="navList">
-        <button class="nav-item active" data-page="overview"><span class="nav-glyph"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon></span><span class="nav-copy"><strong>系统总览</strong></span></button>
-        <button class="nav-item" data-page="data"><span class="nav-glyph"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><span class="nav-copy"><strong>数据接入</strong></span></button>
-        <button class="nav-item" data-page="search"><span class="nav-glyph"><iconify-icon icon="lucide:search"></iconify-icon></span><span class="nav-copy"><strong>语义检索</strong></span></button>
-        <button class="nav-item" data-page="architecture"><span class="nav-glyph"><iconify-icon icon="lucide:workflow"></iconify-icon></span><span class="nav-copy"><strong>系统结构</strong></span></button>
-        <button class="nav-item" data-page="benchmark"><span class="nav-glyph"><iconify-icon icon="lucide:gauge"></iconify-icon></span><span class="nav-copy"><strong>性能基准</strong></span></button>
-      </div>
+      <nav class="appbar-nav" id="navList">
+        <button class="nav-item active" data-page="overview" type="button"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>系统总览</span></button>
+        <button class="nav-item" data-page="data" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>数据接入</span></button>
+        <button class="nav-item" data-page="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
+        <button class="nav-item" data-page="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
+      </nav>
 
-      <div class="sidebar-footer">
-        <div>
-          <strong>后端状态</strong>
-          <p id="statusText">正在检查服务链路</p>
+      <div class="appbar-actions">
+        <div class="status-pill" id="statusPill" title="">
+          <span class="status-dot warning" id="sysStatus"></span>
+          <span id="refreshStamp">等待同步</span>
+          <span id="statusText" hidden></span>
         </div>
-        <span class="status-dot warning" id="sysStatus"></span>
+        <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新数据" title="刷新数据"><iconify-icon icon="lucide:refresh-cw"></iconify-icon></button>
+        <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>运维</strong></div>
       </div>
-    </aside>
+    </header>
 
     <div class="app-main">
-      <header class="topbar">
-        <form class="topbar-search" id="globalSearchForm">
-          <span class="input-icon" aria-hidden="true"><iconify-icon icon="lucide:search"></iconify-icon></span>
-          <input id="globalSearchInput" type="search" placeholder="全局搜索页面、日志、操作节点">
-        </form>
-
-        <div class="topbar-actions">
-          <div class="status-pill" id="statusPill"><iconify-icon icon="lucide:shield-check"></iconify-icon><span class="status-dot warning"></span><span id="refreshStamp">等待首次同步</span></div>
-          <button class="ghost-btn" id="refreshBtn" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新数据</span></button>
-          <div class="user-chip"><iconify-icon icon="lucide:user"></iconify-icon><strong>运维</strong><span class="muted">系统管理员</span></div>
-        </div>
-      </header>
 
       <main class="page-stack">
         <section class="page active" id="page-overview">
           <div class="page-stack">
             <article class="panel hero-card">
+              <div class="hero-chip"><iconify-icon icon="lucide:zap"></iconify-icon><span>Knowledge Engine</span></div>
+              <h3>动力装备知识库</h3>
+              <p>文档解析 → 向量分块 → 语义检索，全链路可视化管理。</p>
               <div class="hero-actions">
                 <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
                 <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                <button class="ghost-btn" data-jump="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能压测</span></button>
               </div>
             </article>
 
@@ -3683,45 +5235,128 @@ window.addEventListener("DOMContentLoaded", init);
               </div>
             </div>
           </div>
-        </section>        <section class="page" id="page-search">
+        </section>
+
+        <section class="page" id="page-search">
           <div class="page-stack">
             <div class="search-layout">
-              <article class="panel">
-                <div class="panel-head">
-                  <div>
-                    <h3>检索配置</h3>
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>检索配置</h3>
+                    </div>
                   </div>
-                </div>
-                <div class="search-row">
-                  <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
-                  <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="5">
-                  <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
-                </div>
-                <div class="search-meta" id="searchMeta">等待检索输入。</div>
-              </article>
+                  <div class="search-row">
+                    <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
+                    <input class="search-select" id="searchTopK" type="number" min="1" max="20" value="5">
+                    <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                  </div>
+                  <div class="search-meta" id="searchMeta">等待检索输入。</div>
+                </article>
 
-              <article class="panel">
-                <div class="panel-head">
-                  <div>
-                    <h3>结果列表</h3>
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>LLM 配置 <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(可选)</span></h3>
+                      <p>OpenAI 兼容端点。配置后可用于下方 RAG 问答。API Key 仅保存在浏览器 localStorage，不会上传。</p>
+                    </div>
+                    <div class="panel-tools">
+                      <button class="ghost-btn" id="btnRefreshLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
+                    </div>
                   </div>
-                </div>
-                <div class="results-list" id="searchResults"></div>
-              </article>
+                  <div class="llm-form">
+                    <div class="field field--wide">
+                      <label for="llmProvider">模型服务</label>
+                      <select class="form-control" id="llmProvider">
+                        <option value="auto">自动识别模型服务</option>
+                      </select>
+                    </div>
+                    <div class="field field--wide">
+                      <label for="llmBaseUrl">API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(从常用模型自动填入，也可手动输入)</span></label>
+                      <div class="input-with-action">
+                        <div class="input-history-wrap">
+                          <input class="form-control" id="llmBaseUrl" type="text" list="llmBaseUrlList" placeholder="选择或输入 API 地址，如 https://api.openai.com/v1" autocomplete="off">
+                          <datalist id="llmBaseUrlList"></datalist>
+                          <div class="input-history-dropdown" id="historyBaseUrl"></div>
+                        </div>
+                        <button class="ghost-btn" id="btnClearLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                      </div>
+                    </div>
+                    <div class="field field--wide">
+                      <label for="llmApiKey">API Key <span style="font-size:10px;color:var(--muted);font-weight:400">(可选 · 本地 Ollama 无需填入)</span></label>
+                      <div class="input-history-wrap">
+                        <input class="form-control" id="llmApiKey" type="password" placeholder="sk-... 或留空" autocomplete="off">
+                        <div class="input-history-dropdown" id="historyApiKey"></div>
+                      </div>
+                    </div>
+                    <div class="field field--wide">
+                      <label for="llmModel">Model</label>
+                      <div class="input-with-action">
+                        <div class="input-history-wrap">
+                          <input class="form-control" id="llmModel" type="text" placeholder="gemini-3.5-flash" autocomplete="off">
+                          <div class="input-history-dropdown" id="historyModel"></div>
+                        </div>
+                        <button class="ghost-btn" id="btnModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="llmTemperature">Temperature</label>
+                      <input class="form-control" id="llmTemperature" type="number" min="0" max="2" step="0.1" value="0.7">
+                    </div>
+                    <div class="field">
+                      <label for="llmMaxTokens">Max Tokens</label>
+                      <input class="form-control" id="llmMaxTokens" type="number" min="64" max="131072" step="256" value="131072">
+                    </div>
+                  </div>
+                  <div class="llm-status" id="llmStatus">未配置 · 可选填，配置后可使用 RAG 问答</div>
+                </article>
+              </div>
+
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>RAG 问答</h3>
+                      <p>提问时会先自动检索本地 chunk / 知识库证据，再调用已配置的 LLM 回答。</p>
+                    </div>
+                    <div class="panel-tools">
+                      <button class="ghost-btn" id="btnClearAnswer" type="button"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>清空</span></button>
+                    </div>
+                  </div>
+                  <div class="ask-row">
+                    <textarea class="form-control" id="askInput" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+                    <button class="btn" id="btnAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
+                  </div>
+                  <div class="ask-answer" id="askAnswer"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>结果列表</h3>
+                    </div>
+                  </div>
+                  <div class="results-list" id="searchResults"></div>
+                </article>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="page" id="page-architecture">
-          <div class="page-stack">
-            <div class="arch-grid" id="archGrid">
-              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:folder-input"></iconify-icon></span><h4>01 上传与预检</h4></div><p>支持单文件、批量文件与目录拖拽；前端在上传前过滤扩展名，后端再次验证类型并保留相对路径。</p></article>
-              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:file-type-2"></iconify-icon></span><h4>02 解析与清洗</h4></div><p>JSON 支持更复杂结构提取，PDF / DOCX / TXT / Markdown / CSV / TSV / LOG 统一走解析分派，并汇总质量问题。</p></article>
-              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:database"></iconify-icon></span><h4>03 分块与向量化</h4></div><p>标题触发分块和多级断点切分同时保留，chunk metadata 额外记录来源扩展名与来源类型。</p></article>
-              <article class="panel arch-item"><div class="arch-head"><span class="arch-icon"><iconify-icon icon="lucide:gauge"></iconify-icon></span><h4>04 检索与基准</h4></div><p>语义检索、延迟统计与本地压测集成在同一控制台中，便于做链路回归和性能观察。</p></article>
+        <div class="modal" id="modelCatalog" hidden role="dialog" aria-modal="true" aria-labelledby="modelCatalogTitle">
+          <div class="modal-backdrop" data-modal-close></div>
+          <div class="modal-content">
+            <div class="modal-head">
+              <div>
+                <h3 id="modelCatalogTitle">常用模型参考</h3>
+                <p>点击任意模型即可复制到剪贴板并填入 Model 字段</p>
+              </div>
+              <button class="icon-btn" data-modal-close type="button" aria-label="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
             </div>
+            <div class="modal-body" id="modelCatalogBody"></div>
           </div>
-        </section>
+        </div>
 
         <section class="page" id="page-benchmark">
           <div class="page-stack">
