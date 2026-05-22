@@ -4606,9 +4606,17 @@ function buildAskMessages(question) {
 
 async function ensureAskContext(question) {
   // 每次问答都强制重新检索，确保获取最新、最相关的上下文
-  if (els.searchInput) els.searchInput.value = question;
-  if (els.searchMeta) els.searchMeta.textContent = "正在为 RAG 问答自动检索上下文...";
-  await runSearch();
+  const previousSearchInput = els.searchInput?.value ?? "";
+  try {
+    // Use the RAG question for retrieval without leaving it in the manual search box.
+    if (els.searchInput) els.searchInput.value = question;
+    if (els.searchMeta) els.searchMeta.textContent = "正在为 RAG 问答自动检索上下文...";
+    await runSearch();
+  } finally {
+    if (els.searchInput && els.searchInput.value === question) {
+      els.searchInput.value = previousSearchInput;
+    }
+  }
 
   const results = Array.isArray(state.lastSearch?.results) ? state.lastSearch.results : [];
   if (!results.length) {
