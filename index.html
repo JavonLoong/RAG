@@ -1289,6 +1289,155 @@ svg { width: 100%; height: auto; display: block; }
   51%, 100% { opacity: 0; }
 }
 
+.kg-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.kg-flow-step,
+.kg-type-row,
+.kg-triple-row,
+.kg-artifact-row {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+}
+
+.kg-flow-step {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-height: 148px;
+}
+
+.kg-step-index {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kg-step-title,
+.kg-type-name,
+.kg-triple-title,
+.kg-artifact-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.kg-step-note,
+.kg-type-desc,
+.kg-triple-evidence,
+.kg-artifact-desc {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.kg-two-col {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.85fr) minmax(460px, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.kg-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.kg-type-list,
+.kg-triple-list,
+.kg-artifact-list,
+.kg-book-list,
+.kg-chip-cloud {
+  display: grid;
+  gap: 10px;
+}
+
+.kg-type-row,
+.kg-triple-row,
+.kg-artifact-row {
+  display: grid;
+  gap: 8px;
+}
+
+.kg-type-row .queue-meta,
+.kg-triple-row .queue-meta,
+.kg-artifact-row .queue-meta {
+  margin-top: 0;
+}
+
+.kg-relation-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--accent-2);
+}
+
+.kg-triple-title {
+  font-family: var(--font-mono);
+  line-height: 1.55;
+}
+
+.kg-triple-title span {
+  color: var(--accent-2);
+}
+
+.kg-chip-cloud {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kg-chip-cloud .pill {
+  justify-content: space-between;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.kg-graph-frame {
+  min-height: 360px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  overflow: auto;
+}
+
+.kg-graph-frame img {
+  display: block;
+  width: 100%;
+  min-width: 900px;
+  height: auto;
+}
+
+.kg-artifact-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+@media (max-width: 1280px) {
+  .kg-flow-grid,
+  .kg-three-col,
+  .kg-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .kg-chip-cloud {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─────── Modal ─────── */
 .modal {
   position: fixed;
@@ -1558,113 +1707,7 @@ const MODEL_CATALOG = [
 ];
 
 const LLM_STORAGE_KEY = "rag_llm_settings_v1";
-const LLM_HISTORY_KEY = "rag_llm_input_history_v1";
-const LLM_HISTORY_MAX = 10;
 
-function loadInputHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(LLM_HISTORY_KEY) || "{}");
-  } catch { return {}; }
-}
-
-function saveInputHistoryEntry(field, value) {
-  const v = String(value || "").trim();
-  if (!v) return;
-  const store = loadInputHistory();
-  const list = Array.isArray(store[field]) ? store[field] : [];
-  const filtered = list.filter((item) => item !== v);
-  filtered.unshift(v);
-  store[field] = filtered.slice(0, LLM_HISTORY_MAX);
-  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
-}
-
-function removeInputHistoryEntry(field, value) {
-  const store = loadInputHistory();
-  const list = Array.isArray(store[field]) ? store[field] : [];
-  store[field] = list.filter((item) => item !== value);
-  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
-}
-
-function clearInputHistory(field) {
-  const store = loadInputHistory();
-  store[field] = [];
-  try { localStorage.setItem(LLM_HISTORY_KEY, JSON.stringify(store)); } catch {}
-}
-
-function getInputHistory(field) {
-  const store = loadInputHistory();
-  return Array.isArray(store[field]) ? store[field] : [];
-}
-
-function renderHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
-  const items = getInputHistory(field);
-  if (!items.length) {
-    dropdownEl.innerHTML = '<div class="history-empty">暂无历史记录</div>';
-    return;
-  }
-  const header = `<div class="history-header"><span>历史记录</span><button class="history-clear-all" data-history-clear="${escapeHtml(field)}">清空</button></div>`;
-  const rows = items.map((item) => {
-    const display = maskValue ? item.slice(0, 6) + "••••••" + item.slice(-4) : item;
-    return `<button class="history-item" type="button" data-history-value="${escapeHtml(item)}" data-history-field="${escapeHtml(field)}"><span title="${escapeHtml(item)}">${escapeHtml(display)}</span><iconify-icon class="history-delete" icon="lucide:x" data-history-delete="${escapeHtml(item)}" data-history-delete-field="${escapeHtml(field)}"></iconify-icon></button>`;
-  }).join("");
-  dropdownEl.innerHTML = header + rows;
-}
-
-function openHistoryDropdown(dropdownEl, field, inputEl, maskValue) {
-  renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
-  dropdownEl.classList.add("is-open");
-}
-
-function closeAllHistoryDropdowns() {
-  document.querySelectorAll(".input-history-dropdown.is-open").forEach((el) => el.classList.remove("is-open"));
-}
-
-function initInputHistory(inputEl, dropdownEl, field, maskValue = false) {
-  if (!inputEl || !dropdownEl) return;
-
-  inputEl.addEventListener("focus", () => {
-    closeAllHistoryDropdowns();
-    openHistoryDropdown(dropdownEl, field, inputEl, maskValue);
-  });
-
-  inputEl.addEventListener("blur", (event) => {
-    // Save to history on blur if value is non-empty
-    const v = inputEl.value.trim();
-    if (v) saveInputHistoryEntry(field, v);
-    // Delay close so click on dropdown item fires first
-    setTimeout(() => {
-      if (!dropdownEl.contains(document.activeElement)) {
-        dropdownEl.classList.remove("is-open");
-      }
-    }, 200);
-  });
-
-  dropdownEl.addEventListener("mousedown", (event) => {
-    event.preventDefault(); // prevent blur on input
-
-    const deleteIcon = event.target.closest("[data-history-delete]");
-    if (deleteIcon) {
-      removeInputHistoryEntry(deleteIcon.dataset.historyDeleteField, deleteIcon.dataset.historyDelete);
-      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
-      return;
-    }
-
-    const clearBtn = event.target.closest("[data-history-clear]");
-    if (clearBtn) {
-      clearInputHistory(clearBtn.dataset.historyClear);
-      renderHistoryDropdown(dropdownEl, field, inputEl, maskValue);
-      return;
-    }
-
-    const item = event.target.closest("[data-history-value]");
-    if (item) {
-      inputEl.value = item.dataset.historyValue;
-      dropdownEl.classList.remove("is-open");
-      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
-      inputEl.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-  });
-}
 
 function cleanLLMEndpoint(value) {
   return String(value || "").trim().replace(/\s*\(.+$/, "").replace(/\/+$/, "");
@@ -1824,6 +1867,153 @@ const PUBLIC_DEMO_SEARCH_RESULTS = [
     distance: 0.26,
     metadata: { filename: "四本书 KG / 故障 POC 三元组.csv", source_kind: "CSV", chunk_index: 14, record_id: "demo-kg-fault-triples-014", estimated_tokens: 105, page_nums: "triples" }
   }];
+
+const KG_ARTIFACT_BASE = "00_项目成果总览_先看这里/06_四本书KG工具跑通演示/";
+const KG_DEMO = {
+  summary: {
+    books: 4,
+    pages: 1592,
+    chunks: 4955,
+    triples: 240,
+    nodes: 102,
+    evidence: 240,
+    sqlite: "graph_store.sqlite",
+    method: "小 schema + 代码规则抽取",
+    status: "KG construction 已跑通；GraphRAG 问答链路仍在继续接"
+  },
+  books: [
+    { name: "燃气涡轮发动机燃烧 第3版", pages: 442, chars: 1078898, triples: 81 },
+    { name: "先进燃气轮机燃烧室", pages: 603, chars: 1672703, triples: 40 },
+    { name: "燃气轮机原理、结构与应用 上", pages: 485, chars: 1393699, triples: 62 },
+    { name: "燃气轮机（南京燃气轮机研究所编）", pages: 62, chars: 223142, triples: 57 }
+  ],
+  steps: [
+    { title: "选资料", note: "先用 OCR 质量相对放心的 4 本燃气轮机资料，避免一上来被脏数据拖乱。" },
+    { title: "OCR 文本", note: "扫描 PDF 先变成 pages.jsonl，每页保留页码和来源。" },
+    { title: "切 chunk", note: "把页文本切成可检索片段，本次生成 4955 个 chunk。" },
+    { title: "定 schema", note: "先限定实体类型和关系类型，避免全部抽成 related_to。" },
+    { title: "抽实体", note: "从 chunk 中识别设备、部件、参数、问题、方法、燃料等候选实体。" },
+    { title: "抽关系", note: "用代码规则和触发词把实体连成候选三元组。" },
+    { title: "绑 evidence", note: "每条三元组都带原文证据、页码、来源文件和置信度。" },
+    { title: "成图谱", note: "产出 triples、graph.json、SVG 图谱，并导入本地 SQLite 图存储。" }
+  ],
+  entityTypes: {
+    Equipment: "燃气轮机、燃烧室、压气机、涡轮等设备或系统。",
+    Component: "设备部件、子系统或结构单元。",
+    Fuel: "燃料类别或具体燃料。",
+    Parameter: "热效率、压比、功率、温度、排放等参数。",
+    Problem: "回火、熄火、振荡、结焦、污染排放等问题。",
+    Method: "冷却、预混燃烧、分级燃烧、联合循环等方法。",
+    Property: "优点、性能特征、约束或要求。",
+    Concept: "技术概念、类别、术语或抽象对象。"
+  },
+  entityTypeCounts: {
+    Equipment: 5,
+    Component: 8,
+    Parameter: 35,
+    Problem: 5,
+    Method: 15,
+    Fuel: 8,
+    Concept: 14,
+    Property: 12
+  },
+  topEntities: [
+    ["燃气轮机", 92],
+    ["燃烧室", 61],
+    ["排放", 47],
+    ["涡轮", 23],
+    ["功率", 18],
+    ["污染", 18],
+    ["透平", 18],
+    ["压气机", 17],
+    ["联合循环", 17]
+  ],
+  relationTypes: {
+    HAS_COMPONENT: "主体设备包含某个部件或子系统。",
+    USES_FUEL: "设备或燃烧室使用某类燃料。",
+    HAS_PARAMETER: "设备、部件或过程关联某个参数。",
+    HAS_PROBLEM: "设备、部件或过程存在某类问题或风险。",
+    IMPROVED_BY: "某个性能或对象可由某方法改善。",
+    REDUCED_BY: "某个排放、损失或风险可由某方法降低。",
+    HAS_FUNCTION: "部件或系统承担某个功能。",
+    HAS_SUBTYPE: "概念、设备或结构拥有下位类型。",
+    RELATED_TO: "证据中存在明确共现，但关系暂时不细分。"
+  },
+  relationCounts: {
+    HAS_PARAMETER: 85,
+    HAS_PROBLEM: 51,
+    HAS_COMPONENT: 24,
+    HAS_SUBTYPE: 20,
+    USES_FUEL: 19,
+    IMPROVED_BY: 18,
+    HAS_FUNCTION: 12,
+    RELATED_TO: 11
+  },
+  triples: [
+    {
+      id: "FBKG-0001",
+      s: "燃气轮机",
+      st: "Equipment",
+      p: "HAS_COMPONENT",
+      o: "压气机",
+      ot: "Component",
+      evidence: "本书主要叙述了燃气轮机及其组成部件：压气机、燃烧室和透平的工作原理、设计特点等。",
+      source: "燃气轮机原理、结构与应用 上",
+      page: 4,
+      confidence: 0.72
+    },
+    {
+      id: "FBKG-0002",
+      s: "燃气轮机",
+      st: "Equipment",
+      p: "HAS_COMPONENT",
+      o: "燃烧室",
+      ot: "Component",
+      evidence: "原文把燃烧室列为燃气轮机组成部件之一。",
+      source: "燃气轮机原理、结构与应用 上",
+      page: 4,
+      confidence: 0.72
+    },
+    {
+      id: "FBKG-0004",
+      s: "燃气轮机",
+      st: "Equipment",
+      p: "IMPROVED_BY",
+      o: "联合循环",
+      ot: "Method",
+      evidence: "文本中同时讨论燃气轮机调节控制、联合循环和应用，用于抽取改进/应用方向候选关系。",
+      source: "燃气轮机原理、结构与应用 上",
+      page: 4,
+      confidence: 0.72
+    },
+    {
+      id: "FBKG-0238",
+      s: "联合循环",
+      st: "Method",
+      p: "USES_FUEL",
+      o: "天然气",
+      ot: "Fuel",
+      evidence: "直至现在，联合循环主要还以天然气、轻柴油或重油为燃料。",
+      source: "燃气轮机（南京燃气轮机研究所编）",
+      page: 16,
+      confidence: 0.83
+    }
+  ],
+  methodNotes: [
+    "这一版实体和关系主要是代码规则抽出来的，不是让大模型自由发挥。",
+    "规则会先看 schema：哪些词能算设备、部件、参数、问题、方法，哪些关系允许出现。",
+    "关系不是越多越好。太宽会变成 related_to，太细会像把一句话的谓语硬翻译成英文。",
+    "后续可以让 LLM 按同一套 schema 抽取，再和这一版规则结果、人审结果对比。"
+  ],
+  artifacts: [
+    { file: "knowledge_graph.svg", title: "知识图谱 SVG", desc: "把三元组画成节点和边，适合展示整体结构。" },
+    { file: "kg_evidence_viewer.html", title: "三元组 / evidence 查看页", desc: "逐条查看三元组、原文证据、来源页码和置信度。" },
+    { file: "schema.json", title: "schema 规则", desc: "实体类型和关系类型的约束表。" },
+    { file: "triples.json", title: "候选三元组", desc: "240 条带 evidence 的结构化关系。" },
+    { file: "graph.json", title: "图谱结构", desc: "102 个节点、240 条边，可供后续图检索或入库。" },
+    { file: "run_report.md", title: "运行记录", desc: "这次 POC 输入、输出和汇报口径。" }
+  ]
+};
 
 const state = {
   online: false,
@@ -2877,6 +3067,18 @@ function resolveEls() {
     btnAsk: $("btnAsk"),
     btnClearAnswer: $("btnClearAnswer"),
     askAnswer: $("askAnswer"),
+    kgStats: $("kgStats"),
+    kgFlow: $("kgFlow"),
+    kgBookList: $("kgBookList"),
+    kgMethodNotes: $("kgMethodNotes"),
+    kgEntities: $("kgEntities"),
+    kgEntityCloud: $("kgEntityCloud"),
+    kgRelations: $("kgRelations"),
+    kgTriples: $("kgTriples"),
+    kgArtifacts: $("kgArtifacts"),
+    kgGraphImage: $("kgGraphImage"),
+    kgEvidenceOpen: $("kgEvidenceOpen"),
+    kgSvgOpen: $("kgSvgOpen"),
     benchDocs: $("benchDocs"),
     benchBatch: $("benchBatch"),
     benchQueries: $("benchQueries"),
@@ -3141,10 +3343,21 @@ function renderEmpty(container, message) {
   container.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
 }
 
-function setPage(page) {
-  state.page = page;
+function normalizePageName(page) {
+  const name = String(page || "").replace(/^#/, "");
+  return ["overview", "data", "search", "kg", "benchmark"].includes(name) ? name : "overview";
+}
+
+function initialPageName() {
+  const params = new URLSearchParams(window.location.search || "");
+  return normalizePageName(params.get("page") || window.location.hash.slice(1) || "overview");
+}
+
+function setPage(page, options = {}) {
+  const nextPage = normalizePageName(page);
+  state.page = nextPage;
   els.pages.forEach((element) => {
-    const isActive = element.id === `page-${page}`;
+    const isActive = element.id === `page-${nextPage}`;
     element.classList.toggle("active", isActive);
     if (isActive) {
       element.style.animation = "none";
@@ -3153,8 +3366,11 @@ function setPage(page) {
     }
   });
   els.navList?.querySelectorAll(".nav-item").forEach((button) => {
-    button.classList.toggle("active", button.dataset.page === page);
+    button.classList.toggle("active", button.dataset.page === nextPage);
   });
+  if (options.updateHash !== false && window.location.hash.slice(1) !== nextPage) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${nextPage}`);
+  }
 }
 
 function renderSparkline(svg, values, color) {
@@ -3761,6 +3977,144 @@ function renderBenchmark() {
   `).join("");
 }
 
+function kgArtifactHref(fileName) {
+  const here = window.location.pathname.replaceAll("\\", "/");
+  const base = here.includes("/frontend_app/current_console/")
+    ? `../../${KG_ARTIFACT_BASE}`
+    : KG_ARTIFACT_BASE;
+  return encodeURI(`${base}${fileName}`);
+}
+
+function renderKgWorkflow() {
+  if (!els.kgStats) return;
+  const summary = KG_DEMO.summary;
+  const statCards = [
+    ["资料", `${summary.books} 本`, `${formatNumber(summary.pages)} 页 OCR 文本`],
+    ["分块", formatNumber(summary.chunks), "用于普通 RAG 检索"],
+    ["三元组", formatNumber(summary.triples), `${formatNumber(summary.evidence)} 条 evidence`],
+    ["图谱", `${formatNumber(summary.nodes)} 节点`, `${summary.sqlite} 已生成`]
+  ];
+  els.kgStats.innerHTML = statCards.map(([label, value, desc]) => `
+    <article class="panel metric-card">
+      <div class="metric-top">
+        <div>
+          <p class="card-kicker">${escapeHtml(label)}</p>
+          <div class="metric-value">${escapeHtml(value)}</div>
+        </div>
+      </div>
+      <p>${escapeHtml(desc)}</p>
+    </article>
+  `).join("");
+
+  if (els.kgFlow) {
+    els.kgFlow.innerHTML = KG_DEMO.steps.map((step, index) => `
+      <article class="kg-flow-step">
+        <div class="kg-step-index">${String(index + 1).padStart(2, "0")}</div>
+        <div class="kg-step-title">${escapeHtml(step.title)}</div>
+        <p class="kg-step-note">${escapeHtml(step.note)}</p>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgBookList) {
+    els.kgBookList.innerHTML = KG_DEMO.books.map((book) => `
+      <article class="kg-type-row">
+        <div class="kg-type-name">${escapeHtml(book.name)}</div>
+        <div class="queue-meta">
+          <span>${formatNumber(book.pages)} 页</span>
+          <span>${formatNumber(book.chars)} 字符</span>
+          <span>${formatNumber(book.triples)} 条三元组</span>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgMethodNotes) {
+    els.kgMethodNotes.innerHTML = KG_DEMO.methodNotes.map((note) => `
+      <article class="kg-type-row">
+        <p class="kg-type-desc">${escapeHtml(note)}</p>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgEntities) {
+    els.kgEntities.innerHTML = Object.entries(KG_DEMO.entityTypes).map(([type, desc]) => `
+      <article class="kg-type-row">
+        <div class="queue-head">
+          <div class="kg-type-name">${escapeHtml(type)}</div>
+          <span class="kg-relation-count">${formatNumber(KG_DEMO.entityTypeCounts[type] || 0)}</span>
+        </div>
+        <p class="kg-type-desc">${escapeHtml(desc)}</p>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgEntityCloud) {
+    els.kgEntityCloud.innerHTML = KG_DEMO.topEntities.map(([name, degree]) => `
+      <span class="pill"><span>${escapeHtml(name)}</span><strong>${formatNumber(degree)}</strong></span>
+    `).join("");
+  }
+
+  if (els.kgRelations) {
+    els.kgRelations.innerHTML = Object.entries(KG_DEMO.relationTypes).map(([type, desc]) => `
+      <article class="kg-type-row">
+        <div class="queue-head">
+          <div class="kg-type-name">${escapeHtml(type)}</div>
+          <span class="kg-relation-count">${formatNumber(KG_DEMO.relationCounts[type] || 0)}</span>
+        </div>
+        <p class="kg-type-desc">${escapeHtml(desc)}</p>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgTriples) {
+    els.kgTriples.innerHTML = KG_DEMO.triples.map((item) => `
+      <article class="kg-triple-row">
+        <div class="queue-head">
+          <div>
+            <div class="kg-triple-title">${escapeHtml(item.s)} <span>${escapeHtml(item.p)}</span> ${escapeHtml(item.o)}</div>
+            <div class="result-meta">
+              <span>${escapeHtml(item.st)} → ${escapeHtml(item.ot)}</span>
+              <span>${escapeHtml(item.id)}</span>
+              <span>confidence ${formatPercent(item.confidence, 0)}</span>
+            </div>
+          </div>
+          <span class="pill">p.${escapeHtml(item.page)}</span>
+        </div>
+        <p class="kg-triple-evidence">${escapeHtml(item.evidence)}</p>
+        <div class="queue-meta">
+          <span>${escapeHtml(item.source)}</span>
+          <span>每条都绑定 evidence，便于人工判断正误。</span>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgArtifacts) {
+    els.kgArtifacts.innerHTML = KG_DEMO.artifacts.map((item) => `
+      <article class="kg-artifact-row">
+        <div>
+          <div class="kg-artifact-title">${escapeHtml(item.title)}</div>
+          <p class="kg-artifact-desc">${escapeHtml(item.desc)}</p>
+        </div>
+        <a class="ghost-btn" href="${escapeHtml(kgArtifactHref(item.file))}" target="_blank" rel="noopener">
+          ${iconMarkup("lucide:external-link")}<span>打开</span>
+        </a>
+      </article>
+    `).join("");
+  }
+
+  if (els.kgGraphImage) {
+    els.kgGraphImage.src = kgArtifactHref("knowledge_graph.svg");
+  }
+  if (els.kgEvidenceOpen) {
+    els.kgEvidenceOpen.href = kgArtifactHref("kg_evidence_viewer.html");
+  }
+  if (els.kgSvgOpen) {
+    els.kgSvgOpen.href = kgArtifactHref("knowledge_graph.svg");
+  }
+}
+
 function renderAll() {
   renderStatus();
   renderCollectionSpectrum();
@@ -3774,6 +4128,7 @@ function renderAll() {
   renderQualityReport();
   renderSearchResults();
   renderBenchmark();
+  renderKgWorkflow();
 }
 
 
@@ -4207,83 +4562,10 @@ function populateBaseUrlDatalist() {
     .join("");
 }
 
-function clearLLMSettings() {
-  if (els.llmBaseUrl) els.llmBaseUrl.value = "";
-  if (els.llmApiKey) els.llmApiKey.value = "";
-  if (els.llmModel) els.llmModel.value = "";
-  if (els.llmTemperature) els.llmTemperature.value = "0.7";
-  if (els.llmMaxTokens) els.llmMaxTokens.value = "131072";
-  saveLLMSettings();
-  showToast("LLM 配置已清空", "success");
-}
-
-function loadLLMSettings() {
-  try {
-    const raw = localStorage.getItem(LLM_STORAGE_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
-      if (els.llmBaseUrl) els.llmBaseUrl.value = data.baseUrl || "";
-      if (els.llmApiKey) els.llmApiKey.value = data.apiKey || "";
-      if (els.llmModel) els.llmModel.value = data.model || "";
-      if (els.llmTemperature && data.temperature != null) els.llmTemperature.value = data.temperature;
-      if (els.llmMaxTokens && data.maxTokens != null) els.llmMaxTokens.value = data.maxTokens;
-    }
-  } catch {}
-  updateLLMStatus();
-}
-
-function saveLLMSettings() {
-  try {
-    const cfg = readLLMSettings();
-    localStorage.setItem(LLM_STORAGE_KEY, JSON.stringify(cfg));
-  } catch {}
-  updateLLMStatus();
-}
-
-function openModelCatalog() {
-  if (!els.modelCatalog || !els.modelCatalogBody) return;
-  els.modelCatalogBody.innerHTML = MODEL_CATALOG.map((group) => {
-    const cleanEndpoint = group.endpoint.replace(/\s*\(.+$/, "");
-    const items = group.models.map((m) => `
-      <button class="model-row" type="button"
-              data-model-name="${escapeHtml(m.name)}"
-              data-endpoint="${escapeHtml(cleanEndpoint)}">
-        <span class="model-name">${escapeHtml(m.name)}</span>
-        <span class="model-desc">${escapeHtml(m.desc || "")}</span>
-        <iconify-icon class="model-copy" icon="lucide:clipboard-copy"></iconify-icon>
-      </button>
-    `).join("");
-    return `
-      <div class="model-group">
-        <div class="model-group-label">
-          <span>${escapeHtml(group.label)}</span>
-          <span class="endpoint">${escapeHtml(group.endpoint)}</span>
-        </div>
-        ${items}
-      </div>
-    `;
-  }).join("");
-  els.modelCatalog.hidden = false;
-}
-
 function closeModelCatalog() {
   if (els.modelCatalog) els.modelCatalog.hidden = true;
 }
 
-async function pickModelFromCatalog(modelName, endpoint) {
-  if (els.llmModel) els.llmModel.value = modelName;
-  if (els.llmBaseUrl && !els.llmBaseUrl.value.trim() && endpoint) {
-    els.llmBaseUrl.value = endpoint;
-  }
-  saveLLMSettings();
-  let copied = false;
-  try {
-    await navigator.clipboard.writeText(modelName);
-    copied = true;
-  } catch {}
-  showToast(copied ? `已复制并填入：${modelName}` : `已填入：${modelName}`, "success");
-  closeModelCatalog();
-}
 
 function readLLMSettings() {
   return {
@@ -4856,25 +5138,7 @@ function bindEvents() {
   document.getElementById("btnClearLlm")?.addEventListener("click", clearLLMSettings);
   document.getElementById("btnRefreshLlm")?.addEventListener("click", refreshLLMConfig);
 
-  // Refresh button reloads saved LLM settings
-  document.getElementById("btnRefreshLlm")?.addEventListener("click", () => {
-    loadLLMSettings();
-    populateLLMProviderSelect();
-    populateBaseUrlDatalist();
-    showToast("LLM 配置已从本地存储刷新", "success");
-  });
 
-  // Input history for Base URL, API Key, Model
-  initInputHistory(els.llmBaseUrl, document.getElementById("historyBaseUrl"), "baseUrl", false);
-  initInputHistory(els.llmApiKey, document.getElementById("historyApiKey"), "apiKey", true);
-  initInputHistory(els.llmModel, document.getElementById("historyModel"), "model", false);
-
-  // Close history dropdowns on outside click
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest(".input-history-wrap")) {
-      closeAllHistoryDropdowns();
-    }
-  });
   els.modelCatalog?.addEventListener("click", (event) => {
     if (event.target.closest("[data-modal-close]")) {
       closeModelCatalog();
@@ -4982,7 +5246,7 @@ async function init() {
   loadLLMSettings();
   populateBaseUrlDatalist();
   bindInputHistoryEvents();
-  setPage("overview");
+  setPage(initialPageName(), { updateHash: false });
   if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO) {
     activatePublicDemoSnapshot();
   } else {
@@ -5010,6 +5274,7 @@ window.addEventListener("DOMContentLoaded", init);
         <button class="nav-item active" data-page="overview" type="button"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>系统总览</span></button>
         <button class="nav-item" data-page="data" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>数据接入</span></button>
         <button class="nav-item" data-page="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
+        <button class="nav-item" data-page="kg" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>KG流程</span></button>
         <button class="nav-item" data-page="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
       </nav>
 
@@ -5036,6 +5301,7 @@ window.addEventListener("DOMContentLoaded", init);
               <div class="hero-actions">
                 <button class="btn" data-jump="data" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传并入库</span></button>
                 <button class="ghost-btn" data-jump="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
+                <button class="ghost-btn" data-jump="kg" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>查看KG流程</span></button>
                 <button class="ghost-btn" data-jump="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能压测</span></button>
               </div>
             </article>
@@ -5362,6 +5628,119 @@ window.addEventListener("DOMContentLoaded", init);
                 </article>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-kg">
+          <div class="page-stack">
+            <article class="panel hero-card">
+              <div class="hero-chip"><iconify-icon icon="lucide:network"></iconify-icon><span>KG Construction</span></div>
+              <h3>知识图谱构建全流程</h3>
+              <p>这里展示的不是概念图，而是这次用四本资料真正跑出来的中间产物：文本、chunk、schema、实体、关系、三元组、evidence 和图谱文件。</p>
+              <div class="hero-actions">
+                <a class="btn" href="#" id="kgEvidenceOpen" target="_blank" rel="noopener"><iconify-icon icon="lucide:table-properties"></iconify-icon><span>打开 evidence 查看页</span></a>
+                <a class="ghost-btn" href="#" id="kgSvgOpen" target="_blank" rel="noopener"><iconify-icon icon="lucide:image"></iconify-icon><span>打开图谱 SVG</span></a>
+              </div>
+            </article>
+
+            <div class="metric-grid metric-grid--summary" id="kgStats"></div>
+
+            <div class="kg-two-col">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Pipeline</p>
+                    <h3>从资料到图谱</h3>
+                  </div>
+                  <span class="pill">已跑通</span>
+                </div>
+                <div class="kg-flow-grid" id="kgFlow"></div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Input</p>
+                    <h3>这次使用的四本资料</h3>
+                  </div>
+                  <span class="pill">OCR 质量较放心</span>
+                </div>
+                <div class="kg-book-list" id="kgBookList"></div>
+              </article>
+            </div>
+
+            <div class="kg-three-col">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Entity Extraction</p>
+                    <h3>实体抽取看什么</h3>
+                  </div>
+                </div>
+                <div class="kg-type-list" id="kgEntities"></div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Relation Extraction</p>
+                    <h3>关系抽取看什么</h3>
+                  </div>
+                </div>
+                <div class="kg-type-list" id="kgRelations"></div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Method</p>
+                    <h3>这一版怎么抽的</h3>
+                  </div>
+                  <span class="pill">规则版</span>
+                </div>
+                <div class="kg-type-list" id="kgMethodNotes"></div>
+                <div style="margin-top:14px;">
+                  <p class="card-kicker">高频节点</p>
+                  <div class="kg-chip-cloud" id="kgEntityCloud"></div>
+                </div>
+              </article>
+            </div>
+
+            <div class="kg-two-col">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Triple + Evidence</p>
+                    <h3>候选三元组样例</h3>
+                  </div>
+                  <span class="pill">240 条完整结果见 evidence 页</span>
+                </div>
+                <div class="kg-triple-list" id="kgTriples"></div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-kicker">Graph View</p>
+                    <h3>图谱图片</h3>
+                  </div>
+                </div>
+                <div class="kg-graph-frame">
+                  <img id="kgGraphImage" alt="四本书知识图谱 SVG">
+                </div>
+              </article>
+            </div>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-kicker">Artifacts</p>
+                  <h3>这次能交付的文件</h3>
+                </div>
+                <span class="pill">可直接打开展示</span>
+              </div>
+              <div class="kg-artifact-list" id="kgArtifacts"></div>
+            </article>
           </div>
         </section>
 

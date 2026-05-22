@@ -1,0 +1,35 @@
+stages:
+  - build
+  - deploy
+
+build-job:
+  stage: build
+  tags:
+    - jn
+  script:
+    - echo "Building Docker image for the workspace..."
+    - sudo docker build -t power-equipment-rag-workspace:latest .
+    - echo "Build complete."
+
+deploy-job:
+  stage: deploy
+  environment: production
+  tags:
+    - jn
+  script:
+    - echo "Starting workspace container..."
+    - sudo docker rm -f power-equipment-rag-workspace-container || true
+    - sudo docker run -d -p 8000:8000 --name power-equipment-rag-workspace-container power-equipment-rag-workspace:latest
+    - sleep 30
+    - python - <<'PY'
+import json
+import urllib.request
+
+with urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=30) as resp:
+    payload = json.loads(resp.read().decode("utf-8"))
+print(payload)
+assert payload["status"] == "ok", payload
+PY
+    - sudo docker logs power-equipment-rag-workspace-container
+    - sudo docker rm -f power-equipment-rag-workspace-container || true
+    - echo "Application successfully deployed."

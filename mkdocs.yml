@@ -1,0 +1,51 @@
+site_name: Power Equipment RAG Workspace
+repo_url: https://github.com/JavonLoong/RAG
+site_description: Workspace documentation for the power-equipment RAG console, prototype pipeline, and archived experiments.
+site_author: Power Equipment RAG Team
+edit_uri: edit/jiwenlong/vectorize-pipeline/docs/
+repo_name: JavonLoong/RAG
+
+nav:
+  - Overview: index.md
+  - Repository Layout: repository-layout.md
+  - Pipeline Prototype: pipeline-prototype.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["data_pipeline/prototype"]
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/JavonLoong/RAG
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true

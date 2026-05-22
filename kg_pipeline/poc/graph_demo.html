@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>燃气轮机故障最小知识图谱 POC</title>
+  <style>
+    :root {
+      --paper: #f7f6f1;
+      --ink: #202522;
+      --muted: #68726c;
+      --panel: rgba(255, 255, 255, 0.86);
+      --line: #d7d9cf;
+      --green: #147269;
+      --blue: #335f91;
+      --red: #ad4a34;
+      --gold: #8d7226;
+      --purple: #6f5b9a;
+      --shadow: 0 20px 64px rgba(32, 37, 34, 0.13);
+      --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+      --sans: "Aptos", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(116deg, rgba(20, 114, 105, 0.09), transparent 32%),
+        linear-gradient(244deg, rgba(173, 74, 52, 0.09), transparent 38%),
+        repeating-linear-gradient(90deg, rgba(32, 37, 34, 0.024) 0 1px, transparent 1px 88px),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.68;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(51, 95, 145, 0.35); outline-offset: 3px; }
+
+    .shell {
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(32, 37, 34, 0.1);
+      background: rgba(247, 246, 241, 0.92);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar .shell {
+      min-height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      font: 800 20px var(--serif);
+      white-space: nowrap;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid rgba(32, 37, 34, 0.12);
+      background: rgba(255, 255, 255, 0.62);
+      color: #404845;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .hero {
+      padding: 64px 0 32px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 42px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: var(--serif);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 950px;
+      font-size: clamp(40px, 5.8vw, 74px);
+      font-weight: 800;
+    }
+
+    .hero p {
+      max-width: 900px;
+      margin: 22px 0 0;
+      color: #48534e;
+      font-size: 18px;
+    }
+
+    .warning {
+      margin-top: 20px;
+      max-width: 900px;
+      padding: 16px 18px;
+      border: 1px solid rgba(173, 74, 52, 0.18);
+      border-left: 4px solid var(--red);
+      background: rgba(242, 225, 219, 0.72);
+      color: #5c3b31;
+      font-weight: 800;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) 340px;
+      gap: 18px;
+      align-items: start;
+      padding-bottom: 46px;
+    }
+
+    .graph-card, .side-card, .table-card, .text-card {
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .graph-card {
+      position: relative;
+      min-height: 700px;
+      overflow: hidden;
+    }
+
+    .graph-head {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 4;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .graph-title {
+      max-width: 520px;
+      padding: 14px 16px;
+      border: 1px solid rgba(32, 37, 34, 0.10);
+      background: rgba(247, 246, 241, 0.91);
+      backdrop-filter: blur(10px);
+    }
+
+    .graph-title h2 {
+      font-size: 26px;
+    }
+
+    .graph-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .filters {
+      pointer-events: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .filter {
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid rgba(32, 37, 34, 0.14);
+      background: rgba(255, 255, 255, 0.82);
+      color: #3f4944;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .filter.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .graph-area {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 26% 28%, rgba(20, 114, 105, 0.08), transparent 24%),
+        radial-gradient(circle at 78% 62%, rgba(173, 74, 52, 0.08), transparent 27%),
+        rgba(255, 255, 255, 0.20);
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .edge {
+      stroke-width: 1.7;
+      marker-end: url(#arrow);
+    }
+
+    .edge.pass { stroke: rgba(20, 114, 105, 0.45); }
+    .edge.needs_discussion { stroke: rgba(141, 114, 38, 0.52); stroke-dasharray: 5 4; }
+    .edge.reject { stroke: rgba(173, 74, 52, 0.54); stroke-dasharray: 2 5; }
+
+    .edge-label {
+      fill: rgba(64, 72, 68, 0.88);
+      font: 800 10.5px var(--sans);
+      paint-order: stroke;
+      stroke: rgba(247, 246, 241, 0.90);
+      stroke-width: 5px;
+      stroke-linejoin: round;
+    }
+
+    .node {
+      position: absolute;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 118px;
+      min-height: 58px;
+      padding: 9px;
+      color: #fff;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.22;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 16px 38px rgba(32, 37, 34, 0.18);
+    }
+
+    .node.Asset { background: var(--green); }
+    .node.Component { background: #23817a; }
+    .node.Fault { background: var(--red); }
+    .node.Symptom { background: #c16647; }
+    .node.Cause { background: var(--gold); }
+    .node.Parameter { background: var(--purple); }
+    .node.Sensor { background: #5674a2; }
+    .node.Action { background: var(--blue); }
+
+    .side-card {
+      padding: 22px;
+    }
+
+    .side-card + .side-card {
+      margin-top: 18px;
+    }
+
+    .side-card h2 {
+      margin-bottom: 14px;
+      font-size: 25px;
+    }
+
+    .side-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .line {
+      width: 22px;
+      height: 0;
+      border-top: 3px solid var(--green);
+    }
+
+    .line.warn {
+      border-top-color: var(--gold);
+      border-top-style: dashed;
+    }
+
+    .line.bad {
+      border-top-color: var(--red);
+      border-top-style: dotted;
+    }
+
+    ul {
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      position: relative;
+      margin: 10px 0;
+      padding-left: 18px;
+      color: #4b5651;
+      font-size: 14px;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      top: 0.78em;
+      left: 0;
+      width: 8px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    .text-card, .table-card {
+      padding: 24px;
+      margin-bottom: 46px;
+    }
+
+    .text-card h2, .table-card h2 {
+      margin-bottom: 16px;
+      font-size: 29px;
+    }
+
+    .text-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .doc {
+      padding: 16px;
+      border: 1px solid rgba(32, 37, 34, 0.1);
+      background: rgba(247, 246, 241, 0.74);
+    }
+
+    .doc strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 18px;
+    }
+
+    .doc span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border: 1px solid rgba(32, 37, 34, 0.11);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--green);
+      background: rgba(220, 236, 231, 0.58);
+      font-weight: 800;
+    }
+
+    td { color: #44504b; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge.pass { background: var(--green); }
+    .badge.needs_discussion { background: var(--gold); }
+    .badge.reject { background: var(--red); }
+
+    .hidden { display: none; }
+
+    @media (max-width: 1080px) {
+      .layout, .text-grid {
+        grid-template-columns: 1fr;
+      }
+      .graph-card {
+        min-height: 740px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 26px, 1240px);
+      }
+      .topbar {
+        position: static;
+      }
+      .topbar .shell {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+      .nav {
+        justify-content: flex-start;
+      }
+      h1 {
+        font-size: 40px;
+      }
+      .graph-head {
+        position: relative;
+        inset: auto;
+        padding: 16px;
+        flex-direction: column;
+      }
+      .graph-area {
+        position: relative;
+        height: 680px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell">
+      <a class="brand" href="#top">最小知识图谱 POC</a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="README.md">POC README</a>
+        <a href="sample_text.md">样例文本</a>
+        <a href="schema.json">Schema</a>
+        <a href="triples.json">Triples JSON</a>
+        <a href="manual_review.csv">评审表</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <p class="eyebrow">Rule-based / Manual Baseline</p>
+      <h1>燃气轮机故障最小知识图谱样例。</h1>
+      <p>这页把一段模拟设备故障文本、最小 schema、人工整理三元组和人工评审状态画成可检查图谱。它用于下次会议讨论 graph construction，不代表已经调用 LLM 或跑通完整 GraphRAG。</p>
+      <div class="warning">当前结果为人工/规则基线：没有调用 LLM，没有部署 Neo4j，没有做完整问答系统。</div>
+    </section>
+
+    <section class="shell layout">
+      <article class="graph-card">
+        <div class="graph-head">
+          <div class="graph-title">
+            <h2>实体关系图</h2>
+            <p>绿色实线为人工评审通过；金色虚线为待讨论；红色点线为不通过关系。</p>
+          </div>
+          <div class="filters" aria-label="关系筛选">
+            <button class="filter active" type="button" data-filter="all">全部</button>
+            <button class="filter" type="button" data-filter="pass">通过</button>
+            <button class="filter" type="button" data-filter="needs_discussion">待讨论</button>
+            <button class="filter" type="button" data-filter="reject">不通过</button>
+          </div>
+        </div>
+        <div class="graph-area" id="graphArea">
+          <svg id="edgeLayer" aria-label="三元组边"></svg>
+        </div>
+      </article>
+
+      <aside>
+        <article class="side-card">
+          <h2>Schema 摘要</h2>
+          <p>实体类型：Asset、Component、Fault、Symptom、Cause、Parameter、Sensor、Action。</p>
+          <p>关系类型：HAS_COMPONENT、OBSERVED_FAULT、HAS_SYMPTOM、POSSIBLE_CAUSE、INDICATED_BY、MEASURED_BY、RECOMMENDED_ACTION、PERFORMED_ACTION、RESOLVED_AFTER。</p>
+          <div class="legend">
+            <span><i class="line"></i>pass：证据支持，关系合理</span>
+            <span><i class="line warn"></i>needs_discussion：需要老师/领域专家确认</span>
+            <span><i class="line bad"></i>reject：当前不应纳入图谱</span>
+          </div>
+        </article>
+        <article class="side-card">
+          <h2>当前可汇报结论</h2>
+          <ul>
+            <li>最小链路已经形成：文本、schema、三元组、人工评审、可视化。</li>
+            <li>通过关系可作为后续自动抽取的人工基线。</li>
+            <li>待讨论关系暴露了“组合动作归因”和“手册候选原因”两个难点。</li>
+            <li>不通过关系说明不能把检查建议直接当成故障原因。</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+
+    <section class="shell text-card">
+      <h2>样例文本摘要</h2>
+      <div class="text-grid">
+        <article class="doc">
+          <strong>D1 运行记录</strong>
+          <span>GT-07 升负荷后压气机出口温度从 430°C 升至 485°C，VIB-CMP-01 振动读数升至 7.2 mm/s。</span>
+        </article>
+        <article class="doc">
+          <strong>D2 检修记录</strong>
+          <span>发现进气滤网压差偏高、滤网局部堵塞、压气机前三级叶片积灰；清理滤网、安排叶片清洗、复位温度传感器后恢复。</span>
+        </article>
+        <article class="doc">
+          <strong>D3 技术手册</strong>
+          <span>压气机出口温度偏高常见原因包括进气阻力增大、叶片污染、温度传感器漂移；建议检查滤网、清洗叶片、校验传感器。</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell table-card">
+      <h2>人工评审表</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>三元组</th>
+            <th>证据</th>
+            <th>状态</th>
+            <th>评审说明</th>
+          </tr>
+        </thead>
+        <tbody id="tripleTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const triples = [
+      { id: "T01", s: "GT-07 燃气轮机", st: "Asset", p: "HAS_COMPONENT", o: "压气机", ot: "Component", doc: "D1", evidence: "GT-07 燃气轮机升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C。", status: "pass", note: "从压气机出口温度可确认 GT-07 关联压气机部件。" },
+      { id: "T02", s: "GT-07 燃气轮机", st: "Asset", p: "OBSERVED_FAULT", o: "压气机出口温度偏高", ot: "Fault", doc: "D1", evidence: "DCS 触发“压气机出口温度偏高”报警。", status: "pass", note: "报警名称直接来自原文。" },
+      { id: "T03", s: "GT-07 燃气轮机", st: "Asset", p: "HAS_SYMPTOM", o: "振动值升高", ot: "Symptom", doc: "D1", evidence: "振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s。", status: "pass", note: "数值变化明确。" },
+      { id: "T04", s: "压气机出口温度偏高", st: "Fault", p: "POSSIBLE_CAUSE", o: "进气滤网堵塞", ot: "Cause", doc: "D2/D3", evidence: "检修发现进气滤网压差偏高，滤网局部堵塞；技术手册说明常见原因包括进气阻力增大。", status: "pass", note: "D2 现场发现与 D3 常见原因互相支持。" },
+      { id: "T05", s: "压气机出口温度偏高", st: "Fault", p: "POSSIBLE_CAUSE", o: "压气机叶片积灰", ot: "Cause", doc: "D2/D3", evidence: "压气机前三级叶片表面积灰明显；技术手册说明常见原因包括压气机叶片污染。", status: "pass", note: "现场发现和手册原因一致。" },
+      { id: "T06", s: "压气机出口温度偏高", st: "Fault", p: "POSSIBLE_CAUSE", o: "温度传感器漂移", ot: "Cause", doc: "D3", evidence: "压气机出口温度偏高的常见原因包括温度传感器漂移。", status: "needs_discussion", note: "手册列为常见原因，但 D1/D2 没有确认本次故障由传感器漂移导致。" },
+      { id: "T07", s: "进气滤网堵塞", st: "Cause", p: "RECOMMENDED_ACTION", o: "清理或更换滤网", ot: "Action", doc: "D3", evidence: "建议检查进气滤网压差，清理或更换滤网。", status: "pass", note: "建议动作直接来自手册。" },
+      { id: "T08", s: "进气滤网堵塞", st: "Cause", p: "PERFORMED_ACTION", o: "清理进气滤网", ot: "Action", doc: "D2", evidence: "检修人员清理进气滤网。", status: "pass", note: "实际检修动作明确。" },
+      { id: "T09", s: "压气机叶片积灰", st: "Cause", p: "PERFORMED_ACTION", o: "压气机叶片离线清洗", ot: "Action", doc: "D2", evidence: "安排压气机叶片离线清洗。", status: "pass", note: "实际检修动作明确。" },
+      { id: "T10", s: "进气滤网堵塞", st: "Cause", p: "INDICATED_BY", o: "进气滤网压差偏高", ot: "Parameter", doc: "D2", evidence: "进气滤网压差偏高，滤网局部堵塞。", status: "pass", note: "参数现象与检查结论相邻出现。" },
+      { id: "T11", s: "振动值升高", st: "Symptom", p: "MEASURED_BY", o: "VIB-CMP-01", ot: "Sensor", doc: "D1", evidence: "振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s。", status: "pass", note: "传感器与读数关系明确。" },
+      { id: "T12", s: "压气机出口温度偏高", st: "Fault", p: "RESOLVED_AFTER", o: "清理进气滤网", ot: "Action", doc: "D2", evidence: "清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器后，压气机出口温度回落至 438°C。", status: "needs_discussion", note: "恢复发生在多个动作之后，不能单独归因给清理滤网。" },
+      { id: "T13", s: "压气机出口温度偏高", st: "Fault", p: "RESOLVED_AFTER", o: "压气机叶片离线清洗", ot: "Action", doc: "D2", evidence: "清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器后，压气机出口温度回落至 438°C。", status: "needs_discussion", note: "恢复发生在多个动作之后，不能单独归因给叶片清洗。" },
+      { id: "T14", s: "振动值升高", st: "Symptom", p: "POSSIBLE_CAUSE", o: "轴承状态或联轴器对中异常", ot: "Cause", doc: "D3", evidence: "若振动值持续偏高，应进一步检查轴承状态和联轴器对中情况。", status: "reject", note: "原文是后续检查建议，不是本次振动升高的已确认原因。" }
+    ];
+
+    const positions = {
+      "GT-07 燃气轮机": [18, 36],
+      "压气机": [42, 22],
+      "压气机出口温度偏高": [42, 46],
+      "振动值升高": [22, 66],
+      "进气滤网堵塞": [64, 32],
+      "压气机叶片积灰": [64, 54],
+      "温度传感器漂移": [64, 76],
+      "清理或更换滤网": [86, 24],
+      "清理进气滤网": [86, 40],
+      "压气机叶片离线清洗": [86, 60],
+      "进气滤网压差偏高": [78, 12],
+      "VIB-CMP-01": [42, 78],
+      "轴承状态或联轴器对中异常": [86, 82]
+    };
+
+    const typeByEntity = {};
+    triples.forEach((triple) => {
+      typeByEntity[triple.s] = triple.st;
+      typeByEntity[triple.o] = triple.ot;
+    });
+
+    const graphArea = document.getElementById("graphArea");
+    const edgeLayer = document.getElementById("edgeLayer");
+    const table = document.getElementById("tripleTable");
+    let activeFilter = "all";
+
+    function visibleTriples() {
+      return activeFilter === "all" ? triples : triples.filter((triple) => triple.status === activeFilter);
+    }
+
+    function renderGraph() {
+      graphArea.querySelectorAll(".node").forEach((node) => node.remove());
+      edgeLayer.innerHTML = `<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="rgba(32,37,34,0.42)"></path></marker></defs>`;
+
+      const shown = visibleTriples();
+      const shownEntities = new Set();
+
+      shown.forEach((triple) => {
+        shownEntities.add(triple.s);
+        shownEntities.add(triple.o);
+        const [x1, y1] = positions[triple.s];
+        const [x2, y2] = positions[triple.o];
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("class", `edge ${triple.status}`);
+        line.setAttribute("x1", `${x1}%`);
+        line.setAttribute("y1", `${y1}%`);
+        line.setAttribute("x2", `${x2}%`);
+        line.setAttribute("y2", `${y2}%`);
+        edgeLayer.appendChild(line);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("class", "edge-label");
+        label.setAttribute("x", `${(x1 + x2) / 2}%`);
+        label.setAttribute("y", `${(y1 + y2) / 2}%`);
+        label.setAttribute("text-anchor", "middle");
+        label.textContent = `${triple.id} ${triple.p}`;
+        edgeLayer.appendChild(label);
+      });
+
+      shownEntities.forEach((entity) => {
+        const [x, y] = positions[entity];
+        const node = document.createElement("div");
+        node.className = `node ${typeByEntity[entity]}`;
+        node.style.left = `${x}%`;
+        node.style.top = `${y}%`;
+        node.textContent = entity;
+        graphArea.appendChild(node);
+      });
+    }
+
+    function statusLabel(status) {
+      if (status === "pass") return "通过";
+      if (status === "needs_discussion") return "待讨论";
+      return "不通过";
+    }
+
+    function renderTable() {
+      table.innerHTML = triples.map((triple) => {
+        const hidden = activeFilter !== "all" && triple.status !== activeFilter ? " hidden" : "";
+        return `<tr class="${hidden}">
+          <td>${triple.id}</td>
+          <td>${triple.s}<br><strong>${triple.p}</strong><br>${triple.o}</td>
+          <td><strong>${triple.doc}</strong><br>${triple.evidence}</td>
+          <td><span class="badge ${triple.status}">${statusLabel(triple.status)}</span></td>
+          <td>${triple.note}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.querySelectorAll(".filter").forEach((button) => {
+        button.classList.toggle("active", button.dataset.filter === filter);
+      });
+      renderGraph();
+      renderTable();
+    }
+
+    document.querySelectorAll(".filter").forEach((button) => {
+      button.addEventListener("click", () => setFilter(button.dataset.filter));
+    });
+
+    renderGraph();
+    renderTable();
+  </script>
+</body>
+</html>

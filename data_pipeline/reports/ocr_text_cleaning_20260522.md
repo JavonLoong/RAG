@@ -1,0 +1,27 @@
+# OCR Clean Text Report
+
+- Generated at: `2026-05-22T19:49:48`
+- Documents: 13
+- Pages: 5483
+- Pages with TSV removed: 1185
+- TSV rows removed: 272843
+- TSV word rows used: 230420
+- Original text chars: 14836326
+- Cleaned text chars: 4732792
+- Delivery sidecars: 4
+
+| Document | Pages | TSV pages | TSV rows removed | Clean chars | Output |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-l... | 603 | 120 | 31689 | 503916 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\01_422e6d6e9786\document.txt` |
+| 大型燃气-蒸汽联合循环电厂培训教材 M701F燃气轮机汽轮机分册 (深圳能源集团月亮湾燃机电厂，中国电机工程学会燃气轮机发电专业委员会编 etc.) (z-l... | 410 | 71 | 14487 | 321648 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\02_f83c2147c643\document.txt` |
+| 燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 442 | 78 | 18588 | 395070 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\03_8262abdfa4ad\document.txt` |
+| 燃气蒸汽轮机动力装置热工基础 (清华大学燃气轮机教研组) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 423 | 201 | 37308 | 272332 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\04_e6a13e82eb6f\document.txt` |
+| 燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 62 | 12 | 3999 | 72315 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\05_42b658350682\document.txt` |
+| 燃气轮机 (燃气轮机基本情况编写组编写) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 161 | 38 | 11327 | 154309 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\06_46cb688f9db5\document.txt` |
+| 燃气轮机与燃气-蒸汽联合循环装置 上 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1li... | 493 | 83 | 27326 | 586397 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\07_b1a5f133347e\document.txt` |
+| 燃气轮机与燃气-蒸汽联合循环装置 下 (清华大学热能工程系动力机械与工程研究所，深圳南山热电股份有限公司编著 etc.) (z-library.sk, 1li... | 325 | 61 | 16365 | 352956 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\08_530bf8fe4384\document.txt` |
+| 燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 485 | 120 | 26363 | 418215 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\09_949722474f48\document.txt` |
+| 燃气轮机原理、结构与应用 下 (沈阳黎明航空发动机（集团）有限责任公司编著, Pdg2Pic) (z-library.sk, 1lib.sk, z-lib.s... | 478 | 103 | 25908 | 459888 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\10_e461d0cc931e\document.txt` |
+| 燃气轮机可靠性维护理论及应用 (张会生，周登极编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 263 | 58 | 10254 | 195010 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\11_f9ae274e182b\document.txt` |
+| 美国飞机燃气涡轮发动机发展史 (James St. Peter) (z-library.sk, 1lib.sk, z-lib.sk).pdf | 813 | 127 | 23285 | 526841 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\12_703d154d523b\document.txt` |
+| 航空燃气轮机涡轮气体动力学：流动机理及气动设计=TURBINE AERODYNAMICS FOR AERO-ENGINE：FLOW ANALYSIS AND ... | 525 | 113 | 25944 | 473895 | `D:\虚拟C盘\RAG\data_pipeline\ocr_text_cleaned\tsinghua_gas_turbine_books\13_4e83a06514eb\document.txt` |
