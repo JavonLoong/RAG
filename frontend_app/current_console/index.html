@@ -3350,7 +3350,7 @@ function renderEmpty(container, message) {
 
 function normalizePageName(page) {
   const name = String(page || "").replace(/^#/, "");
-  return ["overview", "data", "search", "kg", "benchmark"].includes(name) ? name : "overview";
+  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "benchmark"].includes(name) ? name : "overview";
 }
 
 function initialPageName() {
@@ -5071,21 +5071,16 @@ function bindEvents() {
     activateGroupButton(els.globalModeToggle, (el) => el.dataset.mode === mode);
     
     const isRag = mode === "rag";
-    els.navList?.querySelector('[data-page="kg"]')?.classList.toggle("is-hidden", isRag);
-    els.navList?.querySelector('[data-page="overview"]')?.classList.toggle("is-hidden", !isRag);
-    els.navList?.querySelector('[data-page="data"]')?.classList.toggle("is-hidden", !isRag);
-    els.navList?.querySelector('[data-page="search"]')?.classList.toggle("is-hidden", !isRag);
-    els.navList?.querySelector('[data-page="benchmark"]')?.classList.toggle("is-hidden", !isRag);
+    els.navList?.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.toggle("is-hidden", btn.dataset.modeTag !== mode);
+    });
     
     if (isRag) {
-       if (state.page === "kg") setPage("overview");
+       if (["kg", "kg_data", "kg_search"].includes(state.page)) setPage("overview");
     } else {
-       if (state.page !== "kg") setPage("kg");
+       if (["overview", "data", "search", "benchmark"].includes(state.page)) setPage("kg");
     }
   });
-
-  // Init nav state
-  els.navList?.querySelector('[data-page="kg"]')?.classList.add("is-hidden");
 
   els.navList?.addEventListener("click", (event) => {
     const button = event.target.closest(".nav-item");
@@ -5303,11 +5298,14 @@ window.addEventListener("DOMContentLoaded", init);
       </div>
 
       <nav class="appbar-nav" id="navList">
-        <button class="nav-item active" data-page="overview" type="button"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>系统总览</span></button>
-        <button class="nav-item" data-page="data" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>数据接入</span></button>
-        <button class="nav-item" data-page="search" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
-        <button class="nav-item" data-page="kg" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>KG流程</span></button>
-        <button class="nav-item" data-page="benchmark" type="button"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
+        <button class="nav-item active" data-page="overview" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>系统总览</span></button>
+        <button class="nav-item" data-page="data" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>数据接入</span></button>
+        <button class="nav-item" data-page="search" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
+        <button class="nav-item" data-page="benchmark" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
+
+        <button class="nav-item is-hidden" data-page="kg" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:network"></iconify-icon><span>图谱概览</span></button>
+        <button class="nav-item is-hidden" data-page="kg_data" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>图谱构建</span></button>
+        <button class="nav-item is-hidden" data-page="kg_search" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>图谱问答</span></button>
       </nav>
 
       <div class="appbar-actions">
@@ -5772,6 +5770,44 @@ window.addEventListener("DOMContentLoaded", init);
                 <span class="pill">可直接打开展示</span>
               </div>
               <div class="kg-artifact-list" id="kgArtifacts"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="page-kg_data">
+          <div class="page-stack">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>图谱构建与数据接入</h3>
+                  <p>在此配置实体抽取规则、关系抽取任务，并管理图数据库。</p>
+                </div>
+                <span class="pill">建设中</span>
+              </div>
+              <div class="empty-state" style="padding: 60px 20px;">
+                <iconify-icon icon="lucide:construction" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
+                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">图谱构建控制台开发中</div>
+                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持上传源文件，并基于大模型提取实体与关系网络，同步至 Neo4j/SQLite 图存储中。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="page-kg_search">
+          <div class="page-stack">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>图谱智能问答 (GraphRAG)</h3>
+                  <p>基于知识图谱的复杂推理和多跳查询。</p>
+                </div>
+                <span class="pill">建设中</span>
+              </div>
+              <div class="empty-state" style="padding: 60px 20px;">
+                <iconify-icon icon="lucide:message-square-dashed" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
+                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">GraphRAG 问答链路接入中</div>
+                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持根据用户问题进行社区级别的图谱摘要（Community Summarization）和关联路径推理分析。</p>
+              </div>
             </article>
           </div>
         </section>
