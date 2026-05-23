@@ -494,6 +494,73 @@ iconify-icon {
   box-shadow: 0 0.5px 1px rgba(0,0,0,0.2);
 }
 
+/* ── Demo Toggle ── */
+.demo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background var(--transition-fast);
+}
+
+.demo-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.demo-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.demo-toggle-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background var(--transition-fast);
+  flex: 0 0 34px;
+}
+
+.demo-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transition: transform var(--transition-fast);
+}
+
+.demo-toggle input:checked ~ .demo-toggle-track {
+  background: var(--accent);
+}
+
+.demo-toggle input:checked ~ .demo-toggle-track .demo-toggle-thumb {
+  transform: translateX(14px);
+}
+
+.demo-toggle-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* Demo-only content visibility */
+.app-shell:not(.demo-mode) .demo-only {
+  display: none !important;
+}
+
 .overview-grid,
 .data-grid,
 .search-layout,
@@ -1426,6 +1493,122 @@ svg { width: 100%; height: auto; display: block; }
 .kg-artifact-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+}
+
+/* ── Book Showcase ── */
+.kg-book-showcase {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.kg-book-card {
+  background: var(--panel);
+  backdrop-filter: var(--vibrancy);
+  -webkit-backdrop-filter: var(--vibrancy);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kg-book-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow);
+}
+
+.kg-book-card .book-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0A84FF, #0064D6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.kg-book-card .book-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kg-book-card .book-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.kg-book-card .book-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kg-book-card .book-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.kg-book-card .book-stat iconify-icon {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.kg-book-card .book-stat strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kg-book-card .book-bar-wrap {
+  display: grid;
+  gap: 6px;
+}
+
+.kg-book-card .book-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kg-book-card .book-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.kg-book-card .book-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0A84FF, #5AC8FA);
+  transition: width 600ms var(--ease-out);
+}
+
+@media (max-width: 720px) {
+  .kg-book-showcase {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1280px) {
@@ -2987,6 +3170,7 @@ async function runLocalBenchmark() {
 
 function resolveEls() {
   els = {
+    demoToggle: $("demoToggle"),
     globalModeToggle: $("globalModeToggle"),
     navList: $("navList"),
     pages: Array.from(document.querySelectorAll(".page")),
@@ -3075,6 +3259,7 @@ function resolveEls() {
     kgStats: $("kgStats"),
     kgFlow: $("kgFlow"),
     kgBookList: $("kgBookList"),
+    kgBookShowcase: $("kgBookShowcase"),
     kgMethodNotes: $("kgMethodNotes"),
     kgEntities: $("kgEntities"),
     kgEntityCloud: $("kgEntityCloud"),
@@ -4032,6 +4217,34 @@ function renderKgWorkflow() {
         </div>
       </article>
     `).join("");
+  }
+
+  // ── Book Showcase (kg_data page) ──
+  if (els.kgBookShowcase) {
+    const totalChars = KG_DEMO.books.reduce((s, b) => s + b.chars, 0);
+    els.kgBookShowcase.innerHTML = KG_DEMO.books.map((book, i) => {
+      const pct = Math.round((book.chars / totalChars) * 100);
+      return `
+        <article class="kg-book-card">
+          <div class="book-header">
+            <span class="book-index">${String(i + 1).padStart(2, '0')}</span>
+            <h4 class="book-title">${escapeHtml(book.name)}</h4>
+          </div>
+          <div class="book-stats">
+            <span class="book-stat"><iconify-icon icon="lucide:file-text"></iconify-icon><strong>${formatNumber(book.pages)}</strong> 页</span>
+            <span class="book-stat"><iconify-icon icon="lucide:text"></iconify-icon><strong>${formatNumber(book.chars)}</strong> 字符</span>
+            <span class="book-stat"><iconify-icon icon="lucide:git-branch"></iconify-icon><strong>${formatNumber(book.triples)}</strong> 条三元组</span>
+          </div>
+          <div class="book-bar-wrap">
+            <div class="book-bar-label">
+              <span>语料占比</span>
+              <span>${pct}%</span>
+            </div>
+            <div class="book-bar"><div class="book-bar-fill" style="width: ${pct}%"></div></div>
+          </div>
+        </article>
+      `;
+    }).join('');
   }
 
   if (els.kgMethodNotes) {
@@ -5063,6 +5276,14 @@ function clearAnswer() {
   resetAskAnswer();
 }
 
+function applyDemoMode(isDemo) {
+  const shell = document.querySelector('.app-shell');
+  if (!shell) return;
+  shell.classList.toggle('demo-mode', isDemo);
+  if (els.demoToggle) els.demoToggle.checked = isDemo;
+  try { localStorage.setItem('rag_demo_mode', isDemo ? '1' : '0'); } catch {}
+}
+
 function bindEvents() {
   els.globalModeToggle?.addEventListener("click", (event) => {
     const btn = event.target.closest(".segment-btn");
@@ -5080,6 +5301,11 @@ function bindEvents() {
     } else {
        if (["overview", "data", "search", "benchmark"].includes(state.page)) setPage("kg");
     }
+  });
+
+  // Demo mode toggle
+  els.demoToggle?.addEventListener('change', () => {
+    applyDemoMode(els.demoToggle.checked);
   });
 
   els.navList?.addEventListener("click", (event) => {
@@ -5264,6 +5490,10 @@ function bindEvents() {
 
 async function init() {
   resolveEls();
+  // Restore demo mode preference (default: on)
+  const savedDemo = localStorage.getItem('rag_demo_mode');
+  const isDemoMode = savedDemo === null || savedDemo === '1';
+  applyDemoMode(isDemoMode);
   bindEvents();
   populateLLMProviderSelect();
   loadLLMSettings();
@@ -5310,6 +5540,11 @@ window.addEventListener("DOMContentLoaded", init);
       </nav>
 
       <div class="appbar-actions">
+        <label class="demo-toggle" id="demoToggleLabel" title="开启后显示预置四本书演示数据；关闭后从空白工作台开始">
+          <input type="checkbox" id="demoToggle" checked>
+          <span class="demo-toggle-track"><span class="demo-toggle-thumb"></span></span>
+          <span class="demo-toggle-text">演示数据</span>
+        </label>
         <div class="status-pill" id="statusPill" title="">
           <span class="status-dot warning" id="sysStatus"></span>
           <span id="refreshStamp">等待同步</span>
@@ -5337,7 +5572,7 @@ window.addEventListener("DOMContentLoaded", init);
               </div>
             </article>
 
-            <div class="overview-grid">
+            <div class="overview-grid demo-only">
               <div class="stack">
                 <article class="panel">
                   <div class="panel-head">
@@ -5664,7 +5899,7 @@ window.addEventListener("DOMContentLoaded", init);
 
         <section class="page" id="page-kg">
           <div class="page-stack">
-            <article class="panel hero-card">
+            <article class="panel hero-card demo-only">
               <div class="hero-chip"><iconify-icon icon="lucide:network"></iconify-icon><span>KG Construction</span></div>
               <h3>知识图谱构建全流程</h3>
               <p>这里展示的不是概念图，而是这次用四本资料真正跑出来的中间产物：文本、chunk、schema、实体、关系、三元组、evidence 和图谱文件。</p>
@@ -5674,9 +5909,9 @@ window.addEventListener("DOMContentLoaded", init);
               </div>
             </article>
 
-            <div class="metric-grid metric-grid--summary" id="kgStats"></div>
+            <div class="metric-grid metric-grid--summary demo-only" id="kgStats"></div>
 
-            <div class="kg-two-col">
+            <div class="kg-two-col demo-only">
               <article class="panel">
                 <div class="panel-head">
                   <div>
@@ -5700,7 +5935,7 @@ window.addEventListener("DOMContentLoaded", init);
               </article>
             </div>
 
-            <div class="kg-three-col">
+            <div class="kg-three-col demo-only">
               <article class="panel">
                 <div class="panel-head">
                   <div>
@@ -5737,7 +5972,7 @@ window.addEventListener("DOMContentLoaded", init);
               </article>
             </div>
 
-            <div class="kg-two-col">
+            <div class="kg-two-col demo-only">
               <article class="panel">
                 <div class="panel-head">
                   <div>
@@ -5762,7 +5997,7 @@ window.addEventListener("DOMContentLoaded", init);
               </article>
             </div>
 
-            <article class="panel">
+            <article class="panel demo-only">
               <div class="panel-head">
                 <div>
                   <p class="card-kicker">Artifacts</p>
@@ -5777,6 +6012,40 @@ window.addEventListener("DOMContentLoaded", init);
 
         <section class="page" id="page-kg_data">
           <div class="page-stack">
+
+            <!-- ── Book Showcase Hero ── -->
+            <article class="panel hero-card demo-only">
+              <div class="hero-chip"><iconify-icon icon="lucide:library"></iconify-icon><span>Input Corpus</span></div>
+              <h3>本次图谱构建语料</h3>
+              <p>以下四本燃气轮机专业资料经 OCR 数字化后，被切分为 chunk 并送入知识抽取流水线，产出实体、关系和三元组。</p>
+            </article>
+
+            <!-- ── Corpus Summary Metrics ── -->
+            <div class="metric-grid metric-grid--summary demo-only" id="kgCorpusStats">
+              <article class="panel metric-card">
+                <div class="metric-top"><div><p class="card-kicker">资料总数</p><div class="metric-value" id="kgCorpusBookCount">4 本</div></div></div>
+                <div class="metric-subgrid"><span>全部来自扫描 PDF → OCR 文本</span></div>
+              </article>
+              <article class="panel metric-card">
+                <div class="metric-top"><div><p class="card-kicker">总页数</p><div class="metric-value" id="kgCorpusTotalPages">1,592 页</div></div></div>
+                <div class="metric-subgrid"><span>覆盖燃烧、原理、结构与应用</span></div>
+              </article>
+              <article class="panel metric-card">
+                <div class="metric-top"><div><p class="card-kicker">总字符</p><div class="metric-value" id="kgCorpusTotalChars">4,368,442</div></div></div>
+                <div class="metric-subgrid"><span>OCR 后的有效中文字符总量</span></div>
+              </article>
+              <article class="panel metric-card">
+                <div class="metric-top"><div><p class="card-kicker">产出三元组</p><div class="metric-value" id="kgCorpusTotalTriples">240 条</div></div></div>
+                <div class="metric-subgrid"><span>经 schema 约束规则引擎抽取</span></div>
+              </article>
+            </div>
+
+            <!-- ── Individual Book Cards ── -->
+            <div class="kg-book-showcase demo-only" id="kgBookShowcase">
+              <!-- JS will populate 4 book cards -->
+            </div>
+
+            <!-- ── Schema Config & Build ── -->
             <div class="data-grid">
               <div class="stack">
                 <article class="panel">
