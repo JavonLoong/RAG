@@ -12,7 +12,11 @@
   - **稀疏/关键词检索**：Jieba + Rank-BM25
   - **图数据库**：Neo4j (用于 GraphRAG 的实体关系与社区存储)
 - **文档解析**：PyPDF, python-docx 配合自研 Layout-aware OCR 策略
-- **前端应用**：目前在 `frontend_app/current_console` 沉淀了实验控制台
+- **前端应用**：目前在 `frontend_app/current_console` 沉淀了原生前端实验控制台
+- **基础设施与开发工具**（基于工程配置全量罗列）：
+  - **基础运行依赖**：Numpy (科学计算), Requests (网络请求), python-dotenv (环境配置), orjson / python-multipart (高效序列化与表单解析), tqdm (进度监控)
+  - **代码质量与测试**：Ruff (极速 Linter & Formatter), Mypy (静态类型检查), Pytest + pytest-cov (自动化测试与覆盖率), Pre-commit (Git提交拦截检查)
+  - **项目文档与构建**：MkDocs + Material (自动化文档站生成), tox-uv / hatchling (依赖管理与打包构建)
 
 **系统核心分层设计（与代码目录强映射）：**
 1. **数据管线层 (`data_pipeline`)**：负责各类文档的解析、OCR 高精度识别、数据清洗、多层级切分 (Chunking)，统一数据资产。
