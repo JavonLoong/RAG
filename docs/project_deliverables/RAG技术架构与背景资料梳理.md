@@ -35,3 +35,24 @@
 2. **工程落地实操参考**
    - **《Neo4j GraphRAG Python Documentation》**：重型方案参考。重点看了如果要上企业级图数据库，文本、实体、关系、Embedding 是怎么协同落库的。
    - **《LlamaIndex Property Graph Index Documentation》**：轻型方案参考。借鉴了如果不部署重型 Neo4j，在 Python RAG 工程里快速搭建基于属性图（Property Graph）检索的折中方案。
+
+---
+
+### 三、核心数据与查询流程 (Core Workflow)
+
+为了更清晰地说明系统的运转过程，目前的系统主要包含以下两个核心流程：
+
+**1. 离线数据构建流程 (Offline Data Pipeline)**
+*   **文档解析**：输入各类格式文档 (PDF, Word 等)，通过自研的 Layout-aware OCR 策略进行精准解析，保留版面结构信息。
+*   **分块处理**：对解析后的文本进行清洗，并执行多层级切分 (Hierarchical Chunking)。
+*   **双线入库**：
+    *   *向量化分支*：将文本块通过 Embedding 模型向量化，存入 ChromaDB，同时建立倒排索引以支持 BM25 稀疏检索。
+    *   *图谱化分支*：将文本块输入 LLM，抽取其中的“实体”、“关系”和“断言”，进行归一化处理后存入 Neo4j 图数据库，并进一步执行社区发现 (Community Detection) 生成社区摘要。
+
+**2. 在线检索问答流程 (Online RAG Pipeline)**
+*   **意图识别与改写**：接收用户的 Query，通过小模型或规则进行意图识别，并在必要时对 Query 进行扩展或改写。
+*   **多路召回**：
+    *   *向量/稀疏召回*：从 ChromaDB 召回语义相似的文本块，从 BM25 召回关键词匹配的文本块。
+    *   *图谱召回 (GraphRAG)*：从 Neo4j 召回相关的实体子图以及宏观的社区摘要信息。
+*   **融合重排 (Reranking)**：将多路召回的结果进行去重融合，通过 Reranker 模型对证据片段进行重新打分排序，筛选出最相关的 Top-K 证据。
+*   **生成与溯源**：将用户的 Query 与精选的 Top-K 证据组装成 Prompt 交给 LLM 生成最终回答，并附带引用 (Citation) 的溯源信息，同时通过内置的校验机制拦截潜在幻觉。
