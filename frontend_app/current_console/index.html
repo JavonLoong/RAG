@@ -3350,7 +3350,7 @@ function renderEmpty(container, message) {
 
 function normalizePageName(page) {
   const name = String(page || "").replace(/^#/, "");
-  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "benchmark"].includes(name) ? name : "overview";
+  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "kg_benchmark", "benchmark"].includes(name) ? name : "overview";
 }
 
 function initialPageName() {
@@ -5076,7 +5076,7 @@ function bindEvents() {
     });
     
     if (isRag) {
-       if (["kg", "kg_data", "kg_search"].includes(state.page)) setPage("overview");
+       if (["kg", "kg_data", "kg_search", "kg_benchmark"].includes(state.page)) setPage("overview");
     } else {
        if (["overview", "data", "search", "benchmark"].includes(state.page)) setPage("kg");
     }
@@ -5306,6 +5306,7 @@ window.addEventListener("DOMContentLoaded", init);
         <button class="nav-item is-hidden" data-page="kg" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:network"></iconify-icon><span>图谱概览</span></button>
         <button class="nav-item is-hidden" data-page="kg_data" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>图谱构建</span></button>
         <button class="nav-item is-hidden" data-page="kg_search" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>图谱问答</span></button>
+        <button class="nav-item is-hidden" data-page="kg_benchmark" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>图谱基准</span></button>
       </nav>
 
       <div class="appbar-actions">
@@ -5807,6 +5808,25 @@ window.addEventListener("DOMContentLoaded", init);
                 <iconify-icon icon="lucide:message-square-dashed" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
                 <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">GraphRAG 问答链路接入中</div>
                 <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持根据用户问题进行社区级别的图谱摘要（Community Summarization）和关联路径推理分析。</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="page-kg_benchmark">
+          <div class="page-stack">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>图谱性能与评测基准</h3>
+                  <p>评估知识图谱的抽取质量、查询延迟以及社区摘要精度。</p>
+                </div>
+                <span class="pill">建设中</span>
+              </div>
+              <div class="empty-state" style="padding: 60px 20px;">
+                <iconify-icon icon="lucide:gauge" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
+                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">图谱基准评测开发中</div>
+                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持实体抽取召回率、推理多跳准确度（Multi-hop Accuracy）以及子图检索吞吐量的自动化压测。</p>
               </div>
             </article>
           </div>
