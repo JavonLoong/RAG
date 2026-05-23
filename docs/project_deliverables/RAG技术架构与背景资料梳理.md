@@ -46,6 +46,47 @@
 
 为了更清晰地说明系统的运转过程，目前的系统主要包含以下两个核心流程：
 
+```mermaid
+graph TD
+    %% 离线数据构建流程
+    subgraph 离线数据构建流程 (Offline Pipeline)
+        A[原始文档 PDF/Word] --> B[Layout-aware OCR 解析]
+        B --> C[文本清洗与多层级 Chunking]
+        
+        C -->|向量化分支| D[Embedding 模型]
+        D --> E[(ChromaDB 向量库)]
+        C -->|倒排索引| F[(BM25 稀疏索引)]
+        
+        C -->|图谱化分支| G[LLM 实体/关系抽取]
+        G --> H[归一化处理]
+        H --> I[(Neo4j 图数据库)]
+        I --> J[图谱社区发现]
+        J --> K[生成社区摘要]
+        K --> I
+    end
+
+    %% 在线检索问答流程
+    subgraph 在线检索问答流程 (Online Pipeline)
+        Q[用户 Query] --> R[意图识别与 Query 改写]
+        
+        R -->|向量召回| E
+        R -->|关键词召回| F
+        R -->|实体子图/摘要召回| I
+        
+        E --> S[多路召回结果]
+        F --> S
+        I --> S
+        
+        S --> T[融合去重与 Reranker 重排]
+        T --> U[Top-K 高质量证据]
+        U --> V[上下文组装 Prompt]
+        Q -.-> V
+        V --> W[LLM 生成与幻觉校验]
+        W --> X[带 Citation 溯源的最终回答]
+    end
+```
+
+
 **1. 离线数据构建流程 (Offline Data Pipeline)**
 *   **文档解析**：输入各类格式文档 (PDF, Word 等)，通过自研的 Layout-aware OCR 策略进行精准解析，保留版面结构信息。
 *   **分块处理**：对解析后的文本进行清洗，并执行多层级切分 (Hierarchical Chunking)。
