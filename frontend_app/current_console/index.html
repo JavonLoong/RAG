@@ -5777,58 +5777,192 @@ window.addEventListener("DOMContentLoaded", init);
 
         <section class="page" id="page-kg_data">
           <div class="page-stack">
-            <article class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>图谱构建与数据接入</h3>
-                  <p>在此配置实体抽取规则、关系抽取任务，并管理图数据库。</p>
-                </div>
-                <span class="pill">建设中</span>
+            <div class="data-grid">
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>图谱语料接入与构建</h3>
+                    </div>
+                    <span class="pill">基于 Schema 自动抽取实体与关系</span>
+                  </div>
+                  <div class="queue-dropzone" id="kgDropZone">
+                    <div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:network"></iconify-icon></div>
+                      <h3>拖入专业文档开始知识抽取</h3>
+                      <div class="queue-actions">
+                        <button class="btn" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>抽取配置 (Graph Schema)</h3>
+                      <p>定义大模型或规则引擎需要提取的实体和关系约束规则。</p>
+                    </div>
+                  </div>
+                  <div class="form-grid">
+                    <div class="field field--wide">
+                      <label>实体类型 (Entity Types)</label>
+                      <input class="form-control" type="text" value="Equipment, Component, Parameter, Problem, Method" placeholder="用逗号分隔多个类型">
+                    </div>
+                    <div class="field field--wide">
+                      <label>关系类型 (Relation Types)</label>
+                      <input class="form-control" type="text" value="HAS_COMPONENT, USES_FUEL, HAS_PARAMETER, HAS_PROBLEM" placeholder="用逗号分隔多个关系">
+                    </div>
+                    <div class="field">
+                      <label>图谱抽取引擎</label>
+                      <select class="form-control">
+                        <option>纯大模型泛化抽取 (慢, 发散)</option>
+                        <option selected>大模型 + Schema 约束 (快, 准确)</option>
+                        <option>纯正则/触发词规则引擎</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>社区聚类算法 (Community Detection)</label>
+                      <select class="form-control">
+                        <option>Leiden 层次聚类算法</option>
+                        <option>Louvain 模块化算法</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="queue-actions" style="justify-content: flex-start; margin-top: 18px;">
+                    <button class="btn" type="button"><iconify-icon icon="lucide:cpu"></iconify-icon><span>开始构建知识图谱</span></button>
+                  </div>
+                </article>
               </div>
-              <div class="empty-state" style="padding: 60px 20px;">
-                <iconify-icon icon="lucide:construction" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
-                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">图谱构建控制台开发中</div>
-                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持上传源文件，并基于大模型提取实体与关系网络，同步至 Neo4j/SQLite 图存储中。</p>
+
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>构建队列与图谱汇聚日志</h3>
+                      <p>监控三元组生成、实体合并与社区发现的执行进度。</p>
+                    </div>
+                  </div>
+                  <div class="progress"><div class="progress-bar" style="width: 0%"></div></div>
+                  <div class="empty-state" style="margin-top: 20px;">等待构建任务启动。完成后将同步至 SQLite / Neo4j。</div>
+                </article>
               </div>
-            </article>
+            </div>
           </div>
         </section>
 
         <section class="page" id="page-kg_search">
           <div class="page-stack">
-            <article class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>图谱智能问答 (GraphRAG)</h3>
-                  <p>基于知识图谱的复杂推理和多跳查询。</p>
-                </div>
-                <span class="pill">建设中</span>
+            <div class="search-layout">
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>图谱智能问答 (GraphRAG Inference)</h3>
+                      <p>基于全局知识图谱，通过社区摘要和实体路径检索回答复杂问题。</p>
+                    </div>
+                  </div>
+                  <div class="ask-row">
+                    <textarea class="form-control" placeholder="输入跨文档的全局推理问题，例如：总结燃气轮机压气机出口温度偏高的所有常见原因，并列出处理方法..." rows="3"></textarea>
+                    <button class="btn" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>图谱推理</span></button>
+                  </div>
+                  <div class="form-grid" style="margin-top: 14px; grid-template-columns: 1fr 1fr;">
+                    <div class="field">
+                      <label>GraphRAG 检索模式</label>
+                      <select class="form-control">
+                        <option selected>Global Search (跨社区聚合摘要，适合宏观总结)</option>
+                        <option>Local Search (特定实体邻居子图扩展，适合精准定位)</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>路径推理深度 (Max Hops)</label>
+                      <input class="form-control" type="number" value="2" min="1" max="4">
+                    </div>
+                  </div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>图谱合成回答 (Synthesized Response)</h3>
+                    </div>
+                    <span class="pill">等待提问</span>
+                  </div>
+                  <div class="empty-state">输入问题后，这里将展示经过大模型综合图谱关系后的推理长文。</div>
+                </article>
               </div>
-              <div class="empty-state" style="padding: 60px 20px;">
-                <iconify-icon icon="lucide:message-square-dashed" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
-                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">GraphRAG 问答链路接入中</div>
-                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持根据用户问题进行社区级别的图谱摘要（Community Summarization）和关联路径推理分析。</p>
+
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>推理依赖路径 (Reasoning Sub-graph)</h3>
+                      <p>触发该回答所依赖的核心实体网络与底层文献片段。</p>
+                    </div>
+                  </div>
+                  <div class="empty-state" style="min-height: 240px;">
+                    <iconify-icon icon="lucide:git-pull-request" style="font-size: 32px; color: var(--line-strong);"></iconify-icon>
+                    <p style="margin-top: 12px; font-size: 12px;">图谱路径渲染区 / 关联证据链列表</p>
+                  </div>
+                </article>
               </div>
-            </article>
+            </div>
           </div>
         </section>
 
         <section class="page" id="page-kg_benchmark">
           <div class="page-stack">
-            <article class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>图谱性能与评测基准</h3>
-                  <p>评估知识图谱的抽取质量、查询延迟以及社区摘要精度。</p>
+            <div class="benchmark-grid">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h3>图谱性能压测参数</h3>
+                  </div>
                 </div>
-                <span class="pill">建设中</span>
-              </div>
-              <div class="empty-state" style="padding: 60px 20px;">
-                <iconify-icon icon="lucide:gauge" style="font-size: 48px; color: var(--accent); margin-bottom: 16px; opacity: 0.8;"></iconify-icon>
-                <div style="font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 8px;">图谱基准评测开发中</div>
-                <p style="color: var(--ink-soft); max-width: 400px; margin: 0 auto;">即将支持实体抽取召回率、推理多跳准确度（Multi-hop Accuracy）以及子图检索吞吐量的自动化压测。</p>
-              </div>
-            </article>
+                <div class="form-grid">
+                  <div class="field"><label>评测基准数据集</label><select class="form-control"><option>动力装备复杂推理 QA-100</option></select></div>
+                  <div class="field"><label>并发评估线程</label><input class="form-control" type="number" value="5"></div>
+                  <div class="field"><label>最大关联节点召回数</label><input class="form-control" type="number" value="250"></div>
+                  <div class="field"><label>图/向量混合策略</label><select class="form-control"><option>Hybrid (Vector Retrieval + Graph PageRank)</option></select></div>
+                </div>
+                <div style="margin-top:18px;"><div class="progress"><div class="progress-bar" style="width: 0%"></div></div></div>
+                <div class="queue-actions" style="justify-content:flex-start; margin-top:18px;">
+                  <button class="btn" type="button"><iconify-icon icon="lucide:activity"></iconify-icon><span>启动 GraphRAG 压测</span></button>
+                </div>
+                <div class="search-meta">等待压测任务启动...</div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h3>多维度表现 (vs 传统纯向量 RAG)</h3>
+                  </div>
+                </div>
+                <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 0;">
+                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
+                    <p class="card-kicker">多跳推理准确率 (Multi-hop Accuracy)</p>
+                    <div class="metric-value" style="font-size: 24px;">-- %</div>
+                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">对比传统 RAG 基准预估 <strong>大幅提升</strong></div>
+                  </div>
+                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
+                    <p class="card-kicker">实体链接召回率 (Entity Recall)</p>
+                    <div class="metric-value" style="font-size: 24px;">-- %</div>
+                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">对比传统 RAG 基准预估 <strong>显著提升</strong></div>
+                  </div>
+                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
+                    <p class="card-kicker">全局摘要覆盖度 (Global Summary Coverage)</p>
+                    <div class="metric-value" style="font-size: 24px;">--</div>
+                    <div style="font-size: 11px; color: var(--success); margin-top: 6px;">得益于社区聚类，避免“只见树木不见森林”</div>
+                  </div>
+                  <div class="metric-card panel" style="background: rgba(255,255,255,0.02)">
+                    <p class="card-kicker">端到端平均延迟 (Avg Latency)</p>
+                    <div class="metric-value" style="font-size: 24px;">-- ms</div>
+                    <div style="font-size: 11px; color: var(--danger); margin-top: 6px;">因图计算与合并开销，对比纯向量检索 <strong>有所增加</strong></div>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </section>
 
