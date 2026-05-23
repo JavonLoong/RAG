@@ -1,0 +1,58 @@
+@startuml
+title RAG 核心数据与查询流程
+
+package "离线数据构建流程 (Offline Pipeline)" {
+    [原始文档 PDF/Word] as doc
+    [Layout-aware OCR 解析] as ocr
+    [文本清洗与多层级 Chunking] as chunking
+    [Embedding 模型] as embed
+    database "ChromaDB 向量库" as chroma
+    database "BM25 稀疏索引" as bm25
+    [LLM 实体/关系抽取] as llm_extract
+    [归一化处理] as normalize
+    database "Neo4j 图数据库" as neo4j
+    [图谱社区发现] as community
+    [生成社区摘要] as summary
+
+    doc --> ocr
+    ocr --> chunking
+    
+    chunking --> embed : 向量化分支
+    embed --> chroma
+    chunking --> bm25 : 倒排索引
+    
+    chunking --> llm_extract : 图谱化分支
+    llm_extract --> normalize
+    normalize --> neo4j
+    neo4j --> community
+    community --> summary
+    summary --> neo4j
+}
+
+package "在线检索问答流程 (Online Pipeline)" {
+    actor "用户 Query" as query
+    [意图识别与 Query 改写] as rewrite
+    [多路召回结果] as recall_res
+    [融合去重与 Reranker 重排] as rerank
+    [Top-K 高质量证据] as topk
+    [上下文组装 Prompt] as prompt
+    [LLM 生成与幻觉校验] as llm_gen
+    [带 Citation 溯源的最终回答] as final_ans
+
+    query --> rewrite
+    rewrite --> chroma : 向量召回
+    rewrite --> bm25 : 关键词召回
+    rewrite --> neo4j : 实体子图/摘要召回
+
+    chroma --> recall_res
+    bm25 --> recall_res
+    neo4j --> recall_res
+
+    recall_res --> rerank
+    rerank --> topk
+    topk --> prompt
+    query ..> prompt
+    prompt --> llm_gen
+    llm_gen --> final_ans
+}
+@enduml
