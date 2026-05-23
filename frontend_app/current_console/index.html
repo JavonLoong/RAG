@@ -5897,6 +5897,29 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
+                      <h3>推理大模型配置 (Graph LLM) <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(支持与基础 RAG 解耦)</span></h3>
+                      <p>图谱的多跳和社区摘要对模型能力要求极高，建议在此配置 GPT-4 / Claude 3 Opus 级别的独立推理模型。</p>
+                    </div>
+                  </div>
+                  <div class="llm-form">
+                    <div class="field field--wide">
+                      <label>推理引擎 API Base URL</label>
+                      <input class="form-control" type="text" placeholder="https://api.openai.com/v1" autocomplete="off">
+                    </div>
+                    <div class="field field--wide">
+                      <label>API Key</label>
+                      <input class="form-control" type="password" placeholder="sk-..." autocomplete="off">
+                    </div>
+                    <div class="field field--wide">
+                      <label>强推理模型 (Model)</label>
+                      <input class="form-control" type="text" placeholder="gpt-4o 或 claude-3-opus-20240229" autocomplete="off">
+                    </div>
+                  </div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
                       <h3>推理依赖路径 (Reasoning Sub-graph)</h3>
                       <p>触发该回答所依赖的核心实体网络与底层文献片段。</p>
                     </div>
