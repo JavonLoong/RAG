@@ -5,7 +5,7 @@
 咱们的项目整体采用了 **标准RAG + GraphRAG (知识图谱检索增强)** 双线并行的模块化架构设计。为了方便后续做实验评测、支持顶刊级别的指标量化，工程上做了深度的模块解耦。
 
 **核心技术栈：**
-- **后端框架**：Python 3.11+, FastAPI (提供 REST API)
+- **后端框架**：Python 3.11+, FastAPI (提供 REST API), Uvicorn (ASGI 异步服务器), Pydantic (数据校验与引擎建模)
 - **核心模型库**：Sentence-Transformers, Transformers, Torch
 - **检索与存储引擎**：
   - **向量检索**：ChromaDB 
