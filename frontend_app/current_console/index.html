@@ -5855,29 +5855,31 @@ window.addEventListener("DOMContentLoaded", init);
         <section class="page" id="page-kg_search">
           <div class="page-stack">
             <div class="search-layout">
+              <!-- ── Left Column: Search Config + LLM Config ── -->
               <div class="stack">
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>图谱智能问答 (GraphRAG Inference)</h3>
-                      <p>基于全局知识图谱，通过社区摘要和实体路径检索回答复杂问题。</p>
+                      <h3>检索配置</h3>
                     </div>
                   </div>
-                  <div class="ask-row">
-                    <textarea class="form-control" placeholder="输入跨文档的全局推理问题，例如：总结燃气轮机压气机出口温度偏高的所有常见原因，并列出处理方法..." rows="3"></textarea>
-                    <button class="btn" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>图谱推理</span></button>
+                  <div class="search-row">
+                    <input class="search-input" id="kgSearchInput" type="search" placeholder="例如：燃气轮机压气机出口温度偏高的所有常见原因">
+                    <input class="search-select" id="kgSearchTopK" type="number" min="1" max="20" value="20">
+                    <button class="btn" id="btnKgSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
                   </div>
+                  <div class="search-meta" id="kgSearchMeta">等待检索输入。</div>
                   <div class="form-grid" style="margin-top: 14px; grid-template-columns: 1fr 1fr;">
                     <div class="field">
-                      <label>GraphRAG 检索模式</label>
-                      <select class="form-control">
-                        <option selected>Global Search (跨社区聚合摘要，适合宏观总结)</option>
-                        <option>Local Search (特定实体邻居子图扩展，适合精准定位)</option>
+                      <label for="kgSearchMode">GraphRAG 检索模式</label>
+                      <select class="form-control" id="kgSearchMode">
+                        <option value="global" selected>Global Search (跨社区聚合摘要，适合宏观总结)</option>
+                        <option value="local">Local Search (特定实体邻居子图扩展，适合精准定位)</option>
                       </select>
                     </div>
                     <div class="field">
-                      <label>路径推理深度 (Max Hops)</label>
-                      <input class="form-control" type="number" value="2" min="1" max="4">
+                      <label for="kgMaxHops">路径推理深度 (Max Hops)</label>
+                      <input class="form-control" id="kgMaxHops" type="number" value="2" min="1" max="4">
                     </div>
                   </div>
                 </article>
@@ -5885,49 +5887,77 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>图谱合成回答 (Synthesized Response)</h3>
+                      <h3>LLM 配置 <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(可选)</span></h3>
+                      <p>OpenAI 兼容端点。配置后可用于下方 GraphRAG 问答。API Key 仅保存在浏览器 localStorage，不会上传。</p>
                     </div>
-                    <span class="pill">等待提问</span>
-                  </div>
-                  <div class="empty-state">输入问题后，这里将展示经过大模型综合图谱关系后的推理长文。</div>
-                </article>
-              </div>
-
-              <div class="stack">
-                <article class="panel">
-                  <div class="panel-head">
-                    <div>
-                      <h3>推理大模型配置 (Graph LLM) <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px">(支持与基础 RAG 解耦)</span></h3>
-                      <p>图谱的多跳和社区摘要对模型能力要求极高，建议在此配置 GPT-4 / Claude 3 Opus 级别的独立推理模型。</p>
+                    <div class="panel-tools">
+                      <button class="ghost-btn" id="btnRefreshKgLlm" type="button" title="重新加载已保存的 LLM 配置"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
                     </div>
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
-                      <label>推理引擎 API Base URL</label>
-                      <input class="form-control" type="text" placeholder="https://api.openai.com/v1" autocomplete="off">
+                      <label for="kgLlmProvider">模型服务</label>
+                      <select class="form-control" id="kgLlmProvider">
+                        <option value="auto">自动识别模型服务</option>
+                      </select>
                     </div>
                     <div class="field field--wide">
-                      <label>API Key</label>
-                      <input class="form-control" type="password" placeholder="sk-..." autocomplete="off">
+                      <label for="kgLlmBaseUrl">API Base URL <span style="font-size:10px;color:var(--muted);font-weight:400">(从常用模型自动填入，也可手动输入)</span></label>
+                      <div class="input-with-action">
+                        <input class="form-control" id="kgLlmBaseUrl" type="text" placeholder="不填则自动使用对应服务商地址" autocomplete="off">
+                        <button class="ghost-btn" id="btnClearKgLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                      </div>
                     </div>
                     <div class="field field--wide">
-                      <label>强推理模型 (Model)</label>
-                      <input class="form-control" type="text" placeholder="gpt-4o 或 claude-3-opus-20240229" autocomplete="off">
+                      <label for="kgLlmApiKey">API Key <span style="font-size:10px;color:var(--muted);font-weight:400">(可选 · 本地 Ollama 无需填入)</span></label>
+                      <input class="form-control" id="kgLlmApiKey" type="password" placeholder="sk-... 或留空" autocomplete="off">
+                    </div>
+                    <div class="field field--wide">
+                      <label for="kgLlmModel">Model</label>
+                      <div class="input-with-action">
+                        <input class="form-control" id="kgLlmModel" type="text" placeholder="例如 gpt-4o 或 claude-3-opus-20240229" autocomplete="off">
+                        <button class="ghost-btn" id="btnKgModelCatalog" type="button"><iconify-icon icon="lucide:book-open"></iconify-icon><span>常用模型</span></button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="kgLlmTemperature">Temperature</label>
+                      <input class="form-control" id="kgLlmTemperature" type="number" min="0" max="2" step="0.1" value="0.7">
+                    </div>
+                    <div class="field">
+                      <label for="kgLlmMaxTokens">Max Tokens</label>
+                      <input class="form-control" id="kgLlmMaxTokens" type="number" min="64" max="131072" step="256" value="131072">
                     </div>
                   </div>
+                  <div class="llm-status" id="kgLlmStatus">未配置 · 可选填，配置后可使用 GraphRAG 问答</div>
+                </article>
+              </div>
+
+              <!-- ── Right Column: Q&A + Results ── -->
+              <div class="stack">
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>RAG 问答</h3>
+                      <p>提问时会先自动检索本地 chunk / 知识库证据，再调用已配置的 LLM 回答。</p>
+                    </div>
+                    <div class="panel-tools">
+                      <button class="ghost-btn" id="btnClearKgAnswer" type="button"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>清空</span></button>
+                    </div>
+                  </div>
+                  <div class="ask-row">
+                    <textarea class="form-control" id="kgAskInput" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+                    <button class="btn" id="btnKgAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
+                  </div>
+                  <div class="ask-answer" id="kgAskAnswer"></div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>推理依赖路径 (Reasoning Sub-graph)</h3>
-                      <p>触发该回答所依赖的核心实体网络与底层文献片段。</p>
+                      <h3>结果列表</h3>
                     </div>
                   </div>
-                  <div class="empty-state" style="min-height: 240px;">
-                    <iconify-icon icon="lucide:git-pull-request" style="font-size: 32px; color: var(--line-strong);"></iconify-icon>
-                    <p style="margin-top: 12px; font-size: 12px;">图谱路径渲染区 / 关联证据链列表</p>
-                  </div>
+                  <div class="results-list" id="kgSearchResults"></div>
                 </article>
               </div>
             </div>
