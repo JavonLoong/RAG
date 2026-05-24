@@ -6483,6 +6483,124 @@ function bindEvents() {
   $("kgLlmSmartPaste")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyKgSmartPaste(); } });
   $("kgLlmSmartPaste")?.addEventListener("paste", () => { setTimeout(applyKgSmartPaste, 100); });
 
+  // ── GraphRAG Q&A Ask Handler ──
+  async function runKgAsk() {
+    const input = $("kgAskInput");
+    const query = input?.value?.trim();
+    if (!query) return;
+
+    const answerDiv = $("kgAskAnswer");
+    const resultsDiv = $("kgSearchResults");
+    const meta = $("kgSearchMeta");
+
+    // Read KG-specific LLM settings, fallback to standard
+    const kgBaseUrl = $("kgLlmBaseUrl")?.value?.trim() || els.llmBaseUrl?.value?.trim() || "";
+    const kgApiKey = $("kgLlmApiKey")?.value?.trim() || els.llmApiKey?.value?.trim() || "";
+    const kgModel = $("kgLlmModel")?.value?.trim() || els.llmModel?.value?.trim() || "gemini-2.5-flash";
+    const kgTemp = parseFloat($("kgLlmTemperature")?.value || els.llmTemperature?.value || "0.7");
+    const kgMaxTok = parseInt($("kgLlmMaxTokens")?.value || els.llmMaxTokens?.value || "8192");
+
+    if (!kgApiKey) {
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--warning)">请先配置 LLM API Key。</div>`;
+      return;
+    }
+
+    if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--muted)">正在检索图谱并生成回答...</div>`;
+
+    // Graph traversal
+    let graphContext = "当前没有构建知识图谱，无法进行图谱检索。";
+    if (window._kgGraph && window._kgGraph.nodes.length) {
+      const { nodes: gNodes, links: gLinks, entities: gEntities } = window._kgGraph;
+      const maxHops = parseInt($("kgMaxHops")?.value) || 2;
+
+      // Find matching entities
+      const matched = [];
+      for (const [name, data] of gEntities.entries()) {
+        if (name.length >= 2 && query.includes(name)) matched.push({ name, ...data });
+      }
+      if (!matched.length) {
+        for (const [name, data] of gEntities.entries()) {
+          if (name.length >= 2 && name.includes(query.slice(0, 4))) matched.push({ name, ...data });
+        }
+      }
+      if (!matched.length) gNodes.slice(0, 8).forEach(n => matched.push({ name: n.id, type: n.type, count: n.count }));
+
+      // Build adjacency
+      const adj = new Map();
+      gLinks.forEach(l => {
+        const s = typeof l.source === "object" ? l.source.id : l.source;
+        const t = typeof l.target === "object" ? l.target.id : l.target;
+        if (!adj.has(s)) adj.set(s, []);
+        if (!adj.has(t)) adj.set(t, []);
+        adj.get(s).push({ target: t, relation: l.relation, weight: l.weight });
+        adj.get(t).push({ target: s, relation: l.relation, weight: l.weight });
+      });
+
+      // BFS traverse
+      const visited = new Set();
+      const triples = [];
+      const frontier = matched.map(e => ({ name: e.name, depth: 0 }));
+      while (frontier.length) {
+        const { name, depth } = frontier.shift();
+        if (visited.has(name)) continue;
+        visited.add(name);
+        for (const edge of (adj.get(name) || [])) {
+          triples.push(`${name} --[${edge.relation}]--> ${edge.target}`);
+          if (depth < maxHops && !visited.has(edge.target)) frontier.push({ name: edge.target, depth: depth + 1 });
+        }
+      }
+
+      const entityList = [...visited].slice(0, 40).map(n => {
+        const d = gEntities.get(n);
+        return d ? `${n} [${d.type}]` : n;
+      });
+
+      graphContext = [
+        `知识图谱共 ${gNodes.length} 节点 ${gLinks.length} 边`,
+        `查询匹配 ${matched.length} 实体，${maxHops} 跳扩展涉及 ${visited.size} 实体`,
+        `涉及实体：${entityList.join("、")}`,
+        `关系三元组：`,
+        ...triples.slice(0, 50)
+      ].join("\n");
+
+      // Show entity results
+      if (resultsDiv) {
+        resultsDiv.innerHTML = matched.slice(0, 10).map(e => {
+          const nbrs = (adj.get(e.name) || []).slice(0, 5).map(n => `${n.relation} → ${n.target}`).join("\n");
+          return `<div class="result-card"><div class="result-head"><strong>${e.name}</strong> <span class="tag">${e.type}</span> <span class="score">${e.count}次</span></div><div class="result-body"><pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:0">${nbrs || "无直接关系"}</pre></div></div>`;
+        }).join("");
+      }
+      if (meta) meta.textContent = `匹配 ${matched.length} 实体 · ${visited.size} 节点 · ${triples.length} 三元组`;
+    }
+
+    // Call LLM
+    try {
+      const resp = await fetch(kgBaseUrl + "/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${kgApiKey}` },
+        body: JSON.stringify({
+          model: kgModel,
+          temperature: kgTemp,
+          max_tokens: kgMaxTok,
+          messages: [
+            { role: "system", content: "你是一个基于知识图谱的智能问答助手。请基于以下知识图谱中的实体和关系三元组来回答用户问题。给出结构化、有条理的回答。" },
+            { role: "user", content: `问题：${query}\n\n${graphContext}` }
+          ]
+        })
+      });
+      const data = await resp.json();
+      const answer = data.choices?.[0]?.message?.content || data.error?.message || "LLM 未返回有效回答。";
+      if (answerDiv) answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7">${DOMPurify.sanitize(answer)}</div>`;
+    } catch (err) {
+      if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--danger)">LLM 调用失败：${err.message}</div>`;
+    }
+  }
+
+  $("btnKgAsk")?.addEventListener("click", runKgAsk);
+  $("kgAskInput")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runKgAsk(); }
+  });
+
   // ── GraphRAG Search Handler ──
   $("btnKgSearch")?.addEventListener("click", async () => {
     const query = $("kgSearchInput")?.value?.trim();
