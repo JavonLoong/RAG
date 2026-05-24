@@ -6451,6 +6451,38 @@ function bindEvents() {
     setTimeout(applySmartPaste, 100);
   });
 
+  // ── KG page smart paste (fills kgLlm* fields) ──
+  function applyKgSmartPaste() {
+    const input = $("kgLlmSmartPaste");
+    const result = smartParseLLM(input?.value);
+    if (!result) { showToast("请粘贴包含 URL/Key/Model 的文本", "warning"); return; }
+
+    let filled = [];
+    if (result.url) { const el = $("kgLlmBaseUrl"); if (el) { el.value = result.url; filled.push("URL"); } }
+    if (result.key) { const el = $("kgLlmApiKey"); if (el) { el.value = result.key; filled.push("Key"); } }
+    if (result.model) { const el = $("kgLlmModel"); if (el) { el.value = result.model; filled.push("Model"); } }
+    if (result.temp) { const el = $("kgLlmTemperature"); if (el) { el.value = result.temp; filled.push("Temperature"); } }
+    if (result.maxTok) { const el = $("kgLlmMaxTokens"); if (el) { el.value = result.maxTok; filled.push("MaxTokens"); } }
+
+    // Also sync to standard RAG fields so both pages share config
+    if (result.url && els.llmBaseUrl) els.llmBaseUrl.value = result.url;
+    if (result.key && els.llmApiKey) els.llmApiKey.value = result.key;
+    if (result.model && els.llmModel) els.llmModel.value = result.model;
+    if (result.temp && els.llmTemperature) els.llmTemperature.value = result.temp;
+    if (result.maxTok && els.llmMaxTokens) els.llmMaxTokens.value = result.maxTok;
+
+    if (filled.length) {
+      saveLLMSettings();
+      showToast(`✅ 已识别并填入：${filled.join("、")}`, "success");
+      if (input) input.value = "";
+    } else {
+      showToast("未能识别出有效配置，请检查格式", "warning");
+    }
+  }
+  $("btnKgSmartPaste")?.addEventListener("click", applyKgSmartPaste);
+  $("kgLlmSmartPaste")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyKgSmartPaste(); } });
+  $("kgLlmSmartPaste")?.addEventListener("paste", () => { setTimeout(applyKgSmartPaste, 100); });
+
   // ── GraphRAG Search Handler ──
   $("btnKgSearch")?.addEventListener("click", async () => {
     const query = $("kgSearchInput")?.value?.trim();
@@ -7601,6 +7633,13 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div class="llm-form">
+                    <div class="field field--wide" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
+                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="lucide:sparkles" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
+                      <div class="input-with-action">
+                        <input class="form-control" id="kgLlmSmartPaste" type="text" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o 0.7 131072" autocomplete="off" style="font-size:12px">
+                        <button class="btn" id="btnKgSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
+                      </div>
+                    </div>
                     <div class="field field--wide">
                       <label for="kgLlmProvider">模型服务</label>
                       <select class="form-control" id="kgLlmProvider">
