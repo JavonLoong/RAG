@@ -2,29 +2,42 @@
 
 ### 一、目前采用的技术架构情况
 
-咱们的项目整体采用了 **标准RAG + GraphRAG (知识图谱检索增强)** 双线并行的模块化架构设计。为了方便后续做实验评测、支持顶刊级别的指标量化，工程上做了深度的模块解耦。
+咱们的项目整体采用了 **标准RAG + GraphRAG (知识图谱检索增强)** 双线并行的模块化架构设计。为了方便后续做实验评测、支持顶刊级别的指标量化，工程上对两条主线做了深度的模块解耦：
+
+#### A. 普通 RAG 技术架构 (Standard RAG)
 
 **核心技术栈：**
-- **后端框架**：Python 3.11+, FastAPI (提供 REST API), Uvicorn (ASGI 异步服务器), Pydantic (数据校验与引擎建模)
-- **核心模型库**：Sentence-Transformers, Transformers, Torch
-- **检索与存储引擎**：
-  - **向量检索**：ChromaDB 
-  - **稀疏/关键词检索**：Jieba + Rank-BM25
-  - **图数据库**：Neo4j (用于 GraphRAG 的实体关系与社区存储)
+- **开发与框架**：Python 3.11+, FastAPI, Pydantic 
 - **文档解析**：PyPDF, python-docx 配合自研 Layout-aware OCR 策略
-- **前端应用**：目前在 `frontend_app/current_console` 沉淀了原生前端实验控制台
-- **基础设施与开发工具**（基于工程配置全量罗列）：
-  - **基础运行依赖**：Numpy (科学计算), Requests (网络请求), python-dotenv (环境配置), orjson / python-multipart (高效序列化与表单解析), tqdm (进度监控)
-  - **代码质量与测试**：Ruff (极速 Linter & Formatter), Mypy (静态类型检查), Pytest + pytest-cov (自动化测试与覆盖率), Pre-commit (Git提交拦截检查)
-  - **项目文档与构建**：MkDocs + Material (自动化文档站生成), tox-uv / hatchling (依赖管理与打包构建)
+- **检索与存储引擎**：
+  - **向量检索**：ChromaDB (用于 Dense 稠密检索)
+  - **稀疏检索**：Jieba + Rank-BM25 (用于 Sparse 关键词匹配)
 
-**系统核心分层设计（与代码目录强映射）：**
-1. **数据管线层 (`data_pipeline`)**：负责各类文档的解析、OCR 高精度识别、数据清洗、多层级切分 (Chunking)，统一数据资产。
-2. **知识图谱层 (`kg_pipeline`)**：GraphRAG 的核心引擎，负责调用大模型提取文本中的实体、关系和断言，处理归一化，并进行图谱社区发现 (Community Detection) 和摘要生成。
-3. **检索引擎层 (`retrieval_engine`)**：负责多路召回引擎。支持 Dense (向量)、Sparse (关键词)、Graph (图检索) 三路召回，以及混合融合检索，最后通过 Reranker 输出高质量证据。
-4. **RAG 编排层 (`rag_orchestrator`)**：全链路大模型调度。包含问题意图识别、上下文组装、答案生成、引用(Citation)溯源，以及针对幻觉的校验机制。
-5. **模型适配层 (`model_adapters`)**：底座模型网关。统一封装了不同底座的 LLM、Embedding 和 Reranker 模型调用，自带 Token 成本和延迟追踪。
-6. **评测实验层 (`evaluation` / `experiments`)**：包含自动化评测指标（如召回覆盖率、生成忠实度）和大规模消融实验矩阵。
+**系统核心分层设计：**
+1. **数据管线层 (`data_pipeline`)**：负责各类文档的解析、OCR 高精度识别、数据清洗、多层级切分 (Chunking)，输出干净的纯文本。
+2. **检索引擎层 (`retrieval_engine`)**：负责多路召回引擎。支持 Dense 和 Sparse 召回及其混合融合检索，最后通过 Reranker 输出高质量证据。
+3. **RAG 编排层 (`rag_orchestrator`)**：大模型调度。包含普通上下文组装、问题意图识别、答案生成、引用(Citation)溯源。
+
+#### B. 知识图谱与 GraphRAG 技术架构 (KG & GraphRAG)
+
+**核心技术栈：**
+- **知识抽取**：大模型 (LLM) 实体/关系提取、数据归一化算法
+- **检索与存储引擎**：
+  - **图数据库**：Neo4j (用于存储实体关系与社区元数据)
+  - **图计算**：基于图谱的高级挖掘与社区发现 (Community Detection)
+
+**系统核心分层设计：**
+1. **知识图谱构建层 (`kg_pipeline`)**：GraphRAG 的核心数据引擎，负责将切分好的文本进一步结构化为三元组，进行网络聚类划分，并生成社区级宏观摘要。
+2. **图谱检索层 (`retrieval_engine/graph`)**：针对不同问题类型，支持基于实体的局部子图游走（N-hop Local Search）和基于社区摘要的全局检索（Global Search）。
+3. **GraphRAG 编排层 (`rag_orchestrator/graph`)**：负责将高密度的结构化三元组知识与宏观社区摘要拼接成复杂 Prompt，驱动大模型进行全局视角的跨文档推理。
+
+#### C. 双引擎公共基座 (Shared Infrastructure)
+
+- **模型适配层 (`model_adapters`)**：底座模型网关。统一封装不同底座的 LLM、Embedding 和 Reranker 调用，自带 Token 成本和延迟追踪。
+- **评测实验层 (`evaluation` / `experiments`)**：包含自动化评测指标（如召回覆盖率、生成忠实度）和跨引擎（RAG vs GraphRAG）的消融对比实验矩阵。
+- **前端与基础设施**：
+  - `frontend_app/current_console` 提供支持双引擎对比的原生前端实验控制台。
+  - Numpy, Requests, orjson, Ruff, Mypy, Pytest, MkDocs, tox-uv 构成了极其严格的工程级代码质量体系。
 
 ---
 
