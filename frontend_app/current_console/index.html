@@ -2926,7 +2926,7 @@ function activatePublicDemoSnapshot() {
   state.activity = [
     { id: "demo-1", level: "success", title: "公开演示快照", detail: "已展示 4 本 OCR 质量较放心的燃气轮机材料。", at: Date.now() - 1000 * 60 * 8 },
     { id: "demo-2", level: "success", title: "OCR 质量检查", detail: "总页数 5483 页已完成，公开页先放较稳定样例。", at: Date.now() - 1000 * 60 * 16 },
-    { id: "demo-3", level: "warning", title: "后端未部署到 Pages", detail: "GitHub Pages 只托管静态页，真实 ChromaDB 需要单独后端。", at: Date.now() - 1000 * 60 * 25 }
+    { id: "demo-3", level: "warning", title: "演示模式提示", detail: "当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。", at: Date.now() - 1000 * 60 * 25 }
   ];
 }
 
@@ -3188,7 +3188,7 @@ async function runLocalSearch() {
     return;
   }
   if (!state.chunks.length) {
-    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先处理文件，或打开 GitHub Pages 演示快照。" };
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先上传文件并处理，或开启演示模式查看样例数据。" };
     renderSearchResults();
     showToast("当前没有本地索引，请先处理文件。", "warning");
     return;
@@ -3695,7 +3695,7 @@ function renderStatus() {
   let stamp;
   let level;
   if (state.publicDemo) {
-    statusMessage = "公开演示快照已加载。GitHub Pages 只展示成果，真实 ChromaDB 需要后端服务。";
+    statusMessage = "演示快照已加载。连接后端服务后可使用完整的向量入库与检索功能。";
     stamp = `Demo snapshot ${snapshotClock()}`;
     level = "success";
   } else if (state.localMode) {
@@ -3707,7 +3707,7 @@ function renderStatus() {
     stamp = `Last sync ${snapshotClock()}`;
     level = "success";
   } else {
-    statusMessage = "Backend unavailable. Start http://localhost:8000 to use server mode.";
+    statusMessage = "后端未连接。请启动后端服务 (python -m chroma_rag_poc) 以使用完整功能。";
     stamp = "Waiting for backend";
     level = "danger";
   }
@@ -6230,8 +6230,8 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
-                      <label for="publicBooksJsonDir">JSON 文件夹</label>
-                      <input class="form-control" id="publicBooksJsonDir" type="text" value="D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后" placeholder="例如 D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后">
+                      <label for="publicBooksJsonDir">JSON 文件夹路径</label>
+                      <input class="form-control" id="publicBooksJsonDir" type="text" value="" placeholder="请输入 Label Studio JSON 导出文件夹的绝对路径">
                     </div>
                     <div class="field field--wide">
                       <label for="publicBooksJsonCollection">ChromaDB 集合</label>
@@ -6621,8 +6621,8 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="llm-form">
                     <div class="field field--wide">
-                      <label for="kgPublicBooksJsonDir">JSON 文件夹</label>
-                      <input class="form-control" id="kgPublicBooksJsonDir" type="text" value="D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后" placeholder="例如 D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后">
+                      <label for="kgPublicBooksJsonDir">JSON 文件夹路径</label>
+                      <input class="form-control" id="kgPublicBooksJsonDir" type="text" value="" placeholder="请输入 Label Studio JSON 导出文件夹的绝对路径">
                     </div>
                     <div class="field field--wide">
                       <label for="kgPublicBooksJsonCollection">混合检索集合</label>
