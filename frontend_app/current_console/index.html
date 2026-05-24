@@ -6009,12 +6009,23 @@ function bindEvents() {
         logEntry("lucide:book-open", `关键词字典匹配到 ${entities.size} 个实体`);
       }
 
-      // ── ENGINE: 泛化抽取 — keywords + frequency + ngram ──
+      // ── ENGINE: 泛化抽取 — keywords + boundary-segmented terms ──
       if (engineMode === "generative") {
-        const STOP = new Set(["的","了","在","是","我","有","和","就","不","人","都","一","这","中","大","为","上","个","国","说","到","会","来","能","下","过","子","对","出","也","要","学","那","他","去","之","年","把","以","从","用","没","自","还","被","方","如","而","现","但","所","经","与","做","然","已","进","已经","通过","可以","需要","使用","相关","其他","应当","应该","进行","采用","满足","根据","包括","以及","不得","规定","要求"]);
-        const cnWords = fullText.match(/[\u4e00-\u9fa5]{2,6}/g) || [];
+        // Split Chinese text on punctuation and function words to get natural terms
+        const SPLIT_CHARS = /[，。！？、；：""''（）《》【】\s\d\n\r,.;:!?()\[\]{}"'<>\/\\|@#$%^&*+=~`\-_]+/;
+        const FUNC_WORDS = /(?:的|了|在|是|我|有|和|就|不|人|都|一|这|中|大|为|上|个|国|说|到|会|来|能|下|过|子|对|出|也|要|学|那|他|去|之|年|把|以|从|用|没|自|还|被|方|如|而|现|但|所|经|与|做|然|已|进|其|或|等|该|被|将|则|更|可|又|此|于|各|某|每|应|并|及|得|着|地|给|让|向|比|跟|按|关于|对于|由于|因为|所以|虽然|但是|如果|那么|因此|不过|而且|然而|另外|同时|此外)/g;
+
+        // Step 1: split on punctuation
+        const segments = fullText.split(SPLIT_CHARS).filter(s => s.length >= 2);
+        // Step 2: further split on function words
+        const terms = [];
+        for (const seg of segments) {
+          const parts = seg.replace(FUNC_WORDS, "|").split("|").filter(p => p.length >= 2 && p.length <= 8);
+          terms.push(...parts);
+        }
+        // Step 3: count and keep frequent terms
         const wc = {};
-        cnWords.forEach(w => { if (!STOP.has(w)) wc[w] = (wc[w] || 0) + 1; });
+        terms.forEach(w => { wc[w] = (wc[w] || 0) + 1; });
         const types = ["Equipment","Component","Parameter","Problem","Method"];
         Object.entries(wc).filter(e => e[1] >= 3).sort((a,b) => b[1]-a[1]).forEach(([w, c], i) => {
           if (!entities.has(w)) addEntity(w, types[i % 5], c);
