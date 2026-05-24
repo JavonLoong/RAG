@@ -4764,7 +4764,7 @@ async function runProcess() {
 }
 
 // ── Shared state for file pickers ──
-const _pendingJsonFiles = { standard: [], kg: [] };
+const _pendingJsonFiles = { standard: [], kg: [], kgCorpus: [] };
 
 function renderPendingFileList(files, containerEl) {
   if (!containerEl) return;
@@ -4819,7 +4819,10 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     let failed = 0;
     const fileSummaries = [];
 
-    for (const file of files) {
+    for (let fi = 0; fi < files.length; fi++) {
+      const file = files[fi];
+      if (summaryEl) renderEmpty(summaryEl, `正在处理 ${fi + 1}/${files.length}：${file.name}...`);
+      await new Promise(r => setTimeout(r, 0)); // yield to UI
       try {
         const records = await parseFileRecords(file);
         const chunks = makeChunks(records);
@@ -5583,6 +5586,29 @@ function applyDemoMode(isDemo) {
   shell.classList.toggle('demo-mode', isDemo);
   if (els.demoToggle) els.demoToggle.checked = isDemo;
   try { localStorage.setItem('rag_demo_mode', isDemo ? '1' : '0'); } catch {}
+
+  if (isDemo) {
+    // Load demo snapshot data
+    state.publicDemo = true;
+    activatePublicDemoSnapshot();
+  } else {
+    // Clear all demo data back to empty
+    state.publicDemo = false;
+    state.stats = cloneDefaultStats();
+    state.primaryStats = {};
+    state.primaryCollection = null;
+    state.lastProcess = null;
+    state.lastSearch = null;
+    state.publicBooksJson = null;
+    state.activity = [];
+    state.timeline = [];
+    state.uploads = [];
+    state.records = [];
+    state.chunks = [];
+    state.benchmark = null;
+  }
+  renderAll();
+  renderStatus();
 }
 
 // ─── Collection Selection Dialog ───
@@ -5872,8 +5898,8 @@ function bindEvents() {
   function handleKgCorpusFiles(fileList) {
     const picked = Array.from(fileList || []);
     if (picked.length) {
-      _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked];
-      renderPendingFileList(_pendingJsonFiles.kg, kgFileList);
+      _pendingJsonFiles.kgCorpus = [..._pendingJsonFiles.kgCorpus, ...picked];
+      renderPendingFileList(_pendingJsonFiles.kgCorpus, kgFileList);
       showToast(`已选择 ${picked.length} 个语料文件。`, "success");
     }
   }
@@ -5885,6 +5911,54 @@ function bindEvents() {
     e.preventDefault(); kgDropZoneEl.classList.remove("is-dragging");
     const dropped = await filesFromDrop(e.dataTransfer);
     handleKgCorpusFiles(dropped);
+  });
+
+  // ── KG Build button ──
+  $("btnKgBuild")?.addEventListener("click", async () => {
+    const corpusFiles = _pendingJsonFiles.kgCorpus;
+    if (!corpusFiles.length) {
+      showToast("请先在上方拖入或选择语料文件。", "warning");
+      return;
+    }
+    const btn = $("btnKgBuild");
+    if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
+    addActivity("warning", "图谱构建开始", `正在处理 ${corpusFiles.length} 个语料文件...`);
+
+    try {
+      const allRecords = [];
+      const allChunks = [];
+      let succeeded = 0;
+      let failed = 0;
+
+      for (let fi = 0; fi < corpusFiles.length; fi++) {
+        const file = corpusFiles[fi];
+        showToast(`正在解析 ${fi + 1}/${corpusFiles.length}：${file.name}`, "success");
+        await new Promise(r => setTimeout(r, 0));
+        try {
+          const records = await parseFileRecords(file);
+          const chunks = makeChunks(records);
+          allRecords.push(...records);
+          allChunks.push(...chunks);
+          succeeded++;
+        } catch { failed++; }
+      }
+
+      if (allChunks.length) {
+        state.records = [...state.records, ...allRecords];
+        state.chunks = [...state.chunks, ...allChunks];
+        if (state.publicDemo) await refreshPublicDemoStats();
+        else await refreshLocalStats();
+        renderSummaryMetrics();
+      }
+
+      addActivity("success", "图谱构建完成", `成功解析 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} 个向量片段，失败 ${failed} 个。`);
+      showToast(`图谱构建完成，${succeeded} 个文件 → ${formatNumber(allChunks.length)} 个片段。`, "success");
+    } catch (err) {
+      addActivity("danger", "图谱构建失败", err.message || String(err));
+      showToast("图谱构建失败：" + (err.message || String(err)), "danger");
+    } finally {
+      if (btn) { delete btn.dataset.busy; btn.disabled = false; }
+    }
   });
 
   // ── KG JSON ingest file pickers ──
@@ -6857,7 +6931,7 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div class="queue-actions" style="justify-content: flex-start; margin-top: 18px;">
-                    <button class="btn" type="button"><iconify-icon icon="lucide:cpu"></iconify-icon><span>开始构建知识图谱</span></button>
+                    <button class="btn" id="btnKgBuild" type="button"><iconify-icon icon="lucide:cpu"></iconify-icon><span>开始构建知识图谱</span></button>
                   </div>
                 </article>
               </div>
