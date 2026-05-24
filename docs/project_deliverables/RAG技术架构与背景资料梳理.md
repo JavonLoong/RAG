@@ -14,9 +14,9 @@
   - **稀疏检索**：Jieba + Rank-BM25 (用于 Sparse 关键词匹配)
 
 **系统核心分层设计：**
-1. **数据管线层 (`data_pipeline`)**：负责各类文档的解析、OCR 高精度识别、数据清洗、多层级切分 (Chunking)，输出干净的纯文本。
-2. **检索引擎层 (`retrieval_engine`)**：负责多路召回引擎。支持 Dense 和 Sparse 召回及其混合融合检索，最后通过 Reranker 输出高质量证据。
-3. **RAG 编排层 (`rag_orchestrator`)**：大模型调度。包含普通上下文组装、问题意图识别、答案生成、引用(Citation)溯源。
+1. **数据管线层 (`data_pipeline`)**：采用业界成熟的非结构化数据 ETL 范式。结合规则解析与版面感知 OCR (Layout-aware OCR) 进行多模态文档高保真还原；数据切分应用滑动窗口 (Sliding Window) 与层级切块 (Hierarchical Chunking) 策略，在保留上下文语义的同时兼顾精细检索粒度。
+2. **检索引擎层 (`retrieval_engine`)**：引入业界标配的“召回+重排 (Retrieve & Rerank)”架构。底层采用 Dense (ChromaDB 稠密向量) 与 Sparse (Rank-BM25 稀疏关键词) 混合融合检索 (Hybrid Search) 确保基础召回率，并通过 Cross-Encoder 模型进行二次语义精排，提取 Top-K 高质量证据。
+3. **RAG 编排层 (`rag_orchestrator`)**：基于 Advanced RAG 调度策略。集成前置的查询理解与改写 (Query Rewriting) 以对齐知识库语义，通过动态组装上下文 (In-Context Assembly) 配合严格 Prompt 工程，强制大模型生成带有准确引用 (Citation) 的溯源回答，建立防幻觉屏障。
 
 #### B. 知识图谱与 GraphRAG 技术架构 (KG & GraphRAG)
 
@@ -27,9 +27,9 @@
   - **图计算**：基于图谱的高级挖掘与社区发现 (Community Detection)
 
 **系统核心分层设计：**
-1. **知识图谱构建层 (`kg_pipeline`)**：GraphRAG 的核心数据引擎，负责将切分好的文本进一步结构化为三元组，进行网络聚类划分，并生成社区级宏观摘要。
-2. **图谱检索层 (`retrieval_engine/graph`)**：针对不同问题类型，支持基于实体的局部子图游走（N-hop Local Search）和基于社区摘要的全局检索（Global Search）。
-3. **GraphRAG 编排层 (`rag_orchestrator/graph`)**：负责将高密度的结构化三元组知识与宏观社区摘要拼接成复杂 Prompt，驱动大模型进行全局视角的跨文档推理。
+1. **知识图谱构建层 (`kg_pipeline`)**：对标业界主流的 GraphRAG 建图范式。将文本碎片结构化为三元组图谱后，引入图聚类算法（如 Leiden / Louvain Community Detection）划分知识网络层次，并基于不同层级的图谱社区生成宏观摘要 (Community Summaries)。
+2. **图谱检索层 (`retrieval_engine/graph`)**：针对微观与宏观问题分发不同的业界标准查询策略。局部具体问题采用基于起点的子图多跳游走 (N-hop Local Search)；全局宏观问题采用直接并行召回高阶社区摘要的机制 (Global Search)，解决传统向量检索“见树不见林”的痛点。
+3. **GraphRAG 编排层 (`rag_orchestrator/graph`)**：执行 Map-Reduce 风格的复杂图谱推理组装流。负责将高密度的结构化子图信息与海量社区摘要，在上下文中进行规约与逻辑拼接，驱动大模型进行全局视角的跨文档深度推理。
 
 #### C. 双引擎公共基座 (Shared Infrastructure)
 
