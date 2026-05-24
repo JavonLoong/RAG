@@ -6008,12 +6008,88 @@ function bindEvents() {
         }
       }
 
+      // ── Fallback: universal frequency-based extraction ──
+      // If predefined keywords found too few entities, extract from text automatically
+      if (entities.size < 5) {
+        logEntry("lucide:sparkles", "关键词匹配不足，启用通用频率抽取...");
+
+        const STOP_WORDS = new Set(["the","and","for","that","this","with","from","have","are","was","were","been","will","would","could","should","can","not","but","its","all","has","had","which","when","what","where","how","each","both","into","also","more","than","them","then","there","their","these","those","such","only","most","some","much","very","just","about","over","after","before","other","being","does","same","true","false","null","type","name","value","string","number","object","array","data","list","item","file","config","default","undefined","function","return","import","export","const","class","index"]);
+
+        // 1. Extract JSON keys as entities
+        const jsonKeyMatches = fullText.match(/"([a-zA-Z_][a-zA-Z0-9_]{2,30})"(?=\s*:)/g);
+        if (jsonKeyMatches) {
+          const keyCounts = {};
+          jsonKeyMatches.forEach(m => {
+            const key = m.replace(/"/g, "");
+            if (!STOP_WORDS.has(key.toLowerCase()) && key.length > 2) {
+              keyCounts[key] = (keyCounts[key] || 0) + 1;
+            }
+          });
+          const topKeys = Object.entries(keyCounts).sort((a, b) => b[1] - a[1]).slice(0, 30);
+          const assignTypes = ["Component", "Parameter", "Equipment", "Method", "Problem"];
+          topKeys.forEach(([key, count], i) => {
+            if (!entities.has(key)) {
+              entities.set(key, { type: assignTypes[i % assignTypes.length], count });
+            }
+          });
+        }
+
+        // 2. Extract CamelCase / snake_case identifiers
+        const identMatches = fullText.match(/\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b/g) || [];
+        const snakeMatches = fullText.match(/\b[a-z]+(?:_[a-z]+){1,5}\b/g) || [];
+        const allIdents = [...identMatches, ...snakeMatches];
+        const identCounts = {};
+        allIdents.forEach(id => {
+          if (id.length > 3 && id.length < 40 && !STOP_WORDS.has(id.toLowerCase())) {
+            identCounts[id] = (identCounts[id] || 0) + 1;
+          }
+        });
+        Object.entries(identCounts).sort((a, b) => b[1] - a[1]).slice(0, 20).forEach(([id, count]) => {
+          if (!entities.has(id)) {
+            entities.set(id, { type: id.includes("_") ? "Parameter" : "Component", count });
+          }
+        });
+
+        // 3. Extract frequent Chinese words (2-4 chars)
+        const chineseWords = fullText.match(/[\u4e00-\u9fa5]{2,4}/g);
+        if (chineseWords) {
+          const wordCounts = {};
+          const chineseStop = new Set(["的","了","在","是","我","有","和","就","不","人","都","一","这","中","大","为","上","个","国","说","到","会","来","能","下","过","子","对","出","也","要","学","那","他","去","之","年","把","以","从","用","没","自","还","被","方","如","而","现","但","所","经","与","区","做","然","已","进","已经","通过","可以","需要","使用","相关","其他"]);
+          chineseWords.forEach(w => {
+            if (!chineseStop.has(w)) wordCounts[w] = (wordCounts[w] || 0) + 1;
+          });
+          const topCn = Object.entries(wordCounts).filter(e => e[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 25);
+          const cnTypes = ["Equipment", "Component", "Parameter", "Problem", "Method"];
+          topCn.forEach(([w, count], i) => {
+            if (!entities.has(w)) {
+              entities.set(w, { type: cnTypes[i % cnTypes.length], count });
+            }
+          });
+        }
+
+        // 4. Extract frequent English words (5+ chars)
+        const engWords = fullText.toLowerCase().match(/\b[a-z]{5,}\b/g);
+        if (engWords) {
+          const engCounts = {};
+          engWords.forEach(w => {
+            if (!STOP_WORDS.has(w)) engCounts[w] = (engCounts[w] || 0) + 1;
+          });
+          Object.entries(engCounts).filter(e => e[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 20).forEach(([w, count]) => {
+            if (!entities.has(w)) {
+              entities.set(w, { type: "Parameter", count });
+            }
+          });
+        }
+
+        logEntry("lucide:check", `通用抽取补充后共 ${entities.size} 个实体`);
+      }
+
       logEntry("lucide:target", `抽取到 ${entities.size} 个实体`);
       if (progressEl) progressEl.style.width = "65%";
       await new Promise(r => setTimeout(r, 0));
 
-      // Extract relations by co-occurrence in sentences
-      const sentences = fullText.split(/[。！？\n]/).filter(s => s.length > 5);
+      // Extract relations by co-occurrence in sentences/chunks
+      const sentences = fullText.split(/[。！？\.\;\n\}\{]/).filter(s => s.trim().length > 5);
       const entityNames = Array.from(entities.keys());
 
       const RELATION_TYPES = ["HAS_COMPONENT","USES_FUEL","HAS_PARAMETER","HAS_PROBLEM","HAS_METHOD","CONNECTS_TO","OPERATES_WITH"];
