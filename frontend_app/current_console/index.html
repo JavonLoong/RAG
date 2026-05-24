@@ -3316,7 +3316,6 @@ function resolveEls() {
     processProgress: $("processProgress"),
     processFill: $("processFill"),
     processLog: $("processLog"),
-    publicBooksJsonDir: $("publicBooksJsonDir"),
     publicBooksJsonCollection: $("publicBooksJsonCollection"),
     publicBooksJsonMode: $("publicBooksJsonMode"),
     publicBooksJsonChunkSize: $("publicBooksJsonChunkSize"),
@@ -4764,74 +4763,119 @@ async function runProcess() {
   }
 }
 
-async function runPublicBooksJsonIngest() {
-  if (state.localMode || state.publicDemo) {
-    showToast("公开书籍 JSON 入库需要启动本地后端服务。", "warning");
+// ── Shared state for file pickers ──
+const _pendingJsonFiles = { standard: [], kg: [] };
+
+function renderPendingFileList(files, containerEl) {
+  if (!containerEl) return;
+  if (!files.length) { containerEl.innerHTML = ""; return; }
+  containerEl.innerHTML = files.map((f, i) => `
+    <article class="queue-item" style="padding:8px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span class="queue-name" style="font-size:12px">${escapeHtml(f.name)}</span>
+        <span class="muted" style="font-size:11px">${(f.size / 1024).toFixed(1)} KB</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function collectJsonFiles(fileList) {
+  return Array.from(fileList || []).filter(f => f.name.toLowerCase().endsWith(".json"));
+}
+
+async function runBrowserJsonIngest(pendingKey, panelEls) {
+  const files = _pendingJsonFiles[pendingKey];
+  if (!files.length) {
+    showToast("请先选择 JSON 文件。", "warning");
     return;
   }
-  const inputDir = String(els.publicBooksJsonDir?.value || "").trim();
-  if (!inputDir) {
-    showToast("请填写 JSON 文件夹路径。", "warning");
-    return;
-  }
-  const collection = String(els.publicBooksJsonCollection?.value || "public_books_labelstudio").trim() || "public_books_labelstudio";
-  const mode = String(els.publicBooksJsonMode?.value || "append");
-  const chunkSize = Number(els.publicBooksJsonChunkSize?.value || 900);
-  const overlap = Number(els.publicBooksJsonOverlap?.value || 120);
+  const collectionEl = panelEls.collection;
+  const modeEl = panelEls.mode;
+  const chunkSizeEl = panelEls.chunkSize;
+  const overlapEl = panelEls.overlap;
+  const btnEl = panelEls.btn;
+  const summaryEl = panelEls.summary;
 
-  if (els.btnPublicBooksJsonIngest) {
-    els.btnPublicBooksJsonIngest.disabled = true;
-    els.btnPublicBooksJsonIngest.dataset.busy = "true";
-  }
-  state.publicBooksJson = { status: "running" };
-  renderPublicBooksJsonSummary();
-  addActivity("warning", "公开书籍 JSON 入库开始", `${mode === "create" ? "新建/重建" : "追加"} → ${collection}`);
+  const collection = String(collectionEl?.value || "public_books_labelstudio").trim() || "public_books_labelstudio";
+  const mode = String(modeEl?.value || "append");
+  const chunkSize = Number(chunkSizeEl?.value || 900);
+  const overlap = Number(overlapEl?.value || 120);
 
+  if (btnEl) { btnEl.disabled = true; btnEl.dataset.busy = "true"; }
+  if (summaryEl) renderEmpty(summaryEl, "正在解析 JSON 文件并写入浏览器内存向量库...");
+  addActivity("warning", "JSON 入库开始", `${mode === "create" ? "新建/重建" : "追加"} → ${collection}（${files.length} 个文件）`);
+
+  const started = performance.now();
   try {
-    const result = await requestJson("/api/public-books-json/ingest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        input_dir: inputDir,
-        collection,
-        mode,
-        chunk_size: chunkSize,
-        overlap
-      })
-    }, 3600000);
+    // If "create" mode, clear existing chunks
+    if (mode === "create") {
+      state.chunks = [];
+      state.records = [];
+    }
 
-    state.publicBooksJson = result;
-    state.primaryCollection = result.collection || collection;
-    state.lastProcess = {
-      collection: result.collection,
-      requested_filenames: [result.latest_snapshot_name],
-      skipped_already_processed: [],
-      files_succeeded: 1,
-      files_failed: 0,
-      records_processed: result.records_written || 0,
-      chunks_written: result.chunks_written || 0,
-      elapsed_s: result.elapsed_s || 0,
-      file_summaries: [{
-        source_file: result.latest_snapshot_name,
-        source_kind: "JSON",
-        status: "ok",
-        records_extracted: result.records_written || 0
-      }],
-      quality_report: {
-        chunks: { total_chunks: result.chunks_written || 0 },
-        documents: [],
-        issues: [],
-        issue_count: 0
-      },
-      embedding_backend: result.embedding_backend || "hashing",
-      log_file: result.log_file
+    const allRecords = [];
+    const allChunks = [];
+    let succeeded = 0;
+    let failed = 0;
+    const fileSummaries = [];
+
+    for (const file of files) {
+      try {
+        const records = await parseFileRecords(file);
+        const chunks = makeChunks(records);
+        allRecords.push(...records);
+        allChunks.push(...chunks);
+        succeeded++;
+        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "ok", records_extracted: records.length });
+      } catch (err) {
+        failed++;
+        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "error", records_extracted: 0, error: err.message || String(err) });
+      }
+    }
+
+    if (!allChunks.length && !allRecords.length) {
+      throw new Error("所有文件解析失败，未生成任何向量。");
+    }
+
+    state.records = [...state.records, ...allRecords];
+    state.chunks = [...state.chunks, ...allChunks];
+    const elapsed = Number(((performance.now() - started) / 1000).toFixed(2));
+
+    state.publicBooksJson = {
+      status: "ok",
+      latest_snapshot_name: files.map(f => f.name).join(", "),
+      collection,
+      mode,
+      chunks_written: allChunks.length,
+      records_written: allRecords.length,
+      tasks: files.length,
+      blocks_total: allRecords.length,
+      elapsed_s: elapsed,
+      decision_counts: { accept: allRecords.length, review: 0, metadata: 0, reject: 0 }
     };
-    await refreshStats();
+    state.primaryCollection = collection;
+    state.lastProcess = {
+      collection,
+      requested_filenames: files.map(f => f.name),
+      skipped_already_processed: [],
+      files_succeeded: succeeded,
+      files_failed: failed,
+      records_processed: allRecords.length,
+      chunks_written: allChunks.length,
+      elapsed_s: elapsed,
+      file_summaries: fileSummaries,
+      quality_report: buildQualityReport(allRecords, allChunks),
+      embedding_backend: "browser-local"
+    };
+
+    if (state.publicDemo) await refreshPublicDemoStats();
+    else await refreshLocalStats();
     renderPublicBooksJsonSummary();
     renderProcessSummary();
     renderSummaryMetrics();
-    addActivity("success", "公开书籍 JSON 入库完成", `写入 ${formatNumber(result.chunks_written || 0)} 个 chunk。`);
-    showToast(`JSON 入库完成，写入 ${formatNumber(result.chunks_written || 0)} 个 chunk。`, "success");
+    renderSearchResults();
+    addActivity("success", "JSON 入库完成", `成功处理 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} 个 chunk。`);
+    showToast(`JSON 入库完成，写入 ${formatNumber(allChunks.length)} 个 chunk。`, "success");
   } catch (error) {
     state.publicBooksJson = {
       status: "error",
@@ -4845,15 +4889,24 @@ async function runPublicBooksJsonIngest() {
       error: error.message || String(error)
     };
     renderPublicBooksJsonSummary();
-    addActivity("danger", "公开书籍 JSON 入库失败", error.message || String(error));
+    addActivity("danger", "JSON 入库失败", error.message || String(error));
     showToast(error.message || "JSON 入库失败", "danger");
   } finally {
-    if (els.btnPublicBooksJsonIngest) {
-      delete els.btnPublicBooksJsonIngest.dataset.busy;
-      els.btnPublicBooksJsonIngest.disabled = false;
-    }
+    if (btnEl) { delete btnEl.dataset.busy; btnEl.disabled = false; }
   }
 }
+
+async function runPublicBooksJsonIngest() {
+  await runBrowserJsonIngest("standard", {
+    collection: els.publicBooksJsonCollection,
+    mode: els.publicBooksJsonMode,
+    chunkSize: els.publicBooksJsonChunkSize,
+    overlap: els.publicBooksJsonOverlap,
+    btn: els.btnPublicBooksJsonIngest,
+    summary: els.publicBooksJsonSummary
+  });
+}
+
 
 function exportChromaFromPublicBooksPanel() {
   if (state.localMode || state.publicDemo) {
@@ -5779,6 +5832,102 @@ function bindEvents() {
   els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
   els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
 
+  // ── Standard RAG JSON ingest file pickers ──
+  const jsonIngestFileInput = $("jsonIngestFileInput");
+  const jsonIngestFolderInput = $("jsonIngestFolderInput");
+  const jsonIngestDropZone = $("jsonIngestDropZone");
+  const jsonIngestFileList = $("jsonIngestFileList");
+
+  $("btnPickJsonFiles")?.addEventListener("click", () => jsonIngestFileInput?.click());
+  $("btnPickJsonFolder")?.addEventListener("click", () => jsonIngestFolderInput?.click());
+
+  jsonIngestFileInput?.addEventListener("change", (e) => {
+    const picked = collectJsonFiles(e.target.files);
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+    e.target.value = "";
+  });
+  jsonIngestFolderInput?.addEventListener("change", (e) => {
+    const picked = collectJsonFiles(e.target.files);
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+    e.target.value = "";
+  });
+  jsonIngestDropZone?.addEventListener("dragover", (e) => { e.preventDefault(); jsonIngestDropZone.classList.add("is-dragging"); });
+  jsonIngestDropZone?.addEventListener("dragleave", () => jsonIngestDropZone.classList.remove("is-dragging"));
+  jsonIngestDropZone?.addEventListener("drop", async (e) => {
+    e.preventDefault(); jsonIngestDropZone.classList.remove("is-dragging");
+    const dropped = await filesFromDrop(e.dataTransfer);
+    const picked = collectJsonFiles(dropped);
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+  });
+
+  // ── KG corpus dropzone ──
+  const kgFileInput = $("kgFileInput");
+  const kgFolderInput = $("kgFolderInput");
+  const kgDropZoneEl = $("kgDropZone");
+  const kgFileList = $("kgFileList");
+
+  $("btnKgPickFiles")?.addEventListener("click", () => kgFileInput?.click());
+  $("btnKgPickFolder")?.addEventListener("click", () => kgFolderInput?.click());
+
+  function handleKgCorpusFiles(fileList) {
+    const picked = Array.from(fileList || []);
+    if (picked.length) {
+      _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked];
+      renderPendingFileList(_pendingJsonFiles.kg, kgFileList);
+      showToast(`已选择 ${picked.length} 个语料文件。`, "success");
+    }
+  }
+  kgFileInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
+  kgFolderInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
+  kgDropZoneEl?.addEventListener("dragover", (e) => { e.preventDefault(); kgDropZoneEl.classList.add("is-dragging"); });
+  kgDropZoneEl?.addEventListener("dragleave", () => kgDropZoneEl.classList.remove("is-dragging"));
+  kgDropZoneEl?.addEventListener("drop", async (e) => {
+    e.preventDefault(); kgDropZoneEl.classList.remove("is-dragging");
+    const dropped = await filesFromDrop(e.dataTransfer);
+    handleKgCorpusFiles(dropped);
+  });
+
+  // ── KG JSON ingest file pickers ──
+  const kgJsonIngestFileInput = $("kgJsonIngestFileInput");
+  const kgJsonIngestFolderInput = $("kgJsonIngestFolderInput");
+  const kgJsonIngestDropZone = $("kgJsonIngestDropZone");
+  const kgJsonIngestFileList = $("kgJsonIngestFileList");
+
+  $("btnKgPickJsonFiles")?.addEventListener("click", () => kgJsonIngestFileInput?.click());
+  $("btnKgPickJsonFolder")?.addEventListener("click", () => kgJsonIngestFolderInput?.click());
+
+  kgJsonIngestFileInput?.addEventListener("change", (e) => {
+    const picked = collectJsonFiles(e.target.files);
+    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
+    e.target.value = "";
+  });
+  kgJsonIngestFolderInput?.addEventListener("change", (e) => {
+    const picked = collectJsonFiles(e.target.files);
+    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
+    e.target.value = "";
+  });
+  kgJsonIngestDropZone?.addEventListener("dragover", (e) => { e.preventDefault(); kgJsonIngestDropZone.classList.add("is-dragging"); });
+  kgJsonIngestDropZone?.addEventListener("dragleave", () => kgJsonIngestDropZone.classList.remove("is-dragging"));
+  kgJsonIngestDropZone?.addEventListener("drop", async (e) => {
+    e.preventDefault(); kgJsonIngestDropZone.classList.remove("is-dragging");
+    const dropped = await filesFromDrop(e.dataTransfer);
+    const picked = collectJsonFiles(dropped);
+    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
+  });
+
+  $("btnKgPublicBooksJsonIngest")?.addEventListener("click", async () => {
+    await runBrowserJsonIngest("kg", {
+      collection: $("kgPublicBooksJsonCollection"),
+      mode: $("kgPublicBooksJsonMode"),
+      chunkSize: $("kgPublicBooksJsonChunkSize"),
+      overlap: $("kgPublicBooksJsonOverlap"),
+      btn: $("btnKgPublicBooksJsonIngest"),
+      summary: $("kgPublicBooksJsonSummary")
+    });
+  });
+  $("btnKgPublicBooksExportChroma")?.addEventListener("click", exportChromaFromPublicBooksPanel);
+
+
   els.searchInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -6224,17 +6373,27 @@ window.addEventListener("DOMContentLoaded", init);
                   <div class="panel-head">
                     <div>
                       <h3>公开书籍 JSON 入库</h3>
-                      <p>读取本地 Label Studio JSON 目录，只使用最新快照，先筛选正文再写入 ChromaDB。</p>
+                      <p>选择本地 JSON 文件，在浏览器中直接解析、分块并写入内存向量库，无需后端服务。</p>
                     </div>
-                    <span class="pill">本地后端</span>
+                    <span class="pill">浏览器端处理</span>
                   </div>
-                  <div class="llm-form">
-                    <div class="field field--wide">
-                      <label for="publicBooksJsonDir">JSON 文件夹路径</label>
-                      <input class="form-control" id="publicBooksJsonDir" type="text" value="" placeholder="请输入 Label Studio JSON 导出文件夹的绝对路径">
+                  <div class="queue-dropzone" id="jsonIngestDropZone">
+                    <div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:file-json-2"></iconify-icon></div>
+                      <h3>拖入 JSON 文件或点击选择</h3>
+                      <p class="muted">支持 .json 文件，可一次选择多个</p>
+                      <div class="queue-actions">
+                        <button class="btn" id="btnPickJsonFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择 JSON 文件</span></button>
+                        <button class="ghost-btn" id="btnPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                      </div>
+                      <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple accept=".json">
+                      <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory accept=".json">
                     </div>
+                  </div>
+                  <div id="jsonIngestFileList" class="queue-list"></div>
+                  <div class="llm-form" style="margin-top:12px">
                     <div class="field field--wide">
-                      <label for="publicBooksJsonCollection">ChromaDB 集合</label>
+                      <label for="publicBooksJsonCollection">向量库集合名称</label>
                       <input class="form-control" id="publicBooksJsonCollection" type="text" value="public_books_labelstudio">
                     </div>
                     <div class="field">
@@ -6255,7 +6414,7 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="export-bar">
                     <button class="btn" id="btnPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
-                    <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 ChromaDB</span></button>
+                    <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出向量库</span></button>
                   </div>
                   <div class="queue-list" id="publicBooksJsonSummary"></div>
                 </article>
@@ -6603,27 +6762,41 @@ window.addEventListener("DOMContentLoaded", init);
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:network"></iconify-icon></div>
                       <h3>拖入专业文档开始知识抽取</h3>
+                      <p class="muted">支持 JSON / PDF / TXT / DOCX 等格式</p>
                       <div class="queue-actions">
-                        <button class="btn" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
-                        <button class="ghost-btn" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="btn" id="btnKgPickFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="btnKgPickFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
                       </div>
+                      <input class="hidden-input" id="kgFileInput" type="file" multiple accept=".json,.pdf,.txt,.md,.docx,.csv,.tsv">
+                      <input class="hidden-input" id="kgFolderInput" type="file" multiple webkitdirectory directory>
                     </div>
                   </div>
+                  <div id="kgFileList" class="queue-list"></div>
                 </article>
 
                 <article class="panel">
                   <div class="panel-head">
                     <div>
                       <h3>图谱/向量混合 JSON 入库</h3>
-                      <p>支持将提取的知识一键存入新建或已有的库中，并支持直接导出。</p>
+                      <p>选择 JSON 文件，在浏览器中直接解析并写入内存向量库。</p>
                     </div>
-                    <span class="pill">本地后端</span>
+                    <span class="pill">浏览器端处理</span>
                   </div>
-                  <div class="llm-form">
-                    <div class="field field--wide">
-                      <label for="kgPublicBooksJsonDir">JSON 文件夹路径</label>
-                      <input class="form-control" id="kgPublicBooksJsonDir" type="text" value="" placeholder="请输入 Label Studio JSON 导出文件夹的绝对路径">
+                  <div class="queue-dropzone" id="kgJsonIngestDropZone">
+                    <div>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:file-json-2"></iconify-icon></div>
+                      <h3>拖入 JSON 文件或点击选择</h3>
+                      <p class="muted">支持 .json 文件，可一次选择多个</p>
+                      <div class="queue-actions">
+                        <button class="btn" id="btnKgPickJsonFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择 JSON 文件</span></button>
+                        <button class="ghost-btn" id="btnKgPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                      </div>
+                      <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple accept=".json">
+                      <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory accept=".json">
                     </div>
+                  </div>
+                  <div id="kgJsonIngestFileList" class="queue-list"></div>
+                  <div class="llm-form" style="margin-top:12px">
                     <div class="field field--wide">
                       <label for="kgPublicBooksJsonCollection">混合检索集合</label>
                       <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="public_books_labelstudio">
