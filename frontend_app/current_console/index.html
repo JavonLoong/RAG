@@ -2030,6 +2030,7 @@ const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summa
 const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
 const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
+const PUBLIC_BOOKS_JSON_DEFAULT_DIR = "D:\\虚拟C盘\\清华云盘_专业书籍_20260524\\解压后";
 const PUBLIC_DEMO_COLLECTION = "gas_turbine_ocr_demo_snapshot";
 const PUBLIC_DEMO_UPDATED_AT = 1779033600;
 const PUBLIC_DEMO_FILES = [
@@ -2300,6 +2301,7 @@ const state = {
   selectedProcessedUploads: new Set(),
   processedEditMode: false,
   lastProcess: null,
+  publicBooksJson: null,
   lastSearch: null,
   benchmark: null,
   activity: [],
@@ -3008,6 +3010,7 @@ async function deleteLocalUpload(filename, options = {}) {
   renderUploads();
   renderProcessedUploads();
   renderProcessSummary();
+  renderPublicBooksJsonSummary();
   renderQualityReport();
   renderSearchResults();
   const label = splitUploadPath(uploadDisplayName(filename)).file;
@@ -3314,6 +3317,14 @@ function resolveEls() {
     processProgress: $("processProgress"),
     processFill: $("processFill"),
     processLog: $("processLog"),
+    publicBooksJsonDir: $("publicBooksJsonDir"),
+    publicBooksJsonCollection: $("publicBooksJsonCollection"),
+    publicBooksJsonMode: $("publicBooksJsonMode"),
+    publicBooksJsonChunkSize: $("publicBooksJsonChunkSize"),
+    publicBooksJsonOverlap: $("publicBooksJsonOverlap"),
+    btnPublicBooksJsonIngest: $("btnPublicBooksJsonIngest"),
+    btnPublicBooksExportChroma: $("btnPublicBooksExportChroma"),
+    publicBooksJsonSummary: $("publicBooksJsonSummary"),
     queueCountPill: $("queueCountPill"),
     queueList: $("queueList"),
     processedMeta: $("processedMeta"),
@@ -4130,6 +4141,47 @@ function renderProcessSummary() {
   els.processLog.innerHTML = items.join("");
 }
 
+function renderPublicBooksJsonSummary() {
+  if (!els.publicBooksJsonSummary) return;
+  const result = state.publicBooksJson;
+  if (!result) {
+    renderEmpty(els.publicBooksJsonSummary, "还没有运行公开书籍 JSON 入库。选择目录后会自动检测最新快照。");
+    return;
+  }
+  if (result.status === "running") {
+    renderEmpty(els.publicBooksJsonSummary, "正在读取最新 JSON 快照、筛选正文并写入 ChromaDB...");
+    return;
+  }
+
+  const decisions = result.decision_counts || {};
+  const summaryFiles = result.summary_files || {};
+  els.publicBooksJsonSummary.innerHTML = `
+    <article class="queue-item">
+      <div class="queue-head">
+        <div>
+          <div class="queue-name">${escapeHtml(result.latest_snapshot_name || "Label Studio JSON")}</div>
+          <p>集合 ${escapeHtml(result.collection || "-")} · ${escapeHtml(result.mode === "create" ? "新建/重建" : "追加已有")}</p>
+        </div>
+        <span class="pill">${formatNumber(result.chunks_written || 0)} chunks</span>
+      </div>
+      <div class="queue-meta">
+        <span>任务 ${formatNumber(result.tasks || 0)}</span>
+        <span>文本块 ${formatNumber(result.blocks_total || 0)}</span>
+        <span>记录 ${formatNumber(result.records_written || 0)}</span>
+        <span>耗时 ${formatDecimal(result.elapsed_s || 0, 1)} s</span>
+        ${result.log_file ? logLinkMarkup(result.log_file, "日志") : ""}
+      </div>
+      <div class="queue-meta">
+        <span>正文 ${formatNumber(decisions.accept || 0)}</span>
+        <span>待复核 ${formatNumber(decisions.review || 0)}</span>
+        <span>元数据 ${formatNumber(decisions.metadata || 0)}</span>
+        <span>剔除 ${formatNumber(decisions.reject || 0)}</span>
+      </div>
+      ${summaryFiles.markdown ? `<div class="queue-hint">摘要文件：${escapeHtml(summaryFiles.markdown)}</div>` : ""}
+    </article>
+  `;
+}
+
 function renderQualityReport() {
   if (!els.qualityReport) return;
   const report = state.lastProcess?.quality_report;
@@ -4710,6 +4762,112 @@ async function runProcess() {
     }
     renderUploads();
   }
+}
+
+async function runPublicBooksJsonIngest() {
+  if (state.localMode || state.publicDemo) {
+    showToast("公开书籍 JSON 入库需要启动本地后端服务。", "warning");
+    return;
+  }
+  const inputDir = String(els.publicBooksJsonDir?.value || "").trim();
+  if (!inputDir) {
+    showToast("请填写 JSON 文件夹路径。", "warning");
+    return;
+  }
+  const collection = String(els.publicBooksJsonCollection?.value || "public_books_labelstudio").trim() || "public_books_labelstudio";
+  const mode = String(els.publicBooksJsonMode?.value || "append");
+  const chunkSize = Number(els.publicBooksJsonChunkSize?.value || 900);
+  const overlap = Number(els.publicBooksJsonOverlap?.value || 120);
+
+  if (els.btnPublicBooksJsonIngest) {
+    els.btnPublicBooksJsonIngest.disabled = true;
+    els.btnPublicBooksJsonIngest.dataset.busy = "true";
+  }
+  state.publicBooksJson = { status: "running" };
+  renderPublicBooksJsonSummary();
+  addActivity("warning", "公开书籍 JSON 入库开始", `${mode === "create" ? "新建/重建" : "追加"} → ${collection}`);
+
+  try {
+    const result = await requestJson("/api/public-books-json/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input_dir: inputDir,
+        collection,
+        mode,
+        chunk_size: chunkSize,
+        overlap
+      })
+    }, 3600000);
+
+    state.publicBooksJson = result;
+    state.primaryCollection = result.collection || collection;
+    state.lastProcess = {
+      collection: result.collection,
+      requested_filenames: [result.latest_snapshot_name],
+      skipped_already_processed: [],
+      files_succeeded: 1,
+      files_failed: 0,
+      records_processed: result.records_written || 0,
+      chunks_written: result.chunks_written || 0,
+      elapsed_s: result.elapsed_s || 0,
+      file_summaries: [{
+        source_file: result.latest_snapshot_name,
+        source_kind: "JSON",
+        status: "ok",
+        records_extracted: result.records_written || 0
+      }],
+      quality_report: {
+        chunks: { total_chunks: result.chunks_written || 0 },
+        documents: [],
+        issues: [],
+        issue_count: 0
+      },
+      embedding_backend: result.embedding_backend || "hashing",
+      log_file: result.log_file
+    };
+    await refreshStats();
+    renderPublicBooksJsonSummary();
+    renderProcessSummary();
+    renderSummaryMetrics();
+    addActivity("success", "公开书籍 JSON 入库完成", `写入 ${formatNumber(result.chunks_written || 0)} 个 chunk。`);
+    showToast(`JSON 入库完成，写入 ${formatNumber(result.chunks_written || 0)} 个 chunk。`, "success");
+  } catch (error) {
+    state.publicBooksJson = {
+      status: "error",
+      latest_snapshot_name: "入库失败",
+      collection,
+      mode,
+      chunks_written: 0,
+      records_written: 0,
+      elapsed_s: 0,
+      decision_counts: {},
+      error: error.message || String(error)
+    };
+    renderPublicBooksJsonSummary();
+    addActivity("danger", "公开书籍 JSON 入库失败", error.message || String(error));
+    showToast(error.message || "JSON 入库失败", "danger");
+  } finally {
+    if (els.btnPublicBooksJsonIngest) {
+      delete els.btnPublicBooksJsonIngest.dataset.busy;
+      els.btnPublicBooksJsonIngest.disabled = false;
+    }
+  }
+}
+
+function exportChromaFromPublicBooksPanel() {
+  if (state.localMode || state.publicDemo) {
+    exportLocalChunksAsJson();
+    return;
+  }
+  showToast("正在打包 ChromaDB ZIP…", "success");
+  const link = document.createElement("a");
+  link.href = apiUrl("/api/chroma/export");
+  link.download = "";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  addActivity("success", "ChromaDB 已导出", "整库 ZIP");
 }
 
 async function runSearch() {
