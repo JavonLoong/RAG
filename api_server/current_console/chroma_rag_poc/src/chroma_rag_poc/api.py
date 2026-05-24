@@ -4,11 +4,16 @@ FastAPI 后端 — 合并两版
 项目2: 工厂模式 create_app() + Pydantic 校验 + benchmark API
 项目1: 分步 API (上传→处理→统计→检索) + 前端静态文件挂载
 新增: 上传状态清单、按勾选处理、已处理文件批量删除
+新增: 导出 Chroma DB（整库打包 / 单集合 JSON）
 """
 from __future__ import annotations
 
+import io
 import re
+import shutil
+import tempfile
 import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -16,7 +21,7 @@ from urllib.parse import urlparse
 import orjson
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -938,6 +943,75 @@ def create_app(
                 client._system.stop()
             except Exception:
                 pass
+
+    @app.get("/api/export")
+    async def export_all(request: Request):
+        """将整个 ChromaDB 持久化目录打包为 ZIP 下载。"""
+        persist_dir = request.app.state.persist_dir
+        if not persist_dir.exists() or not persist_dir.is_dir():
+            raise HTTPException(status_code=404, detail="向量库目录不存在")
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for file_path in persist_dir.rglob("*"):
+                if file_path.is_file():
+                    arcname = file_path.relative_to(persist_dir)
+                    zf.write(file_path, arcname)
+        buffer.seek(0)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"chroma_db_export_{timestamp}.zip"
+        return StreamingResponse(
+            buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    @app.get("/api/export/{collection_name}")
+    async def export_collection(request: Request, collection_name: str):
+        """导出单个集合的全部文档和元数据为 JSON。"""
+        import chromadb
+        from chromadb.config import Settings
+
+        persist_dir = request.app.state.persist_dir
+        client = chromadb.PersistentClient(
+            path=str(persist_dir),
+            settings=Settings(anonymized_telemetry=False, is_persistent=True),
+        )
+        try:
+            collection = client.get_collection(name=collection_name)
+            count = collection.count()
+            if count == 0:
+                data = {"collection": collection_name, "count": 0, "ids": [], "documents": [], "metadatas": []}
+            else:
+                result = collection.get(
+                    include=["documents", "metadatas"],
+                    limit=count,
+                )
+                data = {
+                    "collection": collection_name,
+                    "count": count,
+                    "ids": result.get("ids", []),
+                    "documents": result.get("documents", []),
+                    "metadatas": result.get("metadatas", []),
+                }
+        except Exception as exc:
+            raise HTTPException(status_code=404, detail=f"集合 '{collection_name}' 不存在或读取失败: {exc}") from exc
+        finally:
+            try:
+                client._system.stop()
+            except Exception:
+                pass
+
+        json_bytes = orjson.dumps(data, option=orjson.OPT_INDENT_2)
+        buffer = io.BytesIO(json_bytes)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{collection_name}_{timestamp}.json"
+        return StreamingResponse(
+            buffer,
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     if FRONTEND_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")

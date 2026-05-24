@@ -3688,6 +3688,7 @@ function renderCollectionList() {
           <span>${meta || "待补充来源信息"}</span>
         </div>
         <div class="queue-actions">
+          <button class="ghost-btn" type="button" data-export-collection="${escapeHtml(item.name)}"><iconify-icon icon="lucide:download"></iconify-icon> 导出 JSON</button>
           <button class="ghost-btn" type="button" data-set-collection="${escapeHtml(item.name)}">设为默认</button>
           <button class="ghost-btn" type="button" data-delete-collection="${escapeHtml(item.name)}">删除集合</button>
         </div>
@@ -5417,6 +5418,28 @@ function bindEvents() {
   els.collList?.addEventListener("click", async (event) => {
     const selectButton = event.target.closest("[data-set-collection]");
     const deleteButton = event.target.closest("[data-delete-collection]");
+    const exportButton = event.target.closest("[data-export-collection]");
+
+    if (exportButton) {
+      const name = exportButton.dataset.exportCollection;
+      if (state.publicDemo || state.localMode) {
+        showToast("当前模式不支持导出。", "warning");
+        return;
+      }
+      showToast(`正在导出集合 ${name}…`, "success");
+      try {
+        const link = document.createElement("a");
+        link.href = apiUrl(`/api/export/${encodeURIComponent(name)}`);
+        link.download = "";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        addActivity("success", "集合已导出", `${name} → JSON`);
+      } catch (err) {
+        showToast(`导出失败: ${err.message || err}`, "danger");
+      }
+      return;
+    }
 
     if (selectButton) {
       state.primaryCollection = selectButton.dataset.setCollection;
@@ -5436,6 +5459,21 @@ function bindEvents() {
       if (!window.confirm(`确认删除集合 ${name} 吗？`)) return;
       await deleteCollection(name);
     }
+  });
+
+  document.getElementById("btnExportAll")?.addEventListener("click", () => {
+    if (state.publicDemo || state.localMode) {
+      showToast("当前模式不支持导出。", "warning");
+      return;
+    }
+    showToast("正在打包整库 ZIP，可能需要几秒钟…", "success");
+    const link = document.createElement("a");
+    link.href = apiUrl("/api/export");
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addActivity("success", "整库已导出", "ChromaDB → ZIP");
   });
 
   els.queueList?.addEventListener("change", (event) => {
@@ -5580,7 +5618,10 @@ window.addEventListener("DOMContentLoaded", init);
                       <p class="card-kicker">集合状态</p>
                       <h3>集合与来源结构</h3>
                     </div>
-                    <span class="pill" id="collectionSummaryPill">实时结构</span>
+                    <div class="panel-tools">
+                      <span class="pill" id="collectionSummaryPill">实时结构</span>
+                      <button class="ghost-btn" id="btnExportAll" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出整库 ZIP</span></button>
+                    </div>
                   </div>
                   <div class="spectrum" id="collectionSpectrum"></div>
                   <div class="queue-hint">来源类型比例来自最新统计采样，删除集合后会自动刷新。</div>
