@@ -5967,13 +5967,19 @@ function bindEvents() {
       logEntry("lucide:check-circle", `解析完成：成功 ${succeeded}，失败 ${failed}，共 ${allTexts.length} 段文本`);
 
       // ── Step 2: Extract entities using keyword matching ──
+      const engineMode = $("kgExtractEngine")?.value || "schema";
+      const engineLabels = { generative: "泛化抽取", schema: "Schema 约束", rules: "规则引擎" };
+      const maxNodes = { generative: 70, schema: 50, rules: 30 };
+      const maxEdges = { generative: 180, schema: 120, rules: 60 };
+      const fallbackThreshold = { generative: 10, schema: 5, rules: 999 }; // rules=999 means never fallback
+
       if (progressEl) progressEl.style.width = "50%";
-      logEntry("lucide:scan", "正在抽取实体与关系...");
+      logEntry("lucide:scan", `正在使用「${engineLabels[engineMode]}」抽取实体与关系...`);
       await new Promise(r => setTimeout(r, 0));
 
       const ENTITY_KEYWORDS = {
         Equipment: ["发电机","汽轮机","锅炉","变压器","电动机","压缩机","泵","风机","冷凝器","换热器","阀门","管道","反应堆","涡轮","柴油机","燃气轮机","水轮机","蒸汽机","引擎","机组","主机","辅机","设备","装置","系统","机器","电站","电厂"],
-        Component: ["轴承","叶片","转子","定子","活塞","气缸","齿轮","联轴器","密封","垫片","弹簧","螺栓","法兰","管板","壳体","端盖","轴","轮","盘","罩","座","架","缸","箱","盖","圈","环","片","板","套"],
+        Component: ["轴承","叶片","转子","定子","活塞","气缸","齿轮","联轴器","密封件","垫片","弹簧","螺栓","法兰","管板","壳体","端盖","曲轴","飞轮","缸套","活塞环","连杆","凸轮轴","喷油器","增压器"],
         Parameter: ["温度","压力","流量","转速","功率","效率","振动","噪声","电压","电流","频率","扭矩","热效率","负荷","输出","容量","排量","油压","水温","气压","真空度","含氧量","浓度","粘度","硬度","强度"],
         Problem: ["故障","泄漏","磨损","腐蚀","裂纹","断裂","过热","振动异常","噪音","堵塞","卡涩","失效","老化","变形","松动","烧损","结垢","汽蚀","疲劳","蠕变","氧化","击穿","短路","漏电","超温","超压"],
         Method: ["检测","维修","更换","清洗","润滑","校准","调试","焊接","热处理","喷涂","镀层","平衡","对中","紧固","密封","试验","监测","诊断","分析","评估","预防","巡检","大修","保养","安装","拆卸"]
@@ -6010,7 +6016,7 @@ function bindEvents() {
 
       // ── Fallback: universal frequency-based extraction ──
       // If predefined keywords found too few entities, extract from text automatically
-      if (entities.size < 5) {
+      if (entities.size < (fallbackThreshold[engineMode] || 5)) {
         logEntry("lucide:sparkles", "关键词匹配不足，启用通用频率抽取...");
 
         const STOP_WORDS = new Set(["the","and","for","that","this","with","from","have","are","was","were","been","will","would","could","should","can","not","but","its","all","has","had","which","when","what","where","how","each","both","into","also","more","than","them","then","there","their","these","those","such","only","most","some","much","very","just","about","over","after","before","other","being","does","same","true","false","null","type","name","value","string","number","object","array","data","list","item","file","config","default","undefined","function","return","import","export","const","class","index"]);
@@ -6122,24 +6128,33 @@ function bindEvents() {
       await new Promise(r => setTimeout(r, 0));
 
       // ── Step 3: Build graph data ──
-      // Limit to top entities by count for readability
+      // Filter out single-char entities and limit for readability
       const sortedEntities = Array.from(entities.entries())
+        .filter(([name]) => name.length >= 2)
         .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 80);
+        .slice(0, maxNodes[engineMode] || 50);
       const topEntityNames = new Set(sortedEntities.map(e => e[0]));
 
-      const nodes = sortedEntities.map(([name, data]) => ({
-        id: name,
-        type: data.type,
-        count: data.count,
-        color: TYPE_COLORS[data.type] || "#aaa",
-        radius: Math.max(6, Math.min(24, 4 + Math.sqrt(data.count) * 2))
-      }));
+      // Assign initial positions by type cluster
+      const typeAngles = { Equipment: 0, Component: 1, Parameter: 2, Problem: 3, Method: 4 };
+      const nodes = sortedEntities.map(([name, data], i) => {
+        const angle = ((typeAngles[data.type] || 0) / 5) * Math.PI * 2 - Math.PI / 2;
+        const spread = 120 + Math.random() * 60;
+        return {
+          id: name,
+          type: data.type,
+          count: data.count,
+          color: TYPE_COLORS[data.type] || "#aaa",
+          radius: Math.max(8, Math.min(28, 5 + Math.sqrt(data.count) * 1.8)),
+          x: 400 + Math.cos(angle) * spread + (Math.random() - 0.5) * 80,
+          y: 300 + Math.sin(angle) * spread + (Math.random() - 0.5) * 80
+        };
+      });
 
       const links = Array.from(edges.values())
         .filter(e => topEntityNames.has(e.source) && topEntityNames.has(e.target))
         .sort((a, b) => b.weight - a.weight)
-        .slice(0, 200);
+        .slice(0, maxEdges[engineMode] || 120);
 
       logEntry("lucide:network", `图谱构建完成：${nodes.length} 节点，${links.length} 条边`);
 
@@ -6173,12 +6188,16 @@ function bindEvents() {
         row.append("text").attr("x", 18).attr("y", 4).attr("fill", "#ccc").attr("font-size", "11px").text(type);
       });
 
-      // Simulation
+      // Simulation — stronger repulsion + type clustering
+      const typeTargetX = { Equipment: 0.25, Component: 0.5, Parameter: 0.75, Problem: 0.15, Method: 0.85 };
+      const typeTargetY = { Equipment: 0.3, Component: 0.5, Parameter: 0.3, Problem: 0.75, Method: 0.75 };
       const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(80))
-        .force("charge", d3.forceManyBody().strength(-120))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collision", d3.forceCollide().radius(d => d.radius + 4));
+        .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.3))
+        .force("charge", d3.forceManyBody().strength(-350).distanceMax(400))
+        .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+        .force("x", d3.forceX(d => (typeTargetX[d.type] || 0.5) * width).strength(0.08))
+        .force("y", d3.forceY(d => (typeTargetY[d.type] || 0.5) * height).strength(0.08))
+        .force("collision", d3.forceCollide().radius(d => d.radius + 8));
 
       // Links
       const link = g.append("g")
@@ -6189,13 +6208,13 @@ function bindEvents() {
         .attr("stroke-opacity", 0.4)
         .attr("stroke-width", d => Math.max(0.5, Math.min(3, d.weight * 0.5)));
 
-      // Edge labels
+      // Edge labels — only show for strongest links to avoid clutter
       const linkLabel = g.append("g")
         .selectAll("text")
-        .data(links.filter(l => l.weight >= 3))
+        .data(links.filter(l => l.weight >= 8))
         .join("text")
-        .attr("fill", "#888")
-        .attr("font-size", "8px")
+        .attr("fill", "#666")
+        .attr("font-size", "7px")
         .attr("text-anchor", "middle")
         .text(d => d.relation);
 
@@ -6216,19 +6235,35 @@ function bindEvents() {
           .on("end", (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
         );
 
-      // Node labels
+      // Node labels — only show top entities, rest appear on hover
+      const topN = Math.min(20, Math.ceil(nodes.length * 0.4));
+      const labelThreshold = nodes.length > topN ? nodes[topN - 1].count : 0;
+
       const label = g.append("g")
         .selectAll("text")
         .data(nodes)
         .join("text")
         .attr("fill", "#eee")
-        .attr("font-size", d => Math.max(9, Math.min(13, d.radius * 0.8)) + "px")
+        .attr("font-size", d => Math.max(9, Math.min(14, d.radius * 0.7)) + "px")
         .attr("text-anchor", "middle")
         .attr("dy", d => d.radius + 14)
         .attr("pointer-events", "none")
+        .attr("opacity", d => d.count >= labelThreshold ? 1 : 0)
         .text(d => d.id);
 
-      // Tooltip on hover
+      // Hover: show label + highlight connections
+      node.on("mouseenter", function(event, d) {
+        d3.select(this).attr("stroke", "#fff").attr("stroke-width", 2.5);
+        label.filter(l => l.id === d.id).attr("opacity", 1).attr("fill", "#fff").attr("font-weight", "bold");
+        link.attr("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.08);
+        link.attr("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? d.color : "#555");
+      }).on("mouseleave", function() {
+        d3.select(this).attr("stroke", "#222").attr("stroke-width", 1.2);
+        label.attr("opacity", d => d.count >= labelThreshold ? 1 : 0).attr("fill", "#eee").attr("font-weight", "normal");
+        link.attr("stroke-opacity", 0.3).attr("stroke", "#555");
+      });
+
+      // Tooltip
       node.append("title").text(d => `${d.id}\n类型: ${d.type}\n出现次数: ${d.count}`);
 
       simulation.on("tick", () => {
@@ -7222,25 +7257,25 @@ window.addEventListener("DOMContentLoaded", init);
                   <div class="form-grid">
                     <div class="field field--wide">
                       <label>实体类型 (Entity Types)</label>
-                      <input class="form-control" type="text" value="Equipment, Component, Parameter, Problem, Method" placeholder="用逗号分隔多个类型">
+                      <input class="form-control" id="kgEntityTypes" type="text" value="Equipment, Component, Parameter, Problem, Method" placeholder="用逗号分隔多个类型">
                     </div>
                     <div class="field field--wide">
                       <label>关系类型 (Relation Types)</label>
-                      <input class="form-control" type="text" value="HAS_COMPONENT, USES_FUEL, HAS_PARAMETER, HAS_PROBLEM" placeholder="用逗号分隔多个关系">
+                      <input class="form-control" id="kgRelationTypes" type="text" value="HAS_COMPONENT, USES_FUEL, HAS_PARAMETER, HAS_PROBLEM" placeholder="用逗号分隔多个关系">
                     </div>
                     <div class="field">
                       <label>图谱抽取引擎</label>
-                      <select class="form-control">
-                        <option>纯大模型泛化抽取 (慢, 发散)</option>
-                        <option selected>大模型 + Schema 约束 (快, 准确)</option>
-                        <option>纯正则/触发词规则引擎</option>
+                      <select class="form-control" id="kgExtractEngine">
+                        <option value="generative">纯大模型泛化抽取 (慢, 发散)</option>
+                        <option value="schema" selected>大模型 + Schema 约束 (快, 准确)</option>
+                        <option value="rules">纯正则/触发词规则引擎</option>
                       </select>
                     </div>
                     <div class="field">
                       <label>社区聚类算法 (Community Detection)</label>
-                      <select class="form-control">
-                        <option>Leiden 层次聚类算法</option>
-                        <option>Louvain 模块化算法</option>
+                      <select class="form-control" id="kgCommunityAlgo">
+                        <option value="leiden">Leiden 层次聚类算法</option>
+                        <option value="louvain">Louvain 模块化算法</option>
                       </select>
                     </div>
                   </div>
