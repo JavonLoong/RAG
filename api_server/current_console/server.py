@@ -19,8 +19,9 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from chroma_rag_poc.api import create_app
+from chroma_rag_poc.pipeline import DEFAULT_RUNTIME_DIR
 
-DATA_DIR = REPO_ROOT / "storage_layer" / "runtime" / "current_console"
+DATA_DIR = DEFAULT_RUNTIME_DIR
 PERSIST_DIR = DATA_DIR / "chroma"
 UPLOAD_DIR = DATA_DIR / "uploads"
 LOG_DIR = DATA_DIR / "logs"

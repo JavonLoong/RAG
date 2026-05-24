@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Sequence
 
@@ -31,9 +32,31 @@ from .parsing import (
 from .text_utils import format_megabytes, get_directory_size, safe_collection_name
 
 PROJECT_ROOT = Path(__file__).resolve().parents[5]
-DEFAULT_RUNTIME_DIR = PROJECT_ROOT / "storage_layer" / "runtime" / "current_console"
+
+
+def contains_non_ascii_path(path: str | Path) -> bool:
+    return any(ord(char) > 127 for char in str(path))
+
+
+def resolve_default_runtime_dir(project_root: str | Path = PROJECT_ROOT) -> Path:
+    explicit = os.environ.get("POWER_RAG_RUNTIME_DIR")
+    if explicit:
+        return Path(explicit)
+
+    repo_runtime_dir = Path(project_root) / "storage_layer" / "runtime" / "current_console"
+    if os.name == "nt" and contains_non_ascii_path(repo_runtime_dir):
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data and not contains_non_ascii_path(local_app_data):
+            return Path(local_app_data) / "PowerRAG" / "current_console"
+
+    return repo_runtime_dir
+
+
+DEFAULT_RUNTIME_DIR = resolve_default_runtime_dir()
 DEFAULT_PERSIST_DIR = DEFAULT_RUNTIME_DIR / "chroma"
 DEFAULT_UPLOAD_DIR = DEFAULT_RUNTIME_DIR / "uploads"
+DEFAULT_HNSW_BATCH_SIZE = 100
+DEFAULT_HNSW_SYNC_THRESHOLD = 100
 
 
 # ============================================================
@@ -598,6 +621,8 @@ def get_collection_handle(
     else:
         metadata = {
             "hnsw:space": "cosine",
+            "hnsw:batch_size": DEFAULT_HNSW_BATCH_SIZE,
+            "hnsw:sync_threshold": DEFAULT_HNSW_SYNC_THRESHOLD,
             "embedding_backend": resolved_backend.name,
             "embedding_model": resolved_backend.model_name,
         }

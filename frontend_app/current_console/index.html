@@ -2030,7 +2030,6 @@ const JSON_TEXT_KEYS = new Set(["text", "content", "body", "description", "summa
 const CODE_EXTENSIONS = new Set(["py", "js", "mjs", "cjs", "ts", "tsx", "jsx", "java", "c", "cc", "cpp", "cxx", "h", "hh", "hpp", "hxx", "cs", "go", "rs", "php", "rb", "swift", "kt", "kts", "scala", "sql", "sh", "bash", "zsh", "ps1", "bat", "cmd", "html", "htm", "css", "scss", "sass", "less", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "properties", "vue", "svelte"]);
 const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf", "docx", "txt", "md", "markdown", "csv", "tsv", "log", ...CODE_EXTENSIONS]);
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
-const PUBLIC_BOOKS_JSON_DEFAULT_DIR = "D:\\虚拟C盘\\清华云盘_专业书籍_20260524\\解压后";
 const PUBLIC_DEMO_COLLECTION = "gas_turbine_ocr_demo_snapshot";
 const PUBLIC_DEMO_UPDATED_AT = 1779033600;
 const PUBLIC_DEMO_FILES = [
@@ -4177,6 +4176,7 @@ function renderPublicBooksJsonSummary() {
         <span>元数据 ${formatNumber(decisions.metadata || 0)}</span>
         <span>剔除 ${formatNumber(decisions.reject || 0)}</span>
       </div>
+      ${result.error ? `<div class="queue-hint danger-text">${escapeHtml(result.error)}</div>` : ""}
       ${summaryFiles.markdown ? `<div class="queue-hint">摘要文件：${escapeHtml(summaryFiles.markdown)}</div>` : ""}
     </article>
   `;
@@ -5776,6 +5776,8 @@ function bindEvents() {
   });
 
   els.btnProcess?.addEventListener("click", runProcess);
+  els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
+  els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
 
   els.searchInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -6216,6 +6218,46 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <input class="hidden-input" id="fileInput" type="file" multiple>
                   <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>公开书籍 JSON 入库</h3>
+                      <p>读取本地 Label Studio JSON 目录，只使用最新快照，先筛选正文再写入 ChromaDB。</p>
+                    </div>
+                    <span class="pill">本地后端</span>
+                  </div>
+                  <div class="llm-form">
+                    <div class="field field--wide">
+                      <label for="publicBooksJsonDir">JSON 文件夹</label>
+                      <input class="form-control" id="publicBooksJsonDir" type="text" value="D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后" placeholder="例如 D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后">
+                    </div>
+                    <div class="field field--wide">
+                      <label for="publicBooksJsonCollection">ChromaDB 集合</label>
+                      <input class="form-control" id="publicBooksJsonCollection" type="text" value="public_books_labelstudio">
+                    </div>
+                    <div class="field">
+                      <label for="publicBooksJsonMode">写入方式</label>
+                      <select class="form-control" id="publicBooksJsonMode">
+                        <option value="append">追加到已有集合</option>
+                        <option value="create">新建/重建集合</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="publicBooksJsonChunkSize">Chunk 长度</label>
+                      <input class="form-control" id="publicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
+                    </div>
+                    <div class="field">
+                      <label for="publicBooksJsonOverlap">Overlap</label>
+                      <input class="form-control" id="publicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
+                    </div>
+                  </div>
+                  <div class="export-bar">
+                    <button class="btn" id="btnPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
+                    <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 ChromaDB</span></button>
+                  </div>
+                  <div class="queue-list" id="publicBooksJsonSummary"></div>
                 </article>
 
                 <article class="panel">

@@ -10,6 +10,7 @@ PACKAGE_SRC = REPO_ROOT / "api_server" / "current_console" / "chroma_rag_poc" / 
 if str(PACKAGE_SRC) not in sys.path:
     sys.path.insert(0, str(PACKAGE_SRC))
 
+from chroma_rag_poc.pipeline import DEFAULT_PERSIST_DIR
 from chroma_rag_poc.public_books_json import ingest_latest_snapshot_to_chroma, write_ingest_summary
 
 
@@ -20,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-root", required=True, help="Directory containing Label Studio JSON snapshots.")
     parser.add_argument(
         "--persist-dir",
-        default=str(REPO_ROOT / "storage_layer" / "runtime" / "current_console" / "chroma"),
+        default=str(DEFAULT_PERSIST_DIR),
         help="ChromaDB persistence directory.",
     )
     parser.add_argument("--collection", default="public_books_labelstudio", help="Target Chroma collection name.")

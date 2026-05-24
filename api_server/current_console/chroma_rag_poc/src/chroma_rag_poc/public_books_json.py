@@ -106,6 +106,8 @@ def choose_latest_snapshot(input_root: str | Path) -> Path:
 def load_latest_labelstudio_snapshot(input_root: str | Path) -> tuple[Path, list[dict[str, Any]]]:
     snapshot_path = choose_latest_snapshot(input_root)
     raw = snapshot_path.read_bytes()
+    if raw.startswith(b"\xef\xbb\xbf"):
+        raw = raw[3:]
     if orjson is not None:
         payload = orjson.loads(raw)
     else:

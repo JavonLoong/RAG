@@ -13,9 +13,11 @@ if str(PACKAGE_SRC) not in sys.path:
 from chroma_rag_poc.public_books_json import (  # noqa: E402
     choose_latest_snapshot,
     filter_blocks,
+    load_latest_labelstudio_snapshot,
     merge_blocks_to_records,
     parse_labelstudio_export,
 )
+from chroma_rag_poc import pipeline  # noqa: E402
 
 
 def _labelstudio_task(task_id: int, filename: str = "book-a.pdf") -> dict:
@@ -128,3 +130,31 @@ def test_latest_snapshot_round_trip_from_file(tmp_path: Path) -> None:
 
     assert latest.name == snapshot.name
     assert records[0].record_id.startswith("book-a:12")
+
+
+def test_load_latest_snapshot_accepts_utf8_bom(tmp_path: Path) -> None:
+    snapshot = tmp_path / "project-1-at-2026-05-21-06-17-bom.json"
+    snapshot.write_bytes(("\ufeff" + json.dumps([_labelstudio_task(8)], ensure_ascii=False)).encode("utf-8"))
+
+    latest, payload = load_latest_labelstudio_snapshot(tmp_path)
+
+    assert latest == snapshot
+    assert payload[0]["id"] == 8
+
+
+def test_default_runtime_dir_moves_windows_chroma_out_of_non_ascii_repo_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("POWER_RAG_RUNTIME_DIR", raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", r"C:\Users\15410\AppData\Local")
+    monkeypatch.setattr(pipeline.os, "name", "nt", raising=False)
+
+    runtime_dir = pipeline.resolve_default_runtime_dir(Path(r"D:\虚拟C盘\RAG"))
+
+    assert runtime_dir == Path(r"C:\Users\15410\AppData\Local\PowerRAG\current_console")
+
+
+def test_explicit_runtime_dir_is_respected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("POWER_RAG_RUNTIME_DIR", r"D:\RAG_RUNTIME")
+
+    runtime_dir = pipeline.resolve_default_runtime_dir(Path(r"D:\虚拟C盘\RAG"))
+
+    assert runtime_dir == Path(r"D:\RAG_RUNTIME")
