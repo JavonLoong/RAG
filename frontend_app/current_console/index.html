@@ -6257,9 +6257,47 @@ function bindEvents() {
 
       if (progressEl) progressEl.style.width = "100%";
 
-      // Also store chunks for search
-      const allRecords2 = [];
-      const allChunks2 = [];
+      // ── Inject graph summary as searchable knowledge ──
+      const typeCounts = {};
+      nodes.forEach(n => { typeCounts[n.type] = (typeCounts[n.type] || 0) + 1; });
+      const topByType = {};
+      for (const type of Object.keys(TYPE_COLORS)) {
+        topByType[type] = nodes.filter(n => n.type === type).sort((a,b) => b.count - a.count).slice(0, 10).map(n => n.id);
+      }
+      const relCounts = {};
+      links.forEach(l => { relCounts[l.relation] = (relCounts[l.relation] || 0) + 1; });
+
+      const graphSummary = [
+        `【知识图谱构建报告】`,
+        `构建引擎：${engineLabels[engineMode]}`,
+        `总节点数：${nodes.length} 个实体节点`,
+        `总边数：${links.length} 条关系边`,
+        ``,
+        `各类型实体统计：`,
+        ...Object.entries(typeCounts).map(([t, c]) => `- ${t}（${t === 'Equipment' ? '设备' : t === 'Component' ? '部件' : t === 'Parameter' ? '参数' : t === 'Problem' ? '故障' : '方法'}）：${c} 个`),
+        ``,
+        `各类型代表性实体：`,
+        ...Object.entries(topByType).map(([t, names]) => `- ${t}：${names.join('、')}`),
+        ``,
+        `关系类型统计：`,
+        ...Object.entries(relCounts).sort((a,b) => b[1]-a[1]).map(([r, c]) => `- ${r}：${c} 条`),
+        ``,
+        `当前知识图谱共包含 ${nodes.length} 个节点和 ${links.length} 条边。`
+      ].join("\n");
+
+      const summaryRecord = {
+        record_id: `kg-summary-${Date.now()}`,
+        filename: "知识图谱构建摘要",
+        source_file: "kg-graph-summary",
+        source_kind: "GraphSummary",
+        page_num: null,
+        text: graphSummary
+      };
+      const summaryChunks = makeChunks([summaryRecord]);
+
+      // Also store original text chunks for search
+      const allRecords2 = [summaryRecord];
+      const allChunks2 = [...summaryChunks];
       for (const text of allTexts) {
         const record = { record_id: `kg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, filename: "kg-build", source_file: "kg-build", source_kind: "JSON", page_num: null, text };
         allRecords2.push(record);
