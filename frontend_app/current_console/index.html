@@ -6614,6 +6614,46 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
+                      <h3>图谱/向量混合 JSON 入库</h3>
+                      <p>支持将提取的知识一键存入新建或已有的库中，并支持直接导出。</p>
+                    </div>
+                    <span class="pill">本地后端</span>
+                  </div>
+                  <div class="llm-form">
+                    <div class="field field--wide">
+                      <label for="kgPublicBooksJsonDir">JSON 文件夹</label>
+                      <input class="form-control" id="kgPublicBooksJsonDir" type="text" value="D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后" placeholder="例如 D:\虚拟C盘\清华云盘_b6d91cc3d88748a987fa_专业书籍\公开书籍标注后\公开书籍标注后">
+                    </div>
+                    <div class="field field--wide">
+                      <label for="kgPublicBooksJsonCollection">混合检索集合</label>
+                      <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="public_books_labelstudio">
+                    </div>
+                    <div class="field">
+                      <label for="kgPublicBooksJsonMode">写入方式</label>
+                      <select class="form-control" id="kgPublicBooksJsonMode">
+                        <option value="append">追加到已有集合</option>
+                        <option value="create">新建/重建集合</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="kgPublicBooksJsonChunkSize">Chunk 长度</label>
+                      <input class="form-control" id="kgPublicBooksJsonChunkSize" type="number" min="100" max="4000" value="900">
+                    </div>
+                    <div class="field">
+                      <label for="kgPublicBooksJsonOverlap">Overlap</label>
+                      <input class="form-control" id="kgPublicBooksJsonOverlap" type="number" min="0" max="1000" value="120">
+                    </div>
+                  </div>
+                  <div class="export-bar">
+                    <button class="btn" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
+                    <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 向量库/图谱</span></button>
+                  </div>
+                  <div class="queue-list" id="kgPublicBooksJsonSummary"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
                       <h3>抽取配置 (Graph Schema)</h3>
                       <p>定义大模型或规则引擎需要提取的实体和关系约束规则。</p>
                     </div>
