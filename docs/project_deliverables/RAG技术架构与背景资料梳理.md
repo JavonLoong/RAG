@@ -21,7 +21,7 @@
 #### B. 知识图谱与 GraphRAG 技术架构 (KG & GraphRAG)
 
 **核心技术栈：**
-- **知识抽取**：大模型 (LLM) 实体/关系提取、数据归一化算法
+- **知识抽取**：基于严格 Schema 约束的信息抽取流（Label Studio 标注 JSON -> 文本块 Chunking -> 候选三元组抽取 -> 证据 Evidence 绑定），配合人工 Review 与数据归一化机制
 - **检索与存储引擎**：
   - **图数据库**：Neo4j (用于存储实体关系与社区元数据)
   - **图计算**：基于图谱的高级挖掘与社区发现 (Community Detection)
