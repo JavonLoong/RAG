@@ -42,41 +42,28 @@
 
 ---
 
-### 三、核心数据与查询流程 (Core Workflow)
+### 三、普通 RAG 核心数据与查询流程 (Standard RAG Workflow)
 
-为了更清晰地说明系统的运转过程，目前的系统主要包含以下两个核心流程：
+为了更清晰地说明系统的运转过程，我们将技术架构拆分为“普通 RAG”和“知识图谱(KG)”两条主线。以下是普通 RAG 的运作机制：
 
 ```mermaid
 graph TD
     %% 离线数据构建流程
-    subgraph 离线数据构建流程 (Offline Pipeline)
+    subgraph offline["离线数据构建流程 (Offline Pipeline)"]
         A[原始文档 PDF/Word] --> B[Layout-aware OCR 解析]
         B --> C[文本清洗与多层级 Chunking]
-        
         C -->|向量化分支| D[Embedding 模型]
         D --> E[(ChromaDB 向量库)]
         C -->|倒排索引| F[(BM25 稀疏索引)]
-        
-        C -->|图谱化分支| G[LLM 实体/关系抽取]
-        G --> H[归一化处理]
-        H --> I[(Neo4j 图数据库)]
-        I --> J[图谱社区发现]
-        J --> K[生成社区摘要]
-        K --> I
     end
 
     %% 在线检索问答流程
-    subgraph 在线检索问答流程 (Online Pipeline)
+    subgraph online["在线检索问答流程 (Online Pipeline)"]
         Q[用户 Query] --> R[意图识别与 Query 改写]
-        
         R -->|向量召回| E
         R -->|关键词召回| F
-        R -->|实体子图/摘要召回| I
-        
         E --> S[多路召回结果]
         F --> S
-        I --> S
-        
         S --> T[融合去重与 Reranker 重排]
         T --> U[Top-K 高质量证据]
         U --> V[上下文组装 Prompt]
@@ -86,18 +73,57 @@ graph TD
     end
 ```
 
-
 **1. 离线数据构建流程 (Offline Data Pipeline)**
 *   **文档解析**：输入各类格式文档 (PDF, Word 等)，通过自研的 Layout-aware OCR 策略进行精准解析，保留版面结构信息。
 *   **分块处理**：对解析后的文本进行清洗，并执行多层级切分 (Hierarchical Chunking)。
-*   **双线入库**：
-    *   *向量化分支*：将文本块通过 Embedding 模型向量化，存入 ChromaDB，同时建立倒排索引以支持 BM25 稀疏检索。
-    *   *图谱化分支*：将文本块输入 LLM，抽取其中的“实体”、“关系”和“断言”，进行归一化处理后存入 Neo4j 图数据库，并进一步执行社区发现 (Community Detection) 生成社区摘要。
+*   **向量化入库**：将文本块通过 Embedding 模型向量化，存入 ChromaDB，同时建立倒排索引以支持 BM25 稀疏检索。
 
 **2. 在线检索问答流程 (Online RAG Pipeline)**
 *   **意图识别与改写**：接收用户的 Query，通过小模型或规则进行意图识别，并在必要时对 Query 进行扩展或改写。
-*   **多路召回**：
-    *   *向量/稀疏召回*：从 ChromaDB 召回语义相似的文本块，从 BM25 召回关键词匹配的文本块。
-    *   *图谱召回 (GraphRAG)*：从 Neo4j 召回相关的实体子图以及宏观的社区摘要信息。
+*   **多路召回**：从 ChromaDB 召回语义相似的文本块，从 BM25 召回关键词匹配的文本块。
 *   **融合重排 (Reranking)**：将多路召回的结果进行去重融合，通过 Reranker 模型对证据片段进行重新打分排序，筛选出最相关的 Top-K 证据。
 *   **生成与溯源**：将用户的 Query 与精选的 Top-K 证据组装成 Prompt 交给 LLM 生成最终回答，并附带引用 (Citation) 的溯源信息，同时通过内置的校验机制拦截潜在幻觉。
+
+---
+
+### 四、知识图谱与 GraphRAG 核心流程 (KG & GraphRAG Workflow)
+
+知识图谱线（GraphRAG）是独立于普通 RAG 的另一条重型数据管线，主要用于处理需要全局宏观视野、跨文档实体关系推理的复杂问题：
+
+```mermaid
+graph TD
+    %% 离线数据构建流程
+    subgraph offline["离线图谱构建流程 (Offline Pipeline)"]
+        A[原始文档 PDF/Word] --> B[Layout-aware OCR 解析]
+        B --> C[文本清洗与多层级 Chunking]
+        C -->|图谱化分支| G[LLM 实体/关系抽取]
+        G --> H[归一化处理]
+        H --> I[(Neo4j 图数据库)]
+        I --> J[图谱社区发现]
+        J --> K[生成社区摘要]
+        K --> I
+    end
+
+    %% 在线检索问答流程
+    subgraph online["在线图谱检索流程 (Online Pipeline)"]
+        Q[用户 Query] --> R[意图识别与 Query 改写]
+        R -->|实体子图/摘要召回| I
+        I --> S[图谱召回结果]
+        S --> T[上下文融合与重排]
+        T --> U[全局/局部高质量证据]
+        U --> V[上下文组装 Prompt]
+        Q -.-> V
+        V --> W[LLM 生成与幻觉校验]
+        W --> X[带 Citation 溯源的最终回答]
+    end
+```
+
+**1. 离线图谱构建流程 (Offline KG Pipeline)**
+*   **文档解析与切分**：与普通 RAG 共享底层解析逻辑，通过 OCR 和文本清洗获得干净的 Chunk 数据。
+*   **知识抽取与入库**：将文本块输入大模型（LLM），抽取其中的“实体”、“关系”和“断言”三元组，经过人工校验或自动归一化处理后，将结构化数据存入 Neo4j 图数据库。
+*   **图谱高级挖掘**：在图数据库中执行图谱社区发现 (Community Detection) 算法，识别局部聚集的网络结构，并利用大模型生成“社区摘要”，反向存入图库，用于支撑宏观总结性问题的回答。
+
+**2. 在线图谱检索流程 (Online GraphRAG Pipeline)**
+*   **意图识别与节点映射**：接收用户 Query，提取 Query 中的关键实体，并将其映射到图数据库中的具体节点。
+*   **图谱结构召回**：根据问题类型，进行不同维度的图检索。例如针对局部问题，通过实体跳数扩展（N-hop）召回关联子图；针对宏观总结性问题，直接召回相关的图谱社区摘要。
+*   **生成与溯源**：将召回的结构化三元组知识或社区摘要拼装为高信息密度的上下文，组装 Prompt 送入大模型，最终生成包含图谱级全局视野的专业回答。
