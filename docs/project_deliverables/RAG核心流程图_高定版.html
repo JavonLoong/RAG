@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>RAG 核心流程图 (矢量重制版)</title>
+<style>
+  body {
+    margin: 0;
+    padding: 40px;
+    background-color: #f1f5f9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .toolbar {
+    margin-bottom: 30px;
+    padding: 16px 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+  }
+  .toolbar-title {
+    font-weight: 700;
+    color: #334155;
+    margin-right: 10px;
+    font-size: 16px;
+  }
+  button {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  button:hover {
+    background: #0284c7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+  }
+  button.secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+  button.secondary:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    box-shadow: none;
+  }
+  .canvas-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+    padding: 40px;
+    overflow-x: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #f1f5f9;
+  }
+  svg {
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-title">✨ RAG 架构图重制完成</div>
+  <button onclick="downloadSVG()">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+    下载矢量图 (SVG)
+  </button>
+  <button class="secondary" onclick="downloadPNG()">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+    下载超清图 (PNG)
+  </button>
+</div>
+
+<div class="canvas-container" id="diagram-wrap">
+  <svg id="main-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1150" width="1200" height="1150">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155" />
+      </marker>
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.06" />
+      </filter>
+      
+      <style>
+        .title { font-family: system-ui, -apple-system, sans-serif; font-size: 34px; font-weight: 900; fill: #0f172a; letter-spacing: 1px; }
+        .box-title { font-family: system-ui, -apple-system, sans-serif; font-size: 20px; font-weight: 800; fill: #1e293b; }
+        .box-subtitle { font-family: system-ui, -apple-system, sans-serif; font-size: 16px; font-weight: 700; fill: #64748b; }
+        .node-text { font-family: system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; }
+        .path-label { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 700; fill: #475569; }
+        .db-text { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 700; fill: #0f172a; }
+      </style>
+    </defs>
+
+    <!-- Background Boxes -->
+    <rect x="40" y="80" width="1120" height="490" rx="24" fill="#f0f9ff" stroke="#bae6fd" stroke-width="3" />
+    <rect x="40" y="590" width="1120" height="520" rx="24" fill="#fffbeb" stroke="#fde68a" stroke-width="3" />
+
+    <!-- Titles -->
+    <text x="600" y="45" class="title" text-anchor="middle">RAG 核心数据与查询流程</text>
+
+    <!-- Box Labels -->
+    <text x="70" y="125" class="box-title">离线数据构建流程</text>
+    <text x="70" y="150" class="box-subtitle">Offline Pipeline</text>
+
+    <text x="70" y="635" class="box-title">在线检索问答流程</text>
+    <text x="70" y="660" class="box-subtitle">Online Pipeline</text>
+
+    <!-- Lines / Arrows -->
+    <g fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)" stroke-linejoin="round">
+      <!-- Offline -->
+      <path d="M 600 155 L 600 185" />
+      <path d="M 600 235 L 600 265" />
+      
+      <!-- Chunking branches -->
+      <path d="M 600 315 L 600 335 L 350 335 L 350 365" />
+      <path d="M 600 315 L 600 365" />
+      <path d="M 600 315 L 600 335 L 800 335 L 800 365" />
+
+      <!-- Down to DBs -->
+      <path d="M 350 415 L 350 465" />
+      <path d="M 600 415 L 600 465" />
+      <path d="M 800 415 L 800 465" />
+
+      <!-- Graph right branch -->
+      <path d="M 890 390 L 940 390" />
+      <path d="M 1000 415 L 1000 445" />
+      <path d="M 1000 495 L 1000 505" />
+      <path d="M 930 530 L 870 530" /> <!-- Into Neo4j -->
+
+      <!-- Query -->
+      <path d="M 220 500 L 280 500" />
+
+      <!-- Cross boundary -->
+      <path d="M 350 540 L 600 625" />
+      <path d="M 600 540 L 600 625" />
+      <path d="M 800 540 L 600 625" />
+
+      <!-- Online -->
+      <path d="M 600 675 L 600 705" />
+      <path d="M 600 755 L 600 785" />
+      <path d="M 600 835 L 600 865" />
+      <path d="M 600 915 L 600 945" />
+      <path d="M 600 995 L 600 1025" />
+    </g>
+
+    <!-- Path Labels (with backgrounds) -->
+    <rect x="435" y="313" width="80" height="24" fill="#f0f9ff" />
+    <text x="475" y="330" class="path-label" text-anchor="middle">向量化分支</text>
+    
+    <rect x="685" y="313" width="80" height="24" fill="#f0f9ff" />
+    <text x="725" y="330" class="path-label" text-anchor="middle">图谱化分支</text>
+
+    <rect x="420" y="565" width="80" height="24" fill="#fffbeb" rx="4" />
+    <text x="460" y="582" class="path-label" text-anchor="middle">向量召回</text>
+
+    <rect x="560" y="565" width="80" height="24" fill="#fffbeb" rx="4" />
+    <text x="600" y="582" class="path-label" text-anchor="middle">关键词召回</text>
+
+    <rect x="660" y="565" width="130" height="24" fill="#fffbeb" rx="4" />
+    <text x="725" y="582" class="path-label" text-anchor="middle">实体子图/摘要召回</text>
+
+
+    <!-- Offline Nodes -->
+    <g transform="translate(510, 105)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="21" class="node-text" text-anchor="middle">
+        <tspan x="90" dy="0">原始文档</tspan>
+        <tspan x="90" dy="18">PDF/Word</tspan>
+      </text>
+    </g>
+
+    <g transform="translate(510, 185)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="21" class="node-text" text-anchor="middle">
+        <tspan x="90" dy="0">Layout-aware</tspan>
+        <tspan x="90" dy="18">OCR 解析</tspan>
+      </text>
+    </g>
+
+    <g transform="translate(490, 265)">
+      <rect width="220" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="110" y="21" class="node-text" text-anchor="middle">
+        <tspan x="110" dy="0">文本清洗与多层级</tspan>
+        <tspan x="110" dy="18">Chunking</tspan>
+      </text>
+    </g>
+
+    <g transform="translate(270, 365)">
+      <rect width="160" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="80" y="30" class="node-text" text-anchor="middle">Embedding 模型</text>
+    </g>
+
+    <g transform="translate(530, 365)">
+      <rect width="140" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="70" y="30" class="node-text" text-anchor="middle">倒排索引</text>
+    </g>
+
+    <g transform="translate(710, 365)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="30" class="node-text" text-anchor="middle">LLM 实体/关系抽取</text>
+    </g>
+
+    <g transform="translate(940, 365)">
+      <rect width="120" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="60" y="30" class="node-text" text-anchor="middle">归一化处理</text>
+    </g>
+
+    <g transform="translate(930, 445)">
+      <rect width="140" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="70" y="30" class="node-text" text-anchor="middle">图谱社区发现</text>
+    </g>
+
+    <g transform="translate(930, 505)">
+      <rect width="140" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="70" y="30" class="node-text" text-anchor="middle">生成社区摘要</text>
+    </g>
+
+    <g transform="translate(80, 475)">
+      <rect width="140" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="70" y="30" class="node-text" text-anchor="middle">用户 Query</text>
+    </g>
+
+    <!-- DB Cylinders -->
+    <g transform="translate(280, 465)" filter="url(#shadow)">
+      <path d="M 0 15 v 45 a 70 15 0 0 0 140 0 v -45 a 70 15 0 0 1 -140 0" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <ellipse cx="70" cy="15" rx="70" ry="15" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <text x="70" y="36" class="db-text" text-anchor="middle">
+        <tspan x="70" dy="0">ChromaDB</tspan>
+        <tspan x="70" dy="18">向量库</tspan>
+      </text>
+    </g>
+
+    <g transform="translate(530, 465)" filter="url(#shadow)">
+      <path d="M 0 15 v 45 a 70 15 0 0 0 140 0 v -45 a 70 15 0 0 1 -140 0" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <ellipse cx="70" cy="15" rx="70" ry="15" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <text x="70" y="36" class="db-text" text-anchor="middle">
+        <tspan x="70" dy="0">BM25</tspan>
+        <tspan x="70" dy="18">稀疏索引</tspan>
+      </text>
+    </g>
+
+    <g transform="translate(730, 465)" filter="url(#shadow)">
+      <path d="M 0 15 v 45 a 70 15 0 0 0 140 0 v -45 a 70 15 0 0 1 -140 0" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <ellipse cx="70" cy="15" rx="70" ry="15" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <text x="70" y="36" class="db-text" text-anchor="middle">
+        <tspan x="70" dy="0">Neo4j</tspan>
+        <tspan x="70" dy="18">图数据库</tspan>
+      </text>
+    </g>
+
+    <!-- Online Nodes -->
+    <g transform="translate(510, 625)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="30" class="node-text" text-anchor="middle">多路召回结果</text>
+    </g>
+
+    <g transform="translate(490, 705)">
+      <rect width="220" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="110" y="30" class="node-text" text-anchor="middle">融合去重与 Reranker 重排</text>
+    </g>
+
+    <g transform="translate(510, 785)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="30" class="node-text" text-anchor="middle">Top-K 高质量证据</text>
+    </g>
+
+    <g transform="translate(510, 865)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="30" class="node-text" text-anchor="middle">上下文组装 Prompt</text>
+    </g>
+
+    <g transform="translate(510, 945)">
+      <rect width="180" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="90" y="30" class="node-text" text-anchor="middle">LLM 生成与幻觉校验</text>
+    </g>
+
+    <g transform="translate(480, 1025)">
+      <rect width="240" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" filter="url(#shadow)"/>
+      <text x="120" y="30" class="node-text" text-anchor="middle">带 Citation 溯源的最终回答</text>
+    </g>
+
+  </svg>
+</div>
+
+<script>
+  function downloadSVG() {
+    const svg = document.getElementById('main-svg');
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+    source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "RAG核心流程图_矢量高定版.svg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadPNG() {
+    const wrap = document.getElementById('diagram-wrap');
+    html2canvas(wrap, { 
+      scale: 3, 
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true 
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'RAG核心流程图_超清.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    });
+  }
+</script>
+
+</body>
+</html>

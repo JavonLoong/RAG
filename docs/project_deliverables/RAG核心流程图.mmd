@@ -1,6 +1,6 @@
 graph TD
     %% 离线数据构建流程
-    subgraph 离线数据构建流程 (Offline Pipeline)
+    subgraph offline["离线数据构建流程 Offline Pipeline"]
         A[原始文档 PDF/Word] --> B[Layout-aware OCR 解析]
         B --> C[文本清洗与多层级 Chunking]
         
@@ -17,7 +17,7 @@ graph TD
     end
 
     %% 在线检索问答流程
-    subgraph 在线检索问答流程 (Online Pipeline)
+    subgraph online["在线检索问答流程 Online Pipeline"]
         Q[用户 Query] --> R[意图识别与 Query 改写]
         
         R -->|向量召回| E
