@@ -6372,6 +6372,85 @@ function bindEvents() {
   });
   els.btnSearch?.addEventListener("click", runSearch);
 
+  // ── Smart Paste: auto-fill LLM config from free-form text ──
+  function smartParseLLM(raw) {
+    const text = (raw || "").trim();
+    if (!text) return null;
+
+    // Split on common separators
+    const tokens = text.split(/[\s,;\t\n|]+/).filter(Boolean);
+    let url = "", key = "", model = "", temp = "", maxTok = "";
+
+    for (const tok of tokens) {
+      // URL detection
+      if (/^https?:\/\//i.test(tok) && !url) {
+        url = tok;
+      }
+      // API Key detection (common patterns)
+      else if (/^(sk-|AIza|key-|Bearer\s)/i.test(tok) && !key) {
+        key = tok.replace(/^Bearer\s+/i, "");
+      }
+      // Model name detection
+      else if (/^(gemini|gpt|claude|deepseek|qwen|llama|mistral|yi-|glm|chatglm|moonshot|kimi|doubao|ernie)/i.test(tok) && !model) {
+        model = tok;
+      }
+      // Temperature: "temp:0.7", "温度0.5", or standalone decimal 0-2
+      else if (!temp && /^(?:temp(?:erature)?[:=]?|温度[:=]?)(\d\.?\d*)$/i.test(tok)) {
+        temp = RegExp.$1;
+      }
+      else if (!temp && /^(0\.\d+|[01]\.?\d*|2\.?0?)$/.test(tok) && parseFloat(tok) <= 2) {
+        temp = tok;
+      }
+      // Max tokens: "tokens:8192", "上下文:131072", or large integer
+      else if (!maxTok && /^(?:max_?tokens?|tokens?|上下文|context)[:=]?(\d+)$/i.test(tok)) {
+        maxTok = RegExp.$1;
+      }
+      else if (!maxTok && /^\d+$/.test(tok) && parseInt(tok) >= 64) {
+        maxTok = tok;
+      }
+      // Long alphanumeric string → likely API key
+      else if (!key && tok.length >= 20 && /^[A-Za-z0-9_\-]+$/.test(tok)) {
+        key = tok;
+      }
+      // Short identifier not yet matched → try as model
+      else if (!model && tok.length >= 3 && tok.length <= 60 && !tok.includes("://")) {
+        model = tok;
+      }
+    }
+
+    return { url, key, model, temp, maxTok };
+  }
+
+  function applySmartPaste() {
+    const input = $("llmSmartPaste");
+    const result = smartParseLLM(input?.value);
+    if (!result) { showToast("请粘贴包含 URL/Key/Model 的文本", "warning"); return; }
+
+    let filled = [];
+    if (result.url && els.llmBaseUrl) { els.llmBaseUrl.value = result.url; filled.push("URL"); }
+    if (result.key && els.llmApiKey) { els.llmApiKey.value = result.key; filled.push("Key"); }
+    if (result.model && els.llmModel) { els.llmModel.value = result.model; filled.push("Model"); }
+    if (result.temp && els.llmTemperature) { els.llmTemperature.value = result.temp; filled.push("Temperature"); }
+    if (result.maxTok && els.llmMaxTokens) { els.llmMaxTokens.value = result.maxTok; filled.push("MaxTokens"); }
+
+    if (filled.length) {
+      saveLLMSettings();
+      showToast(`✅ 已识别并填入：${filled.join("、")}`, "success");
+      if (input) input.value = "";
+    } else {
+      showToast("未能识别出有效配置，请检查格式", "warning");
+    }
+  }
+
+  $("btnSmartPaste")?.addEventListener("click", applySmartPaste);
+  $("llmSmartPaste")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); applySmartPaste(); }
+  });
+  // Auto-trigger on paste
+  $("llmSmartPaste")?.addEventListener("paste", () => {
+    setTimeout(applySmartPaste, 100);
+  });
+
   // ── GraphRAG Search Handler ──
   $("btnKgSearch")?.addEventListener("click", async () => {
     const query = $("kgSearchInput")?.value?.trim();
@@ -7101,6 +7180,13 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div class="llm-form">
+                    <div class="field field--wide" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)">
+                      <label style="display:flex;align-items:center;gap:6px"><iconify-icon icon="lucide:sparkles" style="color:var(--accent)"></iconify-icon> 一键配置 <span style="font-size:10px;color:var(--muted);font-weight:400">粘贴包含 URL、Key、Model 的文本，自动识别填入</span></label>
+                      <div class="input-with-action">
+                        <input class="form-control" id="llmSmartPaste" type="text" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o  或任意顺序组合" autocomplete="off" style="font-size:12px">
+                        <button class="btn" id="btnSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
+                      </div>
+                    </div>
                     <div class="field field--wide">
                       <label for="llmProvider">模型服务</label>
                       <select class="form-control" id="llmProvider">
