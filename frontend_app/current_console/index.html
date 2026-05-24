@@ -6133,6 +6133,9 @@ function bindEvents() {
 
       logEntry("lucide:network", `图谱构建完成：${nodes.length} 节点，${links.length} 条边`);
 
+      // Store graph data globally for KG search
+      window._kgGraph = { nodes, links, entities, edges, engineMode };
+
       // ── Step 4: Render D3 force-directed graph (pre-computed layout) ──
       if (progressEl) progressEl.style.width = "90%";
       logEntry("lucide:loader", "正在计算布局（可能需要几秒）...");
@@ -6368,6 +6371,149 @@ function bindEvents() {
     }
   });
   els.btnSearch?.addEventListener("click", runSearch);
+
+  // ── GraphRAG Search Handler ──
+  $("btnKgSearch")?.addEventListener("click", async () => {
+    const query = $("kgSearchInput")?.value?.trim();
+    if (!query) { showToast("请输入检索问题。", "warning"); return; }
+
+    const meta = $("kgSearchMeta");
+    const resultsDiv = $("kgSearchResults");
+    const answerDiv = $("kgAskAnswer");
+    const searchMode = $("kgSearchMode")?.value || "global";
+    const maxHops = parseInt($("kgMaxHops")?.value) || 2;
+
+    if (!window._kgGraph || !window._kgGraph.nodes.length) {
+      if (meta) meta.textContent = "⚠️ 请先在「图谱构建」页面构建知识图谱。";
+      return;
+    }
+
+    const t0 = performance.now();
+    const { nodes: gNodes, links: gLinks, entities: gEntities } = window._kgGraph;
+    if (meta) meta.textContent = "正在进行图谱检索...";
+    if (resultsDiv) resultsDiv.innerHTML = "";
+    if (answerDiv) answerDiv.innerHTML = "";
+
+    // Step 1: Find matching entities in the query
+    const matchedEntities = [];
+    for (const [name, data] of gEntities.entries()) {
+      if (name.length >= 2 && query.includes(name)) {
+        matchedEntities.push({ name, ...data });
+      }
+    }
+    // Also do fuzzy: find entities whose name appears partially in query
+    if (matchedEntities.length === 0) {
+      for (const [name, data] of gEntities.entries()) {
+        if (name.length >= 2 && (query.includes(name) || name.includes(query.slice(0, 4)))) {
+          matchedEntities.push({ name, ...data });
+        }
+      }
+    }
+    // Fallback: pick top entities by count
+    if (matchedEntities.length === 0) {
+      gNodes.slice(0, 10).forEach(n => matchedEntities.push({ name: n.id, type: n.type, count: n.count }));
+    }
+
+    // Step 2: Build adjacency and traverse N-hop neighbors
+    const adj = new Map();
+    gLinks.forEach(l => {
+      const s = typeof l.source === "object" ? l.source.id : l.source;
+      const t = typeof l.target === "object" ? l.target.id : l.target;
+      if (!adj.has(s)) adj.set(s, []);
+      if (!adj.has(t)) adj.set(t, []);
+      adj.get(s).push({ target: t, relation: l.relation, weight: l.weight });
+      adj.get(t).push({ target: s, relation: l.relation, weight: l.weight });
+    });
+
+    const visited = new Set();
+    const relevantTriples = [];
+    const frontier = matchedEntities.map(e => ({ name: e.name, depth: 0 }));
+
+    while (frontier.length > 0) {
+      const { name, depth } = frontier.shift();
+      if (visited.has(name)) continue;
+      visited.add(name);
+      const neighbors = adj.get(name) || [];
+      for (const edge of neighbors) {
+        relevantTriples.push({ source: name, relation: edge.relation, target: edge.target, weight: edge.weight });
+        if (depth < maxHops && !visited.has(edge.target)) {
+          frontier.push({ name: edge.target, depth: depth + 1 });
+        }
+      }
+    }
+
+    // Step 3: Build structured graph context
+    const entityDetails = [];
+    for (const eName of visited) {
+      const eData = gEntities.get(eName);
+      if (eData) entityDetails.push(`- ${eName} [${eData.type}] (出现 ${eData.count} 次)`);
+    }
+
+    const tripleLines = relevantTriples
+      .sort((a, b) => b.weight - a.weight)
+      .slice(0, 60)
+      .map(t => `  ${t.source} --[${t.relation}]--> ${t.target} (权重: ${t.weight})`);
+
+    const graphContext = [
+      `【GraphRAG 图谱检索结果】`,
+      `检索模式：${searchMode === "global" ? "Global Search" : "Local Search"}`,
+      `查询匹配到 ${matchedEntities.length} 个实体，${maxHops} 跳邻居扩展后共涉及 ${visited.size} 个实体`,
+      `相关三元组 ${relevantTriples.length} 条`,
+      ``,
+      `涉及的实体：`,
+      ...entityDetails.slice(0, 40),
+      ``,
+      `关系三元组（按权重排序）：`,
+      ...tripleLines,
+    ].join("\n");
+
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    if (meta) meta.textContent = `图谱检索完成 · 耗时 ${elapsed}s · 匹配 ${matchedEntities.length} 实体 · ${maxHops} 跳扩展 ${visited.size} 节点 · ${relevantTriples.length} 三元组`;
+
+    // Step 4: Render results as entity cards
+    if (resultsDiv) {
+      const matchedCards = matchedEntities.slice(0, 20).map(e => {
+        const neighbors = (adj.get(e.name) || []).slice(0, 5);
+        const neighborText = neighbors.map(n => `${n.relation} → ${n.target}`).join("\n");
+        return `<div class="result-card">
+          <div class="result-head"><strong>${e.name}</strong> <span class="tag">${e.type}</span> <span class="score">${e.count} 次</span></div>
+          <div class="result-body"><pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:0">${neighborText || "无直接关系"}</pre></div>
+        </div>`;
+      }).join("");
+      resultsDiv.innerHTML = matchedCards || `<p style="color:var(--muted);padding:20px">未找到匹配实体。</p>`;
+    }
+
+    // Step 5: Call LLM with graph context
+    const llmSettings = loadLLMSettings();
+    if (llmSettings.apiKey && answerDiv) {
+      answerDiv.innerHTML = `<div style="color:var(--muted)">正在通过图谱上下文生成回答...</div>`;
+      try {
+        const systemPrompt = `你是一个基于知识图谱的智能问答助手。用户的问题需要基于以下从知识图谱中检索到的实体和关系来回答。请基于图谱中的三元组关系进行推理，给出结构化的回答。如果图谱信息不足以回答，请诚实说明。`;
+        const userPrompt = `用户问题：${query}\n\n${graphContext}`;
+
+        const resp = await fetch(llmSettings.baseUrl + "/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${llmSettings.apiKey}` },
+          body: JSON.stringify({
+            model: llmSettings.model || "gemini-2.5-flash",
+            temperature: parseFloat(llmSettings.temperature) || 0.7,
+            max_tokens: parseInt(llmSettings.maxTokens) || 8192,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ]
+          })
+        });
+        const data = await resp.json();
+        const answer = data.choices?.[0]?.message?.content || "LLM 未返回有效回答。";
+        answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7">${DOMPurify.sanitize(answer)}</div>`;
+      } catch (err) {
+        answerDiv.innerHTML = `<div style="color:var(--danger)">LLM 调用失败：${err.message}</div>`;
+      }
+    } else if (answerDiv) {
+      answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7;color:var(--muted)">请配置 LLM API Key 以启用图谱问答。\n\n以下为检索到的图谱上下文：\n\n${DOMPurify.sanitize(graphContext)}</div>`;
+    }
+  });
 
   ["input", "change"].forEach((evt) => {
     els.llmProvider?.addEventListener(evt, saveLLMSettings);
