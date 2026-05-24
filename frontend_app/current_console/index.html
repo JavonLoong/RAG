@@ -6122,8 +6122,10 @@ function bindEvents() {
 
       logEntry("lucide:network", `图谱构建完成：${nodes.length} 节点，${links.length} 条边`);
 
-      // ── Step 4: Render D3 force-directed graph ──
+      // ── Step 4: Render D3 force-directed graph (pre-computed layout) ──
       if (progressEl) progressEl.style.width = "90%";
+      logEntry("lucide:loader", "正在计算布局（可能需要几秒）...");
+      await new Promise(r => setTimeout(r, 0));
 
       if (graphEmpty) graphEmpty.style.display = "none";
       if (graphSvg) graphSvg.style.display = "block";
@@ -6152,34 +6154,43 @@ function bindEvents() {
         row.append("text").attr("x", 18).attr("y", 4).attr("fill", "#ccc").attr("font-size", "11px").text(type);
       });
 
-      // Simulation — stronger repulsion + type clustering
+      // Pre-compute layout: run simulation in batch, no DOM updates
       const typeTargetX = { Equipment: 0.25, Component: 0.5, Parameter: 0.75, Problem: 0.15, Method: 0.85 };
       const typeTargetY = { Equipment: 0.3, Component: 0.5, Parameter: 0.3, Problem: 0.75, Method: 0.75 };
       const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(100).strength(0.3))
-        .force("charge", d3.forceManyBody().strength(-350).distanceMax(400))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(60).strength(0.2))
+        .force("charge", d3.forceManyBody().strength(nodes.length > 500 ? -8 : nodes.length > 100 ? -80 : -350).distanceMax(300))
         .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
-        .force("x", d3.forceX(d => (typeTargetX[d.type] || 0.5) * width).strength(0.08))
-        .force("y", d3.forceY(d => (typeTargetY[d.type] || 0.5) * height).strength(0.08))
-        .force("collision", d3.forceCollide().radius(d => d.radius + 8));
+        .force("x", d3.forceX(d => (typeTargetX[d.type] || 0.5) * width).strength(0.12))
+        .force("y", d3.forceY(d => (typeTargetY[d.type] || 0.5) * height).strength(0.12))
+        .force("collision", d3.forceCollide().radius(d => d.radius + 2))
+        .stop(); // Don't auto-run
 
+      // Batch tick — compute all positions without DOM updates
+      const tickCount = nodes.length > 1000 ? 80 : nodes.length > 200 ? 150 : 300;
+      for (let i = 0; i < tickCount; i++) simulation.tick();
+
+      // ── One-time render with computed positions ──
       // Links
       const link = g.append("g")
         .selectAll("line")
         .data(links)
         .join("line")
         .attr("stroke", "#555")
-        .attr("stroke-opacity", 0.4)
-        .attr("stroke-width", d => Math.max(0.5, Math.min(3, d.weight * 0.5)));
+        .attr("stroke-opacity", 0.3)
+        .attr("stroke-width", d => Math.max(0.3, Math.min(2.5, d.weight * 0.4)))
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
 
-      // Edge labels — only show for strongest links to avoid clutter
-      const linkLabel = g.append("g")
+      // Edge labels — only for very strong links
+      const minEdgeLabel = nodes.length > 200 ? 20 : 5;
+      g.append("g")
         .selectAll("text")
-        .data(links.filter(l => l.weight >= 8))
+        .data(links.filter(l => l.weight >= minEdgeLabel))
         .join("text")
-        .attr("fill", "#666")
-        .attr("font-size", "7px")
-        .attr("text-anchor", "middle")
+        .attr("fill", "#666").attr("font-size", "7px").attr("text-anchor", "middle")
+        .attr("x", d => (d.source.x + d.target.x) / 2)
+        .attr("y", d => (d.source.y + d.target.y) / 2)
         .text(d => d.relation);
 
       // Nodes
@@ -6189,18 +6200,21 @@ function bindEvents() {
         .join("circle")
         .attr("r", d => d.radius)
         .attr("fill", d => d.color)
-        .attr("stroke", "#222")
-        .attr("stroke-width", 1.2)
-        .attr("opacity", 0.88)
+        .attr("stroke", "#222").attr("stroke-width", 1).attr("opacity", 0.85)
+        .attr("cx", d => d.x).attr("cy", d => d.y)
         .attr("cursor", "grab")
         .call(d3.drag()
-          .on("start", (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-          .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
-          .on("end", (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+          .on("drag", function(event, d) {
+            d.x = event.x; d.y = event.y;
+            d3.select(this).attr("cx", d.x).attr("cy", d.y);
+            label.filter(l => l.id === d.id).attr("x", d.x).attr("y", d.y);
+            link.filter(l => l.source.id === d.id).attr("x1", d.x).attr("y1", d.y);
+            link.filter(l => l.target.id === d.id).attr("x2", d.x).attr("y2", d.y);
+          })
         );
 
-      // Node labels — only show top entities, rest appear on hover
-      const topN = Math.min(20, Math.ceil(nodes.length * 0.4));
+      // Node labels — only show top entities
+      const topN = Math.min(25, Math.ceil(nodes.length * 0.3));
       const labelThreshold = nodes.length > topN ? nodes[topN - 1].count : 0;
 
       const label = g.append("g")
@@ -6213,39 +6227,22 @@ function bindEvents() {
         .attr("dy", d => d.radius + 14)
         .attr("pointer-events", "none")
         .attr("opacity", d => d.count >= labelThreshold ? 1 : 0)
+        .attr("x", d => d.x).attr("y", d => d.y)
         .text(d => d.id);
 
-      // Hover: show label + highlight connections
+      // Hover interactions
       node.on("mouseenter", function(event, d) {
         d3.select(this).attr("stroke", "#fff").attr("stroke-width", 2.5);
         label.filter(l => l.id === d.id).attr("opacity", 1).attr("fill", "#fff").attr("font-weight", "bold");
-        link.attr("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.08);
+        link.attr("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.05);
         link.attr("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? d.color : "#555");
       }).on("mouseleave", function() {
-        d3.select(this).attr("stroke", "#222").attr("stroke-width", 1.2);
+        d3.select(this).attr("stroke", "#222").attr("stroke-width", 1);
         label.attr("opacity", d => d.count >= labelThreshold ? 1 : 0).attr("fill", "#eee").attr("font-weight", "normal");
         link.attr("stroke-opacity", 0.3).attr("stroke", "#555");
       });
 
-      // Tooltip
       node.append("title").text(d => `${d.id}\n类型: ${d.type}\n出现次数: ${d.count}`);
-
-      simulation.on("tick", () => {
-        link
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
-        linkLabel
-          .attr("x", d => (d.source.x + d.target.x) / 2)
-          .attr("y", d => (d.source.y + d.target.y) / 2);
-        node
-          .attr("cx", d => d.x)
-          .attr("cy", d => d.y);
-        label
-          .attr("x", d => d.x)
-          .attr("y", d => d.y);
-      });
 
       if (progressEl) progressEl.style.width = "100%";
 
