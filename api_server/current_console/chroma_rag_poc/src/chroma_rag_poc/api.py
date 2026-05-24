@@ -36,6 +36,7 @@ from .pipeline import (
     ingest_source_payloads,
     query_collection,
 )
+from .public_books_json import ingest_latest_snapshot_to_chroma, write_ingest_summary
 
 PACKAGE_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 CONSOLE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
@@ -335,6 +336,14 @@ class BenchmarkRequest(BaseModel):
 class ProcessRequest(BaseModel):
     filenames: list[str] = Field(default_factory=list)
     collection: str = "power_equipment"
+
+
+class PublicBooksJsonIngestRequest(BaseModel):
+    input_dir: str = Field(min_length=1)
+    collection: str = "public_books_labelstudio"
+    mode: str = Field(default="append", pattern="^(create|append)$")
+    chunk_size: int = Field(default=900, ge=100, le=4000)
+    overlap: int = Field(default=120, ge=0, le=1000)
 
 
 class DeleteUploadsRequest(BaseModel):
@@ -640,6 +649,55 @@ def create_app(
                 )
             logger.close(status="error", error=str(exc))
             raise HTTPException(status_code=500, detail=f"处理失败: {exc}；详细日志: {logger.file_name}") from exc
+
+    @app.post("/api/public-books-json/ingest")
+    async def ingest_public_books_json(request: Request, payload: PublicBooksJsonIngestRequest):
+        """Run the public-books Label Studio JSON screening pipeline and write chunks to ChromaDB."""
+        input_dir = Path(payload.input_dir).expanduser()
+        collection_name = payload.collection.strip() or "public_books_labelstudio"
+        logger = OperationLogger(
+            request.app.state.log_dir,
+            "public_books_json_ingest",
+            input_dir=str(input_dir),
+            collection_name=collection_name,
+            mode=payload.mode,
+            chunk_size=payload.chunk_size,
+            overlap=payload.overlap,
+        )
+        try:
+            if not input_dir.exists():
+                logger.warning("json_input_missing", input_dir=str(input_dir))
+                raise HTTPException(status_code=400, detail=f"JSON 目录不存在：{input_dir}；详细日志: {logger.file_name}")
+
+            with logger.stage("public_books_json_ingest_run"):
+                result = ingest_latest_snapshot_to_chroma(
+                    input_root=input_dir,
+                    persist_dir=request.app.state.persist_dir,
+                    collection_name=collection_name,
+                    mode=payload.mode,
+                    chunk_size=payload.chunk_size,
+                    overlap=payload.overlap,
+                )
+
+            reports_dir = Path(__file__).resolve().parents[5] / "data_pipeline" / "reports"
+            with logger.stage("write_public_books_json_ingest_summary", reports_dir=str(reports_dir)):
+                result["summary_files"] = write_ingest_summary(result, reports_dir)
+            result.update(_operation_log_payload(logger))
+            logger.close(
+                status="ok",
+                collection=result.get("collection"),
+                chunks_written=result.get("chunks_written"),
+                records_written=result.get("records_written"),
+            )
+            return result
+        except HTTPException as exc:
+            logger.error("public_books_json_ingest_rejected", status_code=exc.status_code, detail=exc.detail)
+            logger.close(status="error", status_code=exc.status_code, detail=exc.detail)
+            raise
+        except Exception as exc:
+            logger.exception("public_books_json_ingest_failed", exc)
+            logger.close(status="error", error=str(exc))
+            raise HTTPException(status_code=500, detail=f"JSON 入库失败: {exc}；详细日志: {logger.file_name}") from exc
 
     @app.post("/api/ingest")
     async def ingest(
@@ -966,6 +1024,11 @@ def create_app(
             media_type="application/zip",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
+
+    @app.get("/api/chroma/export")
+    async def export_chroma_db(request: Request):
+        """Alias used by the console UI for downloading the full ChromaDB directory."""
+        return await export_all(request)
 
     @app.get("/api/export/{collection_name}")
     async def export_collection(request: Request, collection_name: str):

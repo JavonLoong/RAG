@@ -1745,6 +1745,86 @@ svg { width: 100%; height: auto; display: block; }
   display: inline-flex;
 }
 .model-row:hover .model-copy { color: var(--accent-2); }
+
+/* ─────── Collection Selection Dialog ─────── */
+.coll-dialog .modal-body {
+  padding: 16px 20px 20px;
+  display: grid;
+  gap: 16px;
+}
+.coll-dialog .coll-existing {
+  display: grid;
+  gap: 8px;
+}
+.coll-dialog .coll-existing-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.coll-dialog .coll-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  color: var(--ink);
+  font-size: 13px;
+}
+.coll-dialog .coll-option:hover {
+  background: rgba(10,132,255,0.10);
+  border-color: rgba(10,132,255,0.4);
+}
+.coll-dialog .coll-option.is-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.coll-dialog .coll-option .coll-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coll-dialog .coll-option .coll-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.coll-dialog .coll-new-wrap {
+  display: grid;
+  gap: 8px;
+}
+.coll-dialog .coll-new-row {
+  display: flex;
+  gap: 8px;
+}
+.coll-dialog .coll-new-row .form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.coll-dialog .coll-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* ─────── Data Page Export Section ─────── */
+.export-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
 </style>
   <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
@@ -2993,6 +3073,11 @@ async function runLocalProcess() {
     showToast("Select files to process first.", "warning");
     return;
   }
+
+  // Show collection selection dialog
+  const collectionName = await openCollectionDialog();
+  if (!collectionName) return; // User cancelled
+
   if (els.btnProcess) {
     els.btnProcess.disabled = true;
     els.btnProcess.dataset.busy = "true";
@@ -3006,7 +3091,7 @@ async function runLocalProcess() {
   const succeeded = [];
   let failed = 0;
   try {
-    addActivity("warning", "Local processing started", `Processing ${selectedItems.length} selected files.`);
+    addActivity("warning", "Local processing started", `Processing ${selectedItems.length} selected files → ${collectionName}.`);
     for (let index = 0; index < selectedItems.length; index += 1) {
       const item = selectedItems[index];
       try {
@@ -3023,7 +3108,7 @@ async function runLocalProcess() {
         nextChunks.push(...chunks);
         succeeded.push(item.filename);
         fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "ok", records_extracted: records.length, error: null });
-        Object.assign(item, { status: "processed", processed_at: Math.floor(Date.now() / 1000), last_collection: LOCAL_COLLECTION_NAME, last_records: records.length, last_chunks: chunks.length, last_error: null });
+        Object.assign(item, { status: "processed", processed_at: Math.floor(Date.now() / 1000), last_collection: collectionName, last_records: records.length, last_chunks: chunks.length, last_error: null });
       } catch (error) {
         failed += 1;
         fileSummaries.push({ source_file: item.filename, source_kind: item.source_kind, status: "error", records_extracted: 0, error: error.message || String(error) });
@@ -3037,7 +3122,7 @@ async function runLocalProcess() {
     refreshLocalUploadBuckets();
     state.selectedUploads.clear();
     state.lastProcess = {
-      collection: LOCAL_COLLECTION_NAME,
+      collection: collectionName,
       requested_filenames: selectedItems.map((item) => item.filename),
       skipped_already_processed: [],
       files_succeeded: succeeded.length,
@@ -4577,6 +4662,10 @@ async function runProcess() {
     return;
   }
 
+  // Show collection selection dialog
+  const collectionName = await openCollectionDialog();
+  if (!collectionName) return; // User cancelled
+
   if (els.btnProcess) {
     els.btnProcess.disabled = true;
     els.btnProcess.dataset.busy = "true";
@@ -4585,13 +4674,13 @@ async function runProcess() {
   if (els.processLog) renderEmpty(els.processLog, "正在处理选中的文件，请稍候...");
 
   try {
-    addActivity("warning", "开始入库处理", `本次处理 ${selected.length} 个勾选文件`);
+    addActivity("warning", "开始入库处理", `本次处理 ${selected.length} 个勾选文件 → 集合 ${collectionName}`);
     const result = await requestJson("/api/process", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         filenames: selected,
-        collection: state.primaryCollection || "power_equipment"
+        collection: collectionName
       })
     }, 300000);
 
@@ -5285,6 +5374,169 @@ function applyDemoMode(isDemo) {
   try { localStorage.setItem('rag_demo_mode', isDemo ? '1' : '0'); } catch {}
 }
 
+// ─── Collection Selection Dialog ───
+
+function getKnownCollections() {
+  const collections = state.stats?.collections || [];
+  return collections.map((c) => ({
+    name: c.name || "",
+    count: Number(c.count || 0),
+    tokens: Number(c.estimated_tokens || 0),
+  })).filter((c) => c.name);
+}
+
+function openCollectionDialog() {
+  return new Promise((resolve) => {
+    const dialog = document.getElementById("collectionDialog");
+    if (!dialog) { resolve(null); return; }
+
+    const body = dialog.querySelector(".modal-body");
+    const collections = getKnownCollections();
+    const defaultName = state.primaryCollection || "power_equipment";
+
+    let selectedCollection = defaultName;
+
+    function render() {
+      const existingSection = collections.length ? `
+        <div class="coll-existing">
+          <div class="coll-existing-label">选择已有集合</div>
+          ${collections.map((c) => `
+            <button class="coll-option ${c.name === selectedCollection ? 'is-selected' : ''}"
+                    type="button" data-coll-pick="${escapeHtml(c.name)}">
+              <iconify-icon icon="lucide:database"></iconify-icon>
+              <span class="coll-name">${escapeHtml(c.name)}</span>
+              <span class="coll-count">${formatNumber(c.count)} 片段 · ${formatNumber(c.tokens)} tokens</span>
+            </button>
+          `).join("")}
+        </div>
+      ` : `<div class="coll-existing">
+          <div class="coll-existing-label">暂无已有集合</div>
+        </div>`;
+
+      body.innerHTML = `
+        ${existingSection}
+        <div class="coll-new-wrap">
+          <div class="coll-existing-label">或输入新集合名称</div>
+          <div class="coll-new-row">
+            <input class="form-control" id="collNewName" type="text"
+                   placeholder="例如: professional_books"
+                   value="${collections.some((c) => c.name === selectedCollection) ? '' : escapeHtml(selectedCollection)}">
+            <button class="ghost-btn" type="button" id="collNewBtn">
+              <iconify-icon icon="lucide:plus"></iconify-icon><span>新建</span>
+            </button>
+          </div>
+        </div>
+        <div class="coll-actions">
+          <button class="ghost-btn" type="button" data-coll-cancel>取消</button>
+          <button class="btn" type="button" data-coll-confirm>
+            <iconify-icon icon="lucide:square-play"></iconify-icon><span>开始处理</span>
+          </button>
+        </div>
+      `;
+    }
+
+    render();
+    dialog.hidden = false;
+
+    function cleanup() {
+      dialog.hidden = true;
+      dialog.removeEventListener("click", handleClick);
+      dialog.removeEventListener("keydown", handleKeydown);
+    }
+
+    function handleClick(event) {
+      const pick = event.target.closest("[data-coll-pick]");
+      if (pick) {
+        selectedCollection = pick.dataset.collPick;
+        const input = dialog.querySelector("#collNewName");
+        if (input) input.value = "";
+        render();
+        return;
+      }
+
+      if (event.target.closest("#collNewBtn")) {
+        const input = dialog.querySelector("#collNewName");
+        const name = (input?.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+        if (name.length < 2) {
+          showToast("集合名至少 2 个字符（仅限字母、数字和下划线）。", "warning");
+          return;
+        }
+        selectedCollection = name;
+        render();
+        return;
+      }
+
+      if (event.target.closest("[data-coll-cancel]") || event.target.closest(".modal-backdrop") || event.target.closest("[data-modal-close]")) {
+        cleanup();
+        resolve(null);
+        return;
+      }
+
+      if (event.target.closest("[data-coll-confirm]")) {
+        const input = dialog.querySelector("#collNewName");
+        const inputVal = (input?.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+        const finalName = inputVal.length >= 2 ? inputVal : selectedCollection;
+        if (!finalName) {
+          showToast("请选择或输入集合名称。", "warning");
+          return;
+        }
+        cleanup();
+        resolve(finalName);
+        return;
+      }
+    }
+
+    function handleKeydown(event) {
+      if (event.key === "Escape") {
+        cleanup();
+        resolve(null);
+      }
+      if (event.key === "Enter" && event.target.id === "collNewName") {
+        event.preventDefault();
+        const name = (event.target.value || "").trim().replace(/[^a-zA-Z0-9_\-]/g, "_");
+        if (name.length >= 2) {
+          cleanup();
+          resolve(name);
+        }
+      }
+    }
+
+    dialog.addEventListener("click", handleClick);
+    dialog.addEventListener("keydown", handleKeydown);
+  });
+}
+
+
+// ─── Local-mode Export ───
+
+function exportLocalChunksAsJson() {
+  if (!state.chunks.length) {
+    showToast("当前没有本地索引数据可导出。", "warning");
+    return;
+  }
+  const data = {
+    collection: state.primaryCollection || LOCAL_COLLECTION_NAME,
+    count: state.chunks.length,
+    exported_at: new Date().toISOString(),
+    ids: state.chunks.map((c) => c.chunk_id),
+    documents: state.chunks.map((c) => c.text),
+    metadatas: state.chunks.map((c) => c.metadata || {}),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.href = url;
+  a.download = `local_index_export_${timestamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  addActivity("success", "本地索引已导出", `${formatNumber(state.chunks.length)} 个片段 → JSON`);
+  showToast(`已导出 ${formatNumber(state.chunks.length)} 个片段。`, "success");
+}
+
+
 function bindEvents() {
   els.globalModeToggle?.addEventListener("click", (event) => {
     const btn = event.target.closest(".segment-btn");
@@ -5422,8 +5674,8 @@ function bindEvents() {
 
     if (exportButton) {
       const name = exportButton.dataset.exportCollection;
-      if (state.publicDemo || state.localMode) {
-        showToast("当前模式不支持导出。", "warning");
+      if (state.localMode || state.publicDemo) {
+        exportLocalChunksAsJson();
         return;
       }
       showToast(`正在导出集合 ${name}…`, "success");
@@ -5462,8 +5714,8 @@ function bindEvents() {
   });
 
   document.getElementById("btnExportAll")?.addEventListener("click", () => {
-    if (state.publicDemo || state.localMode) {
-      showToast("当前模式不支持导出。", "warning");
+    if (state.localMode || state.publicDemo) {
+      exportLocalChunksAsJson();
       return;
     }
     showToast("正在打包整库 ZIP，可能需要几秒钟…", "success");
@@ -5474,6 +5726,42 @@ function bindEvents() {
     link.click();
     document.body.removeChild(link);
     addActivity("success", "整库已导出", "ChromaDB → ZIP");
+  });
+
+  // Data page export buttons
+  document.getElementById("btnExportAllData")?.addEventListener("click", () => {
+    if (state.localMode || state.publicDemo) {
+      exportLocalChunksAsJson();
+      return;
+    }
+    showToast("正在打包整库 ZIP，可能需要几秒钟…", "success");
+    const link = document.createElement("a");
+    link.href = apiUrl("/api/export");
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addActivity("success", "整库已导出", "ChromaDB → ZIP");
+  });
+
+  document.getElementById("btnExportJson")?.addEventListener("click", () => {
+    if (state.localMode || state.publicDemo) {
+      exportLocalChunksAsJson();
+      return;
+    }
+    const name = state.primaryCollection;
+    if (!name) {
+      showToast("当前没有默认集合可导出。", "warning");
+      return;
+    }
+    showToast(`正在导出集合 ${name}…`, "success");
+    const link = document.createElement("a");
+    link.href = apiUrl(`/api/export/${encodeURIComponent(name)}`);
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addActivity("success", "集合已导出", `${name} → JSON`);
   });
 
   els.queueList?.addEventListener("change", (event) => {
@@ -5825,6 +6113,21 @@ window.addEventListener("DOMContentLoaded", init);
                     <span class="pill">处理后</span>
                   </div>
                   <div class="quality-report" id="qualityReport"></div>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h3>导出与备份</h3>
+                      <p>将当前向量数据库导出为文件，便于备份、迁移或离线分析。</p>
+                    </div>
+                    <span class="pill">数据管理</span>
+                  </div>
+                  <div class="export-bar">
+                    <button class="btn" id="btnExportAllData" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出整库 ZIP</span></button>
+                    <button class="ghost-btn" id="btnExportJson" type="button"><iconify-icon icon="lucide:file-json"></iconify-icon><span>导出当前集合 JSON</span></button>
+                  </div>
+                  <div class="queue-hint">整库 ZIP 包含 ChromaDB 全部持久化文件；集合 JSON 只含文本和元数据，不含向量。</div>
                 </article>
               </div>
             </div>
@@ -6380,5 +6683,20 @@ window.addEventListener("DOMContentLoaded", init);
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- Collection Selection Dialog -->
+  <div class="modal coll-dialog" id="collectionDialog" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-head">
+        <div>
+          <h3>选择目标集合</h3>
+          <p>选择一个已有集合追加数据，或输入新名称创建新集合。</p>
+        </div>
+        <button class="icon-btn" type="button" data-modal-close aria-label="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  </div>
 </body>
 </html>
