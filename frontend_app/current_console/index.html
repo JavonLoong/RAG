@@ -2814,55 +2814,39 @@ async function _checkLocalOcr() {
   return _localOcrAvailable;
 }
 
-// ── OCR via local RapidOCR server — single page (94%+ accuracy) ──
-async function _ocrViaLocalServer(pdfArrayBuffer, pageNum) {
-  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf?page=${pageNum}&dpi=200`, {
-    method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: pdfArrayBuffer
-  });
-  if (!resp.ok) throw new Error(`OCR server error: ${resp.status}`);
-  const result = await resp.json();
-  return {
-    text: result.text || "",
-    confidence: Math.round((result.confidence || 0) * 100),
-    lines: result.lines || 0,
-    engine: result.engine || "RapidOCR"
-  };
-}
-
-// ── Upload PDF once, get session ID for batch OCR ──
-async function _uploadPdfForOcr(pdfArrayBuffer) {
-  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/upload`, {
-    method: "POST",
-    headers: { "Content-Type": "application/octet-stream" },
-    body: pdfArrayBuffer
-  });
-  if (!resp.ok) throw new Error(`PDF upload error: ${resp.status}`);
-  const data = await resp.json();
-  if (data.error) throw new Error(data.error);
-  console.log(`[OCR] PDF 上传完成: session=${data.session_id}, ${data.total_pages} 页, ${data.size_mb}MB`);
-  return data.session_id;
-}
-
-// ── OCR via local server — BATCH (session-based, no re-upload) ──
-async function _ocrBatchViaLocalServer(sessionId, pageNums) {
-  const pagesParam = pageNums.join(",");
-  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/batch?session=${sessionId}&pages=${pagesParam}&dpi=200`, {
-    method: "POST"
-  });
-  if (!resp.ok) throw new Error(`OCR batch error: ${resp.status}`);
-  const data = await resp.json();
-  if (data.error) throw new Error(data.error);
+// ── 一键式本地 OCR: 上传 PDF → 服务器并发处理全部页面 → 轮询进度 → 返回结果 ──
+async function _ocrPdfViaServer(file, progressCallback) {
+  const pdfBuf = await file.arrayBuffer();
   
-  return (data.results || []).map(r => ({
-    page: r.page,
-    text: r.text || "",
-    confidence: Math.round((r.confidence || 0) * 100),
-    lines: r.lines || 0,
-    engine: r.engine || "RapidOCR",
-    error: r.error || null
-  }));
+  // 1) 上传 PDF，服务器立刻开始后台并发 OCR
+  const startResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: pdfBuf
+  });
+  if (!startResp.ok) throw new Error(`OCR 上传失败: ${startResp.status}`);
+  const startData = await startResp.json();
+  if (startData.error) throw new Error(startData.error);
+  
+  const { session_id, total_pages, concurrency } = startData;
+  console.log(`[OCR] 开始: session=${session_id}, ${total_pages} 页, ${concurrency}x 并发`);
+  if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency });
+  
+  // 2) 轮询进度直到完成
+  while (true) {
+    await new Promise(r => setTimeout(r, 800));
+    
+    const progResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/progress?session=${session_id}`);
+    const prog = await progResp.json();
+    if (prog.error) throw new Error(prog.error);
+    
+    if (progressCallback) progressCallback({ phase: "processing", ...prog });
+    
+    if (prog.complete) {
+      console.log(`[OCR] 完成: ${total_pages} 页, ${prog.elapsed_s}s, 置信度 ${(prog.avg_confidence*100).toFixed(0)}%`);
+      return prog;  // { full_text, pages, avg_confidence, elapsed_s, ... }
+    }
+  }
 }
 
 // ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
@@ -3058,138 +3042,137 @@ async function parsePdfFile(file) {
     pEngine.textContent = `引擎: ${engineName}` + (engineMode === "local" ? ` (${_localOcrConcurrency}x 并发)` : "");
     pPages.textContent = `0/${ocrPages.length} 页`;
 
-    // For local OCR: upload PDF once to server, get session ID
-    let ocrSessionId = null;
-    if (engineMode === "local") {
-      pEngine.textContent += " — 上传 PDF...";
-      const pdfBuf = await file.arrayBuffer();
-      ocrSessionId = await _uploadPdfForOcr(pdfBuf);
-      pEngine.textContent = `引擎: ${engineName} (${_localOcrConcurrency}x 并发)`;
-    }
-
     const ocrReport = [];
-    let runningChars = 0;
-    let runningConfSum = 0;
-    let doneCount = 0;
 
-    // ── Helper: update progress bar ──
-    function _updateOcrProgress() {
-      const pct = Math.round((doneCount / ocrPages.length) * 100);
-      const avgC = doneCount ? Math.round(runningConfSum / doneCount) : 0;
-      pBar.style.width = `${pct}%`;
-      pPages.textContent = `${doneCount}/${ocrPages.length} 页 (${pct}%)`;
-      pChars.textContent = `${runningChars.toLocaleString()} 字符`;
-      pConf.textContent = `${avgC}%`;
-      pConf.style.color = avgC >= 80 ? "#81c784" : avgC >= 60 ? "#ffb74d" : "#ef5350";
-    }
-
-    // ── Helper: process a single OCR result ──
-    function _processOcrResult(pageIndex, ocr) {
-      const ocrText = normalizeText(ocr.text || "");
-      runningChars += ocrText.length;
-      runningConfSum += (ocr.confidence || 0);
-      doneCount++;
-
-      ocrReport.push({
-        page: pageIndex,
-        confidence: ocr.confidence || 0,
-        chars: ocrText.length,
-        lines: ocr.lines || 0,
-        engine: ocr.engine || engineName
+    if (engineMode === "local") {
+      // ═══════════════════════════════════════════════════
+      // LOCAL MODE: 一键式全量并发 OCR
+      // 上传 PDF → 服务器分页到 12 个线程 → 轮询进度 → 返回合并文本
+      // ═══════════════════════════════════════════════════
+      pEngine.textContent = `引擎: ${engineName} — 上传 PDF...`;
+      
+      const result = await _ocrPdfViaServer(file, (prog) => {
+        // 实时更新进度条
+        if (prog.phase === "started") {
+          pEngine.textContent = `引擎: ${engineName} (${prog.concurrency}x 并发)`;
+        }
+        const pct = prog.pct || 0;
+        const done = prog.done || 0;
+        const total = prog.total || ocrPages.length;
+        pBar.style.width = `${pct}%`;
+        pPages.textContent = `${done}/${total} 页 (${pct}%)`;
+        if (prog.complete) {
+          const chars = (prog.full_text || "").length;
+          pChars.textContent = `${chars.toLocaleString()} 字符`;
+          const c = Math.round((prog.avg_confidence || 0) * 100);
+          pConf.textContent = `${c}%`;
+          pConf.style.color = c >= 80 ? "#81c784" : c >= 60 ? "#ffb74d" : "#ef5350";
+        }
       });
 
-      if (ocrText && ocrText.length > 10) {
-        totalChars += ocrText.length;
+      // 处理结果 — 按页创建 records
+      const fullText = result.full_text || "";
+      const avgConf = Math.round((result.avg_confidence || 0) * 100);
+      
+      // 从服务器的 per-page 结果创建 records
+      if (result.pages) {
+        for (const pg of result.pages) {
+          ocrReport.push({
+            page: pg.page, confidence: Math.round((pg.confidence || 0) * 100),
+            chars: pg.chars || 0, lines: pg.lines || 0, engine: pg.engine || engineName
+          });
+        }
+      }
+      
+      // 整个 PDF 作为一条记录（全量文本）
+      if (fullText.length > 10) {
+        totalChars += fullText.length;
         records.push({
-          record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
+          record_id: `${relativePathOf(file)}::ocr-full`,
           filename: relativePathOf(file),
           source_file: relativePathOf(file),
           source_kind: "PDF-OCR",
-          page_num: pageIndex,
-          ocr_confidence: ocr.confidence || 0,
-          ocr_engine: ocr.engine || engineName,
-          text: ocrText
+          page_num: 0,
+          ocr_confidence: avgConf,
+          ocr_engine: engineName,
+          text: normalizeText(fullText)
         });
-      }
-    }
-
-    if (engineMode === "local") {
-      // ═══════════════════════════════════════════════════
-      // LOCAL MODE: Session-based batch OCR
-      // PDF uploaded once, batches use session ID (no re-upload!)
-      // ═══════════════════════════════════════════════════
-      const BATCH_SIZE = _localOcrConcurrency;
-      const allPageNums = ocrPages.map(p => p.pageIndex);
-      
-      for (let batchStart = 0; batchStart < allPageNums.length; batchStart += BATCH_SIZE) {
-        const batchPages = allPageNums.slice(batchStart, batchStart + BATCH_SIZE);
-        try {
-          const batchResults = await _ocrBatchViaLocalServer(ocrSessionId, batchPages);
-          for (const result of batchResults) {
-            if (result.error) {
-              ocrReport.push({ page: result.page, confidence: 0, chars: 0, error: result.error });
-              doneCount++;
-            } else {
-              _processOcrResult(result.page, result);
-            }
-          }
-        } catch (batchErr) {
-          // Batch failed, mark all pages in batch as failed
-          for (const p of batchPages) {
-            ocrReport.push({ page: p, confidence: 0, chars: 0, error: batchErr.message });
-            doneCount++;
-          }
-        }
-        _updateOcrProgress();
       }
 
     } else {
       // ═══════════════════════════════════════════════════
-      // BROWSER MODE: Concurrent page processing
-      // Process up to 3 pages concurrently (browser has limited resources)
+      // BROWSER MODE: 逐页 OCR (PaddleOCR.js / Tesseract.js)
       // ═══════════════════════════════════════════════════
-      const BROWSER_CONCURRENCY = 3;
-      
-      for (let batchStart = 0; batchStart < ocrPages.length; batchStart += BROWSER_CONCURRENCY) {
-        const batch = ocrPages.slice(batchStart, batchStart + BROWSER_CONCURRENCY);
-        
-        const promises = batch.map(async ({ pageIndex, page }) => {
+      let doneCount = 0;
+      let runningChars = 0;
+      let runningConfSum = 0;
+
+      for (let i = 0; i < ocrPages.length; i++) {
+        const { pageIndex, page } = ocrPages[i];
+        try {
+          let ocr;
+          const canvas = await _renderPdfPageToCanvas(page, 2.0);
           try {
-            let ocr;
-            const canvas = await _renderPdfPageToCanvas(page, 2.0);
-            try {
-              ocr = await _ocrViaPaddleJs(canvas);
-            } catch (paddleErr) {
-              console.warn("[OCR] PaddleOCR.js failed:", paddleErr.message);
-              if (typeof Tesseract === "undefined") {
-                try {
-                  await new Promise((resolve, reject) => {
-                    const s = document.createElement("script");
-                    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
-                    s.onload = resolve;
-                    s.onerror = () => reject(new Error("fail"));
-                    document.head.appendChild(s);
-                  });
-                } catch (e) { /* ignore */ }
-              }
-              if (typeof Tesseract !== "undefined") {
-                ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
-                engineName = "Tesseract.js (浏览器端后备)";
-                pEngine.textContent = `⚠️ 引擎: ${engineName}`;
-                pEngine.style.color = "#ffb74d";
-              } else {
-                throw new Error("无可用 OCR 引擎");
-              }
+            ocr = await _ocrViaPaddleJs(canvas);
+          } catch (paddleErr) {
+            console.warn("[OCR] PaddleOCR.js failed:", paddleErr.message);
+            if (typeof Tesseract === "undefined") {
+              try {
+                await new Promise((resolve, reject) => {
+                  const s = document.createElement("script");
+                  s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+                  s.onload = resolve;
+                  s.onerror = () => reject(new Error("fail"));
+                  document.head.appendChild(s);
+                });
+              } catch (e) { /* ignore */ }
             }
-            _processOcrResult(pageIndex, ocr);
-          } catch (err) {
-            ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: err.message });
-            doneCount++;
+            if (typeof Tesseract !== "undefined") {
+              ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
+              engineName = "Tesseract.js (浏览器端后备)";
+              pEngine.textContent = `⚠️ 引擎: ${engineName}`;
+              pEngine.style.color = "#ffb74d";
+            } else {
+              throw new Error("无可用 OCR 引擎");
+            }
           }
-        });
-        
-        await Promise.all(promises);
-        _updateOcrProgress();
+          
+          const ocrText = normalizeText(ocr.text || "");
+          runningChars += ocrText.length;
+          runningConfSum += (ocr.confidence || 0);
+          doneCount++;
+
+          ocrReport.push({
+            page: pageIndex, confidence: ocr.confidence || 0,
+            chars: ocrText.length, lines: ocr.lines || 0, engine: ocr.engine || engineName
+          });
+
+          if (ocrText && ocrText.length > 10) {
+            totalChars += ocrText.length;
+            records.push({
+              record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
+              filename: relativePathOf(file),
+              source_file: relativePathOf(file),
+              source_kind: "PDF-OCR",
+              page_num: pageIndex,
+              ocr_confidence: ocr.confidence || 0,
+              ocr_engine: ocr.engine || engineName,
+              text: ocrText
+            });
+          }
+        } catch (err) {
+          ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: err.message });
+          doneCount++;
+        }
+
+        // 更新进度
+        const pct = Math.round((doneCount / ocrPages.length) * 100);
+        const avgC = doneCount ? Math.round(runningConfSum / doneCount) : 0;
+        pBar.style.width = `${pct}%`;
+        pPages.textContent = `${doneCount}/${ocrPages.length} 页 (${pct}%)`;
+        pChars.textContent = `${runningChars.toLocaleString()} 字符`;
+        pConf.textContent = `${avgC}%`;
+        pConf.style.color = avgC >= 80 ? "#81c784" : avgC >= 60 ? "#ffb74d" : "#ef5350";
       }
     }
 
@@ -3206,7 +3189,7 @@ async function parsePdfFile(file) {
     else if (avgConf >= 40) { qualityLevel = "一般"; qualityEmoji = "🟠"; }
     else { qualityLevel = "较差"; qualityEmoji = "🔴"; }
 
-    // Update progress bar to show completion
+    // 完成状态
     pTitle.innerHTML = `${qualityEmoji} OCR 完成`;
     pBar.style.width = "100%";
     pBar.style.background = avgConf >= 80 ? "linear-gradient(90deg, #66bb6a, #43a047)" : 
@@ -3226,10 +3209,8 @@ async function parsePdfFile(file) {
     ].filter(Boolean).join("\n");
 
     console.log("[OCR Report]", reportMsg);
-    console.table(ocrReport);
     showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
 
-    // Auto-hide progress bar after 8 seconds
     setTimeout(() => {
       if (ocrProgressEl && ocrProgressEl.parentNode) {
         ocrProgressEl.style.transition = "opacity 0.5s";
@@ -3238,14 +3219,10 @@ async function parsePdfFile(file) {
       }
     }, 8000);
 
-    // Store report for UI display
     if (!window._ocrReports) window._ocrReports = [];
     window._ocrReports.push({
-      file: relativePathOf(file),
-      pages: ocrReport,
-      avgConfidence: avgConf,
-      quality: qualityLevel,
-      engine: engineName
+      file: relativePathOf(file), pages: ocrReport,
+      avgConfidence: avgConf, quality: qualityLevel, engine: engineName
     });
   }
 
