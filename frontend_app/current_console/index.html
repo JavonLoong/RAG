@@ -3258,12 +3258,6 @@ async function parsePdfFile(file) {
   _pdfParseCache.set(cacheKey, records);
   console.log(`[PDF] 缓存已保存: ${file.name} → ${records.length} records`);
 
-  // Auto-download extracted text as .txt (whether from native text or OCR)
-  const allExtractedText = records.map(r => r.text || '').join('\n\n').trim();
-  if (allExtractedText.length > 10 && typeof _autoDownloadOcrText === 'function') {
-    _autoDownloadOcrText(allExtractedText, file.name);
-  }
-
   return records;
 }
 
@@ -5619,7 +5613,7 @@ function renderPendingFileList(files, containerEl) {
   if (!files.length) { containerEl.innerHTML = ""; return; }
 
   // Determine which pending list this container belongs to
-  const listKey = containerEl.id === "kgFileList" ? "kgCorpus" : "standard";
+  const listKey = ["kgFileList", "kgJsonIngestFileList"].includes(containerEl.id) ? "kgCorpus" : "standard";
 
   containerEl.innerHTML = files.map((f, i) => {
     const ext = (f.name.split('.').pop() || '').toLowerCase();
@@ -5688,16 +5682,21 @@ function renderPendingFileList(files, containerEl) {
   }).join("");
 }
 
+function renderPendingListByKey(listKey) {
+  const ids = listKey === "kgCorpus" ? ["kgFileList", "kgJsonIngestFileList"] : ["jsonIngestFileList"];
+  ids.forEach((id) => {
+    const containerEl = $(id);
+    if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey] || [], containerEl);
+  });
+}
+
 // ── Remove a file from a pending list ──
 function removeFileFromList(fileIndex, listKey) {
   const list = _pendingJsonFiles[listKey];
   if (!list || fileIndex < 0 || fileIndex >= list.length) return;
   const removed = list[fileIndex];
   _pendingJsonFiles[listKey] = list.filter((_, idx) => idx !== fileIndex);
-  // Re-render the affected container
-  const containerId = listKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
-  const containerEl = $(containerId);
-  if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey], containerEl);
+  renderPendingListByKey(listKey);
   showToast(`已删除文件：${removed.name}`, 'success');
 }
 
@@ -5715,10 +5714,45 @@ function downloadPendingFile(fileIndex, listKey) {
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
+function pendingFileIdentity(file) {
+  return `${relativePathOf(file)}|${file.size || 0}|${file.lastModified || 0}`;
+}
+
+function ocrResultFileName(sourceFileName) {
+  return sourceFileName.replace(/\.[^.]+$/, '') + '_OCR结果.txt';
+}
+
+function addOcrTextFileToPendingList(listKey, sourceFile, fullText, meta = {}) {
+  if (!fullText || fullText.trim().length <= 10) return null;
+  const list = _pendingJsonFiles[listKey];
+  if (!Array.isArray(list)) return null;
+
+  const sourceKey = pendingFileIdentity(sourceFile);
+  const txtName = ocrResultFileName(sourceFile.name || relativePathOf(sourceFile));
+  const txtFile = new File([fullText], txtName, {
+    type: 'text/plain;charset=utf-8',
+    lastModified: Date.now()
+  });
+  txtFile._ocrGenerated = true;
+  txtFile._sourcePdfName = sourceFile.name || relativePathOf(sourceFile);
+  txtFile._sourcePdfKey = sourceKey;
+  txtFile._ocrEngine = meta.engine || "";
+  txtFile._ocrConfidence = meta.confidence ?? null;
+
+  const sourceIndex = list.findIndex((item) => pendingFileIdentity(item) === sourceKey);
+  const existingIndex = list.findIndex((item) => item._ocrGenerated === true && item._sourcePdfKey === sourceKey);
+  if (existingIndex >= 0) {
+    list.splice(existingIndex, 1);
+  }
+  const insertAt = sourceIndex >= 0 ? sourceIndex + 1 : list.length;
+  list.splice(insertAt, 0, txtFile);
+  return txtFile;
+}
+
 // ── Auto-download OCR result as .txt file ──
 function _autoDownloadOcrText(fullText, sourceFileName) {
   if (!fullText || fullText.length <= 10) return;
-  const txtName = sourceFileName.replace(/\.[^.]+$/, '') + '_OCR结果.txt';
+  const txtName = ocrResultFileName(sourceFileName);
   const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -5856,10 +5890,16 @@ async function startFileOcr(fileIndex, listKey) {
       _pdfParseCache.set(cacheKey, records);
       updateProgress(result.total || 1, result.total || 1,
         `✅ 完成! ${(result.full_text||'').length.toLocaleString()} 字符, ${result.elapsed_s || 0}s`);
-      showToast(`OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`, "success");
-
-      // Auto-download the OCR result as .txt
-      _autoDownloadOcrText(fullText, file.name);
+      const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
+        engine: "RapidOCR",
+        confidence: Math.round((result.avg_confidence || 0) * 100)
+      });
+      showToast(
+        txtFile
+          ? `OCR 完成，已生成文本文件：${txtFile.name}`
+          : `OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`,
+        "success"
+      );
 
     } else if (engine === "paddle" || engine === "tesseract") {
       // Browser-side OCR (PaddleOCR.js or Tesseract.js)
@@ -5912,16 +5952,20 @@ async function startFileOcr(fileIndex, listKey) {
       }
       _pdfParseCache.set(cacheKey, records);
       updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
-      showToast(`OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`, "success");
-
-      // Auto-download the OCR result as .txt
-      _autoDownloadOcrText(fullText, file.name);
+      const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
+        engine: engine === "paddle" ? "PaddleOCR.js" : "Tesseract.js",
+        confidence: avgConf
+      });
+      showToast(
+        txtFile
+          ? `OCR 完成，已生成文本文件：${txtFile.name}`
+          : `OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`,
+        "success"
+      );
     }
 
     // Re-render file list to show cached status and the new .txt file
-    const containerId = listKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
-    const containerEl = $(containerId);
-    if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey], containerEl);
+    renderPendingListByKey(listKey);
 
   } catch (err) {
     updateProgress(0, 0, `❌ 失败: ${err.message}`);
@@ -5934,7 +5978,7 @@ function collectJsonFiles(fileList) {
 }
 
 async function runBrowserJsonIngest(pendingKey, panelEls) {
-  const files = _pendingJsonFiles[pendingKey];
+  const files = [...(_pendingJsonFiles[pendingKey] || [])];
   if (!files.length) {
     showToast("请先在上方拖入或选择文件。", "warning");
     return;
@@ -5981,12 +6025,15 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
         succeeded++;
         fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "ok", records_extracted: records.length });
 
-        // Auto-download extracted text for PDF files
+        // Keep extracted/OCR text as a downloadable .txt item beside the source PDF.
         const ext = (file.name.split('.').pop() || '').toLowerCase();
-        if (ext === 'pdf' && records.length > 0 && typeof _autoDownloadOcrText === 'function') {
+        if (ext === 'pdf' && records.length > 0) {
           const fullText = records.map(r => r.text || '').join('\n\n').trim();
           if (fullText.length > 10) {
-            _autoDownloadOcrText(fullText, file.name);
+            addOcrTextFileToPendingList(pendingKey, file, fullText, {
+              engine: records.find((r) => r.ocr_engine)?.ocr_engine || "PDF.js",
+              confidence: records.find((r) => r.ocr_confidence != null)?.ocr_confidence ?? null
+            });
           }
         }
       } catch (err) {
