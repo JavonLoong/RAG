@@ -1935,18 +1935,36 @@ svg { width: 100%; height: auto; display: block; }
   letter-spacing: 0.02em;
 }
 </style>
-  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+  <!-- ── Dependencies: local libs/ first, CDN fallback ── -->
   <script>
+  // Smart loader: try local libs/ folder first, fallback to CDN
+  const _LIBS = [
+    { local: "libs/iconify-icon.min.js",      cdn: "https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" },
+    { local: "libs/pdf.min.js",               cdn: "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js" },
+    { local: "libs/mammoth.browser.min.js",   cdn: "https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js" },
+    { local: "libs/papaparse.min.js",         cdn: "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" },
+    { local: "libs/marked.min.js",            cdn: "https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" },
+    { local: "libs/purify.min.js",            cdn: "https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" },
+    { local: "libs/d3.min.js",                cdn: "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" },
+    { local: "libs/jszip.min.js",             cdn: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" },
+    { local: "libs/sql-wasm.js",              cdn: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js" },
+  ];
+  // Synchronously write script tags — local first, onerror falls back to CDN
+  _LIBS.forEach(function(lib) {
+    document.write('<script src="' + lib.local + '" onerror="'
+      + "var s=document.createElement('script');s.src='" + lib.cdn + "';document.head.appendChild(s);"
+      + '"><\/script>');
+  });
+  </script>
+  <script>
+// Configure pdf.js worker — prefer local, fallback to CDN
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
-  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+  const _workerLocal = "libs/pdf.worker.min.js";
+  const _workerCDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+  // If running from local server (http://localhost or file://), try local path
+  globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    (location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")
+      ? _workerLocal : _workerCDN;
 }
 
 const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
@@ -6194,7 +6212,13 @@ async function exportLocalChunksAsChromaZip() {
 
     // ── 1. Build chroma.sqlite3 with sql.js ──
     const SQL = await initSqlJs({
-      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}`
+      locateFile: file => {
+        // Prefer local libs/ for offline support, fallback to CDN
+        if (location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+          return `libs/${file}`;
+        }
+        return `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}`;
+      }
     });
     const db = new SQL.Database();
 
