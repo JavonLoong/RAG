@@ -4897,7 +4897,7 @@ async function runProcess() {
 }
 
 // ── Shared state for file pickers ──
-const _pendingJsonFiles = { standard: [], kg: [], kgCorpus: [] };
+const _pendingJsonFiles = { standard: [], kgCorpus: [] };
 
 // ── Example File Manager ──
 const EXAMPLE_FILES_STORAGE_KEY = 'rag_example_files_v1';
@@ -5157,7 +5157,7 @@ function collectJsonFiles(fileList) {
 async function runBrowserJsonIngest(pendingKey, panelEls) {
   const files = _pendingJsonFiles[pendingKey];
   if (!files.length) {
-    showToast("请先选择 JSON 文件。", "warning");
+    showToast("请先在上方拖入或选择文件。", "warning");
     return;
   }
   const collectionEl = panelEls.collection;
@@ -6330,7 +6330,14 @@ function bindEvents() {
     if (picked.length) {
       _pendingJsonFiles.kgCorpus = [..._pendingJsonFiles.kgCorpus, ...picked];
       renderPendingFileList(_pendingJsonFiles.kgCorpus, kgFileList);
-      showToast(`已选择 ${picked.length} 个语料文件。`, "success");
+      // Also render in the ingest summary area if present
+      const kgIngestList = $("kgJsonIngestFileList");
+      if (kgIngestList) renderPendingFileList(_pendingJsonFiles.kgCorpus, kgIngestList);
+      // Summarise file types
+      const exts = {};
+      picked.forEach(f => { const ext = (f.name.split('.').pop() || '').toLowerCase(); exts[ext] = (exts[ext] || 0) + 1; });
+      const summary = Object.entries(exts).map(([k,v]) => `${v} 个 .${k}`).join('、');
+      showToast(`已选择 ${picked.length} 个文件（${summary}）。`, "success");
     }
   }
   kgFileInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
@@ -6892,36 +6899,11 @@ function bindEvents() {
   });
   $("btnKgClearPath")?.addEventListener("click", clearPathHighlight);
 
-  // ── KG JSON ingest file pickers ──
-  const kgJsonIngestFileInput = $("kgJsonIngestFileInput");
-  const kgJsonIngestFolderInput = $("kgJsonIngestFolderInput");
-  const kgJsonIngestDropZone = $("kgJsonIngestDropZone");
-  const kgJsonIngestFileList = $("kgJsonIngestFileList");
-
-  $("btnKgPickJsonFiles")?.addEventListener("click", () => kgJsonIngestFileInput?.click());
-  $("btnKgPickJsonFolder")?.addEventListener("click", () => kgJsonIngestFolderInput?.click());
-
-  kgJsonIngestFileInput?.addEventListener("change", (e) => {
-    const picked = collectJsonFiles(e.target.files);
-    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
-    e.target.value = "";
-  });
-  kgJsonIngestFolderInput?.addEventListener("change", (e) => {
-    const picked = collectJsonFiles(e.target.files);
-    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
-    e.target.value = "";
-  });
-  kgJsonIngestDropZone?.addEventListener("dragover", (e) => { e.preventDefault(); kgJsonIngestDropZone.classList.add("is-dragging"); });
-  kgJsonIngestDropZone?.addEventListener("dragleave", () => kgJsonIngestDropZone.classList.remove("is-dragging"));
-  kgJsonIngestDropZone?.addEventListener("drop", async (e) => {
-    e.preventDefault(); kgJsonIngestDropZone.classList.remove("is-dragging");
-    const dropped = await filesFromDrop(e.dataTransfer);
-    const picked = collectJsonFiles(dropped);
-    if (picked.length) { _pendingJsonFiles.kg = [..._pendingJsonFiles.kg, ...picked]; renderPendingFileList(_pendingJsonFiles.kg, kgJsonIngestFileList); }
-  });
+  // ── KG JSON ingest — unified: reuse kgCorpus files ──
+  // (Merged into the single kgDropZone above; no separate dropzone needed.)
 
   $("btnKgPublicBooksJsonIngest")?.addEventListener("click", async () => {
-    await runBrowserJsonIngest("kg", {
+    await runBrowserJsonIngest("kgCorpus", {
       collection: $("kgPublicBooksJsonCollection"),
       mode: $("kgPublicBooksJsonMode"),
       chunkSize: $("kgPublicBooksJsonChunkSize"),
@@ -8163,9 +8145,6 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div id="kgFileList" class="queue-list"></div>
-                  <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple>
-                  <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory>
-                  <div id="kgJsonIngestFileList" class="queue-list"></div>
                   <div class="llm-form" style="margin-top:12px">
                     <div class="field field--wide">
                       <label for="kgPublicBooksJsonCollection">混合检索集合</label>
