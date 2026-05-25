@@ -1359,6 +1359,13 @@ svg { width: 100%; height: auto; display: block; }
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
+.math-block {
+  text-align: center;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+.math-inline { display: inline; }
+.ask-answer .math-block, .ask-answer .math-inline { color: var(--ink); }
 
 .kg-flow-grid {
   display: grid;
@@ -6387,13 +6394,168 @@ function renderAnswerMarkdown(markdown) {
       const raw = globalThis.marked.parse(text, { breaks: true, gfm: true });
       html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
     } else {
-      html = escapeHtml(text).replaceAll("\n", "<br>");
+      // Built-in Markdown renderer (fallback when marked.js is unavailable)
+      html = _renderMarkdownBuiltin(text);
     }
   } catch {
-    html = escapeHtml(text).replaceAll("\n", "<br>");
+    html = _renderMarkdownBuiltin(text);
   }
+  // Render LaTeX math if present
+  html = _renderMathInHtml(html);
   els.askAnswer.innerHTML = html;
   els.askAnswer.classList.toggle("has-content", text.trim().length > 0);
+  // Trigger KaTeX rendering for any math elements
+  _renderKatexElements(els.askAnswer);
+}
+
+// ── Built-in Markdown → HTML renderer ──
+function _renderMarkdownBuiltin(md) {
+  let html = "";
+  const lines = md.split("\n");
+  let inCodeBlock = false, codeLang = "", codeLines = [];
+  let inList = false, listType = "";
+  
+  function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  
+  function inlineFormat(line) {
+    let s = esc(line);
+    // Code spans first (to protect from other formatting)
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Bold+italic
+    s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    // Bold
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    s = s.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+    // Links [text](url)
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    return s;
+  }
+  
+  function closeList() {
+    if (inList) { html += listType === "ol" ? "</ol>" : "</ul>"; inList = false; }
+  }
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Code block
+    if (line.trimStart().startsWith("```")) {
+      if (!inCodeBlock) {
+        closeList();
+        inCodeBlock = true;
+        codeLang = line.trimStart().slice(3).trim();
+        codeLines = [];
+      } else {
+        html += `<pre><code class="language-${esc(codeLang)}">${esc(codeLines.join("\n"))}</code></pre>`;
+        inCodeBlock = false;
+      }
+      continue;
+    }
+    if (inCodeBlock) { codeLines.push(line); continue; }
+    
+    const trimmed = line.trim();
+    if (!trimmed) { closeList(); html += "<br>"; continue; }
+    
+    // Headings
+    const hMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (hMatch) { closeList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFormat(hMatch[2])}</h${lvl}>`; continue; }
+    
+    // Horizontal rule
+    if (/^[-*_]{3,}$/.test(trimmed)) { closeList(); html += "<hr>"; continue; }
+    
+    // Blockquote
+    if (trimmed.startsWith("> ")) { closeList(); html += `<blockquote><p>${inlineFormat(trimmed.slice(2))}</p></blockquote>`; continue; }
+    
+    // Unordered list
+    const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+    if (ulMatch) {
+      if (!inList || listType !== "ul") { closeList(); html += "<ul>"; inList = true; listType = "ul"; }
+      html += `<li>${inlineFormat(ulMatch[1])}</li>`;
+      continue;
+    }
+    
+    // Ordered list
+    const olMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    if (olMatch) {
+      if (!inList || listType !== "ol") { closeList(); html += "<ol>"; inList = true; listType = "ol"; }
+      html += `<li>${inlineFormat(olMatch[1])}</li>`;
+      continue;
+    }
+    
+    // Table (simple: |col|col|)
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      // Skip separator rows like |---|---|
+      if (/^\|[\s\-:|]+\|$/.test(trimmed)) continue;
+      closeList();
+      const cells = trimmed.slice(1, -1).split("|").map(c => c.trim());
+      // Detect if this is a header (next line is separator)
+      const nextLine = (lines[i+1] || "").trim();
+      const isHeader = /^\|[\s\-:|]+\|$/.test(nextLine);
+      const tag = isHeader ? "th" : "td";
+      html += "<table><tr>" + cells.map(c => `<${tag}>${inlineFormat(c)}</${tag}>`).join("") + "</tr></table>";
+      continue;
+    }
+    
+    // Normal paragraph
+    closeList();
+    html += `<p>${inlineFormat(trimmed)}</p>`;
+  }
+  closeList();
+  if (inCodeBlock) { html += `<pre><code>${esc(codeLines.join("\n"))}</code></pre>`; }
+  return html;
+}
+
+// ── Math rendering: $...$ (inline) and $$...$$ (block) ──
+function _renderMathInHtml(html) {
+  // Replace $$...$$ with math block placeholders
+  html = html.replace(/\$\$(.+?)\$\$/gs, (_, tex) => 
+    `<div class="math-block" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></div>`);
+  // Replace $...$ with inline math (but not $$)
+  html = html.replace(/(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)/g, (_, tex) => 
+    `<span class="math-inline" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></span>`);
+  return html;
+}
+
+let _katexLoaded = false;
+async function _loadKatex() {
+  if (_katexLoaded) return;
+  if (globalThis.katex) { _katexLoaded = true; return; }
+  // Load KaTeX CSS
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css";
+  document.head.appendChild(link);
+  // Load KaTeX JS
+  await new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js";
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("KaTeX CDN failed"));
+    document.head.appendChild(s);
+  });
+  _katexLoaded = true;
+}
+
+async function _renderKatexElements(container) {
+  const mathEls = container.querySelectorAll(".math-block, .math-inline");
+  if (!mathEls.length) return;
+  try {
+    await _loadKatex();
+    for (const el of mathEls) {
+      const tex = el.getAttribute("data-tex");
+      if (!tex || !globalThis.katex) continue;
+      try {
+        globalThis.katex.render(tex, el, {
+          throwOnError: false,
+          displayMode: el.classList.contains("math-block")
+        });
+      } catch { el.textContent = tex; }
+    }
+  } catch {
+    // KaTeX failed to load — show raw TeX
+    for (const el of mathEls) { el.textContent = el.getAttribute("data-tex") || ""; }
+  }
 }
 
 function clearAnswer() {
@@ -7843,7 +8005,21 @@ function bindEvents() {
       });
       const data = await resp.json();
       const answer = data.choices?.[0]?.message?.content || data.error?.message || "LLM 未返回有效回答。";
-      if (answerDiv) answerDiv.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7">${DOMPurify.sanitize(answer)}</div>`;
+      if (answerDiv) {
+        let html;
+        try {
+          if (globalThis.marked?.parse) {
+            const raw = globalThis.marked.parse(answer, { breaks: true, gfm: true });
+            html = globalThis.DOMPurify?.sanitize ? globalThis.DOMPurify.sanitize(raw) : raw;
+          } else {
+            html = _renderMarkdownBuiltin(answer);
+          }
+        } catch { html = _renderMarkdownBuiltin(answer); }
+        html = _renderMathInHtml(html);
+        answerDiv.innerHTML = html;
+        answerDiv.classList.add("has-content");
+        _renderKatexElements(answerDiv);
+      }
     } catch (err) {
       if (answerDiv) answerDiv.innerHTML = `<div style="color:var(--danger)">LLM 调用失败：${err.message}</div>`;
     }
