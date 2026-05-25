@@ -6003,6 +6003,11 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     renderSearchResults();
     addActivity("success", "JSON 入库完成", `成功处理 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} 个 chunk。`);
     showToast(`JSON 入库完成，写入 ${formatNumber(allChunks.length)} 个 chunk。`, "success");
+
+    // Re-render file list to show OCR status and auto-generate .txt for OCR'd PDFs
+    const fileListContainerId = pendingKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
+    const fileListEl = $(fileListContainerId);
+    if (fileListEl) renderPendingFileList(_pendingJsonFiles[pendingKey], fileListEl);
   } catch (error) {
     state.publicBooksJson = {
       status: "error",
