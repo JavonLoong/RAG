@@ -8061,6 +8061,66 @@ function bindEvents() {
   });
   $("btnKgPublicBooksExportChroma")?.addEventListener("click", exportChromaFromPublicBooksPanel);
 
+  // ── Export PDF text as .txt files (standalone, no dependency on OCR cache) ──
+  $("btnKgExportPdfText")?.addEventListener("click", async () => {
+    const files = _pendingJsonFiles.kgCorpus;
+    if (!files || !files.length) {
+      showToast("请先拖入或选择 PDF 文件", "warning");
+      return;
+    }
+    const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
+    if (!pdfFiles.length) {
+      showToast("文件列表中没有 PDF 文件", "warning");
+      return;
+    }
+    if (!globalThis.pdfjsLib) {
+      showToast("PDF.js 库未加载", "danger");
+      return;
+    }
+
+    const btn = $("btnKgExportPdfText");
+    if (btn) { btn.disabled = true; btn.textContent = "正在提取..."; }
+
+    let exported = 0;
+    for (const pdfFile of pdfFiles) {
+      try {
+        const data = await pdfFile.arrayBuffer();
+        const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+        const pageTexts = [];
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const tc = await page.getTextContent();
+          const text = tc.items.map(item => item.str).join(" ").trim();
+          if (text) pageTexts.push(text);
+        }
+        const fullText = pageTexts.join("\n\n");
+        if (fullText.length > 0) {
+          const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_文本提取.txt';
+          const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = txtName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          exported++;
+          showToast(`已下载: ${txtName} (${fullText.length.toLocaleString()} 字符)`, "success");
+        } else {
+          showToast(`${pdfFile.name}: 未提取到文字（可能是扫描件，需先 OCR）`, "warning");
+        }
+      } catch (err) {
+        showToast(`${pdfFile.name} 提取失败: ${err.message}`, "danger");
+      }
+    }
+
+    if (btn) { btn.disabled = false; btn.innerHTML = '<iconify-icon icon="lucide:file-down"></iconify-icon><span>导出PDF文本</span>'; }
+    if (exported > 0) {
+      showToast(`共导出 ${exported} 个 PDF 的文本`, "success");
+    }
+  });
+
 
   els.searchInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -9329,6 +9389,7 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="export-bar">
                     <button class="btn" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
+                    <button class="btn" id="btnKgExportPdfText" type="button" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="提取所有PDF文本并下载为.txt文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出PDF文本</span></button>
                     <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 向量库/图谱</span></button>
                   </div>
                   <div class="queue-list" id="kgPublicBooksJsonSummary"></div>
