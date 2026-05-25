@@ -5621,34 +5621,6 @@ function renderPendingFileList(files, containerEl) {
   // Determine which pending list this container belongs to
   const listKey = containerEl.id === "kgFileList" ? "kgCorpus" : "standard";
 
-  // ── Auto-generate .txt files for PDFs that have cached OCR results ──
-  // This covers ALL OCR code paths (manual OCR, auto-OCR during ingest, etc.)
-  let listModified = false;
-  for (let idx = 0; idx < files.length; idx++) {
-    const f = files[idx];
-    const ext = (f.name.split('.').pop() || '').toLowerCase();
-    if (ext !== 'pdf') continue;
-    const cacheKey = `${f.name}|${f.size}|${f.lastModified}`;
-    if (!_pdfParseCache.has(cacheKey)) continue;
-
-    const txtName = f.name.replace(/\.pdf$/i, '') + '_OCR结果.txt';
-    // Skip if .txt already exists in the list
-    if (files.some(existing => existing.name === txtName)) continue;
-
-    // Extract full text from cached records
-    const cachedRecords = _pdfParseCache.get(cacheKey);
-    const fullText = cachedRecords.map(r => r.text || '').join('\n\n').trim();
-    if (fullText.length <= 10) continue;
-
-    // Create .txt File and insert after the PDF
-    const txtBlob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-    const txtFile = new File([txtBlob], txtName, { type: 'text/plain', lastModified: Date.now() });
-    txtFile._ocrGenerated = true;
-    files.splice(idx + 1, 0, txtFile);
-    listModified = true;
-    idx++; // skip the newly inserted file
-  }
-
   containerEl.innerHTML = files.map((f, i) => {
     const ext = (f.name.split('.').pop() || '').toLowerCase();
     const isPdf = ext === 'pdf';
@@ -5795,28 +5767,6 @@ async function startFileOcr(fileIndex, listKey) {
     if (statusEl) statusEl.textContent = text || `${done}/${total} 页`;
   }
 
-  // Helper: create a .txt File from OCR text and add it to the list
-  function addOcrResultAsTextFile(fullText, sourceFileName) {
-    if (!fullText || fullText.length <= 10) return;
-    const txtName = sourceFileName.replace(/\.pdf$/i, '') + '_OCR结果.txt';
-    const txtBlob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-    const txtFile = new File([txtBlob], txtName, { type: 'text/plain', lastModified: Date.now() });
-    // Mark as OCR-generated for special styling
-    txtFile._ocrGenerated = true;
-    // Check if a file with the same name already exists (avoid duplicates)
-    const existingIdx = _pendingJsonFiles[listKey].findIndex(f => f.name === txtName);
-    if (existingIdx >= 0) {
-      _pendingJsonFiles[listKey][existingIdx] = txtFile;
-    } else {
-      // Insert right after the source PDF
-      const srcIdx = _pendingJsonFiles[listKey].indexOf(file);
-      if (srcIdx >= 0) {
-        _pendingJsonFiles[listKey].splice(srcIdx + 1, 0, txtFile);
-      } else {
-        _pendingJsonFiles[listKey].push(txtFile);
-      }
-    }
-  }
 
   try {
     updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'paddle' ? 'PaddleOCR.js' : 'Tesseract.js'})...`);
@@ -5854,8 +5804,6 @@ async function startFileOcr(fileIndex, listKey) {
         `✅ 完成! ${(result.full_text||'').length.toLocaleString()} 字符, ${result.elapsed_s || 0}s`);
       showToast(`OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`, "success");
 
-      // Generate .txt file from OCR result and add to list
-      addOcrResultAsTextFile(fullText, file.name);
       // Auto-download the OCR result as .txt
       _autoDownloadOcrText(fullText, file.name);
 
@@ -5912,8 +5860,6 @@ async function startFileOcr(fileIndex, listKey) {
       updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
       showToast(`OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`, "success");
 
-      // Generate .txt file from OCR result and add to list
-      addOcrResultAsTextFile(fullText, file.name);
       // Auto-download the OCR result as .txt
       _autoDownloadOcrText(fullText, file.name);
     }
