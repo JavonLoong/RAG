@@ -2932,7 +2932,17 @@ async function _ocrCanvasPage(canvas, lang = "chi_sim+eng") {
   };
 }
 
+// ── PDF parse cache — avoid re-OCR on repeated calls ──
+const _pdfParseCache = new Map();
+
 async function parsePdfFile(file) {
+  // Cache key: name + size + lastModified to detect same file
+  const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+  if (_pdfParseCache.has(cacheKey)) {
+    console.log(`[PDF] 使用缓存: ${file.name} (${_pdfParseCache.get(cacheKey).length} records)`);
+    return _pdfParseCache.get(cacheKey);
+  }
+
   if (!globalThis.pdfjsLib) {
     throw new Error("PDF.js 库未加载，无法在浏览器中解析 PDF。请检查网络连接或使用后端服务。");
   }
@@ -3243,6 +3253,10 @@ async function parsePdfFile(file) {
       text: `[空PDF] ${relativePathOf(file)}，共 ${pdf.numPages} 页，未提取到任何文字内容。`
     });
   }
+
+  // Cache the results so subsequent calls (e.g. KG build) don't re-OCR
+  _pdfParseCache.set(cacheKey, records);
+  console.log(`[PDF] 缓存已保存: ${file.name} → ${records.length} records`);
   return records;
 }
 
