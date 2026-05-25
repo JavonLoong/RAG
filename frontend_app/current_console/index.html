@@ -5614,6 +5614,34 @@ function renderPendingFileList(files, containerEl) {
   // Determine which pending list this container belongs to
   const listKey = containerEl.id === "kgFileList" ? "kgCorpus" : "standard";
 
+  // ── Auto-generate .txt files for PDFs that have cached OCR results ──
+  // This covers ALL OCR code paths (manual OCR, auto-OCR during ingest, etc.)
+  let listModified = false;
+  for (let idx = 0; idx < files.length; idx++) {
+    const f = files[idx];
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (ext !== 'pdf') continue;
+    const cacheKey = `${f.name}|${f.size}|${f.lastModified}`;
+    if (!_pdfParseCache.has(cacheKey)) continue;
+
+    const txtName = f.name.replace(/\.pdf$/i, '') + '_OCR结果.txt';
+    // Skip if .txt already exists in the list
+    if (files.some(existing => existing.name === txtName)) continue;
+
+    // Extract full text from cached records
+    const cachedRecords = _pdfParseCache.get(cacheKey);
+    const fullText = cachedRecords.map(r => r.text || '').join('\n\n').trim();
+    if (fullText.length <= 10) continue;
+
+    // Create .txt File and insert after the PDF
+    const txtBlob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+    const txtFile = new File([txtBlob], txtName, { type: 'text/plain', lastModified: Date.now() });
+    txtFile._ocrGenerated = true;
+    files.splice(idx + 1, 0, txtFile);
+    listModified = true;
+    idx++; // skip the newly inserted file
+  }
+
   containerEl.innerHTML = files.map((f, i) => {
     const ext = (f.name.split('.').pop() || '').toLowerCase();
     const isPdf = ext === 'pdf';
