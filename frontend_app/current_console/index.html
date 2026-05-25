@@ -6208,12 +6208,18 @@ function bindEvents() {
   });
 
   els.fileInput?.addEventListener("change", async (event) => {
-    await uploadFiles(event.target.files);
+    const files = event.target.files;
+    await uploadFiles(files);
+    const picked = collectJsonFiles(files);
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList")); }
     event.target.value = "";
   });
 
   els.folderInput?.addEventListener("change", async (event) => {
-    await uploadFiles(event.target.files);
+    const files = event.target.files;
+    await uploadFiles(files);
+    const picked = collectJsonFiles(files);
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList")); }
     event.target.value = "";
   });
 
@@ -6231,6 +6237,12 @@ function bindEvents() {
     els.dropZone.classList.remove("is-dragging");
     const dropped = await filesFromDrop(event.dataTransfer);
     await uploadFiles(dropped);
+    // Also populate JSON ingest file list
+    const picked = collectJsonFiles(dropped);
+    if (picked.length) {
+      _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked];
+      renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList"));
+    }
   });
 
   els.btnProcess?.addEventListener("click", runProcess);
@@ -7714,8 +7726,8 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>文件接入</h3>
-                      <p>拖入文件或文件夹，自动识别类型并递归扫描目录中的可用文件。</p>
+                      <h3>文件接入与入库</h3>
+                      <p>拖入文件或文件夹，自动识别类型并递归扫描目录中的可用文件，然后配置参数入库。</p>
                     </div>
                     <span class="pill">json pdf docx txt md csv tsv log + code</span>
                   </div>
@@ -7732,29 +7744,8 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <input class="hidden-input" id="fileInput" type="file" multiple>
                   <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory>
-                </article>
-
-                <article class="panel">
-                  <div class="panel-head">
-                    <div>
-                      <h3>向量入库配置</h3>
-                      <p>拖入文件后在此配置入库参数，也可直接选择文件入库。</p>
-                    </div>
-                    <span class="pill">浏览器端处理</span>
-                  </div>
-                  <div class="queue-dropzone" id="jsonIngestDropZone">
-                    <div>
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:database-zap"></iconify-icon></div>
-                      <h3>拖入文件直接入库</h3>
-                      <p class="muted">支持所有格式，自动识别并解析</p>
-                      <div class="queue-actions">
-                        <button class="btn" id="btnPickJsonFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
-                        <button class="ghost-btn" id="btnPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
-                      </div>
-                      <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple accept=".json">
-                      <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory accept=".json">
-                    </div>
-                  </div>
+                  <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple>
+                  <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory>
                   <div id="jsonIngestFileList" class="queue-list"></div>
                   <div class="llm-form" style="margin-top:12px">
                     <div class="field field--wide">
@@ -8172,29 +8163,8 @@ window.addEventListener("DOMContentLoaded", init);
                     </div>
                   </div>
                   <div id="kgFileList" class="queue-list"></div>
-                </article>
-
-                <article class="panel">
-                  <div class="panel-head">
-                    <div>
-                      <h3>向量入库配置</h3>
-                      <p>拖入文件后在此配置入库参数，或直接选择文件入库。</p>
-                    </div>
-                    <span class="pill">浏览器端处理</span>
-                  </div>
-                  <div class="queue-dropzone" id="kgJsonIngestDropZone">
-                    <div>
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:database-zap"></iconify-icon></div>
-                      <h3>拖入文件直接入库</h3>
-                      <p class="muted">支持所有格式，自动识别并解析</p>
-                      <div class="queue-actions">
-                        <button class="btn" id="btnKgPickJsonFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
-                        <button class="ghost-btn" id="btnKgPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
-                      </div>
-                      <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple>
-                      <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory>
-                    </div>
-                  </div>
+                  <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple>
+                  <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory>
                   <div id="kgJsonIngestFileList" class="queue-list"></div>
                   <div class="llm-form" style="margin-top:12px">
                     <div class="field field--wide">
