@@ -2812,7 +2812,58 @@ async function _ocrViaLocalServer(pdfArrayBuffer, pageNum) {
   };
 }
 
-// ── OCR a single canvas image using Tesseract.js (fallback, ~60% for Chinese) ──
+// ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
+let _paddleOcrInstance = null;
+let _paddleOcrLoading = false;
+
+async function _loadPaddleOcr() {
+  if (_paddleOcrInstance) return _paddleOcrInstance;
+  if (_paddleOcrLoading) {
+    // Wait for existing load to finish
+    while (_paddleOcrLoading) await new Promise(r => setTimeout(r, 200));
+    return _paddleOcrInstance;
+  }
+  _paddleOcrLoading = true;
+  try {
+    console.log("[OCR] 正在加载 PaddleOCR.js (PP-OCRv5) 浏览器引擎...");
+    showToast("⏳ 首次加载 PaddleOCR 浏览器引擎，请稍候（约10-30秒）...", "success");
+    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
+    _paddleOcrInstance = await PaddleOCR.create({
+      lang: "ch",
+      ocrVersion: "PP-OCRv5",
+      ortOptions: { backend: "wasm" }
+    });
+    console.log("[OCR] ✅ PaddleOCR.js 加载成功 (PP-OCRv5, WASM backend)");
+    showToast("✅ PaddleOCR 浏览器引擎加载完成，精度 94%+", "success");
+    return _paddleOcrInstance;
+  } catch (err) {
+    console.error("[OCR] PaddleOCR.js 加载失败:", err);
+    _paddleOcrInstance = null;
+    throw err;
+  } finally {
+    _paddleOcrLoading = false;
+  }
+}
+
+// ── OCR a single canvas/blob via PaddleOCR.js browser engine ──
+async function _ocrViaPaddleJs(canvas) {
+  const ocr = await _loadPaddleOcr();
+  // Convert canvas to Blob
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  const [result] = await ocr.predict(blob);
+  const items = result?.items || [];
+  const texts = items.map(item => item.text || "");
+  const confs = items.map(item => item.score ?? item.confidence ?? 0);
+  const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
+  return {
+    text: texts.join("\n"),
+    confidence: Math.round(avgConf * 100),  // 0-100
+    lines: texts.length,
+    engine: "PaddleOCR.js (PP-OCRv5)"
+  };
+}
+
+// ── OCR a single canvas image using Tesseract.js (legacy fallback, ~60% for Chinese) ──
 async function _ocrCanvasPage(canvas, lang = "chi_sim+eng") {
   if (typeof Tesseract === "undefined") {
     throw new Error("Tesseract.js 未加载");
@@ -2877,118 +2928,121 @@ async function parsePdfFile(file) {
   // ── Pass 2: OCR for scanned pages ──
   if (ocrPages.length > 0) {
     const useLocalOcr = await _checkLocalOcr();
-    const hasTesseract = typeof Tesseract !== "undefined";
     
-    if (!useLocalOcr && !hasTesseract) {
-      showToast(
-        `${relativePathOf(file)}: ${ocrPages.length}/${pdf.numPages} 页为扫描件。\n` +
-        `启动 ocr_server.py 可获得 94%+ 精度，或确保 Tesseract.js 已加载。`,
-        "warning"
-      );
-      // Add placeholder for scanned pages
-      if (!records.length) {
-        records.push({
-          record_id: `${relativePathOf(file)}::pdf-meta`,
-          filename: relativePathOf(file),
-          source_file: relativePathOf(file),
-          source_kind: "PDF",
-          page_num: null,
-          text: `[扫描PDF] ${relativePathOf(file)}，共 ${pdf.numPages} 页。请启动 ocr_server.py 获得高精度 OCR。`
-        });
-      }
+    // Determine OCR engine: local RapidOCR > PaddleOCR.js browser > Tesseract.js
+    let engineName, engineMode;
+    if (useLocalOcr) {
+      engineName = "RapidOCR (本地高精度)";
+      engineMode = "local";
     } else {
-      const engineName = useLocalOcr ? "RapidOCR (高精度)" : "Tesseract.js (浏览器端)";
-      // Show OCR start notification
-      showToast(
-        `🔍 开始 OCR: ${relativePathOf(file)} — ${ocrPages.length} 页扫描件\n` +
-        `引擎: ${engineName}`,
-        "success"
-      );
-
-      // For local OCR, read the file once and reuse
-      const pdfArrayBuffer = useLocalOcr ? await file.arrayBuffer() : null;
-
-      const ocrReport = [];  // { page, confidence, chars }
-
-      for (let i = 0; i < ocrPages.length; i++) {
-        const { pageIndex, page } = ocrPages[i];
-        try {
-          let ocr;
-          if (useLocalOcr) {
-            // High-accuracy local OCR via RapidOCR server
-            ocr = await _ocrViaLocalServer(pdfArrayBuffer, pageIndex);
-          } else {
-            // Browser-side Tesseract.js fallback
-            const canvas = await _renderPdfPageToCanvas(page, 2.0);
-            ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
-          }
-          const ocrText = normalizeText(ocr.text);
-
-          ocrReport.push({
-            page: pageIndex,
-            confidence: ocr.confidence,
-            chars: ocrText.length,
-            lines: ocr.lines,
-            engine: ocr.engine
-          });
-
-          if (ocrText && ocrText.length > 10) {
-            totalChars += ocrText.length;
-            records.push({
-              record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
-              filename: relativePathOf(file),
-              source_file: relativePathOf(file),
-              source_kind: "PDF-OCR",
-              page_num: pageIndex,
-              ocr_confidence: ocr.confidence,
-              ocr_engine: ocr.engine,
-              text: ocrText
-            });
-          }
-
-          // Progress toast every 5 pages
-          if ((i + 1) % 5 === 0 || i === ocrPages.length - 1) {
-            showToast(`OCR 进度: ${i + 1}/${ocrPages.length} 页 [${engineName}]`, "success");
-          }
-        } catch (ocrErr) {
-          ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: ocrErr.message });
-        }
-      }
-
-      // ── OCR Quality Report ──
-      const avgConf = ocrReport.length
-        ? Math.round(ocrReport.reduce((s, r) => s + r.confidence, 0) / ocrReport.length)
-        : 0;
-      const totalOcrChars = ocrReport.reduce((s, r) => s + r.chars, 0);
-      const failedPages = ocrReport.filter(r => r.chars < 10).length;
-
-      let qualityLevel, qualityEmoji;
-      if (avgConf >= 80) { qualityLevel = "优秀"; qualityEmoji = "🟢"; }
-      else if (avgConf >= 60) { qualityLevel = "良好"; qualityEmoji = "🟡"; }
-      else if (avgConf >= 40) { qualityLevel = "一般"; qualityEmoji = "🟠"; }
-      else { qualityLevel = "较差"; qualityEmoji = "🔴"; }
-
-      const reportMsg = [
-        `${qualityEmoji} OCR 完成: ${relativePathOf(file)}`,
-        `  平均置信度: ${avgConf}% (${qualityLevel})`,
-        `  识别页数: ${ocrReport.length - failedPages}/${ocrPages.length}`,
-        `  总字符数: ${totalOcrChars.toLocaleString()}`,
-        failedPages ? `  ⚠️ ${failedPages} 页识别失败或内容过少` : ""
-      ].filter(Boolean).join("\n");
-
-      console.log("[OCR Report]", reportMsg);
-      console.table(ocrReport);
-      showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
-
-      // Store report for UI display
-      if (!window._ocrReports) window._ocrReports = [];
-      window._ocrReports.push({
-        file: relativePathOf(file),
-        pages: ocrReport,
-        avgConfidence: avgConf,
-        quality: qualityLevel
-      });
+      // Always try PaddleOCR.js first (dynamically loaded), Tesseract.js as last resort
+      engineName = "PaddleOCR.js (PP-OCRv5 浏览器端)";
+      engineMode = "paddle";
     }
+    
+    // Show OCR start notification
+    showToast(
+      `🔍 开始 OCR: ${relativePathOf(file)} — ${ocrPages.length} 页扫描件\n` +
+      `引擎: ${engineName}`,
+      "success"
+    );
+
+    // For local OCR, read the file once and reuse
+    const pdfArrayBuffer = useLocalOcr ? await file.arrayBuffer() : null;
+
+    const ocrReport = [];  // { page, confidence, chars }
+
+    for (let i = 0; i < ocrPages.length; i++) {
+      const { pageIndex, page } = ocrPages[i];
+      try {
+        let ocr;
+        if (engineMode === "local") {
+          // High-accuracy local OCR via RapidOCR server
+          ocr = await _ocrViaLocalServer(pdfArrayBuffer, pageIndex);
+        } else {
+          // Browser-side OCR: try PaddleOCR.js first, fallback to Tesseract.js
+          const canvas = await _renderPdfPageToCanvas(page, 2.0);
+          try {
+            ocr = await _ocrViaPaddleJs(canvas);
+          } catch (paddleErr) {
+            console.warn("[OCR] PaddleOCR.js failed, trying Tesseract.js:", paddleErr.message);
+            if (i === 0) showToast("⚠️ PaddleOCR.js 不可用，回退到 Tesseract.js", "warning");
+            if (typeof Tesseract !== "undefined") {
+              ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
+              if (i === 0) engineName = "Tesseract.js (浏览器端后备)";
+            } else {
+              throw new Error("无可用 OCR 引擎");
+            }
+          }
+        }
+        const ocrText = normalizeText(ocr.text);
+
+        ocrReport.push({
+          page: pageIndex,
+          confidence: ocr.confidence,
+          chars: ocrText.length,
+          lines: ocr.lines,
+          engine: ocr.engine
+        });
+
+        if (ocrText && ocrText.length > 10) {
+          totalChars += ocrText.length;
+          records.push({
+            record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
+            filename: relativePathOf(file),
+            source_file: relativePathOf(file),
+            source_kind: "PDF-OCR",
+            page_num: pageIndex,
+            ocr_confidence: ocr.confidence,
+            ocr_engine: ocr.engine,
+            text: ocrText
+          });
+        }
+
+        // Progress toast every 5 pages
+        if ((i + 1) % 5 === 0 || i === ocrPages.length - 1) {
+          showToast(`OCR 进度: ${i + 1}/${ocrPages.length} 页 [${engineName}]`, "success");
+        }
+      } catch (ocrErr) {
+        ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: ocrErr.message });
+      }
+    }
+
+    // ── OCR Quality Report ──
+    const avgConf = ocrReport.length
+      ? Math.round(ocrReport.reduce((s, r) => s + r.confidence, 0) / ocrReport.length)
+      : 0;
+    const totalOcrChars = ocrReport.reduce((s, r) => s + r.chars, 0);
+    const failedPages = ocrReport.filter(r => r.chars < 10).length;
+
+    let qualityLevel, qualityEmoji;
+    if (avgConf >= 80) { qualityLevel = "优秀"; qualityEmoji = "🟢"; }
+    else if (avgConf >= 60) { qualityLevel = "良好"; qualityEmoji = "🟡"; }
+    else if (avgConf >= 40) { qualityLevel = "一般"; qualityEmoji = "🟠"; }
+    else { qualityLevel = "较差"; qualityEmoji = "🔴"; }
+
+    const reportMsg = [
+      `${qualityEmoji} OCR 完成: ${relativePathOf(file)}`,
+      `  引擎: ${engineName}`,
+      `  平均置信度: ${avgConf}% (${qualityLevel})`,
+      `  识别页数: ${ocrReport.length - failedPages}/${ocrPages.length}`,
+      `  总字符数: ${totalOcrChars.toLocaleString()}`,
+      failedPages ? `  ⚠️ ${failedPages} 页识别失败或内容过少` : ""
+    ].filter(Boolean).join("\n");
+
+    console.log("[OCR Report]", reportMsg);
+    console.table(ocrReport);
+    showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
+
+    // Store report for UI display
+    if (!window._ocrReports) window._ocrReports = [];
+    window._ocrReports.push({
+      file: relativePathOf(file),
+      pages: ocrReport,
+      avgConfidence: avgConf,
+      quality: qualityLevel,
+      engine: engineName
+    });
   }
 
   if (!records.length) {
