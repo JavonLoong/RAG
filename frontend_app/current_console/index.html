@@ -5611,19 +5611,29 @@ function renderPendingFileList(files, containerEl) {
   if (!containerEl) return;
   if (!files.length) { containerEl.innerHTML = ""; return; }
 
+  // Determine which pending list this container belongs to
+  const listKey = containerEl.id === "kgFileList" ? "kgCorpus" : "standard";
+
   containerEl.innerHTML = files.map((f, i) => {
     const ext = (f.name.split('.').pop() || '').toLowerCase();
     const isPdf = ext === 'pdf';
+    const isTxt = ext === 'txt';
+    const isOcrGenerated = f._ocrGenerated === true;
     const cacheKey = `${f.name}|${f.size}|${f.lastModified}`;
     const isCached = _pdfParseCache.has(cacheKey);
     const sizeStr = f.size > 1048576 ? `${(f.size / 1048576).toFixed(1)} MB` : `${(f.size / 1024).toFixed(1)} KB`;
 
+    // Choose icon color based on file type
+    const iconName = isPdf ? 'lucide:file-text' : isTxt ? 'lucide:file-type' : 'lucide:file';
+    const iconColor = isPdf ? '#ef5350' : isOcrGenerated ? '#42a5f5' : '#81c784';
+
     return `
-    <article class="queue-item file-item" data-file-index="${i}" style="padding:8px 12px;margin-bottom:4px;">
+    <article class="queue-item file-item" data-file-index="${i}" style="padding:8px 12px;margin-bottom:4px;${isOcrGenerated ? 'border-left:3px solid #42a5f5;' : ''}">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
-          <iconify-icon icon="${isPdf ? 'lucide:file-text' : 'lucide:file'}" style="color:${isPdf ? '#ef5350' : '#81c784'};flex-shrink:0;"></iconify-icon>
+          <iconify-icon icon="${iconName}" style="color:${iconColor};flex-shrink:0;"></iconify-icon>
           <span class="queue-name" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.name)}</span>
+          ${isOcrGenerated ? '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(66,165,245,0.15);color:#42a5f5;font-weight:600;margin-left:4px;white-space:nowrap;">OCR 结果</span>' : ''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">✅ 已识别</span>' : ''}
@@ -5631,10 +5641,18 @@ function renderPendingFileList(files, containerEl) {
             style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#1e88e5,#1565c0);color:#fff;border:none;cursor:pointer;">
             <iconify-icon icon="lucide:scan" style="font-size:12px;vertical-align:middle;"></iconify-icon> OCR
           </button>` : ''}
+          <button class="btn btn--xs" onclick="downloadPendingFile(${i}, '${escapeHtml(listKey)}')" title="下载文件"
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
+            <iconify-icon icon="lucide:download" style="font-size:12px;vertical-align:middle;"></iconify-icon> 下载
+          </button>
+          <button class="btn btn--xs" onclick="removeFileFromList(${i}, '${escapeHtml(listKey)}')" title="删除文件"
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#e53935,#c62828);color:#fff;border:none;cursor:pointer;">
+            <iconify-icon icon="lucide:trash-2" style="font-size:12px;vertical-align:middle;"></iconify-icon> 删除
+          </button>
           <span class="muted" style="font-size:11px;">${sizeStr}</span>
         </div>
       </div>
-      <div class="ocr-panel" id="ocrPanel_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
+      ${isPdf ? `<div class="ocr-panel" id="ocrPanel_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
           <select id="ocrEngine_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
@@ -5658,9 +5676,36 @@ function renderPendingFileList(files, containerEl) {
           </div>
           <div id="ocrStatus_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
         </div>
-      </div>
+      </div>` : ''}
     </article>`;
   }).join("");
+}
+
+// ── Remove a file from a pending list ──
+function removeFileFromList(fileIndex, listKey) {
+  const list = _pendingJsonFiles[listKey];
+  if (!list || fileIndex < 0 || fileIndex >= list.length) return;
+  const removed = list[fileIndex];
+  _pendingJsonFiles[listKey] = list.filter((_, idx) => idx !== fileIndex);
+  // Re-render the affected container
+  const containerId = listKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
+  const containerEl = $(containerId);
+  if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey], containerEl);
+  showToast(`已删除文件：${removed.name}`, 'success');
+}
+
+// ── Download a file from a pending list ──
+function downloadPendingFile(fileIndex, listKey) {
+  const list = _pendingJsonFiles[listKey];
+  if (!list || fileIndex < 0 || fileIndex >= list.length) return;
+  const file = list[fileIndex];
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
 // ── OCR panel toggle ──
@@ -5675,9 +5720,17 @@ function openOcrPanel(fileIndex, btn) {
 
 // ── Start OCR for a specific file ──
 async function startFileOcr(fileIndex) {
-  // Find the file from all pending lists
-  const allFiles = [..._pendingJsonFiles.kgCorpus, ..._pendingJsonFiles.standard];
-  const file = allFiles[fileIndex] || _pendingJsonFiles.kgCorpus[fileIndex];
+  // Find the file from all pending lists and determine which list it belongs to
+  let file = null;
+  let listKey = null;
+  if (fileIndex < _pendingJsonFiles.kgCorpus.length) {
+    file = _pendingJsonFiles.kgCorpus[fileIndex];
+    listKey = 'kgCorpus';
+  } else {
+    const adjustedIndex = fileIndex - _pendingJsonFiles.kgCorpus.length;
+    file = _pendingJsonFiles.standard[adjustedIndex];
+    listKey = 'standard';
+  }
   if (!file) { showToast("文件未找到", "warning"); return; }
 
   const engine = document.getElementById(`ocrEngine_${fileIndex}`)?.value || "local";
@@ -5694,6 +5747,29 @@ async function startFileOcr(fileIndex) {
     if (barEl) barEl.style.width = `${pct}%`;
     if (pctEl) pctEl.textContent = `${pct}%`;
     if (statusEl) statusEl.textContent = text || `${done}/${total} 页`;
+  }
+
+  // Helper: create a .txt File from OCR text and add it to the list
+  function addOcrResultAsTextFile(fullText, sourceFileName) {
+    if (!fullText || fullText.length <= 10) return;
+    const txtName = sourceFileName.replace(/\.pdf$/i, '') + '_OCR结果.txt';
+    const txtBlob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+    const txtFile = new File([txtBlob], txtName, { type: 'text/plain', lastModified: Date.now() });
+    // Mark as OCR-generated for special styling
+    txtFile._ocrGenerated = true;
+    // Check if a file with the same name already exists (avoid duplicates)
+    const existingIdx = _pendingJsonFiles[listKey].findIndex(f => f.name === txtName);
+    if (existingIdx >= 0) {
+      _pendingJsonFiles[listKey][existingIdx] = txtFile;
+    } else {
+      // Insert right after the source PDF
+      const srcIdx = _pendingJsonFiles[listKey].indexOf(file);
+      if (srcIdx >= 0) {
+        _pendingJsonFiles[listKey].splice(srcIdx + 1, 0, txtFile);
+      } else {
+        _pendingJsonFiles[listKey].push(txtFile);
+      }
+    }
   }
 
   try {
@@ -5731,6 +5807,9 @@ async function startFileOcr(fileIndex) {
       updateProgress(result.total || 1, result.total || 1,
         `✅ 完成! ${(result.full_text||'').length.toLocaleString()} 字符, ${result.elapsed_s || 0}s`);
       showToast(`OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`, "success");
+
+      // Generate .txt file from OCR result and add to list
+      addOcrResultAsTextFile(fullText, file.name);
 
     } else if (engine === "paddle" || engine === "tesseract") {
       // Browser-side OCR (PaddleOCR.js or Tesseract.js)
@@ -5784,11 +5863,15 @@ async function startFileOcr(fileIndex) {
       _pdfParseCache.set(cacheKey, records);
       updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
       showToast(`OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`, "success");
+
+      // Generate .txt file from OCR result and add to list
+      addOcrResultAsTextFile(fullText, file.name);
     }
 
-    // Re-render file list to show cached status
-    const kgFileList = $("kgFileList");
-    if (kgFileList) renderPendingFileList(_pendingJsonFiles.kgCorpus, kgFileList);
+    // Re-render file list to show cached status and the new .txt file
+    const containerId = listKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
+    const containerEl = $(containerId);
+    if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey], containerEl);
 
   } catch (err) {
     updateProgress(0, 0, `❌ 失败: ${err.message}`);
