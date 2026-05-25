@@ -1948,6 +1948,7 @@ svg { width: 100%; height: auto; display: block; }
     { local: "libs/d3.min.js",                cdn: "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" },
     { local: "libs/jszip.min.js",             cdn: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" },
     { local: "libs/sql-wasm.js",              cdn: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js" },
+    { local: "libs/tesseract.min.js",          cdn: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" },
   ];
   // Synchronously write script tags — local first, onerror falls back to CDN
   _LIBS.forEach(function(lib) {
@@ -2765,6 +2766,38 @@ function parseTabularText(text, delimiter) {
   return normalizeText([`字段: ${header.join(" | ")}`, ...rows].join("\n\n"));
 }
 
+// ── Render a single PDF page to a canvas for OCR ──
+async function _renderPdfPageToCanvas(page, scale = 2.0) {
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas;
+}
+
+// ── OCR a single canvas image using Tesseract.js ──
+async function _ocrCanvasPage(canvas, lang = "chi_sim+eng") {
+  if (typeof Tesseract === "undefined") {
+    throw new Error("Tesseract.js 未加载");
+  }
+  const worker = await Tesseract.createWorker(lang, 1, {
+    logger: m => {
+      if (m.status === "recognizing text" && m.progress) {
+        // Could hook into progress bar here
+      }
+    }
+  });
+  const { data } = await worker.recognize(canvas);
+  await worker.terminate();
+  return {
+    text: data.text || "",
+    confidence: data.confidence || 0,  // 0-100
+    lines: data.lines ? data.lines.length : 0
+  };
+}
+
 async function parsePdfFile(file) {
   if (!globalThis.pdfjsLib) {
     throw new Error("PDF.js 库未加载，无法在浏览器中解析 PDF。请检查网络连接或使用后端服务。");
@@ -2776,36 +2809,145 @@ async function parsePdfFile(file) {
   } catch (loadErr) {
     throw new Error(`PDF 文件读取失败：${loadErr.message || "格式无法识别"}。请确认文件未损坏。`);
   }
+
   const records = [];
+  const ocrPages = [];  // pages that need OCR (scanned)
   let totalChars = 0;
+
+  // ── Pass 1: try native text extraction ──
   for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
     try {
       const page = await pdf.getPage(pageIndex);
       const textContent = await page.getTextContent();
       const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
-      if (!pageText) continue;
-      totalChars += pageText.length;
-      records.push({
-        record_id: `${relativePathOf(file)}::page-${pageIndex}`,
-        filename: relativePathOf(file),
-        source_file: relativePathOf(file),
-        source_kind: "PDF",
-        page_num: pageIndex,
-        text: pageText
-      });
+      if (pageText && pageText.length > 20) {
+        // Native text found — good
+        totalChars += pageText.length;
+        records.push({
+          record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+          filename: relativePathOf(file),
+          source_file: relativePathOf(file),
+          source_kind: "PDF",
+          page_num: pageIndex,
+          text: pageText
+        });
+      } else {
+        // No text — scanned page, needs OCR
+        ocrPages.push({ pageIndex, page });
+      }
     } catch { /* skip corrupt pages */ }
   }
+
+  // ── Pass 2: OCR for scanned pages ──
+  if (ocrPages.length > 0) {
+    const hasTesseract = typeof Tesseract !== "undefined";
+    if (!hasTesseract) {
+      showToast(
+        `${relativePathOf(file)}: ${ocrPages.length}/${pdf.numPages} 页为扫描件，Tesseract.js 未加载，无法 OCR。`,
+        "warning"
+      );
+      // Add placeholder for scanned pages
+      if (!records.length) {
+        records.push({
+          record_id: `${relativePathOf(file)}::pdf-meta`,
+          filename: relativePathOf(file),
+          source_file: relativePathOf(file),
+          source_kind: "PDF",
+          page_num: null,
+          text: `[扫描PDF] ${relativePathOf(file)}，共 ${pdf.numPages} 页。需要 Tesseract.js OCR 引擎。`
+        });
+      }
+    } else {
+      // Show OCR start notification
+      showToast(
+        `🔍 开始 OCR: ${relativePathOf(file)} — ${ocrPages.length} 页扫描件，请耐心等待…`,
+        "success"
+      );
+
+      const ocrReport = [];  // { page, confidence, chars }
+
+      for (let i = 0; i < ocrPages.length; i++) {
+        const { pageIndex, page } = ocrPages[i];
+        try {
+          // Render page to canvas at 2x resolution for better OCR
+          const canvas = await _renderPdfPageToCanvas(page, 2.0);
+          const ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
+          const ocrText = normalizeText(ocr.text);
+
+          ocrReport.push({
+            page: pageIndex,
+            confidence: ocr.confidence,
+            chars: ocrText.length,
+            lines: ocr.lines
+          });
+
+          if (ocrText && ocrText.length > 10) {
+            totalChars += ocrText.length;
+            records.push({
+              record_id: `${relativePathOf(file)}::ocr-page-${pageIndex}`,
+              filename: relativePathOf(file),
+              source_file: relativePathOf(file),
+              source_kind: "PDF-OCR",
+              page_num: pageIndex,
+              ocr_confidence: ocr.confidence,
+              text: ocrText
+            });
+          }
+
+          // Progress toast every 5 pages
+          if ((i + 1) % 5 === 0 || i === ocrPages.length - 1) {
+            showToast(`OCR 进度: ${i + 1}/${ocrPages.length} 页`, "success");
+          }
+        } catch (ocrErr) {
+          ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: ocrErr.message });
+        }
+      }
+
+      // ── OCR Quality Report ──
+      const avgConf = ocrReport.length
+        ? Math.round(ocrReport.reduce((s, r) => s + r.confidence, 0) / ocrReport.length)
+        : 0;
+      const totalOcrChars = ocrReport.reduce((s, r) => s + r.chars, 0);
+      const failedPages = ocrReport.filter(r => r.chars < 10).length;
+
+      let qualityLevel, qualityEmoji;
+      if (avgConf >= 80) { qualityLevel = "优秀"; qualityEmoji = "🟢"; }
+      else if (avgConf >= 60) { qualityLevel = "良好"; qualityEmoji = "🟡"; }
+      else if (avgConf >= 40) { qualityLevel = "一般"; qualityEmoji = "🟠"; }
+      else { qualityLevel = "较差"; qualityEmoji = "🔴"; }
+
+      const reportMsg = [
+        `${qualityEmoji} OCR 完成: ${relativePathOf(file)}`,
+        `  平均置信度: ${avgConf}% (${qualityLevel})`,
+        `  识别页数: ${ocrReport.length - failedPages}/${ocrPages.length}`,
+        `  总字符数: ${totalOcrChars.toLocaleString()}`,
+        failedPages ? `  ⚠️ ${failedPages} 页识别失败或内容过少` : ""
+      ].filter(Boolean).join("\n");
+
+      console.log("[OCR Report]", reportMsg);
+      console.table(ocrReport);
+      showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
+
+      // Store report for UI display
+      if (!window._ocrReports) window._ocrReports = [];
+      window._ocrReports.push({
+        file: relativePathOf(file),
+        pages: ocrReport,
+        avgConfidence: avgConf,
+        quality: qualityLevel
+      });
+    }
+  }
+
   if (!records.length) {
-    // For scanned PDFs: generate a minimal metadata record so the file doesn't completely fail
-    const fallbackText = `[PDF 文件] ${relativePathOf(file)}，共 ${pdf.numPages} 页。此 PDF 为扫描件/图片型，浏览器端无法提取文字内容。如需完整解析请使用后端 OCR 服务。`;
-    return [{
-      record_id: `${relativePathOf(file)}::pdf-meta`,
+    records.push({
+      record_id: `${relativePathOf(file)}::pdf-empty`,
       filename: relativePathOf(file),
       source_file: relativePathOf(file),
       source_kind: "PDF",
       page_num: null,
-      text: fallbackText
-    }];
+      text: `[空PDF] ${relativePathOf(file)}，共 ${pdf.numPages} 页，未提取到任何文字内容。`
+    });
   }
   return records;
 }
