@@ -1825,6 +1825,115 @@ svg { width: 100%; height: auto; display: block; }
   align-items: center;
   flex-wrap: wrap;
 }
+
+/* ─────── Example File Manager ─────── */
+.example-dropzone {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(10,132,255,0.04) 0%, rgba(90,200,250,0.03) 100%);
+  border: 1.5px dashed rgba(10,132,255,0.35);
+  border-radius: 14px;
+  transition: all 200ms var(--ease-out);
+}
+.example-dropzone.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: scale(1.005);
+}
+.example-dropzone > div { min-width: 0; }
+.example-dropzone h3 { margin: 10px 0 6px; font-size: 18px; }
+.example-dropzone .queue-actions { justify-content: center; margin-top: 14px; }
+
+.example-file-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.example-file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(10,132,255,0.06);
+  border: 1px solid rgba(10,132,255,0.18);
+  transition: all var(--transition-fast);
+}
+.example-file-item:hover {
+  background: rgba(10,132,255,0.10);
+  border-color: rgba(10,132,255,0.30);
+}
+.example-file-item .example-file-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 32px;
+}
+.example-file-item .example-file-icon iconify-icon { font-size: 16px; }
+.example-file-item .example-file-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.example-file-item .example-file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.example-file-item .example-file-meta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.example-file-item .example-file-remove {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,69,58,0.08);
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255,69,58,0.15);
+  transition: all var(--transition-fast);
+}
+.example-file-item .example-file-remove:hover {
+  background: rgba(255,69,58,0.18);
+  border-color: rgba(255,69,58,0.30);
+}
+
+.example-empty-hint {
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.65;
+}
+
+.example-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(10,132,255,0.15), rgba(90,200,250,0.12));
+  color: var(--accent-2);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
 </style>
   <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
@@ -2637,24 +2746,47 @@ function parseTabularText(text, delimiter) {
 }
 
 async function parsePdfFile(file) {
-  const data = await file.arrayBuffer();
-  const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+  if (!globalThis.pdfjsLib) {
+    throw new Error("PDF.js 库未加载，无法在浏览器中解析 PDF。请检查网络连接或使用后端服务。");
+  }
+  let pdf;
+  try {
+    const data = await file.arrayBuffer();
+    pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+  } catch (loadErr) {
+    throw new Error(`PDF 文件读取失败：${loadErr.message || "格式无法识别"}。请确认文件未损坏。`);
+  }
   const records = [];
+  let totalChars = 0;
   for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
-    const page = await pdf.getPage(pageIndex);
-    const textContent = await page.getTextContent();
-    const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
-    if (!pageText) continue;
-    records.push({
-      record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+    try {
+      const page = await pdf.getPage(pageIndex);
+      const textContent = await page.getTextContent();
+      const pageText = normalizeText(textContent.items.map((item) => item.str).join(" "));
+      if (!pageText) continue;
+      totalChars += pageText.length;
+      records.push({
+        record_id: `${relativePathOf(file)}::page-${pageIndex}`,
+        filename: relativePathOf(file),
+        source_file: relativePathOf(file),
+        source_kind: "PDF",
+        page_num: pageIndex,
+        text: pageText
+      });
+    } catch { /* skip corrupt pages */ }
+  }
+  if (!records.length) {
+    // For scanned PDFs: generate a minimal metadata record so the file doesn't completely fail
+    const fallbackText = `[PDF 文件] ${relativePathOf(file)}，共 ${pdf.numPages} 页。此 PDF 为扫描件/图片型，浏览器端无法提取文字内容。如需完整解析请使用后端 OCR 服务。`;
+    return [{
+      record_id: `${relativePathOf(file)}::pdf-meta`,
       filename: relativePathOf(file),
       source_file: relativePathOf(file),
       source_kind: "PDF",
-      page_num: pageIndex,
-      text: pageText
-    });
+      page_num: null,
+      text: fallbackText
+    }];
   }
-  if (!records.length) throw new Error("PDF 未提取到可用文本，可能是扫描件或图片型 PDF");
   return records;
 }
 
@@ -4767,6 +4899,244 @@ async function runProcess() {
 // ── Shared state for file pickers ──
 const _pendingJsonFiles = { standard: [], kg: [], kgCorpus: [] };
 
+// ── Example File Manager ──
+const EXAMPLE_FILES_STORAGE_KEY = 'rag_example_files_v1';
+let _exampleFiles = []; // Array of { file: File, name, size, kind, addedAt }
+
+function getStoredExampleMeta() {
+  try {
+    const raw = localStorage.getItem(EXAMPLE_FILES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveExampleMeta() {
+  try {
+    const meta = _exampleFiles.map(ef => ({
+      name: ef.name,
+      size: ef.size,
+      kind: ef.kind,
+      addedAt: ef.addedAt
+    }));
+    localStorage.setItem(EXAMPLE_FILES_STORAGE_KEY, JSON.stringify(meta));
+  } catch {}
+}
+
+function addExampleFiles(fileList) {
+  const incoming = Array.from(fileList || []).filter(isSupportedFile);
+  if (!incoming.length) {
+    showToast('没有可用的示例文件（不支持的格式已跳过）。', 'warning');
+    return;
+  }
+  const existingNames = new Set(_exampleFiles.map(ef => ef.name));
+  let added = 0;
+  let replaced = 0;
+  for (const file of incoming) {
+    const name = relativePathOf(file);
+    const entry = {
+      file,
+      name,
+      size: file.size,
+      kind: sourceKindFromName(name),
+      addedAt: Date.now()
+    };
+    if (existingNames.has(name)) {
+      _exampleFiles = _exampleFiles.map(ef => ef.name === name ? entry : ef);
+      replaced++;
+    } else {
+      _exampleFiles.push(entry);
+      added++;
+    }
+    existingNames.add(name);
+  }
+  saveExampleMeta();
+  renderExampleFileList();
+  const parts = [];
+  if (added) parts.push(`新增 ${added} 个`);
+  if (replaced) parts.push(`替换 ${replaced} 个`);
+  showToast(`示例文件${parts.join('，')}。开启「演示数据」后生效。`, 'success');
+  addActivity('success', '示例文件已更新', `${parts.join('，')}，共 ${_exampleFiles.length} 个示例文件。`);
+}
+
+function removeExampleFile(name) {
+  _exampleFiles = _exampleFiles.filter(ef => ef.name !== name);
+  saveExampleMeta();
+  renderExampleFileList();
+  showToast(`已移除示例文件：${name}`, 'success');
+}
+
+function clearAllExampleFiles() {
+  if (!_exampleFiles.length) {
+    showToast('没有示例文件需要清除。', 'warning');
+    return;
+  }
+  if (!window.confirm(`确认清除全部 ${_exampleFiles.length} 个示例文件？`)) return;
+  _exampleFiles = [];
+  saveExampleMeta();
+  renderExampleFileList();
+  showToast('已清除全部示例文件。', 'success');
+  addActivity('warning', '示例文件已清空', '全部示例文件已被移除。');
+}
+
+function renderExampleFileList() {
+  const listEl = $('exampleFileList');
+  const badgeEl = $('exampleCountBadge');
+  if (badgeEl) badgeEl.textContent = `${_exampleFiles.length} 个示例`;
+  if (!listEl) return;
+  if (!_exampleFiles.length) {
+    listEl.innerHTML = `<div class="example-empty-hint">
+      <iconify-icon icon="lucide:info" style="font-size:16px;vertical-align:-3px;margin-right:4px;color:var(--accent)"></iconify-icon>
+      还没有示例文件。拖入文件或点击上方按钮添加，开启「演示数据」后会自动加载这些文件作为示例。<br>
+      <span style="margin-top:4px;display:inline-block;color:var(--ink-soft)">如果不添加自定义示例，将使用内置的四本书演示数据。</span>
+    </div>`;
+    return;
+  }
+  listEl.innerHTML = _exampleFiles.map(ef => {
+    const sizeStr = ef.size < 1024 * 1024
+      ? `${(ef.size / 1024).toFixed(1)} KB`
+      : `${(ef.size / (1024 * 1024)).toFixed(2)} MB`;
+    const kindIcon = ef.kind === 'JSON' ? 'lucide:file-json-2'
+      : ef.kind === 'PDF' ? 'lucide:file-text'
+      : ef.kind === 'Markdown' ? 'lucide:file-code'
+      : 'lucide:file';
+    return `
+      <div class="example-file-item">
+        <div class="example-file-icon"><iconify-icon icon="${kindIcon}"></iconify-icon></div>
+        <div class="example-file-info">
+          <div class="example-file-name" title="${escapeHtml(ef.name)}">${escapeHtml(ef.name)}</div>
+          <div class="example-file-meta">${escapeHtml(ef.kind)} · ${sizeStr} · ${new Date(ef.addedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+        <button class="example-file-remove" type="button" data-remove-example="${escapeHtml(ef.name)}">移除</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function hasUserExampleFiles() {
+  return _exampleFiles.length > 0;
+}
+
+async function activateExampleFilesAsDemo() {
+  if (!_exampleFiles.length) return false;
+
+  // Parse all example files and build demo data from them
+  state.publicDemo = true;
+  state.localMode = true;
+  state.online = true;
+  state.version = 'example-demo';
+  state.records = [];
+  state.chunks = [];
+  state.uploads = [];
+  state.pendingUploads = [];
+  state.processedUploads = [];
+
+  const fileSummaries = [];
+  let totalRecords = 0;
+  let totalChunks = 0;
+  let succeeded = 0;
+  let failed = 0;
+
+  for (const ef of _exampleFiles) {
+    try {
+      const records = await parseFileRecords(ef.file);
+      const mapped = records.map(r => ({
+        ...r,
+        stored_filename: ef.name,
+        filename: ef.name,
+        source_file: ef.name,
+        source_kind: r.source_kind || ef.kind
+      }));
+      const chunks = makeChunks(mapped);
+      state.records.push(...mapped);
+      state.chunks.push(...chunks);
+
+      const uploadItem = {
+        filename: ef.name,
+        display_name: ef.name,
+        size_kb: Number((ef.size / 1024).toFixed(1)),
+        modified: Math.floor(ef.addedAt / 1000),
+        uploaded_at: Math.floor(ef.addedAt / 1000),
+        processed_at: Math.floor(Date.now() / 1000),
+        source_kind: ef.kind,
+        status: 'processed',
+        last_collection: 'example_demo',
+        last_records: mapped.length,
+        last_chunks: chunks.length,
+        last_error: null,
+        is_demo_sample: true,
+        file: ef.file
+      };
+      state.uploads.push(uploadItem);
+      state.processedUploads.push(uploadItem);
+      totalRecords += mapped.length;
+      totalChunks += chunks.length;
+      succeeded++;
+      fileSummaries.push({ source_file: ef.name, source_kind: ef.kind, status: 'ok', records_extracted: mapped.length });
+    } catch (err) {
+      failed++;
+      fileSummaries.push({ source_file: ef.name, source_kind: ef.kind, status: 'error', records_extracted: 0, error: err.message });
+    }
+  }
+
+  state.primaryCollection = 'example_demo';
+  state.primaryStats = { record_count: totalRecords, chunk_count: totalChunks };
+  const totalTokens = state.chunks.reduce((s, c) => s + Number(c.metadata?.estimated_tokens || 0), 0);
+  const totalChars = state.chunks.reduce((s, c) => s + (c.text?.length || 0), 0);
+  const storageMb = state.uploads.reduce((s, u) => s + Number(u.size_kb || 0), 0) / 1024;
+  const byKind = {};
+  state.uploads.forEach(u => { const k = u.source_kind || 'Other'; byKind[k] = (byKind[k] || 0) + 1; });
+
+  state.stats = {
+    status: 'example-demo',
+    collections: totalChunks ? [{
+      name: 'example_demo',
+      count: totalChunks,
+      estimated_tokens: totalTokens,
+      estimated_chars: totalChars,
+      source_type_counts: byKind,
+      sources: state.uploads.map(u => u.display_name)
+    }] : [],
+    total_documents: succeeded,
+    total_tokens_estimate: totalTokens,
+    storage_size_mb: storageMb,
+    embedding_dim: ENGINE_DEFAULTS.dimension,
+    source_type_breakdown: byKind
+  };
+
+  state.lastProcess = {
+    collection: 'example_demo',
+    requested_filenames: _exampleFiles.map(ef => ef.name),
+    skipped_already_processed: [],
+    files_succeeded: succeeded,
+    files_failed: failed,
+    records_processed: totalRecords,
+    chunks_written: totalChunks,
+    elapsed_s: 0,
+    file_summaries: fileSummaries,
+    quality_report: buildQualityReport(state.records, state.chunks),
+    embedding_backend: 'browser-local'
+  };
+
+  state.timeline = [{
+    reason: 'example',
+    label: '示例加载',
+    docs: succeeded,
+    tokens: totalTokens,
+    collections: 1,
+    latency: 0,
+    pdf: byKind.PDF || 0,
+    text: byKind.Text || 0,
+    json: byKind.JSON || 0,
+    other: byKind.Other || 0
+  }];
+
+  state.activity = [
+    { id: `ex-${Date.now()}`, level: 'success', title: '示例文件已加载', detail: `从 ${_exampleFiles.length} 个示例文件加载了 ${formatNumber(totalChunks)} 个向量片段。`, at: Date.now() }
+  ];
+
+  return true;
+}
+
 function renderPendingFileList(files, containerEl) {
   if (!containerEl) return;
   if (!files.length) { containerEl.innerHTML = ""; return; }
@@ -4781,7 +5151,7 @@ function renderPendingFileList(files, containerEl) {
 }
 
 function collectJsonFiles(fileList) {
-  return Array.from(fileList || []).filter(f => f.name.toLowerCase().endsWith(".json"));
+  return Array.from(fileList || []).filter(f => isSupportedFile(f));
 }
 
 async function runBrowserJsonIngest(pendingKey, panelEls) {
@@ -5581,7 +5951,7 @@ function clearAnswer() {
   resetAskAnswer();
 }
 
-function applyDemoMode(isDemo) {
+async function applyDemoMode(isDemo) {
   const shell = document.querySelector('.app-shell');
   if (!shell) return;
   shell.classList.toggle('demo-mode', isDemo);
@@ -5589,9 +5959,17 @@ function applyDemoMode(isDemo) {
   try { localStorage.setItem('rag_demo_mode', isDemo ? '1' : '0'); } catch {}
 
   if (isDemo) {
-    // Load demo snapshot data
-    state.publicDemo = true;
-    activatePublicDemoSnapshot();
+    // Try user-provided example files first, fall back to hardcoded demo
+    if (hasUserExampleFiles()) {
+      const loaded = await activateExampleFilesAsDemo();
+      if (!loaded) {
+        state.publicDemo = true;
+        activatePublicDemoSnapshot();
+      }
+    } else {
+      state.publicDemo = true;
+      activatePublicDemoSnapshot();
+    }
   } else {
     // Clear all demo data back to empty
     state.publicDemo = false;
@@ -5858,6 +6236,45 @@ function bindEvents() {
   els.btnProcess?.addEventListener("click", runProcess);
   els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
   els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
+
+  // ── Example File Manager ──
+  const exampleDropZone = $("exampleDropZone");
+  const exampleFileInput = $("exampleFileInput");
+  const exampleFolderInput = $("exampleFolderInput");
+
+  $("btnPickExampleFiles")?.addEventListener("click", () => exampleFileInput?.click());
+  $("btnPickExampleFolder")?.addEventListener("click", () => exampleFolderInput?.click());
+  $("btnClearAllExamples")?.addEventListener("click", clearAllExampleFiles);
+
+  exampleFileInput?.addEventListener("change", (e) => {
+    addExampleFiles(e.target.files);
+    e.target.value = "";
+  });
+  exampleFolderInput?.addEventListener("change", (e) => {
+    addExampleFiles(e.target.files);
+    e.target.value = "";
+  });
+  exampleDropZone?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    exampleDropZone.classList.add("is-dragging");
+  });
+  exampleDropZone?.addEventListener("dragleave", () => {
+    exampleDropZone.classList.remove("is-dragging");
+  });
+  exampleDropZone?.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    exampleDropZone.classList.remove("is-dragging");
+    const dropped = await filesFromDrop(e.dataTransfer);
+    addExampleFiles(dropped);
+  });
+
+  // Delegated click for removing example files
+  $("exampleFileList")?.addEventListener("click", (e) => {
+    const removeBtn = e.target.closest("[data-remove-example]");
+    if (removeBtn) {
+      removeExampleFile(removeBtn.dataset.removeExample);
+    }
+  });
 
   // ── Standard RAG JSON ingest file pickers ──
   const jsonIngestFileInput = $("jsonIngestFileInput");
@@ -7076,16 +7493,18 @@ async function init() {
   // Restore demo mode preference (default: on)
   const savedDemo = localStorage.getItem('rag_demo_mode');
   const isDemoMode = savedDemo === null || savedDemo === '1';
-  applyDemoMode(isDemoMode);
+  // Render example file list from stored metadata (files won't have File objects until re-added)
+  renderExampleFileList();
+  await applyDemoMode(isDemoMode);
   bindEvents();
   populateLLMProviderSelect();
   loadLLMSettings();
   populateBaseUrlDatalist();
   bindInputHistoryEvents();
   setPage(initialPageName(), { updateHash: false });
-  if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO) {
+  if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO && !hasUserExampleFiles()) {
     activatePublicDemoSnapshot();
-  } else {
+  } else if (!hasUserExampleFiles()) {
     addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
   }
   renderAll();
@@ -7295,21 +7714,19 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>文件与文件夹接入</h3>
+                      <h3>文件接入</h3>
+                      <p>拖入文件或文件夹，自动识别类型并递归扫描目录中的可用文件。</p>
                     </div>
-                    <span class="pill">json pdf docx txt md csv tsv log + code/config</span>
+                    <span class="pill">json pdf docx txt md csv tsv log + code</span>
                   </div>
                   <div class="queue-dropzone" id="dropZone">
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:folder-input"></iconify-icon></div>
-                      <h3>拖入整个文件夹也能识别</h3>
+                      <h3>拖入文件或文件夹</h3>
+                      <p class="muted">自动识别文件类型，递归扫描文件夹中的可用文件</p>
                       <div class="queue-actions">
-                        <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
-                        <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
-                        <button class="ghost-btn" id="dropBrowseButton" type="button"><iconify-icon icon="lucide:inbox"></iconify-icon><span>查看上传目录</span></button>
-                      </div>
-                      <div class="queue-actions">
-                        <button class="ghost-btn" id="dropFolderButton" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>递归识别目录</span></button>
+                        <button class="btn" id="pickFilesButton" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
                       </div>
                     </div>
                   </div>
@@ -7320,19 +7737,19 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>公开书籍 JSON 入库</h3>
-                      <p>选择本地 JSON 文件，在浏览器中直接解析、分块并写入内存向量库，无需后端服务。</p>
+                      <h3>向量入库配置</h3>
+                      <p>拖入文件后在此配置入库参数，也可直接选择文件入库。</p>
                     </div>
                     <span class="pill">浏览器端处理</span>
                   </div>
                   <div class="queue-dropzone" id="jsonIngestDropZone">
                     <div>
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:file-json-2"></iconify-icon></div>
-                      <h3>拖入 JSON 文件或点击选择</h3>
-                      <p class="muted">支持 .json 文件，可一次选择多个</p>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:database-zap"></iconify-icon></div>
+                      <h3>拖入文件直接入库</h3>
+                      <p class="muted">支持所有格式，自动识别并解析</p>
                       <div class="queue-actions">
-                        <button class="btn" id="btnPickJsonFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择 JSON 文件</span></button>
-                        <button class="ghost-btn" id="btnPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="btn" id="btnPickJsonFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="btnPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
                       </div>
                       <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple accept=".json">
                       <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory accept=".json">
@@ -7365,6 +7782,33 @@ window.addEventListener("DOMContentLoaded", init);
                     <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出向量库</span></button>
                   </div>
                   <div class="queue-list" id="publicBooksJsonSummary"></div>
+                </article>
+
+                <article class="panel" id="exampleFilePanel">
+                  <div class="panel-head">
+                    <div>
+                      <h3><iconify-icon icon="lucide:star" style="color:var(--accent);vertical-align:-2px;margin-right:4px"></iconify-icon>示例文件管理</h3>
+                      <p>拖入文件设为演示示例。开启「演示数据」后，这些文件会自动加载为示例数据，可随时更换。</p>
+                    </div>
+                    <div class="panel-tools">
+                      <span class="example-badge" id="exampleCountBadge">0 个示例</span>
+                      <button class="ghost-btn" id="btnClearAllExamples" type="button" title="清除全部示例"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>全部清除</span></button>
+                    </div>
+                  </div>
+                  <div class="example-dropzone" id="exampleDropZone">
+                    <div>
+                      <div class="surface-icon" aria-hidden="true" style="background:var(--accent-soft)"><iconify-icon icon="lucide:star" style="color:var(--accent)"></iconify-icon></div>
+                      <h3>拖入文件或文件夹设为示例</h3>
+                      <p class="muted">自动识别文件类型，文件夹中的可用文件会被自动扫描加入</p>
+                      <div class="queue-actions">
+                        <button class="btn" id="btnPickExampleFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="btnPickExampleFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
+                      </div>
+                    </div>
+                  </div>
+                  <input class="hidden-input" id="exampleFileInput" type="file" multiple>
+                  <input class="hidden-input" id="exampleFolderInput" type="file" multiple webkitdirectory directory>
+                  <div class="example-file-list" id="exampleFileList"></div>
                 </article>
 
                 <article class="panel">
@@ -7710,19 +8154,20 @@ window.addEventListener("DOMContentLoaded", init);
                   <div class="panel-head">
                     <div>
                       <h3>图谱语料接入与构建</h3>
+                      <p>拖入文件或文件夹，自动识别格式并递归扫描可用文件。支持 JSON / PDF / TXT / DOCX 等。</p>
                     </div>
                     <span class="pill">基于 Schema 自动抽取实体与关系</span>
                   </div>
                   <div class="queue-dropzone" id="kgDropZone">
                     <div>
                       <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:network"></iconify-icon></div>
-                      <h3>拖入专业文档开始知识抽取</h3>
-                      <p class="muted">支持 JSON / PDF / TXT / DOCX 等格式</p>
+                      <h3>拖入文件或文件夹开始知识抽取</h3>
+                      <p class="muted">自动识别文件类型，递归扫描文件夹中的可用文件</p>
                       <div class="queue-actions">
-                        <button class="btn" id="btnKgPickFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择文件</span></button>
-                        <button class="ghost-btn" id="btnKgPickFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="btn" id="btnKgPickFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="btnKgPickFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
                       </div>
-                      <input class="hidden-input" id="kgFileInput" type="file" multiple accept=".json,.pdf,.txt,.md,.docx,.csv,.tsv">
+                      <input class="hidden-input" id="kgFileInput" type="file" multiple>
                       <input class="hidden-input" id="kgFolderInput" type="file" multiple webkitdirectory directory>
                     </div>
                   </div>
@@ -7732,22 +8177,22 @@ window.addEventListener("DOMContentLoaded", init);
                 <article class="panel">
                   <div class="panel-head">
                     <div>
-                      <h3>图谱/向量混合 JSON 入库</h3>
-                      <p>选择 JSON 文件，在浏览器中直接解析并写入内存向量库。</p>
+                      <h3>向量入库配置</h3>
+                      <p>拖入文件后在此配置入库参数，或直接选择文件入库。</p>
                     </div>
                     <span class="pill">浏览器端处理</span>
                   </div>
                   <div class="queue-dropzone" id="kgJsonIngestDropZone">
                     <div>
-                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:file-json-2"></iconify-icon></div>
-                      <h3>拖入 JSON 文件或点击选择</h3>
-                      <p class="muted">支持 .json 文件，可一次选择多个</p>
+                      <div class="surface-icon" aria-hidden="true"><iconify-icon icon="lucide:database-zap"></iconify-icon></div>
+                      <h3>拖入文件直接入库</h3>
+                      <p class="muted">支持所有格式，自动识别并解析</p>
                       <div class="queue-actions">
-                        <button class="btn" id="btnKgPickJsonFiles" type="button"><iconify-icon icon="lucide:file-input"></iconify-icon><span>选择 JSON 文件</span></button>
-                        <button class="ghost-btn" id="btnKgPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-input"></iconify-icon><span>选择文件夹</span></button>
+                        <button class="btn" id="btnKgPickJsonFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
+                        <button class="ghost-btn" id="btnKgPickJsonFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
                       </div>
-                      <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple accept=".json">
-                      <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory accept=".json">
+                      <input class="hidden-input" id="kgJsonIngestFileInput" type="file" multiple>
+                      <input class="hidden-input" id="kgJsonIngestFolderInput" type="file" multiple webkitdirectory directory>
                     </div>
                   </div>
                   <div id="kgJsonIngestFileList" class="queue-list"></div>
