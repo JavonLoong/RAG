@@ -5610,14 +5610,190 @@ async function activateExampleFilesAsDemo() {
 function renderPendingFileList(files, containerEl) {
   if (!containerEl) return;
   if (!files.length) { containerEl.innerHTML = ""; return; }
-  containerEl.innerHTML = files.map((f, i) => `
-    <article class="queue-item" style="padding:8px 12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span class="queue-name" style="font-size:12px">${escapeHtml(f.name)}</span>
-        <span class="muted" style="font-size:11px">${(f.size / 1024).toFixed(1)} KB</span>
+
+  containerEl.innerHTML = files.map((f, i) => {
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const isPdf = ext === 'pdf';
+    const cacheKey = `${f.name}|${f.size}|${f.lastModified}`;
+    const isCached = _pdfParseCache.has(cacheKey);
+    const sizeStr = f.size > 1048576 ? `${(f.size / 1048576).toFixed(1)} MB` : `${(f.size / 1024).toFixed(1)} KB`;
+
+    return `
+    <article class="queue-item file-item" data-file-index="${i}" style="padding:8px 12px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+          <iconify-icon icon="${isPdf ? 'lucide:file-text' : 'lucide:file'}" style="color:${isPdf ? '#ef5350' : '#81c784'};flex-shrink:0;"></iconify-icon>
+          <span class="queue-name" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.name)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">✅ 已识别</span>' : ''}
+          ${isPdf ? `<button class="btn btn--xs" onclick="openOcrPanel(${i}, this)" title="OCR 识别"
+            style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#1e88e5,#1565c0);color:#fff;border:none;cursor:pointer;">
+            <iconify-icon icon="lucide:scan" style="font-size:12px;vertical-align:middle;"></iconify-icon> OCR
+          </button>` : ''}
+          <span class="muted" style="font-size:11px;">${sizeStr}</span>
+        </div>
       </div>
-    </article>
-  `).join("");
+      <div class="ocr-panel" id="ocrPanel_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
+          <select id="ocrEngine_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+            <option value="local">🖥️ RapidOCR (本地高精度, 12x并发)</option>
+            <option value="paddle">🌐 PaddleOCR.js (浏览器端)</option>
+            <option value="tesseract">📝 Tesseract.js (浏览器端后备)</option>
+          </select>
+          <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
+          <input type="number" id="ocrConc_${i}" value="12" min="1" max="24" style="width:50px;font-size:11px;padding:2px 4px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+          <button class="btn btn--xs" onclick="startFileOcr(${i})"
+            style="font-size:11px;padding:3px 12px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
+            ▶ 开始 OCR
+          </button>
+        </div>
+        <div id="ocrProgress_${i}" style="display:none;margin-top:6px;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;">
+            <div style="flex:1;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;">
+              <div id="ocrBar_${i}" style="height:100%;width:0%;background:linear-gradient(90deg,#42a5f5,#1e88e5);transition:width 0.3s;border-radius:3px;"></div>
+            </div>
+            <span id="ocrPct_${i}" style="color:var(--ink-soft);">0%</span>
+          </div>
+          <div id="ocrStatus_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+// ── OCR panel toggle ──
+function openOcrPanel(fileIndex, btn) {
+  const panel = document.getElementById(`ocrPanel_${fileIndex}`);
+  if (!panel) return;
+  const isVisible = panel.style.display !== 'none';
+  // Close all other panels
+  document.querySelectorAll('.ocr-panel').forEach(p => p.style.display = 'none');
+  panel.style.display = isVisible ? 'none' : 'block';
+}
+
+// ── Start OCR for a specific file ──
+async function startFileOcr(fileIndex) {
+  // Find the file from all pending lists
+  const allFiles = [..._pendingJsonFiles.kgCorpus, ..._pendingJsonFiles.standard];
+  const file = allFiles[fileIndex] || _pendingJsonFiles.kgCorpus[fileIndex];
+  if (!file) { showToast("文件未找到", "warning"); return; }
+
+  const engine = document.getElementById(`ocrEngine_${fileIndex}`)?.value || "local";
+  const conc = parseInt(document.getElementById(`ocrConc_${fileIndex}`)?.value || "12");
+  const progressDiv = document.getElementById(`ocrProgress_${fileIndex}`);
+  const barEl = document.getElementById(`ocrBar_${fileIndex}`);
+  const pctEl = document.getElementById(`ocrPct_${fileIndex}`);
+  const statusEl = document.getElementById(`ocrStatus_${fileIndex}`);
+
+  if (progressDiv) progressDiv.style.display = 'block';
+
+  function updateProgress(done, total, text) {
+    const pct = total ? Math.round(done / total * 100) : 0;
+    if (barEl) barEl.style.width = `${pct}%`;
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (statusEl) statusEl.textContent = text || `${done}/${total} 页`;
+  }
+
+  try {
+    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'paddle' ? 'PaddleOCR.js' : 'Tesseract.js'})...`);
+
+    if (engine === "local") {
+      // RapidOCR via local server
+      const available = await _checkLocalOcr();
+      if (!available) {
+        showToast("本地 OCR 服务器未启动！请先运行 start.bat 或 python ocr_server.py", "danger");
+        updateProgress(0, 0, "❌ 本地 OCR 服务器不可用");
+        return;
+      }
+
+      const result = await _ocrPdfViaServer(file, (prog) => {
+        updateProgress(prog.done || 0, prog.total || 0,
+          prog.complete ? `✅ 完成! ${prog.elapsed_s}s, 置信度 ${Math.round((prog.avg_confidence||0)*100)}%`
+          : `${prog.done || 0}/${prog.total || 0} 页 (${prog.concurrency || conc}x 并发)`);
+      });
+
+      // Cache the result as parsed records
+      const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+      const records = [];
+      const fullText = result.full_text || "";
+      if (fullText.length > 10) {
+        records.push({
+          record_id: `${file.name}::ocr-full`,
+          filename: file.name, source_file: file.name,
+          source_kind: "PDF-OCR", page_num: 0,
+          ocr_confidence: Math.round((result.avg_confidence || 0) * 100),
+          ocr_engine: "RapidOCR", text: fullText
+        });
+      }
+      _pdfParseCache.set(cacheKey, records);
+      updateProgress(result.total || 1, result.total || 1,
+        `✅ 完成! ${(result.full_text||'').length.toLocaleString()} 字符, ${result.elapsed_s || 0}s`);
+      showToast(`OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`, "success");
+
+    } else if (engine === "paddle" || engine === "tesseract") {
+      // Browser-side OCR (PaddleOCR.js or Tesseract.js)
+      if (!globalThis.pdfjsLib) { showToast("PDF.js 未加载", "danger"); return; }
+      const data = await file.arrayBuffer();
+      const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
+      const total = pdf.numPages;
+      const allTexts = [];
+      let totalConf = 0;
+
+      for (let p = 1; p <= total; p++) {
+        updateProgress(p - 1, total, `${p}/${total} 页 (${engine === 'paddle' ? 'PaddleOCR.js' : 'Tesseract.js'})`);
+        const page = await pdf.getPage(p);
+        const canvas = await _renderPdfPageToCanvas(page, 2.0);
+        try {
+          let ocr;
+          if (engine === "paddle") {
+            ocr = await _ocrViaPaddleJs(canvas);
+          } else {
+            if (typeof Tesseract === "undefined") {
+              await new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+                s.onload = resolve; s.onerror = () => reject(new Error("fail"));
+                document.head.appendChild(s);
+              });
+            }
+            ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
+          }
+          if (ocr?.text) allTexts.push(ocr.text);
+          totalConf += (ocr?.confidence || 0);
+        } catch (e) {
+          console.warn(`Page ${p} OCR failed:`, e);
+        }
+      }
+
+      const fullText = allTexts.join("\n\n");
+      const avgConf = total ? Math.round(totalConf / total) : 0;
+      const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
+      const records = [];
+      if (fullText.length > 10) {
+        records.push({
+          record_id: `${file.name}::ocr-full`,
+          filename: file.name, source_file: file.name,
+          source_kind: "PDF-OCR", page_num: 0,
+          ocr_confidence: avgConf,
+          ocr_engine: engine === "paddle" ? "PaddleOCR.js" : "Tesseract.js",
+          text: fullText
+        });
+      }
+      _pdfParseCache.set(cacheKey, records);
+      updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
+      showToast(`OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`, "success");
+    }
+
+    // Re-render file list to show cached status
+    const kgFileList = $("kgFileList");
+    if (kgFileList) renderPendingFileList(_pendingJsonFiles.kgCorpus, kgFileList);
+
+  } catch (err) {
+    updateProgress(0, 0, `❌ 失败: ${err.message}`);
+    showToast(`OCR 失败: ${err.message}`, "danger");
+  }
 }
 
 function collectJsonFiles(fileList) {
