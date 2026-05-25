@@ -1958,6 +1958,27 @@ svg { width: 100%; height: auto; display: block; }
       + '"><\/script>');
   });
   </script>
+  <!-- ── PaddleOCR.js: pre-load as ES module (PP-OCRv5, 94%+ Chinese accuracy) ── -->
+  <script type="module">
+  try {
+    const t0 = performance.now();
+    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
+    console.log(`[OCR] PaddleOCR module loaded in ${((performance.now()-t0)/1000).toFixed(1)}s`);
+    const instance = await PaddleOCR.create({
+      lang: "ch",
+      ocrVersion: "PP-OCRv5",
+      ortOptions: {
+        backend: "wasm",
+        wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
+      }
+    });
+    window._paddleOcrReady = instance;
+    console.log(`[OCR] ✅ PaddleOCR.js ready (PP-OCRv5) in ${((performance.now()-t0)/1000).toFixed(1)}s`);
+  } catch (e) {
+    console.warn("[OCR] PaddleOCR.js module pre-load failed:", e.message);
+    window._paddleOcrFailed = e.message;
+  }
+  </script>
   <script>
 // Configure pdf.js worker — prefer local, fallback to CDN
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
@@ -2828,97 +2849,33 @@ async function _ocrViaLocalServer(pdfArrayBuffer, pageNum) {
 }
 
 // ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
-let _paddleOcrInstance = null;
-let _paddleOcrLoading = null; // Promise when loading
-let _paddleOcrError = null;
-
-// CDN sources to try (in order)
-const _PADDLE_CDN_URLS = [
-  "https://esm.sh/@paddleocr/paddleocr-js@0.3.2",
-  "https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js@0.3.2/+esm"
-];
+// The <script type="module"> tag above pre-loads PaddleOCR and sets window._paddleOcrReady
 
 async function _loadPaddleOcr() {
-  // Already loaded
-  if (_paddleOcrInstance) return _paddleOcrInstance;
-  // Already failed permanently
-  if (_paddleOcrError) throw _paddleOcrError;
-  // Already loading — wait for it
-  if (_paddleOcrLoading) return _paddleOcrLoading;
-
-  _paddleOcrLoading = (async () => {
-    console.log("[OCR] 正在加载 PaddleOCR.js (PP-OCRv5) 浏览器引擎...");
-    showToast("⏳ 首次加载 PaddleOCR 浏览器引擎（约 20-60 秒，需下载模型文件）...", "success");
-
-    let PaddleOCR = null;
-    let loadError = null;
-
-    // Try each CDN
-    for (const cdnUrl of _PADDLE_CDN_URLS) {
-      try {
-        console.log(`[OCR] 尝试从 ${cdnUrl} 加载...`);
-        const mod = await import(/* webpackIgnore: true */ cdnUrl);
-        PaddleOCR = mod.PaddleOCR || mod.default?.PaddleOCR;
-        if (PaddleOCR) {
-          console.log(`[OCR] ✅ 模块从 ${cdnUrl} 加载成功`);
-          break;
-        }
-      } catch (e) {
-        console.warn(`[OCR] CDN ${cdnUrl} 失败:`, e.message);
-        loadError = e;
-      }
+  // Already ready from module pre-load
+  if (window._paddleOcrReady) return window._paddleOcrReady;
+  // Pre-load failed
+  if (window._paddleOcrFailed) throw new Error(`PaddleOCR.js: ${window._paddleOcrFailed}`);
+  // Still loading — wait up to 90 seconds
+  showToast("⏳ PaddleOCR 浏览器引擎加载中（首次约 30-60 秒）...", "success");
+  const deadline = Date.now() + 90000;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 500));
+    if (window._paddleOcrReady) {
+      showToast("✅ PaddleOCR 浏览器引擎就绪", "success");
+      return window._paddleOcrReady;
     }
-
-    if (!PaddleOCR) {
-      const err = new Error(`PaddleOCR.js 模块加载失败: ${loadError?.message || "unknown"}`);
-      _paddleOcrError = err;
-      _paddleOcrLoading = null;
-      throw err;
-    }
-
-    // Create OCR instance with explicit WASM paths
-    try {
-      console.log("[OCR] 正在初始化 PaddleOCR 引擎（下载 ONNX 模型中）...");
-      showToast("⏳ 正在下载 OCR 模型文件（约 15MB）...", "success");
-      _paddleOcrInstance = await PaddleOCR.create({
-        lang: "ch",
-        ocrVersion: "PP-OCRv5",
-        ortOptions: {
-          backend: "wasm",
-          wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
-        }
-      });
-      console.log("[OCR] ✅ PaddleOCR.js 初始化成功 (PP-OCRv5, WASM backend)");
-      showToast("✅ PaddleOCR 浏览器引擎就绪，中文识别精度 94%+", "success");
-      _paddleOcrLoading = null;
-      return _paddleOcrInstance;
-    } catch (initErr) {
-      console.error("[OCR] PaddleOCR 引擎初始化失败:", initErr);
-      const err = new Error(`PaddleOCR 初始化失败: ${initErr.message}`);
-      _paddleOcrError = err;
-      _paddleOcrInstance = null;
-      _paddleOcrLoading = null;
-      throw err;
-    }
-  })();
-
-  return _paddleOcrLoading;
+    if (window._paddleOcrFailed) throw new Error(`PaddleOCR.js: ${window._paddleOcrFailed}`);
+  }
+  throw new Error("PaddleOCR.js 加载超时（90秒）");
 }
 
-// Pre-load PaddleOCR in background (non-blocking)
-function _preloadPaddleOcr() {
-  if (_paddleOcrInstance || _paddleOcrError || _paddleOcrLoading) return;
-  _loadPaddleOcr().catch(e => {
-    console.warn("[OCR] PaddleOCR 预加载失败（将在需要时重试）:", e.message);
-    // Reset error so it can retry when actually needed
-    _paddleOcrError = null;
-  });
-}
+// Pre-load stub (now handled by module script tag)
+function _preloadPaddleOcr() { /* handled by <script type="module"> */ }
 
 // ── OCR a single canvas/blob via PaddleOCR.js browser engine ──
 async function _ocrViaPaddleJs(canvas) {
   const ocr = await _loadPaddleOcr();
-  // Convert canvas to Blob
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
   const [result] = await ocr.predict(blob);
   const items = result?.items || [];
@@ -2927,7 +2884,7 @@ async function _ocrViaPaddleJs(canvas) {
   const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
   return {
     text: texts.join("\n"),
-    confidence: Math.round(avgConf * 100),  // 0-100
+    confidence: Math.round(avgConf * 100),
     lines: texts.length,
     engine: "PaddleOCR.js (PP-OCRv5)"
   };
@@ -3005,40 +2962,94 @@ async function parsePdfFile(file) {
       engineName = "RapidOCR (本地高精度)";
       engineMode = "local";
     } else {
-      // Always try PaddleOCR.js first (dynamically loaded), Tesseract.js as last resort
       engineName = "PaddleOCR.js (PP-OCRv5 浏览器端)";
       engineMode = "paddle";
     }
-    
-    // Show OCR start notification
-    showToast(
-      `🔍 开始 OCR: ${relativePathOf(file)} — ${ocrPages.length} 页扫描件\n` +
-      `引擎: ${engineName}`,
-      "success"
-    );
+
+    // ── Create persistent OCR progress bar ──
+    let ocrProgressEl = document.getElementById("ocr-progress-overlay");
+    if (!ocrProgressEl) {
+      ocrProgressEl = document.createElement("div");
+      ocrProgressEl.id = "ocr-progress-overlay";
+      ocrProgressEl.innerHTML = `
+        <style>
+          #ocr-progress-overlay {
+            position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(100,200,255,0.3);
+            border-radius: 16px; padding: 18px 24px; min-width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: system-ui, sans-serif;
+            color: #e0e0e0; backdrop-filter: blur(12px);
+          }
+          #ocr-progress-overlay .ocr-title {
+            font-size: 14px; font-weight: 700; margin-bottom: 6px;
+            display: flex; align-items: center; gap: 8px;
+          }
+          #ocr-progress-overlay .ocr-engine {
+            font-size: 12px; color: #64b5f6; margin-bottom: 10px;
+          }
+          #ocr-progress-overlay .ocr-bar-bg {
+            background: rgba(255,255,255,0.1); border-radius: 8px;
+            height: 10px; overflow: hidden; margin-bottom: 8px;
+          }
+          #ocr-progress-overlay .ocr-bar-fill {
+            height: 100%; border-radius: 8px; transition: width 0.3s ease;
+            background: linear-gradient(90deg, #4fc3f7, #0288d1);
+          }
+          #ocr-progress-overlay .ocr-stats {
+            display: flex; justify-content: space-between; font-size: 12px; color: #90a4ae;
+          }
+          #ocr-progress-overlay .ocr-stats .conf { color: #81c784; font-weight: 600; }
+          #ocr-progress-overlay .ocr-spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(100,200,255,0.3); border-top-color: #4fc3f7;
+            border-radius: 50%; animation: ocr-spin 0.8s linear infinite;
+          }
+          @keyframes ocr-spin { to { transform: rotate(360deg); } }
+        </style>
+        <div class="ocr-title"><span class="ocr-spinner"></span><span id="ocr-p-title">OCR 处理中...</span></div>
+        <div class="ocr-engine" id="ocr-p-engine"></div>
+        <div class="ocr-bar-bg"><div class="ocr-bar-fill" id="ocr-p-bar" style="width:0%"></div></div>
+        <div class="ocr-stats">
+          <span id="ocr-p-pages">0/0 页</span>
+          <span id="ocr-p-chars">0 字符</span>
+          <span>置信度: <span class="conf" id="ocr-p-conf">-</span></span>
+        </div>
+      `;
+      document.body.appendChild(ocrProgressEl);
+    }
+    const pTitle = document.getElementById("ocr-p-title");
+    const pEngine = document.getElementById("ocr-p-engine");
+    const pBar = document.getElementById("ocr-p-bar");
+    const pPages = document.getElementById("ocr-p-pages");
+    const pChars = document.getElementById("ocr-p-chars");
+    const pConf = document.getElementById("ocr-p-conf");
+
+    pTitle.textContent = `🔍 OCR: ${relativePathOf(file)}`;
+    pEngine.textContent = `引擎: ${engineName}`;
+    pPages.textContent = `0/${ocrPages.length} 页`;
 
     // For local OCR, read the file once and reuse
     const pdfArrayBuffer = useLocalOcr ? await file.arrayBuffer() : null;
 
-    const ocrReport = [];  // { page, confidence, chars }
+    const ocrReport = [];
+    let runningChars = 0;
+    let runningConfSum = 0;
 
     for (let i = 0; i < ocrPages.length; i++) {
       const { pageIndex, page } = ocrPages[i];
       try {
         let ocr;
         if (engineMode === "local") {
-          // High-accuracy local OCR via RapidOCR server
           ocr = await _ocrViaLocalServer(pdfArrayBuffer, pageIndex);
         } else {
-          // Browser-side OCR: try PaddleOCR.js first, fallback to Tesseract.js
           const canvas = await _renderPdfPageToCanvas(page, 2.0);
           try {
             ocr = await _ocrViaPaddleJs(canvas);
           } catch (paddleErr) {
             console.warn("[OCR] PaddleOCR.js failed:", paddleErr.message);
-            // Dynamically load Tesseract.js as last resort
             if (typeof Tesseract === "undefined" && i === 0) {
-              showToast("⚠️ PaddleOCR.js 不可用，正在加载 Tesseract.js 后备引擎...", "warning");
+              pEngine.textContent = "⚠️ PaddleOCR.js 不可用，加载 Tesseract.js...";
               try {
                 await new Promise((resolve, reject) => {
                   const s = document.createElement("script");
@@ -3047,16 +3058,14 @@ async function parsePdfFile(file) {
                   s.onerror = () => reject(new Error("Tesseract.js CDN 加载失败"));
                   document.head.appendChild(s);
                 });
-                console.log("[OCR] Tesseract.js 动态加载成功");
-              } catch (tessLoadErr) {
-                console.error("[OCR] Tesseract.js 加载也失败:", tessLoadErr.message);
-              }
+              } catch (e) { /* ignore */ }
             }
             if (typeof Tesseract !== "undefined") {
               ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
               if (i === 0) {
                 engineName = "Tesseract.js (浏览器端后备)";
-                showToast("⚠️ 已回退到 Tesseract.js（中文精度约 60%）", "warning");
+                pEngine.textContent = `⚠️ 引擎: ${engineName}（精度较低）`;
+                pEngine.style.color = "#ffb74d";
               }
             } else {
               throw new Error("PaddleOCR.js 和 Tesseract.js 均不可用");
@@ -3064,6 +3073,8 @@ async function parsePdfFile(file) {
           }
         }
         const ocrText = normalizeText(ocr.text);
+        runningChars += ocrText.length;
+        runningConfSum += ocr.confidence;
 
         ocrReport.push({
           page: pageIndex,
@@ -3087,12 +3098,21 @@ async function parsePdfFile(file) {
           });
         }
 
-        // Progress toast every 5 pages
-        if ((i + 1) % 5 === 0 || i === ocrPages.length - 1) {
-          showToast(`OCR 进度: ${i + 1}/${ocrPages.length} 页 [${engineName}]`, "success");
-        }
+        // ── Update progress bar on EVERY page ──
+        const pct = Math.round(((i + 1) / ocrPages.length) * 100);
+        const avgC = Math.round(runningConfSum / (i + 1));
+        pBar.style.width = `${pct}%`;
+        pPages.textContent = `${i + 1}/${ocrPages.length} 页 (${pct}%)`;
+        pChars.textContent = `${runningChars.toLocaleString()} 字符`;
+        pConf.textContent = `${avgC}%`;
+        pConf.style.color = avgC >= 80 ? "#81c784" : avgC >= 60 ? "#ffb74d" : "#ef5350";
+
       } catch (ocrErr) {
         ocrReport.push({ page: pageIndex, confidence: 0, chars: 0, error: ocrErr.message });
+        // Still update progress
+        const pct = Math.round(((i + 1) / ocrPages.length) * 100);
+        pBar.style.width = `${pct}%`;
+        pPages.textContent = `${i + 1}/${ocrPages.length} 页 (${pct}%)`;
       }
     }
 
@@ -3109,6 +3129,16 @@ async function parsePdfFile(file) {
     else if (avgConf >= 40) { qualityLevel = "一般"; qualityEmoji = "🟠"; }
     else { qualityLevel = "较差"; qualityEmoji = "🔴"; }
 
+    // Update progress bar to show completion
+    pTitle.innerHTML = `${qualityEmoji} OCR 完成`;
+    pBar.style.width = "100%";
+    pBar.style.background = avgConf >= 80 ? "linear-gradient(90deg, #66bb6a, #43a047)" : 
+                             avgConf >= 60 ? "linear-gradient(90deg, #ffa726, #ef6c00)" : 
+                             "linear-gradient(90deg, #ef5350, #c62828)";
+    pEngine.textContent = `引擎: ${engineName}`;
+    pEngine.style.color = avgConf >= 80 ? "#81c784" : "#ffb74d";
+    pConf.textContent = `${avgConf}% (${qualityLevel})`;
+
     const reportMsg = [
       `${qualityEmoji} OCR 完成: ${relativePathOf(file)}`,
       `  引擎: ${engineName}`,
@@ -3121,6 +3151,15 @@ async function parsePdfFile(file) {
     console.log("[OCR Report]", reportMsg);
     console.table(ocrReport);
     showToast(reportMsg, avgConf >= 60 ? "success" : "warning");
+
+    // Auto-hide progress bar after 8 seconds
+    setTimeout(() => {
+      if (ocrProgressEl && ocrProgressEl.parentNode) {
+        ocrProgressEl.style.transition = "opacity 0.5s";
+        ocrProgressEl.style.opacity = "0";
+        setTimeout(() => ocrProgressEl.remove(), 500);
+      }
+    }, 8000);
 
     // Store report for UI display
     if (!window._ocrReports) window._ocrReports = [];
