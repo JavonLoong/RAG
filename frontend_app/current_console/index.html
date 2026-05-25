@@ -3258,12 +3258,10 @@ async function parsePdfFile(file) {
   _pdfParseCache.set(cacheKey, records);
   console.log(`[PDF] 缓存已保存: ${file.name} → ${records.length} records`);
 
-  // Auto-download OCR result as .txt if OCR was performed
-  if (ocrPages.length > 0) {
-    const ocrFullText = records.filter(r => r.source_kind === 'PDF-OCR').map(r => r.text || '').join('\n\n').trim();
-    if (typeof _autoDownloadOcrText === 'function') {
-      _autoDownloadOcrText(ocrFullText, file.name);
-    }
+  // Auto-download extracted text as .txt (whether from native text or OCR)
+  const allExtractedText = records.map(r => r.text || '').join('\n\n').trim();
+  if (allExtractedText.length > 10 && typeof _autoDownloadOcrText === 'function') {
+    _autoDownloadOcrText(allExtractedText, file.name);
   }
 
   return records;
@@ -5982,6 +5980,15 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
         allChunks.push(...chunks);
         succeeded++;
         fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "ok", records_extracted: records.length });
+
+        // Auto-download extracted text for PDF files
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (ext === 'pdf' && records.length > 0 && typeof _autoDownloadOcrText === 'function') {
+          const fullText = records.map(r => r.text || '').join('\n\n').trim();
+          if (fullText.length > 10) {
+            _autoDownloadOcrText(fullText, file.name);
+          }
+        }
       } catch (err) {
         failed++;
         fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "error", records_extracted: 0, error: err.message || String(err) });
