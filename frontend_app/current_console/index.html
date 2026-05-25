@@ -1948,7 +1948,8 @@ svg { width: 100%; height: auto; display: block; }
     { local: "libs/d3.min.js",                cdn: "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" },
     { local: "libs/jszip.min.js",             cdn: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" },
     { local: "libs/sql-wasm.js",              cdn: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js" },
-    { local: "libs/tesseract.min.js",          cdn: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" },
+    // Tesseract.js removed — PaddleOCR.js is now the primary browser OCR engine
+    // Tesseract.js is only loaded as last-resort fallback if PaddleOCR fails
   ];
   // Synchronously write script tags — local first, onerror falls back to CDN
   _LIBS.forEach(function(lib) {
@@ -1973,6 +1974,20 @@ const DEFAULT_PUBLIC_DEMO = window.location.protocol === "file:" || /\.github\.i
 const API_BASE = "";
 const LOCAL_COLLECTION_NAME = "browser_local_index";
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
+
+// Pre-load PaddleOCR.js in background so it's ready when user drops a PDF
+// Skips if local RapidOCR server is detected (faster + no download needed)
+setTimeout(async () => {
+  if (typeof _checkLocalOcr === "function" && typeof _preloadPaddleOcr === "function") {
+    const hasLocal = await _checkLocalOcr();
+    if (!hasLocal) {
+      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 PaddleOCR.js 浏览器引擎...");
+      _preloadPaddleOcr();
+    } else {
+      console.log("[OCR] 本地 RapidOCR 服务器可用，跳过 PaddleOCR.js 预加载");
+    }
+  }
+}, 3000);
 
 const SOURCE_LABELS = {
   PDF: "PDF",
@@ -2814,35 +2829,90 @@ async function _ocrViaLocalServer(pdfArrayBuffer, pageNum) {
 
 // ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
 let _paddleOcrInstance = null;
-let _paddleOcrLoading = false;
+let _paddleOcrLoading = null; // Promise when loading
+let _paddleOcrError = null;
+
+// CDN sources to try (in order)
+const _PADDLE_CDN_URLS = [
+  "https://esm.sh/@paddleocr/paddleocr-js@0.3.2",
+  "https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js@0.3.2/+esm"
+];
 
 async function _loadPaddleOcr() {
+  // Already loaded
   if (_paddleOcrInstance) return _paddleOcrInstance;
-  if (_paddleOcrLoading) {
-    // Wait for existing load to finish
-    while (_paddleOcrLoading) await new Promise(r => setTimeout(r, 200));
-    return _paddleOcrInstance;
-  }
-  _paddleOcrLoading = true;
-  try {
+  // Already failed permanently
+  if (_paddleOcrError) throw _paddleOcrError;
+  // Already loading — wait for it
+  if (_paddleOcrLoading) return _paddleOcrLoading;
+
+  _paddleOcrLoading = (async () => {
     console.log("[OCR] 正在加载 PaddleOCR.js (PP-OCRv5) 浏览器引擎...");
-    showToast("⏳ 首次加载 PaddleOCR 浏览器引擎，请稍候（约10-30秒）...", "success");
-    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
-    _paddleOcrInstance = await PaddleOCR.create({
-      lang: "ch",
-      ocrVersion: "PP-OCRv5",
-      ortOptions: { backend: "wasm" }
-    });
-    console.log("[OCR] ✅ PaddleOCR.js 加载成功 (PP-OCRv5, WASM backend)");
-    showToast("✅ PaddleOCR 浏览器引擎加载完成，精度 94%+", "success");
-    return _paddleOcrInstance;
-  } catch (err) {
-    console.error("[OCR] PaddleOCR.js 加载失败:", err);
-    _paddleOcrInstance = null;
-    throw err;
-  } finally {
-    _paddleOcrLoading = false;
-  }
+    showToast("⏳ 首次加载 PaddleOCR 浏览器引擎（约 20-60 秒，需下载模型文件）...", "success");
+
+    let PaddleOCR = null;
+    let loadError = null;
+
+    // Try each CDN
+    for (const cdnUrl of _PADDLE_CDN_URLS) {
+      try {
+        console.log(`[OCR] 尝试从 ${cdnUrl} 加载...`);
+        const mod = await import(/* webpackIgnore: true */ cdnUrl);
+        PaddleOCR = mod.PaddleOCR || mod.default?.PaddleOCR;
+        if (PaddleOCR) {
+          console.log(`[OCR] ✅ 模块从 ${cdnUrl} 加载成功`);
+          break;
+        }
+      } catch (e) {
+        console.warn(`[OCR] CDN ${cdnUrl} 失败:`, e.message);
+        loadError = e;
+      }
+    }
+
+    if (!PaddleOCR) {
+      const err = new Error(`PaddleOCR.js 模块加载失败: ${loadError?.message || "unknown"}`);
+      _paddleOcrError = err;
+      _paddleOcrLoading = null;
+      throw err;
+    }
+
+    // Create OCR instance with explicit WASM paths
+    try {
+      console.log("[OCR] 正在初始化 PaddleOCR 引擎（下载 ONNX 模型中）...");
+      showToast("⏳ 正在下载 OCR 模型文件（约 15MB）...", "success");
+      _paddleOcrInstance = await PaddleOCR.create({
+        lang: "ch",
+        ocrVersion: "PP-OCRv5",
+        ortOptions: {
+          backend: "wasm",
+          wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
+        }
+      });
+      console.log("[OCR] ✅ PaddleOCR.js 初始化成功 (PP-OCRv5, WASM backend)");
+      showToast("✅ PaddleOCR 浏览器引擎就绪，中文识别精度 94%+", "success");
+      _paddleOcrLoading = null;
+      return _paddleOcrInstance;
+    } catch (initErr) {
+      console.error("[OCR] PaddleOCR 引擎初始化失败:", initErr);
+      const err = new Error(`PaddleOCR 初始化失败: ${initErr.message}`);
+      _paddleOcrError = err;
+      _paddleOcrInstance = null;
+      _paddleOcrLoading = null;
+      throw err;
+    }
+  })();
+
+  return _paddleOcrLoading;
+}
+
+// Pre-load PaddleOCR in background (non-blocking)
+function _preloadPaddleOcr() {
+  if (_paddleOcrInstance || _paddleOcrError || _paddleOcrLoading) return;
+  _loadPaddleOcr().catch(e => {
+    console.warn("[OCR] PaddleOCR 预加载失败（将在需要时重试）:", e.message);
+    // Reset error so it can retry when actually needed
+    _paddleOcrError = null;
+  });
 }
 
 // ── OCR a single canvas/blob via PaddleOCR.js browser engine ──
@@ -2965,13 +3035,31 @@ async function parsePdfFile(file) {
           try {
             ocr = await _ocrViaPaddleJs(canvas);
           } catch (paddleErr) {
-            console.warn("[OCR] PaddleOCR.js failed, trying Tesseract.js:", paddleErr.message);
-            if (i === 0) showToast("⚠️ PaddleOCR.js 不可用，回退到 Tesseract.js", "warning");
+            console.warn("[OCR] PaddleOCR.js failed:", paddleErr.message);
+            // Dynamically load Tesseract.js as last resort
+            if (typeof Tesseract === "undefined" && i === 0) {
+              showToast("⚠️ PaddleOCR.js 不可用，正在加载 Tesseract.js 后备引擎...", "warning");
+              try {
+                await new Promise((resolve, reject) => {
+                  const s = document.createElement("script");
+                  s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+                  s.onload = resolve;
+                  s.onerror = () => reject(new Error("Tesseract.js CDN 加载失败"));
+                  document.head.appendChild(s);
+                });
+                console.log("[OCR] Tesseract.js 动态加载成功");
+              } catch (tessLoadErr) {
+                console.error("[OCR] Tesseract.js 加载也失败:", tessLoadErr.message);
+              }
+            }
             if (typeof Tesseract !== "undefined") {
               ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
-              if (i === 0) engineName = "Tesseract.js (浏览器端后备)";
+              if (i === 0) {
+                engineName = "Tesseract.js (浏览器端后备)";
+                showToast("⚠️ 已回退到 Tesseract.js（中文精度约 60%）", "warning");
+              }
             } else {
-              throw new Error("无可用 OCR 引擎");
+              throw new Error("PaddleOCR.js 和 Tesseract.js 均不可用");
             }
           }
         }
