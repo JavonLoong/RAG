@@ -3257,6 +3257,15 @@ async function parsePdfFile(file) {
   // Cache the results so subsequent calls (e.g. KG build) don't re-OCR
   _pdfParseCache.set(cacheKey, records);
   console.log(`[PDF] 缓存已保存: ${file.name} → ${records.length} records`);
+
+  // Auto-download OCR result as .txt if OCR was performed
+  if (ocrPages.length > 0) {
+    const ocrFullText = records.filter(r => r.source_kind === 'PDF-OCR').map(r => r.text || '').join('\n\n').trim();
+    if (typeof _autoDownloadOcrText === 'function') {
+      _autoDownloadOcrText(ocrFullText, file.name);
+    }
+  }
+
   return records;
 }
 
@@ -5736,6 +5745,21 @@ function downloadPendingFile(fileIndex, listKey) {
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
+// ── Auto-download OCR result as .txt file ──
+function _autoDownloadOcrText(fullText, sourceFileName) {
+  if (!fullText || fullText.length <= 10) return;
+  const txtName = sourceFileName.replace(/\.[^.]+$/, '') + '_OCR结果.txt';
+  const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = txtName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+  console.log(`[OCR] 自动下载: ${txtName} (${fullText.length.toLocaleString()} 字符)`);
+}
+
 // ── OCR panel toggle ──
 function openOcrPanel(fileIndex, listKey) {
   const panel = document.getElementById(`ocrPanel_${listKey}_${fileIndex}`);
@@ -5834,6 +5858,8 @@ async function startFileOcr(fileIndex, listKey) {
 
       // Generate .txt file from OCR result and add to list
       addOcrResultAsTextFile(fullText, file.name);
+      // Auto-download the OCR result as .txt
+      _autoDownloadOcrText(fullText, file.name);
 
     } else if (engine === "paddle" || engine === "tesseract") {
       // Browser-side OCR (PaddleOCR.js or Tesseract.js)
@@ -5890,6 +5916,8 @@ async function startFileOcr(fileIndex, listKey) {
 
       // Generate .txt file from OCR result and add to list
       addOcrResultAsTextFile(fullText, file.name);
+      // Auto-download the OCR result as .txt
+      _autoDownloadOcrText(fullText, file.name);
     }
 
     // Re-render file list to show cached status and the new .txt file
