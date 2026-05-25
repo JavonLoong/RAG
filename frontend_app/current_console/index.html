@@ -1958,27 +1958,8 @@ svg { width: 100%; height: auto; display: block; }
       + '"><\/script>');
   });
   </script>
-  <!-- ── PaddleOCR.js: pre-load as ES module (PP-OCRv5, 94%+ Chinese accuracy) ── -->
-  <script type="module">
-  try {
-    const t0 = performance.now();
-    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
-    console.log(`[OCR] PaddleOCR module loaded in ${((performance.now()-t0)/1000).toFixed(1)}s`);
-    const instance = await PaddleOCR.create({
-      lang: "ch",
-      ocrVersion: "PP-OCRv5",
-      ortOptions: {
-        backend: "wasm",
-        wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
-      }
-    });
-    window._paddleOcrReady = instance;
-    console.log(`[OCR] ✅ PaddleOCR.js ready (PP-OCRv5) in ${((performance.now()-t0)/1000).toFixed(1)}s`);
-  } catch (e) {
-    console.warn("[OCR] PaddleOCR.js module pre-load failed:", e.message);
-    window._paddleOcrFailed = e.message;
-  }
-  </script>
+  <!-- PaddleOCR.js is loaded via dynamic import() in the main script (setTimeout) -->
+  <!-- NOT as <script type="module"> because that breaks file:// protocol (CORS) -->
   <script>
 // Configure pdf.js worker — prefer local, fallback to CDN
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
@@ -2876,29 +2857,41 @@ async function _ocrBatchViaLocalServer(pdfArrayBuffer, pageNums) {
 }
 
 // ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
-// The <script type="module"> tag above pre-loads PaddleOCR and sets window._paddleOcrReady
+// Loaded via dynamic import() — works in both file:// and http://
+let _paddleOcrInstance = null;
+let _paddleOcrPromise = null;
 
 async function _loadPaddleOcr() {
-  // Already ready from module pre-load
-  if (window._paddleOcrReady) return window._paddleOcrReady;
-  // Pre-load failed
-  if (window._paddleOcrFailed) throw new Error(`PaddleOCR.js: ${window._paddleOcrFailed}`);
-  // Still loading — wait up to 90 seconds
-  showToast("⏳ PaddleOCR 浏览器引擎加载中（首次约 30-60 秒）...", "success");
-  const deadline = Date.now() + 90000;
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, 500));
-    if (window._paddleOcrReady) {
-      showToast("✅ PaddleOCR 浏览器引擎就绪", "success");
-      return window._paddleOcrReady;
-    }
-    if (window._paddleOcrFailed) throw new Error(`PaddleOCR.js: ${window._paddleOcrFailed}`);
-  }
-  throw new Error("PaddleOCR.js 加载超时（90秒）");
+  if (_paddleOcrInstance) return _paddleOcrInstance;
+  if (_paddleOcrPromise) return _paddleOcrPromise;
+  
+  _paddleOcrPromise = (async () => {
+    console.log("[OCR] 正在加载 PaddleOCR.js (PP-OCRv5)...");
+    showToast("⏳ 加载 PaddleOCR 浏览器引擎（首次约 30-60 秒）...", "success");
+    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
+    console.log("[OCR] PaddleOCR 模块已下载，正在初始化...");
+    _paddleOcrInstance = await PaddleOCR.create({
+      lang: "ch",
+      ocrVersion: "PP-OCRv5",
+      ortOptions: {
+        backend: "wasm",
+        wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
+      }
+    });
+    console.log("[OCR] ✅ PaddleOCR.js 就绪");
+    showToast("✅ PaddleOCR 浏览器引擎就绪", "success");
+    return _paddleOcrInstance;
+  })();
+  
+  return _paddleOcrPromise;
 }
 
-// Pre-load stub (now handled by module script tag)
-function _preloadPaddleOcr() { /* handled by <script type="module"> */ }
+function _preloadPaddleOcr() {
+  _loadPaddleOcr().catch(e => {
+    console.warn("[OCR] PaddleOCR.js 预加载失败:", e.message);
+    _paddleOcrPromise = null; // Allow retry
+  });
+}
 
 // ── OCR a single canvas/blob via PaddleOCR.js browser engine ──
 async function _ocrViaPaddleJs(canvas) {
