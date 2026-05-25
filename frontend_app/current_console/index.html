@@ -5730,60 +5730,57 @@ function _autoDownloadOcrText(fullText, sourceFileName) {
   console.log(`[OCR] 自动下载: ${txtName} (${fullText.length.toLocaleString()} 字符)`);
 }
 
-// ── Export all PDF text as .txt downloads (standalone global function) ──
+// ── Export OCR results as .txt downloads (from _pdfParseCache) ──
 async function exportKgPdfTexts() {
-  alert('导出PDF文本功能已触发！正在处理...');
   const files = _pendingJsonFiles.kgCorpus;
   if (!files || !files.length) {
-    showToast("请先拖入或选择 PDF 文件", "warning");
+    alert('请先拖入或选择文件');
     return;
   }
   const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
   if (!pdfFiles.length) {
-    showToast("文件列表中没有 PDF 文件", "warning");
-    return;
-  }
-  if (!globalThis.pdfjsLib) {
-    showToast("PDF.js 库未加载", "danger");
+    alert('文件列表中没有 PDF 文件');
     return;
   }
 
   let exported = 0;
+  let noCacheFiles = [];
+
   for (const pdfFile of pdfFiles) {
-    try {
-      const data = await pdfFile.arrayBuffer();
-      const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
-      const pageTexts = [];
-      for (let p = 1; p <= pdf.numPages; p++) {
-        const page = await pdf.getPage(p);
-        const tc = await page.getTextContent();
-        const text = tc.items.map(item => item.str).join(" ").trim();
-        if (text) pageTexts.push(text);
-      }
-      const fullText = pageTexts.join("\n\n");
-      if (fullText.length > 0) {
-        const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_文本提取.txt';
-        const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = txtName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        exported++;
-        showToast(`已下载: ${txtName} (${fullText.length.toLocaleString()} 字符)`, "success");
-      } else {
-        showToast(`${pdfFile.name}: 未提取到文字（可能是扫描件，需先 OCR）`, "warning");
-      }
-    } catch (err) {
-      showToast(`${pdfFile.name} 提取失败: ${err.message}`, "danger");
-      alert('提取失败: ' + err.message);
+    const cacheKey = `${pdfFile.name}|${pdfFile.size}|${pdfFile.lastModified}`;
+    const cached = _pdfParseCache.get(cacheKey);
+
+    if (!cached || !cached.length) {
+      noCacheFiles.push(pdfFile.name);
+      continue;
     }
+
+    // 从缓存的 records 中提取所有文本
+    const fullText = cached.map(r => r.text || '').join('\n\n').trim();
+    if (fullText.length <= 10) {
+      noCacheFiles.push(pdfFile.name);
+      continue;
+    }
+
+    // 触发浏览器下载
+    const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_OCR结果.txt';
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = txtName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    exported++;
   }
+
   if (exported > 0) {
-    alert(`成功导出 ${exported} 个 PDF 的文本！`);
+    alert(`成功导出 ${exported} 个文件的 OCR 结果！`);
+  }
+  if (noCacheFiles.length > 0) {
+    alert(`以下文件尚未进行 OCR 识别，请先点击"检测并入库"：\n${noCacheFiles.join('\n')}`);
   }
 }
 
@@ -9446,7 +9443,7 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="export-bar">
                     <button class="btn" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
-                    <button class="btn" id="btnKgExportPdfText" type="button" onclick="exportKgPdfTexts()" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="提取所有PDF文本并下载为.txt文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出PDF文本</span></button>
+                    <button class="btn" id="btnKgExportPdfText" type="button" onclick="exportKgPdfTexts()" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="导出OCR识别结果为.txt文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
                     <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 向量库/图谱</span></button>
                   </div>
                   <div class="queue-list" id="kgPublicBooksJsonSummary"></div>
