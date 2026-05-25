@@ -5637,7 +5637,7 @@ function renderPendingFileList(files, containerEl) {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">✅ 已识别</span>' : ''}
-          ${isPdf ? `<button class="btn btn--xs" onclick="openOcrPanel(${i}, this)" title="OCR 识别"
+          ${isPdf ? `<button class="btn btn--xs" onclick="openOcrPanel(${i}, '${listKey}')" title="OCR 识别"
             style="font-size:11px;padding:2px 8px;border-radius:4px;background:linear-gradient(135deg,#1e88e5,#1565c0);color:#fff;border:none;cursor:pointer;">
             <iconify-icon icon="lucide:scan" style="font-size:12px;vertical-align:middle;"></iconify-icon> OCR
           </button>` : ''}
@@ -5652,29 +5652,29 @@ function renderPendingFileList(files, containerEl) {
           <span class="muted" style="font-size:11px;">${sizeStr}</span>
         </div>
       </div>
-      ${isPdf ? `<div class="ocr-panel" id="ocrPanel_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
+      ${isPdf ? `<div class="ocr-panel" id="ocrPanel_${listKey}_${i}" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--line);">
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
-          <select id="ocrEngine_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+          <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
             <option value="local">🖥️ RapidOCR (本地高精度, 12x并发)</option>
             <option value="paddle">🌐 PaddleOCR.js (浏览器端)</option>
             <option value="tesseract">📝 Tesseract.js (浏览器端后备)</option>
           </select>
           <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
-          <input type="number" id="ocrConc_${i}" value="12" min="1" max="24" style="width:50px;font-size:11px;padding:2px 4px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
-          <button class="btn btn--xs" onclick="startFileOcr(${i})"
+          <input type="number" id="ocrConc_${listKey}_${i}" value="12" min="1" max="24" style="width:50px;font-size:11px;padding:2px 4px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
+          <button class="btn btn--xs" onclick="startFileOcr(${i}, '${listKey}')"
             style="font-size:11px;padding:3px 12px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
             ▶ 开始 OCR
           </button>
         </div>
-        <div id="ocrProgress_${i}" style="display:none;margin-top:6px;">
+        <div id="ocrProgress_${listKey}_${i}" style="display:none;margin-top:6px;">
           <div style="display:flex;align-items:center;gap:8px;font-size:11px;">
             <div style="flex:1;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;">
-              <div id="ocrBar_${i}" style="height:100%;width:0%;background:linear-gradient(90deg,#42a5f5,#1e88e5);transition:width 0.3s;border-radius:3px;"></div>
+              <div id="ocrBar_${listKey}_${i}" style="height:100%;width:0%;background:linear-gradient(90deg,#42a5f5,#1e88e5);transition:width 0.3s;border-radius:3px;"></div>
             </div>
-            <span id="ocrPct_${i}" style="color:var(--ink-soft);">0%</span>
+            <span id="ocrPct_${listKey}_${i}" style="color:var(--ink-soft);">0%</span>
           </div>
-          <div id="ocrStatus_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+          <div id="ocrStatus_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
         </div>
       </div>` : ''}
     </article>`;
@@ -5709,8 +5709,8 @@ function downloadPendingFile(fileIndex, listKey) {
 }
 
 // ── OCR panel toggle ──
-function openOcrPanel(fileIndex, btn) {
-  const panel = document.getElementById(`ocrPanel_${fileIndex}`);
+function openOcrPanel(fileIndex, listKey) {
+  const panel = document.getElementById(`ocrPanel_${listKey}_${fileIndex}`);
   if (!panel) return;
   const isVisible = panel.style.display !== 'none';
   // Close all other panels
@@ -5719,26 +5719,22 @@ function openOcrPanel(fileIndex, btn) {
 }
 
 // ── Start OCR for a specific file ──
-async function startFileOcr(fileIndex) {
-  // Find the file from all pending lists and determine which list it belongs to
-  let file = null;
-  let listKey = null;
-  if (fileIndex < _pendingJsonFiles.kgCorpus.length) {
-    file = _pendingJsonFiles.kgCorpus[fileIndex];
-    listKey = 'kgCorpus';
-  } else {
-    const adjustedIndex = fileIndex - _pendingJsonFiles.kgCorpus.length;
-    file = _pendingJsonFiles.standard[adjustedIndex];
-    listKey = 'standard';
+async function startFileOcr(fileIndex, listKey) {
+  // Look up the file from the specific pending list
+  const list = _pendingJsonFiles[listKey];
+  if (!list || fileIndex < 0 || fileIndex >= list.length) {
+    showToast("文件未找到", "warning");
+    return;
   }
-  if (!file) { showToast("文件未找到", "warning"); return; }
+  const file = list[fileIndex];
 
-  const engine = document.getElementById(`ocrEngine_${fileIndex}`)?.value || "local";
-  const conc = parseInt(document.getElementById(`ocrConc_${fileIndex}`)?.value || "12");
-  const progressDiv = document.getElementById(`ocrProgress_${fileIndex}`);
-  const barEl = document.getElementById(`ocrBar_${fileIndex}`);
-  const pctEl = document.getElementById(`ocrPct_${fileIndex}`);
-  const statusEl = document.getElementById(`ocrStatus_${fileIndex}`);
+  const idPrefix = `${listKey}_${fileIndex}`;
+  const engine = document.getElementById(`ocrEngine_${idPrefix}`)?.value || "local";
+  const conc = parseInt(document.getElementById(`ocrConc_${idPrefix}`)?.value || "12");
+  const progressDiv = document.getElementById(`ocrProgress_${idPrefix}`);
+  const barEl = document.getElementById(`ocrBar_${idPrefix}`);
+  const pctEl = document.getElementById(`ocrPct_${idPrefix}`);
+  const statusEl = document.getElementById(`ocrStatus_${idPrefix}`);
 
   if (progressDiv) progressDiv.style.display = 'block';
 
