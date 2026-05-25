@@ -1958,8 +1958,6 @@ svg { width: 100%; height: auto; display: block; }
       + '"><\/script>');
   });
   </script>
-  <!-- PaddleOCR.js is loaded via dynamic import() in the main script (setTimeout) -->
-  <!-- NOT as <script type="module"> because that breaks file:// protocol (CORS) -->
   <script>
 // Configure pdf.js worker — prefer local, fallback to CDN
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
@@ -2833,19 +2831,30 @@ async function _ocrViaLocalServer(pdfArrayBuffer, pageNum) {
   };
 }
 
-// ── OCR via local server — BATCH (multiple pages concurrently) ──
-async function _ocrBatchViaLocalServer(pdfArrayBuffer, pageNums) {
-  const pagesParam = pageNums.join(",");
-  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/batch?pages=${pagesParam}&dpi=200`, {
+// ── Upload PDF once, get session ID for batch OCR ──
+async function _uploadPdfForOcr(pdfArrayBuffer) {
+  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/upload`, {
     method: "POST",
     headers: { "Content-Type": "application/octet-stream" },
     body: pdfArrayBuffer
+  });
+  if (!resp.ok) throw new Error(`PDF upload error: ${resp.status}`);
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+  console.log(`[OCR] PDF 上传完成: session=${data.session_id}, ${data.total_pages} 页, ${data.size_mb}MB`);
+  return data.session_id;
+}
+
+// ── OCR via local server — BATCH (session-based, no re-upload) ──
+async function _ocrBatchViaLocalServer(sessionId, pageNums) {
+  const pagesParam = pageNums.join(",");
+  const resp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/batch?session=${sessionId}&pages=${pagesParam}&dpi=200`, {
+    method: "POST"
   });
   if (!resp.ok) throw new Error(`OCR batch error: ${resp.status}`);
   const data = await resp.json();
   if (data.error) throw new Error(data.error);
   
-  // Convert batch results to our format
   return (data.results || []).map(r => ({
     page: r.page,
     text: r.text || "",
@@ -3049,8 +3058,14 @@ async function parsePdfFile(file) {
     pEngine.textContent = `引擎: ${engineName}` + (engineMode === "local" ? ` (${_localOcrConcurrency}x 并发)` : "");
     pPages.textContent = `0/${ocrPages.length} 页`;
 
-    // For local OCR, read the file once and reuse
-    const pdfArrayBuffer = (engineMode === "local") ? await file.arrayBuffer() : null;
+    // For local OCR: upload PDF once to server, get session ID
+    let ocrSessionId = null;
+    if (engineMode === "local") {
+      pEngine.textContent += " — 上传 PDF...";
+      const pdfBuf = await file.arrayBuffer();
+      ocrSessionId = await _uploadPdfForOcr(pdfBuf);
+      pEngine.textContent = `引擎: ${engineName} (${_localOcrConcurrency}x 并发)`;
+    }
 
     const ocrReport = [];
     let runningChars = 0;
@@ -3100,17 +3115,16 @@ async function parsePdfFile(file) {
 
     if (engineMode === "local") {
       // ═══════════════════════════════════════════════════
-      // LOCAL MODE: Batch concurrent OCR via server
-      // Send pages in batches of _localOcrConcurrency
-      // Server processes them with ThreadPoolExecutor
+      // LOCAL MODE: Session-based batch OCR
+      // PDF uploaded once, batches use session ID (no re-upload!)
       // ═══════════════════════════════════════════════════
-      const BATCH_SIZE = _localOcrConcurrency;  // e.g., 12 on 24-core CPU
+      const BATCH_SIZE = _localOcrConcurrency;
       const allPageNums = ocrPages.map(p => p.pageIndex);
       
       for (let batchStart = 0; batchStart < allPageNums.length; batchStart += BATCH_SIZE) {
         const batchPages = allPageNums.slice(batchStart, batchStart + BATCH_SIZE);
         try {
-          const batchResults = await _ocrBatchViaLocalServer(pdfArrayBuffer, batchPages);
+          const batchResults = await _ocrBatchViaLocalServer(ocrSessionId, batchPages);
           for (const result of batchResults) {
             if (result.error) {
               ocrReport.push({ page: result.page, confidence: 0, chars: 0, error: result.error });
