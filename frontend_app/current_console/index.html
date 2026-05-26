@@ -2927,6 +2927,37 @@ async function _ocrCanvasPage(canvas, lang = "chi_sim+eng") {
   };
 }
 
+// ── Real-time OCR text preview helpers ──
+// Updates the floating overlay's live text area with the latest recognized line
+function _updateOcrLiveText(ocrText, pageNum) {
+  const liveEl = document.getElementById("ocr-p-live");
+  if (!liveEl || !ocrText) return;
+  // Get the last non-empty line (most recently recognized)
+  const lines = ocrText.split("\n").filter(l => l.trim().length > 2);
+  if (!lines.length) return;
+  const lastLine = lines[lines.length - 1].trim();
+  // Show last 2 lines for context
+  const showLines = lines.slice(-2);
+  liveEl.innerHTML = showLines.map(line => 
+    `<div class="ocr-live-line"><span class="ocr-live-label">P${pageNum}</span>${_escLiveText(line)}</div>`
+  ).join("");
+  liveEl.scrollTop = liveEl.scrollHeight;
+}
+
+// Updates the inline per-file panel's live text area
+function _updateInlineLiveText(el, ocrText, pageNum) {
+  if (!el || !ocrText) return;
+  const lines = ocrText.split("\n").filter(l => l.trim().length > 2);
+  if (!lines.length) return;
+  const lastLine = lines[lines.length - 1].trim();
+  el.innerHTML = `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:ocr-line-in 0.3s ease-out;"><span style="color:#4fc3f7;font-weight:600;margin-right:4px;font-size:9px;">P${pageNum}</span>${_escLiveText(lastLine)}</div>`;
+}
+
+// Escape HTML for live text display
+function _escLiveText(t) {
+  return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").slice(0, 120);
+}
+
 // ── PDF parse cache — avoid re-OCR on repeated calls ──
 const _pdfParseCache = new Map();
 
@@ -3031,6 +3062,30 @@ async function parsePdfFile(file) {
             border-radius: 50%; animation: ocr-spin 0.8s linear infinite;
           }
           @keyframes ocr-spin { to { transform: rotate(360deg); } }
+          #ocr-progress-overlay .ocr-live-text {
+            margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(100,200,255,0.12);
+            font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            font-size: 11px; line-height: 1.6; color: #b0bec5;
+            max-height: 54px; overflow: hidden; position: relative;
+            transition: opacity 0.2s ease;
+          }
+          #ocr-progress-overlay .ocr-live-text::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 18px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+            pointer-events: none;
+          }
+          #ocr-progress-overlay .ocr-live-text .ocr-live-line {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            animation: ocr-line-in 0.3s ease-out;
+          }
+          #ocr-progress-overlay .ocr-live-text .ocr-live-label {
+            color: #4fc3f7; font-weight: 600; margin-right: 6px; font-size: 10px;
+          }
+          @keyframes ocr-line-in {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
         </style>
         <div class="ocr-title"><span class="ocr-spinner"></span><span id="ocr-p-title">OCR 处理中...</span></div>
         <div class="ocr-engine" id="ocr-p-engine"></div>
@@ -3040,6 +3095,7 @@ async function parsePdfFile(file) {
           <span id="ocr-p-chars">0 字符</span>
           <span>置信度: <span class="conf" id="ocr-p-conf">-</span></span>
         </div>
+        <div class="ocr-live-text" id="ocr-p-live"><div class="ocr-live-line" style="color:#546e7a;font-style:italic;">等待识别结果...</div></div>
       `;
       document.body.appendChild(ocrProgressEl);
     }
@@ -3073,12 +3129,29 @@ async function parsePdfFile(file) {
         const total = prog.total || ocrPages.length;
         pBar.style.width = `${pct}%`;
         pPages.textContent = `${done}/${total} 页 (${pct}%)`;
+        // 实时更新服务器端处理状态
+        const liveEl = document.getElementById("ocr-p-live");
+        if (liveEl && !prog.complete && done > 0) {
+          if (prog.latest_text) {
+            // 显示服务器返回的最新识别文本
+            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label">P${prog.latest_page || '?'}</span>${_escLiveText(prog.latest_text)}</div>`;
+          } else {
+            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label">⚡</span>服务器并发处理中... 已完成 ${done}/${total} 页</div>`;
+          }
+        }
         if (prog.complete) {
           const chars = (prog.full_text || "").length;
           pChars.textContent = `${chars.toLocaleString()} 字符`;
           const c = Math.round((prog.avg_confidence || 0) * 100);
           pConf.textContent = `${c}%`;
           pConf.style.color = c >= 80 ? "#81c784" : c >= 60 ? "#ffb74d" : "#ef5350";
+          // 完成后显示最终文本预览
+          if (liveEl && prog.full_text) {
+            const previewLines = prog.full_text.split("\n").filter(l => l.trim().length > 2).slice(-2);
+            liveEl.innerHTML = previewLines.map(line =>
+              `<div class="ocr-live-line"><span class="ocr-live-label">✅</span>${_escLiveText(line)}</div>`
+            ).join("");
+          }
         }
       });
 
@@ -3158,6 +3231,9 @@ async function parsePdfFile(file) {
             page: pageIndex, confidence: ocr.confidence || 0,
             chars: ocrText.length, lines: ocr.lines || 0, engine: ocr.engine || engineName
           });
+
+          // 实时显示识别到的文字
+          _updateOcrLiveText(ocrText, pageIndex);
 
           if (ocrText && ocrText.length > 10) {
             totalChars += ocrText.length;
@@ -5671,6 +5747,7 @@ function renderPendingFileList(files, containerEl) {
             <span id="ocrPct_${listKey}_${i}" style="color:var(--ink-soft);">0%</span>
           </div>
           <div id="ocrStatus_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+          <div id="ocrLive_${listKey}_${i}" style="margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);font-family:var(--font-mono);font-size:10px;line-height:1.5;color:var(--ink-soft);max-height:44px;overflow:hidden;position:relative;display:none;"><span style="color:var(--muted);font-style:italic;">等待识别结果...</span></div>
         </div>
       </div>` : ''}
     </article>`;
@@ -5922,10 +5999,18 @@ async function startFileOcr(fileIndex, listKey) {
         return;
       }
 
+      // 获取内联实时文字预览元素
+      const inlineLiveEl = document.getElementById(`ocrLive_${idPrefix}`);
+      if (inlineLiveEl) inlineLiveEl.style.display = 'block';
+
       const result = await _ocrPdfViaServer(file, (prog) => {
         updateProgress(prog.done || 0, prog.total || 0,
           prog.complete ? `✅ 完成! ${prog.elapsed_s}s, 置信度 ${Math.round((prog.avg_confidence||0)*100)}%`
           : `${prog.done || 0}/${prog.total || 0} 页 (${prog.concurrency || conc}x 并发)`);
+        // 实时文字预览
+        if (inlineLiveEl && !prog.complete && prog.latest_text) {
+          _updateInlineLiveText(inlineLiveEl, prog.latest_text, prog.latest_page || '?');
+        }
       });
 
       // Cache the result as parsed records
@@ -5966,6 +6051,10 @@ async function startFileOcr(fileIndex, listKey) {
       const allTexts = [];
       let totalConf = 0;
 
+      // 获取内联实时文字预览元素
+      const inlineLiveEl = document.getElementById(`ocrLive_${idPrefix}`);
+      if (inlineLiveEl) inlineLiveEl.style.display = 'block';
+
       for (let p = 1; p <= total; p++) {
         updateProgress(p - 1, total, `${p}/${total} 页 (${engine === 'paddle' ? 'PaddleOCR (PP-OCRv5)' : 'Tesseract.js'})`);
         const page = await pdf.getPage(p);
@@ -5985,7 +6074,11 @@ async function startFileOcr(fileIndex, listKey) {
             }
             ocr = await _ocrCanvasPage(canvas, "chi_sim+eng");
           }
-          if (ocr?.text) allTexts.push(ocr.text);
+          if (ocr?.text) {
+            allTexts.push(ocr.text);
+            // 实时显示识别到的文字（内联面板）
+            _updateInlineLiveText(inlineLiveEl, ocr.text, p);
+          }
           totalConf += (ocr?.confidence || 0);
         } catch (e) {
           console.warn(`Page ${p} OCR failed:`, e);

@@ -155,6 +155,19 @@ def get_progress(sid):
         "engine": s["engine"], "concurrency": s["concurrency"]
     }
     
+    # 返回最近完成的页面文本片段（用于前端实时预览）
+    if not s["complete"] and s["done"] > 0:
+        # 找到最近完成的页面
+        for r in reversed(s["results"]):
+            if r and r.get("text"):
+                text = r["text"].strip()
+                # 取最后一行非空文本作为预览，限制长度
+                lines = [l for l in text.split("\n") if l.strip()]
+                if lines:
+                    result["latest_text"] = lines[-1][:150]
+                    result["latest_page"] = r.get("page", 0)
+                break
+    
     if s["complete"]:
         result["full_text"] = s["full_text"]
         result["elapsed_s"] = s.get("elapsed_s", 0)
