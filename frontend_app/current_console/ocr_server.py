@@ -8,6 +8,15 @@
   GET  /health           健康检查
 """
 import sys, os, io, json, time, uuid, threading
+
+# Fix Windows GBK console encoding crash with Unicode characters
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except: pass
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    try: sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except: pass
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from urllib.parse import urlparse, parse_qs
@@ -25,14 +34,14 @@ try:
     from rapidocr_onnxruntime import RapidOCR
     OCR_ENGINE_NAME = "RapidOCR (PaddleOCR ONNX)"
     RapidOCR()  # test
-    print(f"✅ {OCR_ENGINE_NAME}")
+    print(f"[OK] {OCR_ENGINE_NAME}")
 except ImportError:
-    print("❌ pip install rapidocr-onnxruntime"); sys.exit(1)
+    print("[ERROR] pip install rapidocr-onnxruntime"); sys.exit(1)
 
 try:
     import fitz
 except ImportError:
-    print("❌ pip install pymupdf"); sys.exit(1)
+    print("[ERROR] pip install pymupdf"); sys.exit(1)
 
 import numpy as np
 from PIL import Image
@@ -248,14 +257,14 @@ class OCRHandler(BaseHTTPRequestHandler):
             print(f"  [{time.strftime('%H:%M:%S')}] {a[0]}")
 
 if __name__ == "__main__":
-    print(f"\n🚀 OCR 服务器 v3: http://{HOST}:{PORT}")
-    print(f"   引擎: {OCR_ENGINE_NAME}")
-    print(f"   并发: {MAX_OCR_WORKERS} 线程 / {CPU_COUNT} 核")
-    print(f"   用法: POST /ocr/pdf/start (上传PDF)")
-    print(f"         GET  /ocr/pdf/progress?session=xxx (轮询进度)\n")
+    print(f"\n>>> OCR Server v3: http://{HOST}:{PORT}")
+    print(f"    Engine: {OCR_ENGINE_NAME}")
+    print(f"    Workers: {MAX_OCR_WORKERS} threads / {CPU_COUNT} cores")
+    print(f"    Usage: POST /ocr/pdf/start (upload PDF)")
+    print(f"           GET  /ocr/pdf/progress?session=xxx (poll progress)\n")
     
     server = ThreadingHTTPServer((HOST, PORT), OCRHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n⛔ 停止"); pool.shutdown(wait=False); server.server_close()
+        print("\n[STOP]"); pool.shutdown(wait=False); server.server_close()
