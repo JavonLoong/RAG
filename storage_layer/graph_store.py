@@ -93,12 +93,37 @@ class GraphStore:
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
 
+                CREATE TABLE IF NOT EXISTS communities (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    community_id TEXT NOT NULL,
+                    level INTEGER NOT NULL DEFAULT 0,
+                    node_id INTEGER NOT NULL REFERENCES nodes(id),
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(community_id, level, node_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS community_summaries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    community_id TEXT NOT NULL,
+                    level INTEGER NOT NULL DEFAULT 0,
+                    title TEXT NOT NULL DEFAULT '',
+                    summary TEXT NOT NULL,
+                    entity_count INTEGER NOT NULL DEFAULT 0,
+                    edge_count INTEGER NOT NULL DEFAULT 0,
+                    metadata_json TEXT NOT NULL DEFAULT '{}',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(community_id, level)
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
                 CREATE INDEX IF NOT EXISTS idx_edges_predicate ON edges(predicate);
                 CREATE INDEX IF NOT EXISTS idx_edges_subject ON edges(subject_node_id);
                 CREATE INDEX IF NOT EXISTS idx_edges_object ON edges(object_node_id);
                 CREATE INDEX IF NOT EXISTS idx_evidence_triple ON evidence(triple_id);
                 CREATE INDEX IF NOT EXISTS idx_evidence_text ON evidence(text);
+                CREATE INDEX IF NOT EXISTS idx_communities_cid ON communities(community_id);
+                CREATE INDEX IF NOT EXISTS idx_communities_node ON communities(node_id);
+                CREATE INDEX IF NOT EXISTS idx_community_summaries_cid ON community_summaries(community_id);
                 """
             )
 
@@ -274,6 +299,164 @@ class GraphStore:
             "relation_counts": relation_counts,
             "entity_type_counts": entity_type_counts,
         }
+
+    def store_communities(
+        self, assignments: list[dict[str, Any]], *, level: int = 0, reset_level: bool = True
+    ) -> None:
+        """Store community assignments. Each dict must have 'community_id' and 'node_name'."""
+        with self._connect() as connection:
+            if reset_level:
+                connection.execute("DELETE FROM communities WHERE level = ?", (level,))
+            for assignment in assignments:
+                community_id = str(assignment["community_id"])
+                node_name = str(assignment["node_name"])
+                row = connection.execute("SELECT id FROM nodes WHERE name = ?", (node_name,)).fetchone()
+                if row is None:
+                    continue
+                node_id = int(row["id"])
+                connection.execute(
+                    "INSERT OR IGNORE INTO communities (community_id, level, node_id) VALUES (?, ?, ?)",
+                    (community_id, level, node_id),
+                )
+            connection.commit()
+
+    def store_community_summaries(
+        self, summaries: list[dict[str, Any]], *, level: int = 0, reset_level: bool = True
+    ) -> None:
+        """Store community summaries. Each dict must have 'community_id', 'summary', and optionally 'title'."""
+        with self._connect() as connection:
+            if reset_level:
+                connection.execute("DELETE FROM community_summaries WHERE level = ?", (level,))
+            for item in summaries:
+                connection.execute(
+                    """
+                    INSERT OR REPLACE INTO community_summaries
+                        (community_id, level, title, summary, entity_count, edge_count, metadata_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(item["community_id"]),
+                        level,
+                        str(item.get("title", "")),
+                        str(item["summary"]),
+                        int(item.get("entity_count", 0)),
+                        int(item.get("edge_count", 0)),
+                        _json_dumps(item.get("metadata", {})),
+                    ),
+                )
+            connection.commit()
+
+    def get_communities(self, *, level: int = 0) -> list[dict[str, Any]]:
+        """Return distinct community IDs and their member counts at a given level."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT community_id, COUNT(DISTINCT node_id) AS member_count
+                FROM communities
+                WHERE level = ?
+                GROUP BY community_id
+                ORDER BY member_count DESC
+                """,
+                (level,),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def get_community_entities(self, community_id: str, *, level: int = 0) -> list[dict[str, Any]]:
+        """Return all entities (nodes) belonging to a community."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT n.id, n.name, n.type
+                FROM communities c
+                JOIN nodes n ON n.id = c.node_id
+                WHERE c.community_id = ? AND c.level = ?
+                ORDER BY n.name
+                """,
+                (community_id, level),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def get_community_edges(self, community_id: str, *, level: int = 0) -> list[dict[str, Any]]:
+        """Return all edges within a community (both endpoints are community members)."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    e.triple_id,
+                    s.name AS subject,
+                    o.name AS object,
+                    e.predicate,
+                    e.confidence
+                FROM edges e
+                JOIN nodes s ON s.id = e.subject_node_id
+                JOIN nodes o ON o.id = e.object_node_id
+                WHERE e.subject_node_id IN (
+                    SELECT node_id FROM communities WHERE community_id = ? AND level = ?
+                ) AND e.object_node_id IN (
+                    SELECT node_id FROM communities WHERE community_id = ? AND level = ?
+                )
+                ORDER BY e.triple_id
+                """,
+                (community_id, level, community_id, level),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def get_community_summaries(self, *, level: int = 0) -> list[dict[str, Any]]:
+        """Return all community summaries at a given level."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT community_id, level, title, summary, entity_count, edge_count
+                FROM community_summaries
+                WHERE level = ?
+                ORDER BY entity_count DESC
+                """,
+                (level,),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def search_community_summaries(self, keyword: str, *, level: int = 0, limit: int = 10) -> list[dict[str, Any]]:
+        """Search community summaries by keyword."""
+        pattern = f"%{keyword.lower()}%"
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT community_id, level, title, summary, entity_count, edge_count
+                FROM community_summaries
+                WHERE level = ? AND (lower(summary) LIKE ? OR lower(title) LIKE ?)
+                ORDER BY entity_count DESC
+                LIMIT ?
+                """,
+                (level, pattern, pattern, limit),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
+    def get_all_edges_as_tuples(self) -> list[tuple[str, str, dict[str, Any]]]:
+        """Return all edges as (subject_name, object_name, attrs) tuples for networkx graph construction."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    s.name AS subject,
+                    o.name AS object,
+                    e.predicate,
+                    e.confidence,
+                    e.triple_id
+                FROM edges e
+                JOIN nodes s ON s.id = e.subject_node_id
+                JOIN nodes o ON o.id = e.object_node_id
+                """
+            ).fetchall()
+        return [
+            (row["subject"], row["object"], {"predicate": row["predicate"], "confidence": row["confidence"], "triple_id": row["triple_id"]})
+            for row in rows
+        ]
+
+    def get_all_nodes(self) -> list[dict[str, Any]]:
+        """Return all nodes."""
+        with self._connect() as connection:
+            rows = connection.execute("SELECT id, name, type FROM nodes ORDER BY name").fetchall()
+        return [_row_to_dict(row) for row in rows]
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path)

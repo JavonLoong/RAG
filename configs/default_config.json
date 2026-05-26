@@ -1,0 +1,30 @@
+{
+  "llm": {
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4.1-mini",
+    "timeout": 60.0,
+    "temperature": 0.0
+  },
+  "embedding": {
+    "backend": "hashing",
+    "model": "text-embedding-3-small",
+    "dimension": 384
+  },
+  "storage": {
+    "chroma_persist_dir": "chroma_db",
+    "graph_db_path": "graph.sqlite3",
+    "upload_dir": "uploads",
+    "log_dir": "logs"
+  },
+  "retrieval": {
+    "top_k": 5,
+    "hybrid_alpha": 0.7,
+    "max_scan_rows": 5000,
+    "rerank_enabled": false
+  },
+  "community": {
+    "resolution": 1.0,
+    "min_community_size": 2,
+    "hierarchical_levels": [0.5, 1.0, 2.0]
+  }
+}
