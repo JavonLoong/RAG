@@ -128,20 +128,10 @@ class SQLiteGraphRetriever(BaseRetriever):
         return candidates[:20]  # Limit candidates
 
     def _get_matching_nodes(self, pattern: str) -> list[str]:
-        """Find nodes matching a pattern using indexed lookup."""
-        import sqlite3
-
+        """Find nodes matching a pattern using the public search_nodes API."""
         try:
-            conn = self.graph_store._connect()
-            try:
-                # Use indexed LIKE query on the name column
-                rows = conn.execute(
-                    "SELECT name FROM nodes WHERE name LIKE ? LIMIT 10",
-                    (f"%{pattern}%",),
-                ).fetchall()
-                return [row["name"] for row in rows]
-            finally:
-                conn.close()
+            rows = self.graph_store.search_nodes(pattern, limit=10)
+            return [row["name"] for row in rows]
         except Exception:
             return []
 

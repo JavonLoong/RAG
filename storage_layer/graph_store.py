@@ -458,6 +458,21 @@ class GraphStore:
             rows = connection.execute("SELECT id, name, type FROM nodes ORDER BY name").fetchall()
         return [_row_to_dict(row) for row in rows]
 
+    def search_nodes(self, pattern: str, *, limit: int = 10) -> list[dict[str, Any]]:
+        """Search nodes by name pattern (case-insensitive LIKE match).
+
+        This is the public API for indexed node name lookup. Prefer this
+        over accessing ``_connect()`` directly.
+        """
+        if not pattern or not pattern.strip():
+            return []
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id, name, type FROM nodes WHERE name LIKE ? ORDER BY name LIMIT ?",
+                (f"%{pattern}%", limit),
+            ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
