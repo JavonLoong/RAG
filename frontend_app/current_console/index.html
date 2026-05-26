@@ -1955,7 +1955,7 @@ svg { width: 100%; height: auto; display: block; }
     { local: "libs/d3.min.js",                cdn: "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" },
     { local: "libs/jszip.min.js",             cdn: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" },
     { local: "libs/sql-wasm.js",              cdn: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js" },
-    // Tesseract.js removed — PaddleOCR.js is now the primary browser OCR engine
+    // Tesseract.js removed — ppu-paddle-ocr is now the primary browser OCR engine
     // Tesseract.js is only loaded as last-resort fallback if PaddleOCR fails
   ];
   // Synchronously write script tags — local first, onerror falls back to CDN
@@ -1982,16 +1982,16 @@ const API_BASE = "";
 const LOCAL_COLLECTION_NAME = "browser_local_index";
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
 
-// Pre-load PaddleOCR.js in background so it's ready when user drops a PDF
+// Pre-load ppu-paddle-ocr in background so it's ready when user drops a PDF
 // Skips if local RapidOCR server is detected (faster + no download needed)
 setTimeout(async () => {
   if (typeof _checkLocalOcr === "function" && typeof _preloadPaddleOcr === "function") {
     const hasLocal = await _checkLocalOcr();
     if (!hasLocal) {
-      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 PaddleOCR.js 浏览器引擎...");
+      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引擎...");
       _preloadPaddleOcr();
     } else {
-      console.log("[OCR] 本地 RapidOCR 服务器可用，跳过 PaddleOCR.js 预加载");
+      console.log("[OCR] 本地 RapidOCR 服务器可用，跳过 ppu-paddle-ocr 预加载");
     }
   }
 }, 3000);
@@ -2816,7 +2816,7 @@ async function _checkLocalOcr() {
     }
   } catch {
     _localOcrAvailable = false;
-    console.log("[OCR] 本地 OCR 服务器未启动，将使用浏览器端 PaddleOCR.js");
+    console.log("[OCR] 本地 OCR 服务器未启动，将使用浏览器端 ppu-paddle-ocr");
   }
   return _localOcrAvailable;
 }
@@ -2856,7 +2856,8 @@ async function _ocrPdfViaServer(file, progressCallback) {
   }
 }
 
-// ── Browser-side PaddleOCR.js (PP-OCRv5, 94%+ Chinese accuracy) ──
+// ── Browser-side PaddleOCR (ppu-paddle-ocr, PP-OCRv5, 94%+ Chinese accuracy) ──
+// Uses ppu-paddle-ocr with canvas-native preprocessing (no OpenCV.js dependency)
 // Loaded via dynamic import() — works in both file:// and http://
 let _paddleOcrInstance = null;
 let _paddleOcrPromise = null;
@@ -2866,19 +2867,14 @@ async function _loadPaddleOcr() {
   if (_paddleOcrPromise) return _paddleOcrPromise;
   
   _paddleOcrPromise = (async () => {
-    console.log("[OCR] 正在加载 PaddleOCR.js (PP-OCRv5)...");
+    console.log("[OCR] 正在加载 ppu-paddle-ocr (PP-OCRv5)...");
     showToast("⏳ 加载 PaddleOCR 浏览器引擎（首次约 30-60 秒）...", "success");
-    const { PaddleOCR } = await import("https://esm.sh/@paddleocr/paddleocr-js@0.3.2");
-    console.log("[OCR] PaddleOCR 模块已下载，正在初始化...");
-    _paddleOcrInstance = await PaddleOCR.create({
-      lang: "ch",
-      ocrVersion: "PP-OCRv5",
-      ortOptions: {
-        backend: "wasm",
-        wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/"
-      }
-    });
-    console.log("[OCR] ✅ PaddleOCR.js 就绪");
+    const { PaddleOcrService } = await import("https://esm.sh/ppu-paddle-ocr@5.8.2/web");
+    console.log("[OCR] ppu-paddle-ocr 模块已下载，正在初始化...");
+    const ocr = new PaddleOcrService();
+    await ocr.initialize();
+    _paddleOcrInstance = ocr;
+    console.log("[OCR] ✅ ppu-paddle-ocr 就绪 (PP-OCRv5, canvas-native)");
     showToast("✅ PaddleOCR 浏览器引擎就绪", "success");
     return _paddleOcrInstance;
   })();
@@ -2888,25 +2884,24 @@ async function _loadPaddleOcr() {
 
 function _preloadPaddleOcr() {
   _loadPaddleOcr().catch(e => {
-    console.warn("[OCR] PaddleOCR.js 预加载失败:", e.message);
+    console.warn("[OCR] ppu-paddle-ocr 预加载失败:", e.message);
     _paddleOcrPromise = null; // Allow retry
   });
 }
 
-// ── OCR a single canvas/blob via PaddleOCR.js browser engine ──
+// ── OCR a single canvas via ppu-paddle-ocr browser engine ──
 async function _ocrViaPaddleJs(canvas) {
   const ocr = await _loadPaddleOcr();
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-  const [result] = await ocr.predict(blob);
-  const items = result?.items || [];
-  const texts = items.map(item => item.text || "");
-  const confs = items.map(item => item.score ?? item.confidence ?? 0);
+  const result = await ocr.recognize(canvas);
+  const lines = result?.lines || [];
+  const texts = lines.map(line => line.text || "");
+  const confs = lines.map(line => line.score ?? line.confidence ?? 0);
   const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
   return {
-    text: texts.join("\n"),
+    text: result?.text || texts.join("\n"),
     confidence: Math.round(avgConf * 100),
     lines: texts.length,
-    engine: "PaddleOCR.js (PP-OCRv5)"
+    engine: "ppu-paddle-ocr (PP-OCRv5)"
   };
 }
 
@@ -2986,13 +2981,13 @@ async function parsePdfFile(file) {
   if (ocrPages.length > 0) {
     const useLocalOcr = await _checkLocalOcr();
     
-    // Determine OCR engine: local RapidOCR > PaddleOCR.js browser > Tesseract.js
+    // Determine OCR engine: local RapidOCR > ppu-paddle-ocr browser > Tesseract.js
     let engineName, engineMode;
     if (useLocalOcr) {
       engineName = "RapidOCR (本地高精度)";
       engineMode = "local";
     } else {
-      engineName = "PaddleOCR.js (PP-OCRv5 浏览器端)";
+      engineName = "ppu-paddle-ocr (PP-OCRv5 浏览器端)";
       engineMode = "paddle";
     }
 
@@ -3118,7 +3113,7 @@ async function parsePdfFile(file) {
 
     } else {
       // ═══════════════════════════════════════════════════
-      // BROWSER MODE: 逐页 OCR (PaddleOCR.js / Tesseract.js)
+      // BROWSER MODE: 逐页 OCR (ppu-paddle-ocr / Tesseract.js)
       // ═══════════════════════════════════════════════════
       let doneCount = 0;
       let runningChars = 0;
@@ -3132,7 +3127,7 @@ async function parsePdfFile(file) {
           try {
             ocr = await _ocrViaPaddleJs(canvas);
           } catch (paddleErr) {
-            console.warn("[OCR] PaddleOCR.js failed:", paddleErr.message);
+            console.warn("[OCR] ppu-paddle-ocr failed:", paddleErr.message);
             if (typeof Tesseract === "undefined") {
               try {
                 await new Promise((resolve, reject) => {
@@ -5658,7 +5653,7 @@ function renderPendingFileList(files, containerEl) {
           <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
           <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
             <option value="local">🖥️ RapidOCR (本地高精度, 12x并发)</option>
-            <option value="paddle">🌐 PaddleOCR.js (浏览器端)</option>
+            <option value="paddle">🌐 PaddleOCR (浏览器端, PP-OCRv5)</option>
             <option value="tesseract">📝 Tesseract.js (浏览器端后备)</option>
           </select>
           <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
@@ -5916,7 +5911,7 @@ async function startFileOcr(fileIndex, listKey) {
 
 
   try {
-    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'paddle' ? 'PaddleOCR.js' : 'Tesseract.js'})...`);
+    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'paddle' ? 'PaddleOCR (PP-OCRv5)' : 'Tesseract.js'})...`);
 
     if (engine === "local") {
       // RapidOCR via local server
@@ -5963,7 +5958,7 @@ async function startFileOcr(fileIndex, listKey) {
       );
 
     } else if (engine === "paddle" || engine === "tesseract") {
-      // Browser-side OCR (PaddleOCR.js or Tesseract.js)
+      // Browser-side OCR (ppu-paddle-ocr or Tesseract.js)
       if (!globalThis.pdfjsLib) { showToast("PDF.js 未加载", "danger"); return; }
       const data = await file.arrayBuffer();
       const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
@@ -5972,7 +5967,7 @@ async function startFileOcr(fileIndex, listKey) {
       let totalConf = 0;
 
       for (let p = 1; p <= total; p++) {
-        updateProgress(p - 1, total, `${p}/${total} 页 (${engine === 'paddle' ? 'PaddleOCR.js' : 'Tesseract.js'})`);
+        updateProgress(p - 1, total, `${p}/${total} 页 (${engine === 'paddle' ? 'PaddleOCR (PP-OCRv5)' : 'Tesseract.js'})`);
         const page = await pdf.getPage(p);
         const canvas = await _renderPdfPageToCanvas(page, 2.0);
         try {
@@ -6007,14 +6002,14 @@ async function startFileOcr(fileIndex, listKey) {
           filename: file.name, source_file: file.name,
           source_kind: "PDF-OCR", page_num: 0,
           ocr_confidence: avgConf,
-          ocr_engine: engine === "paddle" ? "PaddleOCR.js" : "Tesseract.js",
+          ocr_engine: engine === "paddle" ? "ppu-paddle-ocr (PP-OCRv5)" : "Tesseract.js",
           text: fullText
         });
       }
       _pdfParseCache.set(cacheKey, records);
       updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
       const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
-        engine: engine === "paddle" ? "PaddleOCR.js" : "Tesseract.js",
+        engine: engine === "paddle" ? "ppu-paddle-ocr (PP-OCRv5)" : "Tesseract.js",
         confidence: avgConf
       });
       // OCR完成后立即自动下载结果，不需要额外步骤
