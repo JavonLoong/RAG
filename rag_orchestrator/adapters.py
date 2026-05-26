@@ -73,15 +73,13 @@ class ChromaTextRetriever:
 
 
 class SQLiteGraphRetriever:
-    """Generic graph retriever for SQLite tables containing triples or edges."""
+    """Graph retriever for SQLite tables containing triples or edges.
 
-    SUBJECT_COLUMNS = ("subject", "head", "source_node", "from_node", "src")
-    PREDICATE_COLUMNS = ("predicate", "relation", "relationship", "edge_type", "label")
-    OBJECT_COLUMNS = ("object", "tail", "target_node", "to_node", "dst", "target")
-    EVIDENCE_COLUMNS = ("evidence", "evidence_text", "text", "description", "content", "chunk_text")
-    SOURCE_COLUMNS = ("source_file", "evidence_doc", "document", "doc_id", "source_path")
-    SCORE_COLUMNS = ("confidence", "score", "weight")
-    ID_COLUMNS = ("id", "edge_id", "triple_id")
+    This is a thin adapter that delegates to the indexed
+    ``retrieval_engine.graph.SQLiteGraphRetriever`` when available.
+    If the retrieval engine module cannot be imported (e.g. running in
+    isolation), it falls back to the legacy full-table-scan approach.
+    """
 
     def __init__(self, sqlite_path: str | Path, *, table_name: str | None = None, max_scan_rows: int = 5000) -> None:
         self.sqlite_path = Path(sqlite_path)
@@ -90,101 +88,103 @@ class SQLiteGraphRetriever:
             raise FileNotFoundError(message)
         self.table_name = table_name
         self.max_scan_rows = max_scan_rows
+        self._delegate = self._build_delegate()
+
+    def _build_delegate(self) -> Any:
+        """Try to create the indexed retriever from retrieval_engine."""
+        try:
+            from storage_layer.graph_store import GraphStore
+            from retrieval_engine.graph import SQLiteGraphRetriever as IndexedRetriever
+
+            store = GraphStore(self.sqlite_path)
+            store.initialize(reset=False)
+            return IndexedRetriever(store, include_community_summaries=True)
+        except Exception:
+            return None
 
     def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+        # Prefer the indexed retriever
+        if self._delegate is not None:
+            results = self._delegate.retrieve(query, top_k=top_k)
+            return [self._convert_result(r) for r in results]
+        # Fallback: legacy full-table-scan
+        return self._legacy_search(query, top_k)
+
+    def _convert_result(self, result: Any) -> dict[str, Any]:
+        """Convert a retrieval_engine.core.RetrievalResult to the dict format expected by adapters."""
+        metadata = getattr(result, "metadata", {}) if hasattr(result, "metadata") else {}
+        if hasattr(result, "chunk"):
+            metadata = getattr(result.chunk, "metadata", {})
+        return {
+            "id": metadata.get("triple_id"),
+            "subject": metadata.get("subject"),
+            "predicate": metadata.get("predicate"),
+            "object": metadata.get("object"),
+            "evidence": getattr(result, "text", str(result)),
+            "source": metadata.get("source_file"),
+            "confidence": metadata.get("confidence"),
+            "metadata": {k: v for k, v in metadata.items()
+                         if k not in ("triple_id", "subject", "predicate", "object",
+                                      "source_file", "confidence")},
+        }
+
+    def _legacy_search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+        """Fallback: full-table-scan approach (original adapters.py logic)."""
+        SUBJECT_COLUMNS = ("subject", "head", "source_node", "from_node", "src")
+        PREDICATE_COLUMNS = ("predicate", "relation", "relationship", "edge_type", "label")
+        OBJECT_COLUMNS = ("object", "tail", "target_node", "to_node", "dst", "target")
+        EVIDENCE_COLUMNS = ("evidence", "evidence_text", "text", "description", "content", "chunk_text")
+        SOURCE_COLUMNS = ("source_file", "evidence_doc", "document", "doc_id", "source_path")
+        SCORE_COLUMNS = ("confidence", "score", "weight")
+        ID_COLUMNS = ("id", "edge_id", "triple_id")
+
         terms = _query_terms(query)
         with sqlite3.connect(self.sqlite_path) as connection:
             connection.row_factory = sqlite3.Row
-            table_name, columns = self._resolve_table(connection)
-            if table_name == GRAPH_STORE_EDGE_JOIN:
-                rows = self._load_joined_graph_store_rows(connection)
-            else:
-                quoted_columns = ", ".join(_quote_identifier(column) for column in columns)
-                sql = (
-                    f"SELECT {quoted_columns} FROM {_quote_identifier(table_name)} "  # noqa: S608
-                    f"LIMIT {int(self.max_scan_rows)}"
+            # Try the GraphStore joined query first
+            tables = [
+                row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
                 )
-                rows = [dict(row) for row in connection.execute(sql)]
+            ]
+            if {"nodes", "edges"}.issubset(set(tables)):
+                sql = """
+                    SELECT e.id, e.triple_id, s.name AS subject, e.predicate,
+                           o.name AS object, ev.text AS evidence,
+                           COALESCE(ev.source_file, e.source_file) AS source_file,
+                           e.confidence
+                    FROM edges e
+                    JOIN nodes s ON s.id = e.subject_node_id
+                    JOIN nodes o ON o.id = e.object_node_id
+                    LEFT JOIN evidence ev ON ev.edge_id = e.id
+                    LIMIT ?
+                """
+                rows = [dict(row) for row in connection.execute(sql, (self.max_scan_rows,))]
+            else:
+                rows = []
 
         ranked = []
         for row in rows:
             rank_score = _row_match_score(row, terms)
             if rank_score > 0:
-                ranked.append((rank_score, _row_numeric_score(row, self.SCORE_COLUMNS), row))
+                ranked.append((rank_score, _row_numeric_score(row, SCORE_COLUMNS), row))
         if not ranked:
-            ranked = [(0, _row_numeric_score(row, self.SCORE_COLUMNS), row) for row in rows]
+            ranked = [(0, _row_numeric_score(row, SCORE_COLUMNS), row) for row in rows]
         ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        return [self._normalize_row(row) for _, _, row in ranked[:top_k]]
-
-    def _resolve_table(self, connection: sqlite3.Connection) -> tuple[str, list[str]]:
-        tables = [
-            row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
-            )
+        return [
+            {
+                "id": _first_present(row, ID_COLUMNS),
+                "subject": _first_present(row, SUBJECT_COLUMNS),
+                "predicate": _first_present(row, PREDICATE_COLUMNS),
+                "object": _first_present(row, OBJECT_COLUMNS),
+                "evidence": _first_present(row, EVIDENCE_COLUMNS),
+                "source": _first_present(row, SOURCE_COLUMNS),
+                "confidence": _first_present(row, SCORE_COLUMNS),
+                "metadata": {},
+            }
+            for _, _, row in ranked[:top_k]
         ]
-        if self.table_name in {None, "edges"} and {"nodes", "edges"}.issubset(set(tables)):
-            edge_columns = _table_columns(connection, "edges")
-            if {"subject_node_id", "object_node_id", "predicate"}.issubset({column.lower() for column in edge_columns}):
-                return GRAPH_STORE_EDGE_JOIN, []
-        if self.table_name:
-            if self.table_name not in tables:
-                message = f"Graph table not found in SQLite store: {self.table_name}"
-                raise GraphRagConfigurationError(message)
-            columns = _table_columns(connection, self.table_name)
-            return self.table_name, columns
-        preferred = [table for table in ("triples", "relationships", "edges", "graph_edges", "facts") if table in tables]
-        for table in [*preferred, *tables]:
-            columns = _table_columns(connection, table)
-            if _has_any(columns, self.SUBJECT_COLUMNS) and _has_any(columns, self.OBJECT_COLUMNS):
-                return table, columns
-        raise GraphRagConfigurationError(NO_GRAPH_TABLE_ERROR)
-
-    def _load_joined_graph_store_rows(self, connection: sqlite3.Connection) -> list[dict[str, Any]]:
-        sql = """
-            SELECT
-                e.id AS id,
-                e.triple_id AS triple_id,
-                s.name AS subject,
-                e.predicate AS predicate,
-                o.name AS object,
-                ev.text AS evidence,
-                COALESCE(ev.source_file, e.source_file) AS source_file,
-                COALESCE(ev.source_page, e.source_page) AS source_page,
-                COALESCE(ev.source_chunk_id, e.source_chunk_id) AS source_chunk_id,
-                e.confidence AS confidence
-            FROM edges e
-            JOIN nodes s ON s.id = e.subject_node_id
-            JOIN nodes o ON o.id = e.object_node_id
-            LEFT JOIN evidence ev ON ev.edge_id = e.id
-            LIMIT ?
-        """
-        return [dict(row) for row in connection.execute(sql, (int(self.max_scan_rows),))]
-
-    def _normalize_row(self, row: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "id": _first_present(row, self.ID_COLUMNS),
-            "subject": _first_present(row, self.SUBJECT_COLUMNS),
-            "predicate": _first_present(row, self.PREDICATE_COLUMNS),
-            "object": _first_present(row, self.OBJECT_COLUMNS),
-            "evidence": _first_present(row, self.EVIDENCE_COLUMNS),
-            "source": _first_present(row, self.SOURCE_COLUMNS),
-            "confidence": _first_present(row, self.SCORE_COLUMNS),
-            "metadata": {
-                key: value
-                for key, value in row.items()
-                if key
-                not in {
-                    *self.ID_COLUMNS,
-                    *self.SUBJECT_COLUMNS,
-                    *self.PREDICATE_COLUMNS,
-                    *self.OBJECT_COLUMNS,
-                    *self.EVIDENCE_COLUMNS,
-                    *self.SOURCE_COLUMNS,
-                    *self.SCORE_COLUMNS,
-                }
-            },
-        }
 
 
 @dataclass(slots=True)

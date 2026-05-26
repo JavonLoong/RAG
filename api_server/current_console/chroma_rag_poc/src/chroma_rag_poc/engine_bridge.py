@@ -68,6 +68,7 @@ def get_graphrag_orchestrator(
     *,
     text_retriever: Any,
     graph_retriever: Any,
+    global_searcher: Any | None = None,
     llm: Any | None = None,
 ) -> Any:
     """Create a GraphRagQAOrchestrator from rag_orchestrator/ for QA."""
@@ -76,6 +77,7 @@ def get_graphrag_orchestrator(
     return GraphRagQAOrchestrator(
         text_retriever=text_retriever,
         graph_retriever=graph_retriever,
+        global_searcher=global_searcher,
         llm=llm,
     )
 

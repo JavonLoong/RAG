@@ -89,18 +89,26 @@ class GraphRagQAResult:
 
 
 class GraphRagQAOrchestrator:
-    """Minimal GraphRAG QA orchestration over text retrieval, graph retrieval, and an LLM."""
+    """Minimal GraphRAG QA orchestration over text retrieval, graph retrieval, and an LLM.
+
+    The optional ``global_searcher`` adds a third retrieval path using
+    Map-Reduce over community summaries.  High-level questions benefit
+    from this global context while fine-grained lookups still rely on
+    the text and graph retrievers.
+    """
 
     def __init__(
         self,
         *,
         text_retriever: Any,
         graph_retriever: Any,
+        global_searcher: Any | None = None,
         llm: Any | None = None,
         prompt_builder: Callable[[str, str, list[dict[str, Any]]], str] | None = None,
     ) -> None:
         self.text_retriever = text_retriever
         self.graph_retriever = graph_retriever
+        self.global_searcher = global_searcher
         self.llm = llm
         self.prompt_builder = prompt_builder or build_default_prompt
 
@@ -121,7 +129,18 @@ class GraphRagQAOrchestrator:
         graph_evidence = [
             _normalize_graph_evidence(item, rank=rank) for rank, item in enumerate(_as_items(graph_raw), start=1)
         ]
-        context = build_context(question, text_evidence, graph_evidence)
+
+        # Global search: community-level context via Map-Reduce
+        global_context = ""
+        if self.global_searcher is not None:
+            try:
+                gs_result = self.global_searcher.search(question, context_only=True)
+                if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
+                    global_context = _format_global_context(gs_result)
+            except Exception:  # noqa: BLE001
+                pass  # Gracefully skip if global search fails
+
+        context = build_context(question, text_evidence, graph_evidence, global_context)
         citations = [item.to_dict() for item in [*text_evidence, *graph_evidence]]
 
         if context_only:
@@ -165,7 +184,12 @@ Answer:
 """
 
 
-def build_context(question: str, text_evidence: list[EvidenceItem], graph_evidence: list[EvidenceItem]) -> str:
+def build_context(
+    question: str,
+    text_evidence: list[EvidenceItem],
+    graph_evidence: list[EvidenceItem],
+    global_context: str = "",
+) -> str:
     parts = [f"# GraphRAG QA context\n\nQuestion: {question}", "## Text retrieval evidence"]
     if text_evidence:
         for item in text_evidence:
@@ -184,7 +208,23 @@ def build_context(question: str, text_evidence: list[EvidenceItem], graph_eviden
             parts.append(f"[{item.citation_id}] {triple}{source}{score}\nEvidence: {item.text}")
     else:
         parts.append("No graph retrieval evidence returned.")
+
+    if global_context:
+        parts.append("## Global context (community-level analysis)")
+        parts.append(global_context)
+
     return "\n\n".join(parts)
+
+
+def _format_global_context(gs_result: Any) -> str:
+    """Format GlobalSearchResult partial answers into context text."""
+    sections: list[str] = []
+    for pa in gs_result.partial_answers:
+        title = pa.get("title", "Community")
+        entity_count = pa.get("entity_count", 0)
+        answer = pa.get("answer", "")
+        sections.append(f"### {title} ({entity_count} entities)\n{answer}")
+    return "\n\n".join(sections)
 
 
 def _format_graph_triple(item: EvidenceItem) -> str:
