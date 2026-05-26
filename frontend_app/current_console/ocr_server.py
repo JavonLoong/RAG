@@ -223,17 +223,34 @@ class OCRHandler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         path = urlparse(self.path).path
+        params = parse_qs(urlparse(self.path).query)
         body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
         
         try:
             if path == "/ocr/pdf/start":
                 self._json(start_ocr_session(body))
             elif path == "/ocr/pdf":
-                # 保留单页接口兼容性
-                params = parse_qs(urlparse(self.path).query)
+                # Single-page compatibility
                 p = int(params.get("page", ["1"])[0])
                 r = _ocr_one_page(body, p)
                 self._json(r)
+            elif path == "/proxy":
+                # CORS proxy for Baidu Cloud OCR API
+                target_url = params.get("url", [""])[0]
+                if not target_url:
+                    self._json({"error": "missing url param"}, 400)
+                    return
+                import urllib.request as _ur
+                content_type = self.headers.get('Content-Type', 'application/x-www-form-urlencoded')
+                req = _ur.Request(target_url, data=body if body else None,
+                                  headers={"Content-Type": content_type},
+                                  method="POST" if body else "GET")
+                with _ur.urlopen(req, timeout=30) as resp:
+                    resp_body = resp.read()
+                self.send_response(200); self._cors()
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", len(resp_body)); self.end_headers()
+                self.wfile.write(resp_body)
             else:
                 self.send_error(404)
         except Exception as e:

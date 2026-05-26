@@ -2856,26 +2856,71 @@ async function _ocrPdfViaServer(file, progressCallback) {
   }
 }
 
-// ── Browser-side PaddleOCR (ppu-paddle-ocr, PP-OCRv5, 94%+ Chinese accuracy) ──
-// Uses ppu-paddle-ocr with canvas-native preprocessing (no OpenCV.js dependency)
-// Loaded via dynamic import() — works in both file:// and http://
+// ── Browser-side PaddleOCR (paddleocr v1.1.1 + PP-OCRv5 Chinese models) ──
+// Uses onnxruntime-web WASM backend + explicit Chinese detection/recognition models
+// Models & dictionary loaded from jsDelivr CDN (~4MB + ~12MB + dict)
 let _paddleOcrInstance = null;
 let _paddleOcrPromise = null;
+let _paddleOrtModule = null;
+
+// CDN URLs for PP-OCRv5 Chinese mobile models (from GitHub, npm pkg doesn't include assets)
+const _PADDLE_MODEL_BASE = "https://cdn.jsdelivr.net/gh/X3ZvaWQ/paddleocr.js@main/assets";
+const _PADDLE_DET_URL = `${_PADDLE_MODEL_BASE}/PP-OCRv5_mobile_det_infer.onnx`;   // ~4.6MB
+const _PADDLE_REC_URL = `${_PADDLE_MODEL_BASE}/PP-OCRv5_mobile_rec_infer.onnx`;   // ~15.8MB
+const _PADDLE_DICT_URL = `${_PADDLE_MODEL_BASE}/ppocrv5_dict.txt`;                // ~74KB, 18385 chars
 
 async function _loadPaddleOcr() {
   if (_paddleOcrInstance) return _paddleOcrInstance;
   if (_paddleOcrPromise) return _paddleOcrPromise;
   
   _paddleOcrPromise = (async () => {
-    console.log("[OCR] 正在加载 ppu-paddle-ocr (PP-OCRv5)...");
-    showToast("⏳ 加载 PaddleOCR 浏览器引擎（首次约 30-60 秒）...", "success");
-    const { PaddleOcrService } = await import("https://esm.sh/ppu-paddle-ocr@5.8.2/web");
-    console.log("[OCR] ppu-paddle-ocr 模块已下载，正在初始化...");
-    const ocr = new PaddleOcrService();
-    await ocr.initialize();
+    console.log("[OCR] 正在加载 PaddleOCR 中文识别引擎 (PP-OCRv5)...");
+    showToast("⏳ 加载 PaddleOCR 中文引擎（首次约 30-60 秒下载模型）...", "success");
+    
+    // 1. Load onnxruntime-web
+    if (!_paddleOrtModule) {
+      console.log("[OCR] 加载 onnxruntime-web...");
+      _paddleOrtModule = await import("https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.all.mjs");
+      // Use WASM backend (most compatible, no special headers needed)
+      _paddleOrtModule.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
+    }
+    
+    // 2. Load paddleocr library
+    console.log("[OCR] 加载 paddleocr 库...");
+    const { PaddleOcrService } = await import("https://esm.sh/paddleocr@1.1.1");
+    
+    // 3. Download Chinese models and dictionary in parallel
+    console.log("[OCR] 下载中文 PP-OCRv5 模型和字典...");
+    const [detBuf, recBuf, dictText] = await Promise.all([
+      fetch(_PADDLE_DET_URL).then(r => { if (!r.ok) throw new Error(`Det model: ${r.status}`); return r.arrayBuffer(); }),
+      fetch(_PADDLE_REC_URL).then(r => { if (!r.ok) throw new Error(`Rec model: ${r.status}`); return r.arrayBuffer(); }),
+      fetch(_PADDLE_DICT_URL).then(r => { if (!r.ok) throw new Error(`Dict: ${r.status}`); return r.text(); }),
+    ]);
+    
+    // 4. Parse dictionary into string array
+    const dictArray = dictText.split("\n").filter(line => line.length > 0);
+    console.log(`[OCR] 字典加载完成: ${dictArray.length} 个字符`);
+    
+    // 5. Initialize PaddleOCR with Chinese models
+    const ocr = await PaddleOcrService.createInstance({
+      ort: _paddleOrtModule,
+      detection: {
+        modelBuffer: detBuf,
+        minimumAreaThreshold: 24,
+        textPixelThreshold: 0.55,
+        paddingBoxVertical: 0.3,
+        paddingBoxHorizontal: 0.5,
+      },
+      recognition: {
+        modelBuffer: recBuf,
+        charactersDictionary: dictArray,
+        imageHeight: 48,
+      },
+    });
+    
     _paddleOcrInstance = ocr;
-    console.log("[OCR] ✅ ppu-paddle-ocr 就绪 (PP-OCRv5, canvas-native)");
-    showToast("✅ PaddleOCR 浏览器引擎就绪", "success");
+    console.log("[OCR] ✅ PaddleOCR 中文引擎就绪 (PP-OCRv5 mobile, " + dictArray.length + " 字符字典)");
+    showToast("✅ PaddleOCR 中文引擎就绪", "success");
     return _paddleOcrInstance;
   })();
   
@@ -2884,46 +2929,128 @@ async function _loadPaddleOcr() {
 
 function _preloadPaddleOcr() {
   _loadPaddleOcr().catch(e => {
-    console.warn("[OCR] ppu-paddle-ocr 预加载失败:", e.message);
+    console.warn("[OCR] PaddleOCR 预加载失败:", e.message);
     _paddleOcrPromise = null; // Allow retry
   });
 }
 
-// ── OCR a single canvas via ppu-paddle-ocr browser engine ──
+// ── OCR a single canvas via paddleocr browser engine (Chinese PP-OCRv5) ──
 async function _ocrViaPaddleJs(canvas) {
   const ocr = await _loadPaddleOcr();
-  const result = await ocr.recognize(canvas);
-  const lines = result?.lines || [];
+  
+  // Extract image data from canvas
+  const ctx = canvas.getContext("2d");
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const input = {
+    data: imageData.data,
+    width: canvas.width,
+    height: canvas.height,
+  };
+  
+  // Run OCR with progress tracking
+  let lastText = "";
+  const result = await ocr.recognize(input, {
+    onProgress(event) {
+      if (event.type === "rec" && event.stage === "item" && event.result?.text) {
+        lastText = event.result.text;
+      }
+    },
+    ordering: { sortByReadingOrder: true },
+  });
+  
+  // Process results
+  const processed = ocr.processRecognition(result, {
+    lineMergeThresholdRatio: 0.8,
+  });
+  
+  const lines = processed?.lines || result?.lines || [];
   const texts = lines.map(line => line.text || "");
   const confs = lines.map(line => line.score ?? line.confidence ?? 0);
   const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
+  
   return {
-    text: result?.text || texts.join("\n"),
+    text: processed?.text || texts.join("\n"),
     confidence: Math.round(avgConf * 100),
     lines: texts.length,
-    engine: "ppu-paddle-ocr (PP-OCRv5)"
+    engine: "PaddleOCR (PP-OCRv5 Chinese)"
   };
 }
 
-// ── OCR a single canvas image using Tesseract.js (legacy fallback, ~60% for Chinese) ──
-async function _ocrCanvasPage(canvas, lang = "chi_sim+eng") {
-  if (typeof Tesseract === "undefined") {
-    throw new Error("Tesseract.js 未加载");
+// ── Baidu Cloud OCR (百度云文字识别 API, 99%+ Chinese accuracy) ──
+// Uses Baidu's accurate_basic endpoint for high-precision Chinese OCR
+// API calls are proxied through local ocr_server.py to avoid CORS issues
+const _BAIDU_OCR_CONFIG = {
+  apiKey: "HFLj7zYStPUykkbP3G3FfR4b",
+  secretKey: "j3T7uDs8zxxyUaoBvKoFQd4sVrWnNegF",
+  tokenUrl: "https://aip.baidubce.com/oauth/2.0/token",
+  ocrUrl: "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic",
+  _cachedToken: null,
+  _tokenExpiry: 0,
+};
+
+async function _getBaiduAccessToken() {
+  const cfg = _BAIDU_OCR_CONFIG;
+  // Return cached token if still valid (30 day expiry, refresh 1 hour early)
+  if (cfg._cachedToken && Date.now() < cfg._tokenExpiry) {
+    return cfg._cachedToken;
   }
-  const worker = await Tesseract.createWorker(lang, 1, {
-    logger: m => {
-      if (m.status === "recognizing text" && m.progress) {
-        // Could hook into progress bar here
-      }
-    }
-  });
-  const { data } = await worker.recognize(canvas);
-  await worker.terminate();
+  const url = `${cfg.tokenUrl}?grant_type=client_credentials&client_id=${cfg.apiKey}&client_secret=${cfg.secretKey}`;
+  
+  // Try via local proxy first (avoids CORS), then try direct
+  let resp;
+  try {
+    resp = await fetch(`http://127.0.0.1:8765/proxy?url=${encodeURIComponent(url)}`, { method: 'POST' });
+    if (!resp.ok) throw new Error('proxy failed');
+  } catch {
+    // Try direct (may fail due to CORS on file:// protocol)
+    resp = await fetch(url, { method: 'POST' });
+  }
+  
+  const data = await resp.json();
+  if (data.error) throw new Error(`百度 Token 获取失败: ${data.error_description || data.error}`);
+  cfg._cachedToken = data.access_token;
+  cfg._tokenExpiry = Date.now() + (data.expires_in - 3600) * 1000; // refresh 1hr early
+  console.log("[OCR] 百度云 access_token 获取成功, 有效期:", Math.round(data.expires_in/3600), "小时");
+  return cfg._cachedToken;
+}
+
+async function _ocrViaBaiduCloud(canvas) {
+  // Convert canvas to base64 JPEG
+  const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  const base64 = jpegDataUrl.split(",")[1]; // Remove "data:image/jpeg;base64," prefix
+  
+  const token = await _getBaiduAccessToken();
+  const ocrUrl = `${_BAIDU_OCR_CONFIG.ocrUrl}?access_token=${token}`;
+  const body = `image=${encodeURIComponent(base64)}`;
+  
+  // Try via local proxy first, then direct
+  let resp;
+  try {
+    resp = await fetch(`http://127.0.0.1:8765/proxy?url=${encodeURIComponent(ocrUrl)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body
+    });
+    if (!resp.ok) throw new Error('proxy failed');
+  } catch {
+    resp = await fetch(ocrUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body
+    });
+  }
+  
+  const data = await resp.json();
+  if (data.error_code) {
+    throw new Error(`百度OCR错误 ${data.error_code}: ${data.error_msg}`);
+  }
+  
+  const words = (data.words_result || []).map(w => w.words);
   return {
-    text: data.text || "",
-    confidence: data.confidence || 0,  // 0-100
-    lines: data.lines ? data.lines.length : 0,
-    engine: "Tesseract.js"
+    text: words.join("\n"),
+    confidence: 95, // Baidu doesn't return per-word confidence in basic mode
+    lines: words.length,
+    engine: "百度云OCR (accurate_basic)"
   };
 }
 
@@ -5713,7 +5840,8 @@ function renderPendingFileList(files, containerEl) {
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
           <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
-            <option value="local">🖥️ RapidOCR (本地高精度, 12x并发) ⭐推荐</option>
+            <option value="baidu">☁️ 百度云OCR (99%+ 中文精度) ⭐推荐</option>
+            <option value="local">🖥️ RapidOCR (本地高精度, 12x并发)</option>
             <option value="paddle">🌐 PaddleOCR (浏览器端, PP-OCRv5)</option>
           </select>
           <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
@@ -5972,7 +6100,7 @@ async function startFileOcr(fileIndex, listKey) {
 
 
   try {
-    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : 'PaddleOCR (PP-OCRv5)'})...`);
+    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'baidu' ? '百度云OCR' : 'PaddleOCR (PP-OCRv5)'})...`);
 
     if (engine === "local") {
       // RapidOCR via local server
@@ -6026,8 +6154,10 @@ async function startFileOcr(fileIndex, listKey) {
         "success"
       );
 
-    } else if (engine === "paddle") {
-      // Browser-side OCR (ppu-paddle-ocr only — Tesseract.js removed due to <5% Chinese accuracy)
+    } else if (engine === "baidu" || engine === "paddle") {
+      // Browser-side OCR: Baidu Cloud API or PaddleOCR WASM
+      const isBaidu = engine === "baidu";
+      const engineLabel = isBaidu ? "百度云OCR" : "PaddleOCR PP-OCRv5";
       if (!globalThis.pdfjsLib) { showToast("PDF.js 未加载", "danger"); return; }
       const data = await file.arrayBuffer();
       const pdf = await globalThis.pdfjsLib.getDocument({ data }).promise;
@@ -6040,11 +6170,11 @@ async function startFileOcr(fileIndex, listKey) {
       if (inlineLiveEl) inlineLiveEl.style.display = 'block';
 
       for (let p = 1; p <= total; p++) {
-        updateProgress(p - 1, total, `${p}/${total} 页 (PaddleOCR PP-OCRv5)`);
+        updateProgress(p - 1, total, `${p}/${total} 页 (${engineLabel})`);
         const page = await pdf.getPage(p);
         const canvas = await _renderPdfPageToCanvas(page, 2.0);
         try {
-          const ocr = await _ocrViaPaddleJs(canvas);
+          const ocr = isBaidu ? await _ocrViaBaiduCloud(canvas) : await _ocrViaPaddleJs(canvas);
           if (ocr?.text) {
             allTexts.push(ocr.text);
             // 实时显示识别到的文字（内联面板）
@@ -6054,8 +6184,11 @@ async function startFileOcr(fileIndex, listKey) {
         } catch (e) {
           console.warn(`Page ${p} OCR failed:`, e);
           if (p === 1) {
-            // 第一页就失败，直接提示用户
-            showToast("⚠️ 浏览器端 PaddleOCR 加载失败，请启动本地 RapidOCR 服务器 (start.bat)", "warning");
+            if (isBaidu) {
+              showToast(`⚠️ 百度云OCR失败: ${e.message}`, "danger");
+            } else {
+              showToast("⚠️ 浏览器端 PaddleOCR 加载失败，请尝试百度云OCR或启动本地服务器", "warning");
+            }
           }
         }
       }
@@ -6070,17 +6203,17 @@ async function startFileOcr(fileIndex, listKey) {
           filename: file.name, source_file: file.name,
           source_kind: "PDF-OCR", page_num: 0,
           ocr_confidence: avgConf,
-          ocr_engine: "ppu-paddle-ocr (PP-OCRv5)",
+          ocr_engine: engineLabel,
           text: fullText
         });
       }
       _pdfParseCache.set(cacheKey, records);
       updateProgress(total, total, `✅ 完成! ${fullText.length.toLocaleString()} 字符, 置信度 ${avgConf}%`);
       const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
-        engine: "ppu-paddle-ocr (PP-OCRv5)",
+        engine: engineLabel,
         confidence: avgConf
       });
-      // OCR完成后立即自动下载结果，不需要额外步骤
+      // OCR完成后立即自动下载结果
       _autoDownloadOcrText(fullText, file.name);
       showToast(
         txtFile
