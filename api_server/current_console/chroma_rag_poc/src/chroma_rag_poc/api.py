@@ -379,6 +379,13 @@ def create_app(
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
     app.state.log_dir.mkdir(parents=True, exist_ok=True)
 
+    # Register modular GraphRAG routes (community detection, global search, etc.)
+    try:
+        from .routes_graphrag import router as graphrag_router
+        app.include_router(graphrag_router)
+    except ImportError:
+        pass  # Gracefully skip if root-level modules are not available
+
     @app.get("/")
     async def index():
         index_path = FRONTEND_DIR / "index.html"

@@ -17,6 +17,8 @@ REPO_ROOT = APP_DIR.parents[1]
 SRC_DIR = APP_DIR / "chroma_rag_poc" / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from chroma_rag_poc.api import create_app
 from chroma_rag_poc.pipeline import DEFAULT_RUNTIME_DIR
