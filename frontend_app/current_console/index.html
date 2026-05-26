@@ -5818,6 +5818,65 @@ async function exportKgPdfTexts() {
   }
 }
 
+// ── Export OCR results from the standard (数据接入) pending list ──
+// This reads directly from _pdfParseCache and OCR-generated .txt files,
+// so it works immediately after OCR without needing "检测并入库".
+function exportOcrResultsFromStandard() {
+  const files = _pendingJsonFiles.standard;
+  if (!files || !files.length) {
+    showToast('请先拖入或选择文件', 'warning');
+    return;
+  }
+
+  let exported = 0;
+
+  // Strategy 1: Export OCR-generated .txt files directly from the pending list
+  const ocrTxtFiles = files.filter(f => f._ocrGenerated === true);
+  for (const txtFile of ocrTxtFiles) {
+    const url = URL.createObjectURL(txtFile);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = txtFile.name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    exported++;
+  }
+
+  // Strategy 2: For PDFs that have been OCR'd but might not have a .txt in the list,
+  // check _pdfParseCache
+  const pdfFiles = files.filter(f => (f.name.split('.').pop() || '').toLowerCase() === 'pdf');
+  for (const pdfFile of pdfFiles) {
+    const cacheKey = `${pdfFile.name}|${pdfFile.size}|${pdfFile.lastModified}`;
+    const cached = _pdfParseCache.get(cacheKey);
+    if (!cached || !cached.length) continue;
+
+    // Check if we already exported a .txt for this PDF via strategy 1
+    const alreadyExported = ocrTxtFiles.some(f => f._sourcePdfName === pdfFile.name);
+    if (alreadyExported) continue;
+
+    const fullText = cached.map(r => r.text || '').join('\n\n').trim();
+    if (fullText.length <= 10) continue;
+
+    const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_OCR结果.txt';
+    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = txtName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    exported++;
+  }
+
+  if (exported > 0) {
+    showToast(`成功导出 ${exported} 个 OCR 结果！`, 'success');
+  } else {
+    showToast('没有找到已完成的OCR结果。请先对PDF文件执行OCR识别。', 'warning');
+  }
+}
+
 // ── OCR panel toggle ──
 function openOcrPanel(fileIndex, listKey) {
   const panel = document.getElementById(`ocrPanel_${listKey}_${fileIndex}`);
@@ -5894,9 +5953,11 @@ async function startFileOcr(fileIndex, listKey) {
         engine: "RapidOCR",
         confidence: Math.round((result.avg_confidence || 0) * 100)
       });
+      // OCR完成后立即自动下载结果，不需要额外步骤
+      _autoDownloadOcrText(fullText, file.name);
       showToast(
         txtFile
-          ? `OCR 完成，已生成文本文件：${txtFile.name}`
+          ? `OCR 完成，结果已自动下载：${txtFile.name}`
           : `OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`,
         "success"
       );
@@ -5956,9 +6017,11 @@ async function startFileOcr(fileIndex, listKey) {
         engine: engine === "paddle" ? "PaddleOCR.js" : "Tesseract.js",
         confidence: avgConf
       });
+      // OCR完成后立即自动下载结果，不需要额外步骤
+      _autoDownloadOcrText(fullText, file.name);
       showToast(
         txtFile
-          ? `OCR 完成，已生成文本文件：${txtFile.name}`
+          ? `OCR 完成，结果已自动下载：${txtFile.name}`
           : `OCR 完成: ${file.name} — ${fullText.length.toLocaleString()} 字符`,
         "success"
       );
@@ -7471,17 +7534,27 @@ function bindEvents() {
     event.target.value = "";
   });
 
-  els.dropZone?.addEventListener("dragover", (event) => {
+  els.dropZone?.addEventListener("dragenter", (event) => {
     event.preventDefault();
+    event.stopPropagation();
     els.dropZone.classList.add("is-dragging");
   });
 
-  els.dropZone?.addEventListener("dragleave", () => {
+  els.dropZone?.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    els.dropZone.classList.add("is-dragging");
+  });
+
+  els.dropZone?.addEventListener("dragleave", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     els.dropZone.classList.remove("is-dragging");
   });
 
   els.dropZone?.addEventListener("drop", async (event) => {
     event.preventDefault();
+    event.stopPropagation();
     els.dropZone.classList.remove("is-dragging");
     const dropped = await filesFromDrop(event.dataTransfer);
     await uploadFiles(dropped);
@@ -7514,15 +7587,24 @@ function bindEvents() {
     addExampleFiles(e.target.files);
     e.target.value = "";
   });
-  exampleDropZone?.addEventListener("dragover", (e) => {
+  exampleDropZone?.addEventListener("dragenter", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     exampleDropZone.classList.add("is-dragging");
   });
-  exampleDropZone?.addEventListener("dragleave", () => {
+  exampleDropZone?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    exampleDropZone.classList.add("is-dragging");
+  });
+  exampleDropZone?.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     exampleDropZone.classList.remove("is-dragging");
   });
   exampleDropZone?.addEventListener("drop", async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     exampleDropZone.classList.remove("is-dragging");
     const dropped = await filesFromDrop(e.dataTransfer);
     addExampleFiles(dropped);
@@ -7590,10 +7672,11 @@ function bindEvents() {
   }
   kgFileInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
   kgFolderInput?.addEventListener("change", (e) => { handleKgCorpusFiles(e.target.files); e.target.value = ""; });
-  kgDropZoneEl?.addEventListener("dragover", (e) => { e.preventDefault(); kgDropZoneEl.classList.add("is-dragging"); });
-  kgDropZoneEl?.addEventListener("dragleave", () => kgDropZoneEl.classList.remove("is-dragging"));
+  kgDropZoneEl?.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.add("is-dragging"); });
+  kgDropZoneEl?.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.add("is-dragging"); });
+  kgDropZoneEl?.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.remove("is-dragging"); });
   kgDropZoneEl?.addEventListener("drop", async (e) => {
-    e.preventDefault(); kgDropZoneEl.classList.remove("is-dragging");
+    e.preventDefault(); e.stopPropagation(); kgDropZoneEl.classList.remove("is-dragging");
     const dropped = await filesFromDrop(e.dataTransfer);
     handleKgCorpusFiles(dropped);
   });
@@ -9074,6 +9157,7 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
                   <div class="export-bar">
                     <button class="btn" id="btnPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
+                    <button class="ghost-btn" id="btnExportOcrResults" type="button" onclick="exportOcrResultsFromStandard()" title="导出已完成OCR的PDF文本结果（无需入库）"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
                     <button class="ghost-btn" id="btnPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出向量库</span></button>
                   </div>
                   <div class="queue-list" id="publicBooksJsonSummary"></div>
