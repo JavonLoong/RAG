@@ -2799,10 +2799,13 @@ async function _renderPdfPageToCanvas(page, scale = 2.0) {
   return canvas;
 }
 
-// ── Local OCR server detection (RapidOCR backend) ──
+// ── Local OCR server detection (multi-engine backend) ──
 let _localOcrAvailable = null; // null = unchecked, true/false
 const LOCAL_OCR_URL = "http://127.0.0.1:8765";
 let _localOcrConcurrency = 1;
+let _localOcrEngines = [];  // ['rapidocr', 'tesseract']
+let _localOcrHasRapid = false;
+let _localOcrHasTesseract = false;
 
 async function _checkLocalOcr() {
   if (_localOcrAvailable !== null) return _localOcrAvailable;
@@ -2811,22 +2814,29 @@ async function _checkLocalOcr() {
     const data = await resp.json();
     _localOcrAvailable = data.status === "ok";
     _localOcrConcurrency = data.concurrency || 1;
+    _localOcrEngines = data.engines || [];
+    _localOcrHasRapid = data.rapidocr === true || _localOcrEngines.includes('rapidocr');
+    _localOcrHasTesseract = data.tesseract === true || _localOcrEngines.includes('tesseract');
     if (_localOcrAvailable) {
-      console.log(`[OCR] 本地高精度 OCR 引擎可用: ${data.engine}, 并发: ${_localOcrConcurrency} 线程, CPU: ${data.cpu_cores || '?'} 核`);
+      console.log(`[OCR] 本地 OCR 服务器可用: 引擎=${_localOcrEngines.join('+')}, 并发: ${_localOcrConcurrency} 线程, CPU: ${data.cpu_cores || '?'} 核`);
     }
   } catch {
     _localOcrAvailable = false;
+    _localOcrEngines = [];
+    _localOcrHasRapid = false;
+    _localOcrHasTesseract = false;
     console.log("[OCR] 本地 OCR 服务器未启动，将使用浏览器端 ppu-paddle-ocr");
   }
   return _localOcrAvailable;
 }
 
 // ── 一键式本地 OCR: 上传 PDF → 服务器并发处理全部页面 → 轮询进度 → 返回结果 ──
-async function _ocrPdfViaServer(file, progressCallback) {
+async function _ocrPdfViaServer(file, progressCallback, engineName) {
   const pdfBuf = await file.arrayBuffer();
+  const engineParam = engineName ? `?engine=${engineName}` : '';
   
   // 1) 上传 PDF，服务器立刻开始后台并发 OCR
-  const startResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/start`, {
+  const startResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/start${engineParam}`, {
     method: "POST",
     headers: { "Content-Type": "application/octet-stream" },
     body: pdfBuf
@@ -2836,8 +2846,9 @@ async function _ocrPdfViaServer(file, progressCallback) {
   if (startData.error) throw new Error(startData.error);
   
   const { session_id, total_pages, concurrency } = startData;
-  console.log(`[OCR] 开始: session=${session_id}, ${total_pages} 页, ${concurrency}x 并发`);
-  if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency });
+  const serverEngine = startData.engine || engineName || 'RapidOCR';
+  console.log(`[OCR] 开始: session=${session_id}, ${total_pages} 页, 引擎=${serverEngine}, ${concurrency}x 并发`);
+  if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency, engine: serverEngine });
   
   // 2) 轮询进度直到完成
   while (true) {
@@ -2850,7 +2861,7 @@ async function _ocrPdfViaServer(file, progressCallback) {
     if (progressCallback) progressCallback({ phase: "processing", ...prog });
     
     if (prog.complete) {
-      console.log(`[OCR] 完成: ${total_pages} 页, ${prog.elapsed_s}s, 置信度 ${(prog.avg_confidence*100).toFixed(0)}%`);
+      console.log(`[OCR] 完成: ${total_pages} 页, 引擎=${serverEngine}, ${prog.elapsed_s}s, 置信度 ${(prog.avg_confidence*100).toFixed(0)}%`);
       return prog;  // { full_text, pages, avg_confidence, elapsed_s, ... }
     }
   }
@@ -5840,8 +5851,9 @@ function renderPendingFileList(files, containerEl) {
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
           <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
-            <option value="baidu">☁️ 百度云OCR (99%+ 中文精度) ⭐推荐</option>
-            <option value="local">🖥️ RapidOCR (本地高精度, 12x并发)</option>
+            <option value="local">🖥️ RapidOCR (本地高精度, 12x并发) ⭐推荐</option>
+            <option value="tesseract">🔤 Tesseract (本地, chi_sim+eng)</option>
+            <option value="baidu">☁️ 百度云OCR (99%+ 中文精度)</option>
             <option value="paddle">🌐 PaddleOCR (浏览器端, PP-OCRv5)</option>
           </select>
           <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
@@ -6083,6 +6095,8 @@ async function startFileOcr(fileIndex, listKey) {
 
   const idPrefix = `${listKey}_${fileIndex}`;
   const engine = document.getElementById(`ocrEngine_${idPrefix}`)?.value || "local";
+  // Reset server detection cache so user can start server mid-session
+  if (engine === "local" || engine === "tesseract") _localOcrAvailable = null;
   const conc = parseInt(document.getElementById(`ocrConc_${idPrefix}`)?.value || "12");
   const progressDiv = document.getElementById(`ocrProgress_${idPrefix}`);
   const barEl = document.getElementById(`ocrBar_${idPrefix}`);
@@ -6100,16 +6114,34 @@ async function startFileOcr(fileIndex, listKey) {
 
 
   try {
-    updateProgress(0, 1, `准备 OCR (${engine === 'local' ? 'RapidOCR 本地' : engine === 'baidu' ? '百度云OCR' : 'PaddleOCR (PP-OCRv5)'})...`);
+    const engineLabels = {
+      local: 'RapidOCR 本地', tesseract: 'Tesseract 本地',
+      baidu: '百度云OCR', paddle: 'PaddleOCR (PP-OCRv5)'
+    };
+    updateProgress(0, 1, `准备 OCR (${engineLabels[engine] || engine})...`);
 
-    if (engine === "local") {
-      // RapidOCR via local server
+    if (engine === "local" || engine === "tesseract") {
+      // Local server engines: RapidOCR or Tesseract
+      const serverEngine = engine === "tesseract" ? "tesseract" : "rapidocr";
       const available = await _checkLocalOcr();
       if (!available) {
-        showToast("本地 OCR 服务器未启动！请先运行 start.bat 或 python ocr_server.py", "danger");
-        updateProgress(0, 0, "❌ 本地 OCR 服务器不可用");
+        showToast("⚠️ 本地 OCR 服务器未启动！请在终端运行: python ocr_server.py", "danger");
+        updateProgress(0, 0, "❌ 本地 OCR 服务器不可用 — 请运行 python ocr_server.py");
         return;
       }
+      // Check if the requested engine is available on the server
+      if (engine === "local" && !_localOcrHasRapid) {
+        showToast("⚠️ 服务器未安装 RapidOCR，请尝试 Tesseract 引擎", "warning");
+        updateProgress(0, 0, "❌ RapidOCR 不可用，请选择 Tesseract");
+        return;
+      }
+      if (engine === "tesseract" && !_localOcrHasTesseract) {
+        showToast("⚠️ 服务器未检测到 Tesseract，请安装 Tesseract OCR", "warning");
+        updateProgress(0, 0, "❌ Tesseract 不可用");
+        return;
+      }
+
+      const engineLabel = engine === "tesseract" ? "Tesseract" : "RapidOCR";
 
       // 获取内联实时文字预览元素
       const inlineLiveEl = document.getElementById(`ocrLive_${idPrefix}`);
@@ -6118,12 +6150,12 @@ async function startFileOcr(fileIndex, listKey) {
       const result = await _ocrPdfViaServer(file, (prog) => {
         updateProgress(prog.done || 0, prog.total || 0,
           prog.complete ? `✅ 完成! ${prog.elapsed_s}s, 置信度 ${Math.round((prog.avg_confidence||0)*100)}%`
-          : `${prog.done || 0}/${prog.total || 0} 页 (${prog.concurrency || conc}x 并发)`);
+          : `${prog.done || 0}/${prog.total || 0} 页 (${engineLabel}, ${prog.concurrency || conc}x 并发)`);
         // 实时文字预览
         if (inlineLiveEl && !prog.complete && prog.latest_text) {
           _updateInlineLiveText(inlineLiveEl, prog.latest_text, prog.latest_page || '?');
         }
-      });
+      }, serverEngine);
 
       // Cache the result as parsed records
       const cacheKey = `${file.name}|${file.size}|${file.lastModified}`;
@@ -6135,22 +6167,22 @@ async function startFileOcr(fileIndex, listKey) {
           filename: file.name, source_file: file.name,
           source_kind: "PDF-OCR", page_num: 0,
           ocr_confidence: Math.round((result.avg_confidence || 0) * 100),
-          ocr_engine: "RapidOCR", text: fullText
+          ocr_engine: engineLabel, text: fullText
         });
       }
       _pdfParseCache.set(cacheKey, records);
       updateProgress(result.total || 1, result.total || 1,
         `✅ 完成! ${(result.full_text||'').length.toLocaleString()} 字符, ${result.elapsed_s || 0}s`);
       const txtFile = addOcrTextFileToPendingList(listKey, file, fullText, {
-        engine: "RapidOCR",
+        engine: engineLabel,
         confidence: Math.round((result.avg_confidence || 0) * 100)
       });
       // OCR完成后立即自动下载结果，不需要额外步骤
       _autoDownloadOcrText(fullText, file.name);
       showToast(
         txtFile
-          ? `OCR 完成，结果已自动下载：${txtFile.name}`
-          : `OCR 完成: ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`,
+          ? `OCR 完成 (${engineLabel})，结果已自动下载：${txtFile.name}`
+          : `OCR 完成 (${engineLabel}): ${file.name} — ${(result.full_text||'').length.toLocaleString()} 字符`,
         "success"
       );
 
