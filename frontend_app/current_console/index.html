@@ -1983,18 +1983,44 @@ const LOCAL_COLLECTION_NAME = "browser_local_index";
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
 
 // Pre-load ppu-paddle-ocr in background so it's ready when user drops a PDF
-// Skips if local RapidOCR server is detected (faster + no download needed)
+// Skips if local OCR server is detected (faster + no download needed)
 setTimeout(async () => {
   if (typeof _checkLocalOcr === "function" && typeof _preloadPaddleOcr === "function") {
     const hasLocal = await _checkLocalOcr();
     if (!hasLocal) {
       console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引擎...");
       _preloadPaddleOcr();
+      // Show a subtle info banner
+      _showOcrServerBanner(false);
     } else {
-      console.log("[OCR] 本地 RapidOCR 服务器可用，跳过 ppu-paddle-ocr 预加载");
+      console.log(`[OCR] 本地 OCR 服务器可用 (${_localOcrEngines.join('+')}), 跳过浏览器引擎预加载`);
+      _showOcrServerBanner(true);
     }
   }
 }, 3000);
+
+function _showOcrServerBanner(available) {
+  // Remove existing banner if any
+  const existing = document.getElementById("ocr-server-banner");
+  if (existing) existing.remove();
+  const banner = document.createElement("div");
+  banner.id = "ocr-server-banner";
+  if (available) {
+    const engines = (typeof _localOcrEngines !== 'undefined' ? _localOcrEngines : []).join(' + ') || 'RapidOCR';
+    banner.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:99998;padding:6px 16px;background:linear-gradient(90deg,#1b5e20,#2e7d32);color:#c8e6c9;font-size:12px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+      <span>✅ OCR 服务器已就绪 — 引擎: <b>${engines}</b> | 并发: ${typeof _localOcrConcurrency !== 'undefined' ? _localOcrConcurrency : '?'}x</span>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#a5d6a7;cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
+    </div>`;
+  } else {
+    banner.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:99998;padding:6px 16px;background:linear-gradient(90deg,#b71c1c,#c62828);color:#ffcdd2;font-size:12px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+      <span>⚠️ OCR 服务器未启动 — 请双击 <b>一键启动.bat</b> 或运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python ocr_server.py</code>（PDF OCR 功能需要）</span>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
+    </div>`;
+  }
+  document.body.appendChild(banner);
+  // Auto-dismiss success banner after 8 seconds
+  if (available) setTimeout(() => banner.remove(), 8000);
+}
 
 const SOURCE_LABELS = {
   PDF: "PDF",
@@ -6125,8 +6151,10 @@ async function startFileOcr(fileIndex, listKey) {
       const serverEngine = engine === "tesseract" ? "tesseract" : "rapidocr";
       const available = await _checkLocalOcr();
       if (!available) {
-        showToast("⚠️ 本地 OCR 服务器未启动！请在终端运行: python ocr_server.py", "danger");
-        updateProgress(0, 0, "❌ 本地 OCR 服务器不可用 — 请运行 python ocr_server.py");
+        const batPath = "frontend_app/current_console/一键启动.bat";
+        showToast(`⚠️ 本地 OCR 服务器未启动！\n\n方法1: 双击运行 ${batPath}\n方法2: 终端运行 python ocr_server.py`, "danger");
+        updateProgress(0, 0, "");
+        if (statusEl) statusEl.innerHTML = `❌ 本地 OCR 服务器不可用<br><span style="font-size:10px;color:#64b5f6;">启动方式: 双击 <b>一键启动.bat</b> 或在终端运行 <code style="background:rgba(255,255,255,0.1);padding:1px 4px;border-radius:3px;">python ocr_server.py</code></span>`;
         return;
       }
       // Check if the requested engine is available on the server
