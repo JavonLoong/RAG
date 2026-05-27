@@ -5,6 +5,24 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>动力装备知识库控制台</title>
+  <script>
+  // 自动跳转: file:// → http://localhost:8766
+  // 解决 file:// 协议下浏览器安全策略阻止 OCR 服务器通信的问题
+  (function() {
+    if (window.location.protocol === "file:") {
+      var httpUrl = "http://127.0.0.1:8766/index.html";
+      var img = new Image();
+      img.onload = function() { window.location.replace(httpUrl); };
+      img.onerror = function() {
+        // Web 服务器未运行, 使用 fetch 再试一次
+        fetch(httpUrl, { mode: "no-cors", signal: AbortSignal.timeout(1500) })
+          .then(function() { window.location.replace(httpUrl); })
+          .catch(function() { /* 服务器未启动, 继续用 file:// */ });
+      };
+      img.src = "http://127.0.0.1:8766/favicon.ico?" + Date.now();
+    }
+  })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2012,14 +2030,46 @@ function _showOcrServerBanner(available) {
       <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#a5d6a7;cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
     </div>`;
   } else {
+    const isFile = window.location.protocol === "file:";
+    const hint = isFile
+      ? `⚠️ 当前通过 file:// 打开，建议访问 <a href="http://127.0.0.1:8766" style="color:#fff;text-decoration:underline;font-weight:bold;">http://127.0.0.1:8766</a>（需先运行 <b>一键启动.bat</b> 或 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>）`
+      : `⚠️ OCR 服务器未启动 — 请运行 <b>一键启动.bat</b> 或 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>`;
     banner.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:99998;padding:6px 16px;background:linear-gradient(90deg,#b71c1c,#c62828);color:#ffcdd2;font-size:12px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-      <span>⚠️ OCR 服务器未启动 — 请双击 <b>一键启动.bat</b> 或运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python ocr_server.py</code>（PDF OCR 功能需要）</span>
-      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
+      <span>${hint}</span>
+      <span style="display:flex;gap:6px;align-items:center;">
+        <button onclick="_retryOcrServerCheck()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;font-size:11px;padding:2px 10px;border-radius:4px;">🔄 重试检测</button>
+        <button onclick="this.closest('#ocr-server-banner').remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;">✕</button>
+      </span>
     </div>`;
+    // Auto-retry every 5 seconds
+    banner._retryTimer = setInterval(async () => {
+      _localOcrAvailable = null;
+      const ok = await _checkLocalOcr();
+      if (ok) {
+        clearInterval(banner._retryTimer);
+        _showOcrServerBanner(true);
+      }
+    }, 5000);
   }
   document.body.appendChild(banner);
   // Auto-dismiss success banner after 8 seconds
   if (available) setTimeout(() => banner.remove(), 8000);
+}
+
+async function _retryOcrServerCheck() {
+  _localOcrAvailable = null;
+  const ok = await _checkLocalOcr();
+  if (ok) {
+    _showOcrServerBanner(true);
+    showToast("✅ OCR 服务器已连接!", "success");
+    // If on file://, redirect to HTTP version
+    if (window.location.protocol === "file:") {
+      showToast("🔄 正在跳转到 HTTP 版本...", "success");
+      setTimeout(() => { window.location.replace("http://127.0.0.1:8766/index.html"); }, 1000);
+    }
+  } else {
+    showToast("❌ 仍无法连接 OCR 服务器，请确认 一键启动.bat 已运行", "danger");
+  }
 }
 
 const SOURCE_LABELS = {
