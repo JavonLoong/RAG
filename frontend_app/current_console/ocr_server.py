@@ -31,7 +31,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 PORT = 8765
 HOST = "127.0.0.1"
 CPU_COUNT = os.cpu_count() or 4
-MAX_OCR_WORKERS = max(2, min(CPU_COUNT // 2, 12))
+MAX_OCR_WORKERS = max(1, min(CPU_COUNT // 4, 4))
 
 # ─── Tesseract paths ───
 TESSERACT_EXE = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
@@ -345,6 +345,17 @@ class OCRHandler(BaseHTTPRequestHandler):
         elif path == "/ocr/pdf/progress":
             sid = params.get("session", [""])[0]
             self._json(get_progress(sid))
+        elif path == "/debug":
+            debug_sessions = {}
+            for k, v in sessions.items():
+                debug_sessions[k] = {
+                    "done": v.get("done"),
+                    "total": v.get("total"),
+                    "complete": v.get("complete"),
+                    "results_len": len(v.get("results", [])),
+                    "error": v.get("error")
+                }
+            self._json(debug_sessions)
         else:
             self._json({"service": "OCR Server v4", "engines": {
                 "rapidocr": RAPID_AVAILABLE,

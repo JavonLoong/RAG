@@ -2927,10 +2927,22 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
   if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency, engine: serverEngine });
   
   // 2) 轮询进度直到完成
+  let retries = 0;
   while (true) {
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 1000));
     
-    const progResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/progress?session=${session_id}`);
+    let progResp;
+    try {
+      progResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/progress?session=${session_id}`);
+      retries = 0; // reset retries on success
+    } catch (e) {
+      retries++;
+      console.warn(`[OCR] 轮询异常 (尝试 ${retries}/5):`, e.message);
+      if (retries > 5) throw new Error(`与 OCR 服务器断开连接: ${e.message}`);
+      continue;
+    }
+
+    if (!progResp.ok) throw new Error(`服务器返回异常状态: ${progResp.status}`);
     const prog = await progResp.json();
     if (prog.error) throw new Error(prog.error);
     
