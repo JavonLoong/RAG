@@ -1,22 +1,19 @@
 @echo off
 chcp 65001 >nul 2>&1
-title RAG 控制台 - 启动中...
 
-:: ─── 用 app.py 统一启动 (OCR + Web + 自动开浏览器) ───
-set "SCRIPT_DIR=%~dp0"
-set "APP_PY=%SCRIPT_DIR%app.py"
-set "RAG_ROOT=%SCRIPT_DIR%..\.."
-set "VENV_PYTHON=%RAG_ROOT%\.venv\Scripts\python.exe"
+cd /d "%~dp0"
 
-:: 检查 Python
+set "VENV_PYTHON=%~dp0..\..\\.venv\Scripts\python.exe"
+
 if exist "%VENV_PYTHON%" (
-    "%VENV_PYTHON%" "%APP_PY%"
+    "%VENV_PYTHON%" "%~dp0app.py"
 ) else (
-    where uv >nul 2>&1
+    where python >nul 2>&1
     if %errorlevel%==0 (
-        uv run python "%APP_PY%"
+        python "%~dp0app.py"
     ) else (
-        python "%APP_PY%"
+        echo [ERROR] Python not found
+        echo Please install Python or create .venv
     )
 )
 pause

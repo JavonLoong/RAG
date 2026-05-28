@@ -23,6 +23,15 @@ WEB_PORT = 8766
 OCR_PORT = 8765
 STARTUP_NAME = "RAG_OCR_Console"
 
+# Resolve venv Python — critical for rapidocr dependencies
+VENV_PYTHON = SCRIPT_DIR.parent.parent / ".venv" / "Scripts" / "python.exe"
+
+def _get_python():
+    """Return the best available Python: venv > sys.executable"""
+    if VENV_PYTHON.exists():
+        return str(VENV_PYTHON)
+    return sys.executable
+
 
 # ═══════════════════════════════════════════════
 #  开机自启 — Windows 注册表
@@ -30,7 +39,7 @@ STARTUP_NAME = "RAG_OCR_Console"
 
 def _get_startup_cmd():
     """构造开机自启命令"""
-    python = sys.executable
+    python = _get_python()
     script = str(Path(__file__).resolve())
     # 使用 pythonw.exe 静默启动（无窗口）
     pythonw = python.replace("python.exe", "pythonw.exe")
@@ -132,7 +141,7 @@ def start_ocr_server(silent=False):
             print(f"  ❌ 找不到 ocr_server.py: {OCR_SERVER}")
         return False
 
-    python = sys.executable
+    python = _get_python()
     if not silent:
         print(f"  🚀 启动 OCR 服务器...")
 
