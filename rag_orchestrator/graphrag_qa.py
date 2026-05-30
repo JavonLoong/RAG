@@ -103,12 +103,16 @@ class GraphRagQAOrchestrator:
         text_retriever: Any,
         graph_retriever: Any,
         global_searcher: Any | None = None,
+        query_router: Any | None = None,
+        hallucination_guard: Any | None = None,
         llm: Any | None = None,
         prompt_builder: Callable[[str, str, list[dict[str, Any]]], str] | None = None,
     ) -> None:
         self.text_retriever = text_retriever
         self.graph_retriever = graph_retriever
         self.global_searcher = global_searcher
+        self.query_router = query_router
+        self.hallucination_guard = hallucination_guard
         self.llm = llm
         self.prompt_builder = prompt_builder or build_default_prompt
 
@@ -121,18 +125,35 @@ class GraphRagQAOrchestrator:
         if self.llm is None and not context_only:
             raise GraphRagConfigurationError(MISSING_LLM_ERROR)
 
-        text_raw = _call_retriever(self.text_retriever, question, top_k)
-        graph_raw = _call_retriever(self.graph_retriever, question, top_k)
-        text_evidence = [
-            _normalize_text_evidence(item, rank=rank) for rank, item in enumerate(_as_items(text_raw), start=1)
-        ]
-        graph_evidence = [
-            _normalize_graph_evidence(item, rank=rank) for rank, item in enumerate(_as_items(graph_raw), start=1)
-        ]
+        # 1. Route the query if a router is available
+        route_strategy = "LOCAL_SEARCH"
+        if self.query_router is not None:
+            route = self.query_router.route_query(question)
+            route_strategy = route.strategy
 
-        # Global search: community-level context via Map-Reduce
+        # 2. Retrieve evidence selectively based on routing strategy
+        text_evidence = []
+        graph_evidence = []
         global_context = ""
-        if self.global_searcher is not None:
+
+        # Run text retriever for VECTOR_ONLY and LOCAL_SEARCH (and optionally GLOBAL)
+        if route_strategy in ("VECTOR_ONLY", "LOCAL_SEARCH", "GLOBAL_SEARCH"):
+            text_raw = _call_retriever(self.text_retriever, question, top_k)
+            text_evidence = [
+                _normalize_text_evidence(item, rank=rank)
+                for rank, item in enumerate(_as_items(text_raw), start=1)
+            ]
+
+        # Run graph retriever for LOCAL_SEARCH
+        if route_strategy == "LOCAL_SEARCH":
+            graph_raw = _call_retriever(self.graph_retriever, question, top_k)
+            graph_evidence = [
+                _normalize_graph_evidence(item, rank=rank)
+                for rank, item in enumerate(_as_items(graph_raw), start=1)
+            ]
+
+        # Run global search only for GLOBAL_SEARCH
+        if route_strategy == "GLOBAL_SEARCH" and self.global_searcher is not None:
             try:
                 gs_result = self.global_searcher.search(question, context_only=True)
                 if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
@@ -155,6 +176,13 @@ class GraphRagQAOrchestrator:
 
         prompt = self.prompt_builder(question, context, citations)
         answer = _call_llm(self.llm, prompt, question=question, context=context, citations=citations)
+
+        # 4. Verify answer if hallucination guard is present
+        if self.hallucination_guard is not None and answer:
+            guard_result = self.hallucination_guard.verify(answer, context)
+            if not guard_result.is_safe:
+                answer += "\n\n[System Warning]: Some claims in this answer might not be fully supported by the evidence: " + ", ".join(guard_result.hallucinated_claims)
+
         return GraphRagQAResult(
             question=question,
             answer=answer,
