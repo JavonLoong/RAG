@@ -20,9 +20,10 @@ class SQLiteGraphRetriever(BaseRetriever):
 
     Instead of scanning all edges, this retriever:
     1. Tokenizes the query into entity name candidates
-    2. Uses indexed lookups to find matching nodes
-    3. Retrieves neighbor edges for matched entities
-    4. Scores by match quality and edge confidence
+    2. Uses indexed lookups to find matching seed nodes
+    3. Traverses the graph using a Personalized PageRank (PPR) approximation
+       (multi-hop BFS with a damping factor) to find deep relational evidence
+    4. Scores by match quality, edge confidence, and graph distance (hops)
     """
 
     name = "graph"
@@ -37,6 +38,8 @@ class SQLiteGraphRetriever(BaseRetriever):
         self.graph_store = graph_store
         self.name = name or self.name
         self.include_community_summaries = include_community_summaries
+        self.max_hops = 2
+        self.damping_factor = 0.85
 
     def retrieve(self, query: str, top_k: int = 5) -> list[RetrievalResult]:
         if top_k <= 0 or not query.strip():
@@ -47,45 +50,68 @@ class SQLiteGraphRetriever(BaseRetriever):
         if not entity_candidates:
             return []
 
-        # Find matching entities in the graph
+        # Personalized PageRank (PPR) Approximation via BFS
         results: list[RetrievalResult] = []
         seen_triples: set[str] = set()
+        visited_nodes: set[str] = set()
 
-        for candidate, match_score in entity_candidates:
-            neighbors = self.graph_store.neighbors(candidate, limit=top_k * 2)
+        # Seed frontier: (node_name, current_score, current_hop)
+        frontier = [(candidate, match_score, 0) for candidate, match_score in entity_candidates]
+
+        while frontier:
+            current_node, current_score, hop = frontier.pop(0)
+            
+            if hop >= self.max_hops:
+                continue
+                
+            if current_node in visited_nodes:
+                continue
+            visited_nodes.add(current_node)
+
+            neighbors = self.graph_store.neighbors(current_node, limit=top_k * 2)
+            
             for neighbor in neighbors:
                 triple_id = str(neighbor.get("triple_id", ""))
-                if triple_id in seen_triples:
-                    continue
-                seen_triples.add(triple_id)
-
+                
                 subject = str(neighbor.get("subject", ""))
-                predicate = str(neighbor.get("predicate", ""))
                 obj = str(neighbor.get("object", ""))
                 confidence = float(neighbor.get("confidence") or 0.5)
 
-                text = f"{subject} --{predicate}--> {obj}"
-                metadata = {
-                    "subject": subject,
-                    "predicate": predicate,
-                    "object": obj,
-                    "confidence": confidence,
-                    "source_file": neighbor.get("source_file"),
-                    "source_page": neighbor.get("source_page"),
-                    "triple_id": triple_id,
-                    "direction": neighbor.get("direction"),
-                }
+                # PPR score decay based on hops and edge confidence
+                edge_score = current_score * confidence * (self.damping_factor ** hop)
 
-                chunk = DocumentChunk(
-                    text=text,
-                    source=neighbor.get("source_file"),
-                    chunk_id=triple_id,
-                    metadata=metadata,
-                )
-                score = match_score * confidence
-                results.append(
-                    RetrievalResult(chunk=chunk, score=score, retriever_name=self.name)
-                )
+                if triple_id not in seen_triples:
+                    seen_triples.add(triple_id)
+                    predicate = str(neighbor.get("predicate", ""))
+                    
+                    text = f"{subject} --{predicate}--> {obj}"
+                    metadata = {
+                        "subject": subject,
+                        "predicate": predicate,
+                        "object": obj,
+                        "confidence": confidence,
+                        "source_file": neighbor.get("source_file"),
+                        "source_page": neighbor.get("source_page"),
+                        "triple_id": triple_id,
+                        "direction": neighbor.get("direction"),
+                        "hop": hop,
+                    }
+
+                    chunk = DocumentChunk(
+                        text=text,
+                        source=neighbor.get("source_file"),
+                        chunk_id=triple_id,
+                        metadata=metadata,
+                    )
+                    
+                    results.append(
+                        RetrievalResult(chunk=chunk, score=edge_score, retriever_name=self.name)
+                    )
+
+                # Add next hop nodes to frontier
+                next_node = obj if subject == current_node else subject
+                if next_node and next_node not in visited_nodes:
+                    frontier.append((next_node, edge_score, hop + 1))
 
         # Add community summary results if available
         if self.include_community_summaries:
