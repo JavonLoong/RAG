@@ -1,5 +1,5 @@
 """
-高性能并发 OCR 服务器 v4 — 多引擎支持
+高性能并发 OCR 服务器 v5 — 多引擎 + 高并发
 流程: 上传 PDF → 服务器自动分页并发 OCR → 前端轮询进度 → 返回合并文本
 
 引擎:
@@ -26,12 +26,14 @@ if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 from urllib.parse import urlparse, parse_qs
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 PORT = 8765
 HOST = "127.0.0.1"
 CPU_COUNT = os.cpu_count() or 4
-MAX_OCR_WORKERS = max(1, min(CPU_COUNT // 4, 4))
+# 默认: CPU核数的一半, 上限12; 可通过环境变量 OCR_WORKERS 覆盖
+_env_workers = os.environ.get("OCR_WORKERS")
+MAX_OCR_WORKERS = int(_env_workers) if _env_workers else max(2, min(CPU_COUNT // 2, 12))
 
 # ─── Tesseract paths ───
 TESSERACT_EXE = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
@@ -73,11 +75,26 @@ import numpy as np
 from PIL import Image
 
 _tls = threading.local()
+
+# 限制 ONNX Runtime 每个实例的线程数, 避免 N×M 线程过度竞争
+# 总线程 ≈ MAX_OCR_WORKERS × _ONNX_THREADS ≈ 12×2 = 24 (恰好用满 CPU)
+_ONNX_THREADS = max(1, CPU_COUNT // MAX_OCR_WORKERS)
+
 def get_rapid_engine():
-    if not hasattr(_tls, 'rapid'): _tls.rapid = RapidOCR()
+    if not hasattr(_tls, 'rapid'):
+        _tls.rapid = RapidOCR(
+            # Det/Cls/Rec 每个子模型的 ONNX 内部并行线程数
+            det_intra_op_num_threads=_ONNX_THREADS,
+            det_inter_op_num_threads=1,
+            cls_intra_op_num_threads=_ONNX_THREADS,
+            cls_inter_op_num_threads=1,
+            rec_intra_op_num_threads=_ONNX_THREADS,
+            rec_inter_op_num_threads=1,
+        )
     return _tls.rapid
 
 pool = ThreadPoolExecutor(max_workers=MAX_OCR_WORKERS, thread_name_prefix="ocr")
+_pool_type = "Thread"
 
 # ─── Session 管理 ───
 sessions = {}  # id → { pages_done, total, results[], complete, text, ... }
@@ -85,7 +102,8 @@ sess_lock = threading.Lock()
 
 
 def _ocr_one_page_rapid(pdf_bytes, page_num, dpi=200):
-    """RapidOCR 单页"""
+    """RapidOCR 单页 (子进程安全)"""
+    t0 = time.time()
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     page = doc[page_num - 1]
 
@@ -94,7 +112,8 @@ def _ocr_one_page_rapid(pdf_bytes, page_num, dpi=200):
     if len(native) > 50:
         doc.close()
         return {"page": page_num, "text": native, "confidence": 1.0,
-                "lines": native.count('\n')+1, "method": "native", "engine": "native"}
+                "lines": native.count('\n')+1, "method": "native", "engine": "native",
+                "time_ms": round((time.time()-t0)*1000)}
 
     # 渲染 + OCR
     mat = fitz.Matrix(dpi/72, dpi/72)
@@ -102,16 +121,18 @@ def _ocr_one_page_rapid(pdf_bytes, page_num, dpi=200):
     img_np = np.array(Image.open(io.BytesIO(pix.tobytes("png"))))
     doc.close()
 
+    # 子进程中用 thread-local 引擎实例
     engine = get_rapid_engine()
     result, _ = engine(img_np)
+    elapsed = round((time.time()-t0)*1000)
     if result:
         texts = [r[1] for r in result]
         confs = [r[2] for r in result]
         return {"page": page_num, "text": "\n".join(texts),
                 "confidence": sum(confs)/len(confs), "lines": len(texts),
-                "method": "ocr", "engine": "RapidOCR"}
+                "method": "ocr", "engine": "RapidOCR", "time_ms": elapsed}
     return {"page": page_num, "text": "", "confidence": 0, "lines": 0,
-            "method": "ocr", "engine": "RapidOCR"}
+            "method": "ocr", "engine": "RapidOCR", "time_ms": elapsed}
 
 
 def _ocr_one_page_tesseract(pdf_bytes, page_num, dpi=200, lang="chi_sim+eng", psm=6):
@@ -357,10 +378,10 @@ class OCRHandler(BaseHTTPRequestHandler):
                 }
             self._json(debug_sessions)
         else:
-            self._json({"service": "OCR Server v4", "engines": {
+            self._json({"service": "OCR Server v5", "engines": {
                 "rapidocr": RAPID_AVAILABLE,
                 "tesseract": TESSERACT_AVAILABLE
-            }, "concurrency": MAX_OCR_WORKERS})
+            }, "concurrency": MAX_OCR_WORKERS, "pool_type": _pool_type})
 
     def do_POST(self):
         path = urlparse(self.path).path
@@ -420,9 +441,11 @@ if __name__ == "__main__":
     engines_str = []
     if RAPID_AVAILABLE: engines_str.append("RapidOCR ✅")
     if TESSERACT_AVAILABLE: engines_str.append("Tesseract ✅")
-    print(f"\n>>> OCR Server v4: http://{HOST}:{PORT}")
+    print(f"\n>>> OCR Server v5: http://{HOST}:{PORT}")
     print(f"    可用引擎: {', '.join(engines_str)}")
-    print(f"    Workers: {MAX_OCR_WORKERS} threads / {CPU_COUNT} cores")
+    print(f"    Workers: {MAX_OCR_WORKERS} {_pool_type.lower()}s / {CPU_COUNT} cores")
+    if _env_workers:
+        print(f"    (OCR_WORKERS 环境变量覆盖: {_env_workers})")
     print(f"    Usage: POST /ocr/pdf/start?engine=rapidocr  (默认)")
     print(f"           POST /ocr/pdf/start?engine=tesseract")
     print(f"           GET  /ocr/pdf/progress?session=xxx\n")
