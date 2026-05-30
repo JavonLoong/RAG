@@ -10,7 +10,7 @@
 |------|------|------|
 | 实体/关系抽取 | `kg_pipeline/llm_extraction/` | ✅ 完整 |
 | 知识图谱存储 | `storage_layer/graph_store.py` | ✅ 完整 |
-| **社区检测（Louvain）** | `kg_pipeline/community_detection.py` | ✅ 新增 |
+| **社区检测（Leiden）** | `kg_pipeline/community_detection.py` | ✅ 新增 |
 | **社区摘要（LLM）** | `kg_pipeline/community_summary.py` | ✅ 新增 |
 | **全局搜索（Map-Reduce）** | `rag_orchestrator/global_search.py` | ✅ 新增 |
 | 局部搜索 | `rag_orchestrator/graphrag_qa.py` | ✅ 完整 |
@@ -37,7 +37,7 @@ RAG/
 ├─ core_domain/              # 领域语义与共享数据结构
 ├─ data_pipeline/            # 数据导入、解析、清洗、切分与数据集
 ├─ kg_pipeline/              # 知识图谱构建、社区检测与摘要
-│  ├─ community_detection.py # Louvain 社区检测
+│  ├─ community_detection.py # Leiden 社区检测
 │  ├─ community_summary.py   # LLM 社区摘要生成
 │  └─ llm_extraction/        # LLM 实体关系抽取
 ├─ retrieval_engine/         # dense/sparse/graph/hybrid 检索
@@ -93,11 +93,11 @@ python server.py
 
 ```python
 # 1. 社区检测
-from kg_pipeline.community_detection import run_louvain_detection
+from kg_pipeline.community_detection import run_leiden_detection
 from storage_layer.graph_store import GraphStore
 
 store = GraphStore("graph.sqlite3")
-result = run_louvain_detection(store, resolution=1.0)
+result = run_leiden_detection(store, resolution=1.0)
 print(f"检测到 {result.num_communities} 个社区")
 
 # 2. 社区摘要

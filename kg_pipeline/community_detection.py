@@ -1,6 +1,6 @@
 """Community detection for GraphRAG knowledge graphs.
 
-Implements Louvain community detection using networkx, loading graph data
+Implements Leiden community detection using leidenalg and igraph, loading graph data
 from the SQLite-backed GraphStore and writing community assignments back.
 
 This is a core GraphRAG capability identified as a critical gap in the project evaluation.
@@ -56,16 +56,28 @@ def _import_networkx() -> Any:
     return nx
 
 
-def _import_community() -> Any:
-    """Import python-louvain (community) for Louvain community detection."""
+def _import_leidenalg() -> Any:
+    """Import leidenalg for Leiden community detection."""
     try:
-        import community as community_louvain
+        import leidenalg
     except ModuleNotFoundError as exc:
         raise ImportError(
-            "python-louvain is required for Louvain community detection. "
-            "Install with: pip install python-louvain"
+            "leidenalg is required for Leiden community detection. "
+            "Install with: pip install leidenalg igraph"
         ) from exc
-    return community_louvain
+    return leidenalg
+
+
+def _import_igraph() -> Any:
+    """Import igraph for Leiden community detection."""
+    try:
+        import igraph
+    except ModuleNotFoundError as exc:
+        raise ImportError(
+            "igraph is required for Leiden community detection. "
+            "Install with: pip install igraph leidenalg"
+        ) from exc
+    return igraph
 
 
 def build_networkx_graph(graph_store: Any) -> Any:
@@ -105,25 +117,26 @@ def build_networkx_graph(graph_store: Any) -> Any:
     return G
 
 
-def run_louvain_detection(
+def run_leiden_detection(
     graph_store: Any,
     *,
     resolution: float = 1.0,
     level: int = 0,
     random_state: int = 42,
 ) -> CommunityDetectionResult:
-    """Run Louvain community detection on the knowledge graph.
+    """Run Leiden community detection on the knowledge graph.
 
     Args:
         graph_store: A GraphStore instance with loaded graph data.
-        resolution: Resolution parameter for Louvain (higher = more communities).
+        resolution: Resolution parameter for Leiden (higher = more communities).
         level: Hierarchical level to assign to results.
         random_state: Random seed for reproducibility.
 
     Returns:
         CommunityDetectionResult with all assignments.
     """
-    community_louvain = _import_community()
+    leidenalg = _import_leidenalg()
+    igraph = _import_igraph()
 
     G = build_networkx_graph(graph_store)
     total_nodes = G.number_of_nodes()
@@ -139,15 +152,34 @@ def run_louvain_detection(
             assignments=[],
         )
 
-    # Run Louvain community detection
-    partition = community_louvain.best_partition(
-        G, resolution=resolution, random_state=random_state
+    # Convert networkx graph to igraph
+    nodes = list(G.nodes())
+    node_mapping = {node: i for i, node in enumerate(nodes)}
+    
+    edges = []
+    weights = []
+    for u, v, data in G.edges(data=True):
+        edges.append((node_mapping[u], node_mapping[v]))
+        weights.append(data.get("weight", 1.0))
+        
+    ig = igraph.Graph(n=len(nodes), edges=edges, directed=False)
+    ig.vs["name"] = nodes
+    ig.es["weight"] = weights
+
+    # Run Leiden community detection
+    partition = leidenalg.find_partition(
+        ig,
+        leidenalg.RBConfigurationVertexPartition,
+        weights=weights,
+        resolution_parameter=resolution,
+        seed=random_state
     )
 
     # Build assignments
     assignments: list[CommunityAssignment] = []
     community_sizes: dict[str, int] = {}
-    for node_name, comm_id in partition.items():
+    for vertex_index, comm_id in enumerate(partition.membership):
+        node_name = ig.vs[vertex_index]["name"]
         community_id = f"C{comm_id}"
         assignments.append(
             CommunityAssignment(
@@ -204,7 +236,7 @@ def run_hierarchical_detection(
 
     results = []
     for level, resolution in enumerate(resolutions):
-        result = run_louvain_detection(
+        result = run_leiden_detection(
             graph_store,
             resolution=resolution,
             level=level,
@@ -231,7 +263,7 @@ def detect_communities_from_file(
 
     Args:
         sqlite_path: Path to the SQLite graph database.
-        resolution: Louvain resolution parameter.
+        resolution: Leiden resolution parameter.
         level: Hierarchical level.
 
     Returns:
@@ -241,4 +273,4 @@ def detect_communities_from_file(
 
     store = GraphStore(sqlite_path)
     store.initialize(reset=False)
-    return run_louvain_detection(store, resolution=resolution, level=level)
+    return run_leiden_detection(store, resolution=resolution, level=level)

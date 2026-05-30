@@ -35,7 +35,8 @@ def _make_two_cluster_graph(tmp_path: Path) -> GraphStore:
 def _has_community_module() -> bool:
     """Check if community detection dependencies are available."""
     try:
-        import community  # python-louvain
+        import leidenalg
+        import igraph
         import networkx
 
         return True
@@ -43,12 +44,12 @@ def _has_community_module() -> bool:
         return False
 
 
-@pytest.mark.skipif(not _has_community_module(), reason="python-louvain or networkx not installed")
-def test_louvain_detects_communities(tmp_path: Path) -> None:
-    from kg_pipeline.community_detection import run_louvain_detection
+@pytest.mark.skipif(not _has_community_module(), reason="leidenalg, igraph or networkx not installed")
+def test_leiden_detects_communities(tmp_path: Path) -> None:
+    from kg_pipeline.community_detection import run_leiden_detection
 
     store = _make_two_cluster_graph(tmp_path)
-    result = run_louvain_detection(store, resolution=1.0, level=0)
+    result = run_leiden_detection(store, resolution=1.0, level=0)
     result_dict = result.to_dict()
 
     assert result_dict["num_communities"] >= 2, "Should detect at least 2 communities"
@@ -56,23 +57,23 @@ def test_louvain_detects_communities(tmp_path: Path) -> None:
     assert result_dict["total_edges"] == 8
 
 
-@pytest.mark.skipif(not _has_community_module(), reason="python-louvain or networkx not installed")
+@pytest.mark.skipif(not _has_community_module(), reason="leidenalg, igraph or networkx not installed")
 def test_communities_stored_in_db(tmp_path: Path) -> None:
-    from kg_pipeline.community_detection import run_louvain_detection
+    from kg_pipeline.community_detection import run_leiden_detection
 
     store = _make_two_cluster_graph(tmp_path)
-    run_louvain_detection(store, resolution=1.0, level=0)
+    run_leiden_detection(store, resolution=1.0, level=0)
 
     communities = store.get_communities(level=0)
     assert len(communities) >= 2
 
 
-@pytest.mark.skipif(not _has_community_module(), reason="python-louvain or networkx not installed")
+@pytest.mark.skipif(not _has_community_module(), reason="leidenalg, igraph or networkx not installed")
 def test_community_entities_are_retrievable(tmp_path: Path) -> None:
-    from kg_pipeline.community_detection import run_louvain_detection
+    from kg_pipeline.community_detection import run_leiden_detection
 
     store = _make_two_cluster_graph(tmp_path)
-    run_louvain_detection(store, resolution=1.0, level=0)
+    run_leiden_detection(store, resolution=1.0, level=0)
 
     communities = store.get_communities(level=0)
     for comm in communities:
@@ -83,11 +84,11 @@ def test_community_entities_are_retrievable(tmp_path: Path) -> None:
 def test_empty_graph_detection(tmp_path: Path) -> None:
     """Community detection on an empty graph should not crash."""
     if not _has_community_module():
-        pytest.skip("python-louvain or networkx not installed")
+        pytest.skip("leidenalg, igraph or networkx not installed")
 
-    from kg_pipeline.community_detection import run_louvain_detection
+    from kg_pipeline.community_detection import run_leiden_detection
 
     store = GraphStore(tmp_path / "empty.db")
     store.initialize(reset=True)
-    result = run_louvain_detection(store, resolution=1.0)
+    result = run_leiden_detection(store, resolution=1.0)
     assert result.to_dict()["num_communities"] == 0
