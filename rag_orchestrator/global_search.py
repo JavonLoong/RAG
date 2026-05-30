@@ -122,6 +122,7 @@ class GlobalSearchOrchestrator:
         *,
         level: int = 0,
         context_only: bool = False,
+        stream_callback: Any | None = None,
     ) -> GlobalSearchResult:
         """Execute a global search over community summaries.
 
@@ -129,6 +130,7 @@ class GlobalSearchOrchestrator:
             question: The user's question.
             level: Community hierarchy level to search.
             context_only: If True, return partial answers without final synthesis.
+            stream_callback: Optional callback func(current: int, total: int, pa: dict) for streaming progress.
 
         Returns:
             GlobalSearchResult with the final answer and metadata.
@@ -151,12 +153,13 @@ class GlobalSearchOrchestrator:
 
         # Limit to max_communities (sorted by entity_count, largest first)
         summaries = summaries[: self.max_communities]
+        total_communities = len(summaries)
 
         # MAP phase: generate partial answers from each community
         partial_answers: list[dict[str, Any]] = []
         relevant_count = 0
 
-        for summary in summaries:
+        for i, summary in enumerate(summaries, start=1):
             map_prompt = self.map_prompt.format(
                 title=summary.get("title", ""),
                 summary=summary.get("summary", ""),
@@ -167,23 +170,28 @@ class GlobalSearchOrchestrator:
                 response = response.strip()
 
                 if response == "NOT_RELEVANT" or not response:
+                    if stream_callback:
+                        stream_callback(i, total_communities, None)
                     continue
 
                 relevant_count += 1
-                partial_answers.append(
-                    {
-                        "community_id": summary["community_id"],
-                        "title": summary.get("title", ""),
-                        "entity_count": summary.get("entity_count", 0),
-                        "answer": response,
-                    }
-                )
+                pa_dict = {
+                    "community_id": summary["community_id"],
+                    "title": summary.get("title", ""),
+                    "entity_count": summary.get("entity_count", 0),
+                    "answer": response,
+                }
+                partial_answers.append(pa_dict)
+                if stream_callback:
+                    stream_callback(i, total_communities, pa_dict)
             except Exception as exc:
                 logger.error(
                     "Map step failed for community %s: %s",
                     summary["community_id"],
                     exc,
                 )
+                if stream_callback:
+                    stream_callback(i, total_communities, None)
 
         if context_only:
             return GlobalSearchResult(

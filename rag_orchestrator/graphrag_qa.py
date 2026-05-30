@@ -44,6 +44,7 @@ class EvidenceItem:
     subject: str | None = None
     predicate: str | None = None
     object_: str | None = None
+    valid_time: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -62,6 +63,7 @@ class EvidenceItem:
                 "subject": self.subject,
                 "predicate": self.predicate,
                 "object": self.object_,
+                "valid_time": self.valid_time,
             }
         return payload
 
@@ -116,7 +118,7 @@ class GraphRagQAOrchestrator:
         self.llm = llm
         self.prompt_builder = prompt_builder or build_default_prompt
 
-    def answer(self, question: str, *, top_k: int = 5, context_only: bool = False) -> GraphRagQAResult:
+    def answer(self, question: str, *, top_k: int = 5, context_only: bool = False, stream_callback: Any | None = None) -> GraphRagQAResult:
         question = (question or "").strip()
         if not question:
             raise ValueError(EMPTY_QUESTION_ERROR)
@@ -155,7 +157,12 @@ class GraphRagQAOrchestrator:
         # Run global search only for GLOBAL_SEARCH
         if route_strategy == "GLOBAL_SEARCH" and self.global_searcher is not None:
             try:
-                gs_result = self.global_searcher.search(question, context_only=True)
+                # Use duck-typing for the search method call since stream_callback was just added
+                if "stream_callback" in inspect.signature(self.global_searcher.search).parameters:
+                    gs_result = self.global_searcher.search(question, context_only=True, stream_callback=stream_callback)
+                else:
+                    gs_result = self.global_searcher.search(question, context_only=True)
+                    
                 if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
                     global_context = _format_global_context(gs_result)
             except Exception:  # noqa: BLE001
@@ -175,13 +182,25 @@ class GraphRagQAOrchestrator:
             )
 
         prompt = self.prompt_builder(question, context, citations)
-        answer = _call_llm(self.llm, prompt, question=question, context=context, citations=citations)
+        
+        # 4. Generate and verify with self-correction loop
+        max_retries = 3
+        guard_result = None
+        for attempt in range(max_retries):
+            current_prompt = prompt
+            if attempt > 0 and guard_result and not guard_result.is_safe:
+                current_prompt += f"\n\nIMPORTANT CORRECTION: Your previous answer contained the following unverified claims: {', '.join(guard_result.hallucinated_claims)}. Please strictly remove these and base your answer ONLY on the provided evidence."
+                
+            answer = _call_llm(self.llm, current_prompt, question=question, context=context, citations=citations)
 
-        # 4. Verify answer if hallucination guard is present
-        if self.hallucination_guard is not None and answer:
-            guard_result = self.hallucination_guard.verify(answer, context)
-            if not guard_result.is_safe:
-                answer += "\n\n[System Warning]: Some claims in this answer might not be fully supported by the evidence: " + ", ".join(guard_result.hallucinated_claims)
+            if self.hallucination_guard is not None and answer:
+                guard_result = self.hallucination_guard.verify(answer, context)
+                if guard_result.is_safe:
+                    break
+                elif attempt == max_retries - 1:
+                    answer += "\n\n[System Warning]: Some claims in this answer might not be fully supported by the evidence: " + ", ".join(guard_result.hallucinated_claims)
+            else:
+                break
 
         return GraphRagQAResult(
             question=question,
@@ -257,7 +276,10 @@ def _format_global_context(gs_result: Any) -> str:
 
 def _format_graph_triple(item: EvidenceItem) -> str:
     if item.subject or item.predicate or item.object_:
-        return f"{item.subject or '?'} --{item.predicate or 'RELATED_TO'}--> {item.object_ or '?'}"
+        base_triple = f"{item.subject or '?'} --{item.predicate or 'RELATED_TO'}--> {item.object_ or '?'}"
+        if item.valid_time:
+            return f"{base_triple} (Valid Time: {item.valid_time})"
+        return base_triple
     return item.text
 
 
@@ -463,6 +485,7 @@ def _normalize_graph_evidence(item: Any, *, rank: int) -> EvidenceItem:
     )
     score = _as_float(_lookup(item, "confidence", "score", "weight"))
     raw_id = _lookup(item, "id", "edge_id", "triple_id")
+    valid_time = _lookup(item, "valid_time", "timestamp") or metadata.get("valid_time")
     return EvidenceItem(
         citation_id=f"G{rank}",
         source_type="graph",
@@ -475,6 +498,7 @@ def _normalize_graph_evidence(item: Any, *, rank: int) -> EvidenceItem:
         subject=str(subject) if subject else None,
         predicate=str(predicate) if predicate else None,
         object_=str(obj) if obj else None,
+        valid_time=str(valid_time) if valid_time else None,
     )
 
 

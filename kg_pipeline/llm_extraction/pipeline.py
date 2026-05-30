@@ -164,7 +164,8 @@ def _build_prompt(schema: dict[str, Any], chunk: ChunkRecord) -> str:
     return (
         "Extract evidence-bound knowledge graph triples from the chunk.\n"
         "Use only relation types from this schema. Return strict JSON: "
-        '{"triples":[{"subject":"","relation":"","object":"","evidence":"","source":"","page":""}]}.\n\n'
+        '{"triples":[{"subject":"","relation":"","object":"","evidence":"","source":"","page":"","valid_time":""}]}.\n'
+        'Note: "valid_time" is optional. If the text mentions a specific year, date, or time period for this fact, include it. Otherwise leave it empty.\n\n'
         f"Schema:\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n\n"
         f"Chunk id: {chunk.id}\nSource: {chunk.source}\nPage: {chunk.page}\nText:\n{chunk.text}"
     )
@@ -198,6 +199,7 @@ def _normalize_triple(triple: dict[str, Any], chunk: ChunkRecord) -> dict[str, A
         "evidence": _coerce_text(triple.get("evidence")),
         "source": _coerce_text(triple.get("source") or chunk.source),
         "page": triple.get("page") or chunk.page,
+        "valid_time": _coerce_text(triple.get("valid_time") or triple.get("timestamp")),
         "chunk_id": chunk.id,
     }
 
