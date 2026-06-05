@@ -171,7 +171,7 @@ def build_project_book(ctx: dict[str, Any]) -> str:
 
 ## 完成情况
 
-当前已完成资料处理、普通 RAG 数据库、知识图谱 POC、30 题 baseline、失败分析和课程汇报包。第一轮挑战杯升级将评测集扩展到 60 题，并建立统一成果入口。
+当前已完成资料处理、普通 RAG 数据库、知识图谱 POC、60 题 baseline、失败分析、GraphRAG 同题子集和课程汇报包，并建立统一成果入口。
 """
 
 

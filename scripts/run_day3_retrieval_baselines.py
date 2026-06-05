@@ -541,7 +541,13 @@ def write_comparison_report(
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
-def write_presentation_summary(path: Path, comparison_path: Path, summaries: list[dict[str, Any]]) -> None:
+def write_presentation_summary(
+    path: Path,
+    comparison_path: Path,
+    summaries: list[dict[str, Any]],
+    *,
+    question_count: int,
+) -> None:
     best = max(summaries, key=lambda item: item["avg_retrieval_keyword_coverage"] or 0)
     lines = [
         "# 第三天检索评测结果",
@@ -549,7 +555,7 @@ def write_presentation_summary(path: Path, comparison_path: Path, summaries: lis
         "## 一句话结论",
         "",
         (
-            f"已基于 30 题评测集完成 keyword、dense_hashing、hybrid_rrf 三组离线检索 baseline；"
+            f"已基于 {question_count} 题评测集完成 keyword、dense_hashing、hybrid_rrf 三组离线检索 baseline；"
             f"当前推荐汇报使用 `{best['method']}` 作为第三天主结果，"
             f"平均关键词覆盖率为 {best['avg_retrieval_keyword_coverage']:.6f}。"
         ),
@@ -582,7 +588,7 @@ def write_presentation_summary(path: Path, comparison_path: Path, summaries: lis
             "",
             "可以这样讲：",
             "",
-            "> 第三天我没有继续堆功能，而是把前一天整理的 30 题评测集接到检索 baseline 上。当前跑了关键词检索、离线哈希向量检索和 Hybrid RRF 三组方法，并用统一脚本统计 question recall、关键词覆盖率和未命中问题。这个结果可以作为后续替换更好 embedding、接入 reranker 和做失败案例分析的基线。",
+            f"> 第三天我没有继续堆功能，而是把整理好的 {question_count} 题评测集接到检索 baseline 上。当前跑了关键词检索、离线哈希向量检索和 Hybrid RRF 三组方法，并用统一脚本统计 question recall、关键词覆盖率和未命中问题。这个结果可以作为后续替换更好 embedding、接入 reranker 和做失败案例分析的基线。",
             "",
             "## 详细报告",
             "",
@@ -593,7 +599,7 @@ def write_presentation_summary(path: Path, comparison_path: Path, summaries: lis
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run Day 3 retrieval baselines for the 30-question system eval set.")
+    parser = argparse.ArgumentParser(description="Run Day 3 retrieval baselines for the system eval set.")
     parser.add_argument("--dataset", default=str(DEFAULT_DATASET))
     parser.add_argument("--output-dir", default=str(DEFAULT_REPORT_DIR))
     parser.add_argument("--docs-summary", default=str(DEFAULT_DOCS_SUMMARY))
@@ -692,7 +698,7 @@ def main(argv: list[str] | None = None) -> int:
         best_method=best_method,
     )
     docs_summary.parent.mkdir(parents=True, exist_ok=True)
-    write_presentation_summary(docs_summary, comparison_md, summaries)
+    write_presentation_summary(docs_summary, comparison_md, summaries, question_count=len(questions))
 
     print(f"Corpus chunks: {len(chunks)}")
     print(f"Wrote comparison JSON: {comparison_json}")

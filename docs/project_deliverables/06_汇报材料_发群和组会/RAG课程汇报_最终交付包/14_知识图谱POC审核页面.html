@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Graph Construction POC Review Workbench</title>
+  <style>
+    :root{--ink:#10242b;--muted:#607176;--line:#dce4e1;--paper:#fbfaf5;--panel:#fff;--teal:#006d6f;--gold:#8a7429;--rose:#b14a62;--blue:#315f98;--ok:#1e7a5f;--bad:#b23b4a;--warn:#9a6a10}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;color:var(--ink);background:linear-gradient(90deg,rgba(16,36,43,.05) 1px,transparent 1px),linear-gradient(rgba(16,36,43,.04) 1px,transparent 1px),var(--paper);background-size:72px 72px;line-height:1.62}
+    header{padding:28px 4vw 20px;background:rgba(255,255,255,.84);border-bottom:1px solid var(--line)}
+    h1{margin:0 0 8px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,4.8vw,56px);font-weight:500;letter-spacing:0}
+    header p{max-width:1120px;color:var(--muted);margin:0}
+    main{padding:20px 4vw 44px}
+    h2{margin:0 0 12px;font-size:20px;color:var(--teal);letter-spacing:0}
+    h3{margin:0 0 8px;font-size:16px;letter-spacing:0}
+    button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 10px;cursor:pointer}
+    button:hover{border-color:var(--teal)}
+    button.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    button.good{border-color:var(--ok);color:var(--ok)}
+    button.bad{border-color:var(--bad);color:var(--bad)}
+    button.warn{border-color:var(--warn);color:var(--warn)}
+    button.active.good{background:var(--ok);color:#fff}
+    button.active.bad{background:var(--bad);color:#fff}
+    button.active.warn{background:var(--warn);color:#fff}
+    .metrics{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin-bottom:18px}
+    .metric{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--gold);padding:13px;min-height:84px}
+    .metric strong{display:block;font-size:26px;line-height:1.2}.metric span{color:var(--muted);font-size:13px}
+    .layout{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(330px,1.1fr) minmax(380px,1.3fr);gap:16px;align-items:start}
+    .panel{background:rgba(255,255,255,.92);border:1px solid var(--line);padding:16px}
+    .file-list,.triple-list{display:grid;gap:8px}
+    .file-item,.triple-item{width:100%;text-align:left;border:1px solid var(--line);background:#fff;padding:10px;min-height:74px}
+    .file-item.active,.triple-item.active{border-color:var(--teal);box-shadow:inset 4px 0 0 var(--teal)}
+    .file-item b,.triple-item b{display:block}.file-item span,.triple-item span{display:block;color:var(--muted);font-size:13px}
+    .status-dot{display:inline-block;min-width:54px;text-align:center;margin-left:6px;padding:1px 6px;border:1px solid var(--line);font-size:12px;color:var(--muted)}
+    .status-dot.correct{color:var(--ok);border-color:var(--ok)}.status-dot.wrong{color:var(--bad);border-color:var(--bad)}.status-dot.discuss{color:var(--warn);border-color:var(--warn)}
+    .file-preview,.evidence,.chunk-preview{white-space:pre-wrap;background:#f8faf8;border:1px solid var(--line);padding:12px;max-height:260px;overflow:auto}
+    .triple-line{font-size:18px;background:#fff;border:1px solid var(--line);padding:14px;margin-bottom:12px}
+    code{color:var(--blue);font-family:Consolas,"Cascadia Mono",monospace}
+    .meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+    .meta{background:#fff;border:1px solid var(--line);padding:9px}.meta b{display:block;color:var(--muted);font-size:12px}
+    .review-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    textarea{width:100%;min-height:84px;border:1px solid var(--line);padding:10px;font:inherit;background:#fff;resize:vertical}
+    .export-box{width:100%;min-height:120px;margin-top:10px;font-family:Consolas,"Cascadia Mono",monospace;font-size:12px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .progress{height:10px;background:#e6ecea;border:1px solid var(--line);margin:8px 0 14px}.progress div{height:100%;background:var(--teal);width:0}
+    .small{font-size:13px;color:var(--muted)}
+    .note{border-left:4px solid var(--rose);background:#fff;padding:12px;margin-top:12px}
+    @media(max-width:1180px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Graph Construction POC Review Workbench</h1>
+    <p>这不是单纯的 HTML 展示页，而是一个可操作的 POC 工作台：展开全流程文件，逐条查看三元组和 evidence，人工判断对/错/待讨论，并导出评审结果。</p>
+  </header>
+  <main>
+    <section class="metrics" id="metrics"></section>
+    <section class="layout">
+      <aside class="panel">
+        <h2>全流程文件</h2>
+        <div class="small">点击每一步，看它在 POC 里对应的文件和作用。</div>
+        <div class="file-list" id="fileList"></div>
+        <h3 id="fileTitle">文件预览</h3>
+        <div class="file-preview" id="filePreview"></div>
+      </aside>
+
+      <section class="panel">
+        <h2>候选三元组</h2>
+        <div class="toolbar">
+          <button data-filter="all" class="primary">全部</button>
+          <button data-filter="unreviewed">未判断</button>
+          <button data-filter="correct">对</button>
+          <button data-filter="wrong">错</button>
+          <button data-filter="discuss">待讨论</button>
+        </div>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="small" id="progressText"></div>
+        <div class="triple-list" id="tripleList"></div>
+      </section>
+
+      <section class="panel">
+        <h2>人工判断区</h2>
+        <div id="reviewDetail"></div>
+        <div class="note">
+          <b>现场讲法：</b>系统先生成候选三元组，我根据右侧 evidence 判断这条关系是否真的被原文支持。判断结果可以导出为 JSON/CSV，后续发给 Codex 或老师继续分析。
+        </div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const POC_DATA = {"summary":{"generated_at":"2026-04-29T10:29:39.052Z","source_json":"input\\project-1-at-2026-04-09-07-02-f7d8cb93.json","schema":"course_kg_schema.json","page_count":4,"block_count":246,"chunk_count":14,"estimated_tokens":3461,"entity_type_count":10,"relation_type_count":15,"triple_count":27,"schema_valid_triples":27,"review_status_counts":{"pass":27},"predicate_counts":{"COURSE_DEVELOPED_BY":2,"COURSE_USES_METHOD":1,"METHOD_HAS_DIMENSION":4,"COURSE_USES_RESOURCE":1,"RESOURCE_HAS_SCALE":2,"MODULE_PROVIDES_THEORY_FOR":1,"MODULE_SUPPORTS":1,"MODULE_PROVIDES_METHOD_FOR":3,"MODULE_TECHNICALLY_COMPLEMENTS":1,"MODULE_APPLICATION_EXTENDS_TO":1,"KNOWLEDGE_POINT_METHOD_SUPPORTS":1,"KNOWLEDGE_POINT_TECHNICALLY_COMPLEMENTS":1,"KNOWLEDGE_POINT_PARALLEL_WITH":1,"RESOURCE_USED_IN":4,"COURSE_HAS_OUTCOME":3},"claim_boundary":["This is a Graph construction POC based on Label Studio OCR JSON.","It does not claim production-grade extraction, Neo4j persistence, or full GraphRAG QA."]},"schema":{"name":"course_knowledge_system_minimal_kg_schema","version":"0.1.0","scope":"Minimal graph construction schema for the Label Studio export of the marine gas turbine control and health management course paper.","entity_types":[{"type":"Course","description":"课程或课程体系，例如船舶燃气轮机控制与健康管理课程。"},{"type":"Institution","description":"参与课程建设或协同育人的高校、研究所或企业。"},{"type":"Method","description":"课程体系构建方法或教学方法，例如四维构建法。"},{"type":"Dimension","description":"方法中的设计维度，例如知识广度、知识层次、知识深度、知识高度。"},{"type":"Resource","description":"课程建设资源或工具，例如课程知识图谱。"},{"type":"Module","description":"课程模块，例如动态特性分析模块、气路故障建模模块。"},{"type":"KnowledgePoint","description":"课程知识点，例如非线性特性的线性化方法。"},{"type":"ScaleMetric","description":"图谱规模或数量指标，例如 12 个核心模块、162 个知识点。"},{"type":"ApplicationScenario","description":"知识图谱的教学应用场景，例如备课、上课导航、自主学习。"},{"type":"Outcome","description":"课程建设或教学实践效果，例如学习效果提升、工程实践能力提升。"}],"relation_types":[{"type":"COURSE_DEVELOPED_BY","domain":["Course"],"range":["Institution"],"description":"课程由某机构或校企团队参与建设。"},{"type":"COURSE_USES_METHOD","domain":["Course"],"range":["Method"],"description":"课程体系采用某种构建方法。"},{"type":"METHOD_HAS_DIMENSION","domain":["Method"],"range":["Dimension"],"description":"方法包含某个设计维度。"},{"type":"COURSE_USES_RESOURCE","domain":["Course"],"range":["Resource"],"description":"课程使用某种资源或工具。"},{"type":"RESOURCE_HAS_SCALE","domain":["Resource"],"range":["ScaleMetric"],"description":"资源具有某个规模指标。"},{"type":"MODULE_PROVIDES_THEORY_FOR","domain":["Module"],"range":["Module"],"description":"一个模块为另一个模块提供理论基础。"},{"type":"MODULE_SUPPORTS","domain":["Module"],"range":["Module"],"description":"一个模块支撑另一个模块。"},{"type":"MODULE_PROVIDES_METHOD_FOR","domain":["Module"],"range":["Module"],"description":"一个模块为另一个模块提供方法基础。"},{"type":"MODULE_TECHNICALLY_COMPLEMENTS","domain":["Module"],"range":["Module"],"description":"两个模块之间存在技术互补关系。"},{"type":"MODULE_APPLICATION_EXTENDS_TO","domain":["Module"],"range":["Module"],"description":"一个模块向另一个模块形成应用延伸关系。"},{"type":"KNOWLEDGE_POINT_METHOD_SUPPORTS","domain":["KnowledgePoint"],"range":["KnowledgePoint"],"description":"一个知识点对另一个知识点形成方法支撑。"},{"type":"KNOWLEDGE_POINT_TECHNICALLY_COMPLEMENTS","domain":["KnowledgePoint"],"range":["KnowledgePoint"],"description":"两个知识点之间存在技术互补关系。"},{"type":"KNOWLEDGE_POINT_PARALLEL_WITH","domain":["KnowledgePoint"],"range":["KnowledgePoint"],"description":"两个知识点之间存在并列协同关系。"},{"type":"RESOURCE_USED_IN","domain":["Resource"],"range":["ApplicationScenario"],"description":"资源应用于某个教学场景。"},{"type":"COURSE_HAS_OUTCOME","domain":["Course"],"range":["Outcome"],"description":"课程建设产生某种教学或能力培养效果。"}],"triple_fields":["id","subject","subject_type","predicate","object","object_type","evidence_doc","evidence_chunk_id","evidence_text","confidence","review_status","review_note"],"review_status_values":["pass","needs_discussion","reject"]},"chunks":[{"chunk_id":"C01","page_num":1,"title":"船舶燃气轮机控制与健康管理课程","labels":{"Title":1},"text":"船舶燃气轮机控制与健康管理课程","char_count":15,"estimated_tokens":10},{"chunk_id":"C02","page_num":1,"title":"知识体系构建与实践","labels":{"Title":1,"Para":34},"text":"知识体系构建与实践\n曹云鹏 1，衣爽 2，王伟影 2，马亮 2，费景洲 1\n（1.哈尔滨工程大学动力与能源工程学院，黑龙江 哈尔滨 150001；\n2.中国船舶集团有限公司第七〇三研究所，黑龙江 哈尔滨 150078）\n摘 要：针对船舶燃气轮机控制与健康管理课程内容多、学科交叉密集、知识点关系复杂的问\n题，文章基于哈尔滨工程大学与中国船舶集团有限公司第七〇三研究所在船舶燃气轮机控制与健\n康管理领域的校企融合教学实践，从行业人才需求分析入手，详细介绍了课程体系的构建原则与\n方法、知识图谱的设计与实施、校企协同教学模式创新等内容，为高端装备制造领域复合型人才培\n养提供了可借鉴的范式。通过三轮教学实践验证，该课程体系有效提升了学生的学习效果和工程\n实践能力，为“两机”专项人才培养提供了有力支撑，为校企融合建设课程体系提供技术参考。\n关键词：产教融合；课程创新；知识图谱；知识体系；知识树\n中图分类号：G642文献标识码：A文章编号：1673-7164（2025）35-0093-04\n船舶燃气轮机控制与健康管理课程是一门多学\n科交叉融合的前沿课程，旨在教授学生如何提升燃气\n轮机的运行效率与性能、延长设备寿命与可靠性、降\n低运行与维护成本。这一领域正是“两机”专项智能\n化、数字化重点攻关方向，对具备跨学科知识整合能\n力和工程实践能力的复合型人才需求极为迫切［1］。\n在国外，美国克利夫兰州立大学与 NASA格林研\n究中心校企融合开设了燃气轮机控制技术课程，采用\n自下而上的渐进式方法，具有很强的实践导向。英国\n克兰菲尔德大学注重实践与工业合作，开发 Pythia 软\n件已应用于航空、工业和船舶燃气涡轮发动机。国内\n西北工业大学［2-3］、北京航空航天大学［4］、南京航空航\n天大学［5-6］构建了航空发动机控制技术知识体系。船\n舶燃气轮机与航空发动机技术同源，但在运行方式、\n控制逻辑、退化机理等方面存在显著差异，有必要研\n究如何建立健全船舶燃气轮机控制与健康管理的课\n程体系。\n针对上述问题，哈尔滨工程大学与中国船舶集团\n有限公司第七〇三研究所，构建了校企协同教学团\n队，开设了“船舶燃气轮机控制与健康管理”专业课\n程。本研究详细介绍该课程知识体系的构建方法、实\n践经验以及校企深度融合创新教学模式，为同类专业\n课程建设提供参考经验。","char_count":972,"estimated_tokens":543},{"chunk_id":"C03","page_num":1,"title":"一、燃气轮机控制与健康管理课程体系的构","labels":{"Title":1},"text":"一、燃气轮机控制与健康管理课程体系的构","char_count":19,"estimated_tokens":12},{"chunk_id":"C04","page_num":1,"title":"建方法","labels":{"Title":1,"Para":8},"text":"建方法\n构建科学合理的课程知识体系是培养优秀的人\n才的基础。“船舶燃气轮机控制与健康管理”作为一门\n典型跨学科课程，其知识体系的构建，需要遵循教育\n规律和工程需求。哈尔滨工程大学与中国船舶集团有\n限公司第七〇三研究所校企教学团队共同进行教学\n实践，总结出一套“四维构建法”。这套方法从四个方\n面来设计课程内容：知识广度、知识层次、知识深度和\n知识高度，确保课程内容既全面又实用。","char_count":189,"estimated_tokens":111},{"chunk_id":"C05","page_num":2,"title":"（一）知识广度设计","labels":{"Title":1,"Para":21},"text":"（一）知识广度设计\n燃气轮机控制与健康管理是一个典型的交叉新\n兴学科领域，其知识内容跨越多个一级学科。为此，在\n知识广度设计方面，校企教学团队将其分为燃气轮机\n控制技术和燃气轮机健康管理两大板块。两大知识板\n块分别整合了多个学科的知识要素。控制技术部分主\n要涉及控制理论、系统建模、优化理论、智能科学以及\n机械工程和电气工程等相关知识。健康管理部分则涵\n盖热力学、机械振动、统计学、传感器技术、信号处理、\n计算机科学、人工智能以及工程管理等学科内容。\n采用实际工程问题作为知识连接纽带，按照知识\n板块、核心学科、关键技术、典型应用案例的逻辑关系\n将各学科知识有机融合，解决跨学科知识整合过程中\n内容机械堆砌问题。例如，燃气轮机气路故障诊断既\n需要热力学知识分析压气机和涡轮的性能变化，又需\n要信号处理技术提取故障特征，还需要机器学习算法\n建立诊断模型，最后还要通过工程管理知识评估维修\n策略的经济性。另外，加强与企业专家的深度合作，\n将这些跨学科知识与船舶燃气轮机的典型案例相结\n合，如控制故障分析、海洋环境下涡轮叶片腐蚀的状\n态评估等，使抽象的理论知识与具体的工程实践相互\n印证。","char_count":491,"estimated_tokens":291},{"chunk_id":"C06","page_num":2,"title":"（二）知识层次安排","labels":{"Title":1,"Para":21},"text":"（二）知识层次安排\n在知识层次设计上，课程团队根据布鲁姆提出的\n记忆、理解、应用、分析、评价、创造六层次认知过程理\n论［7］，按照“机理部件系统应用”的逻辑主线，\n采用自下而上、由简到繁的方式组织教学内容。这种\n层次化设计体现在两个技术方向上。在控制技术部\n分，从燃气轮机动态特性分析这一基础理论出发，逐\n步深入面向控制的建模方法，再到控制系统总体设\n计，最后具体到发电和推进两种应用场景下的控制策\n略实现；在健康管理部分，则按照“特征提取健康评\n估故障诊断性能预测寿命管理”的技术链条，\n循序渐进地展开知识内容。\n以燃气轮机动态特性授课为例，首先通过课堂讲\n授教学手段，让学生“记忆”“理解”转动惯性、容积惯\n性和热惯性的基本概念；然后通过实验室的燃气轮机\n半物理仿真平台，让学生“应用”所学知识，“分析”不\n同惯性环节对系统动态响应的影响；最后结合船用燃\n气轮机实际运行数据，“评价”动态特性对控制策略设\n计的影响，“创造”出新的燃气轮机控制策略。这种递\n进式课程知识安排符合学生认知规律和学习进阶特\n点，有效降低了学习难度，提高了其对知识掌握的系\n统性。","char_count":480,"estimated_tokens":277},{"chunk_id":"C07","page_num":2,"title":"（三）知识深度挖掘","labels":{"Title":1,"Para":20},"text":"（三）知识深度挖掘\n船舶燃气轮机的控制策略因其应用场景不同而\n存在显著差异，课程在知识深度设计上充分考虑了燃\n气轮机在船舶上的使用特点和未来发展趋势。校企教\n学团队深入挖掘团队科学研究成果，将科研项目中的\n技术突破和工程经验转化为教学案例。\n在控制技术方面，重点挖掘三个维度的内容：一\n是从单机效率提升角度，整合燃气轮机先进循环控制\n策略；二是从联合动力装置角度，梳理柴燃联合推进\n系统和全燃联合推进系统的控制策略；三是从船舶电\n力系统发展角度，分析燃气轮机发电模块的频率控制\n策略与载荷控制策略。\n在健康管理技术方面，教学团队针对船舶燃气轮\n机复杂工况和恶劣海洋环境的工作特点，以燃气轮机\n气路性能退化为课程主线，串联状态监测、故障诊断、\n健康评估和寿命预测等健康管理内容。结合燃气轮机\n的海洋工作环境的特点，重点讲授积垢、腐蚀、磨损等\n船舶燃气轮机气路退化机理和监测方法。在授课过程\n中，教学团队以中海油远程诊断中心的实际故障处理\n为案例，演示基于历史运行数据的性能退化建模技术\n和基于数据驱动的剩余使用寿命预测技术。","char_count":461,"estimated_tokens":276},{"chunk_id":"C08","page_num":2,"title":"（四）知识高度提升","labels":{"Title":1,"Para":15},"text":"（四）知识高度提升\n燃气轮机控制与健康管理技术是行业快速发展\n的领域，需不断更新相关的新理论、新技术、新方法。\n为了确保课程内容前沿，课程教学团队教师在每学期\n开学，详细梳理团队健康管理技术过去一年的成果，\n结合教学内容，将团队在燃气轮机控制与健康管理方\n向的研究成果融入课程，不断保持“船舶燃气轮机控\n制与健康管理”研究生课程的知识高度。以学校 2024\n年的教学实践为例，在燃气轮机控制技术方面，知识\n体系中增加了数字孪生技术内容；在健康管理方面，\n知识体系增加了迁移学习算法在健康管理中的应用。\n综上，通过知识广度、知识层次、知识深度和知识\n广度四个维度的课程知识体系设计，建立了船舶燃气\n轮机控制与健康管理课程知识体系。文章指出的课程\n知识体系的梳理方法为知识交叉的新工科课程知识\n体系建设提供了一定的技术参考。","char_count":360,"estimated_tokens":212},{"chunk_id":"C09","page_num":3,"title":"二、基于知识图谱的课程知识体系设计","labels":{"Title":1,"Para":8},"text":"二、基于知识图谱的课程知识体系设计\n知识图谱是应用了知识管理与可视化的技术。通\n过知识图谱，实现语言的理解和表达的泛化；另外，通\n过知识图谱挖掘知识学习与知识应用之间的关联关\n系，可以解决跨学科交叉课程的知识整合与表达的问\n题［8-9］。因此，校企协同教学团队采用知识图谱技术，\n进行了燃气轮机控制与健康管理课程知识体系的结\n构化表示与可视化表达，为教师与学生提供了全面知\n识导航和个性化的学习路径。","char_count":200,"estimated_tokens":118},{"chunk_id":"C10","page_num":3,"title":"（一）知识图谱构建路线","labels":{"Title":1,"Para":22},"text":"（一）知识图谱构建路线\n燃气轮机控制与健康管理课程知识图谱的构建\n流程主要包括：知识建模、知识获取、知识融合、知识\n存储和知识应用五个步骤。教学团队在知识建模环\n节，根据课程目标，采用模块、知识点、关联关系构建\n了三层知识表示模型；在知识获取环节，教学团队依\n据教学大纲，选取精品教材，通过专家咨询方式提取\n结构化知识；在知识融合环节，教学团队对热力学、控\n制学、计算机等跨学科专业知识进行语义对齐和冲突\n消解；在知识存储环节，教学团队采用 Neo4j 图数据\n库和复杂网络工具 NetDraw 实现知识可视化存储；在\n知识应用环节，开发了基于知识图谱的知识体系管理\n模型。\n课程知识图谱的核心架构由 12 个核心模块构成\n（控制技术与健康管理各 6 个），通过 162 个知识点及\n其关联关系形成完整的知识网络。知识树采用左右对\n称结构：左侧控制技术部分以燃气轮机控制技术发展\n历程、动态特性和建模方法为“主干”，支撑发电控制、\n推进控制等“枝叶”内容；右侧健康管理部分则以健康\n管理内涵、气路故障建模为“主干”，支撑状态评估、故\n障诊断、寿命预测等“枝叶”内容。这种树状结构形象\n地反映了知识之间的层次关系和逻辑关联，便于学生\n建立系统化的认知结构。","char_count":527,"estimated_tokens":296},{"chunk_id":"C11","page_num":3,"title":"（二）模块级知识图谱设计","labels":{"Title":1,"Para":20},"text":"（二）模块级知识图谱设计\n在模块级知识图谱设计中，教学团队重点刻画了\n12个核心模块之间的逻辑关系和依赖关系。燃气轮机\n动态特性分析模块（模块 2） 为面向控制的建模模块\n（模块 3）提供理论基础，而建模模块又直接支撑控制\n系统设计模块（模块 4）；同样，气路故障建模模块（模\n块 8）为后续健康状态评估（模块 9）、故障诊断（模块\n10）和寿命预测（模块12）提供方法基础。这种明确的\n前驱后继关系为教学顺序安排提供了科学依据。\n模块间关系从语义关联角度表达了逻辑上的前\n后衔接关系。教学团队在模块级知识图谱定义了“理\n论基础”“方法支撑”“应用延伸”“技术互补”等知识关\n系类型，用来反映模块级知识间的联系。例如，发电燃\n气轮机控制模式设计模块（模块5）和推进燃气轮机并\n车控制模块（模块 6）之间是“技术互补”关系，它们有\n相同的控制理论基础，但因为应用场景不同，所以技\n术路线也不同；健康状态评估模块（模块 9）和性能退\n化预测模块（模块11）之间是“应用延伸”关系，前者为\n后者提供初始状态，后者则是前者在时间上的扩展。\n模块级关系的精准定义，提高了知识图谱的表达能力\n和教学价值。","char_count":496,"estimated_tokens":283},{"chunk_id":"C12","page_num":3,"title":"（三）知识点级知识图谱设计","labels":{"Title":1,"Para":17},"text":"（三）知识点级知识图谱设计\n在模块级知识图谱基础上，教学团队进一步细\n化，构建了包含 162个知识点级的燃气轮机控制与健\n康管理课程知识图谱。知识点级知识图谱采用金字塔\n式分层设计思路，顶层是课程总体目标，中间层是 12\n个核心模块，底层是具体知识点。每个知识点标明知\n识类型，包括概念、方法、应用等，以及知识点的难度\n等级，有利于教师因材施教和学生的个性化学习。\n知识点间的关联是知识图谱的核心价值。教学团\n队通过系统分析，通过定义“方法支撑”“技术互补”\n“并列协同”等关联类型，实现知识点内在联系的表\n达。例如，“非线性特性的线性化方法”知识点与“小偏\n差建模方法”知识点之间是“方法支撑”关系；“燃气轮\n机分段线性化模型”与“燃气轮机状态空间模型”之间\n是“技术互补”关系；“压气机数学模型”与“燃烧室数\n学模型”之间是“并列协同”关系。知识点的关联关系\n有助于学生掌握跨学科知识整合的能力，提升了教学\n应用的便利性 ［ 10- 1 1 ］ 。","char_count":426,"estimated_tokens":238},{"chunk_id":"C13","page_num":4,"title":"（四）知识图谱教学应用模式","labels":{"Title":1,"Para":14},"text":"（四）知识图谱教学应用模式\n知识图谱在燃气轮机控制与健康管理课程教学\n实践中得到了应用。备课时，教师用知识图谱整理教\n学内容的逻辑，保证知识体系完整；在上课时，知识图\n谱作为导航工具，帮助学生建立全局观念，清楚每个\n知识点在课程中的作用；自主学习时，学生可以根据\n知识图谱提供的学习路径，结合自身基础，选择个性\n化的学习顺序。\n随着燃气轮机控制与健康管理技术的发展和教\n学经验的积累，知识图谱不断丰富完善。教学团队建\n立了知识图谱的版本管理机制，定期邀请行业专家评\n审和更新内容，确保反映最新的技术发展。通过分析\n学生的学习轨迹和效果反馈，不断优化知识点间的关\n联强度和教学顺序，最终形成“教学实践－效果评\n估－图谱优化”的应用模式。","char_count":317,"estimated_tokens":186},{"chunk_id":"C14","page_num":4,"title":"三、结语","labels":{"Title":2,"Para":16,"List":15},"text":"三、结语\n船舶燃气轮机控制与健康管理课程知识体系构\n建是哈尔滨工程大学响应国家高科技人才需求、推进\n新工科教育改革的探索实践。教学团队提出的知识广\n度、知识层次、知识深度、知识高度的四维构建法，为\n开发跨学科新工科课程提供了参考经验。课程中使用\n了知识图谱技术，不仅让课程知识体系的设计和表达\n更直观，而且解决了传统专业课程内容分散、更新慢\n的问题。课程涵盖了基础理论到工程应用的完整链\n条，有 12个核心模块和 162 个关键知识点，通过知识\n图谱展示了它们之间的联系，帮助学生更好地理解和\n导航。经过三年的教学实践和不断改进，教学评估显\n示：课程团队成功建立了独特的知识体系，创新了校\n企合作育人模式，学生的系统思维和知识迁移能力明\n显提高，对于培养学生解决复杂工程问题的能力具有\n重要意义，为燃气轮机领域高素质人才培养提供了有\n力支撑。\n参考文献：\n［1］陈绍文，李德友，罗磊，等.“两机”背景下校企协同育人机制的探索与构建［C］//教育部高等学校航空航天类专业教学指导委员\n会. 第三届全国高等学校航空航天类专业教育教学研讨会论文集.哈尔滨工业大学能源科学与工程学院，2022：:81-897.\n［2］符江锋，缑林峰，李华聪，等. 航空发动机控制课程团队式教学模式的改革与探索［J］. 高教学刊，2018（17）：130-132.\n［3］陈毓智，缑林峰，马静.“航空发动机控制系统”课程教学改革［J］. 西部素质教育，2024，10（20）：6-10.\n［4］胡海洋，王方，郑赟，等. 低成本数字教室软硬件系统建设与航空发动机虚拟仿真课程设计［J］. 数字技术与应用，2022，40（10）：\n151-155.\n［5］汪勇，郑前钢，张海波，等. 虚实结合的“航空发动机控制系统设计技术”课程教学改革探索［J］. 工业和信息化教育，2024（12）：\n90-94.\n［6］鲁峰.“航空发动机控制原理”课程混合式教学方法研究［J］. 工业和信息化教育，2021（06）：39-43.\n［7］王恬，胡民. 布鲁姆认知过程分类理论下财务管理课程思政教学设计探析［J］. 大学，2022（33）：79-82.\n［8］郭彩丽，刘芳芳，杨洋. 知识图谱赋能课程体系建设探索与研究：以信号与信息处理类课程为例［J］. 中国大学教学，2024（11）：\n54-60+87.\n［9］刘梅娟，余冰冰，方草. 基于知识图谱的智能会计课程体系构建研究［J］. 财会通讯，2024（13）：160-164+171.\n［10］周满，许鹏，陈佳林，等. 核应急专业知识体系与课程体系构建问题探究［J］. 高教学刊，2024，10（04）：13-16.\n［11］魏彦民，徐毅. 新时代理工科专业课程思政知识体系的构建［J］. 大学，2023（09）：108-111.","char_count":1170,"estimated_tokens":608}],"triples":[{"id":"LSKG-01","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_DEVELOPED_BY","object":"哈尔滨工程大学动力与能源工程学院","object_type":"Institution","evidence_doc":"page_1","evidence_chunk_id":"C02","evidence_text":"（1.哈尔滨工程大学动力与能源工程学院，黑龙江 哈尔滨 150001；","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-02","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_DEVELOPED_BY","object":"中国船舶集团有限公司第七〇三研究所","object_type":"Institution","evidence_doc":"page_1","evidence_chunk_id":"C02","evidence_text":"2.中国船舶集团有限公司第七〇三研究所，黑龙江 哈尔滨 150078） 题，文章基于哈尔滨工程大学与中国船舶集团有限公司第七〇三研究所在船舶燃气轮机控制与健","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-03","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_USES_METHOD","object":"四维构建法","object_type":"Method","evidence_doc":"page_1","evidence_chunk_id":"C04","evidence_text":"实践，总结出一套“四维构建法”。这套方法从四个方","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-04","subject":"四维构建法","subject_type":"Method","predicate":"METHOD_HAS_DIMENSION","object":"知识广度","object_type":"Dimension","evidence_doc":"page_1","evidence_chunk_id":"C04","evidence_text":"面来设计课程内容：知识广度、知识层次、知识深度和","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-05","subject":"四维构建法","subject_type":"Method","predicate":"METHOD_HAS_DIMENSION","object":"知识层次","object_type":"Dimension","evidence_doc":"page_1","evidence_chunk_id":"C04","evidence_text":"面来设计课程内容：知识广度、知识层次、知识深度和","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-06","subject":"四维构建法","subject_type":"Method","predicate":"METHOD_HAS_DIMENSION","object":"知识深度","object_type":"Dimension","evidence_doc":"page_1","evidence_chunk_id":"C04","evidence_text":"面来设计课程内容：知识广度、知识层次、知识深度和 知识高度，确保课程内容既全面又实用。","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-07","subject":"四维构建法","subject_type":"Method","predicate":"METHOD_HAS_DIMENSION","object":"知识高度","object_type":"Dimension","evidence_doc":"page_1","evidence_chunk_id":"C04","evidence_text":"实践，总结出一套“四维构建法”。这套方法从四个方 知识高度，确保课程内容既全面又实用。","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-08","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_USES_RESOURCE","object":"课程知识图谱","object_type":"Resource","evidence_doc":"page_1","evidence_chunk_id":"C02","evidence_text":"方法、知识图谱的设计与实施、校企协同教学模式创新等内容，为高端装备制造领域复合型人才培 关键词：产教融合；课程创新；知识图谱；知识体系；知识树 程。本研究详细介绍该课程知识体系的构建方法、实","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-09","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_HAS_SCALE","object":"12个核心模块","object_type":"ScaleMetric","evidence_doc":"page_3","evidence_chunk_id":"C10","evidence_text":"课程知识图谱的核心架构由 12 个核心模块构成","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-10","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_HAS_SCALE","object":"162个知识点","object_type":"ScaleMetric","evidence_doc":"page_3","evidence_chunk_id":"C10","evidence_text":"节，根据课程目标，采用模块、知识点、关联关系构建 （控制技术与健康管理各 6 个），通过 162 个知识点及","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-11","subject":"动态特性分析模块","subject_type":"Module","predicate":"MODULE_PROVIDES_THEORY_FOR","object":"面向控制的建模模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"动态特性分析模块（模块 2） 为面向控制的建模模块","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-12","subject":"面向控制的建模模块","subject_type":"Module","predicate":"MODULE_SUPPORTS","object":"控制系统设计模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"动态特性分析模块（模块 2） 为面向控制的建模模块 （模块 3）提供理论基础，而建模模块又直接支撑控制 系统设计模块（模块 4）；同样，气路故障建模模块（模","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-13","subject":"气路故障建模模块","subject_type":"Module","predicate":"MODULE_PROVIDES_METHOD_FOR","object":"健康状态评估模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"系统设计模块（模块 4）；同样，气路故障建模模块（模 块 8）为后续健康状态评估（模块 9）、故障诊断（模块 术路线也不同；健康状态评估模块（模块 9）和性能退","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-14","subject":"气路故障建模模块","subject_type":"Module","predicate":"MODULE_PROVIDES_METHOD_FOR","object":"故障诊断模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"系统设计模块（模块 4）；同样，气路故障建模模块（模 块 8）为后续健康状态评估（模块 9）、故障诊断（模块","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-15","subject":"气路故障建模模块","subject_type":"Module","predicate":"MODULE_PROVIDES_METHOD_FOR","object":"寿命预测模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"系统设计模块（模块 4）；同样，气路故障建模模块（模 10）和寿命预测（模块12）提供方法基础。这种明确的","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-16","subject":"发电燃气轮机控制模式设计模块","subject_type":"Module","predicate":"MODULE_TECHNICALLY_COMPLEMENTS","object":"推进燃气轮机并车控制模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"论基础”“方法支撑”“应用延伸”“技术互补”等知识关 车控制模块（模块 6）之间是“技术互补”关系，它们有","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-17","subject":"健康状态评估模块","subject_type":"Module","predicate":"MODULE_APPLICATION_EXTENDS_TO","object":"性能退化预测模块","object_type":"Module","evidence_doc":"page_3","evidence_chunk_id":"C11","evidence_text":"术路线也不同；健康状态评估模块（模块 9）和性能退","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-18","subject":"非线性特性的线性化方法","subject_type":"KnowledgePoint","predicate":"KNOWLEDGE_POINT_METHOD_SUPPORTS","object":"小偏差建模方法","object_type":"KnowledgePoint","evidence_doc":"page_3","evidence_chunk_id":"C12","evidence_text":"达。例如，“非线性特性的线性化方法”知识点与“小偏","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-19","subject":"燃气轮机分段线性化模型","subject_type":"KnowledgePoint","predicate":"KNOWLEDGE_POINT_TECHNICALLY_COMPLEMENTS","object":"燃气轮机状态空间模型","object_type":"KnowledgePoint","evidence_doc":"page_3","evidence_chunk_id":"C12","evidence_text":"机分段线性化模型”与“燃气轮机状态空间模型”之间","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-20","subject":"压气机数学模型","subject_type":"KnowledgePoint","predicate":"KNOWLEDGE_POINT_PARALLEL_WITH","object":"燃烧室数学模型","object_type":"KnowledgePoint","evidence_doc":"page_3","evidence_chunk_id":"C12","evidence_text":"是“技术互补”关系；“压气机数学模型”与“燃烧室数","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-21","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_USED_IN","object":"备课","object_type":"ApplicationScenario","evidence_doc":"page_4","evidence_chunk_id":"C13","evidence_text":"（四）知识图谱教学应用模式 知识图谱在燃气轮机控制与健康管理课程教学 实践中得到了应用。备课时，教师用知识图谱整理教 知识图谱提供的学习路径，结合自身基础，选择个性","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-22","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_USED_IN","object":"上课导航","object_type":"ApplicationScenario","evidence_doc":"page_3","evidence_chunk_id":"C09","evidence_text":"二、基于知识图谱的课程知识体系设计 知识图谱是应用了知识管理与可视化的技术。通 过知识图谱，实现语言的理解和表达的泛化；另外，通 过知识图谱挖掘知识学习与知识应用之间的关联关","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-23","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_USED_IN","object":"自主学习","object_type":"ApplicationScenario","evidence_doc":"page_4","evidence_chunk_id":"C13","evidence_text":"知识点在课程中的作用；自主学习时，学生可以根据 知识图谱提供的学习路径，结合自身基础，选择个性","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-24","subject":"课程知识图谱","subject_type":"Resource","predicate":"RESOURCE_USED_IN","object":"版本管理与专家评审","object_type":"ApplicationScenario","evidence_doc":"page_4","evidence_chunk_id":"C13","evidence_text":"立了知识图谱的版本管理机制，定期邀请行业专家评","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-25","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_HAS_OUTCOME","object":"学习效果提升","object_type":"Outcome","evidence_doc":"page_1","evidence_chunk_id":"C02","evidence_text":"养提供了可借鉴的范式。通过三轮教学实践验证，该课程体系有效提升了学生的学习效果和工程 科交叉融合的前沿课程，旨在教授学生如何提升燃气","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-26","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_HAS_OUTCOME","object":"工程实践能力提升","object_type":"Outcome","evidence_doc":"page_1","evidence_chunk_id":"C02","evidence_text":"养提供了可借鉴的范式。通过三轮教学实践验证，该课程体系有效提升了学生的学习效果和工程 科交叉融合的前沿课程，旨在教授学生如何提升燃气 力和工程实践能力的复合型人才需求极为迫切［1］。","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]},{"id":"LSKG-27","subject":"船舶燃气轮机控制与健康管理课程","subject_type":"Course","predicate":"COURSE_HAS_OUTCOME","object":"系统思维和知识迁移能力提高","object_type":"Outcome","evidence_doc":"page_4","evidence_chunk_id":"C14","evidence_text":"企合作育人模式，学生的系统思维和知识迁移能力明","confidence":0.82,"review_status":"pass","review_note":"POC 初步通过：schema 类型匹配，且 OCR 文本中找到证据。","schema_valid":true,"validation_errors":[]}],"flowFiles":[{"name":"input/project-1-at-2026-04-09-07-02-f7d8cb93.json","stage":"输入","role":"Label Studio 导出的 bbox / OCR / transcription 原始 JSON。","preview":"共 4 页，246 个 OCR 文本块。"},{"name":"poc_run/01_blocks.json","stage":"文本块","role":"从 JSON 中抽取出的页面、标签、坐标和文本块。","preview":"C01: 船舶燃气轮机控制与健康管理课程\n\nC02: 知识体系构建与实践\n曹云鹏 1，衣爽 2，王伟影 2，马亮 2，费景洲 1\n（1.哈尔滨工程大学动力与能源工程学院，黑龙江 哈尔滨 150001；\n2.中国船舶集团有限公司第七〇三研究所，黑龙江 哈尔"},{"name":"poc_run/03_chunks.json","stage":"切分","role":"按标题和长度组织成可追溯 chunk。","preview":"C01 · page 1 · 船舶燃气轮机控制与健康管理课程\nC02 · page 1 · 知识体系构建与实践\nC03 · page 1 · 一、燃气轮机控制与健康管理课程体系的构\nC04 · page 1 · 建方法\nC05 · page 2 · （一）知识广度设计\nC06 · page 2 · （二）知识层次安排\nC07 · page 2 · （三）知识深度挖掘\nC08 · page 2 · （四）知识高度提升\nC09 · page 3 · 二、基于知识图谱的课程知识体系设计\nC10 · page 3 · （一）知识图谱构建路线\nC11 · page 3 · （二）模块级知识图谱设计\nC12 · page 3 · （三）知识点级知识图谱设计\nC13 · page 4 · （四）知识图谱教学应用模式\nC14 · page 4 · 三、结语"},{"name":"course_kg_schema.json","stage":"约束","role":"规定允许的实体类型、关系类型和三元组字段。","preview":"10 类实体，15 类关系。"},{"name":"poc_run/05_validated_triples.json","stage":"三元组","role":"候选三元组，已绑定 evidence 并通过 schema 校验。","preview":"LSKG-01: 船舶燃气轮机控制与健康管理课程 --COURSE_DEVELOPED_BY--> 哈尔滨工程大学动力与能源工程学院\nLSKG-02: 船舶燃气轮机控制与健康管理课程 --COURSE_DEVELOPED_BY--> 中国船舶集团有限公司第七〇三研究所\nLSKG-03: 船舶燃气轮机控制与健康管理课程 --COURSE_USES_METHOD--> 四维构建法\nLSKG-04: 四维构建法 --METHOD_HAS_DIMENSION--> 知识广度\nLSKG-05: 四维构建法 --METHOD_HAS_DIMENSION--> 知识层次\nLSKG-06: 四维构建法 --METHOD_HAS_DIMENSION--> 知识深度\nLSKG-07: 四维构建法 --METHOD_HAS_DIMENSION--> 知识高度\nLSKG-08: 船舶燃气轮机控制与健康管理课程 --COURSE_USES_RESOURCE--> 课程知识图谱"},{"name":"poc_run/06_review_table.csv","stage":"评审","role":"人工评审工作表；本页面会生成新的人工判断结果。","preview":"页面内点击 对 / 错 / 待讨论 后，可导出 review_decisions.json 或 CSV。"}]};
+    const STORAGE_KEY = "labelstudio_course_kg_review_v2";
+    let selectedTripleId = POC_DATA.triples[0]?.id || "";
+    let selectedFileIndex = 0;
+    let activeFilter = "all";
+    let reviews = loadReviews();
+
+    function loadReviews() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveReviews() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+    }
+
+    function statusLabel(status) {
+      if (status === "correct") return "对";
+      if (status === "wrong") return "错";
+      if (status === "discuss") return "待讨论";
+      return "未判断";
+    }
+
+    function escape(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function (char) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char];
+      });
+    }
+
+    function reviewFor(id) {
+      return reviews[id] || { human_status: "", human_note: "", reviewed_at: "" };
+    }
+
+    function reviewedCount() {
+      return POC_DATA.triples.filter((triple) => reviewFor(triple.id).human_status).length;
+    }
+
+    function renderMetrics() {
+      const counts = { correct: 0, wrong: 0, discuss: 0 };
+      POC_DATA.triples.forEach((triple) => {
+        const status = reviewFor(triple.id).human_status;
+        if (counts[status] !== undefined) counts[status] += 1;
+      });
+      document.getElementById("metrics").innerHTML = [
+        metric(POC_DATA.summary.page_count, "pages"),
+        metric(POC_DATA.summary.block_count, "OCR blocks"),
+        metric(POC_DATA.summary.chunk_count, "chunks"),
+        metric(POC_DATA.summary.triple_count, "triples"),
+        metric(reviewedCount() + "/" + POC_DATA.triples.length, "人工已判断"),
+      ].join("");
+    }
+
+    function metric(value, label) {
+      return '<div class="metric"><strong>' + escape(value) + '</strong><span>' + escape(label) + '</span></div>';
+    }
+
+    function renderFiles() {
+      document.getElementById("fileList").innerHTML = POC_DATA.flowFiles.map((file, index) => {
+        return '<button class="file-item ' + (index === selectedFileIndex ? "active" : "") + '" data-file-index="' + index + '">' +
+          '<b>' + escape(file.stage) + ' · ' + escape(file.name) + '</b>' +
+          '<span>' + escape(file.role) + '</span>' +
+        '</button>';
+      }).join("");
+      const file = POC_DATA.flowFiles[selectedFileIndex];
+      document.getElementById("fileTitle").textContent = file.stage + "：" + file.name;
+      document.getElementById("filePreview").textContent = file.preview;
+      document.querySelectorAll("[data-file-index]").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedFileIndex = Number(button.dataset.fileIndex);
+          renderFiles();
+        });
+      });
+    }
+
+    function filteredTriples() {
+      return POC_DATA.triples.filter((triple) => {
+        const status = reviewFor(triple.id).human_status || "unreviewed";
+        return activeFilter === "all" || activeFilter === status;
+      });
+    }
+
+    function renderTriples() {
+      const list = filteredTriples();
+      document.getElementById("tripleList").innerHTML = list.map((triple) => {
+        const status = reviewFor(triple.id).human_status;
+        return '<button class="triple-item ' + (triple.id === selectedTripleId ? "active" : "") + '" data-triple-id="' + escape(triple.id) + '">' +
+          '<b>' + escape(triple.id) + '<span class="status-dot ' + escape(status) + '">' + escape(statusLabel(status)) + '</span></b>' +
+          '<span>' + escape(triple.subject) + '</span>' +
+          '<span><code>' + escape(triple.predicate) + '</code></span>' +
+          '<span>' + escape(triple.object) + '</span>' +
+        '</button>';
+      }).join("") || '<div class="small">当前筛选下没有三元组。</div>';
+      document.querySelectorAll("[data-triple-id]").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedTripleId = button.dataset.tripleId;
+          renderTriples();
+          renderDetail();
+        });
+      });
+      renderProgress();
+    }
+
+    function renderProgress() {
+      const total = POC_DATA.triples.length;
+      const done = reviewedCount();
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("progressText").textContent = "已判断 " + done + " / " + total + " 条（" + pct + "%）";
+    }
+
+    function chunkFor(triple) {
+      return POC_DATA.chunks.find((chunk) => chunk.chunk_id === triple.evidence_chunk_id);
+    }
+
+    function renderDetail() {
+      const triple = POC_DATA.triples.find((item) => item.id === selectedTripleId) || POC_DATA.triples[0];
+      if (!triple) {
+        document.getElementById("reviewDetail").innerHTML = '<div class="small">没有三元组。</div>';
+        return;
+      }
+      selectedTripleId = triple.id;
+      const review = reviewFor(triple.id);
+      const chunk = chunkFor(triple);
+      document.getElementById("reviewDetail").innerHTML =
+        '<div class="triple-line">' + escape(triple.subject) + ' <code>--' + escape(triple.predicate) + '--></code> ' + escape(triple.object) + '</div>' +
+        '<div class="meta-grid">' +
+          meta("类型", triple.subject_type + " -> " + triple.object_type) +
+          meta("证据位置", triple.evidence_doc + " / " + triple.evidence_chunk_id) +
+          meta("schema 校验", triple.schema_valid ? "通过" : triple.validation_errors.join("; ")) +
+          meta("候选置信度", triple.confidence) +
+        '</div>' +
+        '<h3>Evidence 原文</h3>' +
+        '<div class="evidence">' + escape(triple.evidence_text) + '</div>' +
+        '<h3>所在 chunk</h3>' +
+        '<div class="chunk-preview">' + escape(chunk ? chunk.text : "未找到 chunk") + '</div>' +
+        '<h3>你的判断</h3>' +
+        '<div class="review-actions">' +
+          reviewButton("correct", "对", review.human_status) +
+          reviewButton("wrong", "错", review.human_status) +
+          reviewButton("discuss", "待讨论", review.human_status) +
+        '</div>' +
+        '<textarea id="reviewNote" placeholder="可写原因：证据是否支持、关系方向是否对、实体边界是否对。">' + escape(review.human_note || "") + '</textarea>' +
+        '<div class="review-actions">' +
+          '<button class="primary" id="saveNote">保存备注</button>' +
+          '<button id="clearDecision">清除本条判断</button>' +
+        '</div>' +
+        '<h3>导出评审结果</h3>' +
+        '<div class="review-actions">' +
+          '<button class="primary" id="copyJson">复制 JSON</button>' +
+          '<button id="downloadJson">下载 JSON</button>' +
+          '<button id="downloadCsv">下载 CSV</button>' +
+          '<button id="resetAll">清空全部判断</button>' +
+        '</div>' +
+        '<textarea class="export-box" id="exportBox" readonly placeholder="点击复制 JSON 后，这里会出现可发给 Codex 的评审结果。"></textarea>';
+
+      document.querySelectorAll("[data-review-status]").forEach((button) => {
+        button.addEventListener("click", () => setDecision(triple.id, button.dataset.reviewStatus));
+      });
+      document.getElementById("saveNote").addEventListener("click", () => saveNote(triple.id));
+      document.getElementById("clearDecision").addEventListener("click", () => clearDecision(triple.id));
+      document.getElementById("copyJson").addEventListener("click", copyJson);
+      document.getElementById("downloadJson").addEventListener("click", downloadJson);
+      document.getElementById("downloadCsv").addEventListener("click", downloadCsv);
+      document.getElementById("resetAll").addEventListener("click", resetAll);
+    }
+
+    function meta(label, value) {
+      return '<div class="meta"><b>' + escape(label) + '</b>' + escape(value) + '</div>';
+    }
+
+    function reviewButton(status, label, current) {
+      const kind = status === "correct" ? "good" : status === "wrong" ? "bad" : "warn";
+      return '<button class="' + kind + (current === status ? " active" : "") + '" data-review-status="' + status + '">' + label + '</button>';
+    }
+
+    function setDecision(id, status) {
+      reviews[id] = {
+        ...reviewFor(id),
+        human_status: status,
+        reviewed_at: new Date().toISOString(),
+      };
+      saveReviews();
+      renderAll();
+    }
+
+    function saveNote(id) {
+      reviews[id] = {
+        ...reviewFor(id),
+        human_note: document.getElementById("reviewNote").value,
+        reviewed_at: new Date().toISOString(),
+      };
+      saveReviews();
+      renderAll();
+    }
+
+    function clearDecision(id) {
+      delete reviews[id];
+      saveReviews();
+      renderAll();
+    }
+
+    function exportPayload() {
+      const decisions = POC_DATA.triples.map((triple) => {
+        const review = reviewFor(triple.id);
+        return {
+          id: triple.id,
+          subject: triple.subject,
+          predicate: triple.predicate,
+          object: triple.object,
+          evidence_doc: triple.evidence_doc,
+          evidence_chunk_id: triple.evidence_chunk_id,
+          evidence_text: triple.evidence_text,
+          human_status: review.human_status || "",
+          human_note: review.human_note || "",
+          reviewed_at: review.reviewed_at || "",
+        };
+      });
+      const counts = decisions.reduce((acc, item) => {
+        const key = item.human_status || "unreviewed";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      return {
+        exported_at: new Date().toISOString(),
+        source: "Label Studio JSON Graph Construction POC",
+        summary: { total: decisions.length, counts },
+        decisions,
+      };
+    }
+
+    function payloadText() {
+      return JSON.stringify(exportPayload(), null, 2);
+    }
+
+    async function copyJson() {
+      const text = payloadText();
+      document.getElementById("exportBox").value = text;
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("exportBox").value = text + "\n\n已复制到剪贴板。";
+      } catch (error) {
+        document.getElementById("exportBox").value = text + "\n\n浏览器没有开放剪贴板权限，请手动复制这段 JSON。";
+      }
+    }
+
+    function downloadJson() {
+      downloadFile("review_decisions.json", payloadText(), "application/json");
+    }
+
+    function downloadCsv() {
+      const payload = exportPayload();
+      const header = ["id", "subject", "predicate", "object", "evidence_doc", "evidence_chunk_id", "human_status", "human_note", "reviewed_at"];
+      const rows = [header.join(",")].concat(payload.decisions.map((item) => header.map((field) => csv(item[field])).join(",")));
+      downloadFile("review_decisions.csv", rows.join("\n"), "text/csv");
+    }
+
+    function csv(value) {
+      return '"' + String(value ?? "").replaceAll('"', '""') + '"';
+    }
+
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetAll() {
+      if (!confirm("确认清空全部人工判断？")) return;
+      reviews = {};
+      saveReviews();
+      renderAll();
+    }
+
+    function bindFilters() {
+      document.querySelectorAll("[data-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.remove("primary"));
+          button.classList.add("primary");
+          renderTriples();
+        });
+      });
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderFiles();
+      renderTriples();
+      renderDetail();
+    }
+
+    bindFilters();
+    renderAll();
+  </script>
+</body>
+</html>

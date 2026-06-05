@@ -529,7 +529,7 @@
         "keyword": {
           "source_file": "evaluation\\README.md",
           "source_scope": "evaluation_framework",
-          "preview": "# evaluation 评测层。用于检索指标、答案指标、图谱指标、人工评估、消融实验和显著性检验。 ## 当前评测集 - `system_eval_questions.jsonl`：30 题小型系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据和评测方法。 - `scripts/run_system_evaluation.py`：可读取该 JSONL，并对系统输出计算 retrieval recall、answer evidence coverage、citation 缺失率和 ..."
+          "preview": "# evaluation 评测层。用于检索指标、答案指标、图谱指标、人工评估、消融实验和显著性检验。 ## 当前评测集 - `system_eval_questions.jsonl`：60 题系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据和评测方法。 - `scripts/run_system_evaluation.py`：可读取该 JSONL，并对系统输出计算 retrieval recall、answer evidence coverage、citation 缺失率和 ..."
         },
         "dense_hashing": {
           "source_file": "data_pipeline\\ocr_processing_stages\\ocr_text_cleaned\\tsinghua_gas_turbine_books\\05_42b658350682\\document.txt",
@@ -1487,7 +1487,7 @@
         "keyword": {
           "source_file": "evaluation\\README.md",
           "source_scope": "evaluation_framework",
-          "preview": "# evaluation 评测层。用于检索指标、答案指标、图谱指标、人工评估、消融实验和显著性检验。 ## 当前评测集 - `system_eval_questions.jsonl`：30 题小型系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据和评测方法。 - `scripts/run_system_evaluation.py`：可读取该 JSONL，并对系统输出计算 retrieval recall、answer evidence coverage、citation 缺失率和 ..."
+          "preview": "# evaluation 评测层。用于检索指标、答案指标、图谱指标、人工评估、消融实验和显著性检验。 ## 当前评测集 - `system_eval_questions.jsonl`：60 题系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据和评测方法。 - `scripts/run_system_evaluation.py`：可读取该 JSONL，并对系统输出计算 retrieval recall、answer evidence coverage、citation 缺失率和 ..."
         },
         "dense_hashing": {
           "source_file": "data_pipeline\\ocr_processing_stages\\ocr_text_cleaned\\tsinghua_gas_turbine_books\\12_703d154d523b\\document.txt",
