@@ -51,6 +51,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
     assert "scenario demo evidence" in report
+    assert "scenario walkthrough script" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -219,6 +220,18 @@ def test_scenario_demo_gate_rejects_missing_required_records(monkeypatch, tmp_pa
     monkeypatch.setattr(module, "APPLICATION_VALIDATION_REPORT", application_report)
 
     check = module.check_scenario_demo_evidence()
+
+    assert not check.passed
+    assert "demo-gt07-repair-022" in check.detail
+
+
+def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    demo_script = tmp_path / "demo.md"
+    demo_script.write_text("# 系统演示脚本\n\n固定场景演示：燃气轮机异常振动诊断流程。\n", encoding="utf-8")
+    monkeypatch.setattr(module, "DEMO_SCRIPT", demo_script)
+
+    check = module.check_scenario_walkthrough_script()
 
     assert not check.passed
     assert "demo-gt07-repair-022" in check.detail

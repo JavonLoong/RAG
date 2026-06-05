@@ -1,8 +1,8 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 15/15
-- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 16/16
+- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
@@ -18,6 +18,7 @@
 | defense rehearsal pack | pass | timed defense script, killer questions, and boundaries mapped to evidence; 15 evidence links verified |
 | application validation evidence | pass | fixed GT-07 application case, evidence records, benefits, and boundaries verified; 9 evidence links verified |
 | scenario demo evidence | pass | fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary |
+| scenario walkthrough script | pass | fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; 8 evidence links verified |
 | live demo smoke checks | pass | 5/5 checks pass |
 | browser smoke checks | pass | 12/12 checks pass |
 | browser visual evidence | pass | 4 screenshots and 4 KG artifacts verified |

@@ -22,6 +22,7 @@ AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
+DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 DATASET_RELATIVE = "evaluation/system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
@@ -173,7 +174,21 @@ REQUIRED_SCENARIO_BOUNDARY_TERMS = {
     "不证明",
     "替代工程师",
 }
+REQUIRED_SCENARIO_WALKTHROUGH_TERMS = {
+    "固定场景演示",
+    "燃气轮机异常振动诊断流程",
+    "结果 5",
+    "demo-maint-thresholds-076",
+    "demo-structure-fault-130",
+    "demo-gt07-fault-021",
+    "demo-gt07-repair-022",
+    "demo-gt07-manual-023",
+    "人工确认",
+    "application_validation_report.md",
+    "desktop_search_results.png",
+}
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
+COMMAND_FRAGMENTS = (";", "http://", "https://")
 
 
 @dataclass(slots=True)
@@ -429,6 +444,8 @@ def extract_markdown_code_span_paths(text: str) -> list[str]:
         item = value.strip()
         if not item or item.startswith(COMMAND_PREFIXES):
             continue
+        if any(fragment in item for fragment in COMMAND_FRAGMENTS):
+            continue
         if "/" in item or "\\" in item or item.endswith((".md", ".json", ".jsonl", ".html", ".svg", ".csv", ".png")):
             paths.append(item.replace("\\", "/"))
     return paths
@@ -560,6 +577,24 @@ def check_scenario_demo_evidence() -> GateCheck:
     )
 
 
+def check_scenario_walkthrough_script() -> GateCheck:
+    if not DEMO_SCRIPT.exists():
+        return GateCheck("scenario walkthrough script", False, "04_系统演示脚本.md missing")
+    text = DEMO_SCRIPT.read_text(encoding="utf-8")
+    missing = sorted(term for term in REQUIRED_SCENARIO_WALKTHROUGH_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing.extend(missing_paths)
+    return GateCheck(
+        "scenario walkthrough script",
+        not missing,
+        f"fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing scenario walkthrough terms or evidence paths: {', '.join(missing)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
@@ -574,6 +609,7 @@ def run_gate() -> list[GateCheck]:
         check_defense_rehearsal_card(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
+        check_scenario_walkthrough_script(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
@@ -592,7 +628,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

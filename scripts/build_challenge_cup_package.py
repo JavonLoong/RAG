@@ -323,19 +323,22 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 
 def build_demo_script(ctx: dict[str, Any]) -> str:
-    return """# 系统演示脚本
+    validation = ctx["validation"]
+    return f"""# 系统演示脚本
 
 ## 主线演示
 
 1. 打开 `docs/challenge_cup/00_项目一页纸.md`，用 30 秒说明问题、方法和核心数字。
 2. 启动控制台：`cd api_server/current_console; python server.py`，打开 `http://localhost:8000`。
-3. 展示普通 RAG 检索问题：“燃烧室在燃气轮机热力循环中承担什么功能？”
-4. 展示 GraphRAG 证据问题：“为什么三元组必须绑定 evidence 才能用于可信问答？”
-5. 打开 `docs/challenge_cup/03_实验评测报告.md`，说明 baseline 和失败归因。
+3. 固定场景演示：在检索框输入“{validation["query"]}”，展示 `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` 中记录的 `{validation["search_meta"]}`。
+4. 按顺序讲清 5 条证据：`demo-maint-thresholds-076` 给出监测阈值，`demo-structure-fault-130` 解释异常振动机理，`demo-gt07-fault-021` 给出 GT-07 现象，`demo-gt07-repair-022` 给出进气滤网和压气机叶片处理结果，`demo-gt07-manual-023` 给出温度传感器校验等处置建议。
+5. 主动说明边界：系统提供证据整理和来源追溯，必须由工程师结合现场工况人工确认，不替代最终维修决策。
+6. 打开 `docs/challenge_cup/reproducibility/application_validation_report.md` 和 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`，证明固定场景不是口头承诺。
+7. 打开 `docs/challenge_cup/03_实验评测报告.md`，说明 baseline 和失败归因。
 
 ## 备用演示
 
-如果服务未启动，直接打开知识图谱审核页面、SVG、实验评测报告和答辩问答手册。现场不排查环境，把时间用于解释证据链。
+如果服务未启动，直接打开 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`、`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`、`docs/challenge_cup/reproducibility/application_validation_report.md`、知识图谱审核页面、SVG、实验评测报告和答辩问答手册。现场不排查环境，把时间用于解释证据链。
 """
 
 
@@ -708,7 +711,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (15/15 gates)
+-> Status: pass (16/16 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。

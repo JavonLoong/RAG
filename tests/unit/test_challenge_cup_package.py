@@ -142,6 +142,21 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "browser_demo_smoke_report.md",
     ]:
         assert evidence in defense_card
+    demo_script = (PACKAGE_DIR / "04_系统演示脚本.md").read_text(encoding="utf-8")
+    for phrase in [
+        "固定场景演示",
+        "燃气轮机异常振动诊断流程",
+        "demo-maint-thresholds-076",
+        "demo-structure-fault-130",
+        "demo-gt07-fault-021",
+        "demo-gt07-repair-022",
+        "demo-gt07-manual-023",
+        "结果 5",
+        "人工确认",
+        "application_validation_report.md",
+        "desktop_search_results.png",
+    ]:
+        assert phrase in demo_script
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
