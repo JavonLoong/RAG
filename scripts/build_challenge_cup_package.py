@@ -13,6 +13,7 @@ REPRO = OUT / "reproducibility"
 REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
+LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 
 
 def write(path: Path, content: str) -> None:
@@ -306,6 +307,12 @@ def build_runbook(ctx: dict[str, Any]) -> str:
 .\.venv\Scripts\python.exe scripts/extend_challenge_cup_eval_questions.py
 ```
 
+## 运行现场演示烟测
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_challenge_cup_live_demo_smoke.py
+```
+
 ## 重新生成 Day3 baseline
 
 ```powershell
@@ -335,6 +342,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - Day3 baseline：`{optional_md_link(ctx["day3"])}`。
 - Day4 失败分析：`{optional_md_link(ctx["day4"])}`。
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
+- 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 课程最终交付包：`{md_link(ctx["course_pack"])}`。
 """
 
@@ -366,6 +374,10 @@ python -m pytest tests/unit -q
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
 -> 19 passed
+
+python scripts/run_challenge_cup_live_demo_smoke.py
+-> docs/challenge_cup/reproducibility/live_demo_smoke_report.md
+-> Status: pass (5/5 checks)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。

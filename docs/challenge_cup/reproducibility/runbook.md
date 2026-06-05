@@ -13,6 +13,12 @@
 .\.venv\Scripts\python.exe scripts/extend_challenge_cup_eval_questions.py
 ```
 
+## 运行现场演示烟测
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_challenge_cup_live_demo_smoke.py
+```
+
 ## 重新生成 Day3 baseline
 
 ```powershell

@@ -79,6 +79,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
+    runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
+    assert "run_challenge_cup_live_demo_smoke.py" in runbook
+    manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
+    assert "live_demo_smoke_report.md" in manifest
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:

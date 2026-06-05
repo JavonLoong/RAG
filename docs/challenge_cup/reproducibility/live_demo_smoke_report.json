@@ -1,0 +1,35 @@
+{
+  "report_type": "challenge_cup_live_demo_smoke",
+  "generated_at": "2026-06-05T22:00:24",
+  "status": "pass",
+  "passed": 5,
+  "total": 5,
+  "checks": [
+    {
+      "name": "health endpoint",
+      "passed": true,
+      "detail": "GET /api/health -> 200"
+    },
+    {
+      "name": "missing frontend fallback",
+      "passed": true,
+      "detail": "GET / -> 404"
+    },
+    {
+      "name": "trusted cors origin",
+      "passed": true,
+      "detail": "localhost origin accepted; arbitrary origin rejected"
+    },
+    {
+      "name": "search top_k guard",
+      "passed": true,
+      "detail": "GET /api/search?top_k=999 -> 400"
+    },
+    {
+      "name": "graphrag path guard",
+      "passed": true,
+      "detail": "POST /api/graphrag/stats outside runtime root -> 400"
+    }
+  ],
+  "boundary": "This smoke test verifies local API readiness and route guards; it does not replace browser or production-load verification."
+}

@@ -24,6 +24,10 @@ python -m pytest tests/unit -q
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
 -> 19 passed
+
+python scripts/run_challenge_cup_live_demo_smoke.py
+-> docs/challenge_cup/reproducibility/live_demo_smoke_report.md
+-> Status: pass (5/5 checks)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
