@@ -16,6 +16,7 @@ BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
 CLAIM_MATRIX = PACKAGE_DIR / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
+EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 
@@ -30,6 +31,7 @@ REQUIRED_PACKAGE_DOCS = [
     "06_结项验收清单.md",
     "07_评审主张证据矩阵.md",
     "08_特等奖评审自评表.md",
+    "09_专家快速审阅索引.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/command_log.md",
@@ -77,6 +79,17 @@ REQUIRED_AWARD_SELF_EVAL_TERMS = {
     "07_评审主张证据矩阵.md",
     "readiness_gate_report.md",
     "browser_demo_smoke_report.md",
+}
+REQUIRED_EXPERT_REVIEW_INDEX_TERMS = {
+    "三分钟审阅路径",
+    "特等奖主张",
+    "一键复核命令",
+    "风险边界",
+    "07_评审主张证据矩阵.md",
+    "08_特等奖评审自评表.md",
+    "readiness_gate_report.md",
+    "browser_demo_smoke_report.md",
+    "evaluation/system_eval_questions.jsonl",
 }
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 
@@ -166,8 +179,9 @@ def check_browser_evidence_files() -> GateCheck:
 
 
 def extract_markdown_code_span_paths(text: str) -> list[str]:
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
     paths: list[str] = []
-    for value in re.findall(r"`([^`]+)`", text):
+    for value in re.findall(r"`([^`\n]+)`", text):
         item = value.strip()
         if not item or item.startswith(COMMAND_PREFIXES):
             continue
@@ -212,6 +226,24 @@ def check_award_self_eval() -> GateCheck:
     )
 
 
+def check_expert_review_index() -> GateCheck:
+    if not EXPERT_REVIEW_INDEX.exists():
+        return GateCheck("expert review index", False, "09_专家快速审阅索引.md missing")
+    text = EXPERT_REVIEW_INDEX.read_text(encoding="utf-8")
+    missing_terms = sorted(term for term in REQUIRED_EXPERT_REVIEW_INDEX_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing = missing_terms + missing_paths
+    return GateCheck(
+        "expert review index",
+        not missing,
+        f"judge-facing review path maps claims, commands, and boundaries; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing terms or evidence paths: {', '.join(missing)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
@@ -219,6 +251,7 @@ def run_gate() -> list[GateCheck]:
         check_package_manifest(),
         check_claim_evidence_matrix(),
         check_award_self_eval(),
+        check_expert_review_index(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
@@ -237,7 +270,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, claim-evidence matrix, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, claim-evidence matrix, special-prize rubric, expert review index, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

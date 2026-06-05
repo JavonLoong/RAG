@@ -14,6 +14,7 @@ REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
+EXPERT_REVIEW_INDEX = OUT / "09_专家快速审阅索引.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -117,9 +118,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 7. `06_结项验收清单.md`
 8. `07_评审主张证据矩阵.md`
 9. `08_特等奖评审自评表.md`
-10. `reproducibility/runbook.md`
-11. `reproducibility/dataset_manifest.md`
-12. `reproducibility/readiness_gate_report.md`
+10. `09_专家快速审阅索引.md`
+11. `reproducibility/runbook.md`
+12. `reproducibility/dataset_manifest.md`
+13. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -345,6 +347,44 @@ def build_award_self_eval(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_expert_review_index(ctx: dict[str, Any]) -> str:
+    return """# 专家快速审阅索引
+
+本索引用于让评委、结项验收老师或答辩委员在 3-5 分钟内定位项目证据。它不是新的主张材料，而是把已有项目书、评测、演示和门禁证据组织成可复核路径。
+
+## 三分钟审阅路径
+
+1. 先看项目定位：`docs/challenge_cup/00_项目一页纸.md`。
+2. 再看特等奖口径：`docs/challenge_cup/08_特等奖评审自评表.md`。
+3. 复核主张证据：`docs/challenge_cup/07_评审主张证据矩阵.md`。
+4. 查看可复现状态：`docs/challenge_cup/reproducibility/readiness_gate_report.md`。
+5. 如果现场演示受限，查看浏览器证据：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
+
+## 特等奖主张
+
+| 主张 | 快速证据 | 复核方式 |
+| --- | --- | --- |
+| 项目不是普通问答页，而是可结项的 RAG / GraphRAG 知识工程闭环 | `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/02_技术白皮书.md`; `docs/challenge_cup/06_结项验收清单.md` | 阅读项目书的技术路线和验收清单 |
+| 评测不是只挑成功样例，而是有 60 题评测集、baseline、失败归因和 GraphRAG 同题子集 | `evaluation/system_eval_questions.jsonl`; `docs/challenge_cup/03_实验评测报告.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` | 运行评测命令或检查评测报告 |
+| 演示不是口头承诺，而是有 live smoke、browser smoke、截图和 KG artifact 证据 | `docs/challenge_cup/reproducibility/live_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png` | 运行 smoke 或打开截图 |
+| 申报边界清楚，不把课程资料系统夸大成生产级运维系统 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/08_特等奖评审自评表.md` | 检查答辩边界和风险控制 |
+
+## 一键复核命令
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_package.py
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
+.\.venv\Scripts\python.exe -m pytest tests/unit -q
+```
+
+## 风险边界
+
+- 当前 readiness gate 证明成果包、证据链接、评测集、smoke 报告和浏览器截图可复核；它不证明最终奖项结果。
+- 当前系统定位为证据型辅助和知识资产整理；不替代工程师做真实运维决策。
+- 如果现场后端启动失败，按 `docs/challenge_cup/04_系统演示脚本.md` 切换到离线证据包和浏览器截图继续答辩。
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -405,6 +445,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
+- 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -473,7 +514,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (8/8 gates)
+-> Status: pass (9/9 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -492,6 +533,7 @@ def main() -> int:
     write(OUT / "06_结项验收清单.md", build_checklist(ctx))
     write(CLAIM_MATRIX, build_claim_evidence_matrix(ctx))
     write(AWARD_SELF_EVAL, build_award_self_eval(ctx))
+    write(EXPERT_REVIEW_INDEX, build_expert_review_index(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(REPRO / "command_log.md", build_command_log(ctx))
@@ -503,6 +545,7 @@ def main() -> int:
             md_link(DATASET),
             md_link(CLAIM_MATRIX),
             md_link(AWARD_SELF_EVAL),
+            md_link(EXPERT_REVIEW_INDEX),
             md_link(LIVE_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_JSON),

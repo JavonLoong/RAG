@@ -39,6 +39,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "claim-evidence matrix" in report
     assert "award claims" in report
     assert "special-prize rubric self-assessment" in report
+    assert "expert review index" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
     assert "mobile console health" in report
@@ -86,3 +87,20 @@ def test_claim_matrix_gate_rejects_missing_evidence_paths(tmp_path, monkeypatch)
 
     assert not check.passed
     assert "missing-evidence.md" in check.detail
+
+
+def test_markdown_path_extractor_ignores_fenced_commands() -> None:
+    module = load_readiness_module()
+    text = "\n".join(
+        [
+            "`docs/challenge_cup/00_项目一页纸.md`",
+            "",
+            "```powershell",
+            ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_readiness.py",
+            "```",
+        ]
+    )
+
+    paths = module.extract_markdown_code_span_paths(text)
+
+    assert paths == ["docs/challenge_cup/00_项目一页纸.md"]
