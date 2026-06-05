@@ -1,6 +1,6 @@
 {
   "report_type": "challenge_cup_browser_demo_smoke",
-  "generated_at": "2026-06-05T14:46:47.489Z",
+  "generated_at": "2026-06-05T14:51:23.313Z",
   "status": "pass",
   "passed": 12,
   "total": 12,
@@ -45,7 +45,7 @@
     {
       "name": "search interaction",
       "passed": true,
-      "detail": "集合 gas_turbine_ocr_demo_snapshot · 延迟 43.50 ms · 结果 5 · 后端 public-demo"
+      "detail": "集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo"
     },
     {
       "name": "KG SVG render",
@@ -89,8 +89,8 @@
     "playwright_source": "C:\\Users\\15410\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\.pnpm\\playwright@1.60.0\\node_modules\\playwright",
     "title": "动力装备知识库控制台",
     "query": "燃气轮机异常振动诊断流程",
-    "overview_preview": "动力装备知识库\n标准 RAG\nGraphRAG\n系统总览\n数据接入\n语义检索\n性能基准\n演示数据\nDemo snapshot 22:46\n运维\nKNOWLEDGE ENGINE\n动力装备知识库\n\n文档解析 → 向量分块 → 语义检索，全链路可视化管理。\n\n上传并入库\n开始检索\n查看KG流程\n性能压测\n\n集合状态\n\n集合与来源结构\n1 个集合\n导出整库 ZIP\ngas_turbine_ocr_demo_snapshot · 默认\n来源类型比例来自最新统计采样，删除集合后会自动刷新。\ngas_turbine_ocr_demo_snapshot\n\n2,655 个向量片段 · 约 1,185,989 tokens\n\n默认集合\n估算字符 1,740,087\n文本: 4\n导出 JSON\n设为默认\n删除集合\n\n趋势快照\n\n索引增长与检索延迟\n向量规模\n综合\n增量\n延迟\nOCR\n320,000 tk\n分块\n780,000 tk\n索引\n1,186,000 tk\n22:46\n1,185,989 tk\nPDF\n文本\nJSON\n其他\n延迟\n\n吞吐脉冲\n\n8.6 docs/s\n\n当前小时写入吞吐。\n\n结果精度\n\n--\n\n最近一次压测结果。\n\n实时日志\n\n实时操作日志\n全部日志\n全部\n成功\n预警\n异常\n前端已加载\n\n正在连接后端服务并同步 Chroma 统计。\n\n22:46:38\n提醒\n公开演示快照\n\n已展示 4 本 OCR 质量较放心的燃气轮机材料。\n\n22:38:38\n成功\nOCR 质量检查\n\n总页数 5483 页已完成，公开页先放较稳定样例。\n\n22:30:38\n成功\n演示模式提示\n\n当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。\n\n22:21:38\n提醒\n\n导航脉冲\n\n等待检索\n\n文档数\n\n4\nPDF: 0\n文本: 4\nJSON: 0\n其他: 0\n\n词元数\n\n1,185,989\n32.58 MB\n384 维\n记录: 1,592\n片段: 2,655\n\n集合数\n\n1\n当前集合: gas_turbine_ocr_demo_snapshot\n成功文件: 4\n失败文件: 0\n实时存储 32.58 MB\n\n检索延迟\n\n46.20 ms\n结果数: 0\nP95: 71.50 ms\n精度: --\n质量告警 2 条",
-    "search_meta": "集合 gas_turbine_ocr_demo_snapshot · 延迟 43.50 ms · 结果 5 · 后端 public-demo",
+    "overview_preview": "动力装备知识库\n标准 RAG\nGraphRAG\n系统总览\n数据接入\n语义检索\n性能基准\n演示数据\nDemo snapshot 22:51\n运维\nKNOWLEDGE ENGINE\n动力装备知识库\n\n文档解析 → 向量分块 → 语义检索，全链路可视化管理。\n\n上传并入库\n开始检索\n查看KG流程\n性能压测\n\n集合状态\n\n集合与来源结构\n1 个集合\n导出整库 ZIP\ngas_turbine_ocr_demo_snapshot · 默认\n来源类型比例来自最新统计采样，删除集合后会自动刷新。\ngas_turbine_ocr_demo_snapshot\n\n2,655 个向量片段 · 约 1,185,989 tokens\n\n默认集合\n估算字符 1,740,087\n文本: 4\n导出 JSON\n设为默认\n删除集合\n\n趋势快照\n\n索引增长与检索延迟\n向量规模\n综合\n增量\n延迟\nOCR\n320,000 tk\n分块\n780,000 tk\n索引\n1,186,000 tk\n22:51\n1,185,989 tk\nPDF\n文本\nJSON\n其他\n延迟\n\n吞吐脉冲\n\n8.6 docs/s\n\n当前小时写入吞吐。\n\n结果精度\n\n--\n\n最近一次压测结果。\n\n实时日志\n\n实时操作日志\n全部日志\n全部\n成功\n预警\n异常\n前端已加载\n\n正在连接后端服务并同步 Chroma 统计。\n\n22:51:14\n提醒\n公开演示快照\n\n已展示 4 本 OCR 质量较放心的燃气轮机材料。\n\n22:43:14\n成功\nOCR 质量检查\n\n总页数 5483 页已完成，公开页先放较稳定样例。\n\n22:35:14\n成功\n演示模式提示\n\n当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。\n\n22:26:14\n提醒\n\n导航脉冲\n\n等待检索\n\n文档数\n\n4\nPDF: 0\n文本: 4\nJSON: 0\n其他: 0\n\n词元数\n\n1,185,989\n32.58 MB\n384 维\n记录: 1,592\n片段: 2,655\n\n集合数\n\n1\n当前集合: gas_turbine_ocr_demo_snapshot\n成功文件: 4\n失败文件: 0\n实时存储 32.58 MB\n\n检索延迟\n\n46.20 ms\n结果数: 0\nP95: 71.50 ms\n精度: --\n质量告警 2 条",
+    "search_meta": "集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo",
     "results_preview": "燃气轮机运行维护手册_doc101.json\nJSON\nscore 80.8%\ndistance 0.1916\nchunk 76\n80.8%\n\n关键监测参数阈值包括：排气温度散布度不大于 25°C，轴承振动不大于 25.4 mm/s，滑油金属颗粒不大于 5 ppm，压气机效率衰减不大于 3%。这些指标可作为运行异常和早期故障诊断线索。\n\nrecord demo-maint-thresholds-076\ntokens 94\npages 5.7\n展开全文\n燃气轮机可靠性维护理论及应用.txt\n文本\nscore 80.5%\ndistance 0.1952\nchunk 130\n80.5%\n\n燃气轮机结构强度故障是指发生在燃气轮机机械结构和部件中的形变或机械损伤，会引起机组不正常振动并影响正常运行；由于机组尺寸大、转速高，这些机械故障可能导致破坏性机械损伤、停机甚至机组报废。\n\nrecord demo-structure-fault-130\ntokens 112\npages 第6章\n展开全文\n燃气轮机设备故障样例文本.md\n文本\nscore 80.0%\ndistance 0.1999\nchunk 21\n80.0%\n\nGT-07 燃气轮机升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s，DCS 触发“压气机出口温度偏高”报警。运行员记录：燃烧室火焰稳定，未见明显燃烧波动。\n\nrecord demo-gt07-fault-021\ntokens 112\npages POC-1\n展开全文\n燃气轮机设备故障样例文本.md\n文本\nscore 79.8%\ndistance 0.2017\nchunk 22\n79.8%\n\n停机检查发现，进气滤网压差偏高，滤网局部堵塞；压气机前三级叶片表面积灰明显。检修人员清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器 TT-COMP-02。复机后，压气机出口温度回落至 438°C，振动值降至 3.1 mm/s。\n\nrecord demo-gt07-repair-022\ntokens 118\npages POC-2\n展开全文\n燃气轮机设备故障样例文本.md\n文本\nscore 79.7%\ndistance 0.2035\nchunk 23\n79.7%\n\n压气机出口温度偏高的常见原因包括进气阻力增大、压气机叶片污染和温度传感器漂移。建议检查进气滤网压差，清理或更换滤网，清洗压气机叶片，并对温度传感器进行校验。若振动值持续偏高，应进一步检查轴承状态和联轴器对中情况。\n\nrecord demo-gt07-manual-023\ntokens 115\npages POC-3\n展开全文",
     "kg_image": {
       "width": 1500,
@@ -123,7 +123,7 @@
         "ok": true
       }
     ],
-    "mobile_preview": "标准 RAG\nGraphRAG\n演示数据\nDemo snapshot 22:46\nKNOWLEDGE ENGINE\n动力装备知识库\n\n文档解析 → 向量分块 → 语义检索，全链路可视化管理。\n\n上传并入库\n开始检索\n查看KG流程\n性能压测\n\n集合状态\n\n集合与来源结构\n1 个集合\n导出整库 ZIP\ngas_turbine_ocr_demo_snapshot · 默认\n来源类型比例来自最新统计采样，删除集合后会自动刷新。\ngas_turbine_ocr_demo_snapshot\n\n2,655 个向量片段 · 约 1,185,989 tokens\n\n默认集合\n估算字符 1,740,087\n文本: 4\n导出 JSON\n设为默认\n删除集合\n\n趋势快照\n\n索引增长与检索延迟\n向量规模\n综合\n增量\n延迟\nOCR\n320,000 tk\n分块\n780,000 tk\n索引\n1,186,000 tk\n22:46\n1,185,989 tk\nPDF\n文本\nJSON\n其他\n延迟\n\n吞吐脉冲\n\n8.6 docs/s\n\n当前小时写入吞吐。\n\n结果精度\n\n--\n\n最近一次压测结果。\n\n实时日志\n\n实时操作日志\n全部日志\n全部\n成功\n预警\n异常\n前端已加载\n\n正在连接后端服务并同步 Chroma 统计。\n\n22:46:46\n提醒\n公开演示快照\n\n已展示 4 本 OCR 质量较放心的燃气轮机材料。\n\n22:38:46\n成功\nOCR 质量检查\n\n总页数 5483 页已完成，公开页先放较稳定样例。\n\n22:30:46\n成功\n演示模式提示\n\n当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。\n\n22:21:46\n提醒\n\n导航脉冲\n\n等待检索\n\n文档数\n\n4\nPDF: 0\n文本: 4\nJSON: 0\n其他: 0\n\n词元数\n\n1,185,989\n32.58 MB\n384 维\n记录: 1,592\n片段: 2,655\n\n集合数\n\n1\n当前集合: gas_turbine_ocr_demo_snapshot\n成功文件: 4\n失败文件: 0\n实时存储 32.58 MB\n\n检索延迟\n\n46.20 ms\n结果数",
+    "mobile_preview": "标准 RAG\nGraphRAG\n演示数据\nDemo snapshot 22:51\nKNOWLEDGE ENGINE\n动力装备知识库\n\n文档解析 → 向量分块 → 语义检索，全链路可视化管理。\n\n上传并入库\n开始检索\n查看KG流程\n性能压测\n\n集合状态\n\n集合与来源结构\n1 个集合\n导出整库 ZIP\ngas_turbine_ocr_demo_snapshot · 默认\n来源类型比例来自最新统计采样，删除集合后会自动刷新。\ngas_turbine_ocr_demo_snapshot\n\n2,655 个向量片段 · 约 1,185,989 tokens\n\n默认集合\n估算字符 1,740,087\n文本: 4\n导出 JSON\n设为默认\n删除集合\n\n趋势快照\n\n索引增长与检索延迟\n向量规模\n综合\n增量\n延迟\nOCR\n320,000 tk\n分块\n780,000 tk\n索引\n1,186,000 tk\n22:51\n1,185,989 tk\nPDF\n文本\nJSON\n其他\n延迟\n\n吞吐脉冲\n\n8.6 docs/s\n\n当前小时写入吞吐。\n\n结果精度\n\n--\n\n最近一次压测结果。\n\n实时日志\n\n实时操作日志\n全部日志\n全部\n成功\n预警\n异常\n前端已加载\n\n正在连接后端服务并同步 Chroma 统计。\n\n22:51:21\n提醒\n公开演示快照\n\n已展示 4 本 OCR 质量较放心的燃气轮机材料。\n\n22:43:21\n成功\nOCR 质量检查\n\n总页数 5483 页已完成，公开页先放较稳定样例。\n\n22:35:21\n成功\n演示模式提示\n\n当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。\n\n22:26:21\n提醒\n\n导航脉冲\n\n等待检索\n\n文档数\n\n4\nPDF: 0\n文本: 4\nJSON: 0\n其他: 0\n\n词元数\n\n1,185,989\n32.58 MB\n384 维\n记录: 1,592\n片段: 2,655\n\n集合数\n\n1\n当前集合: gas_turbine_ocr_demo_snapshot\n成功文件: 4\n失败文件: 0\n实时存储 32.58 MB\n\n检索延迟\n\n46.20 ms\n结果数",
     "desktop_console": [],
     "mobile_console": [],
     "screenshots": {
@@ -151,7 +151,7 @@
       {
         "name": "search interaction",
         "passed": true,
-        "detail": "集合 gas_turbine_ocr_demo_snapshot · 延迟 43.50 ms · 结果 5 · 后端 public-demo"
+        "detail": "集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo"
       },
       {
         "name": "KG SVG render",

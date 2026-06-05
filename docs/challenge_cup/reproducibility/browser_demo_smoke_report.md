@@ -15,7 +15,7 @@
 | page identity | pass | title=动力装备知识库控制台 |
 | desktop not blank | pass | desktop overview contains app content |
 | desktop console health | pass | 0 warning/error console events |
-| search interaction | pass | 集合 gas_turbine_ocr_demo_snapshot · 延迟 43.50 ms · 结果 5 · 后端 public-demo |
+| search interaction | pass | 集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo |
 | KG SVG render | pass | 1500x980 |
 | KG artifact links | pass | knowledge_graph.svg:200, kg_evidence_viewer.html:200, triples.csv:200, run_report.md:200 |
 | mobile not blank | pass | mobile overview contains app content |
