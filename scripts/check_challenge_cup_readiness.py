@@ -172,6 +172,25 @@ def check_package_docs() -> GateCheck:
     )
 
 
+def check_package_control_files() -> GateCheck:
+    controls = [
+        PACKAGE_MANIFEST.relative_to(REPO_ROOT).as_posix(),
+        EVIDENCE_HASHES.relative_to(REPO_ROOT).as_posix(),
+    ]
+    tracked = git_tracked_paths()
+    missing = [path for path in controls if not nonempty(REPO_ROOT / path)]
+    untracked = [path for path in controls if path not in tracked]
+    dirty = sorted(git_dirty_paths(controls))
+    passed = not missing and not untracked and not dirty
+    return GateCheck(
+        "package control files",
+        passed,
+        f"{len(controls)} control files exist, are git-tracked, and are clean"
+        if passed
+        else f"missing={missing}, untracked={untracked}, dirty={dirty}",
+    )
+
+
 def check_eval_dataset() -> GateCheck:
     count = count_jsonl(DATASET) if DATASET.exists() else 0
     return GateCheck(
@@ -358,6 +377,7 @@ def check_defense_rehearsal_card() -> GateCheck:
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
+        check_package_control_files(),
         check_eval_dataset(),
         check_package_manifest(),
         check_evidence_hashes(),
@@ -383,7 +403,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

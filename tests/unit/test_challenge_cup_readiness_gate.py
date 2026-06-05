@@ -36,6 +36,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     report = REPORT.read_text(encoding="utf-8")
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
+    assert "package control files" in report
     assert "package evidence files" in report
     assert "claim-evidence matrix" in report
     assert "award claims" in report
@@ -154,6 +155,19 @@ def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> 
 
     assert not check.passed
     assert "dirty-evidence.md" in check.detail
+
+
+def test_package_control_files_gate_rejects_dirty_manifest(monkeypatch) -> None:
+    module = load_readiness_module()
+    manifest = module.PACKAGE_MANIFEST.relative_to(module.REPO_ROOT).as_posix()
+    hashes = module.EVIDENCE_HASHES.relative_to(module.REPO_ROOT).as_posix()
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {manifest, hashes})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: {manifest})
+
+    check = module.check_package_control_files()
+
+    assert not check.passed
+    assert "package_manifest.json" in check.detail
 
 
 def test_evidence_hash_gate_rejects_mismatched_hash(monkeypatch, tmp_path) -> None:
