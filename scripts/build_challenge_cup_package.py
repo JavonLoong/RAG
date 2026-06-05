@@ -45,6 +45,14 @@ from build_challenge_cup_defense_deck import (
     SPEAKER_NOTES as DEFENSE_DECK_NOTES,
     build_outputs as build_defense_deck_outputs,
 )
+from build_challenge_cup_hard_evidence_ledger import (
+    EXPERT_README as HARD_EVIDENCE_EXPERT_README,
+    OUTPUT_JSON as HARD_EVIDENCE_LEDGER_JSON,
+    OUTPUT_MD as HARD_EVIDENCE_LEDGER_MD,
+    REHEARSAL_README as HARD_EVIDENCE_REHEARSAL_README,
+    ROOT_README as HARD_EVIDENCE_README,
+    write_outputs as write_hard_evidence_ledger_outputs,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -315,8 +323,9 @@ def build_readme(ctx: dict[str, Any]) -> str:
 21. `reproducibility/defense_rehearsal_scorecard.md`
 22. `reproducibility/defense_rehearsal_result_packet.md`
 23. `reproducibility/expert_feedback_request_packet.md`
-24. `reproducibility/challenge_cup_submission_archive_manifest.json`
-25. `reproducibility/challenge_cup_submission_package.zip`
+24. `reproducibility/hard_evidence_ledger.md`
+25. `reproducibility/challenge_cup_submission_archive_manifest.json`
+26. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -887,12 +896,33 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_deck.py --force
 ```
 
+## 刷新硬证据台账
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
+```
+
 ## 运行结项 readiness gate
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
 ```
 """
+
+
+def build_hard_evidence_dataset_manifest_section() -> str:
+    return "\n".join(
+        [
+            "",
+            "## 硬证据台账",
+            "",
+            f"- 硬证据台账：`{md_link(HARD_EVIDENCE_LEDGER_MD)}`",
+            f"- 硬证据 JSON：`{md_link(HARD_EVIDENCE_LEDGER_JSON)}`",
+            f"- 硬证据归档入口：`{md_link(HARD_EVIDENCE_README)}`",
+            f"- 真实专家反馈归档入口：`{md_link(HARD_EVIDENCE_EXPERT_README)}`",
+            f"- 真实计时彩排归档入口：`{md_link(HARD_EVIDENCE_REHEARSAL_README)}`",
+        ]
+    )
 
 
 def build_dataset_manifest(ctx: dict[str, Any]) -> str:
@@ -1022,6 +1052,10 @@ python scripts/build_expert_feedback_request_packet.py
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 
+python scripts/build_challenge_cup_hard_evidence_ledger.py
+-> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
+-> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -1033,7 +1067,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (28/28 gates)
+-> Status: pass (29/29 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -1061,6 +1095,7 @@ def main() -> int:
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write_defense_result_outputs(build_defense_result_payload())
     write_expert_request_outputs(build_expert_request_payload())
+    hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
     write(GRAPH_ANSWER_BENCHMARK_JSON, json.dumps(graph_answer_payload, ensure_ascii=False, indent=2))
     write_graph_answer_benchmark_markdown(GRAPH_ANSWER_BENCHMARK_MD, graph_answer_payload)
@@ -1068,7 +1103,7 @@ def main() -> int:
     write(GRAPH_GAP_REMEDIATION_JSON, json.dumps(graph_gap_payload, ensure_ascii=False, indent=2))
     write_graph_gap_remediation_markdown(GRAPH_GAP_REMEDIATION_MD, graph_gap_payload)
     write(REPRO / "runbook.md", build_runbook(ctx))
-    write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
+    write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx) + build_hard_evidence_dataset_manifest_section())
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
     build_defense_deck_outputs()
@@ -1087,6 +1122,12 @@ def main() -> int:
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_JSON),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_MD),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_JSON),
+        md_link(HARD_EVIDENCE_LEDGER_MD),
+        md_link(HARD_EVIDENCE_LEDGER_JSON),
+        md_link(HARD_EVIDENCE_README),
+        md_link(HARD_EVIDENCE_EXPERT_README),
+        md_link(HARD_EVIDENCE_REHEARSAL_README),
+        *hard_evidence_payload.get("raw_evidence_files", []),
         md_link(APPLICATION_VALIDATION_DOC),
         md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),

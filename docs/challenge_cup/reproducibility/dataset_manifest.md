@@ -44,3 +44,11 @@
 - 浏览器 KG 产物截图：`docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png`。
 - 浏览器移动端截图：`docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png`。
 - 课程最终交付包：`docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/README_先看这里.md`。
+
+## 硬证据台账
+
+- 硬证据台账：`docs/challenge_cup/reproducibility/hard_evidence_ledger.md`
+- 硬证据 JSON：`docs/challenge_cup/reproducibility/hard_evidence_ledger.json`
+- 硬证据归档入口：`docs/challenge_cup/reproducibility/hard_evidence/README.md`
+- 真实专家反馈归档入口：`docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md`
+- 真实计时彩排归档入口：`docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md`

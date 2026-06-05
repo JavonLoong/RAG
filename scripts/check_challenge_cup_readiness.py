@@ -30,6 +30,23 @@ DEFENSE_REHEARSAL_RESULT_PACKET_MD = REPRO_DIR / "defense_rehearsal_result_packe
 DEFENSE_REHEARSAL_RESULT_PACKET_JSON = REPRO_DIR / "defense_rehearsal_result_packet.json"
 EXPERT_FEEDBACK_REQUEST_PACKET_MD = REPRO_DIR / "expert_feedback_request_packet.md"
 EXPERT_FEEDBACK_REQUEST_PACKET_JSON = REPRO_DIR / "expert_feedback_request_packet.json"
+HARD_EVIDENCE_LEDGER_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.md"
+HARD_EVIDENCE_LEDGER_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.json"
+HARD_EVIDENCE_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/README.md"
+HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md"
+HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
+HARD_EVIDENCE_LEDGER_MD = REPO_ROOT / HARD_EVIDENCE_LEDGER_MD_RELATIVE
+HARD_EVIDENCE_LEDGER_JSON = REPO_ROOT / HARD_EVIDENCE_LEDGER_JSON_RELATIVE
+HARD_EVIDENCE_README = REPO_ROOT / HARD_EVIDENCE_README_RELATIVE
+HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
+HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
+HARD_EVIDENCE_REQUIRED_PATHS = [
+    HARD_EVIDENCE_LEDGER_MD_RELATIVE,
+    HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
+    HARD_EVIDENCE_README_RELATIVE,
+    HARD_EVIDENCE_EXPERT_README_RELATIVE,
+    HARD_EVIDENCE_REHEARSAL_README_RELATIVE,
+]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -134,6 +151,11 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/hard_evidence_ledger.md",
+    "reproducibility/hard_evidence_ledger.json",
+    "reproducibility/hard_evidence/README.md",
+    "reproducibility/hard_evidence/expert_feedback/README.md",
+    "reproducibility/hard_evidence/timed_rehearsal/README.md",
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
@@ -219,6 +241,13 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
     "会议纪要",
     "聊天记录截图",
 }
+HARD_EVIDENCE_MARKDOWN_TERMS = {
+    "真实专家反馈",
+    "真实计时彩排",
+    "不伪造",
+    "不能标记目标完成",
+}
+HARD_EVIDENCE_REQUIRED_CATEGORIES = {"expert_feedback", "timed_rehearsal"}
 GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
     "GraphRAG answer benchmark",
     "10 道 GraphRAG 同题",
@@ -1641,6 +1670,132 @@ def check_expert_feedback_request_packet() -> GateCheck:
     )
 
 
+def check_hard_evidence_ledger() -> GateCheck:
+    failures: list[str] = []
+    required_files = [
+        HARD_EVIDENCE_LEDGER_MD,
+        HARD_EVIDENCE_LEDGER_JSON,
+        HARD_EVIDENCE_README,
+        HARD_EVIDENCE_EXPERT_README,
+        HARD_EVIDENCE_REHEARSAL_README,
+    ]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("hard evidence ledger", False, f"missing or empty: {missing_files}")
+
+    payload = load_json(HARD_EVIDENCE_LEDGER_JSON)
+    markdown = HARD_EVIDENCE_LEDGER_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_hard_evidence_ledger":
+        failures.append(f"report_type={payload.get('report_type')}")
+    required_before = [str(item) for item in payload.get("required_before_goal_completion", [])]
+    if required_before != ["expert_feedback", "timed_rehearsal"]:
+        failures.append(f"required_before_goal_completion={required_before}")
+
+    categories = payload.get("categories", {})
+    if not isinstance(categories, dict):
+        failures.append("categories missing")
+        categories = {}
+    missing_categories = sorted(HARD_EVIDENCE_REQUIRED_CATEGORIES - set(categories))
+    if missing_categories:
+        failures.append(f"missing categories: {missing_categories}")
+
+    raw_evidence_files: list[str] = []
+    category_satisfied = True
+    for key in sorted(HARD_EVIDENCE_REQUIRED_CATEGORIES):
+        category = categories.get(key, {})
+        if not isinstance(category, dict):
+            failures.append(f"{key} category invalid")
+            category_satisfied = False
+            continue
+        files = [str(item) for item in category.get("evidence_files", [])]
+        raw_evidence_files.extend(files)
+        collected_count = int(category.get("collected_count") or 0)
+        required_min = int(category.get("required_min_count") or 0)
+        if collected_count != len(files):
+            failures.append(f"{key}.collected_count mismatch")
+        if required_min < 1:
+            failures.append(f"{key}.required_min_count below 1")
+            category_satisfied = False
+        if collected_count < required_min:
+            category_satisfied = False
+        if not category.get("accepted_evidence_types"):
+            failures.append(f"{key}.accepted_evidence_types missing")
+        if not category.get("required_metadata_fields"):
+            failures.append(f"{key}.required_metadata_fields missing")
+
+    completion_claim_allowed = payload.get("completion_claim_allowed")
+    if completion_claim_allowed is True and not category_satisfied:
+        failures.append("completion_claim_allowed true before required hard evidence is collected")
+    if not category_satisfied:
+        if payload.get("status") != "awaiting_real_external_feedback_and_timed_rehearsal":
+            failures.append(f"status={payload.get('status')} while hard evidence is incomplete")
+        if completion_claim_allowed is not False:
+            failures.append(f"completion_claim_allowed={completion_claim_allowed} while hard evidence is incomplete")
+
+    missing_terms = sorted(term for term in HARD_EVIDENCE_MARKDOWN_TERMS if term not in markdown)
+    if missing_terms:
+        failures.append(f"markdown missing terms: {missing_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    required_manifest_missing = sorted(path for path in HARD_EVIDENCE_REQUIRED_PATHS if path not in manifest_evidence)
+    if required_manifest_missing:
+        failures.append(f"missing manifest entries: {required_manifest_missing}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {"included_files": []}
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+
+    raw_evidence_files = sorted(set(raw_evidence_files))
+    unsafe_raw_paths = []
+    missing_raw_files = []
+    missing_raw_manifest = []
+    missing_raw_hashes = []
+    missing_raw_archive = []
+    for relative in raw_evidence_files:
+        posix = PurePosixPath(relative)
+        if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+            unsafe_raw_paths.append(relative)
+            continue
+        current = REPO_ROOT / relative
+        if not nonempty(current):
+            missing_raw_files.append(relative)
+        if relative not in manifest_evidence:
+            missing_raw_manifest.append(relative)
+        if relative not in hashed_paths:
+            missing_raw_hashes.append(relative)
+        if SUBMISSION_ARCHIVE_MANIFEST.exists() and relative not in archived_paths:
+            missing_raw_archive.append(relative)
+    if unsafe_raw_paths:
+        failures.append(f"unsafe raw evidence paths: {unsafe_raw_paths}")
+    if missing_raw_files:
+        failures.append(f"raw evidence missing or empty: {missing_raw_files}")
+    if missing_raw_manifest:
+        failures.append(f"raw evidence missing from manifest: {missing_raw_manifest}")
+    if missing_raw_hashes:
+        failures.append(f"raw evidence missing from hashes: {missing_raw_hashes}")
+    if missing_raw_archive:
+        failures.append(f"raw evidence missing from archive: {missing_raw_archive}")
+
+    tracked = git_tracked_paths()
+    required_and_raw = HARD_EVIDENCE_REQUIRED_PATHS + raw_evidence_files
+    untracked = [path for path in required_and_raw if path not in tracked]
+    dirty = sorted(git_dirty_paths(required_and_raw))
+    if untracked:
+        failures.append(f"untracked hard evidence files: {untracked}")
+    if dirty:
+        failures.append(f"dirty hard evidence files: {dirty}")
+
+    return GateCheck(
+        "hard evidence ledger",
+        not failures,
+        f"ledger schema, no-fake boundary, {len(raw_evidence_files)} raw hard evidence files, and manifest/hash/archive links verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_application_validation_evidence() -> GateCheck:
     if not APPLICATION_VALIDATION_DOC.exists():
         return GateCheck("application validation evidence", False, "11_应用场景与专家验证.md missing")
@@ -1758,6 +1913,7 @@ def run_gate() -> list[GateCheck]:
         check_defense_rehearsal_scorecard(),
         check_defense_rehearsal_result_packet(),
         check_expert_feedback_request_packet(),
+        check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
@@ -1780,7 +1936,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

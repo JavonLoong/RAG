@@ -56,6 +56,11 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/hard_evidence_ledger.md",
+    "reproducibility/hard_evidence_ledger.json",
+    "reproducibility/hard_evidence/README.md",
+    "reproducibility/hard_evidence/expert_feedback/README.md",
+    "reproducibility/hard_evidence/timed_rehearsal/README.md",
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
@@ -128,6 +133,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "12_专家反馈采集与整改闭环.md" in readme
     assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
     assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
+    assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
@@ -250,6 +256,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "context-only" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "build_challenge_cup_defense_deck.py" in runbook
+    assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -278,6 +285,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "expert_feedback_request_packet.json" in manifest
     assert "challenge_cup_defense_deck.pptx" in manifest
     assert "challenge_cup_defense_speaker_notes.md" in manifest
+    assert "hard_evidence_ledger.md" in manifest
+    assert "hard_evidence_ledger.json" in manifest
+    assert "hard_evidence/expert_feedback/README.md" in manifest
+    assert "hard_evidence/timed_rehearsal/README.md" in manifest
     assert "challenge_cup_submission_package.zip" in manifest
     assert "challenge_cup_submission_archive_manifest.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
@@ -338,6 +349,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert package_manifest["submission_archive_manifest"] == archive_manifest_relative
     assert "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx" in evidence_files
     assert "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/hard_evidence_ledger.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/hard_evidence_ledger.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/hard_evidence/README.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/06_结项验收清单.md" in evidence_files
@@ -385,6 +401,21 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     notes = notes_path.read_text(encoding="utf-8")
     for term in ["90秒开场", "三分钟演示", "GT-07", "GraphRAG", "readiness gate", "不宣称已获得专家认可"]:
         assert term in notes
+    hard_ledger = json.loads((PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.json").read_text(encoding="utf-8"))
+    assert hard_ledger["report_type"] == "challenge_cup_hard_evidence_ledger"
+    assert hard_ledger["status"] == "awaiting_real_external_feedback_and_timed_rehearsal"
+    assert hard_ledger["completion_claim_allowed"] is False
+    assert hard_ledger["categories"]["expert_feedback"]["collected_count"] == 0
+    assert hard_ledger["categories"]["timed_rehearsal"]["collected_count"] == 0
+    assert hard_ledger["required_before_goal_completion"] == ["expert_feedback", "timed_rehearsal"]
+    hard_ledger_md = (PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.md").read_text(encoding="utf-8")
+    for term in [
+        "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988",
+        "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392",
+        "\u4e0d\u4f2a\u9020",
+        "\u4e0d\u80fd\u6807\u8bb0\u76ee\u6807\u5b8c\u6210",
+    ]:
+        assert term in hard_ledger_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
     assert archive_path.exists()
@@ -409,6 +440,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/runbook.md",
         "docs/challenge_cup/reproducibility/command_log.md",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
+        "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
+        "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
+        "docs/challenge_cup/reproducibility/hard_evidence/README.md",
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
+        "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
         "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
         "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md",
     }
@@ -439,6 +475,11 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_result_packet.json",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.json",
+        PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.md",
+        PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.json",
+        PACKAGE_DIR / "reproducibility" / "hard_evidence" / "README.md",
+        PACKAGE_DIR / "reproducibility" / "hard_evidence" / "expert_feedback" / "README.md",
+        PACKAGE_DIR / "reproducibility" / "hard_evidence" / "timed_rehearsal" / "README.md",
         PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
         PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_deck.pptx",
         PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_speaker_notes.md",
@@ -484,6 +525,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json",
         "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
+        "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
         "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",

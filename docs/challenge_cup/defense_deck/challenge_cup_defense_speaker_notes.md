@@ -7,7 +7,7 @@
 先打开项目一页纸说明问题、方法和边界；再展示 GT-07 燃气轮机异常振动诊断流程；随后切到浏览器烟测截图和 KG artifact，证明演示路径已经被真实浏览器跑通过；最后展示 readiness gate 和 submission archive，说明材料不是散文件。
 
 ## 3. 必须讲出的数字
-评测集有 60 道题，覆盖 11 类 task_type 和 17 类 source_scope；GraphRAG 标记问题有 10 道；当前归档包包含 48 个文件；固定应用场景为 GT-07。
+评测集有 60 道题，覆盖 11 类 task_type 和 17 类 source_scope；GraphRAG 标记问题有 10 道；归档包文件数和 SHA256 以 manifest 为准；固定应用场景为 GT-07。
 
 ## 4. GraphRAG 答辩口径
 GraphRAG 在这里的价值是关系证据组织：把故障现象、部件、检查项、处理措施和复机结果串起来。不要说 GraphRAG 对所有问题都优于 baseline，也不要说本地证据覆盖等于在线 LLM 胜率。

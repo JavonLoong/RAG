@@ -42,13 +42,13 @@
     },
     {
       "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
-      "bytes": 976687,
-      "sha256": "744dd7e45f007371cbfe93e1141f74ed623149e4f8d9a0a3aa6eed90582d6d00"
+      "bytes": 976711,
+      "sha256": "89b37ccc8c87c53cb3fe155850d2dfb9acf4459cbb79e8dbaa92df1b487dd97d"
     },
     {
       "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md",
-      "bytes": 2703,
-      "sha256": "9658c210eaf71179c62e156852d9e2dd6219ff91e84cf1e1cad3e468e167b9b1"
+      "bytes": 2717,
+      "sha256": "f2a2d0e6b2b0e66d5f00b63561e1ce1ec665ed95441c965289890ed415cb1d33"
     },
     {
       "path": "docs/challenge_cup/reproducibility/application_validation_report.md",
@@ -124,6 +124,31 @@
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
       "bytes": 2338,
       "sha256": "2e9ecd7bfaf2c4063b11546ae1970d5d0cdfb93dac7b25ae6476afbd26185297"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence/README.md",
+      "bytes": 388,
+      "sha256": "ebb10cb8752cc255ef973f271f386d4f86d88a63ebe60d62ecb1dc030048f54a"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
+      "bytes": 230,
+      "sha256": "00fa98f2a17d26e01cb35539b435fd2adb9b1c52f49bc0be5618adfb98bf6bbb"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
+      "bytes": 321,
+      "sha256": "ba137a6098c87886e126e030ebbc2fa7675d370e0ec9d054dde5f499f99e4e55"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
+      "bytes": 2430,
+      "sha256": "ae96e024c3d0d5b850fef890ce216beb4eb269db4fff33b5fdf0bc6cf6fe718a"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
+      "bytes": 1004,
+      "sha256": "6f52a7ea64c62cafb36bb7b4d390cf7a9ee3109b424eef74c010f6c1ba9c848e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",

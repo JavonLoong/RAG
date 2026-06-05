@@ -212,7 +212,7 @@ def slide_specs(data: dict[str, Any]) -> list[dict[str, Any]]:
                 {"value": "60", "label": "系统评测问题", "color": "#F5C56B"},
                 {"value": str(data["task_type_count"]), "label": "任务类型覆盖", "color": "#76D6E2"},
                 {"value": str(data["source_scope_count"]), "label": "资料范围覆盖", "color": "#A9E3BF"},
-                {"value": "48", "label": "归档包文件", "color": "#FFFFFF"},
+                {"value": "Archive", "label": "manifest 记录", "color": "#FFFFFF"},
                 {"value": "GT-07", "label": "固定演示场景", "color": "#F2A6A6"},
             ],
             "metricY": 242,
@@ -478,7 +478,7 @@ def write_speaker_notes(data: dict[str, Any]) -> None:
     先打开项目一页纸说明问题、方法和边界；再展示 GT-07 燃气轮机异常振动诊断流程；随后切到浏览器烟测截图和 KG artifact，证明演示路径已经被真实浏览器跑通过；最后展示 readiness gate 和 submission archive，说明材料不是散文件。
 
     ## 3. 必须讲出的数字
-    评测集有 60 道题，覆盖 {data['task_type_count']} 类 task_type 和 {data['source_scope_count']} 类 source_scope；GraphRAG 标记问题有 {data['graphrag_questions']} 道；当前归档包包含 {data['archive_file_count']} 个文件；固定应用场景为 GT-07。
+    评测集有 60 道题，覆盖 {data['task_type_count']} 类 task_type 和 {data['source_scope_count']} 类 source_scope；GraphRAG 标记问题有 {data['graphrag_questions']} 道；归档包文件数和 SHA256 以 manifest 为准；固定应用场景为 GT-07。
 
     ## 4. GraphRAG 答辩口径
     GraphRAG 在这里的价值是关系证据组织：把故障现象、部件、检查项、处理措施和复机结果串起来。不要说 GraphRAG 对所有问题都优于 baseline，也不要说本地证据覆盖等于在线 LLM 胜率。

@@ -87,6 +87,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "defense rehearsal scorecard" in report
     assert "defense rehearsal result packet" in report
     assert "expert feedback request packet" in report
+    assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
@@ -637,6 +638,70 @@ def test_expert_feedback_request_packet_gate_rejects_claimed_approval(monkeypatc
 
     assert not check.passed
     assert "no_external_feedback_claimed" in check.detail
+
+
+def test_hard_evidence_ledger_gate_rejects_fake_completion(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    ledger_json = tmp_path / "hard_evidence_ledger.json"
+    ledger_md = tmp_path / "hard_evidence_ledger.md"
+    root_readme = tmp_path / "hard_evidence_README.md"
+    expert_readme = tmp_path / "expert_feedback_README.md"
+    rehearsal_readme = tmp_path / "timed_rehearsal_README.md"
+    ledger_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_hard_evidence_ledger",
+                "status": "hard_evidence_complete",
+                "completion_claim_allowed": True,
+                "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+                "categories": {
+                    "expert_feedback": {"collected_count": 0, "evidence_files": []},
+                    "timed_rehearsal": {"collected_count": 0, "evidence_files": []},
+                },
+                "no_fake_evidence_rules": ["\u4e0d\u4f2a\u9020\u5916\u90e8\u610f\u89c1"],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    ledger_md.write_text(
+        "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988\n"
+        "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392\n"
+        "\u4e0d\u4f2a\u9020\n"
+        "\u4e0d\u80fd\u6807\u8bb0\u76ee\u6807\u5b8c\u6210\n",
+        encoding="utf-8",
+    )
+    for path in (root_readme, expert_readme, rehearsal_readme):
+        path.write_text("hard evidence intake\n", encoding="utf-8")
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "evidence_files": [
+                    "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
+                    "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
+                    "docs/challenge_cup/reproducibility/hard_evidence/README.md",
+                    "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
+                    "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "HARD_EVIDENCE_LEDGER_JSON", ledger_json)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_LEDGER_MD", ledger_md)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_README", root_readme)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_EXPERT_README", expert_readme)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_REHEARSAL_README", rehearsal_readme)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.HARD_EVIDENCE_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "completion_claim_allowed" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

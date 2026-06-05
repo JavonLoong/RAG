@@ -1,0 +1,72 @@
+{
+  "report_type": "challenge_cup_hard_evidence_ledger",
+  "status": "awaiting_real_external_feedback_and_timed_rehearsal",
+  "completion_claim_allowed": false,
+  "required_before_goal_completion": [
+    "expert_feedback",
+    "timed_rehearsal"
+  ],
+  "categories": {
+    "expert_feedback": {
+      "category": "expert_feedback",
+      "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback",
+      "required_min_count": 1,
+      "collected_count": 0,
+      "accepted_evidence_types": [
+        "signed_feedback_form",
+        "email_reply",
+        "meeting_minutes",
+        "chat_screenshot"
+      ],
+      "required_metadata_fields": [
+        "reviewer_identity",
+        "role_or_org",
+        "review_date",
+        "feedback_source_path",
+        "review_dimensions",
+        "remediation_record"
+      ],
+      "evidence_files": []
+    },
+    "timed_rehearsal": {
+      "category": "timed_rehearsal",
+      "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal",
+      "required_min_count": 1,
+      "collected_count": 0,
+      "accepted_evidence_types": [
+        "timer_screenshot",
+        "screen_recording",
+        "observer_note",
+        "missed_question_list"
+      ],
+      "required_metadata_fields": [
+        "rehearsal_date",
+        "observer",
+        "opening_actual_seconds",
+        "demo_actual_seconds",
+        "offline_fallback_actual_seconds",
+        "killer_question_results",
+        "recording_or_timer_source_path"
+      ],
+      "evidence_files": []
+    }
+  },
+  "no_fake_evidence_rules": [
+    "不伪造外部意见",
+    "不把内部自评写成专家背书",
+    "没有真实专家反馈和真实计时彩排前，不能标记目标完成"
+  ],
+  "ledger_files": [
+    "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
+    "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
+    "docs/challenge_cup/reproducibility/hard_evidence/README.md",
+    "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
+    "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
+  ],
+  "raw_evidence_files": [],
+  "rerun_commands": [
+    "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+    "python scripts/build_challenge_cup_package.py",
+    "python scripts/check_challenge_cup_readiness.py"
+  ]
+}
