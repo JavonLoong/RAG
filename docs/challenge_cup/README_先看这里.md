@@ -16,9 +16,10 @@
 8. `07_评审主张证据矩阵.md`
 9. `08_特等奖评审自评表.md`
 10. `09_专家快速审阅索引.md`
-11. `reproducibility/runbook.md`
-12. `reproducibility/dataset_manifest.md`
-13. `reproducibility/readiness_gate_report.md`
+11. `10_答辩攻防与彩排卡.md`
+12. `reproducibility/runbook.md`
+13. `reproducibility/dataset_manifest.md`
+14. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 

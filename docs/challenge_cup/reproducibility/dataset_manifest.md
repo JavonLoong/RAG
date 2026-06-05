@@ -9,6 +9,7 @@
 - 评审主张证据矩阵：`docs/challenge_cup/07_评审主张证据矩阵.md`。
 - 特等奖评审自评表：`docs/challenge_cup/08_特等奖评审自评表.md`。
 - 专家快速审阅索引：`docs/challenge_cup/09_专家快速审阅索引.md`。
+- 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 现场演示烟测：`docs/challenge_cup/reproducibility/live_demo_smoke_report.md`。
 - 真实浏览器演示烟测：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 - 真实浏览器烟测 JSON：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`。

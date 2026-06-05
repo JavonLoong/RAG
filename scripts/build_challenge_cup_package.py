@@ -15,6 +15,7 @@ DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = OUT / "09_专家快速审阅索引.md"
+DEFENSE_REHEARSAL_CARD = OUT / "10_答辩攻防与彩排卡.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -119,9 +120,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 8. `07_评审主张证据矩阵.md`
 9. `08_特等奖评审自评表.md`
 10. `09_专家快速审阅索引.md`
-11. `reproducibility/runbook.md`
-12. `reproducibility/dataset_manifest.md`
-13. `reproducibility/readiness_gate_report.md`
+11. `10_答辩攻防与彩排卡.md`
+12. `reproducibility/runbook.md`
+13. `reproducibility/dataset_manifest.md`
+14. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -385,6 +387,58 @@ def build_expert_review_index(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
+    return """# 答辩攻防与彩排卡
+
+本卡用于把“现场答辩表现”从临场发挥变成可训练、可复核、可切换的流程。彩排时按本卡计时，现场时按本卡选择主线和证据。
+
+## 90秒开场
+
+1. 15 秒：说明真实问题，动力装备资料分散、扫描件多、术语密集，普通检索难以解释部件、故障、参数和措施之间的关系。
+2. 25 秒：说明方法，项目把 OCR、普通 RAG、evidence-bound 知识图谱、GraphRAG 检索和自动评测连成闭环。
+3. 25 秒：说明完成度，评测集、baseline、失败归因、浏览器 smoke、KG artifact 和 readiness gate 均已留证。
+4. 25 秒：说明边界，系统是证据型辅助和知识资产整理，不替代工程师做真实运维决策。
+
+## 三分钟演示节奏
+
+| 时间 | 动作 | 证据锚点 |
+| --- | --- | --- |
+| 0:00-0:30 | 打开一页纸，讲问题、方法和核心数字 | `docs/challenge_cup/00_项目一页纸.md` |
+| 0:30-1:20 | 展示检索或离线截图，证明系统不是静态材料 | `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md` |
+| 1:20-2:10 | 打开 KG artifact 或证据矩阵，证明 GraphRAG 价值在关系证据组织 | `docs/challenge_cup/07_评审主张证据矩阵.md` |
+| 2:10-2:40 | 展示 readiness gate，证明可复核而非口头承诺 | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 2:40-3:00 | 主动讲边界和下一步，避免被动防守 | `docs/challenge_cup/08_特等奖评审自评表.md` |
+
+## 杀手问题
+
+| 追问 | 推荐回答 | 立即引用 |
+| --- | --- | --- |
+| 你们和普通 RAG 的本质差异是什么？ | 普通 RAG 解决片段召回，项目额外把部件、故障、参数和措施关系显式化，并要求 KG 三元组绑定 evidence。 | `docs/challenge_cup/02_技术白皮书.md`; `docs/challenge_cup/07_评审主张证据矩阵.md` |
+| GraphRAG 是否全面优于 keyword / hybrid？ | 不做绝对化结论。它在跨实体关系和全局归纳问题上更有价值，评测报告保留 baseline 和失败归因。 | `docs/challenge_cup/03_实验评测报告.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
+| 数据是否足以支撑生产级运维？ | 当前支撑结项、课程资料知识化和可复核演示，不宣称生产级闭环；高风险运维决策必须人工确认。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/08_特等奖评审自评表.md` |
+| 现场服务挂了怎么办？ | 不现场排环境，切到离线证据包：browser smoke、截图、KG artifact、readiness gate 和专家审阅索引。 | `docs/challenge_cup/04_系统演示脚本.md`; `docs/challenge_cup/09_专家快速审阅索引.md` |
+| 为什么能冲击特等奖？ | 不是靠页面包装，而是靠真实资料处理、知识工程闭环、科学评测、失败归因、可复现门禁和清晰边界。 | `docs/challenge_cup/08_特等奖评审自评表.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+
+## 不可夸大边界
+
+- 不说“已经替代工程师”。
+- 不说“GraphRAG 对所有问题都更强”。
+- 不说“当前数据已经覆盖真实生产全场景”。
+- 不把 readiness gate 说成获奖保证；它只证明交付包和演示证据可复核。
+
+## 彩排通过标准
+
+- 90秒开场不超时，且必须讲到问题、方法、完成度和边界。
+- 三分钟演示节奏完整跑完，现场失败时能在 20 秒内切换到离线证据包。
+- 每个杀手问题至少能在 30 秒内给出一句结论和一个证据锚点。
+- 彩排结束后运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
+```
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -446,6 +500,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
+- 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -514,7 +569,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (9/9 gates)
+-> Status: pass (10/10 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -534,6 +589,7 @@ def main() -> int:
     write(CLAIM_MATRIX, build_claim_evidence_matrix(ctx))
     write(AWARD_SELF_EVAL, build_award_self_eval(ctx))
     write(EXPERT_REVIEW_INDEX, build_expert_review_index(ctx))
+    write(DEFENSE_REHEARSAL_CARD, build_defense_rehearsal_card(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(REPRO / "command_log.md", build_command_log(ctx))
@@ -546,6 +602,7 @@ def main() -> int:
             md_link(CLAIM_MATRIX),
             md_link(AWARD_SELF_EVAL),
             md_link(EXPERT_REVIEW_INDEX),
+            md_link(DEFENSE_REHEARSAL_CARD),
             md_link(LIVE_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_JSON),
