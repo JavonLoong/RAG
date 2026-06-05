@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "docs/challenge_cup/06_结项验收清单.md",
-      "bytes": 3711,
-      "sha256": "c66d0e34281a67e6aed463251231c381f2869cc0f8c9e755faca546fd1fe645d"
+      "bytes": 4235,
+      "sha256": "b61bfa4f90320517c715a5f6bbc2f5d26609e2dc529e3e3571466646bb03d326"
     },
     {
       "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
@@ -39,6 +39,16 @@
       "path": "docs/challenge_cup/12_专家反馈采集与整改闭环.md",
       "bytes": 2071,
       "sha256": "c84922384837a70bdafe6a645970f4515b3307a59579919e218bb4911cc403f8"
+    },
+    {
+      "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
+      "bytes": 976687,
+      "sha256": "744dd7e45f007371cbfe93e1141f74ed623149e4f8d9a0a3aa6eed90582d6d00"
+    },
+    {
+      "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md",
+      "bytes": 2703,
+      "sha256": "9658c210eaf71179c62e156852d9e2dd6219ff91e84cf1e1cad3e468e167b9b1"
     },
     {
       "path": "docs/challenge_cup/reproducibility/application_validation_report.md",

@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -41,6 +42,7 @@ REQUIRED_PACKAGE_FILES = [
     "10_答辩攻防与彩排卡.md",
     "11_应用场景与专家验证.md",
     "12_专家反馈采集与整改闭环.md",
+    "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/evaluation_coverage_profile.json",
@@ -69,6 +71,18 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def pptx_slide_text(path: Path) -> tuple[int, str]:
+    with zipfile.ZipFile(path) as archive:
+        slide_names = sorted(
+            name for name in archive.namelist() if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+        )
+        texts: list[str] = []
+        for name in slide_names:
+            root = ET.fromstring(archive.read(name))
+            texts.extend(node.text or "" for node in root.iter() if node.tag.endswith("}t"))
+    return len(slide_names), "\n".join(texts)
 
 
 def test_challenge_cup_eval_dataset_has_60_schema_complete_records() -> None:
@@ -112,6 +126,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "10_答辩攻防与彩排卡.md" in readme
     assert "11_应用场景与专家验证.md" in readme
     assert "12_专家反馈采集与整改闭环.md" in readme
+    assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
+    assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
@@ -121,6 +137,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for evidence in [
         "package_manifest.json",
         "readiness_gate_report.md",
+        "challenge_cup_defense_deck.pptx",
+        "challenge_cup_defense_speaker_notes.md",
         "browser_demo_smoke_report.md",
         "application_validation_report.md",
         "expert_feedback_form.md",
@@ -231,6 +249,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "manual evidence supplement" in eval_report
     assert "context-only" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
+    assert "build_challenge_cup_defense_deck.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -257,6 +276,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "defense_rehearsal_result_packet.json" in manifest
     assert "expert_feedback_request_packet.md" in manifest
     assert "expert_feedback_request_packet.json" in manifest
+    assert "challenge_cup_defense_deck.pptx" in manifest
+    assert "challenge_cup_defense_speaker_notes.md" in manifest
     assert "challenge_cup_submission_package.zip" in manifest
     assert "challenge_cup_submission_archive_manifest.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
@@ -315,6 +336,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     archive_manifest_relative = "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json"
     assert package_manifest["submission_archive"] == archive_relative
     assert package_manifest["submission_archive_manifest"] == archive_manifest_relative
+    assert "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx" in evidence_files
+    assert "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/06_结项验收清单.md" in evidence_files
@@ -351,6 +374,17 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for entry in hashes["files"]:
         assert re.fullmatch(r"[0-9a-f]{64}", entry["sha256"])
         assert entry["bytes"] == (REPO_ROOT / entry["path"]).stat().st_size
+    deck_path = PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_deck.pptx"
+    notes_path = PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_speaker_notes.md"
+    assert deck_path.exists()
+    assert deck_path.stat().st_size > 100_000
+    slide_count, deck_text = pptx_slide_text(deck_path)
+    assert slide_count == 10
+    for term in ["GraphRAG", "GT-07", "60", "readiness", "专家反馈"]:
+        assert term in deck_text
+    notes = notes_path.read_text(encoding="utf-8")
+    for term in ["90秒开场", "三分钟演示", "GT-07", "GraphRAG", "readiness gate", "不宣称已获得专家认可"]:
+        assert term in notes
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
     assert archive_path.exists()
@@ -375,6 +409,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/runbook.md",
         "docs/challenge_cup/reproducibility/command_log.md",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
+        "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
+        "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md",
     }
     required_archive_entries.discard(self_report)
     assert required_archive_entries <= set(archive_entries)
@@ -404,6 +440,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.json",
         PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
+        PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_deck.pptx",
+        PACKAGE_DIR / "defense_deck" / "challenge_cup_defense_speaker_notes.md",
         PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_package.zip",
         PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_archive_manifest.json",
         PACKAGE_DIR / "package_manifest.json",

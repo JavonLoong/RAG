@@ -38,6 +38,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_package.py
 ```
 
+## 刷新终审答辩 PPT
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_deck.py --force
+```
+
 ## 运行结项 readiness gate
 
 ```powershell

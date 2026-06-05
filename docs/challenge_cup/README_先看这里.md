@@ -19,16 +19,18 @@
 11. `10_答辩攻防与彩排卡.md`
 12. `11_应用场景与专家验证.md`
 13. `12_专家反馈采集与整改闭环.md`
-14. `reproducibility/application_validation_report.md`
-15. `reproducibility/expert_feedback_form.md`
-16. `reproducibility/runbook.md`
-17. `reproducibility/dataset_manifest.md`
-18. `reproducibility/readiness_gate_report.md`
-19. `reproducibility/defense_rehearsal_scorecard.md`
-20. `reproducibility/defense_rehearsal_result_packet.md`
-21. `reproducibility/expert_feedback_request_packet.md`
-22. `reproducibility/challenge_cup_submission_archive_manifest.json`
-23. `reproducibility/challenge_cup_submission_package.zip`
+14. `defense_deck/challenge_cup_defense_deck.pptx`
+15. `defense_deck/challenge_cup_defense_speaker_notes.md`
+16. `reproducibility/application_validation_report.md`
+17. `reproducibility/expert_feedback_form.md`
+18. `reproducibility/runbook.md`
+19. `reproducibility/dataset_manifest.md`
+20. `reproducibility/readiness_gate_report.md`
+21. `reproducibility/defense_rehearsal_scorecard.md`
+22. `reproducibility/defense_rehearsal_result_packet.md`
+23. `reproducibility/expert_feedback_request_packet.md`
+24. `reproducibility/challenge_cup_submission_archive_manifest.json`
+25. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 

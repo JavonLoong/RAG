@@ -4,6 +4,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -42,6 +43,21 @@ def load_readiness_module():
     return module
 
 
+def write_minimal_pptx(path: Path, slide_texts: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w") as archive:
+        for index, text in enumerate(slide_texts, start=1):
+            archive.writestr(
+                f"ppt/slides/slide{index}.xml",
+                (
+                    '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" '
+                    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                    f"<p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>{text}</a:t></a:r></a:p>"
+                    "</p:txBody></p:sp></p:spTree></p:cSld></p:sld>"
+                ),
+            )
+
+
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     result = subprocess.run(
         [sys.executable, "scripts/check_challenge_cup_readiness.py"],
@@ -67,6 +83,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "special-prize rubric self-assessment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
+    assert "defense deck" in report
     assert "defense rehearsal scorecard" in report
     assert "defense rehearsal result packet" in report
     assert "expert feedback request packet" in report
@@ -497,6 +514,40 @@ def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tm
 
     assert not check.passed
     assert "opening_seconds" in check.detail
+
+
+def test_defense_deck_gate_rejects_missing_fixed_scenario(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    deck = tmp_path / "challenge_cup_defense_deck.pptx"
+    write_minimal_pptx(
+        deck,
+        [
+            "GraphRAG 60 questions readiness expert feedback boundary"
+            for _ in range(10)
+        ],
+    )
+    notes = tmp_path / "challenge_cup_defense_speaker_notes.md"
+    notes.write_text(
+        "90秒开场\n三分钟演示\nGraphRAG\nreadiness gate\n不宣称已获得专家认可\n",
+        encoding="utf-8",
+    )
+    deck_relative = "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx"
+    notes_relative = "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md"
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps({"evidence_files": [deck_relative, notes_relative]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "DEFENSE_DECK_PPTX", deck)
+    monkeypatch.setattr(module, "DEFENSE_DECK_NOTES", notes)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {deck_relative, notes_relative})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_defense_deck()
+
+    assert not check.passed
+    assert "GT-07" in check.detail
 
 
 def test_defense_rehearsal_result_packet_gate_rejects_fake_completed_result(monkeypatch, tmp_path) -> None:

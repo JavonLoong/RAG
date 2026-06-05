@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import zipfile
+import xml.etree.ElementTree as ET
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -32,6 +33,10 @@ EXPERT_FEEDBACK_REQUEST_PACKET_JSON = REPRO_DIR / "expert_feedback_request_packe
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
+DEFENSE_DECK_PPTX_RELATIVE = "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx"
+DEFENSE_DECK_NOTES_RELATIVE = "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md"
+DEFENSE_DECK_PPTX = REPO_ROOT / DEFENSE_DECK_PPTX_RELATIVE
+DEFENSE_DECK_NOTES = REPO_ROOT / DEFENSE_DECK_NOTES_RELATIVE
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 DATASET_RELATIVE = "evaluation/system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
@@ -82,6 +87,15 @@ EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
     "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
     "or production validation."
 )
+DEFENSE_DECK_REQUIRED_TERMS = {"GraphRAG", "GT-07", "60", "readiness", "专家反馈"}
+DEFENSE_DECK_NOTES_REQUIRED_TERMS = {
+    "90秒开场",
+    "三分钟演示",
+    "GT-07",
+    "GraphRAG",
+    "readiness gate",
+    "不宣称已获得专家认可",
+}
 REQUIRED_GRAPH_CASE_FIELDS = {
     "id",
     "graph_evidence_coverage",
@@ -105,6 +119,8 @@ REQUIRED_PACKAGE_DOCS = [
     "10_答辩攻防与彩排卡.md",
     "11_应用场景与专家验证.md",
     "12_专家反馈采集与整改闭环.md",
+    "defense_deck/challenge_cup_defense_deck.pptx",
+    "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/evaluation_coverage_profile.json",
@@ -469,6 +485,18 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def pptx_text_and_slide_count(path: Path) -> tuple[int, str]:
+    with zipfile.ZipFile(path) as archive:
+        slide_names = sorted(
+            name for name in archive.namelist() if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+        )
+        text_nodes: list[str] = []
+        for name in slide_names:
+            root = ET.fromstring(archive.read(name))
+            text_nodes.extend(node.text or "" for node in root.iter() if node.tag.endswith("}t") or node.tag == "t")
+    return len(slide_names), "\n".join(text_nodes)
+
+
 def git_tracked_paths() -> set[str]:
     result = subprocess.run(
         ["git", "ls-files", "-z"],
@@ -727,6 +755,61 @@ def check_submission_archive() -> GateCheck:
         "submission archive",
         not failures,
         f"{len(included_files)} files archived; {SUBMISSION_ARCHIVE.stat().st_size} bytes; sha256 verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_defense_deck() -> GateCheck:
+    failures: list[str] = []
+    if not nonempty(DEFENSE_DECK_PPTX):
+        failures.append(f"{DEFENSE_DECK_PPTX_RELATIVE} missing or empty")
+    if not nonempty(DEFENSE_DECK_NOTES):
+        failures.append(f"{DEFENSE_DECK_NOTES_RELATIVE} missing or empty")
+    if not PACKAGE_MANIFEST.exists():
+        failures.append("package_manifest.json missing")
+    if failures:
+        return GateCheck("defense deck", False, "; ".join(failures))
+
+    try:
+        slide_count, deck_text = pptx_text_and_slide_count(DEFENSE_DECK_PPTX)
+    except (ET.ParseError, KeyError, zipfile.BadZipFile) as exc:
+        return GateCheck("defense deck", False, f"invalid pptx: {exc}")
+
+    if slide_count != 10:
+        failures.append(f"slide_count={slide_count}, expected=10")
+    missing_deck_terms = sorted(term for term in DEFENSE_DECK_REQUIRED_TERMS if term not in deck_text)
+    if missing_deck_terms:
+        failures.append(f"missing deck terms: {missing_deck_terms}")
+
+    notes = DEFENSE_DECK_NOTES.read_text(encoding="utf-8", errors="ignore")
+    missing_notes_terms = sorted(term for term in DEFENSE_DECK_NOTES_REQUIRED_TERMS if term not in notes)
+    if missing_notes_terms:
+        failures.append(f"missing speaker notes terms: {missing_notes_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST)
+    evidence = set(manifest.get("evidence_files", []))
+    missing_manifest_entries = sorted(
+        relative
+        for relative in (DEFENSE_DECK_PPTX_RELATIVE, DEFENSE_DECK_NOTES_RELATIVE)
+        if relative not in evidence
+    )
+    if missing_manifest_entries:
+        failures.append(f"missing manifest entries: {missing_manifest_entries}")
+
+    controls = [DEFENSE_DECK_PPTX_RELATIVE, DEFENSE_DECK_NOTES_RELATIVE]
+    tracked = git_tracked_paths()
+    untracked = [path for path in controls if path not in tracked]
+    dirty = sorted(git_dirty_paths(controls))
+    if untracked:
+        failures.append(f"untracked defense deck files: {untracked}")
+    if dirty:
+        failures.append(f"dirty defense deck files: {dirty}")
+
+    return GateCheck(
+        "defense deck",
+        not failures,
+        f"{slide_count} slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified"
         if not failures
         else "; ".join(failures),
     )
@@ -1660,6 +1743,7 @@ def run_gate() -> list[GateCheck]:
         check_evaluation_coverage_profile(),
         check_package_manifest(),
         check_evidence_hashes(),
+        check_defense_deck(),
         check_submission_archive(),
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
@@ -1696,7 +1780,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

@@ -40,6 +40,11 @@ from build_graphrag_gap_remediation_plan import (
     build_payload as build_graph_gap_remediation_payload,
     write_markdown as write_graph_gap_remediation_markdown,
 )
+from build_challenge_cup_defense_deck import (
+    FINAL_PPTX as DEFENSE_DECK_PPTX,
+    SPEAKER_NOTES as DEFENSE_DECK_NOTES,
+    build_outputs as build_defense_deck_outputs,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -300,16 +305,18 @@ def build_readme(ctx: dict[str, Any]) -> str:
 11. `10_答辩攻防与彩排卡.md`
 12. `11_应用场景与专家验证.md`
 13. `12_专家反馈采集与整改闭环.md`
-14. `reproducibility/application_validation_report.md`
-15. `reproducibility/expert_feedback_form.md`
-16. `reproducibility/runbook.md`
-17. `reproducibility/dataset_manifest.md`
-18. `reproducibility/readiness_gate_report.md`
-19. `reproducibility/defense_rehearsal_scorecard.md`
-20. `reproducibility/defense_rehearsal_result_packet.md`
-21. `reproducibility/expert_feedback_request_packet.md`
-22. `reproducibility/challenge_cup_submission_archive_manifest.json`
-23. `reproducibility/challenge_cup_submission_package.zip`
+14. `defense_deck/challenge_cup_defense_deck.pptx`
+15. `defense_deck/challenge_cup_defense_speaker_notes.md`
+16. `reproducibility/application_validation_report.md`
+17. `reproducibility/expert_feedback_form.md`
+18. `reproducibility/runbook.md`
+19. `reproducibility/dataset_manifest.md`
+20. `reproducibility/readiness_gate_report.md`
+21. `reproducibility/defense_rehearsal_scorecard.md`
+22. `reproducibility/defense_rehearsal_result_packet.md`
+23. `reproducibility/expert_feedback_request_packet.md`
+24. `reproducibility/challenge_cup_submission_archive_manifest.json`
+25. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -509,7 +516,7 @@ def build_checklist(ctx: dict[str, Any]) -> str:
 
 ## 结项验收口径
 
-- 可提交范围：挑战杯材料包、可复现实验评测、固定应用场景、浏览器演示证据、专家反馈采集协议。
+- 可提交范围：挑战杯材料包、终审答辩 PPT/讲稿、可复现实验评测、固定应用场景、浏览器演示证据、专家反馈采集协议。
 - 验收方式：按本页逐项打开证据，运行 readiness gate，并用固定 GT-07 场景复核证据链。
 - 通过标准：材料路径存在、核心结论有证据、演示有离线备份、边界不夸大。
 
@@ -520,6 +527,8 @@ def build_checklist(ctx: dict[str, Any]) -> str:
 | 包清单 | `docs/challenge_cup/package_manifest.json` | 记录证据文件和评测题数，便于判断提交范围。 | 已固化 |
 | 证据清单 | `docs/challenge_cup/reproducibility/dataset_manifest.md` | 汇总数据、报告、截图、KG artifact 和课程交付入口。 | 已固化 |
 | 可复现门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md` | 证明材料、manifest、哈希、浏览器 smoke 和应用案例均可复核。 | 已固化 |
+| 终审答辩 PPT | `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx` | 10 页终审答辩 deck，覆盖问题、方法、GT-07、GraphRAG、归档、边界和下一步。 | 已固化 |
+| 终审答辩讲稿 | `docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md` | 90 秒开场、三分钟演示、杀手问题和边界口径。 | 已固化 |
 | 演示证据 | `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md` | 证明页面、搜索交互、KG artifact 和移动端基本可用。 | 已固化 |
 | 应用验证 | `docs/challenge_cup/reproducibility/application_validation_report.md` | 用固定燃气轮机异常振动场景展示证据链和边界。 | 已固化 |
 | 专家反馈表 | `docs/challenge_cup/reproducibility/expert_feedback_form.md` | 收集真实签字、邮件或会议纪要，不伪造外部背书。 | 待真实反馈归档 |
@@ -528,9 +537,10 @@ def build_checklist(ctx: dict[str, Any]) -> str:
 
 1. 打开 `docs/challenge_cup/README_先看这里.md`，确认评审阅读顺序。
 2. 打开 `docs/challenge_cup/07_评审主张证据矩阵.md`，逐条核对主张、证据、命令和边界。
-3. 运行 `python scripts/build_challenge_cup_package.py` 重新生成材料包。
-4. 运行 `python scripts/check_challenge_cup_readiness.py` 生成 `docs/challenge_cup/reproducibility/readiness_gate_report.md`。
-5. 打开 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`，复核固定搜索结果。
+3. 打开 `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx` 和讲稿，检查终审答辩主线。
+4. 运行 `python scripts/build_challenge_cup_package.py` 重新生成材料包。
+5. 运行 `python scripts/check_challenge_cup_readiness.py` 生成 `docs/challenge_cup/reproducibility/readiness_gate_report.md`。
+6. 打开 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`，复核固定搜索结果。
 
 ## 现场演示与离线备份
 
@@ -871,6 +881,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_package.py
 ```
 
+## 刷新终审答辩 PPT
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_deck.py --force
+```
+
 ## 运行结项 readiness gate
 
 ```powershell
@@ -901,6 +917,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
+- 终审答辩 PPTX：`{md_link(DEFENSE_DECK_PPTX)}`。
+- 终审答辩讲稿：`{md_link(DEFENSE_DECK_NOTES)}`。
 - 答辩彩排计分卡：`{md_link(DEFENSE_REHEARSAL_SCORECARD_MD)}`。
 - 答辩彩排计分 JSON：`{md_link(DEFENSE_REHEARSAL_SCORECARD_JSON)}`。
 - 答辩计时彩排结果归档包：`{md_link(DEFENSE_REHEARSAL_RESULT_PACKET_MD)}`。
@@ -940,6 +958,8 @@ python scripts/extend_challenge_cup_eval_questions.py
 
 python scripts/build_challenge_cup_package.py
 -> Wrote docs/challenge_cup with 60 evaluation questions
+-> docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx
+-> docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md
 -> docs/challenge_cup/11_应用场景与专家验证.md
 -> docs/challenge_cup/12_专家反馈采集与整改闭环.md
 -> docs/challenge_cup/reproducibility/application_validation_report.md
@@ -1013,7 +1033,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (27/27 gates)
+-> Status: pass (28/28 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -1051,8 +1071,11 @@ def main() -> int:
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
+    build_defense_deck_outputs()
     evidence_files = [
         md_link(DATASET),
+        md_link(DEFENSE_DECK_PPTX),
+        md_link(DEFENSE_DECK_NOTES),
         md_link(ACCEPTANCE_CHECKLIST),
         md_link(CLAIM_MATRIX),
         md_link(AWARD_SELF_EVAL),
