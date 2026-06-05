@@ -149,6 +149,7 @@ REQUIRED_PACKAGE_DOCS = [
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/goal_completion_report.md",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",

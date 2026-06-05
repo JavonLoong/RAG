@@ -45,6 +45,7 @@ REQUIRED_PACKAGE_FILES = [
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/goal_completion_report.md",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
@@ -140,6 +141,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
+    assert "reproducibility/goal_completion_report.md" in readme
     acceptance_checklist = (PACKAGE_DIR / "06_结项验收清单.md").read_text(encoding="utf-8")
     for phrase in ["结项验收口径", "可提交材料", "验收步骤", "现场演示与离线备份", "未完成项与边界", "验收结论"]:
         assert phrase in acceptance_checklist
@@ -266,6 +268,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
+    assert "check_challenge_cup_goal_completion.py" in runbook
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
@@ -274,6 +277,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "expert_feedback_form.md" in manifest
     assert "12_专家反馈采集与整改闭环.md" in manifest
     assert "readiness_gate_report.md" in manifest
+    assert "goal_completion_report.md" in manifest
     assert "evidence_hashes.json" in manifest
     assert "evaluation_coverage_profile.json" in manifest
     assert "challenge_cup_graphrag_context_demo.md" in manifest
@@ -389,6 +393,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/goal_completion_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
     hashes = json.loads((PACKAGE_DIR / "reproducibility" / "evidence_hashes.json").read_text(encoding="utf-8"))
@@ -431,6 +436,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     )
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
+    goal_completion = (PACKAGE_DIR / "reproducibility" / "goal_completion_report.md").read_text(encoding="utf-8")
+    assert "Challenge Cup Goal Completion Gate" in goal_completion
+    assert "Status: `fail`" in goal_completion
+    assert "completion_claim_allowed=False" in goal_completion
+    assert "不能标记目标完成" in goal_completion
     official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
     assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
     assert official_rubric["official_source_count"] >= 4
@@ -468,6 +478,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/runbook.md",
         "docs/challenge_cup/reproducibility/command_log.md",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
+        "docs/challenge_cup/reproducibility/goal_completion_report.md",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
@@ -497,6 +508,7 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "README_先看这里.md",
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
+        PACKAGE_DIR / "reproducibility" / "goal_completion_report.md",
         PACKAGE_DIR / "11_应用场景与专家验证.md",
         PACKAGE_DIR / "reproducibility" / "application_validation_report.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.md",

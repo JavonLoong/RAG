@@ -35,6 +35,7 @@
 - 真实浏览器演示烟测：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 - 真实浏览器烟测 JSON：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`。
 - 结项 readiness gate：`docs/challenge_cup/reproducibility/readiness_gate_report.md`。
+- 总目标完成门禁：`docs/challenge_cup/reproducibility/goal_completion_report.md`。
 - 证据完整性哈希：`docs/challenge_cup/reproducibility/evidence_hashes.json`。
 - 可提交归档包：`docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`。
 - 可提交归档包哈希清单：`docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`。

@@ -58,6 +58,7 @@ from build_challenge_cup_official_rubric_alignment import (
     OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
     write_outputs as write_official_rubric_alignment_outputs,
 )
+from check_challenge_cup_goal_completion import write_report as write_goal_completion_report
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +82,7 @@ LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
 READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
+GOAL_COMPLETION_REPORT = REPRO / "goal_completion_report.md"
 EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
 SUBMISSION_ARCHIVE = REPRO / "challenge_cup_submission_package.zip"
@@ -325,13 +327,14 @@ def build_readme(ctx: dict[str, Any]) -> str:
 18. `reproducibility/runbook.md`
 19. `reproducibility/dataset_manifest.md`
 20. `reproducibility/readiness_gate_report.md`
-21. `reproducibility/defense_rehearsal_scorecard.md`
-22. `reproducibility/defense_rehearsal_result_packet.md`
-23. `reproducibility/expert_feedback_request_packet.md`
-24. `reproducibility/official_rubric_alignment.md`
-25. `reproducibility/hard_evidence_ledger.md`
-26. `reproducibility/challenge_cup_submission_archive_manifest.json`
-27. `reproducibility/challenge_cup_submission_package.zip`
+21. `reproducibility/goal_completion_report.md`
+22. `reproducibility/defense_rehearsal_scorecard.md`
+23. `reproducibility/defense_rehearsal_result_packet.md`
+24. `reproducibility/expert_feedback_request_packet.md`
+25. `reproducibility/official_rubric_alignment.md`
+26. `reproducibility/hard_evidence_ledger.md`
+27. `reproducibility/challenge_cup_submission_archive_manifest.json`
+28. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -933,6 +936,14 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
 ```
+
+## 运行总目标完成门禁
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py
+```
+
+当前缺少真实专家反馈和真实计时彩排时，该门禁应返回 fail；这不是包生成失败，而是防止把 package readiness 误写成总目标已完成。
 """
 
 
@@ -1001,6 +1012,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
 - 结项 readiness gate：`{md_link(READINESS_GATE_REPORT)}`。
+- 总目标完成门禁：`{md_link(GOAL_COMPLETION_REPORT)}`。
 - 证据完整性哈希：`{md_link(EVIDENCE_HASHES)}`。
 - 可提交归档包：`{md_link(SUBMISSION_ARCHIVE)}`。
 - 可提交归档包哈希清单：`{md_link(SUBMISSION_ARCHIVE_MANIFEST)}`。
@@ -1109,7 +1121,11 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (29/29 gates)
+-> Status: pass (30/30 gates)
+
+python scripts/check_challenge_cup_goal_completion.py
+-> docs/challenge_cup/reproducibility/goal_completion_report.md
+-> Status: fail (awaiting real expert feedback and timed rehearsal)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -1153,6 +1169,7 @@ def main() -> int:
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
     build_defense_deck_outputs()
+    write_goal_completion_report(REPO_ROOT)
     evidence_files = [
         md_link(DATASET),
         md_link(DEFENSE_DECK_PPTX),
@@ -1185,6 +1202,7 @@ def main() -> int:
         md_link(BROWSER_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_JSON),
         md_link(READINESS_GATE_REPORT),
+        md_link(GOAL_COMPLETION_REPORT),
         *(md_link(path) for path in BROWSER_SCREENSHOTS),
         *(
             md_link(path)

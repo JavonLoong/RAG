@@ -75,3 +75,11 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
 ```
+
+## 运行总目标完成门禁
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py
+```
+
+当前缺少真实专家反馈和真实计时彩排时，该门禁应返回 fail；这不是包生成失败，而是防止把 package readiness 误写成总目标已完成。
