@@ -25,7 +25,8 @@
 17. `reproducibility/dataset_manifest.md`
 18. `reproducibility/readiness_gate_report.md`
 19. `reproducibility/defense_rehearsal_scorecard.md`
-20. `reproducibility/expert_feedback_request_packet.md`
+20. `reproducibility/defense_rehearsal_result_packet.md`
+21. `reproducibility/expert_feedback_request_packet.md`
 
 ## 当前核心数字
 

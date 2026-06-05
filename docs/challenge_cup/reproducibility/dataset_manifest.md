@@ -18,6 +18,8 @@
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 答辩彩排计分卡：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`。
 - 答辩彩排计分 JSON：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json`。
+- 答辩计时彩排结果归档包：`docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md`。
+- 答辩计时彩排结果 JSON：`docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json`。
 - 专家反馈外发包：`docs/challenge_cup/reproducibility/expert_feedback_request_packet.md`。
 - 专家反馈外发 JSON：`docs/challenge_cup/reproducibility/expert_feedback_request_packet.json`。
 - 应用场景与专家验证：`docs/challenge_cup/11_应用场景与专家验证.md`。

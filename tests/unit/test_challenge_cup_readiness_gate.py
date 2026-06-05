@@ -14,6 +14,10 @@ DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
     "has already happened or guarantee an award."
 )
+DEFENSE_REHEARSAL_RESULT_PACKET_BOUNDARY = (
+    "This packet prepares actual timed rehearsal recording; it does not claim a timed rehearsal has "
+    "already been completed."
+)
 EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
     "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
     "or production validation."
@@ -58,6 +62,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense rehearsal scorecard" in report
+    assert "defense rehearsal result packet" in report
     assert "expert feedback request packet" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -417,6 +422,62 @@ def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tm
 
     assert not check.passed
     assert "opening_seconds" in check.detail
+
+
+def test_defense_rehearsal_result_packet_gate_rejects_fake_completed_result(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    packet_json = tmp_path / "defense_rehearsal_result_packet.json"
+    packet_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_defense_rehearsal_result_packet",
+                "status": "ready_to_record_actual_rehearsal",
+                "actual_rehearsal_completed": True,
+                "boundary": DEFENSE_REHEARSAL_RESULT_PACKET_BOUNDARY,
+                "timing_targets": {
+                    "opening_seconds": 90,
+                    "demo_seconds": 180,
+                    "offline_fallback_seconds": 20,
+                    "killer_question_seconds": 30,
+                },
+                "pass_fail_rules": {
+                    "opening_actual_seconds_max": 90,
+                    "demo_actual_seconds_max": 180,
+                    "offline_fallback_actual_seconds_max": 20,
+                    "each_killer_question_actual_seconds_max": 30,
+                    "required_killer_question_count": 5,
+                },
+                "required_archive_evidence_types": ["计时截图", "彩排录屏", "观察员签字或备注", "问题遗漏清单"],
+                "result_template": {
+                    "overall_result": "pass",
+                    "opening_actual_seconds": 88,
+                    "demo_actual_seconds": 175,
+                    "offline_fallback_actual_seconds": 18,
+                    "killer_question_results": [],
+                },
+                "evidence_files": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    packet_md = tmp_path / "defense_rehearsal_result_packet.md"
+    packet_md.write_text(
+        "答辩计时彩排结果归档包\n"
+        "尚未记录真实计时彩排\n"
+        "不伪造现场彩排记录\n"
+        "opening_actual_seconds\n"
+        "offline_fallback_actual_seconds\n"
+        "killer_question_results\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "DEFENSE_REHEARSAL_RESULT_PACKET_JSON", packet_json)
+    monkeypatch.setattr(module, "DEFENSE_REHEARSAL_RESULT_PACKET_MD", packet_md)
+
+    check = module.check_defense_rehearsal_result_packet()
+
+    assert not check.passed
+    assert "actual_rehearsal_completed" in check.detail
 
 
 def test_expert_feedback_request_packet_gate_rejects_claimed_approval(monkeypatch, tmp_path) -> None:

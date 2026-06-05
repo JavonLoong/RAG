@@ -1,0 +1,87 @@
+{
+  "report_type": "challenge_cup_defense_rehearsal_result_packet",
+  "status": "ready_to_record_actual_rehearsal",
+  "actual_rehearsal_completed": false,
+  "boundary": "This packet prepares actual timed rehearsal recording; it does not claim a timed rehearsal has already been completed.",
+  "timing_targets": {
+    "opening_seconds": 90,
+    "demo_seconds": 180,
+    "offline_fallback_seconds": 20,
+    "killer_question_seconds": 30
+  },
+  "pass_fail_rules": {
+    "opening_actual_seconds_max": 90,
+    "demo_actual_seconds_max": 180,
+    "offline_fallback_actual_seconds_max": 20,
+    "each_killer_question_actual_seconds_max": 30,
+    "required_killer_question_count": 5
+  },
+  "required_archive_evidence_types": [
+    "计时截图",
+    "彩排录屏",
+    "观察员签字或备注",
+    "问题遗漏清单"
+  ],
+  "result_template": {
+    "rehearsal_date": null,
+    "recorder": null,
+    "observer": null,
+    "opening_actual_seconds": null,
+    "demo_actual_seconds": null,
+    "offline_fallback_actual_seconds": null,
+    "killer_question_results": [
+      {
+        "question_index": 1,
+        "question": "这和普通 RAG 的本质差异是什么？",
+        "actual_seconds": null,
+        "missed_evidence_anchor": null,
+        "needs_revision": null
+      },
+      {
+        "question_index": 2,
+        "question": "GraphRAG 是否一定全面优于 keyword 或 hybrid？",
+        "actual_seconds": null,
+        "missed_evidence_anchor": null,
+        "needs_revision": null
+      },
+      {
+        "question_index": 3,
+        "question": "当前数据规模是否足以支撑真实生产级运维？",
+        "actual_seconds": null,
+        "missed_evidence_anchor": null,
+        "needs_revision": null
+      },
+      {
+        "question_index": 4,
+        "question": "如果现场服务、浏览器或网络出问题怎么办？",
+        "actual_seconds": null,
+        "missed_evidence_anchor": null,
+        "needs_revision": null
+      },
+      {
+        "question_index": 5,
+        "question": "为什么这个项目具备冲击特等奖的完整度？",
+        "actual_seconds": null,
+        "missed_evidence_anchor": null,
+        "needs_revision": null
+      }
+    ],
+    "archive_evidence_paths": [],
+    "issue_list": [],
+    "overall_result": "not_recorded"
+  },
+  "post_recording_actions": [
+    "填写所有 actual_seconds 字段并归档计时截图或录屏。",
+    "把每个超时项和遗漏证据锚点写入 issue_list。",
+    "更新 overall_result 为 pass 或 needs_revision。",
+    "重新运行 scripts/check_challenge_cup_readiness.py。"
+  ],
+  "evidence_files": [
+    "docs/challenge_cup/04_系统演示脚本.md",
+    "docs/challenge_cup/05_答辩问答手册.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
+    "docs/challenge_cup/10_答辩攻防与彩排卡.md",
+    "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md",
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md"
+  ]
+}
