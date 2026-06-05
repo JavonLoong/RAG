@@ -32,6 +32,12 @@ from build_graphrag_answer_benchmark import (
     build_payload as build_graph_answer_benchmark_payload,
     write_markdown as write_graph_answer_benchmark_markdown,
 )
+from build_graphrag_gap_remediation_plan import (
+    OUTPUT_JSON as GRAPH_GAP_REMEDIATION_JSON,
+    OUTPUT_MD as GRAPH_GAP_REMEDIATION_MD,
+    build_payload as build_graph_gap_remediation_payload,
+    write_markdown as write_graph_gap_remediation_markdown,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -182,6 +188,8 @@ def build_context() -> dict[str, Any]:
         "graph_context_demo_json": GRAPH_CONTEXT_DEMO_JSON if GRAPH_CONTEXT_DEMO_JSON.exists() else None,
         "graph_answer_benchmark_md": GRAPH_ANSWER_BENCHMARK_MD,
         "graph_answer_benchmark_json": GRAPH_ANSWER_BENCHMARK_JSON,
+        "graph_gap_remediation_md": GRAPH_GAP_REMEDIATION_MD,
+        "graph_gap_remediation_json": GRAPH_GAP_REMEDIATION_JSON,
         "validation": browser_validation_context(),
         "rag_db": REPO_ROOT
         / "docs"
@@ -331,6 +339,7 @@ def build_eval_report(ctx: dict[str, Any]) -> str:
     graph_ref = optional_md_link(ctx["graph_report"])
     graph_context_ref = optional_md_link(ctx["graph_context_demo_md"])
     graph_answer_ref = optional_md_link(ctx["graph_answer_benchmark_md"])
+    graph_gap_ref = optional_md_link(ctx["graph_gap_remediation_md"])
     return f"""# 实验评测报告
 
 ## 评测集
@@ -357,9 +366,13 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 已将 10 道 GraphRAG 同题生成答案级覆盖对照，固定比较文本 baseline 参考关键词覆盖率与 triples.csv 图谱证据覆盖率，并保留 partial/missing 案例。报告位置：`{graph_answer_ref}`。该 benchmark 是 deterministic offline reference keyword coverage，不生成在线 LLM 答案，不宣称 GraphRAG 全面优于 baseline。
 
+## GraphRAG 补证整改计划
+
+已将 answer benchmark 暴露出的 partial/missing 案例转成补证整改计划，逐题给出缺失关键词、优先级、补图谱或补全局摘要动作和复跑命令。报告位置：`{graph_gap_ref}`。该计划不宣称 gap 已修复，而是把失败案例纳入下一轮工程闭环。
+
 ## 结论
 
-当前项目能证明评测链路存在并可复跑，也能展示 GraphRAG context-only 证据编排和答案级覆盖对照。挑战杯版本后续可继续补充真实 LLM answer 生成、embedding/reranker 复测和更大规模 benchmark。
+当前项目能证明评测链路存在并可复跑，也能展示 GraphRAG context-only 证据编排、答案级覆盖对照和补证整改计划。挑战杯版本后续可继续补充真实 LLM answer 生成、embedding/reranker 复测和更大规模 benchmark。
 
 ## 关键证据摘录
 
@@ -482,7 +495,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | --- | --- | --- | --- | --- |
 | 创新性 | 项目不是单纯问答页面，而是面向动力装备知识的 evidence-bound RAG / GraphRAG 工程闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `{graph_ref}`; `docs/project_deliverables/06_四本书KG工具跑通演示/kg_evidence_viewer.html` | `python scripts/build_graphrag_challenge_report.py` | GraphRAG 用于关系证据组织，不声称在所有问题上必然优于普通 RAG。 |
 | 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
-| 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因和 GraphRAG 同题子集。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py` | 评测集是当前阶段的课程 / 挑战杯评测集，后续可扩展为更大 benchmark。 |
+| 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因、GraphRAG 同题子集和 partial/missing 补证整改计划。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}`; `evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py`; `python scripts/build_graphrag_gap_remediation_plan.py` | 评测集是当前阶段的课程 / 挑战杯评测集；补证计划不等于 gap 已修复。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
 | 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
 | 专家反馈闭环 | 项目已准备好可发送给老师或行业专家的反馈采集表、评分维度、签字或邮件证据归档规则和整改闭环。 | `docs/challenge_cup/12_专家反馈采集与整改闭环.md`; `docs/challenge_cup/reproducibility/expert_feedback_form.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | `python scripts/check_challenge_cup_readiness.py` | 未收到真实反馈前不得宣称已通过专家验证；反馈必须按签字、邮件或会议纪要归档。 |
@@ -810,6 +823,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - GraphRAG context-only JSON：`{optional_md_link(ctx["graph_context_demo_json"])}`。
 - GraphRAG answer benchmark：`{optional_md_link(ctx["graph_answer_benchmark_md"])}`。
 - GraphRAG answer benchmark JSON：`{optional_md_link(ctx["graph_answer_benchmark_json"])}`。
+- GraphRAG 补证整改计划：`{optional_md_link(ctx["graph_gap_remediation_md"])}`。
+- GraphRAG 补证整改 JSON：`{optional_md_link(ctx["graph_gap_remediation_json"])}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
@@ -895,6 +910,10 @@ python scripts/build_graphrag_answer_benchmark.py
 -> evaluation/reports/challenge_cup_graphrag_answer_benchmark.md
 -> evaluation/reports/challenge_cup_graphrag_answer_benchmark.json
 
+python scripts/build_graphrag_gap_remediation_plan.py
+-> evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md
+-> evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json
+
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
@@ -918,7 +937,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (25/25 gates)
+-> Status: pass (26/26 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -949,6 +968,9 @@ def main() -> int:
     graph_answer_payload = build_graph_answer_benchmark_payload()
     write(GRAPH_ANSWER_BENCHMARK_JSON, json.dumps(graph_answer_payload, ensure_ascii=False, indent=2))
     write_graph_answer_benchmark_markdown(GRAPH_ANSWER_BENCHMARK_MD, graph_answer_payload)
+    graph_gap_payload = build_graph_gap_remediation_payload()
+    write(GRAPH_GAP_REMEDIATION_JSON, json.dumps(graph_gap_payload, ensure_ascii=False, indent=2))
+    write_graph_gap_remediation_markdown(GRAPH_GAP_REMEDIATION_MD, graph_gap_payload)
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -986,6 +1008,8 @@ def main() -> int:
                 ctx["graph_context_demo_json"],
                 GRAPH_ANSWER_BENCHMARK_MD,
                 GRAPH_ANSWER_BENCHMARK_JSON,
+                GRAPH_GAP_REMEDIATION_MD,
+                GRAPH_GAP_REMEDIATION_JSON,
             )
             if path is not None
         ),

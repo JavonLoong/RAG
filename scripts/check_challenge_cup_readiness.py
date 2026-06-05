@@ -44,6 +44,8 @@ GRAPH_CONTEXT_DEMO_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_
 GRAPH_CONTEXT_DEMO_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_context_demo.md"
 GRAPH_ANSWER_BENCHMARK_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_answer_benchmark.json"
 GRAPH_ANSWER_BENCHMARK_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_answer_benchmark.md"
+GRAPH_GAP_REMEDIATION_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_gap_remediation_plan.json"
+GRAPH_GAP_REMEDIATION_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_gap_remediation_plan.md"
 GRAPH_EVIDENCE_BOUNDARY = (
     "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
 )
@@ -54,6 +56,10 @@ GRAPH_CONTEXT_DEMO_BOUNDARY = (
 GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
     "This is a deterministic offline answer benchmark over the fixed GraphRAG subset; it does not claim "
     "online LLM answer win-rate or that GraphRAG beats every baseline question."
+)
+GRAPH_GAP_REMEDIATION_BOUNDARY = (
+    "This plan turns partial/missing GraphRAG evidence into prioritized remediation work; it does not "
+    "claim the gaps are already fixed."
 )
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
@@ -191,6 +197,25 @@ GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
     "保留 partial/missing",
     "不宣称 GraphRAG 全面优于 baseline",
 }
+GRAPH_GAP_REMEDIATION_MARKDOWN_TERMS = {
+    "GraphRAG 补证整改计划",
+    "ready_for_graph_iteration",
+    "不把 partial/missing 改写成成功案例",
+    "cc032",
+    "cc043",
+}
+GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE = [
+    "new_triples_or_summary_diff",
+    "source_page_or_doc_anchor",
+    "manual_review_note",
+    "rerun_report_json",
+]
+GRAPH_GAP_REQUIRED_RERUN_COMMANDS = [
+    "python scripts/build_graphrag_challenge_report.py",
+    "python scripts/build_graphrag_answer_benchmark.py",
+    "python scripts/build_graphrag_gap_remediation_plan.py",
+    "python scripts/check_challenge_cup_readiness.py",
+]
 EVAL_COVERAGE_MINIMUMS = {
     "task_types": 10,
     "source_scopes": 15,
@@ -866,6 +891,105 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     )
 
 
+def check_graphrag_gap_remediation_plan() -> GateCheck:
+    failures: list[str] = []
+    if not GRAPH_GAP_REMEDIATION_JSON.exists():
+        return GateCheck(
+            "graphrag gap remediation plan",
+            False,
+            f"{GRAPH_GAP_REMEDIATION_JSON.relative_to(REPO_ROOT)} missing",
+        )
+    if not GRAPH_GAP_REMEDIATION_MD.exists():
+        return GateCheck(
+            "graphrag gap remediation plan",
+            False,
+            f"{GRAPH_GAP_REMEDIATION_MD.relative_to(REPO_ROOT)} missing",
+        )
+
+    payload = load_json(GRAPH_GAP_REMEDIATION_JSON)
+    benchmark = load_json(GRAPH_ANSWER_BENCHMARK_JSON)
+    markdown = GRAPH_GAP_REMEDIATION_MD.read_text(encoding="utf-8")
+    benchmark_cases = benchmark.get("cases", [])
+    expected_gap_cases = {
+        str(case["id"]): str(case["graphrag_answer_status"])
+        for case in benchmark_cases
+        if case.get("graphrag_answer_status") in {"partial", "missing"}
+    }
+    expected_supported = sum(1 for case in benchmark_cases if case.get("graphrag_answer_status") == "supported")
+    expected_partial = sum(1 for status in expected_gap_cases.values() if status == "partial")
+    expected_missing = sum(1 for status in expected_gap_cases.values() if status == "missing")
+
+    if payload.get("report_type") != "challenge_cup_graphrag_gap_remediation_plan":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "ready_for_graph_iteration":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("gaps_marked_fixed") is not False:
+        failures.append(f"gaps_marked_fixed={payload.get('gaps_marked_fixed')}")
+    if payload.get("boundary") != GRAPH_GAP_REMEDIATION_BOUNDARY:
+        failures.append("boundary mismatch")
+    if payload.get("source_dataset") != DATASET_RELATIVE:
+        failures.append(f"source_dataset={payload.get('source_dataset')}")
+    if payload.get("source_graph_report") != GRAPH_REPORT_JSON.relative_to(REPO_ROOT).as_posix():
+        failures.append(f"source_graph_report={payload.get('source_graph_report')}")
+    if payload.get("source_answer_benchmark") != GRAPH_ANSWER_BENCHMARK_JSON.relative_to(REPO_ROOT).as_posix():
+        failures.append(f"source_answer_benchmark={payload.get('source_answer_benchmark')}")
+    if int(payload.get("total_graph_cases") or -1) != len(benchmark_cases):
+        failures.append("total_graph_cases mismatch")
+    if int(payload.get("supported_count") or -1) != expected_supported:
+        failures.append("supported_count mismatch")
+    if int(payload.get("partial_count") or -1) != expected_partial:
+        failures.append("partial_count mismatch")
+    if int(payload.get("missing_count") or -1) != expected_missing:
+        failures.append("missing_count mismatch")
+    if int(payload.get("partial_or_missing_count") or -1) != len(expected_gap_cases):
+        failures.append("partial_or_missing_count mismatch")
+    if payload.get("required_evidence_to_archive") != GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE:
+        failures.append("required_evidence_to_archive mismatch")
+    if payload.get("rerun_commands") != GRAPH_GAP_REQUIRED_RERUN_COMMANDS:
+        failures.append("rerun_commands mismatch")
+    if "不把 partial/missing 改写成成功案例" not in payload.get("no_overclaim_rules", []):
+        failures.append("missing no-overclaim rule")
+
+    items = payload.get("remediation_items", [])
+    if not isinstance(items, list):
+        failures.append("remediation_items missing")
+        items = []
+    item_by_id = {str(item.get("id")): item for item in items if isinstance(item, dict)}
+    if set(item_by_id) != set(expected_gap_cases):
+        failures.append(f"remediation ids mismatch: expected={sorted(expected_gap_cases)}, actual={sorted(item_by_id)}")
+    for case_id, expected_status in expected_gap_cases.items():
+        item = item_by_id.get(case_id, {})
+        if item.get("current_status") != expected_status:
+            failures.append(f"{case_id}.current_status={item.get('current_status')}")
+        expected_priority = "P0" if expected_status == "missing" else "P1"
+        if item.get("priority") != expected_priority:
+            failures.append(f"{case_id}.priority={item.get('priority')}")
+        if item.get("claim_fixed") is not False:
+            failures.append(f"{case_id}.claim_fixed={item.get('claim_fixed')}")
+        if not item.get("missing_expected_keywords"):
+            failures.append(f"{case_id}.missing_expected_keywords missing")
+        if len(item.get("action_items", [])) < 3:
+            failures.append(f"{case_id}.action_items below 3")
+        acceptance = set(str(value) for value in item.get("acceptance_evidence", []))
+        missing_acceptance = sorted(set(GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE) - acceptance)
+        if missing_acceptance:
+            failures.append(f"{case_id}.acceptance_evidence missing {missing_acceptance}")
+
+    missing_markdown_terms = sorted(
+        term for term in (GRAPH_GAP_REMEDIATION_MARKDOWN_TERMS | {GRAPH_GAP_REMEDIATION_BOUNDARY}) if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "graphrag gap remediation plan",
+        not failures,
+        f"{len(expected_gap_cases)} partial/missing cases converted into remediation tasks"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
     if not path.exists():
         return GateCheck(name, False, f"{path.relative_to(REPO_ROOT)} missing")
@@ -1367,6 +1491,7 @@ def run_gate() -> list[GateCheck]:
         check_graphrag_same_question_evidence(),
         check_graphrag_context_demo(),
         check_graphrag_answer_benchmark(),
+        check_graphrag_gap_remediation_plan(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -1397,7 +1522,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

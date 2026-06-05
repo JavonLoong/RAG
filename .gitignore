@@ -34,6 +34,7 @@ desktop.ini
 !docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json
 !docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 !evaluation/reports/challenge_cup_graphrag_answer_benchmark.json
+!evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json
 *.sqlite3
 *.sqlite
 *.db

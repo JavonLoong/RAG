@@ -35,7 +35,9 @@
     "evaluation/reports/challenge_cup_graphrag_context_demo.md",
     "evaluation/reports/challenge_cup_graphrag_context_demo.json",
     "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md",
-    "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json"
+    "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
+    "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
+    "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json"
   ],
   "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json"
 }

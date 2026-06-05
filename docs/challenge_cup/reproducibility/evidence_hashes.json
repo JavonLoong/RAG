@@ -12,8 +12,8 @@
     },
     {
       "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
-      "bytes": 3978,
-      "sha256": "ffee38dbf526f57ce434ede6a16c867210cae7e959b43aae3e283b171b5dc853"
+      "bytes": 4142,
+      "sha256": "f6ad843dfaca3b8613f3aed98ede08b7b5c2062b4c92f555ffa8c59f9f03d6ca"
     },
     {
       "path": "docs/challenge_cup/08_特等奖评审自评表.md",
@@ -134,6 +134,16 @@
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.md",
       "bytes": 11737,
       "sha256": "a326f7e9e98f99fc44c5ff91a55ecf371b6e739363dc9dd9f24551af43b9d916"
+    },
+    {
+      "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",
+      "bytes": 9858,
+      "sha256": "bdd9528235cff3655a3dceb8f8029ed6b11c81ea6fec8b9de3306d054c9fe713"
+    },
+    {
+      "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
+      "bytes": 5550,
+      "sha256": "006bf155bfa04f28cc52192d178483a0680c44ec09d0e50dc70a6410e2c4f8a6"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",

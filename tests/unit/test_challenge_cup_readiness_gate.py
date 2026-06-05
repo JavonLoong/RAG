@@ -26,6 +26,10 @@ GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
     "This is a deterministic offline answer benchmark over the fixed GraphRAG subset; it does not claim "
     "online LLM answer win-rate or that GraphRAG beats every baseline question."
 )
+GRAPH_GAP_REMEDIATION_BOUNDARY = (
+    "This plan turns partial/missing GraphRAG evidence into prioritized remediation work; it does not "
+    "claim the gaps are already fixed."
+)
 
 
 def load_readiness_module():
@@ -78,6 +82,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "graphrag evidence audit" in report
     assert "graphrag context demo" in report
     assert "graphrag answer benchmark" in report
+    assert "graphrag gap remediation plan" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -390,6 +395,73 @@ def test_graphrag_answer_benchmark_gate_rejects_online_win_rate_claim(monkeypatc
 
     assert not check.passed
     assert "llm_answer_generated" in check.detail
+
+
+def test_graphrag_gap_remediation_gate_rejects_claimed_fixed_gaps(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    plan_json = tmp_path / "challenge_cup_graphrag_gap_remediation_plan.json"
+    plan_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_graphrag_gap_remediation_plan",
+                "status": "ready_for_graph_iteration",
+                "gaps_marked_fixed": True,
+                "boundary": GRAPH_GAP_REMEDIATION_BOUNDARY,
+                "source_dataset": "evaluation/system_eval_questions.jsonl",
+                "source_graph_report": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+                "source_answer_benchmark": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
+                "total_graph_cases": 10,
+                "supported_count": 3,
+                "partial_count": 3,
+                "missing_count": 4,
+                "partial_or_missing_count": 7,
+                "priority_counts": {"P0": 4, "P1": 3},
+                "no_overclaim_rules": ["不把 partial/missing 改写成成功案例"],
+                "required_evidence_to_archive": [
+                    "new_triples_or_summary_diff",
+                    "source_page_or_doc_anchor",
+                    "manual_review_note",
+                    "rerun_report_json",
+                ],
+                "rerun_commands": [
+                    "python scripts/build_graphrag_challenge_report.py",
+                    "python scripts/build_graphrag_answer_benchmark.py",
+                    "python scripts/build_graphrag_gap_remediation_plan.py",
+                    "python scripts/check_challenge_cup_readiness.py",
+                ],
+                "remediation_items": [
+                    {
+                        "id": "cc032",
+                        "current_status": "missing",
+                        "priority": "P0",
+                        "claim_fixed": True,
+                        "missing_expected_keywords": ["OCR"],
+                        "action_items": ["sample", "sample", "sample"],
+                        "acceptance_evidence": ["rerun_report_json"],
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    plan_md = tmp_path / "challenge_cup_graphrag_gap_remediation_plan.md"
+    plan_md.write_text(
+        "GraphRAG 补证整改计划\n"
+        "ready_for_graph_iteration\n"
+        "不把 partial/missing 改写成成功案例\n"
+        "cc032\n"
+        "cc043\n"
+        f"{GRAPH_GAP_REMEDIATION_BOUNDARY}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "GRAPH_GAP_REMEDIATION_JSON", plan_json)
+    monkeypatch.setattr(module, "GRAPH_GAP_REMEDIATION_MD", plan_md)
+
+    check = module.check_graphrag_gap_remediation_plan()
+
+    assert not check.passed
+    assert "gaps_marked_fixed" in check.detail
 
 
 def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tmp_path) -> None:
