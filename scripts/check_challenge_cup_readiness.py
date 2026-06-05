@@ -455,6 +455,52 @@ def check_evidence_hashes() -> GateCheck:
     )
 
 
+def check_numeric_consistency() -> GateCheck:
+    failures: list[str] = []
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    coverage = load_json(EVAL_COVERAGE_PROFILE) if EVAL_COVERAGE_PROFILE.exists() else {}
+    browser_payload = load_json(BROWSER_SMOKE_JSON) if BROWSER_SMOKE_JSON.exists() else {}
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {}
+
+    dataset_count = sum(1 for line in DATASET.read_text(encoding="utf-8").splitlines() if line.strip()) if DATASET.exists() else -1
+    manifest_count = int(manifest.get("question_count") or -1)
+    coverage_count = int(coverage.get("question_count") or -1)
+    if not (dataset_count == manifest_count == coverage_count == 60):
+        failures.append(
+            f"question_count mismatch: dataset={dataset_count}, manifest={manifest_count}, coverage={coverage_count}, expected=60"
+        )
+
+    evidence_files = manifest.get("evidence_files", [])
+    excluded = set(hashes.get("excluded_self_reports", []))
+    hashed_count = len(hashes.get("files", [])) + len(excluded)
+    if len(evidence_files) != hashed_count:
+        failures.append(f"evidence file/hash count mismatch: evidence_files={len(evidence_files)}, hashed_plus_excluded={hashed_count}")
+
+    browser = browser_payload.get("browser", {})
+    search_meta = str(browser.get("search_meta", ""))
+    match = re.search(r"结果\s*(\d+)", search_meta)
+    meta_result_count = int(match.group(1)) if match else -1
+    card_count = int(browser.get("search_result_card_count") or -1)
+    visible_record_ids = {str(item) for item in browser.get("visible_record_ids", [])}
+    visible_count = len(visible_record_ids)
+    expected_visible = len(REQUIRED_SCENARIO_RECORD_IDS)
+    if not (meta_result_count == card_count == visible_count == expected_visible == 5):
+        failures.append(
+            f"search result count mismatch: meta={meta_result_count}, cards={card_count}, visible={visible_count}, expected={expected_visible}"
+        )
+    missing_visible_records = sorted(REQUIRED_SCENARIO_RECORD_IDS - visible_record_ids)
+    if missing_visible_records:
+        failures.append(f"missing visible record ids: {missing_visible_records}")
+
+    return GateCheck(
+        "numeric consistency",
+        not failures,
+        f"60 questions, {len(evidence_files)} evidence files, and 5 visible search records are consistent"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
     if not path.exists():
         return GateCheck(name, False, f"{path.relative_to(REPO_ROOT)} missing")
@@ -703,6 +749,7 @@ def run_gate() -> list[GateCheck]:
         check_evaluation_coverage_profile(),
         check_package_manifest(),
         check_evidence_hashes(),
+        check_numeric_consistency(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -730,7 +777,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

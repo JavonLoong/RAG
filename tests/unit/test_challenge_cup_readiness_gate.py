@@ -41,6 +41,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "claim-evidence matrix" in report
     assert "award claims" in report
     assert "acceptance checklist" in report
+    assert "numeric consistency" in report
     assert "special-prize rubric self-assessment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
@@ -297,6 +298,57 @@ def test_acceptance_checklist_gate_rejects_missing_submission_terms(monkeypatch,
 
     assert not check.passed
     assert "未完成项与边界" in check.detail
+
+
+def test_numeric_consistency_gate_rejects_question_count_mismatch(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "question_count": 59,
+                "evidence_files": [
+                    "evaluation/system_eval_questions.jsonl",
+                    "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    coverage = tmp_path / "evaluation_coverage_profile.json"
+    coverage.write_text(json.dumps({"question_count": 60}, ensure_ascii=False), encoding="utf-8")
+    dataset = tmp_path / "system_eval_questions.jsonl"
+    dataset.write_text("{}\n" * 60, encoding="utf-8")
+    browser_json = tmp_path / "browser_demo_smoke_report.json"
+    browser_json.write_text(
+        json.dumps(
+            {
+                "browser": {
+                    "search_meta": "集合 gas_turbine_ocr_demo_snapshot · 延迟 41.80 ms · 结果 5 · 后端 public-demo",
+                    "search_result_card_count": 5,
+                    "visible_record_ids": [
+                        "demo-maint-thresholds-076",
+                        "demo-structure-fault-130",
+                        "demo-gt07-fault-021",
+                        "demo-gt07-repair-022",
+                        "demo-gt07-manual-023",
+                    ],
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVAL_COVERAGE_PROFILE", coverage)
+    monkeypatch.setattr(module, "DATASET", dataset)
+    monkeypatch.setattr(module, "BROWSER_SMOKE_JSON", browser_json)
+
+    check = module.check_numeric_consistency()
+
+    assert not check.passed
+    assert "question_count mismatch" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

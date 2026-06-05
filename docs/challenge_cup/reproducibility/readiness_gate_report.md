@@ -1,8 +1,8 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 18/18
-- Scope: challenge-cup package docs, control files, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 19/19
+- Scope: challenge-cup package docs, control files, numeric consistency, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
@@ -12,6 +12,7 @@
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
 | package evidence files | pass | 21 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 20 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| numeric consistency | pass | 60 questions, 21 evidence files, and 5 visible search records are consistent |
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 23 evidence links verified |
 | acceptance checklist | pass | submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; 13 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 14 evidence links verified |
