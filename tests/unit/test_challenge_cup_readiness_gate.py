@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -105,3 +106,26 @@ def test_markdown_path_extractor_ignores_fenced_commands() -> None:
     paths = module.extract_markdown_code_span_paths(text)
 
     assert paths == ["docs/challenge_cup/00_项目一页纸.md"]
+
+
+def test_package_manifest_gate_rejects_untracked_evidence(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "question_count": 60,
+                "evidence_files": ["docs/challenge_cup/untracked-evidence.md"],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "nonempty", lambda path: True)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {"evaluation/system_eval_questions.jsonl"}, raising=False)
+
+    check = module.check_package_manifest()
+
+    assert not check.passed
+    assert "untracked-evidence.md" in check.detail

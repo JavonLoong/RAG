@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -128,6 +129,16 @@ def nonempty(path: Path) -> bool:
     return path.exists() and path.stat().st_size > 0
 
 
+def git_tracked_paths() -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+    )
+    return {item for item in result.stdout.decode("utf-8", errors="replace").split("\0") if item}
+
+
 def check_package_docs() -> GateCheck:
     missing = [relative for relative in REQUIRED_PACKAGE_DOCS if not nonempty(PACKAGE_DIR / relative)]
     return GateCheck(
@@ -153,12 +164,14 @@ def check_package_manifest() -> GateCheck:
     evidence = manifest.get("evidence_files", [])
     self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
     missing = [path for path in evidence if path != self_report and not nonempty(REPO_ROOT / path)]
+    tracked = git_tracked_paths()
+    untracked = [path for path in evidence if path not in tracked]
     question_count = int(manifest.get("question_count") or 0)
-    passed = bool(evidence) and question_count >= 60 and not missing
+    passed = bool(evidence) and question_count >= 60 and not missing and not untracked
     if passed:
-        detail = f"{len(evidence)} evidence files tracked; {question_count} questions"
+        detail = f"{len(evidence)} evidence files exist and are git-tracked; {question_count} questions"
     else:
-        detail = f"evidence={len(evidence)}, questions={question_count}, missing={missing}"
+        detail = f"evidence={len(evidence)}, questions={question_count}, missing={missing}, untracked={untracked}"
     return GateCheck("package evidence files", passed, detail)
 
 
