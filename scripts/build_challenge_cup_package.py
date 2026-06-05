@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,20 @@ def latest(pattern: str) -> Path | None:
     return candidates[-1] if candidates else None
 
 
+def generated_at_from_reports(*paths: Path | None) -> str:
+    stamps: list[str] = []
+    for path in paths:
+        if path is None:
+            continue
+        match = re.search(r"(\d{8})_(\d{6})", path.name)
+        if match:
+            stamps.append(match.group(1) + match.group(2))
+    if not stamps:
+        return "1970-01-01 00:00"
+    stamp = max(stamps)
+    return datetime.strptime(stamp, "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M")
+
+
 def md_link(path: Path) -> str:
     return str(path.relative_to(REPO_ROOT)).replace("\\", "/")
 
@@ -43,11 +58,13 @@ def optional_md_link(path: Path | None) -> str:
 
 
 def build_context() -> dict[str, Any]:
+    day3 = latest("day3_retrieval_baseline_comparison_*.md")
+    day4 = latest("day4_failure_analysis_*.md")
     return {
-        "now": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "now": generated_at_from_reports(day3, day4),
         "question_count": count_jsonl(DATASET),
-        "day3": latest("day3_retrieval_baseline_comparison_*.md"),
-        "day4": latest("day4_failure_analysis_*.md"),
+        "day3": day3,
+        "day4": day4,
         "rag_db": REPO_ROOT
         / "docs"
         / "project_deliverables"

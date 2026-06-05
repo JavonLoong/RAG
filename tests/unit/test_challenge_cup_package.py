@@ -76,3 +76,48 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "9080" in one_page
     assert "27" in one_page
     assert "GraphRAG" in one_page
+
+
+def test_build_challenge_cup_package_is_idempotent() -> None:
+    command = [sys.executable, "scripts/build_challenge_cup_package.py"]
+    subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    tracked = [
+        PACKAGE_DIR / "README_先看这里.md",
+        PACKAGE_DIR / "03_实验评测报告.md",
+        PACKAGE_DIR / "reproducibility" / "command_log.md",
+        PACKAGE_DIR / "package_manifest.json",
+    ]
+    before = {path: path.read_text(encoding="utf-8") for path in tracked}
+    subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    after = {path: path.read_text(encoding="utf-8") for path in tracked}
+    assert after == before
+
+
+def test_build_challenge_cup_package_uses_report_timestamp() -> None:
+    subprocess.run(
+        [sys.executable, "scripts/build_challenge_cup_package.py"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["generated_at"] == "2026-06-05 21:06"
