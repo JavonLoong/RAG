@@ -264,6 +264,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_official_rubric_alignment.py" in runbook
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in runbook
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
+    assert "run_challenge_cup_timed_rehearsal.py" in runbook
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
@@ -436,6 +437,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     )
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
+    assert "run_challenge_cup_timed_rehearsal.py" in hard_evidence_readme
     goal_completion = (PACKAGE_DIR / "reproducibility" / "goal_completion_report.md").read_text(encoding="utf-8")
     assert "Challenge Cup Goal Completion Gate" in goal_completion
     assert "Status: `fail`" in goal_completion

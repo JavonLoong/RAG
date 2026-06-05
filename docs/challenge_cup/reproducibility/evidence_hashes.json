@@ -122,8 +122,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 957,
-      "sha256": "0b291e929a20b78f368c5198805dedd8f5554c8909c59cb272d7ec13064a71a1"
+      "bytes": 966,
+      "sha256": "b7ed0d2158efbb75f24247664c5a6e9744f932772434f52d774eb6648690b2d9"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -132,8 +132,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/README.md",
-      "bytes": 769,
-      "sha256": "2954cfbfa3db0fcdf65d1b5471f68423e61f94fae92abd2ff9c2df9b4d9e0eeb"
+      "bytes": 953,
+      "sha256": "db8663672b6e448244be700c4a9b322f0eac21d294d4b609c6174948f7230d6f"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
@@ -142,8 +142,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
-      "bytes": 1032,
-      "sha256": "5cb7df763283a3bfe6e3c9cfd13cfb74c0f0fbf8506108af44ed4e896bef31a6"
+      "bytes": 1327,
+      "sha256": "57840a9d9b918ce7bd333d1111645e6409b40b75460523d5666ef0cbd570bbb5"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
