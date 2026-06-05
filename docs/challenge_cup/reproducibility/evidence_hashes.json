@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
-      "bytes": 2768,
-      "sha256": "e533fa16f58a18214755340da2d873368d28bfd2e646c9ee5212469acb2209ca"
+      "bytes": 3448,
+      "sha256": "d62e01fbe65df7c2e11fb284a54cd5bcc8133af2d2696cb9265a27edc58bda58"
     },
     {
       "path": "docs/challenge_cup/08_特等奖评审自评表.md",
@@ -17,13 +17,23 @@
     },
     {
       "path": "docs/challenge_cup/09_专家快速审阅索引.md",
-      "bytes": 2619,
-      "sha256": "9ee19aa7bcc3842e7cbdd76161dbca29546b19923fc73334839528f1ad57cd63"
+      "bytes": 2988,
+      "sha256": "7784b29136896718cd59370def957de698896ae3d5a4d020d4bb536e14c76d90"
     },
     {
       "path": "docs/challenge_cup/10_答辩攻防与彩排卡.md",
       "bytes": 3746,
       "sha256": "9a45bf98d0599c9bd6f5071f261598d50682fc5d307caee180c9e980cd7e342c"
+    },
+    {
+      "path": "docs/challenge_cup/11_应用场景与专家验证.md",
+      "bytes": 2859,
+      "sha256": "7dee268f282c6fff6ba3009579d03f16b840b83f620a2028989012472e4c24aa"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/application_validation_report.md",
+      "bytes": 2861,
+      "sha256": "e3f380eba1b1b5d50d96dcd91ed0f772b49b803b6930071a5175e5e2c587dafe"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",

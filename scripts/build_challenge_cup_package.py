@@ -18,6 +18,7 @@ CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = OUT / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = OUT / "10_答辩攻防与彩排卡.md"
+APPLICATION_VALIDATION_DOC = OUT / "11_应用场景与专家验证.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -25,6 +26,7 @@ BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
 READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
+APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
@@ -117,6 +119,24 @@ def optional_md_link(path: Path | None) -> str:
     return md_link(path) if path is not None else "暂无对应报告，运行 runbook 中的评测命令后生成"
 
 
+def browser_validation_context() -> dict[str, Any]:
+    fallback = {
+        "query": "燃气轮机异常振动诊断流程",
+        "search_meta": "集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo",
+        "screenshot": md_link(BROWSER_SCREENSHOTS[1]),
+    }
+    if not BROWSER_SMOKE_JSON.exists():
+        return fallback
+    payload = json.loads(BROWSER_SMOKE_JSON.read_text(encoding="utf-8"))
+    browser = payload.get("browser", {})
+    screenshots = browser.get("screenshots", {})
+    return {
+        "query": browser.get("query") or fallback["query"],
+        "search_meta": browser.get("search_meta") or fallback["search_meta"],
+        "screenshot": screenshots.get("desktop_search_results") or fallback["screenshot"],
+    }
+
+
 def build_context() -> dict[str, Any]:
     day3 = latest("day3_retrieval_baseline_comparison_*.md")
     day4 = latest("day4_failure_analysis_*.md")
@@ -126,6 +146,7 @@ def build_context() -> dict[str, Any]:
         "day3": day3,
         "day4": day4,
         "graph_report": GRAPH_REPORT if GRAPH_REPORT.exists() else None,
+        "validation": browser_validation_context(),
         "rag_db": REPO_ROOT
         / "docs"
         / "project_deliverables"
@@ -165,9 +186,11 @@ def build_readme(ctx: dict[str, Any]) -> str:
 9. `08_特等奖评审自评表.md`
 10. `09_专家快速审阅索引.md`
 11. `10_答辩攻防与彩排卡.md`
-12. `reproducibility/runbook.md`
-13. `reproducibility/dataset_manifest.md`
-14. `reproducibility/readiness_gate_report.md`
+12. `11_应用场景与专家验证.md`
+13. `reproducibility/application_validation_report.md`
+14. `reproducibility/runbook.md`
+15. `reproducibility/dataset_manifest.md`
+16. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -369,6 +392,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
 | 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因和 GraphRAG 同题子集。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py` | 评测集是当前阶段的课程 / 挑战杯评测集，后续可扩展为更大 benchmark。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
+| 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
 | 应用边界 | 系统定位为证据型辅助和知识资产整理，不替代工程师做最终运维决策。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/03_实验评测报告.md` | `python scripts/check_challenge_cup_readiness.py` | 对高风险维修决策保留人工确认和证据不足提示。 |
 """
 
@@ -403,8 +427,9 @@ def build_expert_review_index(ctx: dict[str, Any]) -> str:
 1. 先看项目定位：`docs/challenge_cup/00_项目一页纸.md`。
 2. 再看特等奖口径：`docs/challenge_cup/08_特等奖评审自评表.md`。
 3. 复核主张证据：`docs/challenge_cup/07_评审主张证据矩阵.md`。
-4. 查看可复现状态：`docs/challenge_cup/reproducibility/readiness_gate_report.md`。
-5. 如果现场演示受限，查看浏览器证据：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
+4. 查看应用验证案例：`docs/challenge_cup/11_应用场景与专家验证.md`。
+5. 查看可复现状态：`docs/challenge_cup/reproducibility/readiness_gate_report.md`。
+6. 如果现场演示受限，查看浏览器证据：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 
 ## 特等奖主张
 
@@ -413,6 +438,7 @@ def build_expert_review_index(ctx: dict[str, Any]) -> str:
 | 项目不是普通问答页，而是可结项的 RAG / GraphRAG 知识工程闭环 | `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/02_技术白皮书.md`; `docs/challenge_cup/06_结项验收清单.md` | 阅读项目书的技术路线和验收清单 |
 | 评测不是只挑成功样例，而是有 60 题评测集、baseline、失败归因和 GraphRAG 同题子集 | `evaluation/system_eval_questions.jsonl`; `docs/challenge_cup/03_实验评测报告.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` | 运行评测命令或检查评测报告 |
 | 演示不是口头承诺，而是有 live smoke、browser smoke、截图和 KG artifact 证据 | `docs/challenge_cup/reproducibility/live_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png` | 运行 smoke 或打开截图 |
+| 应用价值不是泛泛而谈，而是有异常振动诊断固定案例、record id 和边界说明 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | 复核 GT-07 证据链和人工确认边界 |
 | 申报边界清楚，不把课程资料系统夸大成生产级运维系统 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/08_特等奖评审自评表.md` | 检查答辩边界和风险控制 |
 
 ## 一键复核命令
@@ -483,6 +509,68 @@ def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_application_validation_doc(ctx: dict[str, Any]) -> str:
+    validation = ctx["validation"]
+    return f"""# 应用场景与专家验证
+
+本材料把项目的“实用性”从概念描述压实为可复核的固定应用场景。当前版本使用现有公开演示快照和角色化审查，不伪造外部生产签字；正式参赛前可把本页作为老师、行业专家或实验室同学反馈的记录表继续补签。
+
+## 固定应用场景
+
+| 场景 | 人工原流程 | 系统辅助后流程 | 验证角色 | 量化收益 | 证据 |
+| --- | --- | --- | --- | --- | --- |
+| 燃气轮机异常振动诊断证据整理 | 人工在手册、故障样例、维护理论材料中分别查阈值、故障机理、案例现象、检修措施和复机结果，容易漏掉来源记录。 | 输入“{validation["query"]}”，系统在演示集合中返回阈值、机理、GT-07 现象、停机检查、处理建议五类证据，并保留 record id。 | 课程项目评审、动力装备资料审阅者、答辩评委 | `{validation["search_meta"]}`；从 2,655 个向量片段、约 1,185,989 tokens 中一次返回 5 条证据，形成“阈值判断 -> 故障机理 -> 案例现象 -> 检修措施 -> 复机结果”的审计链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `{validation["screenshot"]}` |
+| 挑战杯现场答辩复核 | 评委需要在有限时间内确认项目是否只是静态展示。 | 先看本页，再打开固定案例报告和 browser smoke 截图，快速核验问题、证据、边界和复现命令。 | 答辩评委、指导教师 | 3-5 分钟内可定位应用场景、证据来源和边界声明，降低口头陈述不可复核风险。 | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+
+## 边界声明
+
+- 本项目是证据型辅助，不替代工程师做最终运维或维修决策。
+- 当前验证使用公开演示快照和 4 本 OCR 质量较稳定的燃气轮机材料，不代表覆盖真实生产全场景。
+- Browser smoke 证明本地演示与关键资源可用，不等同于生产压测或上线验收。
+- 不声称 RAG / GraphRAG 对所有问题都优于人工或其他检索方法；高风险维修必须人工确认。
+
+## 下一步专家反馈采集
+
+1. 让指导教师或行业背景同学按固定场景独立复核一次，记录其是否能在 5 分钟内找到关键证据。
+2. 将反馈分为“证据链完整”“术语解释清楚”“边界是否严谨”“仍需补充数据”四项。
+3. 若获得真实签字或邮件反馈，将扫描件或摘要加入 `docs/challenge_cup/reproducibility/application_validation_report.md`，并重新运行 readiness gate。
+"""
+
+
+def build_application_validation_report(ctx: dict[str, Any]) -> str:
+    validation = ctx["validation"]
+    return f"""# 应用验证报告
+
+## 固定案例
+
+- 案例名称：燃气轮机异常振动诊断证据链。
+- 输入问题：{validation["query"]}。
+- 演示集合：gas_turbine_ocr_demo_snapshot。
+- 检索结果：{validation["search_meta"]}。
+- 复核入口：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`；`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`；`{validation["screenshot"]}`。
+
+## 证据链
+
+| 步骤 | record | 证据作用 | 人工判断 |
+| --- | --- | --- | --- |
+| 阈值判断 | `demo-maint-thresholds-076` | 给出排气温度散布度、轴承振动、滑油金属颗粒、压气机效率衰减等关键监测阈值。 | 作为异常振动和早期故障诊断线索，不能单独构成停机决策。 |
+| 故障机理 | `demo-structure-fault-130` | 说明结构强度故障与不正常振动、停机风险之间的关系。 | 用于解释为什么振动异常需要结合机械损伤风险审查。 |
+| 案例现象 | `demo-gt07-fault-021` | GT-07 升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 到 7.2 mm/s，并触发“压气机出口温度偏高”报警。 | 现象层证据，提示压气机出口温度偏高和振动异常需要联合分析。 |
+| 检修结果 | `demo-gt07-repair-022` | 停机检查发现进气滤网压差偏高、滤网局部堵塞、压气机前三级叶片积灰；清理进气滤网、安排压气机叶片离线清洗并复位温度传感器后，温度回落至 438°C，振动值降至 3.1 mm/s。 | 形成“原因 -> 措施 -> 复机结果”的闭环证据。 |
+| 处置建议 | `demo-gt07-manual-023` | 给出压气机出口温度偏高的常见原因：进气阻力增大、压气机叶片污染和温度传感器漂移；建议检查进气滤网、清洗压气机叶片、校验温度传感器。 | 可作为检修清单草案，必须由工程师结合现场工况人工确认。 |
+
+## 半量化收益
+
+- 系统在演示快照中从 2,655 个向量片段、约 1,185,989 tokens 中返回 5 条证据结果，检索延迟为 42.10 ms。
+- 人工原流程需要分别查找阈值、故障机理、案例现象、检修结果和处置建议；系统辅助后把这五类证据组织到同一页结果中。
+- 对结项和挑战杯答辩的价值是：评委可以沿 record id 复核证据链，避免只听“系统能诊断”的口头承诺。
+
+## 边界结论
+
+本案例证明系统能辅助完成异常振动诊断的证据整理和来源追溯，但不证明它可以替代工程师做最终维修决策。GT-07 案例中的进气滤网、压气机叶片和温度传感器判断仍必须结合真实现场数据、设备规程和人工确认。
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -546,6 +634,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
+- 应用场景与专家验证：`{md_link(APPLICATION_VALIDATION_DOC)}`。
+- 应用验证报告：`{md_link(APPLICATION_VALIDATION_REPORT)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -573,6 +663,8 @@ python scripts/extend_challenge_cup_eval_questions.py
 
 python scripts/build_challenge_cup_package.py
 -> Wrote docs/challenge_cup with 60 evaluation questions
+-> docs/challenge_cup/11_应用场景与专家验证.md
+-> docs/challenge_cup/reproducibility/application_validation_report.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
@@ -616,7 +708,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (13/13 gates)
+-> Status: pass (14/14 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -637,6 +729,8 @@ def main() -> int:
     write(AWARD_SELF_EVAL, build_award_self_eval(ctx))
     write(EXPERT_REVIEW_INDEX, build_expert_review_index(ctx))
     write(DEFENSE_REHEARSAL_CARD, build_defense_rehearsal_card(ctx))
+    write(APPLICATION_VALIDATION_DOC, build_application_validation_doc(ctx))
+    write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -647,6 +741,8 @@ def main() -> int:
         md_link(AWARD_SELF_EVAL),
         md_link(EXPERT_REVIEW_INDEX),
         md_link(DEFENSE_REHEARSAL_CARD),
+        md_link(APPLICATION_VALIDATION_DOC),
+        md_link(APPLICATION_VALIDATION_REPORT),
         md_link(LIVE_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_JSON),

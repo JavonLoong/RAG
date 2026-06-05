@@ -37,10 +37,12 @@ REQUIRED_PACKAGE_FILES = [
     "08_特等奖评审自评表.md",
     "09_专家快速审阅索引.md",
     "10_答辩攻防与彩排卡.md",
+    "11_应用场景与专家验证.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
+    "reproducibility/application_validation_report.md",
     "reproducibility/command_log.md",
 ]
 
@@ -88,16 +90,30 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "08_特等奖评审自评表.md" in readme
     assert "09_专家快速审阅索引.md" in readme
     assert "10_答辩攻防与彩排卡.md" in readme
+    assert "11_应用场景与专家验证.md" in readme
+    assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     claim_matrix = (PACKAGE_DIR / "07_评审主张证据矩阵.md").read_text(encoding="utf-8")
-    for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用边界"]:
+    for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用验证", "应用边界"]:
         assert phrase in claim_matrix
     for evidence in [
         "evaluation/system_eval_questions.jsonl",
+        "11_应用场景与专家验证.md",
+        "application_validation_report.md",
         "browser_demo_smoke_report.md",
         "readiness_gate_report.md",
     ]:
         assert evidence in claim_matrix
+    application_validation = (PACKAGE_DIR / "11_应用场景与专家验证.md").read_text(encoding="utf-8")
+    for phrase in ["固定应用场景", "人工原流程", "系统辅助后流程", "验证角色", "量化收益", "边界声明"]:
+        assert phrase in application_validation
+    for evidence in ["application_validation_report.md", "browser_demo_smoke_report.json", "desktop_search_results.png"]:
+        assert evidence in application_validation
+    application_report = (PACKAGE_DIR / "reproducibility" / "application_validation_report.md").read_text(encoding="utf-8")
+    for phrase in ["GT-07", "压气机出口温度偏高", "进气滤网", "压气机叶片", "温度传感器", "人工确认"]:
+        assert phrase in application_report
+    for evidence in ["demo-gt07-fault-021", "demo-gt07-repair-022", "demo-gt07-manual-023"]:
+        assert evidence in application_report
     award_self_eval = (PACKAGE_DIR / "08_特等奖评审自评表.md").read_text(encoding="utf-8")
     for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "特等奖不超过6件"]:
         assert phrase in award_self_eval
@@ -136,6 +152,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
+    assert "application_validation_report.md" in manifest
+    assert "11_应用场景与专家验证.md" in manifest
     assert "readiness_gate_report.md" in manifest
     assert "evidence_hashes.json" in manifest
     assert "evaluation_coverage_profile.json" in manifest
@@ -172,6 +190,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/08_特等奖评审自评表.md" in evidence_files
     assert "docs/challenge_cup/09_专家快速审阅索引.md" in evidence_files
     assert "docs/challenge_cup/10_答辩攻防与彩排卡.md" in evidence_files
+    assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
@@ -201,6 +221,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "README_先看这里.md",
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
+        PACKAGE_DIR / "11_应用场景与专家验证.md",
+        PACKAGE_DIR / "reproducibility" / "application_validation_report.md",
         PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
         PACKAGE_DIR / "package_manifest.json",
     ]

@@ -49,6 +49,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "mobile console health" in report
     assert "60 evaluation questions" in report
     assert "evaluation coverage profile" in report
+    assert "application validation evidence" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -177,6 +178,21 @@ def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tm
 
     assert not check.passed
     assert "question_count" in check.detail
+
+
+def test_application_validation_gate_rejects_missing_case_terms(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    validation_doc = tmp_path / "11_应用场景与专家验证.md"
+    validation_doc.write_text("# 应用场景\n\n只有泛泛描述。\n", encoding="utf-8")
+    validation_report = tmp_path / "application_validation_report.md"
+    validation_report.write_text("# 应用验证报告\n\n缺少固定案例证据。\n", encoding="utf-8")
+    monkeypatch.setattr(module, "APPLICATION_VALIDATION_DOC", validation_doc)
+    monkeypatch.setattr(module, "APPLICATION_VALIDATION_REPORT", validation_report)
+
+    check = module.check_application_validation_evidence()
+
+    assert not check.passed
+    assert "GT-07" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

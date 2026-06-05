@@ -21,11 +21,13 @@ CLAIM_MATRIX = PACKAGE_DIR / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
+APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 DATASET_RELATIVE = "evaluation/system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO_DIR / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO_DIR / "evaluation_coverage_profile.json"
+APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
 
 REQUIRED_PACKAGE_DOCS = [
     "README_先看这里.md",
@@ -40,10 +42,12 @@ REQUIRED_PACKAGE_DOCS = [
     "08_特等奖评审自评表.md",
     "09_专家快速审阅索引.md",
     "10_答辩攻防与彩排卡.md",
+    "11_应用场景与专家验证.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
+    "reproducibility/application_validation_report.md",
     "reproducibility/command_log.md",
 ]
 EVAL_COVERAGE_MINIMUMS = {
@@ -86,8 +90,11 @@ REQUIRED_CLAIM_MATRIX_TERMS = {
     "工程闭环",
     "科学评测",
     "可复现",
+    "应用验证",
     "应用边界",
     "evaluation/system_eval_questions.jsonl",
+    "11_应用场景与专家验证.md",
+    "application_validation_report.md",
     "browser_demo_smoke_report.md",
     "readiness_gate_report.md",
 }
@@ -124,6 +131,30 @@ REQUIRED_DEFENSE_REHEARSAL_TERMS = {
     "08_特等奖评审自评表.md",
     "readiness_gate_report.md",
     "browser_demo_smoke_report.md",
+}
+REQUIRED_APPLICATION_VALIDATION_TERMS = {
+    "固定应用场景",
+    "人工原流程",
+    "系统辅助后流程",
+    "验证角色",
+    "量化收益",
+    "边界声明",
+    "application_validation_report.md",
+    "browser_demo_smoke_report.json",
+    "desktop_search_results.png",
+}
+REQUIRED_APPLICATION_REPORT_TERMS = {
+    "GT-07",
+    "压气机出口温度偏高",
+    "进气滤网",
+    "压气机叶片",
+    "温度传感器",
+    "人工确认",
+    "demo-maint-thresholds-076",
+    "demo-structure-fault-130",
+    "demo-gt07-fault-021",
+    "demo-gt07-repair-022",
+    "demo-gt07-manual-023",
 }
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 
@@ -458,6 +489,28 @@ def check_defense_rehearsal_card() -> GateCheck:
     )
 
 
+def check_application_validation_evidence() -> GateCheck:
+    if not APPLICATION_VALIDATION_DOC.exists():
+        return GateCheck("application validation evidence", False, "11_应用场景与专家验证.md missing")
+    if not APPLICATION_VALIDATION_REPORT.exists():
+        return GateCheck("application validation evidence", False, "application_validation_report.md missing")
+    doc_text = APPLICATION_VALIDATION_DOC.read_text(encoding="utf-8")
+    report_text = APPLICATION_VALIDATION_REPORT.read_text(encoding="utf-8")
+    missing_terms = sorted(term for term in REQUIRED_APPLICATION_VALIDATION_TERMS if term not in doc_text)
+    missing_terms.extend(sorted(term for term in REQUIRED_APPLICATION_REPORT_TERMS if term not in report_text))
+    evidence_paths = extract_markdown_code_span_paths(doc_text + "\n" + report_text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing = missing_terms + missing_paths
+    return GateCheck(
+        "application validation evidence",
+        not missing,
+        f"fixed GT-07 application case, evidence records, benefits, and boundaries verified; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing application validation terms or evidence paths: {', '.join(missing)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
@@ -470,6 +523,7 @@ def run_gate() -> list[GateCheck]:
         check_award_self_eval(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
+        check_application_validation_evidence(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
@@ -488,7 +542,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

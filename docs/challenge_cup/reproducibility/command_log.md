@@ -10,6 +10,8 @@ python scripts/extend_challenge_cup_eval_questions.py
 
 python scripts/build_challenge_cup_package.py
 -> Wrote docs/challenge_cup with 60 evaluation questions
+-> docs/challenge_cup/11_应用场景与专家验证.md
+-> docs/challenge_cup/reproducibility/application_validation_report.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
@@ -53,7 +55,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (13/13 gates)
+-> Status: pass (14/14 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
