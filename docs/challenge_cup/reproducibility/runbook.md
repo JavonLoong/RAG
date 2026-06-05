@@ -58,6 +58,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <真实专家反馈附件路径> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场
 ```
 
+真实外发专家反馈请求后，先记录外发凭证；这不等同于专家反馈硬证据：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <真实外发邮件或聊天凭证路径> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension 实用性 --requested-review-dimension 创新性 --requested-review-dimension 边界严谨性 --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach
+```
+
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
@@ -73,6 +79,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ## 刷新硬证据台账
 
 ```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 

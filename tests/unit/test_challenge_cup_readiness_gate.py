@@ -88,6 +88,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "defense rehearsal scorecard" in report
     assert "defense rehearsal result packet" in report
     assert "expert feedback request packet" in report
+    assert "expert feedback outreach ledger" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -696,6 +697,99 @@ def test_expert_feedback_request_packet_gate_rejects_claimed_approval(monkeypatc
 
     assert not check.passed
     assert "no_external_feedback_claimed" in check.detail
+
+
+def test_expert_feedback_outreach_ledger_gate_rejects_overclaim_and_invalid_metadata(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    module = load_readiness_module()
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+
+    ledger_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "expert_feedback_outreach_ledger.json"
+    ledger_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "expert_feedback_outreach_ledger.md"
+    outreach_readme = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "expert_feedback_outreach" / "README.md"
+    metadata_relative = "docs/challenge_cup/reproducibility/expert_feedback_outreach/advisor-a-20260606.json"
+    metadata_path = tmp_path / metadata_relative
+    metadata_path.parent.mkdir(parents=True)
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "outreach_type": "expert_feedback_request",
+                "recipient_alias": "advisor-a",
+                "recipient_role": "advisor",
+                "channel": "email",
+                "sent_date": "June 6 2026",
+                "status": "sent",
+                "request_source_path": metadata_relative,
+                "requested_review_dimensions": ["practicality"],
+                "requested_attachment_paths": ["docs/challenge_cup/00_项目一页纸.md"],
+                "followup_due_date": "2026/06/09",
+                "no_external_feedback_claimed": False,
+                "does_not_satisfy_hard_evidence": False,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    ledger_json.parent.mkdir(parents=True, exist_ok=True)
+    ledger_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_expert_feedback_outreach_ledger",
+                "status": "outreach_recorded_awaiting_response",
+                "no_external_feedback_claimed": False,
+                "does_not_satisfy_goal_completion": False,
+                "boundary": module.EXPERT_FEEDBACK_OUTREACH_LEDGER_BOUNDARY,
+                "outreach_record_count": 1,
+                "metadata_record_count": 1,
+                "outreach_files": [metadata_relative],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    ledger_md.write_text(
+        "Expert Feedback Outreach Ledger\n"
+        "Outreach records prove that a real request was sent or followed up.\n"
+        "They do not prove expert approval.\n",
+        encoding="utf-8",
+    )
+    outreach_readme.write_text("Expert Feedback Outreach Intake\n", encoding="utf-8")
+    package_manifest = tmp_path / "package_manifest.json"
+    evidence_files = [
+        "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.md",
+        "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json",
+        "docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md",
+        metadata_relative,
+    ]
+    package_manifest.write_text(json.dumps({"evidence_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    evidence_hashes = tmp_path / "evidence_hashes.json"
+    evidence_hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in evidence_files]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive_manifest = tmp_path / "archive_manifest.json"
+    archive_manifest.write_text(json.dumps({"included_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON", ledger_json)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_OUTREACH_LEDGER_MD", ledger_md)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_OUTREACH_README", outreach_readme)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", package_manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", evidence_hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(evidence_files))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_expert_feedback_outreach_ledger()
+
+    assert not check.passed
+    assert "no_external_feedback_claimed" in check.detail
+    assert "does_not_satisfy_goal_completion" in check.detail
+    assert "does_not_satisfy_hard_evidence" in check.detail
+    assert "sent_date" in check.detail
+    assert "followup_due_date" in check.detail
+    assert "request_source_path" in check.detail
+    assert "requested_review_dimensions" in check.detail
 
 
 def test_hard_evidence_ledger_gate_rejects_fake_completion(monkeypatch, tmp_path) -> None:

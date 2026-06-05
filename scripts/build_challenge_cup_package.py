@@ -28,6 +28,12 @@ from build_expert_feedback_request_packet import (
     build_payload as build_expert_request_payload,
     write_outputs as write_expert_request_outputs,
 )
+from build_challenge_cup_expert_outreach_ledger import (
+    OUTPUT_JSON as EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON,
+    OUTPUT_MD as EXPERT_FEEDBACK_OUTREACH_LEDGER_MD,
+    OUTREACH_README as EXPERT_FEEDBACK_OUTREACH_README,
+    write_outputs as write_expert_outreach_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -331,10 +337,11 @@ def build_readme(ctx: dict[str, Any]) -> str:
 22. `reproducibility/defense_rehearsal_scorecard.md`
 23. `reproducibility/defense_rehearsal_result_packet.md`
 24. `reproducibility/expert_feedback_request_packet.md`
-25. `reproducibility/official_rubric_alignment.md`
-26. `reproducibility/hard_evidence_ledger.md`
-27. `reproducibility/challenge_cup_submission_archive_manifest.json`
-28. `reproducibility/challenge_cup_submission_package.zip`
+25. `reproducibility/expert_feedback_outreach_ledger.md`
+26. `reproducibility/official_rubric_alignment.md`
+27. `reproducibility/hard_evidence_ledger.md`
+28. `reproducibility/challenge_cup_submission_archive_manifest.json`
+29. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -919,6 +926,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <真实专家反馈附件路径> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场
 ```
 
+真实外发专家反馈请求后，先记录外发凭证；这不等同于专家反馈硬证据：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <真实外发邮件或聊天凭证路径> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension 实用性 --requested-review-dimension 创新性 --requested-review-dimension 边界严谨性 --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach
+```
+
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
@@ -934,6 +947,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ## 刷新硬证据台账
 
 ```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 
@@ -964,6 +978,9 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- 硬证据归档入口：`{md_link(HARD_EVIDENCE_README)}`",
             f"- 真实专家反馈归档入口：`{md_link(HARD_EVIDENCE_EXPERT_README)}`",
             f"- 真实计时彩排归档入口：`{md_link(HARD_EVIDENCE_REHEARSAL_README)}`",
+            f"- 专家反馈外发追踪台账：`{md_link(EXPERT_FEEDBACK_OUTREACH_LEDGER_MD)}`",
+            f"- 专家反馈外发追踪 JSON：`{md_link(EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON)}`",
+            f"- 专家反馈外发追踪入口：`{md_link(EXPERT_FEEDBACK_OUTREACH_README)}`",
         ]
     )
 
@@ -1108,6 +1125,10 @@ python scripts/build_expert_feedback_request_packet.py
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 
+python scripts/build_challenge_cup_expert_outreach_ledger.py
+-> docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.md
+-> docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -1159,6 +1180,7 @@ def main() -> int:
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write_defense_result_outputs(build_defense_result_payload())
     write_expert_request_outputs(build_expert_request_payload())
+    expert_outreach_payload = write_expert_outreach_outputs()
     write_official_rubric_alignment_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
@@ -1191,6 +1213,10 @@ def main() -> int:
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_JSON),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_MD),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_JSON),
+        md_link(EXPERT_FEEDBACK_OUTREACH_LEDGER_MD),
+        md_link(EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON),
+        md_link(EXPERT_FEEDBACK_OUTREACH_README),
+        *expert_outreach_payload.get("outreach_files", []),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
         md_link(HARD_EVIDENCE_LEDGER_MD),

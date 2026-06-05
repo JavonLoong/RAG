@@ -30,10 +30,11 @@
 22. `reproducibility/defense_rehearsal_scorecard.md`
 23. `reproducibility/defense_rehearsal_result_packet.md`
 24. `reproducibility/expert_feedback_request_packet.md`
-25. `reproducibility/official_rubric_alignment.md`
-26. `reproducibility/hard_evidence_ledger.md`
-27. `reproducibility/challenge_cup_submission_archive_manifest.json`
-28. `reproducibility/challenge_cup_submission_package.zip`
+25. `reproducibility/expert_feedback_outreach_ledger.md`
+26. `reproducibility/official_rubric_alignment.md`
+27. `reproducibility/hard_evidence_ledger.md`
+28. `reproducibility/challenge_cup_submission_archive_manifest.json`
+29. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 

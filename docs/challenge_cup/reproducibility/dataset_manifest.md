@@ -57,3 +57,6 @@
 - 硬证据归档入口：`docs/challenge_cup/reproducibility/hard_evidence/README.md`
 - 真实专家反馈归档入口：`docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md`
 - 真实计时彩排归档入口：`docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md`
+- 专家反馈外发追踪台账：`docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.md`
+- 专家反馈外发追踪 JSON：`docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json`
+- 专家反馈外发追踪入口：`docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md`

@@ -31,6 +31,15 @@ DEFENSE_REHEARSAL_RESULT_PACKET_MD = REPRO_DIR / "defense_rehearsal_result_packe
 DEFENSE_REHEARSAL_RESULT_PACKET_JSON = REPRO_DIR / "defense_rehearsal_result_packet.json"
 EXPERT_FEEDBACK_REQUEST_PACKET_MD = REPRO_DIR / "expert_feedback_request_packet.md"
 EXPERT_FEEDBACK_REQUEST_PACKET_JSON = REPRO_DIR / "expert_feedback_request_packet.json"
+EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.md"
+)
+EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json"
+)
+EXPERT_FEEDBACK_OUTREACH_README_RELATIVE = (
+    "docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md"
+)
 HARD_EVIDENCE_LEDGER_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.md"
 HARD_EVIDENCE_LEDGER_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.json"
 HARD_EVIDENCE_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/README.md"
@@ -38,6 +47,9 @@ HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
 OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
+EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
+EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
 HARD_EVIDENCE_LEDGER_MD = REPO_ROOT / HARD_EVIDENCE_LEDGER_MD_RELATIVE
 HARD_EVIDENCE_LEDGER_JSON = REPO_ROOT / HARD_EVIDENCE_LEDGER_JSON_RELATIVE
 HARD_EVIDENCE_README = REPO_ROOT / HARD_EVIDENCE_README_RELATIVE
@@ -51,6 +63,11 @@ HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_README_RELATIVE,
     HARD_EVIDENCE_EXPERT_README_RELATIVE,
     HARD_EVIDENCE_REHEARSAL_README_RELATIVE,
+]
+EXPERT_FEEDBACK_OUTREACH_REQUIRED_PATHS = [
+    EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE,
+    EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE,
+    EXPERT_FEEDBACK_OUTREACH_README_RELATIVE,
 ]
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
@@ -113,6 +130,16 @@ EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
     "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
     "or production validation."
 )
+EXPERT_FEEDBACK_OUTREACH_LEDGER_BOUNDARY = (
+    "Outreach records prove that a real request was sent or followed up. They do not prove expert "
+    "approval and do not satisfy the expert_feedback hard-evidence requirement."
+)
+EXPERT_FEEDBACK_OUTREACH_STATUSES = {
+    "ready_to_send_no_outreach_recorded",
+    "outreach_recorded_awaiting_response",
+}
+EXPERT_FEEDBACK_OUTREACH_METADATA_STATUSES = {"sent", "followed_up", "no_response_yet", "declined"}
+EXPERT_FEEDBACK_OUTREACH_CHANNELS = {"email", "chat", "meeting", "phone", "in_person"}
 DEFENSE_DECK_REQUIRED_TERMS = {"GraphRAG", "GT-07", "60", "readiness", "专家反馈"}
 DEFENSE_DECK_NOTES_REQUIRED_TERMS = {
     "90秒开场",
@@ -161,6 +188,9 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/expert_feedback_outreach_ledger.md",
+    "reproducibility/expert_feedback_outreach_ledger.json",
+    "reproducibility/expert_feedback_outreach/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
     "reproducibility/hard_evidence_ledger.md",
@@ -1910,6 +1940,170 @@ def check_expert_feedback_request_packet() -> GateCheck:
     )
 
 
+def validate_expert_feedback_outreach_metadata(relative: str, payload: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if payload.get("outreach_type") != "expert_feedback_request":
+        failures.append(f"{relative}: outreach_type={payload.get('outreach_type')}")
+    for field in (
+        "recipient_alias",
+        "recipient_role",
+        "channel",
+        "sent_date",
+        "status",
+        "request_source_path",
+        "requested_review_dimensions",
+        "requested_attachment_paths",
+    ):
+        if not has_value(payload.get(field)):
+            failures.append(f"{relative}: {field} missing")
+    channel = str(payload.get("channel", ""))
+    if channel and channel not in EXPERT_FEEDBACK_OUTREACH_CHANNELS:
+        failures.append(f"{relative}: channel={channel}")
+    status = str(payload.get("status", ""))
+    if status and status not in EXPERT_FEEDBACK_OUTREACH_METADATA_STATUSES:
+        failures.append(f"{relative}: status={status}")
+    if payload.get("no_external_feedback_claimed") is not True:
+        failures.append(f"{relative}: no_external_feedback_claimed={payload.get('no_external_feedback_claimed')}")
+    if payload.get("does_not_satisfy_hard_evidence") is not True:
+        failures.append(
+            f"{relative}: does_not_satisfy_hard_evidence={payload.get('does_not_satisfy_hard_evidence')}"
+        )
+    if not is_iso_date(payload.get("sent_date")):
+        failures.append(f"{relative}: sent_date must be YYYY-MM-DD")
+    followup_due = payload.get("followup_due_date")
+    if has_value(followup_due) and not is_iso_date(followup_due):
+        failures.append(f"{relative}: followup_due_date must be YYYY-MM-DD")
+    failures.extend(validate_source_path(relative, payload, "request_source_path"))
+
+    dimensions = payload.get("requested_review_dimensions")
+    if not isinstance(dimensions, list) or len(dimensions) < HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS:
+        failures.append(f"{relative}: requested_review_dimensions below {HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS}")
+
+    attachments = payload.get("requested_attachment_paths")
+    if not isinstance(attachments, list) or not attachments:
+        failures.append(f"{relative}: requested_attachment_paths missing")
+    else:
+        for attachment in attachments:
+            attachment_path = str(attachment)
+            posix = PurePosixPath(attachment_path)
+            if posix.is_absolute() or ".." in posix.parts or "\\" in attachment_path:
+                failures.append(f"{relative}: requested_attachment_paths unsafe: {attachment_path}")
+            elif not nonempty(REPO_ROOT / attachment_path):
+                failures.append(f"{relative}: requested_attachment_paths missing or empty: {attachment_path}")
+    return failures
+
+
+def check_expert_feedback_outreach_ledger() -> GateCheck:
+    failures: list[str] = []
+    required_files = [
+        EXPERT_FEEDBACK_OUTREACH_LEDGER_MD,
+        EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON,
+        EXPERT_FEEDBACK_OUTREACH_README,
+    ]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("expert feedback outreach ledger", False, f"missing or empty: {missing_files}")
+
+    payload = load_json(EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON)
+    markdown = EXPERT_FEEDBACK_OUTREACH_LEDGER_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_expert_feedback_outreach_ledger":
+        failures.append(f"report_type={payload.get('report_type')}")
+    status = str(payload.get("status", ""))
+    if status not in EXPERT_FEEDBACK_OUTREACH_STATUSES:
+        failures.append(f"status={status}")
+    if payload.get("no_external_feedback_claimed") is not True:
+        failures.append(f"no_external_feedback_claimed={payload.get('no_external_feedback_claimed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("boundary") != EXPERT_FEEDBACK_OUTREACH_LEDGER_BOUNDARY:
+        failures.append("boundary mismatch")
+
+    outreach_files = [str(item) for item in payload.get("outreach_files", [])]
+    metadata_files = [relative for relative in outreach_files if relative.lower().endswith(".json")]
+    if int(payload.get("outreach_record_count") or 0) != len(outreach_files):
+        failures.append("outreach_record_count mismatch")
+    if int(payload.get("metadata_record_count") or 0) != len(metadata_files):
+        failures.append("metadata_record_count mismatch")
+    if outreach_files and status != "outreach_recorded_awaiting_response":
+        failures.append(f"status={status} while outreach files exist")
+    if not outreach_files and status != "ready_to_send_no_outreach_recorded":
+        failures.append(f"status={status} while no outreach files exist")
+
+    unsafe_paths: list[str] = []
+    missing_paths: list[str] = []
+    metadata_failures: list[str] = []
+    for relative in outreach_files:
+        posix = PurePosixPath(relative)
+        if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+            unsafe_paths.append(relative)
+            continue
+        path = REPO_ROOT / relative
+        if not nonempty(path):
+            missing_paths.append(relative)
+            continue
+        if relative.lower().endswith(".json"):
+            try:
+                metadata = load_json(path)
+            except (OSError, json.JSONDecodeError) as exc:
+                metadata_failures.append(f"{relative}: invalid metadata json: {exc}")
+                continue
+            metadata_failures.extend(validate_expert_feedback_outreach_metadata(relative, metadata))
+    if unsafe_paths:
+        failures.append(f"unsafe outreach paths: {unsafe_paths}")
+    if missing_paths:
+        failures.append(f"outreach files missing or empty: {missing_paths}")
+    failures.extend(metadata_failures)
+
+    missing_markdown_terms = sorted(
+        term
+        for term in (
+            "Expert Feedback Outreach Ledger",
+            "do not prove expert approval",
+            EXPERT_FEEDBACK_OUTREACH_LEDGER_BOUNDARY,
+        )
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    required_and_outreach = EXPERT_FEEDBACK_OUTREACH_REQUIRED_PATHS + outreach_files
+    missing_manifest = sorted(path for path in required_and_outreach if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in required_and_outreach if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in required_and_outreach if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in required_and_outreach if path not in tracked]
+    dirty = sorted(git_dirty_paths(required_and_outreach))
+    if untracked:
+        failures.append(f"untracked expert outreach files: {untracked}")
+    if dirty:
+        failures.append(f"dirty expert outreach files: {dirty}")
+
+    return GateCheck(
+        "expert feedback outreach ledger",
+        not failures,
+        f"outreach ledger schema, boundary, {len(outreach_files)} outreach files, and manifest/hash/archive links verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], category: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     accepted_types = {str(item) for item in category.get("accepted_evidence_types", [])}
@@ -2243,6 +2437,7 @@ def run_gate() -> list[GateCheck]:
         check_defense_rehearsal_scorecard(),
         check_defense_rehearsal_result_packet(),
         check_expert_feedback_request_packet(),
+        check_expert_feedback_outreach_ledger(),
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
@@ -2266,7 +2461,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
