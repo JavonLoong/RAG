@@ -13,10 +13,10 @@
 | package evidence files | pass | 35 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 34 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | numeric consistency | pass | 60 questions, 35 evidence files, and 5 visible search records are consistent |
-| graphrag evidence audit | pass | 9 supported, 1 partial, 0 missing cases over 244 triples |
+| graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
-| graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=9, partial=1, missing=0, graph_avg=0.8 |
-| graphrag gap remediation plan | pass | 1 partial/missing cases converted into remediation tasks |
+| graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |
+| graphrag gap remediation plan | pass | local GraphRAG evidence gaps closed; 0 remediation tasks remain |
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 24 evidence links verified |
 | acceptance checklist | pass | submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; 13 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 16 evidence links verified |

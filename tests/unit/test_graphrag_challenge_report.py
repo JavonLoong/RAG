@@ -33,9 +33,10 @@ def test_build_graphrag_challenge_report_outputs_subset_metrics() -> None:
     assert payload["graph_evidence_source"].endswith("triples.csv")
     assert payload["graph_evidence_supplement"] == SUPPLEMENT
     assert payload["base_graph_triple_count"] == 240
-    assert payload["manual_evidence_supplement_count"] >= 4
+    assert payload["manual_evidence_supplement_count"] >= 5
     assert payload["graph_triple_count"] == payload["base_graph_triple_count"] + payload["manual_evidence_supplement_count"]
-    assert payload["graph_evidence_supported_case_count"] >= 7
+    assert payload["graph_evidence_supported_case_count"] == 10
+    assert payload["graph_evidence_partial_case_count"] == 0
     assert payload["graph_evidence_missing_case_count"] == 0
     assert payload["graph_evidence_boundary"] == (
         "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
@@ -50,6 +51,16 @@ def test_build_graphrag_challenge_report_outputs_subset_metrics() -> None:
         assert cases[case_id]["matched_graph_evidence"]
     assert cases["cc035"]["graph_matchable_keyword_count"] == 2
     assert cases["cc035"]["ignored_graph_keywords"] == ["27", "26", "1", "0"]
+    assert cases["cc056"]["graph_evidence_status"] == "supported"
+    assert cases["cc056"]["graph_evidence_coverage"] == 1.0
+    assert set(cases["cc056"]["matched_graph_keywords"]) == {
+        "related_to",
+        "关系类型",
+        "原因",
+        "症状",
+        "处理措施",
+        "过滤",
+    }
     markdown = REPORT_MD.read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in markdown
     assert "Graph evidence coverage audit" in markdown

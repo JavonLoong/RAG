@@ -105,15 +105,21 @@ def build_payload() -> dict[str, Any]:
     supported = sum(1 for case in cases if case["graphrag_answer_status"] == "supported")
     partial = sum(1 for case in cases if case["graphrag_answer_status"] == "partial")
     missing = sum(1 for case in cases if case["graphrag_answer_status"] == "missing")
-    summary = (
-        "manual graph evidence now closes P0 missing cases; remaining partial cases still require relation "
-        "synonym/schema work, and this does not claim online LLM answer win-rate."
-        if missing == 0 and supported >= 7
-        else (
+    if missing == 0 and partial == 0 and supported == len(cases):
+        summary = (
+            "manual graph evidence now closes all fixed GraphRAG evidence gaps; this remains a local "
+            "deterministic evidence audit and does not claim online LLM answer win-rate."
+        )
+    elif missing == 0 and supported >= 7:
+        summary = (
+            "manual graph evidence now closes P0 missing cases; remaining partial cases still require relation "
+            "synonym/schema work, and this does not claim online LLM answer win-rate."
+        )
+    else:
+        summary = (
             "GraphRAG is not yet an answer-level win-rate improvement; current value is strongest for "
             "supported relation-evidence cases, while partial/missing cases expose the next data and graph gaps."
         )
-    )
     return {
         "report_type": "challenge_cup_graphrag_answer_benchmark",
         "benchmark_mode": "deterministic_offline_reference_keyword_coverage",
@@ -156,7 +162,11 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- P0 missing 已补证: `{payload['graphrag_missing_answer_case_count'] == 0 and payload['graphrag_supported_answer_case_count'] >= 7}`",
         f"- Best baseline average coverage: {payload['average_best_baseline_reference_keyword_coverage']}",
         f"- GraphRAG evidence average coverage: {payload['average_graphrag_reference_keyword_coverage']}",
-        "- 结论：不宣称 GraphRAG 全面优于 baseline；保留 partial/missing 作为下一轮补图谱和补答案评测的证据。",
+        (
+            "- All fixed GraphRAG evidence gaps closed: "
+            f"`{payload['graphrag_partial_answer_case_count'] == 0 and payload['graphrag_missing_answer_case_count'] == 0}`"
+        ),
+        "- 结论：不宣称 GraphRAG 全面优于 baseline；本报告只证明固定 GraphRAG 子集的本地证据覆盖，不证明在线 LLM answer win-rate。",
         "",
         "## 案例表",
         "",
@@ -180,18 +190,25 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             )
             + " |"
         )
-    lines.extend(
-        [
-            "",
-            "## 保留 partial/missing",
-            "",
-            "partial 和 missing 题没有被改写成成功案例；它们用于说明当前 GraphRAG evidence 仍需要补充关系、社区摘要或最终在线 answer benchmark。",
-            "",
-            "## Boundary",
-            "",
-            payload["boundary"],
-        ]
-    )
+    if payload["partial_or_missing_cases_retained"]:
+        lines.extend(
+            [
+                "",
+                "## 保留 partial/missing",
+                "",
+                "partial 和 missing 题没有被改写成成功案例；它们用于说明当前 GraphRAG evidence 仍需要补充关系、社区摘要或最终在线 answer benchmark。",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "",
+                "## All fixed GraphRAG evidence gaps closed",
+                "",
+                "固定 GraphRAG 同题子集当前没有 partial/missing 本地证据缺口；该结论仍限于离线关键词覆盖审计，不代表在线 LLM answer win-rate。",
+            ]
+        )
+    lines.extend(["", "## Boundary", "", payload["boundary"]])
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 

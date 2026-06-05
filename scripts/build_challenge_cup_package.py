@@ -366,11 +366,11 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 ## GraphRAG answer benchmark
 
-已将 10 道 GraphRAG 同题生成答案级覆盖对照，固定比较文本 baseline 参考关键词覆盖率与 triples.csv 图谱证据覆盖率，并保留 partial/missing 案例。报告位置：`{graph_answer_ref}`。该 benchmark 是 deterministic offline reference keyword coverage，不生成在线 LLM 答案，不宣称 GraphRAG 全面优于 baseline。
+已将 10 道 GraphRAG 同题生成答案级覆盖对照，固定比较文本 baseline 参考关键词覆盖率与 triples.csv 图谱证据覆盖率；当前本地证据覆盖已关闭固定子集 partial/missing 缺口。报告位置：`{graph_answer_ref}`。该 benchmark 是 deterministic offline reference keyword coverage，不生成在线 LLM 答案，不宣称 GraphRAG 全面优于 baseline。
 
 ## GraphRAG 补证整改计划
 
-已将 answer benchmark 暴露出的 partial/missing 案例转成补证整改计划，逐题给出缺失关键词、优先级、补图谱或补全局摘要动作和复跑命令。报告位置：`{graph_gap_ref}`。同时新增 manual evidence supplement：`{graph_supplement_ref}`，把 P0 missing 缺口补成可审计的人工图谱证据。该计划不宣称所有 gap 已修复，而是保留剩余 partial 案例进入下一轮工程闭环。
+已将 answer benchmark 暴露出的 partial/missing 案例转成可审计补证闭环。报告位置：`{graph_gap_ref}`。manual evidence supplement：`{graph_supplement_ref}` 已关闭 P0 missing 和 cc056 relation schema partial 缺口。该闭环只证明固定 GraphRAG 子集的本地证据覆盖，不宣称在线 LLM answer win-rate、外部专家验证或 GraphRAG 全面优于 baseline。
 
 ## 结论
 
@@ -497,7 +497,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | --- | --- | --- | --- | --- |
 | 创新性 | 项目不是单纯问答页面，而是面向动力装备知识的 evidence-bound RAG / GraphRAG 工程闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `{graph_ref}`; `docs/project_deliverables/06_四本书KG工具跑通演示/kg_evidence_viewer.html` | `python scripts/build_graphrag_challenge_report.py` | GraphRAG 用于关系证据组织，不声称在所有问题上必然优于普通 RAG。 |
 | 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
-| 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因、GraphRAG 同题子集和 partial/missing 补证整改计划。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}`; `evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py`; `python scripts/build_graphrag_gap_remediation_plan.py` | 评测集是当前阶段的课程 / 挑战杯评测集；补证计划不等于 gap 已修复。 |
+| 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因、GraphRAG 同题子集和补证闭环；固定 GraphRAG 子集当前本地证据缺口已关闭。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}`; `evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py`; `python scripts/build_graphrag_gap_remediation_plan.py` | 评测集是当前阶段的课程 / 挑战杯评测集；本地证据覆盖不等于在线 LLM 胜率或外部专家验证。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
 | 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
 | 专家反馈闭环 | 项目已准备好可发送给老师或行业专家的反馈采集表、评分维度、签字或邮件证据归档规则和整改闭环。 | `docs/challenge_cup/12_专家反馈采集与整改闭环.md`; `docs/challenge_cup/reproducibility/expert_feedback_form.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | `python scripts/check_challenge_cup_readiness.py` | 未收到真实反馈前不得宣称已通过专家验证；反馈必须按签字、邮件或会议纪要归档。 |

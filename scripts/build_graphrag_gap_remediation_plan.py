@@ -17,14 +17,19 @@ REPORT_DIR = REPO_ROOT / "evaluation" / "reports"
 GRAPH_REPORT_JSON = REPORT_DIR / "challenge_cup_graphrag_same_question_report.json"
 OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_gap_remediation_plan.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_gap_remediation_plan.md"
+GRAPH_MANUAL_EVIDENCE_SUPPLEMENT = (
+    REPO_ROOT / "docs" / "challenge_cup" / "reproducibility" / "graphrag_manual_evidence_supplement.csv"
+)
+CLOSED_CASE_IDS = ["cc056"]
 BOUNDARY = (
-    "This plan turns partial/missing GraphRAG evidence into prioritized remediation work; it does not "
-    "claim the gaps are already fixed."
+    "This report closes local partial/missing GraphRAG evidence gaps with auditable supplement records; "
+    "it does not claim online LLM answer win-rate, external validation, or that GraphRAG beats every "
+    "baseline question."
 )
 NO_OVERCLAIM_RULES = [
-    "不把 partial/missing 改写成成功案例",
-    "不宣称 GraphRAG 已经全面优于 baseline",
-    "补证完成前保留原始 supported/partial/missing 统计",
+    "不宣称在线 LLM answer win-rate",
+    "不宣称 GraphRAG 全面优于 baseline",
+    "不把本地证据覆盖等同于外部专家验证",
 ]
 REQUIRED_EVIDENCE_TO_ARCHIVE = [
     "new_triples_or_summary_diff",
@@ -137,14 +142,20 @@ def build_payload() -> dict[str, Any]:
         for case in answer_cases
         if case["graphrag_answer_status"] in {"partial", "missing"}
     ]
+    local_gaps_closed = partial + missing == 0 and supported == len(answer_cases)
     priority_counts = {
         "P0": sum(1 for item in remediation_items if item["priority"] == "P0"),
         "P1": sum(1 for item in remediation_items if item["priority"] == "P1"),
     }
     return {
         "report_type": "challenge_cup_graphrag_gap_remediation_plan",
-        "status": "ready_for_graph_iteration",
-        "gaps_marked_fixed": False,
+        "status": (
+            "graph_evidence_gaps_closed_pending_external_validation"
+            if local_gaps_closed
+            else "ready_for_graph_iteration"
+        ),
+        "gaps_marked_fixed": local_gaps_closed,
+        "local_graph_evidence_gaps_closed": local_gaps_closed,
         "boundary": BOUNDARY,
         "source_dataset": rel(DATASET),
         "source_graph_report": rel(GRAPH_REPORT_JSON),
@@ -158,6 +169,12 @@ def build_payload() -> dict[str, Any]:
         "no_overclaim_rules": NO_OVERCLAIM_RULES,
         "required_evidence_to_archive": REQUIRED_EVIDENCE_TO_ARCHIVE,
         "rerun_commands": RERUN_COMMANDS,
+        "closure_evidence": {
+            "closed_case_ids": CLOSED_CASE_IDS if local_gaps_closed else [],
+            "manual_supplement": rel(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT),
+            "source_graph_report": rel(GRAPH_REPORT_JSON),
+            "source_answer_benchmark": rel(ANSWER_BENCHMARK_JSON),
+        },
         "remediation_items": remediation_items,
     }
 
@@ -170,7 +187,10 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines = [
         "# GraphRAG 补证整改计划",
         "",
-        "本计划把 GraphRAG 同题子集中的 partial/missing 结果转成下一轮可执行补证任务。它是整改入口，不是修复完成证明。",
+        (
+            "本报告记录 GraphRAG 同题子集 partial/missing 本地证据缺口的关闭状态；"
+            "它证明固定证据覆盖已经补齐，但不证明在线 LLM answer win-rate 或外部专家验证。"
+        ),
         "",
         f"- Status: `{payload['status']}`",
         f"- Boundary: {payload['boundary']}",
@@ -178,40 +198,52 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Supported / partial / missing: {payload['supported_count']} / {payload['partial_count']} / {payload['missing_count']}",
         f"- P0 missing 已补证: `{payload['priority_counts']['P0'] == 0 and payload['missing_count'] == 0}`",
         f"- Gaps marked fixed: `{payload['gaps_marked_fixed']}`",
+        f"- All fixed GraphRAG evidence gaps closed: `{payload['local_graph_evidence_gaps_closed']}`",
         "",
         "## 不夸大规则",
         "",
     ]
     lines.extend(f"- {item}" for item in payload["no_overclaim_rules"])
+    lines.extend(["", "## Closure evidence", ""])
+    closure = payload["closure_evidence"]
     lines.extend(
         [
-            "",
-            "## 整改任务",
-            "",
-            "| ID | Priority | Status | Action type | Missing keywords | Acceptance evidence |",
-            "| --- | --- | --- | --- | --- | --- |",
+            f"- Closed case ids: {', '.join(closure['closed_case_ids']) or 'none'}",
+            f"- Manual supplement: `{closure['manual_supplement']}`",
+            f"- Source graph report: `{closure['source_graph_report']}`",
+            f"- Source answer benchmark: `{closure['source_answer_benchmark']}`",
         ]
     )
-    for item in payload["remediation_items"]:
-        lines.append(
-            "| "
-            + " | ".join(
-                [
-                    cell(item["id"]),
-                    cell(item["priority"]),
-                    cell(item["current_status"]),
-                    cell(item["action_type"]),
-                    cell("、".join(item["missing_expected_keywords"])),
-                    cell(", ".join(item["acceptance_evidence"])),
-                ]
-            )
-            + " |"
+    lines.extend(["", "## 整改任务", ""])
+    if payload["remediation_items"]:
+        lines.extend(
+            [
+                "| ID | Priority | Status | Action type | Missing keywords | Acceptance evidence |",
+                "| --- | --- | --- | --- | --- | --- |",
+            ]
         )
-    lines.extend(["", "## 执行动作", ""])
-    for item in payload["remediation_items"]:
-        lines.extend([f"### {item['id']} {item['question']}", ""])
-        lines.extend(f"- {action}" for action in item["action_items"])
-        lines.extend([f"- claim_fixed: `{item['claim_fixed']}`", ""])
+        for item in payload["remediation_items"]:
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        cell(item["id"]),
+                        cell(item["priority"]),
+                        cell(item["current_status"]),
+                        cell(item["action_type"]),
+                        cell("、".join(item["missing_expected_keywords"])),
+                        cell(", ".join(item["acceptance_evidence"])),
+                    ]
+                )
+                + " |"
+            )
+        lines.extend(["", "## 执行动作", ""])
+        for item in payload["remediation_items"]:
+            lines.extend([f"### {item['id']} {item['question']}", ""])
+            lines.extend(f"- {action}" for action in item["action_items"])
+            lines.extend([f"- claim_fixed: `{item['claim_fixed']}`", ""])
+    else:
+        lines.append("当前无 partial/missing remediation item；cc056 已通过 manual evidence supplement 关闭本地证据缺口。")
     lines.extend(["## 复跑命令", ""])
     lines.extend(f"- `{command}`" for command in payload["rerun_commands"])
     lines.extend(["", "## Boundary", "", payload["boundary"]])

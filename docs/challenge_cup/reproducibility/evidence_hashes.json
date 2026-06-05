@@ -12,8 +12,8 @@
     },
     {
       "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
-      "bytes": 4142,
-      "sha256": "f6ad843dfaca3b8613f3aed98ede08b7b5c2062b4c92f555ffa8c59f9f03d6ca"
+      "bytes": 4207,
+      "sha256": "11b0f450f2a691741726d5d384ca719899cb33b1afd0c1b5d701ee77b7b63930"
     },
     {
       "path": "docs/challenge_cup/08_特等奖评审自评表.md",
@@ -112,8 +112,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
-      "bytes": 1852,
-      "sha256": "51e08bafb05dde4fa5e936cbd522a35f18abf18a3183d4f941a830e3d9404627"
+      "bytes": 2338,
+      "sha256": "2e9ecd7bfaf2c4063b11546ae1970d5d0cdfb93dac7b25ae6476afbd26185297"
     },
     {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
@@ -122,18 +122,18 @@
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
-      "bytes": 22111,
-      "sha256": "ec22858e86d050d92f9e4b4383da79b89916bdfde386845edf45b5d5065c97fa"
+      "bytes": 22429,
+      "sha256": "662c055d8d3146ac49208e39de79d42ba7d3651698bfac296efef013c7397760"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md",
-      "bytes": 3155,
-      "sha256": "fcccfb7dac2981ee3dacb24434eaeb9e36b8e4ba78723b5f7691109e2287fe10"
+      "bytes": 3247,
+      "sha256": "5c422be19b28c2e32522c560b14d2d2ee487bcae4ea7ffa27bed38f2ff4c5e25"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.json",
-      "bytes": 41718,
-      "sha256": "dd7523da258c76bdedaa50dfe0eeb9e96deed29c5994e0c23d8460e43eee5d36"
+      "bytes": 41732,
+      "sha256": "ed0aabc3ef8e32ed867291c050f0c60e2e787e87102f4cd6d6aaa07393fec266"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.md",
@@ -142,23 +142,23 @@
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",
-      "bytes": 2562,
-      "sha256": "753f5e24c47e2047b998e6170063ba065660fb30af520c4a32a1c14c30a9f701"
+      "bytes": 1917,
+      "sha256": "82457035139b927cde3a6faae046f0fb37a84a696083c633c6f766a6d649cd00"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
-      "bytes": 1820,
-      "sha256": "0040cc5dbac69fd0b1c57369cc4849dd606d58df3387ed12c9723c4ab3458648"
+      "bytes": 1814,
+      "sha256": "52b975a1a54f4649f8b4a054704125905821f6215a15b12cce2941a3ef0816f2"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
-      "bytes": 43121,
-      "sha256": "26abeb167277d751cb081b8a23cb41562d3c6d9b5f974baab60ec067c6d1c627"
+      "bytes": 45876,
+      "sha256": "247e40d17d4337830c7d9131371a733bbd3c43c774296994ce20b594f586a482"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
-      "bytes": 3986,
-      "sha256": "d56a4433679f3ef2912455c61329c2c5c966cea025fdf5e44340df615a384c48"
+      "bytes": 3984,
+      "sha256": "81e54f3b0f2dfc8666be257a30d62f1f3161bcdb5ca9ccc9205725f9b98765bc"
     },
     {
       "path": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",

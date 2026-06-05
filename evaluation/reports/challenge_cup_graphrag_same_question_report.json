@@ -17,10 +17,10 @@
   "graph_evidence_source": "docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv",
   "graph_evidence_supplement": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
   "base_graph_triple_count": 240,
-  "manual_evidence_supplement_count": 4,
-  "graph_triple_count": 244,
-  "graph_evidence_supported_case_count": 9,
-  "graph_evidence_partial_case_count": 1,
+  "manual_evidence_supplement_count": 5,
+  "graph_triple_count": 245,
+  "graph_evidence_supported_case_count": 10,
+  "graph_evidence_partial_case_count": 0,
   "graph_evidence_missing_case_count": 0,
   "graph_evidence_boundary": "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate.",
   "priority_case_count": 6,
@@ -831,15 +831,19 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.333333,
-      "graph_evidence_coverage": 0.333333,
-      "graph_evidence_vs_best_baseline_delta": 0.0,
-      "graph_evidence_status": "partial",
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.666667,
+      "graph_evidence_status": "supported",
       "expected_evidence_keyword_count": 6,
       "graph_matchable_keyword_count": 6,
       "ignored_graph_keywords": [],
       "matched_graph_keywords": [
         "related_to",
-        "原因"
+        "关系类型",
+        "原因",
+        "处理措施",
+        "症状",
+        "过滤"
       ],
       "matched_graph_evidence": [
         {
@@ -854,6 +858,17 @@
           "evidence_preview": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃"
         },
         {
+          "keyword": "关系类型",
+          "triple_id": "CCKG-0005",
+          "subject": "知识图谱关系类型Schema",
+          "predicate": "HAS_RELATION_DESIGN_BOUNDARY",
+          "object": "中等粒度关系",
+          "source_file": "docs/project_deliverables/06_汇报材料_发群和组会/发群进度清单.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "关系类型不能全部写成 related_to：过泛会让后续检索没有语义价值；schema 应保留中等粒度，让原因、症状、处理措施、过滤等关系语义可被检索和推理使用。"
+        },
+        {
           "keyword": "原因",
           "triple_id": "FBKG-0044",
           "subject": "燃气轮机",
@@ -863,6 +878,39 @@
           "source_page": "12",
           "confidence": "0.73",
           "evidence_preview": "1在19世纪,曾有许多人提出多种燃气轮机设计方案,其中最著名的是德国人斯托尔2%(F.Stolze)F 1872年提出的热空气轮机失败的原因仍然是部件效率低和进入透平的气体温度不高所致"
+        },
+        {
+          "keyword": "症状",
+          "triple_id": "CCKG-0005",
+          "subject": "知识图谱关系类型Schema",
+          "predicate": "HAS_RELATION_DESIGN_BOUNDARY",
+          "object": "中等粒度关系",
+          "source_file": "docs/project_deliverables/06_汇报材料_发群和组会/发群进度清单.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "关系类型不能全部写成 related_to：过泛会让后续检索没有语义价值；schema 应保留中等粒度，让原因、症状、处理措施、过滤等关系语义可被检索和推理使用。"
+        },
+        {
+          "keyword": "处理措施",
+          "triple_id": "CCKG-0005",
+          "subject": "知识图谱关系类型Schema",
+          "predicate": "HAS_RELATION_DESIGN_BOUNDARY",
+          "object": "中等粒度关系",
+          "source_file": "docs/project_deliverables/06_汇报材料_发群和组会/发群进度清单.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "关系类型不能全部写成 related_to：过泛会让后续检索没有语义价值；schema 应保留中等粒度，让原因、症状、处理措施、过滤等关系语义可被检索和推理使用。"
+        },
+        {
+          "keyword": "过滤",
+          "triple_id": "CCKG-0005",
+          "subject": "知识图谱关系类型Schema",
+          "predicate": "HAS_RELATION_DESIGN_BOUNDARY",
+          "object": "中等粒度关系",
+          "source_file": "docs/project_deliverables/06_汇报材料_发群和组会/发群进度清单.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "关系类型不能全部写成 related_to：过泛会让后续检索没有语义价值；schema 应保留中等粒度，让原因、症状、处理措施、过滤等关系语义可被检索和推理使用。"
         }
       ],
       "priority_for_graph_eval": true,

@@ -47,6 +47,7 @@ def test_build_graphrag_context_demo_outputs_text_and_graph_context() -> None:
         "cc035",
         "cc043",
         "cc048",
+        "cc056",
     ]
     assert payload["demo_case_count"] == 3
     assert payload["case_ids"] == ["cc039", "cc040", "cc041"]

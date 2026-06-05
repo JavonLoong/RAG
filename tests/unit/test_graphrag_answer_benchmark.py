@@ -35,14 +35,14 @@ def test_build_graphrag_answer_benchmark_outputs_answer_level_subset_report() ->
     assert payload["dataset"] == "evaluation/system_eval_questions.jsonl"
     assert payload["source_graph_report"] == "evaluation/reports/challenge_cup_graphrag_same_question_report.json"
     assert payload["answer_benchmark_case_count"] == 10
-    assert payload["partial_or_missing_cases_retained"] is True
+    assert payload["partial_or_missing_cases_retained"] is False
     assert payload["best_baseline_method_count"] == 3
-    assert payload["graphrag_supported_answer_case_count"] >= 7
-    assert payload["graphrag_partial_answer_case_count"] >= 1
+    assert payload["graphrag_supported_answer_case_count"] == 10
+    assert payload["graphrag_partial_answer_case_count"] == 0
     assert payload["graphrag_missing_answer_case_count"] == 0
     assert 0 <= payload["average_best_baseline_reference_keyword_coverage"] <= 1
     assert 0 <= payload["average_graphrag_reference_keyword_coverage"] <= 1
-    assert "manual graph evidence now closes P0 missing cases" in payload["summary_verdict"]
+    assert "manual graph evidence now closes all fixed GraphRAG evidence gaps" in payload["summary_verdict"]
     assert "does not claim online LLM answer win-rate" in payload["summary_verdict"]
 
     cases = {case["id"]: case for case in payload["cases"]}
@@ -51,6 +51,10 @@ def test_build_graphrag_answer_benchmark_outputs_answer_level_subset_report() ->
     for case_id in ["cc032", "cc035", "cc043", "cc048"]:
         assert cases[case_id]["graphrag_answer_status"] == "supported"
         assert cases[case_id]["answer_level_verdict"] == "graph_supported"
+    assert cases["cc056"]["graphrag_answer_status"] == "supported"
+    assert cases["cc056"]["answer_level_verdict"] == "graph_supported"
+    assert cases["cc056"]["graphrag_reference_keyword_coverage"] == 1.0
+    assert cases["cc056"]["matched_graph_evidence_count"] >= 6
     for case in payload["cases"]:
         assert case["question"]
         assert case["reference_answer"]
@@ -58,14 +62,14 @@ def test_build_graphrag_answer_benchmark_outputs_answer_level_subset_report() ->
         assert case["best_baseline_method"] in {"keyword", "dense_hashing", "hybrid_rrf"}
         assert 0 <= case["best_baseline_reference_keyword_coverage"] <= 1
         assert 0 <= case["graphrag_reference_keyword_coverage"] <= 1
-        assert case["answer_level_verdict"] in {"graph_supported", "graph_partial", "graph_missing"}
+        assert case["answer_level_verdict"] == "graph_supported"
         assert case["graphrag_answer_draft"]
         assert case["boundary"] == "保留该题原始 GraphRAG 证据状态，不把 partial/missing 改写成成功案例。"
 
     markdown = REPORT_MD.read_text(encoding="utf-8")
     assert "GraphRAG answer benchmark" in markdown
     assert "10 道 GraphRAG 同题" in markdown
-    assert "保留 partial/missing" in markdown
+    assert "All fixed GraphRAG evidence gaps closed" in markdown
     assert "P0 missing 已补证" in markdown
     assert "不宣称 GraphRAG 全面优于 baseline" in markdown
     assert BOUNDARY in markdown

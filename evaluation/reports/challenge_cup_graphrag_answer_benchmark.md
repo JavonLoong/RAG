@@ -6,11 +6,12 @@
 - LLM answer generated: `False`
 - Benchmark mode: deterministic offline reference keyword coverage
 - 10 道 GraphRAG 同题：10
-- Graph supported / partial / missing: 9 / 1 / 0
+- Graph supported / partial / missing: 10 / 0 / 0
 - P0 missing 已补证: `True`
 - Best baseline average coverage: 0.633333
-- GraphRAG evidence average coverage: 0.8
-- 结论：不宣称 GraphRAG 全面优于 baseline；保留 partial/missing 作为下一轮补图谱和补答案评测的证据。
+- GraphRAG evidence average coverage: 0.866667
+- All fixed GraphRAG evidence gaps closed: `True`
+- 结论：不宣称 GraphRAG 全面优于 baseline；本报告只证明固定 GraphRAG 子集的本地证据覆盖，不证明在线 LLM answer win-rate。
 
 ## 案例表
 
@@ -25,11 +26,11 @@
 | cc041 | graphrag_global | dense_hashing | 0.833333 | 1.0 | supported | graph_supported | 燃烧室相关问题为什么适合用图谱表达部件、现象和影响之间的关系？ |
 | cc043 | graphrag_global | dense_hashing | 0.166667 | 1.0 | supported | graph_supported | 如果 GraphRAG 没有在所有题上超过 keyword baseline，应该如何解释？ |
 | cc048 | graphrag_global | keyword | 0.5 | 1.0 | supported | graph_supported | GraphRAG global 更适合回答什么类型的问题？ |
-| cc056 | graphrag_context | keyword | 0.333333 | 0.333333 | partial | graph_partial | 为什么知识图谱关系类型不能全部写成 related_to？ |
+| cc056 | graphrag_context | keyword | 0.333333 | 1.0 | supported | graph_supported | 为什么知识图谱关系类型不能全部写成 related_to？ |
 
-## 保留 partial/missing
+## All fixed GraphRAG evidence gaps closed
 
-partial 和 missing 题没有被改写成成功案例；它们用于说明当前 GraphRAG evidence 仍需要补充关系、社区摘要或最终在线 answer benchmark。
+固定 GraphRAG 同题子集当前没有 partial/missing 本地证据缺口；该结论仍限于离线关键词覆盖审计，不代表在线 LLM answer win-rate。
 
 ## Boundary
 

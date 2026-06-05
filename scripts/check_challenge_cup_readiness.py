@@ -59,8 +59,9 @@ GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
     "online LLM answer win-rate or that GraphRAG beats every baseline question."
 )
 GRAPH_GAP_REMEDIATION_BOUNDARY = (
-    "This plan turns partial/missing GraphRAG evidence into prioritized remediation work; it does not "
-    "claim the gaps are already fixed."
+    "This report closes local partial/missing GraphRAG evidence gaps with auditable supplement records; "
+    "it does not claim online LLM answer win-rate, external validation, or that GraphRAG beats every "
+    "baseline question."
 )
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
@@ -197,14 +198,15 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
 GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
     "GraphRAG answer benchmark",
     "10 道 GraphRAG 同题",
-    "保留 partial/missing",
+    "All fixed GraphRAG evidence gaps closed",
     "不宣称 GraphRAG 全面优于 baseline",
 }
 GRAPH_GAP_REMEDIATION_MARKDOWN_TERMS = {
     "GraphRAG 补证整改计划",
-    "ready_for_graph_iteration",
+    "graph_evidence_gaps_closed_pending_external_validation",
+    "All fixed GraphRAG evidence gaps closed",
     "P0 missing 已补证",
-    "不把 partial/missing 改写成成功案例",
+    "不宣称在线 LLM answer win-rate",
     "cc056",
 }
 GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE = [
@@ -702,18 +704,18 @@ def check_graphrag_same_question_evidence() -> GateCheck:
     supplement_count = int(payload.get("manual_evidence_supplement_count") or 0)
     if base_count < 240:
         failures.append(f"base_graph_triple_count below 240: {base_count}")
-    if supplement_count < 4:
-        failures.append(f"manual_evidence_supplement_count below 4: {supplement_count}")
+    if supplement_count < 5:
+        failures.append(f"manual_evidence_supplement_count below 5: {supplement_count}")
     triple_count = int(payload.get("graph_triple_count") or 0)
     if triple_count != base_count + supplement_count:
         failures.append(f"graph_triple_count mismatch: {triple_count} != {base_count}+{supplement_count}")
     supported = int(payload.get("graph_evidence_supported_case_count") or 0)
     partial = int(payload.get("graph_evidence_partial_case_count") or 0)
     missing = int(payload.get("graph_evidence_missing_case_count") or 0)
-    if supported < 9:
-        failures.append(f"graph_evidence_supported_case_count below 9: {supported}")
-    if partial < 1:
-        failures.append("graph_evidence_partial_case_count must retain remaining partial work")
+    if supported != 10:
+        failures.append(f"graph_evidence_supported_case_count must be 10 after cc056 supplement: {supported}")
+    if partial != 0:
+        failures.append(f"graph_evidence_partial_case_count must be 0 after cc056 supplement: {partial}")
     if missing != 0:
         failures.append(f"graph_evidence_missing_case_count must be 0 after P0 supplement: {missing}")
     if payload.get("graph_evidence_boundary") != GRAPH_EVIDENCE_BOUNDARY:
@@ -724,7 +726,7 @@ def check_graphrag_same_question_evidence() -> GateCheck:
         failures.append("cases must match graphrag_question_count")
         cases = []
     supported_with_hits = 0
-    p0_cases = {"cc032", "cc035", "cc043", "cc048"}
+    required_supported_cases = {"cc032", "cc035", "cc043", "cc048", "cc056"}
     for case in cases:
         missing_fields = sorted(REQUIRED_GRAPH_CASE_FIELDS - set(case))
         if missing_fields:
@@ -737,13 +739,19 @@ def check_graphrag_same_question_evidence() -> GateCheck:
         hits = case.get("matched_graph_evidence", [])
         if status == "supported" and hits:
             supported_with_hits += 1
-        if str(case.get("id")) in p0_cases and status != "supported":
-            failures.append(f"P0 gap {case.get('id')} not supported after manual supplement")
+        if str(case.get("id")) in required_supported_cases and status != "supported":
+            failures.append(f"manual supplement case {case.get('id')} not supported")
         if str(case.get("id")) == "cc035":
             if int(case.get("graph_matchable_keyword_count") or 0) != 2:
                 failures.append("cc035 graph_matchable_keyword_count must ignore pure numeric keywords")
             if case.get("ignored_graph_keywords") != ["27", "26", "1", "0"]:
                 failures.append("cc035 ignored_graph_keywords mismatch")
+        if str(case.get("id")) == "cc056":
+            if float(case.get("graph_evidence_coverage") or 0) != 1.0:
+                failures.append("cc056 graph_evidence_coverage must be 1.0 after relation schema supplement")
+            expected_keywords = {"related_to", "关系类型", "原因", "症状", "处理措施", "过滤"}
+            if set(case.get("matched_graph_keywords", [])) != expected_keywords:
+                failures.append("cc056 matched_graph_keywords mismatch")
     if supported_with_hits < 1:
         failures.append("no supported GraphRAG evidence case with matched_graph_evidence")
 
@@ -858,17 +866,17 @@ def check_graphrag_answer_benchmark() -> GateCheck:
         failures.append(f"source_graph_report={payload.get('source_graph_report')}")
     if int(payload.get("answer_benchmark_case_count") or 0) != 10:
         failures.append("answer_benchmark_case_count must be 10")
-    if payload.get("partial_or_missing_cases_retained") is not True:
-        failures.append("partial_or_missing_cases_retained must be true")
+    if payload.get("partial_or_missing_cases_retained") is not False:
+        failures.append("partial_or_missing_cases_retained must be false after cc056 supplement")
     if int(payload.get("best_baseline_method_count") or 0) != 3:
         failures.append("best_baseline_method_count must be 3")
     supported = int(payload.get("graphrag_supported_answer_case_count") or 0)
     partial = int(payload.get("graphrag_partial_answer_case_count") or 0)
     missing = int(payload.get("graphrag_missing_answer_case_count") or 0)
-    if supported < 9:
-        failures.append(f"graphrag_supported_answer_case_count below 9: {supported}")
-    if partial < 1:
-        failures.append("graphrag_partial_answer_case_count must retain remaining partial work")
+    if supported != 10:
+        failures.append(f"graphrag_supported_answer_case_count must be 10 after cc056 supplement: {supported}")
+    if partial != 0:
+        failures.append(f"graphrag_partial_answer_case_count must be 0 after cc056 supplement: {partial}")
     if missing != 0:
         failures.append(f"graphrag_missing_answer_case_count must be 0 after P0 supplement: {missing}")
     baseline_avg = float(payload.get("average_best_baseline_reference_keyword_coverage") or -1)
@@ -876,8 +884,8 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     if not (0 <= baseline_avg <= 1 and 0 <= graph_avg <= 1):
         failures.append(f"average coverage out of range: baseline={baseline_avg}, graph={graph_avg}")
     summary = str(payload.get("summary_verdict", ""))
-    if "manual graph evidence now closes P0 missing cases" not in summary:
-        failures.append("summary_verdict missing manual supplement improvement")
+    if "manual graph evidence now closes all fixed GraphRAG evidence gaps" not in summary:
+        failures.append("summary_verdict missing full manual supplement closure")
     if "does not claim online LLM answer win-rate" not in summary:
         failures.append("summary_verdict missing no-online-win-rate boundary")
 
@@ -890,13 +898,13 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     if case_ids != required_case_ids:
         failures.append(f"case ids mismatch: {sorted(case_ids)}")
     verdicts = {str(case.get("answer_level_verdict", "")) for case in cases}
-    if not {"graph_supported", "graph_partial"} <= verdicts or "graph_missing" in verdicts:
-        failures.append(f"verdicts must include supported/partial and no missing: {sorted(verdicts)}")
-    p0_cases = {"cc032", "cc035", "cc043", "cc048"}
+    if verdicts != {"graph_supported"}:
+        failures.append(f"verdicts must all be graph_supported after cc056 supplement: {sorted(verdicts)}")
+    required_supported_cases = {"cc032", "cc035", "cc043", "cc048", "cc056"}
     for case in cases:
         case_id = str(case.get("id", "<unknown>"))
-        if case_id in p0_cases and case.get("graphrag_answer_status") != "supported":
-            failures.append(f"P0 answer case {case_id} not supported")
+        if case_id in required_supported_cases and case.get("graphrag_answer_status") != "supported":
+            failures.append(f"manual supplement answer case {case_id} not supported")
         for key in ("question", "reference_answer", "expected_evidence_keywords", "graphrag_answer_draft"):
             if not case.get(key):
                 failures.append(f"case {case_id} missing {key}")
@@ -948,10 +956,18 @@ def check_graphrag_gap_remediation_plan() -> GateCheck:
 
     if payload.get("report_type") != "challenge_cup_graphrag_gap_remediation_plan":
         failures.append(f"report_type={payload.get('report_type')}")
-    if payload.get("status") != "ready_for_graph_iteration":
+    local_gaps_closed = not expected_gap_cases and expected_supported == len(benchmark_cases)
+    expected_status = (
+        "graph_evidence_gaps_closed_pending_external_validation"
+        if local_gaps_closed
+        else "ready_for_graph_iteration"
+    )
+    if payload.get("status") != expected_status:
         failures.append(f"status={payload.get('status')}")
-    if payload.get("gaps_marked_fixed") is not False:
+    if payload.get("gaps_marked_fixed") is not local_gaps_closed:
         failures.append(f"gaps_marked_fixed={payload.get('gaps_marked_fixed')}")
+    if payload.get("local_graph_evidence_gaps_closed") is not local_gaps_closed:
+        failures.append(f"local_graph_evidence_gaps_closed={payload.get('local_graph_evidence_gaps_closed')}")
     if payload.get("boundary") != GRAPH_GAP_REMEDIATION_BOUNDARY:
         failures.append("boundary mismatch")
     if payload.get("source_dataset") != DATASET_RELATIVE:
@@ -974,8 +990,25 @@ def check_graphrag_gap_remediation_plan() -> GateCheck:
         failures.append("required_evidence_to_archive mismatch")
     if payload.get("rerun_commands") != GRAPH_GAP_REQUIRED_RERUN_COMMANDS:
         failures.append("rerun_commands mismatch")
-    if "不把 partial/missing 改写成成功案例" not in payload.get("no_overclaim_rules", []):
+    if "不宣称在线 LLM answer win-rate" not in payload.get("no_overclaim_rules", []):
         failures.append("missing no-overclaim rule")
+    if "不宣称 GraphRAG 全面优于 baseline" not in payload.get("no_overclaim_rules", []):
+        failures.append("missing no-baseline-overclaim rule")
+
+    closure = payload.get("closure_evidence", {})
+    if not isinstance(closure, dict):
+        failures.append("closure_evidence missing")
+        closure = {}
+    if local_gaps_closed:
+        if closure.get("closed_case_ids") != ["cc056"]:
+            failures.append(f"closure_evidence.closed_case_ids={closure.get('closed_case_ids')}")
+        expected_supplement = GRAPH_MANUAL_EVIDENCE_SUPPLEMENT.relative_to(REPO_ROOT).as_posix()
+        if closure.get("manual_supplement") != expected_supplement:
+            failures.append(f"closure_evidence.manual_supplement={closure.get('manual_supplement')}")
+        if closure.get("source_graph_report") != GRAPH_REPORT_JSON.relative_to(REPO_ROOT).as_posix():
+            failures.append(f"closure_evidence.source_graph_report={closure.get('source_graph_report')}")
+        if closure.get("source_answer_benchmark") != GRAPH_ANSWER_BENCHMARK_JSON.relative_to(REPO_ROOT).as_posix():
+            failures.append(f"closure_evidence.source_answer_benchmark={closure.get('source_answer_benchmark')}")
 
     items = payload.get("remediation_items", [])
     if not isinstance(items, list):
@@ -1011,7 +1044,11 @@ def check_graphrag_gap_remediation_plan() -> GateCheck:
     return GateCheck(
         "graphrag gap remediation plan",
         not failures,
-        f"{len(expected_gap_cases)} partial/missing cases converted into remediation tasks"
+        (
+            "local GraphRAG evidence gaps closed; 0 remediation tasks remain"
+            if local_gaps_closed
+            else f"{len(expected_gap_cases)} partial/missing cases converted into remediation tasks"
+        )
         if not failures
         else "; ".join(failures),
     )

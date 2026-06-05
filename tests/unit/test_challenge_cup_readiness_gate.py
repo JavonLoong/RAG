@@ -27,8 +27,9 @@ GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
     "online LLM answer win-rate or that GraphRAG beats every baseline question."
 )
 GRAPH_GAP_REMEDIATION_BOUNDARY = (
-    "This plan turns partial/missing GraphRAG evidence into prioritized remediation work; it does not "
-    "claim the gaps are already fixed."
+    "This report closes local partial/missing GraphRAG evidence gaps with auditable supplement records; "
+    "it does not claim online LLM answer win-rate, external validation, or that GraphRAG beats every "
+    "baseline question."
 )
 
 
@@ -83,7 +84,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "graphrag context demo" in report
     assert "graphrag answer benchmark" in report
     assert "graphrag gap remediation plan" in report
-    assert "supported=9, partial=1, missing=0" in report
+    assert "supported=10, partial=0, missing=0" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -462,7 +463,7 @@ def test_graphrag_gap_remediation_gate_rejects_claimed_fixed_gaps(monkeypatch, t
     check = module.check_graphrag_gap_remediation_plan()
 
     assert not check.passed
-    assert "gaps_marked_fixed" in check.detail
+    assert "local_graph_evidence_gaps_closed" in check.detail
 
 
 def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tmp_path) -> None:
