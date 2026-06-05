@@ -74,6 +74,10 @@ python scripts/build_expert_feedback_request_packet.py
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 
+python scripts/build_challenge_cup_official_rubric_alignment.py
+-> docs/challenge_cup/reproducibility/official_rubric_alignment.md
+-> docs/challenge_cup/reproducibility/official_rubric_alignment.json
+
 python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json

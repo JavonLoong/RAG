@@ -56,6 +56,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/official_rubric_alignment.md",
+    "reproducibility/official_rubric_alignment.json",
     "reproducibility/hard_evidence_ledger.md",
     "reproducibility/hard_evidence_ledger.json",
     "reproducibility/hard_evidence/README.md",
@@ -133,6 +135,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "12_专家反馈采集与整改闭环.md" in readme
     assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
     assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
+    assert "reproducibility/official_rubric_alignment.md" in readme
     assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
@@ -256,6 +259,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "context-only" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "build_challenge_cup_defense_deck.py" in runbook
+    assert "build_challenge_cup_official_rubric_alignment.py" in runbook
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
@@ -283,6 +287,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "defense_rehearsal_result_packet.json" in manifest
     assert "expert_feedback_request_packet.md" in manifest
     assert "expert_feedback_request_packet.json" in manifest
+    assert "official_rubric_alignment.md" in manifest
+    assert "official_rubric_alignment.json" in manifest
     assert "challenge_cup_defense_deck.pptx" in manifest
     assert "challenge_cup_defense_speaker_notes.md" in manifest
     assert "hard_evidence_ledger.md" in manifest
@@ -378,6 +384,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/expert_feedback_request_packet.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/official_rubric_alignment.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/official_rubric_alignment.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
@@ -416,6 +424,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "\u4e0d\u80fd\u6807\u8bb0\u76ee\u6807\u5b8c\u6210",
     ]:
         assert term in hard_ledger_md
+    official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
+    assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
+    assert official_rubric["official_source_count"] >= 4
+    assert official_rubric["dimensions"]["academic_or_practical_value"]["evidence_files"]
+    assert official_rubric["dimensions"]["innovation"]["evidence_files"]
+    assert official_rubric["dimensions"]["completion"]["evidence_files"]
+    assert official_rubric["dimensions"]["defense_performance"]["evidence_files"]
+    assert official_rubric["special_prize_policy"]["max_special_prize_count"] == 6
+    assert official_rubric["special_prize_policy"]["may_be_vacant"] is True
+    assert official_rubric["integrity_rules"]["no_award_guarantee"] is True
+    official_rubric_md = (PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md").read_text(encoding="utf-8")
+    for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "特等奖不超过6件", "不承诺获奖"]:
+        assert term in official_rubric_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
     assert archive_path.exists()
@@ -440,6 +461,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/runbook.md",
         "docs/challenge_cup/reproducibility/command_log.md",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
+        "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
+        "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/hard_evidence/README.md",
@@ -475,6 +498,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_result_packet.json",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.json",
+        PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md",
+        PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.md",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence" / "README.md",
@@ -525,6 +550,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json",
         "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
+        "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",

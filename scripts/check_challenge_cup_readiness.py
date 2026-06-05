@@ -36,17 +36,25 @@ HARD_EVIDENCE_LEDGER_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_ev
 HARD_EVIDENCE_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/README.md"
 HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md"
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
+OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
+OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
 HARD_EVIDENCE_LEDGER_MD = REPO_ROOT / HARD_EVIDENCE_LEDGER_MD_RELATIVE
 HARD_EVIDENCE_LEDGER_JSON = REPO_ROOT / HARD_EVIDENCE_LEDGER_JSON_RELATIVE
 HARD_EVIDENCE_README = REPO_ROOT / HARD_EVIDENCE_README_RELATIVE
 HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
 HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
+OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
+OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
     HARD_EVIDENCE_README_RELATIVE,
     HARD_EVIDENCE_EXPERT_README_RELATIVE,
     HARD_EVIDENCE_REHEARSAL_README_RELATIVE,
+]
+OFFICIAL_RUBRIC_REQUIRED_PATHS = [
+    OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
+    OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE,
 ]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
@@ -152,6 +160,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/official_rubric_alignment.md",
+    "reproducibility/official_rubric_alignment.json",
     "reproducibility/hard_evidence_ledger.md",
     "reproducibility/hard_evidence_ledger.json",
     "reproducibility/hard_evidence/README.md",
@@ -359,6 +369,21 @@ REQUIRED_AWARD_SELF_EVAL_TERMS = {
     "defense_rehearsal_scorecard.md",
     "defense_rehearsal_result_packet.md",
 }
+OFFICIAL_RUBRIC_REQUIRED_DIMENSIONS = {
+    "academic_or_practical_value",
+    "innovation",
+    "completion",
+    "defense_performance",
+}
+OFFICIAL_RUBRIC_REQUIRED_TERMS = {
+    "学术/实用价值",
+    "创新性",
+    "作品完成度",
+    "现场答辩",
+    "特等奖不超过6件",
+    "不承诺获奖",
+}
+OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 4
 REQUIRED_EXPERT_REVIEW_INDEX_TERMS = {
     "三分钟审阅路径",
     "特等奖主张",
@@ -1440,6 +1465,164 @@ def check_award_self_eval() -> GateCheck:
     )
 
 
+def check_official_rubric_alignment() -> GateCheck:
+    failures: list[str] = []
+    required_files = [OFFICIAL_RUBRIC_ALIGNMENT_MD, OFFICIAL_RUBRIC_ALIGNMENT_JSON]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("official rubric alignment", False, f"missing or empty: {missing_files}")
+
+    try:
+        payload = load_json(OFFICIAL_RUBRIC_ALIGNMENT_JSON)
+    except (OSError, json.JSONDecodeError) as exc:
+        return GateCheck("official rubric alignment", False, f"invalid official rubric json: {exc}")
+    markdown = OFFICIAL_RUBRIC_ALIGNMENT_MD.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_official_rubric_alignment":
+        failures.append(f"report_type={payload.get('report_type')}")
+
+    official_sources = payload.get("official_sources", [])
+    if not isinstance(official_sources, list):
+        failures.append("official_sources missing")
+        official_sources = []
+    official_source_count = payload.get("official_source_count")
+    if official_source_count != len(official_sources):
+        failures.append(
+            f"official_source_count mismatch: {official_source_count} != {len(official_sources)}"
+        )
+    if len(official_sources) < OFFICIAL_RUBRIC_MIN_SOURCE_COUNT:
+        failures.append(f"official_sources below {OFFICIAL_RUBRIC_MIN_SOURCE_COUNT}: {len(official_sources)}")
+
+    source_ids: set[str] = set()
+    duplicate_source_ids: set[str] = set()
+    for index, item in enumerate(official_sources, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"official_sources[{index}] invalid")
+            continue
+        source_id = str(item.get("source_id", "")).strip()
+        if not source_id:
+            failures.append(f"official_sources[{index}].source_id missing")
+        elif source_id in source_ids:
+            duplicate_source_ids.add(source_id)
+        else:
+            source_ids.add(source_id)
+        if not str(item.get("title", "")).strip():
+            failures.append(f"official_sources[{index}].title missing")
+        url = str(item.get("url", "")).strip()
+        if not url.startswith("https://"):
+            failures.append(f"official_sources[{index}].url must start with https://")
+        claims = item.get("claims")
+        if not isinstance(claims, list) or not claims:
+            failures.append(f"official_sources[{index}].claims missing")
+        if not is_iso_date(item.get("checked_at")):
+            failures.append(f"official_sources[{index}].checked_at must be YYYY-MM-DD")
+    if duplicate_source_ids:
+        failures.append(f"duplicate official source ids: {sorted(duplicate_source_ids)}")
+
+    dimensions = payload.get("dimensions", {})
+    if not isinstance(dimensions, dict):
+        failures.append("dimensions missing")
+        dimensions = {}
+    missing_dimensions = sorted(OFFICIAL_RUBRIC_REQUIRED_DIMENSIONS - set(dimensions))
+    if missing_dimensions:
+        failures.append(f"missing required dimensions: {missing_dimensions}")
+
+    evidence_paths: set[str] = set()
+    for dimension_key, dimension in dimensions.items():
+        if not isinstance(dimension, dict):
+            failures.append(f"{dimension_key}: dimension invalid")
+            continue
+        dimension_source_ids = [str(item) for item in dimension.get("official_source_ids", [])]
+        if not dimension_source_ids:
+            failures.append(f"{dimension_key}: official_source_ids missing")
+        missing_source_refs = sorted(source_id for source_id in dimension_source_ids if source_id not in source_ids)
+        if missing_source_refs:
+            failures.append(f"{dimension_key}: unknown official_source_ids {missing_source_refs}")
+
+        dimension_evidence = dimension.get("evidence_files", [])
+        if not isinstance(dimension_evidence, list) or not dimension_evidence:
+            failures.append(f"{dimension_key}: evidence_files missing")
+            continue
+        for value in dimension_evidence:
+            relative = str(value).strip()
+            if not relative:
+                failures.append(f"{dimension_key}: empty evidence file")
+                continue
+            posix = PurePosixPath(relative)
+            if relative.startswith(("http://", "https://")):
+                failures.append(f"{dimension_key}: evidence_files must be repo paths, not URLs: {relative}")
+                continue
+            if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+                failures.append(f"{dimension_key}: unsafe evidence path: {relative}")
+                continue
+            if relative in OFFICIAL_RUBRIC_REQUIRED_PATHS:
+                failures.append(f"{dimension_key}: evidence_files self-reference official rubric: {relative}")
+                continue
+            evidence_paths.add(relative)
+            if not nonempty(REPO_ROOT / relative):
+                failures.append(f"{dimension_key}: evidence path missing or empty: {relative}")
+
+    special_prize_policy = payload.get("special_prize_policy", {})
+    if not isinstance(special_prize_policy, dict):
+        failures.append("special_prize_policy missing")
+        special_prize_policy = {}
+    if special_prize_policy.get("max_special_prize_count") != 6:
+        failures.append(f"max_special_prize_count={special_prize_policy.get('max_special_prize_count')}")
+    if special_prize_policy.get("may_be_vacant") is not True:
+        failures.append(f"may_be_vacant={special_prize_policy.get('may_be_vacant')}")
+
+    integrity_rules = payload.get("integrity_rules", {})
+    if not isinstance(integrity_rules, dict):
+        failures.append("integrity_rules missing")
+        integrity_rules = {}
+    if integrity_rules.get("no_award_guarantee") is not True:
+        failures.append(f"no_award_guarantee={integrity_rules.get('no_award_guarantee')}")
+
+    missing_terms = sorted(term for term in OFFICIAL_RUBRIC_REQUIRED_TERMS if term not in markdown)
+    if missing_terms:
+        failures.append(f"markdown missing terms: {missing_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    required_manifest_missing = sorted(path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in manifest_evidence)
+    if required_manifest_missing:
+        failures.append(f"missing manifest entries: {required_manifest_missing}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    excluded_hashes = {str(item) for item in hashes.get("excluded_self_reports", [])}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(
+        path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in excluded_hashes and path not in hashed_paths
+    )
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {"included_files": []}
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked official rubric files: {untracked}")
+    if dirty:
+        failures.append(f"dirty official rubric files: {dirty}")
+
+    return GateCheck(
+        "official rubric alignment",
+        not failures,
+        (
+            f"{len(official_sources)} official sources, {len(dimensions)} rubric dimensions, "
+            f"and {len(evidence_paths)} project evidence paths verified"
+        )
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_expert_review_index() -> GateCheck:
     if not EXPERT_REVIEW_INDEX.exists():
         return GateCheck("expert review index", False, "09_专家快速审阅索引.md missing")
@@ -2052,6 +2235,7 @@ def run_gate() -> list[GateCheck]:
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
+        check_official_rubric_alignment(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -2080,7 +2264,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

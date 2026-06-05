@@ -44,6 +44,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_deck.py --force
 ```
 
+## 刷新官方评审口径对齐表
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_official_rubric_alignment.py
+```
+
 ## 刷新硬证据台账
 
 ```powershell

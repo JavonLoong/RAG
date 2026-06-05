@@ -53,6 +53,11 @@ from build_challenge_cup_hard_evidence_ledger import (
     ROOT_README as HARD_EVIDENCE_README,
     write_outputs as write_hard_evidence_ledger_outputs,
 )
+from build_challenge_cup_official_rubric_alignment import (
+    OUTPUT_JSON as OFFICIAL_RUBRIC_ALIGNMENT_JSON,
+    OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
+    write_outputs as write_official_rubric_alignment_outputs,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -323,9 +328,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 21. `reproducibility/defense_rehearsal_scorecard.md`
 22. `reproducibility/defense_rehearsal_result_packet.md`
 23. `reproducibility/expert_feedback_request_packet.md`
-24. `reproducibility/hard_evidence_ledger.md`
-25. `reproducibility/challenge_cup_submission_archive_manifest.json`
-26. `reproducibility/challenge_cup_submission_package.zip`
+24. `reproducibility/official_rubric_alignment.md`
+25. `reproducibility/hard_evidence_ledger.md`
+26. `reproducibility/challenge_cup_submission_archive_manifest.json`
+27. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -596,7 +602,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 def build_award_self_eval(ctx: dict[str, Any]) -> str:
     return """# 特等奖评审自评表
 
-本表按清华公开报道中出现的评审维度进行自检：评委会关注作品的学术价值或实用性、创新性、作品完成情况和现场答辩表现；清华制度文件也强调实用性、创新性和学术价值。特等奖不超过6件，可空缺，因此本表只用于倒逼整改，不承诺获奖结果。
+本表按清华公开报道中出现的评审维度进行自检：评委会关注作品的学术价值或实用性、创新性、作品完成情况和现场答辩表现；清华制度文件也强调实用性、创新性和学术价值。特等奖不超过6件，可空缺，因此本表只用于倒逼整改，不承诺获奖结果。完整官方口径与证据绑定见 `docs/challenge_cup/reproducibility/official_rubric_alignment.md`。
 
 ## 参考口径
 
@@ -896,6 +902,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_deck.py --force
 ```
 
+## 刷新官方评审口径对齐表
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_official_rubric_alignment.py
+```
+
 ## 刷新硬证据台账
 
 ```powershell
@@ -921,6 +933,18 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- 硬证据归档入口：`{md_link(HARD_EVIDENCE_README)}`",
             f"- 真实专家反馈归档入口：`{md_link(HARD_EVIDENCE_EXPERT_README)}`",
             f"- 真实计时彩排归档入口：`{md_link(HARD_EVIDENCE_REHEARSAL_README)}`",
+        ]
+    )
+
+
+def build_official_rubric_dataset_manifest_section() -> str:
+    return "\n".join(
+        [
+            "",
+            "## 官方评审口径对齐",
+            "",
+            f"- 官方评审口径对齐表：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD)}`",
+            f"- 官方评审口径 JSON：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON)}`",
         ]
     )
 
@@ -1052,6 +1076,10 @@ python scripts/build_expert_feedback_request_packet.py
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
 -> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 
+python scripts/build_challenge_cup_official_rubric_alignment.py
+-> docs/challenge_cup/reproducibility/official_rubric_alignment.md
+-> docs/challenge_cup/reproducibility/official_rubric_alignment.json
+
 python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
@@ -1095,6 +1123,7 @@ def main() -> int:
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write_defense_result_outputs(build_defense_result_payload())
     write_expert_request_outputs(build_expert_request_payload())
+    write_official_rubric_alignment_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
     write(GRAPH_ANSWER_BENCHMARK_JSON, json.dumps(graph_answer_payload, ensure_ascii=False, indent=2))
@@ -1103,7 +1132,10 @@ def main() -> int:
     write(GRAPH_GAP_REMEDIATION_JSON, json.dumps(graph_gap_payload, ensure_ascii=False, indent=2))
     write_graph_gap_remediation_markdown(GRAPH_GAP_REMEDIATION_MD, graph_gap_payload)
     write(REPRO / "runbook.md", build_runbook(ctx))
-    write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx) + build_hard_evidence_dataset_manifest_section())
+    write(
+        REPRO / "dataset_manifest.md",
+        build_dataset_manifest(ctx) + build_official_rubric_dataset_manifest_section() + build_hard_evidence_dataset_manifest_section(),
+    )
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
     build_defense_deck_outputs()
@@ -1122,6 +1154,8 @@ def main() -> int:
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_JSON),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_MD),
         md_link(EXPERT_FEEDBACK_REQUEST_PACKET_JSON),
+        md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
+        md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
         md_link(HARD_EVIDENCE_LEDGER_MD),
         md_link(HARD_EVIDENCE_LEDGER_JSON),
         md_link(HARD_EVIDENCE_README),

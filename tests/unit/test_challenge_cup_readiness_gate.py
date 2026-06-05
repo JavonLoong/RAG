@@ -81,6 +81,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "acceptance checklist" in report
     assert "numeric consistency" in report
     assert "special-prize rubric self-assessment" in report
+    assert "official rubric alignment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense deck" in report
@@ -187,6 +188,63 @@ def test_package_manifest_gate_rejects_untracked_evidence(monkeypatch, tmp_path)
 
     assert not check.passed
     assert "untracked-evidence.md" in check.detail
+
+
+def test_official_rubric_alignment_gate_rejects_missing_sources_and_evidence(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    rubric_json = tmp_path / "official_rubric_alignment.json"
+    rubric_md = tmp_path / "official_rubric_alignment.md"
+    rubric_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_official_rubric_alignment",
+                "official_sources": [
+                    {
+                        "source_id": "tsinghua_43rd_2025",
+                        "url": "",
+                        "claims": ["special_prize_count"],
+                    }
+                ],
+                "dimensions": {
+                    "academic_or_practical_value": {"official_source_ids": [], "evidence_files": []},
+                    "innovation": {"official_source_ids": ["tsinghua_43rd_2025"], "evidence_files": []},
+                    "completion": {"official_source_ids": ["tsinghua_43rd_2025"], "evidence_files": []},
+                    "defense_performance": {"official_source_ids": ["tsinghua_43rd_2025"], "evidence_files": []},
+                },
+                "special_prize_policy": {"max_special_prize_count": 7, "may_be_vacant": False},
+                "integrity_rules": {"no_award_guarantee": False},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    rubric_md.write_text("学术/实用价值\n创新性\n作品完成度\n现场答辩\n", encoding="utf-8")
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "evidence_files": [
+                    "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
+                    "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_JSON", rubric_json)
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_MD", rubric_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_official_rubric_alignment()
+
+    assert not check.passed
+    assert "official_sources" in check.detail
+    assert "academic_or_practical_value" in check.detail
+    assert "max_special_prize_count" in check.detail
+    assert "no_award_guarantee" in check.detail
 
 
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
