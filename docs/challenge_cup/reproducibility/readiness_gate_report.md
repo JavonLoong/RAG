@@ -14,7 +14,7 @@
 | package evidence files | pass | 48 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 47 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 62 files archived; 2422554 bytes; sha256 verified |
+| submission archive | pass | 62 files archived; 2423083 bytes; sha256 verified |
 | numeric consistency | pass | 60 questions, 48 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
@@ -23,7 +23,7 @@
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 24 evidence links verified |
 | acceptance checklist | pass | submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; 16 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 17 evidence links verified |
-| official rubric alignment | pass | 4 official sources, 5 rubric dimensions, and 24 project evidence paths verified |
+| official rubric alignment | pass | 5 official sources, 5 rubric dimensions, and 24 project evidence paths verified |
 | expert review index | pass | judge-facing review path maps claims, commands, and boundaries; 20 evidence links verified |
 | defense rehearsal pack | pass | timed defense script, killer questions, and boundaries mapped to evidence; 17 evidence links verified |
 | defense rehearsal scorecard | pass | 5 timed demo steps, 5 killer questions, 12 evidence files |
