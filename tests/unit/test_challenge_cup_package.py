@@ -38,11 +38,13 @@ REQUIRED_PACKAGE_FILES = [
     "09_专家快速审阅索引.md",
     "10_答辩攻防与彩排卡.md",
     "11_应用场景与专家验证.md",
+    "12_专家反馈采集与整改闭环.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
+    "reproducibility/expert_feedback_form.md",
     "reproducibility/command_log.md",
 ]
 
@@ -91,7 +93,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "09_专家快速审阅索引.md" in readme
     assert "10_答辩攻防与彩排卡.md" in readme
     assert "11_应用场景与专家验证.md" in readme
+    assert "12_专家反馈采集与整改闭环.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
+    assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     claim_matrix = (PACKAGE_DIR / "07_评审主张证据矩阵.md").read_text(encoding="utf-8")
     for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用验证", "应用边界"]:
@@ -99,7 +103,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for evidence in [
         "evaluation/system_eval_questions.jsonl",
         "11_应用场景与专家验证.md",
+        "12_专家反馈采集与整改闭环.md",
         "application_validation_report.md",
+        "expert_feedback_form.md",
         "browser_demo_smoke_report.md",
         "readiness_gate_report.md",
     ]:
@@ -114,6 +120,14 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         assert phrase in application_report
     for evidence in ["demo-gt07-fault-021", "demo-gt07-repair-022", "demo-gt07-manual-023"]:
         assert evidence in application_report
+    expert_feedback_loop = (PACKAGE_DIR / "12_专家反馈采集与整改闭环.md").read_text(encoding="utf-8")
+    for phrase in ["反馈采集状态", "待真实反馈归档", "不伪造外部意见", "整改闭环", "专家反馈采集表"]:
+        assert phrase in expert_feedback_loop
+    for evidence in ["expert_feedback_form.md", "application_validation_report.md", "readiness_gate_report.md"]:
+        assert evidence in expert_feedback_loop
+    expert_feedback_form = (PACKAGE_DIR / "reproducibility" / "expert_feedback_form.md").read_text(encoding="utf-8")
+    for phrase in ["评审人姓名", "单位或角色", "联系方式", "评审日期", "签字或邮件证据", "燃气轮机异常振动诊断流程", "demo-gt07-repair-022", "整改建议"]:
+        assert phrase in expert_feedback_form
     award_self_eval = (PACKAGE_DIR / "08_特等奖评审自评表.md").read_text(encoding="utf-8")
     for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "特等奖不超过6件"]:
         assert phrase in award_self_eval
@@ -169,6 +183,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "browser_demo_smoke_report.md" in manifest
     assert "application_validation_report.md" in manifest
     assert "11_应用场景与专家验证.md" in manifest
+    assert "expert_feedback_form.md" in manifest
+    assert "12_专家反馈采集与整改闭环.md" in manifest
     assert "readiness_gate_report.md" in manifest
     assert "evidence_hashes.json" in manifest
     assert "evaluation_coverage_profile.json" in manifest
@@ -222,7 +238,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/09_专家快速审阅索引.md" in evidence_files
     assert "docs/challenge_cup/10_答辩攻防与彩排卡.md" in evidence_files
     assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
+    assert "docs/challenge_cup/12_专家反馈采集与整改闭环.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/expert_feedback_form.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files

@@ -13,6 +13,8 @@
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 应用场景与专家验证：`docs/challenge_cup/11_应用场景与专家验证.md`。
 - 应用验证报告：`docs/challenge_cup/reproducibility/application_validation_report.md`。
+- 专家反馈采集与整改闭环：`docs/challenge_cup/12_专家反馈采集与整改闭环.md`。
+- 专家反馈采集表：`docs/challenge_cup/reproducibility/expert_feedback_form.md`。
 - 现场演示烟测：`docs/challenge_cup/reproducibility/live_demo_smoke_report.md`。
 - 真实浏览器演示烟测：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 - 真实浏览器烟测 JSON：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`。

@@ -18,10 +18,12 @@
 10. `09_专家快速审阅索引.md`
 11. `10_答辩攻防与彩排卡.md`
 12. `11_应用场景与专家验证.md`
-13. `reproducibility/application_validation_report.md`
-14. `reproducibility/runbook.md`
-15. `reproducibility/dataset_manifest.md`
-16. `reproducibility/readiness_gate_report.md`
+13. `12_专家反馈采集与整改闭环.md`
+14. `reproducibility/application_validation_report.md`
+15. `reproducibility/expert_feedback_form.md`
+16. `reproducibility/runbook.md`
+17. `reproducibility/dataset_manifest.md`
+18. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 

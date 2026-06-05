@@ -52,6 +52,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "application validation evidence" in report
     assert "scenario demo evidence" in report
     assert "scenario walkthrough script" in report
+    assert "expert feedback protocol" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -235,6 +236,21 @@ def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, t
 
     assert not check.passed
     assert "demo-gt07-repair-022" in check.detail
+
+
+def test_expert_feedback_protocol_gate_rejects_missing_integrity_terms(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    protocol = tmp_path / "12_专家反馈采集与整改闭环.md"
+    protocol.write_text("# 专家反馈\n\n只有泛泛描述。\n", encoding="utf-8")
+    form = tmp_path / "expert_feedback_form.md"
+    form.write_text("# 表单\n\n评审人姓名\n", encoding="utf-8")
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_PROTOCOL", protocol)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_FORM", form)
+
+    check = module.check_expert_feedback_protocol()
+
+    assert not check.passed
+    assert "不伪造外部意见" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

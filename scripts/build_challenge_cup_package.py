@@ -19,6 +19,7 @@ AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = OUT / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = OUT / "10_答辩攻防与彩排卡.md"
 APPLICATION_VALIDATION_DOC = OUT / "11_应用场景与专家验证.md"
+EXPERT_FEEDBACK_PROTOCOL = OUT / "12_专家反馈采集与整改闭环.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -27,6 +28,7 @@ READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
 APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
+EXPERT_FEEDBACK_FORM = REPRO / "expert_feedback_form.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
@@ -187,10 +189,12 @@ def build_readme(ctx: dict[str, Any]) -> str:
 10. `09_专家快速审阅索引.md`
 11. `10_答辩攻防与彩排卡.md`
 12. `11_应用场景与专家验证.md`
-13. `reproducibility/application_validation_report.md`
-14. `reproducibility/runbook.md`
-15. `reproducibility/dataset_manifest.md`
-16. `reproducibility/readiness_gate_report.md`
+13. `12_专家反馈采集与整改闭环.md`
+14. `reproducibility/application_validation_report.md`
+15. `reproducibility/expert_feedback_form.md`
+16. `reproducibility/runbook.md`
+17. `reproducibility/dataset_manifest.md`
+18. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -396,6 +400,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因和 GraphRAG 同题子集。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py` | 评测集是当前阶段的课程 / 挑战杯评测集，后续可扩展为更大 benchmark。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
 | 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
+| 专家反馈闭环 | 项目已准备好可发送给老师或行业专家的反馈采集表、评分维度、签字或邮件证据归档规则和整改闭环。 | `docs/challenge_cup/12_专家反馈采集与整改闭环.md`; `docs/challenge_cup/reproducibility/expert_feedback_form.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | `python scripts/check_challenge_cup_readiness.py` | 未收到真实反馈前不得宣称已通过专家验证；反馈必须按签字、邮件或会议纪要归档。 |
 | 应用边界 | 系统定位为证据型辅助和知识资产整理，不替代工程师做最终运维决策。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/03_实验评测报告.md` | `python scripts/check_challenge_cup_readiness.py` | 对高风险维修决策保留人工确认和证据不足提示。 |
 """
 
@@ -574,6 +579,86 @@ def build_application_validation_report(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_expert_feedback_protocol(ctx: dict[str, Any]) -> str:
+    return """# 专家反馈采集与整改闭环
+
+本页用于把外部意见采集变成可审计流程。当前反馈采集状态为：待真实反馈归档。未收到真实签字、邮件或会议纪要前，不伪造外部意见，不宣称项目已经通过专家验证。
+
+## 反馈采集状态
+
+| 项目 | 当前状态 | 归档规则 |
+| --- | --- | --- |
+| 指导教师反馈 | 待真实反馈归档 | 使用 `docs/challenge_cup/reproducibility/expert_feedback_form.md`，附签字页、邮件截图或会议纪要。 |
+| 行业或实验室同学反馈 | 待真实反馈归档 | 记录单位或角色、联系方式、评审日期、评审问题和整改建议。 |
+| 固定应用场景复核 | 已准备固定材料 | 复核 `docs/challenge_cup/reproducibility/application_validation_report.md` 与固定查询证据链。 |
+| readiness 复核 | 已有机器门禁 | 反馈归档后重新运行 `docs/challenge_cup/reproducibility/readiness_gate_report.md` 对应命令。 |
+
+## 专家反馈采集表
+
+- 表单入口：`docs/challenge_cup/reproducibility/expert_feedback_form.md`。
+- 评审对象：项目一页纸、固定场景演示、应用验证报告、readiness gate、浏览器截图。
+- 核心问题：实用性是否成立、证据链是否可信、边界是否严谨、哪些材料仍需补充。
+
+## 整改闭环
+
+| 步骤 | 动作 | 可审计证据 |
+| --- | --- | --- |
+| 1 | 发出反馈表和固定场景材料 | 邮件、聊天记录或会议邀请截图。 |
+| 2 | 收到反馈后摘录关键意见 | 签字页、邮件回复、会议纪要或反馈表原件。 |
+| 3 | 将意见拆成整改项 | 在本页追加“意见-整改-证据”表。 |
+| 4 | 完成整改后重跑 gate | `python scripts/build_challenge_cup_package.py`；`python scripts/check_challenge_cup_readiness.py`。 |
+
+## 诚信边界
+
+- 不伪造外部意见，不把内部自评写成专家背书。
+- 不把“已准备采集协议”说成“已获得专家认可”。
+- 真实反馈如果提出否定意见，必须保留并进入整改闭环。
+"""
+
+
+def build_expert_feedback_form(ctx: dict[str, Any]) -> str:
+    return """# 专家反馈采集表
+
+## 评审人信息
+
+- 评审人姓名：
+- 单位或角色：
+- 联系方式：
+- 评审日期：
+- 签字或邮件证据：
+
+## 评审材料
+
+| 材料 | 路径 | 复核要点 |
+| --- | --- | --- |
+| 项目一页纸 | `docs/challenge_cup/00_项目一页纸.md` | 问题、方法、数字和边界是否清楚。 |
+| 固定场景演示 | `docs/challenge_cup/04_系统演示脚本.md` | 是否能按 3 分钟节奏讲清证据链。 |
+| 应用验证报告 | `docs/challenge_cup/reproducibility/application_validation_report.md` | `燃气轮机异常振动诊断流程` 是否能支撑应用价值。 |
+| 浏览器证据 | `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md` | 5 条记录是否可复核，含 `demo-gt07-repair-022`。 |
+| readiness gate | `docs/challenge_cup/reproducibility/readiness_gate_report.md` | 机器门禁是否证明包完整性和边界。 |
+
+## 评分表
+
+| 维度 | 评分 | 证据或意见 |
+| --- | --- | --- |
+| 实用性 |  |  |
+| 创新性 |  |  |
+| 工程完成度 |  |  |
+| 评测可信度 |  |  |
+| 答辩可讲清程度 |  |  |
+
+## 整改建议
+
+| 问题 | 严重度 | 建议 | 需补证据 |
+| --- | --- | --- | --- |
+|  |  |  |  |
+
+## 归档路径
+
+反馈原件、签字页、邮件截图或会议纪要应归档到挑战杯证据包，并在 `docs/challenge_cup/12_专家反馈采集与整改闭环.md` 追加整改记录。未归档真实证据前，不得宣称已经获得专家认可。
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -639,6 +724,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 应用场景与专家验证：`{md_link(APPLICATION_VALIDATION_DOC)}`。
 - 应用验证报告：`{md_link(APPLICATION_VALIDATION_REPORT)}`。
+- 专家反馈采集与整改闭环：`{md_link(EXPERT_FEEDBACK_PROTOCOL)}`。
+- 专家反馈采集表：`{md_link(EXPERT_FEEDBACK_FORM)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -667,7 +754,9 @@ python scripts/extend_challenge_cup_eval_questions.py
 python scripts/build_challenge_cup_package.py
 -> Wrote docs/challenge_cup with 60 evaluation questions
 -> docs/challenge_cup/11_应用场景与专家验证.md
+-> docs/challenge_cup/12_专家反馈采集与整改闭环.md
 -> docs/challenge_cup/reproducibility/application_validation_report.md
+-> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
@@ -711,7 +800,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (16/16 gates)
+-> Status: pass (17/17 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -733,7 +822,9 @@ def main() -> int:
     write(EXPERT_REVIEW_INDEX, build_expert_review_index(ctx))
     write(DEFENSE_REHEARSAL_CARD, build_defense_rehearsal_card(ctx))
     write(APPLICATION_VALIDATION_DOC, build_application_validation_doc(ctx))
+    write(EXPERT_FEEDBACK_PROTOCOL, build_expert_feedback_protocol(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
+    write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -745,7 +836,9 @@ def main() -> int:
         md_link(EXPERT_REVIEW_INDEX),
         md_link(DEFENSE_REHEARSAL_CARD),
         md_link(APPLICATION_VALIDATION_DOC),
+        md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),
+        md_link(EXPERT_FEEDBACK_FORM),
         md_link(LIVE_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_JSON),
