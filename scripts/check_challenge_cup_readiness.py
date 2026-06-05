@@ -34,8 +34,14 @@ APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_REPORT_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.md"
+GRAPH_CONTEXT_DEMO_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_context_demo.json"
+GRAPH_CONTEXT_DEMO_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_context_demo.md"
 GRAPH_EVIDENCE_BOUNDARY = (
     "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
+)
+GRAPH_CONTEXT_DEMO_BOUNDARY = (
+    "This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers "
+    "or prove online answer win-rate."
 )
 REQUIRED_GRAPH_CASE_FIELDS = {
     "id",
@@ -593,6 +599,75 @@ def check_graphrag_same_question_evidence() -> GateCheck:
     )
 
 
+def check_graphrag_context_demo() -> GateCheck:
+    failures: list[str] = []
+    if not GRAPH_CONTEXT_DEMO_JSON.exists():
+        return GateCheck("graphrag context demo", False, f"{GRAPH_CONTEXT_DEMO_JSON.relative_to(REPO_ROOT)} missing")
+    if not GRAPH_CONTEXT_DEMO_MD.exists():
+        return GateCheck("graphrag context demo", False, f"{GRAPH_CONTEXT_DEMO_MD.relative_to(REPO_ROOT)} missing")
+
+    payload = load_json(GRAPH_CONTEXT_DEMO_JSON)
+    markdown = GRAPH_CONTEXT_DEMO_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_graphrag_context_demo":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("context_only") is not True:
+        failures.append("context_only must be true")
+    if payload.get("answer_generated") is not False:
+        failures.append("answer_generated must be false")
+    if payload.get("boundary") != GRAPH_CONTEXT_DEMO_BOUNDARY:
+        failures.append("boundary mismatch")
+    if str(payload.get("text_baseline_method", "")) != "keyword":
+        failures.append("text_baseline_method must be keyword")
+    source_graph = str(payload.get("source_graph", ""))
+    if not source_graph.endswith("triples.csv"):
+        failures.append("source_graph must point to triples.csv")
+    elif not nonempty(REPO_ROOT / source_graph):
+        failures.append(f"source_graph missing or empty: {source_graph}")
+    case_ids = [str(item) for item in payload.get("case_ids", [])]
+    required_case_ids = ["cc039", "cc040", "cc041"]
+    if case_ids != required_case_ids:
+        failures.append(f"case_ids must be {required_case_ids}: {case_ids}")
+    cases = payload.get("cases", [])
+    if not isinstance(cases, list) or len(cases) != int(payload.get("demo_case_count") or -1):
+        failures.append("cases must match demo_case_count")
+        cases = []
+    if int(payload.get("demo_case_count") or 0) < 3:
+        failures.append("demo_case_count below 3")
+    for case in cases:
+        case_id = str(case.get("id", "<unknown>"))
+        if case.get("answer") is not None:
+            failures.append(f"case {case_id} answer must be null")
+        if not case.get("text_evidence"):
+            failures.append(f"case {case_id} missing text_evidence")
+        if not case.get("graph_evidence"):
+            failures.append(f"case {case_id} missing graph_evidence")
+        citation_types = {str(citation.get("source_type", "")) for citation in case.get("citations", [])}
+        if not {"text", "graph"} <= citation_types:
+            failures.append(f"case {case_id} citations must include text and graph")
+        prompt_context = str(case.get("prompt_context", ""))
+        for term in ("Context-only debug mode", "## Text retrieval evidence", "## Graph retrieval evidence"):
+            if term not in prompt_context:
+                failures.append(f"case {case_id} prompt_context missing {term}")
+
+    required_markdown_terms = {
+        "GraphRAG context-only QA demo",
+        "不生成 LLM 答案",
+        "triples.csv",
+        GRAPH_CONTEXT_DEMO_BOUNDARY,
+    }
+    missing_markdown_terms = sorted(term for term in required_markdown_terms if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "graphrag context demo",
+        not failures,
+        f"{payload.get('demo_case_count')} context-only cases with text and graph citations"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
     if not path.exists():
         return GateCheck(name, False, f"{path.relative_to(REPO_ROOT)} missing")
@@ -843,6 +918,7 @@ def run_gate() -> list[GateCheck]:
         check_evidence_hashes(),
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
+        check_graphrag_context_demo(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -870,7 +946,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

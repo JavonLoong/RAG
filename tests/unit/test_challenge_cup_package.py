@@ -185,6 +185,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
+    assert "challenge_cup_graphrag_context_demo.md" in eval_report
+    assert "context-only" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
@@ -199,6 +201,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "readiness_gate_report.md" in manifest
     assert "evidence_hashes.json" in manifest
     assert "evaluation_coverage_profile.json" in manifest
+    assert "challenge_cup_graphrag_context_demo.md" in manifest
+    assert "challenge_cup_graphrag_context_demo.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -258,6 +262,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/08_特等奖评审自评表.md" in evidence_files
     assert "docs/challenge_cup/09_专家快速审阅索引.md" in evidence_files
     assert "docs/challenge_cup/10_答辩攻防与彩排卡.md" in evidence_files
+    assert "evaluation/reports/challenge_cup_graphrag_context_demo.md" in evidence_files
+    assert "evaluation/reports/challenge_cup_graphrag_context_demo.json" in evidence_files
     assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
     assert "docs/challenge_cup/12_专家反馈采集与整改闭环.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files

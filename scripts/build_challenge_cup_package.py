@@ -23,6 +23,8 @@ APPLICATION_VALIDATION_DOC = OUT / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = OUT / "12_专家反馈采集与整改闭环.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
+GRAPH_CONTEXT_DEMO_MD = REPORTS / "challenge_cup_graphrag_context_demo.md"
+GRAPH_CONTEXT_DEMO_JSON = REPORTS / "challenge_cup_graphrag_context_demo.json"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
@@ -151,6 +153,8 @@ def build_context() -> dict[str, Any]:
         "day4": day4,
         "graph_report": GRAPH_REPORT if GRAPH_REPORT.exists() else None,
         "graph_report_json": GRAPH_REPORT_JSON if GRAPH_REPORT_JSON.exists() else None,
+        "graph_context_demo_md": GRAPH_CONTEXT_DEMO_MD if GRAPH_CONTEXT_DEMO_MD.exists() else None,
+        "graph_context_demo_json": GRAPH_CONTEXT_DEMO_JSON if GRAPH_CONTEXT_DEMO_JSON.exists() else None,
         "validation": browser_validation_context(),
         "rag_db": REPO_ROOT
         / "docs"
@@ -295,6 +299,7 @@ def build_eval_report(ctx: dict[str, Any]) -> str:
     day3_ref = optional_md_link(ctx["day3"])
     day4_ref = optional_md_link(ctx["day4"])
     graph_ref = optional_md_link(ctx["graph_report"])
+    graph_context_ref = optional_md_link(ctx["graph_context_demo_md"])
     return f"""# 实验评测报告
 
 ## 评测集
@@ -313,9 +318,13 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 已从 60 题评测集中筛出显式标注 `graphrag_context` / `graphrag_global` 的同题子集，并对这些题的 keyword、dense_hashing、hybrid_rrf baseline 覆盖率做了对照。报告位置：`{graph_ref}`。
 
+## GraphRAG context-only demo
+
+已将 supported 同题案例生成 context-only GraphRAG QA 快照，固定展示文本检索证据和 triples.csv 图谱关系证据。报告位置：`{graph_context_ref}`。该 demo 不生成 LLM 答案，不作为完整在线 answer benchmark。
+
 ## 结论
 
-当前项目能证明评测链路存在并可复跑。挑战杯版本需要继续补充 GraphRAG context/global 的同题对比，并在真实 embedding/reranker 条件允许时复测。
+当前项目能证明评测链路存在并可复跑，也能展示 GraphRAG context-only 证据编排。挑战杯版本后续可继续补充真实 LLM answer 生成、embedding/reranker 复测和更大规模 benchmark。
 
 ## 关键证据摘录
 
@@ -760,6 +769,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - Day4 失败分析：`{optional_md_link(ctx["day4"])}`。
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
 - GraphRAG 同题 JSON：`{optional_md_link(ctx["graph_report_json"])}`。
+- GraphRAG context-only demo：`{optional_md_link(ctx["graph_context_demo_md"])}`。
+- GraphRAG context-only JSON：`{optional_md_link(ctx["graph_context_demo_json"])}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
@@ -831,6 +842,10 @@ python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline
 python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline.py -k test_deliverable_assets_are_served_from_stable_root_path
 -> OK
 
+python scripts/build_graphrag_context_demo.py
+-> evaluation/reports/challenge_cup_graphrag_context_demo.md
+-> evaluation/reports/challenge_cup_graphrag_context_demo.json
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -842,7 +857,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (20/20 gates)
+-> Status: pass (21/21 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -887,7 +902,18 @@ def main() -> int:
         md_link(BROWSER_SMOKE_JSON),
         md_link(READINESS_GATE_REPORT),
         *(md_link(path) for path in BROWSER_SCREENSHOTS),
-        *(md_link(path) for path in (ctx["day3"], ctx["day4"], ctx["graph_report"], ctx["graph_report_json"]) if path is not None),
+        *(
+            md_link(path)
+            for path in (
+                ctx["day3"],
+                ctx["day4"],
+                ctx["graph_report"],
+                ctx["graph_report_json"],
+                ctx["graph_context_demo_md"],
+                ctx["graph_context_demo_json"],
+            )
+            if path is not None
+        ),
     ]
     manifest = {
         "generated_at": ctx["now"],

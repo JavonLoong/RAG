@@ -57,6 +57,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "scenario walkthrough script" in report
     assert "expert feedback protocol" in report
     assert "graphrag evidence audit" in report
+    assert "graphrag context demo" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -289,6 +290,49 @@ def test_graphrag_evidence_audit_gate_rejects_missing_required_fields(monkeypatc
 
     assert not check.passed
     assert "graph_evidence_source" in check.detail
+
+
+def test_graphrag_context_demo_gate_rejects_generated_answers(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    demo_json = tmp_path / "challenge_cup_graphrag_context_demo.json"
+    demo_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_graphrag_context_demo",
+                "context_only": False,
+                "answer_generated": True,
+                "boundary": "wrong",
+                "source_graph": "docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv",
+                "text_baseline_method": "keyword",
+                "demo_case_count": 1,
+                "case_ids": ["cc041"],
+                "cases": [
+                    {
+                        "id": "cc041",
+                        "text_evidence": [{"id": "T1", "source_type": "text"}],
+                        "graph_evidence": [{"id": "G1", "source_type": "graph"}],
+                        "citations": [{"id": "T1", "source_type": "text"}, {"id": "G1", "source_type": "graph"}],
+                        "prompt_context": "## Text retrieval evidence\n## Graph retrieval evidence",
+                        "answer": "generated answer",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    demo_md = tmp_path / "challenge_cup_graphrag_context_demo.md"
+    demo_md.write_text(
+        "GraphRAG context-only QA demo\n不生成 LLM 答案\ntriples.csv\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "GRAPH_CONTEXT_DEMO_JSON", demo_json)
+    monkeypatch.setattr(module, "GRAPH_CONTEXT_DEMO_MD", demo_md)
+
+    check = module.check_graphrag_context_demo()
+
+    assert not check.passed
+    assert "context_only" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

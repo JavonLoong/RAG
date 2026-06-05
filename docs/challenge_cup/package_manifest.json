@@ -25,7 +25,9 @@
     "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
     "evaluation/reports/day4_failure_analysis_20260605_210642.md",
     "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
-    "evaluation/reports/challenge_cup_graphrag_same_question_report.json"
+    "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+    "evaluation/reports/challenge_cup_graphrag_context_demo.md",
+    "evaluation/reports/challenge_cup_graphrag_context_demo.json"
   ],
   "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json"
 }
