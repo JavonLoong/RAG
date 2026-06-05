@@ -48,6 +48,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "KG artifact links" in report
     assert "mobile console health" in report
     assert "60 evaluation questions" in report
+    assert "evaluation coverage profile" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -131,6 +132,51 @@ def test_package_manifest_gate_rejects_untracked_evidence(monkeypatch, tmp_path)
 
     assert not check.passed
     assert "untracked-evidence.md" in check.detail
+
+
+def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    dataset = tmp_path / "system_eval_questions.jsonl"
+    dataset.write_text(
+        json.dumps(
+            {
+                "id": "q001",
+                "question": "sample",
+                "reference_answer": "sample",
+                "expected_evidence_keywords": ["sample"],
+                "task_type": "standard_rag_fact",
+                "source_scope": "sample_scope",
+                "expected_modes": ["keyword"],
+                "grading_notes": "sample",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    profile = tmp_path / "evaluation_coverage_profile.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "generated_from": "evaluation/system_eval_questions.jsonl",
+                "question_count": 60,
+                "task_type_counts": {"standard_rag_fact": 1},
+                "source_scope_counts": {"sample_scope": 1},
+                "expected_mode_counts": {"keyword": 1},
+                "questions_with_graphrag_modes": 0,
+                "minimums": {"task_types": 10, "source_scopes": 15, "graphrag_questions": 10},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "DATASET", dataset)
+    monkeypatch.setattr(module, "EVAL_COVERAGE_PROFILE", profile)
+
+    check = module.check_evaluation_coverage_profile()
+
+    assert not check.passed
+    assert "question_count" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

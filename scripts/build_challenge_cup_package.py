@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
 READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
+EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
@@ -30,6 +32,11 @@ BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_kg_artifacts.png",
     BROWSER_SCREENSHOT_DIR / "mobile_overview.png",
 ]
+EVAL_COVERAGE_MINIMUMS = {
+    "task_types": 10,
+    "source_scopes": 15,
+    "graphrag_questions": 10,
+}
 
 
 def write(path: Path, content: str) -> None:
@@ -54,6 +61,33 @@ def read(path: Path, limit: int = 1600) -> str:
 
 def count_jsonl(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def build_evaluation_coverage_profile(ctx: dict[str, Any]) -> dict[str, Any]:
+    rows = read_jsonl(DATASET)
+    task_type_counts = Counter(str(row["task_type"]) for row in rows)
+    source_scope_counts = Counter(str(row["source_scope"]) for row in rows)
+    expected_mode_counts: Counter[str] = Counter()
+    questions_with_graphrag_modes = 0
+    for row in rows:
+        modes = [str(mode) for mode in row.get("expected_modes", [])]
+        expected_mode_counts.update(modes)
+        if any(mode.startswith("graphrag_") for mode in modes):
+            questions_with_graphrag_modes += 1
+    return {
+        "generated_at": ctx["now"],
+        "generated_from": md_link(DATASET),
+        "question_count": len(rows),
+        "task_type_counts": dict(sorted(task_type_counts.items())),
+        "source_scope_counts": dict(sorted(source_scope_counts.items())),
+        "expected_mode_counts": dict(sorted(expected_mode_counts.items())),
+        "questions_with_graphrag_modes": questions_with_graphrag_modes,
+        "minimums": dict(EVAL_COVERAGE_MINIMUMS),
+    }
 
 
 def latest(pattern: str) -> Path | None:
@@ -502,6 +536,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
     return f"""# 数据集与证据清单
 
 - 系统评测集：`evaluation/system_eval_questions.jsonl`，{ctx["question_count"]} 题。
+- 评测覆盖画像：`{md_link(EVAL_COVERAGE_PROFILE)}`。
 - 普通 RAG 数据库说明：`{md_link(ctx["rag_db"])}`。
 - 知识图谱人工评审：`{md_link(ctx["kg_review"])}`。
 - Day3 baseline：`{optional_md_link(ctx["day3"])}`。
@@ -538,6 +573,7 @@ python scripts/extend_challenge_cup_eval_questions.py
 
 python scripts/build_challenge_cup_package.py
 -> Wrote docs/challenge_cup with 60 evaluation questions
+-> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
 -> Corpus chunks: 6494
@@ -580,7 +616,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (10/10 gates)
+-> Status: pass (13/13 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -603,6 +639,7 @@ def main() -> int:
     write(DEFENSE_REHEARSAL_CARD, build_defense_rehearsal_card(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
+    write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
     evidence_files = [
         md_link(DATASET),
@@ -621,6 +658,7 @@ def main() -> int:
         "generated_at": ctx["now"],
         "output_dir": md_link(OUT),
         "question_count": ctx["question_count"],
+        "evaluation_coverage_profile": md_link(EVAL_COVERAGE_PROFILE),
         "evidence_files": evidence_files,
         "integrity_manifest": md_link(EVIDENCE_HASHES),
     }

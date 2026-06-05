@@ -39,6 +39,7 @@ REQUIRED_PACKAGE_FILES = [
     "10_答辩攻防与彩排卡.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/command_log.md",
 ]
@@ -137,17 +138,34 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "browser_demo_smoke_report.md" in manifest
     assert "readiness_gate_report.md" in manifest
     assert "evidence_hashes.json" in manifest
+    assert "evaluation_coverage_profile.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
     assert "desktop_kg_artifacts.png" in manifest
     assert "mobile_overview.png" in manifest
+    coverage = json.loads((PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json").read_text(encoding="utf-8"))
+    assert coverage["generated_from"] == "evaluation/system_eval_questions.jsonl"
+    assert coverage["question_count"] == 60
+    assert len(coverage["task_type_counts"]) >= 10
+    assert len(coverage["source_scope_counts"]) >= 15
+    assert coverage["expected_mode_counts"]["keyword"] >= 50
+    assert coverage["expected_mode_counts"]["hybrid_rrf"] >= 50
+    assert coverage["expected_mode_counts"]["graphrag_context"] >= 8
+    assert coverage["expected_mode_counts"]["graphrag_global"] >= 4
+    assert coverage["questions_with_graphrag_modes"] >= 10
+    assert coverage["minimums"]["task_types"] == 10
+    assert coverage["minimums"]["source_scopes"] == 15
+    assert coverage["minimums"]["graphrag_questions"] == 10
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
     package_manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
     evidence_files = package_manifest["evidence_files"]
     assert package_manifest["integrity_manifest"] == "docs/challenge_cup/reproducibility/evidence_hashes.json"
+    assert package_manifest["evaluation_coverage_profile"] == (
+        "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json"
+    )
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
@@ -183,6 +201,7 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "README_先看这里.md",
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
+        PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
         PACKAGE_DIR / "package_manifest.json",
     ]
     before = {path: path.read_text(encoding="utf-8") for path in tracked}
@@ -218,6 +237,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "package.json",
         "docs/challenge_cup/package_manifest.json",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
+        "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json",
         "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
     ]
     for target in tracked_json_entries:

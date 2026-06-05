@@ -5,6 +5,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -21,8 +22,10 @@ AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
+DATASET_RELATIVE = "evaluation/system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO_DIR / "evidence_hashes.json"
+EVAL_COVERAGE_PROFILE = REPRO_DIR / "evaluation_coverage_profile.json"
 
 REQUIRED_PACKAGE_DOCS = [
     "README_先看这里.md",
@@ -39,9 +42,21 @@ REQUIRED_PACKAGE_DOCS = [
     "10_答辩攻防与彩排卡.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/command_log.md",
 ]
+EVAL_COVERAGE_MINIMUMS = {
+    "task_types": 10,
+    "source_scopes": 15,
+    "graphrag_questions": 10,
+}
+REQUIRED_EXPECTED_MODES = {
+    "keyword": 50,
+    "hybrid_rrf": 50,
+    "graphrag_context": 8,
+    "graphrag_global": 4,
+}
 
 REQUIRED_BROWSER_CHECKS = {
     "health endpoint",
@@ -128,6 +143,32 @@ def count_jsonl(path: Path) -> int:
     return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def expected_coverage_profile() -> dict[str, Any]:
+    rows = read_jsonl(DATASET)
+    task_type_counts = Counter(str(row["task_type"]) for row in rows)
+    source_scope_counts = Counter(str(row["source_scope"]) for row in rows)
+    expected_mode_counts: Counter[str] = Counter()
+    questions_with_graphrag_modes = 0
+    for row in rows:
+        modes = [str(mode) for mode in row.get("expected_modes", [])]
+        expected_mode_counts.update(modes)
+        if any(mode.startswith("graphrag_") for mode in modes):
+            questions_with_graphrag_modes += 1
+    return {
+        "generated_from": DATASET_RELATIVE,
+        "question_count": len(rows),
+        "task_type_counts": dict(sorted(task_type_counts.items())),
+        "source_scope_counts": dict(sorted(source_scope_counts.items())),
+        "expected_mode_counts": dict(sorted(expected_mode_counts.items())),
+        "questions_with_graphrag_modes": questions_with_graphrag_modes,
+        "minimums": dict(EVAL_COVERAGE_MINIMUMS),
+    }
+
+
 def nonempty(path: Path) -> bool:
     return path.exists() and path.stat().st_size > 0
 
@@ -197,6 +238,49 @@ def check_eval_dataset() -> GateCheck:
         "60 evaluation questions",
         count >= 60,
         f"{count} evaluation questions",
+    )
+
+
+def check_evaluation_coverage_profile() -> GateCheck:
+    if not EVAL_COVERAGE_PROFILE.exists():
+        return GateCheck("evaluation coverage profile", False, "evaluation_coverage_profile.json missing")
+    profile = load_json(EVAL_COVERAGE_PROFILE)
+    expected = expected_coverage_profile()
+    failures: list[str] = []
+    for key in (
+        "generated_from",
+        "question_count",
+        "task_type_counts",
+        "source_scope_counts",
+        "expected_mode_counts",
+        "questions_with_graphrag_modes",
+        "minimums",
+    ):
+        if profile.get(key) != expected[key]:
+            failures.append(f"{key} mismatch")
+    if expected["question_count"] < 60:
+        failures.append(f"question_count below 60: {expected['question_count']}")
+    if len(expected["task_type_counts"]) < EVAL_COVERAGE_MINIMUMS["task_types"]:
+        failures.append(f"task_types below {EVAL_COVERAGE_MINIMUMS['task_types']}")
+    if len(expected["source_scope_counts"]) < EVAL_COVERAGE_MINIMUMS["source_scopes"]:
+        failures.append(f"source_scopes below {EVAL_COVERAGE_MINIMUMS['source_scopes']}")
+    if expected["questions_with_graphrag_modes"] < EVAL_COVERAGE_MINIMUMS["graphrag_questions"]:
+        failures.append(f"graphrag_questions below {EVAL_COVERAGE_MINIMUMS['graphrag_questions']}")
+    mode_counts = expected["expected_mode_counts"]
+    for mode, minimum in REQUIRED_EXPECTED_MODES.items():
+        actual = int(mode_counts.get(mode, 0))
+        if actual < minimum:
+            failures.append(f"{mode} below {minimum}: {actual}")
+    return GateCheck(
+        "evaluation coverage profile",
+        not failures,
+        (
+            f"{expected['question_count']} questions across {len(expected['task_type_counts'])} task types, "
+            f"{len(expected['source_scope_counts'])} source scopes, "
+            f"{expected['questions_with_graphrag_modes']} GraphRAG-tagged questions"
+        )
+        if not failures
+        else "; ".join(failures),
     )
 
 
@@ -379,6 +463,7 @@ def run_gate() -> list[GateCheck]:
         check_package_docs(),
         check_package_control_files(),
         check_eval_dataset(),
+        check_evaluation_coverage_profile(),
         check_package_manifest(),
         check_evidence_hashes(),
         check_claim_evidence_matrix(),
@@ -403,7 +488,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
