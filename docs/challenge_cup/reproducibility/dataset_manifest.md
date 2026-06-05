@@ -5,4 +5,5 @@
 - 知识图谱人工评审：`docs/project_deliverables/05_知识图谱POC_三元组和人工判断/人工判断小结.md`。
 - Day3 baseline：`evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md`。
 - Day4 失败分析：`evaluation/reports/day4_failure_analysis_20260605_210642.md`。
+- GraphRAG 同题子集：`evaluation/reports/challenge_cup_graphrag_same_question_report.md`。
 - 课程最终交付包：`docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/README_先看这里.md`。

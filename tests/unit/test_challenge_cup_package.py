@@ -76,6 +76,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "9080" in one_page
     assert "27" in one_page
     assert "GraphRAG" in one_page
+    eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
+    assert "GraphRAG 同题子集" in eval_report
+    assert "challenge_cup_graphrag_same_question_report.md" in eval_report
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:

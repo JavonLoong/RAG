@@ -1,0 +1,231 @@
+{
+  "report_type": "challenge_cup_graphrag_same_question_subset",
+  "dataset": "evaluation/system_eval_questions.jsonl",
+  "day3_comparison": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.json",
+  "total_questions": 60,
+  "graphrag_question_count": 10,
+  "mode_counts": {
+    "graphrag_context": 8,
+    "graphrag_global": 4
+  },
+  "baseline_methods": [
+    "keyword",
+    "dense_hashing",
+    "hybrid_rrf"
+  ],
+  "average_best_baseline_coverage_on_graph_subset": 0.633333,
+  "priority_case_count": 6,
+  "boundary": "This report identifies the same-question GraphRAG evaluation subset; it does not claim completed online GraphRAG QA beats the baseline.",
+  "cases": [
+    {
+      "id": "cc032",
+      "question": "本项目为什么不能只说自己是一个普通问答页面？",
+      "task_type": "challenge_cup_positioning",
+      "source_scope": "project_deliverables_and_evaluation_notes",
+      "expected_modes": [
+        "keyword",
+        "hybrid_rrf",
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 0.333333,
+        "dense_hashing": 0.166667,
+        "hybrid_rrf": 0.166667
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.333333,
+      "priority_for_graph_eval": true,
+      "recommendation": "Prioritize local graph evidence because current text retrieval does not cover enough expected evidence.",
+      "grading_notes": "回答需要突出工程闭环，不应只描述前端问答。"
+    },
+    {
+      "id": "cc033",
+      "question": "GraphRAG 在动力装备资料中适合解决哪一类普通 RAG 不稳定的问题？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "graphrag_design_docs",
+      "expected_modes": [
+        "graphrag_context",
+        "graphrag_global"
+      ],
+      "graph_mode": "graphrag_global",
+      "baseline_keyword_coverage": {
+        "keyword": 0.666667,
+        "dense_hashing": 0.0,
+        "hybrid_rrf": 0.5
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.666667,
+      "priority_for_graph_eval": true,
+      "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
+      "grading_notes": "必须说明 GraphRAG 的适用场景，而不是宣称所有问题都优于普通 RAG。"
+    },
+    {
+      "id": "cc034",
+      "question": "为什么三元组必须绑定 evidence 才能用于可信问答？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "kg_poc_outputs",
+      "expected_modes": [
+        "keyword",
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 0.833333,
+        "dense_hashing": 0.5,
+        "hybrid_rrf": 0.833333
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.833333,
+      "priority_for_graph_eval": false,
+      "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
+      "grading_notes": "应强调证据绑定是可信性和人工评审的前提。"
+    },
+    {
+      "id": "cc035",
+      "question": "当前知识图谱 POC 的人工评审结果能证明什么，不能证明什么？",
+      "task_type": "structured_data_fact",
+      "source_scope": "kg_poc_outputs",
+      "expected_modes": [
+        "keyword",
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 1.0,
+        "dense_hashing": 1.0,
+        "hybrid_rrf": 1.0
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 1.0,
+      "priority_for_graph_eval": false,
+      "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
+      "grading_notes": "必须同时说清楚能证明和不能过度声称的边界。"
+    },
+    {
+      "id": "cc039",
+      "question": "动力装备故障诊断类问题为什么需要同时返回可能原因和检查证据？",
+      "task_type": "fault_reasoning",
+      "source_scope": "fault_reports_and_maintenance_documents",
+      "expected_modes": [
+        "hybrid_rrf",
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 0.833333,
+        "dense_hashing": 0.333333,
+        "hybrid_rrf": 0.833333
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.833333,
+      "priority_for_graph_eval": false,
+      "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
+      "grading_notes": "回答应保持辅助定位，不应直接下维修决策。"
+    },
+    {
+      "id": "cc040",
+      "question": "燃气轮机运行监测中温度、压力和振动信号为什么常被放在一起分析？",
+      "task_type": "fault_reasoning",
+      "source_scope": "public_books_operation_and_fault_reports",
+      "expected_modes": [
+        "keyword",
+        "hybrid_rrf",
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 0.833333,
+        "dense_hashing": 0.5,
+        "hybrid_rrf": 0.833333
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.833333,
+      "priority_for_graph_eval": false,
+      "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
+      "grading_notes": "应体现多参数联合分析的运维价值。"
+    },
+    {
+      "id": "cc041",
+      "question": "燃烧室相关问题为什么适合用图谱表达部件、现象和影响之间的关系？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "public_books_gas_turbine_and_combined_cycle",
+      "expected_modes": [
+        "graphrag_context",
+        "graphrag_global"
+      ],
+      "graph_mode": "graphrag_global",
+      "baseline_keyword_coverage": {
+        "keyword": 0.666667,
+        "dense_hashing": 0.833333,
+        "hybrid_rrf": 0.666667
+      },
+      "best_baseline_method": "dense_hashing",
+      "best_baseline_coverage": 0.833333,
+      "priority_for_graph_eval": true,
+      "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
+      "grading_notes": "应说明图谱表达多实体关系的优势。"
+    },
+    {
+      "id": "cc043",
+      "question": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应该如何解释？",
+      "task_type": "evaluation_method",
+      "source_scope": "evaluation_framework",
+      "expected_modes": [
+        "keyword",
+        "graphrag_global"
+      ],
+      "graph_mode": "graphrag_global",
+      "baseline_keyword_coverage": {
+        "keyword": 0.0,
+        "dense_hashing": 0.166667,
+        "hybrid_rrf": 0.166667
+      },
+      "best_baseline_method": "dense_hashing",
+      "best_baseline_coverage": 0.166667,
+      "priority_for_graph_eval": true,
+      "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
+      "grading_notes": "必须体现方法适用边界。"
+    },
+    {
+      "id": "cc048",
+      "question": "GraphRAG global 更适合回答什么类型的问题？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "graphrag_design_docs",
+      "expected_modes": [
+        "graphrag_global"
+      ],
+      "graph_mode": "graphrag_global",
+      "baseline_keyword_coverage": {
+        "keyword": 0.5,
+        "dense_hashing": 0.166667,
+        "hybrid_rrf": 0.333333
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.5,
+      "priority_for_graph_eval": true,
+      "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
+      "grading_notes": "应明确 global search 的问题类型。"
+    },
+    {
+      "id": "cc056",
+      "question": "为什么知识图谱关系类型不能全部写成 related_to？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "kg_poc_outputs",
+      "expected_modes": [
+        "graphrag_context"
+      ],
+      "graph_mode": "graphrag_context",
+      "baseline_keyword_coverage": {
+        "keyword": 0.333333,
+        "dense_hashing": 0.166667,
+        "hybrid_rrf": 0.166667
+      },
+      "best_baseline_method": "keyword",
+      "best_baseline_coverage": 0.333333,
+      "priority_for_graph_eval": true,
+      "recommendation": "Prioritize local graph evidence because current text retrieval does not cover enough expected evidence.",
+      "grading_notes": "应强调 schema 粒度控制。"
+    }
+  ]
+}
