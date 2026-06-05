@@ -76,15 +76,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "9080" in one_page
     assert "27" in one_page
     assert "GraphRAG" in one_page
+    readme = (PACKAGE_DIR / "README_先看这里.md").read_text(encoding="utf-8")
+    assert "reproducibility/readiness_gate_report.md" in readme
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
+    assert "check_challenge_cup_readiness.py" in runbook
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
+    assert "readiness_gate_report.md" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -97,6 +101,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     evidence_files = package_manifest["evidence_files"]
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
 

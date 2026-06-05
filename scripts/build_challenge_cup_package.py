@@ -16,6 +16,7 @@ GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
+READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
@@ -114,6 +115,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 7. `06_结项验收清单.md`
 8. `reproducibility/runbook.md`
 9. `reproducibility/dataset_manifest.md`
+10. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -341,6 +343,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_package.py
 ```
+
+## 运行结项 readiness gate
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
+```
 """
 
 
@@ -356,6 +364,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
+- 结项 readiness gate：`{md_link(READINESS_GATE_REPORT)}`。
 - 浏览器验收截图：`{md_link(BROWSER_SCREENSHOT_DIR)}/`。
 - 浏览器桌面总览截图：`{md_link(BROWSER_SCREENSHOTS[0])}`。
 - 浏览器桌面检索截图：`{md_link(BROWSER_SCREENSHOTS[1])}`。
@@ -417,6 +426,10 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png
 -> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
 -> Status: pass (12/12 checks)
+
+python scripts/check_challenge_cup_readiness.py
+-> docs/challenge_cup/reproducibility/readiness_gate_report.md
+-> Status: pass (6/6 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -445,6 +458,7 @@ def main() -> int:
             md_link(LIVE_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_JSON),
+            md_link(READINESS_GATE_REPORT),
             *(md_link(path) for path in BROWSER_SCREENSHOTS),
             *(md_link(path) for path in (ctx["day3"], ctx["day4"], ctx["graph_report"]) if path is not None),
         ],

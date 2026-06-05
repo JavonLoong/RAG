@@ -15,6 +15,7 @@
 7. `06_结项验收清单.md`
 8. `reproducibility/runbook.md`
 9. `reproducibility/dataset_manifest.md`
+10. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 

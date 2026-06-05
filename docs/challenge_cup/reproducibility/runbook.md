@@ -37,3 +37,9 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_package.py
 ```
+
+## 运行结项 readiness gate
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
+```

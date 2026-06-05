@@ -49,6 +49,10 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png
 -> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
 -> Status: pass (12/12 checks)
+
+python scripts/check_challenge_cup_readiness.py
+-> docs/challenge_cup/reproducibility/readiness_gate_report.md
+-> Status: pass (6/6 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
