@@ -1,0 +1,380 @@
+{
+  "generated_at": "2026-06-05T21:05:40",
+  "dataset": "D:\\虚拟C盘\\RAG\\evaluation\\system_eval_questions.jsonl",
+  "corpus_chunks": 6494,
+  "chunk_size": 900,
+  "overlap": 120,
+  "top_k": 5,
+  "summaries": [
+    {
+      "method": "keyword",
+      "total_questions": 60,
+      "matched_outputs": 60,
+      "question_recall_at_k": 0.833333,
+      "keyword_recall_at_k": 0.540268,
+      "avg_retrieval_keyword_coverage": 0.563056,
+      "zero_hit_questions": 0,
+      "strong_questions": 25,
+      "weak_questions": 25,
+      "missed_questions": 10
+    },
+    {
+      "method": "dense_hashing",
+      "total_questions": 60,
+      "matched_outputs": 60,
+      "question_recall_at_k": 0.583333,
+      "keyword_recall_at_k": 0.281879,
+      "avg_retrieval_keyword_coverage": 0.299722,
+      "zero_hit_questions": 0,
+      "strong_questions": 12,
+      "weak_questions": 23,
+      "missed_questions": 25
+    },
+    {
+      "method": "hybrid_rrf",
+      "total_questions": 60,
+      "matched_outputs": 60,
+      "question_recall_at_k": 0.816667,
+      "keyword_recall_at_k": 0.5,
+      "avg_retrieval_keyword_coverage": 0.519722,
+      "zero_hit_questions": 0,
+      "strong_questions": 24,
+      "weak_questions": 25,
+      "missed_questions": 11
+    }
+  ],
+  "case_picks": {
+    "successes": [
+      {
+        "id": "se001",
+        "question": "燃气-蒸汽联合循环为什么通常比单一燃气轮机循环效率更高？",
+        "task_type": "standard_rag_fact",
+        "source_scope": "public_books_gas_turbine_and_combined_cycle",
+        "grading_notes": "应检索到联合循环、余热利用、蒸汽轮机或能量梯级利用相关证据，不能只泛泛说效率高。",
+        "expected_evidence_keywords": [
+          "燃气-蒸汽联合循环",
+          "余热",
+          "蒸汽轮机",
+          "能量梯级利用"
+        ],
+        "retrieval_evidence_keywords": [
+          "燃气-蒸汽联合循环",
+          "余热",
+          "蒸汽轮机"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.75,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "RR(英)Sco,RBa2ii”23800 34.7 19.2 3000 172.6° GEC(英)EAS1 33,38iX”12200 27.6 9.8 6500 32.9 GE(美)L M2500”17550 34 18 3600\")100” 五川岛播磨CAD 1M1500”16300 24.5 11.6 3600\"*16.5 联合技术公司〈美)FTI...",
+          "能量平衡关系 式中“Ps一一蒸汽透平轴端的做功功率; QAs一蒸汽透平通过凝汽器排向外界冷源的热能。 在图14-1所示的系统中，蒸汽轮机的循环效率BE 鉴于汽轮发电机端的做功功率为 则蒸汽轮机循环的有效效率se 8 式中“妈。一一蒸汽轮机的机械传动效率; 人一一燕汽轮机发电机的效率。 4.联合循环的热效率rh.Era De RE十RS Te TAG 7 a...",
+          "蒸汽联合循环能达到相当高的效率,因而发展很快,特别是近十多年来已有 很多座功率为数十万千瓦及更大的高效率联合循环电站投入使用。目前世界上功率最天 的联合循环电站为2500MW,联合循环效率最高的已达到58%。 RAED RAC-燕汽联合循环具有以下一些优点,即:@供电效率远远超过燃煤的汽 轮机电站;加在国外,交钥匙工程的比投资费用大约为500~…600美元...",
+          "型的燃气轮栅ee 694 8.10微型燃气轮机5 INGE sae aee sen eneereenenenee ee 639 | ## Page 9 第9章燃气轮机辅机系统pe G4] 9.1概述oo 641 9.2辅机的传动4 9.3起动装置ee 643 9.7通流部分的清洗装置ee 665 9.9消声与隔声ooeee ee 676 9.10灭火系统8...",
+          "燃料电池与 AEE GAH,BICOL MES|RS笃 H和CO,再导入燃气轮机中作燃料.燃气轮机中“|ake RSG 机三层循环,三者共同输出功率。其中燃料电池图1。7 concmmMma mre 显然,这是能源利用匹配很好的系统,兼之SOFC在压力下工作时可提高其能源转换效 率,使该循环能达到很高的效率。计算表明,图13.79所示方案的发电效率可达到7..."
+        ]
+      },
+      {
+        "id": "se002",
+        "question": "压气机在燃气轮机中的主要作用是什么？",
+        "task_type": "standard_rag_fact",
+        "source_scope": "public_books_gas_turbine_principles",
+        "grading_notes": "答案应说明压气机与燃烧室、空气压力/流量之间的关系。",
+        "expected_evidence_keywords": [
+          "压气机",
+          "空气",
+          "压力",
+          "燃烧室"
+        ],
+        "retrieval_evidence_keywords": [
+          "压气机",
+          "空气",
+          "压力"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.75,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "变排量调节原理是什么? 10.顶轴系统投运和停运的注意事项是什么”日常运行维护主要有哪些方面? 11.控制油系统作用是什么?M7OIF型单轴联合循环机组控制油系统主要由哪些设备组 成?系统工作流程怎样? 12.控制油供向忆些执行机构提供高压油?在执行机构中,快速卸载阅起什么作用?AST 电磁赣中间油压监测的目的是什么? 13.在执行机构中,伺服调节油动机工...",
+          "以自 HB. 思考题 1汽轮机本体主要由哪些部件组 2.可通过哪些措施减少级的漏汽损失? 3.汽缸的作用是什么? 4.采用双层抵结构有哪些优点? 5.检树形叶根和个形时根各有何优缺点? 6.可倾瓦轴承有什么特点? 7.TC2F-30型汽轮机的算体是如何脱胀的? 104 ## Page 119 第入境 机岛辅助系统 Ce 一台烘气-藻汽联合循环发电机组,除了...",
+          "BR UHR 241 5.1油轮气动设计流程”241 去2油轮气动杭失模型“242 5.3低维设计空间上的涡轮儿何和气动参数的选取277 去4时上造型方法“308 5.5叶片三维积稚对油轮沪动及性能的影响”320 卖6“涡轮精细化流动组织与没计技术334 参考文献365 6“注欠内部流动控制技术377 6.1流动控制技术简介37 6.2边界层流动控制技术“...",
+          "检 查经TCA加热后的天然气温度是否满足燃气轮机的要求,如果温度低于低限设定值,将触发 低速RUNBACK,此时应观察风气轮机控制系统是可动作正常,若不正常可手动三负荷。在此 期间,应采取各种有效措施(如尽快恢复海水奈\\水浴炉正常)尽量提高天然气温度。 5.22.8系统维护及保养 系统维护保养包括双级过滤器的切换及涉芯的更换、水浴炉维护及其他定期维护保养-...",
+          "封将汽联箱压力低是什么原因导致如何处理? 33.栈汽器真空如何影响联合循环的效率?什么是凝汽器的最人真空 34.配汽器的过冷度和端差的各指什么? 35.什么是离心泵的汽蚀和气缚现象? 36.畏助蒸汽联箱压力高是什么原因导致应如何处理? 37.简述水环真室友的工作过程。 38.APRIL HE TIME KCN BA 39.为何设置密封油系统? 40.密封油..."
+        ]
+      },
+      {
+        "id": "se004",
+        "question": "涡轮为什么能够输出机械功？",
+        "task_type": "standard_rag_fact",
+        "source_scope": "public_books_gas_turbine_principles",
+        "grading_notes": "应命中涡轮膨胀做功和驱动压气机/负载的证据。",
+        "expected_evidence_keywords": [
+          "涡轮",
+          "膨胀",
+          "叶片",
+          "轴功"
+        ],
+        "retrieval_evidence_keywords": [
+          "涡轮",
+          "膨胀",
+          "叶片",
+          "轴功"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 1.0,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "轮机中布置的不同可分为，国简形、分管形、环管形和环形。大多 数据气轮机不须对结构做重大改变而只更换火焰简即可兼用扩散式和开混型的棋伐室。AC 温部件，结构设计中必须很好地考虑热及联、热定位和减小局部热应力的问题。燃烧室的重要部件包 揪，火迷简、火迷稳定装置、灼料哮嘲、点火和联焙机构、准却机构. 《8)对重型机所轮机机娆宣的结构以及不同形式的DLN燃烧方案，...",
+          "18 HIT I fe (AT A BY EAR 6 A a8 es CK id FT SA eT ah AEC AE, AIRBUS ofA, ACA MLMT ARAB A Be LN IK CON ABLE BE AS— 1 所未。经过过涉系统过当后的向.清理.进入压气机。压气 机的一个叶轮与其司的一组静时绢成了一个组,一个压气机南若干级组成。压气 ...",
+          "等情炊降Ah7的比值为轮周效率刀 考虑到向心透平中的其他损失,它的特性线与轴流透平基本相似,不再作详细说明。 小结 6)轴流式燃气和平主要是由一系列静叶叶栅和装有动叶机的工作叶轮筱此囊联而 成。每一列静叶时机与位于其后的工作叶轮一起,组合成为榴气透平的一个级,它是燃气 发生影卫过程并把燃气的能量转化成为输给外界机械功的基本单位,轴流式延平的特点 是;容许流...",
+          "降给出有用的机械功。这四类装置的区别主要体现在形成工质高压,高温状态的 方式,以及和用工质灶降的形式两个方面习。其中,部气欠机中采用的是旋转式压 箱.气体通过连续能转的叶轮实现增压.同样通过能转叶轮实现连续的及了过程- or ## Page 19 燃气轮机可靠性维护理论及应用 压气机,用喷出涡轮的排气进入大气或动力涡轮做功。 1.1.2”燃气轮机的循环原理...",
+          "BR UHR 241 5.1油轮气动设计流程”241 去2油轮气动杭失模型“242 5.3低维设计空间上的涡轮儿何和气动参数的选取277 去4时上造型方法“308 5.5叶片三维积稚对油轮沪动及性能的影响”320 卖6“涡轮精细化流动组织与没计技术334 参考文献365 6“注欠内部流动控制技术377 6.1流动控制技术简介37 6.2边界层流动控制技术“..."
+        ]
+      }
+    ],
+    "partial": [
+      {
+        "id": "se003",
+        "question": "燃烧室在燃气轮机热力循环中承担什么功能？",
+        "task_type": "standard_rag_fact",
+        "source_scope": "public_books_gas_turbine_principles",
+        "grading_notes": "应覆盖燃料燃烧、压缩空气和高温燃气，避免只写燃烧室是燃烧的地方。",
+        "expected_evidence_keywords": [
+          "燃烧室",
+          "燃料",
+          "压缩空气",
+          "高温燃气"
+        ],
+        "retrieval_evidence_keywords": [
+          "燃烧室",
+          "燃料"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.5,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "传热学在其发展进程中者是采用了理论 分析与实验相结合的方法。科学实验是推动这些学科发展的重要力量,通过实验,可以验 证理论的正确性,通过实验,可以发现新的现象,促进了理论分析的发展.随着计算机和计 算理论的发展,数值分析也已经成为这些学科研究发展的重要方面. 我们强调实验实践的重要性,在学习和工作中,一定要牢记实践是检验真理的惟一 标准。特别是对从事工程工...",
+          "mae!有 是总压损失的减低，这是非常有价值的收获，而且与 其他复杂的低污染燃烧系统相比，结构相对简单，制 造成本也较低， 图5-55所示是FT4C-3F燃气轮机采用的一种催化 燃烧室。由于火焰简的尺寸比原型机增大了很多，故 将原来的8 PRIN TL RE AH ER 仍然是8个火焰简，但尺寸加大。该燃烧系统由4部 分组成，即前置燃烧器、燃料注人器、催化...",
+          "C，使机组效率的提 气冷核反应堆利用核能的闭式循环燃气轮机，可以应用气冷反应堆，并选用合适 图3-31”应用核能的燃气轮机从20世纪50年代起，人们就开始了上述核能燃气轮机的设计研究 球形元件的高温气冷反应堆，建立起了用氮气作为工质的闭式循环燃气轮机试验机组，从中积累经验， 第三更、燃气输机热力循环有 A 3-30闭式循环燃气轮机 的气体，既作为反应堆的冷...",
+          "加则效率增加。 注意到在确定榴气轮机的压比时,有两个最佳压比,即效率最佳压比rr和比功最人 压比es 以上内容是本章最基本的内容,必须掌握， 《4)其他循环,此外我们还介绍了回热箱环,以间冷.再热和回热为特色的复杂循环， 简单介绍了航空发动机循环 《5)有关燃气轮机热力循环的计算问题,我们也作了简单介绍有了良好的热力学基 机和灵气轮机热力循环的闻念,进行热...",
+          "特臻感谢. 由于我们的理论水平和实践经验不足，出版时间又甚紧，书中难免有不少缺陷或不足之处，县请广 大读者批评指正。 清华大学热能工程系动力机械与工程研究所 深圳南山热电股份有限公司 2007年6月于北京 ## Page 7 |AES RR)—BRS RRB) 前言第三节.燃烧过程的物理一化学原理 ||a eee概要RN 100 第二节目前我国发展燃气轮机..."
+        ]
+      },
+      {
+        "id": "se010",
+        "question": "设备维修报告中，哪些信息最适合作为 RAG 检索的证据片段？",
+        "task_type": "standard_rag_process",
+        "source_scope": "fault_reports_and_maintenance_documents",
+        "grading_notes": "应说明证据片段应包含事实、原因和处理结果，不应只说全文入库。",
+        "expected_evidence_keywords": [
+          "故障现象",
+          "原因分析",
+          "维修措施",
+          "结论"
+        ],
+        "retrieval_evidence_keywords": [
+          "结论"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.25,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "别与 Query 改写] R -->|向量召回| E R -->|关键词召回| F E --> S[多路召回结果] F --> S S --> T[融合去重与 Reranker 重排] T --> U[Top-K 高质量证据] U --> V[上下文组装 Prompt] Q -.-> V V --> W[LLM 生成与幻觉校验] W --> X[带 Cit...",
+          "# Layout-aware OCR 可靠性审计 ## 总判断 这批 OCR 已经完成工程层面的全量处理，可以作为 RAG 检索候选文本；但它仍不是精校文本。 - 运行完整性：高，所有目标页都处理完，脚本层面没有报错。 - 文字识别：整体可用，但封面、目录、表格、公式、页眉页脚仍可能有识别噪声。 - 句段关系：新版 layout-aware 输出已经比旧版...",
+          "# Layout-aware OCR 交付前质量审计 ## 总判断 这批 OCR 已经完成工程层面的全量处理，可以作为 RAG 检索候选文本；但它仍不是精校文本。 - 运行完整性：高，所有目标页都处理完，脚本层面没有报错。 - 文字识别：整体可用，但封面、目录、表格、公式、页眉页脚仍可能有识别噪声。 - 句段关系：新版 layout-aware 输出已经比...",
+          "应用分析[].科学技术与工程,2007， 7(15):3881-3885. [24]余杰.周浩,黄春光.以可靠性为中心的检修策略品].高电压技术,2005,31(6); 090 ## Page 108 BABS BRI RCM的相关分析方法及工具 27-28. [25]Ade.DAT SEE oy AE CRCMD在电力系统中的应用研究LD].杭州:浙江大...",
+          "# 高分辨率修正版 OCR 交付前质量审计 ## 总判断 这批 OCR 已经完成工程层面的全量处理，可以作为 RAG 检索候选文本；但它仍不是精校文本。 - 运行完整性：高，所有目标页都处理完，脚本层面没有报错。 - 文字识别：整体可用，但封面、目录、表格、公式、页眉页脚仍可能有识别噪声。 - 句段关系：新版 layout-aware 输出已经比旧版更好，..."
+        ]
+      },
+      {
+        "id": "se021",
+        "question": "知识图谱 POC 中 schema 约束的作用是什么？",
+        "task_type": "kg_graph_rag",
+        "source_scope": "kg_poc_outputs",
+        "grading_notes": "应检索到 schema、实体/关系约束和三元组校验相关证据。",
+        "expected_evidence_keywords": [
+          "schema",
+          "实体类型",
+          "关系类型",
+          "三元组"
+        ],
+        "retrieval_evidence_keywords": [
+          "schema",
+          "三元组"
+        ],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.5,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "*RAG 编排层 (`rag_orchestrator`)**：基于 Advanced RAG 调度策略。集成前置的查询理解与改写 (Query Rewriting) 以对齐知识库语义，通过动态组装上下文 (In-Context Assembly) 配合严格 Prompt 工程，强制大模型生成带有准确引用 (Citation) 的溯源回答，建立防幻觉屏障。...",
+          "rand\" href=\"#top\">最小知识图谱 POC</a> <nav class=\"nav\" aria-label=\"页面导航\"> <a href=\"README.md\">POC README</a> <a href=\"sample_text.md\">样例文本</a> <a href=\"schema.json\">Schema</a> <a href=...",
+          "- 输入来源：Label Studio 导出的 OCR / bbox / transcription JSON。 - 文档内容：船舶燃气轮机控制与健康管理课程知识体系构建论文。 - OCR 文本块：246 个。 - chunk：14 个。 - schema：10 类实体，15 类关系。 - 候选三元组：27 条。 - schema 校验通过：27 条。 -...",
+          "检 查经TCA加热后的天然气温度是否满足燃气轮机的要求,如果温度低于低限设定值,将触发 低速RUNBACK,此时应观察风气轮机控制系统是可动作正常,若不正常可手动三负荷。在此 期间,应采取各种有效措施(如尽快恢复海水奈\\水浴炉正常)尽量提高天然气温度。 5.22.8系统维护及保养 系统维护保养包括双级过滤器的切换及涉芯的更换、水浴炉维护及其他定期维护保养-...",
+          "LLM 自动抽取质量、Neo4j 落库或完整 GraphRAG 问答已经完成。下一步会用同一个 schema 让 LLM 自动抽三元组，再和当前人工评审结果对比。 ## 现场演示顺序 1. 打开输入 JSON，说明这是之前已有的 Label Studio 导出文件。 2. 打开 `01_blocks.json`，说明已经从 JSON 中抽出 OCR 文本块..."
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "id": "se013",
+        "question": "Reranker 在 RAG 流程中的作用是什么？",
+        "task_type": "standard_rag_process",
+        "source_scope": "rag_system_design_docs",
+        "grading_notes": "应说明 reranker 是召回后的二次排序环节，不应误解为向量数据库。",
+        "expected_evidence_keywords": [
+          "Reranker",
+          "重排",
+          "候选证据",
+          "Top-K"
+        ],
+        "retrieval_evidence_keywords": [],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.0,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "检 查经TCA加热后的天然气温度是否满足燃气轮机的要求,如果温度低于低限设定值,将触发 低速RUNBACK,此时应观察风气轮机控制系统是可动作正常,若不正常可手动三负荷。在此 期间,应采取各种有效措施(如尽快恢复海水奈\\水浴炉正常)尽量提高天然气温度。 5.22.8系统维护及保养 系统维护保养包括双级过滤器的切换及涉芯的更换、水浴炉维护及其他定期维护保养-...",
+          "变排量调节原理是什么? 10.顶轴系统投运和停运的注意事项是什么”日常运行维护主要有哪些方面? 11.控制油系统作用是什么?M7OIF型单轴联合循环机组控制油系统主要由哪些设备组 成?系统工作流程怎样? 12.控制油供向忆些执行机构提供高压油?在执行机构中,快速卸载阅起什么作用?AST 电磁赣中间油压监测的目的是什么? 13.在执行机构中,伺服调节油动机工...",
+          "封将汽联箱压力低是什么原因导致如何处理? 33.栈汽器真空如何影响联合循环的效率?什么是凝汽器的最人真空 34.配汽器的过冷度和端差的各指什么? 35.什么是离心泵的汽蚀和气缚现象? 36.畏助蒸汽联箱压力高是什么原因导致应如何处理? 37.简述水环真室友的工作过程。 38.APRIL HE TIME KCN BA 39.为何设置密封油系统? 40.密封油...",
+          "以自 HB. 思考题 1汽轮机本体主要由哪些部件组 2.可通过哪些措施减少级的漏汽损失? 3.汽缸的作用是什么? 4.采用双层抵结构有哪些优点? 5.检树形叶根和个形时根各有何优缺点? 6.可倾瓦轴承有什么特点? 7.TC2F-30型汽轮机的算体是如何脱胀的? 104 ## Page 119 第入境 机岛辅助系统 Ce 一台烘气-藻汽联合循环发电机组,除了...",
+          "图4.28 PUCK 4.29 Bom GMP DR PUIG AER AL HJ Co RIDE LAS AL轴承座上,该中心推拉梁对高中压 汽红同风aed轴承座进行对中定位,H形中心推拉时的安装位置如图4.6所示,结构如图 4.29所示,中心推拉梁两侧分别使用螺栓和偏心销与商中压汽缸下部及轴承座相连。 在图4.27中,要轴承座由一个纵销1引导轴承认的自..."
+        ]
+      },
+      {
+        "id": "se015",
+        "question": "如果检索结果没有覆盖标准答案中的关键证据，生成模型可能出现什么风险？",
+        "task_type": "answer_quality",
+        "source_scope": "evaluation_framework",
+        "grading_notes": "应把检索覆盖不足和生成幻觉风险联系起来。",
+        "expected_evidence_keywords": [
+          "检索上下文",
+          "关键证据",
+          "幻觉风险",
+          "低召回"
+        ],
+        "retrieval_evidence_keywords": [],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.0,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "al_engine`) * **多路召回与重排机制 (Hybrid Retriever & Reranker)**：自研集成层，将 Dense (向量语义)、Sparse (BM25 词法) 和 Graph (图谱邻域) 三路检索结果进行评分归一化、去重和融合互补。 * **上下文智能打包器 (Context Packer)**：自研 token 预算控制...",
+          "间距40mm AK及到对试验结果的理解主流空气速度16m/s,冷却 气体有两种:一种就用空气，另一种用CO;，因为CO的密度是空气的1.6 AFF,AT 以模拟郝烧室中冷却空气与热气之间的密度比。图12-17表示斜的发散小孔冷却 空气流动与壁面的关系 mee eau tem aE 图12-15 FLUE 104或164 st 图12-7“全面夺的气肛交 参...",
+          "三、 全局工程蓝图与物理目录架构 (Detailed Blueprint) 以下为系统十二层核心模块的详细职责划分与包结构： ```text rag_research_system/ ├─ configs/ # 全局配置中心：统一管理实验、模型、数据、日志、部署参数。 ├─ core_domain/ # 领域语义层：定义知识单元、实体、关系、文档、问题、证...",
+          "（LLM），抽取其中的“实体”、“关系”和“断言”三元组，经过人工校验或自动归一化处理后，将结构化数据存入 Neo4j 图数据库。 * **图谱高级挖掘**：在图数据库中执行图谱社区发现 (Community Detection) 算法，识别局部聚集的网络结构，并利用大模型生成“社区摘要”，反向存入图库，用于支撑宏观总结性问题的回答。 **2. 在线图谱检...",
+          "eveloped Architectures) 为了达成“发顶刊、可观测、可对比消融”的目标，本项目在第三方基建之上，自主研发了庞大的中间控制层和流水线体系。以下全部为项目团队从零自研的代码模块： ### 1. 🚀 自研 OCR 调度与高并发调度层 (`data_pipeline`) * **动态多线程 OCR 池化策略**：自研 `ThreadPoolE..."
+        ]
+      },
+      {
+        "id": "se024",
+        "question": "当前知识图谱 POC 的人工评审结果是多少？",
+        "task_type": "kg_graph_rag",
+        "source_scope": "kg_poc_outputs",
+        "grading_notes": "应准确命中数量，不能把 27 条和 26 条混淆。",
+        "expected_evidence_keywords": [
+          "27条",
+          "26条正确",
+          "1条待讨论",
+          "0条错误"
+        ],
+        "retrieval_evidence_keywords": [],
+        "answer_evidence_keywords": [],
+        "citation_evidence_keywords": [],
+        "retrieval_keyword_coverage": 0.0,
+        "answer_keyword_coverage": null,
+        "citation_keyword_coverage": null,
+        "retrieved_count_at_k": 5,
+        "has_retrieval_result": true,
+        "answer_contains_evidence": null,
+        "citation_count": null,
+        "missing_citation": null,
+        "hallucination_risk": "not_applicable",
+        "top_retrieval_previews": [
+          "- 输入来源：Label Studio 导出的 OCR / bbox / transcription JSON。 - 文档内容：船舶燃气轮机控制与健康管理课程知识体系构建论文。 - OCR 文本块：246 个。 - chunk：14 个。 - schema：10 类实体，15 类关系。 - 候选三元组：27 条。 - schema 校验通过：27 条。 -...",
+          "LLM 自动抽取质量、Neo4j 落库或完整 GraphRAG 问答已经完成。下一步会用同一个 schema 让 LLM 自动抽三元组，再和当前人工评审结果对比。 ## 现场演示顺序 1. 打开输入 JSON，说明这是之前已有的 Label Studio 导出文件。 2. 打开 `01_blocks.json`，说明已经从 JSON 中抽出 OCR 文本块...",
+          "rand\" href=\"#top\">最小知识图谱 POC</a> <nav class=\"nav\" aria-label=\"页面导航\"> <a href=\"README.md\">POC README</a> <a href=\"sample_text.md\">样例文本</a> <a href=\"schema.json\">Schema</a> <a href=...",
+          "# 最小知识图谱 POC 本目录是会议要求的最小 graph construction 样例，主题是燃气轮机/设备故障文本。 重要说明： - 当前版本是 `rule-based/manual baseline`。 - 没有调用 LLM。 - 没有跑通 Microsoft GraphRAG、Neo4j 或 LlamaIndex/LangChain。 - 目标...",
+          "# 本次组会展示清单：Label Studio JSON -> Graph Construction POC ## 一句话结论 这次已经补出一个可操作的 Graph construction POC 工作台：使用之前的 Label Studio 导出 JSON 作为输入，完成 `JSON -> OCR 文本块 -> chunk -> schema -> 候..."
+        ]
+      }
+    ]
+  },
+  "files": {
+    "keyword": {
+      "outputs": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\day3_retrieval_outputs_keyword_20260605_210540.jsonl",
+      "report_json": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_keyword_20260605_210540.json",
+      "report_md": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_keyword_20260605_210540.md"
+    },
+    "dense_hashing": {
+      "outputs": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\day3_retrieval_outputs_dense_hashing_20260605_210540.jsonl",
+      "report_json": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_dense_hashing_20260605_210540.json",
+      "report_md": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_dense_hashing_20260605_210540.md"
+    },
+    "hybrid_rrf": {
+      "outputs": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\day3_retrieval_outputs_hybrid_rrf_20260605_210540.jsonl",
+      "report_json": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_hybrid_rrf_20260605_210540.json",
+      "report_md": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\system_eval_day3_hybrid_rrf_20260605_210540.md"
+    }
+  }
+}
