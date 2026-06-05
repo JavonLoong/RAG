@@ -3,7 +3,7 @@
   "archive_path": "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
   "algorithm": "sha256",
   "bytes": 2422555,
-  "sha256": "5ffddb3c41c0484824f08c311963301f8ee72957a4244c3fcd4cde4d655b516c",
+  "sha256": "431d6c504f018d79c6037a4553b2cda234aba1205b81b07f8c6671eece108deb",
   "file_count": 62,
   "included_files": [
     "docs/challenge_cup/00_项目一页纸.md",
