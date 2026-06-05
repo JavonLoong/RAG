@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -65,6 +66,7 @@ REQUIRED_CLAIM_MATRIX_TERMS = {
     "browser_demo_smoke_report.md",
     "readiness_gate_report.md",
 }
+COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 
 
 @dataclass(slots=True)
@@ -151,15 +153,32 @@ def check_browser_evidence_files() -> GateCheck:
     return GateCheck("browser visual evidence", passed, detail)
 
 
+def extract_markdown_code_span_paths(text: str) -> list[str]:
+    paths: list[str] = []
+    for value in re.findall(r"`([^`]+)`", text):
+        item = value.strip()
+        if not item or item.startswith(COMMAND_PREFIXES):
+            continue
+        if "/" in item or "\\" in item or item.endswith((".md", ".json", ".jsonl", ".html", ".svg", ".csv", ".png")):
+            paths.append(item.replace("\\", "/"))
+    return paths
+
+
 def check_claim_evidence_matrix() -> GateCheck:
     if not CLAIM_MATRIX.exists():
         return GateCheck("claim-evidence matrix", False, "07_评审主张证据矩阵.md missing")
     text = CLAIM_MATRIX.read_text(encoding="utf-8")
-    missing = sorted(term for term in REQUIRED_CLAIM_MATRIX_TERMS if term not in text)
+    missing_terms = sorted(term for term in REQUIRED_CLAIM_MATRIX_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing = missing_terms + missing_paths
     return GateCheck(
         "claim-evidence matrix",
         not missing,
-        "award claims mapped to evidence, commands, and boundaries" if not missing else f"missing terms: {', '.join(missing)}",
+        f"award claims mapped to evidence, commands, and boundaries; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing terms or evidence paths: {', '.join(missing)}",
     )
 
 

@@ -9,7 +9,7 @@
 | package documents | pass | all required challenge cup docs exist |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | package evidence files | pass | 13 evidence files tracked; 60 questions |
-| claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries |
+| claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 16 evidence links verified |
 | live demo smoke checks | pass | 5/5 checks pass |
 | browser smoke checks | pass | 12/12 checks pass |
 | browser visual evidence | pass | 4 screenshots and 4 KG artifacts verified |
