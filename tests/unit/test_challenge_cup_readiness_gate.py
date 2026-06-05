@@ -42,6 +42,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "special-prize rubric self-assessment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
+    assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
     assert "mobile console health" in report
@@ -153,3 +154,39 @@ def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> 
 
     assert not check.passed
     assert "dirty-evidence.md" in check.detail
+
+
+def test_evidence_hash_gate_rejects_mismatched_hash(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    target = "evaluation/system_eval_questions.jsonl"
+    manifest.write_text(
+        json.dumps(
+            {
+                "question_count": 60,
+                "evidence_files": [target],
+                "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    hashes = tmp_path / "evidence_hashes.json"
+    hashes.write_text(
+        json.dumps(
+            {
+                "algorithm": "sha256",
+                "excluded_self_reports": [],
+                "files": [{"path": target, "bytes": (module.REPO_ROOT / target).stat().st_size, "sha256": "0" * 64}],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+
+    check = module.check_evidence_hashes()
+
+    assert not check.passed
+    assert "sha256 mismatch" in check.detail

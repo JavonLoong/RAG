@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -38,6 +39,7 @@ REQUIRED_PACKAGE_FILES = [
     "10_答辩攻防与彩排卡.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/evidence_hashes.json",
     "reproducibility/command_log.md",
 ]
 
@@ -134,6 +136,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
     assert "readiness_gate_report.md" in manifest
+    assert "evidence_hashes.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -144,6 +147,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "browser_demo_smoke_report.json" in command_log
     package_manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
     evidence_files = package_manifest["evidence_files"]
+    assert package_manifest["integrity_manifest"] == "docs/challenge_cup/reproducibility/evidence_hashes.json"
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
@@ -153,6 +157,15 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
+    hashes = json.loads((PACKAGE_DIR / "reproducibility" / "evidence_hashes.json").read_text(encoding="utf-8"))
+    assert hashes["algorithm"] == "sha256"
+    excluded = {"docs/challenge_cup/reproducibility/readiness_gate_report.md"}
+    expected_hashed = sorted(path for path in evidence_files if path not in excluded)
+    assert hashes["excluded_self_reports"] == sorted(excluded)
+    assert [entry["path"] for entry in hashes["files"]] == expected_hashed
+    for entry in hashes["files"]:
+        assert re.fullmatch(r"[0-9a-f]{64}", entry["sha256"])
+        assert entry["bytes"] == (REPO_ROOT / entry["path"]).stat().st_size
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:
@@ -204,6 +217,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
     tracked_json_entries = [
         "package.json",
         "docs/challenge_cup/package_manifest.json",
+        "docs/challenge_cup/reproducibility/evidence_hashes.json",
         "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
     ]
     for target in tracked_json_entries:

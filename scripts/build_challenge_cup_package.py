@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from datetime import datetime
@@ -21,6 +22,7 @@ LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
 READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
+EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
     BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
@@ -33,6 +35,14 @@ BROWSER_SCREENSHOTS = [
 def write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content.rstrip() + "\n", encoding="utf-8")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def read(path: Path, limit: int = 1600) -> str:
@@ -505,6 +515,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
 - 结项 readiness gate：`{md_link(READINESS_GATE_REPORT)}`。
+- 证据完整性哈希：`{md_link(EVIDENCE_HASHES)}`。
 - 浏览器验收截图：`{md_link(BROWSER_SCREENSHOT_DIR)}/`。
 - 浏览器桌面总览截图：`{md_link(BROWSER_SCREENSHOTS[0])}`。
 - 浏览器桌面检索截图：`{md_link(BROWSER_SCREENSHOTS[1])}`。
@@ -593,25 +604,42 @@ def main() -> int:
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(REPRO / "command_log.md", build_command_log(ctx))
+    evidence_files = [
+        md_link(DATASET),
+        md_link(CLAIM_MATRIX),
+        md_link(AWARD_SELF_EVAL),
+        md_link(EXPERT_REVIEW_INDEX),
+        md_link(DEFENSE_REHEARSAL_CARD),
+        md_link(LIVE_SMOKE_REPORT),
+        md_link(BROWSER_SMOKE_REPORT),
+        md_link(BROWSER_SMOKE_JSON),
+        md_link(READINESS_GATE_REPORT),
+        *(md_link(path) for path in BROWSER_SCREENSHOTS),
+        *(md_link(path) for path in (ctx["day3"], ctx["day4"], ctx["graph_report"]) if path is not None),
+    ]
     manifest = {
         "generated_at": ctx["now"],
         "output_dir": md_link(OUT),
         "question_count": ctx["question_count"],
-        "evidence_files": [
-            md_link(DATASET),
-            md_link(CLAIM_MATRIX),
-            md_link(AWARD_SELF_EVAL),
-            md_link(EXPERT_REVIEW_INDEX),
-            md_link(DEFENSE_REHEARSAL_CARD),
-            md_link(LIVE_SMOKE_REPORT),
-            md_link(BROWSER_SMOKE_REPORT),
-            md_link(BROWSER_SMOKE_JSON),
-            md_link(READINESS_GATE_REPORT),
-            *(md_link(path) for path in BROWSER_SCREENSHOTS),
-            *(md_link(path) for path in (ctx["day3"], ctx["day4"], ctx["graph_report"]) if path is not None),
-        ],
+        "evidence_files": evidence_files,
+        "integrity_manifest": md_link(EVIDENCE_HASHES),
     }
     write(OUT / "package_manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+    excluded_self_reports = [md_link(READINESS_GATE_REPORT)]
+    hash_payload = {
+        "algorithm": "sha256",
+        "generated_at": ctx["now"],
+        "excluded_self_reports": excluded_self_reports,
+        "files": [
+            {
+                "path": relative,
+                "bytes": (REPO_ROOT / relative).stat().st_size,
+                "sha256": sha256_file(REPO_ROOT / relative),
+            }
+            for relative in sorted(path for path in evidence_files if path not in excluded_self_reports)
+        ],
+    }
+    write(EVIDENCE_HASHES, json.dumps(hash_payload, ensure_ascii=False, indent=2))
     print(f"Wrote docs/challenge_cup with {ctx['question_count']} evaluation questions")
     return 0
 

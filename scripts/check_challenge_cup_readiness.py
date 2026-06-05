@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -21,6 +22,7 @@ EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
+EVIDENCE_HASHES = REPRO_DIR / "evidence_hashes.json"
 
 REQUIRED_PACKAGE_DOCS = [
     "README_先看这里.md",
@@ -37,6 +39,7 @@ REQUIRED_PACKAGE_DOCS = [
     "10_答辩攻防与彩排卡.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
+    "reproducibility/evidence_hashes.json",
     "reproducibility/command_log.md",
 ]
 
@@ -129,6 +132,14 @@ def nonempty(path: Path) -> bool:
     return path.exists() and path.stat().st_size > 0
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def git_tracked_paths() -> set[str]:
     result = subprocess.run(
         ["git", "ls-files", "-z"],
@@ -187,6 +198,46 @@ def check_package_manifest() -> GateCheck:
     else:
         detail = f"evidence={len(evidence)}, questions={question_count}, missing={missing}, untracked={untracked}, dirty={dirty}"
     return GateCheck("package evidence files", passed, detail)
+
+
+def check_evidence_hashes() -> GateCheck:
+    if not EVIDENCE_HASHES.exists():
+        return GateCheck("evidence integrity hashes", False, "evidence_hashes.json missing")
+    manifest = load_json(PACKAGE_MANIFEST)
+    hashes = load_json(EVIDENCE_HASHES)
+    evidence = list(manifest.get("evidence_files", []))
+    excluded = set(hashes.get("excluded_self_reports", []))
+    expected_paths = sorted(path for path in evidence if path not in excluded)
+    entries = hashes.get("files", [])
+    entry_by_path = {str(item.get("path", "")): item for item in entries}
+    missing_entries = sorted(path for path in expected_paths if path not in entry_by_path)
+    extra_entries = sorted(path for path in entry_by_path if path not in expected_paths)
+    failures: list[str] = []
+    if hashes.get("algorithm") != "sha256":
+        failures.append(f"algorithm={hashes.get('algorithm')}")
+    if missing_entries:
+        failures.append(f"missing hash entries: {missing_entries}")
+    if extra_entries:
+        failures.append(f"extra hash entries: {extra_entries}")
+    for relative in expected_paths:
+        path = REPO_ROOT / relative
+        entry = entry_by_path.get(relative)
+        if entry is None:
+            continue
+        if not path.exists():
+            failures.append(f"missing file: {relative}")
+            continue
+        if int(entry.get("bytes") or -1) != path.stat().st_size:
+            failures.append(f"bytes mismatch: {relative}")
+        if str(entry.get("sha256", "")) != sha256_file(path):
+            failures.append(f"sha256 mismatch: {relative}")
+    return GateCheck(
+        "evidence integrity hashes",
+        not failures,
+        f"{len(expected_paths)} evidence hashes verified; excluded={sorted(excluded)}"
+        if not failures
+        else "; ".join(failures),
+    )
 
 
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
@@ -309,6 +360,7 @@ def run_gate() -> list[GateCheck]:
         check_package_docs(),
         check_eval_dataset(),
         check_package_manifest(),
+        check_evidence_hashes(),
         check_claim_evidence_matrix(),
         check_award_self_eval(),
         check_expert_review_index(),
@@ -331,7 +383,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, evaluation dataset, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

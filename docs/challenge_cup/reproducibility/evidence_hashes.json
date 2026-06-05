@@ -1,0 +1,84 @@
+{
+  "algorithm": "sha256",
+  "generated_at": "2026-06-05 21:06",
+  "excluded_self_reports": [
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md"
+  ],
+  "files": [
+    {
+      "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
+      "bytes": 2768,
+      "sha256": "e533fa16f58a18214755340da2d873368d28bfd2e646c9ee5212469acb2209ca"
+    },
+    {
+      "path": "docs/challenge_cup/08_特等奖评审自评表.md",
+      "bytes": 3024,
+      "sha256": "ef74fd0ad285d43054f5434ca9ad3328f1c1e5143f2693518ba4a8e528f35ba8"
+    },
+    {
+      "path": "docs/challenge_cup/09_专家快速审阅索引.md",
+      "bytes": 2619,
+      "sha256": "9ee19aa7bcc3842e7cbdd76161dbca29546b19923fc73334839528f1ad57cd63"
+    },
+    {
+      "path": "docs/challenge_cup/10_答辩攻防与彩排卡.md",
+      "bytes": 3746,
+      "sha256": "9a45bf98d0599c9bd6f5071f261598d50682fc5d307caee180c9e980cd7e342c"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
+      "bytes": 11943,
+      "sha256": "7d4177493d67fb1af7a2eb64e18eef190cf05f5375d0cb767a3e38c7f7b1c34d"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+      "bytes": 4239,
+      "sha256": "247cde1cd3d02f6bfeb7019844d3976891e2c38e1dfa10bb3ad42f364eb503b3"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png",
+      "bytes": 382008,
+      "sha256": "86bbc50adb76633be0ae16cd47a6a6d7aa961d33ef07a2ed4703c9446e8ebd1d"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png",
+      "bytes": 264446,
+      "sha256": "61c2ef90a38cacb0e706aebf69fd6d135a4161ac4799668a1b71857f20273a5f"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+      "bytes": 237260,
+      "sha256": "d0524363dc509e94d9932327c16141300dc9e7939668922965d8ed51f487144d"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png",
+      "bytes": 140645,
+      "sha256": "e1b802ed22335281c2330a55ed0b1833d40edf14175575ce66006cd7d6598968"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
+      "bytes": 692,
+      "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"
+    },
+    {
+      "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
+      "bytes": 3089,
+      "sha256": "91cda220461e8364309c37570c8ef632b2b5677313dee0017269accc8ffb6d04"
+    },
+    {
+      "path": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
+      "bytes": 4229,
+      "sha256": "3d34878a2b02cf27cd39c42e825f547a1e287f3d5f49edd394a8f438376348c0"
+    },
+    {
+      "path": "evaluation/reports/day4_failure_analysis_20260605_210642.md",
+      "bytes": 84286,
+      "sha256": "dd0a4de3aea3fe81dd7516d5fa35b3791dbdf725399141fbcebcf18fb5aa75ff"
+    },
+    {
+      "path": "evaluation/system_eval_questions.jsonl",
+      "bytes": 38124,
+      "sha256": "72928af7e312bd0a8baf27c52e65f6f947d57e139b2141fa08946e0427b33cfe"
+    }
+  ]
+}
