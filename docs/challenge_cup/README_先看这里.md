@@ -27,6 +27,8 @@
 19. `reproducibility/defense_rehearsal_scorecard.md`
 20. `reproducibility/defense_rehearsal_result_packet.md`
 21. `reproducibility/expert_feedback_request_packet.md`
+22. `reproducibility/challenge_cup_submission_archive_manifest.json`
+23. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 

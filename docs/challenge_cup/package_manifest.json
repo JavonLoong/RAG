@@ -40,5 +40,7 @@
     "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
     "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json"
   ],
-  "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json"
+  "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json",
+  "submission_archive": "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
+  "submission_archive_manifest": "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json"
 }

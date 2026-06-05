@@ -59,6 +59,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "Status: `pass`" in report
     assert "package control files" in report
     assert "package evidence files" in report
+    assert "submission archive" in report
     assert "claim-evidence matrix" in report
     assert "award claims" in report
     assert "acceptance checklist" in report
@@ -745,6 +746,29 @@ def test_evidence_hash_gate_rejects_mismatched_hash(monkeypatch, tmp_path) -> No
     monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
 
     check = module.check_evidence_hashes()
+
+    assert not check.passed
+    assert "sha256 mismatch" in check.detail
+
+
+def test_submission_archive_gate_rejects_mismatched_hash(monkeypatch, tmp_path) -> None:
+    subprocess.run(
+        [sys.executable, "scripts/build_challenge_cup_package.py"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    module = load_readiness_module()
+    payload = json.loads(module.SUBMISSION_ARCHIVE_MANIFEST.read_text(encoding="utf-8"))
+    payload["sha256"] = "0" * 64
+    bad_manifest = tmp_path / "challenge_cup_submission_archive_manifest.json"
+    bad_manifest.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", bad_manifest)
+
+    check = module.check_submission_archive()
 
     assert not check.passed
     assert "sha256 mismatch" in check.detail

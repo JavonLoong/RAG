@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import zipfile
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -63,6 +65,8 @@ BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
 READINESS_GATE_REPORT = REPRO / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
+SUBMISSION_ARCHIVE = REPRO / "challenge_cup_submission_package.zip"
+SUBMISSION_ARCHIVE_MANIFEST = REPRO / "challenge_cup_submission_archive_manifest.json"
 APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO / "expert_feedback_form.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
@@ -77,6 +81,7 @@ EVAL_COVERAGE_MINIMUMS = {
     "source_scopes": 15,
     "graphrag_questions": 10,
 }
+ARCHIVE_TIMESTAMP = (2026, 6, 5, 21, 6, 0)
 
 
 def write(path: Path, content: str) -> None:
@@ -90,6 +95,68 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def build_submission_archive_inputs(evidence_files: list[str]) -> list[str]:
+    excluded = {
+        md_link(SUBMISSION_ARCHIVE),
+        md_link(SUBMISSION_ARCHIVE_MANIFEST),
+        md_link(READINESS_GATE_REPORT),
+    }
+    required = set(evidence_files)
+    required.difference_update(excluded)
+    required.update(
+        {
+            md_link(OUT / "package_manifest.json"),
+            md_link(EVIDENCE_HASHES),
+            md_link(EVAL_COVERAGE_PROFILE),
+            md_link(REPRO / "dataset_manifest.md"),
+            md_link(REPRO / "runbook.md"),
+            md_link(REPRO / "command_log.md"),
+        }
+    )
+    for path in OUT.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = md_link(path)
+        if (
+            relative in excluded
+            or (path.name.startswith(f"{SUBMISSION_ARCHIVE.name}.") and path.name.endswith(".tmp"))
+        ):
+            continue
+        required.add(relative)
+
+    missing = sorted(relative for relative in required if not (REPO_ROOT / relative).is_file())
+    empty = sorted(relative for relative in required if (REPO_ROOT / relative).is_file() and (REPO_ROOT / relative).stat().st_size == 0)
+    if missing or empty:
+        raise FileNotFoundError(f"submission archive inputs invalid: missing={missing}, empty={empty}")
+    return sorted(required)
+
+
+def write_submission_archive(ctx: dict[str, Any], included_files: list[str]) -> None:
+    SUBMISSION_ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    temp_archive = SUBMISSION_ARCHIVE.with_name(f"{SUBMISSION_ARCHIVE.name}.{os.getpid()}.tmp")
+    if temp_archive.exists():
+        temp_archive.unlink()
+    with zipfile.ZipFile(temp_archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for relative in included_files:
+            info = zipfile.ZipInfo(relative, date_time=ARCHIVE_TIMESTAMP)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            info.create_system = 3
+            archive.writestr(info, (REPO_ROOT / relative).read_bytes())
+    temp_archive.replace(SUBMISSION_ARCHIVE)
+    manifest = {
+        "generated_at": ctx["now"],
+        "archive_path": md_link(SUBMISSION_ARCHIVE),
+        "algorithm": "sha256",
+        "bytes": SUBMISSION_ARCHIVE.stat().st_size,
+        "sha256": sha256_file(SUBMISSION_ARCHIVE),
+        "file_count": len(included_files),
+        "included_files": included_files,
+        "excluded_files": [md_link(READINESS_GATE_REPORT), md_link(SUBMISSION_ARCHIVE), md_link(SUBMISSION_ARCHIVE_MANIFEST)],
+    }
+    write(SUBMISSION_ARCHIVE_MANIFEST, json.dumps(manifest, ensure_ascii=False, indent=2))
 
 
 def read(path: Path, limit: int = 1600) -> str:
@@ -241,6 +308,8 @@ def build_readme(ctx: dict[str, Any]) -> str:
 19. `reproducibility/defense_rehearsal_scorecard.md`
 20. `reproducibility/defense_rehearsal_result_packet.md`
 21. `reproducibility/expert_feedback_request_packet.md`
+22. `reproducibility/challenge_cup_submission_archive_manifest.json`
+23. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -847,6 +916,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
 - 结项 readiness gate：`{md_link(READINESS_GATE_REPORT)}`。
 - 证据完整性哈希：`{md_link(EVIDENCE_HASHES)}`。
+- 可提交归档包：`{md_link(SUBMISSION_ARCHIVE)}`。
+- 可提交归档包哈希清单：`{md_link(SUBMISSION_ARCHIVE_MANIFEST)}`。
 - 浏览器验收截图：`{md_link(BROWSER_SCREENSHOT_DIR)}/`。
 - 浏览器桌面总览截图：`{md_link(BROWSER_SCREENSHOTS[0])}`。
 - 浏览器桌面检索截图：`{md_link(BROWSER_SCREENSHOTS[1])}`。
@@ -874,6 +945,8 @@ python scripts/build_challenge_cup_package.py
 -> docs/challenge_cup/reproducibility/application_validation_report.md
 -> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
+-> docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip
+-> docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
 -> Corpus chunks: 6494
@@ -940,7 +1013,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (26/26 gates)
+-> Status: pass (27/27 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -1025,6 +1098,8 @@ def main() -> int:
         "evaluation_coverage_profile": md_link(EVAL_COVERAGE_PROFILE),
         "evidence_files": evidence_files,
         "integrity_manifest": md_link(EVIDENCE_HASHES),
+        "submission_archive": md_link(SUBMISSION_ARCHIVE),
+        "submission_archive_manifest": md_link(SUBMISSION_ARCHIVE_MANIFEST),
     }
     write(OUT / "package_manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
     excluded_self_reports = [md_link(READINESS_GATE_REPORT)]
@@ -1042,6 +1117,8 @@ def main() -> int:
         ],
     }
     write(EVIDENCE_HASHES, json.dumps(hash_payload, ensure_ascii=False, indent=2))
+    archive_inputs = build_submission_archive_inputs(evidence_files)
+    write_submission_archive(ctx, archive_inputs)
     print(f"Wrote docs/challenge_cup with {ctx['question_count']} evaluation questions")
     return 0
 

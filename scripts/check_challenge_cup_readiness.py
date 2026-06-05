@@ -5,9 +5,10 @@ import json
 import re
 import subprocess
 import sys
+import zipfile
 from collections import Counter
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -36,6 +37,12 @@ DATASET_RELATIVE = "evaluation/system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 EVIDENCE_HASHES = REPRO_DIR / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO_DIR / "evaluation_coverage_profile.json"
+SUBMISSION_ARCHIVE_RELATIVE = "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip"
+SUBMISSION_ARCHIVE_MANIFEST_RELATIVE = (
+    "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json"
+)
+SUBMISSION_ARCHIVE = REPO_ROOT / SUBMISSION_ARCHIVE_RELATIVE
+SUBMISSION_ARCHIVE_MANIFEST = REPO_ROOT / SUBMISSION_ARCHIVE_MANIFEST_RELATIVE
 APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
@@ -111,6 +118,7 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
 DEFENSE_REHEARSAL_TIMING_TARGETS = {
@@ -618,6 +626,107 @@ def check_evidence_hashes() -> GateCheck:
         "evidence integrity hashes",
         not failures,
         f"{len(expected_paths)} evidence hashes verified; excluded={sorted(excluded)}"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_submission_archive() -> GateCheck:
+    failures: list[str] = []
+    if not PACKAGE_MANIFEST.exists():
+        return GateCheck("submission archive", False, "package_manifest.json missing")
+    manifest = load_json(PACKAGE_MANIFEST)
+    if manifest.get("submission_archive") != SUBMISSION_ARCHIVE_RELATIVE:
+        failures.append(f"submission_archive mismatch: {manifest.get('submission_archive')}")
+    if manifest.get("submission_archive_manifest") != SUBMISSION_ARCHIVE_MANIFEST_RELATIVE:
+        failures.append(f"submission_archive_manifest mismatch: {manifest.get('submission_archive_manifest')}")
+    if not nonempty(SUBMISSION_ARCHIVE):
+        failures.append(f"{SUBMISSION_ARCHIVE_RELATIVE} missing or empty")
+    if not nonempty(SUBMISSION_ARCHIVE_MANIFEST):
+        failures.append(f"{SUBMISSION_ARCHIVE_MANIFEST_RELATIVE} missing or empty")
+    if failures:
+        return GateCheck("submission archive", False, "; ".join(failures))
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST)
+    included_files = [str(item) for item in archive_manifest.get("included_files", [])]
+    if archive_manifest.get("archive_path") != SUBMISSION_ARCHIVE_RELATIVE:
+        failures.append(f"archive_path mismatch: {archive_manifest.get('archive_path')}")
+    if archive_manifest.get("algorithm") != "sha256":
+        failures.append(f"algorithm={archive_manifest.get('algorithm')}")
+    if int(archive_manifest.get("bytes") or -1) != SUBMISSION_ARCHIVE.stat().st_size:
+        failures.append("bytes mismatch")
+    if str(archive_manifest.get("sha256", "")) != sha256_file(SUBMISSION_ARCHIVE):
+        failures.append("sha256 mismatch")
+    if int(archive_manifest.get("file_count") or -1) != len(included_files):
+        failures.append("file_count mismatch")
+    if included_files != sorted(included_files):
+        failures.append("included_files not sorted")
+    duplicated = sorted(path for path in set(included_files) if included_files.count(path) > 1)
+    if duplicated:
+        failures.append(f"duplicate entries: {duplicated}")
+
+    unsafe = []
+    for relative in included_files:
+        posix = PurePosixPath(relative)
+        if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+            unsafe.append(relative)
+    if unsafe:
+        failures.append(f"unsafe archive paths: {unsafe}")
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    self_included = sorted(
+        path
+        for path in (self_report, SUBMISSION_ARCHIVE_RELATIVE, SUBMISSION_ARCHIVE_MANIFEST_RELATIVE)
+        if path in included_files
+    )
+    if self_included:
+        failures.append(f"archive self-inclusion: {self_included}")
+
+    required_package_docs = {
+        f"docs/challenge_cup/{relative}"
+        for relative in REQUIRED_PACKAGE_DOCS
+        if relative != "reproducibility/challenge_cup_submission_archive_manifest.json"
+    }
+    required_archive_entries = set(manifest.get("evidence_files", [])) | required_package_docs | {
+        PACKAGE_MANIFEST.relative_to(REPO_ROOT).as_posix(),
+        EVIDENCE_HASHES.relative_to(REPO_ROOT).as_posix(),
+        EVAL_COVERAGE_PROFILE.relative_to(REPO_ROOT).as_posix(),
+        "docs/challenge_cup/reproducibility/dataset_manifest.md",
+        "docs/challenge_cup/reproducibility/runbook.md",
+        "docs/challenge_cup/reproducibility/command_log.md",
+    }
+    required_archive_entries.discard(self_report)
+    missing_required = sorted(required_archive_entries - set(included_files))
+    if missing_required:
+        failures.append(f"missing archive entries: {missing_required}")
+
+    try:
+        with zipfile.ZipFile(SUBMISSION_ARCHIVE) as archive:
+            zip_entries = sorted(info.filename for info in archive.infolist())
+            if zip_entries != included_files:
+                failures.append("zip entries do not match archive manifest")
+            for relative in included_files:
+                current_path = REPO_ROOT / relative
+                if not current_path.exists():
+                    failures.append(f"current file missing: {relative}")
+                    continue
+                if archive.read(relative) != current_path.read_bytes():
+                    failures.append(f"stale archive entry: {relative}")
+    except (KeyError, zipfile.BadZipFile) as exc:
+        failures.append(f"invalid zip archive: {exc}")
+
+    archive_controls = [SUBMISSION_ARCHIVE_RELATIVE, SUBMISSION_ARCHIVE_MANIFEST_RELATIVE]
+    tracked = git_tracked_paths()
+    untracked = [path for path in archive_controls if path not in tracked]
+    dirty = sorted(git_dirty_paths(archive_controls))
+    if untracked:
+        failures.append(f"untracked archive controls: {untracked}")
+    if dirty:
+        failures.append(f"dirty archive controls: {dirty}")
+
+    return GateCheck(
+        "submission archive",
+        not failures,
+        f"{len(included_files)} files archived; {SUBMISSION_ARCHIVE.stat().st_size} bytes; sha256 verified"
         if not failures
         else "; ".join(failures),
     )
@@ -1551,6 +1660,7 @@ def run_gate() -> list[GateCheck]:
         check_evaluation_coverage_profile(),
         check_package_manifest(),
         check_evidence_hashes(),
+        check_submission_archive(),
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
         check_graphrag_context_demo(),
@@ -1586,7 +1696,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

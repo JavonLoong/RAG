@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -52,12 +54,21 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/defense_rehearsal_result_packet.json",
     "reproducibility/expert_feedback_request_packet.md",
     "reproducibility/expert_feedback_request_packet.json",
+    "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
 
 
 def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def test_challenge_cup_eval_dataset_has_60_schema_complete_records() -> None:
@@ -246,6 +257,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "defense_rehearsal_result_packet.json" in manifest
     assert "expert_feedback_request_packet.md" in manifest
     assert "expert_feedback_request_packet.json" in manifest
+    assert "challenge_cup_submission_package.zip" in manifest
+    assert "challenge_cup_submission_archive_manifest.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -298,6 +311,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert package_manifest["evaluation_coverage_profile"] == (
         "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json"
     )
+    archive_relative = "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip"
+    archive_manifest_relative = "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json"
+    assert package_manifest["submission_archive"] == archive_relative
+    assert package_manifest["submission_archive_manifest"] == archive_manifest_relative
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/06_结项验收清单.md" in evidence_files
@@ -334,6 +351,33 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for entry in hashes["files"]:
         assert re.fullmatch(r"[0-9a-f]{64}", entry["sha256"])
         assert entry["bytes"] == (REPO_ROOT / entry["path"]).stat().st_size
+    archive_path = REPO_ROOT / archive_relative
+    archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
+    assert archive_path.exists()
+    assert archive_path.stat().st_size > 0
+    assert archive_manifest["archive_path"] == archive_relative
+    assert archive_manifest["bytes"] == archive_path.stat().st_size
+    assert archive_manifest["sha256"] == sha256_file(archive_path)
+    assert re.fullmatch(r"[0-9a-f]{64}", archive_manifest["sha256"])
+    with zipfile.ZipFile(archive_path) as archive:
+        archive_entries = sorted(info.filename for info in archive.infolist())
+    assert archive_entries == archive_manifest["included_files"]
+    assert archive_manifest["file_count"] == len(archive_entries)
+    assert archive_relative not in archive_entries
+    assert archive_manifest_relative not in archive_entries
+    self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
+    assert self_report not in archive_entries
+    assert self_report in archive_manifest["excluded_files"]
+    assert all(not Path(entry).is_absolute() and ".." not in Path(entry).parts for entry in archive_entries)
+    required_archive_entries = set(evidence_files) | {
+        "docs/challenge_cup/package_manifest.json",
+        "docs/challenge_cup/reproducibility/dataset_manifest.md",
+        "docs/challenge_cup/reproducibility/runbook.md",
+        "docs/challenge_cup/reproducibility/command_log.md",
+        "docs/challenge_cup/reproducibility/evidence_hashes.json",
+    }
+    required_archive_entries.discard(self_report)
+    assert required_archive_entries <= set(archive_entries)
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:
@@ -360,9 +404,11 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md",
         PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.json",
         PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
+        PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_package.zip",
+        PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_archive_manifest.json",
         PACKAGE_DIR / "package_manifest.json",
     ]
-    before = {path: path.read_text(encoding="utf-8") for path in tracked}
+    before = {path: path.read_bytes() for path in tracked}
     subprocess.run(
         command,
         cwd=REPO_ROOT,
@@ -372,7 +418,7 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         encoding="utf-8",
         errors="replace",
     )
-    after = {path: path.read_text(encoding="utf-8") for path in tracked}
+    after = {path: path.read_bytes() for path in tracked}
     assert after == before
 
 
@@ -400,6 +446,8 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json",
         "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
+        "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
+        "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
         "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",
     ]
     for target in tracked_json_entries:

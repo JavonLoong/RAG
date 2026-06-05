@@ -15,6 +15,8 @@ python scripts/build_challenge_cup_package.py
 -> docs/challenge_cup/reproducibility/application_validation_report.md
 -> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
+-> docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip
+-> docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json
 
 python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5
 -> Corpus chunks: 6494
@@ -81,7 +83,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (26/26 gates)
+-> Status: pass (27/27 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
