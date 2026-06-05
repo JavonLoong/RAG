@@ -12,6 +12,12 @@ OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_context_demo.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_context_demo.md"
 TEXT_BASELINE_METHOD = "keyword"
 DEMO_CASE_LIMIT = 3
+SELECTION_POLICY = "supported_domain_graph_cases_first"
+ELIGIBLE_SOURCE_SCOPES = (
+    "fault_reports_and_maintenance_documents",
+    "public_books_operation_and_fault_reports",
+    "public_books_gas_turbine_and_combined_cycle",
+)
 BOUNDARY = (
     "This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers "
     "or prove online answer win-rate."
@@ -89,6 +95,10 @@ def graph_evidence_for(case: dict[str, Any], limit: int = 3) -> list[dict[str, A
     return items
 
 
+def is_domain_demo_case(case: dict[str, Any]) -> bool:
+    return str(case.get("source_scope", "")) in ELIGIBLE_SOURCE_SCOPES
+
+
 def build_prompt_context(question: str, text_items: list[dict[str, Any]], graph_items: list[dict[str, Any]]) -> str:
     lines = [
         "# GraphRAG context-only QA demo",
@@ -137,6 +147,8 @@ def build_case(case: dict[str, Any], text_output: dict[str, Any]) -> dict[str, A
     return {
         "id": case["id"],
         "question": case["question"],
+        "task_type": case["task_type"],
+        "source_scope": case["source_scope"],
         "graph_mode": case["graph_mode"],
         "graph_evidence_coverage": case["graph_evidence_coverage"],
         "graph_evidence_status": case["graph_evidence_status"],
@@ -157,8 +169,14 @@ def build_payload() -> dict[str, Any]:
     text_output_path, text_outputs = load_text_outputs(comparison)
     supported_cases = [
         case for case in graph_report["cases"] if case.get("graph_evidence_status") == "supported"
-    ][:DEMO_CASE_LIMIT]
-    cases = [build_case(case, text_outputs[str(case["id"])]) for case in supported_cases]
+    ]
+    eligible_cases = [case for case in supported_cases if is_domain_demo_case(case)]
+    if len(eligible_cases) < DEMO_CASE_LIMIT:
+        raise ValueError(
+            f"Need at least {DEMO_CASE_LIMIT} supported domain graph demo cases, got {len(eligible_cases)}."
+        )
+    demo_cases = eligible_cases[:DEMO_CASE_LIMIT]
+    cases = [build_case(case, text_outputs[str(case["id"])]) for case in demo_cases]
     return {
         "report_type": "challenge_cup_graphrag_context_demo",
         "context_only": True,
@@ -169,6 +187,11 @@ def build_payload() -> dict[str, Any]:
         "day3_comparison": rel(comparison_path),
         "text_baseline_method": TEXT_BASELINE_METHOD,
         "text_baseline_outputs": rel(text_output_path),
+        "selection_policy": SELECTION_POLICY,
+        "eligible_source_scopes": list(ELIGIBLE_SOURCE_SCOPES),
+        "excluded_supported_case_ids": [
+            str(case["id"]) for case in supported_cases if not is_domain_demo_case(case)
+        ],
         "demo_case_count": len(cases),
         "case_ids": [case["id"] for case in cases],
         "cases": cases,
@@ -188,6 +211,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Boundary: {payload['boundary']}",
         f"- Graph source: `{payload['source_graph']}`",
         f"- Text baseline: `{payload['text_baseline_method']}` / `{payload['text_baseline_outputs']}`",
+        f"- Selection policy: `{payload['selection_policy']}`",
         f"- Demo cases: {payload['demo_case_count']} ({', '.join(payload['case_ids'])})",
         "",
         "## Cases",

@@ -45,6 +45,7 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
     "reproducibility/expert_feedback_form.md",
+    "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
     "reproducibility/defense_rehearsal_scorecard.json",
     "reproducibility/defense_rehearsal_result_packet.md",
@@ -216,6 +217,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_gap_remediation_plan.md" in eval_report
     assert "答案级覆盖对照" in eval_report
     assert "补证整改计划" in eval_report
+    assert "manual evidence supplement" in eval_report
     assert "context-only" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
@@ -237,6 +239,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_answer_benchmark.json" in manifest
     assert "challenge_cup_graphrag_gap_remediation_plan.md" in manifest
     assert "challenge_cup_graphrag_gap_remediation_plan.json" in manifest
+    assert "graphrag_manual_evidence_supplement.csv" in manifest
     assert "defense_rehearsal_scorecard.md" in manifest
     assert "defense_rehearsal_scorecard.json" in manifest
     assert "defense_rehearsal_result_packet.md" in manifest
@@ -308,6 +311,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv" in evidence_files
     assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
     assert "docs/challenge_cup/12_专家反馈采集与整改闭环.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files

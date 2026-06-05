@@ -15,10 +15,13 @@
   ],
   "average_best_baseline_coverage_on_graph_subset": 0.633333,
   "graph_evidence_source": "docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv",
-  "graph_triple_count": 240,
-  "graph_evidence_supported_case_count": 3,
-  "graph_evidence_partial_case_count": 3,
-  "graph_evidence_missing_case_count": 4,
+  "graph_evidence_supplement": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
+  "base_graph_triple_count": 240,
+  "manual_evidence_supplement_count": 4,
+  "graph_triple_count": 244,
+  "graph_evidence_supported_case_count": 9,
+  "graph_evidence_partial_case_count": 1,
+  "graph_evidence_missing_case_count": 0,
   "graph_evidence_boundary": "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate.",
   "priority_case_count": 6,
   "boundary": "This report identifies the same-question GraphRAG evaluation subset; it does not claim completed online GraphRAG QA beats the baseline.",
@@ -41,10 +44,88 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.333333,
-      "graph_evidence_coverage": 0.0,
-      "graph_evidence_vs_best_baseline_delta": -0.333333,
-      "graph_evidence_status": "missing",
-      "matched_graph_evidence": [],
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.666667,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "ChromaDB",
+        "OCR",
+        "baseline",
+        "人工评审",
+        "失败归因",
+        "知识图谱"
+      ],
+      "matched_graph_evidence": [
+        {
+          "keyword": "OCR",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "ChromaDB",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "知识图谱",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "人工评审",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "baseline",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "失败归因",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Prioritize local graph evidence because current text retrieval does not cover enough expected evidence.",
       "grading_notes": "回答需要突出工程闭环，不应只描述前端问答。"
@@ -66,10 +147,53 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.666667,
-      "graph_evidence_coverage": 0.333333,
-      "graph_evidence_vs_best_baseline_delta": -0.333334,
-      "graph_evidence_status": "partial",
+      "graph_evidence_coverage": 0.833333,
+      "graph_evidence_vs_best_baseline_delta": 0.166666,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "GraphRAG",
+        "关系",
+        "实体",
+        "故障",
+        "跨文档"
+      ],
       "matched_graph_evidence": [
+        {
+          "keyword": "GraphRAG",
+          "triple_id": "CCKG-0002",
+          "subject": "知识图谱POC",
+          "predicate": "HAS_MANUAL_REVIEW_BOUNDARY",
+          "object": "人工评审结论",
+          "source_file": "docs/challenge_cup/00_项目一页纸.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "知识图谱 POC 能证明候选三元组生成、evidence 绑定、人工评审和导出的闭环已经跑通；27 条候选中 26 条正确、1 条待讨论、0 条错误，但不能证明完整商业级 GraphRAG 问答系统。"
+        },
+        {
+          "keyword": "跨文档",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        },
+        {
+          "keyword": "实体",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
         {
           "keyword": "关系",
           "triple_id": "FBKG-0124",
@@ -114,10 +238,52 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.833333,
-      "graph_evidence_coverage": 0.166667,
-      "graph_evidence_vs_best_baseline_delta": -0.666666,
-      "graph_evidence_status": "partial",
+      "graph_evidence_coverage": 0.666667,
+      "graph_evidence_vs_best_baseline_delta": -0.166666,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "evidence",
+        "三元组",
+        "关系",
+        "实体"
+      ],
       "matched_graph_evidence": [
+        {
+          "keyword": "三元组",
+          "triple_id": "CCKG-0002",
+          "subject": "知识图谱POC",
+          "predicate": "HAS_MANUAL_REVIEW_BOUNDARY",
+          "object": "人工评审结论",
+          "source_file": "docs/challenge_cup/00_项目一页纸.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "知识图谱 POC 能证明候选三元组生成、evidence 绑定、人工评审和导出的闭环已经跑通；27 条候选中 26 条正确、1 条待讨论、0 条错误，但不能证明完整商业级 GraphRAG 问答系统。"
+        },
+        {
+          "keyword": "evidence",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "实体",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
         {
           "keyword": "关系",
           "triple_id": "FBKG-0124",
@@ -151,10 +317,45 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 1.0,
-      "graph_evidence_coverage": 0.0,
-      "graph_evidence_vs_best_baseline_delta": -1.0,
-      "graph_evidence_status": "missing",
-      "matched_graph_evidence": [],
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.0,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 2,
+      "ignored_graph_keywords": [
+        "27",
+        "26",
+        "1",
+        "0"
+      ],
+      "matched_graph_keywords": [
+        "不能证明",
+        "人工评审"
+      ],
+      "matched_graph_evidence": [
+        {
+          "keyword": "人工评审",
+          "triple_id": "CCKG-0001",
+          "subject": "知燃知维项目",
+          "predicate": "HAS_ENGINEERING_EVIDENCE",
+          "object": "可复现工程链路",
+          "source_file": "docs/challenge_cup/01_挑战杯项目书.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "项目不是普通问答页面；结项材料明确包含 OCR 审计、ChromaDB 入库、知识图谱、人工评审、baseline、失败归因和演示脚本，用于证明可复现工程链路。"
+        },
+        {
+          "keyword": "不能证明",
+          "triple_id": "CCKG-0002",
+          "subject": "知识图谱POC",
+          "predicate": "HAS_MANUAL_REVIEW_BOUNDARY",
+          "object": "人工评审结论",
+          "source_file": "docs/challenge_cup/00_项目一页纸.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "知识图谱 POC 能证明候选三元组生成、evidence 绑定、人工评审和导出的闭环已经跑通；27 条候选中 26 条正确、1 条待讨论、0 条错误，但不能证明完整商业级 GraphRAG 问答系统。"
+        }
+      ],
       "priority_for_graph_eval": false,
       "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
       "grading_notes": "必须同时说清楚能证明和不能过度声称的边界。"
@@ -179,6 +380,14 @@
       "graph_evidence_coverage": 0.5,
       "graph_evidence_vs_best_baseline_delta": -0.333333,
       "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "参数",
+        "检查",
+        "部件"
+      ],
       "matched_graph_evidence": [
         {
           "keyword": "检查",
@@ -239,6 +448,15 @@
       "graph_evidence_coverage": 0.666667,
       "graph_evidence_vs_best_baseline_delta": -0.166666,
       "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "压力",
+        "机械",
+        "温度",
+        "热力"
+      ],
       "matched_graph_evidence": [
         {
           "keyword": "温度",
@@ -309,6 +527,17 @@
       "graph_evidence_coverage": 1.0,
       "graph_evidence_vs_best_baseline_delta": 0.166667,
       "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "关系",
+        "压力损失",
+        "温度场",
+        "燃料",
+        "燃烧室",
+        "空气"
+      ],
       "matched_graph_evidence": [
         {
           "keyword": "燃烧室",
@@ -398,10 +627,88 @@
       },
       "best_baseline_method": "dense_hashing",
       "best_baseline_coverage": 0.166667,
-      "graph_evidence_coverage": 0.0,
-      "graph_evidence_vs_best_baseline_delta": -0.166667,
-      "graph_evidence_status": "missing",
-      "matched_graph_evidence": [],
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.833333,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "GraphRAG",
+        "keyword",
+        "分类型",
+        "数字事实",
+        "术语",
+        "跨实体"
+      ],
+      "matched_graph_evidence": [
+        {
+          "keyword": "keyword",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
+        {
+          "keyword": "GraphRAG",
+          "triple_id": "CCKG-0002",
+          "subject": "知识图谱POC",
+          "predicate": "HAS_MANUAL_REVIEW_BOUNDARY",
+          "object": "人工评审结论",
+          "source_file": "docs/challenge_cup/00_项目一页纸.md",
+          "source_page": "n/a",
+          "confidence": "0.95",
+          "evidence_preview": "知识图谱 POC 能证明候选三元组生成、evidence 绑定、人工评审和导出的闭环已经跑通；27 条候选中 26 条正确、1 条待讨论、0 条错误，但不能证明完整商业级 GraphRAG 问答系统。"
+        },
+        {
+          "keyword": "术语",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
+        {
+          "keyword": "数字事实",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
+        {
+          "keyword": "跨实体",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
+        {
+          "keyword": "分类型",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "必须体现方法适用边界。"
@@ -422,10 +729,88 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.5,
-      "graph_evidence_coverage": 0.0,
-      "graph_evidence_vs_best_baseline_delta": -0.5,
-      "graph_evidence_status": "missing",
-      "matched_graph_evidence": [],
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.5,
+      "graph_evidence_status": "supported",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "global",
+        "全局归纳",
+        "故障模式",
+        "社区",
+        "精确数字",
+        "跨文档"
+      ],
+      "matched_graph_evidence": [
+        {
+          "keyword": "global",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        },
+        {
+          "keyword": "跨文档",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        },
+        {
+          "keyword": "社区",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        },
+        {
+          "keyword": "全局归纳",
+          "triple_id": "CCKG-0003",
+          "subject": "GraphRAG评测口径",
+          "predicate": "HAS_METHOD_BOUNDARY",
+          "object": "分类型解释",
+          "source_file": "docs/challenge_cup/05_答辩问答手册.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "如果 GraphRAG 没有在所有题上超过 keyword baseline，应按方法适用边界解释：keyword 适合术语和数字事实，GraphRAG 适合跨实体关系和全局归纳，评测报告应分类型呈现。"
+        },
+        {
+          "keyword": "故障模式",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        },
+        {
+          "keyword": "精确数字",
+          "triple_id": "CCKG-0004",
+          "subject": "GraphRAG global",
+          "predicate": "FITS_QUESTION_TYPE",
+          "object": "跨文档全局归纳",
+          "source_file": "docs/challenge_cup/03_实验评测报告.md",
+          "source_page": "n/a",
+          "confidence": "0.94",
+          "evidence_preview": "GraphRAG global 更适合跨文档、社区、全局归纳和故障模式分布类问题；它不适合替代 keyword 去查精确数字，也不证明所有问题全面优于 baseline。"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "应明确 global search 的问题类型。"
@@ -449,6 +834,13 @@
       "graph_evidence_coverage": 0.333333,
       "graph_evidence_vs_best_baseline_delta": 0.0,
       "graph_evidence_status": "partial",
+      "expected_evidence_keyword_count": 6,
+      "graph_matchable_keyword_count": 6,
+      "ignored_graph_keywords": [],
+      "matched_graph_keywords": [
+        "related_to",
+        "原因"
+      ],
       "matched_graph_evidence": [
         {
           "keyword": "related_to",

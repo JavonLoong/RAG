@@ -34,6 +34,20 @@ def test_build_graphrag_context_demo_outputs_text_and_graph_context() -> None:
     assert payload["boundary"] == BOUNDARY
     assert payload["source_graph"].endswith("triples.csv")
     assert payload["text_baseline_method"] == "keyword"
+    assert payload["selection_policy"] == "supported_domain_graph_cases_first"
+    assert payload["eligible_source_scopes"] == [
+        "fault_reports_and_maintenance_documents",
+        "public_books_operation_and_fault_reports",
+        "public_books_gas_turbine_and_combined_cycle",
+    ]
+    assert payload["excluded_supported_case_ids"] == [
+        "cc032",
+        "cc033",
+        "cc034",
+        "cc035",
+        "cc043",
+        "cc048",
+    ]
     assert payload["demo_case_count"] == 3
     assert payload["case_ids"] == ["cc039", "cc040", "cc041"]
 

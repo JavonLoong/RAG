@@ -83,6 +83,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "graphrag context demo" in report
     assert "graphrag answer benchmark" in report
     assert "graphrag gap remediation plan" in report
+    assert "supported=9, partial=1, missing=0" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:

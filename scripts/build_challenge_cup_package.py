@@ -56,6 +56,7 @@ GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_CONTEXT_DEMO_MD = REPORTS / "challenge_cup_graphrag_context_demo.md"
 GRAPH_CONTEXT_DEMO_JSON = REPORTS / "challenge_cup_graphrag_context_demo.json"
+GRAPH_MANUAL_EVIDENCE_SUPPLEMENT = REPRO / "graphrag_manual_evidence_supplement.csv"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
 BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
@@ -340,6 +341,7 @@ def build_eval_report(ctx: dict[str, Any]) -> str:
     graph_context_ref = optional_md_link(ctx["graph_context_demo_md"])
     graph_answer_ref = optional_md_link(ctx["graph_answer_benchmark_md"])
     graph_gap_ref = optional_md_link(ctx["graph_gap_remediation_md"])
+    graph_supplement_ref = md_link(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT)
     return f"""# 实验评测报告
 
 ## 评测集
@@ -368,7 +370,7 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 ## GraphRAG 补证整改计划
 
-已将 answer benchmark 暴露出的 partial/missing 案例转成补证整改计划，逐题给出缺失关键词、优先级、补图谱或补全局摘要动作和复跑命令。报告位置：`{graph_gap_ref}`。该计划不宣称 gap 已修复，而是把失败案例纳入下一轮工程闭环。
+已将 answer benchmark 暴露出的 partial/missing 案例转成补证整改计划，逐题给出缺失关键词、优先级、补图谱或补全局摘要动作和复跑命令。报告位置：`{graph_gap_ref}`。同时新增 manual evidence supplement：`{graph_supplement_ref}`，把 P0 missing 缺口补成可审计的人工图谱证据。该计划不宣称所有 gap 已修复，而是保留剩余 partial 案例进入下一轮工程闭环。
 
 ## 结论
 
@@ -825,6 +827,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - GraphRAG answer benchmark JSON：`{optional_md_link(ctx["graph_answer_benchmark_json"])}`。
 - GraphRAG 补证整改计划：`{optional_md_link(ctx["graph_gap_remediation_md"])}`。
 - GraphRAG 补证整改 JSON：`{optional_md_link(ctx["graph_gap_remediation_json"])}`。
+- GraphRAG manual evidence supplement：`{md_link(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT)}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
@@ -992,6 +995,7 @@ def main() -> int:
         md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),
         md_link(EXPERT_FEEDBACK_FORM),
+        md_link(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT),
         md_link(LIVE_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_JSON),

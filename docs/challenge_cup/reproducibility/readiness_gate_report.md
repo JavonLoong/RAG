@@ -10,13 +10,13 @@
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 34 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 33 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
-| numeric consistency | pass | 60 questions, 34 evidence files, and 5 visible search records are consistent |
-| graphrag evidence audit | pass | 3 supported, 3 partial, 4 missing cases over 240 triples |
+| package evidence files | pass | 35 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 34 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| numeric consistency | pass | 60 questions, 35 evidence files, and 5 visible search records are consistent |
+| graphrag evidence audit | pass | 9 supported, 1 partial, 0 missing cases over 244 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
-| graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=3, missing=4, graph_avg=0.3 |
-| graphrag gap remediation plan | pass | 7 partial/missing cases converted into remediation tasks |
+| graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=9, partial=1, missing=0, graph_avg=0.8 |
+| graphrag gap remediation plan | pass | 1 partial/missing cases converted into remediation tasks |
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 24 evidence links verified |
 | acceptance checklist | pass | submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; 13 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 16 evidence links verified |

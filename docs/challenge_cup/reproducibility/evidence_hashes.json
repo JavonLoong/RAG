@@ -111,49 +111,54 @@
       "sha256": "ad658f3aa9c554c62d15593fd3107c5278eaba66b3e0c5508a684e2f299c1e8e"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
+      "bytes": 1852,
+      "sha256": "51e08bafb05dde4fa5e936cbd522a35f18abf18a3183d4f941a830e3d9404627"
+    },
+    {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
       "bytes": 692,
       "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
-      "bytes": 18321,
-      "sha256": "2beb7ede48e95a4fd548cb01c8eb01d10474fa56cdbeacd99405c65518974628"
+      "bytes": 22111,
+      "sha256": "ec22858e86d050d92f9e4b4383da79b89916bdfde386845edf45b5d5065c97fa"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md",
-      "bytes": 3099,
-      "sha256": "a67b7b64a0008d089da72bd2a8e688a6a68a08d50e7b3766cfd27801cb133094"
+      "bytes": 3155,
+      "sha256": "fcccfb7dac2981ee3dacb24434eaeb9e36b8e4ba78723b5f7691109e2287fe10"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.json",
-      "bytes": 41030,
-      "sha256": "7c97af5d79b4b07f796d2a66e38181b51bdc911f6f516ce760f7fc5aa58b4507"
+      "bytes": 41718,
+      "sha256": "dd7523da258c76bdedaa50dfe0eeb9e96deed29c5994e0c23d8460e43eee5d36"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.md",
-      "bytes": 11737,
-      "sha256": "a326f7e9e98f99fc44c5ff91a55ecf371b6e739363dc9dd9f24551af43b9d916"
+      "bytes": 11795,
+      "sha256": "d59affe6200907f799d967fbf2445969ac588e9e8752a632d86522b200376d48"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",
-      "bytes": 9858,
-      "sha256": "bdd9528235cff3655a3dceb8f8029ed6b11c81ea6fec8b9de3306d054c9fe713"
+      "bytes": 2562,
+      "sha256": "753f5e24c47e2047b998e6170063ba065660fb30af520c4a32a1c14c30a9f701"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
-      "bytes": 5550,
-      "sha256": "006bf155bfa04f28cc52192d178483a0680c44ec09d0e50dc70a6410e2c4f8a6"
+      "bytes": 1820,
+      "sha256": "0040cc5dbac69fd0b1c57369cc4849dd606d58df3387ed12c9723c4ab3458648"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
-      "bytes": 24380,
-      "sha256": "0346c43d4dd81fcdb413df3151a18b82209464e9c3ab44ed4eb863c05e693579"
+      "bytes": 43121,
+      "sha256": "26abeb167277d751cb081b8a23cb41562d3c6d9b5f974baab60ec067c6d1c627"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
-      "bytes": 3812,
-      "sha256": "4fd4de2b688180b557af5aef63e402a115b24bb3e877d61088ed516184e6ef22"
+      "bytes": 3986,
+      "sha256": "d56a4433679f3ef2912455c61329c2c5c966cea025fdf5e44340df615a384c48"
     },
     {
       "path": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",

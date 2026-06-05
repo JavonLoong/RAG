@@ -5,6 +5,7 @@
 - Boundary: This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers or prove online answer win-rate.
 - Graph source: `docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv`
 - Text baseline: `keyword` / `evaluation/reports/day3_retrieval_outputs_keyword_20260605_210540.jsonl`
+- Selection policy: `supported_domain_graph_cases_first`
 - Demo cases: 3 (cc039, cc040, cc041)
 
 ## Cases

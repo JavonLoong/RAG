@@ -8,6 +8,20 @@
   "day3_comparison": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.json",
   "text_baseline_method": "keyword",
   "text_baseline_outputs": "evaluation/reports/day3_retrieval_outputs_keyword_20260605_210540.jsonl",
+  "selection_policy": "supported_domain_graph_cases_first",
+  "eligible_source_scopes": [
+    "fault_reports_and_maintenance_documents",
+    "public_books_operation_and_fault_reports",
+    "public_books_gas_turbine_and_combined_cycle"
+  ],
+  "excluded_supported_case_ids": [
+    "cc032",
+    "cc033",
+    "cc034",
+    "cc035",
+    "cc043",
+    "cc048"
+  ],
   "demo_case_count": 3,
   "case_ids": [
     "cc039",
@@ -18,6 +32,8 @@
     {
       "id": "cc039",
       "question": "动力装备故障诊断类问题为什么需要同时返回可能原因和检查证据？",
+      "task_type": "fault_reasoning",
+      "source_scope": "fault_reports_and_maintenance_documents",
       "graph_mode": "graphrag_context",
       "graph_evidence_coverage": 0.5,
       "graph_evidence_status": "supported",
@@ -159,6 +175,8 @@
     {
       "id": "cc040",
       "question": "燃气轮机运行监测中温度、压力和振动信号为什么常被放在一起分析？",
+      "task_type": "fault_reasoning",
+      "source_scope": "public_books_operation_and_fault_reports",
       "graph_mode": "graphrag_context",
       "graph_evidence_coverage": 0.666667,
       "graph_evidence_status": "supported",
@@ -300,6 +318,8 @@
     {
       "id": "cc041",
       "question": "燃烧室相关问题为什么适合用图谱表达部件、现象和影响之间的关系？",
+      "task_type": "kg_graph_rag",
+      "source_scope": "public_books_gas_turbine_and_combined_cycle",
       "graph_mode": "graphrag_global",
       "graph_evidence_coverage": 1.0,
       "graph_evidence_status": "supported",

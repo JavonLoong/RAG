@@ -14,6 +14,9 @@ OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_same_question_report.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_same_question_report.md"
 BASELINE_METHODS = ["keyword", "dense_hashing", "hybrid_rrf"]
 GRAPH_EVIDENCE_COLUMNS = ("subject", "predicate", "object", "evidence", "source_file", "rule_name")
+GRAPH_EVIDENCE_SUPPLEMENT = (
+    REPO_ROOT / "docs" / "challenge_cup" / "reproducibility" / "graphrag_manual_evidence_supplement.csv"
+)
 GRAPH_EVIDENCE_BOUNDARY = (
     "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
 )
@@ -51,18 +54,27 @@ def read_graph_triples(path: Path) -> list[dict[str, str]]:
         return [dict(row) for row in csv.DictReader(handle)]
 
 
+def read_manual_supplement(path: Path) -> list[dict[str, str]]:
+    return read_graph_triples(path) if path.exists() else []
+
+
 def searchable_graph_text(triple: dict[str, str]) -> str:
     return " ".join(str(triple.get(column, "")) for column in GRAPH_EVIDENCE_COLUMNS).lower()
+
+
+def graph_matchable_keywords(keywords: list[str]) -> list[str]:
+    return [str(keyword).strip() for keyword in keywords if str(keyword).strip() and not str(keyword).strip().isdigit()]
+
+
+def ignored_graph_keywords(keywords: list[str]) -> list[str]:
+    return [str(keyword).strip() for keyword in keywords if str(keyword).strip().isdigit()]
 
 
 def graph_keyword_hits(keywords: list[str], triples: list[dict[str, str]]) -> list[dict[str, Any]]:
     hits: list[dict[str, Any]] = []
     matched_keywords: set[str] = set()
     indexed = [(triple, searchable_graph_text(triple)) for triple in triples]
-    for keyword in keywords:
-        key = str(keyword).strip()
-        if not key or key.isdigit():
-            continue
+    for key in graph_matchable_keywords(keywords):
         lowered = key.lower()
         for triple, text in indexed:
             if lowered not in text:
@@ -129,7 +141,9 @@ def build_payload() -> dict[str, Any]:
     comparison = read_json(comparison_path)
     method_results = load_method_results(comparison)
     triples_path = graph_triples_csv()
-    triples = read_graph_triples(triples_path)
+    base_triples = read_graph_triples(triples_path)
+    supplement_triples = read_manual_supplement(GRAPH_EVIDENCE_SUPPLEMENT)
+    triples = [*base_triples, *supplement_triples]
     graph_questions = [
         row for row in questions if any(str(mode).startswith("graphrag") for mode in row.get("expected_modes", []))
     ]
@@ -141,9 +155,11 @@ def build_payload() -> dict[str, Any]:
             for method in BASELINE_METHODS
         }
         best_method, best_coverage = max(coverages.items(), key=lambda item: item[1])
-        graph_hits = graph_keyword_hits(list(row.get("expected_evidence_keywords", [])), triples)
+        expected_keywords = list(row.get("expected_evidence_keywords", []))
+        matchable_keywords = graph_matchable_keywords(expected_keywords)
+        graph_hits = graph_keyword_hits(expected_keywords, triples)
         graph_coverage = round(
-            len({hit["keyword"] for hit in graph_hits}) / max(len(row.get("expected_evidence_keywords", [])), 1),
+            len({hit["keyword"] for hit in graph_hits}) / max(len(matchable_keywords), 1),
             6,
         )
         cases.append(
@@ -160,6 +176,10 @@ def build_payload() -> dict[str, Any]:
                 "graph_evidence_coverage": graph_coverage,
                 "graph_evidence_vs_best_baseline_delta": round(graph_coverage - best_coverage, 6),
                 "graph_evidence_status": graph_evidence_status(graph_coverage),
+                "expected_evidence_keyword_count": len(expected_keywords),
+                "graph_matchable_keyword_count": len(matchable_keywords),
+                "ignored_graph_keywords": ignored_graph_keywords(expected_keywords),
+                "matched_graph_keywords": sorted({hit["keyword"] for hit in graph_hits}),
                 "matched_graph_evidence": graph_hits,
                 "priority_for_graph_eval": best_coverage < 0.75 or "graphrag_global" in row["expected_modes"],
                 "recommendation": recommendation_for(row, best_coverage),
@@ -180,6 +200,9 @@ def build_payload() -> dict[str, Any]:
         "baseline_methods": BASELINE_METHODS,
         "average_best_baseline_coverage_on_graph_subset": round(avg_best, 6),
         "graph_evidence_source": str(triples_path.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "graph_evidence_supplement": str(GRAPH_EVIDENCE_SUPPLEMENT.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "base_graph_triple_count": len(base_triples),
+        "manual_evidence_supplement_count": len(supplement_triples),
         "graph_triple_count": len(triples),
         "graph_evidence_supported_case_count": status_counts.get("supported", 0),
         "graph_evidence_partial_case_count": status_counts.get("partial", 0),
@@ -220,7 +243,9 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- global 题数：{payload['mode_counts'].get('graphrag_global', 0)}",
         f"- 当前文本 baseline 最优覆盖率均值：{payload['average_best_baseline_coverage_on_graph_subset']}",
         f"- 优先补 GraphRAG 实测案例：{payload['priority_case_count']}",
-        f"- Graph evidence source: `{payload['graph_evidence_source']}` ({payload['graph_triple_count']} triples)",
+        f"- Graph evidence source: `{payload['graph_evidence_source']}` ({payload['base_graph_triple_count']} base triples)",
+        f"- manual evidence supplement: `{payload['graph_evidence_supplement']}` ({payload['manual_evidence_supplement_count']} triples)",
+        f"- Graph evidence total triples: {payload['graph_triple_count']}",
         (
             "- Graph evidence supported / partial / missing: "
             f"{payload['graph_evidence_supported_case_count']} / "

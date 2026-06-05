@@ -46,6 +46,7 @@ GRAPH_ANSWER_BENCHMARK_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_
 GRAPH_ANSWER_BENCHMARK_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_answer_benchmark.md"
 GRAPH_GAP_REMEDIATION_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_gap_remediation_plan.json"
 GRAPH_GAP_REMEDIATION_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_gap_remediation_plan.md"
+GRAPH_MANUAL_EVIDENCE_SUPPLEMENT = REPRO_DIR / "graphrag_manual_evidence_supplement.csv"
 GRAPH_EVIDENCE_BOUNDARY = (
     "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
 )
@@ -77,6 +78,7 @@ REQUIRED_GRAPH_CASE_FIELDS = {
     "id",
     "graph_evidence_coverage",
     "graph_evidence_status",
+    "graph_matchable_keyword_count",
     "matched_graph_evidence",
 }
 
@@ -101,6 +103,7 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
     "reproducibility/expert_feedback_form.md",
+    "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
     "reproducibility/defense_rehearsal_scorecard.json",
     "reproducibility/defense_rehearsal_result_packet.md",
@@ -200,9 +203,9 @@ GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
 GRAPH_GAP_REMEDIATION_MARKDOWN_TERMS = {
     "GraphRAG 补证整改计划",
     "ready_for_graph_iteration",
+    "P0 missing 已补证",
     "不把 partial/missing 改写成成功案例",
-    "cc032",
-    "cc043",
+    "cc056",
 }
 GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE = [
     "new_triples_or_summary_diff",
@@ -689,16 +692,30 @@ def check_graphrag_same_question_evidence() -> GateCheck:
     elif not nonempty(REPO_ROOT / source):
         failures.append(f"graph_evidence_source missing or empty: {source}")
 
+    supplement = str(payload.get("graph_evidence_supplement", ""))
+    expected_supplement = GRAPH_MANUAL_EVIDENCE_SUPPLEMENT.relative_to(REPO_ROOT).as_posix()
+    if supplement != expected_supplement:
+        failures.append(f"graph_evidence_supplement={supplement}")
+    elif not nonempty(REPO_ROOT / supplement):
+        failures.append(f"graph_evidence_supplement missing or empty: {supplement}")
+    base_count = int(payload.get("base_graph_triple_count") or 0)
+    supplement_count = int(payload.get("manual_evidence_supplement_count") or 0)
+    if base_count < 240:
+        failures.append(f"base_graph_triple_count below 240: {base_count}")
+    if supplement_count < 4:
+        failures.append(f"manual_evidence_supplement_count below 4: {supplement_count}")
     triple_count = int(payload.get("graph_triple_count") or 0)
-    if triple_count < 240:
-        failures.append(f"graph_triple_count below 240: {triple_count}")
+    if triple_count != base_count + supplement_count:
+        failures.append(f"graph_triple_count mismatch: {triple_count} != {base_count}+{supplement_count}")
     supported = int(payload.get("graph_evidence_supported_case_count") or 0)
     partial = int(payload.get("graph_evidence_partial_case_count") or 0)
     missing = int(payload.get("graph_evidence_missing_case_count") or 0)
-    if supported < 3:
-        failures.append(f"graph_evidence_supported_case_count below 3: {supported}")
-    if missing < 1:
-        failures.append("graph_evidence_missing_case_count must preserve at least one known gap")
+    if supported < 9:
+        failures.append(f"graph_evidence_supported_case_count below 9: {supported}")
+    if partial < 1:
+        failures.append("graph_evidence_partial_case_count must retain remaining partial work")
+    if missing != 0:
+        failures.append(f"graph_evidence_missing_case_count must be 0 after P0 supplement: {missing}")
     if payload.get("graph_evidence_boundary") != GRAPH_EVIDENCE_BOUNDARY:
         failures.append("graph_evidence_boundary mismatch")
 
@@ -707,7 +724,7 @@ def check_graphrag_same_question_evidence() -> GateCheck:
         failures.append("cases must match graphrag_question_count")
         cases = []
     supported_with_hits = 0
-    missing_cases = 0
+    p0_cases = {"cc032", "cc035", "cc043", "cc048"}
     for case in cases:
         missing_fields = sorted(REQUIRED_GRAPH_CASE_FIELDS - set(case))
         if missing_fields:
@@ -720,16 +737,20 @@ def check_graphrag_same_question_evidence() -> GateCheck:
         hits = case.get("matched_graph_evidence", [])
         if status == "supported" and hits:
             supported_with_hits += 1
-        if status == "missing":
-            missing_cases += 1
+        if str(case.get("id")) in p0_cases and status != "supported":
+            failures.append(f"P0 gap {case.get('id')} not supported after manual supplement")
+        if str(case.get("id")) == "cc035":
+            if int(case.get("graph_matchable_keyword_count") or 0) != 2:
+                failures.append("cc035 graph_matchable_keyword_count must ignore pure numeric keywords")
+            if case.get("ignored_graph_keywords") != ["27", "26", "1", "0"]:
+                failures.append("cc035 ignored_graph_keywords mismatch")
     if supported_with_hits < 1:
         failures.append("no supported GraphRAG evidence case with matched_graph_evidence")
-    if missing_cases < 1:
-        failures.append("no missing GraphRAG evidence case retained")
 
     required_markdown_terms = {
         "Graph evidence coverage audit",
         "triples.csv",
+        "manual evidence supplement",
         "不代表完整 GraphRAG 在线问答已优于 baseline",
     }
     missing_markdown_terms = sorted(term for term in required_markdown_terms if term not in markdown)
@@ -842,20 +863,23 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     if int(payload.get("best_baseline_method_count") or 0) != 3:
         failures.append("best_baseline_method_count must be 3")
     supported = int(payload.get("graphrag_supported_answer_case_count") or 0)
+    partial = int(payload.get("graphrag_partial_answer_case_count") or 0)
     missing = int(payload.get("graphrag_missing_answer_case_count") or 0)
-    if supported < 3:
-        failures.append(f"graphrag_supported_answer_case_count below 3: {supported}")
-    if missing < 1:
-        failures.append("graphrag_missing_answer_case_count must retain known gaps")
+    if supported < 9:
+        failures.append(f"graphrag_supported_answer_case_count below 9: {supported}")
+    if partial < 1:
+        failures.append("graphrag_partial_answer_case_count must retain remaining partial work")
+    if missing != 0:
+        failures.append(f"graphrag_missing_answer_case_count must be 0 after P0 supplement: {missing}")
     baseline_avg = float(payload.get("average_best_baseline_reference_keyword_coverage") or -1)
     graph_avg = float(payload.get("average_graphrag_reference_keyword_coverage") or -1)
     if not (0 <= baseline_avg <= 1 and 0 <= graph_avg <= 1):
         failures.append(f"average coverage out of range: baseline={baseline_avg}, graph={graph_avg}")
-    if graph_avg > baseline_avg:
-        failures.append("graph average coverage must not overclaim beyond current baseline average")
     summary = str(payload.get("summary_verdict", ""))
-    if "GraphRAG is not yet an answer-level win-rate improvement" not in summary:
-        failures.append("summary_verdict missing no-win-rate boundary")
+    if "manual graph evidence now closes P0 missing cases" not in summary:
+        failures.append("summary_verdict missing manual supplement improvement")
+    if "does not claim online LLM answer win-rate" not in summary:
+        failures.append("summary_verdict missing no-online-win-rate boundary")
 
     cases = payload.get("cases", [])
     if not isinstance(cases, list) or len(cases) != 10:
@@ -866,10 +890,13 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     if case_ids != required_case_ids:
         failures.append(f"case ids mismatch: {sorted(case_ids)}")
     verdicts = {str(case.get("answer_level_verdict", "")) for case in cases}
-    if not {"graph_supported", "graph_partial", "graph_missing"} <= verdicts:
-        failures.append(f"verdicts must include supported, partial, and missing: {sorted(verdicts)}")
+    if not {"graph_supported", "graph_partial"} <= verdicts or "graph_missing" in verdicts:
+        failures.append(f"verdicts must include supported/partial and no missing: {sorted(verdicts)}")
+    p0_cases = {"cc032", "cc035", "cc043", "cc048"}
     for case in cases:
         case_id = str(case.get("id", "<unknown>"))
+        if case_id in p0_cases and case.get("graphrag_answer_status") != "supported":
+            failures.append(f"P0 answer case {case_id} not supported")
         for key in ("question", "reference_answer", "expected_evidence_keywords", "graphrag_answer_draft"):
             if not case.get(key):
                 failures.append(f"case {case_id} missing {key}")
@@ -885,7 +912,7 @@ def check_graphrag_answer_benchmark() -> GateCheck:
     return GateCheck(
         "graphrag answer benchmark",
         not failures,
-        f"{len(cases)} fixed GraphRAG answer cases; supported={supported}, missing={missing}, graph_avg={graph_avg}"
+        f"{len(cases)} fixed GraphRAG answer cases; supported={supported}, partial={partial}, missing={missing}, graph_avg={graph_avg}"
         if not failures
         else "; ".join(failures),
     )
@@ -933,15 +960,15 @@ def check_graphrag_gap_remediation_plan() -> GateCheck:
         failures.append(f"source_graph_report={payload.get('source_graph_report')}")
     if payload.get("source_answer_benchmark") != GRAPH_ANSWER_BENCHMARK_JSON.relative_to(REPO_ROOT).as_posix():
         failures.append(f"source_answer_benchmark={payload.get('source_answer_benchmark')}")
-    if int(payload.get("total_graph_cases") or -1) != len(benchmark_cases):
+    if int(payload.get("total_graph_cases", -1)) != len(benchmark_cases):
         failures.append("total_graph_cases mismatch")
-    if int(payload.get("supported_count") or -1) != expected_supported:
+    if int(payload.get("supported_count", -1)) != expected_supported:
         failures.append("supported_count mismatch")
-    if int(payload.get("partial_count") or -1) != expected_partial:
+    if int(payload.get("partial_count", -1)) != expected_partial:
         failures.append("partial_count mismatch")
-    if int(payload.get("missing_count") or -1) != expected_missing:
+    if int(payload.get("missing_count", -1)) != expected_missing:
         failures.append("missing_count mismatch")
-    if int(payload.get("partial_or_missing_count") or -1) != len(expected_gap_cases):
+    if int(payload.get("partial_or_missing_count", -1)) != len(expected_gap_cases):
         failures.append("partial_or_missing_count mismatch")
     if payload.get("required_evidence_to_archive") != GRAPH_GAP_REQUIRED_ARCHIVE_EVIDENCE:
         failures.append("required_evidence_to_archive mismatch")

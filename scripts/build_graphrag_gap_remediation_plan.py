@@ -4,12 +4,17 @@ import json
 from pathlib import Path
 from typing import Any
 
+from build_graphrag_answer_benchmark import (
+    OUTPUT_JSON as ANSWER_BENCHMARK_JSON,
+    OUTPUT_MD as ANSWER_BENCHMARK_MD,
+    build_payload as build_answer_benchmark_payload,
+    write_markdown as write_answer_benchmark_markdown,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_DIR = REPO_ROOT / "evaluation" / "reports"
 GRAPH_REPORT_JSON = REPORT_DIR / "challenge_cup_graphrag_same_question_report.json"
-ANSWER_BENCHMARK_JSON = REPORT_DIR / "challenge_cup_graphrag_answer_benchmark.json"
 OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_gap_remediation_plan.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_gap_remediation_plan.md"
 BOUNDARY = (
@@ -41,6 +46,14 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def rel(path: Path) -> str:
     return str(path.relative_to(REPO_ROOT)).replace("\\", "/")
+
+
+def refresh_answer_benchmark() -> dict[str, Any]:
+    payload = build_answer_benchmark_payload()
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    ANSWER_BENCHMARK_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_answer_benchmark_markdown(ANSWER_BENCHMARK_MD, payload)
+    return payload
 
 
 def missing_keywords(case: dict[str, Any]) -> list[str]:
@@ -112,8 +125,8 @@ def build_item(answer_case: dict[str, Any], graph_case: dict[str, Any]) -> dict[
 
 
 def build_payload() -> dict[str, Any]:
+    benchmark = refresh_answer_benchmark()
     graph_report = read_json(GRAPH_REPORT_JSON)
-    benchmark = read_json(ANSWER_BENCHMARK_JSON)
     graph_cases = {str(case["id"]): case for case in graph_report["cases"]}
     answer_cases = list(benchmark["cases"])
     supported = sum(1 for case in answer_cases if case["graphrag_answer_status"] == "supported")
@@ -163,6 +176,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- Boundary: {payload['boundary']}",
         f"- Total cases: {payload['total_graph_cases']}",
         f"- Supported / partial / missing: {payload['supported_count']} / {payload['partial_count']} / {payload['missing_count']}",
+        f"- P0 missing 已补证: `{payload['priority_counts']['P0'] == 0 and payload['missing_count'] == 0}`",
         f"- Gaps marked fixed: `{payload['gaps_marked_fixed']}`",
         "",
         "## 不夸大规则",

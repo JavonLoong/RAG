@@ -4,11 +4,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+from build_graphrag_challenge_report import (
+    OUTPUT_JSON as GRAPH_REPORT_JSON,
+    OUTPUT_MD as GRAPH_REPORT_MD,
+    build_payload as build_graph_report_payload,
+    write_markdown as write_graph_report_markdown,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_DIR = REPO_ROOT / "evaluation" / "reports"
-GRAPH_REPORT_JSON = REPORT_DIR / "challenge_cup_graphrag_same_question_report.json"
 OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_answer_benchmark.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_answer_benchmark.md"
 BOUNDARY = (
@@ -27,6 +32,14 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 def rel(path: Path) -> str:
     return str(path.relative_to(REPO_ROOT)).replace("\\", "/")
+
+
+def refresh_graph_report() -> dict[str, Any]:
+    payload = build_graph_report_payload()
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    GRAPH_REPORT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_graph_report_markdown(GRAPH_REPORT_MD, payload)
+    return payload
 
 
 def answer_status(coverage: float) -> str:
@@ -86,12 +99,21 @@ def average(values: list[float]) -> float:
 
 
 def build_payload() -> dict[str, Any]:
-    graph_report = read_json(GRAPH_REPORT_JSON)
+    graph_report = refresh_graph_report()
     dataset_by_id = {str(row["id"]): row for row in read_jsonl(DATASET)}
     cases = [build_case(case, dataset_by_id) for case in graph_report["cases"]]
     supported = sum(1 for case in cases if case["graphrag_answer_status"] == "supported")
     partial = sum(1 for case in cases if case["graphrag_answer_status"] == "partial")
     missing = sum(1 for case in cases if case["graphrag_answer_status"] == "missing")
+    summary = (
+        "manual graph evidence now closes P0 missing cases; remaining partial cases still require relation "
+        "synonym/schema work, and this does not claim online LLM answer win-rate."
+        if missing == 0 and supported >= 7
+        else (
+            "GraphRAG is not yet an answer-level win-rate improvement; current value is strongest for "
+            "supported relation-evidence cases, while partial/missing cases expose the next data and graph gaps."
+        )
+    )
     return {
         "report_type": "challenge_cup_graphrag_answer_benchmark",
         "benchmark_mode": "deterministic_offline_reference_keyword_coverage",
@@ -111,10 +133,7 @@ def build_payload() -> dict[str, Any]:
         "average_graphrag_reference_keyword_coverage": average(
             [case["graphrag_reference_keyword_coverage"] for case in cases]
         ),
-        "summary_verdict": (
-            "GraphRAG is not yet an answer-level win-rate improvement; current value is strongest for "
-            "supported relation-evidence cases, while partial/missing cases expose the next data and graph gaps."
-        ),
+        "summary_verdict": summary,
         "cases": cases,
     }
 
@@ -134,6 +153,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "- Benchmark mode: deterministic offline reference keyword coverage",
         f"- 10 道 GraphRAG 同题：{payload['answer_benchmark_case_count']}",
         f"- Graph supported / partial / missing: {payload['graphrag_supported_answer_case_count']} / {payload['graphrag_partial_answer_case_count']} / {payload['graphrag_missing_answer_case_count']}",
+        f"- P0 missing 已补证: `{payload['graphrag_missing_answer_case_count'] == 0 and payload['graphrag_supported_answer_case_count'] >= 7}`",
         f"- Best baseline average coverage: {payload['average_best_baseline_reference_keyword_coverage']}",
         f"- GraphRAG evidence average coverage: {payload['average_graphrag_reference_keyword_coverage']}",
         "- 结论：不宣称 GraphRAG 全面优于 baseline；保留 partial/missing 作为下一轮补图谱和补答案评测的证据。",

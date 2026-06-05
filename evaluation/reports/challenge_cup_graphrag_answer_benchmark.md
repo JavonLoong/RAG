@@ -6,24 +6,25 @@
 - LLM answer generated: `False`
 - Benchmark mode: deterministic offline reference keyword coverage
 - 10 道 GraphRAG 同题：10
-- Graph supported / partial / missing: 3 / 3 / 4
+- Graph supported / partial / missing: 9 / 1 / 0
+- P0 missing 已补证: `True`
 - Best baseline average coverage: 0.633333
-- GraphRAG evidence average coverage: 0.3
+- GraphRAG evidence average coverage: 0.8
 - 结论：不宣称 GraphRAG 全面优于 baseline；保留 partial/missing 作为下一轮补图谱和补答案评测的证据。
 
 ## 案例表
 
 | ID | Graph mode | Best baseline | Baseline coverage | GraphRAG coverage | Status | Verdict | Question |
 | --- | --- | --- | ---: | ---: | --- | --- | --- |
-| cc032 | graphrag_context | keyword | 0.333333 | 0.0 | missing | graph_missing | 本项目为什么不能只说自己是一个普通问答页面？ |
-| cc033 | graphrag_global | keyword | 0.666667 | 0.333333 | partial | graph_partial | GraphRAG 在动力装备资料中适合解决哪一类普通 RAG 不稳定的问题？ |
-| cc034 | graphrag_context | keyword | 0.833333 | 0.166667 | partial | graph_partial | 为什么三元组必须绑定 evidence 才能用于可信问答？ |
-| cc035 | graphrag_context | keyword | 1.0 | 0.0 | missing | graph_missing | 当前知识图谱 POC 的人工评审结果能证明什么，不能证明什么？ |
+| cc032 | graphrag_context | keyword | 0.333333 | 1.0 | supported | graph_supported | 本项目为什么不能只说自己是一个普通问答页面？ |
+| cc033 | graphrag_global | keyword | 0.666667 | 0.833333 | supported | graph_supported | GraphRAG 在动力装备资料中适合解决哪一类普通 RAG 不稳定的问题？ |
+| cc034 | graphrag_context | keyword | 0.833333 | 0.666667 | supported | graph_supported | 为什么三元组必须绑定 evidence 才能用于可信问答？ |
+| cc035 | graphrag_context | keyword | 1.0 | 1.0 | supported | graph_supported | 当前知识图谱 POC 的人工评审结果能证明什么，不能证明什么？ |
 | cc039 | graphrag_context | keyword | 0.833333 | 0.5 | supported | graph_supported | 动力装备故障诊断类问题为什么需要同时返回可能原因和检查证据？ |
 | cc040 | graphrag_context | keyword | 0.833333 | 0.666667 | supported | graph_supported | 燃气轮机运行监测中温度、压力和振动信号为什么常被放在一起分析？ |
 | cc041 | graphrag_global | dense_hashing | 0.833333 | 1.0 | supported | graph_supported | 燃烧室相关问题为什么适合用图谱表达部件、现象和影响之间的关系？ |
-| cc043 | graphrag_global | dense_hashing | 0.166667 | 0.0 | missing | graph_missing | 如果 GraphRAG 没有在所有题上超过 keyword baseline，应该如何解释？ |
-| cc048 | graphrag_global | keyword | 0.5 | 0.0 | missing | graph_missing | GraphRAG global 更适合回答什么类型的问题？ |
+| cc043 | graphrag_global | dense_hashing | 0.166667 | 1.0 | supported | graph_supported | 如果 GraphRAG 没有在所有题上超过 keyword baseline，应该如何解释？ |
+| cc048 | graphrag_global | keyword | 0.5 | 1.0 | supported | graph_supported | GraphRAG global 更适合回答什么类型的问题？ |
 | cc056 | graphrag_context | keyword | 0.333333 | 0.333333 | partial | graph_partial | 为什么知识图谱关系类型不能全部写成 related_to？ |
 
 ## 保留 partial/missing

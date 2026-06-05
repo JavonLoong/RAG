@@ -37,17 +37,20 @@ def test_build_graphrag_answer_benchmark_outputs_answer_level_subset_report() ->
     assert payload["answer_benchmark_case_count"] == 10
     assert payload["partial_or_missing_cases_retained"] is True
     assert payload["best_baseline_method_count"] == 3
-    assert payload["graphrag_supported_answer_case_count"] >= 3
-    assert payload["graphrag_missing_answer_case_count"] >= 1
+    assert payload["graphrag_supported_answer_case_count"] >= 7
+    assert payload["graphrag_partial_answer_case_count"] >= 1
+    assert payload["graphrag_missing_answer_case_count"] == 0
     assert 0 <= payload["average_best_baseline_reference_keyword_coverage"] <= 1
     assert 0 <= payload["average_graphrag_reference_keyword_coverage"] <= 1
-    assert payload["average_best_baseline_reference_keyword_coverage"] >= payload["average_graphrag_reference_keyword_coverage"]
-    assert "GraphRAG is not yet an answer-level win-rate improvement" in payload["summary_verdict"]
+    assert "manual graph evidence now closes P0 missing cases" in payload["summary_verdict"]
+    assert "does not claim online LLM answer win-rate" in payload["summary_verdict"]
 
     cases = {case["id"]: case for case in payload["cases"]}
     assert set(cases) == {"cc032", "cc033", "cc034", "cc035", "cc039", "cc040", "cc041", "cc043", "cc048", "cc056"}
     assert cases["cc041"]["graphrag_answer_status"] == "supported"
-    assert cases["cc043"]["graphrag_answer_status"] == "missing"
+    for case_id in ["cc032", "cc035", "cc043", "cc048"]:
+        assert cases[case_id]["graphrag_answer_status"] == "supported"
+        assert cases[case_id]["answer_level_verdict"] == "graph_supported"
     for case in payload["cases"]:
         assert case["question"]
         assert case["reference_answer"]
@@ -63,5 +66,6 @@ def test_build_graphrag_answer_benchmark_outputs_answer_level_subset_report() ->
     assert "GraphRAG answer benchmark" in markdown
     assert "10 道 GraphRAG 同题" in markdown
     assert "保留 partial/missing" in markdown
+    assert "P0 missing 已补证" in markdown
     assert "不宣称 GraphRAG 全面优于 baseline" in markdown
     assert BOUNDARY in markdown

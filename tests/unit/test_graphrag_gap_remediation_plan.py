@@ -37,9 +37,12 @@ def test_build_graphrag_gap_remediation_plan_outputs_all_partial_missing_cases_w
     assert payload["source_answer_benchmark"] == "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json"
     assert payload["total_graph_cases"] == 10
     assert payload["supported_count"] >= 3
+    assert payload["supported_count"] >= 7
     assert payload["partial_count"] >= 1
-    assert payload["missing_count"] >= 1
+    assert payload["missing_count"] == 0
     assert payload["partial_or_missing_count"] == payload["partial_count"] + payload["missing_count"]
+    assert payload["priority_counts"]["P0"] == 0
+    assert payload["priority_counts"]["P1"] == payload["partial_count"]
     assert len(payload["remediation_items"]) == payload["partial_or_missing_count"]
     assert "不把 partial/missing 改写成成功案例" in payload["no_overclaim_rules"]
     assert payload["required_evidence_to_archive"] == [
@@ -56,17 +59,12 @@ def test_build_graphrag_gap_remediation_plan_outputs_all_partial_missing_cases_w
     ]
 
     items = {item["id"]: item for item in payload["remediation_items"]}
-    assert "cc032" in items
-    assert "cc043" in items
-    assert items["cc032"]["current_status"] == "missing"
-    assert items["cc032"]["priority"] == "P0"
-    assert items["cc032"]["action_type"] == "add_project_claim_graph_evidence"
-    assert items["cc043"]["current_status"] == "missing"
-    assert items["cc043"]["priority"] == "P0"
-    assert items["cc043"]["claim_fixed"] is False
+    assert "cc032" not in items
+    assert "cc043" not in items
+    assert "cc056" in items
     for item in payload["remediation_items"]:
-        assert item["current_status"] in {"partial", "missing"}
-        assert item["priority"] in {"P0", "P1"}
+        assert item["current_status"] == "partial"
+        assert item["priority"] == "P1"
         assert item["claim_fixed"] is False
         assert item["missing_expected_keywords"]
         assert len(item["action_items"]) >= 3
@@ -75,7 +73,7 @@ def test_build_graphrag_gap_remediation_plan_outputs_all_partial_missing_cases_w
     markdown = REPORT_MD.read_text(encoding="utf-8")
     assert "GraphRAG 补证整改计划" in markdown
     assert "ready_for_graph_iteration" in markdown
+    assert "P0 missing 已补证" in markdown
     assert "不把 partial/missing 改写成成功案例" in markdown
-    assert "cc032" in markdown
-    assert "cc043" in markdown
+    assert "cc056" in markdown
     assert BOUNDARY in markdown
