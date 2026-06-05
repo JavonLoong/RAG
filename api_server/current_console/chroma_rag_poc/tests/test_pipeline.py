@@ -298,6 +298,47 @@ class PipelineTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_frontend_libs_and_assets_are_served_from_root_paths(self) -> None:
+        """index.html 以 /libs 与 /assets 相对根路径加载本地前端依赖。"""
+        frontend_dir = Path(self.tempdir.name) / "frontend"
+        (frontend_dir / "libs").mkdir(parents=True)
+        (frontend_dir / "assets").mkdir(parents=True)
+        (frontend_dir / "index.html").write_text("<!doctype html><title>demo</title>", encoding="utf-8")
+        (frontend_dir / "libs" / "demo.js").write_text("window.demoLib = true;", encoding="utf-8")
+        (frontend_dir / "assets" / "hero.webp").write_bytes(b"WEBP")
+
+        app = create_app(
+            persist_dir=self.persist_dir,
+            upload_dir=self.upload_dir,
+            frontend_dir=frontend_dir,
+        )
+        client = TestClient(app)
+
+        lib_response = client.get("/libs/demo.js")
+        asset_response = client.get("/assets/hero.webp")
+
+        self.assertEqual(lib_response.status_code, 200)
+        self.assertEqual(asset_response.status_code, 200)
+
+    def test_deliverable_assets_are_served_from_stable_root_path(self) -> None:
+        """前端演示页引用的结项资产应可通过稳定 URL 访问，避免浏览器 404。"""
+        deliverables_dir = Path(self.tempdir.name) / "docs" / "project_deliverables"
+        kg_dir = deliverables_dir / "06_四本书KG工具跑通演示"
+        kg_dir.mkdir(parents=True)
+        (kg_dir / "knowledge_graph.svg").write_text("<svg></svg>", encoding="utf-8")
+
+        app = create_app(
+            persist_dir=self.persist_dir,
+            upload_dir=self.upload_dir,
+            deliverables_dir=deliverables_dir,
+        )
+        client = TestClient(app)
+
+        response = client.get("/deliverables/06_%E5%9B%9B%E6%9C%AC%E4%B9%A6KG%E5%B7%A5%E5%85%B7%E8%B7%91%E9%80%9A%E6%BC%94%E7%A4%BA/knowledge_graph.svg")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.text, "<svg></svg>")
+
     def test_default_cors_rejects_untrusted_origin(self) -> None:
         """默认 CORS 只允许本地控制台来源，不能对任意站点开放。"""
         app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)

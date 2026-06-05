@@ -7,4 +7,11 @@
 - Day4 失败分析：`evaluation/reports/day4_failure_analysis_20260605_210642.md`。
 - GraphRAG 同题子集：`evaluation/reports/challenge_cup_graphrag_same_question_report.md`。
 - 现场演示烟测：`docs/challenge_cup/reproducibility/live_demo_smoke_report.md`。
+- 真实浏览器演示烟测：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
+- 真实浏览器烟测 JSON：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`。
+- 浏览器验收截图：`docs/challenge_cup/reproducibility/browser_screenshots/`。
+- 浏览器桌面总览截图：`docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png`。
+- 浏览器桌面检索截图：`docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`。
+- 浏览器 KG 产物截图：`docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png`。
+- 浏览器移动端截图：`docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png`。
 - 课程最终交付包：`docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/README_先看这里.md`。

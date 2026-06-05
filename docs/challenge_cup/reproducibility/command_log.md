@@ -20,14 +20,35 @@ python scripts/analyze_day4_failure_cases.py
 -> Analyzed cases: 40
 
 python -m pytest tests/unit -q
--> 76 passed
+-> 86 passed
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
--> 19 passed
+-> 21 passed
 
 python scripts/run_challenge_cup_live_demo_smoke.py
 -> docs/challenge_cup/reproducibility/live_demo_smoke_report.md
 -> Status: pass (5/5 checks)
+
+python -m unittest tests/unit/test_console_import_compat.py
+-> OK
+
+python -m unittest tests/unit/test_frontend_demo_mode_contract.py
+-> OK
+
+python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline.py -k test_frontend_libs_and_assets_are_served_from_root_paths
+-> OK
+
+python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline.py -k test_deliverable_assets_are_served_from_stable_root_path
+-> OK
+
+node scripts/run_challenge_cup_browser_demo_smoke.mjs
+-> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
+-> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
+-> Status: pass (12/12 checks)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。

@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-06-05 21:06",
+  "output_dir": "docs/challenge_cup",
+  "question_count": 60,
+  "evidence_files": [
+    "evaluation/system_eval_questions.jsonl",
+    "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
+    "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png",
+    "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+    "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png",
+    "docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png",
+    "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
+    "evaluation/reports/day4_failure_analysis_20260605_210642.md",
+    "evaluation/reports/challenge_cup_graphrag_same_question_report.md"
+  ]
+}

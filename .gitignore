@@ -25,6 +25,9 @@ desktop.ini
 *.pdf
 *.zip
 *.json
+!package.json
+!docs/challenge_cup/package_manifest.json
+!docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
 *.sqlite3
 *.sqlite
 *.db

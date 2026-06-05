@@ -17,6 +17,7 @@
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/run_challenge_cup_live_demo_smoke.py
+node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```
 
 ## 重新生成 Day3 baseline

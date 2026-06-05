@@ -45,6 +45,7 @@ CONSOLE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
 REPO_FRONTEND_DIR = REPO_ROOT / "frontend_app" / "current_console"
 FRONTEND_DIR_CANDIDATES = (REPO_FRONTEND_DIR, CONSOLE_FRONTEND_DIR, PACKAGE_FRONTEND_DIR)
 PUBLIC_BOOKS_JSON_ROOT = REPO_ROOT / "data_pipeline"
+DEFAULT_DELIVERABLES_DIR = REPO_ROOT / "docs" / "project_deliverables"
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:8000",
     "http://127.0.0.1:8000",
@@ -408,10 +409,12 @@ def create_app(
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
     log_dir: Path | None = None,
     frontend_dir: Path | str | None = None,
+    deliverables_dir: Path | str | None = None,
     cors_origins: list[str] | tuple[str, ...] | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
     resolved_frontend_dir = Path(frontend_dir) if frontend_dir is not None else _resolve_frontend_dir()
+    resolved_deliverables_dir = Path(deliverables_dir) if deliverables_dir is not None else DEFAULT_DELIVERABLES_DIR
     allowed_cors_origins = list(cors_origins) if cors_origins is not None else _configured_cors_origins()
 
     app = FastAPI(
@@ -1143,6 +1146,14 @@ def create_app(
         )
 
     if resolved_frontend_dir is not None and resolved_frontend_dir.exists():
+        libs_dir = resolved_frontend_dir / "libs"
+        assets_dir = resolved_frontend_dir / "assets"
+        if libs_dir.exists():
+            app.mount("/libs", StaticFiles(directory=str(libs_dir)), name="libs")
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
         app.mount("/static", StaticFiles(directory=str(resolved_frontend_dir)), name="static")
+    if resolved_deliverables_dir.exists():
+        app.mount("/deliverables", StaticFiles(directory=str(resolved_deliverables_dir)), name="deliverables")
 
     return app

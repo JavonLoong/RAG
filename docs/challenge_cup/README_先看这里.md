@@ -14,6 +14,7 @@
 6. `05_答辩问答手册.md`
 7. `06_结项验收清单.md`
 8. `reproducibility/runbook.md`
+9. `reproducibility/dataset_manifest.md`
 
 ## 当前核心数字
 

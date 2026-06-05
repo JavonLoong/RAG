@@ -81,8 +81,24 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
+    assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
+    assert "browser_demo_smoke_report.md" in manifest
+    assert "browser_demo_smoke_report.json" in manifest
+    assert "desktop_overview.png" in manifest
+    assert "desktop_search_results.png" in manifest
+    assert "desktop_kg_artifacts.png" in manifest
+    assert "mobile_overview.png" in manifest
+    command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
+    assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
+    assert "browser_demo_smoke_report.json" in command_log
+    package_manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
+    evidence_files = package_manifest["evidence_files"]
+    assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
+    assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:
@@ -128,3 +144,17 @@ def test_build_challenge_cup_package_uses_report_timestamp() -> None:
     )
     manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
     assert manifest["generated_at"] == "2026-06-05 21:06"
+
+
+def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
+    tracked_json_entries = [
+        "package.json",
+        "docs/challenge_cup/package_manifest.json",
+        "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
+    ]
+    for target in tracked_json_entries:
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", "--no-index", "--", target],
+            cwd=REPO_ROOT,
+        )
+        assert result.returncode != 0, target

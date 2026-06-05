@@ -14,6 +14,15 @@ REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
+BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
+BROWSER_SMOKE_JSON = REPRO / "browser_demo_smoke_report.json"
+BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
+BROWSER_SCREENSHOTS = [
+    BROWSER_SCREENSHOT_DIR / "desktop_overview.png",
+    BROWSER_SCREENSHOT_DIR / "desktop_search_results.png",
+    BROWSER_SCREENSHOT_DIR / "desktop_kg_artifacts.png",
+    BROWSER_SCREENSHOT_DIR / "mobile_overview.png",
+]
 
 
 def write(path: Path, content: str) -> None:
@@ -104,6 +113,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 6. `05_答辩问答手册.md`
 7. `06_结项验收清单.md`
 8. `reproducibility/runbook.md`
+9. `reproducibility/dataset_manifest.md`
 
 ## 当前核心数字
 
@@ -311,6 +321,7 @@ def build_runbook(ctx: dict[str, Any]) -> str:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/run_challenge_cup_live_demo_smoke.py
+node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```
 
 ## 重新生成 Day3 baseline
@@ -343,6 +354,13 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - Day4 失败分析：`{optional_md_link(ctx["day4"])}`。
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
+- 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
+- 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
+- 浏览器验收截图：`{md_link(BROWSER_SCREENSHOT_DIR)}/`。
+- 浏览器桌面总览截图：`{md_link(BROWSER_SCREENSHOTS[0])}`。
+- 浏览器桌面检索截图：`{md_link(BROWSER_SCREENSHOTS[1])}`。
+- 浏览器 KG 产物截图：`{md_link(BROWSER_SCREENSHOTS[2])}`。
+- 浏览器移动端截图：`{md_link(BROWSER_SCREENSHOTS[3])}`。
 - 课程最终交付包：`{md_link(ctx["course_pack"])}`。
 """
 
@@ -370,14 +388,35 @@ python scripts/analyze_day4_failure_cases.py
 -> Analyzed cases: 40
 
 python -m pytest tests/unit -q
--> 76 passed
+-> 86 passed
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
--> 19 passed
+-> 21 passed
 
 python scripts/run_challenge_cup_live_demo_smoke.py
 -> docs/challenge_cup/reproducibility/live_demo_smoke_report.md
 -> Status: pass (5/5 checks)
+
+python -m unittest tests/unit/test_console_import_compat.py
+-> OK
+
+python -m unittest tests/unit/test_frontend_demo_mode_contract.py
+-> OK
+
+python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline.py -k test_frontend_libs_and_assets_are_served_from_root_paths
+-> OK
+
+python -m unittest api_server/current_console/chroma_rag_poc/tests/test_pipeline.py -k test_deliverable_assets_are_served_from_stable_root_path
+-> OK
+
+node scripts/run_challenge_cup_browser_demo_smoke.mjs
+-> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
+-> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png
+-> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
+-> Status: pass (12/12 checks)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -401,6 +440,14 @@ def main() -> int:
         "generated_at": ctx["now"],
         "output_dir": md_link(OUT),
         "question_count": ctx["question_count"],
+        "evidence_files": [
+            md_link(DATASET),
+            md_link(LIVE_SMOKE_REPORT),
+            md_link(BROWSER_SMOKE_REPORT),
+            md_link(BROWSER_SMOKE_JSON),
+            *(md_link(path) for path in BROWSER_SCREENSHOTS),
+            *(md_link(path) for path in (ctx["day3"], ctx["day4"], ctx["graph_report"]) if path is not None),
+        ],
     }
     write(OUT / "package_manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
     print(f"Wrote docs/challenge_cup with {ctx['question_count']} evaluation questions")

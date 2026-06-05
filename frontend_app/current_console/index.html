@@ -2364,7 +2364,8 @@ const PUBLIC_DEMO_SEARCH_RESULTS = [
     metadata: { filename: "四本书 KG / 故障 POC 三元组.csv", source_kind: "CSV", chunk_index: 14, record_id: "demo-kg-fault-triples-014", estimated_tokens: 105, page_nums: "triples" }
   }];
 
-const KG_ARTIFACT_BASE = "00_项目成果总览_先看这里/06_四本书KG工具跑通演示/";
+const KG_ARTIFACT_BASE = "/deliverables/06_四本书KG工具跑通演示/";
+const KG_FILE_ARTIFACT_BASE = "../../docs/project_deliverables/06_四本书KG工具跑通演示/";
 const KG_DEMO = {
   summary: {
     books: 4,
@@ -2391,7 +2392,7 @@ const KG_DEMO = {
     { title: "抽实体", note: "从 chunk 中识别设备、部件、参数、问题、方法、燃料等候选实体。" },
     { title: "抽关系", note: "用代码规则和触发词把实体连成候选三元组。" },
     { title: "绑 evidence", note: "每条三元组都带原文证据、页码、来源文件和置信度。" },
-    { title: "成图谱", note: "产出 triples、graph.json、SVG 图谱，并导入本地 SQLite 图存储。" }
+    { title: "成图谱", note: "产出 triples.csv、SVG 图谱和运行报告，并导入本地 SQLite 图存储。" }
   ],
   entityTypes: {
     Equipment: "燃气轮机、燃烧室、压气机、涡轮等设备或系统。",
@@ -2504,9 +2505,7 @@ const KG_DEMO = {
   artifacts: [
     { file: "knowledge_graph.svg", title: "知识图谱 SVG", desc: "把三元组画成节点和边，适合展示整体结构。" },
     { file: "kg_evidence_viewer.html", title: "三元组 / evidence 查看页", desc: "逐条查看三元组、原文证据、来源页码和置信度。" },
-    { file: "schema.json", title: "schema 规则", desc: "实体类型和关系类型的约束表。" },
-    { file: "triples.json", title: "候选三元组", desc: "240 条带 evidence 的结构化关系。" },
-    { file: "graph.json", title: "图谱结构", desc: "102 个节点、240 条边，可供后续图检索或入库。" },
+    { file: "triples.csv", title: "候选三元组 CSV", desc: "240 条带 evidence 的结构化关系，可直接审阅和复算。" },
     { file: "run_report.md", title: "运行记录", desc: "这次 POC 输入、输出和汇报口径。" }
   ]
 };
@@ -5192,8 +5191,8 @@ function renderBenchmark() {
 
 function kgArtifactHref(fileName) {
   const here = window.location.pathname.replaceAll("\\", "/");
-  const base = here.includes("/frontend_app/current_console/")
-    ? `../../${KG_ARTIFACT_BASE}`
+  const base = window.location.protocol === "file:" || here.includes("/frontend_app/current_console/")
+    ? KG_FILE_ARTIFACT_BASE
     : KG_ARTIFACT_BASE;
   return encodeURI(`${base}${fileName}`);
 }
@@ -6519,7 +6518,7 @@ function exportChromaFromPublicBooksPanel() {
 }
 
 async function runSearch() {
-  if (state.localMode) {
+  if (state.localMode || state.publicDemo) {
     await runLocalSearch();
     return;
   }
@@ -7349,6 +7348,9 @@ async function applyDemoMode(isDemo) {
   } else {
     // Clear all demo data back to empty
     state.publicDemo = false;
+    state.localMode = FORCE_LOCAL_RUNTIME;
+    state.online = false;
+    state.version = "";
     state.stats = cloneDefaultStats();
     state.primaryStats = {};
     state.primaryCollection = null;
@@ -7361,6 +7363,8 @@ async function applyDemoMode(isDemo) {
     state.records = [];
     state.chunks = [];
     state.benchmark = null;
+    await refreshAll();
+    return;
   }
   renderAll();
   renderStatus();
