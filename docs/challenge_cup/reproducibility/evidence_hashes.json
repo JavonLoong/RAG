@@ -17,8 +17,8 @@
     },
     {
       "path": "docs/challenge_cup/08_特等奖评审自评表.md",
-      "bytes": 3267,
-      "sha256": "529a75adc96a967662bd50e2f8f992e835c70f850ff6f00628b2985d70f346df"
+      "bytes": 3655,
+      "sha256": "2e1128b2090d0990b56627380459e359f70a0e5a442ac456b827daac65a15260"
     },
     {
       "path": "docs/challenge_cup/09_专家快速审阅索引.md",
@@ -177,13 +177,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
-      "bytes": 6952,
-      "sha256": "6904dacaf5e9f708bbd8d521143363eccbb2159fb2158450dee96eddc072b895"
+      "bytes": 7834,
+      "sha256": "5841a0ceb2969f2e2321ee2916de657852221d178e456c7d3610f5258287e689"
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
-      "bytes": 4967,
-      "sha256": "33889a9fe226739a6af945e7471d7b00fd480a1c5626bf1c54b8732c8975bab5"
+      "bytes": 5462,
+      "sha256": "deca42d702e929e5eb1d28565cbb4f00eb2f6689eefceccb09cbaee06bb4febd"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",

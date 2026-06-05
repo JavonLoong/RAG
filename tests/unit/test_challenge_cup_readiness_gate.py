@@ -266,8 +266,8 @@ def test_official_rubric_alignment_gate_rejects_missing_sources_and_evidence(mon
 
     assert not check.passed
     assert "official_sources" in check.detail
+    assert "tsinghua_44th_2026" in check.detail
     assert "academic_or_practical_value" in check.detail
-    assert "max_special_prize_count" in check.detail
     assert "no_award_guarantee" in check.detail
 
 

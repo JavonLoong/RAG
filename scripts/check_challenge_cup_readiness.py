@@ -393,7 +393,8 @@ REQUIRED_AWARD_SELF_EVAL_TERMS = {
     "创新性",
     "作品完成情况",
     "现场答辩表现",
-    "特等奖不超过6件",
+    "第44届",
+    "特等奖7项",
     "07_评审主张证据矩阵.md",
     "readiness_gate_report.md",
     "browser_demo_smoke_report.md",
@@ -411,10 +412,12 @@ OFFICIAL_RUBRIC_REQUIRED_TERMS = {
     "创新性",
     "作品完成度",
     "现场答辩",
-    "特等奖不超过6件",
+    "第44届",
+    "特等奖7项",
     "不承诺获奖",
 }
-OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 4
+OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 5
+OFFICIAL_RUBRIC_LATEST_SOURCE_ID = "tsinghua_44th_2026"
 REQUIRED_EXPERT_REVIEW_INDEX_TERMS = {
     "三分钟审阅路径",
     "特等奖主张",
@@ -1624,6 +1627,8 @@ def check_official_rubric_alignment() -> GateCheck:
             failures.append(f"official_sources[{index}].checked_at must be YYYY-MM-DD")
     if duplicate_source_ids:
         failures.append(f"duplicate official source ids: {sorted(duplicate_source_ids)}")
+    if OFFICIAL_RUBRIC_LATEST_SOURCE_ID not in source_ids:
+        failures.append(f"missing latest official source: {OFFICIAL_RUBRIC_LATEST_SOURCE_ID}")
 
     dimensions = payload.get("dimensions", {})
     if not isinstance(dimensions, dict):
@@ -1673,8 +1678,12 @@ def check_official_rubric_alignment() -> GateCheck:
     if not isinstance(special_prize_policy, dict):
         failures.append("special_prize_policy missing")
         special_prize_policy = {}
-    if special_prize_policy.get("max_special_prize_count") != 6:
+    if special_prize_policy.get("max_special_prize_count") != 7:
         failures.append(f"max_special_prize_count={special_prize_policy.get('max_special_prize_count')}")
+    if special_prize_policy.get("latest_public_result_source_id") != OFFICIAL_RUBRIC_LATEST_SOURCE_ID:
+        failures.append(
+            f"latest_public_result_source_id={special_prize_policy.get('latest_public_result_source_id')}"
+        )
     if special_prize_policy.get("may_be_vacant") is not True:
         failures.append(f"may_be_vacant={special_prize_policy.get('may_be_vacant')}")
 

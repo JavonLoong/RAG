@@ -14,6 +14,19 @@ REPORT_TYPE = "challenge_cup_official_rubric_alignment"
 
 OFFICIAL_SOURCES = [
     {
+        "source_id": "tsinghua_44th_2026",
+        "title": "清华大学第44届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式举行",
+        "url": "https://www.tsinghua.edu.cn/info/1177/125861.htm",
+        "source_type": "tsinghua_news",
+        "checked_at": "2026-06-06",
+        "claims": [
+            "2026年4月25日开展终审答辩",
+            "主赛道共产生114项获奖作品，其中特等奖7项",
+            "本届挑战杯共收到报名作品337件",
+            "200余件学生科创作品参展",
+        ],
+    },
+    {
         "source_id": "tsinghua_43rd_2025",
         "title": "清华大学第43届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式",
         "url": "https://www.tsinghua.edu.cn/info/1176/118626.htm",
@@ -135,9 +148,16 @@ def build_payload() -> dict[str, Any]:
         "official_sources": OFFICIAL_SOURCES,
         "dimensions": DIMENSIONS,
         "special_prize_policy": {
-            "max_special_prize_count": 6,
+            "max_special_prize_count": 7,
             "may_be_vacant": True,
-            "source_ids": ["tsinghua_rules_pdf_2017", "tsinghua_39th_2021", "tsinghua_43rd_2025"],
+            "source_ids": [
+                "tsinghua_44th_2026",
+                "tsinghua_rules_pdf_2017",
+                "tsinghua_39th_2021",
+                "tsinghua_43rd_2025",
+            ],
+            "latest_public_result_source_id": "tsinghua_44th_2026",
+            "historical_rule_note": "2017制度文件写有特等奖不超过6件、可空缺；2026年第44届公开报道显示主赛道实际特等奖7项，材料以最新公开结果为准并保留历史口径说明。",
             "project_boundary": "本项目只能证明材料与答辩准备对齐官方口径；不承诺获奖结果。",
         },
         "integrity_rules": {
@@ -163,7 +183,7 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- report_type: `{payload['report_type']}`",
         f"- checked_at: `{payload['checked_at']}`",
         f"- official_source_count: `{payload['official_source_count']}`",
-        "- 特等奖不超过6件，可空缺；本项目不承诺获奖。",
+        "- 第44届（2026）主赛道公开结果：特等奖7项；历史制度口径可能变化；本项目不承诺获奖。",
         "",
         "## 官方来源",
         "",

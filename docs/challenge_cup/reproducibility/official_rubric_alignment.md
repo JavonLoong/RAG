@@ -4,10 +4,19 @@
 
 - report_type: `challenge_cup_official_rubric_alignment`
 - checked_at: `2026-06-06`
-- official_source_count: `4`
-- 特等奖不超过6件，可空缺；本项目不承诺获奖。
+- official_source_count: `5`
+- 第44届（2026）主赛道公开结果：特等奖7项；历史制度口径可能变化；本项目不承诺获奖。
 
 ## 官方来源
+
+### tsinghua_44th_2026
+- Title: 清华大学第44届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式举行
+- URL: https://www.tsinghua.edu.cn/info/1177/125861.htm
+- Checked at: 2026-06-06
+- Claim: 2026年4月25日开展终审答辩
+- Claim: 主赛道共产生114项获奖作品，其中特等奖7项
+- Claim: 本届挑战杯共收到报名作品337件
+- Claim: 200余件学生科创作品参展
 
 ### tsinghua_43rd_2025
 - Title: 清华大学第43届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式

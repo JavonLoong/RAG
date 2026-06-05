@@ -196,7 +196,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for phrase in ["专家反馈外发包", "待真实反馈归档", "不宣称已获得专家认可", "建议邮件主题"]:
         assert phrase in expert_feedback_request_packet
     award_self_eval = (PACKAGE_DIR / "08_特等奖评审自评表.md").read_text(encoding="utf-8")
-    for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "特等奖不超过6件"]:
+    for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "第44届", "特等奖7项"]:
         assert phrase in award_self_eval
     for evidence in ["07_评审主张证据矩阵.md", "readiness_gate_report.md", "browser_demo_smoke_report.md"]:
         assert evidence in award_self_eval
@@ -472,16 +472,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "不能标记目标完成" in goal_completion
     official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
     assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
-    assert official_rubric["official_source_count"] >= 4
+    assert official_rubric["official_source_count"] >= 5
+    source_ids = {source["source_id"] for source in official_rubric["official_sources"]}
+    assert "tsinghua_44th_2026" in source_ids
     assert official_rubric["dimensions"]["academic_or_practical_value"]["evidence_files"]
     assert official_rubric["dimensions"]["innovation"]["evidence_files"]
     assert official_rubric["dimensions"]["completion"]["evidence_files"]
     assert official_rubric["dimensions"]["defense_performance"]["evidence_files"]
-    assert official_rubric["special_prize_policy"]["max_special_prize_count"] == 6
+    assert official_rubric["special_prize_policy"]["max_special_prize_count"] == 7
+    assert official_rubric["special_prize_policy"]["latest_public_result_source_id"] == "tsinghua_44th_2026"
     assert official_rubric["special_prize_policy"]["may_be_vacant"] is True
     assert official_rubric["integrity_rules"]["no_award_guarantee"] is True
     official_rubric_md = (PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md").read_text(encoding="utf-8")
-    for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "特等奖不超过6件", "不承诺获奖"]:
+    for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "第44届", "特等奖7项", "不承诺获奖"]:
         assert term in official_rubric_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
