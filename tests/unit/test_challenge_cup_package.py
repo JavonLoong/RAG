@@ -260,6 +260,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     runbook = (PACKAGE_DIR / "reproducibility" / "runbook.md").read_text(encoding="utf-8")
     assert "build_challenge_cup_defense_deck.py" in runbook
     assert "build_challenge_cup_official_rubric_alignment.py" in runbook
+    assert "record_challenge_cup_hard_evidence.py expert_feedback" in runbook
+    assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
@@ -424,6 +426,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "\u4e0d\u80fd\u6807\u8bb0\u76ee\u6807\u5b8c\u6210",
     ]:
         assert term in hard_ledger_md
+    hard_evidence_readme = (PACKAGE_DIR / "reproducibility" / "hard_evidence" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    assert "record_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
+    assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
     official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
     assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
     assert official_rubric["official_source_count"] >= 4

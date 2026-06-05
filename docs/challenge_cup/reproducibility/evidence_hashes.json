@@ -127,18 +127,18 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/README.md",
-      "bytes": 546,
-      "sha256": "af9c18c89326022459302fc775c61bd5c01eed79bee16ed1ffb74ff9d11f9839"
+      "bytes": 769,
+      "sha256": "2954cfbfa3db0fcdf65d1b5471f68423e61f94fae92abd2ff9c2df9b4d9e0eeb"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
-      "bytes": 499,
-      "sha256": "ab9e1571864b2495ffdc42f36fa40a2ce38fd04b08a1025beda0fe384c9db4bf"
+      "bytes": 899,
+      "sha256": "75095a9b39e8eac0a775d7e8ebe3f408fdc19b5a3ab08edcab14ef03f7a43234"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
-      "bytes": 686,
-      "sha256": "8a2a5817464be6828af3f0c511726b6e4b346164cca105b9509d6e1545ffa838"
+      "bytes": 1032,
+      "sha256": "5cb7df763283a3bfe6e3c9cfd13cfb74c0f0fbf8506108af44ed4e896bef31a6"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",

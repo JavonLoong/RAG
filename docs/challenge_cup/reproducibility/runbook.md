@@ -50,6 +50,20 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_official_rubric_alignment.py
 ```
 
+## 归档真实硬证据
+
+收到真实专家反馈附件后运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <真实专家反馈附件路径> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场
+```
+
+完成真实计时彩排后运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <真实计时记录附件路径> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29
+```
+
 ## 刷新硬证据台账
 
 ```powershell
