@@ -48,6 +48,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
     assert "mobile console health" in report
+    assert "search results visible" in report
     assert "60 evaluation questions" in report
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
@@ -225,6 +226,38 @@ def test_scenario_demo_gate_rejects_missing_required_records(monkeypatch, tmp_pa
 
     assert not check.passed
     assert "demo-gt07-repair-022" in check.detail
+
+
+def test_browser_visual_evidence_gate_rejects_hidden_search_results(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    screenshot = tmp_path / "desktop_search_results.png"
+    screenshot.write_bytes(b"png")
+    browser_json = tmp_path / "browser_demo_smoke_report.json"
+    browser_json.write_text(
+        json.dumps(
+            {
+                "browser": {
+                    "screenshots": {
+                        "desktop_overview": str(screenshot),
+                        "desktop_search_results": str(screenshot),
+                        "desktop_kg_artifacts": str(screenshot),
+                        "mobile_overview": str(screenshot),
+                    },
+                    "kg_artifacts": [{"ok": True}, {"ok": True}, {"ok": True}, {"ok": True}],
+                    "search_results_visible": False,
+                    "visible_record_ids": ["demo-maint-thresholds-076"],
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "BROWSER_SMOKE_JSON", browser_json)
+
+    check = module.check_browser_evidence_files()
+
+    assert not check.passed
+    assert "search_results_visible" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

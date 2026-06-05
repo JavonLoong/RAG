@@ -1,7 +1,7 @@
 # Browser Demo Smoke Report
 
 - Status: `pass`
-- Passed: 12/12
+- Passed: 13/13
 - URL: http://127.0.0.1:8000
 - Query: 燃气轮机异常振动诊断流程
 - Playwright: C:\Users\15410\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\.pnpm\playwright@1.60.0\node_modules\playwright
@@ -15,7 +15,8 @@
 | page identity | pass | title=动力装备知识库控制台 |
 | desktop not blank | pass | desktop overview contains app content |
 | desktop console health | pass | 0 warning/error console events |
-| search interaction | pass | 集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo |
+| search interaction | pass | 集合 gas_turbine_ocr_demo_snapshot · 延迟 41.80 ms · 结果 5 · 后端 public-demo |
+| search results visible | pass | visible records 5/5: demo-maint-thresholds-076, demo-structure-fault-130, demo-gt07-fault-021, demo-gt07-repair-022, demo-gt07-manual-023 |
 | KG SVG render | pass | 1500x980 |
 | KG artifact links | pass | knowledge_graph.svg:200, kg_evidence_viewer.html:200, triples.csv:200, run_report.md:200 |
 | mobile not blank | pass | mobile overview contains app content |
@@ -37,6 +38,8 @@
 | deliverables route | pass | GET /deliverables/06_四本书KG工具跑通演示/knowledge_graph.svg -> 200 |
 
 ## Search Result Preview
+
+Visible record ids: demo-maint-thresholds-076, demo-structure-fault-130, demo-gt07-fault-021, demo-gt07-repair-022, demo-gt07-manual-023
 
 ```text
 燃气轮机运行维护手册_doc101.json

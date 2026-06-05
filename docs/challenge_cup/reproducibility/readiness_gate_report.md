@@ -22,12 +22,12 @@
 | scenario walkthrough script | pass | fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; 8 evidence links verified |
 | expert feedback protocol | pass | feedback form, integrity boundary, archival rule, and remediation loop verified; 10 evidence links verified |
 | live demo smoke checks | pass | 5/5 checks pass |
-| browser smoke checks | pass | 12/12 checks pass |
-| browser visual evidence | pass | 4 screenshots and 4 KG artifacts verified |
+| browser smoke checks | pass | 13/13 checks pass |
+| browser visual evidence | pass | 4 screenshots, 4 KG artifacts, and 5 visible search records verified |
 
 ## Required Browser Checks
 
-KG SVG render, KG artifact links, assets route, deliverables route, desktop console health, desktop not blank, health endpoint, libs route, mobile console health, mobile not blank, page identity, search interaction
+KG SVG render, KG artifact links, assets route, deliverables route, desktop console health, desktop not blank, health endpoint, libs route, mobile console health, mobile not blank, page identity, search interaction, search results visible
 
 ## Boundary
 

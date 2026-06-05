@@ -33,7 +33,7 @@
     {
       "path": "docs/challenge_cup/11_应用场景与专家验证.md",
       "bytes": 2859,
-      "sha256": "7dee268f282c6fff6ba3009579d03f16b840b83f620a2028989012472e4c24aa"
+      "sha256": "abbf262d3905cf581005f1866a5f346c99027c870fef11ff8fe213e559ea11eb"
     },
     {
       "path": "docs/challenge_cup/12_专家反馈采集与整改闭环.md",
@@ -43,37 +43,37 @@
     {
       "path": "docs/challenge_cup/reproducibility/application_validation_report.md",
       "bytes": 2861,
-      "sha256": "e3f380eba1b1b5d50d96dcd91ed0f772b49b803b6930071a5175e5e2c587dafe"
+      "sha256": "52417fd9d5df42dbeea1ac0ff2c29732f6f99daf4b6fc24343f58df53418845e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
-      "bytes": 11943,
-      "sha256": "7d4177493d67fb1af7a2eb64e18eef190cf05f5375d0cb767a3e38c7f7b1c34d"
+      "bytes": 13367,
+      "sha256": "5863d3936e8c8d3124ddf2ad89754c4ba217bd75e8daf613656ec17f50611eb4"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
-      "bytes": 4239,
-      "sha256": "247cde1cd3d02f6bfeb7019844d3976891e2c38e1dfa10bb3ad42f364eb503b3"
+      "bytes": 4551,
+      "sha256": "999c0ea85e4f632e0189f6a94e2329ba4b2f746400d20bc1e62daf95444277d4"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png",
-      "bytes": 382008,
-      "sha256": "86bbc50adb76633be0ae16cd47a6a6d7aa961d33ef07a2ed4703c9446e8ebd1d"
+      "bytes": 546090,
+      "sha256": "4f91d71f5bd1e02501bf3262747e2ce0fb56e4e761af58a6911155623a400050"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png",
-      "bytes": 264446,
-      "sha256": "61c2ef90a38cacb0e706aebf69fd6d135a4161ac4799668a1b71857f20273a5f"
+      "bytes": 264511,
+      "sha256": "72f26df785890a43614a9676ed418b5053d9fc8a199152387934163fb3529594"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
-      "bytes": 237260,
-      "sha256": "d0524363dc509e94d9932327c16141300dc9e7939668922965d8ed51f487144d"
+      "bytes": 388498,
+      "sha256": "42dfa7473c52a1eab5abb655f9ae206bc48d56e3700e2846c3b930d5e9794c7d"
     },
     {
       "path": "docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png",
-      "bytes": 140645,
-      "sha256": "e1b802ed22335281c2330a55ed0b1833d40edf14175575ce66006cd7d6598968"
+      "bytes": 140697,
+      "sha256": "29020753ba85de0cef009b50de9e3a033bd0dcb3418a76d3af193161d0c78ac9"
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_form.md",

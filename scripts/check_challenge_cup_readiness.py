@@ -77,6 +77,7 @@ REQUIRED_BROWSER_CHECKS = {
     "desktop not blank",
     "desktop console health",
     "search interaction",
+    "search results visible",
     "KG SVG render",
     "KG artifact links",
     "mobile not blank",
@@ -188,6 +189,13 @@ REQUIRED_SCENARIO_TERMS = {
     "进气滤网",
     "压气机叶片",
     "温度传感器",
+}
+REQUIRED_SCENARIO_RECORD_IDS = {
+    "demo-maint-thresholds-076",
+    "demo-structure-fault-130",
+    "demo-gt07-fault-021",
+    "demo-gt07-repair-022",
+    "demo-gt07-manual-023",
 }
 REQUIRED_SCENARIO_BOUNDARY_TERMS = {
     "人工确认",
@@ -465,15 +473,26 @@ def check_report_payload(path: Path, required_checks: set[str], name: str) -> Ga
 
 def check_browser_evidence_files() -> GateCheck:
     payload = load_json(BROWSER_SMOKE_JSON) if BROWSER_SMOKE_JSON.exists() else {}
-    screenshots = payload.get("browser", {}).get("screenshots", {})
+    browser = payload.get("browser", {})
+    screenshots = browser.get("screenshots", {})
     missing = [path for path in screenshots.values() if not nonempty(REPO_ROOT / str(path))]
-    kg_artifacts = payload.get("browser", {}).get("kg_artifacts", [])
+    kg_artifacts = browser.get("kg_artifacts", [])
     bad_artifacts = [str(item.get("href", "")) for item in kg_artifacts if not item.get("ok")]
-    passed = len(screenshots) >= 4 and not missing and len(kg_artifacts) >= 4 and not bad_artifacts
+    visible_record_ids = {str(item) for item in browser.get("visible_record_ids", [])}
+    missing_visible_records = sorted(REQUIRED_SCENARIO_RECORD_IDS - visible_record_ids)
+    search_results_visible = browser.get("search_results_visible") is True
+    passed = (
+        len(screenshots) >= 4
+        and not missing
+        and len(kg_artifacts) >= 4
+        and not bad_artifacts
+        and search_results_visible
+        and not missing_visible_records
+    )
     detail = (
-        f"{len(screenshots)} screenshots and {len(kg_artifacts)} KG artifacts verified"
+        f"{len(screenshots)} screenshots, {len(kg_artifacts)} KG artifacts, and {len(visible_record_ids)} visible search records verified"
         if passed
-        else f"missing_screenshots={missing}, bad_artifacts={bad_artifacts}"
+        else f"missing_screenshots={missing}, bad_artifacts={bad_artifacts}, search_results_visible={search_results_visible}, missing_visible_records={missing_visible_records}"
     )
     return GateCheck("browser visual evidence", passed, detail)
 

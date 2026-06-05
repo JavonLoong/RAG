@@ -225,6 +225,15 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert browser["query"] == "燃气轮机异常振动诊断流程"
     assert "结果 5" in browser["search_meta"]
     assert "延迟" in browser["search_meta"]
+    assert browser["search_results_visible"] is True
+    assert browser["visible_record_ids"] == [
+        "demo-maint-thresholds-076",
+        "demo-structure-fault-130",
+        "demo-gt07-fault-021",
+        "demo-gt07-repair-022",
+        "demo-gt07-manual-023",
+    ]
+    assert browser["search_result_card_count"] >= 5
     for evidence in [
         "demo-maint-thresholds-076",
         "demo-structure-fault-130",

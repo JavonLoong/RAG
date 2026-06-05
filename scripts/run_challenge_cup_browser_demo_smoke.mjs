@@ -16,6 +16,13 @@ const OUTPUT_DIR = path.join(REPO_ROOT, "outputs", "challenge-cup-browser-smoke"
 const REPORT_JSON = path.join(REPORT_DIR, "browser_demo_smoke_report.json");
 const REPORT_MD = path.join(REPORT_DIR, "browser_demo_smoke_report.md");
 const QUERY = "燃气轮机异常振动诊断流程";
+const EXPECTED_RECORD_IDS = [
+  "demo-maint-thresholds-076",
+  "demo-structure-fault-130",
+  "demo-gt07-fault-021",
+  "demo-gt07-repair-022",
+  "demo-gt07-manual-023",
+];
 const KG_DELIVERABLE_BASE_PATH = "/deliverables/06_四本书KG工具跑通演示/";
 const REQUIRED_STATIC_ROUTES = [
   { name: "libs route", pathname: "/libs/d3.min.js" },
@@ -197,6 +204,22 @@ async function runBrowserSmoke(playwright, playwrightSource) {
   }, null, { timeout: 15_000 });
   const searchMeta = await page.locator("#searchMeta").innerText().catch(() => "");
   const resultsText = await page.locator("#searchResults").innerText().catch(() => "");
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.locator("#searchResults").evaluate((node) => node.scrollIntoView({ block: "start", inline: "nearest" }));
+  await page.waitForTimeout(250);
+  const searchResultCards = await page.locator("#searchResults .result-card").evaluateAll((cards) => cards.map((card) => {
+    const rect = card.getBoundingClientRect();
+    const text = card.innerText || "";
+    const recordId = text.match(/record\s+([^\s]+)/)?.[1] || "";
+    return {
+      record_id: recordId,
+      visible: rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth,
+      top: Math.round(rect.top),
+      bottom: Math.round(rect.bottom),
+    };
+  }));
+  const visibleRecordIds = searchResultCards.filter((item) => item.visible && item.record_id).map((item) => item.record_id);
+  const searchResultsVisible = EXPECTED_RECORD_IDS.every((recordId) => visibleRecordIds.includes(recordId));
   const desktopSearch = path.join(SCREENSHOT_DIR, "desktop_search_results.png");
   await page.screenshot({ path: desktopSearch, fullPage: false });
 
@@ -251,6 +274,11 @@ async function runBrowserSmoke(playwright, playwrightSource) {
     check("desktop not blank", overviewText.includes("动力装备知识库") && overviewText.includes("语义检索"), "desktop overview contains app content"),
     check("desktop console health", desktopConsole.length === 0, `${desktopConsole.length} warning/error console events`),
     check("search interaction", searchMeta.includes("结果 5") && resultsText.includes("GT-07"), searchMeta),
+    check(
+      "search results visible",
+      searchResultsVisible,
+      `visible records ${visibleRecordIds.length}/${EXPECTED_RECORD_IDS.length}: ${visibleRecordIds.join(", ")}`,
+    ),
     check("KG SVG render", kgImage.width > 0 && kgImage.height > 0, `${kgImage.width}x${kgImage.height}`),
     check(
       "KG artifact links",
@@ -268,6 +296,10 @@ async function runBrowserSmoke(playwright, playwrightSource) {
     overview_preview: overviewText,
     search_meta: searchMeta,
     results_preview: resultsText.slice(0, 1400),
+    search_results_visible: searchResultsVisible,
+    visible_record_ids: visibleRecordIds,
+    search_result_card_count: searchResultCards.length,
+    search_result_cards: searchResultCards,
     kg_image: kgImage,
     kg_artifacts: artifactStatuses,
     mobile_preview: mobileText,
@@ -314,6 +346,8 @@ function writeReports(payload) {
     ...(payload.static_routes || []).map((item) => `| ${item.name} | ${item.passed ? "pass" : "fail"} | ${String(item.detail).replaceAll("|", "/")} |`),
     "",
     "## Search Result Preview",
+    "",
+    `Visible record ids: ${payload.browser.visible_record_ids.join(", ")}`,
     "",
     "```text",
     payload.browser.results_preview,

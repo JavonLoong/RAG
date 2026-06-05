@@ -5,7 +5,7 @@
 - 案例名称：燃气轮机异常振动诊断证据链。
 - 输入问题：燃气轮机异常振动诊断流程。
 - 演示集合：gas_turbine_ocr_demo_snapshot。
-- 检索结果：集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo。
+- 检索结果：集合 gas_turbine_ocr_demo_snapshot · 延迟 41.80 ms · 结果 5 · 后端 public-demo。
 - 复核入口：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`；`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`；`docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`。
 
 ## 证据链

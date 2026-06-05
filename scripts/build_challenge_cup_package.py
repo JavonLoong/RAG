@@ -835,7 +835,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png
 -> docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png
 -> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
--> Status: pass (12/12 checks)
+-> Status: pass (13/13 checks)
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
