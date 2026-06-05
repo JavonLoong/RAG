@@ -5,6 +5,7 @@
   "evaluation_coverage_profile": "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json",
   "evidence_files": [
     "evaluation/system_eval_questions.jsonl",
+    "docs/challenge_cup/06_结项验收清单.md",
     "docs/challenge_cup/07_评审主张证据矩阵.md",
     "docs/challenge_cup/08_特等奖评审自评表.md",
     "docs/challenge_cup/09_专家快速审阅索引.md",

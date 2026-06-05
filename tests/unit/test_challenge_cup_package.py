@@ -97,6 +97,17 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
+    acceptance_checklist = (PACKAGE_DIR / "06_结项验收清单.md").read_text(encoding="utf-8")
+    for phrase in ["结项验收口径", "可提交材料", "验收步骤", "现场演示与离线备份", "未完成项与边界", "验收结论"]:
+        assert phrase in acceptance_checklist
+    for evidence in [
+        "package_manifest.json",
+        "readiness_gate_report.md",
+        "browser_demo_smoke_report.md",
+        "application_validation_report.md",
+        "expert_feedback_form.md",
+    ]:
+        assert evidence in acceptance_checklist
     claim_matrix = (PACKAGE_DIR / "07_评审主张证据矩阵.md").read_text(encoding="utf-8")
     for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用验证", "应用边界"]:
         assert phrase in claim_matrix
@@ -233,6 +244,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     )
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
+    assert "docs/challenge_cup/06_结项验收清单.md" in evidence_files
     assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
     assert "docs/challenge_cup/08_特等奖评审自评表.md" in evidence_files
     assert "docs/challenge_cup/09_专家快速审阅索引.md" in evidence_files

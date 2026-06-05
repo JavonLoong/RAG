@@ -40,6 +40,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "package evidence files" in report
     assert "claim-evidence matrix" in report
     assert "award claims" in report
+    assert "acceptance checklist" in report
     assert "special-prize rubric self-assessment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
@@ -251,6 +252,18 @@ def test_expert_feedback_protocol_gate_rejects_missing_integrity_terms(monkeypat
 
     assert not check.passed
     assert "不伪造外部意见" in check.detail
+
+
+def test_acceptance_checklist_gate_rejects_missing_submission_terms(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    checklist = tmp_path / "06_结项验收清单.md"
+    checklist.write_text("# 结项验收清单\n\n只有泛泛勾选。\n", encoding="utf-8")
+    monkeypatch.setattr(module, "ACCEPTANCE_CHECKLIST", checklist)
+
+    check = module.check_acceptance_checklist()
+
+    assert not check.passed
+    assert "未完成项与边界" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

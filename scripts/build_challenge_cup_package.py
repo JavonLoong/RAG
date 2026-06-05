@@ -14,6 +14,7 @@ OUT = REPO_ROOT / "docs" / "challenge_cup"
 REPRO = OUT / "reproducibility"
 REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
+ACCEPTANCE_CHECKLIST = OUT / "06_结项验收清单.md"
 CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
 AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = OUT / "09_专家快速审阅索引.md"
@@ -374,14 +375,52 @@ def build_qa(ctx: dict[str, Any]) -> str:
 def build_checklist(ctx: dict[str, Any]) -> str:
     return """# 结项验收清单
 
-| 主张 | 证据文件 | 状态 |
+本清单用于结项老师或挑战杯评委快速判断项目是否具备“可提交、可复核、可答辩”的交付状态。验收口径是：先证明成果包完整和证据可追溯，再讨论创新性和奖项竞争力。
+
+## 结项验收口径
+
+- 可提交范围：挑战杯材料包、可复现实验评测、固定应用场景、浏览器演示证据、专家反馈采集协议。
+- 验收方式：按本页逐项打开证据，运行 readiness gate，并用固定 GT-07 场景复核证据链。
+- 通过标准：材料路径存在、核心结论有证据、演示有离线备份、边界不夸大。
+
+## 可提交材料
+
+| 材料 | 路径 | 验收要点 | 状态 |
+| --- | --- | --- | --- |
+| 包清单 | `docs/challenge_cup/package_manifest.json` | 记录证据文件和评测题数，便于判断提交范围。 | 已固化 |
+| 证据清单 | `docs/challenge_cup/reproducibility/dataset_manifest.md` | 汇总数据、报告、截图、KG artifact 和课程交付入口。 | 已固化 |
+| 可复现门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md` | 证明材料、manifest、哈希、浏览器 smoke 和应用案例均可复核。 | 已固化 |
+| 演示证据 | `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md` | 证明页面、搜索交互、KG artifact 和移动端基本可用。 | 已固化 |
+| 应用验证 | `docs/challenge_cup/reproducibility/application_validation_report.md` | 用固定燃气轮机异常振动场景展示证据链和边界。 | 已固化 |
+| 专家反馈表 | `docs/challenge_cup/reproducibility/expert_feedback_form.md` | 收集真实签字、邮件或会议纪要，不伪造外部背书。 | 待真实反馈归档 |
+
+## 验收步骤
+
+1. 打开 `docs/challenge_cup/README_先看这里.md`，确认评审阅读顺序。
+2. 打开 `docs/challenge_cup/07_评审主张证据矩阵.md`，逐条核对主张、证据、命令和边界。
+3. 运行 `python scripts/build_challenge_cup_package.py` 重新生成材料包。
+4. 运行 `python scripts/check_challenge_cup_readiness.py` 生成 `docs/challenge_cup/reproducibility/readiness_gate_report.md`。
+5. 打开 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`，复核固定搜索结果。
+
+## 现场演示与离线备份
+
+| 场景 | 首选动作 | 备用动作 |
 | --- | --- | --- |
-| 资料处理链路完整 | `docs/project_deliverables/02_OCR结果_13本扫描PDF/`、`docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | 已有 |
-| 普通 RAG 可入库检索 | `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | 已有 |
-| 知识图谱不是空图 | `docs/project_deliverables/05_知识图谱POC_三元组和人工判断/人工判断小结.md` | 已有 |
-| RAG 能被评测 | `evaluation/system_eval_questions.jsonl`、`evaluation/reports/` | 已有并扩展 |
-| 演示有主线和备用线 | `docs/challenge_cup/04_系统演示脚本.md` | 已有 |
-| 答辩边界严谨 | `docs/challenge_cup/05_答辩问答手册.md` | 已有 |
+| 后端和前端均可用 | 按 `docs/challenge_cup/04_系统演示脚本.md` 现场演示固定查询。 | 用 browser smoke 报告解释已验证的交互路径。 |
+| 现场网络或后端不可用 | 不现场排环境。 | 打开 `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`、截图和 KG artifact 继续答辩。 |
+| 评委追问真实应用价值 | 展示 `docs/challenge_cup/11_应用场景与专家验证.md`。 | 说明真实生产决策仍需人工确认。 |
+
+## 未完成项与边界
+
+| 项目 | 当前处理 | 不得夸大 |
+| --- | --- | --- |
+| 真实外部反馈 | 已有采集协议和表单，等待签字、邮件或会议纪要归档。 | 不宣称已经获得专家认可。 |
+| 生产级运维上线 | 当前证明课程资料知识化和可复核演示。 | 不宣称替代工程师决策或已进入生产系统。 |
+| 大规模 benchmark | 当前是 60 题挑战杯评测集和 GraphRAG 子集。 | 不宣称达到公开论文级大规模评测。 |
+
+## 验收结论
+
+当前材料包达到“可提交结项 / 可进入挑战杯评审”的状态：材料入口清楚，证据链可追溯，机器门禁可复核，演示有离线备份。下一阶段的提分项是归档真实专家反馈、强化现场彩排和扩展更大规模评测。
 """
 
 
@@ -800,7 +839,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (17/17 gates)
+-> Status: pass (18/18 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -816,7 +855,7 @@ def main() -> int:
     write(OUT / "03_实验评测报告.md", build_eval_report(ctx))
     write(OUT / "04_系统演示脚本.md", build_demo_script(ctx))
     write(OUT / "05_答辩问答手册.md", build_qa(ctx))
-    write(OUT / "06_结项验收清单.md", build_checklist(ctx))
+    write(ACCEPTANCE_CHECKLIST, build_checklist(ctx))
     write(CLAIM_MATRIX, build_claim_evidence_matrix(ctx))
     write(AWARD_SELF_EVAL, build_award_self_eval(ctx))
     write(EXPERT_REVIEW_INDEX, build_expert_review_index(ctx))
@@ -831,6 +870,7 @@ def main() -> int:
     write(REPRO / "command_log.md", build_command_log(ctx))
     evidence_files = [
         md_link(DATASET),
+        md_link(ACCEPTANCE_CHECKLIST),
         md_link(CLAIM_MATRIX),
         md_link(AWARD_SELF_EVAL),
         md_link(EXPERT_REVIEW_INDEX),

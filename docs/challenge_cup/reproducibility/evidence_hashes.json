@@ -6,6 +6,11 @@
   ],
   "files": [
     {
+      "path": "docs/challenge_cup/06_结项验收清单.md",
+      "bytes": 3711,
+      "sha256": "c66d0e34281a67e6aed463251231c381f2869cc0f8c9e755faca546fd1fe645d"
+    },
+    {
       "path": "docs/challenge_cup/07_评审主张证据矩阵.md",
       "bytes": 3978,
       "sha256": "ffee38dbf526f57ce434ede6a16c867210cae7e959b43aae3e283b171b5dc853"

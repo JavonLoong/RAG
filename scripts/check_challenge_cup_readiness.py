@@ -18,6 +18,7 @@ PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
 CLAIM_MATRIX = PACKAGE_DIR / "07_评审主张证据矩阵.md"
+ACCEPTANCE_CHECKLIST = PACKAGE_DIR / "06_结项验收清单.md"
 AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
@@ -104,6 +105,19 @@ REQUIRED_CLAIM_MATRIX_TERMS = {
     "expert_feedback_form.md",
     "browser_demo_smoke_report.md",
     "readiness_gate_report.md",
+}
+REQUIRED_ACCEPTANCE_CHECKLIST_TERMS = {
+    "结项验收口径",
+    "可提交材料",
+    "验收步骤",
+    "现场演示与离线备份",
+    "未完成项与边界",
+    "验收结论",
+    "package_manifest.json",
+    "readiness_gate_report.md",
+    "browser_demo_smoke_report.md",
+    "application_validation_report.md",
+    "expert_feedback_form.md",
 }
 REQUIRED_AWARD_SELF_EVAL_TERMS = {
     "学术价值或实用性",
@@ -496,6 +510,24 @@ def check_claim_evidence_matrix() -> GateCheck:
     )
 
 
+def check_acceptance_checklist() -> GateCheck:
+    if not ACCEPTANCE_CHECKLIST.exists():
+        return GateCheck("acceptance checklist", False, "06_结项验收清单.md missing")
+    text = ACCEPTANCE_CHECKLIST.read_text(encoding="utf-8")
+    missing_terms = sorted(term for term in REQUIRED_ACCEPTANCE_CHECKLIST_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing = missing_terms + missing_paths
+    return GateCheck(
+        "acceptance checklist",
+        not missing,
+        f"submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing acceptance checklist terms or evidence paths: {', '.join(missing)}",
+    )
+
+
 def check_award_self_eval() -> GateCheck:
     if not AWARD_SELF_EVAL.exists():
         return GateCheck("special-prize rubric self-assessment", False, "08_特等奖评审自评表.md missing")
@@ -653,6 +685,7 @@ def run_gate() -> list[GateCheck]:
         check_package_manifest(),
         check_evidence_hashes(),
         check_claim_evidence_matrix(),
+        check_acceptance_checklist(),
         check_award_self_eval(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
@@ -678,7 +711,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
