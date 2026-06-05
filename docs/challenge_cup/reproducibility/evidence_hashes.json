@@ -86,9 +86,14 @@
       "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"
     },
     {
+      "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+      "bytes": 24380,
+      "sha256": "0346c43d4dd81fcdb413df3151a18b82209464e9c3ab44ed4eb863c05e693579"
+    },
+    {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
-      "bytes": 3089,
-      "sha256": "91cda220461e8364309c37570c8ef632b2b5677313dee0017269accc8ffb6d04"
+      "bytes": 3812,
+      "sha256": "4fd4de2b688180b557af5aef63e402a115b24bb3e877d61088ed516184e6ef22"
     },
     {
       "path": "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",

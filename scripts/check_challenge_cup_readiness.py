@@ -32,6 +32,17 @@ EVIDENCE_HASHES = REPRO_DIR / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO_DIR / "evaluation_coverage_profile.json"
 APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
+GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
+GRAPH_REPORT_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.md"
+GRAPH_EVIDENCE_BOUNDARY = (
+    "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
+)
+REQUIRED_GRAPH_CASE_FIELDS = {
+    "id",
+    "graph_evidence_coverage",
+    "graph_evidence_status",
+    "matched_graph_evidence",
+}
 
 REQUIRED_PACKAGE_DOCS = [
     "README_先看这里.md",
@@ -501,6 +512,87 @@ def check_numeric_consistency() -> GateCheck:
     )
 
 
+def check_graphrag_same_question_evidence() -> GateCheck:
+    failures: list[str] = []
+    if not GRAPH_REPORT_JSON.exists():
+        return GateCheck("graphrag evidence audit", False, f"{GRAPH_REPORT_JSON.relative_to(REPO_ROOT)} missing")
+    if not GRAPH_REPORT_MD.exists():
+        return GateCheck("graphrag evidence audit", False, f"{GRAPH_REPORT_MD.relative_to(REPO_ROOT)} missing")
+
+    payload = load_json(GRAPH_REPORT_JSON)
+    markdown = GRAPH_REPORT_MD.read_text(encoding="utf-8")
+    if int(payload.get("total_questions") or 0) != 60:
+        failures.append("total_questions must be 60")
+    if int(payload.get("graphrag_question_count") or 0) != 10:
+        failures.append("graphrag_question_count must be 10")
+    mode_counts = payload.get("mode_counts", {})
+    if int(mode_counts.get("graphrag_context") or 0) < 8:
+        failures.append("graphrag_context count below 8")
+    if int(mode_counts.get("graphrag_global") or 0) < 4:
+        failures.append("graphrag_global count below 4")
+
+    source = str(payload.get("graph_evidence_source", ""))
+    if not source.endswith("triples.csv"):
+        failures.append("graph_evidence_source must point to triples.csv")
+    elif not nonempty(REPO_ROOT / source):
+        failures.append(f"graph_evidence_source missing or empty: {source}")
+
+    triple_count = int(payload.get("graph_triple_count") or 0)
+    if triple_count < 240:
+        failures.append(f"graph_triple_count below 240: {triple_count}")
+    supported = int(payload.get("graph_evidence_supported_case_count") or 0)
+    partial = int(payload.get("graph_evidence_partial_case_count") or 0)
+    missing = int(payload.get("graph_evidence_missing_case_count") or 0)
+    if supported < 3:
+        failures.append(f"graph_evidence_supported_case_count below 3: {supported}")
+    if missing < 1:
+        failures.append("graph_evidence_missing_case_count must preserve at least one known gap")
+    if payload.get("graph_evidence_boundary") != GRAPH_EVIDENCE_BOUNDARY:
+        failures.append("graph_evidence_boundary mismatch")
+
+    cases = payload.get("cases", [])
+    if not isinstance(cases, list) or len(cases) != int(payload.get("graphrag_question_count") or -1):
+        failures.append("cases must match graphrag_question_count")
+        cases = []
+    supported_with_hits = 0
+    missing_cases = 0
+    for case in cases:
+        missing_fields = sorted(REQUIRED_GRAPH_CASE_FIELDS - set(case))
+        if missing_fields:
+            failures.append(f"case {case.get('id', '<unknown>')} missing fields: {missing_fields}")
+            continue
+        coverage = float(case.get("graph_evidence_coverage") or 0)
+        if coverage < 0 or coverage > 1:
+            failures.append(f"case {case.get('id')} graph_evidence_coverage out of range")
+        status = str(case.get("graph_evidence_status", ""))
+        hits = case.get("matched_graph_evidence", [])
+        if status == "supported" and hits:
+            supported_with_hits += 1
+        if status == "missing":
+            missing_cases += 1
+    if supported_with_hits < 1:
+        failures.append("no supported GraphRAG evidence case with matched_graph_evidence")
+    if missing_cases < 1:
+        failures.append("no missing GraphRAG evidence case retained")
+
+    required_markdown_terms = {
+        "Graph evidence coverage audit",
+        "triples.csv",
+        "不代表完整 GraphRAG 在线问答已优于 baseline",
+    }
+    missing_markdown_terms = sorted(term for term in required_markdown_terms if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "graphrag evidence audit",
+        not failures,
+        f"{supported} supported, {partial} partial, {missing} missing cases over {triple_count} triples"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
     if not path.exists():
         return GateCheck(name, False, f"{path.relative_to(REPO_ROOT)} missing")
@@ -750,6 +842,7 @@ def run_gate() -> list[GateCheck]:
         check_package_manifest(),
         check_evidence_hashes(),
         check_numeric_consistency(),
+        check_graphrag_same_question_evidence(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -777,7 +870,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

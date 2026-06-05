@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from collections import Counter
 from pathlib import Path
@@ -12,6 +13,10 @@ REPORT_DIR = REPO_ROOT / "evaluation" / "reports"
 OUTPUT_JSON = REPORT_DIR / "challenge_cup_graphrag_same_question_report.json"
 OUTPUT_MD = REPORT_DIR / "challenge_cup_graphrag_same_question_report.md"
 BASELINE_METHODS = ["keyword", "dense_hashing", "hybrid_rrf"]
+GRAPH_EVIDENCE_COLUMNS = ("subject", "predicate", "object", "evidence", "source_file", "rule_name")
+GRAPH_EVIDENCE_BOUNDARY = (
+    "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -32,6 +37,62 @@ def latest_day3_comparison() -> Path:
     if not candidates:
         raise FileNotFoundError("No Day3 comparison JSON found under evaluation/reports.")
     return candidates[-1]
+
+
+def graph_triples_csv() -> Path:
+    candidates = sorted((REPO_ROOT / "docs" / "project_deliverables").glob("06_*KG*/triples.csv"))
+    if not candidates:
+        raise FileNotFoundError("No KG triples.csv found under docs/project_deliverables/06_*KG*/.")
+    return candidates[-1]
+
+
+def read_graph_triples(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return [dict(row) for row in csv.DictReader(handle)]
+
+
+def searchable_graph_text(triple: dict[str, str]) -> str:
+    return " ".join(str(triple.get(column, "")) for column in GRAPH_EVIDENCE_COLUMNS).lower()
+
+
+def graph_keyword_hits(keywords: list[str], triples: list[dict[str, str]]) -> list[dict[str, Any]]:
+    hits: list[dict[str, Any]] = []
+    matched_keywords: set[str] = set()
+    indexed = [(triple, searchable_graph_text(triple)) for triple in triples]
+    for keyword in keywords:
+        key = str(keyword).strip()
+        if not key or key.isdigit():
+            continue
+        lowered = key.lower()
+        for triple, text in indexed:
+            if lowered not in text:
+                continue
+            if key in matched_keywords:
+                break
+            matched_keywords.add(key)
+            hits.append(
+                {
+                    "keyword": key,
+                    "triple_id": triple.get("id", ""),
+                    "subject": triple.get("subject", ""),
+                    "predicate": triple.get("predicate", ""),
+                    "object": triple.get("object", ""),
+                    "source_file": triple.get("source_file", ""),
+                    "source_page": triple.get("source_page", ""),
+                    "confidence": triple.get("confidence", ""),
+                    "evidence_preview": str(triple.get("evidence", ""))[:160],
+                }
+            )
+            break
+    return hits
+
+
+def graph_evidence_status(coverage: float) -> str:
+    if coverage >= 0.5:
+        return "supported"
+    if coverage > 0:
+        return "partial"
+    return "missing"
 
 
 def by_id(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -67,6 +128,8 @@ def build_payload() -> dict[str, Any]:
     comparison_path = latest_day3_comparison()
     comparison = read_json(comparison_path)
     method_results = load_method_results(comparison)
+    triples_path = graph_triples_csv()
+    triples = read_graph_triples(triples_path)
     graph_questions = [
         row for row in questions if any(str(mode).startswith("graphrag") for mode in row.get("expected_modes", []))
     ]
@@ -78,6 +141,11 @@ def build_payload() -> dict[str, Any]:
             for method in BASELINE_METHODS
         }
         best_method, best_coverage = max(coverages.items(), key=lambda item: item[1])
+        graph_hits = graph_keyword_hits(list(row.get("expected_evidence_keywords", [])), triples)
+        graph_coverage = round(
+            len({hit["keyword"] for hit in graph_hits}) / max(len(row.get("expected_evidence_keywords", [])), 1),
+            6,
+        )
         cases.append(
             {
                 "id": row["id"],
@@ -89,6 +157,10 @@ def build_payload() -> dict[str, Any]:
                 "baseline_keyword_coverage": coverages,
                 "best_baseline_method": best_method,
                 "best_baseline_coverage": best_coverage,
+                "graph_evidence_coverage": graph_coverage,
+                "graph_evidence_vs_best_baseline_delta": round(graph_coverage - best_coverage, 6),
+                "graph_evidence_status": graph_evidence_status(graph_coverage),
+                "matched_graph_evidence": graph_hits,
                 "priority_for_graph_eval": best_coverage < 0.75 or "graphrag_global" in row["expected_modes"],
                 "recommendation": recommendation_for(row, best_coverage),
                 "grading_notes": row["grading_notes"],
@@ -96,6 +168,7 @@ def build_payload() -> dict[str, Any]:
         )
 
     priority_cases = [case for case in cases if case["priority_for_graph_eval"]]
+    status_counts = Counter(case["graph_evidence_status"] for case in cases)
     avg_best = sum(case["best_baseline_coverage"] for case in cases) / max(len(cases), 1)
     payload = {
         "report_type": "challenge_cup_graphrag_same_question_subset",
@@ -106,6 +179,12 @@ def build_payload() -> dict[str, Any]:
         "mode_counts": dict(sorted(mode_counts.items())),
         "baseline_methods": BASELINE_METHODS,
         "average_best_baseline_coverage_on_graph_subset": round(avg_best, 6),
+        "graph_evidence_source": str(triples_path.relative_to(REPO_ROOT)).replace("\\", "/"),
+        "graph_triple_count": len(triples),
+        "graph_evidence_supported_case_count": status_counts.get("supported", 0),
+        "graph_evidence_partial_case_count": status_counts.get("partial", 0),
+        "graph_evidence_missing_case_count": status_counts.get("missing", 0),
+        "graph_evidence_boundary": GRAPH_EVIDENCE_BOUNDARY,
         "priority_case_count": len(priority_cases),
         "boundary": "This report identifies the same-question GraphRAG evaluation subset; it does not claim completed online GraphRAG QA beats the baseline.",
         "cases": cases,
@@ -141,11 +220,23 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         f"- global 题数：{payload['mode_counts'].get('graphrag_global', 0)}",
         f"- 当前文本 baseline 最优覆盖率均值：{payload['average_best_baseline_coverage_on_graph_subset']}",
         f"- 优先补 GraphRAG 实测案例：{payload['priority_case_count']}",
+        f"- Graph evidence source: `{payload['graph_evidence_source']}` ({payload['graph_triple_count']} triples)",
+        (
+            "- Graph evidence supported / partial / missing: "
+            f"{payload['graph_evidence_supported_case_count']} / "
+            f"{payload['graph_evidence_partial_case_count']} / "
+            f"{payload['graph_evidence_missing_case_count']}"
+        ),
+        "",
+        "## Graph evidence coverage audit",
+        "",
+        payload["graph_evidence_boundary"],
+        "该审计只检查当前 triples.csv 对 GraphRAG 同题关键词的三元组覆盖，不代表完整 GraphRAG 在线问答已优于 baseline。",
         "",
         "## 案例表",
         "",
-        "| ID | Graph mode | Best baseline | Coverage | Question | Recommendation |",
-        "| --- | --- | --- | ---: | --- | --- |",
+        "| ID | Graph mode | Best baseline | Baseline coverage | Graph evidence coverage | Graph evidence status | Question | Recommendation |",
+        "| --- | --- | --- | ---: | ---: | --- | --- | --- |",
     ]
     for case in payload["cases"]:
         lines.append(
@@ -156,6 +247,8 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
                     cell(case["graph_mode"]),
                     cell(case["best_baseline_method"]),
                     cell(case["best_baseline_coverage"]),
+                    cell(case["graph_evidence_coverage"]),
+                    cell(case["graph_evidence_status"]),
                     cell(case["question"]),
                     cell(case["recommendation"]),
                 ]

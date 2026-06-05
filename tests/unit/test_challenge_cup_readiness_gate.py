@@ -56,6 +56,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "scenario demo evidence" in report
     assert "scenario walkthrough script" in report
     assert "expert feedback protocol" in report
+    assert "graphrag evidence audit" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -259,6 +260,35 @@ def test_browser_visual_evidence_gate_rejects_hidden_search_results(monkeypatch,
 
     assert not check.passed
     assert "search_results_visible" in check.detail
+
+
+def test_graphrag_evidence_audit_gate_rejects_missing_required_fields(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    graph_json = tmp_path / "challenge_cup_graphrag_same_question_report.json"
+    graph_json.write_text(
+        json.dumps(
+            {
+                "total_questions": 60,
+                "graphrag_question_count": 10,
+                "mode_counts": {"graphrag_context": 8, "graphrag_global": 4},
+                "cases": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    graph_md = tmp_path / "challenge_cup_graphrag_same_question_report.md"
+    graph_md.write_text(
+        "Graph evidence coverage audit\ntriples.csv\n不代表完整 GraphRAG 在线问答已优于 baseline\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "GRAPH_REPORT_JSON", graph_json)
+    monkeypatch.setattr(module, "GRAPH_REPORT_MD", graph_md)
+
+    check = module.check_graphrag_same_question_evidence()
+
+    assert not check.passed
+    assert "graph_evidence_source" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

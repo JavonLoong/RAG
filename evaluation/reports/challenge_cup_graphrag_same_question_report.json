@@ -14,6 +14,12 @@
     "hybrid_rrf"
   ],
   "average_best_baseline_coverage_on_graph_subset": 0.633333,
+  "graph_evidence_source": "docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv",
+  "graph_triple_count": 240,
+  "graph_evidence_supported_case_count": 3,
+  "graph_evidence_partial_case_count": 3,
+  "graph_evidence_missing_case_count": 4,
+  "graph_evidence_boundary": "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate.",
   "priority_case_count": 6,
   "boundary": "This report identifies the same-question GraphRAG evaluation subset; it does not claim completed online GraphRAG QA beats the baseline.",
   "cases": [
@@ -35,6 +41,10 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.333333,
+      "graph_evidence_coverage": 0.0,
+      "graph_evidence_vs_best_baseline_delta": -0.333333,
+      "graph_evidence_status": "missing",
+      "matched_graph_evidence": [],
       "priority_for_graph_eval": true,
       "recommendation": "Prioritize local graph evidence because current text retrieval does not cover enough expected evidence.",
       "grading_notes": "回答需要突出工程闭环，不应只描述前端问答。"
@@ -56,6 +66,33 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.666667,
+      "graph_evidence_coverage": 0.333333,
+      "graph_evidence_vs_best_baseline_delta": -0.333334,
+      "graph_evidence_status": "partial",
+      "matched_graph_evidence": [
+        {
+          "keyword": "关系",
+          "triple_id": "FBKG-0124",
+          "subject": "燃气轮机",
+          "predicate": "HAS_PARAMETER",
+          "object": "稳定性",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "11",
+          "confidence": "0.74",
+          "evidence_preview": "中文版序目第5章介绍姑烧效率、稳定性和点火性能，将这3个问题集中到一章进行阐述，以使读者更清晰地理解占烧性能的3个不同方面的关系"
+        },
+        {
+          "keyword": "故障",
+          "triple_id": "FBKG-0172",
+          "subject": "燃烧过程",
+          "predicate": "HAS_PROBLEM",
+          "object": "回火",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "12",
+          "confidence": "0.77",
+          "evidence_preview": "因此，在多燃料性能、回火、高室非设计点册烧效率和减少带气膜冷却火焰简故障研究方面的修改最少"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "必须说明 GraphRAG 的适用场景，而不是宣称所有问题都优于普通 RAG。"
@@ -77,6 +114,22 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.833333,
+      "graph_evidence_coverage": 0.166667,
+      "graph_evidence_vs_best_baseline_delta": -0.666666,
+      "graph_evidence_status": "partial",
+      "matched_graph_evidence": [
+        {
+          "keyword": "关系",
+          "triple_id": "FBKG-0124",
+          "subject": "燃气轮机",
+          "predicate": "HAS_PARAMETER",
+          "object": "稳定性",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "11",
+          "confidence": "0.74",
+          "evidence_preview": "中文版序目第5章介绍姑烧效率、稳定性和点火性能，将这3个问题集中到一章进行阐述，以使读者更清晰地理解占烧性能的3个不同方面的关系"
+        }
+      ],
       "priority_for_graph_eval": false,
       "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
       "grading_notes": "应强调证据绑定是可信性和人工评审的前提。"
@@ -98,6 +151,10 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 1.0,
+      "graph_evidence_coverage": 0.0,
+      "graph_evidence_vs_best_baseline_delta": -1.0,
+      "graph_evidence_status": "missing",
+      "matched_graph_evidence": [],
       "priority_for_graph_eval": false,
       "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
       "grading_notes": "必须同时说清楚能证明和不能过度声称的边界。"
@@ -119,6 +176,44 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.833333,
+      "graph_evidence_coverage": 0.5,
+      "graph_evidence_vs_best_baseline_delta": -0.333333,
+      "graph_evidence_status": "supported",
+      "matched_graph_evidence": [
+        {
+          "keyword": "检查",
+          "triple_id": "FBKG-0204",
+          "subject": "燃烧室",
+          "predicate": "HAS_PROBLEM",
+          "object": "熄火",
+          "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "20",
+          "confidence": "0.75",
+          "evidence_preview": "对军用发动机，要求在发射导弹时燃烧室吸和导弹燃烧尾气而不熄火，通常由模拟试验来检查"
+        },
+        {
+          "keyword": "部件",
+          "triple_id": "FBKG-0001",
+          "subject": "燃气轮机",
+          "predicate": "HAS_COMPONENT",
+          "object": "压气机",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "4",
+          "confidence": "0.72",
+          "evidence_preview": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等"
+        },
+        {
+          "keyword": "参数",
+          "triple_id": "FBKG-0019",
+          "subject": "燃气轮机",
+          "predicate": "HAS_PARAMETER",
+          "object": "热效率",
+          "source_file": "燃气轮机 (南京燃气轮机研究所编) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "5",
+          "confidence": "0.79",
+          "evidence_preview": "随着技术进步和发展，燃气轮机越来越多地为人们所揭示和了解，它不但具有重量轻、体积小、启动快、运行维护方便、便于集中控制、少用水或不用水的优点，而且随着热效率不断提高和采用燃气-蒸汽联合循环的方式运行，联合循环发电装置的热效率已超过大功率高参数火电机组的水平"
+        }
+      ],
       "priority_for_graph_eval": false,
       "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
       "grading_notes": "回答应保持辅助定位，不应直接下维修决策。"
@@ -141,6 +236,55 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.833333,
+      "graph_evidence_coverage": 0.666667,
+      "graph_evidence_vs_best_baseline_delta": -0.166666,
+      "graph_evidence_status": "supported",
+      "matched_graph_evidence": [
+        {
+          "keyword": "温度",
+          "triple_id": "FBKG-0018",
+          "subject": "燃烧室",
+          "predicate": "HAS_FUNCTION",
+          "object": "将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)",
+          "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "8",
+          "confidence": "0.74",
+          "evidence_preview": "燃烧室的作用是将化学能〈燃油加空气)转化为燃烧产物和剩余的未燃空气的热能《温度升高)"
+        },
+        {
+          "keyword": "压力",
+          "triple_id": "FBKG-0037",
+          "subject": "燃烧室",
+          "predicate": "HAS_PARAMETER",
+          "object": "压力损失",
+          "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "8",
+          "confidence": "0.76",
+          "evidence_preview": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求"
+        },
+        {
+          "keyword": "热力",
+          "triple_id": "FBKG-0006",
+          "subject": "燃气轮机",
+          "predicate": "HAS_COMPONENT",
+          "object": "压气机",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "4",
+          "confidence": "0.72",
+          "evidence_preview": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃"
+        },
+        {
+          "keyword": "机械",
+          "triple_id": "FBKG-0154",
+          "subject": "发电机组",
+          "predicate": "HAS_PARAMETER",
+          "object": "可靠性 = 99%",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "16",
+          "confidence": "0.73",
+          "evidence_preview": "《2)体积小,占地面积小,用于车.船等运输机械时可节省空间作其他用途用《3)起动快,从冷态起动至带满负荷,视机组功率的大小及结构型式的不同在数分钟至半小时之间,在紧急情况下很多机组的起动时间可缩短约一半左右-A)安装周期短,对于燃气轮机电站,在做好基础设施等准备工作后,的气轮机发电机组可在1一2个月内安装好并投入运行发"
+        }
+      ],
       "priority_for_graph_eval": false,
       "recommendation": "Keep as GraphRAG support case: text baseline is usable, but graph relations can improve explanation structure.",
       "grading_notes": "应体现多参数联合分析的运维价值。"
@@ -162,6 +306,77 @@
       },
       "best_baseline_method": "dense_hashing",
       "best_baseline_coverage": 0.833333,
+      "graph_evidence_coverage": 1.0,
+      "graph_evidence_vs_best_baseline_delta": 0.166667,
+      "graph_evidence_status": "supported",
+      "matched_graph_evidence": [
+        {
+          "keyword": "燃烧室",
+          "triple_id": "FBKG-0001",
+          "subject": "燃气轮机",
+          "predicate": "HAS_COMPONENT",
+          "object": "压气机",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "4",
+          "confidence": "0.72",
+          "evidence_preview": "本书主要叙述了人燃气轮机及其组成部件一一压气机、燃烧室和透平的工作原理、设计特点及其试验、变工况性能和结构,以及调节控制联合循环和应用等"
+        },
+        {
+          "keyword": "燃料",
+          "triple_id": "FBKG-0005",
+          "subject": "压气机",
+          "predicate": "HAS_COMPONENT",
+          "object": "涡轮",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "9",
+          "confidence": "0.8",
+          "evidence_preview": "中文版序燃气涌轮发动机主灼烧室是洪气涡轮发动机核心机的主要部件之一，将压气机压缩后的空气与江油充分混合、燃烧，将燃料中的化学能转化为热能"
+        },
+        {
+          "keyword": "空气",
+          "triple_id": "FBKG-0005",
+          "subject": "压气机",
+          "predicate": "HAS_COMPONENT",
+          "object": "涡轮",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "9",
+          "confidence": "0.8",
+          "evidence_preview": "中文版序燃气涌轮发动机主灼烧室是洪气涡轮发动机核心机的主要部件之一，将压气机压缩后的空气与江油充分混合、燃烧，将燃料中的化学能转化为热能"
+        },
+        {
+          "keyword": "温度场",
+          "triple_id": "FBKG-0023",
+          "subject": "燃气轮机",
+          "predicate": "HAS_PARAMETER",
+          "object": "可靠性",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "9",
+          "confidence": "0.78",
+          "evidence_preview": "既要满足点火迅速可靠、燃烧稳定安全、流体流动损失小、出口温度场品质好、排气污染小等和要求，又要满足结构紧凑、质量轻、寿命长、可靠性高竺要求"
+        },
+        {
+          "keyword": "压力损失",
+          "triple_id": "FBKG-0037",
+          "subject": "燃烧室",
+          "predicate": "HAS_PARAMETER",
+          "object": "压力损失",
+          "source_file": "先进燃气轮机燃烧室=ADVANCED GAS TURBINE COMBUSTOR (金如山，索建秦著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "8",
+          "confidence": "0.76",
+          "evidence_preview": "灼烧室工况复杂，其研究内容涉及气体动力学、燃烧学、化学动力学、热力学、传热学、排放污染控制、声学等多个学科和领域发动机对燃烧室的基本要求是燃烧效率高、压力损失小、重量轻、寿命长、污染排放低，另外燃烧室还要满足贫油炸火边界高空点火、出口温度分布、结构、强度、寿命、维护等方面的要求"
+        },
+        {
+          "keyword": "关系",
+          "triple_id": "FBKG-0124",
+          "subject": "燃气轮机",
+          "predicate": "HAS_PARAMETER",
+          "object": "稳定性",
+          "source_file": "燃气涡轮发动机燃烧 第3版 (（英）A.H.勒菲沃（Arthur etc.) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "11",
+          "confidence": "0.74",
+          "evidence_preview": "中文版序目第5章介绍姑烧效率、稳定性和点火性能，将这3个问题集中到一章进行阐述，以使读者更清晰地理解占烧性能的3个不同方面的关系"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "应说明图谱表达多实体关系的优势。"
@@ -183,6 +398,10 @@
       },
       "best_baseline_method": "dense_hashing",
       "best_baseline_coverage": 0.166667,
+      "graph_evidence_coverage": 0.0,
+      "graph_evidence_vs_best_baseline_delta": -0.166667,
+      "graph_evidence_status": "missing",
+      "matched_graph_evidence": [],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "必须体现方法适用边界。"
@@ -203,6 +422,10 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.5,
+      "graph_evidence_coverage": 0.0,
+      "graph_evidence_vs_best_baseline_delta": -0.5,
+      "graph_evidence_status": "missing",
+      "matched_graph_evidence": [],
       "priority_for_graph_eval": true,
       "recommendation": "Use community/global summaries and compare against keyword/hybrid on cross-document synthesis.",
       "grading_notes": "应明确 global search 的问题类型。"
@@ -223,6 +446,33 @@
       },
       "best_baseline_method": "keyword",
       "best_baseline_coverage": 0.333333,
+      "graph_evidence_coverage": 0.333333,
+      "graph_evidence_vs_best_baseline_delta": 0.0,
+      "graph_evidence_status": "partial",
+      "matched_graph_evidence": [
+        {
+          "keyword": "related_to",
+          "triple_id": "FBKG-0016",
+          "subject": "燃气轮机",
+          "predicate": "RELATED_TO",
+          "object": "联合循环 / 功率",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "4",
+          "confidence": "0.58",
+          "evidence_preview": "此外,书中注意跟踪当今燃气轮机的新技术成就,介绍了先进的大功率燃气轮机和联合循环,新的航机改型机组,与高速发电机设计成整体的微型燃气轮机,压气机的可控扩压叶型,单轴燃气轮机型式的压气机全尺寸性能试验方法,干式低污染排放燃烧室,透平叶片的蒸汽闭环冷却和高效率的弯扭叶片,刷子气封,MARK$V控制系统,新的热力循环,以及燃"
+        },
+        {
+          "keyword": "原因",
+          "triple_id": "FBKG-0044",
+          "subject": "燃气轮机",
+          "predicate": "HAS_COMPONENT",
+          "object": "透平",
+          "source_file": "燃气轮机原理、结构与应用 上 (沈阳黎明航空发动机（集团）有限责任公司编著) (z-library.sk, 1lib.sk, z-lib.sk).pdf",
+          "source_page": "12",
+          "confidence": "0.73",
+          "evidence_preview": "1在19世纪,曾有许多人提出多种燃气轮机设计方案,其中最著名的是德国人斯托尔2%(F.Stolze)F 1872年提出的热空气轮机失败的原因仍然是部件效率低和进入透平的气体温度不高所致"
+        }
+      ],
       "priority_for_graph_eval": true,
       "recommendation": "Prioritize local graph evidence because current text retrieval does not cover enough expected evidence.",
       "grading_notes": "应强调 schema 粒度控制。"
