@@ -13,6 +13,7 @@ REPRO = OUT / "reproducibility"
 REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
+AWARD_SELF_EVAL = OUT / "08_特等奖评审自评表.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -115,9 +116,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 6. `05_答辩问答手册.md`
 7. `06_结项验收清单.md`
 8. `07_评审主张证据矩阵.md`
-9. `reproducibility/runbook.md`
-10. `reproducibility/dataset_manifest.md`
-11. `reproducibility/readiness_gate_report.md`
+9. `08_特等奖评审自评表.md`
+10. `reproducibility/runbook.md`
+11. `reproducibility/dataset_manifest.md`
+12. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -323,6 +325,26 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_award_self_eval(ctx: dict[str, Any]) -> str:
+    return """# 特等奖评审自评表
+
+本表按清华公开报道中出现的评审维度进行自检：评委会关注作品的学术价值或实用性、创新性、作品完成情况和现场答辩表现；清华制度文件也强调实用性、创新性和学术价值。特等奖不超过6件，可空缺，因此本表只用于倒逼整改，不承诺获奖结果。
+
+## 参考口径
+
+- 清华大学第37届“挑战杯”校级终审报道：评委从作品的学术价值或实用性、创新性、作品完成情况和现场答辩表现等方面评分；特等奖候选作品经公开答辩和综合评定产生。链接：https://www.tsinghua.edu.cn/info/1181/35383.htm
+- 《清华大学课外创新人才培养体系制度文件汇编》：评审应充分考虑作品的实用性、创新性和学术价值；特等奖不超过6件，可空缺。链接：https://qiyuan.tsinghua.edu.cn/intro/2018/11024/%E6%94%AF%E6%92%91%E6%9D%90%E6%96%993-%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E8%AF%BE%E5%A4%96%E5%88%9B%E6%96%B0%E4%BA%BA%E6%89%8D%E5%9F%B9%E5%85%BB%E4%BD%93%E7%B3%BB%E5%88%B6%E5%BA%A6%E6%96%87%E4%BB%B6%E6%B1%87%E7%BC%96.pdf
+
+| 评审维度 | 当前自评 | 已有证据 | 仍需现场强调 | 风险控制 |
+| --- | --- | --- | --- | --- |
+| 学术价值或实用性 | A- | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/03_实验评测报告.md`; `evaluation/system_eval_questions.jsonl` | 把动力装备运维知识的真实痛点讲清楚，强调证据型辅助而非泛问答。 | 避免把课程数据包装成生产级运维闭环。 |
+| 创新性 | A- | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md`; `docs/project_deliverables/06_四本书KG工具跑通演示/kg_evidence_viewer.html` | 强调 evidence-bound KG、失败归因和 GraphRAG 同题子集，而不是只说用了 RAG。 | 明确 GraphRAG 不保证所有问题都超过普通 RAG。 |
+| 作品完成情况 | A | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/runbook.md` | 现场先跑 readiness gate，再展示浏览器截图和 KG artifact。 | 如果 live backend 异常，按离线证据包继续答辩。 |
+| 现场答辩表现 | B+ | `docs/challenge_cup/04_系统演示脚本.md`; `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/reproducibility/command_log.md` | 3分钟内讲清“问题-方法-证据-边界”，把失败案例变成科学性而不是扣分点。 | 需要继续做限时 rehearsal，避免被问到生产部署和真实运维责任时失焦。 |
+| 特等奖不超过6件 | 目标状态 | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | 用“可复现证据链 + 严谨边界 + 工程闭环”争取进入特等奖讨论。 | 不把奖项概率写成承诺；持续补强演示稳定性和答辩节奏。 |
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -382,6 +404,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - Day4 失败分析：`{optional_md_link(ctx["day4"])}`。
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
+- 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -450,7 +473,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (7/7 gates)
+-> Status: pass (8/8 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -468,6 +491,7 @@ def main() -> int:
     write(OUT / "05_答辩问答手册.md", build_qa(ctx))
     write(OUT / "06_结项验收清单.md", build_checklist(ctx))
     write(CLAIM_MATRIX, build_claim_evidence_matrix(ctx))
+    write(AWARD_SELF_EVAL, build_award_self_eval(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(REPRO / "command_log.md", build_command_log(ctx))
@@ -478,6 +502,7 @@ def main() -> int:
         "evidence_files": [
             md_link(DATASET),
             md_link(CLAIM_MATRIX),
+            md_link(AWARD_SELF_EVAL),
             md_link(LIVE_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_JSON),

@@ -15,6 +15,7 @@ PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
 CLAIM_MATRIX = PACKAGE_DIR / "07_评审主张证据矩阵.md"
+AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 
@@ -28,6 +29,7 @@ REQUIRED_PACKAGE_DOCS = [
     "05_答辩问答手册.md",
     "06_结项验收清单.md",
     "07_评审主张证据矩阵.md",
+    "08_特等奖评审自评表.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/command_log.md",
@@ -65,6 +67,16 @@ REQUIRED_CLAIM_MATRIX_TERMS = {
     "evaluation/system_eval_questions.jsonl",
     "browser_demo_smoke_report.md",
     "readiness_gate_report.md",
+}
+REQUIRED_AWARD_SELF_EVAL_TERMS = {
+    "学术价值或实用性",
+    "创新性",
+    "作品完成情况",
+    "现场答辩表现",
+    "特等奖不超过6件",
+    "07_评审主张证据矩阵.md",
+    "readiness_gate_report.md",
+    "browser_demo_smoke_report.md",
 }
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 
@@ -182,12 +194,31 @@ def check_claim_evidence_matrix() -> GateCheck:
     )
 
 
+def check_award_self_eval() -> GateCheck:
+    if not AWARD_SELF_EVAL.exists():
+        return GateCheck("special-prize rubric self-assessment", False, "08_特等奖评审自评表.md missing")
+    text = AWARD_SELF_EVAL.read_text(encoding="utf-8")
+    missing_terms = sorted(term for term in REQUIRED_AWARD_SELF_EVAL_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    missing = missing_terms + missing_paths
+    return GateCheck(
+        "special-prize rubric self-assessment",
+        not missing,
+        f"public Tsinghua rubric dimensions mapped to evidence; {len(evidence_paths)} evidence links verified"
+        if not missing
+        else f"missing terms or evidence paths: {', '.join(missing)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
         check_eval_dataset(),
         check_package_manifest(),
         check_claim_evidence_matrix(),
+        check_award_self_eval(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),

@@ -38,6 +38,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "package evidence files" in report
     assert "claim-evidence matrix" in report
     assert "award claims" in report
+    assert "special-prize rubric self-assessment" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
     assert "mobile console health" in report

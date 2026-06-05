@@ -33,6 +33,7 @@ REQUIRED_PACKAGE_FILES = [
     "05_答辩问答手册.md",
     "06_结项验收清单.md",
     "07_评审主张证据矩阵.md",
+    "08_特等奖评审自评表.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/command_log.md",
@@ -79,6 +80,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "GraphRAG" in one_page
     readme = (PACKAGE_DIR / "README_先看这里.md").read_text(encoding="utf-8")
     assert "07_评审主张证据矩阵.md" in readme
+    assert "08_特等奖评审自评表.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     claim_matrix = (PACKAGE_DIR / "07_评审主张证据矩阵.md").read_text(encoding="utf-8")
     for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用边界"]:
@@ -89,6 +91,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "readiness_gate_report.md",
     ]:
         assert evidence in claim_matrix
+    award_self_eval = (PACKAGE_DIR / "08_特等奖评审自评表.md").read_text(encoding="utf-8")
+    for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "特等奖不超过6件"]:
+        assert phrase in award_self_eval
+    for evidence in ["07_评审主张证据矩阵.md", "readiness_gate_report.md", "browser_demo_smoke_report.md"]:
+        assert evidence in award_self_eval
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
@@ -113,6 +120,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
+    assert "docs/challenge_cup/08_特等奖评审自评表.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files

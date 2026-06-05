@@ -5,6 +5,7 @@
   "evidence_files": [
     "evaluation/system_eval_questions.jsonl",
     "docs/challenge_cup/07_评审主张证据矩阵.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
     "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
     "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
     "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
