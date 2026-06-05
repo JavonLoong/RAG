@@ -14,6 +14,10 @@ DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
     "has already happened or guarantee an award."
 )
+EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
+    "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
+    "or production validation."
+)
 
 
 def load_readiness_module():
@@ -50,6 +54,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense rehearsal scorecard" in report
+    assert "expert feedback request packet" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
@@ -370,6 +375,39 @@ def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tm
 
     assert not check.passed
     assert "opening_seconds" in check.detail
+
+
+def test_expert_feedback_request_packet_gate_rejects_claimed_approval(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    packet_json = tmp_path / "expert_feedback_request_packet.json"
+    packet_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_expert_feedback_request_packet",
+                "status": "ready_to_send",
+                "no_external_feedback_claimed": False,
+                "boundary": EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY,
+                "recipient_roles": ["指导教师", "行业专家", "实验室同学"],
+                "review_dimensions": ["实用性", "创新性", "工程完成度", "评测可信度", "答辩清晰度", "边界严谨性"],
+                "required_archive_evidence_types": ["签字页", "邮件回复", "会议纪要", "聊天记录截图"],
+                "review_questions": ["q1"] * 8,
+                "sendable_message": {"subject": "sample", "body": "sample", "attachments": []},
+                "minimum_evidence_file_count": 10,
+                "evidence_files": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    packet_md = tmp_path / "expert_feedback_request_packet.md"
+    packet_md.write_text("专家反馈外发包\n待真实反馈归档\n不宣称已获得专家认可\n建议邮件主题\n签字页\n邮件回复\n会议纪要\n聊天记录截图\n", encoding="utf-8")
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_JSON", packet_json)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_MD", packet_md)
+
+    check = module.check_expert_feedback_request_packet()
+
+    assert not check.passed
+    assert "no_external_feedback_claimed" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

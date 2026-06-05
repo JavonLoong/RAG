@@ -91,6 +91,16 @@
       "sha256": "9dbdcee7f2c3b6710b6ab0dc5e22c3120097dac76d9a9105255d56583c27ff46"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
+      "bytes": 3870,
+      "sha256": "df24c1313edf5fab224db6e9bcae84be774ccc64cb45325d7ccb580ea0526987"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.md",
+      "bytes": 3376,
+      "sha256": "ad658f3aa9c554c62d15593fd3107c5278eaba66b3e0c5508a684e2f299c1e8e"
+    },
+    {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
       "bytes": 692,
       "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"

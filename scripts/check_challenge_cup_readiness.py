@@ -24,6 +24,8 @@ EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
+EXPERT_FEEDBACK_REQUEST_PACKET_MD = REPRO_DIR / "expert_feedback_request_packet.md"
+EXPERT_FEEDBACK_REQUEST_PACKET_JSON = REPRO_DIR / "expert_feedback_request_packet.json"
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -48,6 +50,10 @@ GRAPH_CONTEXT_DEMO_BOUNDARY = (
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
     "has already happened or guarantee an award."
+)
+EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
+    "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
+    "or production validation."
 )
 REQUIRED_GRAPH_CASE_FIELDS = {
     "id",
@@ -79,6 +85,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/expert_feedback_form.md",
     "reproducibility/defense_rehearsal_scorecard.md",
     "reproducibility/defense_rehearsal_scorecard.json",
+    "reproducibility/expert_feedback_request_packet.md",
+    "reproducibility/expert_feedback_request_packet.json",
     "reproducibility/command_log.md",
 ]
 DEFENSE_REHEARSAL_TIMING_TARGETS = {
@@ -108,6 +116,40 @@ DEFENSE_REHEARSAL_MARKDOWN_TERMS = {
     "20 秒内切换",
     "30 秒内回答",
     "不把 readiness gate 说成获奖保证",
+}
+EXPERT_FEEDBACK_REQUEST_DIMENSIONS = [
+    "实用性",
+    "创新性",
+    "工程完成度",
+    "评测可信度",
+    "答辩清晰度",
+    "边界严谨性",
+]
+EXPERT_FEEDBACK_REQUIRED_ARCHIVE_TYPES = ["签字页", "邮件回复", "会议纪要", "聊天记录截图"]
+EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES = {
+    "docs/challenge_cup/00_项目一页纸.md",
+    "docs/challenge_cup/03_实验评测报告.md",
+    "docs/challenge_cup/04_系统演示脚本.md",
+    "docs/challenge_cup/07_评审主张证据矩阵.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
+    "docs/challenge_cup/10_答辩攻防与彩排卡.md",
+    "docs/challenge_cup/11_应用场景与专家验证.md",
+    "docs/challenge_cup/12_专家反馈采集与整改闭环.md",
+    "docs/challenge_cup/reproducibility/application_validation_report.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md",
+    "docs/challenge_cup/reproducibility/expert_feedback_form.md",
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+}
+EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
+    "专家反馈外发包",
+    "待真实反馈归档",
+    "不宣称已获得专家认可",
+    "建议邮件主题",
+    "签字页",
+    "邮件回复",
+    "会议纪要",
+    "聊天记录截图",
 }
 EVAL_COVERAGE_MINIMUMS = {
     "task_types": 10,
@@ -943,6 +985,83 @@ def check_defense_rehearsal_scorecard() -> GateCheck:
     )
 
 
+def check_expert_feedback_request_packet() -> GateCheck:
+    failures: list[str] = []
+    if not EXPERT_FEEDBACK_REQUEST_PACKET_JSON.exists():
+        return GateCheck(
+            "expert feedback request packet",
+            False,
+            f"{EXPERT_FEEDBACK_REQUEST_PACKET_JSON.relative_to(REPO_ROOT)} missing",
+        )
+    if not EXPERT_FEEDBACK_REQUEST_PACKET_MD.exists():
+        return GateCheck(
+            "expert feedback request packet",
+            False,
+            f"{EXPERT_FEEDBACK_REQUEST_PACKET_MD.relative_to(REPO_ROOT)} missing",
+        )
+
+    payload = load_json(EXPERT_FEEDBACK_REQUEST_PACKET_JSON)
+    markdown = EXPERT_FEEDBACK_REQUEST_PACKET_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_expert_feedback_request_packet":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "ready_to_send":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("no_external_feedback_claimed") is not True:
+        failures.append(f"no_external_feedback_claimed={payload.get('no_external_feedback_claimed')}")
+    if payload.get("boundary") != EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY:
+        failures.append("boundary mismatch")
+    if payload.get("review_dimensions") != EXPERT_FEEDBACK_REQUEST_DIMENSIONS:
+        failures.append("review_dimensions mismatch")
+    if payload.get("required_archive_evidence_types") != EXPERT_FEEDBACK_REQUIRED_ARCHIVE_TYPES:
+        failures.append("required_archive_evidence_types mismatch")
+    if len(payload.get("recipient_roles", [])) < 3:
+        failures.append("recipient_roles below 3")
+    if len(payload.get("review_questions", [])) < 8:
+        failures.append("review_questions below 8")
+    if int(payload.get("minimum_evidence_file_count") or 0) < 10:
+        failures.append("minimum_evidence_file_count below 10")
+
+    sendable = payload.get("sendable_message", {})
+    body = str(sendable.get("body", ""))
+    attachments = [str(item) for item in sendable.get("attachments", [])]
+    if not sendable.get("subject"):
+        failures.append("sendable_message.subject missing")
+    if "待真实反馈归档" not in body:
+        failures.append("sendable_message.body missing pending-feedback boundary")
+    for forbidden in ("已经获得专家认可", "通过专家验证"):
+        if forbidden in body:
+            failures.append(f"sendable_message.body overclaims: {forbidden}")
+    if len(attachments) < 5:
+        failures.append("sendable_message.attachments below 5")
+
+    evidence_files = {str(item) for item in payload.get("evidence_files", [])}
+    missing_required_evidence = sorted(EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES - evidence_files)
+    if missing_required_evidence:
+        failures.append(f"missing evidence_files: {missing_required_evidence}")
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_evidence_paths = sorted(
+        path for path in evidence_files if path != self_report and not nonempty(REPO_ROOT / path)
+    )
+    if missing_evidence_paths:
+        failures.append(f"evidence path missing or empty: {missing_evidence_paths}")
+
+    missing_markdown_terms = sorted(
+        term
+        for term in (EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS | {EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY})
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "expert feedback request packet",
+        not failures,
+        f"{len(payload.get('recipient_roles', []))} recipient roles, {len(payload.get('review_questions', []))} review questions, {len(evidence_files)} evidence files"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_application_validation_evidence() -> GateCheck:
     if not APPLICATION_VALIDATION_DOC.exists():
         return GateCheck("application validation evidence", False, "11_应用场景与专家验证.md missing")
@@ -1054,6 +1173,7 @@ def run_gate() -> list[GateCheck]:
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
+        check_expert_feedback_request_packet(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
@@ -1076,7 +1196,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

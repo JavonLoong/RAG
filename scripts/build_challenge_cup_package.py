@@ -14,6 +14,12 @@ from build_defense_rehearsal_scorecard import (
     build_payload as build_defense_scorecard_payload,
     write_outputs as write_defense_scorecard_outputs,
 )
+from build_expert_feedback_request_packet import (
+    OUTPUT_JSON as EXPERT_FEEDBACK_REQUEST_PACKET_JSON,
+    OUTPUT_MD as EXPERT_FEEDBACK_REQUEST_PACKET_MD,
+    build_payload as build_expert_request_payload,
+    write_outputs as write_expert_request_outputs,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -210,6 +216,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 17. `reproducibility/dataset_manifest.md`
 18. `reproducibility/readiness_gate_report.md`
 19. `reproducibility/defense_rehearsal_scorecard.md`
+20. `reproducibility/expert_feedback_request_packet.md`
 
 ## 当前核心数字
 
@@ -786,6 +793,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 答辩彩排计分卡：`{md_link(DEFENSE_REHEARSAL_SCORECARD_MD)}`。
 - 答辩彩排计分 JSON：`{md_link(DEFENSE_REHEARSAL_SCORECARD_JSON)}`。
+- 专家反馈外发包：`{md_link(EXPERT_FEEDBACK_REQUEST_PACKET_MD)}`。
+- 专家反馈外发 JSON：`{md_link(EXPERT_FEEDBACK_REQUEST_PACKET_JSON)}`。
 - 应用场景与专家验证：`{md_link(APPLICATION_VALIDATION_DOC)}`。
 - 应用验证报告：`{md_link(APPLICATION_VALIDATION_REPORT)}`。
 - 专家反馈采集与整改闭环：`{md_link(EXPERT_FEEDBACK_PROTOCOL)}`。
@@ -861,6 +870,10 @@ python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
 
+python scripts/build_expert_feedback_request_packet.py
+-> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
+-> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -872,7 +885,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (22/22 gates)
+-> Status: pass (23/23 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -898,6 +911,7 @@ def main() -> int:
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
+    write_expert_request_outputs(build_expert_request_payload())
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -911,6 +925,8 @@ def main() -> int:
         md_link(DEFENSE_REHEARSAL_CARD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
+        md_link(EXPERT_FEEDBACK_REQUEST_PACKET_MD),
+        md_link(EXPERT_FEEDBACK_REQUEST_PACKET_JSON),
         md_link(APPLICATION_VALIDATION_DOC),
         md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),

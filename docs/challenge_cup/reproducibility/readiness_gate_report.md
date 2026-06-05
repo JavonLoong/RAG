@@ -1,8 +1,8 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 22/22
-- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 23/23
+- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
@@ -10,9 +10,9 @@
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 26 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 25 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
-| numeric consistency | pass | 60 questions, 26 evidence files, and 5 visible search records are consistent |
+| package evidence files | pass | 28 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 27 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| numeric consistency | pass | 60 questions, 28 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 3 supported, 3 partial, 4 missing cases over 240 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 23 evidence links verified |
@@ -21,6 +21,7 @@
 | expert review index | pass | judge-facing review path maps claims, commands, and boundaries; 20 evidence links verified |
 | defense rehearsal pack | pass | timed defense script, killer questions, and boundaries mapped to evidence; 16 evidence links verified |
 | defense rehearsal scorecard | pass | 5 timed demo steps, 5 killer questions, 12 evidence files |
+| expert feedback request packet | pass | 3 recipient roles, 8 review questions, 13 evidence files |
 | application validation evidence | pass | fixed GT-07 application case, evidence records, benefits, and boundaries verified; 9 evidence links verified |
 | scenario demo evidence | pass | fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary |
 | scenario walkthrough script | pass | fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; 8 evidence links verified |

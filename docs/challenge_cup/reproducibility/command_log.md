@@ -54,6 +54,10 @@ python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
 
+python scripts/build_expert_feedback_request_packet.py
+-> docs/challenge_cup/reproducibility/expert_feedback_request_packet.md
+-> docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -65,7 +69,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (22/22 gates)
+-> Status: pass (23/23 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。

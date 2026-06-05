@@ -31,6 +31,7 @@ desktop.ini
 !docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 !docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
 !docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
+!docs/challenge_cup/reproducibility/expert_feedback_request_packet.json
 *.sqlite3
 *.sqlite
 *.db

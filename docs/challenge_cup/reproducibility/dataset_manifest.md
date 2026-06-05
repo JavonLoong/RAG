@@ -16,6 +16,8 @@
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 答辩彩排计分卡：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`。
 - 答辩彩排计分 JSON：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json`。
+- 专家反馈外发包：`docs/challenge_cup/reproducibility/expert_feedback_request_packet.md`。
+- 专家反馈外发 JSON：`docs/challenge_cup/reproducibility/expert_feedback_request_packet.json`。
 - 应用场景与专家验证：`docs/challenge_cup/11_应用场景与专家验证.md`。
 - 应用验证报告：`docs/challenge_cup/reproducibility/application_validation_report.md`。
 - 专家反馈采集与整改闭环：`docs/challenge_cup/12_专家反馈采集与整改闭环.md`。

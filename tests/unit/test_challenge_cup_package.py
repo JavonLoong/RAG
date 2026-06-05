@@ -47,6 +47,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/expert_feedback_form.md",
     "reproducibility/defense_rehearsal_scorecard.md",
     "reproducibility/defense_rehearsal_scorecard.json",
+    "reproducibility/expert_feedback_request_packet.md",
+    "reproducibility/expert_feedback_request_packet.json",
     "reproducibility/command_log.md",
 ]
 
@@ -141,6 +143,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     expert_feedback_form = (PACKAGE_DIR / "reproducibility" / "expert_feedback_form.md").read_text(encoding="utf-8")
     for phrase in ["评审人姓名", "单位或角色", "联系方式", "评审日期", "签字或邮件证据", "燃气轮机异常振动诊断流程", "demo-gt07-repair-022", "整改建议"]:
         assert phrase in expert_feedback_form
+    expert_feedback_request_packet = (
+        PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md"
+    ).read_text(encoding="utf-8")
+    for phrase in ["专家反馈外发包", "待真实反馈归档", "不宣称已获得专家认可", "建议邮件主题"]:
+        assert phrase in expert_feedback_request_packet
     award_self_eval = (PACKAGE_DIR / "08_特等奖评审自评表.md").read_text(encoding="utf-8")
     for phrase in ["学术价值或实用性", "创新性", "作品完成情况", "现场答辩表现", "特等奖不超过6件"]:
         assert phrase in award_self_eval
@@ -211,6 +218,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_context_demo.json" in manifest
     assert "defense_rehearsal_scorecard.md" in manifest
     assert "defense_rehearsal_scorecard.json" in manifest
+    assert "expert_feedback_request_packet.md" in manifest
+    assert "expert_feedback_request_packet.json" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -278,6 +287,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/expert_feedback_form.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/expert_feedback_request_packet.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
@@ -311,6 +322,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "application_validation_report.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.json",
+        PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.md",
+        PACKAGE_DIR / "reproducibility" / "expert_feedback_request_packet.json",
         PACKAGE_DIR / "reproducibility" / "evaluation_coverage_profile.json",
         PACKAGE_DIR / "package_manifest.json",
     ]
@@ -350,6 +363,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json",
         "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
+        "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
     ]
     for target in tracked_json_entries:
         result = subprocess.run(
