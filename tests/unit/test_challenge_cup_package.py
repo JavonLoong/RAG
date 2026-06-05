@@ -178,6 +178,22 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
+    browser_smoke = json.loads((PACKAGE_DIR / "reproducibility" / "browser_demo_smoke_report.json").read_text(encoding="utf-8"))
+    browser = browser_smoke["browser"]
+    assert browser["query"] == "燃气轮机异常振动诊断流程"
+    assert "结果 5" in browser["search_meta"]
+    assert "延迟" in browser["search_meta"]
+    for evidence in [
+        "demo-maint-thresholds-076",
+        "demo-structure-fault-130",
+        "demo-gt07-fault-021",
+        "demo-gt07-repair-022",
+        "demo-gt07-manual-023",
+        "压气机出口温度偏高",
+        "进气滤网",
+        "温度传感器",
+    ]:
+        assert evidence in browser["results_preview"]
     package_manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
     evidence_files = package_manifest["evidence_files"]
     assert package_manifest["integrity_manifest"] == "docs/challenge_cup/reproducibility/evidence_hashes.json"

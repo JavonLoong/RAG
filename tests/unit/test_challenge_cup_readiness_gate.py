@@ -50,6 +50,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "60 evaluation questions" in report
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
+    assert "scenario demo evidence" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -193,6 +194,34 @@ def test_application_validation_gate_rejects_missing_case_terms(monkeypatch, tmp
 
     assert not check.passed
     assert "GT-07" in check.detail
+
+
+def test_scenario_demo_gate_rejects_missing_required_records(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    browser_json = tmp_path / "browser_demo_smoke_report.json"
+    browser_json.write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "browser": {
+                    "query": "燃气轮机异常振动诊断流程",
+                    "search_meta": "集合 gas_turbine_ocr_demo_snapshot · 延迟 42.10 ms · 结果 5 · 后端 public-demo",
+                    "results_preview": "record demo-maint-thresholds-076\nrecord demo-gt07-fault-021",
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    application_report = tmp_path / "application_validation_report.md"
+    application_report.write_text("人工确认\n边界结论\n", encoding="utf-8")
+    monkeypatch.setattr(module, "BROWSER_SMOKE_JSON", browser_json)
+    monkeypatch.setattr(module, "APPLICATION_VALIDATION_REPORT", application_report)
+
+    check = module.check_scenario_demo_evidence()
+
+    assert not check.passed
+    assert "demo-gt07-repair-022" in check.detail
 
 
 def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:

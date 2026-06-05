@@ -156,6 +156,23 @@ REQUIRED_APPLICATION_REPORT_TERMS = {
     "demo-gt07-repair-022",
     "demo-gt07-manual-023",
 }
+REQUIRED_SCENARIO_QUERY = "燃气轮机异常振动诊断流程"
+REQUIRED_SCENARIO_TERMS = {
+    "demo-maint-thresholds-076",
+    "demo-structure-fault-130",
+    "demo-gt07-fault-021",
+    "demo-gt07-repair-022",
+    "demo-gt07-manual-023",
+    "压气机出口温度偏高",
+    "进气滤网",
+    "压气机叶片",
+    "温度传感器",
+}
+REQUIRED_SCENARIO_BOUNDARY_TERMS = {
+    "人工确认",
+    "不证明",
+    "替代工程师",
+}
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 
 
@@ -511,6 +528,38 @@ def check_application_validation_evidence() -> GateCheck:
     )
 
 
+def check_scenario_demo_evidence() -> GateCheck:
+    if not BROWSER_SMOKE_JSON.exists():
+        return GateCheck("scenario demo evidence", False, "browser_demo_smoke_report.json missing")
+    payload = load_json(BROWSER_SMOKE_JSON)
+    browser = payload.get("browser", {})
+    query = str(browser.get("query", ""))
+    search_meta = str(browser.get("search_meta", ""))
+    results_preview = str(browser.get("results_preview", ""))
+    application_text = APPLICATION_VALIDATION_REPORT.read_text(encoding="utf-8") if APPLICATION_VALIDATION_REPORT.exists() else ""
+    failures: list[str] = []
+    if payload.get("status") != "pass":
+        failures.append(f"browser smoke status={payload.get('status')}")
+    if query != REQUIRED_SCENARIO_QUERY:
+        failures.append(f"query mismatch: {query}")
+    for term in ("结果 5", "延迟", "gas_turbine_ocr_demo_snapshot"):
+        if term not in search_meta:
+            failures.append(f"search_meta missing {term}")
+    for term in sorted(REQUIRED_SCENARIO_TERMS):
+        if term not in results_preview:
+            failures.append(term)
+    for term in sorted(REQUIRED_SCENARIO_BOUNDARY_TERMS):
+        if term not in application_text:
+            failures.append(f"boundary missing {term}")
+    return GateCheck(
+        "scenario demo evidence",
+        not failures,
+        "fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary"
+        if not failures
+        else f"missing scenario demo terms: {', '.join(failures)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
@@ -524,6 +573,7 @@ def run_gate() -> list[GateCheck]:
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_application_validation_evidence(),
+        check_scenario_demo_evidence(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
@@ -542,7 +592,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, claim-evidence matrix, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
