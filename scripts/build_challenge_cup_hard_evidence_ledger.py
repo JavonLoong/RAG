@@ -168,6 +168,7 @@ def write_readmes() -> None:
                 "",
                 "- `expert_feedback/`: signed feedback, email replies, meeting minutes, or chat screenshots.",
                 "- `timed_rehearsal/`: timer screenshots, recordings, observer notes, or missed-question lists.",
+                "- Each category must include at least one JSON summary with the required metadata fields; screenshots or recordings alone do not satisfy the readiness gate.",
                 text("- \\u4e0d\\u4f2a\\u9020\\u8bc1\\u636e\\uff1b\\u6ca1\\u6709\\u8fd9\\u4e24\\u7c7b\\u771f\\u5b9e\\u8bc1\\u636e\\u524d\\uff0c\\u4e0d\\u80fd\\u6807\\u8bb0\\u76ee\\u6807\\u5b8c\\u6210\\u3002"),
             ]
         ),
@@ -187,6 +188,8 @@ def write_readmes() -> None:
                     "\\u6bcf\\u4efd\\u8bc1\\u636e\\u5e94\\u80fd\\u770b\\u5230 reviewer identity\\u3001"
                     "role/org\\u3001date\\u3001review dimensions \\u548c remediation record\\u3002"
                 ),
+                "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, review_dimensions, remediation_record.",
+                "Use YYYY-MM-DD for review_date. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
             ]
         ),
     )
@@ -202,6 +205,8 @@ def write_readmes() -> None:
                     "\\u89c2\\u5bdf\\u5458\\u5907\\u6ce8\\u6216\\u95ee\\u9898\\u9057\\u6f0f\\u6e05\\u5355\\u3002"
                 ),
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
+                "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path.",
+                "Use YYYY-MM-DD for rehearsal_date. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
                 text("\\u8d85\\u65f6\\u548c\\u7b54\\u8fa9\\u9057\\u6f0f\\u70b9\\u5fc5\\u987b\\u4fdd\\u7559\\uff0c\\u4e0d\\u80fd\\u7c89\\u9970\\u4e3a\\u901a\\u8fc7\\u3002"),
             ]
         ),

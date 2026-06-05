@@ -704,6 +704,260 @@ def test_hard_evidence_ledger_gate_rejects_fake_completion(monkeypatch, tmp_path
     assert "completion_claim_allowed" in check.detail
 
 
+def install_hard_evidence_fixture(
+    module,
+    monkeypatch,
+    tmp_path: Path,
+    payload: dict,
+    raw_files: dict[str, dict],
+) -> None:
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    path_attrs = {
+        "HARD_EVIDENCE_LEDGER_JSON": "HARD_EVIDENCE_LEDGER_JSON_RELATIVE",
+        "HARD_EVIDENCE_LEDGER_MD": "HARD_EVIDENCE_LEDGER_MD_RELATIVE",
+        "HARD_EVIDENCE_README": "HARD_EVIDENCE_README_RELATIVE",
+        "HARD_EVIDENCE_EXPERT_README": "HARD_EVIDENCE_EXPERT_README_RELATIVE",
+        "HARD_EVIDENCE_REHEARSAL_README": "HARD_EVIDENCE_REHEARSAL_README_RELATIVE",
+    }
+    for attr, relative_attr in path_attrs.items():
+        monkeypatch.setattr(module, attr, tmp_path / getattr(module, relative_attr))
+
+    module.HARD_EVIDENCE_LEDGER_JSON.parent.mkdir(parents=True, exist_ok=True)
+    module.HARD_EVIDENCE_LEDGER_JSON.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    module.HARD_EVIDENCE_LEDGER_MD.write_text(
+        "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988\n"
+        "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392\n"
+        "\u4e0d\u4f2a\u9020\n"
+        "\u4e0d\u80fd\u6807\u8bb0\u76ee\u6807\u5b8c\u6210\n",
+        encoding="utf-8",
+    )
+    for path in (module.HARD_EVIDENCE_README, module.HARD_EVIDENCE_EXPERT_README, module.HARD_EVIDENCE_REHEARSAL_README):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("hard evidence intake\n", encoding="utf-8")
+    for relative, content in raw_files.items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(content, ensure_ascii=False), encoding="utf-8")
+
+    evidence_files = module.HARD_EVIDENCE_REQUIRED_PATHS + sorted(raw_files)
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    hashes = tmp_path / "evidence_hashes.json"
+    hashes.write_text(
+        json.dumps({"files": [{"path": path} for path in evidence_files]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive_manifest = tmp_path / "challenge_cup_submission_archive_manifest.json"
+    archive_manifest.write_text(json.dumps({"included_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(evidence_files))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+
+def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dict:
+    return {
+        "report_type": "challenge_cup_hard_evidence_ledger",
+        "status": "hard_evidence_collected_pending_review",
+        "completion_claim_allowed": True,
+        "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+        "categories": {
+            "expert_feedback": {
+                "required_min_count": 1,
+                "collected_count": 1,
+                "accepted_evidence_types": ["signed_feedback_form", "email_reply", "meeting_minutes", "chat_screenshot"],
+                "required_metadata_fields": [
+                    "reviewer_identity",
+                    "role_or_org",
+                    "review_date",
+                    "feedback_source_path",
+                    "review_dimensions",
+                    "remediation_record",
+                ],
+                "evidence_files": [expert_file],
+            },
+            "timed_rehearsal": {
+                "required_min_count": 1,
+                "collected_count": 1,
+                "accepted_evidence_types": ["timer_screenshot", "screen_recording", "observer_note", "missed_question_list"],
+                "required_metadata_fields": [
+                    "rehearsal_date",
+                    "observer",
+                    "opening_actual_seconds",
+                    "demo_actual_seconds",
+                    "offline_fallback_actual_seconds",
+                    "killer_question_results",
+                    "recording_or_timer_source_path",
+                ],
+                "evidence_files": [rehearsal_file],
+            },
+        },
+        "no_fake_evidence_rules": ["\u4e0d\u4f2a\u9020\u5916\u90e8\u610f\u89c1"],
+    }
+
+
+def test_hard_evidence_ledger_gate_rejects_expert_feedback_without_required_metadata(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_file = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/expert_feedback_summary.json"
+    rehearsal_file = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timed_rehearsal_summary.json"
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        hard_evidence_complete_payload(expert_file, rehearsal_file),
+        {
+            expert_file: {
+                "evidence_type": "email_reply",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": expert_file,
+                "review_dimensions": ["usefulness", "innovation", "boundary"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            },
+            rehearsal_file: {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 88,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+                "recording_or_timer_source_path": rehearsal_file,
+            },
+        },
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "reviewer_identity" in check.detail
+
+
+def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_question_count(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    expert_file = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/expert_feedback_summary.json"
+    rehearsal_file = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timed_rehearsal_summary.json"
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        hard_evidence_complete_payload(expert_file, rehearsal_file),
+        {
+            expert_file: {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "reviewer-a",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": expert_file,
+                "review_dimensions": ["usefulness", "innovation", "boundary"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            },
+            rehearsal_file: {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 96,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [{"question_index": 1, "actual_seconds": 25}],
+                "recording_or_timer_source_path": rehearsal_file,
+            },
+        },
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "opening_actual_seconds" in check.detail
+    assert "killer_question_results" in check.detail
+
+
+def test_hard_evidence_ledger_gate_rejects_metadata_without_real_source_attachment(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_file = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/expert_feedback_summary.json"
+    rehearsal_file = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timed_rehearsal_summary.json"
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        hard_evidence_complete_payload(expert_file, rehearsal_file),
+        {
+            expert_file: {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "reviewer-a",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": expert_file,
+                "review_dimensions": ["usefulness", "innovation", "boundary"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            },
+            rehearsal_file: {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 88,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+                "recording_or_timer_source_path": rehearsal_file,
+            },
+        },
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "feedback_source_path" in check.detail
+    assert "recording_or_timer_source_path" in check.detail
+
+
+def test_hard_evidence_ledger_gate_rejects_non_iso_evidence_dates(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_file = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/expert_feedback_summary.json"
+    rehearsal_file = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timed_rehearsal_summary.json"
+    expert_attachment = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/email_reply.txt"
+    rehearsal_attachment = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timer_note.txt"
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        hard_evidence_complete_payload(expert_file, rehearsal_file),
+        {
+            expert_file: {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "reviewer-a",
+                "role_or_org": "advisor",
+                "review_date": "June 6 2026",
+                "feedback_source_path": expert_attachment,
+                "review_dimensions": ["usefulness", "innovation", "boundary"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            },
+            rehearsal_file: {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026/06/06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 88,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+                "recording_or_timer_source_path": rehearsal_attachment,
+            },
+            expert_attachment: {"note": "source attachment placeholder for test"},
+            rehearsal_attachment: {"note": "timer source attachment placeholder for test"},
+        },
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "review_date" in check.detail
+    assert "rehearsal_date" in check.detail
+
+
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     demo_script = tmp_path / "demo.md"

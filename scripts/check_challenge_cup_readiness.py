@@ -9,6 +9,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from collections import Counter
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -248,6 +249,14 @@ HARD_EVIDENCE_MARKDOWN_TERMS = {
     "不能标记目标完成",
 }
 HARD_EVIDENCE_REQUIRED_CATEGORIES = {"expert_feedback", "timed_rehearsal"}
+HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS = 3
+HARD_EVIDENCE_TIMING_LIMITS = {
+    "opening_actual_seconds": 90,
+    "demo_actual_seconds": 180,
+    "offline_fallback_actual_seconds": 20,
+    "killer_question_actual_seconds": 30,
+    "killer_question_count": 5,
+}
 GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
     "GraphRAG answer benchmark",
     "10 道 GraphRAG 同题",
@@ -470,6 +479,52 @@ class GateCheck:
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def has_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, tuple, set)):
+        return bool(value)
+    return True
+
+
+def numeric_value(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
+def is_iso_date(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def validate_source_path(relative: str, payload: dict[str, Any], field: str) -> list[str]:
+    failures: list[str] = []
+    source = str(payload.get(field, "")).strip()
+    if not source:
+        failures.append(f"{relative}: {field} missing")
+        return failures
+    posix = PurePosixPath(source)
+    if posix.is_absolute() or ".." in posix.parts or "\\" in source:
+        failures.append(f"{relative}: {field} unsafe")
+        return failures
+    if source == relative:
+        failures.append(f"{relative}: {field} points to metadata file")
+        return failures
+    if not nonempty(REPO_ROOT / source):
+        failures.append(f"{relative}: {field} missing or empty")
+    return failures
 
 
 def count_jsonl(path: Path) -> int:
@@ -1670,6 +1725,91 @@ def check_expert_feedback_request_packet() -> GateCheck:
     )
 
 
+def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], category: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    accepted_types = {str(item) for item in category.get("accepted_evidence_types", [])}
+    evidence_type = str(payload.get("evidence_type", ""))
+    if evidence_type not in accepted_types:
+        failures.append(f"{relative}: evidence_type={evidence_type}")
+    for field in category.get("required_metadata_fields", []):
+        if not has_value(payload.get(str(field))):
+            failures.append(f"{relative}: {field} missing")
+    review_dimensions = payload.get("review_dimensions")
+    if not isinstance(review_dimensions, list) or len(review_dimensions) < HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS:
+        failures.append(f"{relative}: review_dimensions below {HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS}")
+    remediation_record = payload.get("remediation_record")
+    if not isinstance(remediation_record, list) or not remediation_record:
+        failures.append(f"{relative}: remediation_record missing")
+    if not is_iso_date(payload.get("review_date")):
+        failures.append(f"{relative}: review_date must be YYYY-MM-DD")
+    failures.extend(validate_source_path(relative, payload, "feedback_source_path"))
+    return failures
+
+
+def validate_timed_rehearsal_metadata(relative: str, payload: dict[str, Any], category: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    accepted_types = {str(item) for item in category.get("accepted_evidence_types", [])}
+    evidence_type = str(payload.get("evidence_type", ""))
+    if evidence_type not in accepted_types:
+        failures.append(f"{relative}: evidence_type={evidence_type}")
+    for field in category.get("required_metadata_fields", []):
+        if not has_value(payload.get(str(field))):
+            failures.append(f"{relative}: {field} missing")
+
+    for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
+        actual = numeric_value(payload.get(field))
+        limit = HARD_EVIDENCE_TIMING_LIMITS[field]
+        if actual is None:
+            failures.append(f"{relative}: {field} must be numeric")
+        elif actual > limit:
+            failures.append(f"{relative}: {field}={actual:g} exceeds {limit}")
+
+    if not is_iso_date(payload.get("rehearsal_date")):
+        failures.append(f"{relative}: rehearsal_date must be YYYY-MM-DD")
+    failures.extend(validate_source_path(relative, payload, "recording_or_timer_source_path"))
+
+    killer_results = payload.get("killer_question_results")
+    if not isinstance(killer_results, list):
+        failures.append(f"{relative}: killer_question_results missing")
+        return failures
+    required_count = HARD_EVIDENCE_TIMING_LIMITS["killer_question_count"]
+    if len(killer_results) < required_count:
+        failures.append(f"{relative}: killer_question_results below {required_count}")
+    for index, item in enumerate(killer_results, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"{relative}: killer_question_results[{index}] invalid")
+            continue
+        actual = numeric_value(item.get("actual_seconds"))
+        limit = HARD_EVIDENCE_TIMING_LIMITS["killer_question_actual_seconds"]
+        if actual is None:
+            failures.append(f"{relative}: killer_question_results[{index}].actual_seconds must be numeric")
+        elif actual > limit:
+            failures.append(f"{relative}: killer_question_results[{index}].actual_seconds={actual:g} exceeds {limit}")
+    return failures
+
+
+def validate_hard_evidence_metadata(category_key: str, files: list[str], category: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if not files:
+        return failures
+    metadata_files = [relative for relative in files if relative.lower().endswith(".json")]
+    if not metadata_files:
+        failures.append(f"{category_key}: metadata json missing")
+        return failures
+    for relative in metadata_files:
+        path = REPO_ROOT / relative
+        try:
+            payload = load_json(path)
+        except (OSError, json.JSONDecodeError) as exc:
+            failures.append(f"{relative}: invalid metadata json: {exc}")
+            continue
+        if category_key == "expert_feedback":
+            failures.extend(validate_expert_feedback_metadata(relative, payload, category))
+        elif category_key == "timed_rehearsal":
+            failures.extend(validate_timed_rehearsal_metadata(relative, payload, category))
+    return failures
+
+
 def check_hard_evidence_ledger() -> GateCheck:
     failures: list[str] = []
     required_files = [
@@ -1722,6 +1862,10 @@ def check_hard_evidence_ledger() -> GateCheck:
             failures.append(f"{key}.accepted_evidence_types missing")
         if not category.get("required_metadata_fields"):
             failures.append(f"{key}.required_metadata_fields missing")
+        metadata_failures = validate_hard_evidence_metadata(key, files, category)
+        if metadata_failures:
+            category_satisfied = False
+            failures.extend(metadata_failures)
 
     completion_claim_allowed = payload.get("completion_claim_allowed")
     if completion_claim_allowed is True and not category_satisfied:
