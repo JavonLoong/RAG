@@ -524,6 +524,27 @@ REQUIRED_EXPERT_FEEDBACK_FORM_TERMS = {
 }
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 COMMAND_FRAGMENTS = (";", "http://", "https://")
+CHALLENGE_CUP_TEXT_SUFFIXES = {".md", ".json", ".txt"}
+CHINESE_READABILITY_REQUIRED_TERMS = {
+    "挑战杯",
+    "结项",
+    "专家反馈",
+    "GraphRAG",
+    "不伪造",
+    "真实计时彩排",
+}
+MOJIBAKE_MARKERS = (
+    "\ufffd",
+    "锛",
+    "銆",
+    "鈥",
+    "娓呭崕",
+    "鎸戞垬",
+    "鐗圭瓑",
+    "缁撻",
+    "涓撳",
+    "璇勫",
+)
 
 
 @dataclass(slots=True)
@@ -617,6 +638,26 @@ def nonempty(path: Path) -> bool:
     return path.exists() and path.stat().st_size > 0
 
 
+def display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        try:
+            return path.relative_to(PACKAGE_DIR).as_posix()
+        except ValueError:
+            return path.as_posix()
+
+
+def challenge_cup_text_paths() -> list[Path]:
+    if not PACKAGE_DIR.exists():
+        return []
+    return sorted(
+        path
+        for path in PACKAGE_DIR.rglob("*")
+        if path.is_file() and path.suffix.lower() in CHALLENGE_CUP_TEXT_SUFFIXES
+    )
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -666,6 +707,40 @@ def check_package_docs() -> GateCheck:
         "package documents",
         not missing,
         "all required challenge cup docs exist" if not missing else f"missing: {', '.join(missing)}",
+    )
+
+
+def check_challenge_cup_chinese_readability() -> GateCheck:
+    if not PACKAGE_DIR.exists():
+        return GateCheck("chinese readability", False, "docs/challenge_cup missing")
+    paths = challenge_cup_text_paths()
+    if not paths:
+        return GateCheck("chinese readability", False, "no challenge cup text artifacts found")
+
+    failures: list[str] = []
+    combined: list[str] = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            failures.append(f"{display_path(path)}: invalid utf-8 ({exc})")
+            continue
+        combined.append(text)
+        hits = [marker for marker in MOJIBAKE_MARKERS if marker in text]
+        if hits:
+            failures.append(f"{display_path(path)}: mojibake markers {', '.join(hits[:4])}")
+
+    aggregate_text = "\n".join(combined)
+    missing_terms = sorted(term for term in CHINESE_READABILITY_REQUIRED_TERMS if term not in aggregate_text)
+    if missing_terms:
+        failures.append(f"missing required Chinese review terms: {', '.join(missing_terms)}")
+
+    return GateCheck(
+        "chinese readability",
+        not failures,
+        f"{len(paths)} challenge-cup text artifacts are UTF-8 readable with required Chinese review terms"
+        if not failures
+        else "; ".join(failures[:12]),
     )
 
 
@@ -2416,6 +2491,7 @@ def check_expert_feedback_protocol() -> GateCheck:
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
+        check_challenge_cup_chinese_readability(),
         check_package_control_files(),
         check_eval_dataset(),
         check_evaluation_coverage_profile(),
@@ -2461,7 +2537,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

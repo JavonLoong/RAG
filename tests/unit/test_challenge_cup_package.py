@@ -334,6 +334,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
+    assert "Status: pass (32/32 gates)" in command_log
+    assert "Status: pass (30/30 gates)" not in command_log
     browser_smoke = json.loads((PACKAGE_DIR / "reproducibility" / "browser_demo_smoke_report.json").read_text(encoding="utf-8"))
     browser = browser_smoke["browser"]
     assert browser["query"] == "燃气轮机异常振动诊断流程"

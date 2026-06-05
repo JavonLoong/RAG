@@ -74,6 +74,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
     assert "package control files" in report
+    assert "chinese readability" in report
     assert "package evidence files" in report
     assert "submission archive" in report
     assert "claim-evidence matrix" in report
@@ -123,6 +124,28 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
 
     assert "Status: pass" in result.stdout
     assert REPORT.exists()
+
+
+def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    package_dir.mkdir(parents=True)
+    (package_dir / "README_先看这里.md").write_text(
+        "挑战杯 结项 专家反馈 GraphRAG 不伪造 真实计时彩排\n",
+        encoding="utf-8",
+    )
+    mojibake = "清华挑战杯".encode("utf-8").decode("gbk", errors="replace")
+    (package_dir / "01_挑战杯项目书.md").write_text(
+        f"# 项目书\n\n{mojibake}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_challenge_cup_chinese_readability()
+
+    assert not check.passed
+    assert "mojibake" in check.detail
+    assert "01_挑战杯项目书.md" in check.detail
 
 
 def test_claim_matrix_gate_rejects_missing_evidence_paths(tmp_path, monkeypatch) -> None:
