@@ -122,8 +122,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 966,
-      "sha256": "b7ed0d2158efbb75f24247664c5a6e9744f932772434f52d774eb6648690b2d9"
+      "bytes": 957,
+      "sha256": "0b291e929a20b78f368c5198805dedd8f5554c8909c59cb272d7ec13064a71a1"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
