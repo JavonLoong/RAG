@@ -13,7 +13,7 @@
 | package evidence files | pass | 45 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 44 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 59 files archived; 2419925 bytes; sha256 verified |
+| submission archive | pass | 59 files archived; 2420162 bytes; sha256 verified |
 | numeric consistency | pass | 60 questions, 45 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
