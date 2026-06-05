@@ -1,14 +1,15 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 6/6
-- Scope: challenge-cup package docs, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 7/7
+- Scope: challenge-cup package docs, claim-evidence matrix, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
 | 60 evaluation questions | pass | 60 evaluation questions |
-| package evidence files | pass | 12 evidence files tracked; 60 questions |
+| package evidence files | pass | 13 evidence files tracked; 60 questions |
+| claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries |
 | live demo smoke checks | pass | 5/5 checks pass |
 | browser smoke checks | pass | 12/12 checks pass |
 | browser visual evidence | pass | 4 screenshots and 4 KG artifacts verified |

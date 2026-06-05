@@ -6,6 +6,7 @@
 - Day3 baseline：`evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md`。
 - Day4 失败分析：`evaluation/reports/day4_failure_analysis_20260605_210642.md`。
 - GraphRAG 同题子集：`evaluation/reports/challenge_cup_graphrag_same_question_report.md`。
+- 评审主张证据矩阵：`docs/challenge_cup/07_评审主张证据矩阵.md`。
 - 现场演示烟测：`docs/challenge_cup/reproducibility/live_demo_smoke_report.md`。
 - 真实浏览器演示烟测：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 - 真实浏览器烟测 JSON：`docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`。

@@ -12,6 +12,7 @@ OUT = REPO_ROOT / "docs" / "challenge_cup"
 REPRO = OUT / "reproducibility"
 REPORTS = REPO_ROOT / "evaluation" / "reports"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
+CLAIM_MATRIX = OUT / "07_评审主张证据矩阵.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 LIVE_SMOKE_REPORT = REPRO / "live_demo_smoke_report.md"
 BROWSER_SMOKE_REPORT = REPRO / "browser_demo_smoke_report.md"
@@ -113,9 +114,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 5. `04_系统演示脚本.md`
 6. `05_答辩问答手册.md`
 7. `06_结项验收清单.md`
-8. `reproducibility/runbook.md`
-9. `reproducibility/dataset_manifest.md`
-10. `reproducibility/readiness_gate_report.md`
+8. `07_评审主张证据矩阵.md`
+9. `reproducibility/runbook.md`
+10. `reproducibility/dataset_manifest.md`
+11. `reproducibility/readiness_gate_report.md`
 
 ## 当前核心数字
 
@@ -303,6 +305,24 @@ def build_checklist(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
+    day3_ref = optional_md_link(ctx["day3"])
+    day4_ref = optional_md_link(ctx["day4"])
+    graph_ref = optional_md_link(ctx["graph_report"])
+    return f"""# 评审主张证据矩阵
+
+本矩阵把挑战杯答辩中的高水平主张逐条绑定到可核验材料、复现命令和边界说明，避免把项目包装成只有演示页面的普通 RAG 工具。
+
+| 评审维度 | 可答辩主张 | 直接证据 | 复现 / 验证命令 | 边界说明 |
+| --- | --- | --- | --- | --- |
+| 创新性 | 项目不是单纯问答页面，而是面向动力装备知识的 evidence-bound RAG / GraphRAG 工程闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `{graph_ref}`; `docs/project_deliverables/06_四本书KG工具跑通演示/kg_evidence_viewer.html` | `python scripts/build_graphrag_challenge_report.py` | GraphRAG 用于关系证据组织，不声称在所有问题上必然优于普通 RAG。 |
+| 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
+| 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因和 GraphRAG 同题子集。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py` | 评测集是当前阶段的课程 / 挑战杯评测集，后续可扩展为更大 benchmark。 |
+| 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
+| 应用边界 | 系统定位为证据型辅助和知识资产整理，不替代工程师做最终运维决策。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/03_实验评测报告.md` | `python scripts/check_challenge_cup_readiness.py` | 对高风险维修决策保留人工确认和证据不足提示。 |
+"""
+
+
 def build_runbook(ctx: dict[str, Any]) -> str:
     return """# 可复现运行手册
 
@@ -361,6 +381,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - Day3 baseline：`{optional_md_link(ctx["day3"])}`。
 - Day4 失败分析：`{optional_md_link(ctx["day4"])}`。
 - GraphRAG 同题子集：`{optional_md_link(ctx["graph_report"])}`。
+- 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 现场演示烟测：`{md_link(LIVE_SMOKE_REPORT)}`。
 - 真实浏览器演示烟测：`{md_link(BROWSER_SMOKE_REPORT)}`。
 - 真实浏览器烟测 JSON：`{md_link(BROWSER_SMOKE_JSON)}`。
@@ -429,7 +450,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (6/6 gates)
+-> Status: pass (7/7 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -446,6 +467,7 @@ def main() -> int:
     write(OUT / "04_系统演示脚本.md", build_demo_script(ctx))
     write(OUT / "05_答辩问答手册.md", build_qa(ctx))
     write(OUT / "06_结项验收清单.md", build_checklist(ctx))
+    write(CLAIM_MATRIX, build_claim_evidence_matrix(ctx))
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(REPRO / "command_log.md", build_command_log(ctx))
@@ -455,6 +477,7 @@ def main() -> int:
         "question_count": ctx["question_count"],
         "evidence_files": [
             md_link(DATASET),
+            md_link(CLAIM_MATRIX),
             md_link(LIVE_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_REPORT),
             md_link(BROWSER_SMOKE_JSON),

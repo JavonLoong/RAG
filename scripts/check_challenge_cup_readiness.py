@@ -13,6 +13,7 @@ REPRO_DIR = PACKAGE_DIR / "reproducibility"
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
+CLAIM_MATRIX = PACKAGE_DIR / "07_评审主张证据矩阵.md"
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 REPORT_MD = REPRO_DIR / "readiness_gate_report.md"
 
@@ -25,6 +26,7 @@ REQUIRED_PACKAGE_DOCS = [
     "04_系统演示脚本.md",
     "05_答辩问答手册.md",
     "06_结项验收清单.md",
+    "07_评审主张证据矩阵.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/command_log.md",
@@ -51,6 +53,17 @@ REQUIRED_LIVE_CHECKS = {
     "trusted cors origin",
     "search top_k guard",
     "graphrag path guard",
+}
+
+REQUIRED_CLAIM_MATRIX_TERMS = {
+    "创新性",
+    "工程闭环",
+    "科学评测",
+    "可复现",
+    "应用边界",
+    "evaluation/system_eval_questions.jsonl",
+    "browser_demo_smoke_report.md",
+    "readiness_gate_report.md",
 }
 
 
@@ -138,11 +151,24 @@ def check_browser_evidence_files() -> GateCheck:
     return GateCheck("browser visual evidence", passed, detail)
 
 
+def check_claim_evidence_matrix() -> GateCheck:
+    if not CLAIM_MATRIX.exists():
+        return GateCheck("claim-evidence matrix", False, "07_评审主张证据矩阵.md missing")
+    text = CLAIM_MATRIX.read_text(encoding="utf-8")
+    missing = sorted(term for term in REQUIRED_CLAIM_MATRIX_TERMS if term not in text)
+    return GateCheck(
+        "claim-evidence matrix",
+        not missing,
+        "award claims mapped to evidence, commands, and boundaries" if not missing else f"missing terms: {', '.join(missing)}",
+    )
+
+
 def run_gate() -> list[GateCheck]:
     return [
         check_package_docs(),
         check_eval_dataset(),
         check_package_manifest(),
+        check_claim_evidence_matrix(),
         check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
@@ -161,7 +187,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, claim-evidence matrix, evaluation dataset, evidence manifest, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

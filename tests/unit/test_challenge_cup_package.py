@@ -32,6 +32,7 @@ REQUIRED_PACKAGE_FILES = [
     "04_系统演示脚本.md",
     "05_答辩问答手册.md",
     "06_结项验收清单.md",
+    "07_评审主张证据矩阵.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/command_log.md",
@@ -77,7 +78,17 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "27" in one_page
     assert "GraphRAG" in one_page
     readme = (PACKAGE_DIR / "README_先看这里.md").read_text(encoding="utf-8")
+    assert "07_评审主张证据矩阵.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
+    claim_matrix = (PACKAGE_DIR / "07_评审主张证据矩阵.md").read_text(encoding="utf-8")
+    for phrase in ["创新性", "工程闭环", "科学评测", "可复现", "应用边界"]:
+        assert phrase in claim_matrix
+    for evidence in [
+        "evaluation/system_eval_questions.jsonl",
+        "browser_demo_smoke_report.md",
+        "readiness_gate_report.md",
+    ]:
+        assert evidence in claim_matrix
     eval_report = (PACKAGE_DIR / "03_实验评测报告.md").read_text(encoding="utf-8")
     assert "GraphRAG 同题子集" in eval_report
     assert "challenge_cup_graphrag_same_question_report.md" in eval_report
@@ -101,6 +112,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     evidence_files = package_manifest["evidence_files"]
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
+    assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
