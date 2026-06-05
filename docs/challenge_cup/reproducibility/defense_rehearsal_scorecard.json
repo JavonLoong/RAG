@@ -1,0 +1,123 @@
+{
+  "report_type": "challenge_cup_defense_rehearsal_scorecard",
+  "status": "ready_for_timed_rehearsal",
+  "boundary": "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense has already happened or guarantee an award.",
+  "timing_targets": {
+    "opening_seconds": 90,
+    "demo_seconds": 180,
+    "offline_fallback_seconds": 20,
+    "killer_question_seconds": 30
+  },
+  "opening_required_points": [
+    "问题",
+    "方法",
+    "完成度",
+    "边界"
+  ],
+  "demo_timeline": [
+    {
+      "timebox": "0:00-0:30",
+      "focus": "项目一页纸",
+      "pass_condition": "问题、用户和交付物在半分钟内讲清。",
+      "evidence_anchor": "docs/challenge_cup/00_项目一页纸.md"
+    },
+    {
+      "timebox": "0:30-1:20",
+      "focus": "浏览器检索演示",
+      "pass_condition": "展示真实可运行页面和检索证据，不停留在口头描述。",
+      "evidence_anchor": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md"
+    },
+    {
+      "timebox": "1:20-2:10",
+      "focus": "GraphRAG 关系证据",
+      "pass_condition": "讲清文本证据与图谱证据如何共同支撑同一问题。",
+      "evidence_anchor": "evaluation/reports/challenge_cup_graphrag_context_demo.md"
+    },
+    {
+      "timebox": "2:10-2:40",
+      "focus": "readiness gate",
+      "pass_condition": "展示机器校验通过项，同时不把 readiness gate 说成获奖保证。",
+      "evidence_anchor": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
+    },
+    {
+      "timebox": "2:40-3:00",
+      "focus": "边界与下一步",
+      "pass_condition": "明确当前验证边界和后续扩展，不夸大生产级覆盖。",
+      "evidence_anchor": "docs/challenge_cup/08_特等奖评审自评表.md"
+    }
+  ],
+  "killer_questions": [
+    {
+      "question": "这和普通 RAG 的本质差异是什么？",
+      "answer_seconds": 30,
+      "answer_frame": "先承认普通 RAG 是强基线，再说明本项目多了可审计关系证据和同题对照。",
+      "evidence_anchors": [
+        "docs/challenge_cup/03_实验评测报告.md",
+        "docs/challenge_cup/07_评审主张证据矩阵.md",
+        "evaluation/reports/challenge_cup_graphrag_same_question_report.md"
+      ]
+    },
+    {
+      "question": "GraphRAG 是否一定全面优于 keyword 或 hybrid？",
+      "answer_seconds": 30,
+      "answer_frame": "不做绝对化表述，只主张在需要关系解释和证据追踪的问题上有可展示优势。",
+      "evidence_anchors": [
+        "docs/challenge_cup/03_实验评测报告.md",
+        "docs/challenge_cup/05_答辩问答手册.md",
+        "evaluation/reports/challenge_cup_graphrag_context_demo.md"
+      ]
+    },
+    {
+      "question": "当前数据规模是否足以支撑真实生产级运维？",
+      "answer_seconds": 30,
+      "answer_frame": "把范围限定为教学科研验证集，强调已完成数据、索引、评测、演示闭环。",
+      "evidence_anchors": [
+        "docs/challenge_cup/reproducibility/dataset_manifest.md",
+        "docs/challenge_cup/reproducibility/application_validation_report.md",
+        "docs/challenge_cup/08_特等奖评审自评表.md"
+      ]
+    },
+    {
+      "question": "如果现场服务、浏览器或网络出问题怎么办？",
+      "answer_seconds": 30,
+      "answer_frame": "20 秒内切换到离线截图、smoke report 和固定演示脚本，避免现场阻塞。",
+      "evidence_anchors": [
+        "docs/challenge_cup/04_系统演示脚本.md",
+        "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+        "docs/challenge_cup/reproducibility/runbook.md"
+      ]
+    },
+    {
+      "question": "为什么这个项目具备冲击特等奖的完整度？",
+      "answer_seconds": 30,
+      "answer_frame": "用一页纸、证据矩阵和 readiness gate 串起创新性、工程性、可复现性与边界。",
+      "evidence_anchors": [
+        "docs/challenge_cup/00_项目一页纸.md",
+        "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+        "docs/challenge_cup/10_答辩攻防与彩排卡.md"
+      ]
+    }
+  ],
+  "no_overclaim_boundaries": [
+    "不说已经替代工程师",
+    "不说 GraphRAG 对所有问题都更强",
+    "不说当前数据覆盖真实生产全场景",
+    "不把 readiness gate 说成获奖保证",
+    "不伪造专家反馈或现场彩排记录"
+  ],
+  "minimum_evidence_anchor_count": 14,
+  "evidence_files": [
+    "docs/challenge_cup/00_项目一页纸.md",
+    "docs/challenge_cup/03_实验评测报告.md",
+    "docs/challenge_cup/04_系统演示脚本.md",
+    "docs/challenge_cup/05_答辩问答手册.md",
+    "docs/challenge_cup/07_评审主张证据矩阵.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
+    "docs/challenge_cup/10_答辩攻防与彩排卡.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/application_validation_report.md",
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+    "evaluation/reports/challenge_cup_graphrag_context_demo.md",
+    "evaluation/reports/challenge_cup_graphrag_same_question_report.md"
+  ]
+}

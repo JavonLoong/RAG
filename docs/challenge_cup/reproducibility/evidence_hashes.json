@@ -17,8 +17,8 @@
     },
     {
       "path": "docs/challenge_cup/08_特等奖评审自评表.md",
-      "bytes": 3024,
-      "sha256": "ef74fd0ad285d43054f5434ca9ad3328f1c1e5143f2693518ba4a8e528f35ba8"
+      "bytes": 3118,
+      "sha256": "3ad6c152b392d6474572a3079b98da6576deb037c1636f3b93dba57333b6be3d"
     },
     {
       "path": "docs/challenge_cup/09_专家快速审阅索引.md",
@@ -27,8 +27,8 @@
     },
     {
       "path": "docs/challenge_cup/10_答辩攻防与彩排卡.md",
-      "bytes": 3746,
-      "sha256": "9a45bf98d0599c9bd6f5071f261598d50682fc5d307caee180c9e980cd7e342c"
+      "bytes": 3888,
+      "sha256": "d770978cf44d75a75911eb3f4b3772c6bfdc771cf3ce04e35efc2e9c4dea8d22"
     },
     {
       "path": "docs/challenge_cup/11_应用场景与专家验证.md",
@@ -74,6 +74,16 @@
       "path": "docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png",
       "bytes": 140697,
       "sha256": "29020753ba85de0cef009b50de9e3a033bd0dcb3418a76d3af193161d0c78ac9"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
+      "bytes": 5359,
+      "sha256": "465337d20581448e526cabccbcf01c062d97bfb15e92dd77de10a62dee87cc10"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md",
+      "bytes": 4306,
+      "sha256": "3989be926689fbe26e80258779dc9a4d44dbea7843645d27451dd7e4907ea3c8"
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_form.md",

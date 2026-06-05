@@ -8,6 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from build_defense_rehearsal_scorecard import (
+    OUTPUT_JSON as DEFENSE_REHEARSAL_SCORECARD_JSON,
+    OUTPUT_MD as DEFENSE_REHEARSAL_SCORECARD_MD,
+    build_payload as build_defense_scorecard_payload,
+    write_outputs as write_defense_scorecard_outputs,
+)
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT = REPO_ROOT / "docs" / "challenge_cup"
@@ -202,6 +209,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 16. `reproducibility/runbook.md`
 17. `reproducibility/dataset_manifest.md`
 18. `reproducibility/readiness_gate_report.md`
+19. `reproducibility/defense_rehearsal_scorecard.md`
 
 ## 当前核心数字
 
@@ -470,7 +478,7 @@ def build_award_self_eval(ctx: dict[str, Any]) -> str:
 | 学术价值或实用性 | A- | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/03_实验评测报告.md`; `evaluation/system_eval_questions.jsonl` | 把动力装备运维知识的真实痛点讲清楚，强调证据型辅助而非泛问答。 | 避免把课程数据包装成生产级运维闭环。 |
 | 创新性 | A- | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md`; `docs/project_deliverables/06_四本书KG工具跑通演示/kg_evidence_viewer.html` | 强调 evidence-bound KG、失败归因和 GraphRAG 同题子集，而不是只说用了 RAG。 | 明确 GraphRAG 不保证所有问题都超过普通 RAG。 |
 | 作品完成情况 | A | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/runbook.md` | 现场先跑 readiness gate，再展示浏览器截图和 KG artifact。 | 如果 live backend 异常，按离线证据包继续答辩。 |
-| 现场答辩表现 | B+ | `docs/challenge_cup/04_系统演示脚本.md`; `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/reproducibility/command_log.md` | 3分钟内讲清“问题-方法-证据-边界”，把失败案例变成科学性而不是扣分点。 | 需要继续做限时 rehearsal，避免被问到生产部署和真实运维责任时失焦。 |
+| 现场答辩表现 | A- | `docs/challenge_cup/04_系统演示脚本.md`; `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`; `docs/challenge_cup/reproducibility/command_log.md` | 3分钟内讲清“问题-方法-证据-边界”，把失败案例变成科学性而不是扣分点。 | 仍需正式现场前按 scorecard 做真实计时彩排并归档，不把准备状态说成已经完成现场答辩。 |
 | 特等奖不超过6件 | 目标状态 | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | 用“可复现证据链 + 严谨边界 + 工程闭环”争取进入特等奖讨论。 | 不把奖项概率写成承诺；持续补强演示稳定性和答辩节奏。 |
 """
 
@@ -559,6 +567,7 @@ def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
 - 90秒开场不超时，且必须讲到问题、方法、完成度和边界。
 - 三分钟演示节奏完整跑完，现场失败时能在 20 秒内切换到离线证据包。
 - 每个杀手问题至少能在 30 秒内给出一句结论和一个证据锚点。
+- 彩排后复核 `docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`，确认没有把 readiness gate 说成获奖保证。
 - 彩排结束后运行：
 
 ```powershell
@@ -775,6 +784,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
+- 答辩彩排计分卡：`{md_link(DEFENSE_REHEARSAL_SCORECARD_MD)}`。
+- 答辩彩排计分 JSON：`{md_link(DEFENSE_REHEARSAL_SCORECARD_JSON)}`。
 - 应用场景与专家验证：`{md_link(APPLICATION_VALIDATION_DOC)}`。
 - 应用验证报告：`{md_link(APPLICATION_VALIDATION_REPORT)}`。
 - 专家反馈采集与整改闭环：`{md_link(EXPERT_FEEDBACK_PROTOCOL)}`。
@@ -846,6 +857,10 @@ python scripts/build_graphrag_context_demo.py
 -> evaluation/reports/challenge_cup_graphrag_context_demo.md
 -> evaluation/reports/challenge_cup_graphrag_context_demo.json
 
+python scripts/build_defense_rehearsal_scorecard.py
+-> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
+-> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -857,7 +872,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (21/21 gates)
+-> Status: pass (22/22 gates)
 ```
 
 推荐复现命令见 `runbook.md`。重新运行后，以新的终端输出和报告时间戳为准。
@@ -882,6 +897,7 @@ def main() -> int:
     write(EXPERT_FEEDBACK_PROTOCOL, build_expert_feedback_protocol(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
+    write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -893,6 +909,8 @@ def main() -> int:
         md_link(AWARD_SELF_EVAL),
         md_link(EXPERT_REVIEW_INDEX),
         md_link(DEFENSE_REHEARSAL_CARD),
+        md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
+        md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
         md_link(APPLICATION_VALIDATION_DOC),
         md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),

@@ -22,6 +22,8 @@ ACCEPTANCE_CHECKLIST = PACKAGE_DIR / "06_结项验收清单.md"
 AWARD_SELF_EVAL = PACKAGE_DIR / "08_特等奖评审自评表.md"
 EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
+DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
+DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -42,6 +44,10 @@ GRAPH_EVIDENCE_BOUNDARY = (
 GRAPH_CONTEXT_DEMO_BOUNDARY = (
     "This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers "
     "or prove online answer win-rate."
+)
+DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
+    "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
+    "has already happened or guarantee an award."
 )
 REQUIRED_GRAPH_CASE_FIELDS = {
     "id",
@@ -71,8 +77,38 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
     "reproducibility/expert_feedback_form.md",
+    "reproducibility/defense_rehearsal_scorecard.md",
+    "reproducibility/defense_rehearsal_scorecard.json",
     "reproducibility/command_log.md",
 ]
+DEFENSE_REHEARSAL_TIMING_TARGETS = {
+    "opening_seconds": 90,
+    "demo_seconds": 180,
+    "offline_fallback_seconds": 20,
+    "killer_question_seconds": 30,
+}
+DEFENSE_REHEARSAL_REQUIRED_EVIDENCE_FILES = {
+    "docs/challenge_cup/00_项目一页纸.md",
+    "docs/challenge_cup/03_实验评测报告.md",
+    "docs/challenge_cup/04_系统演示脚本.md",
+    "docs/challenge_cup/05_答辩问答手册.md",
+    "docs/challenge_cup/07_评审主张证据矩阵.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
+    "docs/challenge_cup/10_答辩攻防与彩排卡.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/application_validation_report.md",
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+    "evaluation/reports/challenge_cup_graphrag_context_demo.md",
+    "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
+}
+DEFENSE_REHEARSAL_MARKDOWN_TERMS = {
+    "答辩彩排计分卡",
+    "90秒开场",
+    "三分钟演示节奏",
+    "20 秒内切换",
+    "30 秒内回答",
+    "不把 readiness gate 说成获奖保证",
+}
 EVAL_COVERAGE_MINIMUMS = {
     "task_types": 10,
     "source_scopes": 15,
@@ -146,6 +182,7 @@ REQUIRED_AWARD_SELF_EVAL_TERMS = {
     "07_评审主张证据矩阵.md",
     "readiness_gate_report.md",
     "browser_demo_smoke_report.md",
+    "defense_rehearsal_scorecard.md",
 }
 REQUIRED_EXPERT_REVIEW_INDEX_TERMS = {
     "三分钟审阅路径",
@@ -814,6 +851,98 @@ def check_defense_rehearsal_card() -> GateCheck:
     )
 
 
+def check_defense_rehearsal_scorecard() -> GateCheck:
+    failures: list[str] = []
+    if not DEFENSE_REHEARSAL_SCORECARD_JSON.exists():
+        return GateCheck(
+            "defense rehearsal scorecard",
+            False,
+            f"{DEFENSE_REHEARSAL_SCORECARD_JSON.relative_to(REPO_ROOT)} missing",
+        )
+    if not DEFENSE_REHEARSAL_SCORECARD_MD.exists():
+        return GateCheck(
+            "defense rehearsal scorecard",
+            False,
+            f"{DEFENSE_REHEARSAL_SCORECARD_MD.relative_to(REPO_ROOT)} missing",
+        )
+
+    payload = load_json(DEFENSE_REHEARSAL_SCORECARD_JSON)
+    markdown = DEFENSE_REHEARSAL_SCORECARD_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_defense_rehearsal_scorecard":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "ready_for_timed_rehearsal":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("boundary") != DEFENSE_REHEARSAL_SCORECARD_BOUNDARY:
+        failures.append("boundary mismatch")
+
+    timing = payload.get("timing_targets", {})
+    for key, expected in DEFENSE_REHEARSAL_TIMING_TARGETS.items():
+        actual = timing.get(key) if isinstance(timing, dict) else None
+        if int(actual or -1) != expected:
+            failures.append(f"{key}={actual}, expected={expected}")
+    if payload.get("opening_required_points") != ["问题", "方法", "完成度", "边界"]:
+        failures.append("opening_required_points mismatch")
+
+    demo_timeline = payload.get("demo_timeline", [])
+    if not isinstance(demo_timeline, list) or len(demo_timeline) != 5:
+        failures.append("demo_timeline must contain exactly 5 steps")
+    else:
+        missing_demo_anchors = [
+            str(item.get("timebox", index))
+            for index, item in enumerate(demo_timeline, start=1)
+            if not item.get("evidence_anchor")
+        ]
+        if missing_demo_anchors:
+            failures.append(f"demo_timeline missing evidence_anchor: {missing_demo_anchors}")
+
+    killer_questions = payload.get("killer_questions", [])
+    if not isinstance(killer_questions, list) or len(killer_questions) < 5:
+        failures.append("killer_questions below 5")
+        killer_questions = []
+    for index, item in enumerate(killer_questions, start=1):
+        seconds = int(item.get("answer_seconds") or 999)
+        if seconds > DEFENSE_REHEARSAL_TIMING_TARGETS["killer_question_seconds"]:
+            failures.append(f"killer_question {index} answer_seconds={seconds}")
+        if not item.get("evidence_anchors"):
+            failures.append(f"killer_question {index} missing evidence_anchors")
+
+    boundaries = {str(item) for item in payload.get("no_overclaim_boundaries", [])}
+    if len(boundaries) < 4:
+        failures.append("no_overclaim_boundaries below 4")
+    if "不把 readiness gate 说成获奖保证" not in boundaries:
+        failures.append("missing readiness gate no-overclaim boundary")
+    if int(payload.get("minimum_evidence_anchor_count") or 0) < 12:
+        failures.append("minimum_evidence_anchor_count below 12")
+
+    evidence_files = {str(item) for item in payload.get("evidence_files", [])}
+    missing_required_evidence = sorted(DEFENSE_REHEARSAL_REQUIRED_EVIDENCE_FILES - evidence_files)
+    if missing_required_evidence:
+        failures.append(f"missing evidence_files: {missing_required_evidence}")
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_evidence_paths = sorted(
+        path for path in evidence_files if path != self_report and not nonempty(REPO_ROOT / path)
+    )
+    if missing_evidence_paths:
+        failures.append(f"evidence path missing or empty: {missing_evidence_paths}")
+
+    missing_markdown_terms = sorted(
+        term for term in (DEFENSE_REHEARSAL_MARKDOWN_TERMS | {DEFENSE_REHEARSAL_SCORECARD_BOUNDARY}) if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "defense rehearsal scorecard",
+        not failures,
+        (
+            f"{len(demo_timeline)} timed demo steps, {len(killer_questions)} killer questions, "
+            f"{len(evidence_files)} evidence files"
+        )
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_application_validation_evidence() -> GateCheck:
     if not APPLICATION_VALIDATION_DOC.exists():
         return GateCheck("application validation evidence", False, "11_应用场景与专家验证.md missing")
@@ -924,6 +1053,7 @@ def run_gate() -> list[GateCheck]:
         check_award_self_eval(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
+        check_defense_rehearsal_scorecard(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
@@ -946,7 +1076,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

@@ -10,6 +10,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPORT = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md"
 READINESS_SCRIPT = REPO_ROOT / "scripts" / "check_challenge_cup_readiness.py"
+DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
+    "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
+    "has already happened or guarantee an award."
+)
 
 
 def load_readiness_module():
@@ -45,6 +49,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "special-prize rubric self-assessment" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
+    assert "defense rehearsal scorecard" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
     assert "KG artifact links" in report
@@ -333,6 +338,38 @@ def test_graphrag_context_demo_gate_rejects_generated_answers(monkeypatch, tmp_p
 
     assert not check.passed
     assert "context_only" in check.detail
+
+
+def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    score_json = tmp_path / "defense_rehearsal_scorecard.json"
+    score_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_defense_rehearsal_scorecard",
+                "status": "ready_for_timed_rehearsal",
+                "boundary": DEFENSE_REHEARSAL_SCORECARD_BOUNDARY,
+                "timing_targets": {"opening_seconds": 120},
+                "opening_required_points": ["问题", "方法", "完成度", "边界"],
+                "demo_timeline": [],
+                "killer_questions": [],
+                "no_overclaim_boundaries": [],
+                "minimum_evidence_anchor_count": 0,
+                "evidence_files": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    score_md = tmp_path / "defense_rehearsal_scorecard.md"
+    score_md.write_text("答辩彩排计分卡\n90秒开场\n", encoding="utf-8")
+    monkeypatch.setattr(module, "DEFENSE_REHEARSAL_SCORECARD_JSON", score_json)
+    monkeypatch.setattr(module, "DEFENSE_REHEARSAL_SCORECARD_MD", score_md)
+
+    check = module.check_defense_rehearsal_scorecard()
+
+    assert not check.passed
+    assert "opening_seconds" in check.detail
 
 
 def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, tmp_path) -> None:

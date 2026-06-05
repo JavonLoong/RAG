@@ -14,6 +14,8 @@
 - 特等奖评审自评表：`docs/challenge_cup/08_特等奖评审自评表.md`。
 - 专家快速审阅索引：`docs/challenge_cup/09_专家快速审阅索引.md`。
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
+- 答辩彩排计分卡：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`。
+- 答辩彩排计分 JSON：`docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json`。
 - 应用场景与专家验证：`docs/challenge_cup/11_应用场景与专家验证.md`。
 - 应用验证报告：`docs/challenge_cup/reproducibility/application_validation_report.md`。
 - 专家反馈采集与整改闭环：`docs/challenge_cup/12_专家反馈采集与整改闭环.md`。
