@@ -10,6 +10,8 @@
 - GraphRAG 同题 JSON：`evaluation/reports/challenge_cup_graphrag_same_question_report.json`。
 - GraphRAG context-only demo：`evaluation/reports/challenge_cup_graphrag_context_demo.md`。
 - GraphRAG context-only JSON：`evaluation/reports/challenge_cup_graphrag_context_demo.json`。
+- GraphRAG answer benchmark：`evaluation/reports/challenge_cup_graphrag_answer_benchmark.md`。
+- GraphRAG answer benchmark JSON：`evaluation/reports/challenge_cup_graphrag_answer_benchmark.json`。
 - 评审主张证据矩阵：`docs/challenge_cup/07_评审主张证据矩阵.md`。
 - 特等奖评审自评表：`docs/challenge_cup/08_特等奖评审自评表.md`。
 - 专家快速审阅索引：`docs/challenge_cup/09_专家快速审阅索引.md`。

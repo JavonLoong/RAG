@@ -20,6 +20,12 @@ from build_expert_feedback_request_packet import (
     build_payload as build_expert_request_payload,
     write_outputs as write_expert_request_outputs,
 )
+from build_graphrag_answer_benchmark import (
+    OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
+    OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
+    build_payload as build_graph_answer_benchmark_payload,
+    write_markdown as write_graph_answer_benchmark_markdown,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -168,6 +174,8 @@ def build_context() -> dict[str, Any]:
         "graph_report_json": GRAPH_REPORT_JSON if GRAPH_REPORT_JSON.exists() else None,
         "graph_context_demo_md": GRAPH_CONTEXT_DEMO_MD if GRAPH_CONTEXT_DEMO_MD.exists() else None,
         "graph_context_demo_json": GRAPH_CONTEXT_DEMO_JSON if GRAPH_CONTEXT_DEMO_JSON.exists() else None,
+        "graph_answer_benchmark_md": GRAPH_ANSWER_BENCHMARK_MD,
+        "graph_answer_benchmark_json": GRAPH_ANSWER_BENCHMARK_JSON,
         "validation": browser_validation_context(),
         "rag_db": REPO_ROOT
         / "docs"
@@ -315,6 +323,7 @@ def build_eval_report(ctx: dict[str, Any]) -> str:
     day4_ref = optional_md_link(ctx["day4"])
     graph_ref = optional_md_link(ctx["graph_report"])
     graph_context_ref = optional_md_link(ctx["graph_context_demo_md"])
+    graph_answer_ref = optional_md_link(ctx["graph_answer_benchmark_md"])
     return f"""# 实验评测报告
 
 ## 评测集
@@ -337,9 +346,13 @@ Day4 已将弱命中和失败案例归类为术语别名、结构化事实、hyb
 
 已将 supported 同题案例生成 context-only GraphRAG QA 快照，固定展示文本检索证据和 triples.csv 图谱关系证据。报告位置：`{graph_context_ref}`。该 demo 不生成 LLM 答案，不作为完整在线 answer benchmark。
 
+## GraphRAG answer benchmark
+
+已将 10 道 GraphRAG 同题生成答案级覆盖对照，固定比较文本 baseline 参考关键词覆盖率与 triples.csv 图谱证据覆盖率，并保留 partial/missing 案例。报告位置：`{graph_answer_ref}`。该 benchmark 是 deterministic offline reference keyword coverage，不生成在线 LLM 答案，不宣称 GraphRAG 全面优于 baseline。
+
 ## 结论
 
-当前项目能证明评测链路存在并可复跑，也能展示 GraphRAG context-only 证据编排。挑战杯版本后续可继续补充真实 LLM answer 生成、embedding/reranker 复测和更大规模 benchmark。
+当前项目能证明评测链路存在并可复跑，也能展示 GraphRAG context-only 证据编排和答案级覆盖对照。挑战杯版本后续可继续补充真实 LLM answer 生成、embedding/reranker 复测和更大规模 benchmark。
 
 ## 关键证据摘录
 
@@ -787,6 +800,8 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - GraphRAG 同题 JSON：`{optional_md_link(ctx["graph_report_json"])}`。
 - GraphRAG context-only demo：`{optional_md_link(ctx["graph_context_demo_md"])}`。
 - GraphRAG context-only JSON：`{optional_md_link(ctx["graph_context_demo_json"])}`。
+- GraphRAG answer benchmark：`{optional_md_link(ctx["graph_answer_benchmark_md"])}`。
+- GraphRAG answer benchmark JSON：`{optional_md_link(ctx["graph_answer_benchmark_json"])}`。
 - 评审主张证据矩阵：`{md_link(CLAIM_MATRIX)}`。
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
@@ -866,6 +881,10 @@ python scripts/build_graphrag_context_demo.py
 -> evaluation/reports/challenge_cup_graphrag_context_demo.md
 -> evaluation/reports/challenge_cup_graphrag_context_demo.json
 
+python scripts/build_graphrag_answer_benchmark.py
+-> evaluation/reports/challenge_cup_graphrag_answer_benchmark.md
+-> evaluation/reports/challenge_cup_graphrag_answer_benchmark.json
+
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
@@ -912,6 +931,9 @@ def main() -> int:
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write_expert_request_outputs(build_expert_request_payload())
+    graph_answer_payload = build_graph_answer_benchmark_payload()
+    write(GRAPH_ANSWER_BENCHMARK_JSON, json.dumps(graph_answer_payload, ensure_ascii=False, indent=2))
+    write_graph_answer_benchmark_markdown(GRAPH_ANSWER_BENCHMARK_MD, graph_answer_payload)
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(REPRO / "dataset_manifest.md", build_dataset_manifest(ctx))
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
@@ -945,6 +967,8 @@ def main() -> int:
                 ctx["graph_report_json"],
                 ctx["graph_context_demo_md"],
                 ctx["graph_context_demo_json"],
+                GRAPH_ANSWER_BENCHMARK_MD,
+                GRAPH_ANSWER_BENCHMARK_JSON,
             )
             if path is not None
         ),

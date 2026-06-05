@@ -50,6 +50,10 @@ python scripts/build_graphrag_context_demo.py
 -> evaluation/reports/challenge_cup_graphrag_context_demo.md
 -> evaluation/reports/challenge_cup_graphrag_context_demo.json
 
+python scripts/build_graphrag_answer_benchmark.py
+-> evaluation/reports/challenge_cup_graphrag_answer_benchmark.md
+-> evaluation/reports/challenge_cup_graphrag_answer_benchmark.json
+
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json

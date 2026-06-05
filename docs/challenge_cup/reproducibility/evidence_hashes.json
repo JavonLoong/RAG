@@ -106,6 +106,16 @@
       "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"
     },
     {
+      "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
+      "bytes": 18321,
+      "sha256": "2beb7ede48e95a4fd548cb01c8eb01d10474fa56cdbeacd99405c65518974628"
+    },
+    {
+      "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md",
+      "bytes": 3099,
+      "sha256": "a67b7b64a0008d089da72bd2a8e688a6a68a08d50e7b3766cfd27801cb133094"
+    },
+    {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.json",
       "bytes": 41030,
       "sha256": "7c97af5d79b4b07f796d2a66e38181b51bdc911f6f516ce760f7fc5aa58b4507"

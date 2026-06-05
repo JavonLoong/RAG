@@ -40,12 +40,18 @@ GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphr
 GRAPH_REPORT_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_CONTEXT_DEMO_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_context_demo.json"
 GRAPH_CONTEXT_DEMO_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_context_demo.md"
+GRAPH_ANSWER_BENCHMARK_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_answer_benchmark.json"
+GRAPH_ANSWER_BENCHMARK_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_answer_benchmark.md"
 GRAPH_EVIDENCE_BOUNDARY = (
     "Graph evidence coverage audits triples.csv keyword support; it is not a completed GraphRAG answer win-rate."
 )
 GRAPH_CONTEXT_DEMO_BOUNDARY = (
     "This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers "
     "or prove online answer win-rate."
+)
+GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
+    "This is a deterministic offline answer benchmark over the fixed GraphRAG subset; it does not claim "
+    "online LLM answer win-rate or that GraphRAG beats every baseline question."
 )
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
@@ -150,6 +156,12 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
     "邮件回复",
     "会议纪要",
     "聊天记录截图",
+}
+GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS = {
+    "GraphRAG answer benchmark",
+    "10 道 GraphRAG 同题",
+    "保留 partial/missing",
+    "不宣称 GraphRAG 全面优于 baseline",
 }
 EVAL_COVERAGE_MINIMUMS = {
     "task_types": 10,
@@ -747,6 +759,83 @@ def check_graphrag_context_demo() -> GateCheck:
     )
 
 
+def check_graphrag_answer_benchmark() -> GateCheck:
+    failures: list[str] = []
+    if not GRAPH_ANSWER_BENCHMARK_JSON.exists():
+        return GateCheck("graphrag answer benchmark", False, f"{GRAPH_ANSWER_BENCHMARK_JSON.relative_to(REPO_ROOT)} missing")
+    if not GRAPH_ANSWER_BENCHMARK_MD.exists():
+        return GateCheck("graphrag answer benchmark", False, f"{GRAPH_ANSWER_BENCHMARK_MD.relative_to(REPO_ROOT)} missing")
+
+    payload = load_json(GRAPH_ANSWER_BENCHMARK_JSON)
+    markdown = GRAPH_ANSWER_BENCHMARK_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_graphrag_answer_benchmark":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("benchmark_mode") != "deterministic_offline_reference_keyword_coverage":
+        failures.append(f"benchmark_mode={payload.get('benchmark_mode')}")
+    if payload.get("llm_answer_generated") is not False:
+        failures.append(f"llm_answer_generated={payload.get('llm_answer_generated')}")
+    if payload.get("boundary") != GRAPH_ANSWER_BENCHMARK_BOUNDARY:
+        failures.append("boundary mismatch")
+    if payload.get("dataset") != DATASET_RELATIVE:
+        failures.append(f"dataset={payload.get('dataset')}")
+    if payload.get("source_graph_report") != GRAPH_REPORT_JSON.relative_to(REPO_ROOT).as_posix():
+        failures.append(f"source_graph_report={payload.get('source_graph_report')}")
+    if int(payload.get("answer_benchmark_case_count") or 0) != 10:
+        failures.append("answer_benchmark_case_count must be 10")
+    if payload.get("partial_or_missing_cases_retained") is not True:
+        failures.append("partial_or_missing_cases_retained must be true")
+    if int(payload.get("best_baseline_method_count") or 0) != 3:
+        failures.append("best_baseline_method_count must be 3")
+    supported = int(payload.get("graphrag_supported_answer_case_count") or 0)
+    missing = int(payload.get("graphrag_missing_answer_case_count") or 0)
+    if supported < 3:
+        failures.append(f"graphrag_supported_answer_case_count below 3: {supported}")
+    if missing < 1:
+        failures.append("graphrag_missing_answer_case_count must retain known gaps")
+    baseline_avg = float(payload.get("average_best_baseline_reference_keyword_coverage") or -1)
+    graph_avg = float(payload.get("average_graphrag_reference_keyword_coverage") or -1)
+    if not (0 <= baseline_avg <= 1 and 0 <= graph_avg <= 1):
+        failures.append(f"average coverage out of range: baseline={baseline_avg}, graph={graph_avg}")
+    if graph_avg > baseline_avg:
+        failures.append("graph average coverage must not overclaim beyond current baseline average")
+    summary = str(payload.get("summary_verdict", ""))
+    if "GraphRAG is not yet an answer-level win-rate improvement" not in summary:
+        failures.append("summary_verdict missing no-win-rate boundary")
+
+    cases = payload.get("cases", [])
+    if not isinstance(cases, list) or len(cases) != 10:
+        failures.append("cases must contain 10 GraphRAG questions")
+        cases = []
+    case_ids = {str(case.get("id", "")) for case in cases}
+    required_case_ids = {"cc032", "cc033", "cc034", "cc035", "cc039", "cc040", "cc041", "cc043", "cc048", "cc056"}
+    if case_ids != required_case_ids:
+        failures.append(f"case ids mismatch: {sorted(case_ids)}")
+    verdicts = {str(case.get("answer_level_verdict", "")) for case in cases}
+    if not {"graph_supported", "graph_partial", "graph_missing"} <= verdicts:
+        failures.append(f"verdicts must include supported, partial, and missing: {sorted(verdicts)}")
+    for case in cases:
+        case_id = str(case.get("id", "<unknown>"))
+        for key in ("question", "reference_answer", "expected_evidence_keywords", "graphrag_answer_draft"):
+            if not case.get(key):
+                failures.append(f"case {case_id} missing {key}")
+        if str(case.get("boundary", "")) != "保留该题原始 GraphRAG 证据状态，不把 partial/missing 改写成成功案例。":
+            failures.append(f"case {case_id} boundary mismatch")
+
+    missing_markdown_terms = sorted(
+        term for term in (GRAPH_ANSWER_BENCHMARK_MARKDOWN_TERMS | {GRAPH_ANSWER_BENCHMARK_BOUNDARY}) if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    return GateCheck(
+        "graphrag answer benchmark",
+        not failures,
+        f"{len(cases)} fixed GraphRAG answer cases; supported={supported}, missing={missing}, graph_avg={graph_avg}"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_report_payload(path: Path, required_checks: set[str], name: str) -> GateCheck:
     if not path.exists():
         return GateCheck(name, False, f"{path.relative_to(REPO_ROOT)} missing")
@@ -1167,6 +1256,7 @@ def run_gate() -> list[GateCheck]:
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
         check_graphrag_context_demo(),
+        check_graphrag_answer_benchmark(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -1196,7 +1286,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, control files, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, claim-evidence matrix, acceptance checklist, special-prize rubric, expert review index, defense rehearsal pack, defense rehearsal scorecard, expert feedback request packet, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

@@ -18,6 +18,10 @@ EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY = (
     "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
     "or production validation."
 )
+GRAPH_ANSWER_BENCHMARK_BOUNDARY = (
+    "This is a deterministic offline answer benchmark over the fixed GraphRAG subset; it does not claim "
+    "online LLM answer win-rate or that GraphRAG beats every baseline question."
+)
 
 
 def load_readiness_module():
@@ -68,6 +72,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "expert feedback protocol" in report
     assert "graphrag evidence audit" in report
     assert "graphrag context demo" in report
+    assert "graphrag answer benchmark" in report
 
 
 def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
@@ -343,6 +348,43 @@ def test_graphrag_context_demo_gate_rejects_generated_answers(monkeypatch, tmp_p
 
     assert not check.passed
     assert "context_only" in check.detail
+
+
+def test_graphrag_answer_benchmark_gate_rejects_online_win_rate_claim(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    benchmark_json = tmp_path / "challenge_cup_graphrag_answer_benchmark.json"
+    benchmark_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_graphrag_answer_benchmark",
+                "benchmark_mode": "deterministic_offline_reference_keyword_coverage",
+                "llm_answer_generated": True,
+                "boundary": GRAPH_ANSWER_BENCHMARK_BOUNDARY,
+                "dataset": "evaluation/system_eval_questions.jsonl",
+                "source_graph_report": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+                "answer_benchmark_case_count": 10,
+                "partial_or_missing_cases_retained": False,
+                "best_baseline_method_count": 3,
+                "graphrag_supported_answer_case_count": 10,
+                "graphrag_missing_answer_case_count": 0,
+                "average_best_baseline_reference_keyword_coverage": 0.2,
+                "average_graphrag_reference_keyword_coverage": 1.0,
+                "summary_verdict": "GraphRAG beats every baseline question.",
+                "cases": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    benchmark_md = tmp_path / "challenge_cup_graphrag_answer_benchmark.md"
+    benchmark_md.write_text("GraphRAG answer benchmark\n10 道 GraphRAG 同题\n", encoding="utf-8")
+    monkeypatch.setattr(module, "GRAPH_ANSWER_BENCHMARK_JSON", benchmark_json)
+    monkeypatch.setattr(module, "GRAPH_ANSWER_BENCHMARK_MD", benchmark_md)
+
+    check = module.check_graphrag_answer_benchmark()
+
+    assert not check.passed
+    assert "llm_answer_generated" in check.detail
 
 
 def test_defense_rehearsal_scorecard_gate_rejects_missing_timing(monkeypatch, tmp_path) -> None:
