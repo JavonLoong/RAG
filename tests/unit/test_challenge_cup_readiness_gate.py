@@ -129,3 +129,27 @@ def test_package_manifest_gate_rejects_untracked_evidence(monkeypatch, tmp_path)
 
     assert not check.passed
     assert "untracked-evidence.md" in check.detail
+
+
+def test_package_manifest_gate_rejects_dirty_evidence(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "question_count": 60,
+                "evidence_files": ["docs/challenge_cup/dirty-evidence.md"],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "nonempty", lambda path: True)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {"docs/challenge_cup/dirty-evidence.md"})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: {"docs/challenge_cup/dirty-evidence.md"}, raising=False)
+
+    check = module.check_package_manifest()
+
+    assert not check.passed
+    assert "dirty-evidence.md" in check.detail

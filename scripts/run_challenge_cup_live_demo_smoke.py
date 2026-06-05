@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 import sys
@@ -127,8 +128,17 @@ def run_smoke_checks() -> list[SmokeCheck]:
     return checks
 
 
-def write_reports(checks: list[SmokeCheck]) -> dict[str, Any]:
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def write_reports(checks: list[SmokeCheck], report_dir: Path = REPORT_DIR) -> dict[str, Any]:
     passed = sum(1 for item in checks if item.passed)
+    report_json = report_dir / "live_demo_smoke_report.json"
+    report_md = report_dir / "live_demo_smoke_report.md"
     payload = {
         "report_type": "challenge_cup_live_demo_smoke",
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -138,8 +148,8 @@ def write_reports(checks: list[SmokeCheck]) -> dict[str, Any]:
         "checks": [item.to_dict() for item in checks],
         "boundary": "This smoke test verifies local API readiness and route guards; it does not replace browser or production-load verification.",
     }
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    REPORT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     lines = [
         "# Live Demo Smoke Report",
@@ -162,14 +172,26 @@ def write_reports(checks: list[SmokeCheck]) -> dict[str, Any]:
             str(payload["boundary"]),
         ]
     )
-    REPORT_MD.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    report_md.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return payload
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run Challenge Cup live demo smoke checks.")
+    parser.add_argument(
+        "--report-dir",
+        type=Path,
+        default=REPORT_DIR,
+        help="Directory for live_demo_smoke_report.{json,md}; defaults to the committed reproducibility directory.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     checks = run_smoke_checks()
-    payload = write_reports(checks)
-    print(f"Wrote {REPORT_MD.relative_to(REPO_ROOT)}")
+    payload = write_reports(checks, args.report_dir)
+    print(f"Wrote {display_path(args.report_dir / 'live_demo_smoke_report.md')}")
     print(f"Status: {payload['status']} ({payload['passed']}/{payload['total']} checks)")
     return 0 if payload["status"] == "pass" else 1
 

@@ -139,6 +139,19 @@ def git_tracked_paths() -> set[str]:
     return {item for item in result.stdout.decode("utf-8", errors="replace").split("\0") if item}
 
 
+def git_dirty_paths(paths: list[str]) -> set[str]:
+    if not paths:
+        return set()
+    result = subprocess.run(
+        ["git", "status", "--porcelain=v1", "-z", "--", *paths],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+    )
+    entries = [item for item in result.stdout.decode("utf-8", errors="replace").split("\0") if item]
+    return {entry[3:].replace("\\", "/") for entry in entries if len(entry) > 3}
+
+
 def check_package_docs() -> GateCheck:
     missing = [relative for relative in REQUIRED_PACKAGE_DOCS if not nonempty(PACKAGE_DIR / relative)]
     return GateCheck(
@@ -166,12 +179,13 @@ def check_package_manifest() -> GateCheck:
     missing = [path for path in evidence if path != self_report and not nonempty(REPO_ROOT / path)]
     tracked = git_tracked_paths()
     untracked = [path for path in evidence if path not in tracked]
+    dirty = sorted(path for path in git_dirty_paths(evidence) if path != self_report)
     question_count = int(manifest.get("question_count") or 0)
-    passed = bool(evidence) and question_count >= 60 and not missing and not untracked
+    passed = bool(evidence) and question_count >= 60 and not missing and not untracked and not dirty
     if passed:
-        detail = f"{len(evidence)} evidence files exist and are git-tracked; {question_count} questions"
+        detail = f"{len(evidence)} evidence files exist, are git-tracked, and are clean; {question_count} questions"
     else:
-        detail = f"evidence={len(evidence)}, questions={question_count}, missing={missing}, untracked={untracked}"
+        detail = f"evidence={len(evidence)}, questions={question_count}, missing={missing}, untracked={untracked}, dirty={dirty}"
     return GateCheck("package evidence files", passed, detail)
 
 

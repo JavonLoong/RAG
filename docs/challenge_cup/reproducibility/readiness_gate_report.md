@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
 | 60 evaluation questions | pass | 60 evaluation questions |
-| package evidence files | pass | 16 evidence files exist and are git-tracked; 60 questions |
+| package evidence files | pass | 16 evidence files exist, are git-tracked, and are clean; 60 questions |
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 16 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 14 evidence links verified |
 | expert review index | pass | judge-facing review path maps claims, commands, and boundaries; 17 evidence links verified |
