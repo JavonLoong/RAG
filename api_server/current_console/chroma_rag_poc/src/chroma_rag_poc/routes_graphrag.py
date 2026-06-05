@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 _REPO_ROOT = Path(__file__).resolve().parents[5]
@@ -18,6 +18,46 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 router = APIRouter(prefix="/api/graphrag", tags=["graphrag"])
+GRAPH_DB_SUFFIXES = {".db", ".sqlite", ".sqlite3"}
+
+
+def _graph_allowed_roots(request: Request) -> list[Path]:
+    roots = [_REPO_ROOT]
+    for state_name in ("persist_dir", "upload_dir"):
+        state_path = getattr(request.app.state, state_name, None)
+        if state_path is None:
+            continue
+        path = Path(state_path).resolve()
+        roots.append(path)
+        roots.append(path.parent)
+
+    unique_roots: list[Path] = []
+    seen: set[str] = set()
+    for root in roots:
+        key = str(root)
+        if key not in seen:
+            seen.add(key)
+            unique_roots.append(root)
+    return unique_roots
+
+
+def _resolve_graph_db_path(request: Request, raw_path: str) -> Path:
+    if not raw_path or not str(raw_path).strip():
+        raise HTTPException(status_code=400, detail="Graph database path is required")
+
+    requested = Path(str(raw_path).strip()).expanduser()
+    db_path = requested.resolve() if requested.is_absolute() else (_REPO_ROOT / requested).resolve()
+    if db_path.suffix.lower() not in GRAPH_DB_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Graph database path must point to a SQLite .db/.sqlite file")
+
+    allowed_roots = _graph_allowed_roots(request)
+    if not any(db_path.is_relative_to(root) for root in allowed_roots):
+        raise HTTPException(status_code=400, detail="Graph database path is outside the allowed runtime roots")
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"Graph database not found: {raw_path}")
+    if not db_path.is_file():
+        raise HTTPException(status_code=400, detail="Graph database path must be a file")
+    return db_path
 
 
 # ── Pydantic Models ──────────────────────────────────────────────
@@ -25,7 +65,7 @@ router = APIRouter(prefix="/api/graphrag", tags=["graphrag"])
 
 class CommunityDetectionRequest(BaseModel):
     graph_db_path: str = Field(..., description="Path to the SQLite graph database")
-    resolution: float = Field(default=1.0, description="Louvain resolution (higher = more communities)")
+    resolution: float = Field(default=1.0, description="Leiden resolution (higher = more communities)")
     level: int = Field(default=0, description="Hierarchical level for the detection")
 
 
@@ -55,19 +95,16 @@ class GraphStatsRequest(BaseModel):
 
 
 @router.post("/community/detect", response_model=CommunityDetectionResponse)
-async def detect_communities(payload: CommunityDetectionRequest):
-    """Run Louvain community detection on the knowledge graph."""
+async def detect_communities(request: Request, payload: CommunityDetectionRequest):
+    """Run Leiden community detection on the knowledge graph."""
     try:
-        from kg_pipeline.community_detection import run_louvain_detection
+        from kg_pipeline.community_detection import run_leiden_detection
         from storage_layer.graph_store import GraphStore
 
-        db_path = Path(payload.graph_db_path)
-        if not db_path.exists():
-            raise HTTPException(status_code=404, detail=f"Graph database not found: {payload.graph_db_path}")
-
+        db_path = _resolve_graph_db_path(request, payload.graph_db_path)
         store = GraphStore(db_path)
         store.initialize(reset=False)
-        result = run_louvain_detection(
+        result = run_leiden_detection(
             store, resolution=payload.resolution, level=payload.level
         )
         return CommunityDetectionResponse(**result.to_dict())
@@ -80,17 +117,14 @@ async def detect_communities(payload: CommunityDetectionRequest):
 
 
 @router.post("/community/summarize")
-async def summarize_communities(payload: GlobalSearchRequest):
+async def summarize_communities(request: Request, payload: GlobalSearchRequest):
     """Generate summaries for detected communities using LLM."""
     try:
         from kg_pipeline.community_summary import summarize_communities as _summarize
         from model_adapters.llm import OpenAICompatibleLLMClient
         from storage_layer.graph_store import GraphStore
 
-        db_path = Path(payload.graph_db_path)
-        if not db_path.exists():
-            raise HTTPException(status_code=404, detail=f"Graph database not found: {payload.graph_db_path}")
-
+        db_path = _resolve_graph_db_path(request, payload.graph_db_path)
         store = GraphStore(db_path)
         store.initialize(reset=False)
 
@@ -111,17 +145,14 @@ async def summarize_communities(payload: GlobalSearchRequest):
 
 
 @router.post("/search/global")
-async def global_search(payload: GlobalSearchRequest):
+async def global_search(request: Request, payload: GlobalSearchRequest):
     """Execute global search over community summaries (map-reduce)."""
     try:
         from model_adapters.llm import OpenAICompatibleLLMClient
         from rag_orchestrator.global_search import GlobalSearchOrchestrator
         from storage_layer.graph_store import GraphStore
 
-        db_path = Path(payload.graph_db_path)
-        if not db_path.exists():
-            raise HTTPException(status_code=404, detail=f"Graph database not found: {payload.graph_db_path}")
-
+        db_path = _resolve_graph_db_path(request, payload.graph_db_path)
         store = GraphStore(db_path)
         store.initialize(reset=False)
 
@@ -147,15 +178,12 @@ async def global_search(payload: GlobalSearchRequest):
 
 
 @router.post("/stats")
-async def graph_stats(payload: GraphStatsRequest):
+async def graph_stats(request: Request, payload: GraphStatsRequest):
     """Get knowledge graph statistics including community info."""
     try:
         from storage_layer.graph_store import GraphStore
 
-        db_path = Path(payload.graph_db_path)
-        if not db_path.exists():
-            raise HTTPException(status_code=404, detail=f"Graph database not found: {payload.graph_db_path}")
-
+        db_path = _resolve_graph_db_path(request, payload.graph_db_path)
         store = GraphStore(db_path)
         store.initialize(reset=False)
 
@@ -182,15 +210,12 @@ async def graph_stats(payload: GraphStatsRequest):
 
 
 @router.get("/communities")
-async def list_communities(graph_db_path: str, level: int = 0):
+async def list_communities(request: Request, graph_db_path: str, level: int = 0):
     """List all detected communities and their summaries."""
     try:
         from storage_layer.graph_store import GraphStore
 
-        db_path = Path(graph_db_path)
-        if not db_path.exists():
-            raise HTTPException(status_code=404, detail=f"Graph database not found: {graph_db_path}")
-
+        db_path = _resolve_graph_db_path(request, graph_db_path)
         store = GraphStore(db_path)
         store.initialize(reset=False)
 

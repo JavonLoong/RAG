@@ -9,6 +9,7 @@ FastAPI 后端 — 合并两版
 from __future__ import annotations
 
 import io
+import os
 import re
 import shutil
 import tempfile
@@ -38,19 +39,49 @@ from .pipeline import (
 )
 from .public_books_json import ingest_latest_snapshot_to_chroma, write_ingest_summary
 
+REPO_ROOT = Path(__file__).resolve().parents[5]
 PACKAGE_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 CONSOLE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
-REPO_FRONTEND_DIR = Path(__file__).resolve().parents[5] / "frontend_app" / "current_console"
-FRONTEND_DIR = next(
-    path
-    for path in (REPO_FRONTEND_DIR, CONSOLE_FRONTEND_DIR, PACKAGE_FRONTEND_DIR)
-    if path.exists()
+REPO_FRONTEND_DIR = REPO_ROOT / "frontend_app" / "current_console"
+FRONTEND_DIR_CANDIDATES = (REPO_FRONTEND_DIR, CONSOLE_FRONTEND_DIR, PACKAGE_FRONTEND_DIR)
+PUBLIC_BOOKS_JSON_ROOT = REPO_ROOT / "data_pipeline"
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 )
 SUPPORTED_EXTENSIONS_LABEL = ", ".join(supported_source_extensions())
 UPLOAD_MANIFEST_NAME = ".upload-manifest.json"
 WINDOWS_INVALID_UPLOAD_CHARS = set('<>:"/\\|?*')
 DEFAULT_LOG_DIR = DEFAULT_UPLOAD_DIR.parent / "logs"
 LOG_FILENAME_PATTERN = re.compile(r"^[0-9A-Za-z._-]+\.log$")
+
+
+def _resolve_frontend_dir(candidates: tuple[Path, ...] = FRONTEND_DIR_CANDIDATES) -> Path | None:
+    try:
+        for path in candidates:
+            if path.exists():
+                return path
+    except (StopIteration, OSError):
+        pass
+    return None
+
+
+def _configured_cors_origins() -> list[str]:
+    raw_origins = os.getenv("POWER_RAG_CORS_ORIGINS", "")
+    if not raw_origins.strip():
+        return list(DEFAULT_CORS_ORIGINS)
+
+    origins: list[str] = []
+    for raw_origin in raw_origins.split(","):
+        origin = raw_origin.strip().rstrip("/")
+        parsed = urlparse(origin)
+        if parsed.scheme in {"http", "https"} and parsed.netloc and origin != "*":
+            origins.append(origin)
+    return origins or list(DEFAULT_CORS_ORIGINS)
 
 
 def _safe_upload_name(raw_name: str) -> str:
@@ -214,6 +245,13 @@ def _operation_log_payload(logger: OperationLogger) -> dict[str, str]:
     return {"log_file": logger.file_name}
 
 
+def _validate_top_k(top_k: int, *, max_top_k: int = 20) -> int:
+    value = int(top_k)
+    if value < 1 or value > max_top_k:
+        raise HTTPException(status_code=400, detail=f"top_k 必须在 1 到 {max_top_k} 之间")
+    return value
+
+
 def _list_operation_logs(log_dir: Path, limit: int = 50) -> list[dict]:
     log_dir = Path(log_dir)
     if not log_dir.exists():
@@ -274,6 +312,20 @@ def _resolve_upload_path(upload_dir: Path, filename: str) -> tuple[str, Path]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="上传文件名不合法") from exc
     return stored_name, file_path
+
+
+def _resolve_public_books_input_dir(request: Request, raw_input_dir: str) -> Path:
+    requested = Path(str(raw_input_dir or "").strip()).expanduser()
+    input_dir = requested.resolve() if requested.is_absolute() else (REPO_ROOT / requested).resolve()
+    allowed_roots = (
+        PUBLIC_BOOKS_JSON_ROOT.resolve(),
+        Path(request.app.state.upload_dir).resolve(),
+    )
+    if not any(input_dir.is_relative_to(root) for root in allowed_roots):
+        raise HTTPException(status_code=400, detail="input_dir is not allowed")
+    if not input_dir.exists() or not input_dir.is_dir():
+        raise HTTPException(status_code=400, detail=f"JSON input_dir does not exist: {input_dir}")
+    return input_dir
 
 
 def _purge_vectors_by_source_files(persist_dir: Path, filenames: list[str]) -> dict:
@@ -355,8 +407,13 @@ def create_app(
     persist_dir: Path = DEFAULT_PERSIST_DIR,
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
     log_dir: Path | None = None,
+    frontend_dir: Path | str | None = None,
+    cors_origins: list[str] | tuple[str, ...] | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
+    resolved_frontend_dir = Path(frontend_dir) if frontend_dir is not None else _resolve_frontend_dir()
+    allowed_cors_origins = list(cors_origins) if cors_origins is not None else _configured_cors_origins()
+
     app = FastAPI(
         title="动力装备知识库管理系统",
         description="文件上传、向量化、ChromaDB 管理、混合检索、RAG 问答",
@@ -365,9 +422,9 @@ def create_app(
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_cors_origins,
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=["Accept", "Authorization", "Content-Type", "Origin"],
     )
 
     app.state.persist_dir = Path(persist_dir)
@@ -388,7 +445,9 @@ def create_app(
 
     @app.get("/")
     async def index():
-        index_path = FRONTEND_DIR / "index.html"
+        if resolved_frontend_dir is None:
+            return JSONResponse({"message": "前端文件未找到，请检查 frontend/index.html"}, status_code=404)
+        index_path = resolved_frontend_dir / "index.html"
         if index_path.exists():
             return FileResponse(index_path, media_type="text/html; charset=utf-8")
         return JSONResponse({"message": "前端文件未找到，请检查 frontend/index.html"}, status_code=404)
@@ -412,10 +471,13 @@ def create_app(
             relative_path=relative_path,
         )
         try:
-            if not is_supported_source(source_name):
+            display_name = relative_path.strip() if relative_path and relative_path.strip() else source_name
+            stored_name = _safe_upload_name(display_name)
+            if not is_supported_source(source_name) or not is_supported_source(stored_name):
                 logger.warning(
                     "upload_unsupported_type",
                     source_file=source_name,
+                    stored_name=stored_name,
                     supported_extensions=SUPPORTED_EXTENSIONS_LABEL,
                 )
                 raise HTTPException(
@@ -429,8 +491,6 @@ def create_app(
                 logger.warning("upload_empty_file", source_file=source_name)
                 raise HTTPException(status_code=400, detail=f"上传文件为空；详细日志: {logger.file_name}")
 
-            display_name = relative_path.strip() if relative_path else source_name
-            stored_name = _safe_upload_name(relative_path or source_name)
             save_path = request.app.state.upload_dir / stored_name
             with logger.stage(
                 "save_upload_file",
@@ -447,7 +507,7 @@ def create_app(
                 status="uploaded",
                 uploaded_at=time.time(),
                 processed_at=None,
-                source_kind=get_source_kind(source_name),
+                source_kind=get_source_kind(stored_name),
                 last_collection=None,
                 last_records=0,
                 last_chunks=0,
@@ -460,7 +520,7 @@ def create_app(
                 "filename": stored_name,
                 "display_name": display_name,
                 "size_kb": round(len(content) / 1024, 1),
-                "source_kind": get_source_kind(source_name),
+                "source_kind": get_source_kind(stored_name),
                 **_operation_log_payload(logger),
             }
             logger.close(status="ok", stored_name=stored_name, size_bytes=len(content))
@@ -660,23 +720,21 @@ def create_app(
     @app.post("/api/public-books-json/ingest")
     async def ingest_public_books_json(request: Request, payload: PublicBooksJsonIngestRequest):
         """Run the public-books Label Studio JSON screening pipeline and write chunks to ChromaDB."""
-        input_dir = Path(payload.input_dir).expanduser()
+        raw_input_dir = payload.input_dir
         collection_name = payload.collection.strip() or "public_books_labelstudio"
         logger = OperationLogger(
             request.app.state.log_dir,
             "public_books_json_ingest",
-            input_dir=str(input_dir),
+            input_dir=raw_input_dir,
             collection_name=collection_name,
             mode=payload.mode,
             chunk_size=payload.chunk_size,
             overlap=payload.overlap,
         )
         try:
-            if not input_dir.exists():
-                logger.warning("json_input_missing", input_dir=str(input_dir))
-                raise HTTPException(status_code=400, detail=f"JSON 目录不存在：{input_dir}；详细日志: {logger.file_name}")
+            input_dir = _resolve_public_books_input_dir(request, raw_input_dir)
 
-            with logger.stage("public_books_json_ingest_run"):
+            with logger.stage("public_books_json_ingest_run", input_dir=str(input_dir)):
                 result = ingest_latest_snapshot_to_chroma(
                     input_root=input_dir,
                     persist_dir=request.app.state.persist_dir,
@@ -686,7 +744,7 @@ def create_app(
                     overlap=payload.overlap,
                 )
 
-            reports_dir = Path(__file__).resolve().parents[5] / "data_pipeline" / "reports"
+            reports_dir = REPO_ROOT / "data_pipeline" / "reports"
             with logger.stage("write_public_books_json_ingest_summary", reports_dir=str(reports_dir)):
                 result["summary_files"] = write_ingest_summary(result, reports_dir)
             result.update(_operation_log_payload(logger))
@@ -861,6 +919,7 @@ def create_app(
     @app.get("/api/search")
     async def search_get(request: Request, q: str = "", top_k: int = 5, collection: str = ""):
         """语义检索 (GET) — 自动检测有数据的集合"""
+        top_k = _validate_top_k(top_k)
         logger = OperationLogger(
             request.app.state.log_dir,
             "search",
@@ -1083,10 +1142,7 @@ def create_app(
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
-    if FRONTEND_DIR.exists():
-        app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+    if resolved_frontend_dir is not None and resolved_frontend_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(resolved_frontend_dir)), name="static")
 
     return app
-
-
-app = create_app()

@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import orjson
 from fastapi.testclient import TestClient
@@ -278,6 +279,116 @@ class PipelineTests(unittest.TestCase):
         processed = uploads.json()["processed"]
         self.assertEqual(processed[0]["last_log_file"], result["log_file"])
 
+    def test_api_module_does_not_create_app_at_import_time(self) -> None:
+        """api.py 只暴露工厂，避免导入时创建默认应用实例。"""
+        import chroma_rag_poc.api as api_module
+
+        self.assertNotIn("app", vars(api_module))
+
+    def test_index_returns_404_when_frontend_dir_is_missing(self) -> None:
+        """前端目录不存在时根路由应优雅降级，而不是依赖导入期 next()。"""
+        app = create_app(
+            persist_dir=self.persist_dir,
+            upload_dir=self.upload_dir,
+            frontend_dir=Path(self.tempdir.name) / "missing-frontend",
+        )
+        client = TestClient(app)
+
+        response = client.get("/")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_default_cors_rejects_untrusted_origin(self) -> None:
+        """默认 CORS 只允许本地控制台来源，不能对任意站点开放。"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        rejected = client.options(
+            "/api/health",
+            headers={
+                "Origin": "https://evil.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        allowed = client.options(
+            "/api/health",
+            headers={
+                "Origin": "http://localhost:8000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+        self.assertIsNone(rejected.headers.get("access-control-allow-origin"))
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.headers.get("access-control-allow-origin"), "http://localhost:8000")
+
+    def test_api_upload_rejects_unsupported_relative_path_extension(self) -> None:
+        """relative_path 不能把已校验的上传伪装成不可处理的最终文件名"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        response = client.post(
+            "/api/upload",
+            data={"relative_path": "nested/unsafe.exe"},
+            files={"file": ("safe.txt", b"processable text", "text/plain")},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse((self.upload_dir / "nested__unsafe.exe").exists())
+
+    def test_api_search_get_rejects_out_of_range_top_k(self) -> None:
+        """GET 搜索需要与 POST 搜索保持相同 top_k 边界，避免昂贵或无效查询。"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        response = client.get("/api/search", params={"q": "状态监测", "top_k": 999})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("top_k", response.json()["detail"])
+
+    def test_graphrag_routes_reject_graph_db_outside_runtime_roots(self) -> None:
+        """GraphRAG 路由不能通过请求体任意打开运行目录外的本地 SQLite 文件。"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        outside_graph = Path(self.tempdir.name).parent / "outside_graph.sqlite"
+        outside_graph.write_bytes(b"")
+
+        def cleanup_outside_graph() -> None:
+            try:
+                outside_graph.unlink(missing_ok=True)
+            except PermissionError:
+                pass
+
+        self.addCleanup(cleanup_outside_graph)
+
+        response = client.post("/api/graphrag/stats", json={"graph_db_path": str(outside_graph)})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Graph database path", response.json()["detail"])
+
+    def test_public_books_json_ingest_rejects_input_dir_outside_allowed_roots(self) -> None:
+        """本地 JSON 入库接口不能通过请求体扫描白名单外的任意目录。"""
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        outside_dir = Path(self.tempdir.name).parent / "outside-public-books-json"
+        outside_dir.mkdir(exist_ok=True)
+
+        def cleanup_outside_dir() -> None:
+            try:
+                outside_dir.rmdir()
+            except OSError:
+                pass
+
+        self.addCleanup(cleanup_outside_dir)
+
+        response = client.post(
+            "/api/public-books-json/ingest",
+            json={"input_dir": str(outside_dir)},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not allowed", response.json()["detail"])
+
     def test_observability_hardening_edges(self) -> None:
         """日志和文件名边界不能悄悄越界或写出重复结束事件"""
         hasher = HashingEmbeddingFunction(dimension=16)
@@ -335,6 +446,32 @@ class PipelineTests(unittest.TestCase):
         broken_stats = broken_client.get("/api/stats?collection=broken")
         self.assertEqual(broken_stats.status_code, 500)
         self.assertIn(".log", broken_stats.json()["detail"])
+
+    def test_graphrag_community_detection_route_uses_available_detector(self) -> None:
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        graph_db_path = Path(self.tempdir.name) / "graph.sqlite"
+        graph_db_path.write_bytes(b"")
+
+        class FakeDetectionResult:
+            def to_dict(self) -> dict:
+                return {
+                    "total_nodes": 3,
+                    "total_edges": 2,
+                    "num_communities": 1,
+                    "level": 0,
+                    "community_sizes": {"C0": 3},
+                }
+
+        with patch("kg_pipeline.community_detection.run_leiden_detection", return_value=FakeDetectionResult()) as detector:
+            response = client.post(
+                "/api/graphrag/community/detect",
+                json={"graph_db_path": str(graph_db_path), "resolution": 1.0, "level": 0},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["num_communities"], 1)
+        detector.assert_called_once()
 
     def test_benchmark(self) -> None:
         """性能基准测试"""

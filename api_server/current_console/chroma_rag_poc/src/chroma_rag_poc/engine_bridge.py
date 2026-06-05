@@ -154,10 +154,10 @@ def run_community_detection(
 
     Bridge to kg_pipeline/community_detection.py.
     """
-    from kg_pipeline.community_detection import run_louvain_detection
+    from kg_pipeline.community_detection import run_leiden_detection
 
     store = get_graph_store(db_path)
-    result = run_louvain_detection(store, resolution=resolution, level=level)
+    result = run_leiden_detection(store, resolution=resolution, level=level)
     return result.to_dict()
 
 

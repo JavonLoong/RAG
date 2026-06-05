@@ -93,7 +93,7 @@ def main() -> None:
         print(f"   前端: http://localhost:8000")
         print(f"   API 文档: http://localhost:8000/docs")
         print("=" * 60)
-        uvicorn.run("chroma_rag_poc.api:app", host="0.0.0.0", port=8000, reload=False)
+        uvicorn.run("chroma_rag_poc.api:create_app", host="0.0.0.0", port=8000, reload=False, factory=True)
         return
 
     if args.command == "serve":
@@ -102,7 +102,7 @@ def main() -> None:
         print(f"   前端: http://{args.host}:{args.port}")
         print(f"   API 文档: http://{args.host}:{args.port}/docs")
         print("=" * 60)
-        uvicorn.run("chroma_rag_poc.api:app", host=args.host, port=args.port, reload=False)
+        uvicorn.run("chroma_rag_poc.api:create_app", host=args.host, port=args.port, reload=False, factory=True)
         return
 
     if args.command == "ingest":

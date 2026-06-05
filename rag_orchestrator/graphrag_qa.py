@@ -154,8 +154,9 @@ class GraphRagQAOrchestrator:
                 for rank, item in enumerate(_as_items(graph_raw), start=1)
             ]
 
-        # Run global search only for GLOBAL_SEARCH
-        if route_strategy == "GLOBAL_SEARCH" and self.global_searcher is not None:
+        # Include global community context when a global searcher is available,
+        # unless a router explicitly chose vector-only retrieval.
+        if route_strategy in ("LOCAL_SEARCH", "GLOBAL_SEARCH") and self.global_searcher is not None:
             try:
                 # Use duck-typing for the search method call since stream_callback was just added
                 if "stream_callback" in inspect.signature(self.global_searcher.search).parameters:
