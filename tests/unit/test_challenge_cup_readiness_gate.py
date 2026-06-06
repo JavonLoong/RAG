@@ -297,6 +297,75 @@ def test_official_rubric_alignment_gate_rejects_missing_sources_and_evidence(mon
     assert "no_award_guarantee" in check.detail
 
 
+def test_special_prize_dashboard_gate_rejects_missing_non_self_report_evidence(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    dashboard_json = tmp_path / "special_prize_readiness_dashboard.json"
+    dashboard_md = tmp_path / "special_prize_readiness_dashboard.md"
+    existing_evidence = "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md"
+    self_report_path = module.REPO_ROOT / "docs" / "challenge_cup" / "reproducibility" / "temporary_self_report.md"
+    self_report = self_report_path.relative_to(module.REPO_ROOT).as_posix()
+    missing_evidence = "docs/challenge_cup/reproducibility/missing_dashboard_evidence_for_test.md"
+    rubric_readiness = [
+        {
+            "dimension_key": key,
+            "readiness_level": "strong_evidence_linked",
+            "judge_message": "message",
+            "defense_action": "action",
+            "evidence_files": [existing_evidence],
+        }
+        for key in sorted(module.OFFICIAL_RUBRIC_REQUIRED_DIMENSIONS)
+    ]
+    rubric_readiness[0]["evidence_files"] = [self_report, missing_evidence]
+    dashboard_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_special_prize_readiness_dashboard",
+                "status": "special_prize_review_ready_with_external_evidence_gaps",
+                "no_award_guarantee": True,
+                "completion_claim_allowed": False,
+                "can_mark_goal_complete": False,
+                "official_basis": {
+                    "latest_public_result_source_id": module.OFFICIAL_RUBRIC_LATEST_SOURCE_ID,
+                    "max_special_prize_count": 7,
+                    "may_be_vacant": True,
+                },
+                "rubric_readiness": rubric_readiness,
+                "top_risks": [
+                    {"risk_id": "expert_feedback"},
+                    {"risk_id": "timed_rehearsal"},
+                    {"risk_id": "award_overclaim"},
+                ],
+                "next_action_files": [existing_evidence],
+                "verification_commands": ["python scripts/check_challenge_cup_goal_completion.py"],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    dashboard_md.write_text(
+        "\n".join(
+            [
+                "Special Prize Readiness Dashboard",
+                "special_prize_review_ready_with_external_evidence_gaps",
+                "no_award_guarantee=True",
+                "expert_feedback",
+                "timed_rehearsal",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "SPECIAL_PRIZE_READINESS_DASHBOARD_JSON", dashboard_json)
+    monkeypatch.setattr(module, "SPECIAL_PRIZE_READINESS_DASHBOARD_MD", dashboard_md)
+    monkeypatch.setattr(module, "SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS", [])
+    monkeypatch.setattr(module, "REPORT_MD", self_report_path)
+
+    check = module.check_special_prize_readiness_dashboard()
+
+    assert not check.passed
+    assert missing_evidence in check.detail
+    assert self_report not in check.detail
+
+
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     dataset = tmp_path / "system_eval_questions.jsonl"
