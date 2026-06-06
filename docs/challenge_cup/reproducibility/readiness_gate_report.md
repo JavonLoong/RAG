@@ -7,7 +7,7 @@
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
-| chinese readability | pass | 54 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 53 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |

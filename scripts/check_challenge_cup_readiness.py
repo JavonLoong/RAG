@@ -719,10 +719,12 @@ def display_path(path: Path) -> str:
 def challenge_cup_text_paths() -> list[Path]:
     if not PACKAGE_DIR.exists():
         return []
+    readiness_self_report = REPORT_MD.resolve()
     return sorted(
         path
         for path in PACKAGE_DIR.rglob("*")
         if path.is_file() and path.suffix.lower() in CHALLENGE_CUP_TEXT_SUFFIXES
+        and path.resolve() != readiness_self_report
     )
 
 

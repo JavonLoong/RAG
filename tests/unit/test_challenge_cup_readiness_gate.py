@@ -152,6 +152,26 @@ def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tm
     assert "01_挑战杯项目书.md" in check.detail
 
 
+def test_challenge_cup_chinese_readability_ignores_readiness_self_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    repro_dir = package_dir / "reproducibility"
+    repro_dir.mkdir(parents=True)
+    report = repro_dir / "readiness_gate_report.md"
+    report.write_text(f"# self report\n{module.MOJIBAKE_MARKERS[0]}\n", encoding="utf-8")
+    (package_dir / "README_先看这里.md").write_text(
+        " ".join(module.CHINESE_READABILITY_REQUIRED_TERMS),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+    monkeypatch.setattr(module, "REPORT_MD", report)
+
+    check = module.check_challenge_cup_chinese_readability()
+
+    assert check.passed
+    assert "1 challenge-cup text artifacts" in check.detail
+
+
 def test_claim_matrix_gate_rejects_missing_evidence_paths(tmp_path, monkeypatch) -> None:
     module = load_readiness_module()
     matrix = tmp_path / "claim_matrix.md"
