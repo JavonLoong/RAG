@@ -63,6 +63,8 @@
     "docs/challenge_cup/reproducibility/application_value_quantification.json",
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md",
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json",
+    "docs/challenge_cup/reproducibility/verification_transcript.md",
+    "docs/challenge_cup/reproducibility/verification_transcript.json",
     "docs/challenge_cup/reproducibility/expert_feedback_form.md",
     "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
     "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",

@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 56
+CURRENT_READINESS_GATE_COUNT = 57
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -115,6 +115,8 @@ RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE = (
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json"
 )
+VERIFICATION_TRANSCRIPT_MD_RELATIVE = "docs/challenge_cup/reproducibility/verification_transcript.md"
+VERIFICATION_TRANSCRIPT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/verification_transcript.json"
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
@@ -148,6 +150,8 @@ APPLICATION_VALUE_QUANTIFICATION_MD = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATI
 APPLICATION_VALUE_QUANTIFICATION_JSON = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
+VERIFICATION_TRANSCRIPT_MD = REPO_ROOT / VERIFICATION_TRANSCRIPT_MD_RELATIVE
+VERIFICATION_TRANSCRIPT_JSON = REPO_ROOT / VERIFICATION_TRANSCRIPT_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
@@ -207,6 +211,10 @@ RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
 ]
+VERIFICATION_TRANSCRIPT_REQUIRED_PATHS = [
+    VERIFICATION_TRANSCRIPT_MD_RELATIVE,
+    VERIFICATION_TRANSCRIPT_JSON_RELATIVE,
+]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -237,6 +245,11 @@ RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY = (
     "This snapshot records the local runtime used to reproduce the challenge-cup package; it is not a "
     "production deployment certification, does not guarantee a special-prize result, and does not replace "
     "real expert feedback or real timed rehearsal evidence."
+)
+VERIFICATION_TRANSCRIPT_BOUNDARY = (
+    "This transcript summarizes current machine-verification reports for reviewer navigation; it does not "
+    "claim goal completion, does not claim expert approval or timed rehearsal completion, and does not "
+    "replace real expert feedback or real timed rehearsal evidence."
 )
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
@@ -372,6 +385,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/application_value_quantification.json",
     "reproducibility/runtime_reproducibility_snapshot.md",
     "reproducibility/runtime_reproducibility_snapshot.json",
+    "reproducibility/verification_transcript.md",
+    "reproducibility/verification_transcript.json",
     "reproducibility/expert_feedback_form.md",
     "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
@@ -5253,6 +5268,172 @@ def check_runtime_reproducibility_snapshot() -> GateCheck:
     )
 
 
+def check_verification_transcript() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path
+        for path in (VERIFICATION_TRANSCRIPT_MD, VERIFICATION_TRANSCRIPT_JSON)
+        if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("verification transcript", False, f"missing or empty: {missing}")
+
+    payload = load_json(VERIFICATION_TRANSCRIPT_JSON)
+    markdown = VERIFICATION_TRANSCRIPT_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_verification_transcript":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "package_verification_transcript_ready_goal_still_blocked":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("external_validation_claimed") is not False:
+        failures.append(f"external_validation_claimed={payload.get('external_validation_claimed')}")
+
+    readiness = payload.get("readiness_gate", {})
+    if not isinstance(readiness, dict):
+        failures.append("readiness_gate missing")
+        readiness = {}
+    if readiness.get("status") != "pass":
+        failures.append(f"readiness.status={readiness.get('status')}")
+    if int(readiness.get("passed") or -1) != CURRENT_READINESS_GATE_COUNT:
+        failures.append(f"readiness.passed={readiness.get('passed')}")
+    if int(readiness.get("total") or -1) != CURRENT_READINESS_GATE_COUNT:
+        failures.append(f"readiness.total={readiness.get('total')}")
+    if int(readiness.get("current_gate_count") or -1) != CURRENT_READINESS_GATE_COUNT:
+        failures.append(f"readiness.current_gate_count={readiness.get('current_gate_count')}")
+
+    final_acceptance = payload.get("final_acceptance", {})
+    if not isinstance(final_acceptance, dict):
+        failures.append("final_acceptance missing")
+        final_acceptance = {}
+    if final_acceptance.get("status") != "package_ready_awaiting_external_hard_evidence":
+        failures.append(f"final_acceptance.status={final_acceptance.get('status')}")
+    if final_acceptance.get("can_submit_for_package_review") is not True:
+        failures.append(f"can_submit_for_package_review={final_acceptance.get('can_submit_for_package_review')}")
+    if final_acceptance.get("can_mark_goal_complete") is not False:
+        failures.append(f"can_mark_goal_complete={final_acceptance.get('can_mark_goal_complete')}")
+
+    goal_completion = payload.get("goal_completion", {})
+    if not isinstance(goal_completion, dict):
+        failures.append("goal_completion missing")
+        goal_completion = {}
+    if goal_completion.get("status") != "fail":
+        failures.append(f"goal_completion.status={goal_completion.get('status')}")
+    if goal_completion.get("completion_claim_allowed") is not False:
+        failures.append(f"goal_completion.completion_claim_allowed={goal_completion.get('completion_claim_allowed')}")
+    if goal_completion.get("expected_failure") is not True:
+        failures.append(f"goal_completion.expected_failure={goal_completion.get('expected_failure')}")
+
+    blocking_categories = {
+        str(item.get("category"))
+        for item in payload.get("blocking_items", [])
+        if isinstance(item, dict)
+    }
+    if blocking_categories != {"expert_feedback", "timed_rehearsal"}:
+        failures.append(f"blocking_items={sorted(blocking_categories)}")
+
+    commands = {
+        str(item.get("command")): item
+        for item in payload.get("verification_commands", [])
+        if isinstance(item, dict)
+    }
+    expected_commands = {
+        ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_readiness.py": (0, "pass"),
+        ".\\.venv\\Scripts\\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .": (
+            0,
+            "pass",
+        ),
+        ".\\.venv\\Scripts\\python.exe scripts/build_challenge_cup_final_acceptance_audit.py": (
+            0,
+            "package_ready_awaiting_external_hard_evidence",
+        ),
+        ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_goal_completion.py": (1, "fail"),
+    }
+    for command, (expected_exit, expected_status) in expected_commands.items():
+        item = commands.get(command)
+        if not item:
+            failures.append(f"verification command missing: {command}")
+            continue
+        try:
+            actual_exit = int(item.get("expected_exit_code"))
+        except (TypeError, ValueError):
+            actual_exit = None
+        if actual_exit != expected_exit:
+            failures.append(f"{command} expected_exit_code={item.get('expected_exit_code')}")
+        if item.get("observed_status") != expected_status:
+            failures.append(f"{command} observed_status={item.get('observed_status')}")
+    goal_command = commands.get(".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_goal_completion.py", {})
+    if goal_command.get("expected_failure_reason") != "awaiting_real_external_hard_evidence":
+        failures.append(f"goal expected_failure_reason={goal_command.get('expected_failure_reason')}")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != VERIFICATION_TRANSCRIPT_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "does not claim goal completion",
+        "does not claim expert approval or timed rehearsal completion",
+        "does not replace real expert feedback or real timed rehearsal evidence",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in VERIFICATION_TRANSCRIPT_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(
+        term
+        for term in (
+            "Verification Transcript",
+            "Expected Failure",
+            f"readiness gate pass {CURRENT_READINESS_GATE_COUNT}/{CURRENT_READINESS_GATE_COUNT}",
+            "does not claim goal completion",
+        )
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in VERIFICATION_TRANSCRIPT_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in VERIFICATION_TRANSCRIPT_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in VERIFICATION_TRANSCRIPT_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in VERIFICATION_TRANSCRIPT_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(VERIFICATION_TRANSCRIPT_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked verification transcript files: {untracked}")
+    if dirty:
+        failures.append(f"dirty verification transcript files: {dirty}")
+
+    return GateCheck(
+        "verification transcript",
+        not failures,
+        "current verifier, readiness, final audit, and expected goal-completion failure summarized"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_scenario_demo_evidence() -> GateCheck:
     if not BROWSER_SMOKE_JSON.exists():
         return GateCheck("scenario demo evidence", False, "browser_demo_smoke_report.json missing")
@@ -5377,6 +5558,7 @@ def run_gate() -> list[GateCheck]:
         check_application_validation_evidence(),
         check_application_value_quantification(),
         check_runtime_reproducibility_snapshot(),
+        check_verification_transcript(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
         check_expert_feedback_protocol(),
@@ -5398,7 +5580,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, runtime reproducibility snapshot, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

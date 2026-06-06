@@ -3,11 +3,11 @@
   "status": "package_ready_awaiting_external_hard_evidence",
   "package_readiness": {
     "status": "pass",
-    "passed": 56,
-    "total": 56,
-    "source_report_passed": 56,
-    "source_report_total": 56,
-    "current_gate_count": 56,
+    "passed": 57,
+    "total": 57,
+    "source_report_passed": 57,
+    "source_report_total": 57,
+    "current_gate_count": 57,
     "count_synced_for_self_referential_audit": false,
     "report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
   },

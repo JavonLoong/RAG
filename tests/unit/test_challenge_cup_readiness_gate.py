@@ -122,6 +122,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "application validation evidence" in report
     assert "application value quantification" in report
     assert "runtime reproducibility snapshot" in report
+    assert "verification transcript" in report
     assert "scenario demo evidence" in report
     assert "scenario walkthrough script" in report
     assert "expert feedback protocol" in report
@@ -220,12 +221,12 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "56 readiness gates", "53 readiness gates"
+                "57 readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("56 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("57 readiness gates", "53 readiness gates"),
         encoding="utf-8",
     )
 
@@ -2369,6 +2370,115 @@ def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatc
     assert not check.passed
     assert "runtime_reproducibility_snapshot.md" in check.detail
     assert "runtime_reproducibility_snapshot.json" in check.detail
+
+
+def test_verification_transcript_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "verification_transcript.md"
+    metadata = tmp_path / "verification_transcript.json"
+    monkeypatch.setattr(module, "VERIFICATION_TRANSCRIPT_MD", markdown)
+    monkeypatch.setattr(module, "VERIFICATION_TRANSCRIPT_JSON", metadata)
+
+    check = module.check_verification_transcript()
+
+    assert not check.passed
+    assert "verification_transcript.md" in check.detail
+    assert "verification_transcript.json" in check.detail
+
+
+def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "verification_transcript.md"
+    metadata = tmp_path / "verification_transcript.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = [
+        "docs/challenge_cup/reproducibility/verification_transcript.md",
+        "docs/challenge_cup/reproducibility/verification_transcript.json",
+    ]
+    monkeypatch.setattr(module, "VERIFICATION_TRANSCRIPT_MD", markdown)
+    monkeypatch.setattr(module, "VERIFICATION_TRANSCRIPT_JSON", metadata)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "VERIFICATION_TRANSCRIPT_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    markdown.write_text(
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 57/57\n"
+        "does not claim goal completion\n",
+        encoding="utf-8",
+    )
+    metadata.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_verification_transcript",
+                "status": "package_verification_transcript_ready_goal_still_blocked",
+                "completion_claim_allowed": False,
+                "does_not_satisfy_goal_completion": True,
+                "external_validation_claimed": False,
+                "readiness_gate": {
+                    "status": "pass",
+                    "passed": 57,
+                    "total": 57,
+                    "current_gate_count": 57,
+                },
+                "final_acceptance": {
+                    "status": "package_ready_awaiting_external_hard_evidence",
+                    "can_submit_for_package_review": True,
+                    "can_mark_goal_complete": False,
+                },
+                "goal_completion": {
+                    "status": "fail",
+                    "completion_claim_allowed": False,
+                    "expected_failure": True,
+                },
+                "blocking_items": [{"category": "expert_feedback"}, {"category": "timed_rehearsal"}],
+                "verification_commands": [
+                    {
+                        "command": ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_readiness.py",
+                        "expected_exit_code": 0,
+                        "observed_status": "pass",
+                    },
+                    {
+                        "command": (
+                            ".\\.venv\\Scripts\\python.exe "
+                            "docs/challenge_cup/reproducibility/verify_submission_package.py --root ."
+                        ),
+                        "expected_exit_code": 0,
+                        "observed_status": "pass",
+                    },
+                    {
+                        "command": ".\\.venv\\Scripts\\python.exe scripts/build_challenge_cup_final_acceptance_audit.py",
+                        "expected_exit_code": 0,
+                        "observed_status": "package_ready_awaiting_external_hard_evidence",
+                    },
+                    {
+                        "command": ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_goal_completion.py",
+                        "expected_exit_code": 1,
+                        "observed_status": "fail",
+                        "expected_failure_reason": "awaiting_real_external_hard_evidence",
+                    },
+                ],
+                "boundary": module.VERIFICATION_TRANSCRIPT_BOUNDARY,
+                "output_files": required_paths,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(
+        json.dumps({"included_files": required_paths}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    check = module.check_verification_transcript()
+
+    assert check.passed
 
 
 def test_expert_feedback_protocol_gate_rejects_missing_integrity_terms(monkeypatch, tmp_path) -> None:

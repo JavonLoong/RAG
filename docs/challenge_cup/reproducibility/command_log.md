@@ -19,6 +19,8 @@ python scripts/build_challenge_cup_package.py
 -> docs/challenge_cup/reproducibility/application_value_quantification.json
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
+-> docs/challenge_cup/reproducibility/verification_transcript.md
+-> docs/challenge_cup/reproducibility/verification_transcript.json
 -> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 -> docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip
@@ -79,6 +81,11 @@ python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
 -> Status: runtime_snapshot_ready_no_environment_portability_claim
+
+python scripts/build_challenge_cup_verification_transcript.py
+-> docs/challenge_cup/reproducibility/verification_transcript.md
+-> docs/challenge_cup/reproducibility/verification_transcript.json
+-> Status: package_verification_transcript_ready_goal_still_blocked
 
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
@@ -146,7 +153,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (56/56 gates)
+-> Status: pass (57/57 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

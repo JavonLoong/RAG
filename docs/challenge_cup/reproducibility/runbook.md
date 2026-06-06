@@ -50,6 +50,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 ```
 
+## 生成复核转录摘要
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_verification_transcript.py
+```
+
 ## 重新生成挑战杯成果包
 
 ```powershell
