@@ -54,6 +54,7 @@ REHEARSAL_SCHEDULE_COMMAND = (
 )
 REHEARSAL_RUN_COMMAND = (
     "python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> "
+    "--source <real-timer-or-observer-file> "
     "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
     "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
     "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "

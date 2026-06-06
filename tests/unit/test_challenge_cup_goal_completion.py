@@ -49,6 +49,22 @@ def test_goal_completion_gate_fails_until_real_hard_evidence_is_archived() -> No
     assert "不能标记目标完成" in report
 
 
+def test_goal_completion_gate_rejects_stale_readiness_gate_count(tmp_path: Path) -> None:
+    module = load_goal_module()
+    repro = tmp_path / "docs" / "challenge_cup" / "reproducibility"
+    repro.mkdir(parents=True)
+    (repro / "readiness_gate_report.md").write_text(
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 30/30\n",
+        encoding="utf-8",
+    )
+
+    ok, detail = module.readiness_passed(tmp_path)
+
+    assert ok is False
+    assert "stale readiness gate count" in detail
+    assert "62/62" in detail
+
+
 def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_evidence(tmp_path: Path) -> None:
     module = load_goal_module()
     repro = tmp_path / "docs" / "challenge_cup" / "reproducibility"
@@ -68,6 +84,7 @@ def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_eviden
                 "review_date": "2026-06-06",
                 "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
                 "source_sha256": hashlib.sha256(expert_source.read_bytes()).hexdigest(),
+                "source_origin": "external_attachment",
                 "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
                 "real_feedback_confirmed": True,
@@ -90,6 +107,7 @@ def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_eviden
                 ],
                 "recording_or_timer_source_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
                 "source_sha256": hashlib.sha256(rehearsal_source.read_bytes()).hexdigest(),
+                "source_origin": "external_attachment",
                 "real_rehearsal_confirmed": True,
             },
             ensure_ascii=False,
@@ -97,7 +115,7 @@ def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_eviden
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 30/30\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
         encoding="utf-8",
     )
     ledger = {

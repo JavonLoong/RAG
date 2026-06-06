@@ -84,7 +84,7 @@ def build_rehearsal_note(args: argparse.Namespace) -> str:
     return "\n".join(note_lines).rstrip() + "\n"
 
 
-def build_intake_args(source: Path, args: argparse.Namespace) -> argparse.Namespace:
+def build_intake_args(source: Path, args: argparse.Namespace, source_origin: str) -> argparse.Namespace:
     return argparse.Namespace(
         id=args.id,
         source=str(source),
@@ -96,16 +96,25 @@ def build_intake_args(source: Path, args: argparse.Namespace) -> argparse.Namesp
         offline_fallback_actual_seconds=args.offline_fallback_actual_seconds,
         killer_question_seconds=args.killer_question_seconds,
         confirm_real_rehearsal=True,
+        source_origin=source_origin,
         force=args.force,
     )
 
 
 def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any]]:
     validate_args(args)
-    with tempfile.TemporaryDirectory(prefix=f"{args.id}-timed-rehearsal-") as temp_root:
-        source = Path(temp_root) / f"{args.id}.txt"
-        source.write_text(build_rehearsal_note(args), encoding="utf-8")
-        metadata_path, source_path = intake.record_timed_rehearsal(build_intake_args(source, args))
+    if args.source:
+        source = intake.valid_source_attachment(args.source)
+        metadata_path, source_path = intake.record_timed_rehearsal(
+            build_intake_args(source, args, intake.SOURCE_ORIGIN_EXTERNAL_ATTACHMENT)
+        )
+    else:
+        with tempfile.TemporaryDirectory(prefix=f"{args.id}-timed-rehearsal-") as temp_root:
+            source = Path(temp_root) / f"{args.id}.txt"
+            source.write_text(build_rehearsal_note(args), encoding="utf-8")
+            metadata_path, source_path = intake.record_timed_rehearsal(
+                build_intake_args(source, args, intake.SOURCE_ORIGIN_GENERATED_OBSERVER_NOTE)
+            )
     payload = intake.ledger.write_outputs()
     return metadata_path, source_path, payload
 
@@ -124,6 +133,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--demo-actual-seconds", required=True, type=positive_seconds)
     parser.add_argument("--offline-fallback-actual-seconds", required=True, type=positive_seconds)
     parser.add_argument("--killer-question-seconds", nargs="+", required=True, type=positive_seconds)
+    parser.add_argument(
+        "--source",
+        help=(
+            "Independent real timer screenshot, screen recording, or observer source. Without this, the generated "
+            "observer note is archived but will not count as hard evidence."
+        ),
+    )
     parser.add_argument("--note", action="append", default=[])
     parser.add_argument("--confirm-real-rehearsal", action="store_true")
     parser.add_argument("--force", action="store_true")
@@ -134,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_timed_rehearsal(args)
-    except RehearsalInputError as exc:
+    except (RehearsalInputError, intake.HardEvidenceInputError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

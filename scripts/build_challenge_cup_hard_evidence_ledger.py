@@ -50,6 +50,7 @@ EXPERT_RECORD_COMMAND = (
 )
 REHEARSAL_RUN_COMMAND = (
     "python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> "
+    "--source <real-timer-or-observer-file> "
     "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
     "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
     "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
@@ -89,6 +90,7 @@ TIMED_REHEARSAL_LIMITS = {
     "killer_question_actual_seconds": 30,
     "killer_question_count": 5,
 }
+SOURCE_ORIGIN_EXTERNAL_ATTACHMENT = "external_attachment"
 
 
 def configure_paths(repo_root: Path) -> None:
@@ -192,6 +194,12 @@ def remediation_record_failures(value: Any) -> list[str]:
     return failures
 
 
+def source_origin_failure(value: Any) -> str | None:
+    if value != SOURCE_ORIGIN_EXTERNAL_ATTACHMENT:
+        return f"source_origin must be {SOURCE_ORIGIN_EXTERNAL_ATTACHMENT}"
+    return None
+
+
 def timed_rehearsal_timing_failures(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
@@ -273,6 +281,9 @@ def review_metadata_records(
             reasons.append(f"{confirmed_field} must be true")
         if payload.get("evidence_type") not in accepted_types:
             reasons.append(f"evidence_type={payload.get('evidence_type')!r} is not accepted")
+        failure = source_origin_failure(payload.get("source_origin"))
+        if failure:
+            reasons.append(failure)
         if not metadata_date_not_future(category_key, payload):
             date_field = "review_date" if category_key == "expert_feedback" else "rehearsal_date"
             reasons.append(f"{date_field} must be YYYY-MM-DD and not in the future")
@@ -372,6 +383,7 @@ def build_payload() -> dict[str, Any]:
             "review_date",
             "feedback_source_path",
             "source_sha256",
+            "source_origin",
             "review_dimensions",
             "remediation_record",
             "real_feedback_confirmed",
@@ -396,6 +408,7 @@ def build_payload() -> dict[str, Any]:
             "killer_question_results",
             "recording_or_timer_source_path",
             "source_sha256",
+            "source_origin",
             "real_rehearsal_confirmed",
         ],
     )
@@ -457,7 +470,7 @@ def write_readmes() -> None:
                 "- Each category must include at least one JSON summary with the required metadata fields; screenshots or recordings alone do not satisfy the readiness gate.",
                 "- Preflight expert feedback with `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback` before recording.",
                 "- Record expert feedback with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback`.",
-                "- Preferred timed rehearsal flow: `python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal` generates an observer note from measured seconds and archives it.",
+                "- Preferred timed rehearsal flow: `python scripts/run_challenge_cup_timed_rehearsal.py ... --source <real-timer-or-observer-file> --confirm-real-rehearsal` archives an independent real timer or observer attachment.",
                 "- Preflight source-based timed rehearsal evidence with `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal` before source-based recording.",
                 "- Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.",
                 text("- \\u4e0d\\u4f2a\\u9020\\u8bc1\\u636e\\uff1b\\u6ca1\\u6709\\u8fd9\\u4e24\\u7c7b\\u771f\\u5b9e\\u8bc1\\u636e\\u524d\\uff0c\\u4e0d\\u80fd\\u6807\\u8bb0\\u76ee\\u6807\\u5b8c\\u6210\\u3002"),
@@ -485,6 +498,7 @@ def write_readmes() -> None:
                 "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
+                "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
             ]
@@ -503,11 +517,12 @@ def write_readmes() -> None:
                 ),
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
                 "Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.",
-                "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, source_sha256, real_rehearsal_confirmed.",
+                "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, source_sha256, source_origin, real_rehearsal_confirmed.",
                 "Use YYYY-MM-DD for rehearsal_date; it must not be in the future. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
                 "observer must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
+                "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
                 f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{REHEARSAL_RECORD_COMMAND}`.",

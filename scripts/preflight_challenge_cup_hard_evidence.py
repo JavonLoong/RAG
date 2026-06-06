@@ -121,6 +121,7 @@ def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
         "review_date": args.review_date,
         "review_dimension_count": len(review_dimensions),
         "source_sha256": intake.sha256_file(source),
+        "source_origin": intake.SOURCE_ORIGIN_EXTERNAL_ATTACHMENT,
         "has_remediation_record": bool(remediation_issue and remediation_action),
         "real_feedback_confirmed": True,
     }
@@ -158,6 +159,7 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         "killer_question_count": len(args.killer_question_seconds),
         "max_killer_question_seconds": max(args.killer_question_seconds),
         "source_sha256": intake.sha256_file(source),
+        "source_origin": intake.SOURCE_ORIGIN_EXTERNAL_ATTACHMENT,
         "timing_acceptance_pass": not timing_failures,
         "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,

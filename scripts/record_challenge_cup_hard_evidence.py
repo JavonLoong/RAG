@@ -35,6 +35,8 @@ TIMING_LIMITS = {
     "killer_question_actual_seconds": 30,
     "killer_question_count": 5,
 }
+SOURCE_ORIGIN_EXTERNAL_ATTACHMENT = "external_attachment"
+SOURCE_ORIGIN_GENERATED_OBSERVER_NOTE = "generated_observer_note"
 
 
 class HardEvidenceInputError(ValueError):
@@ -194,6 +196,7 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         "review_date": review_date,
         "feedback_source_path": repo_path(copied_source),
         "source_sha256": sha256_file(copied_source),
+        "source_origin": SOURCE_ORIGIN_EXTERNAL_ATTACHMENT,
         "review_dimensions": review_dimensions,
         "remediation_record": [{"issue": remediation_issue, "action": remediation_action}],
         "real_feedback_confirmed": True,
@@ -217,6 +220,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
     source = valid_source_attachment(args.source)
     copied_source = copy_source(source, REHEARSAL_DIR, args.id, force=args.force)
     timing_failures = timed_rehearsal_acceptance_failures(args)
+    source_origin = getattr(args, "source_origin", SOURCE_ORIGIN_EXTERNAL_ATTACHMENT)
     metadata = {
         "evidence_type": args.evidence_type,
         "rehearsal_date": rehearsal_date,
@@ -230,6 +234,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         ],
         "recording_or_timer_source_path": repo_path(copied_source),
         "source_sha256": sha256_file(copied_source),
+        "source_origin": source_origin,
         "timing_acceptance_pass": not timing_failures,
         "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,

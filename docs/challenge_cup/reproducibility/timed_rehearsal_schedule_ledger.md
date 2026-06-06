@@ -14,7 +14,7 @@
 
 ## Required Next Step
 
-After the timed rehearsal is actually run, archive measured seconds and observer evidence with run_challenge_cup_timed_rehearsal.py --confirm-real-rehearsal or record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal.
+After the timed rehearsal is actually run, archive measured seconds and observer evidence with run_challenge_cup_timed_rehearsal.py --source <real-timer-or-observer-file> --confirm-real-rehearsal or record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal.
 
 ## Rerun Commands
 

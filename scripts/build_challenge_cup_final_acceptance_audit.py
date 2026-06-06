@@ -317,7 +317,7 @@ def build_payload() -> dict[str, Any]:
         "blocking_items": blocking_items,
         "next_required_actions": [
             "Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback",
-            "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
+            "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --source <real-timer-or-observer-file> --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
             "Rebuild package, rerun readiness, rerun goal completion, and rerun this audit.",
         ],
         "boundary": BOUNDARY,

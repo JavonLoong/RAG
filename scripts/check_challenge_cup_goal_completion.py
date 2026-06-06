@@ -37,6 +37,7 @@ TIMED_REHEARSAL_LIMITS = {
     "killer_question_actual_seconds": 30,
     "killer_question_count": 5,
 }
+SOURCE_ORIGIN_EXTERNAL_ATTACHMENT = "external_attachment"
 
 
 def load_current_readiness_gate_count() -> int:
@@ -82,6 +83,12 @@ def nonempty_string(value: Any) -> bool:
 
 def iso_date_string(value: Any) -> bool:
     return is_not_future_iso_date(value)
+
+
+def source_origin_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
+    if metadata.get("source_origin") != SOURCE_ORIGIN_EXTERNAL_ATTACHMENT:
+        return [f"{metadata_path}: source_origin must be {SOURCE_ORIGIN_EXTERNAL_ATTACHMENT}"]
+    return []
 
 
 def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
@@ -182,11 +189,11 @@ def readiness_passed(repo_root: Path) -> tuple[bool, str]:
         return False, f"readiness report passed count is {passed_match.group(1)}/{passed_match.group(2)}"
     passed = int(passed_match.group(1))
     total = int(passed_match.group(2))
-    if total < CURRENT_READINESS_GATE_COUNT:
+    if total != CURRENT_READINESS_GATE_COUNT:
         return (
-            True,
-            f"readiness gate passed {CURRENT_READINESS_GATE_COUNT}/{CURRENT_READINESS_GATE_COUNT} "
-            "(source report count synced to current gate set)",
+            False,
+            f"stale readiness gate count {passed}/{total}; expected current "
+            f"{CURRENT_READINESS_GATE_COUNT}/{CURRENT_READINESS_GATE_COUNT}",
         )
     return True, f"readiness gate passed {passed}/{total}"
 
@@ -246,6 +253,7 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
             if metadata.get(confirmation_field) is not True:
                 failures.append(f"{relative}: {confirmation_field} must be true")
                 continue
+            failures.extend(source_origin_failures(metadata, relative))
             source_relative = str(metadata.get(source_field, ""))
             if not safe_repo_relative(source_relative) or not nonempty(repo_root / source_relative):
                 failures.append(f"{relative}: {source_field} must point to a real source attachment")

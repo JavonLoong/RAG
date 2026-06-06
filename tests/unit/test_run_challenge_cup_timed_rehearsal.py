@@ -82,6 +82,7 @@ def test_records_confirmed_timed_rehearsal_note_and_refreshes_ledger(tmp_path: P
     assert "opening_actual_seconds: 88" in note
     assert "--confirm-real-rehearsal supplied: true" in note
     assert metadata["evidence_type"] == "observer_note"
+    assert metadata["source_origin"] == "generated_observer_note"
     assert metadata["recording_or_timer_source_path"] == (
         "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
     )
@@ -100,6 +101,33 @@ def test_records_confirmed_timed_rehearsal_note_and_refreshes_ledger(tmp_path: P
     assert ledger["status"] == "awaiting_real_external_feedback_and_timed_rehearsal"
     assert ledger["completion_claim_allowed"] is False
     assert ledger["categories"]["expert_feedback"]["collected_count"] == 0
+    rehearsal = ledger["categories"]["timed_rehearsal"]
+    assert rehearsal["collected_count"] == 0
+    assert rehearsal["evidence_records"] == []
+    assert "source_origin must be external_attachment" in rehearsal["rejected_metadata_records"][0]["reasons"]
+
+
+def test_records_external_timed_rehearsal_source_and_refreshes_ledger(tmp_path: Path) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer-screenshot.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real independent timer screenshot or observer source", encoding="utf-8")
+
+    exit_code = module.main(timed_rehearsal_args("--source", str(source), "--confirm-real-rehearsal"))
+
+    assert exit_code == 0
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    copied_source = evidence_dir / "rehearsal-1.txt"
+    metadata_path = evidence_dir / "rehearsal-1.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert copied_source.read_text(encoding="utf-8") == source.read_text(encoding="utf-8")
+    assert metadata["source_origin"] == "external_attachment"
+    ledger = json.loads(
+        (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
     assert ledger["categories"]["timed_rehearsal"]["collected_count"] == 1
 
 

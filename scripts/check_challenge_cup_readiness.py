@@ -4711,6 +4711,8 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
                 )
             if "run_challenge_cup_timed_rehearsal.py" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
+            if "--source" not in joined:
+                failures.append(f"{category}: ready_to_execute_commands missing independent --source attachment")
             if "--confirm-real-rehearsal" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-rehearsal")
     post_commands = stream.get("post_collection_commands")
@@ -4914,6 +4916,8 @@ def check_hard_evidence_action_pack() -> GateCheck:
                 failures.append(f"{category}: recording_commands missing schedule recorder")
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{category}: recording_commands missing timed rehearsal runner")
+            if "--source" not in commands:
+                failures.append(f"{category}: recording_commands missing independent --source attachment")
             if "--confirm-real-rehearsal" not in commands:
                 failures.append(f"{category}: recording_commands missing --confirm-real-rehearsal")
             failed_rule = str(stream.get("failed_rehearsal_archival_rule", ""))
@@ -4934,6 +4938,7 @@ def check_hard_evidence_action_pack() -> GateCheck:
             "does_not_satisfy_goal_completion=True",
             "PowerShell execution block",
             "source_sha256",
+            "--source",
             "must not be a JSON metadata file",
             "timing_acceptance_pass=false",
             "rejected_metadata_records",
@@ -5161,6 +5166,8 @@ def check_external_evidence_execution_kit() -> GateCheck:
                 )
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
+            if "--source" not in commands:
+                failures.append(f"{packet_id}: recording_commands missing independent --source attachment")
             if "--confirm-real-rehearsal" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing --confirm-real-rehearsal")
             failed_rule = str(packet.get("failed_rehearsal_archival_rule", ""))
@@ -5270,6 +5277,8 @@ def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], ca
         failures.append(f"{relative}: review_date must be YYYY-MM-DD and not in the future")
     if payload.get("real_feedback_confirmed") is not True:
         failures.append(f"{relative}: real_feedback_confirmed must be true")
+    if payload.get("source_origin") != "external_attachment":
+        failures.append(f"{relative}: source_origin must be external_attachment")
     failures.extend(validate_source_path(relative, payload, "feedback_source_path"))
     return failures
 
@@ -5298,6 +5307,8 @@ def validate_timed_rehearsal_metadata(relative: str, payload: dict[str, Any], ca
         failures.append(f"{relative}: rehearsal_date must be YYYY-MM-DD and not in the future")
     if payload.get("real_rehearsal_confirmed") is not True:
         failures.append(f"{relative}: real_rehearsal_confirmed must be true")
+    if payload.get("source_origin") != "external_attachment":
+        failures.append(f"{relative}: source_origin must be external_attachment")
     failures.extend(validate_source_path(relative, payload, "recording_or_timer_source_path"))
 
     killer_results = payload.get("killer_question_results")

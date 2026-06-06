@@ -122,7 +122,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
+.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --source <real-timer-or-observer-file> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
 ```
 
 如果已有真实计时截图、录屏或观察员笔记附件，也可以直接归档：

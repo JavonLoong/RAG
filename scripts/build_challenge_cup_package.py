@@ -1029,7 +1029,7 @@ def build_project_handoff_checklist(ctx: dict[str, Any]) -> str:
 | 缺口 | 归档入口 | 补齐后动作 |
 | --- | --- | --- |
 | 真实专家反馈 | `docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md` | 用 `scripts/record_challenge_cup_hard_evidence.py` 的 expert_feedback 模式归档原件或摘要，再重跑 readiness、goal completion、final audit 和 package build。 |
-| 真实计时彩排 | `docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md` | 用 `scripts/run_challenge_cup_timed_rehearsal.py` 或 `scripts/record_challenge_cup_hard_evidence.py` 的 timed_rehearsal 模式归档计时证据，再重跑全链路。 |
+| 真实计时彩排 | `docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md` | 用 `scripts/run_challenge_cup_timed_rehearsal.py` 并传入 `--source <real-timer-or-observer-file>`，或用 `scripts/record_challenge_cup_hard_evidence.py` 的 timed_rehearsal 模式归档独立计时证据，再重跑全链路。 |
 
 ## 移交结论
 
@@ -2191,7 +2191,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
+.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --source <real-timer-or-observer-file> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
 ```
 
 如果已有真实计时截图、录屏或观察员笔记附件，也可以直接归档：

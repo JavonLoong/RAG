@@ -97,6 +97,7 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
                 "review_date": "2026-06-06",
                 "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
                 "source_sha256": hashlib.sha256(expert_source.read_bytes()).hexdigest(),
+                "source_origin": "external_attachment",
                 "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
                 "real_feedback_confirmed": True,
@@ -126,6 +127,7 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
                 ),
                 "source_sha256": hashlib.sha256(rehearsal_source.read_bytes()).hexdigest(),
+                "source_origin": "external_attachment",
                 "real_rehearsal_confirmed": True,
             },
             ensure_ascii=False,

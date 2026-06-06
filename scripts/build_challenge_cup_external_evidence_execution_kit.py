@@ -65,6 +65,7 @@ REHEARSAL_SCHEDULE_COMMAND = (
 )
 REHEARSAL_RUN_COMMAND = (
     "python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id "
+    "--source path/to/real-timer-or-observer-file.txt "
     "--rehearsal-date YYYY-MM-DD --observer real-observer-alias "
     "--opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds "
     "--offline-fallback-actual-seconds actual-offline-fallback-seconds "
@@ -128,6 +129,7 @@ def timed_rehearsal_powershell_block() -> list[str]:
     return [
         f"Set-Location '{powershell_repo_root()}'",
         "$rehearsalId = 'rehearsal-YYYYMMDD-01'",
+        "$rehearsalSource = 'D:\\path\\to\\real-timer-or-observer-file.txt'",
         "$rehearsalDate = 'YYYY-MM-DD'",
         "$observer = 'real-observer-alias'",
         "$opening = 88",
@@ -135,7 +137,7 @@ def timed_rehearsal_powershell_block() -> list[str]:
         "$offline = 18",
         "$killer = 25,25,25,25,25",
         *guarded_powershell_command(
-            f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal"
+            f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --source $rehearsalSource --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal"
         ),
     ]
 
@@ -223,7 +225,7 @@ def execution_packets() -> list[dict[str, Any]]:
             "done_when": [
                 "a real observer is recorded",
                 "opening/demo/offline fallback/killer-question seconds are measured",
-                "run_challenge_cup_timed_rehearsal.py records actual timing metadata",
+                "run_challenge_cup_timed_rehearsal.py records actual timing metadata only with an independent --source attachment",
                 "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1 only when timing_acceptance_pass=true",
             ],
             "recording_commands": [

@@ -91,7 +91,7 @@ Ready packet files:
 
 Recording commands:
 - `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id real-rehearsal-schedule-id --source path/to/real-calendar-or-observer-prep-file.txt --scheduled-date YYYY-MM-DD --observer real-observer-alias --venue-or-channel real-venue-or-channel --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`
-- `python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+- `python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
 - `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
 - `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
 
@@ -100,13 +100,14 @@ PowerShell execution block:
 ```powershell
 Set-Location 'D:\虚拟C盘\RAG'
 $rehearsalId = 'rehearsal-YYYYMMDD-01'
+$rehearsalSource = 'D:\path\to\real-timer-or-observer-file.txt'
 $rehearsalDate = 'YYYY-MM-DD'
 $observer = 'real-observer-alias'
 $opening = 88
 $demo = 170
 $offline = 18
 $killer = 25,25,25,25,25
-.\.venv\Scripts\python.exe .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+.\.venv\Scripts\python.exe .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --source $rehearsalSource --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 ```
 

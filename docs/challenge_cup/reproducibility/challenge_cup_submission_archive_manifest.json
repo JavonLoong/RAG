@@ -2,8 +2,8 @@
   "generated_at": "2026-06-05 21:06",
   "archive_path": "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
   "algorithm": "sha256",
-  "bytes": 2536480,
-  "sha256": "1cad20a6870b50a091ec07d719a1196cbd5010c8cdd6d32f1b21153fa8a22844",
+  "bytes": 2536876,
+  "sha256": "2a27365413d1bce7f384590775bf9524aec276744a9226308b2d46c1b79a4661",
   "file_count": 112,
   "included_files": [
     "docs/challenge_cup/00_项目一页纸.md",
