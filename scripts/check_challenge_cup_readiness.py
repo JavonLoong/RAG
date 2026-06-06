@@ -34,6 +34,7 @@ REVIEW_RISK_RESPONSE_PLAN = PACKAGE_DIR / "17_评审风险控制与应急预案.
 SPECIAL_PRIZE_SCORING_DRILL = PACKAGE_DIR / "18_特等奖打分模拟与整改清单.md"
 POSTER_BOOTH_QA_PACK = PACKAGE_DIR / "19_作品展墙报问辩与展台脚本.md"
 COMMERCIALIZATION_ROADMAP = PACKAGE_DIR / "20_成果转化与持续迭代路线图.md"
+POSTER_BOARD_HTML = PACKAGE_DIR / "poster" / "challenge_cup_a0_poster.html"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
 DEFENSE_REHEARSAL_RESULT_PACKET_MD = REPRO_DIR / "defense_rehearsal_result_packet.md"
@@ -265,6 +266,7 @@ REQUIRED_PACKAGE_DOCS = [
     "18_特等奖打分模拟与整改清单.md",
     "19_作品展墙报问辩与展台脚本.md",
     "20_成果转化与持续迭代路线图.md",
+    "poster/challenge_cup_a0_poster.html",
     "defense_deck/challenge_cup_defense_deck.pptx",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
@@ -724,6 +726,34 @@ REQUIRED_COMMERCIALIZATION_ROADMAP_TERMS = {
     "hard_evidence_action_pack.md",
     "hard_evidence_ledger.md",
     "goal_completion_report.md",
+}
+REQUIRED_POSTER_BOARD_HTML_TERMS = {
+    "<!doctype html>",
+    "A0",
+    "@page",
+    "size: A0 landscape",
+    "知燃知维",
+    "GraphRAG",
+    "证据链",
+    "GT-07",
+    "60 题评测",
+    "9080 chunks",
+    "二维码",
+    "README",
+    "submission verifier",
+    "readiness gate",
+    "真实专家反馈",
+    "真实计时彩排",
+    "不承诺获奖",
+    "docs/challenge_cup/README_先看这里.md",
+    "docs/challenge_cup/13_评委现场速览卡.md",
+    "docs/challenge_cup/19_作品展墙报问辩与展台脚本.md",
+    "docs/challenge_cup/20_成果转化与持续迭代路线图.md",
+    "docs/challenge_cup/reproducibility/application_validation_report.md",
+    "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+    "docs/challenge_cup/reproducibility/verify_submission_package.py",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
 }
 REQUIRED_DEFENSE_REHEARSAL_TERMS = {
     "90秒开场",
@@ -2701,6 +2731,47 @@ def check_commercialization_roadmap() -> GateCheck:
     )
 
 
+def check_poster_board_asset() -> GateCheck:
+    if not POSTER_BOARD_HTML.exists():
+        return GateCheck("poster board asset", False, "poster/challenge_cup_a0_poster.html missing")
+    text = POSTER_BOARD_HTML.read_text(encoding="utf-8")
+    poster_relative = POSTER_BOARD_HTML.relative_to(REPO_ROOT).as_posix()
+    missing_terms = sorted(term for term in REQUIRED_POSTER_BOARD_HTML_TERMS if term not in text)
+    failures = missing_terms
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    if poster_relative not in manifest_evidence:
+        failures.append(f"missing manifest entries: ['{poster_relative}']")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    if poster_relative not in hashed_paths:
+        failures.append(f"missing hash entries: ['{poster_relative}']")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and poster_relative not in archived_paths:
+        failures.append(f"missing archive entries: ['{poster_relative}']")
+
+    tracked = git_tracked_paths()
+    dirty = sorted(git_dirty_paths([poster_relative]))
+    if poster_relative not in tracked:
+        failures.append(f"untracked poster board asset: {poster_relative}")
+    if dirty:
+        failures.append(f"dirty poster board asset: {dirty}")
+
+    return GateCheck(
+        "poster board asset",
+        not failures,
+        "printable A0 HTML poster, QR/material links, evidence anchors, and no-overclaim boundaries verified"
+        if not failures
+        else f"missing terms, evidence paths, or package links: {', '.join(failures)}",
+    )
+
+
 def check_defense_rehearsal_card() -> GateCheck:
     if not DEFENSE_REHEARSAL_CARD.exists():
         return GateCheck("defense rehearsal pack", False, "10_答辩攻防与彩排卡.md missing")
@@ -3913,6 +3984,7 @@ def run_gate() -> list[GateCheck]:
         check_special_prize_scoring_drill(),
         check_poster_booth_qa_pack(),
         check_commercialization_roadmap(),
+        check_poster_board_asset(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -3945,7 +4017,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

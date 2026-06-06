@@ -113,6 +113,7 @@ REVIEW_RISK_RESPONSE_PLAN = OUT / "17_评审风险控制与应急预案.md"
 SPECIAL_PRIZE_SCORING_DRILL = OUT / "18_特等奖打分模拟与整改清单.md"
 POSTER_BOOTH_QA_PACK = OUT / "19_作品展墙报问辩与展台脚本.md"
 COMMERCIALIZATION_ROADMAP = OUT / "20_成果转化与持续迭代路线图.md"
+POSTER_BOARD_HTML = OUT / "poster" / "challenge_cup_a0_poster.html"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_CONTEXT_DEMO_MD = REPORTS / "challenge_cup_graphrag_context_demo.md"
@@ -370,28 +371,29 @@ def build_readme(ctx: dict[str, Any]) -> str:
 19. `18_特等奖打分模拟与整改清单.md`
 20. `19_作品展墙报问辩与展台脚本.md`
 21. `20_成果转化与持续迭代路线图.md`
-22. `defense_deck/challenge_cup_defense_deck.pptx`
-23. `defense_deck/challenge_cup_defense_speaker_notes.md`
-24. `reproducibility/application_validation_report.md`
-25. `reproducibility/expert_feedback_form.md`
-26. `reproducibility/runbook.md`
-27. `reproducibility/dataset_manifest.md`
-28. `reproducibility/readiness_gate_report.md`
-29. `reproducibility/goal_completion_report.md`
-30. `reproducibility/defense_rehearsal_scorecard.md`
-31. `reproducibility/defense_rehearsal_result_packet.md`
-32. `reproducibility/expert_feedback_request_packet.md`
-33. `reproducibility/expert_feedback_outreach_ledger.md`
-34. `reproducibility/timed_rehearsal_schedule_ledger.md`
-35. `reproducibility/official_rubric_alignment.md`
-36. `reproducibility/special_prize_readiness_dashboard.md`
-37. `reproducibility/hard_evidence_closure_board.md`
-38. `reproducibility/hard_evidence_action_pack.md`
-39. `reproducibility/hard_evidence_ledger.md`
-40. `reproducibility/challenge_cup_submission_archive_manifest.json`
-41. `reproducibility/challenge_cup_submission_package.zip`
-42. `reproducibility/verify_submission_package.py`
-43. `reproducibility/final_acceptance_audit.md`
+22. `poster/challenge_cup_a0_poster.html`
+23. `defense_deck/challenge_cup_defense_deck.pptx`
+24. `defense_deck/challenge_cup_defense_speaker_notes.md`
+25. `reproducibility/application_validation_report.md`
+26. `reproducibility/expert_feedback_form.md`
+27. `reproducibility/runbook.md`
+28. `reproducibility/dataset_manifest.md`
+29. `reproducibility/readiness_gate_report.md`
+30. `reproducibility/goal_completion_report.md`
+31. `reproducibility/defense_rehearsal_scorecard.md`
+32. `reproducibility/defense_rehearsal_result_packet.md`
+33. `reproducibility/expert_feedback_request_packet.md`
+34. `reproducibility/expert_feedback_outreach_ledger.md`
+35. `reproducibility/timed_rehearsal_schedule_ledger.md`
+36. `reproducibility/official_rubric_alignment.md`
+37. `reproducibility/special_prize_readiness_dashboard.md`
+38. `reproducibility/hard_evidence_closure_board.md`
+39. `reproducibility/hard_evidence_action_pack.md`
+40. `reproducibility/hard_evidence_ledger.md`
+41. `reproducibility/challenge_cup_submission_archive_manifest.json`
+42. `reproducibility/challenge_cup_submission_package.zip`
+43. `reproducibility/verify_submission_package.py`
+44. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -817,7 +819,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 46 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 47 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1126,6 +1128,240 @@ def build_commercialization_roadmap(ctx: dict[str, Any]) -> str:
 - 数据治理未完成前，不接入未授权生产资料。
 - 所有运维建议必须经过人工确认；系统只做证据型辅助和知识资产整理。
 - 若后续出现试点单位或外部反馈，必须归档原始证据并重跑 `docs/challenge_cup/reproducibility/verify_submission_package.py`、`scripts/check_challenge_cup_readiness.py` 和 `scripts/check_challenge_cup_goal_completion.py`。
+"""
+
+
+def build_poster_board_html(ctx: dict[str, Any]) -> str:
+    question_count = ctx["question_count"]
+    return f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>知燃知维 Challenge Cup A0 Poster</title>
+  <style>
+    @page {{ size: A0 landscape; margin: 0; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      background: #f2f4f1;
+      color: #17201c;
+      font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+    }}
+    .poster {{
+      width: 1189mm;
+      min-height: 841mm;
+      padding: 34mm 38mm;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 22mm;
+      background:
+        linear-gradient(90deg, rgba(24, 83, 68, 0.08), rgba(150, 36, 32, 0.07)),
+        #fbfbf7;
+    }}
+    header {{
+      display: grid;
+      grid-template-columns: 1.5fr 0.9fr;
+      gap: 24mm;
+      align-items: end;
+      border-bottom: 3mm solid #185344;
+      padding-bottom: 14mm;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 42mm;
+      line-height: 1;
+      letter-spacing: 0;
+      color: #12392f;
+    }}
+    h2 {{
+      margin: 0 0 7mm;
+      font-size: 15mm;
+      color: #185344;
+      letter-spacing: 0;
+    }}
+    p {{
+      margin: 0;
+      font-size: 8.5mm;
+      line-height: 1.45;
+    }}
+    .subtitle {{
+      margin-top: 10mm;
+      max-width: 700mm;
+      font-size: 13mm;
+      color: #35413b;
+    }}
+    .metrics {{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8mm;
+    }}
+    .metric {{
+      border: 1.2mm solid #185344;
+      padding: 8mm;
+      min-height: 42mm;
+      background: rgba(255,255,255,0.72);
+    }}
+    .metric strong {{
+      display: block;
+      font-size: 18mm;
+      line-height: 1;
+      color: #962420;
+      margin-bottom: 5mm;
+    }}
+    main {{
+      display: grid;
+      grid-template-columns: 1.05fr 1.35fr 0.95fr;
+      gap: 18mm;
+    }}
+    section {{
+      background: rgba(255,255,255,0.78);
+      border: 1mm solid rgba(24,83,68,0.22);
+      padding: 13mm;
+      min-height: 0;
+    }}
+    .route {{
+      display: grid;
+      gap: 8mm;
+    }}
+    .step {{
+      border-left: 3mm solid #185344;
+      padding-left: 7mm;
+      font-size: 8.4mm;
+      line-height: 1.35;
+    }}
+    .case {{
+      border: 1.2mm solid #962420;
+      padding: 10mm;
+      background: #fff7f4;
+      margin: 8mm 0;
+    }}
+    .case strong {{
+      color: #962420;
+    }}
+    ul {{
+      margin: 5mm 0 0;
+      padding-left: 9mm;
+      font-size: 7.8mm;
+      line-height: 1.42;
+    }}
+    .evidence {{
+      display: grid;
+      gap: 5mm;
+      font-size: 6.4mm;
+      line-height: 1.25;
+    }}
+    code {{
+      display: block;
+      overflow-wrap: anywhere;
+      padding: 2mm 0;
+      color: #26332e;
+      font-family: Consolas, "Microsoft YaHei", monospace;
+    }}
+    .qr-grid {{
+      display: grid;
+      grid-template-columns: 48mm 1fr;
+      gap: 8mm;
+      align-items: center;
+      margin-bottom: 10mm;
+    }}
+    .qr {{
+      width: 48mm;
+      height: 48mm;
+      border: 2mm solid #17201c;
+      display: grid;
+      place-items: center;
+      font-size: 9mm;
+      font-weight: 700;
+      background:
+        linear-gradient(45deg, #17201c 25%, transparent 25% 75%, #17201c 75%),
+        linear-gradient(45deg, #17201c 25%, transparent 25% 75%, #17201c 75%);
+      background-size: 12mm 12mm;
+      background-position: 0 0, 6mm 6mm;
+      color: #fff;
+    }}
+    footer {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16mm;
+      border-top: 2mm solid #185344;
+      padding-top: 10mm;
+    }}
+    .boundary {{
+      font-size: 7.2mm;
+      line-height: 1.4;
+      color: #2f3935;
+    }}
+  </style>
+</head>
+<body>
+  <article class="poster" aria-label="知燃知维 A0 展板">
+    <header>
+      <div>
+        <h1>知燃知维</h1>
+        <p class="subtitle">面向动力装备运维知识的可信 GraphRAG 系统：把资料、证据链、知识图谱、检索评测和现场答辩材料压到同一套可复核闭环。</p>
+      </div>
+      <div class="metrics">
+        <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
+        <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
+        <div class="metric"><strong>47 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2>技术路线</h2>
+        <div class="route">
+          <div class="step">OCR / 清洗 / chunk：把动力装备资料转为可追溯文本资产。</div>
+          <div class="step">普通 RAG baseline：形成强基线和失败归因，而不是只展示单次命中。</div>
+          <div class="step">KG evidence / GraphRAG：把故障、部件、参数、措施和来源绑定为证据链。</div>
+          <div class="step">submission verifier / readiness gate：让 README、hash、zip、截图和报告可复核。</div>
+        </div>
+        <div class="case">
+          <p><strong>GT-07 固定案例：</strong>燃气轮机异常振动诊断流程，展示阈值、机理、异常现象、检修建议、复机结果和人工确认边界。</p>
+        </div>
+        <ul>
+          <li>不是普通聊天页：评测、失败分析、GraphRAG 同题证据和浏览器 smoke 同时留档。</li>
+          <li>不是口头包装：每个主张都回到证据文件、哈希、归档包和可运行脚本。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>评审证据锚点</h2>
+        <div class="evidence">
+          <code>docs/challenge_cup/README_先看这里.md</code>
+          <code>docs/challenge_cup/13_评委现场速览卡.md</code>
+          <code>docs/challenge_cup/19_作品展墙报问辩与展台脚本.md</code>
+          <code>docs/challenge_cup/20_成果转化与持续迭代路线图.md</code>
+          <code>docs/challenge_cup/reproducibility/application_validation_report.md</code>
+          <code>docs/challenge_cup/reproducibility/readiness_gate_report.md</code>
+          <code>docs/challenge_cup/reproducibility/verify_submission_package.py</code>
+          <code>docs/challenge_cup/reproducibility/browser_demo_smoke_report.md</code>
+          <code>docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png</code>
+        </div>
+      </section>
+
+      <section>
+        <h2>展台入口</h2>
+        <div class="qr-grid">
+          <div class="qr">二维码</div>
+          <p>二维码应指向 README；现场无法联网时，直接打开离线 submission verifier、readiness gate、browser smoke 报告和桌面检索截图。</p>
+        </div>
+        <ul>
+          <li>先讲价值：动力装备知识资产整理和故障证据追溯。</li>
+          <li>再讲创新：GraphRAG 与 evidence-bound RAG 结合。</li>
+          <li>最后讲边界：真实专家反馈、真实计时彩排仍需归档。</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <p class="boundary">材料口径：不承诺获奖，不把 readiness gate、二维码访问或内部自评说成特等奖保证；它们只证明包完整、路径清楚、证据可复核。</p>
+      <p class="boundary">待补硬证据：真实专家反馈和真实计时彩排归档后，必须重跑 submission verifier、readiness gate、goal completion 和 final acceptance audit。</p>
+    </footer>
+  </article>
+</body>
+</html>
 """
 
 
@@ -1513,6 +1749,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 特等奖打分模拟与整改清单：`{md_link(SPECIAL_PRIZE_SCORING_DRILL)}`。
 - 作品展墙报问辩与展台脚本：`{md_link(POSTER_BOOTH_QA_PACK)}`。
 - 成果转化与持续迭代路线图：`{md_link(COMMERCIALIZATION_ROADMAP)}`。
+- 作品展 A0 展板源文件：`{md_link(POSTER_BOARD_HTML)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 终审答辩 PPTX：`{md_link(DEFENSE_DECK_PPTX)}`。
 - 终审答辩讲稿：`{md_link(DEFENSE_DECK_NOTES)}`。
@@ -1666,7 +1903,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (46/46 gates)
+-> Status: pass (47/47 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1701,6 +1938,7 @@ def main() -> int:
     write(SPECIAL_PRIZE_SCORING_DRILL, build_special_prize_scoring_drill(ctx))
     write(POSTER_BOOTH_QA_PACK, build_poster_booth_qa_pack(ctx))
     write(COMMERCIALIZATION_ROADMAP, build_commercialization_roadmap(ctx))
+    write(POSTER_BOARD_HTML, build_poster_board_html(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
@@ -1747,6 +1985,7 @@ def main() -> int:
         md_link(SPECIAL_PRIZE_SCORING_DRILL),
         md_link(POSTER_BOOTH_QA_PACK),
         md_link(COMMERCIALIZATION_ROADMAP),
+        md_link(POSTER_BOARD_HTML),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_MD),

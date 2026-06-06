@@ -48,7 +48,7 @@
     {
       "path": "docs/challenge_cup/14_现场答辩操作Runbook.md",
       "bytes": 5138,
-      "sha256": "fcb8b398072e131e14155b60c57d36149cf0e63a12fad079f59621a2fb6c44b1"
+      "sha256": "3a9b0c9dccca301eaa580c47da0e251d0e145d533212d70d6676eb345d510a4a"
     },
     {
       "path": "docs/challenge_cup/15_结项交付移交清单.md",
@@ -89,6 +89,11 @@
       "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md",
       "bytes": 2717,
       "sha256": "f2a2d0e6b2b0e66d5f00b63561e1ce1ec665ed95441c965289890ed415cb1d33"
+    },
+    {
+      "path": "docs/challenge_cup/poster/challenge_cup_a0_poster.html",
+      "bytes": 7613,
+      "sha256": "b33a1b470446392efe7cc7e46b84455d107b6498349882fd9d5efeab1c4dfaaa"
     },
     {
       "path": "docs/challenge_cup/reproducibility/application_validation_report.md",
@@ -178,17 +183,17 @@
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
       "bytes": 1857,
-      "sha256": "524e9967d266a9aa13f092be808e7ac6dd1e3a5fac5c7c1b3ee0d92491874585"
+      "sha256": "af0449113d7016e144048bfef4770462be2de797fe489062c3ba9a76b85b8196"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
       "bytes": 1241,
-      "sha256": "33a19becd4fd6972ef9119b0f2db4b01c1b1fc98085307447137d7bb57343934"
+      "sha256": "060581e17a2c877c83fe602e5fc32c94a4dc93fe6afbf7b63f56a8b8cb0b7633"
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
       "bytes": 957,
-      "sha256": "0810082db33ed556126d5617979db34963a751e0ffce23fb6eb337bb7bc58684"
+      "sha256": "ed161e6c13679ab26c381cfa075313690d516f865f57851f1af22a775d4088b9"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -258,7 +263,7 @@
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
       "bytes": 7742,
-      "sha256": "e229f0a6941de875af6001a2b35f86e9b38bd0ae025b14231c8de48b901552d5"
+      "sha256": "4bdc272e6201d70f01b9b3ebe240b3fec4cf5d17f4277918b25e10408e39ce52"
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
