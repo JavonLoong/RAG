@@ -23,7 +23,10 @@ def hard_evidence_dir(root: Path) -> Path:
     return root / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence"
 
 
-def test_preflights_confirmed_expert_feedback_without_writing_hard_evidence(tmp_path: Path) -> None:
+def test_preflights_confirmed_expert_feedback_without_writing_hard_evidence(
+    tmp_path: Path,
+    capsys,
+) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
     source = tmp_path / "incoming" / "advisor_reply.txt"
@@ -60,6 +63,14 @@ def test_preflights_confirmed_expert_feedback_without_writing_hard_evidence(tmp_
     )
 
     assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ledger_acceptance"] == {
+        "category": "expert_feedback",
+        "will_count_as_hard_evidence": True,
+        "will_enter_rejected_metadata_records": False,
+        "completion_gate_effect": "recorded metadata can satisfy expert_feedback after ledger rebuild",
+        "reasons": [],
+    }
     assert not hard_evidence_dir(tmp_path).exists()
 
 
@@ -260,7 +271,10 @@ def test_refuses_expert_feedback_preflight_with_future_review_date(tmp_path: Pat
     assert not hard_evidence_dir(tmp_path).exists()
 
 
-def test_preflights_confirmed_timed_rehearsal_without_writing_hard_evidence(tmp_path: Path) -> None:
+def test_preflights_confirmed_timed_rehearsal_without_writing_hard_evidence(
+    tmp_path: Path,
+    capsys,
+) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
     source = tmp_path / "incoming" / "timer_note.txt"
@@ -297,6 +311,14 @@ def test_preflights_confirmed_timed_rehearsal_without_writing_hard_evidence(tmp_
     )
 
     assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ledger_acceptance"] == {
+        "category": "timed_rehearsal",
+        "will_count_as_hard_evidence": True,
+        "will_enter_rejected_metadata_records": False,
+        "completion_gate_effect": "recorded metadata can satisfy timed_rehearsal after ledger rebuild",
+        "reasons": [],
+    }
     assert not hard_evidence_dir(tmp_path).exists()
 
 
@@ -419,6 +441,13 @@ def test_preflights_over_limit_timed_rehearsal_as_archivable_but_not_accepted(tm
     payload = json.loads(capsys.readouterr().out)
     assert payload["validated_metadata"]["timing_acceptance_pass"] is False
     assert "opening_actual_seconds=91 exceeds 90" in payload["validated_metadata"]["timing_acceptance_failures"]
+    assert payload["ledger_acceptance"]["category"] == "timed_rehearsal"
+    assert payload["ledger_acceptance"]["will_count_as_hard_evidence"] is False
+    assert payload["ledger_acceptance"]["will_enter_rejected_metadata_records"] is True
+    assert payload["ledger_acceptance"]["completion_gate_effect"] == (
+        "recorded metadata will be archived but will not satisfy timed_rehearsal until a passing rehearsal is recorded"
+    )
+    assert "opening_actual_seconds=91 exceeds 90" in payload["ledger_acceptance"]["reasons"]
     assert not hard_evidence_dir(tmp_path).exists()
 
 

@@ -69,6 +69,28 @@ def base_payload(category: str, args: argparse.Namespace, source: Path, target_d
     }
 
 
+def ledger_acceptance(
+    category: str,
+    *,
+    will_count: bool,
+    reasons: list[str] | None = None,
+) -> dict[str, Any]:
+    reasons = reasons or []
+    if will_count:
+        completion_gate_effect = f"recorded metadata can satisfy {category} after ledger rebuild"
+    else:
+        completion_gate_effect = (
+            f"recorded metadata will be archived but will not satisfy {category} until a passing rehearsal is recorded"
+        )
+    return {
+        "category": category,
+        "will_count_as_hard_evidence": will_count,
+        "will_enter_rejected_metadata_records": not will_count,
+        "completion_gate_effect": completion_gate_effect,
+        "reasons": reasons,
+    }
+
+
 def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
     if not args.confirm_real_feedback:
         raise PreflightInputError(
@@ -97,6 +119,7 @@ def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
         "has_remediation_record": bool(args.remediation_issue and args.remediation_action),
         "real_feedback_confirmed": True,
     }
+    payload["ledger_acceptance"] = ledger_acceptance("expert_feedback", will_count=True)
     return payload
 
 
@@ -133,6 +156,11 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,
     }
+    payload["ledger_acceptance"] = ledger_acceptance(
+        "timed_rehearsal",
+        will_count=not timing_failures,
+        reasons=timing_failures,
+    )
     return payload
 
 
