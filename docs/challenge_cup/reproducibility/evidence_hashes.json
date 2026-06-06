@@ -327,13 +327,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
-      "bytes": 2503,
-      "sha256": "5d88151e1d0e044d4494145c857b3f20f761627d84ac639c68d0b42d46d2201a"
+      "bytes": 2931,
+      "sha256": "a114818a91f82ec92fb852fc239534b81cbb656f07a8f703f6d466c631240c2b"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
-      "bytes": 1004,
-      "sha256": "6f52a7ea64c62cafb36bb7b4d390cf7a9ee3109b424eef74c010f6c1ba9c848e"
+      "bytes": 1046,
+      "sha256": "399d4e37f9793574112e12828fdc1481638fc77c8046570551a9c6710a72d083"
     },
     {
       "path": "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json",

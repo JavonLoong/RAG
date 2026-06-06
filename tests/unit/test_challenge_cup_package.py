@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
@@ -14,6 +15,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
+PACKAGE_SCRIPT = REPO_ROOT / "scripts" / "build_challenge_cup_package.py"
 
 
 REQUIRED_DATASET_FIELDS = {
@@ -118,6 +120,18 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
+
+
+def load_package_module():
+    scripts_path = str(REPO_ROOT / "scripts")
+    if scripts_path not in sys.path:
+        sys.path.insert(0, scripts_path)
+    spec = importlib.util.spec_from_file_location("build_challenge_cup_package", PACKAGE_SCRIPT)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -1083,7 +1097,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "生成时间" in command_log
     assert "本轮验证记录" in command_log
     assert "python -m pytest tests/unit -q" in command_log
-    assert "216 passed" in command_log
+    assert "218 passed" in command_log
     assert "86 passed" not in command_log
     for mojibake in ["鍛戒护", "鐢熸垚", "楠岃瘉"]:
         assert mojibake not in command_log
@@ -1724,6 +1738,30 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
     )
     after = {path: path.read_bytes() for path in tracked}
     assert after == before
+
+
+def test_archive_replace_retries_transient_permission_error(monkeypatch, tmp_path: Path) -> None:
+    module = load_package_module()
+    source = tmp_path / "archive.zip.tmp"
+    target = tmp_path / "archive.zip"
+    source.write_bytes(b"new")
+    target.write_bytes(b"old")
+    attempts = {"count": 0}
+
+    def flaky_replace(current: Path, destination: Path):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            raise PermissionError("simulated transient Windows zip lock")
+        return original_replace(current, destination)
+
+    original_replace = type(source).replace
+    monkeypatch.setattr(type(source), "replace", flaky_replace)
+    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
+
+    module.replace_with_retry(source, target, attempts=2, delay_seconds=0)
+
+    assert attempts["count"] == 2
+    assert target.read_bytes() == b"new"
 
 
 def test_build_challenge_cup_package_uses_report_timestamp() -> None:

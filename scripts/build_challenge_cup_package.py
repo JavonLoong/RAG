@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import time
 import zipfile
 from collections import Counter
 from datetime import datetime
@@ -286,7 +287,7 @@ def write_submission_archive(ctx: dict[str, Any], included_files: list[str]) -> 
             info.external_attr = 0o644 << 16
             info.create_system = 3
             archive.writestr(info, (REPO_ROOT / relative).read_bytes())
-    temp_archive.replace(SUBMISSION_ARCHIVE)
+    replace_with_retry(temp_archive, SUBMISSION_ARCHIVE)
     manifest = {
         "generated_at": ctx["now"],
         "archive_path": md_link(SUBMISSION_ARCHIVE),
@@ -298,6 +299,17 @@ def write_submission_archive(ctx: dict[str, Any], included_files: list[str]) -> 
         "excluded_files": [md_link(READINESS_GATE_REPORT), md_link(SUBMISSION_ARCHIVE), md_link(SUBMISSION_ARCHIVE_MANIFEST)],
     }
     write(SUBMISSION_ARCHIVE_MANIFEST, json.dumps(manifest, ensure_ascii=False, indent=2))
+
+
+def replace_with_retry(source: Path, target: Path, attempts: int = 5, delay_seconds: float = 0.2) -> None:
+    for attempt in range(1, attempts + 1):
+        try:
+            source.replace(target)
+            return
+        except PermissionError:
+            if attempt >= attempts:
+                raise
+            time.sleep(delay_seconds)
 
 
 def read(path: Path, limit: int = 1600) -> str:
@@ -2455,7 +2467,7 @@ python scripts/analyze_day4_failure_cases.py
 -> Analyzed cases: 40
 
 python -m pytest tests/unit -q
--> 216 passed
+-> 218 passed
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
 -> 21 passed

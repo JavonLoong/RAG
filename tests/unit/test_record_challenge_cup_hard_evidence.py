@@ -80,6 +80,18 @@ def test_records_expert_feedback_attachment_and_metadata(tmp_path: Path) -> None
     )
     assert metadata["feedback_source_path"] in ledger["categories"]["expert_feedback"]["evidence_files"]
     assert "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json" in ledger["raw_evidence_files"]
+    expert = ledger["categories"]["expert_feedback"]
+    assert expert["raw_file_count"] == 2
+    assert expert["metadata_file_count"] == 1
+    assert expert["source_file_count"] == 1
+    assert expert["evidence_record_count"] == 1
+    assert expert["collected_count"] == 1
+    assert expert["evidence_records"] == [
+        {
+            "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+            "source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+        }
+    ]
 
 
 def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None:
@@ -137,7 +149,18 @@ def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None
             encoding="utf-8"
         )
     )
-    assert ledger["categories"]["timed_rehearsal"]["collected_count"] == 2
+    rehearsal = ledger["categories"]["timed_rehearsal"]
+    assert rehearsal["raw_file_count"] == 2
+    assert rehearsal["metadata_file_count"] == 1
+    assert rehearsal["source_file_count"] == 1
+    assert rehearsal["evidence_record_count"] == 1
+    assert rehearsal["collected_count"] == 1
+    assert rehearsal["evidence_records"] == [
+        {
+            "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+            "source_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
+        }
+    ]
     assert ledger["completion_claim_allowed"] is False
 
 

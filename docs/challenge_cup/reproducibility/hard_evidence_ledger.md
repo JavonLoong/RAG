@@ -7,10 +7,10 @@
 
 ## 必须归档的真实证据
 
-| Category | Required | Collected | Intake Dir |
-| --- | ---: | ---: | --- |
-| expert_feedback | 1 | 0 | `docs/challenge_cup/reproducibility/hard_evidence/expert_feedback` |
-| timed_rehearsal | 1 | 0 | `docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal` |
+| Category | Required Records | Evidence Records | Raw Files | Intake Dir |
+| --- | ---: | ---: | ---: | --- |
+| expert_feedback | 1 | 0 | 0 | `docs/challenge_cup/reproducibility/hard_evidence/expert_feedback` |
+| timed_rehearsal | 1 | 0 | 0 | `docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal` |
 
 ## 原则
 

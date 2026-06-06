@@ -5134,11 +5134,58 @@ def check_hard_evidence_ledger() -> GateCheck:
             category_satisfied = False
             continue
         files = [str(item) for item in category.get("evidence_files", [])]
+        metadata_files = [str(item) for item in category.get("metadata_files", [])]
+        source_files = [str(item) for item in category.get("source_files", [])]
+        evidence_records = category.get("evidence_records", [])
         raw_evidence_files.extend(files)
         collected_count = int(category.get("collected_count") or 0)
+        raw_file_count = int(category.get("raw_file_count") or 0)
+        metadata_file_count = int(category.get("metadata_file_count") or 0)
+        source_file_count = int(category.get("source_file_count") or 0)
+        evidence_record_count = int(category.get("evidence_record_count") or 0)
         required_min = int(category.get("required_min_count") or 0)
-        if collected_count != len(files):
-            failures.append(f"{key}.collected_count mismatch")
+        for schema_field in (
+            "raw_file_count",
+            "metadata_file_count",
+            "source_file_count",
+            "evidence_record_count",
+            "metadata_files",
+            "source_files",
+            "evidence_records",
+        ):
+            if schema_field not in category:
+                failures.append(f"{key}.{schema_field} missing")
+        expected_metadata_files = sorted(relative for relative in files if relative.lower().endswith(".json"))
+        expected_source_files = sorted(relative for relative in files if not relative.lower().endswith(".json"))
+        if raw_file_count != len(files):
+            failures.append(f"{key}.raw_file_count mismatch")
+        if metadata_file_count != len(expected_metadata_files):
+            failures.append(f"{key}.metadata_file_count mismatch")
+        if source_file_count != len(expected_source_files):
+            failures.append(f"{key}.source_file_count mismatch")
+        if sorted(metadata_files) != expected_metadata_files:
+            failures.append(f"{key}.metadata_files mismatch")
+        if sorted(source_files) != expected_source_files:
+            failures.append(f"{key}.source_files mismatch")
+        if not isinstance(evidence_records, list):
+            failures.append(f"{key}.evidence_records invalid")
+            evidence_records = []
+        if evidence_record_count != len(evidence_records):
+            failures.append(f"{key}.evidence_record_count mismatch")
+        if collected_count != evidence_record_count:
+            failures.append(f"{key}.collected_count must equal evidence_record_count")
+        metadata_file_set = set(metadata_files)
+        source_file_set = set(source_files)
+        for index, record in enumerate(evidence_records, start=1):
+            if not isinstance(record, dict):
+                failures.append(f"{key}.evidence_records[{index}] invalid")
+                continue
+            metadata_path = str(record.get("metadata_path", ""))
+            source_path = str(record.get("source_path", ""))
+            if metadata_path not in metadata_file_set:
+                failures.append(f"{key}.evidence_records[{index}].metadata_path not in metadata_files")
+            if source_path not in source_file_set:
+                failures.append(f"{key}.evidence_records[{index}].source_path not in source_files")
         if required_min < 1:
             failures.append(f"{key}.required_min_count below 1")
             category_satisfied = False

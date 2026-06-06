@@ -108,11 +108,75 @@ def is_candidate_evidence(path: Path) -> bool:
     return not any(fragment in name for fragment in PLACEHOLDER_NAME_FRAGMENTS)
 
 
-def evidence_files(directory: Path) -> list[str]:
+def candidate_evidence_paths(directory: Path) -> list[Path]:
     if not directory.exists():
         return []
     files = [path for path in directory.rglob("*") if path.is_file() and is_candidate_evidence(path)]
-    return sorted(repo_path(path) for path in files)
+    return sorted(files, key=repo_path)
+
+
+def evidence_files(directory: Path) -> list[str]:
+    return [repo_path(path) for path in candidate_evidence_paths(directory)]
+
+
+def read_json_object(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def source_path_field(category_key: str) -> str:
+    if category_key == "expert_feedback":
+        return "feedback_source_path"
+    if category_key == "timed_rehearsal":
+        return "recording_or_timer_source_path"
+    raise ValueError(f"unknown hard evidence category: {category_key}")
+
+
+def confirmation_field(category_key: str) -> str:
+    if category_key == "expert_feedback":
+        return "real_feedback_confirmed"
+    if category_key == "timed_rehearsal":
+        return "real_rehearsal_confirmed"
+    raise ValueError(f"unknown hard evidence category: {category_key}")
+
+
+def build_evidence_records(
+    category_key: str,
+    paths: list[Path],
+    accepted_types: list[str],
+    required_fields: list[str],
+) -> list[dict[str, str]]:
+    metadata_paths = [path for path in paths if path.suffix.lower() == ".json"]
+    source_files = {repo_path(path) for path in paths if path.suffix.lower() != ".json"}
+    required = set(required_fields)
+    source_field = source_path_field(category_key)
+    confirmed_field = confirmation_field(category_key)
+    records: list[dict[str, str]] = []
+    for metadata_path in metadata_paths:
+        payload = read_json_object(metadata_path)
+        if payload is None:
+            continue
+        if not required.issubset(payload):
+            continue
+        if payload.get(confirmed_field) is not True:
+            continue
+        if payload.get("evidence_type") not in accepted_types:
+            continue
+        source_path = payload.get(source_field)
+        if not isinstance(source_path, str) or not source_path:
+            continue
+        if source_path not in source_files:
+            continue
+        records.append(
+            {
+                "metadata_path": repo_path(metadata_path),
+                "source_path": source_path,
+            }
+        )
+    return sorted(records, key=lambda item: (item["metadata_path"], item["source_path"]))
 
 
 def build_category(
@@ -121,15 +185,26 @@ def build_category(
     accepted_types: list[str],
     required_fields: list[str],
 ) -> dict[str, Any]:
-    files = evidence_files(directory)
+    paths = candidate_evidence_paths(directory)
+    files = [repo_path(path) for path in paths]
+    metadata_files = [repo_path(path) for path in paths if path.suffix.lower() == ".json"]
+    source_files = [repo_path(path) for path in paths if path.suffix.lower() != ".json"]
+    records = build_evidence_records(key, paths, accepted_types, required_fields)
     return {
         "category": key,
         "intake_dir": repo_path(directory),
         "required_min_count": 1,
-        "collected_count": len(files),
+        "raw_file_count": len(files),
+        "metadata_file_count": len(metadata_files),
+        "source_file_count": len(source_files),
+        "evidence_record_count": len(records),
+        "collected_count": len(records),
         "accepted_evidence_types": accepted_types,
         "required_metadata_fields": required_fields,
         "evidence_files": files,
+        "metadata_files": metadata_files,
+        "source_files": source_files,
+        "evidence_records": records,
     }
 
 
@@ -300,13 +375,14 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "",
         text("## \\u5fc5\\u987b\\u5f52\\u6863\\u7684\\u771f\\u5b9e\\u8bc1\\u636e"),
         "",
-        "| Category | Required | Collected | Intake Dir |",
-        "| --- | ---: | ---: | --- |",
+        "| Category | Required Records | Evidence Records | Raw Files | Intake Dir |",
+        "| --- | ---: | ---: | ---: | --- |",
     ]
     for key in REQUIRED_BEFORE_GOAL_COMPLETION:
         category = categories[key]
         lines.append(
-            f"| {key} | {category['required_min_count']} | {category['collected_count']} | `{category['intake_dir']}` |"
+            f"| {key} | {category['required_min_count']} | {category['collected_count']} | "
+            f"{category['raw_file_count']} | `{category['intake_dir']}` |"
         )
     lines.extend(["", text("## \\u539f\\u5219"), ""])
     lines.extend(f"- {item}" for item in payload["no_fake_evidence_rules"])

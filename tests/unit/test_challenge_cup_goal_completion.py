@@ -105,18 +105,42 @@ def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_eviden
         "categories": {
             "expert_feedback": {
                 "required_min_count": 1,
-                "collected_count": 2,
+                "raw_file_count": 2,
+                "metadata_file_count": 1,
+                "source_file_count": 1,
+                "evidence_record_count": 1,
+                "collected_count": 1,
                 "evidence_files": [
                     "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
                     "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
                 ],
+                "metadata_files": ["docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json"],
+                "source_files": ["docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"],
+                "evidence_records": [
+                    {
+                        "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+                        "source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                    }
+                ],
             },
             "timed_rehearsal": {
                 "required_min_count": 1,
-                "collected_count": 2,
+                "raw_file_count": 2,
+                "metadata_file_count": 1,
+                "source_file_count": 1,
+                "evidence_record_count": 1,
+                "collected_count": 1,
                 "evidence_files": [
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
+                ],
+                "metadata_files": ["docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json"],
+                "source_files": ["docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"],
+                "evidence_records": [
+                    {
+                        "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+                        "source_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
+                    }
                 ],
             },
         },
@@ -194,18 +218,42 @@ def test_goal_completion_gate_rejects_hard_evidence_without_real_confirmations(t
         "categories": {
             "expert_feedback": {
                 "required_min_count": 1,
-                "collected_count": 2,
+                "raw_file_count": 2,
+                "metadata_file_count": 1,
+                "source_file_count": 1,
+                "evidence_record_count": 1,
+                "collected_count": 1,
                 "evidence_files": [
                     "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
                     "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
                 ],
+                "metadata_files": ["docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json"],
+                "source_files": ["docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"],
+                "evidence_records": [
+                    {
+                        "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+                        "source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                    }
+                ],
             },
             "timed_rehearsal": {
                 "required_min_count": 1,
-                "collected_count": 2,
+                "raw_file_count": 2,
+                "metadata_file_count": 1,
+                "source_file_count": 1,
+                "evidence_record_count": 1,
+                "collected_count": 1,
                 "evidence_files": [
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
+                ],
+                "metadata_files": ["docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json"],
+                "source_files": ["docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"],
+                "evidence_records": [
+                    {
+                        "metadata_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+                        "source_path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt",
+                    }
                 ],
             },
         },

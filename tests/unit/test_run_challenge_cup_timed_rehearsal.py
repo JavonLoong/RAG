@@ -87,7 +87,7 @@ def test_records_confirmed_timed_rehearsal_note_and_refreshes_ledger(tmp_path: P
     assert ledger["status"] == "awaiting_real_external_feedback_and_timed_rehearsal"
     assert ledger["completion_claim_allowed"] is False
     assert ledger["categories"]["expert_feedback"]["collected_count"] == 0
-    assert ledger["categories"]["timed_rehearsal"]["collected_count"] == 2
+    assert ledger["categories"]["timed_rehearsal"]["collected_count"] == 1
 
 
 def test_rejects_wrong_killer_question_count(tmp_path: Path) -> None:
