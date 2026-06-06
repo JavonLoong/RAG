@@ -726,7 +726,16 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     for phrase in [
         "<!doctype html>",
         "Defense Control Console",
+        "知燃知维 GraphRAG 挑战杯现场总控台",
+        "现场演示流程",
+        "证据启动台",
+        "兜底与边界",
+        "演示失败",
+        "不过度承诺",
+        "硬证据边界",
+        "主动声明边界",
         "3-minute timer",
+        "三分钟演示",
         "90-second opening",
         "offline fallback",
         "readiness gate",
@@ -738,6 +747,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "real timed rehearsal",
     ]:
         assert phrase in defense_console
+    for mojibake in ["鐭", "绛", "涓", "鍦", "杈", "褰", "\ufffd"]:
+        assert mojibake not in defense_console
     for evidence in [
         "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
         "docs/challenge_cup/13_评委现场速览卡.md",

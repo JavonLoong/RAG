@@ -1057,7 +1057,16 @@ REQUIRED_POSTER_BOARD_HTML_TERMS = {
 REQUIRED_DEFENSE_CONTROL_CONSOLE_TERMS = {
     "<!doctype html>",
     "Defense Control Console",
+    "知燃知维 GraphRAG 挑战杯现场总控台",
+    "现场演示流程",
+    "证据启动台",
+    "兜底与边界",
+    "演示失败",
+    "不过度承诺",
+    "硬证据边界",
+    "主动声明边界",
     "3-minute timer",
+    "三分钟演示",
     "90-second opening",
     "offline fallback",
     "readiness gate",
@@ -1077,6 +1086,14 @@ REQUIRED_DEFENSE_CONTROL_CONSOLE_TERMS = {
     "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
     "docs/challenge_cup/reproducibility/goal_completion_report.md",
 }
+DEFENSE_CONTROL_CONSOLE_MOJIBAKE_MARKERS = (
+    "\ufffd",
+    "鐭",
+    "绛",
+    "鍦",
+    "杈",
+    "褰",
+)
 REQUIRED_IP_OPEN_SOURCE_COMPLIANCE_TERMS = {
     "知识产权与开源合规说明",
     "原创性声明",
@@ -3731,6 +3748,9 @@ def check_defense_control_console() -> GateCheck:
     text = DEFENSE_CONTROL_CONSOLE.read_text(encoding="utf-8")
     console_relative = DEFENSE_CONTROL_CONSOLE.relative_to(REPO_ROOT).as_posix()
     failures = sorted(term for term in REQUIRED_DEFENSE_CONTROL_CONSOLE_TERMS if term not in text)
+    mojibake_hits = [marker for marker in DEFENSE_CONTROL_CONSOLE_MOJIBAKE_MARKERS if marker in text]
+    if mojibake_hits:
+        failures.append(f"mojibake markers in defense console: {', '.join(mojibake_hits)}")
 
     manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}

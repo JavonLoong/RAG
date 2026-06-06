@@ -181,6 +181,70 @@ def test_defense_control_console_gate_rejects_missing_console(monkeypatch, tmp_p
     assert "defense_console/index.html missing" in check.detail
 
 
+def test_defense_control_console_gate_rejects_mojibake(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    console_path = tmp_path / "docs" / "challenge_cup" / "defense_console" / "index.html"
+    console_path.parent.mkdir(parents=True)
+    console_relative = "docs/challenge_cup/defense_console/index.html"
+    console_text = "\n".join(
+        [
+            "<!doctype html>",
+            "Defense Control Console",
+            "知燃知维 GraphRAG 挑战杯现场总控台",
+            "现场演示流程",
+            "证据启动台",
+            "兜底与边界",
+            "演示失败",
+            "不过度承诺",
+            "硬证据边界",
+            "主动声明边界",
+            "3-minute timer",
+            "三分钟演示",
+            "90-second opening",
+            "offline fallback",
+            "readiness gate",
+            "submission verifier",
+            "GT-07",
+            "GraphRAG",
+            "no award guarantee",
+            "real expert feedback",
+            "real timed rehearsal",
+            "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
+            "docs/challenge_cup/13_评委现场速览卡.md",
+            "docs/challenge_cup/14_现场答辩操作Runbook.md",
+            "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+            "docs/challenge_cup/reproducibility/verify_submission_package.py",
+            "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+            "docs/challenge_cup/reproducibility/application_validation_report.md",
+            "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
+            "docs/challenge_cup/reproducibility/goal_completion_report.md",
+            "鐭ョ噧鐭ョ淮",
+        ]
+    )
+    console_path.write_text(console_text, encoding="utf-8")
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": [console_relative]}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": console_relative}]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(
+        json.dumps({"included_files": [console_relative]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "DEFENSE_CONTROL_CONSOLE", console_path)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {console_relative})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_defense_control_console()
+
+    assert not check.passed
+    assert "mojibake markers" in check.detail
+
+
 def test_judge_objection_matrix_gate_rejects_missing_matrix(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     matrix_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "judge_objection_response_matrix.md"
