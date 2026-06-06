@@ -72,6 +72,12 @@ OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/offi
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
 JUDGE_OBJECTION_MATRIX_MD_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.md"
 JUDGE_OBJECTION_MATRIX_JSON_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json"
+FAILURE_REMEDIATION_BEFORE_AFTER_MD_RELATIVE = (
+    "evaluation/reports/challenge_cup_failure_remediation_before_after.md"
+)
+FAILURE_REMEDIATION_BEFORE_AFTER_JSON_RELATIVE = (
+    "evaluation/reports/challenge_cup_failure_remediation_before_after.json"
+)
 SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md"
 )
@@ -111,6 +117,8 @@ OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
 JUDGE_OBJECTION_MATRIX_MD = REPO_ROOT / JUDGE_OBJECTION_MATRIX_MD_RELATIVE
 JUDGE_OBJECTION_MATRIX_JSON = REPO_ROOT / JUDGE_OBJECTION_MATRIX_JSON_RELATIVE
+FAILURE_REMEDIATION_BEFORE_AFTER_MD = REPO_ROOT / FAILURE_REMEDIATION_BEFORE_AFTER_MD_RELATIVE
+FAILURE_REMEDIATION_BEFORE_AFTER_JSON = REPO_ROOT / FAILURE_REMEDIATION_BEFORE_AFTER_JSON_RELATIVE
 SPECIAL_PRIZE_READINESS_DASHBOARD_MD = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE
 SPECIAL_PRIZE_READINESS_DASHBOARD_JSON = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_JSON_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_MD = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE
@@ -147,6 +155,10 @@ OFFICIAL_RUBRIC_REQUIRED_PATHS = [
 JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS = [
     JUDGE_OBJECTION_MATRIX_MD_RELATIVE,
     JUDGE_OBJECTION_MATRIX_JSON_RELATIVE,
+]
+FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS = [
+    FAILURE_REMEDIATION_BEFORE_AFTER_MD_RELATIVE,
+    FAILURE_REMEDIATION_BEFORE_AFTER_JSON_RELATIVE,
 ]
 SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS = [
     SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE,
@@ -216,6 +228,12 @@ GRAPH_GAP_REMEDIATION_BOUNDARY = (
     "This report closes local partial/missing GraphRAG evidence gaps with auditable supplement records; "
     "it does not claim online LLM answer win-rate, external validation, or that GraphRAG beats every "
     "baseline question."
+)
+FAILURE_REMEDIATION_BEFORE_AFTER_BOUNDARY = (
+    "This is a remediation-card ablation over the fixed Day4 failure set. It proves which failures can be "
+    "closed or bounded by explicit glossary, fact-card, structured-fact, and keyword-guardrail evidence; it is "
+    "not a live retriever upgrade, not an online LLM answer win-rate, provides no award guarantee, and does not "
+    "replace real expert feedback or real timed rehearsal evidence."
 )
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
@@ -475,6 +493,43 @@ GRAPH_GAP_REQUIRED_RERUN_COMMANDS = [
     "python scripts/build_graphrag_gap_remediation_plan.py",
     "python scripts/check_challenge_cup_readiness.py",
 ]
+FAILURE_REMEDIATION_REQUIRED_CATEGORIES = {
+    "corpus_gap_or_query_gap",
+    "evaluation_concept_gap",
+    "exact_number_fact",
+    "hybrid_dilution",
+    "partial_ranking_gap",
+    "structured_fact_routing",
+    "terminology_alias_gap",
+}
+FAILURE_REMEDIATION_ALLOWED_CATEGORY_STATUSES = {
+    "closed_by_remediation_card",
+    "bounded_by_keyword_guardrail",
+}
+FAILURE_REMEDIATION_CRITICAL_CASE_IDS = {"se013", "se024", "se027", "se028"}
+FAILURE_REMEDIATION_REQUIRED_CARD_IDS = {
+    "evaluation_metric_glossary",
+    "kg_poc_fact_card",
+    "goldwind_structured_fact_card",
+    "reranker_alias_card",
+    "keyword_guardrail_policy",
+}
+FAILURE_REMEDIATION_REQUIRED_COMMANDS = {
+    "python scripts/build_challenge_cup_failure_remediation_before_after.py",
+    "python scripts/build_challenge_cup_package.py",
+    "python scripts/check_challenge_cup_readiness.py",
+}
+FAILURE_REMEDIATION_MARKDOWN_TERMS = {
+    "Failure Remediation Before/After",
+    "remediation-card ablation",
+    "se013",
+    "se024",
+    "se027",
+    "se028",
+    "not a live retriever upgrade",
+    "real expert feedback",
+    "real timed rehearsal",
+}
 EVAL_COVERAGE_MINIMUMS = {
     "task_types": 10,
     "source_scopes": 15,
@@ -2127,6 +2182,193 @@ def check_graphrag_gap_remediation_plan() -> GateCheck:
             "local GraphRAG evidence gaps closed; 0 remediation tasks remain"
             if local_gaps_closed
             else f"{len(expected_gap_cases)} partial/missing cases converted into remediation tasks"
+        )
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_failure_remediation_before_after() -> GateCheck:
+    failures: list[str] = []
+    required_files = [FAILURE_REMEDIATION_BEFORE_AFTER_MD, FAILURE_REMEDIATION_BEFORE_AFTER_JSON]
+    missing_files = [path.name + " missing" for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("failure remediation before/after", False, ", ".join(missing_files))
+
+    try:
+        payload = load_json(FAILURE_REMEDIATION_BEFORE_AFTER_JSON)
+    except (OSError, json.JSONDecodeError) as exc:
+        return GateCheck("failure remediation before/after", False, f"invalid before/after json: {exc}")
+    markdown = FAILURE_REMEDIATION_BEFORE_AFTER_MD.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_failure_remediation_before_after":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "remediation_card_ablation_ready_no_live_retriever_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("live_retriever_upgrade_claimed") is not False:
+        failures.append(f"live_retriever_upgrade_claimed={payload.get('live_retriever_upgrade_claimed')}")
+    if payload.get("boundary") != FAILURE_REMEDIATION_BEFORE_AFTER_BOUNDARY:
+        failures.append("boundary mismatch")
+    if payload.get("source_day4_failure_analysis") != "evaluation/reports/day4_failure_analysis_20260605_210642.json":
+        failures.append(f"source_day4_failure_analysis={payload.get('source_day4_failure_analysis')}")
+    if payload.get("source_graphrag_same_question_report") != GRAPH_REPORT_JSON.relative_to(REPO_ROOT).as_posix():
+        failures.append(f"source_graphrag_same_question_report={payload.get('source_graphrag_same_question_report')}")
+
+    analyzed = int(payload.get("analyzed_question_count") or -1)
+    if analyzed != 40:
+        failures.append(f"analyzed_question_count={payload.get('analyzed_question_count')}")
+
+    category_closure = payload.get("category_closure", {})
+    if not isinstance(category_closure, dict):
+        failures.append("category_closure missing")
+        category_closure = {}
+    category_keys = {str(key) for key in category_closure}
+    if category_keys != FAILURE_REMEDIATION_REQUIRED_CATEGORIES:
+        failures.append(f"category_closure keys={sorted(category_keys)}")
+    category_closed_count = 0
+    for category, item in category_closure.items():
+        if not isinstance(item, dict):
+            failures.append(f"{category}: category closure item invalid")
+            continue
+        status = str(item.get("status", ""))
+        if status not in FAILURE_REMEDIATION_ALLOWED_CATEGORY_STATUSES:
+            failures.append(f"{category}: status={status}")
+        category_closed_count += int(item.get("closed_or_bounded_count") or 0)
+
+    before = payload.get("before", {})
+    after = payload.get("after", {})
+    if not isinstance(before, dict):
+        failures.append("before missing")
+        before = {}
+    if not isinstance(after, dict):
+        failures.append("after missing")
+        after = {}
+    before_avg = float(before.get("avg_hybrid_coverage") or -1)
+    after_avg = float(after.get("avg_effective_coverage") or -1)
+    before_zero = int(before.get("zero_coverage_question_count") or -1)
+    after_zero = int(after.get("zero_coverage_question_count") or -1)
+    if after_avg <= before_avg:
+        failures.append(f"after avg coverage not improved: before={before_avg}, after={after_avg}")
+    if after_zero >= before_zero:
+        failures.append(f"zero coverage not reduced: before={before_zero}, after={after_zero}")
+    if int(after.get("closed_or_bounded_case_count") or -1) != analyzed:
+        failures.append(f"closed_or_bounded_case_count={after.get('closed_or_bounded_case_count')}")
+    if category_closed_count != analyzed:
+        failures.append(f"category closed_or_bounded total={category_closed_count}")
+
+    critical_status = after.get("critical_case_status", {})
+    expected_critical_status = {case_id: "closed_or_bounded" for case_id in sorted(FAILURE_REMEDIATION_CRITICAL_CASE_IDS)}
+    if critical_status != expected_critical_status:
+        failures.append(f"critical_case_status={critical_status}")
+
+    case_results = payload.get("case_results", [])
+    if not isinstance(case_results, list) or len(case_results) != analyzed:
+        failures.append(f"case_results count={len(case_results) if isinstance(case_results, list) else 'invalid'}")
+        case_results = []
+    result_ids = {str(item.get("id", "")) for item in case_results if isinstance(item, dict)}
+    missing_critical = sorted(FAILURE_REMEDIATION_CRITICAL_CASE_IDS - result_ids)
+    if missing_critical:
+        failures.append(f"critical cases missing from case_results: {missing_critical}")
+    for item in case_results:
+        if not isinstance(item, dict):
+            continue
+        case_id = str(item.get("id", ""))
+        if item.get("closure_status") != "closed_or_bounded":
+            failures.append(f"{case_id}: closure_status={item.get('closure_status')}")
+        after_effective = float(item.get("after_effective_coverage") or 0)
+        if after_effective < 0 or after_effective > 1:
+            failures.append(f"{case_id}: after_effective_coverage={after_effective}")
+
+    card_ids = {
+        str(item.get("card_id", ""))
+        for item in payload.get("remediation_cards", [])
+        if isinstance(item, dict)
+    }
+    missing_cards = sorted(FAILURE_REMEDIATION_REQUIRED_CARD_IDS - card_ids)
+    if missing_cards:
+        failures.append(f"missing remediation cards: {missing_cards}")
+
+    graph_subset = payload.get("graph_fixed_subset", {})
+    if not isinstance(graph_subset, dict):
+        failures.append("graph_fixed_subset missing")
+        graph_subset = {}
+    if int(graph_subset.get("supported_count", -1)) != 10:
+        failures.append(f"graph supported_count={graph_subset.get('supported_count')}")
+    if int(graph_subset.get("partial_count", -1)) != 0:
+        failures.append(f"graph partial_count={graph_subset.get('partial_count')}")
+    if int(graph_subset.get("missing_count", -1)) != 0:
+        failures.append(f"graph missing_count={graph_subset.get('missing_count')}")
+    minimum_avg = float(graph_subset.get("minimum_required_average_coverage") or 0)
+    observed_avg = float(graph_subset.get("observed_average_coverage") or 0)
+    observed_min = float(graph_subset.get("observed_min_coverage") or 0)
+    if minimum_avg != 0.866667:
+        failures.append(f"minimum_required_average_coverage={minimum_avg}")
+    if observed_avg < minimum_avg:
+        failures.append(f"observed_average_coverage={observed_avg}")
+    if observed_min < 0.5:
+        failures.append(f"observed_min_coverage={observed_min}")
+
+    verification_commands = {str(item) for item in payload.get("verification_commands", [])}
+    missing_commands = sorted(FAILURE_REMEDIATION_REQUIRED_COMMANDS - verification_commands)
+    if missing_commands:
+        failures.append(f"missing verification_commands: {missing_commands}")
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+
+    missing_markdown_terms = sorted(
+        term
+        for term in (FAILURE_REMEDIATION_MARKDOWN_TERMS | {FAILURE_REMEDIATION_BEFORE_AFTER_BOUNDARY})
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(
+        path for path in FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS if path not in hashed_paths
+    )
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(
+        path for path in FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS if path not in archived_paths
+    )
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(FAILURE_REMEDIATION_BEFORE_AFTER_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked failure remediation files: {untracked}")
+    if dirty:
+        failures.append(f"dirty failure remediation files: {dirty}")
+
+    return GateCheck(
+        "failure remediation before/after",
+        not failures,
+        (
+            f"{analyzed} Day4 cases, {len(category_keys)} categories, "
+            f"{len(FAILURE_REMEDIATION_CRITICAL_CASE_IDS)} critical cases, graph_avg={observed_avg}"
         )
         if not failures
         else "; ".join(failures),
@@ -4729,6 +4971,7 @@ def run_gate() -> list[GateCheck]:
         check_graphrag_context_demo(),
         check_graphrag_answer_benchmark(),
         check_graphrag_gap_remediation_plan(),
+        check_failure_remediation_before_after(),
         check_claim_evidence_matrix(),
         check_acceptance_checklist(),
         check_award_self_eval(),
@@ -4781,7 +5024,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

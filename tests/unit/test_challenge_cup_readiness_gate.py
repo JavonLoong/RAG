@@ -127,6 +127,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "graphrag context demo" in report
     assert "graphrag answer benchmark" in report
     assert "graphrag gap remediation plan" in report
+    assert "failure remediation before/after" in report
     assert "supported=10, partial=0, missing=0" in report
 
 
@@ -190,6 +191,30 @@ def test_judge_objection_matrix_gate_rejects_missing_matrix(monkeypatch, tmp_pat
     assert not check.passed
     assert "judge_objection_response_matrix.md missing" in check.detail
     assert "judge_objection_response_matrix.json missing" in check.detail
+
+
+def test_failure_remediation_before_after_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    report_md = tmp_path / "evaluation" / "reports" / "challenge_cup_failure_remediation_before_after.md"
+    report_json = tmp_path / "evaluation" / "reports" / "challenge_cup_failure_remediation_before_after.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "FAILURE_REMEDIATION_BEFORE_AFTER_MD", report_md)
+    monkeypatch.setattr(module, "FAILURE_REMEDIATION_BEFORE_AFTER_JSON", report_json)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+
+    check = module.check_failure_remediation_before_after()
+
+    assert not check.passed
+    assert "challenge_cup_failure_remediation_before_after.md missing" in check.detail
+    assert "challenge_cup_failure_remediation_before_after.json missing" in check.detail
 
 
 def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tmp_path) -> None:

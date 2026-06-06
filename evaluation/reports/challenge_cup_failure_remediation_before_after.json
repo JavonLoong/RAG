@@ -1,0 +1,625 @@
+{
+  "report_type": "challenge_cup_failure_remediation_before_after",
+  "status": "remediation_card_ablation_ready_no_live_retriever_claim",
+  "completion_claim_allowed": false,
+  "does_not_satisfy_goal_completion": true,
+  "live_retriever_upgrade_claimed": false,
+  "source_day4_failure_analysis": "evaluation/reports/day4_failure_analysis_20260605_210642.json",
+  "source_day3_comparison": "D:\\虚拟C盘\\RAG\\evaluation\\reports\\day3_retrieval_baseline_comparison_20260605_210540.json",
+  "source_graphrag_same_question_report": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+  "analyzed_question_count": 40,
+  "category_counts": {
+    "corpus_gap_or_query_gap": 1,
+    "evaluation_concept_gap": 13,
+    "exact_number_fact": 3,
+    "hybrid_dilution": 17,
+    "partial_ranking_gap": 2,
+    "structured_fact_routing": 2,
+    "terminology_alias_gap": 2
+  },
+  "before": {
+    "avg_hybrid_coverage": 0.371667,
+    "zero_coverage_question_count": 11,
+    "method_snapshot": [
+      {
+        "method": "keyword",
+        "total_questions": 60,
+        "matched_outputs": 60,
+        "question_recall_at_k": 0.833333,
+        "keyword_recall_at_k": 0.540268,
+        "avg_retrieval_keyword_coverage": 0.563056,
+        "zero_hit_questions": 0,
+        "strong_questions": 25,
+        "weak_questions": 25,
+        "missed_questions": 10
+      },
+      {
+        "method": "dense_hashing",
+        "total_questions": 60,
+        "matched_outputs": 60,
+        "question_recall_at_k": 0.583333,
+        "keyword_recall_at_k": 0.281879,
+        "avg_retrieval_keyword_coverage": 0.299722,
+        "zero_hit_questions": 0,
+        "strong_questions": 12,
+        "weak_questions": 23,
+        "missed_questions": 25
+      },
+      {
+        "method": "hybrid_rrf",
+        "total_questions": 60,
+        "matched_outputs": 60,
+        "question_recall_at_k": 0.816667,
+        "keyword_recall_at_k": 0.5,
+        "avg_retrieval_keyword_coverage": 0.519722,
+        "zero_hit_questions": 0,
+        "strong_questions": 24,
+        "weak_questions": 25,
+        "missed_questions": 11
+      }
+    ]
+  },
+  "after": {
+    "avg_effective_coverage": 0.84125,
+    "zero_coverage_question_count": 0,
+    "closed_or_bounded_case_count": 40,
+    "critical_case_status": {
+      "se013": "closed_or_bounded",
+      "se024": "closed_or_bounded",
+      "se027": "closed_or_bounded",
+      "se028": "closed_or_bounded"
+    }
+  },
+  "category_closure": {
+    "corpus_gap_or_query_gap": {
+      "case_count": 1,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 1,
+      "avg_after_effective_coverage": 1.0
+    },
+    "evaluation_concept_gap": {
+      "case_count": 13,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 13,
+      "avg_after_effective_coverage": 1.0
+    },
+    "exact_number_fact": {
+      "case_count": 3,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 3,
+      "avg_after_effective_coverage": 1.0
+    },
+    "hybrid_dilution": {
+      "case_count": 17,
+      "status": "bounded_by_keyword_guardrail",
+      "closed_or_bounded_count": 17,
+      "avg_after_effective_coverage": 0.626471
+    },
+    "partial_ranking_gap": {
+      "case_count": 2,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 2,
+      "avg_after_effective_coverage": 1.0
+    },
+    "structured_fact_routing": {
+      "case_count": 2,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 2,
+      "avg_after_effective_coverage": 1.0
+    },
+    "terminology_alias_gap": {
+      "case_count": 2,
+      "status": "closed_by_remediation_card",
+      "closed_or_bounded_count": 2,
+      "avg_after_effective_coverage": 1.0
+    }
+  },
+  "case_results": [
+    {
+      "id": "cc032",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.166667,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 0.333333,
+      "delta_vs_hybrid": 0.166666,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc033",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.666667,
+      "after_effective_coverage": 0.666667,
+      "delta_vs_hybrid": 0.166667,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc036",
+      "category": "exact_number_fact",
+      "before_hybrid_coverage": 0.666667,
+      "before_best_existing_coverage": 0.666667,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.333333,
+      "remediation_card_id": "kg_poc_fact_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc037",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 0.5,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc038",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc042",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.2,
+      "before_best_existing_coverage": 0.4,
+      "after_effective_coverage": 0.4,
+      "delta_vs_hybrid": 0.2,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc043",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.166667,
+      "before_best_existing_coverage": 0.166667,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.833333,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc044",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.166667,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 0.333333,
+      "delta_vs_hybrid": 0.166666,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc045",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 0.5,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc046",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.666667,
+      "before_best_existing_coverage": 0.666667,
+      "after_effective_coverage": 0.666667,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc047",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.333333,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.666667,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc048",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.333333,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 0.5,
+      "delta_vs_hybrid": 0.166667,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc049",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.333333,
+      "before_best_existing_coverage": 0.666667,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.666667,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc050",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.333333,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.666667,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc051",
+      "category": "corpus_gap_or_query_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "source_scope_routing_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc052",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc053",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc054",
+      "category": "terminology_alias_gap",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.5,
+      "remediation_card_id": "reranker_alias_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc055",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.666667,
+      "before_best_existing_coverage": 0.666667,
+      "after_effective_coverage": 0.666667,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc056",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.166667,
+      "before_best_existing_coverage": 0.333333,
+      "after_effective_coverage": 0.333333,
+      "delta_vs_hybrid": 0.166666,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc057",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.333333,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 0.5,
+      "delta_vs_hybrid": 0.166667,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc058",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.5,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc059",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "cc060",
+      "category": "exact_number_fact",
+      "before_hybrid_coverage": 0.833333,
+      "before_best_existing_coverage": 0.833333,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.166667,
+      "remediation_card_id": "kg_poc_fact_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se003",
+      "category": "partial_ranking_gap",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.5,
+      "remediation_card_id": "source_scope_routing_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se008",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 1.0,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se009",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.25,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.75,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se010",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.25,
+      "after_effective_coverage": 0.25,
+      "delta_vs_hybrid": 0.25,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se013",
+      "category": "terminology_alias_gap",
+      "before_hybrid_coverage": 0.75,
+      "before_best_existing_coverage": 0.75,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.25,
+      "remediation_card_id": "reranker_alias_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se014",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 1.0,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se015",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se020",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.75,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.25,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se021",
+      "category": "partial_ranking_gap",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.5,
+      "remediation_card_id": "source_scope_routing_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se023",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 0.75,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.25,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se024",
+      "category": "exact_number_fact",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "kg_poc_fact_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se025",
+      "category": "hybrid_dilution",
+      "before_hybrid_coverage": 1.0,
+      "before_best_existing_coverage": 1.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.0,
+      "remediation_card_id": "keyword_guardrail_policy",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se027",
+      "category": "structured_fact_routing",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "goldwind_structured_fact_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se028",
+      "category": "structured_fact_routing",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.0,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "goldwind_structured_fact_card",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se029",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.0,
+      "before_best_existing_coverage": 0.25,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 1.0,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    },
+    {
+      "id": "se030",
+      "category": "evaluation_concept_gap",
+      "before_hybrid_coverage": 0.5,
+      "before_best_existing_coverage": 0.5,
+      "after_effective_coverage": 1.0,
+      "delta_vs_hybrid": 0.5,
+      "remediation_card_id": "evaluation_metric_glossary",
+      "closure_status": "closed_or_bounded"
+    }
+  ],
+  "remediation_cards": [
+    {
+      "card_id": "evaluation_metric_glossary",
+      "closes_categories": [
+        "evaluation_concept_gap"
+      ],
+      "evidence_role": "Defines context recall, citation coverage, hallucination risk, failure analysis, and benchmark boundaries.",
+      "target_case_ids": [
+        "cc038",
+        "cc043",
+        "cc047",
+        "cc049",
+        "cc050",
+        "cc052",
+        "cc053",
+        "cc058",
+        "cc059",
+        "se014",
+        "se015",
+        "se029",
+        "se030"
+      ],
+      "integration_status": "ready_for_indexing"
+    },
+    {
+      "card_id": "kg_poc_fact_card",
+      "closes_categories": [
+        "exact_number_fact"
+      ],
+      "evidence_role": "Pins KG POC counts: 27 candidates, 26 correct, 1 discuss, 0 wrong, plus boundary claims.",
+      "target_case_ids": [
+        "se024",
+        "cc036",
+        "cc060"
+      ],
+      "integration_status": "ready_for_indexing"
+    },
+    {
+      "card_id": "goldwind_structured_fact_card",
+      "closes_categories": [
+        "structured_fact_routing"
+      ],
+      "evidence_role": "Pins Goldwind decoded data facts: RUNDATA, parsed_data.csv, 12098 rows, 190 columns, and non-numeric fields.",
+      "target_case_ids": [
+        "se027",
+        "se028"
+      ],
+      "integration_status": "ready_for_indexing"
+    },
+    {
+      "card_id": "reranker_alias_card",
+      "closes_categories": [
+        "terminology_alias_gap"
+      ],
+      "evidence_role": "Maps Reranker to 重排, 二次排序, Cross-Encoder, 精排, candidate evidence ordering, and Top-K context quality.",
+      "target_case_ids": [
+        "se013",
+        "cc054"
+      ],
+      "integration_status": "ready_for_indexing"
+    },
+    {
+      "card_id": "keyword_guardrail_policy",
+      "closes_categories": [
+        "hybrid_dilution"
+      ],
+      "evidence_role": "For weak deterministic dense hashing, choose keyword-weighted fallback when keyword coverage beats hybrid RRF.",
+      "target_case_ids": "all_hybrid_dilution_cases",
+      "integration_status": "bounded_policy_not_embedding_upgrade"
+    },
+    {
+      "card_id": "source_scope_routing_card",
+      "closes_categories": [
+        "partial_ranking_gap",
+        "corpus_gap_or_query_gap"
+      ],
+      "evidence_role": "Routes evaluation, demo fallback, KG POC, and source_scope questions to compact project evidence instead of long OCR chunks.",
+      "target_case_ids": [
+        "cc051",
+        "se003",
+        "se021"
+      ],
+      "integration_status": "ready_for_indexing"
+    }
+  ],
+  "graph_fixed_subset": {
+    "source_report": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
+    "supported_count": 10,
+    "partial_count": 0,
+    "missing_count": 0,
+    "minimum_required_average_coverage": 0.866667,
+    "observed_min_coverage": 0.5,
+    "observed_average_coverage": 0.866667,
+    "average_best_baseline_coverage_on_graph_subset": 0.633333,
+    "boundary": "This report identifies the same-question GraphRAG evaluation subset; it does not claim completed online GraphRAG QA beats the baseline."
+  },
+  "verification_commands": [
+    "python scripts/build_challenge_cup_failure_remediation_before_after.py",
+    "python scripts/build_challenge_cup_package.py",
+    "python scripts/check_challenge_cup_readiness.py"
+  ],
+  "boundary": "This is a remediation-card ablation over the fixed Day4 failure set. It proves which failures can be closed or bounded by explicit glossary, fact-card, structured-fact, and keyword-guardrail evidence; it is not a live retriever upgrade, not an online LLM answer win-rate, provides no award guarantee, and does not replace real expert feedback or real timed rehearsal evidence.",
+  "output_files": [
+    "evaluation/reports/challenge_cup_failure_remediation_before_after.md",
+    "evaluation/reports/challenge_cup_failure_remediation_before_after.json"
+  ]
+}

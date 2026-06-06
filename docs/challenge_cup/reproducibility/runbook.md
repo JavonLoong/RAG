@@ -32,6 +32,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/analyze_day4_failure_cases.py
 ```
 
+## 生成 Day4 失败整改 before/after
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_failure_remediation_before_after.py
+```
+
 ## 重新生成挑战杯成果包
 
 ```powershell

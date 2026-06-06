@@ -184,6 +184,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "defense_console/index.html" in readme
     assert "reproducibility/official_rubric_alignment.md" in readme
     assert "reproducibility/judge_objection_response_matrix.md" in readme
+    assert "challenge_cup_failure_remediation_before_after.md" in readme
     assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
@@ -311,7 +312,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "53 项 readiness gate" in onsite_runbook
+    assert "54 项 readiness gate" in onsite_runbook
+    assert "53 项 readiness gate" not in onsite_runbook
     assert "52 项 readiness gate" not in onsite_runbook
     assert "51 项 readiness gate" not in onsite_runbook
     assert "50 项 readiness gate" not in onsite_runbook
@@ -726,6 +728,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_context_demo.md" in eval_report
     assert "challenge_cup_graphrag_answer_benchmark.md" in eval_report
     assert "challenge_cup_graphrag_gap_remediation_plan.md" in eval_report
+    assert "challenge_cup_failure_remediation_before_after.md" in eval_report
+    assert "Day4 失败整改 before/after" in eval_report
     assert "答案级覆盖对照" in eval_report
     assert "补证整改计划" in eval_report
     assert "manual evidence supplement" in eval_report
@@ -746,6 +750,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_hard_evidence_action_pack.py" in runbook
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in runbook
+    assert "build_challenge_cup_failure_remediation_before_after.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -777,6 +782,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_graphrag_answer_benchmark.json" in manifest
     assert "challenge_cup_graphrag_gap_remediation_plan.md" in manifest
     assert "challenge_cup_graphrag_gap_remediation_plan.json" in manifest
+    assert "challenge_cup_failure_remediation_before_after.md" in manifest
+    assert "challenge_cup_failure_remediation_before_after.json" in manifest
     assert "graphrag_manual_evidence_supplement.csv" in manifest
     assert "defense_rehearsal_scorecard.md" in manifest
     assert "defense_rehearsal_scorecard.json" in manifest
@@ -845,9 +852,12 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_external_evidence_execution_kit.py" in command_log
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "build_challenge_cup_judge_objection_matrix.py" in command_log
+    assert "build_challenge_cup_failure_remediation_before_after.py" in command_log
+    assert "Status: remediation_card_ablation_ready_no_live_retriever_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (53/53 gates)" in command_log
+    assert "Status: pass (54/54 gates)" in command_log
+    assert "Status: pass (53/53 gates)" not in command_log
     assert "Status: pass (52/52 gates)" not in command_log
     assert "Status: pass (51/51 gates)" not in command_log
     assert "Status: pass (50/50 gates)" not in command_log
@@ -935,6 +945,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json" in evidence_files
+    assert "evaluation/reports/challenge_cup_failure_remediation_before_after.md" in evidence_files
+    assert "evaluation/reports/challenge_cup_failure_remediation_before_after.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv" in evidence_files
     assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
     assert "docs/challenge_cup/12_专家反馈采集与整改闭环.md" in evidence_files
@@ -1099,8 +1111,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 53
-    assert final_acceptance["package_readiness"]["total"] == 53
+    assert final_acceptance["package_readiness"]["passed"] == 54
+    assert final_acceptance["package_readiness"]["total"] == 54
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1183,6 +1195,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     ) in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in archive_entries
+    assert "evaluation/reports/challenge_cup_failure_remediation_before_after.md" in archive_entries
+    assert "evaluation/reports/challenge_cup_failure_remediation_before_after.json" in archive_entries
     assert "docs/challenge_cup/13_评委现场速览卡.md" in archive_entries
     assert "docs/challenge_cup/14_现场答辩操作Runbook.md" in archive_entries
     assert "docs/challenge_cup/15_结项交付移交清单.md" in archive_entries

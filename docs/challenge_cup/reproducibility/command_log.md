@@ -62,6 +62,10 @@ python scripts/build_graphrag_gap_remediation_plan.py
 -> evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md
 -> evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json
 
+python scripts/build_challenge_cup_failure_remediation_before_after.py
+-> evaluation/reports/challenge_cup_failure_remediation_before_after.md
+-> Status: remediation_card_ablation_ready_no_live_retriever_claim
+
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json
@@ -128,7 +132,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (53/53 gates)
+-> Status: pass (54/54 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

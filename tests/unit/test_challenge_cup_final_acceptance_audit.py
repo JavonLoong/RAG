@@ -27,8 +27,8 @@ def test_final_acceptance_audit_summarizes_package_ready_but_goal_incomplete() -
     assert payload["report_type"] == "challenge_cup_final_acceptance_audit"
     assert payload["status"] == "package_ready_awaiting_external_hard_evidence"
     assert payload["package_readiness"]["status"] == "pass"
-    assert payload["package_readiness"]["passed"] == 53
-    assert payload["package_readiness"]["total"] == 53
+    assert payload["package_readiness"]["passed"] == 54
+    assert payload["package_readiness"]["total"] == 54
     assert payload["submission_package_verifier"]["available"] is True
     assert payload["submission_package_verifier"]["archived"] is True
     assert payload["goal_completion"]["status"] == "fail"
