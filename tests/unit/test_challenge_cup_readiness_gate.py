@@ -2345,6 +2345,45 @@ def test_hard_evidence_ledger_gate_rejects_expert_feedback_without_required_meta
     assert "reviewer_identity" in check.detail
 
 
+def test_expert_feedback_metadata_rejects_generic_review_dimensions(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    source_relative = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"
+    source = tmp_path / source_relative
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text("real expert reply", encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    category = {
+        "accepted_evidence_types": ["email_reply"],
+        "required_metadata_fields": [
+            "reviewer_identity",
+            "role_or_org",
+            "review_date",
+            "feedback_source_path",
+            "review_dimensions",
+            "remediation_record",
+            "real_feedback_confirmed",
+        ],
+    }
+    payload = {
+        "evidence_type": "email_reply",
+        "reviewer_identity": "advisor-a",
+        "role_or_org": "advisor",
+        "review_date": "2026-06-06",
+        "feedback_source_path": source_relative,
+        "review_dimensions": ["presentation", "readability", "pacing"],
+        "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+        "real_feedback_confirmed": True,
+    }
+
+    failures = module.validate_expert_feedback_metadata(
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+        payload,
+        category,
+    )
+
+    assert any("missing required expert review dimension groups" in item for item in failures)
+
+
 def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_question_count(
     monkeypatch,
     tmp_path,

@@ -218,3 +218,39 @@ def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Pa
     assert rehearsal["collected_count"] == 0
     assert rehearsal["evidence_records"] == []
     assert payload["completion_claim_allowed"] is False
+
+
+def test_hard_evidence_ledger_rejects_generic_expert_feedback_dimensions(tmp_path: Path) -> None:
+    module = load_ledger_module()
+    configure_module_paths(module, tmp_path)
+    expert_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    expert_dir.mkdir(parents=True)
+    expert_source = expert_dir / "advisor-a.txt"
+    expert_source.write_text("real expert reply", encoding="utf-8")
+    (expert_dir / "advisor-a.json").write_text(
+        json.dumps(
+            {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "advisor-a",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                "review_dimensions": ["presentation", "readability", "pacing"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    payload = module.write_outputs()
+
+    expert = payload["categories"]["expert_feedback"]
+    assert expert["raw_file_count"] == 2
+    assert expert["metadata_file_count"] == 1
+    assert expert["source_file_count"] == 1
+    assert expert["evidence_record_count"] == 0
+    assert expert["collected_count"] == 0
+    assert expert["evidence_records"] == []
+    assert payload["completion_claim_allowed"] is False

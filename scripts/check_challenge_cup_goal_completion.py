@@ -3,9 +3,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -102,6 +109,12 @@ def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: s
             failures.append(
                 f"{metadata_path}: review_dimensions count={len(valid_dimensions)} "
                 f"expected at least {MIN_EXPERT_REVIEW_DIMENSIONS}"
+            )
+        missing_dimension_groups = missing_required_review_dimension_groups(valid_dimensions)
+        if missing_dimension_groups:
+            failures.append(
+                f"{metadata_path}: missing required expert review dimension groups: "
+                + ", ".join(missing_dimension_groups)
             )
 
     remediation_record = metadata.get("remediation_record")

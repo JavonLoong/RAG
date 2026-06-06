@@ -14,6 +14,12 @@ from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
@@ -5048,6 +5054,13 @@ def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], ca
     review_dimensions = payload.get("review_dimensions")
     if not isinstance(review_dimensions, list) or len(review_dimensions) < HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS:
         failures.append(f"{relative}: review_dimensions below {HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS}")
+    else:
+        missing_dimension_groups = missing_required_review_dimension_groups(review_dimensions)
+        if missing_dimension_groups:
+            failures.append(
+                f"{relative}: missing required expert review dimension groups: "
+                + ", ".join(missing_dimension_groups)
+            )
     remediation_record = payload.get("remediation_record")
     if not isinstance(remediation_record, list) or not remediation_record:
         failures.append(f"{relative}: remediation_record missing")

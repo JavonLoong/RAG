@@ -34,7 +34,12 @@
       "evidence_files": [],
       "metadata_files": [],
       "source_files": [],
-      "evidence_records": []
+      "evidence_records": [],
+      "required_review_dimension_groups": [
+        "practical_value",
+        "innovation",
+        "boundary_rigor"
+      ]
     },
     "timed_rehearsal": {
       "category": "timed_rehearsal",

@@ -15,6 +15,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_challenge_cup_hard_evidence_ledger as ledger
+from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -136,6 +137,12 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         raise ValueError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
     if len(args.review_dimension) < 3:
         raise ValueError("expert feedback needs at least three review dimensions")
+    missing_dimension_groups = missing_required_review_dimension_groups(args.review_dimension)
+    if missing_dimension_groups:
+        raise HardEvidenceInputError(
+            "expert feedback missing required review dimension groups: "
+            + ", ".join(missing_dimension_groups)
+        )
     source = existing_source(args.source)
     copied_source = copy_source(source, EXPERT_DIR, args.id, force=args.force)
     metadata = {

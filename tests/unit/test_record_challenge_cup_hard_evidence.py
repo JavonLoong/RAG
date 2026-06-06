@@ -238,6 +238,46 @@ def test_refuses_expert_feedback_without_real_feedback_confirmation(tmp_path: Pa
     assert not (tmp_path / "docs").exists()
 
 
+def test_refuses_expert_feedback_with_generic_dimensions(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实专家邮件回复。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "presentation",
+            "--review-dimension",
+            "readability",
+            "--review-dimension",
+            "pacing",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
 def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: Path) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)

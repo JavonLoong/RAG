@@ -78,6 +78,12 @@ def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
         raise PreflightInputError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
     if len(args.review_dimension) < 3:
         raise PreflightInputError("expert feedback preflight needs at least three review dimensions")
+    missing_dimension_groups = intake.missing_required_review_dimension_groups(args.review_dimension)
+    if missing_dimension_groups:
+        raise PreflightInputError(
+            "expert feedback preflight missing required review dimension groups: "
+            + ", ".join(missing_dimension_groups)
+        )
     intake.parse_iso_date(args.review_date)
     source = nonempty_source(args.source)
     payload = base_payload("expert_feedback", args, source, intake.EXPERT_DIR)

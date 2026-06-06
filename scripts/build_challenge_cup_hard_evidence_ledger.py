@@ -1,8 +1,18 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from challenge_cup_expert_review_dimensions import (
+    REQUIRED_EXPERT_REVIEW_DIMENSION_GROUPS,
+    missing_required_review_dimension_groups,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -195,6 +205,10 @@ def build_evidence_records(
             continue
         if payload.get("evidence_type") not in accepted_types:
             continue
+        if category_key == "expert_feedback" and missing_required_review_dimension_groups(
+            payload.get("review_dimensions")
+        ):
+            continue
         if category_key == "timed_rehearsal" and not timed_rehearsal_timings_within_limits(payload):
             continue
         source_path = payload.get(source_field)
@@ -260,6 +274,7 @@ def build_payload() -> dict[str, Any]:
             "real_feedback_confirmed",
         ],
     )
+    expert["required_review_dimension_groups"] = list(REQUIRED_EXPERT_REVIEW_DIMENSION_GROUPS)
     rehearsal = build_category(
         "timed_rehearsal",
         REHEARSAL_DIR,
@@ -361,6 +376,7 @@ def write_readmes() -> None:
                     "role/org\\u3001date\\u3001review dimensions \\u548c remediation record\\u3002"
                 ),
                 "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, review_dimensions, remediation_record, real_feedback_confirmed.",
+                "Required review dimension groups: practical_value, innovation, boundary_rigor.",
                 "Use YYYY-MM-DD for review_date. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",

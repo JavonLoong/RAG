@@ -139,6 +139,46 @@ def test_refuses_expert_feedback_preflight_with_too_few_dimensions(tmp_path: Pat
     assert not hard_evidence_dir(tmp_path).exists()
 
 
+def test_refuses_expert_feedback_preflight_with_generic_dimensions(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor feedback", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "presentation",
+            "--review-dimension",
+            "readability",
+            "--review-dimension",
+            "pacing",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
 def test_preflights_confirmed_timed_rehearsal_without_writing_hard_evidence(tmp_path: Path) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
