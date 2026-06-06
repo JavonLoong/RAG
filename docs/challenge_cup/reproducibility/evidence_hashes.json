@@ -272,8 +272,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
-      "bytes": 2370,
-      "sha256": "b1fa03b1cfbd665106e573adbabfba6432e7161794387f604e19e41fedccd73d"
+      "bytes": 2385,
+      "sha256": "7aeaa6cd8c16efc58fc4b1c6aece482e6d6bb767137e5e738da8c63bfd10769a"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
@@ -282,8 +282,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 1041,
-      "sha256": "b02fd98d6ae0c435ab13e5e24960b68d91759ae3cc66b026d8b79210a7a8105a"
+      "bytes": 1050,
+      "sha256": "80622717873b22f8f66017e9f89172c09e4dee5465995fe56da05b64e154c75e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -402,8 +402,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
-      "bytes": 8188,
-      "sha256": "6a700893dd318764d83dc65a6c8f357d6bd7c10113a1e7cea956d09d38854edf"
+      "bytes": 8203,
+      "sha256": "d395b9e24f6be9e56e06b23309a4ad30f59674ab9d4cdf4d69f1d2e08c21dc1c"
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
@@ -427,8 +427,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/verification_transcript.json",
-      "bytes": 3676,
-      "sha256": "90c32d5e3f1619dac1bd788f3df7d0a1d98a35de9fd7bf33a41b0735c0bd8199"
+      "bytes": 3691,
+      "sha256": "c50c11d5ba172e5046789352fd7e46966d18ef746955642618adab79330d97eb"
     },
     {
       "path": "docs/challenge_cup/reproducibility/verification_transcript.md",
