@@ -405,7 +405,7 @@ REQUIRED_BROWSER_CHECKS = {
 
 REQUIRED_LIVE_CHECKS = {
     "health endpoint",
-    "missing frontend fallback",
+    "frontend root page",
     "trusted cors origin",
     "search top_k guard",
     "graphrag path guard",

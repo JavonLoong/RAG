@@ -34,14 +34,16 @@ def test_live_demo_smoke_writes_report_and_checks_core_routes(tmp_path) -> None:
     check_names = {check["name"] for check in payload["checks"]}
     assert {
         "health endpoint",
-        "missing frontend fallback",
+        "frontend root page",
         "trusted cors origin",
         "search top_k guard",
         "graphrag path guard",
     } <= check_names
+    assert "missing frontend fallback" not in check_names
 
     markdown = (report_dir / "live_demo_smoke_report.md").read_text(encoding="utf-8")
     assert "Live Demo Smoke Report" in markdown
+    assert "frontend root page" in markdown
     assert "GraphRAG" in markdown
     assert REPORT_JSON.read_text(encoding="utf-8") == committed_json_before
     assert REPORT_MD.read_text(encoding="utf-8") == committed_md_before

@@ -137,8 +137,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 957,
-      "sha256": "ceec253bdb07ad0d2200b4798e6dc52ff0807594246960754b9da2ad9afeaa3b"
+      "bytes": 966,
+      "sha256": "b7ed0d2158efbb75f24247664c5a6e9744f932772434f52d774eb6648690b2d9"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -182,8 +182,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
-      "bytes": 692,
-      "sha256": "0142f006726986b6ec5524824561362cf1ce731c7801441b09f7f679c2176199"
+      "bytes": 779,
+      "sha256": "a03cd8d752a91c4a50ffffc97defed060cee7056f4aaac36f18219d75a1de8af"
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.json",

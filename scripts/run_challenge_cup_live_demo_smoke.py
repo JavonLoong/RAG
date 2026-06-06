@@ -16,6 +16,7 @@ API_SRC = REPO_ROOT / "api_server" / "current_console" / "chroma_rag_poc" / "src
 REPORT_DIR = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility"
 REPORT_JSON = REPORT_DIR / "live_demo_smoke_report.json"
 REPORT_MD = REPORT_DIR / "live_demo_smoke_report.md"
+DEMO_FRONTEND_DIR = REPO_ROOT / "frontend_app" / "current_console"
 
 if str(API_SRC) not in sys.path:
     sys.path.insert(0, str(API_SRC))
@@ -41,7 +42,7 @@ def check(condition: bool, name: str, detail: str) -> SmokeCheck:
     return SmokeCheck(name=name, passed=bool(condition), detail=detail)
 
 
-def build_app(temp_root: Path) -> TestClient:
+def build_app(temp_root: Path, frontend_dir: Path = DEMO_FRONTEND_DIR) -> TestClient:
     persist_dir = temp_root / "chroma"
     upload_dir = temp_root / "uploads"
     log_dir = temp_root / "logs"
@@ -51,7 +52,7 @@ def build_app(temp_root: Path) -> TestClient:
         persist_dir=persist_dir,
         upload_dir=upload_dir,
         log_dir=log_dir,
-        frontend_dir=temp_root / "missing-frontend",
+        frontend_dir=frontend_dir,
     )
     return TestClient(app)
 
@@ -73,11 +74,14 @@ def run_smoke_checks() -> list[SmokeCheck]:
             )
 
             index = client.get("/")
+            index_content_type = index.headers.get("content-type", "")
             checks.append(
                 check(
-                    index.status_code == 404 and "message" in index.json(),
-                    "missing frontend fallback",
-                    f"GET / -> {index.status_code}",
+                    index.status_code == 200
+                    and "text/html" in index_content_type
+                    and index.text.lstrip().lower().startswith("<!doctype html"),
+                    "frontend root page",
+                    f"GET / -> {index.status_code}; frontend={display_path(DEMO_FRONTEND_DIR)}",
                 )
             )
 
@@ -146,7 +150,7 @@ def write_reports(checks: list[SmokeCheck], report_dir: Path = REPORT_DIR) -> di
         "passed": passed,
         "total": len(checks),
         "checks": [item.to_dict() for item in checks],
-        "boundary": "This smoke test verifies local API readiness and route guards; it does not replace browser or production-load verification.",
+        "boundary": "This smoke test verifies local API readiness, project frontend serving, and route guards; it does not replace browser or production-load verification.",
     }
     report_dir.mkdir(parents=True, exist_ok=True)
     report_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -156,7 +160,7 @@ def write_reports(checks: list[SmokeCheck], report_dir: Path = REPORT_DIR) -> di
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: local FastAPI app factory, health route, CORS, search guard, GraphRAG path guard",
+        "- Scope: local FastAPI app factory, project frontend root page, health route, CORS, search guard, GraphRAG path guard",
         "",
         "| Check | Result | Detail |",
         "| --- | --- | --- |",

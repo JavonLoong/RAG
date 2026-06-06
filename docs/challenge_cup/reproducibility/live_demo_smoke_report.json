@@ -1,6 +1,6 @@
 {
   "report_type": "challenge_cup_live_demo_smoke",
-  "generated_at": "2026-06-05T23:42:45",
+  "generated_at": "2026-06-06T11:51:28",
   "status": "pass",
   "passed": 5,
   "total": 5,
@@ -11,9 +11,9 @@
       "detail": "GET /api/health -> 200"
     },
     {
-      "name": "missing frontend fallback",
+      "name": "frontend root page",
       "passed": true,
-      "detail": "GET / -> 404"
+      "detail": "GET / -> 200; frontend=frontend_app\\current_console"
     },
     {
       "name": "trusted cors origin",
@@ -31,5 +31,5 @@
       "detail": "POST /api/graphrag/stats outside runtime root -> 400"
     }
   ],
-  "boundary": "This smoke test verifies local API readiness and route guards; it does not replace browser or production-load verification."
+  "boundary": "This smoke test verifies local API readiness, project frontend serving, and route guards; it does not replace browser or production-load verification."
 }
