@@ -86,6 +86,27 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         and "--confirm-real-rehearsal" in command
         for command in packets["timed_rehearsal_observer"]["recording_commands"]
     )
+    command_text = "\n".join(
+        [item["command"] for item in payload["operator_sequence"]]
+        + [
+            command
+            for packet in packets.values()
+            for command in packet["recording_commands"]
+        ]
+    )
+    assert "2026-06-06" not in command_text
+    assert "20260606" not in command_text
+    for placeholder in [
+        "<real-outreach-id>",
+        "<real-sent-date-yyyy-mm-dd>",
+        "<real-followup-due-date-yyyy-mm-dd>",
+        "<real-review-date-yyyy-mm-dd>",
+        "<real-rehearsal-schedule-id>",
+        "<real-scheduled-date-yyyy-mm-dd>",
+        "<real-rehearsal-id>",
+        "<real-rehearsal-date-yyyy-mm-dd>",
+    ]:
+        assert placeholder in command_text
 
     output_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility"
     output_json = output_dir / "external_evidence_execution_kit.json"

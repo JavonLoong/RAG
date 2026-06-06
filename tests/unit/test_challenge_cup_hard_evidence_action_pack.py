@@ -68,6 +68,24 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         and "--confirm-real-rehearsal" in command
         for command in streams["timed_rehearsal"]["recording_commands"]
     )
+    command_text = "\n".join(
+        command
+        for stream in streams.values()
+        for command in stream["recording_commands"]
+    )
+    assert "2026-06-06" not in command_text
+    assert "20260606" not in command_text
+    for placeholder in [
+        "<real-outreach-id>",
+        "<real-sent-date-yyyy-mm-dd>",
+        "<real-followup-due-date-yyyy-mm-dd>",
+        "<real-review-date-yyyy-mm-dd>",
+        "<real-rehearsal-schedule-id>",
+        "<real-scheduled-date-yyyy-mm-dd>",
+        "<real-rehearsal-id>",
+        "<real-rehearsal-date-yyyy-mm-dd>",
+    ]:
+        assert placeholder in command_text
     assert "check_challenge_cup_goal_completion.py" in "\n".join(payload["verification_commands"])
 
     output_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_action_pack.json"

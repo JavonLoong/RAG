@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
@@ -358,6 +359,25 @@ def generated_at_from_reports(*paths: Path | None) -> str:
 
 def md_link(path: Path) -> str:
     return str(path.relative_to(REPO_ROOT)).replace("\\", "/")
+
+
+def graph_manual_evidence_source_files() -> list[str]:
+    if not GRAPH_MANUAL_EVIDENCE_SUPPLEMENT.exists():
+        return []
+
+    sources: set[str] = set()
+    rows = csv.DictReader(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT.read_text(encoding="utf-8").splitlines())
+    for row in rows:
+        source = (row.get("source_file") or "").strip().replace("\\", "/")
+        if not source or source.lower() == "n/a":
+            continue
+        source_path = Path(source)
+        if source_path.is_absolute() or ".." in source_path.parts:
+            raise ValueError(f"invalid GraphRAG manual evidence source_file: {source}")
+        if not (REPO_ROOT / source).is_file():
+            raise FileNotFoundError(f"GraphRAG manual evidence source_file not found: {source}")
+        sources.add(source)
+    return sorted(sources)
 
 
 def optional_md_link(path: Path | None) -> str:
@@ -2124,33 +2144,33 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 收到真实专家反馈附件后运行：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <真实专家反馈附件路径> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场 --confirm-real-feedback
-.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <真实专家反馈附件路径> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场 --confirm-real-feedback
+.\.venv\Scripts\python.exe scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply --reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> --review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py expert_feedback --id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply --reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> --review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback
 ```
 
 真实外发专家反馈请求后，先记录外发凭证；这不等同于专家反馈硬证据：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <真实外发邮件或聊天凭证路径> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension 实用性 --requested-review-dimension 创新性 --requested-review-dimension 边界严谨性 --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> --source <real-outreach-proof> --recipient-alias <real-reviewer-alias> --recipient-role <real-reviewer-role> --channel email --sent-date <real-sent-date-yyyy-mm-dd> --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date <real-followup-due-date-yyyy-mm-dd> --confirm-real-outreach
 ```
 
 真实计时彩排排期或观察员准备完成后，先记录排期凭证；这不等同于真实计时彩排硬证据：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/record_challenge_cup_timed_rehearsal_schedule.py --id rehearsal-schedule-20260606 --source <真实日历邀请或观察员准备记录路径> --scheduled-date 2026-06-06 --observer observer-a --venue-or-channel meeting-room-a --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item "timer visible to observer" --checklist-item "browser smoke report opened" --checklist-item "offline fallback archive ready" --checklist-item "five killer questions assigned" --confirm-real-schedule
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_timed_rehearsal_schedule.py --id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> --scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> --venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule
 ```
 
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id rehearsal-1 --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal
+.\.venv\Scripts\python.exe scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
 ```
 
 如果已有真实计时截图、录屏或观察员笔记附件，也可以直接归档：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <真实计时记录附件路径> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal
-.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <真实计时记录附件路径> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal
+.\.venv\Scripts\python.exe scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal
 ```
 
 ## 刷新硬证据台账
@@ -2745,6 +2765,7 @@ def main() -> int:
         md_link(VERIFICATION_TRANSCRIPT_REPORT_JSON),
         md_link(EXPERT_FEEDBACK_FORM),
         md_link(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT),
+        *graph_manual_evidence_source_files(),
         md_link(LIVE_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_REPORT),
         md_link(BROWSER_SMOKE_JSON),

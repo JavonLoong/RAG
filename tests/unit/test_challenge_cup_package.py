@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import re
@@ -933,6 +934,20 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
     assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
     assert "run_challenge_cup_timed_rehearsal.py" in runbook
+    assert "2026-06-06" not in runbook
+    assert "20260606" not in runbook
+    for placeholder in [
+        "<real-outreach-id>",
+        "<real-sent-date-yyyy-mm-dd>",
+        "<real-followup-due-date-yyyy-mm-dd>",
+        "<real-feedback-id>",
+        "<real-review-date-yyyy-mm-dd>",
+        "<real-rehearsal-schedule-id>",
+        "<real-scheduled-date-yyyy-mm-dd>",
+        "<real-rehearsal-id>",
+        "<real-rehearsal-date-yyyy-mm-dd>",
+    ]:
+        assert placeholder in runbook
     assert "build_challenge_cup_expert_outreach_ledger.py" in runbook
     assert "build_challenge_cup_timed_rehearsal_schedule_ledger.py" in runbook
     assert "build_challenge_cup_hard_evidence_closure_board.py" in runbook
@@ -1535,6 +1550,30 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     required_archive_entries.discard(self_report)
     assert required_archive_entries <= set(archive_entries)
+
+
+def test_graphrag_manual_evidence_source_files_are_archived_and_hashed() -> None:
+    supplement_path = PACKAGE_DIR / "reproducibility" / "graphrag_manual_evidence_supplement.csv"
+    rows = list(csv.DictReader(supplement_path.read_text(encoding="utf-8").splitlines()))
+    source_files = sorted({row["source_file"] for row in rows if row.get("source_file")})
+    assert source_files
+
+    package_manifest = json.loads((PACKAGE_DIR / "package_manifest.json").read_text(encoding="utf-8"))
+    evidence_files = set(package_manifest["evidence_files"])
+    hashes = json.loads((PACKAGE_DIR / "reproducibility" / "evidence_hashes.json").read_text(encoding="utf-8"))
+    hashed_paths = {entry["path"] for entry in hashes["files"]}
+    archive_manifest = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_archive_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    archived_paths = set(archive_manifest["included_files"])
+
+    for source_file in source_files:
+        assert (REPO_ROOT / source_file).is_file()
+        assert source_file in evidence_files
+        assert source_file in hashed_paths
+        assert source_file in archived_paths
 
 
 def test_submission_package_verifier_runs_from_extracted_archive(tmp_path: Path) -> None:

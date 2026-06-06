@@ -20,6 +20,48 @@ REPORT_TYPE = "challenge_cup_hard_evidence_ledger"
 AWAITING_STATUS = "awaiting_real_external_feedback_and_timed_rehearsal"
 READY_FOR_REVIEW_STATUS = "hard_evidence_collected_pending_review"
 REQUIRED_BEFORE_GOAL_COMPLETION = ["expert_feedback", "timed_rehearsal"]
+EXPERT_PREFLIGHT_COMMAND = (
+    "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback "
+    "--id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply "
+    "--reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> "
+    "--review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality "
+    "--review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> "
+    "--remediation-action <action> --confirm-real-feedback"
+)
+EXPERT_RECORD_COMMAND = (
+    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback "
+    "--id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply "
+    "--reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> "
+    "--review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality "
+    "--review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> "
+    "--remediation-action <action> --confirm-real-feedback"
+)
+REHEARSAL_RUN_COMMAND = (
+    "python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
+REHEARSAL_PREFLIGHT_COMMAND = (
+    "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal "
+    "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
+REHEARSAL_RECORD_COMMAND = (
+    "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal "
+    "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
 
 PLACEHOLDER_NAME_FRAGMENTS = {
     "example",
@@ -28,6 +70,22 @@ PLACEHOLDER_NAME_FRAGMENTS = {
     "template",
     "todo",
 }
+
+
+def configure_paths(repo_root: Path) -> None:
+    global REPO_ROOT, OUTPUT_DIR, OUTPUT_JSON, OUTPUT_MD
+    global INTAKE_ROOT, EXPERT_DIR, REHEARSAL_DIR, ROOT_README, EXPERT_README, REHEARSAL_README
+
+    REPO_ROOT = repo_root
+    OUTPUT_DIR = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility"
+    OUTPUT_JSON = OUTPUT_DIR / "hard_evidence_ledger.json"
+    OUTPUT_MD = OUTPUT_DIR / "hard_evidence_ledger.md"
+    INTAKE_ROOT = OUTPUT_DIR / "hard_evidence"
+    EXPERT_DIR = INTAKE_ROOT / "expert_feedback"
+    REHEARSAL_DIR = INTAKE_ROOT / "timed_rehearsal"
+    ROOT_README = INTAKE_ROOT / "README.md"
+    EXPERT_README = EXPERT_DIR / "README.md"
+    REHEARSAL_README = REHEARSAL_DIR / "README.md"
 
 
 def text(value: str) -> str:
@@ -197,8 +255,8 @@ def write_readmes() -> None:
                 ),
                 "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, review_dimensions, remediation_record, real_feedback_confirmed.",
                 "Use YYYY-MM-DD for review_date. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
-                "Preflight CLI: `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue demo-pacing --remediation-action tighten-opening --confirm-real-feedback`.",
-                "Recommended CLI: `python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension 实用性 --review-dimension 创新性 --review-dimension 边界严谨性 --remediation-issue 演示节奏 --remediation-action 压缩开场 --confirm-real-feedback`.",
+                f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
+                f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
             ]
         ),
     )
@@ -216,9 +274,9 @@ def write_readmes() -> None:
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
                 "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, real_rehearsal_confirmed.",
                 "Use YYYY-MM-DD for rehearsal_date. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
-                "Preferred CLI: `python scripts/run_challenge_cup_timed_rehearsal.py --id rehearsal-1 --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal`.",
-                "Preflight CLI: `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <real-timer-file> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal`.",
-                "Recommended CLI: `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <real-timer-file> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal`.",
+                f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
+                f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",
+                f"Recommended CLI: `{REHEARSAL_RECORD_COMMAND}`.",
                 text("\\u8d85\\u65f6\\u548c\\u7b54\\u8fa9\\u9057\\u6f0f\\u70b9\\u5fc5\\u987b\\u4fdd\\u7559\\uff0c\\u4e0d\\u80fd\\u7c89\\u9970\\u4e3a\\u901a\\u8fc7\\u3002"),
             ]
         ),

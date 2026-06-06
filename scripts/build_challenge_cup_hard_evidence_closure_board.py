@@ -17,6 +17,67 @@ BOUNDARY = (
     "This closure board is an execution control artifact. It does not satisfy goal completion, "
     "does not prove expert feedback, and does not prove a timed rehearsal was completed."
 )
+EXPERT_OUTREACH_COMMAND = (
+    "python scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> "
+    "--source <real-outreach-proof> --recipient-alias <real-reviewer-alias> "
+    "--recipient-role <real-reviewer-role> --channel email --sent-date <real-sent-date-yyyy-mm-dd> "
+    "--status sent --requested-review-dimension practicality --requested-review-dimension innovation "
+    "--requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md "
+    "--requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md "
+    "--followup-due-date <real-followup-due-date-yyyy-mm-dd> --confirm-real-outreach"
+)
+EXPERT_PREFLIGHT_COMMAND = (
+    "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback "
+    "--id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply "
+    "--reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> "
+    "--review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality "
+    "--review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> "
+    "--remediation-action <action> --confirm-real-feedback"
+)
+EXPERT_RECORD_COMMAND = (
+    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback "
+    "--id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply "
+    "--reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> "
+    "--review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality "
+    "--review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> "
+    "--remediation-action <action> --confirm-real-feedback"
+)
+REHEARSAL_SCHEDULE_COMMAND = (
+    "python scripts/record_challenge_cup_timed_rehearsal_schedule.py "
+    "--id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> "
+    "--scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 "
+    "--demo-planned-seconds 180 --offline-fallback-planned-seconds 20 "
+    "--killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible "
+    "--checklist-item browser-smoke-opened --checklist-item offline-archive-ready "
+    "--checklist-item five-killer-questions-assigned --confirm-real-schedule"
+)
+REHEARSAL_RUN_COMMAND = (
+    "python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
+REHEARSAL_PREFLIGHT_COMMAND = (
+    "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal "
+    "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
+REHEARSAL_RECORD_COMMAND = (
+    "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal "
+    "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
+    "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
+    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
+    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
+    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--confirm-real-rehearsal"
+)
 
 
 def configure_paths(repo_root: Path) -> None:
@@ -51,9 +112,9 @@ def closure_streams() -> list[dict[str, Any]]:
                 "chat_screenshot",
             ],
             "ready_to_execute_commands": [
-                "python scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <real-outreach-proof> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach",
-                "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback",
-                "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback",
+                EXPERT_OUTREACH_COMMAND,
+                EXPERT_PREFLIGHT_COMMAND,
+                EXPERT_RECORD_COMMAND,
             ],
             "post_collection_commands": [
                 "python scripts/build_challenge_cup_hard_evidence_ledger.py",
@@ -75,10 +136,10 @@ def closure_streams() -> list[dict[str, Any]]:
                 "missed_question_list",
             ],
             "ready_to_execute_commands": [
-                "python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id rehearsal-schedule-20260606 --source <real-calendar-or-observer-prep-file> --scheduled-date 2026-06-06 --observer observer-a --venue-or-channel meeting-room-a --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule",
-                "python scripts/run_challenge_cup_timed_rehearsal.py --id rehearsal-1 --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal",
-                "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal",
-                "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id rehearsal-1 --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal",
+                REHEARSAL_SCHEDULE_COMMAND,
+                REHEARSAL_RUN_COMMAND,
+                REHEARSAL_PREFLIGHT_COMMAND,
+                REHEARSAL_RECORD_COMMAND,
             ],
             "post_collection_commands": [
                 "python scripts/build_challenge_cup_hard_evidence_ledger.py",
