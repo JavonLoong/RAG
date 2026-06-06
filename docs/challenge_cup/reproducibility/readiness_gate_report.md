@@ -1,23 +1,23 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 36/36
-- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 37/37
+- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
-| chinese readability | pass | 53 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 55 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 56 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 55 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| package evidence files | pass | 58 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 57 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 70 files archived; 2432888 bytes; sha256 verified |
+| submission archive | pass | 72 files archived; 2436906 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
-| numeric consistency | pass | 60 questions, 56 evidence files, and 5 visible search records are consistent |
+| numeric consistency | pass | 60 questions, 58 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |
@@ -34,6 +34,7 @@
 | expert feedback outreach ledger | pass | outreach ledger schema, boundary, 0 outreach files, and manifest/hash/archive links verified |
 | timed rehearsal schedule ledger | pass | schedule ledger schema, boundary, 0 schedule files, and manifest/hash/archive links verified |
 | hard evidence closure board | pass | closure board schema, boundary, real-evidence streams, and manifest/hash/archive links verified |
+| hard evidence action pack | pass | human handoff, no-fake boundary, recording commands, and manifest/hash/archive links verified |
 | hard evidence ledger | pass | ledger schema, no-fake boundary, 0 raw hard evidence files, and manifest/hash/archive links verified |
 | application validation evidence | pass | fixed GT-07 application case, evidence records, benefits, and boundaries verified; 9 evidence links verified |
 | scenario demo evidence | pass | fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary |
