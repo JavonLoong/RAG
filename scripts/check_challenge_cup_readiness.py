@@ -35,6 +35,7 @@ SPECIAL_PRIZE_SCORING_DRILL = PACKAGE_DIR / "18_特等奖打分模拟与整改�
 POSTER_BOOTH_QA_PACK = PACKAGE_DIR / "19_作品展墙报问辩与展台脚本.md"
 COMMERCIALIZATION_ROADMAP = PACKAGE_DIR / "20_成果转化与持续迭代路线图.md"
 IP_OPEN_SOURCE_COMPLIANCE = PACKAGE_DIR / "21_知识产权与开源合规说明.md"
+LOCAL_BASELINE_DIFFERENTIATION = PACKAGE_DIR / "22_同类方案对比与创新性证据卡.md"
 POSTER_BOARD_HTML = PACKAGE_DIR / "poster" / "challenge_cup_a0_poster.html"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
@@ -268,6 +269,7 @@ REQUIRED_PACKAGE_DOCS = [
     "19_作品展墙报问辩与展台脚本.md",
     "20_成果转化与持续迭代路线图.md",
     "21_知识产权与开源合规说明.md",
+    "22_同类方案对比与创新性证据卡.md",
     "poster/challenge_cup_a0_poster.html",
     "defense_deck/challenge_cup_defense_deck.pptx",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
@@ -784,6 +786,31 @@ REQUIRED_IP_OPEN_SOURCE_COMPLIANCE_TERMS = {
     "official_rubric_alignment.md",
     "hard_evidence_ledger.md",
     "final_acceptance_audit.md",
+}
+REQUIRED_LOCAL_BASELINE_DIFFERENTIATION_TERMS = {
+    "同类方案对比与创新性证据卡",
+    "不是普通 RAG 页面",
+    "本地同题对照",
+    "keyword / dense_hashing / hybrid_rrf / GraphRAG",
+    "GraphRAG 用于关系证据组织",
+    "supported=10, partial=0, missing=0",
+    "GT-07",
+    "不宣称 GraphRAG 全面优于 baseline",
+    "不替代工程师做最终运维决策",
+    "不依赖真实专家反馈或真实彩排",
+    "Best baseline average coverage: 0.633333",
+    "GraphRAG evidence average coverage: 0.866667",
+    "Graph supported / partial / missing: 10 / 0 / 0",
+    "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
+    "evaluation/reports/day4_failure_analysis_20260605_210642.md",
+    "evaluation/reports/challenge_cup_graphrag_same_question_report.md",
+    "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md",
+    "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md",
+    "docs/challenge_cup/reproducibility/application_validation_report.md",
+    "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+    "docs/challenge_cup/03_实验评测报告.md",
+    "docs/challenge_cup/07_评审主张证据矩阵.md",
+    "docs/challenge_cup/08_特等奖评审自评表.md",
 }
 REQUIRED_DEFENSE_REHEARSAL_TERMS = {
     "90秒开场",
@@ -2846,6 +2873,50 @@ def check_ip_open_source_compliance() -> GateCheck:
     )
 
 
+def check_local_baseline_differentiation_evidence() -> GateCheck:
+    if not LOCAL_BASELINE_DIFFERENTIATION.exists():
+        return GateCheck("local baseline differentiation evidence", False, "22_同类方案对比与创新性证据卡.md missing")
+    text = LOCAL_BASELINE_DIFFERENTIATION.read_text(encoding="utf-8")
+    baseline_relative = LOCAL_BASELINE_DIFFERENTIATION.relative_to(REPO_ROOT).as_posix()
+    missing_terms = sorted(term for term in REQUIRED_LOCAL_BASELINE_DIFFERENTIATION_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    failures = missing_terms + missing_paths
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    if baseline_relative not in manifest_evidence:
+        failures.append(f"missing manifest entries: ['{baseline_relative}']")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    if baseline_relative not in hashed_paths:
+        failures.append(f"missing hash entries: ['{baseline_relative}']")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and baseline_relative not in archived_paths:
+        failures.append(f"missing archive entries: ['{baseline_relative}']")
+
+    tracked = git_tracked_paths()
+    dirty = sorted(git_dirty_paths([baseline_relative]))
+    if baseline_relative not in tracked:
+        failures.append(f"untracked local baseline differentiation evidence: {baseline_relative}")
+    if dirty:
+        failures.append(f"dirty local baseline differentiation evidence: {dirty}")
+
+    return GateCheck(
+        "local baseline differentiation evidence",
+        not failures,
+        f"baseline comparison, GraphRAG subset, GT-07 application anchor, and no-overclaim boundaries verified; {len(evidence_paths)} evidence links verified"
+        if not failures
+        else f"missing terms, evidence paths, or package links: {', '.join(failures)}",
+    )
+
+
 def check_defense_rehearsal_card() -> GateCheck:
     if not DEFENSE_REHEARSAL_CARD.exists():
         return GateCheck("defense rehearsal pack", False, "10_答辩攻防与彩排卡.md missing")
@@ -4060,6 +4131,7 @@ def run_gate() -> list[GateCheck]:
         check_commercialization_roadmap(),
         check_poster_board_asset(),
         check_ip_open_source_compliance(),
+        check_local_baseline_differentiation_evidence(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -4092,7 +4164,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, ip and open-source compliance, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, ip and open-source compliance, local baseline differentiation evidence, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

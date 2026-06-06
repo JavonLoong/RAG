@@ -27,6 +27,7 @@
 - 作品展墙报问辩与展台脚本：`docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`。
 - 成果转化与持续迭代路线图：`docs/challenge_cup/20_成果转化与持续迭代路线图.md`。
 - 知识产权与开源合规说明：`docs/challenge_cup/21_知识产权与开源合规说明.md`。
+- 同类方案对比与创新性证据卡：`docs/challenge_cup/22_同类方案对比与创新性证据卡.md`。
 - 作品展 A0 展板源文件：`docs/challenge_cup/poster/challenge_cup_a0_poster.html`。
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 终审答辩 PPTX：`docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`。
