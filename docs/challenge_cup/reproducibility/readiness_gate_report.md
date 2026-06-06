@@ -14,7 +14,7 @@
 | package evidence files | pass | 102 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 101 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 112 files archived; 2535528 bytes; sha256 verified |
+| submission archive | pass | 112 files archived; 2536480 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 102 evidence files, and 5 visible search records are consistent |
@@ -65,7 +65,7 @@
 | scenario demo evidence | pass | fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary |
 | scenario walkthrough script | pass | fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; 8 evidence links verified |
 | expert feedback protocol | pass | feedback form, integrity boundary, archival rule, and remediation loop verified; 10 evidence links verified |
-| live demo smoke checks | pass | 5/5 checks pass |
+| live demo smoke checks | pass | 8/8 checks pass; live Chroma retrieval collection=challenge_cup_live_retrieval_smoke, records=3, source=gt07-live-smoke.json |
 | browser smoke checks | pass | 13/13 checks pass |
 | browser visual evidence | pass | 4 screenshots, 4 KG artifacts, and 5 visible search records verified |
 
