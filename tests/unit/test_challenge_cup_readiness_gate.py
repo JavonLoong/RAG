@@ -679,6 +679,26 @@ def test_official_rubric_alignment_gate_rejects_stale_or_incomplete_source_lock(
     assert "special_prize_competition_benchmarks" in check.detail
 
 
+def test_official_rubric_alignment_gate_rejects_non_tsinghua_source_urls(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    rubric_json = tmp_path / "official_rubric_alignment.json"
+    rubric_md = tmp_path / "official_rubric_alignment.md"
+    payload = json.loads(module.OFFICIAL_RUBRIC_ALIGNMENT_JSON.read_text(encoding="utf-8"))
+    payload["official_sources"][0]["url"] = "https://example.com/copied-tsinghua-notice"
+    rubric_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    rubric_md.write_text(module.OFFICIAL_RUBRIC_ALIGNMENT_MD.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_JSON", rubric_json)
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_MD", rubric_md)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_official_rubric_alignment()
+
+    assert not check.passed
+    assert "non-Tsinghua official source URL" in check.detail
+    assert "example.com" in check.detail
+
+
 def test_rubric_defense_coverage_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "rubric_defense_coverage.md"

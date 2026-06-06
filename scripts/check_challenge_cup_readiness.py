@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -805,6 +806,7 @@ OFFICIAL_RUBRIC_REQUIRED_TERMS = {
 OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 7
 OFFICIAL_RUBRIC_CURRENT_AS_OF = "2026-06-07"
 OFFICIAL_RUBRIC_LATEST_SOURCE_ID = "tsinghua_44th_2026"
+OFFICIAL_RUBRIC_ALLOWED_SOURCE_DOMAIN_SUFFIXES = ("tsinghua.edu.cn",)
 OFFICIAL_RUBRIC_BENCHMARK_SOURCE_IDS = [
     "tsinghua_44th_2026",
     "tsinghua_ee_44th_2026",
@@ -1420,6 +1422,15 @@ def is_iso_date(value: Any) -> bool:
     except ValueError:
         return False
     return True
+
+
+def is_allowed_official_rubric_source_url(url: str) -> bool:
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    return any(
+        host == suffix or host.endswith(f".{suffix}")
+        for suffix in OFFICIAL_RUBRIC_ALLOWED_SOURCE_DOMAIN_SUFFIXES
+    )
 
 
 def validate_source_path(relative: str, payload: dict[str, Any], field: str) -> list[str]:
@@ -2826,6 +2837,8 @@ def check_official_rubric_alignment() -> GateCheck:
         url = str(item.get("url", "")).strip()
         if not url.startswith("https://"):
             failures.append(f"official_sources[{index}].url must start with https://")
+        elif not is_allowed_official_rubric_source_url(url):
+            failures.append(f"official_sources[{index}].non-Tsinghua official source URL: {url}")
         claims = item.get("claims")
         if not isinstance(claims, list) or not claims:
             failures.append(f"official_sources[{index}].claims missing")
