@@ -18,8 +18,8 @@
   },
   "package_readiness": {
     "status": "pass",
-    "passed": 40,
-    "total": 40,
+    "passed": 41,
+    "total": 41,
     "report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
   },
   "rubric_readiness": [

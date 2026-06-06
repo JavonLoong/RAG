@@ -20,6 +20,7 @@
 - 专家快速审阅索引：`docs/challenge_cup/09_专家快速审阅索引.md`。
 - 评委现场速览卡：`docs/challenge_cup/13_评委现场速览卡.md`。
 - 现场答辩操作 Runbook：`docs/challenge_cup/14_现场答辩操作Runbook.md`。
+- 结项交付移交清单：`docs/challenge_cup/15_结项交付移交清单.md`。
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 终审答辩 PPTX：`docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`。
 - 终审答辩讲稿：`docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md`。

@@ -28,6 +28,7 @@ EXPERT_REVIEW_INDEX = PACKAGE_DIR / "09_专家快速审阅索引.md"
 DEFENSE_REHEARSAL_CARD = PACKAGE_DIR / "10_答辩攻防与彩排卡.md"
 JUDGE_BRIEFING_CARD = PACKAGE_DIR / "13_评委现场速览卡.md"
 ONSITE_DEFENSE_RUNBOOK = PACKAGE_DIR / "14_现场答辩操作Runbook.md"
+PROJECT_HANDOFF_CHECKLIST = PACKAGE_DIR / "15_结项交付移交清单.md"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
 DEFENSE_REHEARSAL_RESULT_PACKET_MD = REPRO_DIR / "defense_rehearsal_result_packet.md"
@@ -253,6 +254,7 @@ REQUIRED_PACKAGE_DOCS = [
     "12_专家反馈采集与整改闭环.md",
     "13_评委现场速览卡.md",
     "14_现场答辩操作Runbook.md",
+    "15_结项交付移交清单.md",
     "defense_deck/challenge_cup_defense_deck.pptx",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
@@ -558,6 +560,27 @@ REQUIRED_ONSITE_DEFENSE_RUNBOOK_TERMS = {
     "desktop_search_results.png",
     "final_acceptance_audit.md",
     "goal_completion_report.md",
+}
+REQUIRED_PROJECT_HANDOFF_CHECKLIST_TERMS = {
+    "结项交付移交清单",
+    "移交范围",
+    "签收确认",
+    "复核命令",
+    "材料归档",
+    "外部硬证据补齐",
+    "真实专家反馈",
+    "真实计时彩排",
+    "不能标记目标完成",
+    "README_先看这里.md",
+    "package_manifest.json",
+    "challenge_cup_submission_package.zip",
+    "verify_submission_package.py",
+    "readiness_gate_report.md",
+    "final_acceptance_audit.md",
+    "goal_completion_report.md",
+    "hard_evidence_ledger.md",
+    "hard_evidence_action_pack.md",
+    "14_现场答辩操作Runbook.md",
 }
 REQUIRED_DEFENSE_REHEARSAL_TERMS = {
     "90秒开场",
@@ -2271,6 +2294,50 @@ def check_onsite_defense_runbook() -> GateCheck:
     )
 
 
+def check_project_handoff_checklist() -> GateCheck:
+    if not PROJECT_HANDOFF_CHECKLIST.exists():
+        return GateCheck("project handoff checklist", False, "15_结项交付移交清单.md missing")
+    text = PROJECT_HANDOFF_CHECKLIST.read_text(encoding="utf-8")
+    checklist_relative = PROJECT_HANDOFF_CHECKLIST.relative_to(REPO_ROOT).as_posix()
+    missing_terms = sorted(term for term in REQUIRED_PROJECT_HANDOFF_CHECKLIST_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    failures = missing_terms + missing_paths
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    if checklist_relative not in manifest_evidence:
+        failures.append(f"missing manifest entries: ['{checklist_relative}']")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    if checklist_relative not in hashed_paths:
+        failures.append(f"missing hash entries: ['{checklist_relative}']")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and checklist_relative not in archived_paths:
+        failures.append(f"missing archive entries: ['{checklist_relative}']")
+
+    tracked = git_tracked_paths()
+    dirty = sorted(git_dirty_paths([checklist_relative]))
+    if checklist_relative not in tracked:
+        failures.append(f"untracked project handoff checklist: {checklist_relative}")
+    if dirty:
+        failures.append(f"dirty project handoff checklist: {dirty}")
+
+    return GateCheck(
+        "project handoff checklist",
+        not failures,
+        f"handoff scope, signoff, verification commands, archive boundary, and external hard-evidence follow-up verified; {len(evidence_paths)} evidence links verified"
+        if not failures
+        else f"missing terms, evidence paths, or package links: {', '.join(failures)}",
+    )
+
+
 def check_defense_rehearsal_card() -> GateCheck:
     if not DEFENSE_REHEARSAL_CARD.exists():
         return GateCheck("defense rehearsal pack", False, "10_答辩攻防与彩排卡.md missing")
@@ -3477,6 +3544,7 @@ def run_gate() -> list[GateCheck]:
         check_special_prize_readiness_dashboard(),
         check_judge_briefing_card(),
         check_onsite_defense_runbook(),
+        check_project_handoff_checklist(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -3509,7 +3577,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
