@@ -18,6 +18,14 @@
 | 检修结果 | `demo-gt07-repair-022` | 停机检查发现进气滤网压差偏高、滤网局部堵塞、压气机前三级叶片积灰；清理进气滤网、安排压气机叶片离线清洗并复位温度传感器后，温度回落至 438°C，振动值降至 3.1 mm/s。 | 形成“原因 -> 措施 -> 复机结果”的闭环证据。 |
 | 处置建议 | `demo-gt07-manual-023` | 给出压气机出口温度偏高的常见原因：进气阻力增大、压气机叶片污染和温度传感器漂移；建议检查进气滤网、清洗压气机叶片、校验温度传感器。 | 可作为检修清单草案，必须由工程师结合现场工况人工确认。 |
 
+## Scenario Coverage Matrix
+
+| Scenario ID | Maintenance question | Evidence records | What it proves | Boundary |
+| --- | --- | --- | --- | --- |
+| `scenario-gt07-abnormal-vibration` | Can the package organize an abnormal-vibration diagnosis chain? | `demo-maint-thresholds-076`; `demo-structure-fault-130`; `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | The fixed GT-07 flow links threshold screening, mechanism, symptom, repair result, and disposition advice. | Fixed local scenario only. |
+| `scenario-maintenance-thresholds` | Can reviewers trace maintenance thresholds before case-level judgment? | `demo-maint-thresholds-076`; `evaluation/system_eval_questions.jsonl`; `docs/challenge_cup/03_实验评测报告.md` | The system can surface threshold evidence and bind it to the disclosed evaluation set. | Local course/project evidence only. |
+| `scenario-compressor-temperature` | Can reviewers audit a compressor outlet temperature alarm path? | `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | The same evidence chain connects alarm symptom, inlet-filter/compressor-blade findings, and manual disposition. | This is not production full-scenario validation. |
+
 ## 半量化收益
 
 - 系统在演示快照中从 2,655 个向量片段、约 1,185,989 tokens 中返回 5 条证据结果，检索延迟为 41.80 ms。

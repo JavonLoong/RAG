@@ -268,6 +268,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     application_validation = (PACKAGE_DIR / "11_应用场景与专家验证.md").read_text(encoding="utf-8")
     for phrase in ["固定应用场景", "人工原流程", "系统辅助后流程", "验证角色", "量化收益", "边界声明"]:
         assert phrase in application_validation
+    for phrase in ["多场景覆盖矩阵", "scenario-gt07-abnormal-vibration", "scenario-maintenance-thresholds", "scenario-compressor-temperature"]:
+        assert phrase in application_validation
     for evidence in [
         "application_validation_report.md",
         "application_value_quantification.md",
@@ -280,6 +282,14 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         assert phrase in application_report
     for evidence in ["demo-gt07-fault-021", "demo-gt07-repair-022", "demo-gt07-manual-023"]:
         assert evidence in application_report
+    for phrase in [
+        "Scenario Coverage Matrix",
+        "scenario-gt07-abnormal-vibration",
+        "scenario-maintenance-thresholds",
+        "scenario-compressor-temperature",
+        "not production full-scenario validation",
+    ]:
+        assert phrase in application_report
     application_value = json.loads(
         (PACKAGE_DIR / "reproducibility" / "application_value_quantification.json").read_text(encoding="utf-8")
     )

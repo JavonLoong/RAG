@@ -52,8 +52,8 @@
     },
     {
       "path": "docs/challenge_cup/11_应用场景与专家验证.md",
-      "bytes": 2933,
-      "sha256": "c2af1a567962ef3a1a5523a80b6183b7728a52616c23f619ff41fdce82712a6c"
+      "bytes": 4035,
+      "sha256": "e64b175ce217b44228093038d74a86bd2df6ff8fdf5edf9f947fd97777d5d1c7"
     },
     {
       "path": "docs/challenge_cup/12_专家反馈采集与整改闭环.md",
@@ -137,8 +137,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/application_validation_report.md",
-      "bytes": 2861,
-      "sha256": "436817508fbc64b9ece52373a537c71b19455a9582137299f22c8dc7e9d0f1df"
+      "bytes": 4087,
+      "sha256": "683bbb09eab65ca1ac7016fed6a9c1d93b40336ace285f1849c0803c61b7ef3d"
     },
     {
       "path": "docs/challenge_cup/reproducibility/application_value_quantification.json",

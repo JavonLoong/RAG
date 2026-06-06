@@ -1179,6 +1179,10 @@ REQUIRED_APPLICATION_VALIDATION_TERMS = {
     "验证角色",
     "量化收益",
     "边界声明",
+    "多场景覆盖矩阵",
+    "scenario-gt07-abnormal-vibration",
+    "scenario-maintenance-thresholds",
+    "scenario-compressor-temperature",
     "application_validation_report.md",
     "browser_demo_smoke_report.json",
     "desktop_search_results.png",
@@ -1195,6 +1199,11 @@ REQUIRED_APPLICATION_REPORT_TERMS = {
     "demo-gt07-fault-021",
     "demo-gt07-repair-022",
     "demo-gt07-manual-023",
+    "Scenario Coverage Matrix",
+    "scenario-gt07-abnormal-vibration",
+    "scenario-maintenance-thresholds",
+    "scenario-compressor-temperature",
+    "not production full-scenario validation",
 }
 REQUIRED_SCENARIO_QUERY = "燃气轮机异常振动诊断流程"
 APPLICATION_VALUE_EXPECTED_STAGE_IDS = [
@@ -5294,7 +5303,7 @@ def check_application_validation_evidence() -> GateCheck:
     return GateCheck(
         "application validation evidence",
         not missing,
-        f"fixed GT-07 application case, evidence records, benefits, and boundaries verified; {len(evidence_paths)} evidence links verified"
+        f"fixed GT-07 application case, multi-scenario matrix, evidence records, benefits, and boundaries verified; {len(evidence_paths)} evidence links verified"
         if not missing
         else f"missing application validation terms or evidence paths: {', '.join(missing)}",
     )

@@ -1920,6 +1920,14 @@ def build_application_validation_doc(ctx: dict[str, Any]) -> str:
 | 燃气轮机异常振动诊断证据整理 | 人工在手册、故障样例、维护理论材料中分别查阈值、故障机理、案例现象、检修措施和复机结果，容易漏掉来源记录。 | 输入“{validation["query"]}”，系统在演示集合中返回阈值、机理、GT-07 现象、停机检查、处理建议五类证据，并保留 record id。 | 课程项目评审、动力装备资料审阅者、答辩评委 | `{validation["search_meta"]}`；从 2,655 个向量片段、约 1,185,989 tokens 中一次返回 5 条证据，形成“阈值判断 -> 故障机理 -> 案例现象 -> 检修措施 -> 复机结果”的审计链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/application_value_quantification.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `{validation["screenshot"]}` |
 | 挑战杯现场答辩复核 | 评委需要在有限时间内确认项目是否只是静态展示。 | 先看本页，再打开固定案例报告和 browser smoke 截图，快速核验问题、证据、边界和复现命令。 | 答辩评委、指导教师 | 3-5 分钟内可定位应用场景、证据来源和边界声明，降低口头陈述不可复核风险。 | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 
+## 多场景覆盖矩阵
+
+| 场景 ID | 场景 | 复核证据 | 评审用途 | 边界 |
+| --- | --- | --- | --- | --- |
+| `scenario-gt07-abnormal-vibration` | GT-07 异常振动诊断证据链 | `demo-maint-thresholds-076`; `demo-structure-fault-130`; `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | 展示“阈值 -> 机理 -> 现象 -> 检修 -> 建议”的完整证据组织能力。 | 固定演示场景，不替代工程师最终判断。 |
+| `scenario-maintenance-thresholds` | 维护阈值巡检与异常筛查 | `demo-maint-thresholds-076`; `docs/challenge_cup/03_实验评测报告.md`; `evaluation/system_eval_questions.jsonl` | 说明系统不仅返回案例，还能把监测阈值和评测题绑定起来。 | 只能证明本地资料中的阈值证据可追溯。 |
+| `scenario-compressor-temperature` | 压气机出口温度偏高处置复核 | `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | 说明故障现象、维修措施和处置建议能被同一条证据链复核。 | 多场景覆盖不等于生产全场景验证。 |
+
 ## 边界声明
 
 - 本项目是证据型辅助，不替代工程师做最终运维或维修决策。
@@ -1957,6 +1965,14 @@ def build_application_validation_report(ctx: dict[str, Any]) -> str:
 | 案例现象 | `demo-gt07-fault-021` | GT-07 升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 到 7.2 mm/s，并触发“压气机出口温度偏高”报警。 | 现象层证据，提示压气机出口温度偏高和振动异常需要联合分析。 |
 | 检修结果 | `demo-gt07-repair-022` | 停机检查发现进气滤网压差偏高、滤网局部堵塞、压气机前三级叶片积灰；清理进气滤网、安排压气机叶片离线清洗并复位温度传感器后，温度回落至 438°C，振动值降至 3.1 mm/s。 | 形成“原因 -> 措施 -> 复机结果”的闭环证据。 |
 | 处置建议 | `demo-gt07-manual-023` | 给出压气机出口温度偏高的常见原因：进气阻力增大、压气机叶片污染和温度传感器漂移；建议检查进气滤网、清洗压气机叶片、校验温度传感器。 | 可作为检修清单草案，必须由工程师结合现场工况人工确认。 |
+
+## Scenario Coverage Matrix
+
+| Scenario ID | Maintenance question | Evidence records | What it proves | Boundary |
+| --- | --- | --- | --- | --- |
+| `scenario-gt07-abnormal-vibration` | Can the package organize an abnormal-vibration diagnosis chain? | `demo-maint-thresholds-076`; `demo-structure-fault-130`; `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | The fixed GT-07 flow links threshold screening, mechanism, symptom, repair result, and disposition advice. | Fixed local scenario only. |
+| `scenario-maintenance-thresholds` | Can reviewers trace maintenance thresholds before case-level judgment? | `demo-maint-thresholds-076`; `evaluation/system_eval_questions.jsonl`; `docs/challenge_cup/03_实验评测报告.md` | The system can surface threshold evidence and bind it to the disclosed evaluation set. | Local course/project evidence only. |
+| `scenario-compressor-temperature` | Can reviewers audit a compressor outlet temperature alarm path? | `demo-gt07-fault-021`; `demo-gt07-repair-022`; `demo-gt07-manual-023` | The same evidence chain connects alarm symptom, inlet-filter/compressor-blade findings, and manual disposition. | This is not production full-scenario validation. |
 
 ## 半量化收益
 

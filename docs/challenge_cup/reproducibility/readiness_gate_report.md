@@ -14,7 +14,7 @@
 | package evidence files | pass | 102 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 101 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 112 files archived; 2528440 bytes; sha256 verified |
+| submission archive | pass | 112 files archived; 2529435 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 102 evidence files, and 5 visible search records are consistent |
@@ -53,7 +53,7 @@
 | hard evidence action pack | pass | human handoff, no-fake boundary, recording commands, and manifest/hash/archive links verified |
 | external evidence execution kit | pass | expert-review and timed-rehearsal handoff packets, no-fake boundary, commands, and manifest/hash/archive links verified |
 | hard evidence ledger | pass | ledger schema, no-fake boundary, 0 raw hard evidence files, and manifest/hash/archive links verified |
-| application validation evidence | pass | fixed GT-07 application case, evidence records, benefits, and boundaries verified; 10 evidence links verified |
+| application validation evidence | pass | fixed GT-07 application case, multi-scenario matrix, evidence records, benefits, and boundaries verified; 14 evidence links verified |
 | application value quantification | pass | GT-07 application value quantified with 5-stage traceability, 41.8 ms latency, and no-external-claim boundary |
 | numeric traceability report | pass | GT-07 browser/application/application-validation numbers are traceable: 41.80 ms, 5 records, 2,655 chunks, 1,185,989 tokens |
 | no-answer boundary evaluation | pass | empty/noisy-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims |
