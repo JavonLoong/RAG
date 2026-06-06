@@ -19,6 +19,13 @@ CONFIRMATION_FIELDS = {
     "expert_feedback": ("real_feedback_confirmed", "feedback_source_path"),
     "timed_rehearsal": ("real_rehearsal_confirmed", "recording_or_timer_source_path"),
 }
+TIMED_REHEARSAL_LIMITS = {
+    "opening_actual_seconds": 90,
+    "demo_actual_seconds": 180,
+    "offline_fallback_actual_seconds": 20,
+    "killer_question_actual_seconds": 30,
+    "killer_question_count": 5,
+}
 
 
 def load_current_readiness_gate_count() -> int:
@@ -52,6 +59,48 @@ def nonempty(path: Path) -> bool:
 def safe_repo_relative(path: str) -> bool:
     posix = PurePosixPath(path)
     return not posix.is_absolute() and ".." not in posix.parts and "\\" not in path
+
+
+def positive_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def timed_rehearsal_timing_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
+    failures: list[str] = []
+    for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
+        actual = metadata.get(field)
+        limit = TIMED_REHEARSAL_LIMITS[field]
+        if not positive_int(actual):
+            failures.append(f"{metadata_path}: {field} must be a positive integer")
+        elif actual > limit:
+            failures.append(f"{metadata_path}: {field}={actual} exceeds {limit}")
+
+    killer_results = metadata.get("killer_question_results")
+    expected_count = TIMED_REHEARSAL_LIMITS["killer_question_count"]
+    if not isinstance(killer_results, list):
+        failures.append(f"{metadata_path}: killer_question_results must be a list")
+        return failures
+    if len(killer_results) != expected_count:
+        failures.append(f"{metadata_path}: killer_question_results count={len(killer_results)} expected {expected_count}")
+        return failures
+    question_limit = TIMED_REHEARSAL_LIMITS["killer_question_actual_seconds"]
+    for expected_index, item in enumerate(killer_results, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"{metadata_path}: killer_question_results[{expected_index}] must be an object")
+            continue
+        if item.get("question_index") != expected_index:
+            failures.append(
+                f"{metadata_path}: killer_question_results[{expected_index}].question_index must be {expected_index}"
+            )
+        actual = item.get("actual_seconds")
+        if not positive_int(actual):
+            failures.append(f"{metadata_path}: killer_question_results[{expected_index}].actual_seconds must be positive")
+        elif actual > question_limit:
+            failures.append(
+                f"{metadata_path}: killer_question_results[{expected_index}].actual_seconds={actual} "
+                f"exceeds {question_limit}"
+            )
+    return failures
 
 
 def readiness_passed(repo_root: Path) -> tuple[bool, str]:
@@ -137,6 +186,10 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
             if not safe_repo_relative(source_relative) or not nonempty(repo_root / source_relative):
                 failures.append(f"{relative}: {source_field} must point to a real source attachment")
                 continue
+            if key == "timed_rehearsal":
+                failures.extend(timed_rehearsal_timing_failures(metadata, relative))
+                if failures and any(item.startswith(f"{relative}:") for item in failures):
+                    continue
             confirmed_metadata_found = True
         if unsafe_paths:
             failures.append(f"{key}: unsafe evidence paths={unsafe_paths}")
