@@ -45,6 +45,7 @@ REQUIRED_PACKAGE_FILES = [
     "13_评委现场速览卡.md",
     "14_现场答辩操作Runbook.md",
     "15_结项交付移交清单.md",
+    "16_现场问辩记录与整改台账.md",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
@@ -155,6 +156,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "13_评委现场速览卡.md" in readme
     assert "14_现场答辩操作Runbook.md" in readme
     assert "15_结项交付移交清单.md" in readme
+    assert "16_现场问辩记录与整改台账.md" in readme
     assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
     assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
     assert "reproducibility/official_rubric_alignment.md" in readme
@@ -281,6 +283,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
+    assert "42 项 readiness gate" in onsite_runbook
+    assert "40 项 readiness gate" not in onsite_runbook
     handoff_checklist = (PACKAGE_DIR / "15_结项交付移交清单.md").read_text(encoding="utf-8")
     for phrase in [
         "结项交付移交清单",
@@ -307,6 +311,37 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "14_现场答辩操作Runbook.md",
     ]:
         assert evidence in handoff_checklist
+    qa_remediation = (PACKAGE_DIR / "16_现场问辩记录与整改台账.md").read_text(encoding="utf-8")
+    for phrase in [
+        "现场问辩记录与整改台账",
+        "记录范围",
+        "现场记录表",
+        "证据补链",
+        "整改闭环",
+        "复核命令",
+        "边界声明",
+        "judge_question",
+        "evidence_anchor",
+        "remediation_action",
+        "closure_status",
+        "真实专家反馈",
+        "真实计时彩排",
+        "不能标记目标完成",
+    ]:
+        assert phrase in qa_remediation
+    for evidence in [
+        "10_答辩攻防与彩排卡.md",
+        "14_现场答辩操作Runbook.md",
+        "15_结项交付移交清单.md",
+        "07_评审主张证据矩阵.md",
+        "09_专家快速审阅索引.md",
+        "readiness_gate_report.md",
+        "goal_completion_report.md",
+        "hard_evidence_ledger.md",
+        "hard_evidence_action_pack.md",
+        "scripts/check_challenge_cup_readiness.py",
+    ]:
+        assert evidence in qa_remediation
     defense_card = (PACKAGE_DIR / "10_答辩攻防与彩排卡.md").read_text(encoding="utf-8")
     for phrase in ["90秒开场", "三分钟演示节奏", "杀手问题", "不可夸大边界", "彩排通过标准"]:
         assert phrase in defense_card
@@ -417,6 +452,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "13_评委现场速览卡.md" in manifest
     assert "14_现场答辩操作Runbook.md" in manifest
     assert "15_结项交付移交清单.md" in manifest
+    assert "16_现场问辩记录与整改台账.md" in manifest
     assert "hard_evidence_closure_board.md" in manifest
     assert "hard_evidence_closure_board.json" in manifest
     assert "hard_evidence_action_pack.md" in manifest
@@ -456,7 +492,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (41/41 gates)" in command_log
+    assert "Status: pass (42/42 gates)" in command_log
+    assert "Status: pass (41/41 gates)" not in command_log
     assert "Status: pass (40/40 gates)" not in command_log
     assert "Status: pass (37/37 gates)" not in command_log
     assert "Status: pass (36/36 gates)" not in command_log
@@ -516,6 +553,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/13_评委现场速览卡.md" in evidence_files
     assert "docs/challenge_cup/14_现场答辩操作Runbook.md" in evidence_files
     assert "docs/challenge_cup/15_结项交付移交清单.md" in evidence_files
+    assert "docs/challenge_cup/16_现场问辩记录与整改台账.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.json" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md" in evidence_files
@@ -656,8 +694,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 41
-    assert final_acceptance["package_readiness"]["total"] == 41
+    assert final_acceptance["package_readiness"]["passed"] == 42
+    assert final_acceptance["package_readiness"]["total"] == 42
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -721,6 +759,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/13_评委现场速览卡.md" in archive_entries
     assert "docs/challenge_cup/14_现场答辩操作Runbook.md" in archive_entries
     assert "docs/challenge_cup/15_结项交付移交清单.md" in archive_entries
+    assert "docs/challenge_cup/16_现场问辩记录与整改台账.md" in archive_entries
     self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
     assert self_report not in archive_entries
     assert self_report in archive_manifest["excluded_files"]
@@ -807,6 +846,7 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "13_评委现场速览卡.md",
         PACKAGE_DIR / "14_现场答辩操作Runbook.md",
         PACKAGE_DIR / "15_结项交付移交清单.md",
+        PACKAGE_DIR / "16_现场问辩记录与整改台账.md",
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
         PACKAGE_DIR / "reproducibility" / "goal_completion_report.md",

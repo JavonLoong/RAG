@@ -48,12 +48,17 @@
     {
       "path": "docs/challenge_cup/14_现场答辩操作Runbook.md",
       "bytes": 5138,
-      "sha256": "48f9bac85a8e9cfe4575c041eebf109596fcb45a4e25d84755686113b15a0319"
+      "sha256": "e68329972277c55c7dd7703bab0daff982ce30f8ebbf857e3202320c66728636"
     },
     {
       "path": "docs/challenge_cup/15_结项交付移交清单.md",
       "bytes": 4556,
       "sha256": "b5d6a23286065fd1ad514f77e5a5cb9aaed72648207f54b4c4cfd5892a28e485"
+    },
+    {
+      "path": "docs/challenge_cup/16_现场问辩记录与整改台账.md",
+      "bytes": 4721,
+      "sha256": "dde55bf1c9833bcb69afc43d4df479bd71dc63d4085fab9a5ac3df3ad79c3a0d"
     },
     {
       "path": "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
@@ -153,17 +158,17 @@
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
       "bytes": 1857,
-      "sha256": "a17bee1fabcc02824f854133a427ca1bd0e222afa78f17325b4d99f47ca03570"
+      "sha256": "cc4f68310a69871ea1b9ef95ab78f6f87880b31409a6d88bf028ea9a5334a5af"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
       "bytes": 1241,
-      "sha256": "e94962e3b9d122e285b7ba11f264b7bf7c66603a796f78574a1e68810cde258a"
+      "sha256": "2aab1afd129cacae058c99ceffb621ec316238bed7847b026d804efa037226e3"
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
       "bytes": 957,
-      "sha256": "36109517f16dadb75e4f6aafa7b7ef8fc51db18f049311f9524a642c5c14f2dd"
+      "sha256": "411463c84b2fb49c75b318fb9cabdb7b5300126b784883c5990f3c679ddbf059"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -233,7 +238,7 @@
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
       "bytes": 7742,
-      "sha256": "ebbfb38c953a34de6382d1e809f7164c2fc4112940fc6759eed13105d996e1a5"
+      "sha256": "19f1201fa61af34c75b940b4a509f3b964d4a42df2fccf5df3faf5dba3b690d3"
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",

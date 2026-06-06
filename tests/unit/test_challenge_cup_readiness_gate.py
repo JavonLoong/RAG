@@ -89,6 +89,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "judge briefing card" in report
     assert "onsite defense runbook" in report
     assert "project handoff checklist" in report
+    assert "defense q&a remediation ledger" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense deck" in report
@@ -439,6 +440,30 @@ def test_project_handoff_checklist_gate_rejects_missing_manifest_hash_archive_li
     assert "missing hash entries" in check.detail
     assert "missing archive entries" in check.detail
     assert checklist_relative in check.detail
+
+
+def test_defense_qa_remediation_ledger_gate_rejects_missing_manifest_hash_archive_links(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    ledger_relative = module.DEFENSE_QA_REMEDIATION_LEDGER.relative_to(module.REPO_ROOT).as_posix()
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {ledger_relative})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_defense_qa_remediation_ledger()
+
+    assert not check.passed
+    assert "missing manifest entries" in check.detail
+    assert "missing hash entries" in check.detail
+    assert "missing archive entries" in check.detail
+    assert ledger_relative in check.detail
 
 
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
