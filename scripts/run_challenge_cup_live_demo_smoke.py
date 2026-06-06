@@ -139,7 +139,9 @@ def run_live_retrieval_checks(client: TestClient) -> tuple[list[SmokeCheck], dic
         check(
             ingest.status_code == 200
             and ingest_payload.get("collection") == LIVE_RETRIEVAL_COLLECTION
-            and int(ingest_payload.get("chunks_written") or 0) >= len(LIVE_RETRIEVAL_RECORDS)
+            and int(ingest_payload.get("chunks_written") or 0) == len(LIVE_RETRIEVAL_RECORDS)
+            and int(ingest_payload.get("records_processed") or 0) == len(LIVE_RETRIEVAL_RECORDS)
+            and int(ingest_payload.get("files_succeeded") or 0) == 1
             and ingest_payload.get("embedding_backend") == "hashing",
             "live retrieval ingest",
             (
@@ -152,7 +154,9 @@ def run_live_retrieval_checks(client: TestClient) -> tuple[list[SmokeCheck], dic
         check(
             stats.status_code == 200
             and stats_payload.get("collection") == LIVE_RETRIEVAL_COLLECTION
-            and int(stats_payload.get("chunk_count") or 0) >= len(LIVE_RETRIEVAL_RECORDS),
+            and int(stats_payload.get("chunk_count") or 0) == len(LIVE_RETRIEVAL_RECORDS)
+            and int(stats_payload.get("record_count") or 0) == len(LIVE_RETRIEVAL_RECORDS)
+            and int(stats_payload.get("source_file_count") or 0) == 1,
             "live retrieval stats",
             (
                 f"GET /api/stats -> {stats.status_code}; "
@@ -163,6 +167,7 @@ def run_live_retrieval_checks(client: TestClient) -> tuple[list[SmokeCheck], dic
         check(
             search.status_code == 200
             and len(results) == 3
+            and len(raw_record_ids) == len(LIVE_RETRIEVAL_RECORDS)
             and EXPECTED_LIVE_RECORD_IDS <= observed_ids
             and not_public_demo,
             "live retrieval search",

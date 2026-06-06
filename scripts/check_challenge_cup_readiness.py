@@ -725,6 +725,14 @@ REQUIRED_LIVE_CHECKS = {
     "live retrieval stats",
     "live retrieval search",
 }
+LIVE_RETRIEVAL_COLLECTION = "challenge_cup_live_retrieval_smoke"
+LIVE_RETRIEVAL_SOURCE = "gt07-live-smoke.json"
+LIVE_RETRIEVAL_EXPECTED_RECORD_IDS = {
+    "live-gt07-threshold",
+    "live-gt07-fault",
+    "live-gt07-repair",
+}
+LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT = 3
 
 REQUIRED_CLAIM_MATRIX_TERMS = {
     "创新性",
@@ -2698,6 +2706,68 @@ def check_report_payload(path: Path, required_checks: set[str], name: str) -> Ga
     else:
         detail = f"status={payload.get('status')}, missing={missing}, failed={failed}"
     return GateCheck(name, passed, detail)
+
+
+def live_smoke_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def check_live_demo_smoke_report() -> GateCheck:
+    base = check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks")
+    if not base.passed:
+        return base
+
+    payload = load_json(LIVE_SMOKE_JSON)
+    retrieval = payload.get("retrieval")
+    if not isinstance(retrieval, dict):
+        return GateCheck("live demo smoke checks", False, "retrieval payload missing")
+
+    failures: list[str] = []
+    collection = retrieval.get("collection")
+    if collection != LIVE_RETRIEVAL_COLLECTION:
+        failures.append(f"collection={collection!r}")
+    if retrieval.get("backend") != "hashing":
+        failures.append(f"backend={retrieval.get('backend')!r}")
+    if retrieval.get("not_public_demo") is not True:
+        failures.append(f"not_public_demo={retrieval.get('not_public_demo')!r}")
+    if live_smoke_int(retrieval.get("result_count")) != LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT:
+        failures.append(f"result_count={retrieval.get('result_count')!r}")
+
+    stats = retrieval.get("stats") if isinstance(retrieval.get("stats"), dict) else {}
+    expected_stats = {
+        "chunk_count": LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT,
+        "record_count": LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT,
+        "source_file_count": 1,
+    }
+    for key, expected in expected_stats.items():
+        if live_smoke_int(stats.get(key)) != expected:
+            failures.append(f"stats.{key}={stats.get(key)!r}")
+
+    record_ids = {str(item) for item in retrieval.get("record_ids", [])}
+    missing_record_ids = sorted(LIVE_RETRIEVAL_EXPECTED_RECORD_IDS - record_ids)
+    if missing_record_ids:
+        failures.append(f"missing record_ids={missing_record_ids}")
+
+    raw_record_ids = [str(item) for item in retrieval.get("raw_record_ids", [])]
+    if len(raw_record_ids) != LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT or not all(
+        LIVE_RETRIEVAL_SOURCE in record_id for record_id in raw_record_ids
+    ):
+        failures.append(f"raw source mismatch: expected {LIVE_RETRIEVAL_SOURCE}, raw_record_ids={raw_record_ids}")
+
+    if failures:
+        return GateCheck("live demo smoke checks", False, "; ".join(failures))
+    return GateCheck(
+        "live demo smoke checks",
+        True,
+        (
+            f"{payload.get('passed')}/{payload.get('total')} checks pass; "
+            f"live Chroma retrieval collection={collection}, records={LIVE_RETRIEVAL_EXPECTED_RECORD_COUNT}, "
+            f"source={LIVE_RETRIEVAL_SOURCE}"
+        ),
+    )
 
 
 def check_browser_evidence_files() -> GateCheck:
@@ -6890,7 +6960,7 @@ def run_gate() -> list[GateCheck]:
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
         check_expert_feedback_protocol(),
-        check_report_payload(LIVE_SMOKE_JSON, REQUIRED_LIVE_CHECKS, "live demo smoke checks"),
+        check_live_demo_smoke_report(),
         check_report_payload(BROWSER_SMOKE_JSON, REQUIRED_BROWSER_CHECKS, "browser smoke checks"),
         check_browser_evidence_files(),
     ]

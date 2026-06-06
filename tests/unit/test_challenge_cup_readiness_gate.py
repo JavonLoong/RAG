@@ -161,6 +161,52 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report(monkeypatch) -> 
     assert REPORT.exists()
 
 
+def test_live_demo_smoke_gate_rejects_public_demo_retrieval_payload(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    report = tmp_path / "live_demo_smoke_report.json"
+    checks = [{"name": name, "passed": True, "detail": "synthetic pass"} for name in module.REQUIRED_LIVE_CHECKS]
+    report.write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "passed": len(checks),
+                "total": len(checks),
+                "checks": checks,
+                "retrieval": {
+                    "collection": "gas_turbine_ocr_demo_snapshot",
+                    "backend": "hashing",
+                    "not_public_demo": True,
+                    "stats": {
+                        "chunk_count": 3,
+                        "record_count": 3,
+                        "source_file_count": 1,
+                    },
+                    "result_count": 3,
+                    "record_ids": [
+                        "live-gt07-threshold",
+                        "live-gt07-fault",
+                        "live-gt07-repair",
+                    ],
+                    "raw_record_ids": [
+                        "public-demo::item-live-gt07-threshold",
+                        "public-demo::item-live-gt07-fault",
+                        "public-demo::item-live-gt07-repair",
+                    ],
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "LIVE_SMOKE_JSON", report)
+
+    check = module.check_live_demo_smoke_report()
+
+    assert not check.passed
+    assert "collection" in check.detail
+    assert "raw source" in check.detail
+
+
 def test_defense_control_console_gate_rejects_missing_console(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     console_path = tmp_path / "docs" / "challenge_cup" / "defense_console" / "index.html"

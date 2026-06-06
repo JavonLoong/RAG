@@ -46,13 +46,17 @@ def test_live_demo_smoke_writes_report_and_checks_core_routes(tmp_path) -> None:
     assert retrieval["collection"] == "challenge_cup_live_retrieval_smoke"
     assert retrieval["backend"] == "hashing"
     assert retrieval["not_public_demo"] is True
-    assert retrieval["stats"]["chunk_count"] >= 3
+    assert retrieval["stats"]["chunk_count"] == 3
+    assert retrieval["stats"]["record_count"] == 3
+    assert retrieval["stats"]["source_file_count"] == 1
     assert retrieval["result_count"] == 3
+    assert len(retrieval["raw_record_ids"]) == 3
     assert {
         "live-gt07-threshold",
         "live-gt07-fault",
         "live-gt07-repair",
     } <= set(retrieval["record_ids"])
+    assert all("gt07-live-smoke.json" in item for item in retrieval["raw_record_ids"])
     assert "missing frontend fallback" not in check_names
 
     markdown = (report_dir / "live_demo_smoke_report.md").read_text(encoding="utf-8")

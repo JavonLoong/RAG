@@ -1,6 +1,6 @@
 {
   "report_type": "challenge_cup_live_demo_smoke",
-  "generated_at": "2026-06-07T06:02:26",
+  "generated_at": "2026-06-07T06:08:09",
   "status": "pass",
   "passed": 8,
   "total": 8,
@@ -74,9 +74,9 @@
       "live-gt07-repair"
     ],
     "raw_record_ids": [
-      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-fault",
-      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-threshold",
-      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-repair"
+      "20260607-060809-0-gt07-live-smoke.json::item-live-gt07-fault",
+      "20260607-060809-0-gt07-live-smoke.json::item-live-gt07-threshold",
+      "20260607-060809-0-gt07-live-smoke.json::item-live-gt07-repair"
     ],
     "scores": [
       0.749907,
