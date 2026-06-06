@@ -47,11 +47,12 @@
 39. `reproducibility/special_prize_readiness_dashboard.md`
 40. `reproducibility/hard_evidence_closure_board.md`
 41. `reproducibility/hard_evidence_action_pack.md`
-42. `reproducibility/hard_evidence_ledger.md`
-43. `reproducibility/challenge_cup_submission_archive_manifest.json`
-44. `reproducibility/challenge_cup_submission_package.zip`
-45. `reproducibility/verify_submission_package.py`
-46. `reproducibility/final_acceptance_audit.md`
+42. `reproducibility/external_evidence_execution_kit.md`
+43. `reproducibility/hard_evidence_ledger.md`
+44. `reproducibility/challenge_cup_submission_archive_manifest.json`
+45. `reproducibility/challenge_cup_submission_package.zip`
+46. `reproducibility/verify_submission_package.py`
+47. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 

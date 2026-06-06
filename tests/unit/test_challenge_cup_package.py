@@ -84,6 +84,10 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/hard_evidence_closure_board.json",
     "reproducibility/hard_evidence_action_pack.md",
     "reproducibility/hard_evidence_action_pack.json",
+    "reproducibility/external_evidence_execution_kit.md",
+    "reproducibility/external_evidence_execution_kit.json",
+    "reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
+    "reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
     "reproducibility/hard_evidence_ledger.md",
     "reproducibility/hard_evidence_ledger.json",
     "reproducibility/hard_evidence/README.md",
@@ -180,6 +184,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/timed_rehearsal_schedule_ledger.md" in readme
     assert "reproducibility/hard_evidence_closure_board.md" in readme
     assert "reproducibility/hard_evidence_action_pack.md" in readme
+    assert "reproducibility/external_evidence_execution_kit.md" in readme
     assert "reproducibility/special_prize_readiness_dashboard.md" in readme
     assert "poster/challenge_cup_a0_poster.html" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
@@ -297,7 +302,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "49 项 readiness gate" in onsite_runbook
+    assert "50 项 readiness gate" in onsite_runbook
+    assert "49 项 readiness gate" not in onsite_runbook
     assert "48 项 readiness gate" not in onsite_runbook
     assert "47 项 readiness gate" not in onsite_runbook
     assert "46 项 readiness gate" not in onsite_runbook
@@ -708,6 +714,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "hard_evidence_closure_board.json" in manifest
     assert "hard_evidence_action_pack.md" in manifest
     assert "hard_evidence_action_pack.json" in manifest
+    assert "external_evidence_execution_kit.md" in manifest
+    assert "external_evidence_execution_kit.json" in manifest
+    assert "external_evidence_execution_kit/expert_review_handoff.md" in manifest
+    assert "external_evidence_execution_kit/timed_rehearsal_observer_sheet.md" in manifest
     assert "challenge_cup_defense_deck.pptx" in manifest
     assert "challenge_cup_defense_speaker_notes.md" in manifest
     assert "hard_evidence_ledger.md" in manifest
@@ -740,10 +750,12 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "browser_demo_smoke_report.json" in command_log
     assert "build_challenge_cup_final_acceptance_audit.py" in command_log
     assert "build_challenge_cup_hard_evidence_action_pack.py" in command_log
+    assert "build_challenge_cup_external_evidence_execution_kit.py" in command_log
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (49/49 gates)" in command_log
+    assert "Status: pass (50/50 gates)" in command_log
+    assert "Status: pass (49/49 gates)" not in command_log
     assert "Status: pass (48/48 gates)" not in command_log
     assert "Status: pass (47/47 gates)" not in command_log
     assert "Status: pass (46/46 gates)" not in command_log
@@ -850,6 +862,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md" in evidence_files
+    assert (
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/"
+        "timed_rehearsal_observer_sheet.md"
+    ) in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/goal_completion_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in evidence_files
@@ -948,6 +967,17 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "expert_feedback",
         "timed_rehearsal",
     }
+    execution_kit = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit.json").read_text(encoding="utf-8")
+    )
+    assert execution_kit["report_type"] == "challenge_cup_external_evidence_execution_kit"
+    assert execution_kit["status"] == "ready_for_external_execution_handoff"
+    assert execution_kit["completion_claim_allowed"] is False
+    assert execution_kit["does_not_satisfy_goal_completion"] is True
+    assert {item["hard_evidence_category"] for item in execution_kit["execution_packets"]} == {
+        "expert_feedback",
+        "timed_rehearsal",
+    }
     goal_completion = (PACKAGE_DIR / "reproducibility" / "goal_completion_report.md").read_text(encoding="utf-8")
     assert "Challenge Cup Goal Completion Gate" in goal_completion
     assert "Status: `fail`" in goal_completion
@@ -959,8 +989,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 49
-    assert final_acceptance["package_readiness"]["total"] == 49
+    assert final_acceptance["package_readiness"]["passed"] == 50
+    assert final_acceptance["package_readiness"]["total"] == 50
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1019,6 +1049,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json" in archive_entries
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json" in archive_entries
+    assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md" in archive_entries
+    assert (
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/"
+        "timed_rehearsal_observer_sheet.md"
+    ) in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in archive_entries
     assert "docs/challenge_cup/13_评委现场速览卡.md" in archive_entries
@@ -1053,6 +1090,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
+        (
+            "docs/challenge_cup/reproducibility/external_evidence_execution_kit/"
+            "timed_rehearsal_observer_sheet.md"
+        ),
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/hard_evidence/README.md",
@@ -1153,6 +1197,13 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "hard_evidence_closure_board.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_action_pack.md",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_action_pack.json",
+        PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit.md",
+        PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit.json",
+        PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit" / "expert_review_handoff.md",
+        PACKAGE_DIR
+        / "reproducibility"
+        / "external_evidence_execution_kit"
+        / "timed_rehearsal_observer_sheet.md",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.md",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_ledger.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence" / "README.md",
@@ -1209,6 +1260,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",

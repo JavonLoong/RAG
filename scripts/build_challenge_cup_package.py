@@ -50,6 +50,13 @@ from build_challenge_cup_hard_evidence_action_pack import (
     OUTPUT_MD as HARD_EVIDENCE_ACTION_PACK_MD,
     write_outputs as write_hard_evidence_action_pack_outputs,
 )
+from build_challenge_cup_external_evidence_execution_kit import (
+    EXPERT_HANDOFF_MD as EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD,
+    OUTPUT_JSON as EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON,
+    OUTPUT_MD as EXTERNAL_EVIDENCE_EXECUTION_KIT_MD,
+    TIMED_REHEARSAL_OBSERVER_MD as EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD,
+    write_outputs as write_external_evidence_execution_kit_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -393,11 +400,12 @@ def build_readme(ctx: dict[str, Any]) -> str:
 39. `reproducibility/special_prize_readiness_dashboard.md`
 40. `reproducibility/hard_evidence_closure_board.md`
 41. `reproducibility/hard_evidence_action_pack.md`
-42. `reproducibility/hard_evidence_ledger.md`
-43. `reproducibility/challenge_cup_submission_archive_manifest.json`
-44. `reproducibility/challenge_cup_submission_package.zip`
-45. `reproducibility/verify_submission_package.py`
-46. `reproducibility/final_acceptance_audit.md`
+42. `reproducibility/external_evidence_execution_kit.md`
+43. `reproducibility/hard_evidence_ledger.md`
+44. `reproducibility/challenge_cup_submission_archive_manifest.json`
+45. `reproducibility/challenge_cup_submission_package.zip`
+46. `reproducibility/verify_submission_package.py`
+47. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -823,7 +831,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 49 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 50 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1760,6 +1768,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_execution_kit.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
 ```
@@ -1803,6 +1812,10 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Hard evidence closure JSON: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON)}`",
             f"- Hard evidence action pack: `{md_link(HARD_EVIDENCE_ACTION_PACK_MD)}`",
             f"- Hard evidence action pack JSON: `{md_link(HARD_EVIDENCE_ACTION_PACK_JSON)}`",
+            f"- External evidence execution kit: `{md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_MD)}`",
+            f"- External evidence execution kit JSON: `{md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON)}`",
+            f"- Expert review handoff: `{md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD)}`",
+            f"- Timed rehearsal observer sheet: `{md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD)}`",
             f"- Special prize readiness dashboard: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD)}`",
             f"- Special prize readiness dashboard JSON: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON)}`",
         ]
@@ -1982,6 +1995,10 @@ python scripts/build_challenge_cup_hard_evidence_action_pack.py
 -> docs/challenge_cup/reproducibility/hard_evidence_action_pack.md
 -> Status: ready_for_real_external_evidence_collection
 
+python scripts/build_challenge_cup_external_evidence_execution_kit.py
+-> docs/challenge_cup/reproducibility/external_evidence_execution_kit.md
+-> Status: ready_for_external_execution_handoff
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -2012,7 +2029,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (49/49 gates)
+-> Status: pass (50/50 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2060,6 +2077,7 @@ def main() -> int:
     timed_rehearsal_schedule_payload = write_timed_rehearsal_schedule_outputs()
     write_hard_evidence_closure_board_outputs()
     write_hard_evidence_action_pack_outputs()
+    write_external_evidence_execution_kit_outputs()
     write_official_rubric_alignment_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
@@ -2121,6 +2139,10 @@ def main() -> int:
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON),
         md_link(HARD_EVIDENCE_ACTION_PACK_MD),
         md_link(HARD_EVIDENCE_ACTION_PACK_JSON),
+        md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_MD),
+        md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON),
+        md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD),
+        md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD),
         md_link(HARD_EVIDENCE_LEDGER_MD),
         md_link(HARD_EVIDENCE_LEDGER_JSON),
         md_link(HARD_EVIDENCE_README),

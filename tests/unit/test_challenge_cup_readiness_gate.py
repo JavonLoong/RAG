@@ -107,6 +107,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "timed rehearsal schedule ledger" in report
     assert "hard evidence closure board" in report
     assert "hard evidence action pack" in report
+    assert "external evidence execution kit" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -639,6 +640,87 @@ def test_local_baseline_differentiation_gate_rejects_missing_manifest_hash_archi
     assert "missing hash entries" in check.detail
     assert "missing archive entries" in check.detail
     assert baseline_relative in check.detail
+
+
+def test_external_evidence_execution_kit_gate_rejects_missing_manifest_hash_archive_links(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    required_paths = [
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
+    ]
+    for relative in required_paths:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "External Evidence Execution Kit\n"
+            "does_not_satisfy_goal_completion=True\n"
+            "\u4e0d\u4f2a\u9020\n"
+            "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988\n"
+            "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392\n",
+            encoding="utf-8",
+        )
+    payload = {
+        "report_type": "challenge_cup_external_evidence_execution_kit",
+        "status": "ready_for_external_execution_handoff",
+        "completion_claim_allowed": False,
+        "does_not_satisfy_goal_completion": True,
+        "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+        "execution_packets": [
+            {
+                "packet_id": "expert_feedback_review",
+                "hard_evidence_category": "expert_feedback",
+                "owner": "project lead",
+                "handoff_file": required_paths[2],
+                "attachment_files": [required_paths[2]],
+                "execution_steps": ["send real packet"],
+                "done_when": ["real expert feedback archived"],
+                "recording_commands": ["python scripts/record_challenge_cup_hard_evidence.py expert_feedback ..."],
+                "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+            {
+                "packet_id": "timed_rehearsal_observer",
+                "hard_evidence_category": "timed_rehearsal",
+                "owner": "observer",
+                "handoff_file": required_paths[3],
+                "attachment_files": [required_paths[3]],
+                "execution_steps": ["run real timed rehearsal"],
+                "done_when": ["real timed rehearsal archived"],
+                "recording_commands": ["python scripts/run_challenge_cup_timed_rehearsal.py ..."],
+                "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+        ],
+    }
+    (tmp_path / required_paths[1]).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_MD", tmp_path / required_paths[0])
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON", tmp_path / required_paths[1])
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_external_evidence_execution_kit()
+
+    assert not check.passed
+    assert "missing manifest entries" in check.detail
+    assert "missing hash entries" in check.detail
+    assert "missing archive entries" in check.detail
+    assert required_paths[0] in check.detail
 
 
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
