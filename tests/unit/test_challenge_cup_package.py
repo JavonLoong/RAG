@@ -1373,9 +1373,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
     assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
-    assert official_rubric["official_source_count"] >= 5
+    assert official_rubric["official_source_count"] >= 7
     source_ids = {source["source_id"] for source in official_rubric["official_sources"]}
     assert "tsinghua_44th_2026" in source_ids
+    assert {"tsinghua_ee_44th_2026", "tsinghua_auto_44th_2026"}.issubset(source_ids)
     assert official_rubric["dimensions"]["academic_or_practical_value"]["evidence_files"]
     assert official_rubric["dimensions"]["innovation"]["evidence_files"]
     assert official_rubric["dimensions"]["completion"]["evidence_files"]
@@ -1383,9 +1384,21 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert official_rubric["special_prize_policy"]["max_special_prize_count"] == 7
     assert official_rubric["special_prize_policy"]["latest_public_result_source_id"] == "tsinghua_44th_2026"
     assert official_rubric["special_prize_policy"]["may_be_vacant"] is True
+    benchmarks = official_rubric["special_prize_competition_benchmarks"]
+    assert benchmarks["current_as_of"] == "2026-06-07"
+    assert benchmarks["benchmark_source_ids"] == [
+        "tsinghua_44th_2026",
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+    ]
+    assert benchmarks["no_award_guarantee"] is True
+    assert {item["source_id"] for item in benchmarks["department_benchmarks"]} == {
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+    }
     assert official_rubric["integrity_rules"]["no_award_guarantee"] is True
     source_lock = official_rubric["official_source_lock"]
-    assert source_lock["current_as_of"] == "2026-06-06"
+    assert source_lock["current_as_of"] == "2026-06-07"
     latest_public_result = source_lock["latest_public_result"]
     assert latest_public_result["source_id"] == "tsinghua_44th_2026"
     assert latest_public_result["source_url"] == "https://www.tsinghua.edu.cn/info/1177/125861.htm"
@@ -1413,7 +1426,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     official_rubric_md = (PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md").read_text(encoding="utf-8")
     for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "第44届", "特等奖7项", "不承诺获奖"]:
         assert term in official_rubric_md
-    for term in ["Official Source Lock", "2026-04-25", "2026-04-29", "337", "173", "114"]:
+    for term in [
+        "Official Source Lock",
+        "44th Department Benchmarks",
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+        "department_total_score_first",
+        "department_total_score_fifth",
+        "2026-04-25",
+        "2026-04-29",
+        "337",
+        "173",
+        "114",
+    ]:
         assert term in official_rubric_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))

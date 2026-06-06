@@ -352,18 +352,18 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
-      "bytes": 9609,
-      "sha256": "2443c88673cb5fbd5e5d4439c128955165e59768d4c4c80b0ba5afd53f4f85ed"
+      "bytes": 12589,
+      "sha256": "327b79f04814c60898eaac933fac65831dd3f1b3fd6953b81572c0aaf23e4768"
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
-      "bytes": 6426,
-      "sha256": "0362261b457a00451878cbcba8cae4a571401247effa16becb35e900dddf10ea"
+      "bytes": 8667,
+      "sha256": "47c9a1bfb6781d405acaa62fcf85812f3f718a4657bfd2c1f3e3811610832232"
     },
     {
       "path": "docs/challenge_cup/reproducibility/rubric_defense_coverage.json",
       "bytes": 8450,
-      "sha256": "4b7753afac90ba7fcdf71a2e626135befd76c26e5a6faa2f709319c88b76fc5e"
+      "sha256": "9fd80d7ccb985defcf9c63f75e7cc1ce0f4ec73c3f1b9a10c56a337e05f011ef"
     },
     {
       "path": "docs/challenge_cup/reproducibility/rubric_defense_coverage.md",
@@ -382,8 +382,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
-      "bytes": 8122,
-      "sha256": "b21435ecae774ed9d6952fffb11812f00a72bd77fbb4497ff4844adb34cf3692"
+      "bytes": 8188,
+      "sha256": "6a700893dd318764d83dc65a6c8f357d6bd7c10113a1e7cea956d09d38854edf"
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",

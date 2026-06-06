@@ -3,15 +3,15 @@
 本表把清华“挑战杯”公开报道和制度文件中的评审口径转化为本项目的可核验证据路线。它不承诺获奖，只用于倒逼材料、演示和边界表达贴近官方尺度。
 
 - report_type: `challenge_cup_official_rubric_alignment`
-- checked_at: `2026-06-06`
-- official_source_count: `5`
+- checked_at: `2026-06-07`
+- official_source_count: `7`
 - 第44届（2026）主赛道公开结果：特等奖7项；历史制度口径可能变化；本项目不承诺获奖。
 
 ## 官方来源
 
 ## Official Source Lock
 
-- current_as_of: `2026-06-06`
+- current_as_of: `2026-06-07`
 - latest_public_result: `tsinghua_44th_2026`
 - source_url: https://www.tsinghua.edu.cn/info/1177/125861.htm
 - published_date: `2026-04-29`
@@ -35,19 +35,60 @@ Rubric dimension lock:
 - source_ids: tsinghua_37th_2019, tsinghua_39th_2021
 - required_dimensions: academic_or_practical_value, innovation, completion, defense_performance
 
+## 44th Department Benchmarks
+
+- current_as_of: `2026-06-07`
+- benchmark_source_ids: tsinghua_44th_2026, tsinghua_ee_44th_2026, tsinghua_auto_44th_2026
+- no_award_guarantee: `True`
+
+### Benchmark tsinghua_ee_44th_2026
+- department: electronic_engineering
+- rank_signal: department_total_score_first
+- reported_awards: special_prize=1, first_prize=1, second_prize=2
+- benchmark_signal: 44th_challenge_cup_winner_department_with_special_prize
+- project_implication: 特等奖级材料需要同时给出高价值问题、可信技术创新、可复核评估和清晰成果线索。
+
+### Benchmark tsinghua_auto_44th_2026
+- department: automation
+- rank_signal: department_total_score_fifth
+- reported_awards: second_prize=4, third_prize=2
+- benchmark_signal: winner_cup_without_special_prize
+- project_implication: 优胜杯级团队表现也可能没有特等奖，必须保留获奖不确定性和外部证据缺口。
+
+Interpretation:
+- 第44届全校主赛道特等奖仅7项，特等奖竞争强度高于普通结项材料。
+- 电子系总分第一且有特等奖项目，可作为特等奖级证据密度对标。
+- 自动化系获得优胜杯但公开报道未列特等奖，可作为防止过度承诺的边界对标。
+
 ### tsinghua_44th_2026
 - Title: 清华大学第44届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式举行
 - URL: https://www.tsinghua.edu.cn/info/1177/125861.htm
-- Checked at: 2026-06-06
+- Checked at: 2026-06-07
 - Claim: 2026年4月25日开展终审答辩
 - Claim: 主赛道共产生114项获奖作品，其中特等奖7项
 - Claim: 本届挑战杯共收到报名作品337件
 - Claim: 200余件学生科创作品参展
 
+### tsinghua_ee_44th_2026
+- Title: 总分第一！电子系时隔22年再捧清华大学“挑战杯”
+- URL: https://www.ee.tsinghua.edu.cn/info/1076/5199.htm
+- Checked at: 2026-06-07
+- Claim: 第44届竞赛中电子系获得特等奖1项、一等奖1项、二等奖2项
+- Claim: 电子系在本届竞赛中院系总分第一，时隔22年再次荣获清华大学挑战杯
+- Claim: 特等奖项目公开列明了问题、方法、评估结果和论文投稿等成果线索
+
+### tsinghua_auto_44th_2026
+- Title: 自动化系在清华大学第四十四届“挑战杯”竞赛中斩获佳绩 时隔五年重夺优胜杯
+- URL: https://www.au.tsinghua.edu.cn/info/1235/4520.htm
+- Checked at: 2026-06-07
+- Claim: 自动化系六组选手夺得团体第五名，时隔五年再次荣获竞赛优胜杯
+- Claim: 自动化系最终收获四项二等奖、两项三等奖
+- Claim: 优胜杯级院系表现仍可能没有特等奖，材料不得把准备充分写成获奖保证
+
 ### tsinghua_43rd_2025
 - Title: 清华大学第43届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式
 - URL: https://www.tsinghua.edu.cn/info/1176/118626.htm
-- Checked at: 2026-06-06
+- Checked at: 2026-06-07
 - Claim: 2025年4月10日开展终审答辩
 - Claim: 主赛道特等奖6项
 - Claim: 清华挑战杯是学校历史最长、规模最大、水平最高的综合性学生课外学术科技作品竞赛
@@ -56,7 +97,7 @@ Rubric dimension lock:
 ### tsinghua_39th_2021
 - Title: 清华大学第39届“挑战杯”学生课外学术科技作品竞赛校级终审落幕
 - URL: https://www.tsinghua.edu.cn/info/1175/82720.htm
-- Checked at: 2026-06-06
+- Checked at: 2026-06-07
 - Claim: 评分维度包括学术/实用价值、创新性、作品完成度、现场答辩及墙报问辩表现
 - Claim: 每个分场至多推荐一项作品参加特等奖评比
 - Claim: 本届最终评选出特等奖6项
@@ -64,7 +105,7 @@ Rubric dimension lock:
 ### tsinghua_37th_2019
 - Title: 清华大学第37届“挑战杯”学生课外学术科技作品竞赛校级终审落幕
 - URL: https://www.tsinghua.edu.cn/info/1181/35383.htm
-- Checked at: 2026-06-06
+- Checked at: 2026-06-07
 - Claim: 强调遵守比赛规则、恪守学术规范和学术成果表述严谨性
 - Claim: 评委从学术价值或实用性、创新性、作品完成情况和现场答辩表现四个方面评分
 - Claim: 特等奖候选作品参与公开答辩并由评委综合评定
@@ -72,7 +113,7 @@ Rubric dimension lock:
 ### tsinghua_rules_pdf_2017
 - Title: 清华大学课外创新人才培养体系制度文件汇编
 - URL: https://qiyuan.tsinghua.edu.cn/intro/2018/11024/%E6%94%AF%E6%92%91%E6%9D%90%E6%96%993-%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E8%AF%BE%E5%A4%96%E5%88%9B%E6%96%B0%E4%BA%BA%E6%89%8D%E5%9F%B9%E5%85%BB%E4%BD%93%E7%B3%BB%E5%88%B6%E5%BA%A6%E6%96%87%E4%BB%B6%E6%B1%87%E7%BC%96.pdf
-- Checked at: 2026-06-06
+- Checked at: 2026-06-07
 - Claim: 评审应考虑作品实用性、创新性和学术价值
 - Claim: 特等奖不超过6件，可空缺
 - Claim: 竞赛规程由清华相关部门和学生科协共同发布

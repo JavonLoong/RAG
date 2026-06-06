@@ -11,8 +11,9 @@ OUTPUT_JSON = OUTPUT_DIR / "official_rubric_alignment.json"
 OUTPUT_MD = OUTPUT_DIR / "official_rubric_alignment.md"
 
 REPORT_TYPE = "challenge_cup_official_rubric_alignment"
+CHECKED_AT = "2026-06-07"
 OFFICIAL_SOURCE_LOCK = {
-    "current_as_of": "2026-06-06",
+    "current_as_of": CHECKED_AT,
     "verification_method": "manual_web_check_against_official_tsinghua_pages",
     "latest_public_result": {
         "source_id": "tsinghua_44th_2026",
@@ -64,7 +65,7 @@ OFFICIAL_SOURCES = [
         "title": "清华大学第44届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式举行",
         "url": "https://www.tsinghua.edu.cn/info/1177/125861.htm",
         "source_type": "tsinghua_news",
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "claims": [
             "2026年4月25日开展终审答辩",
             "主赛道共产生114项获奖作品，其中特等奖7项",
@@ -73,11 +74,35 @@ OFFICIAL_SOURCES = [
         ],
     },
     {
+        "source_id": "tsinghua_ee_44th_2026",
+        "title": "总分第一！电子系时隔22年再捧清华大学“挑战杯”",
+        "url": "https://www.ee.tsinghua.edu.cn/info/1076/5199.htm",
+        "source_type": "tsinghua_department_news",
+        "checked_at": CHECKED_AT,
+        "claims": [
+            "第44届竞赛中电子系获得特等奖1项、一等奖1项、二等奖2项",
+            "电子系在本届竞赛中院系总分第一，时隔22年再次荣获清华大学挑战杯",
+            "特等奖项目公开列明了问题、方法、评估结果和论文投稿等成果线索",
+        ],
+    },
+    {
+        "source_id": "tsinghua_auto_44th_2026",
+        "title": "自动化系在清华大学第四十四届“挑战杯”竞赛中斩获佳绩 时隔五年重夺优胜杯",
+        "url": "https://www.au.tsinghua.edu.cn/info/1235/4520.htm",
+        "source_type": "tsinghua_department_news",
+        "checked_at": CHECKED_AT,
+        "claims": [
+            "自动化系六组选手夺得团体第五名，时隔五年再次荣获竞赛优胜杯",
+            "自动化系最终收获四项二等奖、两项三等奖",
+            "优胜杯级院系表现仍可能没有特等奖，材料不得把准备充分写成获奖保证",
+        ],
+    },
+    {
         "source_id": "tsinghua_43rd_2025",
         "title": "清华大学第43届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式",
         "url": "https://www.tsinghua.edu.cn/info/1176/118626.htm",
         "source_type": "tsinghua_news",
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "claims": [
             "2025年4月10日开展终审答辩",
             "主赛道特等奖6项",
@@ -90,7 +115,7 @@ OFFICIAL_SOURCES = [
         "title": "清华大学第39届“挑战杯”学生课外学术科技作品竞赛校级终审落幕",
         "url": "https://www.tsinghua.edu.cn/info/1175/82720.htm",
         "source_type": "tsinghua_news",
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "claims": [
             "评分维度包括学术/实用价值、创新性、作品完成度、现场答辩及墙报问辩表现",
             "每个分场至多推荐一项作品参加特等奖评比",
@@ -102,7 +127,7 @@ OFFICIAL_SOURCES = [
         "title": "清华大学第37届“挑战杯”学生课外学术科技作品竞赛校级终审落幕",
         "url": "https://www.tsinghua.edu.cn/info/1181/35383.htm",
         "source_type": "tsinghua_news",
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "claims": [
             "强调遵守比赛规则、恪守学术规范和学术成果表述严谨性",
             "评委从学术价值或实用性、创新性、作品完成情况和现场答辩表现四个方面评分",
@@ -114,7 +139,7 @@ OFFICIAL_SOURCES = [
         "title": "清华大学课外创新人才培养体系制度文件汇编",
         "url": "https://qiyuan.tsinghua.edu.cn/intro/2018/11024/%E6%94%AF%E6%92%91%E6%9D%90%E6%96%993-%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E8%AF%BE%E5%A4%96%E5%88%9B%E6%96%B0%E4%BA%BA%E6%89%8D%E5%9F%B9%E5%85%BB%E4%BD%93%E7%B3%BB%E5%88%B6%E5%BA%A6%E6%96%87%E4%BB%B6%E6%B1%87%E7%BC%96.pdf",
         "source_type": "tsinghua_rules_pdf",
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "claims": [
             "评审应考虑作品实用性、创新性和学术价值",
             "特等奖不超过6件，可空缺",
@@ -186,10 +211,51 @@ DIMENSIONS = {
 }
 
 
+SPECIAL_PRIZE_COMPETITION_BENCHMARKS = {
+    "current_as_of": CHECKED_AT,
+    "benchmark_source_ids": [
+        "tsinghua_44th_2026",
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+    ],
+    "department_benchmarks": [
+        {
+            "source_id": "tsinghua_ee_44th_2026",
+            "department": "electronic_engineering",
+            "rank_signal": "department_total_score_first",
+            "reported_awards": {
+                "special_prize": 1,
+                "first_prize": 1,
+                "second_prize": 2,
+            },
+            "benchmark_signal": "44th_challenge_cup_winner_department_with_special_prize",
+            "project_implication": "特等奖级材料需要同时给出高价值问题、可信技术创新、可复核评估和清晰成果线索。",
+        },
+        {
+            "source_id": "tsinghua_auto_44th_2026",
+            "department": "automation",
+            "rank_signal": "department_total_score_fifth",
+            "reported_awards": {
+                "second_prize": 4,
+                "third_prize": 2,
+            },
+            "benchmark_signal": "winner_cup_without_special_prize",
+            "project_implication": "优胜杯级团队表现也可能没有特等奖，必须保留获奖不确定性和外部证据缺口。",
+        },
+    ],
+    "interpretation": [
+        "第44届全校主赛道特等奖仅7项，特等奖竞争强度高于普通结项材料。",
+        "电子系总分第一且有特等奖项目，可作为特等奖级证据密度对标。",
+        "自动化系获得优胜杯但公开报道未列特等奖，可作为防止过度承诺的边界对标。",
+    ],
+    "no_award_guarantee": True,
+}
+
+
 def build_payload() -> dict[str, Any]:
     return {
         "report_type": REPORT_TYPE,
-        "checked_at": "2026-06-06",
+        "checked_at": CHECKED_AT,
         "official_source_count": len(OFFICIAL_SOURCES),
         "official_sources": OFFICIAL_SOURCES,
         "official_source_lock": OFFICIAL_SOURCE_LOCK,
@@ -202,11 +268,14 @@ def build_payload() -> dict[str, Any]:
                 "tsinghua_rules_pdf_2017",
                 "tsinghua_39th_2021",
                 "tsinghua_43rd_2025",
+                "tsinghua_ee_44th_2026",
+                "tsinghua_auto_44th_2026",
             ],
             "latest_public_result_source_id": "tsinghua_44th_2026",
             "historical_rule_note": "2017制度文件写有特等奖不超过6件、可空缺；2026年第44届公开报道显示主赛道实际特等奖7项，材料以最新公开结果为准并保留历史口径说明。",
             "project_boundary": "本项目只能证明材料与答辩准备对齐官方口径；不承诺获奖结果。",
         },
+        "special_prize_competition_benchmarks": SPECIAL_PRIZE_COMPETITION_BENCHMARKS,
         "integrity_rules": {
             "no_award_guarantee": True,
             "no_fake_external_validation": True,
@@ -264,8 +333,35 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             f"- source_ids: {', '.join(source_lock['rubric_dimension_lock']['source_ids'])}",
             f"- required_dimensions: {', '.join(source_lock['rubric_dimension_lock']['required_dimensions'])}",
             "",
+            "## 44th Department Benchmarks",
+            "",
         ]
     )
+    benchmarks = payload["special_prize_competition_benchmarks"]
+    lines.extend(
+        [
+            f"- current_as_of: `{benchmarks['current_as_of']}`",
+            f"- benchmark_source_ids: {', '.join(benchmarks['benchmark_source_ids'])}",
+            f"- no_award_guarantee: `{benchmarks['no_award_guarantee']}`",
+            "",
+        ]
+    )
+    for item in benchmarks["department_benchmarks"]:
+        awards = ", ".join(f"{key}={value}" for key, value in item["reported_awards"].items())
+        lines.extend(
+            [
+                f"### Benchmark {item['source_id']}",
+                f"- department: {item['department']}",
+                f"- rank_signal: {item['rank_signal']}",
+                f"- reported_awards: {awards}",
+                f"- benchmark_signal: {item['benchmark_signal']}",
+                f"- project_implication: {item['project_implication']}",
+                "",
+            ]
+        )
+    lines.append("Interpretation:")
+    lines.extend(f"- {item}" for item in benchmarks["interpretation"])
+    lines.append("")
     for source in payload["official_sources"]:
         lines.extend(
             [
@@ -313,3 +409,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

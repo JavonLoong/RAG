@@ -14,7 +14,7 @@
 | package evidence files | pass | 97 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 96 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 111 files archived; 2522525 bytes; sha256 verified |
+| submission archive | pass | 111 files archived; 2524161 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 97 evidence files, and 5 visible search records are consistent |
@@ -26,7 +26,7 @@
 | claim-evidence matrix | pass | award claims mapped to evidence, commands, and boundaries; 28 evidence links verified |
 | acceptance checklist | pass | submission materials, acceptance steps, offline fallback, boundaries, and conclusion verified; 16 evidence links verified |
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 17 evidence links verified |
-| official rubric alignment | pass | 5 official sources, 5 rubric dimensions, and 24 project evidence paths verified |
+| official rubric alignment | pass | 7 official sources, 5 rubric dimensions, and 24 project evidence paths verified |
 | judge objection response matrix | pass | 10 objection responses, 30-second boundary, and 28 evidence links verified |
 | special prize readiness dashboard | pass | 5 rubric dimensions, 3 top risks, and no-award boundary verified |
 | judge briefing card | pass | one-page judge leave-behind, evidence anchors, and no-overclaim boundaries verified; 22 evidence links verified |

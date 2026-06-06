@@ -30,7 +30,7 @@ def test_official_rubric_alignment_locks_latest_public_source_facts(tmp_path: Pa
 
     source_lock = payload["official_source_lock"]
     latest = source_lock["latest_public_result"]
-    assert source_lock["current_as_of"] == "2026-06-06"
+    assert source_lock["current_as_of"] == "2026-06-07"
     assert latest["source_id"] == "tsinghua_44th_2026"
     assert latest["source_url"] == "https://www.tsinghua.edu.cn/info/1177/125861.htm"
     assert latest["published_date"] == "2026-04-29"
@@ -59,8 +59,49 @@ def test_official_rubric_alignment_locks_latest_public_source_facts(tmp_path: Pa
     assert source_lock["recency_policy"]["must_recheck_before_final_submission"] is True
     assert source_lock["recency_policy"]["no_award_guarantee"] is True
 
+    source_ids = {source["source_id"] for source in payload["official_sources"]}
+    assert {"tsinghua_ee_44th_2026", "tsinghua_auto_44th_2026"}.issubset(source_ids)
+    assert payload["official_source_count"] == len(payload["official_sources"]) >= 7
+
+    benchmarks = payload["special_prize_competition_benchmarks"]
+    assert benchmarks["current_as_of"] == "2026-06-07"
+    assert benchmarks["no_award_guarantee"] is True
+    assert benchmarks["benchmark_source_ids"] == [
+        "tsinghua_44th_2026",
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+    ]
+    department_ids = {item["source_id"] for item in benchmarks["department_benchmarks"]}
+    assert department_ids == {"tsinghua_ee_44th_2026", "tsinghua_auto_44th_2026"}
+    electronic_engineering = next(
+        item for item in benchmarks["department_benchmarks"] if item["source_id"] == "tsinghua_ee_44th_2026"
+    )
+    assert electronic_engineering["reported_awards"] == {
+        "special_prize": 1,
+        "first_prize": 1,
+        "second_prize": 2,
+    }
+    automation = next(
+        item for item in benchmarks["department_benchmarks"] if item["source_id"] == "tsinghua_auto_44th_2026"
+    )
+    assert automation["reported_awards"] == {"second_prize": 4, "third_prize": 2}
+
     output = json.loads(module.OUTPUT_JSON.read_text(encoding="utf-8"))
     assert output["official_source_lock"] == source_lock
     markdown = module.OUTPUT_MD.read_text(encoding="utf-8")
-    for term in ["Official Source Lock", "2026-04-25", "2026-04-29", "337", "173", "9", "114", "7"]:
+    for term in [
+        "Official Source Lock",
+        "44th Department Benchmarks",
+        "tsinghua_ee_44th_2026",
+        "tsinghua_auto_44th_2026",
+        "department_total_score_first",
+        "department_total_score_fifth",
+        "2026-04-25",
+        "2026-04-29",
+        "337",
+        "173",
+        "9",
+        "114",
+        "7",
+    ]:
         assert term in markdown

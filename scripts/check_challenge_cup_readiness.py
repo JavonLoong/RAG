@@ -776,8 +776,31 @@ OFFICIAL_RUBRIC_REQUIRED_TERMS = {
     "特等奖7项",
     "不承诺获奖",
 }
-OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 5
+OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 7
+OFFICIAL_RUBRIC_CURRENT_AS_OF = "2026-06-07"
 OFFICIAL_RUBRIC_LATEST_SOURCE_ID = "tsinghua_44th_2026"
+OFFICIAL_RUBRIC_BENCHMARK_SOURCE_IDS = [
+    "tsinghua_44th_2026",
+    "tsinghua_ee_44th_2026",
+    "tsinghua_auto_44th_2026",
+]
+OFFICIAL_RUBRIC_DEPARTMENT_BENCHMARK_SPECS = {
+    "tsinghua_ee_44th_2026": {
+        "rank_signal": "department_total_score_first",
+        "reported_awards": {
+            "special_prize": 1,
+            "first_prize": 1,
+            "second_prize": 2,
+        },
+    },
+    "tsinghua_auto_44th_2026": {
+        "rank_signal": "department_total_score_fifth",
+        "reported_awards": {
+            "second_prize": 4,
+            "third_prize": 2,
+        },
+    },
+}
 JUDGE_OBJECTION_MATRIX_REQUIRED_IDS = {
     "OJ-01-normal-rag",
     "OJ-02-graphrag-baseline",
@@ -2752,6 +2775,9 @@ def check_official_rubric_alignment() -> GateCheck:
         failures.append(f"duplicate official source ids: {sorted(duplicate_source_ids)}")
     if OFFICIAL_RUBRIC_LATEST_SOURCE_ID not in source_ids:
         failures.append(f"missing latest official source: {OFFICIAL_RUBRIC_LATEST_SOURCE_ID}")
+    missing_benchmark_source_ids = sorted(set(OFFICIAL_RUBRIC_BENCHMARK_SOURCE_IDS) - source_ids)
+    if missing_benchmark_source_ids:
+        failures.append(f"missing department benchmark official sources: {missing_benchmark_source_ids}")
 
     dimensions = payload.get("dimensions", {})
     if not isinstance(dimensions, dict):
@@ -2809,6 +2835,61 @@ def check_official_rubric_alignment() -> GateCheck:
         )
     if special_prize_policy.get("may_be_vacant") is not True:
         failures.append(f"may_be_vacant={special_prize_policy.get('may_be_vacant')}")
+    policy_source_ids = {str(item) for item in special_prize_policy.get("source_ids", [])}
+    if not set(OFFICIAL_RUBRIC_BENCHMARK_SOURCE_IDS).issubset(policy_source_ids):
+        failures.append(f"special_prize_policy.source_ids missing benchmark sources: {sorted(policy_source_ids)}")
+
+    benchmarks = payload.get("special_prize_competition_benchmarks")
+    if not isinstance(benchmarks, dict):
+        failures.append("special_prize_competition_benchmarks missing")
+        benchmarks = {}
+    else:
+        if benchmarks.get("current_as_of") != OFFICIAL_RUBRIC_CURRENT_AS_OF:
+            failures.append(f"special_prize_competition_benchmarks.current_as_of={benchmarks.get('current_as_of')}")
+        if benchmarks.get("benchmark_source_ids") != OFFICIAL_RUBRIC_BENCHMARK_SOURCE_IDS:
+            failures.append(
+                f"special_prize_competition_benchmarks.benchmark_source_ids={benchmarks.get('benchmark_source_ids')}"
+            )
+        if benchmarks.get("no_award_guarantee") is not True:
+            failures.append(f"special_prize_competition_benchmarks.no_award_guarantee={benchmarks.get('no_award_guarantee')}")
+        department_benchmarks = benchmarks.get("department_benchmarks")
+        if not isinstance(department_benchmarks, list):
+            failures.append("special_prize_competition_benchmarks.department_benchmarks missing")
+            department_benchmarks = []
+        benchmark_by_source: dict[str, dict[str, Any]] = {}
+        for item in department_benchmarks:
+            if not isinstance(item, dict):
+                failures.append("special_prize_competition_benchmarks.department_benchmarks item invalid")
+                continue
+            source_id = str(item.get("source_id", "")).strip()
+            if not source_id:
+                failures.append("special_prize_competition_benchmarks.department_benchmarks.source_id missing")
+                continue
+            benchmark_by_source[source_id] = item
+            if source_id not in source_ids:
+                failures.append(f"special_prize_competition_benchmarks unknown source_id: {source_id}")
+            for field in ("department", "rank_signal", "benchmark_signal", "project_implication"):
+                if not has_value(item.get(field)):
+                    failures.append(f"special_prize_competition_benchmarks.{source_id}.{field} missing")
+        expected_department_ids = set(OFFICIAL_RUBRIC_DEPARTMENT_BENCHMARK_SPECS)
+        if set(benchmark_by_source) != expected_department_ids:
+            failures.append(
+                "special_prize_competition_benchmarks.department_benchmark_ids="
+                f"{sorted(benchmark_by_source)}"
+            )
+        for source_id, expected in OFFICIAL_RUBRIC_DEPARTMENT_BENCHMARK_SPECS.items():
+            item = benchmark_by_source.get(source_id, {})
+            if item.get("rank_signal") != expected["rank_signal"]:
+                failures.append(
+                    f"special_prize_competition_benchmarks.{source_id}.rank_signal={item.get('rank_signal')}"
+                )
+            if item.get("reported_awards") != expected["reported_awards"]:
+                failures.append(
+                    f"special_prize_competition_benchmarks.{source_id}.reported_awards={item.get('reported_awards')}"
+                )
+        interpretation = benchmarks.get("interpretation")
+        if not isinstance(interpretation, list) or len(interpretation) < 2:
+            failures.append("special_prize_competition_benchmarks.interpretation below 2")
 
     source_lock = payload.get("official_source_lock")
     if not isinstance(source_lock, dict):
@@ -2816,6 +2897,8 @@ def check_official_rubric_alignment() -> GateCheck:
         source_lock = {}
     else:
         if not is_iso_date(source_lock.get("current_as_of")):
+            failures.append(f"official_source_lock.current_as_of={source_lock.get('current_as_of')}")
+        if source_lock.get("current_as_of") != OFFICIAL_RUBRIC_CURRENT_AS_OF:
             failures.append(f"official_source_lock.current_as_of={source_lock.get('current_as_of')}")
 
         latest = source_lock.get("latest_public_result")

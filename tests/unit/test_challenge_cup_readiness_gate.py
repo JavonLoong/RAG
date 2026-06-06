@@ -478,6 +478,7 @@ def test_official_rubric_alignment_gate_rejects_missing_sources_and_evidence(mon
     assert "academic_or_practical_value" in check.detail
     assert "no_award_guarantee" in check.detail
     assert "official_source_lock" in check.detail
+    assert "special_prize_competition_benchmarks" in check.detail
 
 
 def test_official_rubric_alignment_gate_rejects_stale_or_incomplete_source_lock(monkeypatch, tmp_path) -> None:
@@ -610,6 +611,7 @@ def test_official_rubric_alignment_gate_rejects_stale_or_incomplete_source_lock(
     assert "exhibition_work_count_min" in check.detail
     assert "rubric_dimension_lock" in check.detail
     assert "must_recheck_before_final_submission" in check.detail
+    assert "special_prize_competition_benchmarks" in check.detail
 
 
 def test_rubric_defense_coverage_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
