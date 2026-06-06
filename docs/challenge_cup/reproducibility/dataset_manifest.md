@@ -18,6 +18,7 @@
 - 评审主张证据矩阵：`docs/challenge_cup/07_评审主张证据矩阵.md`。
 - 特等奖评审自评表：`docs/challenge_cup/08_特等奖评审自评表.md`。
 - 专家快速审阅索引：`docs/challenge_cup/09_专家快速审阅索引.md`。
+- 评委现场速览卡：`docs/challenge_cup/13_评委现场速览卡.md`。
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 终审答辩 PPTX：`docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`。
 - 终审答辩讲稿：`docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md`。

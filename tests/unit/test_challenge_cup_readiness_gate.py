@@ -86,6 +86,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "special-prize rubric self-assessment" in report
     assert "official rubric alignment" in report
     assert "special prize readiness dashboard" in report
+    assert "judge briefing card" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense deck" in report
@@ -364,6 +365,30 @@ def test_special_prize_dashboard_gate_rejects_missing_non_self_report_evidence(m
     assert not check.passed
     assert missing_evidence in check.detail
     assert self_report not in check.detail
+
+
+def test_judge_briefing_card_gate_rejects_missing_manifest_hash_archive_links(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    card_relative = module.JUDGE_BRIEFING_CARD.relative_to(module.REPO_ROOT).as_posix()
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {card_relative})
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_judge_briefing_card()
+
+    assert not check.passed
+    assert "missing manifest entries" in check.detail
+    assert "missing hash entries" in check.detail
+    assert "missing archive entries" in check.detail
+    assert card_relative in check.detail
 
 
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:

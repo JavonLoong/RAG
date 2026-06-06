@@ -1,23 +1,23 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 38/38
-- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 39/39
+- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
-| chinese readability | pass | 57 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 58 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 60 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 59 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| package evidence files | pass | 61 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 60 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 74 files archived; 2441181 bytes; sha256 verified |
+| submission archive | pass | 75 files archived; 2443906 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
-| numeric consistency | pass | 60 questions, 60 evidence files, and 5 visible search records are consistent |
+| numeric consistency | pass | 60 questions, 61 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |
@@ -27,6 +27,7 @@
 | special-prize rubric self-assessment | pass | public Tsinghua rubric dimensions mapped to evidence; 17 evidence links verified |
 | official rubric alignment | pass | 5 official sources, 5 rubric dimensions, and 24 project evidence paths verified |
 | special prize readiness dashboard | pass | 5 rubric dimensions, 3 top risks, and no-award boundary verified |
+| judge briefing card | pass | one-page judge leave-behind, evidence anchors, and no-overclaim boundaries verified; 22 evidence links verified |
 | expert review index | pass | judge-facing review path maps claims, commands, and boundaries; 20 evidence links verified |
 | defense rehearsal pack | pass | timed defense script, killer questions, and boundaries mapped to evidence; 17 evidence links verified |
 | defense rehearsal scorecard | pass | 5 timed demo steps, 5 killer questions, 12 evidence files |
