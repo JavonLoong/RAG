@@ -40,6 +40,11 @@ from build_challenge_cup_timed_rehearsal_schedule_ledger import (
     SCHEDULE_README as TIMED_REHEARSAL_SCHEDULE_README,
     write_outputs as write_timed_rehearsal_schedule_outputs,
 )
+from build_challenge_cup_hard_evidence_closure_board import (
+    OUTPUT_JSON as HARD_EVIDENCE_CLOSURE_BOARD_JSON,
+    OUTPUT_MD as HARD_EVIDENCE_CLOSURE_BOARD_MD,
+    write_outputs as write_hard_evidence_closure_board_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -346,9 +351,10 @@ def build_readme(ctx: dict[str, Any]) -> str:
 25. `reproducibility/expert_feedback_outreach_ledger.md`
 26. `reproducibility/timed_rehearsal_schedule_ledger.md`
 27. `reproducibility/official_rubric_alignment.md`
-28. `reproducibility/hard_evidence_ledger.md`
-29. `reproducibility/challenge_cup_submission_archive_manifest.json`
-30. `reproducibility/challenge_cup_submission_package.zip`
+28. `reproducibility/hard_evidence_closure_board.md`
+29. `reproducibility/hard_evidence_ledger.md`
+30. `reproducibility/challenge_cup_submission_archive_manifest.json`
+31. `reproducibility/challenge_cup_submission_package.zip`
 
 ## 当前核心数字
 
@@ -963,6 +969,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 
@@ -999,6 +1006,8 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Timed rehearsal schedule ledger: `{md_link(TIMED_REHEARSAL_SCHEDULE_LEDGER_MD)}`",
             f"- Timed rehearsal schedule JSON: `{md_link(TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON)}`",
             f"- Timed rehearsal schedule intake: `{md_link(TIMED_REHEARSAL_SCHEDULE_README)}`",
+            f"- Hard evidence closure board: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD)}`",
+            f"- Hard evidence closure JSON: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON)}`",
         ]
     )
 
@@ -1151,6 +1160,10 @@ python scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 -> docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md
 -> docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json
 
+python scripts/build_challenge_cup_hard_evidence_closure_board.py
+-> docs/challenge_cup/reproducibility/hard_evidence_closure_board.md
+-> docs/challenge_cup/reproducibility/hard_evidence_closure_board.json
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -1170,7 +1183,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (33/33 gates)
+-> Status: pass (34/34 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1204,6 +1217,7 @@ def main() -> int:
     write_expert_request_outputs(build_expert_request_payload())
     expert_outreach_payload = write_expert_outreach_outputs()
     timed_rehearsal_schedule_payload = write_timed_rehearsal_schedule_outputs()
+    write_hard_evidence_closure_board_outputs()
     write_official_rubric_alignment_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
@@ -1246,6 +1260,8 @@ def main() -> int:
         *timed_rehearsal_schedule_payload.get("schedule_files", []),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
+        md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD),
+        md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON),
         md_link(HARD_EVIDENCE_LEDGER_MD),
         md_link(HARD_EVIDENCE_LEDGER_JSON),
         md_link(HARD_EVIDENCE_README),

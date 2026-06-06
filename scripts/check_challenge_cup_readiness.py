@@ -56,6 +56,8 @@ HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
 OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md"
+HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json"
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
@@ -69,6 +71,8 @@ HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
 HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
+HARD_EVIDENCE_CLOSURE_BOARD_MD = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE
+HARD_EVIDENCE_CLOSURE_BOARD_JSON = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
@@ -89,6 +93,10 @@ TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS = [
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
     OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE,
+]
+HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS = [
+    HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE,
+    HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE,
 ]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
@@ -155,6 +163,10 @@ TIMED_REHEARSAL_SCHEDULE_LEDGER_BOUNDARY = (
     "Schedule records prove that a real timed rehearsal was scheduled or observer preparation was "
     "recorded. They do not prove a timed rehearsal was completed and do not satisfy the "
     "timed_rehearsal hard-evidence requirement."
+)
+HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY = (
+    "This closure board is an execution control artifact. It does not satisfy goal completion, "
+    "does not prove expert feedback, and does not prove a timed rehearsal was completed."
 )
 EXPERT_FEEDBACK_OUTREACH_STATUSES = {
     "ready_to_send_no_outreach_recorded",
@@ -230,6 +242,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/hard_evidence_closure_board.md",
+    "reproducibility/hard_evidence_closure_board.json",
     "reproducibility/hard_evidence_ledger.md",
     "reproducibility/hard_evidence_ledger.json",
     "reproducibility/hard_evidence/README.md",
@@ -2404,6 +2418,148 @@ def check_timed_rehearsal_schedule_ledger() -> GateCheck:
     )
 
 
+def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    category = str(stream.get("category", ""))
+    if category not in HARD_EVIDENCE_REQUIRED_CATEGORIES:
+        failures.append(f"invalid category={category}")
+    for field in (
+        "closure_phase",
+        "target_min_count",
+        "current_collected_count",
+        "required_source_examples",
+        "ready_to_execute_commands",
+        "post_collection_commands",
+        "acceptance_gate",
+    ):
+        if not has_value(stream.get(field)):
+            failures.append(f"{category or 'stream'}: {field} missing")
+    if int(stream.get("target_min_count") or 0) < 1:
+        failures.append(f"{category}: target_min_count below 1")
+    if int(stream.get("current_collected_count") or 0) != 0:
+        failures.append(f"{category}: current_collected_count should remain 0 until real hard evidence exists")
+    examples = stream.get("required_source_examples")
+    if not isinstance(examples, list) or len(examples) < 4:
+        failures.append(f"{category}: required_source_examples below 4")
+    ready_commands = stream.get("ready_to_execute_commands")
+    if not isinstance(ready_commands, list) or not ready_commands:
+        failures.append(f"{category}: ready_to_execute_commands missing")
+    else:
+        joined = "\n".join(str(item) for item in ready_commands)
+        if category == "expert_feedback" and "record_challenge_cup_hard_evidence.py expert_feedback" not in joined:
+            failures.append(f"{category}: ready_to_execute_commands missing expert hard-evidence recorder")
+        if category == "timed_rehearsal" and "run_challenge_cup_timed_rehearsal.py" not in joined:
+            failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
+    post_commands = stream.get("post_collection_commands")
+    if not isinstance(post_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
+        str(item) for item in post_commands
+    }:
+        failures.append(f"{category}: post_collection_commands missing goal completion check")
+    acceptance_gate = str(stream.get("acceptance_gate", ""))
+    if category and category not in acceptance_gate:
+        failures.append(f"{category}: acceptance_gate does not reference category")
+    return failures
+
+
+def check_hard_evidence_closure_board() -> GateCheck:
+    failures: list[str] = []
+    required_files = [
+        HARD_EVIDENCE_CLOSURE_BOARD_MD,
+        HARD_EVIDENCE_CLOSURE_BOARD_JSON,
+    ]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("hard evidence closure board", False, f"missing or empty: {missing_files}")
+
+    payload = load_json(HARD_EVIDENCE_CLOSURE_BOARD_JSON)
+    markdown = HARD_EVIDENCE_CLOSURE_BOARD_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_hard_evidence_closure_board":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "awaiting_real_external_evidence_closure":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("no_completion_claimed") is not True:
+        failures.append(f"no_completion_claimed={payload.get('no_completion_claimed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("boundary") != HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY:
+        failures.append("boundary mismatch")
+    required_before = [str(item) for item in payload.get("required_before_goal_completion", [])]
+    if required_before != ["expert_feedback", "timed_rehearsal"]:
+        failures.append(f"required_before_goal_completion={required_before}")
+    if int(payload.get("blocker_count") or 0) != 2:
+        failures.append(f"blocker_count={payload.get('blocker_count')}")
+
+    streams = payload.get("closure_streams")
+    if not isinstance(streams, list):
+        failures.append("closure_streams missing")
+        streams = []
+    categories = {str(item.get("category", "")) for item in streams if isinstance(item, dict)}
+    missing_categories = sorted(HARD_EVIDENCE_REQUIRED_CATEGORIES - categories)
+    if missing_categories:
+        failures.append(f"missing closure streams: {missing_categories}")
+    for stream in streams:
+        if not isinstance(stream, dict):
+            failures.append("closure_streams item invalid")
+            continue
+        failures.extend(validate_hard_evidence_closure_stream(stream))
+
+    verification_commands = payload.get("post_closure_verification_commands")
+    if not isinstance(verification_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
+        str(item) for item in verification_commands
+    }:
+        failures.append("post_closure_verification_commands missing goal completion check")
+
+    missing_markdown_terms = sorted(
+        term
+        for term in (
+            "Hard Evidence Closure Board",
+            "does not satisfy goal completion",
+            "expert_feedback",
+            "timed_rehearsal",
+            HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY,
+        )
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked hard evidence closure board files: {untracked}")
+    if dirty:
+        failures.append(f"dirty hard evidence closure board files: {dirty}")
+
+    return GateCheck(
+        "hard evidence closure board",
+        not failures,
+        "closure board schema, boundary, real-evidence streams, and manifest/hash/archive links verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], category: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     accepted_types = {str(item) for item in category.get("accepted_evidence_types", [])}
@@ -2740,6 +2896,7 @@ def run_gate() -> list[GateCheck]:
         check_expert_feedback_request_packet(),
         check_expert_feedback_outreach_ledger(),
         check_timed_rehearsal_schedule_ledger(),
+        check_hard_evidence_closure_board(),
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
@@ -2763,7 +2920,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

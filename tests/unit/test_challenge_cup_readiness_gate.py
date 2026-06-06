@@ -91,6 +91,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "expert feedback request packet" in report
     assert "expert feedback outreach ledger" in report
     assert "timed rehearsal schedule ledger" in report
+    assert "hard evidence closure board" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -912,6 +913,72 @@ def test_timed_rehearsal_schedule_ledger_gate_rejects_overclaim_and_invalid_meta
     assert "schedule_source_path" in check.detail
     assert "killer_question_count" in check.detail
     assert "checklist_items" in check.detail
+
+
+def test_hard_evidence_closure_board_gate_rejects_overclaim_and_missing_streams(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    module = load_readiness_module()
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+
+    board_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_closure_board.json"
+    board_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_closure_board.md"
+    board_json.parent.mkdir(parents=True)
+    board_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_hard_evidence_closure_board",
+                "status": "complete",
+                "no_completion_claimed": False,
+                "does_not_satisfy_goal_completion": False,
+                "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+                "blocker_count": 1,
+                "closure_streams": [
+                    {
+                        "category": "expert_feedback",
+                        "required_source_examples": [],
+                        "ready_to_execute_commands": [],
+                        "post_collection_commands": [],
+                        "acceptance_gate": "",
+                    }
+                ],
+                "post_closure_verification_commands": [],
+                "boundary": module.HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    board_md.write_text("Hard Evidence Closure Board\n", encoding="utf-8")
+    package_manifest = tmp_path / "package_manifest.json"
+    evidence_files = [
+        "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md",
+        "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
+    ]
+    package_manifest.write_text(json.dumps({"evidence_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    evidence_hashes = tmp_path / "evidence_hashes.json"
+    evidence_hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in evidence_files]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive_manifest = tmp_path / "archive_manifest.json"
+    archive_manifest.write_text(json.dumps({"included_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "HARD_EVIDENCE_CLOSURE_BOARD_JSON", board_json)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_CLOSURE_BOARD_MD", board_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", package_manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", evidence_hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(evidence_files))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_hard_evidence_closure_board()
+
+    assert not check.passed
+    assert "no_completion_claimed" in check.detail
+    assert "does_not_satisfy_goal_completion" in check.detail
+    assert "timed_rehearsal" in check.detail
+    assert "ready_to_execute_commands" in check.detail
 
 
 def test_hard_evidence_ledger_gate_rejects_fake_completion(monkeypatch, tmp_path) -> None:

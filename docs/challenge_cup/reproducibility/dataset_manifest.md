@@ -63,3 +63,5 @@
 - Timed rehearsal schedule ledger: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md`
 - Timed rehearsal schedule JSON: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json`
 - Timed rehearsal schedule intake: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md`
+- Hard evidence closure board: `docs/challenge_cup/reproducibility/hard_evidence_closure_board.md`
+- Hard evidence closure JSON: `docs/challenge_cup/reproducibility/hard_evidence_closure_board.json`

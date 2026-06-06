@@ -82,6 +82,10 @@ python scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 -> docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md
 -> docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json
 
+python scripts/build_challenge_cup_hard_evidence_closure_board.py
+-> docs/challenge_cup/reproducibility/hard_evidence_closure_board.md
+-> docs/challenge_cup/reproducibility/hard_evidence_closure_board.json
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -101,7 +105,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (33/33 gates)
+-> Status: pass (34/34 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
