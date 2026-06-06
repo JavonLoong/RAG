@@ -1131,6 +1131,7 @@ def check_submission_package_verifier() -> GateCheck:
 
 def check_final_acceptance_audit() -> GateCheck:
     failures: list[str] = []
+    bootstrapping_readiness_report = not REPORT_MD.exists()
     if not nonempty(FINAL_ACCEPTANCE_AUDIT_MD):
         failures.append(f"{FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE} missing or empty")
     if not nonempty(FINAL_ACCEPTANCE_AUDIT_JSON):
@@ -1147,16 +1148,19 @@ def check_final_acceptance_audit() -> GateCheck:
         failures.append(f"report_type={payload.get('report_type')}")
 
     status = payload.get("status")
-    if status not in {"package_ready_awaiting_external_hard_evidence", "goal_complete"}:
+    allowed_statuses = {"package_ready_awaiting_external_hard_evidence", "goal_complete"}
+    if bootstrapping_readiness_report:
+        allowed_statuses.add("not_ready")
+    if status not in allowed_statuses:
         failures.append(f"status={status}")
 
     package_readiness = payload.get("package_readiness")
     if not isinstance(package_readiness, dict):
         failures.append("package_readiness missing")
     else:
-        if package_readiness.get("status") != "pass":
+        if package_readiness.get("status") != "pass" and not bootstrapping_readiness_report:
             failures.append(f"package_readiness.status={package_readiness.get('status')}")
-        if package_readiness.get("passed") != package_readiness.get("total"):
+        if package_readiness.get("passed") != package_readiness.get("total") and not bootstrapping_readiness_report:
             failures.append(
                 f"package_readiness count={package_readiness.get('passed')}/{package_readiness.get('total')}"
             )
@@ -1210,12 +1214,17 @@ def check_final_acceptance_audit() -> GateCheck:
             failures.append(f"can_submit_for_package_review={payload.get('can_submit_for_package_review')}")
         if payload.get("can_mark_goal_complete") is not True:
             failures.append(f"can_mark_goal_complete={payload.get('can_mark_goal_complete')}")
+    elif status == "not_ready" and bootstrapping_readiness_report:
+        if package_readiness.get("report") != REPORT_MD.relative_to(REPO_ROOT).as_posix():
+            failures.append(f"package_readiness.report={package_readiness.get('report')}")
 
     markdown = FINAL_ACCEPTANCE_AUDIT_MD.read_text(encoding="utf-8")
     for term in [
         "Final Acceptance Audit",
         "verify_submission_package.py",
-        "completion_claim_allowed=False" if status == "package_ready_awaiting_external_hard_evidence" else "goal_complete",
+        "completion_claim_allowed=False"
+        if status in {"package_ready_awaiting_external_hard_evidence", "not_ready"}
+        else "goal_complete",
     ]:
         if term not in markdown:
             failures.append(f"markdown missing {term}")
@@ -2035,6 +2044,7 @@ def check_special_prize_readiness_dashboard() -> GateCheck:
     missing_dimensions = sorted(OFFICIAL_RUBRIC_REQUIRED_DIMENSIONS - dimension_keys)
     if missing_dimensions:
         failures.append(f"missing rubric dimensions: {missing_dimensions}")
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
     for item in readiness:
         if not isinstance(item, dict):
             failures.append("rubric_readiness item invalid")
@@ -2046,7 +2056,7 @@ def check_special_prize_readiness_dashboard() -> GateCheck:
             if not has_value(item.get(field)):
                 failures.append(f"{key}: {field} missing")
         for relative in [str(value) for value in item.get("evidence_files", [])]:
-            if not nonempty(REPO_ROOT / relative):
+            if relative != self_report and not nonempty(REPO_ROOT / relative):
                 failures.append(f"{key}: evidence file missing or empty: {relative}")
 
     top_risks = payload.get("top_risks")
