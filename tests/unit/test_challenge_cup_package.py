@@ -1065,6 +1065,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert official_rubric["special_prize_policy"]["latest_public_result_source_id"] == "tsinghua_44th_2026"
     assert official_rubric["special_prize_policy"]["may_be_vacant"] is True
     assert official_rubric["integrity_rules"]["no_award_guarantee"] is True
+    source_lock = official_rubric["official_source_lock"]
+    assert source_lock["current_as_of"] == "2026-06-06"
+    latest_public_result = source_lock["latest_public_result"]
+    assert latest_public_result["source_id"] == "tsinghua_44th_2026"
+    assert latest_public_result["source_url"] == "https://www.tsinghua.edu.cn/info/1177/125861.htm"
+    assert latest_public_result["published_date"] == "2026-04-29"
+    assert latest_public_result["final_defense_date"] == "2026-04-25"
+    assert latest_public_result["registration_count"] == 337
+    assert latest_public_result["school_finalist_counts"] == {"undergraduate": 173, "graduate": 9}
+    assert latest_public_result["main_track_award_counts"]["special_prize"] == 7
+    assert latest_public_result["main_track_award_counts"]["total"] == 114
+    assert source_lock["recency_policy"]["must_recheck_before_final_submission"] is True
+    assert source_lock["recency_policy"]["no_award_guarantee"] is True
     special_prize_dashboard = json.loads(
         (PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.json").read_text(encoding="utf-8")
     )
@@ -1080,6 +1093,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     official_rubric_md = (PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md").read_text(encoding="utf-8")
     for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "第44届", "特等奖7项", "不承诺获奖"]:
+        assert term in official_rubric_md
+    for term in ["Official Source Lock", "2026-04-25", "2026-04-29", "337", "173", "114"]:
         assert term in official_rubric_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))

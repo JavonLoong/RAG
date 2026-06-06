@@ -2299,6 +2299,78 @@ def check_official_rubric_alignment() -> GateCheck:
     if special_prize_policy.get("may_be_vacant") is not True:
         failures.append(f"may_be_vacant={special_prize_policy.get('may_be_vacant')}")
 
+    source_lock = payload.get("official_source_lock")
+    if not isinstance(source_lock, dict):
+        failures.append("official_source_lock missing")
+        source_lock = {}
+    else:
+        if not is_iso_date(source_lock.get("current_as_of")):
+            failures.append(f"official_source_lock.current_as_of={source_lock.get('current_as_of')}")
+
+        latest = source_lock.get("latest_public_result")
+        if not isinstance(latest, dict):
+            failures.append("official_source_lock.latest_public_result missing")
+            latest = {}
+        expected_latest = {
+            "source_id": OFFICIAL_RUBRIC_LATEST_SOURCE_ID,
+            "source_url": "https://www.tsinghua.edu.cn/info/1177/125861.htm",
+            "published_date": "2026-04-29",
+            "final_defense_date": "2026-04-25",
+            "award_ceremony_date": "2026-04-26",
+            "registration_count": 337,
+            "exhibition_work_count_min": 200,
+        }
+        for key, expected in expected_latest.items():
+            if latest.get(key) != expected:
+                failures.append(f"official_source_lock.latest_public_result.{key}={latest.get(key)}")
+        finalists = latest.get("school_finalist_counts")
+        if finalists != {"undergraduate": 173, "graduate": 9}:
+            failures.append(f"official_source_lock.latest_public_result.school_finalist_counts={finalists}")
+        awards = latest.get("main_track_award_counts")
+        expected_awards = {
+            "total": 114,
+            "special_prize": 7,
+            "first_prize": 11,
+            "second_prize": 32,
+            "third_prize": 64,
+        }
+        if awards != expected_awards:
+            failures.append(f"official_source_lock.latest_public_result.main_track_award_counts={awards}")
+        anchor_terms = latest.get("anchor_terms")
+        if not isinstance(anchor_terms, list) or len(anchor_terms) < 5:
+            failures.append("official_source_lock.latest_public_result.anchor_terms below 5")
+
+        dimension_lock = source_lock.get("rubric_dimension_lock")
+        if not isinstance(dimension_lock, dict):
+            failures.append("official_source_lock.rubric_dimension_lock missing")
+            dimension_lock = {}
+        dimension_source_ids = {str(item) for item in dimension_lock.get("source_ids", [])}
+        if not {"tsinghua_37th_2019", "tsinghua_39th_2021"}.issubset(dimension_source_ids):
+            failures.append(f"official_source_lock.rubric_dimension_lock.source_ids={sorted(dimension_source_ids)}")
+        locked_dimensions = [str(item) for item in dimension_lock.get("required_dimensions", [])]
+        expected_locked_dimensions = [
+            "academic_or_practical_value",
+            "innovation",
+            "completion",
+            "defense_performance",
+        ]
+        if locked_dimensions != expected_locked_dimensions:
+            failures.append(f"official_source_lock.rubric_dimension_lock.required_dimensions={locked_dimensions}")
+
+        recency_policy = source_lock.get("recency_policy")
+        if not isinstance(recency_policy, dict):
+            failures.append("official_source_lock.recency_policy missing")
+            recency_policy = {}
+        if recency_policy.get("must_recheck_before_final_submission") is not True:
+            failures.append(
+                "official_source_lock.recency_policy.must_recheck_before_final_submission="
+                f"{recency_policy.get('must_recheck_before_final_submission')}"
+            )
+        if recency_policy.get("no_award_guarantee") is not True:
+            failures.append(
+                f"official_source_lock.recency_policy.no_award_guarantee={recency_policy.get('no_award_guarantee')}"
+            )
+
     integrity_rules = payload.get("integrity_rules", {})
     if not isinstance(integrity_rules, dict):
         failures.append("integrity_rules missing")

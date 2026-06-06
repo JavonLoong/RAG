@@ -287,13 +287,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
-      "bytes": 7834,
-      "sha256": "5841a0ceb2969f2e2321ee2916de657852221d178e456c7d3610f5258287e689"
+      "bytes": 9609,
+      "sha256": "2443c88673cb5fbd5e5d4439c128955165e59768d4c4c80b0ba5afd53f4f85ed"
     },
     {
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
-      "bytes": 5462,
-      "sha256": "deca42d702e929e5eb1d28565cbb4f00eb2f6689eefceccb09cbaee06bb4febd"
+      "bytes": 6426,
+      "sha256": "0362261b457a00451878cbcba8cae4a571401247effa16becb35e900dddf10ea"
     },
     {
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",

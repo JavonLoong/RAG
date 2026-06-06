@@ -308,6 +308,139 @@ def test_official_rubric_alignment_gate_rejects_missing_sources_and_evidence(mon
     assert "tsinghua_44th_2026" in check.detail
     assert "academic_or_practical_value" in check.detail
     assert "no_award_guarantee" in check.detail
+    assert "official_source_lock" in check.detail
+
+
+def test_official_rubric_alignment_gate_rejects_stale_or_incomplete_source_lock(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    rubric_json = tmp_path / "official_rubric_alignment.json"
+    rubric_md = tmp_path / "official_rubric_alignment.md"
+    source_paths = [
+        "docs/challenge_cup/00_项目一页纸.md",
+        "docs/challenge_cup/02_技术白皮书.md",
+        "docs/challenge_cup/package_manifest.json",
+        "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
+    ]
+    for relative in source_paths:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("evidence", encoding="utf-8")
+    payload = {
+        "report_type": "challenge_cup_official_rubric_alignment",
+        "official_source_count": 5,
+        "official_sources": [
+            {
+                "source_id": source_id,
+                "title": source_id,
+                "url": f"https://www.tsinghua.edu.cn/{source_id}",
+                "checked_at": "2026-06-06",
+                "claims": ["claim"],
+            }
+            for source_id in [
+                "tsinghua_44th_2026",
+                "tsinghua_43rd_2025",
+                "tsinghua_39th_2021",
+                "tsinghua_37th_2019",
+                "tsinghua_rules_pdf_2017",
+            ]
+        ],
+        "dimensions": {
+            "academic_or_practical_value": {
+                "official_source_ids": ["tsinghua_37th_2019"],
+                "evidence_files": [source_paths[0]],
+            },
+            "innovation": {
+                "official_source_ids": ["tsinghua_39th_2021"],
+                "evidence_files": [source_paths[1]],
+            },
+            "completion": {
+                "official_source_ids": ["tsinghua_39th_2021"],
+                "evidence_files": [source_paths[2]],
+            },
+            "defense_performance": {
+                "official_source_ids": ["tsinghua_37th_2019"],
+                "evidence_files": [source_paths[3]],
+            },
+        },
+        "special_prize_policy": {
+            "max_special_prize_count": 7,
+            "may_be_vacant": True,
+            "latest_public_result_source_id": "tsinghua_44th_2026",
+        },
+        "integrity_rules": {"no_award_guarantee": True},
+        "official_source_lock": {
+            "current_as_of": "2026-06-06",
+            "latest_public_result": {
+                "source_id": "tsinghua_44th_2026",
+                "source_url": "https://www.tsinghua.edu.cn/info/1177/125861.htm",
+                "published_date": "2026-04-29",
+                "final_defense_date": "2026-04-24",
+                "award_ceremony_date": "2026-04-26",
+                "registration_count": 336,
+                "school_finalist_counts": {"undergraduate": 173, "graduate": 9},
+                "main_track_award_counts": {
+                    "total": 114,
+                    "special_prize": 6,
+                    "first_prize": 11,
+                    "second_prize": 32,
+                    "third_prize": 64,
+                },
+                "exhibition_work_count_min": 199,
+            },
+            "rubric_dimension_lock": {
+                "source_ids": ["tsinghua_37th_2019"],
+                "required_dimensions": ["academic_or_practical_value"],
+            },
+            "recency_policy": {
+                "must_recheck_before_final_submission": False,
+                "no_award_guarantee": False,
+            },
+        },
+    }
+    rubric_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    rubric_md.write_text(
+        "官方评审口径对齐表\n"
+        "学术/实用价值\n创新性\n作品完成度\n现场答辩\n第44届\n特等奖7项\n不承诺获奖\n",
+        encoding="utf-8",
+    )
+    manifest = tmp_path / "package_manifest.json"
+    manifest.write_text(
+        json.dumps({"evidence_files": module.OFFICIAL_RUBRIC_REQUIRED_PATHS}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    hashes = tmp_path / "evidence_hashes.json"
+    hashes.write_text(
+        json.dumps({"files": [{"path": path} for path in module.OFFICIAL_RUBRIC_REQUIRED_PATHS]}),
+        encoding="utf-8",
+    )
+    archive_manifest = tmp_path / "archive_manifest.json"
+    archive_manifest.write_text(
+        json.dumps({"included_files": module.OFFICIAL_RUBRIC_REQUIRED_PATHS}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(
+        module,
+        "REPORT_MD",
+        tmp_path / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md",
+    )
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_JSON", rubric_json)
+    monkeypatch.setattr(module, "OFFICIAL_RUBRIC_ALIGNMENT_MD", rubric_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_official_rubric_alignment()
+
+    assert not check.passed
+    assert "final_defense_date" in check.detail
+    assert "registration_count" in check.detail
+    assert "special_prize" in check.detail
+    assert "exhibition_work_count_min" in check.detail
+    assert "rubric_dimension_lock" in check.detail
+    assert "must_recheck_before_final_submission" in check.detail
 
 
 def test_special_prize_dashboard_gate_rejects_missing_non_self_report_evidence(monkeypatch, tmp_path) -> None:

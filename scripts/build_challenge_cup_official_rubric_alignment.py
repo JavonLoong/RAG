@@ -11,6 +11,52 @@ OUTPUT_JSON = OUTPUT_DIR / "official_rubric_alignment.json"
 OUTPUT_MD = OUTPUT_DIR / "official_rubric_alignment.md"
 
 REPORT_TYPE = "challenge_cup_official_rubric_alignment"
+OFFICIAL_SOURCE_LOCK = {
+    "current_as_of": "2026-06-06",
+    "verification_method": "manual_web_check_against_official_tsinghua_pages",
+    "latest_public_result": {
+        "source_id": "tsinghua_44th_2026",
+        "source_url": "https://www.tsinghua.edu.cn/info/1177/125861.htm",
+        "published_date": "2026-04-29",
+        "final_defense_date": "2026-04-25",
+        "award_ceremony_date": "2026-04-26",
+        "registration_count": 337,
+        "school_finalist_counts": {"undergraduate": 173, "graduate": 9},
+        "main_track_award_counts": {
+            "total": 114,
+            "special_prize": 7,
+            "first_prize": 11,
+            "second_prize": 32,
+            "third_prize": 64,
+        },
+        "exhibition_work_count_min": 200,
+        "anchor_terms": [
+            "终审答辩于2026年4月25日开展",
+            "报名作品337件",
+            "173件本科生作品和9件研究生作品进入校级终审",
+            "主赛道共产生114项获奖作品",
+            "特等奖7项",
+            "200余件学生科创作品参展",
+        ],
+    },
+    "rubric_dimension_lock": {
+        "source_ids": ["tsinghua_37th_2019", "tsinghua_39th_2021"],
+        "required_dimensions": [
+            "academic_or_practical_value",
+            "innovation",
+            "completion",
+            "defense_performance",
+        ],
+        "wall_poster_questioning_supported_by": "tsinghua_39th_2021",
+        "academic_norms_supported_by": "tsinghua_37th_2019",
+    },
+    "recency_policy": {
+        "must_recheck_before_final_submission": True,
+        "recheck_trigger": "new Tsinghua Challenge Cup official notice or result page appears",
+        "no_award_guarantee": True,
+        "no_fake_external_validation": True,
+    },
+}
 
 OFFICIAL_SOURCES = [
     {
@@ -146,6 +192,7 @@ def build_payload() -> dict[str, Any]:
         "checked_at": "2026-06-06",
         "official_source_count": len(OFFICIAL_SOURCES),
         "official_sources": OFFICIAL_SOURCES,
+        "official_source_lock": OFFICIAL_SOURCE_LOCK,
         "dimensions": DIMENSIONS,
         "special_prize_policy": {
             "max_special_prize_count": 7,
@@ -188,6 +235,37 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         "## 官方来源",
         "",
     ]
+    source_lock = payload["official_source_lock"]
+    latest = source_lock["latest_public_result"]
+    lines.extend(
+        [
+            "## Official Source Lock",
+            "",
+            f"- current_as_of: `{source_lock['current_as_of']}`",
+            f"- latest_public_result: `{latest['source_id']}`",
+            f"- source_url: {latest['source_url']}",
+            f"- published_date: `{latest['published_date']}`",
+            f"- final_defense_date: `{latest['final_defense_date']}`",
+            f"- award_ceremony_date: `{latest['award_ceremony_date']}`",
+            f"- registration_count: `{latest['registration_count']}`",
+            f"- school_finalists: undergraduate `{latest['school_finalist_counts']['undergraduate']}`, graduate `{latest['school_finalist_counts']['graduate']}`",
+            f"- main_track_awards: total `{latest['main_track_award_counts']['total']}`, special_prize `{latest['main_track_award_counts']['special_prize']}`, first `{latest['main_track_award_counts']['first_prize']}`, second `{latest['main_track_award_counts']['second_prize']}`, third `{latest['main_track_award_counts']['third_prize']}`",
+            f"- exhibition_work_count_min: `{latest['exhibition_work_count_min']}`",
+            f"- recency_policy.must_recheck_before_final_submission: `{source_lock['recency_policy']['must_recheck_before_final_submission']}`",
+            "",
+            "Anchor terms:",
+        ]
+    )
+    lines.extend(f"- {term}" for term in latest["anchor_terms"])
+    lines.extend(
+        [
+            "",
+            "Rubric dimension lock:",
+            f"- source_ids: {', '.join(source_lock['rubric_dimension_lock']['source_ids'])}",
+            f"- required_dimensions: {', '.join(source_lock['rubric_dimension_lock']['required_dimensions'])}",
+            "",
+        ]
+    )
     for source in payload["official_sources"]:
         lines.extend(
             [

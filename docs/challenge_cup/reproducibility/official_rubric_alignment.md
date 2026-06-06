@@ -9,6 +9,32 @@
 
 ## 官方来源
 
+## Official Source Lock
+
+- current_as_of: `2026-06-06`
+- latest_public_result: `tsinghua_44th_2026`
+- source_url: https://www.tsinghua.edu.cn/info/1177/125861.htm
+- published_date: `2026-04-29`
+- final_defense_date: `2026-04-25`
+- award_ceremony_date: `2026-04-26`
+- registration_count: `337`
+- school_finalists: undergraduate `173`, graduate `9`
+- main_track_awards: total `114`, special_prize `7`, first `11`, second `32`, third `64`
+- exhibition_work_count_min: `200`
+- recency_policy.must_recheck_before_final_submission: `True`
+
+Anchor terms:
+- 终审答辩于2026年4月25日开展
+- 报名作品337件
+- 173件本科生作品和9件研究生作品进入校级终审
+- 主赛道共产生114项获奖作品
+- 特等奖7项
+- 200余件学生科创作品参展
+
+Rubric dimension lock:
+- source_ids: tsinghua_37th_2019, tsinghua_39th_2021
+- required_dimensions: academic_or_practical_value, innovation, completion, defense_performance
+
 ### tsinghua_44th_2026
 - Title: 清华大学第44届“挑战杯”学生课外学术科技作品竞赛颁奖仪式暨作品展开幕式举行
 - URL: https://www.tsinghua.edu.cn/info/1177/125861.htm
