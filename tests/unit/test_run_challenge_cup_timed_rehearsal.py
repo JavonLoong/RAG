@@ -103,7 +103,7 @@ def test_rejects_wrong_killer_question_count(tmp_path: Path) -> None:
     assert not (tmp_path / "docs").exists()
 
 
-def test_rejects_over_limit_timing_before_writing_observer_note(tmp_path: Path) -> None:
+def test_archives_over_limit_timing_without_counting_it_complete(tmp_path: Path) -> None:
     module = load_runner_module()
     module.configure_paths(tmp_path)
 
@@ -112,5 +112,24 @@ def test_rejects_over_limit_timing_before_writing_observer_note(tmp_path: Path) 
     args[opening_index + 1] = "91"
     exit_code = module.main(args)
 
-    assert exit_code == 2
-    assert not (tmp_path / "docs").exists()
+    assert exit_code == 0
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    copied_note = evidence_dir / "rehearsal-1.txt"
+    metadata_path = evidence_dir / "rehearsal-1.json"
+    note = copied_note.read_text(encoding="utf-8")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert "opening_actual_seconds: 91" in note
+    assert metadata["opening_actual_seconds"] == 91
+    assert metadata["timing_acceptance_pass"] is False
+    assert "opening_actual_seconds=91 exceeds 90" in metadata["timing_acceptance_failures"]
+
+    ledger = json.loads(
+        (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rehearsal = ledger["categories"]["timed_rehearsal"]
+    assert rehearsal["collected_count"] == 0
+    assert rehearsal["evidence_records"] == []
+    assert rehearsal["rejected_metadata_records"][0]["metadata_path"].endswith("rehearsal-1.json")
+    assert "opening_actual_seconds=91 exceeds 90" in rehearsal["rejected_metadata_records"][0]["reasons"]

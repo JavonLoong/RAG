@@ -5138,25 +5138,69 @@ def validate_timed_rehearsal_metadata(relative: str, payload: dict[str, Any], ca
     return failures
 
 
-def validate_hard_evidence_metadata(category_key: str, files: list[str], category: dict[str, Any]) -> list[str]:
+def validate_hard_evidence_metadata_file(category_key: str, relative: str, category: dict[str, Any]) -> list[str]:
+    path = REPO_ROOT / relative
+    try:
+        payload = load_json(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"{relative}: invalid metadata json: {exc}"]
+    if category_key == "expert_feedback":
+        return validate_expert_feedback_metadata(relative, payload, category)
+    if category_key == "timed_rehearsal":
+        return validate_timed_rehearsal_metadata(relative, payload, category)
+    return []
+
+
+def validate_hard_evidence_metadata_accounting(
+    category_key: str,
+    metadata_files: list[str],
+    evidence_records: list[Any],
+    rejected_metadata_records: list[Any],
+    category: dict[str, Any],
+) -> list[str]:
     failures: list[str] = []
-    if not files:
-        return failures
-    metadata_files = [relative for relative in files if relative.lower().endswith(".json")]
-    if not metadata_files:
+    metadata_file_set = set(metadata_files)
+    accepted_metadata_paths: set[str] = set()
+    rejected_metadata_paths: set[str] = set()
+
+    if category.get("raw_file_count", 0) and not metadata_files:
         failures.append(f"{category_key}: metadata json missing")
         return failures
-    for relative in metadata_files:
-        path = REPO_ROOT / relative
-        try:
-            payload = load_json(path)
-        except (OSError, json.JSONDecodeError) as exc:
-            failures.append(f"{relative}: invalid metadata json: {exc}")
+
+    for index, record in enumerate(evidence_records, start=1):
+        if not isinstance(record, dict):
             continue
-        if category_key == "expert_feedback":
-            failures.extend(validate_expert_feedback_metadata(relative, payload, category))
-        elif category_key == "timed_rehearsal":
-            failures.extend(validate_timed_rehearsal_metadata(relative, payload, category))
+        metadata_path = str(record.get("metadata_path", ""))
+        if metadata_path not in metadata_file_set:
+            continue
+        accepted_metadata_paths.add(metadata_path)
+        failures.extend(validate_hard_evidence_metadata_file(category_key, metadata_path, category))
+
+    for index, record in enumerate(rejected_metadata_records, start=1):
+        if not isinstance(record, dict):
+            failures.append(f"{category_key}.rejected_metadata_records[{index}] invalid")
+            continue
+        metadata_path = str(record.get("metadata_path", ""))
+        if metadata_path not in metadata_file_set:
+            failures.append(f"{category_key}.rejected_metadata_records[{index}].metadata_path not in metadata_files")
+            continue
+        if metadata_path in accepted_metadata_paths:
+            failures.append(f"{category_key}.rejected_metadata_records[{index}].metadata_path also accepted")
+        rejected_metadata_paths.add(metadata_path)
+
+        reasons = record.get("reasons")
+        if not isinstance(reasons, list) or not any(isinstance(reason, str) and reason.strip() for reason in reasons):
+            failures.append(f"{category_key}.rejected_metadata_records[{index}].reasons missing")
+
+        current_rejection_basis = validate_hard_evidence_metadata_file(category_key, metadata_path, category)
+        if not current_rejection_basis:
+            failures.append(f"{category_key}.rejected_metadata_records[{index}] has no current rejection basis")
+
+    unaccounted = sorted(metadata_file_set - accepted_metadata_paths - rejected_metadata_paths)
+    if unaccounted:
+        failures.append(
+            f"{category_key}.metadata_files not accounted by evidence_records or rejected_metadata_records: {unaccounted}"
+        )
     return failures
 
 
@@ -5201,6 +5245,7 @@ def check_hard_evidence_ledger() -> GateCheck:
         metadata_files = [str(item) for item in category.get("metadata_files", [])]
         source_files = [str(item) for item in category.get("source_files", [])]
         evidence_records = category.get("evidence_records", [])
+        rejected_metadata_records = category.get("rejected_metadata_records", [])
         raw_evidence_files.extend(files)
         collected_count = int(category.get("collected_count") or 0)
         raw_file_count = int(category.get("raw_file_count") or 0)
@@ -5216,6 +5261,7 @@ def check_hard_evidence_ledger() -> GateCheck:
             "metadata_files",
             "source_files",
             "evidence_records",
+            "rejected_metadata_records",
         ):
             if schema_field not in category:
                 failures.append(f"{key}.{schema_field} missing")
@@ -5234,6 +5280,9 @@ def check_hard_evidence_ledger() -> GateCheck:
         if not isinstance(evidence_records, list):
             failures.append(f"{key}.evidence_records invalid")
             evidence_records = []
+        if not isinstance(rejected_metadata_records, list):
+            failures.append(f"{key}.rejected_metadata_records invalid")
+            rejected_metadata_records = []
         if evidence_record_count != len(evidence_records):
             failures.append(f"{key}.evidence_record_count mismatch")
         if collected_count != evidence_record_count:
@@ -5264,7 +5313,13 @@ def check_hard_evidence_ledger() -> GateCheck:
             failures.append(f"{key}.required_metadata_fields missing real_feedback_confirmed")
         if key == "timed_rehearsal" and "real_rehearsal_confirmed" not in required_metadata_fields:
             failures.append(f"{key}.required_metadata_fields missing real_rehearsal_confirmed")
-        metadata_failures = validate_hard_evidence_metadata(key, files, category)
+        metadata_failures = validate_hard_evidence_metadata_accounting(
+            key,
+            metadata_files,
+            evidence_records,
+            rejected_metadata_records,
+            category,
+        )
         if metadata_failures:
             category_satisfied = False
             failures.extend(metadata_failures)

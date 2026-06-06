@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import subprocess
 import sys
@@ -2272,6 +2273,10 @@ def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dic
         "categories": {
             "expert_feedback": {
                 "required_min_count": 1,
+                "raw_file_count": 1,
+                "metadata_file_count": 1,
+                "source_file_count": 0,
+                "evidence_record_count": 1,
                 "collected_count": 1,
                 "accepted_evidence_types": ["signed_feedback_form", "email_reply", "meeting_minutes", "chat_screenshot"],
                 "required_metadata_fields": [
@@ -2284,9 +2289,17 @@ def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dic
                     "real_feedback_confirmed",
                 ],
                 "evidence_files": [expert_file],
+                "metadata_files": [expert_file],
+                "source_files": [],
+                "evidence_records": [{"metadata_path": expert_file, "source_path": expert_file}],
+                "rejected_metadata_records": [],
             },
             "timed_rehearsal": {
                 "required_min_count": 1,
+                "raw_file_count": 1,
+                "metadata_file_count": 1,
+                "source_file_count": 0,
+                "evidence_record_count": 1,
                 "collected_count": 1,
                 "accepted_evidence_types": ["timer_screenshot", "screen_recording", "observer_note", "missed_question_list"],
                 "required_metadata_fields": [
@@ -2300,10 +2313,18 @@ def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dic
                     "real_rehearsal_confirmed",
                 ],
                 "evidence_files": [rehearsal_file],
+                "metadata_files": [rehearsal_file],
+                "source_files": [],
+                "evidence_records": [{"metadata_path": rehearsal_file, "source_path": rehearsal_file}],
+                "rejected_metadata_records": [],
             },
         },
         "no_fake_evidence_rules": ["\u4e0d\u4f2a\u9020\u5916\u90e8\u610f\u89c1"],
     }
+
+
+def hard_evidence_test_source_sha256(payload: dict) -> str:
+    return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
 def test_hard_evidence_ledger_gate_rejects_expert_feedback_without_required_metadata(monkeypatch, tmp_path) -> None:
@@ -2537,6 +2558,136 @@ def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_qu
     assert not check.passed
     assert "opening_actual_seconds" in check.detail
     assert "killer_question_results" in check.detail
+
+
+def test_hard_evidence_ledger_gate_allows_rejected_over_limit_rehearsal_metadata(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    expert_metadata = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json"
+    expert_source = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"
+    rehearsal_metadata = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json"
+    rehearsal_source = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
+    expert_source_payload = {"source": "real expert feedback attachment"}
+    rehearsal_source_payload = {"source": "real timed rehearsal timer note"}
+    expert_hash = hard_evidence_test_source_sha256(expert_source_payload)
+    rehearsal_hash = hard_evidence_test_source_sha256(rehearsal_source_payload)
+    raw_files = {
+        expert_metadata: {
+            "evidence_type": "email_reply",
+            "reviewer_identity": "reviewer-a",
+            "role_or_org": "advisor",
+            "review_date": "2026-06-06",
+            "feedback_source_path": expert_source,
+            "source_sha256": expert_hash,
+            "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+            "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            "real_feedback_confirmed": True,
+        },
+        expert_source: expert_source_payload,
+        rehearsal_metadata: {
+            "evidence_type": "observer_note",
+            "rehearsal_date": "2026-06-06",
+            "observer": "observer-a",
+            "opening_actual_seconds": 96,
+            "demo_actual_seconds": 170,
+            "offline_fallback_actual_seconds": 18,
+            "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+            "recording_or_timer_source_path": rehearsal_source,
+            "source_sha256": rehearsal_hash,
+            "real_rehearsal_confirmed": True,
+        },
+        rehearsal_source: rehearsal_source_payload,
+    }
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        {
+            "report_type": "challenge_cup_hard_evidence_ledger",
+            "status": "awaiting_real_external_feedback_and_timed_rehearsal",
+            "completion_claim_allowed": False,
+            "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+            "categories": {
+                "expert_feedback": {
+                    "category": "expert_feedback",
+                    "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback",
+                    "required_min_count": 1,
+                    "raw_file_count": 2,
+                    "metadata_file_count": 1,
+                    "source_file_count": 1,
+                    "evidence_record_count": 1,
+                    "collected_count": 1,
+                    "accepted_evidence_types": [
+                        "signed_feedback_form",
+                        "email_reply",
+                        "meeting_minutes",
+                        "chat_screenshot",
+                    ],
+                    "required_metadata_fields": [
+                        "reviewer_identity",
+                        "role_or_org",
+                        "review_date",
+                        "feedback_source_path",
+                        "source_sha256",
+                        "review_dimensions",
+                        "remediation_record",
+                        "real_feedback_confirmed",
+                    ],
+                    "evidence_files": [expert_metadata, expert_source],
+                    "metadata_files": [expert_metadata],
+                    "source_files": [expert_source],
+                    "evidence_records": [{"metadata_path": expert_metadata, "source_path": expert_source}],
+                    "rejected_metadata_records": [],
+                },
+                "timed_rehearsal": {
+                    "category": "timed_rehearsal",
+                    "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal",
+                    "required_min_count": 1,
+                    "raw_file_count": 2,
+                    "metadata_file_count": 1,
+                    "source_file_count": 1,
+                    "evidence_record_count": 0,
+                    "collected_count": 0,
+                    "accepted_evidence_types": [
+                        "timer_screenshot",
+                        "screen_recording",
+                        "observer_note",
+                        "missed_question_list",
+                    ],
+                    "required_metadata_fields": [
+                        "rehearsal_date",
+                        "observer",
+                        "opening_actual_seconds",
+                        "demo_actual_seconds",
+                        "offline_fallback_actual_seconds",
+                        "killer_question_results",
+                        "recording_or_timer_source_path",
+                        "source_sha256",
+                        "real_rehearsal_confirmed",
+                    ],
+                    "evidence_files": [rehearsal_metadata, rehearsal_source],
+                    "metadata_files": [rehearsal_metadata],
+                    "source_files": [rehearsal_source],
+                    "evidence_records": [],
+                    "rejected_metadata_records": [
+                        {
+                            "metadata_path": rehearsal_metadata,
+                            "source_path": rehearsal_source,
+                            "reasons": ["opening_actual_seconds=96 exceeds 90"],
+                        }
+                    ],
+                },
+            },
+            "no_fake_evidence_rules": ["不伪造外部意见"],
+        },
+        raw_files,
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert check.passed, check.detail
 
 
 def test_hard_evidence_ledger_gate_rejects_metadata_without_real_source_attachment(monkeypatch, tmp_path) -> None:

@@ -327,8 +327,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
-      "bytes": 3115,
-      "sha256": "ff2bb96d0d3f32acb25c216e2bce84a1a5b31e1eaedc177ab5b1eb7d1c7f4b45"
+      "bytes": 3195,
+      "sha256": "dc337c7b57ceba358056ac08946e15f64bee1b5005e01bb2cefcdf81304b4d34"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_ledger.md",

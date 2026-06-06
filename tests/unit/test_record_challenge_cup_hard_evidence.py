@@ -560,7 +560,7 @@ def test_refuses_timed_rehearsal_with_future_rehearsal_date(tmp_path: Path) -> N
     assert not (tmp_path / "docs").exists()
 
 
-def test_refuses_timed_rehearsal_when_any_timing_exceeds_defense_limit(tmp_path: Path) -> None:
+def test_records_over_limit_timed_rehearsal_but_ledger_does_not_count_it_complete(tmp_path: Path) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)
     source = tmp_path / "incoming" / "timer_note.txt"
@@ -596,5 +596,17 @@ def test_refuses_timed_rehearsal_when_any_timing_exceeds_defense_limit(tmp_path:
         ]
     )
 
-    assert exit_code == 2
-    assert not (tmp_path / "docs").exists()
+    assert exit_code == 0
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    metadata = json.loads((evidence_dir / "rehearsal-1.json").read_text(encoding="utf-8"))
+    assert metadata["timing_acceptance_pass"] is False
+    assert "opening_actual_seconds=91 exceeds 90" in metadata["timing_acceptance_failures"]
+    ledger = json.loads(
+        (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rehearsal = ledger["categories"]["timed_rehearsal"]
+    assert rehearsal["collected_count"] == 0
+    assert rehearsal["evidence_records"] == []
+    assert "opening_actual_seconds=91 exceeds 90" in rehearsal["rejected_metadata_records"][0]["reasons"]

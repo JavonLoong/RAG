@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -378,7 +379,7 @@ def test_refuses_timed_rehearsal_preflight_with_json_source(tmp_path: Path) -> N
     assert not hard_evidence_dir(tmp_path).exists()
 
 
-def test_refuses_timed_rehearsal_preflight_with_over_limit_timing(tmp_path: Path) -> None:
+def test_preflights_over_limit_timed_rehearsal_as_archivable_but_not_accepted(tmp_path: Path, capsys) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
     source = tmp_path / "incoming" / "timer_note.txt"
@@ -414,7 +415,10 @@ def test_refuses_timed_rehearsal_preflight_with_over_limit_timing(tmp_path: Path
         ]
     )
 
-    assert exit_code == 2
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["validated_metadata"]["timing_acceptance_pass"] is False
+    assert "opening_actual_seconds=91 exceeds 90" in payload["validated_metadata"]["timing_acceptance_failures"]
     assert not hard_evidence_dir(tmp_path).exists()
 
 

@@ -113,6 +113,7 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         intake.validate_timed_rehearsal_limits(args)
     except intake.HardEvidenceInputError as exc:
         raise PreflightInputError(str(exc)) from exc
+    timing_failures = intake.timed_rehearsal_acceptance_failures(args)
     timing_fields = {
         "opening_actual_seconds": args.opening_actual_seconds,
         "demo_actual_seconds": args.demo_actual_seconds,
@@ -128,6 +129,8 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         "killer_question_count": len(args.killer_question_seconds),
         "max_killer_question_seconds": max(args.killer_question_seconds),
         "source_sha256": intake.sha256_file(source),
+        "timing_acceptance_pass": not timing_failures,
+        "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,
     }
     return payload

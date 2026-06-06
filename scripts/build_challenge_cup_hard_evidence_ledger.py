@@ -162,27 +162,46 @@ def confirmation_field(category_key: str) -> str:
     raise ValueError(f"unknown hard evidence category: {category_key}")
 
 
-def positive_int_within_limit(value: Any, limit: int) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and 0 < value <= limit
+def positive_int_failure(field: str, value: Any, limit: int | None = None) -> str | None:
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        return f"{field} must be a positive integer"
+    if limit is not None and value > limit:
+        return f"{field}={value} exceeds {limit}"
+    return None
 
 
-def timed_rehearsal_timings_within_limits(payload: dict[str, Any]) -> bool:
+def timed_rehearsal_timing_failures(payload: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
     for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
-        if not positive_int_within_limit(payload.get(field), TIMED_REHEARSAL_LIMITS[field]):
-            return False
+        failure = positive_int_failure(field, payload.get(field), TIMED_REHEARSAL_LIMITS[field])
+        if failure:
+            failures.append(failure)
 
     killer_results = payload.get("killer_question_results")
     if not isinstance(killer_results, list) or len(killer_results) != TIMED_REHEARSAL_LIMITS["killer_question_count"]:
-        return False
+        return failures + [
+            f"killer_question_results count={len(killer_results) if isinstance(killer_results, list) else 'missing'} "
+            f"expected {TIMED_REHEARSAL_LIMITS['killer_question_count']}"
+        ]
     question_limit = TIMED_REHEARSAL_LIMITS["killer_question_actual_seconds"]
     for expected_index, item in enumerate(killer_results, start=1):
         if not isinstance(item, dict):
-            return False
+            failures.append(f"killer_question_results[{expected_index}] must be an object")
+            continue
         if item.get("question_index") != expected_index:
-            return False
-        if not positive_int_within_limit(item.get("actual_seconds"), question_limit):
-            return False
-    return True
+            failures.append(f"killer_question_results[{expected_index}].question_index must be {expected_index}")
+        failure = positive_int_failure(
+            f"killer_question_results[{expected_index}].actual_seconds",
+            item.get("actual_seconds"),
+            question_limit,
+        )
+        if failure:
+            failures.append(failure)
+    return failures
+
+
+def timed_rehearsal_timings_within_limits(payload: dict[str, Any]) -> bool:
+    return not timed_rehearsal_timing_failures(payload)
 
 
 def metadata_date_not_future(category_key: str, payload: dict[str, Any]) -> bool:
@@ -193,12 +212,12 @@ def metadata_date_not_future(category_key: str, payload: dict[str, Any]) -> bool
     raise ValueError(f"unknown hard evidence category: {category_key}")
 
 
-def build_evidence_records(
+def review_metadata_records(
     category_key: str,
     paths: list[Path],
     accepted_types: list[str],
     required_fields: list[str],
-) -> list[dict[str, str]]:
+) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
     metadata_paths = [path for path in paths if path.suffix.lower() == ".json"]
     source_paths = {
         repo_path(path): path
@@ -210,38 +229,70 @@ def build_evidence_records(
     source_field = source_path_field(category_key)
     confirmed_field = confirmation_field(category_key)
     records: list[dict[str, str]] = []
+    rejected: list[dict[str, Any]] = []
     for metadata_path in metadata_paths:
+        metadata_relative = repo_path(metadata_path)
+        source_path = ""
+        reasons: list[str] = []
         payload = read_json_object(metadata_path)
         if payload is None:
+            rejected.append(
+                {
+                    "metadata_path": metadata_relative,
+                    "source_path": source_path,
+                    "reasons": ["metadata json must be a valid object"],
+                }
+            )
             continue
-        if not required.issubset(payload):
-            continue
+        missing_fields = sorted(required - set(payload))
+        if missing_fields:
+            reasons.append("missing required fields: " + ", ".join(missing_fields))
         if payload.get(confirmed_field) is not True:
-            continue
+            reasons.append(f"{confirmed_field} must be true")
         if payload.get("evidence_type") not in accepted_types:
-            continue
+            reasons.append(f"evidence_type={payload.get('evidence_type')!r} is not accepted")
         if not metadata_date_not_future(category_key, payload):
-            continue
+            date_field = "review_date" if category_key == "expert_feedback" else "rehearsal_date"
+            reasons.append(f"{date_field} must be YYYY-MM-DD and not in the future")
         if category_key == "expert_feedback" and missing_required_review_dimension_groups(
             payload.get("review_dimensions")
         ):
-            continue
-        if category_key == "timed_rehearsal" and not timed_rehearsal_timings_within_limits(payload):
-            continue
-        source_path = payload.get(source_field)
-        if not isinstance(source_path, str) or not source_path:
-            continue
-        if source_path not in source_files:
-            continue
-        if source_sha256_failure(source_paths[source_path], payload.get("source_sha256")):
+            reasons.append(
+                "missing required expert review dimension groups: "
+                + ", ".join(missing_required_review_dimension_groups(payload.get("review_dimensions")))
+            )
+        if category_key == "timed_rehearsal":
+            reasons.extend(timed_rehearsal_timing_failures(payload))
+        source_path_value = payload.get(source_field)
+        if isinstance(source_path_value, str):
+            source_path = source_path_value
+        if not isinstance(source_path_value, str) or not source_path_value:
+            reasons.append(f"{source_field} must point to a source attachment")
+        elif source_path_value not in source_files:
+            reasons.append(f"{source_field} source attachment missing or invalid")
+        else:
+            sha_failure = source_sha256_failure(source_paths[source_path_value], payload.get("source_sha256"))
+            if sha_failure:
+                reasons.append(sha_failure)
+        if reasons:
+            rejected.append(
+                {
+                    "metadata_path": metadata_relative,
+                    "source_path": source_path,
+                    "reasons": reasons,
+                }
+            )
             continue
         records.append(
             {
-                "metadata_path": repo_path(metadata_path),
-                "source_path": source_path,
+                "metadata_path": metadata_relative,
+                "source_path": source_path_value,
             }
         )
-    return sorted(records, key=lambda item: (item["metadata_path"], item["source_path"]))
+    return (
+        sorted(records, key=lambda item: (item["metadata_path"], item["source_path"])),
+        sorted(rejected, key=lambda item: (item["metadata_path"], item["source_path"])),
+    )
 
 
 def build_category(
@@ -254,7 +305,7 @@ def build_category(
     files = [repo_path(path) for path in paths]
     metadata_files = [repo_path(path) for path in paths if path.suffix.lower() == ".json"]
     source_files = [repo_path(path) for path in paths if path.suffix.lower() != ".json"]
-    records = build_evidence_records(key, paths, accepted_types, required_fields)
+    records, rejected = review_metadata_records(key, paths, accepted_types, required_fields)
     return {
         "category": key,
         "intake_dir": repo_path(directory),
@@ -270,6 +321,7 @@ def build_category(
         "metadata_files": metadata_files,
         "source_files": source_files,
         "evidence_records": records,
+        "rejected_metadata_records": rejected,
     }
 
 
@@ -465,6 +517,15 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         lines.extend(f"- `{item}`" for item in payload["raw_evidence_files"])
     else:
         lines.append(text("- \\u5c1a\\u672a\\u5f52\\u6863\\u771f\\u5b9e\\u9644\\u4ef6\\u3002"))
+    rejected_records = [
+        (key, record)
+        for key in REQUIRED_BEFORE_GOAL_COMPLETION
+        for record in categories[key].get("rejected_metadata_records", [])
+    ]
+    if rejected_records:
+        lines.extend(["", "## Rejected Metadata Records", ""])
+        for key, record in rejected_records:
+            lines.append(f"- `{key}` `{record['metadata_path']}` -> " + "; ".join(record["reasons"]))
     lines.extend(["", "## Rerun Commands", ""])
     lines.extend(f"- `{command}`" for command in payload["rerun_commands"])
     write_text(path, "\n".join(lines))

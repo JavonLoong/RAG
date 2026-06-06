@@ -213,6 +213,8 @@ def test_hard_evidence_ledger_rejects_source_sha256_mismatch(tmp_path: Path) -> 
     expert = payload["categories"]["expert_feedback"]
     assert expert["collected_count"] == 0
     assert expert["evidence_records"] == []
+    assert expert["rejected_metadata_records"][0]["metadata_path"].endswith("advisor-a.json")
+    assert any("source_sha256 mismatch" in reason for reason in expert["rejected_metadata_records"][0]["reasons"])
 
 
 def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Path) -> None:
@@ -238,6 +240,7 @@ def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Pa
                 "recording_or_timer_source_path": (
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-over-limit.txt"
                 ),
+                "source_sha256": hashlib.sha256(rehearsal_source.read_bytes()).hexdigest(),
                 "real_rehearsal_confirmed": True,
             },
             ensure_ascii=False,
@@ -254,6 +257,8 @@ def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Pa
     assert rehearsal["evidence_record_count"] == 0
     assert rehearsal["collected_count"] == 0
     assert rehearsal["evidence_records"] == []
+    assert rehearsal["rejected_metadata_records"][0]["metadata_path"].endswith("rehearsal-over-limit.json")
+    assert "opening_actual_seconds=91 exceeds 90" in rehearsal["rejected_metadata_records"][0]["reasons"]
     assert payload["completion_claim_allowed"] is False
 
 

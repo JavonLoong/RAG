@@ -36,6 +36,7 @@
       "metadata_files": [],
       "source_files": [],
       "evidence_records": [],
+      "rejected_metadata_records": [],
       "required_review_dimension_groups": [
         "practical_value",
         "innovation",
@@ -71,7 +72,8 @@
       "evidence_files": [],
       "metadata_files": [],
       "source_files": [],
-      "evidence_records": []
+      "evidence_records": [],
+      "rejected_metadata_records": []
     }
   },
   "no_fake_evidence_rules": [

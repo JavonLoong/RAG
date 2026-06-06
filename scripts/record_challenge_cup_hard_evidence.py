@@ -112,15 +112,28 @@ def validate_timed_rehearsal_limits(args: argparse.Namespace) -> None:
     }
     for field, actual in timing_fields.items():
         validate_positive_timing(field, actual)
+
+    for index, actual in enumerate(args.killer_question_seconds, start=1):
+        validate_positive_timing(f"killer_question_seconds[{index}]", actual)
+
+
+def timed_rehearsal_acceptance_failures(args: argparse.Namespace) -> list[str]:
+    failures: list[str] = []
+    timing_fields = {
+        "opening_actual_seconds": args.opening_actual_seconds,
+        "demo_actual_seconds": args.demo_actual_seconds,
+        "offline_fallback_actual_seconds": args.offline_fallback_actual_seconds,
+    }
+    for field, actual in timing_fields.items():
         limit = TIMING_LIMITS[field]
         if actual > limit:
-            raise HardEvidenceInputError(f"{field}={actual} exceeds {limit}")
+            failures.append(f"{field}={actual} exceeds {limit}")
 
     question_limit = TIMING_LIMITS["killer_question_actual_seconds"]
     for index, actual in enumerate(args.killer_question_seconds, start=1):
-        validate_positive_timing(f"killer_question_seconds[{index}]", actual)
         if actual > question_limit:
-            raise HardEvidenceInputError(f"killer_question_seconds[{index}]={actual} exceeds {question_limit}")
+            failures.append(f"killer_question_seconds[{index}]={actual} exceeds {question_limit}")
+    return failures
 
 
 def copy_source(source: Path, target_dir: Path, evidence_id: str, force: bool = False) -> Path:
@@ -186,6 +199,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
     validate_timed_rehearsal_limits(args)
     source = valid_source_attachment(args.source)
     copied_source = copy_source(source, REHEARSAL_DIR, args.id, force=args.force)
+    timing_failures = timed_rehearsal_acceptance_failures(args)
     metadata = {
         "evidence_type": args.evidence_type,
         "rehearsal_date": rehearsal_date,
@@ -199,6 +213,8 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         ],
         "recording_or_timer_source_path": repo_path(copied_source),
         "source_sha256": sha256_file(copied_source),
+        "timing_acceptance_pass": not timing_failures,
+        "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,
     }
     metadata_path = REHEARSAL_DIR / f"{args.id}.json"
