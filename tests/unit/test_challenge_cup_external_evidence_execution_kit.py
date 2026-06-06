@@ -101,6 +101,11 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         and "--confirm-real-rehearsal" in command
         for command in packets["timed_rehearsal_observer"]["recording_commands"]
     )
+    timed_powershell = "\n".join(packets["timed_rehearsal_observer"]["powershell_execution_block"])
+    assert "run_challenge_cup_timed_rehearsal.py" in timed_powershell
+    assert "$timerSource" not in timed_powershell
+    assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in timed_powershell
+    assert "record_challenge_cup_hard_evidence.py timed_rehearsal" not in timed_powershell
     command_text = "\n".join(
         [item["command"] for item in payload["operator_sequence"]]
         + [

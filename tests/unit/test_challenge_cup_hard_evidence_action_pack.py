@@ -92,6 +92,11 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     assert "rejected_metadata_records" in rehearsal_rule
     assert "collected_count" in rehearsal_rule
     assert "check_challenge_cup_goal_completion.py" in "\n".join(payload["verification_commands"])
+    timed_powershell = "\n".join(streams["timed_rehearsal"]["powershell_execution_block"])
+    assert "run_challenge_cup_timed_rehearsal.py" in timed_powershell
+    assert "$timerSource" not in timed_powershell
+    assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in timed_powershell
+    assert "record_challenge_cup_hard_evidence.py timed_rehearsal" not in timed_powershell
 
     output_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_action_pack.json"
     output_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_action_pack.md"

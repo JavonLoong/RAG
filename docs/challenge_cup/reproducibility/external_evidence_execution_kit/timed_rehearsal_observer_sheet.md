@@ -53,7 +53,6 @@
 ```powershell
 Set-Location 'D:\虚拟C盘\RAG'
 $rehearsalId = 'rehearsal-YYYYMMDD-01'
-$timerSource = 'D:\path\to\real-timer-or-observer-note.txt'
 $rehearsalDate = 'YYYY-MM-DD'
 $observer = 'real-observer-alias'
 $opening = 88
@@ -61,8 +60,6 @@ $demo = 170
 $offline = 18
 $killer = 25,25,25,25,25
 python .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
-python .\scripts\preflight_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
-python .\scripts\record_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
 ```
 
 ## Failed Rehearsal Archival Rule
