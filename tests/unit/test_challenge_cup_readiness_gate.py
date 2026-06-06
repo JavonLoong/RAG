@@ -121,6 +121,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
     assert "application value quantification" in report
+    assert "runtime reproducibility snapshot" in report
     assert "scenario demo evidence" in report
     assert "scenario walkthrough script" in report
     assert "expert feedback protocol" in report
@@ -219,12 +220,12 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "55 readiness gates", "53 readiness gates"
+                "56 readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("55 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("56 readiness gates", "53 readiness gates"),
         encoding="utf-8",
     )
 
@@ -2354,6 +2355,20 @@ def test_application_value_quantification_gate_rejects_missing_report(monkeypatc
     assert not check.passed
     assert "application_value_quantification.md" in check.detail
     assert "application_value_quantification.json" in check.detail
+
+
+def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "runtime_reproducibility_snapshot.md"
+    metadata = tmp_path / "runtime_reproducibility_snapshot.json"
+    monkeypatch.setattr(module, "RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD", markdown)
+    monkeypatch.setattr(module, "RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON", metadata)
+
+    check = module.check_runtime_reproducibility_snapshot()
+
+    assert not check.passed
+    assert "runtime_reproducibility_snapshot.md" in check.detail
+    assert "runtime_reproducibility_snapshot.json" in check.detail
 
 
 def test_expert_feedback_protocol_gate_rejects_missing_integrity_terms(monkeypatch, tmp_path) -> None:

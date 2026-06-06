@@ -65,6 +65,10 @@
 
 - Application value quantification: `docs/challenge_cup/reproducibility/application_value_quantification.md`
 - Application value quantification JSON: `docs/challenge_cup/reproducibility/application_value_quantification.json`
+## Runtime Reproducibility Snapshot
+
+- Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`
+- Runtime reproducibility snapshot JSON: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json`
 ## 官方评审口径对齐
 
 - 官方评审口径对齐表：`docs/challenge_cup/reproducibility/official_rubric_alignment.md`

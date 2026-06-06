@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 55
+CURRENT_READINESS_GATE_COUNT = 56
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -109,6 +109,12 @@ APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE = (
 APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE = (
     "docs/challenge_cup/reproducibility/application_value_quantification.json"
 )
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md"
+)
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json"
+)
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
@@ -140,6 +146,8 @@ FINAL_ACCEPTANCE_AUDIT_MD = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE
 FINAL_ACCEPTANCE_AUDIT_JSON = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE
 APPLICATION_VALUE_QUANTIFICATION_MD = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE
 APPLICATION_VALUE_QUANTIFICATION_JSON = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
@@ -195,6 +203,10 @@ APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS = [
     APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE,
     APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE,
 ]
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
+    RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
+    RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
+]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -220,6 +232,11 @@ APPLICATION_VALUE_QUANTIFICATION_BOUNDARY = (
     "This is a local application-value quantification over the fixed GT-07 browser-smoke scenario; "
     "it is not a production validation, does not replace engineers, provides no external validation "
     "claim, and does not replace real expert feedback or real timed rehearsal evidence."
+)
+RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY = (
+    "This snapshot records the local runtime used to reproduce the challenge-cup package; it is not a "
+    "production deployment certification, does not guarantee a special-prize result, and does not replace "
+    "real expert feedback or real timed rehearsal evidence."
 )
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
@@ -353,6 +370,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
+    "reproducibility/runtime_reproducibility_snapshot.md",
+    "reproducibility/runtime_reproducibility_snapshot.json",
     "reproducibility/expert_feedback_form.md",
     "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
@@ -5099,6 +5118,141 @@ def check_application_value_quantification() -> GateCheck:
     )
 
 
+def check_runtime_reproducibility_snapshot() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path
+        for path in (RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD, RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON)
+        if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("runtime reproducibility snapshot", False, f"missing or empty: {missing}")
+
+    payload = load_json(RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON)
+    markdown = RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_runtime_reproducibility_snapshot":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "runtime_snapshot_ready_no_environment_portability_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("external_validation_claimed") is not False:
+        failures.append(f"external_validation_claimed={payload.get('external_validation_claimed')}")
+    if payload.get("runtime_scope") != "local challenge-cup package reproduction environment":
+        failures.append(f"runtime_scope={payload.get('runtime_scope')}")
+
+    python_payload = payload.get("python", {})
+    if not isinstance(python_payload, dict):
+        failures.append("python section missing")
+        python_payload = {}
+    if python_payload.get("project_python") != ".venv/Scripts/python.exe":
+        failures.append(f"project_python={python_payload.get('project_python')}")
+    for field in ("current_executable", "current_version", "pytest_probe"):
+        if not has_value(python_payload.get(field)):
+            failures.append(f"python.{field} missing")
+
+    node_payload = payload.get("node", {})
+    if not isinstance(node_payload, dict):
+        failures.append("node section missing")
+        node_payload = {}
+    for field in ("node_available", "node_version", "package_json_present", "package_lock_present", "node_modules_present"):
+        if field not in node_payload:
+            failures.append(f"node.{field} missing")
+
+    browser_payload = payload.get("browser_automation", {})
+    if not isinstance(browser_payload, dict):
+        failures.append("browser_automation section missing")
+        browser_payload = {}
+    if browser_payload.get("source_report") != "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json":
+        failures.append(f"browser source_report={browser_payload.get('source_report')}")
+    for field in ("playwright_source", "frontend_url", "browser_smoke_status"):
+        if not has_value(browser_payload.get(field)):
+            failures.append(f"browser_automation.{field} missing")
+
+    commands = {str(item) for item in payload.get("verification_commands", [])}
+    for command in (
+        ".\\.venv\\Scripts\\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+        ".\\.venv\\Scripts\\python.exe scripts/check_challenge_cup_readiness.py",
+        ".\\.venv\\Scripts\\python.exe -m pytest tests/unit -q",
+    ):
+        if command not in commands:
+            failures.append(f"verification command missing: {command}")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "not a production deployment certification",
+        "does not guarantee a special-prize result",
+        "does not replace real expert feedback or real timed rehearsal evidence",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(
+        path for path in RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS if path not in output_files
+    )
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(
+        term
+        for term in (
+            "Runtime Reproducibility Snapshot",
+            "Python Runtime",
+            "Node And Browser Automation",
+            "Repository Controls",
+            "not a production deployment certification",
+        )
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(
+        path for path in RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS if path not in archived_paths
+    )
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked runtime reproducibility snapshot files: {untracked}")
+    if dirty:
+        failures.append(f"dirty runtime reproducibility snapshot files: {dirty}")
+
+    return GateCheck(
+        "runtime reproducibility snapshot",
+        not failures,
+        "local Python, Node, Playwright, verification commands, and no-portability-claim boundary verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_scenario_demo_evidence() -> GateCheck:
     if not BROWSER_SMOKE_JSON.exists():
         return GateCheck("scenario demo evidence", False, "browser_demo_smoke_report.json missing")
@@ -5222,6 +5376,7 @@ def run_gate() -> list[GateCheck]:
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_application_value_quantification(),
+        check_runtime_reproducibility_snapshot(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
         check_expert_feedback_protocol(),
@@ -5243,7 +5398,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, runtime reproducibility snapshot, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

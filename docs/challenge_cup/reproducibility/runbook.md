@@ -44,6 +44,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_application_value_quantification.py
 ```
 
+## 生成运行环境复现快照
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
+```
+
 ## 重新生成挑战杯成果包
 
 ```powershell

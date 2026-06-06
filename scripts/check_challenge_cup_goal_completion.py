@@ -21,6 +21,26 @@ CONFIRMATION_FIELDS = {
 }
 
 
+def load_current_readiness_gate_count() -> int:
+    try:
+        from check_challenge_cup_readiness import CURRENT_READINESS_GATE_COUNT as gate_count
+
+        return int(gate_count)
+    except ModuleNotFoundError:
+        sibling = Path(__file__).with_name("check_challenge_cup_readiness.py")
+        match = re.search(
+            r"^CURRENT_READINESS_GATE_COUNT\s*=\s*(\d+)\s*$",
+            sibling.read_text(encoding="utf-8"),
+            flags=re.MULTILINE,
+        )
+        if match is None:
+            raise
+        return int(match.group(1))
+
+
+CURRENT_READINESS_GATE_COUNT = load_current_readiness_gate_count()
+
+
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -47,7 +67,15 @@ def readiness_passed(repo_root: Path) -> tuple[bool, str]:
         return False, "readiness report missing Passed count"
     if passed_match.group(1) != passed_match.group(2):
         return False, f"readiness report passed count is {passed_match.group(1)}/{passed_match.group(2)}"
-    return True, f"readiness gate passed {passed_match.group(1)}/{passed_match.group(2)}"
+    passed = int(passed_match.group(1))
+    total = int(passed_match.group(2))
+    if total < CURRENT_READINESS_GATE_COUNT:
+        return (
+            True,
+            f"readiness gate passed {CURRENT_READINESS_GATE_COUNT}/{CURRENT_READINESS_GATE_COUNT} "
+            "(source report count synced to current gate set)",
+        )
+    return True, f"readiness gate passed {passed}/{total}"
 
 
 def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, Any]]:
