@@ -32,17 +32,39 @@
 - a real observer is recorded
 - opening/demo/offline fallback/killer-question seconds are measured
 - run_challenge_cup_timed_rehearsal.py records actual timing metadata
-- hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1
+- hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1 only when timing_acceptance_pass=true
 
 ## Source Integrity Guardrails
 
 - preflight and record commands calculate source_sha256 from the real source attachment
 - metadata source_sha256 must match the archived source attachment content
+- --source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file
 - do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 ## Recording Commands
 
-- `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> --scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> --venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`
-- `python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
-- `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
-- `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
+- `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id real-rehearsal-schedule-id --source path/to/real-calendar-or-observer-prep-file.txt --scheduled-date YYYY-MM-DD --observer real-observer-alias --venue-or-channel real-venue-or-channel --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`
+- `python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+- `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+- `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+
+## PowerShell execution block
+
+```powershell
+Set-Location 'D:\虚拟C盘\RAG'
+$rehearsalId = 'rehearsal-YYYYMMDD-01'
+$timerSource = 'D:\path\to\real-timer-or-observer-note.txt'
+$rehearsalDate = 'YYYY-MM-DD'
+$observer = 'real-observer-alias'
+$opening = 88
+$demo = 170
+$offline = 18
+$killer = 25,25,25,25,25
+python .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+python .\scripts\preflight_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+python .\scripts\record_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+```
+
+## Failed Rehearsal Archival Rule
+
+If any measured rehearsal segment exceeds the limit or a required killer-question timing is missing, still archive the real rehearsal evidence with timing_acceptance_pass=false; the hard evidence ledger must place the metadata in rejected_metadata_records and collected_count must not satisfy the acceptance gate.

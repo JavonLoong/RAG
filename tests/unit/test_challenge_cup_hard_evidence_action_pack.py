@@ -40,12 +40,18 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert stream["proof_to_collect"]
         assert stream["ready_packet_files"]
         assert stream["recording_commands"]
+        assert stream["powershell_execution_block"]
         assert stream["source_integrity_guardrails"]
         assert "source_sha256" in "\n".join(stream["source_integrity_guardrails"])
         assert "source attachment" in "\n".join(stream["source_integrity_guardrails"])
+        assert "must not be a JSON metadata file" in "\n".join(stream["source_integrity_guardrails"])
         assert stream["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert stream["does_not_satisfy_goal_completion"] is True
         assert category in stream["acceptance_gate"]
+        powershell = "\n".join(stream["powershell_execution_block"])
+        assert "Set-Location" in powershell
+        assert "<" not in powershell
+        assert ">" not in powershell
 
     assert "record_challenge_cup_expert_outreach.py" in "\n".join(
         streams["expert_feedback"]["recording_commands"]
@@ -78,17 +84,12 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     )
     assert "2026-06-06" not in command_text
     assert "20260606" not in command_text
-    for placeholder in [
-        "<real-outreach-id>",
-        "<real-sent-date-yyyy-mm-dd>",
-        "<real-followup-due-date-yyyy-mm-dd>",
-        "<real-review-date-yyyy-mm-dd>",
-        "<real-rehearsal-schedule-id>",
-        "<real-scheduled-date-yyyy-mm-dd>",
-        "<real-rehearsal-id>",
-        "<real-rehearsal-date-yyyy-mm-dd>",
-    ]:
-        assert placeholder in command_text
+    assert "<" not in command_text
+    assert ">" not in command_text
+    rehearsal_rule = streams["timed_rehearsal"]["failed_rehearsal_archival_rule"]
+    assert "timing_acceptance_pass=false" in rehearsal_rule
+    assert "rejected_metadata_records" in rehearsal_rule
+    assert "collected_count" in rehearsal_rule
     assert "check_challenge_cup_goal_completion.py" in "\n".join(payload["verification_commands"])
 
     output_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_action_pack.json"
@@ -99,6 +100,10 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     assert "does_not_satisfy_goal_completion=True" in markdown
     assert "source_sha256" in markdown
     assert "source attachment" in markdown
+    assert "must not be a JSON metadata file" in markdown
+    assert "PowerShell execution block" in markdown
+    assert "timing_acceptance_pass=false" in markdown
+    assert "rejected_metadata_records" in markdown
     assert "expert_feedback" in markdown
     assert "timed_rehearsal" in markdown
     assert "不伪造" in markdown

@@ -60,6 +60,37 @@
 - 会议纪要
 - 聊天记录截图
 
+## post-receipt hard evidence intake
+
+Required metadata fields:
+- `reviewer_identity`
+- `role_or_org`
+- `review_date`
+- `feedback_source_path`
+- `source_sha256`
+- `review_dimensions`
+- `remediation_record`
+- `real_feedback_confirmed`
+
+Source integrity guardrails:
+- feedback_source_path must point to the real source attachment returned by the reviewer
+- the source attachment must be non-empty and must not be a JSON metadata file
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+
+Recording commands:
+- `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening`
+- `python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback`
+- `python scripts/build_challenge_cup_hard_evidence_ledger.py`
+- `python scripts/build_challenge_cup_package.py`
+- `python scripts/check_challenge_cup_readiness.py`
+- `python scripts/check_challenge_cup_goal_completion.py`
+
+Rejection rules:
+- do not count outreach records as expert feedback hard evidence
+- do not use the JSON metadata summary itself as feedback_source_path
+- do not mark goal completion until hard_evidence_ledger.categories.expert_feedback.collected_count >= 1
+
 收到真实反馈后，应将原件或摘要归档，更新 `docs/challenge_cup/12_专家反馈采集与整改闭环.md`，并重新运行 readiness gate。
 
 ## 证据文件

@@ -242,33 +242,33 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
-      "bytes": 3870,
-      "sha256": "df24c1313edf5fab224db6e9bcae84be774ccc64cb45325d7ccb580ea0526987"
+      "bytes": 6025,
+      "sha256": "17037bba88d199c36a5af3da686bfaffc5e6e596063993c46b712ccb01ed8fed"
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.md",
-      "bytes": 3376,
-      "sha256": "ad658f3aa9c554c62d15593fd3107c5278eaba66b3e0c5508a684e2f299c1e8e"
+      "bytes": 5300,
+      "sha256": "95a6be593d4021defb7e4f55aaa3da9f2718140a452a0b2d531a7ae43d9cc4db"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
-      "bytes": 18869,
-      "sha256": "7d7fdd7669274e80503fd9c22679f4e48d4ebe4fef12cff58b9a2ed75499e938"
+      "bytes": 22235,
+      "sha256": "a8e3be70dfd11ee1d450bb14ddcaf0c7f958b79a8231a1d10f5369942fbbcdcb"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
-      "bytes": 15359,
-      "sha256": "75bea3c7279014761afa08448b4dc67b01b35b03d4712f85138da826fc34ec9e"
+      "bytes": 18411,
+      "sha256": "bf749fa4aa84e635230ae92235aee1040105854f645faadb0efbd7daefed99d4"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
-      "bytes": 3505,
-      "sha256": "75699a624dd7450e19a203032715d1a6d8bc71ac3be062dd2b4ae4fa5f867217"
+      "bytes": 4807,
+      "sha256": "b56e26004fbff0cfc10b883888ad19b2559433eddbfaffa1ea06c52d06a5706e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
-      "bytes": 4066,
-      "sha256": "62a4bd351e9e5f4f8bd73f71e0bbb3cabc081a9e79a13412148cb84c1c223a7c"
+      "bytes": 5843,
+      "sha256": "201f7574abaae8c27629371b03a23e5ee059dfdce3ddf8a4ee4c209f433b3305"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
@@ -307,13 +307,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
-      "bytes": 8035,
-      "sha256": "a2e706b5269a6369822ca3de01f057acbe713026cc66a8bca689f07c75b693a7"
+      "bytes": 11346,
+      "sha256": "123dcf9b63b3f05df11b13ae8aa9a863b66a6b27ce5beef075b50662d4c05fab"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
-      "bytes": 7257,
-      "sha256": "4b0c15268752fd855df5afa6bc5332e3c04374d67dffee3c81e99d227b9be09f"
+      "bytes": 10292,
+      "sha256": "f9f3c322a7f07f5dc3a6ddded25bc4e9274afab9bb3210544c7801e131822629"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",

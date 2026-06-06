@@ -41,6 +41,38 @@ EVIDENCE_FILES = [
     "docs/challenge_cup/reproducibility/expert_feedback_form.md",
     "docs/challenge_cup/reproducibility/readiness_gate_report.md",
 ]
+POST_RECEIPT_HARD_EVIDENCE_INTAKE = {
+    "purpose": "post-receipt hard evidence intake",
+    "required_metadata_fields": [
+        "reviewer_identity",
+        "role_or_org",
+        "review_date",
+        "feedback_source_path",
+        "source_sha256",
+        "review_dimensions",
+        "remediation_record",
+        "real_feedback_confirmed",
+    ],
+    "source_integrity_guardrails": [
+        "feedback_source_path must point to the real source attachment returned by the reviewer",
+        "the source attachment must be non-empty and must not be a JSON metadata file",
+        "preflight and record commands calculate source_sha256 from the real source attachment",
+        "metadata source_sha256 must match the archived source attachment content",
+    ],
+    "recording_commands": [
+        "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening",
+        "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback",
+        "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+        "python scripts/build_challenge_cup_package.py",
+        "python scripts/check_challenge_cup_readiness.py",
+        "python scripts/check_challenge_cup_goal_completion.py",
+    ],
+    "rejection_rules": [
+        "do not count outreach records as expert feedback hard evidence",
+        "do not use the JSON metadata summary itself as feedback_source_path",
+        "do not mark goal completion until hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+    ],
+}
 
 
 def build_payload() -> dict[str, Any]:
@@ -99,6 +131,7 @@ def build_payload() -> dict[str, Any]:
             "required_post_receipt_action": "将原件或摘要归档后，更新专家反馈闭环并重新运行 readiness gate。",
             "integrity_boundary": "不宣称已获得专家认可；不把内部自评写成外部背书。",
         },
+        "post_receipt_hard_evidence_intake": POST_RECEIPT_HARD_EVIDENCE_INTAKE,
         "minimum_evidence_file_count": len(EVIDENCE_FILES),
         "evidence_files": EVIDENCE_FILES,
     }
@@ -142,6 +175,16 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines.extend(f"- `{item}`" for item in message["attachments"])
     lines.extend(["", "## 归档要求", ""])
     lines.extend(f"- {item}" for item in payload["required_archive_evidence_types"])
+    intake = payload["post_receipt_hard_evidence_intake"]
+    lines.extend(["", "## post-receipt hard evidence intake", ""])
+    lines.append("Required metadata fields:")
+    lines.extend(f"- `{item}`" for item in intake["required_metadata_fields"])
+    lines.extend(["", "Source integrity guardrails:"])
+    lines.extend(f"- {item}" for item in intake["source_integrity_guardrails"])
+    lines.extend(["", "Recording commands:"])
+    lines.extend(f"- `{item}`" for item in intake["recording_commands"])
+    lines.extend(["", "Rejection rules:"])
+    lines.extend(f"- {item}" for item in intake["rejection_rules"])
     lines.extend(
         [
             "",

@@ -590,6 +590,23 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
     "邮件回复",
     "会议纪要",
     "聊天记录截图",
+    "post-receipt hard evidence intake",
+    "source_sha256",
+    "must not be a JSON metadata file",
+}
+EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS = {
+    "reviewer_identity",
+    "role_or_org",
+    "review_date",
+    "feedback_source_path",
+    "source_sha256",
+    "review_dimensions",
+    "remediation_record",
+    "real_feedback_confirmed",
+}
+EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_GUARDRAIL_TERMS = {
+    "source_sha256",
+    "must not be a JSON metadata file",
 }
 HARD_EVIDENCE_MARKDOWN_TERMS = {
     "真实专家反馈",
@@ -4172,6 +4189,27 @@ def check_expert_feedback_request_packet() -> GateCheck:
     if len(attachments) < 5:
         failures.append("sendable_message.attachments below 5")
 
+    intake = payload.get("post_receipt_hard_evidence_intake")
+    if not isinstance(intake, dict):
+        failures.append("post_receipt_hard_evidence_intake missing")
+    else:
+        intake_fields = {str(item) for item in intake.get("required_metadata_fields", [])}
+        missing_intake_fields = sorted(EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS - intake_fields)
+        if missing_intake_fields:
+            failures.append(f"post_receipt_hard_evidence_intake.required_metadata_fields missing: {missing_intake_fields}")
+        guardrails = "\n".join(str(item) for item in intake.get("source_integrity_guardrails", []))
+        for term in EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_GUARDRAIL_TERMS:
+            if term not in guardrails:
+                failures.append(f"post_receipt_hard_evidence_intake.source_integrity_guardrails missing {term}")
+        commands = "\n".join(str(item) for item in intake.get("recording_commands", []))
+        for term in (
+            "preflight_challenge_cup_hard_evidence.py expert_feedback",
+            "record_challenge_cup_hard_evidence.py expert_feedback",
+            "--confirm-real-feedback",
+        ):
+            if term not in commands:
+                failures.append(f"post_receipt_hard_evidence_intake.recording_commands missing {term}")
+
     evidence_files = {str(item) for item in payload.get("evidence_files", [])}
     missing_required_evidence = sorted(EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES - evidence_files)
     if missing_required_evidence:
@@ -4738,7 +4776,15 @@ def check_hard_evidence_action_pack() -> GateCheck:
             failures.append("action_streams item invalid")
             continue
         category = str(stream.get("category", ""))
-        for field in ("human_owner", "human_action", "proof_to_collect", "ready_packet_files", "recording_commands"):
+        for field in (
+            "human_owner",
+            "human_action",
+            "proof_to_collect",
+            "ready_packet_files",
+            "recording_commands",
+            "powershell_execution_block",
+            "source_integrity_guardrails",
+        ):
             if not has_value(stream.get(field)):
                 failures.append(f"{category}: {field} missing")
         if stream.get("does_not_satisfy_goal_completion") is not True:
@@ -4751,6 +4797,17 @@ def check_hard_evidence_action_pack() -> GateCheck:
         if missing_ready_files:
             failures.append(f"{category}: ready_packet_files missing or empty: {missing_ready_files}")
         commands = "\n".join(str(item) for item in stream.get("recording_commands", []))
+        if "<" in commands or ">" in commands:
+            failures.append(f"{category}: recording_commands contain PowerShell-unsafe angle placeholders")
+        powershell = "\n".join(str(item) for item in stream.get("powershell_execution_block", []))
+        if "Set-Location" not in powershell:
+            failures.append(f"{category}: powershell_execution_block missing Set-Location")
+        if "<" in powershell or ">" in powershell:
+            failures.append(f"{category}: powershell_execution_block contains angle placeholders")
+        guardrails = "\n".join(str(item) for item in stream.get("source_integrity_guardrails", []))
+        for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
+            if term not in guardrails:
+                failures.append(f"{category}: source_integrity_guardrails missing {term}")
         if category == "expert_feedback":
             if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in commands:
                 failures.append(
@@ -4773,6 +4830,10 @@ def check_hard_evidence_action_pack() -> GateCheck:
                 failures.append(f"{category}: recording_commands missing timed rehearsal runner")
             if "--confirm-real-rehearsal" not in commands:
                 failures.append(f"{category}: recording_commands missing --confirm-real-rehearsal")
+            failed_rule = str(stream.get("failed_rehearsal_archival_rule", ""))
+            for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
+                if term not in failed_rule:
+                    failures.append(f"{category}: failed_rehearsal_archival_rule missing {term}")
 
     verification_commands = payload.get("verification_commands")
     if not isinstance(verification_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
@@ -4785,6 +4846,11 @@ def check_hard_evidence_action_pack() -> GateCheck:
         for term in (
             "External Hard Evidence Action Pack",
             "does_not_satisfy_goal_completion=True",
+            "PowerShell execution block",
+            "source_sha256",
+            "must not be a JSON metadata file",
+            "timing_acceptance_pass=false",
+            "rejected_metadata_records",
             "expert_feedback",
             "timed_rehearsal",
             "不伪造",
@@ -4920,6 +4986,14 @@ def check_external_evidence_execution_kit() -> GateCheck:
             failures.append(f"{step_id}: command missing {required_command}")
         if "&&" in command:
             failures.append(f"{step_id}: command must not use PowerShell-incompatible && chaining")
+        if "<" in command or ">" in command:
+            failures.append(f"{step_id}: command contains PowerShell-unsafe angle placeholders")
+    timed_step = sequence_by_id.get("run_timed_rehearsal", {})
+    if isinstance(timed_step, dict):
+        expected_after_step = str(timed_step.get("expected_after_step", ""))
+        for term in ("timing_acceptance_pass", "rejected_metadata_records"):
+            if term not in expected_after_step:
+                failures.append(f"run_timed_rehearsal: expected_after_step missing {term}")
 
     packets = payload.get("execution_packets")
     if not isinstance(packets, list):
@@ -4945,6 +5019,8 @@ def check_external_evidence_execution_kit() -> GateCheck:
             "execution_steps",
             "done_when",
             "recording_commands",
+            "powershell_execution_block",
+            "source_integrity_guardrails",
             "acceptance_gate",
         ):
             if not has_value(packet.get(field)):
@@ -4972,6 +5048,17 @@ def check_external_evidence_execution_kit() -> GateCheck:
             failures.append(f"{packet_id}: attachment_files missing or empty: {missing_attachments}")
 
         commands = "\n".join(str(item) for item in packet.get("recording_commands", []))
+        if "<" in commands or ">" in commands:
+            failures.append(f"{packet_id}: recording_commands contain PowerShell-unsafe angle placeholders")
+        powershell = "\n".join(str(item) for item in packet.get("powershell_execution_block", []))
+        if "Set-Location" not in powershell:
+            failures.append(f"{packet_id}: powershell_execution_block missing Set-Location")
+        if "<" in powershell or ">" in powershell:
+            failures.append(f"{packet_id}: powershell_execution_block contains angle placeholders")
+        guardrails = "\n".join(str(item) for item in packet.get("source_integrity_guardrails", []))
+        for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
+            if term not in guardrails:
+                failures.append(f"{packet_id}: source_integrity_guardrails missing {term}")
         if category == "expert_feedback":
             if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in commands:
                 failures.append(
@@ -4990,6 +5077,10 @@ def check_external_evidence_execution_kit() -> GateCheck:
                 failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
             if "--confirm-real-rehearsal" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing --confirm-real-rehearsal")
+            failed_rule = str(packet.get("failed_rehearsal_archival_rule", ""))
+            for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
+                if term not in failed_rule:
+                    failures.append(f"{packet_id}: failed_rehearsal_archival_rule missing {term}")
 
     verification_commands = {str(item) for item in payload.get("verification_commands", [])}
     for command in (
@@ -5008,6 +5099,11 @@ def check_external_evidence_execution_kit() -> GateCheck:
             "record_expert_feedback",
             "run_timed_rehearsal",
             "does_not_satisfy_goal_completion=True",
+            "PowerShell execution block",
+            "source_sha256",
+            "must not be a JSON metadata file",
+            "timing_acceptance_pass=false",
+            "rejected_metadata_records",
             "不伪造",
             "真实专家反馈",
             "真实计时彩排",

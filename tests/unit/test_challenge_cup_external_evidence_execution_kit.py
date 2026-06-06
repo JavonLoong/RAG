@@ -49,6 +49,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert sequence["record_rehearsal_schedule"]["counts_as_hard_evidence"] is False
     assert sequence["record_expert_feedback"]["counts_as_hard_evidence"] is True
     assert sequence["run_timed_rehearsal"]["counts_as_hard_evidence"] is True
+    assert "timing_acceptance_pass" in sequence["run_timed_rehearsal"]["expected_after_step"]
+    assert "rejected_metadata_records" in sequence["run_timed_rehearsal"]["expected_after_step"]
     for item in sequence.values():
         assert item["command"]
         assert item["human_proof_required"]
@@ -68,11 +70,17 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert packet["execution_steps"]
         assert packet["done_when"]
         assert packet["recording_commands"]
+        assert packet["powershell_execution_block"]
         assert packet["source_integrity_guardrails"]
         assert "source_sha256" in "\n".join(packet["source_integrity_guardrails"])
         assert "source attachment" in "\n".join(packet["source_integrity_guardrails"])
+        assert "must not be a JSON metadata file" in "\n".join(packet["source_integrity_guardrails"])
         assert packet["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert packet["does_not_satisfy_goal_completion"] is True
+        powershell = "\n".join(packet["powershell_execution_block"])
+        assert "Set-Location" in powershell
+        assert "<" not in powershell
+        assert ">" not in powershell
 
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
         packets["expert_feedback_review"]["recording_commands"]
@@ -103,17 +111,12 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "&&" not in command_text
     assert "2026-06-06" not in command_text
     assert "20260606" not in command_text
-    for placeholder in [
-        "<real-outreach-id>",
-        "<real-sent-date-yyyy-mm-dd>",
-        "<real-followup-due-date-yyyy-mm-dd>",
-        "<real-review-date-yyyy-mm-dd>",
-        "<real-rehearsal-schedule-id>",
-        "<real-scheduled-date-yyyy-mm-dd>",
-        "<real-rehearsal-id>",
-        "<real-rehearsal-date-yyyy-mm-dd>",
-    ]:
-        assert placeholder in command_text
+    assert "<" not in command_text
+    assert ">" not in command_text
+    rehearsal_packet = packets["timed_rehearsal_observer"]
+    assert "timing_acceptance_pass=false" in rehearsal_packet["failed_rehearsal_archival_rule"]
+    assert "rejected_metadata_records" in rehearsal_packet["failed_rehearsal_archival_rule"]
+    assert "collected_count" in rehearsal_packet["failed_rehearsal_archival_rule"]
 
     output_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility"
     output_json = output_dir / "external_evidence_execution_kit.json"
@@ -134,6 +137,10 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "does_not_satisfy_goal_completion=True" in markdown
     assert "source_sha256" in markdown
     assert "source attachment" in markdown
+    assert "must not be a JSON metadata file" in markdown
+    assert "PowerShell execution block" in markdown
+    assert "timing_acceptance_pass=false" in markdown
+    assert "rejected_metadata_records" in markdown
     assert "\u4e0d\u4f2a\u9020" in markdown
     assert "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988" in markdown
     assert "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392" in markdown
@@ -142,3 +149,5 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         handoff_text = handoff.read_text(encoding="utf-8")
         assert "source_sha256" in handoff_text
         assert "source attachment" in handoff_text
+        assert "must not be a JSON metadata file" in handoff_text
+        assert "PowerShell execution block" in handoff_text

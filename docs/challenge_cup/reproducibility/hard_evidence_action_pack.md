@@ -31,6 +31,7 @@ Proof to collect:
 Source integrity guardrails:
 - preflight and record commands calculate source_sha256 from the real source attachment
 - metadata source_sha256 must match the archived source attachment content
+- --source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file
 - do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Ready packet files:
@@ -41,9 +42,24 @@ Ready packet files:
 - `docs/challenge_cup/reproducibility/final_acceptance_audit.md`
 
 Recording commands:
-- `python scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> --source <real-outreach-proof> --recipient-alias <real-reviewer-alias> --recipient-role <real-reviewer-role> --channel email --sent-date <real-sent-date-yyyy-mm-dd> --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date <real-followup-due-date-yyyy-mm-dd> --confirm-real-outreach`
-- `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply --reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> --review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback`
-- `python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply --reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> --review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback`
+- `python scripts/record_challenge_cup_expert_outreach.py --id real-outreach-id --source path/to/real-outreach-proof.eml --recipient-alias real-reviewer-alias --recipient-role real-reviewer-role --channel email --sent-date YYYY-MM-DD --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date YYYY-MM-DD --confirm-real-outreach`
+- `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback`
+- `python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback`
+
+PowerShell execution block:
+
+```powershell
+Set-Location 'D:\虚拟C盘\RAG'
+$feedbackId = 'advisor-a-YYYYMMDD-01'
+$feedbackSource = 'D:\path\to\real-feedback.eml'
+$reviewDate = 'YYYY-MM-DD'
+$reviewer = 'real-reviewer-identity'
+$reviewerRole = 'real-reviewer-role-or-org'
+$remediationIssue = 'demo-pacing'
+$remediationAction = 'tighten-opening'
+python .\scripts\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback
+python .\scripts\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback
+```
 
 ### timed_rehearsal
 
@@ -61,6 +77,7 @@ Proof to collect:
 Source integrity guardrails:
 - preflight and record commands calculate source_sha256 from the real source attachment
 - metadata source_sha256 must match the archived source attachment content
+- --source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file
 - do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Ready packet files:
@@ -71,10 +88,30 @@ Ready packet files:
 - `docs/challenge_cup/reproducibility/final_acceptance_audit.md`
 
 Recording commands:
-- `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> --scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> --venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`
-- `python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
-- `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
-- `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`
+- `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id real-rehearsal-schedule-id --source path/to/real-calendar-or-observer-prep-file.txt --scheduled-date YYYY-MM-DD --observer real-observer-alias --venue-or-channel real-venue-or-channel --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`
+- `python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+- `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+- `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds --offline-fallback-actual-seconds actual-offline-fallback-seconds --killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds --confirm-real-rehearsal`
+
+PowerShell execution block:
+
+```powershell
+Set-Location 'D:\虚拟C盘\RAG'
+$rehearsalId = 'rehearsal-YYYYMMDD-01'
+$timerSource = 'D:\path\to\real-timer-or-observer-note.txt'
+$rehearsalDate = 'YYYY-MM-DD'
+$observer = 'real-observer-alias'
+$opening = 88
+$demo = 170
+$offline = 18
+$killer = 25,25,25,25,25
+python .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+python .\scripts\preflight_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+python .\scripts\record_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+```
+
+Failed rehearsal archival rule:
+- If any measured rehearsal segment exceeds the limit or a required killer-question timing is missing, still archive the real rehearsal evidence with timing_acceptance_pass=false; the hard evidence ledger must place the metadata in rejected_metadata_records and collected_count must not satisfy the acceptance gate.
 
 ## Verification Commands
 

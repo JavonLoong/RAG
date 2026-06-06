@@ -1891,6 +1891,62 @@ def test_expert_feedback_request_packet_gate_rejects_claimed_approval(monkeypatc
     assert "no_external_feedback_claimed" in check.detail
 
 
+def test_expert_feedback_request_packet_gate_requires_post_receipt_hard_evidence_intake(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    packet_json = tmp_path / "expert_feedback_request_packet.json"
+    evidence_files = sorted(module.EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES)
+    packet_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_expert_feedback_request_packet",
+                "status": "ready_to_send",
+                "no_external_feedback_claimed": True,
+                "boundary": EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY,
+                "recipient_roles": ["指导教师", "行业专家", "实验室同学"],
+                "review_dimensions": module.EXPERT_FEEDBACK_REQUEST_DIMENSIONS,
+                "required_archive_evidence_types": module.EXPERT_FEEDBACK_REQUIRED_ARCHIVE_TYPES,
+                "review_questions": ["q1"] * 8,
+                "sendable_message": {
+                    "subject": "sample",
+                    "body": "待真实反馈归档",
+                    "attachments": evidence_files[:5],
+                },
+                "minimum_evidence_file_count": 10,
+                "evidence_files": evidence_files,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    packet_md = tmp_path / "expert_feedback_request_packet.md"
+    packet_md.write_text(
+        "\n".join(
+            [
+                "专家反馈外发包",
+                "待真实反馈归档",
+                "不宣称已获得专家认可",
+                "建议邮件主题",
+                "签字页",
+                "邮件回复",
+                "会议纪要",
+                "聊天记录截图",
+                EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY,
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_JSON", packet_json)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_MD", packet_md)
+
+    check = module.check_expert_feedback_request_packet()
+
+    assert not check.passed
+    assert "post_receipt_hard_evidence_intake" in check.detail
+
+
 def test_expert_feedback_outreach_ledger_gate_rejects_overclaim_and_invalid_metadata(
     monkeypatch,
     tmp_path: Path,
