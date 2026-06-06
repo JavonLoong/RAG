@@ -95,6 +95,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "poster booth q&a pack" in report
     assert "commercialization roadmap" in report
     assert "poster board asset" in report
+    assert "defense control console" in report
     assert "ip and open-source compliance" in report
     assert "local baseline differentiation evidence" in report
     assert "final submission handoff sheet" in report
@@ -143,6 +144,27 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
 
     assert "Status: pass" in result.stdout
     assert REPORT.exists()
+
+
+def test_defense_control_console_gate_rejects_missing_console(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    console_path = tmp_path / "docs" / "challenge_cup" / "defense_console" / "index.html"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "DEFENSE_CONTROL_CONSOLE", console_path)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+
+    check = module.check_defense_control_console()
+
+    assert not check.passed
+    assert "defense_console/index.html missing" in check.detail
 
 
 def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tmp_path) -> None:

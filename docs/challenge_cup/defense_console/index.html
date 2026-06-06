@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Defense Control Console</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #53606f;
+      --line: #d7dde5;
+      --panel: #f7f9fb;
+      --blue: #1f5fbf;
+      --green: #147a4f;
+      --amber: #9a6500;
+      --red: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+    }
+    h1, h2 { margin: 0; letter-spacing: 0; }
+    h1 { font-size: 32px; }
+    h2 { font-size: 18px; margin-bottom: 10px; }
+    p { margin: 8px 0 0; color: var(--muted); line-height: 1.55; }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0 22px;
+    }
+    .metric, section {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px;
+      border-radius: 8px;
+    }
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .links {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    a {
+      display: block;
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    a span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 10px;
+      padding: 10px;
+      border-left: 4px solid var(--blue);
+      background: #ffffff;
+    }
+    .step strong { color: var(--blue); }
+    .warning { border-left: 4px solid var(--red); }
+    .warning strong { color: var(--red); }
+    .fallback { border-left: 4px solid var(--amber); }
+    .fallback strong { color: var(--amber); }
+    .ok { border-left: 4px solid var(--green); }
+    .ok strong { color: var(--green); }
+    code {
+      display: block;
+      overflow-wrap: anywhere;
+      color: #233042;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    @media (max-width: 860px) {
+      main { padding: 16px; }
+      .status, .grid, .links { grid-template-columns: 1fr; }
+      h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Defense Control Console</h1>
+      <p>知燃知维 GraphRAG 挑战杯现场总控台。用于终审现场按顺序打开材料、控制节奏、快速切换离线证据，并主动声明边界。</p>
+    </header>
+
+    <div class="status" aria-label="readiness summary">
+      <div class="metric"><strong>3-minute timer</strong><span>演示主线固定为 180 秒</span></div>
+      <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
+      <div class="metric"><strong>52 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
+    </div>
+
+    <div class="grid">
+      <section>
+        <h2>Live Sequence</h2>
+        <div class="timeline">
+          <div class="step"><strong>0:00</strong><div>打开 PPT 或一页纸，讲清真实问题与 GraphRAG 价值。<code>docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx</code></div></div>
+          <div class="step"><strong>0:30</strong><div>进入 GT-07 固定检索案例，说明证据链不是口头承诺。<code>docs/challenge_cup/reproducibility/application_validation_report.md</code></div></div>
+          <div class="step ok"><strong>1:20</strong><div>展示 GraphRAG / KG 证据组织和评测闭环。<code>docs/challenge_cup/07_评审主张证据矩阵.md</code></div></div>
+          <div class="step ok"><strong>2:10</strong><div>展示 readiness gate 和 submission verifier，证明包可复核。<code>docs/challenge_cup/reproducibility/readiness_gate_report.md</code></div></div>
+          <div class="step warning"><strong>2:40</strong><div>主动声明 no award guarantee、real expert feedback 和 real timed rehearsal 边界。<code>docs/challenge_cup/reproducibility/goal_completion_report.md</code></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Evidence Launchpad</h2>
+        <div class="links">
+          <a href="../defense_deck/challenge_cup_defense_deck.pptx">Defense deck<span>docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx</span></a>
+          <a href="../13_评委现场速览卡.md">Judge briefing card<span>docs/challenge_cup/13_评委现场速览卡.md</span></a>
+          <a href="../14_现场答辩操作Runbook.md">Onsite runbook<span>docs/challenge_cup/14_现场答辩操作Runbook.md</span></a>
+          <a href="../reproducibility/readiness_gate_report.md">Readiness gate<span>docs/challenge_cup/reproducibility/readiness_gate_report.md</span></a>
+          <a href="../reproducibility/verify_submission_package.py">Submission verifier<span>docs/challenge_cup/reproducibility/verify_submission_package.py</span></a>
+          <a href="../reproducibility/browser_screenshots/desktop_search_results.png">GT-07 screenshot<span>docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png</span></a>
+          <a href="../reproducibility/final_acceptance_audit.md">Final acceptance<span>docs/challenge_cup/reproducibility/final_acceptance_audit.md</span></a>
+          <a href="../reproducibility/special_prize_readiness_dashboard.md">Special prize dashboard<span>docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md</span></a>
+        </div>
+      </section>
+    </div>
+
+    <section style="margin-top: 16px;">
+      <h2>Fallback and Boundaries</h2>
+      <div class="timeline">
+        <div class="step fallback"><strong>Demo fails</strong><div>Do not debug live. Open offline fallback evidence: screenshot, browser smoke report, KG artifacts, readiness gate.</div></div>
+        <div class="step warning"><strong>No overclaim</strong><div>State no award guarantee. Readiness proves package completeness, not special prize probability.</div></div>
+        <div class="step warning"><strong>Hard evidence</strong><div>Do not claim real expert feedback or real timed rehearsal until archived with confirmation scripts.</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

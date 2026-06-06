@@ -54,6 +54,7 @@ REQUIRED_PACKAGE_FILES = [
     "22_同类方案对比与创新性证据卡.md",
     "23_终审提交总目录与签收页.md",
     "poster/challenge_cup_a0_poster.html",
+    "defense_console/index.html",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
@@ -178,6 +179,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "23_终审提交总目录与签收页.md" in readme
     assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
     assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
+    assert "defense_console/index.html" in readme
     assert "reproducibility/official_rubric_alignment.md" in readme
     assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
@@ -189,6 +191,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/external_evidence_execution_kit.md" in readme
     assert "reproducibility/special_prize_readiness_dashboard.md" in readme
     assert "poster/challenge_cup_a0_poster.html" in readme
+    assert "defense_console/index.html" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     assert "reproducibility/goal_completion_report.md" in readme
     assert "reproducibility/final_acceptance_audit.md" in readme
@@ -304,7 +307,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "51 项 readiness gate" in onsite_runbook
+    assert "52 项 readiness gate" in onsite_runbook
+    assert "51 项 readiness gate" not in onsite_runbook
     assert "50 项 readiness gate" not in onsite_runbook
     assert "49 项 readiness gate" not in onsite_runbook
     assert "48 项 readiness gate" not in onsite_runbook
@@ -499,6 +503,34 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
     ]:
         assert evidence in poster_html
+    defense_console = (PACKAGE_DIR / "defense_console" / "index.html").read_text(encoding="utf-8")
+    for phrase in [
+        "<!doctype html>",
+        "Defense Control Console",
+        "3-minute timer",
+        "90-second opening",
+        "offline fallback",
+        "readiness gate",
+        "submission verifier",
+        "GT-07",
+        "GraphRAG",
+        "no award guarantee",
+        "real expert feedback",
+        "real timed rehearsal",
+    ]:
+        assert phrase in defense_console
+    for evidence in [
+        "docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx",
+        "docs/challenge_cup/13_评委现场速览卡.md",
+        "docs/challenge_cup/14_现场答辩操作Runbook.md",
+        "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+        "docs/challenge_cup/reproducibility/verify_submission_package.py",
+        "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+        "docs/challenge_cup/reproducibility/application_validation_report.md",
+        "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
+        "docs/challenge_cup/reproducibility/goal_completion_report.md",
+    ]:
+        assert evidence in defense_console
     commercialization_plan = (PACKAGE_DIR / "20_成果转化与持续迭代路线图.md").read_text(encoding="utf-8")
     for phrase in [
         "成果转化与持续迭代路线图",
@@ -710,6 +742,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "12_专家反馈采集与整改闭环.md" in manifest
     assert "readiness_gate_report.md" in manifest
     assert "poster/challenge_cup_a0_poster.html" in manifest
+    assert "defense_console/index.html" in manifest
     assert "21_知识产权与开源合规说明.md" in manifest
     assert "22_同类方案对比与创新性证据卡.md" in manifest
     assert "23_终审提交总目录与签收页.md" in manifest
@@ -793,7 +826,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (51/51 gates)" in command_log
+    assert "Status: pass (52/52 gates)" in command_log
+    assert "Status: pass (51/51 gates)" not in command_log
     assert "Status: pass (50/50 gates)" not in command_log
     assert "Status: pass (49/49 gates)" not in command_log
     assert "Status: pass (48/48 gates)" not in command_log
@@ -872,6 +906,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/22_同类方案对比与创新性证据卡.md" in evidence_files
     assert "docs/challenge_cup/23_终审提交总目录与签收页.md" in evidence_files
     assert "docs/challenge_cup/poster/challenge_cup_a0_poster.html" in evidence_files
+    assert "docs/challenge_cup/defense_console/index.html" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.json" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md" in evidence_files
@@ -1040,8 +1075,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 51
-    assert final_acceptance["package_readiness"]["total"] == 51
+    assert final_acceptance["package_readiness"]["passed"] == 52
+    assert final_acceptance["package_readiness"]["total"] == 52
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1136,6 +1171,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/22_同类方案对比与创新性证据卡.md" in archive_entries
     assert "docs/challenge_cup/23_终审提交总目录与签收页.md" in archive_entries
     assert "docs/challenge_cup/poster/challenge_cup_a0_poster.html" in archive_entries
+    assert "docs/challenge_cup/defense_console/index.html" in archive_entries
     self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
     assert self_report not in archive_entries
     assert self_report in archive_manifest["excluded_files"]
