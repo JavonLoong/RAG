@@ -64,6 +64,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
+    "reproducibility/application_value_quantification.md",
+    "reproducibility/application_value_quantification.json",
     "reproducibility/expert_feedback_form.md",
     "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
@@ -187,6 +189,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "challenge_cup_failure_remediation_before_after.md" in readme
     assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
+    assert "reproducibility/application_value_quantification.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/expert_feedback_outreach_ledger.md" in readme
     assert "reproducibility/timed_rehearsal_schedule_ledger.md" in readme
@@ -229,13 +232,39 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     application_validation = (PACKAGE_DIR / "11_应用场景与专家验证.md").read_text(encoding="utf-8")
     for phrase in ["固定应用场景", "人工原流程", "系统辅助后流程", "验证角色", "量化收益", "边界声明"]:
         assert phrase in application_validation
-    for evidence in ["application_validation_report.md", "browser_demo_smoke_report.json", "desktop_search_results.png"]:
+    for evidence in [
+        "application_validation_report.md",
+        "application_value_quantification.md",
+        "browser_demo_smoke_report.json",
+        "desktop_search_results.png",
+    ]:
         assert evidence in application_validation
     application_report = (PACKAGE_DIR / "reproducibility" / "application_validation_report.md").read_text(encoding="utf-8")
     for phrase in ["GT-07", "压气机出口温度偏高", "进气滤网", "压气机叶片", "温度传感器", "人工确认"]:
         assert phrase in application_report
     for evidence in ["demo-gt07-fault-021", "demo-gt07-repair-022", "demo-gt07-manual-023"]:
         assert evidence in application_report
+    application_value = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "application_value_quantification.json").read_text(encoding="utf-8")
+    )
+    assert application_value["status"] == "application_value_quantified_no_external_validation_claim"
+    assert application_value["completion_claim_allowed"] is False
+    assert application_value["does_not_satisfy_goal_completion"] is True
+    assert application_value["collection"] == "gas_turbine_ocr_demo_snapshot"
+    assert application_value["retrieval_latency_ms"] == 41.8
+    assert application_value["workflow_contrast"]["evidence_consolidation_ratio"] == 5.0
+    assert [stage["record_id"] for stage in application_value["evidence_chain"]] == [
+        "demo-maint-thresholds-076",
+        "demo-structure-fault-130",
+        "demo-gt07-fault-021",
+        "demo-gt07-repair-022",
+        "demo-gt07-manual-023",
+    ]
+    application_value_md = (
+        PACKAGE_DIR / "reproducibility" / "application_value_quantification.md"
+    ).read_text(encoding="utf-8")
+    for phrase in ["Application Value Quantification", "GT-07", "41.8 ms", "5.0x evidence consolidation"]:
+        assert phrase in application_value_md
     expert_feedback_loop = (PACKAGE_DIR / "12_专家反馈采集与整改闭环.md").read_text(encoding="utf-8")
     for phrase in ["反馈采集状态", "待真实反馈归档", "不伪造外部意见", "整改闭环", "专家反馈采集表"]:
         assert phrase in expert_feedback_loop
@@ -312,7 +341,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "54 项 readiness gate" in onsite_runbook
+    assert "55 项 readiness gate" in onsite_runbook
+    assert "54 项 readiness gate" not in onsite_runbook
     assert "53 项 readiness gate" not in onsite_runbook
     assert "52 项 readiness gate" not in onsite_runbook
     assert "51 项 readiness gate" not in onsite_runbook
@@ -751,6 +781,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in runbook
     assert "build_challenge_cup_failure_remediation_before_after.py" in runbook
+    assert "build_challenge_cup_application_value_quantification.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -761,6 +792,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
     assert "application_validation_report.md" in manifest
+    assert "application_value_quantification.md" in manifest
+    assert "application_value_quantification.json" in manifest
     assert "11_应用场景与专家验证.md" in manifest
     assert "expert_feedback_form.md" in manifest
     assert "12_专家反馈采集与整改闭环.md" in manifest
@@ -853,10 +886,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "build_challenge_cup_judge_objection_matrix.py" in command_log
     assert "build_challenge_cup_failure_remediation_before_after.py" in command_log
+    assert "build_challenge_cup_application_value_quantification.py" in command_log
     assert "Status: remediation_card_ablation_ready_no_live_retriever_claim" in command_log
+    assert "Status: application_value_quantified_no_external_validation_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (54/54 gates)" in command_log
+    assert "Status: pass (55/55 gates)" in command_log
+    assert "Status: pass (54/54 gates)" not in command_log
     assert "Status: pass (53/53 gates)" not in command_log
     assert "Status: pass (52/52 gates)" not in command_log
     assert "Status: pass (51/51 gates)" not in command_log
@@ -951,6 +987,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/11_应用场景与专家验证.md" in evidence_files
     assert "docs/challenge_cup/12_专家反馈采集与整改闭环.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/application_value_quantification.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/application_value_quantification.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/expert_feedback_form.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json" in evidence_files
@@ -1111,8 +1149,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 54
-    assert final_acceptance["package_readiness"]["total"] == 54
+    assert final_acceptance["package_readiness"]["passed"] == 55
+    assert final_acceptance["package_readiness"]["total"] == 55
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1195,6 +1233,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     ) in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in archive_entries
+    assert "docs/challenge_cup/reproducibility/application_value_quantification.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/application_value_quantification.json" in archive_entries
     assert "evaluation/reports/challenge_cup_failure_remediation_before_after.md" in archive_entries
     assert "evaluation/reports/challenge_cup_failure_remediation_before_after.json" in archive_entries
     assert "docs/challenge_cup/13_评委现场速览卡.md" in archive_entries
@@ -1321,6 +1361,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "final_acceptance_audit.json",
         PACKAGE_DIR / "11_应用场景与专家验证.md",
         PACKAGE_DIR / "reproducibility" / "application_validation_report.md",
+        PACKAGE_DIR / "reproducibility" / "application_value_quantification.md",
+        PACKAGE_DIR / "reproducibility" / "application_value_quantification.json",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.json",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_result_packet.md",
@@ -1395,6 +1437,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
         "docs/challenge_cup/reproducibility/evaluation_coverage_profile.json",
         "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
+        "docs/challenge_cup/reproducibility/application_value_quantification.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json",
         "docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.json",
         "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",

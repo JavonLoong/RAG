@@ -74,6 +74,11 @@ from build_challenge_cup_failure_remediation_before_after import (
     OUTPUT_MD as FAILURE_REMEDIATION_BEFORE_AFTER_MD,
     write_outputs as write_failure_remediation_before_after_outputs,
 )
+from build_challenge_cup_application_value_quantification import (
+    OUTPUT_JSON as APPLICATION_VALUE_QUANTIFICATION_JSON,
+    OUTPUT_MD as APPLICATION_VALUE_QUANTIFICATION_MD,
+    write_outputs as write_application_value_quantification_outputs,
+)
 from build_challenge_cup_defense_deck import (
     FINAL_PPTX as DEFENSE_DECK_PPTX,
     SPEAKER_NOTES as DEFENSE_DECK_NOTES,
@@ -152,6 +157,8 @@ SUBMISSION_ARCHIVE_MANIFEST = REPRO / "challenge_cup_submission_archive_manifest
 SUBMISSION_PACKAGE_VERIFIER_SOURCE = REPO_ROOT / "scripts" / "verify_challenge_cup_submission_package.py"
 SUBMISSION_PACKAGE_VERIFIER = REPRO / "verify_submission_package.py"
 APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
+APPLICATION_VALUE_QUANTIFICATION_REPORT = APPLICATION_VALUE_QUANTIFICATION_MD
+APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON = APPLICATION_VALUE_QUANTIFICATION_JSON
 EXPERT_FEEDBACK_FORM = REPRO / "expert_feedback_form.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
 BROWSER_SCREENSHOTS = [
@@ -402,28 +409,29 @@ def build_readme(ctx: dict[str, Any]) -> str:
 27. `defense_deck/challenge_cup_defense_deck.pptx`
 28. `defense_deck/challenge_cup_defense_speaker_notes.md`
 29. `reproducibility/application_validation_report.md`
-30. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
-31. `reproducibility/expert_feedback_form.md`
-32. `reproducibility/runbook.md`
-33. `reproducibility/dataset_manifest.md`
-34. `reproducibility/readiness_gate_report.md`
-35. `reproducibility/goal_completion_report.md`
-36. `reproducibility/defense_rehearsal_scorecard.md`
-37. `reproducibility/defense_rehearsal_result_packet.md`
-38. `reproducibility/expert_feedback_request_packet.md`
-39. `reproducibility/expert_feedback_outreach_ledger.md`
-40. `reproducibility/timed_rehearsal_schedule_ledger.md`
-41. `reproducibility/official_rubric_alignment.md`
-42. `reproducibility/judge_objection_response_matrix.md`
-43. `reproducibility/special_prize_readiness_dashboard.md`
-44. `reproducibility/hard_evidence_closure_board.md`
-45. `reproducibility/hard_evidence_action_pack.md`
-46. `reproducibility/external_evidence_execution_kit.md`
-47. `reproducibility/hard_evidence_ledger.md`
-48. `reproducibility/challenge_cup_submission_archive_manifest.json`
-49. `reproducibility/challenge_cup_submission_package.zip`
-50. `reproducibility/verify_submission_package.py`
-51. `reproducibility/final_acceptance_audit.md`
+30. `reproducibility/application_value_quantification.md`
+31. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
+32. `reproducibility/expert_feedback_form.md`
+33. `reproducibility/runbook.md`
+34. `reproducibility/dataset_manifest.md`
+35. `reproducibility/readiness_gate_report.md`
+36. `reproducibility/goal_completion_report.md`
+37. `reproducibility/defense_rehearsal_scorecard.md`
+38. `reproducibility/defense_rehearsal_result_packet.md`
+39. `reproducibility/expert_feedback_request_packet.md`
+40. `reproducibility/expert_feedback_outreach_ledger.md`
+41. `reproducibility/timed_rehearsal_schedule_ledger.md`
+42. `reproducibility/official_rubric_alignment.md`
+43. `reproducibility/judge_objection_response_matrix.md`
+44. `reproducibility/special_prize_readiness_dashboard.md`
+45. `reproducibility/hard_evidence_closure_board.md`
+46. `reproducibility/hard_evidence_action_pack.md`
+47. `reproducibility/external_evidence_execution_kit.md`
+48. `reproducibility/hard_evidence_ledger.md`
+49. `reproducibility/challenge_cup_submission_archive_manifest.json`
+50. `reproducibility/challenge_cup_submission_package.zip`
+51. `reproducibility/verify_submission_package.py`
+52. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -690,7 +698,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
 | 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因、GraphRAG 同题子集、Day4 失败整改 before/after 和补证闭环；固定 GraphRAG 子集当前本地证据缺口已关闭。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}`; `evaluation/reports/challenge_cup_failure_remediation_before_after.md`; `evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py`; `python scripts/build_challenge_cup_failure_remediation_before_after.py`; `python scripts/build_graphrag_gap_remediation_plan.py` | 评测集是当前阶段的课程 / 挑战杯评测集；整改报告是 remediation-card ablation，不等于在线 LLM 胜率、live retriever 升级或外部专家验证。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
-| 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
+| 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/application_value_quantification.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_application_value_quantification.py`; `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
 | 专家反馈闭环 | 项目已准备好可发送给老师或行业专家的反馈采集表、评分维度、签字或邮件证据归档规则和整改闭环。 | `docs/challenge_cup/12_专家反馈采集与整改闭环.md`; `docs/challenge_cup/reproducibility/expert_feedback_form.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | `python scripts/check_challenge_cup_readiness.py` | 未收到真实反馈前不得宣称已通过专家验证；反馈必须按签字、邮件或会议纪要归档。 |
 | 应用边界 | 系统定位为证据型辅助和知识资产整理，不替代工程师做最终运维决策。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/03_实验评测报告.md` | `python scripts/check_challenge_cup_readiness.py` | 对高风险维修决策保留人工确认和证据不足提示。 |
 """
@@ -854,7 +862,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 54 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 55 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1514,7 +1522,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>54 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>55 gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1705,7 +1713,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
     <div class="status" aria-label="readiness summary">
       <div class="metric"><strong>3-minute timer</strong><span>演示主线固定为 180 秒</span></div>
       <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
-      <div class="metric"><strong>54 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>55 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
       <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
     </div>
 
@@ -1814,7 +1822,7 @@ def build_application_validation_doc(ctx: dict[str, Any]) -> str:
 
 | 场景 | 人工原流程 | 系统辅助后流程 | 验证角色 | 量化收益 | 证据 |
 | --- | --- | --- | --- | --- | --- |
-| 燃气轮机异常振动诊断证据整理 | 人工在手册、故障样例、维护理论材料中分别查阈值、故障机理、案例现象、检修措施和复机结果，容易漏掉来源记录。 | 输入“{validation["query"]}”，系统在演示集合中返回阈值、机理、GT-07 现象、停机检查、处理建议五类证据，并保留 record id。 | 课程项目评审、动力装备资料审阅者、答辩评委 | `{validation["search_meta"]}`；从 2,655 个向量片段、约 1,185,989 tokens 中一次返回 5 条证据，形成“阈值判断 -> 故障机理 -> 案例现象 -> 检修措施 -> 复机结果”的审计链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `{validation["screenshot"]}` |
+| 燃气轮机异常振动诊断证据整理 | 人工在手册、故障样例、维护理论材料中分别查阈值、故障机理、案例现象、检修措施和复机结果，容易漏掉来源记录。 | 输入“{validation["query"]}”，系统在演示集合中返回阈值、机理、GT-07 现象、停机检查、处理建议五类证据，并保留 record id。 | 课程项目评审、动力装备资料审阅者、答辩评委 | `{validation["search_meta"]}`；从 2,655 个向量片段、约 1,185,989 tokens 中一次返回 5 条证据，形成“阈值判断 -> 故障机理 -> 案例现象 -> 检修措施 -> 复机结果”的审计链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/application_value_quantification.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `{validation["screenshot"]}` |
 | 挑战杯现场答辩复核 | 评委需要在有限时间内确认项目是否只是静态展示。 | 先看本页，再打开固定案例报告和 browser smoke 截图，快速核验问题、证据、边界和复现命令。 | 答辩评委、指导教师 | 3-5 分钟内可定位应用场景、证据来源和边界声明，降低口头陈述不可复核风险。 | `docs/challenge_cup/07_评审主张证据矩阵.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 
 ## 边界声明
@@ -1987,6 +1995,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_failure_remediation_before_after.py
 ```
 
+## 生成应用价值量化报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_application_value_quantification.py
+```
+
 ## 重新生成挑战杯成果包
 
 ```powershell
@@ -2120,6 +2134,18 @@ def build_official_rubric_dataset_manifest_section() -> str:
     )
 
 
+def build_application_value_dataset_manifest_section() -> str:
+    return "\n".join(
+        [
+            "",
+            "## Application Value Quantification",
+            "",
+            f"- Application value quantification: `{md_link(APPLICATION_VALUE_QUANTIFICATION_REPORT)}`",
+            f"- Application value quantification JSON: `{md_link(APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON)}`",
+        ]
+    )
+
+
 def build_dataset_manifest(ctx: dict[str, Any]) -> str:
     return f"""# 数据集与证据清单
 
@@ -2204,6 +2230,8 @@ python scripts/build_challenge_cup_package.py
 -> docs/challenge_cup/11_应用场景与专家验证.md
 -> docs/challenge_cup/12_专家反馈采集与整改闭环.md
 -> docs/challenge_cup/reproducibility/application_validation_report.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.json
 -> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 -> docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip
@@ -2254,6 +2282,11 @@ python scripts/build_graphrag_gap_remediation_plan.py
 python scripts/build_challenge_cup_failure_remediation_before_after.py
 -> evaluation/reports/challenge_cup_failure_remediation_before_after.md
 -> Status: remediation_card_ablation_ready_no_live_retriever_claim
+
+python scripts/build_challenge_cup_application_value_quantification.py
+-> docs/challenge_cup/reproducibility/application_value_quantification.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.json
+-> Status: application_value_quantified_no_external_validation_claim
 
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
@@ -2321,7 +2354,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (54/54 gates)
+-> Status: pass (55/55 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2362,6 +2395,7 @@ def main() -> int:
     write(POSTER_BOARD_HTML, build_poster_board_html(ctx))
     write(DEFENSE_CONTROL_CONSOLE, build_defense_control_console_html(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
+    write_application_value_quantification_outputs()
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
@@ -2385,7 +2419,10 @@ def main() -> int:
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(
         REPRO / "dataset_manifest.md",
-        build_dataset_manifest(ctx) + build_official_rubric_dataset_manifest_section() + build_hard_evidence_dataset_manifest_section(),
+        build_dataset_manifest(ctx)
+        + build_application_value_dataset_manifest_section()
+        + build_official_rubric_dataset_manifest_section()
+        + build_hard_evidence_dataset_manifest_section(),
     )
     write(EVAL_COVERAGE_PROFILE, json.dumps(build_evaluation_coverage_profile(ctx), ensure_ascii=False, indent=2))
     write(REPRO / "command_log.md", build_command_log(ctx))
@@ -2452,6 +2489,8 @@ def main() -> int:
         md_link(APPLICATION_VALIDATION_DOC),
         md_link(EXPERT_FEEDBACK_PROTOCOL),
         md_link(APPLICATION_VALIDATION_REPORT),
+        md_link(APPLICATION_VALUE_QUANTIFICATION_REPORT),
+        md_link(APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON),
         md_link(EXPERT_FEEDBACK_FORM),
         md_link(GRAPH_MANUAL_EVIDENCE_SUPPLEMENT),
         md_link(LIVE_SMOKE_REPORT),

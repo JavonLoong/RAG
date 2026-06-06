@@ -15,6 +15,8 @@ python scripts/build_challenge_cup_package.py
 -> docs/challenge_cup/11_应用场景与专家验证.md
 -> docs/challenge_cup/12_专家反馈采集与整改闭环.md
 -> docs/challenge_cup/reproducibility/application_validation_report.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.json
 -> docs/challenge_cup/reproducibility/expert_feedback_form.md
 -> docs/challenge_cup/reproducibility/evaluation_coverage_profile.json
 -> docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip
@@ -65,6 +67,11 @@ python scripts/build_graphrag_gap_remediation_plan.py
 python scripts/build_challenge_cup_failure_remediation_before_after.py
 -> evaluation/reports/challenge_cup_failure_remediation_before_after.md
 -> Status: remediation_card_ablation_ready_no_live_retriever_claim
+
+python scripts/build_challenge_cup_application_value_quantification.py
+-> docs/challenge_cup/reproducibility/application_value_quantification.md
+-> docs/challenge_cup/reproducibility/application_value_quantification.json
+-> Status: application_value_quantified_no_external_validation_claim
 
 python scripts/build_defense_rehearsal_scorecard.py
 -> docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md
@@ -132,7 +139,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (54/54 gates)
+-> Status: pass (55/55 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

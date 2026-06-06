@@ -61,6 +61,10 @@
 - 浏览器移动端截图：`docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png`。
 - 课程最终交付包：`docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/README_先看这里.md`。
 
+## Application Value Quantification
+
+- Application value quantification: `docs/challenge_cup/reproducibility/application_value_quantification.md`
+- Application value quantification JSON: `docs/challenge_cup/reproducibility/application_value_quantification.json`
 ## 官方评审口径对齐
 
 - 官方评审口径对齐表：`docs/challenge_cup/reproducibility/official_rubric_alignment.md`

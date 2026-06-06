@@ -38,6 +38,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_failure_remediation_before_after.py
 ```
 
+## 生成应用价值量化报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_application_value_quantification.py
+```
+
 ## 重新生成挑战杯成果包
 
 ```powershell

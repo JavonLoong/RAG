@@ -120,6 +120,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "60 evaluation questions" in report
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
+    assert "application value quantification" in report
     assert "scenario demo evidence" in report
     assert "scenario walkthrough script" in report
     assert "expert feedback protocol" in report
@@ -2256,6 +2257,20 @@ def test_scenario_walkthrough_script_gate_rejects_missing_records(monkeypatch, t
 
     assert not check.passed
     assert "demo-gt07-repair-022" in check.detail
+
+
+def test_application_value_quantification_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "application_value_quantification.md"
+    metadata = tmp_path / "application_value_quantification.json"
+    monkeypatch.setattr(module, "APPLICATION_VALUE_QUANTIFICATION_MD", markdown)
+    monkeypatch.setattr(module, "APPLICATION_VALUE_QUANTIFICATION_JSON", metadata)
+
+    check = module.check_application_value_quantification()
+
+    assert not check.passed
+    assert "application_value_quantification.md" in check.detail
+    assert "application_value_quantification.json" in check.detail
 
 
 def test_expert_feedback_protocol_gate_rejects_missing_integrity_terms(monkeypatch, tmp_path) -> None:

@@ -102,6 +102,12 @@ EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_RELATIVE = (
 )
 FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE = "docs/challenge_cup/reproducibility/final_acceptance_audit.md"
 FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/final_acceptance_audit.json"
+APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/application_value_quantification.md"
+)
+APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/application_value_quantification.json"
+)
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
@@ -131,6 +137,8 @@ EXTERNAL_EVIDENCE_EXPERT_HANDOFF = REPO_ROOT / EXTERNAL_EVIDENCE_EXPERT_HANDOFF_
 EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER = REPO_ROOT / EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_RELATIVE
 FINAL_ACCEPTANCE_AUDIT_MD = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE
 FINAL_ACCEPTANCE_AUDIT_JSON = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE
+APPLICATION_VALUE_QUANTIFICATION_MD = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE
+APPLICATION_VALUE_QUANTIFICATION_JSON = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
@@ -182,6 +190,10 @@ FINAL_ACCEPTANCE_AUDIT_REQUIRED_PATHS = [
     FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE,
     FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE,
 ]
+APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS = [
+    APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE,
+    APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE,
+]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
 DEMO_SCRIPT = PACKAGE_DIR / "04_系统演示脚本.md"
@@ -203,6 +215,11 @@ SUBMISSION_ARCHIVE_MANIFEST = REPO_ROOT / SUBMISSION_ARCHIVE_MANIFEST_RELATIVE
 SUBMISSION_PACKAGE_VERIFIER_RELATIVE = "docs/challenge_cup/reproducibility/verify_submission_package.py"
 SUBMISSION_PACKAGE_VERIFIER = REPO_ROOT / SUBMISSION_PACKAGE_VERIFIER_RELATIVE
 APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
+APPLICATION_VALUE_QUANTIFICATION_BOUNDARY = (
+    "This is a local application-value quantification over the fixed GT-07 browser-smoke scenario; "
+    "it is not a production validation, does not replace engineers, provides no external validation "
+    "claim, and does not replace real expert feedback or real timed rehearsal evidence."
+)
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_REPORT_MD = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.md"
@@ -333,6 +350,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
+    "reproducibility/application_value_quantification.md",
+    "reproducibility/application_value_quantification.json",
     "reproducibility/expert_feedback_form.md",
     "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
@@ -1019,6 +1038,33 @@ REQUIRED_APPLICATION_REPORT_TERMS = {
     "demo-gt07-manual-023",
 }
 REQUIRED_SCENARIO_QUERY = "燃气轮机异常振动诊断流程"
+APPLICATION_VALUE_EXPECTED_STAGE_IDS = [
+    "threshold_screening",
+    "mechanism_explanation",
+    "case_symptom",
+    "repair_result",
+    "disposition_recommendation",
+]
+APPLICATION_VALUE_EXPECTED_RECORD_IDS = [
+    "demo-maint-thresholds-076",
+    "demo-structure-fault-130",
+    "demo-gt07-fault-021",
+    "demo-gt07-repair-022",
+    "demo-gt07-manual-023",
+]
+APPLICATION_VALUE_REQUIRED_CLAIM_IDS = {
+    "practical_value",
+    "review_efficiency",
+    "risk_boundary",
+}
+APPLICATION_VALUE_MARKDOWN_TERMS = {
+    "Application Value Quantification",
+    "GT-07",
+    "41.8 ms",
+    "5.0x evidence consolidation",
+    "not a production validation",
+    *APPLICATION_VALUE_EXPECTED_RECORD_IDS,
+}
 REQUIRED_SCENARIO_TERMS = {
     "demo-maint-thresholds-076",
     "demo-structure-fault-130",
@@ -4881,6 +4927,153 @@ def check_application_validation_evidence() -> GateCheck:
     )
 
 
+def check_application_value_quantification() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path
+        for path in (APPLICATION_VALUE_QUANTIFICATION_MD, APPLICATION_VALUE_QUANTIFICATION_JSON)
+        if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("application value quantification", False, f"missing or empty: {missing}")
+
+    payload = load_json(APPLICATION_VALUE_QUANTIFICATION_JSON)
+    markdown = APPLICATION_VALUE_QUANTIFICATION_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_application_value_quantification":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "application_value_quantified_no_external_validation_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("external_validation_claimed") is not False:
+        failures.append(f"external_validation_claimed={payload.get('external_validation_claimed')}")
+    if payload.get("source_browser_smoke") != "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json":
+        failures.append(f"source_browser_smoke={payload.get('source_browser_smoke')}")
+    if payload.get("source_application_validation_report") != (
+        "docs/challenge_cup/reproducibility/application_validation_report.md"
+    ):
+        failures.append(f"source_application_validation_report={payload.get('source_application_validation_report')}")
+    if payload.get("query") != REQUIRED_SCENARIO_QUERY:
+        failures.append(f"query={payload.get('query')}")
+    if payload.get("collection") != "gas_turbine_ocr_demo_snapshot":
+        failures.append(f"collection={payload.get('collection')}")
+    if float(payload.get("retrieval_latency_ms") or 0) != 41.8:
+        failures.append(f"retrieval_latency_ms={payload.get('retrieval_latency_ms')}")
+    for key, expected in {
+        "returned_record_count": 5,
+        "visible_record_count": 5,
+        "indexed_chunks": 2655,
+        "indexed_tokens": 1185989,
+        "evidence_chain_stage_count": 5,
+    }.items():
+        if int(payload.get(key) or -1) != expected:
+            failures.append(f"{key}={payload.get(key)}")
+    if payload.get("evidence_chain_complete") is not True:
+        failures.append(f"evidence_chain_complete={payload.get('evidence_chain_complete')}")
+
+    chain = payload.get("evidence_chain", [])
+    if not isinstance(chain, list):
+        failures.append("evidence_chain missing")
+        chain = []
+    stage_ids = [str(stage.get("stage_id")) for stage in chain if isinstance(stage, dict)]
+    record_ids = [str(stage.get("record_id")) for stage in chain if isinstance(stage, dict)]
+    if stage_ids != APPLICATION_VALUE_EXPECTED_STAGE_IDS:
+        failures.append(f"stage_ids={stage_ids}")
+    if record_ids != APPLICATION_VALUE_EXPECTED_RECORD_IDS:
+        failures.append(f"record_ids={record_ids}")
+    invisible = [
+        str(stage.get("record_id"))
+        for stage in chain
+        if isinstance(stage, dict) and stage.get("visible") is not True
+    ]
+    if invisible:
+        failures.append(f"invisible records={invisible}")
+
+    workflow = payload.get("workflow_contrast", {})
+    if not isinstance(workflow, dict):
+        failures.append("workflow_contrast missing")
+        workflow = {}
+    if int(workflow.get("manual_lookup_step_count") or -1) != 5:
+        failures.append(f"manual_lookup_step_count={workflow.get('manual_lookup_step_count')}")
+    if int(workflow.get("system_result_step_count") or -1) != 1:
+        failures.append(f"system_result_step_count={workflow.get('system_result_step_count')}")
+    if float(workflow.get("evidence_consolidation_ratio") or 0) != 5.0:
+        failures.append(f"evidence_consolidation_ratio={workflow.get('evidence_consolidation_ratio')}")
+    if workflow.get("record_id_traceability") is not True:
+        failures.append(f"record_id_traceability={workflow.get('record_id_traceability')}")
+
+    claim_ids = {
+        str(claim.get("claim_id"))
+        for claim in payload.get("judge_value_claims", [])
+        if isinstance(claim, dict)
+    }
+    missing_claim_ids = sorted(APPLICATION_VALUE_REQUIRED_CLAIM_IDS - claim_ids)
+    if missing_claim_ids:
+        failures.append(f"missing claim_ids: {missing_claim_ids}")
+    boundary = str(payload.get("boundary", ""))
+    if boundary != APPLICATION_VALUE_QUANTIFICATION_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "not a production validation",
+        "does not replace engineers",
+        "real expert feedback",
+        "real timed rehearsal",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(term for term in APPLICATION_VALUE_MARKDOWN_TERMS if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(
+        path for path in APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS if path not in archived_paths
+    )
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked application value quantification files: {untracked}")
+    if dirty:
+        failures.append(f"dirty application value quantification files: {dirty}")
+
+    return GateCheck(
+        "application value quantification",
+        not failures,
+        "GT-07 application value quantified with 5-stage traceability, 41.8 ms latency, and no-external-claim boundary"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_scenario_demo_evidence() -> GateCheck:
     if not BROWSER_SMOKE_JSON.exists():
         return GateCheck("scenario demo evidence", False, "browser_demo_smoke_report.json missing")
@@ -5003,6 +5196,7 @@ def run_gate() -> list[GateCheck]:
         check_external_evidence_execution_kit(),
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
+        check_application_value_quantification(),
         check_scenario_demo_evidence(),
         check_scenario_walkthrough_script(),
         check_expert_feedback_protocol(),
@@ -5024,7 +5218,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
