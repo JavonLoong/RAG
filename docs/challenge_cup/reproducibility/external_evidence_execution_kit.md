@@ -122,6 +122,11 @@ Attachment files:
 - `docs/challenge_cup/reproducibility/expert_feedback_request_packet.md`
 - `docs/challenge_cup/reproducibility/readiness_gate_report.md`
 
+Source integrity guardrails:
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
+
 Recording commands:
 - `python scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> --source <real-outreach-proof> --recipient-alias <real-reviewer-alias> --recipient-role <real-reviewer-role> --channel email --sent-date <real-sent-date-yyyy-mm-dd> --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date <real-followup-due-date-yyyy-mm-dd> --confirm-real-outreach`
 - `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id <real-feedback-id> --source <real-feedback-file> --evidence-type email_reply --reviewer-identity <real-reviewer-identity> --role-or-org <real-reviewer-role-or-org> --review-date <real-review-date-yyyy-mm-dd> --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback`
@@ -144,6 +149,11 @@ Attachment files:
 - `docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md`
 - `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md`
 - `docs/challenge_cup/reproducibility/final_acceptance_audit.md`
+
+Source integrity guardrails:
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Recording commands:
 - `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> --scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> --venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`

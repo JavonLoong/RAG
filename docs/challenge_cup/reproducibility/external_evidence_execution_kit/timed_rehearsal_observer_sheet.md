@@ -34,6 +34,12 @@
 - run_challenge_cup_timed_rehearsal.py records actual timing metadata
 - hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1
 
+## Source Integrity Guardrails
+
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
+
 ## Recording Commands
 
 - `python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id <real-rehearsal-schedule-id> --source <real-calendar-or-observer-prep-file> --scheduled-date <real-scheduled-date-yyyy-mm-dd> --observer <real-observer-alias> --venue-or-channel <real-venue-or-channel> --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule`

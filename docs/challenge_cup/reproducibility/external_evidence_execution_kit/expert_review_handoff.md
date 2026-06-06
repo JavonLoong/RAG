@@ -33,6 +33,12 @@
 - record_challenge_cup_hard_evidence.py expert_feedback records metadata, source path, and --confirm-real-feedback
 - hard_evidence_ledger.categories.expert_feedback.collected_count >= 1
 
+## Source Integrity Guardrails
+
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
+
 ## Recording Commands
 
 - `python scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> --source <real-outreach-proof> --recipient-alias <real-reviewer-alias> --recipient-role <real-reviewer-role> --channel email --sent-date <real-sent-date-yyyy-mm-dd> --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date <real-followup-due-date-yyyy-mm-dd> --confirm-real-outreach`

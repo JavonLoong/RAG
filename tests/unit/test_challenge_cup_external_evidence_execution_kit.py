@@ -65,6 +65,9 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert packet["execution_steps"]
         assert packet["done_when"]
         assert packet["recording_commands"]
+        assert packet["source_integrity_guardrails"]
+        assert "source_sha256" in "\n".join(packet["source_integrity_guardrails"])
+        assert "source attachment" in "\n".join(packet["source_integrity_guardrails"])
         assert packet["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert packet["does_not_satisfy_goal_completion"] is True
 
@@ -125,6 +128,13 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "record_expert_feedback" in markdown
     assert "run_timed_rehearsal" in markdown
     assert "does_not_satisfy_goal_completion=True" in markdown
+    assert "source_sha256" in markdown
+    assert "source attachment" in markdown
     assert "\u4e0d\u4f2a\u9020" in markdown
     assert "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988" in markdown
     assert "\u771f\u5b9e\u8ba1\u65f6\u5f69\u6392" in markdown
+
+    for handoff in (expert_handoff, observer_sheet):
+        handoff_text = handoff.read_text(encoding="utf-8")
+        assert "source_sha256" in handoff_text
+        assert "source attachment" in handoff_text

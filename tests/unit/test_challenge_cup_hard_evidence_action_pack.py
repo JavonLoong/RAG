@@ -40,6 +40,9 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert stream["proof_to_collect"]
         assert stream["ready_packet_files"]
         assert stream["recording_commands"]
+        assert stream["source_integrity_guardrails"]
+        assert "source_sha256" in "\n".join(stream["source_integrity_guardrails"])
+        assert "source attachment" in "\n".join(stream["source_integrity_guardrails"])
         assert stream["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert stream["does_not_satisfy_goal_completion"] is True
         assert category in stream["acceptance_gate"]
@@ -94,6 +97,8 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     markdown = output_md.read_text(encoding="utf-8")
     assert "External Hard Evidence Action Pack" in markdown
     assert "does_not_satisfy_goal_completion=True" in markdown
+    assert "source_sha256" in markdown
+    assert "source attachment" in markdown
     assert "expert_feedback" in markdown
     assert "timed_rehearsal" in markdown
     assert "不伪造" in markdown

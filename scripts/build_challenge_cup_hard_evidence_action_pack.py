@@ -18,6 +18,11 @@ BOUNDARY = (
     "It does not satisfy goal completion, does not claim expert approval, and does not claim "
     "a timed rehearsal has been completed."
 )
+SOURCE_INTEGRITY_GUARDRAILS = [
+    "preflight and record commands calculate source_sha256 from the real source attachment",
+    "metadata source_sha256 must match the archived source attachment content",
+    "do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates",
+]
 EXPERT_OUTREACH_COMMAND = (
     "python scripts/record_challenge_cup_expert_outreach.py --id <real-outreach-id> "
     "--source <real-outreach-proof> --recipient-alias <real-reviewer-alias> "
@@ -126,6 +131,7 @@ def action_streams() -> list[dict[str, Any]]:
                 EXPERT_PREFLIGHT_COMMAND,
                 EXPERT_RECORD_COMMAND,
             ],
+            "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
             "does_not_satisfy_goal_completion": True,
         },
@@ -155,6 +161,7 @@ def action_streams() -> list[dict[str, Any]]:
                 REHEARSAL_PREFLIGHT_COMMAND,
                 REHEARSAL_RECORD_COMMAND,
             ],
+            "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
             "does_not_satisfy_goal_completion": True,
         },
@@ -217,6 +224,8 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             ]
         )
         lines.extend(f"- {item}" for item in stream["proof_to_collect"])
+        lines.extend(["", "Source integrity guardrails:"])
+        lines.extend(f"- {item}" for item in stream["source_integrity_guardrails"])
         lines.extend(["", "Ready packet files:"])
         lines.extend(f"- `{item}`" for item in stream["ready_packet_files"])
         lines.extend(["", "Recording commands:"])

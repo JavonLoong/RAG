@@ -28,6 +28,11 @@ Proof to collect:
 - signed feedback form, email reply, meeting minutes, or chat screenshot
 - remediation issue and action after feedback
 
+Source integrity guardrails:
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
+
 Ready packet files:
 - `docs/challenge_cup/00_项目一页纸.md`
 - `docs/challenge_cup/11_应用场景与专家验证.md`
@@ -52,6 +57,11 @@ Proof to collect:
 - timer screenshot or screen recording
 - observer note
 - five killer-question timings and missed-question list
+
+Source integrity guardrails:
+- preflight and record commands calculate source_sha256 from the real source attachment
+- metadata source_sha256 must match the archived source attachment content
+- do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Ready packet files:
 - `docs/challenge_cup/04_系统演示脚本.md`
