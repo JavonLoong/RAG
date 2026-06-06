@@ -194,6 +194,68 @@ def test_judge_objection_matrix_gate_rejects_missing_matrix(monkeypatch, tmp_pat
     assert "judge_objection_response_matrix.json missing" in check.detail
 
 
+def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+
+    spec = importlib.util.spec_from_file_location(
+        "build_challenge_cup_judge_objection_matrix_for_readiness_test",
+        REPO_ROOT / "scripts" / "build_challenge_cup_judge_objection_matrix.py",
+    )
+    assert spec and spec.loader
+    builder = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = builder
+    spec.loader.exec_module(builder)
+
+    builder.REPO_ROOT = tmp_path
+    builder.OUTPUT_DIR = tmp_path / "docs" / "challenge_cup" / "reproducibility"
+    builder.OUTPUT_JSON = builder.OUTPUT_DIR / "judge_objection_response_matrix.json"
+    builder.OUTPUT_MD = builder.OUTPUT_DIR / "judge_objection_response_matrix.md"
+    payload = builder.write_outputs()
+
+    for item in payload["objections"]:
+        for relative in item["evidence_files"]:
+            path = tmp_path / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("evidence", encoding="utf-8")
+        if item["objection_id"] == "OJ-10-project-closure":
+            item["one_sentence_answer"] = item["one_sentence_answer"].replace(
+                "55 readiness gates", "53 readiness gates"
+            )
+
+    builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    builder.OUTPUT_MD.write_text(
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("55 readiness gates", "53 readiness gates"),
+        encoding="utf-8",
+    )
+
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = list(module.JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS)
+    manifest.write_text(json.dumps({"evidence_files": required_paths}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": required_paths}), encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(
+        module,
+        "REPORT_MD",
+        tmp_path / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md",
+    )
+    monkeypatch.setattr(module, "JUDGE_OBJECTION_MATRIX_MD", builder.OUTPUT_MD)
+    monkeypatch.setattr(module, "JUDGE_OBJECTION_MATRIX_JSON", builder.OUTPUT_JSON)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_judge_objection_response_matrix()
+
+    assert not check.passed
+    assert "stale readiness gate count" in check.detail
+
+
 def test_failure_remediation_before_after_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     report_md = tmp_path / "evaluation" / "reports" / "challenge_cup_failure_remediation_before_after.md"

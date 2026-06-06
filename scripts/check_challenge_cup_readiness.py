@@ -18,6 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
+CURRENT_READINESS_GATE_COUNT = 55
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -2864,6 +2865,25 @@ def check_judge_objection_response_matrix() -> GateCheck:
             evidence_paths.add(relative)
             if relative != self_report and not nonempty(REPO_ROOT / relative):
                 failures.append(f"{objection_id}: evidence path missing or empty: {relative}")
+
+    closure_answers = [
+        str(item.get("one_sentence_answer", ""))
+        for item in objections
+        if isinstance(item, dict) and item.get("objection_id") == "OJ-10-project-closure"
+    ]
+    if closure_answers:
+        expected_gate_phrase = f"{CURRENT_READINESS_GATE_COUNT} readiness gates"
+        stale_gate_phrases = [
+            phrase
+            for phrase in re.findall(r"\b\d+\s+readiness gates\b", "\n".join(closure_answers + [markdown]))
+            if phrase != expected_gate_phrase
+        ]
+        if expected_gate_phrase not in closure_answers[0]:
+            failures.append(
+                f"stale readiness gate count in OJ-10-project-closure: expected {expected_gate_phrase}"
+            )
+        if stale_gate_phrases:
+            failures.append(f"stale readiness gate count phrases: {sorted(set(stale_gate_phrases))}")
 
     payload_evidence = {str(item) for item in payload.get("evidence_files", [])}
     missing_payload_evidence = sorted(

@@ -67,6 +67,10 @@ def test_judge_objection_matrix_builds_evidence_bound_responses(tmp_path: Path) 
     assert "real expert feedback" in serialized
     assert "real timed rehearsal" in serialized
     assert "readiness gate is not an award guarantee" in serialized
+    project_closure = next(item for item in objections if item["objection_id"] == "OJ-10-project-closure")
+    assert "55 readiness gates" in project_closure["one_sentence_answer"]
+    assert "54 readiness gates" not in project_closure["one_sentence_answer"]
+    assert "53 readiness gates" not in project_closure["one_sentence_answer"]
 
     output = json.loads(module.OUTPUT_JSON.read_text(encoding="utf-8"))
     assert output == payload
