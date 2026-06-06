@@ -13,6 +13,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 from challenge_cup_hard_evidence_dates import is_not_future_iso_date
+from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata
 
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -248,6 +249,9 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
             source_relative = str(metadata.get(source_field, ""))
             if not safe_repo_relative(source_relative) or not nonempty(repo_root / source_relative):
                 failures.append(f"{relative}: {source_field} must point to a real source attachment")
+                continue
+            if source_path_looks_like_metadata(source_relative):
+                failures.append(f"{relative}: {source_field} must not be a json metadata file")
                 continue
             if key == "expert_feedback":
                 failures.extend(expert_feedback_metadata_failures(metadata, relative))

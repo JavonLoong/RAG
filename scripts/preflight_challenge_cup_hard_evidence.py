@@ -44,10 +44,10 @@ def positive_seconds(value: str) -> int:
 
 
 def nonempty_source(path_value: str) -> Path:
-    source = intake.existing_source(path_value)
-    if source.stat().st_size <= 0:
-        raise PreflightInputError(f"source evidence file is empty: {source}")
-    return source
+    try:
+        return intake.valid_source_attachment(path_value)
+    except intake.HardEvidenceInputError as exc:
+        raise PreflightInputError(str(exc)) from exc
 
 
 def target_source_path(source: Path, target_dir: Path, evidence_id: str) -> Path:

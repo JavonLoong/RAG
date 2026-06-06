@@ -2453,6 +2453,31 @@ def test_hard_evidence_metadata_rejects_future_dates(monkeypatch, tmp_path) -> N
     assert any("rehearsal_date must be YYYY-MM-DD and not in the future" in item for item in rehearsal_failures)
 
 
+def test_hard_evidence_metadata_rejects_json_source_attachments(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_source_relative = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-source.json"
+    rehearsal_source_relative = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-source.json"
+    for relative in (expert_source_relative, rehearsal_source_relative):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('{"not": "metadata"}', encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+
+    expert_failures = module.validate_source_path(
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+        {"feedback_source_path": expert_source_relative},
+        "feedback_source_path",
+    )
+    rehearsal_failures = module.validate_source_path(
+        "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+        {"recording_or_timer_source_path": rehearsal_source_relative},
+        "recording_or_timer_source_path",
+    )
+
+    assert any("must not be a json metadata file" in item for item in expert_failures)
+    assert any("must not be a json metadata file" in item for item in rehearsal_failures)
+
+
 def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_question_count(
     monkeypatch,
     tmp_path,

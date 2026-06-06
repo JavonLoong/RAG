@@ -297,13 +297,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md",
-      "bytes": 1597,
-      "sha256": "191a30147eecd4a49356e12418c0591d5f42a981c3ca0b19846a7fb72a13a6fe"
+      "bytes": 1676,
+      "sha256": "288c2b92bd3c5298de759e858f5cd86d0c8ae2d62b9724cd0e12e1061dc5fe7e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md",
-      "bytes": 2488,
-      "sha256": "345c93746067eb0fde24e4a4f44e934bdcd28c3586b2721219d9afba4ae68ab3"
+      "bytes": 2567,
+      "sha256": "1455aa2148d24bfe4eef4a8689c31fc1c808a08793dff28378a7dd5d61a7cbbb"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",

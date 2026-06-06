@@ -15,6 +15,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_challenge_cup_hard_evidence_ledger as ledger
 from challenge_cup_hard_evidence_dates import parse_not_future_iso_date
+from challenge_cup_hard_evidence_sources import source_attachment_failure
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 
 
@@ -87,6 +88,14 @@ def existing_source(path_value: str) -> Path:
     return path
 
 
+def valid_source_attachment(path_value: str) -> Path:
+    source = existing_source(path_value)
+    failure = source_attachment_failure(source)
+    if failure:
+        raise HardEvidenceInputError(failure)
+    return source
+
+
 def validate_positive_timing(field: str, actual: int) -> None:
     if actual <= 0:
         raise HardEvidenceInputError(f"{field}={actual} must be positive")
@@ -147,7 +156,7 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
             + ", ".join(missing_dimension_groups)
         )
     review_date = parse_iso_date(args.review_date)
-    source = existing_source(args.source)
+    source = valid_source_attachment(args.source)
     copied_source = copy_source(source, EXPERT_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,
@@ -174,7 +183,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         raise ValueError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
     rehearsal_date = parse_iso_date(args.rehearsal_date)
     validate_timed_rehearsal_limits(args)
-    source = existing_source(args.source)
+    source = valid_source_attachment(args.source)
     copied_source = copy_source(source, REHEARSAL_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,

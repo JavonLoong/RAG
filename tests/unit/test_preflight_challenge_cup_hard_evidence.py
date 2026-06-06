@@ -101,6 +101,46 @@ def test_refuses_expert_feedback_preflight_without_real_confirmation(tmp_path: P
     assert not hard_evidence_dir(tmp_path).exists()
 
 
+def test_refuses_expert_feedback_preflight_with_json_source(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"real": "reply"}', encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "practicality",
+            "--review-dimension",
+            "innovation",
+            "--review-dimension",
+            "boundary_rigor",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
 def test_refuses_expert_feedback_preflight_with_too_few_dimensions(tmp_path: Path) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
@@ -291,6 +331,46 @@ def test_refuses_timed_rehearsal_preflight_without_real_confirmation(tmp_path: P
             "27",
             "28",
             "29",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
+def test_refuses_timed_rehearsal_preflight_with_json_source(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"seconds": 88}', encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
         ]
     )
 

@@ -199,6 +199,86 @@ def test_rejects_missing_source_file(tmp_path: Path) -> None:
         )
 
 
+def test_refuses_empty_expert_feedback_source_file(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_json_expert_feedback_source_file(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"real": "reply"}', encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
 def test_refuses_expert_feedback_without_real_feedback_confirmation(tmp_path: Path) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)
@@ -350,6 +430,86 @@ def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: P
             "27",
             "28",
             "29",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_empty_timed_rehearsal_source_file(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_json_timed_rehearsal_source_file(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"seconds": 88}', encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
         ]
     )
 
