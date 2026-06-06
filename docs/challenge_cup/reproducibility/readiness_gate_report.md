@@ -7,14 +7,14 @@
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist |
-| chinese readability | pass | 51 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 52 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
 | package evidence files | pass | 53 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 52 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 67 files archived; 2428419 bytes; sha256 verified |
+| submission archive | pass | 67 files archived; 2428474 bytes; sha256 verified |
 | numeric consistency | pass | 60 questions, 53 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
