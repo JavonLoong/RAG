@@ -54,6 +54,8 @@
 ## Submission Package Offline Verification
 
 - Offline verifier: `docs/challenge_cup/reproducibility/verify_submission_package.py`
+- Final acceptance audit: `docs/challenge_cup/reproducibility/final_acceptance_audit.md`
+- Final acceptance audit JSON: `docs/challenge_cup/reproducibility/final_acceptance_audit.json`
 ## 硬证据台账
 
 - 硬证据台账：`docs/challenge_cup/reproducibility/hard_evidence_ledger.md`

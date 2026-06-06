@@ -75,6 +75,11 @@ from build_challenge_cup_official_rubric_alignment import (
     OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
     write_outputs as write_official_rubric_alignment_outputs,
 )
+from build_challenge_cup_final_acceptance_audit import (
+    OUTPUT_JSON as FINAL_ACCEPTANCE_AUDIT_JSON,
+    OUTPUT_MD as FINAL_ACCEPTANCE_AUDIT_MD,
+    write_outputs as write_final_acceptance_audit_outputs,
+)
 from check_challenge_cup_goal_completion import write_report as write_goal_completion_report
 
 
@@ -358,6 +363,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 30. `reproducibility/challenge_cup_submission_archive_manifest.json`
 31. `reproducibility/challenge_cup_submission_package.zip`
 32. `reproducibility/verify_submission_package.py`
+33. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -987,6 +993,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py
 .\.venv\Scripts\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_final_acceptance_audit.py
 ```
 
 当前缺少真实专家反馈和真实计时彩排时，该门禁应返回 fail；这不是包生成失败，而是防止把 package readiness 误写成总目标已完成。
@@ -1028,6 +1035,8 @@ def build_official_rubric_dataset_manifest_section() -> str:
             "## Submission Package Offline Verification",
             "",
             f"- Offline verifier: `{md_link(SUBMISSION_PACKAGE_VERIFIER)}`",
+            f"- Final acceptance audit: `{md_link(FINAL_ACCEPTANCE_AUDIT_MD)}`",
+            f"- Final acceptance audit JSON: `{md_link(FINAL_ACCEPTANCE_AUDIT_JSON)}`",
         ]
     )
 
@@ -1192,9 +1201,13 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 python docs/challenge_cup/reproducibility/verify_submission_package.py --root .
 -> Status: pass
 
+python scripts/build_challenge_cup_final_acceptance_audit.py
+-> docs/challenge_cup/reproducibility/final_acceptance_audit.md
+-> Status: package_ready_awaiting_external_hard_evidence
+
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (35/35 gates)
+-> Status: pass (36/36 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1247,6 +1260,7 @@ def main() -> int:
     write(REPRO / "command_log.md", build_command_log(ctx))
     build_defense_deck_outputs()
     write_goal_completion_report(REPO_ROOT)
+    write_final_acceptance_audit_outputs()
     evidence_files = [
         md_link(DATASET),
         md_link(DEFENSE_DECK_PPTX),
@@ -1290,6 +1304,8 @@ def main() -> int:
         md_link(BROWSER_SMOKE_JSON),
         md_link(READINESS_GATE_REPORT),
         md_link(GOAL_COMPLETION_REPORT),
+        md_link(FINAL_ACCEPTANCE_AUDIT_MD),
+        md_link(FINAL_ACCEPTANCE_AUDIT_JSON),
         md_link(SUBMISSION_PACKAGE_VERIFIER),
         *(md_link(path) for path in BROWSER_SCREENSHOTS),
         *(

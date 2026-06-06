@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+REPRO_DIR = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility"
+OUTPUT_JSON = REPRO_DIR / "final_acceptance_audit.json"
+OUTPUT_MD = REPRO_DIR / "final_acceptance_audit.md"
+READINESS_REPORT = REPRO_DIR / "readiness_gate_report.md"
+GOAL_COMPLETION_REPORT = REPRO_DIR / "goal_completion_report.md"
+HARD_EVIDENCE_LEDGER = REPRO_DIR / "hard_evidence_ledger.json"
+ARCHIVE_MANIFEST = REPRO_DIR / "challenge_cup_submission_archive_manifest.json"
+SUBMISSION_VERIFIER = REPRO_DIR / "verify_submission_package.py"
+SUBMISSION_VERIFIER_RELATIVE = "docs/challenge_cup/reproducibility/verify_submission_package.py"
+REPORT_TYPE = "challenge_cup_final_acceptance_audit"
+READY_AWAITING_STATUS = "package_ready_awaiting_external_hard_evidence"
+BOUNDARY = (
+    "This audit proves package-level acceptance readiness and explicitly preserves the hard-evidence "
+    "boundary. It does not claim expert approval, timed rehearsal completion, final goal completion, "
+    "or award probability."
+)
+
+
+def repo_path(path: Path) -> str:
+    return path.relative_to(REPO_ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+
+
+def parse_status_line(text: str) -> str:
+    match = re.search(r"- Status: `([^`]+)`", text)
+    return match.group(1) if match else "unknown"
+
+
+def parse_passed_count(text: str) -> dict[str, int | None]:
+    match = re.search(r"- Passed:\s*(\d+)/(\d+)", text)
+    if not match:
+        return {"passed": None, "total": None}
+    return {"passed": int(match.group(1)), "total": int(match.group(2))}
+
+
+def parse_completion_claim_allowed(text: str) -> bool | None:
+    if "completion_claim_allowed=True" in text:
+        return True
+    if "completion_claim_allowed=False" in text:
+        return False
+    return None
+
+
+def blocking_items_from_ledger(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    categories = ledger.get("categories", {})
+    if not isinstance(categories, dict):
+        return items
+    for category_name, category in categories.items():
+        if not isinstance(category, dict):
+            continue
+        required = int(category.get("required_min_count") or 0)
+        collected = int(category.get("collected_count") or 0)
+        evidence_files = [str(item) for item in category.get("evidence_files", [])]
+        if collected < max(1, required) or len(evidence_files) < max(1, required):
+            items.append(
+                {
+                    "category": str(category_name),
+                    "required_min_count": required,
+                    "collected_count": collected,
+                    "evidence_files": evidence_files,
+                    "intake_dir": str(category.get("intake_dir") or ""),
+                }
+            )
+    return items
+
+
+def build_payload() -> dict[str, Any]:
+    readiness_text = read_text(READINESS_REPORT)
+    goal_text = read_text(GOAL_COMPLETION_REPORT)
+    hard_ledger = load_json(HARD_EVIDENCE_LEDGER)
+    archive_manifest = load_json(ARCHIVE_MANIFEST)
+
+    readiness_status = parse_status_line(readiness_text)
+    readiness_count = parse_passed_count(readiness_text)
+    completion_claim_allowed = parse_completion_claim_allowed(goal_text)
+    goal_status = parse_status_line(goal_text)
+    verifier_archived = SUBMISSION_VERIFIER_RELATIVE in {
+        str(item) for item in archive_manifest.get("included_files", [])
+    }
+    verifier_available = SUBMISSION_VERIFIER.exists() and SUBMISSION_VERIFIER.stat().st_size > 0
+    blocking_items = blocking_items_from_ledger(hard_ledger)
+    package_ready = (
+        readiness_status == "pass"
+        and readiness_count["passed"] == readiness_count["total"]
+        and verifier_available
+        and verifier_archived
+    )
+    can_mark_goal_complete = goal_status == "pass" and completion_claim_allowed is True and not blocking_items
+
+    if package_ready and not can_mark_goal_complete and blocking_items:
+        status = READY_AWAITING_STATUS
+    elif can_mark_goal_complete:
+        status = "goal_complete"
+    else:
+        status = "not_ready"
+
+    return {
+        "report_type": REPORT_TYPE,
+        "status": status,
+        "package_readiness": {
+            "status": readiness_status,
+            **readiness_count,
+            "report": repo_path(READINESS_REPORT),
+        },
+        "submission_package_verifier": {
+            "available": verifier_available,
+            "archived": verifier_archived,
+            "path": repo_path(SUBMISSION_VERIFIER),
+        },
+        "goal_completion": {
+            "status": goal_status,
+            "completion_claim_allowed": completion_claim_allowed,
+            "report": repo_path(GOAL_COMPLETION_REPORT),
+        },
+        "can_submit_for_package_review": package_ready,
+        "can_mark_goal_complete": can_mark_goal_complete,
+        "blocking_items": blocking_items,
+        "next_required_actions": [
+            "Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ...",
+            "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ...",
+            "Rebuild package, rerun readiness, rerun goal completion, and rerun this audit.",
+        ],
+        "boundary": BOUNDARY,
+    }
+
+
+def write_markdown(payload: dict[str, Any]) -> None:
+    lines = [
+        "# Final Acceptance Audit",
+        "",
+        f"- Status: `{payload['status']}`",
+        f"- Can submit for package review: `{payload['can_submit_for_package_review']}`",
+        f"- Can mark goal complete: `{payload['can_mark_goal_complete']}`",
+        f"- Readiness gate: `{payload['package_readiness']['status']}` "
+        f"({payload['package_readiness']['passed']}/{payload['package_readiness']['total']})",
+        f"- Submission verifier: `verify_submission_package.py` available={payload['submission_package_verifier']['available']} archived={payload['submission_package_verifier']['archived']}",
+        f"- Goal completion: `{payload['goal_completion']['status']}`; completion_claim_allowed={payload['goal_completion']['completion_claim_allowed']}",
+        "",
+        "## Blocking Items",
+        "",
+    ]
+    for item in payload["blocking_items"]:
+        lines.append(
+            f"- `{item['category']}`: collected={item['collected_count']}, "
+            f"required={item['required_min_count']}, intake=`{item['intake_dir']}`"
+        )
+    lines.extend(["", "## Next Required Actions", ""])
+    lines.extend(f"- {item}" for item in payload["next_required_actions"])
+    lines.extend(["", "## Boundary", "", str(payload["boundary"])])
+    OUTPUT_MD.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+
+def write_outputs() -> dict[str, Any]:
+    payload = build_payload()
+    REPRO_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_markdown(payload)
+    return payload
+
+
+def main() -> int:
+    payload = write_outputs()
+    print(f"final acceptance audit: {repo_path(OUTPUT_MD)}")
+    print(f"Status: {payload['status']}")
+    return 0 if payload["status"] in {READY_AWAITING_STATUS, "goal_complete"} else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

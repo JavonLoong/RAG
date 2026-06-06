@@ -1,0 +1,44 @@
+{
+  "report_type": "challenge_cup_final_acceptance_audit",
+  "status": "package_ready_awaiting_external_hard_evidence",
+  "package_readiness": {
+    "status": "pass",
+    "passed": 35,
+    "total": 35,
+    "report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
+  },
+  "submission_package_verifier": {
+    "available": true,
+    "archived": true,
+    "path": "docs/challenge_cup/reproducibility/verify_submission_package.py"
+  },
+  "goal_completion": {
+    "status": "fail",
+    "completion_claim_allowed": false,
+    "report": "docs/challenge_cup/reproducibility/goal_completion_report.md"
+  },
+  "can_submit_for_package_review": true,
+  "can_mark_goal_complete": false,
+  "blocking_items": [
+    {
+      "category": "expert_feedback",
+      "required_min_count": 1,
+      "collected_count": 0,
+      "evidence_files": [],
+      "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback"
+    },
+    {
+      "category": "timed_rehearsal",
+      "required_min_count": 1,
+      "collected_count": 0,
+      "evidence_files": [],
+      "intake_dir": "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal"
+    }
+  ],
+  "next_required_actions": [
+    "Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ...",
+    "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ...",
+    "Rebuild package, rerun readiness, rerun goal completion, and rerun this audit."
+  ],
+  "boundary": "This audit proves package-level acceptance readiness and explicitly preserves the hard-evidence boundary. It does not claim expert approval, timed rehearsal completion, final goal completion, or award probability."
+}

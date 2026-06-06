@@ -46,6 +46,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/goal_completion_report.md",
+    "reproducibility/final_acceptance_audit.md",
+    "reproducibility/final_acceptance_audit.json",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
@@ -154,6 +156,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/hard_evidence_closure_board.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     assert "reproducibility/goal_completion_report.md" in readme
+    assert "reproducibility/final_acceptance_audit.md" in readme
     acceptance_checklist = (PACKAGE_DIR / "06_结项验收清单.md").read_text(encoding="utf-8")
     for phrase in ["结项验收口径", "可提交材料", "验收步骤", "现场演示与离线备份", "未完成项与边界", "验收结论"]:
         assert phrase in acceptance_checklist
@@ -287,6 +290,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
     assert "check_challenge_cup_goal_completion.py" in runbook
+    assert "build_challenge_cup_final_acceptance_audit.py" in runbook
     assert "verify_submission_package.py" in runbook
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
@@ -297,6 +301,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "12_专家反馈采集与整改闭环.md" in manifest
     assert "readiness_gate_report.md" in manifest
     assert "goal_completion_report.md" in manifest
+    assert "final_acceptance_audit.md" in manifest
+    assert "final_acceptance_audit.json" in manifest
     assert "evidence_hashes.json" in manifest
     assert "evaluation_coverage_profile.json" in manifest
     assert "challenge_cup_graphrag_context_demo.md" in manifest
@@ -352,7 +358,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
-    assert "Status: pass (35/35 gates)" in command_log
+    assert "build_challenge_cup_final_acceptance_audit.py" in command_log
+    assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
+    assert "Status: pass (36/36 gates)" in command_log
+    assert "Status: pass (35/35 gates)" not in command_log
     assert "Status: pass (33/33 gates)" not in command_log
     assert "Status: pass (32/32 gates)" not in command_log
     assert "Status: pass (30/30 gates)" not in command_log
@@ -434,6 +443,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/goal_completion_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
@@ -522,6 +533,22 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "Status: `fail`" in goal_completion
     assert "completion_claim_allowed=False" in goal_completion
     assert "不能标记目标完成" in goal_completion
+    final_acceptance = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "final_acceptance_audit.json").read_text(encoding="utf-8")
+    )
+    assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
+    assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
+    assert final_acceptance["package_readiness"]["status"] == "pass"
+    assert final_acceptance["submission_package_verifier"]["available"] is True
+    assert final_acceptance["submission_package_verifier"]["archived"] is True
+    assert final_acceptance["goal_completion"]["status"] == "fail"
+    assert final_acceptance["goal_completion"]["completion_claim_allowed"] is False
+    assert final_acceptance["can_submit_for_package_review"] is True
+    assert final_acceptance["can_mark_goal_complete"] is False
+    assert {item["category"] for item in final_acceptance["blocking_items"]} == {
+        "expert_feedback",
+        "timed_rehearsal",
+    }
     official_rubric = json.loads((PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json").read_text(encoding="utf-8"))
     assert official_rubric["report_type"] == "challenge_cup_official_rubric_alignment"
     assert official_rubric["official_source_count"] >= 5
@@ -553,6 +580,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert archive_relative not in archive_entries
     assert archive_manifest_relative not in archive_entries
     assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in archive_entries
+    assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in archive_entries
     self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
     assert self_report not in archive_entries
     assert self_report in archive_manifest["excluded_files"]
@@ -564,6 +593,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/command_log.md",
         "docs/challenge_cup/reproducibility/evidence_hashes.json",
         "docs/challenge_cup/reproducibility/goal_completion_report.md",
+        "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
+        "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md",
@@ -633,6 +664,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
         PACKAGE_DIR / "reproducibility" / "goal_completion_report.md",
+        PACKAGE_DIR / "reproducibility" / "final_acceptance_audit.md",
+        PACKAGE_DIR / "reproducibility" / "final_acceptance_audit.json",
         PACKAGE_DIR / "11_应用场景与专家验证.md",
         PACKAGE_DIR / "reproducibility" / "application_validation_report.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.md",
@@ -706,6 +739,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
+        "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
         "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",

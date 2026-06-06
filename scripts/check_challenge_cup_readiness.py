@@ -59,6 +59,8 @@ OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/offi
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
 HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md"
 HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json"
+FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE = "docs/challenge_cup/reproducibility/final_acceptance_audit.md"
+FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/final_acceptance_audit.json"
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
@@ -74,6 +76,8 @@ OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_MD = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_JSON = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE
+FINAL_ACCEPTANCE_AUDIT_MD = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE
+FINAL_ACCEPTANCE_AUDIT_JSON = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE
 HARD_EVIDENCE_REQUIRED_PATHS = [
     HARD_EVIDENCE_LEDGER_MD_RELATIVE,
     HARD_EVIDENCE_LEDGER_JSON_RELATIVE,
@@ -98,6 +102,10 @@ OFFICIAL_RUBRIC_REQUIRED_PATHS = [
 HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS = [
     HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE,
     HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE,
+]
+FINAL_ACCEPTANCE_AUDIT_REQUIRED_PATHS = [
+    FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE,
+    FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE,
 ]
 APPLICATION_VALIDATION_DOC = PACKAGE_DIR / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = PACKAGE_DIR / "12_专家反馈采集与整改闭环.md"
@@ -226,6 +234,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
     "reproducibility/goal_completion_report.md",
+    "reproducibility/final_acceptance_audit.md",
+    "reproducibility/final_acceptance_audit.json",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/application_validation_report.md",
@@ -1088,6 +1098,108 @@ def check_submission_package_verifier() -> GateCheck:
         "submission package verifier",
         not failures,
         "extracted submission package verifier passed from archived script"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_final_acceptance_audit() -> GateCheck:
+    failures: list[str] = []
+    if not nonempty(FINAL_ACCEPTANCE_AUDIT_MD):
+        failures.append(f"{FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE} missing or empty")
+    if not nonempty(FINAL_ACCEPTANCE_AUDIT_JSON):
+        failures.append(f"{FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE} missing or empty")
+    if failures:
+        return GateCheck("final acceptance audit", False, "; ".join(failures))
+
+    try:
+        payload = json.loads(FINAL_ACCEPTANCE_AUDIT_JSON.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return GateCheck("final acceptance audit", False, f"invalid json: {exc}")
+
+    if payload.get("report_type") != "challenge_cup_final_acceptance_audit":
+        failures.append(f"report_type={payload.get('report_type')}")
+
+    status = payload.get("status")
+    if status not in {"package_ready_awaiting_external_hard_evidence", "goal_complete"}:
+        failures.append(f"status={status}")
+
+    package_readiness = payload.get("package_readiness")
+    if not isinstance(package_readiness, dict):
+        failures.append("package_readiness missing")
+    else:
+        if package_readiness.get("status") != "pass":
+            failures.append(f"package_readiness.status={package_readiness.get('status')}")
+        if package_readiness.get("passed") != package_readiness.get("total"):
+            failures.append(
+                f"package_readiness count={package_readiness.get('passed')}/{package_readiness.get('total')}"
+            )
+
+    verifier = payload.get("submission_package_verifier")
+    if not isinstance(verifier, dict):
+        failures.append("submission_package_verifier missing")
+    else:
+        if verifier.get("available") is not True:
+            failures.append(f"submission_package_verifier.available={verifier.get('available')}")
+        if verifier.get("archived") is not True:
+            failures.append(f"submission_package_verifier.archived={verifier.get('archived')}")
+        if verifier.get("path") != SUBMISSION_PACKAGE_VERIFIER_RELATIVE:
+            failures.append(f"submission_package_verifier.path={verifier.get('path')}")
+
+    goal_completion = payload.get("goal_completion")
+    if not isinstance(goal_completion, dict):
+        failures.append("goal_completion missing")
+    else:
+        if status == "package_ready_awaiting_external_hard_evidence":
+            if goal_completion.get("status") != "fail":
+                failures.append(f"goal_completion.status={goal_completion.get('status')}")
+            if goal_completion.get("completion_claim_allowed") is not False:
+                failures.append(
+                    f"goal_completion.completion_claim_allowed={goal_completion.get('completion_claim_allowed')}"
+                )
+        elif status == "goal_complete":
+            if goal_completion.get("status") != "pass":
+                failures.append(f"goal_completion.status={goal_completion.get('status')}")
+            if goal_completion.get("completion_claim_allowed") is not True:
+                failures.append(
+                    f"goal_completion.completion_claim_allowed={goal_completion.get('completion_claim_allowed')}"
+                )
+
+    if status == "package_ready_awaiting_external_hard_evidence":
+        if payload.get("can_submit_for_package_review") is not True:
+            failures.append(f"can_submit_for_package_review={payload.get('can_submit_for_package_review')}")
+        if payload.get("can_mark_goal_complete") is not False:
+            failures.append(f"can_mark_goal_complete={payload.get('can_mark_goal_complete')}")
+        blocking_items = payload.get("blocking_items")
+        if not isinstance(blocking_items, list):
+            failures.append("blocking_items missing")
+        else:
+            blocking_categories = {
+                str(item.get("category")) for item in blocking_items if isinstance(item, dict)
+            }
+            if blocking_categories != {"expert_feedback", "timed_rehearsal"}:
+                failures.append(f"blocking_items={sorted(blocking_categories)}")
+    elif status == "goal_complete":
+        if payload.get("can_submit_for_package_review") is not True:
+            failures.append(f"can_submit_for_package_review={payload.get('can_submit_for_package_review')}")
+        if payload.get("can_mark_goal_complete") is not True:
+            failures.append(f"can_mark_goal_complete={payload.get('can_mark_goal_complete')}")
+
+    markdown = FINAL_ACCEPTANCE_AUDIT_MD.read_text(encoding="utf-8")
+    for term in [
+        "Final Acceptance Audit",
+        "verify_submission_package.py",
+        "completion_claim_allowed=False" if status == "package_ready_awaiting_external_hard_evidence" else "goal_complete",
+    ]:
+        if term not in markdown:
+            failures.append(f"markdown missing {term}")
+
+    return GateCheck(
+        "final acceptance audit",
+        not failures,
+        "package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal"
+        if not failures and status == "package_ready_awaiting_external_hard_evidence"
+        else "goal completion audit passed"
         if not failures
         else "; ".join(failures),
     )
@@ -2945,6 +3057,7 @@ def run_gate() -> list[GateCheck]:
         check_defense_deck(),
         check_submission_archive(),
         check_submission_package_verifier(),
+        check_final_acceptance_audit(),
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
         check_graphrag_context_demo(),
@@ -2985,7 +3098,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

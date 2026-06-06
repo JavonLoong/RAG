@@ -78,6 +78,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "package evidence files" in report
     assert "submission archive" in report
     assert "submission package verifier" in report
+    assert "final acceptance audit" in report
     assert "claim-evidence matrix" in report
     assert "award claims" in report
     assert "acceptance checklist" in report
