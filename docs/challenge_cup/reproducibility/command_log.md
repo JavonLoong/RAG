@@ -98,6 +98,10 @@ python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
 
+python scripts/build_challenge_cup_special_prize_readiness_dashboard.py
+-> docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md
+-> Status: special_prize_review_ready_with_external_evidence_gaps
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -116,7 +120,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (37/37 gates)
+-> Status: pass (38/38 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

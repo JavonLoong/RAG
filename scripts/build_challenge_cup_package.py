@@ -80,6 +80,11 @@ from build_challenge_cup_official_rubric_alignment import (
     OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
     write_outputs as write_official_rubric_alignment_outputs,
 )
+from build_challenge_cup_special_prize_readiness_dashboard import (
+    OUTPUT_JSON as SPECIAL_PRIZE_READINESS_DASHBOARD_JSON,
+    OUTPUT_MD as SPECIAL_PRIZE_READINESS_DASHBOARD_MD,
+    write_outputs as write_special_prize_readiness_dashboard_outputs,
+)
 from build_challenge_cup_final_acceptance_audit import (
     OUTPUT_JSON as FINAL_ACCEPTANCE_AUDIT_JSON,
     OUTPUT_MD as FINAL_ACCEPTANCE_AUDIT_MD,
@@ -363,13 +368,14 @@ def build_readme(ctx: dict[str, Any]) -> str:
 25. `reproducibility/expert_feedback_outreach_ledger.md`
 26. `reproducibility/timed_rehearsal_schedule_ledger.md`
 27. `reproducibility/official_rubric_alignment.md`
-28. `reproducibility/hard_evidence_closure_board.md`
-29. `reproducibility/hard_evidence_action_pack.md`
-30. `reproducibility/hard_evidence_ledger.md`
-31. `reproducibility/challenge_cup_submission_archive_manifest.json`
-32. `reproducibility/challenge_cup_submission_package.zip`
-33. `reproducibility/verify_submission_package.py`
-34. `reproducibility/final_acceptance_audit.md`
+28. `reproducibility/special_prize_readiness_dashboard.md`
+29. `reproducibility/hard_evidence_closure_board.md`
+30. `reproducibility/hard_evidence_action_pack.md`
+31. `reproducibility/hard_evidence_ledger.md`
+32. `reproducibility/challenge_cup_submission_archive_manifest.json`
+33. `reproducibility/challenge_cup_submission_package.zip`
+34. `reproducibility/verify_submission_package.py`
+35. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -987,6 +993,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
 ```
 
 ## 运行结项 readiness gate
@@ -1028,6 +1035,8 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Hard evidence closure JSON: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON)}`",
             f"- Hard evidence action pack: `{md_link(HARD_EVIDENCE_ACTION_PACK_MD)}`",
             f"- Hard evidence action pack JSON: `{md_link(HARD_EVIDENCE_ACTION_PACK_JSON)}`",
+            f"- Special prize readiness dashboard: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD)}`",
+            f"- Special prize readiness dashboard JSON: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON)}`",
         ]
     )
 
@@ -1202,6 +1211,10 @@ python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
 
+python scripts/build_challenge_cup_special_prize_readiness_dashboard.py
+-> docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md
+-> Status: special_prize_review_ready_with_external_evidence_gaps
+
 node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.md
 -> docs/challenge_cup/reproducibility/browser_demo_smoke_report.json
@@ -1220,7 +1233,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (37/37 gates)
+-> Status: pass (38/38 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1275,6 +1288,7 @@ def main() -> int:
     build_defense_deck_outputs()
     write_goal_completion_report(REPO_ROOT)
     write_final_acceptance_audit_outputs()
+    write_special_prize_readiness_dashboard_outputs()
     evidence_files = [
         md_link(DATASET),
         md_link(DEFENSE_DECK_PPTX),
@@ -1300,6 +1314,8 @@ def main() -> int:
         *timed_rehearsal_schedule_payload.get("schedule_files", []),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
+        md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD),
+        md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON),
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD),
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON),
         md_link(HARD_EVIDENCE_ACTION_PACK_MD),

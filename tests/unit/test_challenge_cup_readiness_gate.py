@@ -85,6 +85,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "numeric consistency" in report
     assert "special-prize rubric self-assessment" in report
     assert "official rubric alignment" in report
+    assert "special prize readiness dashboard" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense deck" in report

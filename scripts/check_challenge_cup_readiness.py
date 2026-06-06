@@ -57,6 +57,12 @@ HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
 OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md"
+)
+SPECIAL_PRIZE_READINESS_DASHBOARD_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json"
+)
 HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md"
 HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json"
 HARD_EVIDENCE_ACTION_PACK_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md"
@@ -76,6 +82,8 @@ HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
 HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
+SPECIAL_PRIZE_READINESS_DASHBOARD_MD = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE
+SPECIAL_PRIZE_READINESS_DASHBOARD_JSON = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_JSON_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_MD = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_JSON = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE
 HARD_EVIDENCE_ACTION_PACK_MD = REPO_ROOT / HARD_EVIDENCE_ACTION_PACK_MD_RELATIVE
@@ -102,6 +110,10 @@ TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS = [
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
     OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE,
+]
+SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS = [
+    SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE,
+    SPECIAL_PRIZE_READINESS_DASHBOARD_JSON_RELATIVE,
 ]
 HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS = [
     HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE,
@@ -263,6 +275,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/special_prize_readiness_dashboard.md",
+    "reproducibility/special_prize_readiness_dashboard.json",
     "reproducibility/hard_evidence_closure_board.md",
     "reproducibility/hard_evidence_closure_board.json",
     "reproducibility/hard_evidence_action_pack.md",
@@ -1978,6 +1992,129 @@ def check_official_rubric_alignment() -> GateCheck:
     )
 
 
+def check_special_prize_readiness_dashboard() -> GateCheck:
+    failures: list[str] = []
+    required_files = [SPECIAL_PRIZE_READINESS_DASHBOARD_MD, SPECIAL_PRIZE_READINESS_DASHBOARD_JSON]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("special prize readiness dashboard", False, f"missing or empty: {missing_files}")
+
+    try:
+        payload = load_json(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON)
+    except (OSError, json.JSONDecodeError) as exc:
+        return GateCheck("special prize readiness dashboard", False, f"invalid dashboard json: {exc}")
+    markdown = SPECIAL_PRIZE_READINESS_DASHBOARD_MD.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_special_prize_readiness_dashboard":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "special_prize_review_ready_with_external_evidence_gaps":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("no_award_guarantee") is not True:
+        failures.append(f"no_award_guarantee={payload.get('no_award_guarantee')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("can_mark_goal_complete") is not False:
+        failures.append(f"can_mark_goal_complete={payload.get('can_mark_goal_complete')}")
+
+    official_basis = payload.get("official_basis", {})
+    if not isinstance(official_basis, dict):
+        failures.append("official_basis missing")
+        official_basis = {}
+    if official_basis.get("latest_public_result_source_id") != OFFICIAL_RUBRIC_LATEST_SOURCE_ID:
+        failures.append(f"latest_public_result_source_id={official_basis.get('latest_public_result_source_id')}")
+    if official_basis.get("max_special_prize_count") != 7:
+        failures.append(f"max_special_prize_count={official_basis.get('max_special_prize_count')}")
+    if official_basis.get("may_be_vacant") is not True:
+        failures.append(f"may_be_vacant={official_basis.get('may_be_vacant')}")
+
+    readiness = payload.get("rubric_readiness")
+    if not isinstance(readiness, list):
+        failures.append("rubric_readiness missing")
+        readiness = []
+    dimension_keys = {str(item.get("dimension_key", "")) for item in readiness if isinstance(item, dict)}
+    missing_dimensions = sorted(OFFICIAL_RUBRIC_REQUIRED_DIMENSIONS - dimension_keys)
+    if missing_dimensions:
+        failures.append(f"missing rubric dimensions: {missing_dimensions}")
+    for item in readiness:
+        if not isinstance(item, dict):
+            failures.append("rubric_readiness item invalid")
+            continue
+        key = str(item.get("dimension_key", ""))
+        if item.get("readiness_level") not in {"strong_evidence_linked", "ready_with_external_gap"}:
+            failures.append(f"{key}: readiness_level={item.get('readiness_level')}")
+        for field in ("judge_message", "defense_action", "evidence_files"):
+            if not has_value(item.get(field)):
+                failures.append(f"{key}: {field} missing")
+        for relative in [str(value) for value in item.get("evidence_files", [])]:
+            if not nonempty(REPO_ROOT / relative):
+                failures.append(f"{key}: evidence file missing or empty: {relative}")
+
+    top_risks = payload.get("top_risks")
+    if not isinstance(top_risks, list):
+        failures.append("top_risks missing")
+        top_risks = []
+    risk_ids = {str(item.get("risk_id", "")) for item in top_risks if isinstance(item, dict)}
+    if risk_ids != {"expert_feedback", "timed_rehearsal", "award_overclaim"}:
+        failures.append(f"top_risks={sorted(risk_ids)}")
+
+    next_action_files = [str(item) for item in payload.get("next_action_files", [])]
+    if "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" not in next_action_files:
+        failures.append("next_action_files missing hard evidence action pack")
+    missing_action_files = sorted(relative for relative in next_action_files if not nonempty(REPO_ROOT / relative))
+    if missing_action_files:
+        failures.append(f"next_action_files missing or empty: {missing_action_files}")
+
+    verification_commands = {str(item) for item in payload.get("verification_commands", [])}
+    if "python scripts/check_challenge_cup_goal_completion.py" not in verification_commands:
+        failures.append("verification_commands missing goal completion check")
+
+    for term in (
+        "Special Prize Readiness Dashboard",
+        "special_prize_review_ready_with_external_evidence_gaps",
+        "no_award_guarantee=True",
+        "expert_feedback",
+        "timed_rehearsal",
+    ):
+        if term not in markdown:
+            failures.append(f"markdown missing {term}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked special prize dashboard files: {untracked}")
+    if dirty:
+        failures.append(f"dirty special prize dashboard files: {dirty}")
+
+    return GateCheck(
+        "special prize readiness dashboard",
+        not failures,
+        f"{len(readiness)} rubric dimensions, 3 top risks, and no-award boundary verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_expert_review_index() -> GateCheck:
     if not EXPERT_REVIEW_INDEX.exists():
         return GateCheck("expert review index", False, "09_专家快速审阅索引.md missing")
@@ -3199,6 +3336,7 @@ def run_gate() -> list[GateCheck]:
         check_acceptance_checklist(),
         check_award_self_eval(),
         check_official_rubric_alignment(),
+        check_special_prize_readiness_dashboard(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -3231,7 +3369,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

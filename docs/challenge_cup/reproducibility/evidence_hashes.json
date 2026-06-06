@@ -216,6 +216,16 @@
       "sha256": "deca42d702e929e5eb1d28565cbb4f00eb2f6689eefceccb09cbaee06bb4febd"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
+      "bytes": 7742,
+      "sha256": "a09133160cc075030c0c1a1322e118ae6466fb5422ac9ebacd692cbd50e3ffb6"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
+      "bytes": 2942,
+      "sha256": "28747f0ca1f56c45bdd07fe7bfbda8d38fba640cf267c255e0a2c64b52be9a29"
+    },
+    {
       "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md",
       "bytes": 904,
       "sha256": "905bcb2b6570b68dd0070344d4b532e595224ac99003335a1323344c94738b83"

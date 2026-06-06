@@ -73,3 +73,5 @@
 - Hard evidence closure JSON: `docs/challenge_cup/reproducibility/hard_evidence_closure_board.json`
 - Hard evidence action pack: `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md`
 - Hard evidence action pack JSON: `docs/challenge_cup/reproducibility/hard_evidence_action_pack.json`
+- Special prize readiness dashboard: `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md`
+- Special prize readiness dashboard JSON: `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json`

@@ -67,6 +67,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/special_prize_readiness_dashboard.md",
+    "reproducibility/special_prize_readiness_dashboard.json",
     "reproducibility/hard_evidence_closure_board.md",
     "reproducibility/hard_evidence_closure_board.json",
     "reproducibility/hard_evidence_action_pack.md",
@@ -157,6 +159,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/timed_rehearsal_schedule_ledger.md" in readme
     assert "reproducibility/hard_evidence_closure_board.md" in readme
     assert "reproducibility/hard_evidence_action_pack.md" in readme
+    assert "reproducibility/special_prize_readiness_dashboard.md" in readme
     assert "reproducibility/readiness_gate_report.md" in readme
     assert "reproducibility/goal_completion_report.md" in readme
     assert "reproducibility/final_acceptance_audit.md" in readme
@@ -290,6 +293,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_hard_evidence_closure_board.py" in runbook
     assert "build_challenge_cup_hard_evidence_action_pack.py" in runbook
     assert "build_challenge_cup_hard_evidence_ledger.py" in runbook
+    assert "build_challenge_cup_special_prize_readiness_dashboard.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -330,6 +334,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "timed_rehearsal_schedule/README.md" in manifest
     assert "official_rubric_alignment.md" in manifest
     assert "official_rubric_alignment.json" in manifest
+    assert "special_prize_readiness_dashboard.md" in manifest
+    assert "special_prize_readiness_dashboard.json" in manifest
     assert "hard_evidence_closure_board.md" in manifest
     assert "hard_evidence_closure_board.json" in manifest
     assert "hard_evidence_action_pack.md" in manifest
@@ -366,8 +372,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "browser_demo_smoke_report.json" in command_log
     assert "build_challenge_cup_final_acceptance_audit.py" in command_log
     assert "build_challenge_cup_hard_evidence_action_pack.py" in command_log
+    assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
-    assert "Status: pass (37/37 gates)" in command_log
+    assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
+    assert "Status: pass (38/38 gates)" in command_log
+    assert "Status: pass (37/37 gates)" not in command_log
     assert "Status: pass (36/36 gates)" not in command_log
     assert "Status: pass (35/35 gates)" not in command_log
     assert "Status: pass (33/33 gates)" not in command_log
@@ -447,6 +456,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" in evidence_files
@@ -583,6 +594,19 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert official_rubric["special_prize_policy"]["latest_public_result_source_id"] == "tsinghua_44th_2026"
     assert official_rubric["special_prize_policy"]["may_be_vacant"] is True
     assert official_rubric["integrity_rules"]["no_award_guarantee"] is True
+    special_prize_dashboard = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.json").read_text(encoding="utf-8")
+    )
+    assert special_prize_dashboard["report_type"] == "challenge_cup_special_prize_readiness_dashboard"
+    assert special_prize_dashboard["status"] == "special_prize_review_ready_with_external_evidence_gaps"
+    assert special_prize_dashboard["no_award_guarantee"] is True
+    assert special_prize_dashboard["completion_claim_allowed"] is False
+    assert special_prize_dashboard["can_mark_goal_complete"] is False
+    assert {risk["risk_id"] for risk in special_prize_dashboard["top_risks"]} == {
+        "expert_feedback",
+        "timed_rehearsal",
+        "award_overclaim",
+    }
     official_rubric_md = (PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md").read_text(encoding="utf-8")
     for term in ["学术/实用价值", "创新性", "作品完成度", "现场答辩", "第44届", "特等奖7项", "不承诺获奖"]:
         assert term in official_rubric_md
@@ -601,6 +625,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert archive_relative not in archive_entries
     assert archive_manifest_relative not in archive_entries
     assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in archive_entries
+    assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.md" in archive_entries
@@ -620,6 +646,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
+        "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
+        "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
@@ -707,6 +735,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "timed_rehearsal_schedule" / "README.md",
         PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md",
         PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json",
+        PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.md",
+        PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_closure_board.md",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_closure_board.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_action_pack.md",
@@ -764,6 +794,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json",
         "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
+        "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
