@@ -4868,7 +4868,10 @@ def check_external_evidence_execution_kit() -> GateCheck:
         "preflight_expert_feedback",
         "record_expert_feedback",
         "run_timed_rehearsal",
-        "rebuild_package_and_gates",
+        "rebuild_package",
+        "check_readiness_gate",
+        "verify_submission_package",
+        "check_goal_completion_gate",
         "refresh_final_audit",
     ]
     if not isinstance(operator_sequence, list):
@@ -4904,7 +4907,10 @@ def check_external_evidence_execution_kit() -> GateCheck:
         "preflight_expert_feedback": "preflight_challenge_cup_hard_evidence.py expert_feedback",
         "record_expert_feedback": "record_challenge_cup_hard_evidence.py expert_feedback",
         "run_timed_rehearsal": "run_challenge_cup_timed_rehearsal.py",
-        "rebuild_package_and_gates": "check_challenge_cup_goal_completion.py",
+        "rebuild_package": "build_challenge_cup_package.py",
+        "check_readiness_gate": "check_challenge_cup_readiness.py",
+        "verify_submission_package": "verify_submission_package.py --root .",
+        "check_goal_completion_gate": "check_challenge_cup_goal_completion.py",
         "refresh_final_audit": "build_challenge_cup_final_acceptance_audit.py",
     }
     for step_id, required_command in command_requirements.items():
@@ -4912,6 +4918,8 @@ def check_external_evidence_execution_kit() -> GateCheck:
         command = str(item.get("command", "")) if isinstance(item, dict) else ""
         if required_command not in command:
             failures.append(f"{step_id}: command missing {required_command}")
+        if "&&" in command:
+            failures.append(f"{step_id}: command must not use PowerShell-incompatible && chaining")
 
     packets = payload.get("execution_packets")
     if not isinstance(packets, list):

@@ -257,19 +257,47 @@ def operator_sequence() -> list[dict[str, Any]]:
             "does_not_claim_award_or_completion": True,
         },
         {
-            "step_id": "rebuild_package_and_gates",
+            "step_id": "rebuild_package",
             "phase": "post_evidence_package_refresh",
             "category": "package_readiness",
-            "command": (
-                "python scripts/build_challenge_cup_package.py && "
-                "python scripts/check_challenge_cup_readiness.py && "
-                "python docs/challenge_cup/reproducibility/verify_submission_package.py --root . && "
-                "python scripts/check_challenge_cup_goal_completion.py"
-            ),
+            "command": "python scripts/build_challenge_cup_package.py",
             "human_proof_required": "archived expert feedback and archived timed rehearsal evidence are already present",
             "counts_as_hard_evidence": False,
-            "expected_after_step": "package, readiness, archive verifier, and goal-completion gate reflect the new evidence",
-            "guardrail": "Do not treat rebuild success as proof unless goal completion explicitly passes.",
+            "expected_after_step": "package manifest, evidence hashes, and submission archive are refreshed",
+            "guardrail": "Package rebuild is only a refresh; it does not prove readiness or goal completion.",
+            "does_not_claim_award_or_completion": True,
+        },
+        {
+            "step_id": "check_readiness_gate",
+            "phase": "post_evidence_package_refresh",
+            "category": "package_readiness",
+            "command": "python scripts/check_challenge_cup_readiness.py",
+            "human_proof_required": "refreshed package files from the previous step",
+            "counts_as_hard_evidence": False,
+            "expected_after_step": "readiness gate reports the current package state",
+            "guardrail": "A passing readiness gate is still package readiness, not award proof.",
+            "does_not_claim_award_or_completion": True,
+        },
+        {
+            "step_id": "verify_submission_package",
+            "phase": "post_evidence_package_refresh",
+            "category": "package_readiness",
+            "command": "python docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+            "human_proof_required": "refreshed submission archive from the package rebuild step",
+            "counts_as_hard_evidence": False,
+            "expected_after_step": "submission package verifier passes against the refreshed archive",
+            "guardrail": "Archive verification proves package integrity only; it does not close external evidence.",
+            "does_not_claim_award_or_completion": True,
+        },
+        {
+            "step_id": "check_goal_completion_gate",
+            "phase": "post_evidence_package_refresh",
+            "category": "goal_completion",
+            "command": "python scripts/check_challenge_cup_goal_completion.py",
+            "human_proof_required": "archived hard evidence ledger and refreshed readiness report",
+            "counts_as_hard_evidence": False,
+            "expected_after_step": "goal-completion gate explicitly states whether completion is allowed",
+            "guardrail": "Do not treat any previous step as proof unless goal completion explicitly passes.",
             "does_not_claim_award_or_completion": True,
         },
         {

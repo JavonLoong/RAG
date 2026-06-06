@@ -39,7 +39,10 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         "preflight_expert_feedback",
         "record_expert_feedback",
         "run_timed_rehearsal",
-        "rebuild_package_and_gates",
+        "rebuild_package",
+        "check_readiness_gate",
+        "verify_submission_package",
+        "check_goal_completion_gate",
         "refresh_final_audit",
     ]
     assert sequence["record_expert_outreach"]["counts_as_hard_evidence"] is False
@@ -97,6 +100,7 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
             for command in packet["recording_commands"]
         ]
     )
+    assert "&&" not in command_text
     assert "2026-06-06" not in command_text
     assert "20260606" not in command_text
     for placeholder in [

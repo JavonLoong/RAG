@@ -80,15 +80,48 @@
 - Guardrail: Measured rehearsal timing supports defense readiness; it is not expert approval or award proof.
 - does_not_claim_award_or_completion: `True`
 
-### rebuild_package_and_gates
+### rebuild_package
 
 - Phase: `post_evidence_package_refresh`
 - Category: `package_readiness`
-- Command: `python scripts/build_challenge_cup_package.py && python scripts/check_challenge_cup_readiness.py && python docs/challenge_cup/reproducibility/verify_submission_package.py --root . && python scripts/check_challenge_cup_goal_completion.py`
+- Command: `python scripts/build_challenge_cup_package.py`
 - Human proof required: archived expert feedback and archived timed rehearsal evidence are already present
 - counts_as_hard_evidence: `False`
-- Expected after step: package, readiness, archive verifier, and goal-completion gate reflect the new evidence
-- Guardrail: Do not treat rebuild success as proof unless goal completion explicitly passes.
+- Expected after step: package manifest, evidence hashes, and submission archive are refreshed
+- Guardrail: Package rebuild is only a refresh; it does not prove readiness or goal completion.
+- does_not_claim_award_or_completion: `True`
+
+### check_readiness_gate
+
+- Phase: `post_evidence_package_refresh`
+- Category: `package_readiness`
+- Command: `python scripts/check_challenge_cup_readiness.py`
+- Human proof required: refreshed package files from the previous step
+- counts_as_hard_evidence: `False`
+- Expected after step: readiness gate reports the current package state
+- Guardrail: A passing readiness gate is still package readiness, not award proof.
+- does_not_claim_award_or_completion: `True`
+
+### verify_submission_package
+
+- Phase: `post_evidence_package_refresh`
+- Category: `package_readiness`
+- Command: `python docs/challenge_cup/reproducibility/verify_submission_package.py --root .`
+- Human proof required: refreshed submission archive from the package rebuild step
+- counts_as_hard_evidence: `False`
+- Expected after step: submission package verifier passes against the refreshed archive
+- Guardrail: Archive verification proves package integrity only; it does not close external evidence.
+- does_not_claim_award_or_completion: `True`
+
+### check_goal_completion_gate
+
+- Phase: `post_evidence_package_refresh`
+- Category: `goal_completion`
+- Command: `python scripts/check_challenge_cup_goal_completion.py`
+- Human proof required: archived hard evidence ledger and refreshed readiness report
+- counts_as_hard_evidence: `False`
+- Expected after step: goal-completion gate explicitly states whether completion is allowed
+- Guardrail: Do not treat any previous step as proof unless goal completion explicitly passes.
 - does_not_claim_award_or_completion: `True`
 
 ### refresh_final_audit
