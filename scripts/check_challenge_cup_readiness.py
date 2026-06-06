@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 59
+CURRENT_READINESS_GATE_COUNT = 60
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -117,6 +117,8 @@ NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE = (
 NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE = (
     "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json"
 )
+CLAIM_INTEGRITY_REPORT_MD_RELATIVE = "docs/challenge_cup/reproducibility/claim_integrity_report.md"
+CLAIM_INTEGRITY_REPORT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/claim_integrity_report.json"
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md"
 )
@@ -160,6 +162,8 @@ NUMERIC_TRACEABILITY_REPORT_MD = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_MD_RELA
 NUMERIC_TRACEABILITY_REPORT_JSON = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE
 NO_ANSWER_BOUNDARY_EVALUATION_MD = REPO_ROOT / NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE
 NO_ANSWER_BOUNDARY_EVALUATION_JSON = REPO_ROOT / NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE
+CLAIM_INTEGRITY_REPORT_MD = REPO_ROOT / CLAIM_INTEGRITY_REPORT_MD_RELATIVE
+CLAIM_INTEGRITY_REPORT_JSON = REPO_ROOT / CLAIM_INTEGRITY_REPORT_JSON_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
 VERIFICATION_TRANSCRIPT_MD = REPO_ROOT / VERIFICATION_TRANSCRIPT_MD_RELATIVE
@@ -227,6 +231,10 @@ NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS = [
     NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE,
     NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE,
 ]
+CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS = [
+    CLAIM_INTEGRITY_REPORT_MD_RELATIVE,
+    CLAIM_INTEGRITY_REPORT_JSON_RELATIVE,
+]
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
@@ -270,6 +278,12 @@ NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY = (
     "This is a deterministic empty-context no-answer boundary evaluation for the local HallucinationGuard; "
     "it does not claim live retriever coverage, does not claim online LLM behavior, does not claim external "
     "validation, and does not satisfy goal completion without real expert feedback and real timed rehearsal evidence."
+)
+CLAIM_INTEGRITY_REPORT_BOUNDARY = (
+    "This report audits package-level defense claims for evidence links and forbidden overclaims. It does "
+    "not guarantee an award, does not claim expert approval, does not claim timed rehearsal completion, "
+    "does not claim production deployment, and does not satisfy goal completion without real expert feedback "
+    "and real timed rehearsal evidence."
 )
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY = (
     "This snapshot records the local runtime used to reproduce the challenge-cup package; it is not a "
@@ -1151,6 +1165,14 @@ NO_ANSWER_BOUNDARY_MARKDOWN_TERMS = {
     "证据不足",
     "does not claim live retriever coverage",
     "does not claim online LLM behavior",
+}
+CLAIM_INTEGRITY_MARKDOWN_TERMS = {
+    "Claim Integrity Report",
+    "claim_integrity_verified_no_award_or_external_claim",
+    "package_review_ready",
+    "special_prize_competition_argument",
+    "does not guarantee an award",
+    "does not claim expert approval",
 }
 REQUIRED_SCENARIO_TERMS = {
     "demo-maint-thresholds-076",
@@ -5446,6 +5468,137 @@ def check_no_answer_boundary_evaluation() -> GateCheck:
     )
 
 
+def check_claim_integrity_report() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path for path in (CLAIM_INTEGRITY_REPORT_MD, CLAIM_INTEGRITY_REPORT_JSON) if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("claim integrity report", False, f"missing or empty: {missing}")
+
+    payload = load_json(CLAIM_INTEGRITY_REPORT_JSON)
+    markdown = CLAIM_INTEGRITY_REPORT_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_claim_integrity_report":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "claim_integrity_verified_no_award_or_external_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    for field in (
+        "award_guarantee_claimed",
+        "expert_approval_claimed",
+        "timed_rehearsal_completion_claimed",
+        "production_deployment_claimed",
+    ):
+        if payload.get(field) is not False:
+            failures.append(f"{field}={payload.get(field)}")
+    if payload.get("all_claims_evidence_bound") is not True:
+        failures.append(f"all_claims_evidence_bound={payload.get('all_claims_evidence_bound')}")
+    if int(payload.get("forbidden_hit_count", -1)) != 0:
+        failures.append(f"forbidden_hit_count={payload.get('forbidden_hit_count')}")
+    if payload.get("forbidden_hits") not in ([], None):
+        failures.append(f"forbidden_hits={payload.get('forbidden_hits')}")
+    if int(payload.get("claim_count") or -1) < 8:
+        failures.append(f"claim_count={payload.get('claim_count')}")
+    if payload.get("failures") != []:
+        failures.append(f"failures={payload.get('failures')}")
+
+    claims = [claim for claim in payload.get("claims", []) if isinstance(claim, dict)]
+    claim_ids = {str(claim.get("claim_id", "")) for claim in claims}
+    bootstrapping_readiness_report = not REPORT_MD.exists()
+    readiness_self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    required_claim_ids = {
+        "package_review_ready",
+        "graphrag_innovation_bounded",
+        "evaluation_transparency",
+        "application_value_bounded",
+        "defense_demo_fallback_ready",
+        "external_hard_evidence_not_closed",
+        "special_prize_competition_argument",
+        "human_decision_boundary",
+    }
+    missing_claim_ids = sorted(required_claim_ids - claim_ids)
+    if missing_claim_ids:
+        failures.append(f"missing claim ids: {missing_claim_ids}")
+    for claim in claims:
+        claim_id = str(claim.get("claim_id", ""))
+        evidence_files = [str(path) for path in claim.get("evidence_files", [])]
+        if not evidence_files:
+            failures.append(f"{claim_id}: evidence_files missing")
+        for relative in evidence_files:
+            if not relative.startswith("docs/") and not relative.startswith("evaluation/"):
+                failures.append(f"{claim_id}: evidence_files must be repo paths: {relative}")
+            if bootstrapping_readiness_report and relative == readiness_self_report:
+                continue
+            if not nonempty(REPO_ROOT / relative):
+                failures.append(f"{claim_id}: evidence file missing or empty: {relative}")
+        if not str(claim.get("boundary", "")).strip():
+            failures.append(f"{claim_id}: boundary missing")
+        if not str(claim.get("forbidden_overclaim", "")).strip():
+            failures.append(f"{claim_id}: forbidden_overclaim missing")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != CLAIM_INTEGRITY_REPORT_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "does not guarantee an award",
+        "does not claim expert approval",
+        "does not claim timed rehearsal completion",
+        "does not claim production deployment",
+        "real expert feedback",
+        "real timed rehearsal",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(term for term in CLAIM_INTEGRITY_MARKDOWN_TERMS if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked claim integrity report files: {untracked}")
+    if dirty:
+        failures.append(f"dirty claim integrity report files: {dirty}")
+
+    return GateCheck(
+        "claim integrity report",
+        not failures,
+        "8 defense claim families are evidence-bound with no award, expert-approval, timed-rehearsal, or production-deployment overclaim"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_runtime_reproducibility_snapshot() -> GateCheck:
     failures: list[str] = []
     missing_files = [
@@ -5872,6 +6025,7 @@ def run_gate() -> list[GateCheck]:
         check_application_value_quantification(),
         check_numeric_traceability_report(),
         check_no_answer_boundary_evaluation(),
+        check_claim_integrity_report(),
         check_runtime_reproducibility_snapshot(),
         check_verification_transcript(),
         check_scenario_demo_evidence(),
@@ -5895,7 +6049,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

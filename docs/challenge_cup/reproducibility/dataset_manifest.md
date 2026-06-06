@@ -73,6 +73,10 @@
 
 - No-answer boundary evaluation: `docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md`
 - No-answer boundary JSON: `docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json`
+## Claim Integrity Report
+
+- Claim integrity report: `docs/challenge_cup/reproducibility/claim_integrity_report.md`
+- Claim integrity JSON: `docs/challenge_cup/reproducibility/claim_integrity_report.json`
 ## Runtime Reproducibility Snapshot
 
 - Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`

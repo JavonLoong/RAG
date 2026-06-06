@@ -56,6 +56,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_no_answer_boundary_evaluation.py
 ```
 
+## 生成评审主张诚信报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_claim_integrity_report.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell

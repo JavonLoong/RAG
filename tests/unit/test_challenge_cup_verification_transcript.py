@@ -28,7 +28,7 @@ def test_verification_transcript_summarizes_current_gates_without_goal_overclaim
     monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(module, "OUTPUT_JSON", output_json)
     monkeypatch.setattr(module, "OUTPUT_MD", output_md)
-    monkeypatch.setattr(module, "CURRENT_READINESS_GATE_COUNT", 59)
+    monkeypatch.setattr(module, "CURRENT_READINESS_GATE_COUNT", 60)
 
     (repro / "readiness_gate_report.md").write_text(
         "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 56/56\n",
@@ -66,8 +66,8 @@ def test_verification_transcript_summarizes_current_gates_without_goal_overclaim
     assert payload["does_not_satisfy_goal_completion"] is True
     assert payload["external_validation_claimed"] is False
     assert payload["readiness_gate"]["status"] == "pass"
-    assert payload["readiness_gate"]["passed"] == 59
-    assert payload["readiness_gate"]["total"] == 59
+    assert payload["readiness_gate"]["passed"] == 60
+    assert payload["readiness_gate"]["total"] == 60
     assert payload["readiness_gate"]["source_report_passed"] == 56
     assert payload["final_acceptance"]["status"] == "package_ready_awaiting_external_hard_evidence"
     assert payload["goal_completion"]["status"] == "fail"
@@ -94,6 +94,6 @@ def test_verification_transcript_summarizes_current_gates_without_goal_overclaim
     assert json.loads(output_json.read_text(encoding="utf-8")) == payload
     markdown = output_md.read_text(encoding="utf-8")
     assert "Verification Transcript" in markdown
-    assert "readiness gate pass 59/59" in markdown
+    assert "readiness gate pass 60/60" in markdown
     assert "Expected Failure" in markdown
     assert "does not claim goal completion" in markdown

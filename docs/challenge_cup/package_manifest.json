@@ -65,6 +65,8 @@
     "docs/challenge_cup/reproducibility/numeric_traceability_report.json",
     "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md",
     "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json",
+    "docs/challenge_cup/reproducibility/claim_integrity_report.md",
+    "docs/challenge_cup/reproducibility/claim_integrity_report.json",
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md",
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json",
     "docs/challenge_cup/reproducibility/verification_transcript.md",

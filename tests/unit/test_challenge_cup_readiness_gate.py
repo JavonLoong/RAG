@@ -223,12 +223,12 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "59 readiness gates", "53 readiness gates"
+                "60 readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("59 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("60 readiness gates", "53 readiness gates"),
         encoding="utf-8",
     )
 
@@ -2527,6 +2527,86 @@ def test_no_answer_boundary_evaluation_gate_rejects_live_llm_claim(monkeypatch, 
     assert "online_llm_behavior_claimed=True" in check.detail
 
 
+def test_claim_integrity_report_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "claim_integrity_report.md"
+    metadata = tmp_path / "claim_integrity_report.json"
+    monkeypatch.setattr(module, "CLAIM_INTEGRITY_REPORT_MD", markdown)
+    monkeypatch.setattr(module, "CLAIM_INTEGRITY_REPORT_JSON", metadata)
+
+    check = module.check_claim_integrity_report()
+
+    assert not check.passed
+    assert "claim_integrity_report.md" in check.detail
+    assert "claim_integrity_report.json" in check.detail
+
+
+def test_claim_integrity_report_gate_rejects_award_guarantee_claim(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "claim_integrity_report.md"
+    metadata = tmp_path / "claim_integrity_report.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = [
+        "docs/challenge_cup/reproducibility/claim_integrity_report.md",
+        "docs/challenge_cup/reproducibility/claim_integrity_report.json",
+    ]
+    monkeypatch.setattr(module, "CLAIM_INTEGRITY_REPORT_MD", markdown)
+    monkeypatch.setattr(module, "CLAIM_INTEGRITY_REPORT_JSON", metadata)
+    monkeypatch.setattr(module, "CLAIM_INTEGRITY_REPORT_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    markdown.write_text(
+        "Claim Integrity Report\nclaim_integrity_verified_no_award_or_external_claim\n"
+        "package_review_ready\nspecial_prize_competition_argument\n",
+        encoding="utf-8",
+    )
+    metadata.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_claim_integrity_report",
+                "status": "claim_integrity_verified_no_award_or_external_claim",
+                "completion_claim_allowed": False,
+                "does_not_satisfy_goal_completion": True,
+                "award_guarantee_claimed": True,
+                "expert_approval_claimed": False,
+                "timed_rehearsal_completion_claimed": False,
+                "production_deployment_claimed": False,
+                "all_claims_evidence_bound": True,
+                "forbidden_hit_count": 0,
+                "claim_count": 8,
+                "claims": [
+                    {
+                        "claim_id": "package_review_ready",
+                        "allowed_claim": "Package review ready.",
+                        "evidence_files": ["docs/challenge_cup/reproducibility/readiness_gate_report.md"],
+                        "boundary": "Readiness is not an award guarantee.",
+                        "forbidden_overclaim": "Do not claim award certainty.",
+                    }
+                ],
+                "failures": [],
+                "boundary": module.CLAIM_INTEGRITY_REPORT_BOUNDARY,
+                "output_files": required_paths,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+
+    check = module.check_claim_integrity_report()
+
+    assert not check.passed
+    assert "award_guarantee_claimed=True" in check.detail
+
+
 def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "runtime_reproducibility_snapshot.md"
@@ -2576,7 +2656,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 59/59\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 60/60\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -2590,9 +2670,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 59,
-                    "total": 59,
-                    "current_gate_count": 59,
+                    "passed": 60,
+                    "total": 60,
+                    "current_gate_count": 60,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",
