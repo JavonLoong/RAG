@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -19,6 +20,8 @@ CONFIRMATION_FIELDS = {
     "expert_feedback": ("real_feedback_confirmed", "feedback_source_path"),
     "timed_rehearsal": ("real_rehearsal_confirmed", "recording_or_timer_source_path"),
 }
+EXPERT_EVIDENCE_TYPES = {"signed_feedback_form", "email_reply", "meeting_minutes", "chat_screenshot"}
+MIN_EXPERT_REVIEW_DIMENSIONS = 3
 TIMED_REHEARSAL_LIMITS = {
     "opening_actual_seconds": 90,
     "demo_actual_seconds": 180,
@@ -63,6 +66,57 @@ def safe_repo_relative(path: str) -> bool:
 
 def positive_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def iso_date_string(value: Any) -> bool:
+    if not nonempty_string(value):
+        return False
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
+    failures: list[str] = []
+    evidence_type = metadata.get("evidence_type")
+    if evidence_type not in EXPERT_EVIDENCE_TYPES:
+        failures.append(f"{metadata_path}: evidence_type={evidence_type!r} is not accepted expert feedback")
+    for field in ("reviewer_identity", "role_or_org"):
+        if not nonempty_string(metadata.get(field)):
+            failures.append(f"{metadata_path}: {field} must be non-empty")
+    if not iso_date_string(metadata.get("review_date")):
+        failures.append(f"{metadata_path}: review_date must be YYYY-MM-DD")
+
+    review_dimensions = metadata.get("review_dimensions")
+    if not isinstance(review_dimensions, list):
+        failures.append(f"{metadata_path}: review_dimensions must be a list")
+    else:
+        valid_dimensions = [item for item in review_dimensions if nonempty_string(item)]
+        if len(valid_dimensions) < MIN_EXPERT_REVIEW_DIMENSIONS:
+            failures.append(
+                f"{metadata_path}: review_dimensions count={len(valid_dimensions)} "
+                f"expected at least {MIN_EXPERT_REVIEW_DIMENSIONS}"
+            )
+
+    remediation_record = metadata.get("remediation_record")
+    if not isinstance(remediation_record, list) or not remediation_record:
+        failures.append(f"{metadata_path}: remediation_record must contain at least one item")
+    else:
+        for index, item in enumerate(remediation_record, start=1):
+            if not isinstance(item, dict):
+                failures.append(f"{metadata_path}: remediation_record[{index}] must be an object")
+                continue
+            if not nonempty_string(item.get("issue")):
+                failures.append(f"{metadata_path}: remediation_record[{index}].issue must be non-empty")
+            if not nonempty_string(item.get("action")):
+                failures.append(f"{metadata_path}: remediation_record[{index}].action must be non-empty")
+    return failures
 
 
 def timed_rehearsal_timing_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
@@ -186,6 +240,10 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
             if not safe_repo_relative(source_relative) or not nonempty(repo_root / source_relative):
                 failures.append(f"{relative}: {source_field} must point to a real source attachment")
                 continue
+            if key == "expert_feedback":
+                failures.extend(expert_feedback_metadata_failures(metadata, relative))
+                if failures and any(item.startswith(f"{relative}:") for item in failures):
+                    continue
             if key == "timed_rehearsal":
                 failures.extend(timed_rehearsal_timing_failures(metadata, relative))
                 if failures and any(item.startswith(f"{relative}:") for item in failures):
