@@ -92,6 +92,11 @@ python scripts/build_challenge_cup_claim_integrity_report.py
 -> docs/challenge_cup/reproducibility/claim_integrity_report.json
 -> Status: claim_integrity_verified_no_award_or_external_claim
 
+python scripts/build_challenge_cup_rubric_defense_coverage.py
+-> docs/challenge_cup/reproducibility/rubric_defense_coverage.md
+-> docs/challenge_cup/reproducibility/rubric_defense_coverage.json
+-> Status: rubric_defense_coverage_ready_no_award_claim
+
 python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
@@ -168,7 +173,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (60/60 gates)
+-> Status: pass (61/61 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

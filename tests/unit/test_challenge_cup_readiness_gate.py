@@ -123,6 +123,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "application value quantification" in report
     assert "numeric traceability report" in report
     assert "no-answer boundary evaluation" in report
+    assert "rubric defense coverage" in report
     assert "runtime reproducibility snapshot" in report
     assert "verification transcript" in report
     assert "scenario demo evidence" in report
@@ -223,12 +224,14 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "60 readiness gates", "53 readiness gates"
+                f"{module.CURRENT_READINESS_GATE_COUNT} readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("60 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace(
+            f"{module.CURRENT_READINESS_GATE_COUNT} readiness gates", "53 readiness gates"
+        ),
         encoding="utf-8",
     )
 
@@ -601,6 +604,116 @@ def test_official_rubric_alignment_gate_rejects_stale_or_incomplete_source_lock(
     assert "exhibition_work_count_min" in check.detail
     assert "rubric_dimension_lock" in check.detail
     assert "must_recheck_before_final_submission" in check.detail
+
+
+def test_rubric_defense_coverage_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "rubric_defense_coverage.md"
+    metadata = tmp_path / "rubric_defense_coverage.json"
+    monkeypatch.setattr(module, "RUBRIC_DEFENSE_COVERAGE_MD", markdown)
+    monkeypatch.setattr(module, "RUBRIC_DEFENSE_COVERAGE_JSON", metadata)
+
+    check = module.check_rubric_defense_coverage()
+
+    assert not check.passed
+    assert "rubric_defense_coverage.md" in check.detail
+    assert "rubric_defense_coverage.json" in check.detail
+
+
+def test_rubric_defense_coverage_gate_rejects_missing_dimension(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "rubric_defense_coverage.md"
+    metadata = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "rubric_defense_coverage.json"
+    manifest = tmp_path / "docs" / "challenge_cup" / "package_manifest.json"
+    hashes = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "evidence_hashes.json"
+    archive_manifest = (
+        tmp_path / "docs" / "challenge_cup" / "reproducibility" / "challenge_cup_submission_archive_manifest.json"
+    )
+    report_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md"
+    for path in (markdown, metadata, manifest, hashes, archive_manifest, report_md):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    evidence_paths = [
+        "docs/challenge_cup/evidence-a.md",
+        "docs/challenge_cup/evidence-b.md",
+        "evaluation/reports/evidence-c.md",
+    ]
+    for relative in evidence_paths:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("evidence", encoding="utf-8")
+    report_md.write_text("# readiness\n", encoding="utf-8")
+
+    dimension_rows = [
+        {
+            "dimension_key": key,
+            "label": key,
+            "coverage_status": "covered",
+            "official_source_ids": ["tsinghua_37th_2019"],
+            "evidence_files": evidence_paths[:2],
+            "judge_objection_ids": ["OJ-01-normal-rag"],
+            "claim_ids": ["package_review_ready"],
+            "defense_assets": ["docs/challenge_cup/evidence-a.md"],
+            "boundary": "No award guarantee and no external validation claim.",
+        }
+        for key in sorted(module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_DIMENSIONS - {"defense_performance"})
+    ]
+    metadata.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_rubric_defense_coverage",
+                "status": "rubric_defense_coverage_ready_no_award_claim",
+                "completion_claim_allowed": False,
+                "does_not_satisfy_goal_completion": True,
+                "award_guarantee_claimed": False,
+                "expert_approval_claimed": False,
+                "timed_rehearsal_completion_claimed": False,
+                "coverage_complete": True,
+                "dimension_count": len(dimension_rows),
+                "covered_dimension_count": len(dimension_rows),
+                "dimensions": dimension_rows,
+                "gaps": [],
+                "boundary": module.RUBRIC_DEFENSE_COVERAGE_BOUNDARY,
+                "output_files": module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    markdown.write_text(
+        "Rubric Defense Coverage\nacademic_or_practical_value\ninnovation\ncompletion\nno award guarantee\n",
+        encoding="utf-8",
+    )
+    manifest.write_text(
+        json.dumps({"evidence_files": module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    hashes.write_text(
+        json.dumps(
+            {"files": [{"path": path} for path in module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS]},
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    archive_manifest.write_text(
+        json.dumps({"included_files": module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "REPORT_MD", report_md)
+    monkeypatch.setattr(module, "RUBRIC_DEFENSE_COVERAGE_MD", markdown)
+    monkeypatch.setattr(module, "RUBRIC_DEFENSE_COVERAGE_JSON", metadata)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_rubric_defense_coverage()
+
+    assert not check.passed
+    assert "missing dimension keys" in check.detail
+    assert "defense_performance" in check.detail
 
 
 def test_special_prize_dashboard_gate_rejects_missing_non_self_report_evidence(monkeypatch, tmp_path) -> None:
@@ -2656,7 +2769,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 60/60\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 61/61\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -2670,9 +2783,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 60,
-                    "total": 60,
-                    "current_gate_count": 60,
+                    "passed": 61,
+                    "total": 61,
+                    "current_gate_count": 61,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

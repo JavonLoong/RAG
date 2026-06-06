@@ -94,6 +94,11 @@ from build_challenge_cup_claim_integrity_report import (
     OUTPUT_MD as CLAIM_INTEGRITY_REPORT_MD,
     write_outputs as write_claim_integrity_report_outputs,
 )
+from build_challenge_cup_rubric_defense_coverage import (
+    OUTPUT_JSON as RUBRIC_DEFENSE_COVERAGE_JSON,
+    OUTPUT_MD as RUBRIC_DEFENSE_COVERAGE_MD,
+    write_outputs as write_rubric_defense_coverage_outputs,
+)
 from build_challenge_cup_runtime_reproducibility_snapshot import (
     OUTPUT_JSON as RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON,
     OUTPUT_MD as RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD,
@@ -190,6 +195,8 @@ NO_ANSWER_BOUNDARY_EVALUATION_REPORT = NO_ANSWER_BOUNDARY_EVALUATION_MD
 NO_ANSWER_BOUNDARY_EVALUATION_REPORT_JSON = NO_ANSWER_BOUNDARY_EVALUATION_JSON
 CLAIM_INTEGRITY_REPORT = CLAIM_INTEGRITY_REPORT_MD
 CLAIM_INTEGRITY_REPORT_JSON_PATH = CLAIM_INTEGRITY_REPORT_JSON
+RUBRIC_DEFENSE_COVERAGE_REPORT = RUBRIC_DEFENSE_COVERAGE_MD
+RUBRIC_DEFENSE_COVERAGE_REPORT_JSON = RUBRIC_DEFENSE_COVERAGE_JSON
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT = RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT_JSON = RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON
 VERIFICATION_TRANSCRIPT_REPORT = VERIFICATION_TRANSCRIPT_MD
@@ -457,28 +464,29 @@ def build_readme(ctx: dict[str, Any]) -> str:
 33. `reproducibility/claim_integrity_report.md`
 34. `reproducibility/runtime_reproducibility_snapshot.md`
 35. `reproducibility/verification_transcript.md`
-36. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
-37. `reproducibility/expert_feedback_form.md`
-38. `reproducibility/runbook.md`
-39. `reproducibility/dataset_manifest.md`
-40. `reproducibility/readiness_gate_report.md`
-41. `reproducibility/goal_completion_report.md`
-42. `reproducibility/defense_rehearsal_scorecard.md`
-43. `reproducibility/defense_rehearsal_result_packet.md`
-44. `reproducibility/expert_feedback_request_packet.md`
-45. `reproducibility/expert_feedback_outreach_ledger.md`
-46. `reproducibility/timed_rehearsal_schedule_ledger.md`
-47. `reproducibility/official_rubric_alignment.md`
-48. `reproducibility/judge_objection_response_matrix.md`
-49. `reproducibility/special_prize_readiness_dashboard.md`
-50. `reproducibility/hard_evidence_closure_board.md`
-51. `reproducibility/hard_evidence_action_pack.md`
-52. `reproducibility/external_evidence_execution_kit.md`
-53. `reproducibility/hard_evidence_ledger.md`
-54. `reproducibility/challenge_cup_submission_archive_manifest.json`
-55. `reproducibility/challenge_cup_submission_package.zip`
-56. `reproducibility/verify_submission_package.py`
-57. `reproducibility/final_acceptance_audit.md`
+36. `reproducibility/rubric_defense_coverage.md`
+37. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
+38. `reproducibility/expert_feedback_form.md`
+39. `reproducibility/runbook.md`
+40. `reproducibility/dataset_manifest.md`
+41. `reproducibility/readiness_gate_report.md`
+42. `reproducibility/goal_completion_report.md`
+43. `reproducibility/defense_rehearsal_scorecard.md`
+44. `reproducibility/defense_rehearsal_result_packet.md`
+45. `reproducibility/expert_feedback_request_packet.md`
+46. `reproducibility/expert_feedback_outreach_ledger.md`
+47. `reproducibility/timed_rehearsal_schedule_ledger.md`
+48. `reproducibility/official_rubric_alignment.md`
+49. `reproducibility/judge_objection_response_matrix.md`
+50. `reproducibility/special_prize_readiness_dashboard.md`
+51. `reproducibility/hard_evidence_closure_board.md`
+52. `reproducibility/hard_evidence_action_pack.md`
+53. `reproducibility/external_evidence_execution_kit.md`
+54. `reproducibility/hard_evidence_ledger.md`
+55. `reproducibility/challenge_cup_submission_archive_manifest.json`
+56. `reproducibility/challenge_cup_submission_package.zip`
+57. `reproducibility/verify_submission_package.py`
+58. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -909,7 +917,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 60 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 61 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1569,7 +1577,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>60 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>61 gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1760,7 +1768,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
     <div class="status" aria-label="readiness summary">
       <div class="metric"><strong>3-minute timer</strong><span>演示主线固定为 180 秒</span></div>
       <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
-      <div class="metric"><strong>60 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>61 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
       <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
     </div>
 
@@ -2067,6 +2075,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_claim_integrity_report.py
 ```
 
+## 生成官方评分维度答辩覆盖报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_rubric_defense_coverage.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell
@@ -2260,6 +2274,18 @@ def build_claim_integrity_dataset_manifest_section() -> str:
     )
 
 
+def build_rubric_defense_coverage_dataset_manifest_section() -> str:
+    return "\n".join(
+        [
+            "",
+            "## Rubric Defense Coverage",
+            "",
+            f"- Rubric defense coverage report: `{md_link(RUBRIC_DEFENSE_COVERAGE_REPORT)}`",
+            f"- Rubric defense coverage JSON: `{md_link(RUBRIC_DEFENSE_COVERAGE_REPORT_JSON)}`",
+        ]
+    )
+
+
 def build_runtime_reproducibility_dataset_manifest_section() -> str:
     return "\n".join(
         [
@@ -2445,6 +2471,11 @@ python scripts/build_challenge_cup_claim_integrity_report.py
 -> docs/challenge_cup/reproducibility/claim_integrity_report.json
 -> Status: claim_integrity_verified_no_award_or_external_claim
 
+python scripts/build_challenge_cup_rubric_defense_coverage.py
+-> docs/challenge_cup/reproducibility/rubric_defense_coverage.md
+-> docs/challenge_cup/reproducibility/rubric_defense_coverage.json
+-> Status: rubric_defense_coverage_ready_no_award_claim
+
 python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
@@ -2521,7 +2552,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (60/60 gates)
+-> Status: pass (61/61 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2587,6 +2618,7 @@ def main() -> int:
     write(GRAPH_GAP_REMEDIATION_JSON, json.dumps(graph_gap_payload, ensure_ascii=False, indent=2))
     write_graph_gap_remediation_markdown(GRAPH_GAP_REMEDIATION_MD, graph_gap_payload)
     write_failure_remediation_before_after_outputs()
+    write_rubric_defense_coverage_outputs()
     write(REPRO / "runbook.md", build_runbook(ctx))
     write(
         REPRO / "dataset_manifest.md",
@@ -2595,6 +2627,7 @@ def main() -> int:
         + build_numeric_traceability_dataset_manifest_section()
         + build_no_answer_boundary_dataset_manifest_section()
         + build_claim_integrity_dataset_manifest_section()
+        + build_rubric_defense_coverage_dataset_manifest_section()
         + build_runtime_reproducibility_dataset_manifest_section()
         + build_verification_transcript_dataset_manifest_section()
         + build_official_rubric_dataset_manifest_section()
@@ -2674,6 +2707,8 @@ def main() -> int:
         md_link(NO_ANSWER_BOUNDARY_EVALUATION_REPORT_JSON),
         md_link(CLAIM_INTEGRITY_REPORT),
         md_link(CLAIM_INTEGRITY_REPORT_JSON_PATH),
+        md_link(RUBRIC_DEFENSE_COVERAGE_REPORT),
+        md_link(RUBRIC_DEFENSE_COVERAGE_REPORT_JSON),
         md_link(RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT),
         md_link(RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT_JSON),
         md_link(VERIFICATION_TRANSCRIPT_REPORT),

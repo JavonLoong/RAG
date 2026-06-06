@@ -76,6 +76,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/runtime_reproducibility_snapshot.json",
     "reproducibility/verification_transcript.md",
     "reproducibility/verification_transcript.json",
+    "reproducibility/rubric_defense_coverage.md",
+    "reproducibility/rubric_defense_coverage.json",
     "reproducibility/expert_feedback_form.md",
     "reproducibility/graphrag_manual_evidence_supplement.csv",
     "reproducibility/defense_rehearsal_scorecard.md",
@@ -205,6 +207,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/claim_integrity_report.md" in readme
     assert "reproducibility/runtime_reproducibility_snapshot.md" in readme
     assert "reproducibility/verification_transcript.md" in readme
+    assert "reproducibility/rubric_defense_coverage.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
     assert "reproducibility/expert_feedback_outreach_ledger.md" in readme
     assert "reproducibility/timed_rehearsal_schedule_ledger.md" in readme
@@ -356,14 +359,35 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert verification_transcript["status"] == "package_verification_transcript_ready_goal_still_blocked"
     assert verification_transcript["completion_claim_allowed"] is False
     assert verification_transcript["does_not_satisfy_goal_completion"] is True
-    assert verification_transcript["readiness_gate"]["passed"] == 60
+    assert verification_transcript["readiness_gate"]["passed"] == 61
     assert verification_transcript["goal_completion"]["expected_failure"] is True
     assert "does not claim goal completion" in verification_transcript["boundary"]
     verification_transcript_md = (
         PACKAGE_DIR / "reproducibility" / "verification_transcript.md"
     ).read_text(encoding="utf-8")
-    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 60/60"]:
+    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 61/61"]:
         assert phrase in verification_transcript_md
+    rubric_defense = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.json").read_text(encoding="utf-8")
+    )
+    assert rubric_defense["status"] == "rubric_defense_coverage_ready_no_award_claim"
+    assert rubric_defense["completion_claim_allowed"] is False
+    assert rubric_defense["does_not_satisfy_goal_completion"] is True
+    assert rubric_defense["coverage_complete"] is True
+    assert rubric_defense["dimension_count"] == 5
+    assert rubric_defense["covered_dimension_count"] == 5
+    assert {item["dimension_key"] for item in rubric_defense["dimensions"]} == {
+        "academic_or_practical_value",
+        "innovation",
+        "completion",
+        "defense_performance",
+        "academic_norms_and_rigor",
+    }
+    rubric_defense_md = (
+        PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.md"
+    ).read_text(encoding="utf-8")
+    for phrase in ["Rubric Defense Coverage", "academic_or_practical_value", "defense_performance"]:
+        assert phrase in rubric_defense_md
     expert_feedback_loop = (PACKAGE_DIR / "12_专家反馈采集与整改闭环.md").read_text(encoding="utf-8")
     for phrase in ["反馈采集状态", "待真实反馈归档", "不伪造外部意见", "整改闭环", "专家反馈采集表"]:
         assert phrase in expert_feedback_loop
@@ -440,7 +464,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "60 项 readiness gate" in onsite_runbook
+    assert "61 项 readiness gate" in onsite_runbook
+    assert "60 项 readiness gate" not in onsite_runbook
     assert "58 项 readiness gate" not in onsite_runbook
     assert "57 项 readiness gate" not in onsite_runbook
     assert "56 项 readiness gate" not in onsite_runbook
@@ -900,6 +925,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_numeric_traceability_report.py" in runbook
     assert "build_challenge_cup_no_answer_boundary_evaluation.py" in runbook
     assert "build_challenge_cup_claim_integrity_report.py" in runbook
+    assert "build_challenge_cup_rubric_defense_coverage.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -1018,6 +1044,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_numeric_traceability_report.py" in command_log
     assert "build_challenge_cup_no_answer_boundary_evaluation.py" in command_log
     assert "build_challenge_cup_claim_integrity_report.py" in command_log
+    assert "build_challenge_cup_rubric_defense_coverage.py" in command_log
     assert "build_challenge_cup_runtime_reproducibility_snapshot.py" in command_log
     assert "build_challenge_cup_verification_transcript.py" in command_log
     assert "Status: remediation_card_ablation_ready_no_live_retriever_claim" in command_log
@@ -1025,10 +1052,12 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "Status: numeric_traceability_consistent_no_external_claim" in command_log
     assert "Status: no_answer_boundary_guard_verified_no_live_llm_claim" in command_log
     assert "Status: claim_integrity_verified_no_award_or_external_claim" in command_log
+    assert "Status: rubric_defense_coverage_ready_no_award_claim" in command_log
     assert "Status: runtime_snapshot_ready_no_environment_portability_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (60/60 gates)" in command_log
+    assert "Status: pass (61/61 gates)" in command_log
+    assert "Status: pass (60/60 gates)" not in command_log
     assert "Status: pass (59/59 gates)" not in command_log
     assert "Status: pass (58/58 gates)" not in command_log
     assert "Status: pass (57/57 gates)" not in command_log
@@ -1141,6 +1170,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/verification_transcript.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/verification_transcript.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/rubric_defense_coverage.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/rubric_defense_coverage.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/expert_feedback_form.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/defense_rehearsal_scorecard.json" in evidence_files
@@ -1301,8 +1332,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 60
-    assert final_acceptance["package_readiness"]["total"] == 60
+    assert final_acceptance["package_readiness"]["passed"] == 61
+    assert final_acceptance["package_readiness"]["total"] == 61
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1529,6 +1560,8 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "runtime_reproducibility_snapshot.json",
         PACKAGE_DIR / "reproducibility" / "verification_transcript.md",
         PACKAGE_DIR / "reproducibility" / "verification_transcript.json",
+        PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.md",
+        PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.json",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.md",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_scorecard.json",
         PACKAGE_DIR / "reproducibility" / "defense_rehearsal_result_packet.md",
@@ -1616,6 +1649,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
         "docs/challenge_cup/reproducibility/hard_evidence_ledger.json",
         "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
+        "docs/challenge_cup/reproducibility/rubric_defense_coverage.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
         "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
         "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",

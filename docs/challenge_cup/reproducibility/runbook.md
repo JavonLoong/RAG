@@ -62,6 +62,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_claim_integrity_report.py
 ```
 
+## 生成官方评分维度答辩覆盖报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_rubric_defense_coverage.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell

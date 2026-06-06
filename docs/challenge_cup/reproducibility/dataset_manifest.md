@@ -77,6 +77,10 @@
 
 - Claim integrity report: `docs/challenge_cup/reproducibility/claim_integrity_report.md`
 - Claim integrity JSON: `docs/challenge_cup/reproducibility/claim_integrity_report.json`
+## Rubric Defense Coverage
+
+- Rubric defense coverage report: `docs/challenge_cup/reproducibility/rubric_defense_coverage.md`
+- Rubric defense coverage JSON: `docs/challenge_cup/reproducibility/rubric_defense_coverage.json`
 ## Runtime Reproducibility Snapshot
 
 - Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`

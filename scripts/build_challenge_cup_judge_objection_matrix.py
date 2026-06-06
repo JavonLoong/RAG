@@ -196,7 +196,7 @@ def build_payload() -> dict[str, Any]:
             "severity": "P1",
             "judge_objection": "Can this be accepted as a closure package today?",
             "one_sentence_answer": (
-                "Yes for package review: the submission archive, verifier, hashes, and 60 readiness gates prove the "
+                "Yes for package review: the submission archive, verifier, hashes, and 61 readiness gates prove the "
                 "materials are organized and reproducible, while goal completion still waits for real hard evidence."
             ),
             "evidence_files": [
