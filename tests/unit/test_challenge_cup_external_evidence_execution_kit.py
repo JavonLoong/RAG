@@ -79,6 +79,7 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert packet["does_not_satisfy_goal_completion"] is True
         powershell = "\n".join(packet["powershell_execution_block"])
         assert "Set-Location" in powershell
+        assert str(tmp_path) in powershell
         assert "<" not in powershell
         assert ">" not in powershell
 

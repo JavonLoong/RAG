@@ -50,6 +50,7 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert category in stream["acceptance_gate"]
         powershell = "\n".join(stream["powershell_execution_block"])
         assert "Set-Location" in powershell
+        assert str(tmp_path) in powershell
         assert "<" not in powershell
         assert ">" not in powershell
 

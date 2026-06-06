@@ -85,37 +85,47 @@ REHEARSAL_RECORD_COMMAND = (
     "--killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds "
     "--confirm-real-rehearsal"
 )
-EXPERT_FEEDBACK_POWERSHELL_BLOCK = [
-    "Set-Location 'D:\\虚拟C盘\\RAG'",
-    "$feedbackId = 'advisor-a-YYYYMMDD-01'",
-    "$feedbackSource = 'D:\\path\\to\\real-feedback.eml'",
-    "$reviewDate = 'YYYY-MM-DD'",
-    "$reviewer = 'real-reviewer-identity'",
-    "$reviewerRole = 'real-reviewer-role-or-org'",
-    "$remediationIssue = 'demo-pacing'",
-    "$remediationAction = 'tighten-opening'",
-    "python .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
-    "python .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
-]
-TIMED_REHEARSAL_POWERSHELL_BLOCK = [
-    "Set-Location 'D:\\虚拟C盘\\RAG'",
-    "$rehearsalId = 'rehearsal-YYYYMMDD-01'",
-    "$timerSource = 'D:\\path\\to\\real-timer-or-observer-note.txt'",
-    "$rehearsalDate = 'YYYY-MM-DD'",
-    "$observer = 'real-observer-alias'",
-    "$opening = 88",
-    "$demo = 170",
-    "$offline = 18",
-    "$killer = 25,25,25,25,25",
-    "python .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
-    "python .\\scripts\\preflight_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
-    "python .\\scripts\\record_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
-]
 FAILED_REHEARSAL_ARCHIVAL_RULE = (
     "If any measured rehearsal segment exceeds the limit or a required killer-question timing is missing, "
     "still archive the real rehearsal evidence with timing_acceptance_pass=false; the hard evidence ledger "
     "must place the metadata in rejected_metadata_records and collected_count must not satisfy the acceptance gate."
 )
+
+
+def powershell_repo_root() -> str:
+    return str(REPO_ROOT).replace("'", "''")
+
+
+def expert_feedback_powershell_block() -> list[str]:
+    return [
+        f"Set-Location '{powershell_repo_root()}'",
+        "$feedbackId = 'advisor-a-YYYYMMDD-01'",
+        "$feedbackSource = 'D:\\path\\to\\real-feedback.eml'",
+        "$reviewDate = 'YYYY-MM-DD'",
+        "$reviewer = 'real-reviewer-identity'",
+        "$reviewerRole = 'real-reviewer-role-or-org'",
+        "$remediationIssue = 'demo-pacing'",
+        "$remediationAction = 'tighten-opening'",
+        "python .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
+        "python .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
+    ]
+
+
+def timed_rehearsal_powershell_block() -> list[str]:
+    return [
+        f"Set-Location '{powershell_repo_root()}'",
+        "$rehearsalId = 'rehearsal-YYYYMMDD-01'",
+        "$timerSource = 'D:\\path\\to\\real-timer-or-observer-note.txt'",
+        "$rehearsalDate = 'YYYY-MM-DD'",
+        "$observer = 'real-observer-alias'",
+        "$opening = 88",
+        "$demo = 170",
+        "$offline = 18",
+        "$killer = 25,25,25,25,25",
+        "python .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
+        "python .\\scripts\\preflight_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
+        "python .\\scripts\\record_challenge_cup_hard_evidence.py timed_rehearsal --id $rehearsalId --source $timerSource --evidence-type observer_note --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
+    ]
 
 
 def configure_paths(repo_root: Path) -> None:
@@ -163,7 +173,7 @@ def action_streams() -> list[dict[str, Any]]:
                 EXPERT_PREFLIGHT_COMMAND,
                 EXPERT_RECORD_COMMAND,
             ],
-            "powershell_execution_block": EXPERT_FEEDBACK_POWERSHELL_BLOCK,
+            "powershell_execution_block": expert_feedback_powershell_block(),
             "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
             "does_not_satisfy_goal_completion": True,
@@ -194,7 +204,7 @@ def action_streams() -> list[dict[str, Any]]:
                 REHEARSAL_PREFLIGHT_COMMAND,
                 REHEARSAL_RECORD_COMMAND,
             ],
-            "powershell_execution_block": TIMED_REHEARSAL_POWERSHELL_BLOCK,
+            "powershell_execution_block": timed_rehearsal_powershell_block(),
             "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "failed_rehearsal_archival_rule": FAILED_REHEARSAL_ARCHIVAL_RULE,
             "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
