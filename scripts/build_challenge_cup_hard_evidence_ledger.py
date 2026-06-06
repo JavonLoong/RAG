@@ -170,6 +170,28 @@ def positive_int_failure(field: str, value: Any, limit: int | None = None) -> st
     return None
 
 
+def nonempty_text_failure(field: str, value: Any) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return f"{field} must be non-empty text"
+    return None
+
+
+def remediation_record_failures(value: Any) -> list[str]:
+    if not isinstance(value, list) or not value:
+        return ["remediation_record must include at least one issue/action object"]
+
+    failures: list[str] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            failures.append(f"remediation_record[{index}] must be an object")
+            continue
+        for field in ("issue", "action"):
+            failure = nonempty_text_failure(f"remediation_record[{index}].{field}", item.get(field))
+            if failure:
+                failures.append(failure)
+    return failures
+
+
 def timed_rehearsal_timing_failures(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
@@ -261,7 +283,16 @@ def review_metadata_records(
                 "missing required expert review dimension groups: "
                 + ", ".join(missing_required_review_dimension_groups(payload.get("review_dimensions")))
             )
+        if category_key == "expert_feedback":
+            for field in ("reviewer_identity", "role_or_org"):
+                failure = nonempty_text_failure(field, payload.get(field))
+                if failure:
+                    reasons.append(failure)
+            reasons.extend(remediation_record_failures(payload.get("remediation_record")))
         if category_key == "timed_rehearsal":
+            failure = nonempty_text_failure("observer", payload.get("observer"))
+            if failure:
+                reasons.append(failure)
             reasons.extend(timed_rehearsal_timing_failures(payload))
         source_path_value = payload.get(source_field)
         if isinstance(source_path_value, str):
@@ -451,6 +482,7 @@ def write_readmes() -> None:
                 "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, review_dimensions, remediation_record, real_feedback_confirmed.",
                 "Required review dimension groups: practical_value, innovation, boundary_rigor.",
                 "Use YYYY-MM-DD for review_date; it must not be in the future. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
+                "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
@@ -473,6 +505,7 @@ def write_readmes() -> None:
                 "Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.",
                 "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, source_sha256, real_rehearsal_confirmed.",
                 "Use YYYY-MM-DD for rehearsal_date; it must not be in the future. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
+                "observer must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",

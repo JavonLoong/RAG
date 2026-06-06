@@ -231,6 +231,86 @@ def test_refuses_expert_feedback_preflight_with_generic_dimensions(tmp_path: Pat
     assert not hard_evidence_dir(tmp_path).exists()
 
 
+def test_refuses_expert_feedback_preflight_with_blank_identity_fields(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor feedback", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "   ",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "practicality",
+            "--review-dimension",
+            "innovation",
+            "--review-dimension",
+            "boundary_rigor",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
+def test_refuses_expert_feedback_preflight_with_blank_remediation_fields(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor feedback", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "practicality",
+            "--review-dimension",
+            "innovation",
+            "--review-dimension",
+            "boundary_rigor",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "   ",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
 def test_refuses_expert_feedback_preflight_with_future_review_date(tmp_path: Path) -> None:
     module = load_preflight_module()
     module.configure_paths(tmp_path)
@@ -319,6 +399,46 @@ def test_preflights_confirmed_timed_rehearsal_without_writing_hard_evidence(
         "completion_gate_effect": "recorded metadata can satisfy timed_rehearsal after ledger rebuild",
         "reasons": [],
     }
+    assert not hard_evidence_dir(tmp_path).exists()
+
+
+def test_refuses_timed_rehearsal_preflight_with_blank_observer(tmp_path: Path) -> None:
+    module = load_preflight_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real timed rehearsal observer note", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "   ",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
+        ]
+    )
+
+    assert exit_code == 2
     assert not hard_evidence_dir(tmp_path).exists()
 
 

@@ -53,6 +53,19 @@ def test_refuses_to_write_without_real_rehearsal_confirmation(tmp_path: Path) ->
     assert not (tmp_path / "docs").exists()
 
 
+def test_refuses_to_write_with_blank_observer(tmp_path: Path) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+
+    args = timed_rehearsal_args("--confirm-real-rehearsal")
+    observer_index = args.index("--observer")
+    args[observer_index + 1] = "   "
+    exit_code = module.main(args)
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
 def test_records_confirmed_timed_rehearsal_note_and_refreshes_ledger(tmp_path: Path) -> None:
     module = load_runner_module()
     module.configure_paths(tmp_path)

@@ -96,6 +96,17 @@ def valid_source_attachment(path_value: str) -> Path:
     return source
 
 
+def required_nonempty_text(field: str, value: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise HardEvidenceInputError(f"{field} must be non-empty text")
+    return normalized
+
+
+def required_nonempty_text_list(field: str, values: list[str]) -> list[str]:
+    return [required_nonempty_text(f"{field}[{index}]", value) for index, value in enumerate(values, start=1)]
+
+
 def validate_positive_timing(field: str, actual: int) -> None:
     if actual <= 0:
         raise HardEvidenceInputError(f"{field}={actual} must be positive")
@@ -160,9 +171,14 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         )
     if args.evidence_type not in EXPERT_EVIDENCE_TYPES:
         raise ValueError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
-    if len(args.review_dimension) < 3:
+    reviewer_identity = required_nonempty_text("reviewer_identity", args.reviewer_identity)
+    role_or_org = required_nonempty_text("role_or_org", args.role_or_org)
+    review_dimensions = required_nonempty_text_list("review_dimension", args.review_dimension)
+    remediation_issue = required_nonempty_text("remediation_issue", args.remediation_issue)
+    remediation_action = required_nonempty_text("remediation_action", args.remediation_action)
+    if len(review_dimensions) < 3:
         raise ValueError("expert feedback needs at least three review dimensions")
-    missing_dimension_groups = missing_required_review_dimension_groups(args.review_dimension)
+    missing_dimension_groups = missing_required_review_dimension_groups(review_dimensions)
     if missing_dimension_groups:
         raise HardEvidenceInputError(
             "expert feedback missing required review dimension groups: "
@@ -173,13 +189,13 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
     copied_source = copy_source(source, EXPERT_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,
-        "reviewer_identity": args.reviewer_identity,
-        "role_or_org": args.role_or_org,
+        "reviewer_identity": reviewer_identity,
+        "role_or_org": role_or_org,
         "review_date": review_date,
         "feedback_source_path": repo_path(copied_source),
         "source_sha256": sha256_file(copied_source),
-        "review_dimensions": args.review_dimension,
-        "remediation_record": [{"issue": args.remediation_issue, "action": args.remediation_action}],
+        "review_dimensions": review_dimensions,
+        "remediation_record": [{"issue": remediation_issue, "action": remediation_action}],
         "real_feedback_confirmed": True,
     }
     metadata_path = EXPERT_DIR / f"{args.id}.json"
@@ -195,6 +211,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         )
     if args.evidence_type not in REHEARSAL_EVIDENCE_TYPES:
         raise ValueError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
+    observer = required_nonempty_text("observer", args.observer)
     rehearsal_date = parse_iso_date(args.rehearsal_date)
     validate_timed_rehearsal_limits(args)
     source = valid_source_attachment(args.source)
@@ -203,7 +220,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
     metadata = {
         "evidence_type": args.evidence_type,
         "rehearsal_date": rehearsal_date,
-        "observer": args.observer,
+        "observer": observer,
         "opening_actual_seconds": args.opening_actual_seconds,
         "demo_actual_seconds": args.demo_actual_seconds,
         "offline_fallback_actual_seconds": args.offline_fallback_actual_seconds,

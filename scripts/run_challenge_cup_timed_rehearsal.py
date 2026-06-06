@@ -43,6 +43,10 @@ def validate_args(args: argparse.Namespace) -> None:
             "refusing to record evidence without --confirm-real-rehearsal; do not archive rehearsal data "
             "unless these seconds came from an actual timed run"
         )
+    try:
+        args.observer = intake.required_nonempty_text("observer", args.observer)
+    except intake.HardEvidenceInputError as exc:
+        raise RehearsalInputError(str(exc)) from exc
     intake.parse_iso_date(args.rehearsal_date)
     try:
         intake.validate_timed_rehearsal_limits(args)

@@ -74,6 +74,8 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
         assert placeholder in command_text
     assert "must not be in the future" in command_text
     assert "source attachment must be non-empty and must not be a JSON metadata file" in command_text
+    assert "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text" in command_text
+    assert "observer must be non-empty text" in command_text
 
 
 def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tmp_path: Path) -> None:
@@ -295,6 +297,74 @@ def test_hard_evidence_ledger_rejects_generic_expert_feedback_dimensions(tmp_pat
     assert expert["evidence_record_count"] == 0
     assert expert["collected_count"] == 0
     assert expert["evidence_records"] == []
+    assert payload["completion_claim_allowed"] is False
+
+
+def test_hard_evidence_ledger_rejects_blank_identity_and_remediation_fields(tmp_path: Path) -> None:
+    module = load_ledger_module()
+    configure_module_paths(module, tmp_path)
+    expert_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    rehearsal_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    expert_dir.mkdir(parents=True)
+    rehearsal_dir.mkdir(parents=True)
+
+    expert_source = expert_dir / "advisor-a.txt"
+    expert_source.write_text("real expert reply", encoding="utf-8")
+    (expert_dir / "advisor-a.json").write_text(
+        json.dumps(
+            {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "   ",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                "source_sha256": hashlib.sha256(expert_source.read_bytes()).hexdigest(),
+                "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+                "remediation_record": [{"issue": "demo pacing", "action": "   "}],
+                "real_feedback_confirmed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    rehearsal_source = rehearsal_dir / "rehearsal-1.txt"
+    rehearsal_source.write_text("real timer record", encoding="utf-8")
+    (rehearsal_dir / "rehearsal-1.json").write_text(
+        json.dumps(
+            {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "   ",
+                "opening_actual_seconds": 88,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [
+                    {"question_index": index, "actual_seconds": seconds}
+                    for index, seconds in enumerate([25, 26, 27, 28, 29], start=1)
+                ],
+                "recording_or_timer_source_path": (
+                    "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
+                ),
+                "source_sha256": hashlib.sha256(rehearsal_source.read_bytes()).hexdigest(),
+                "real_rehearsal_confirmed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    payload = module.write_outputs()
+
+    expert = payload["categories"]["expert_feedback"]
+    assert expert["collected_count"] == 0
+    expert_reasons = expert["rejected_metadata_records"][0]["reasons"]
+    assert "reviewer_identity must be non-empty text" in expert_reasons
+    assert "remediation_record[0].action must be non-empty text" in expert_reasons
+
+    rehearsal = payload["categories"]["timed_rehearsal"]
+    assert rehearsal["collected_count"] == 0
+    assert "observer must be non-empty text" in rehearsal["rejected_metadata_records"][0]["reasons"]
     assert payload["completion_claim_allowed"] is False
 
 

@@ -98,9 +98,14 @@ def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.evidence_type not in intake.EXPERT_EVIDENCE_TYPES:
         raise PreflightInputError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
-    if len(args.review_dimension) < 3:
+    reviewer_identity = intake.required_nonempty_text("reviewer_identity", args.reviewer_identity)
+    role_or_org = intake.required_nonempty_text("role_or_org", args.role_or_org)
+    review_dimensions = intake.required_nonempty_text_list("review_dimension", args.review_dimension)
+    remediation_issue = intake.required_nonempty_text("remediation_issue", args.remediation_issue)
+    remediation_action = intake.required_nonempty_text("remediation_action", args.remediation_action)
+    if len(review_dimensions) < 3:
         raise PreflightInputError("expert feedback preflight needs at least three review dimensions")
-    missing_dimension_groups = intake.missing_required_review_dimension_groups(args.review_dimension)
+    missing_dimension_groups = intake.missing_required_review_dimension_groups(review_dimensions)
     if missing_dimension_groups:
         raise PreflightInputError(
             "expert feedback preflight missing required review dimension groups: "
@@ -111,12 +116,12 @@ def preflight_expert_feedback(args: argparse.Namespace) -> dict[str, Any]:
     payload = base_payload("expert_feedback", args, source, intake.EXPERT_DIR)
     payload["validated_metadata"] = {
         "evidence_type": args.evidence_type,
-        "reviewer_identity": args.reviewer_identity,
-        "role_or_org": args.role_or_org,
+        "reviewer_identity": reviewer_identity,
+        "role_or_org": role_or_org,
         "review_date": args.review_date,
-        "review_dimension_count": len(args.review_dimension),
+        "review_dimension_count": len(review_dimensions),
         "source_sha256": intake.sha256_file(source),
-        "has_remediation_record": bool(args.remediation_issue and args.remediation_action),
+        "has_remediation_record": bool(remediation_issue and remediation_action),
         "real_feedback_confirmed": True,
     }
     payload["ledger_acceptance"] = ledger_acceptance("expert_feedback", will_count=True)
@@ -130,6 +135,7 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         )
     if args.evidence_type not in intake.REHEARSAL_EVIDENCE_TYPES:
         raise PreflightInputError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
+    observer = intake.required_nonempty_text("observer", args.observer)
     intake.parse_iso_date(args.rehearsal_date)
     source = nonempty_source(args.source)
     try:
@@ -147,7 +153,7 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
     payload["validated_metadata"] = {
         "evidence_type": args.evidence_type,
         "rehearsal_date": args.rehearsal_date,
-        "observer": args.observer,
+        "observer": observer,
         **timing_fields,
         "killer_question_count": len(args.killer_question_seconds),
         "max_killer_question_seconds": max(args.killer_question_seconds),
