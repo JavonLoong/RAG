@@ -37,6 +37,7 @@
 29. `reproducibility/hard_evidence_ledger.md`
 30. `reproducibility/challenge_cup_submission_archive_manifest.json`
 31. `reproducibility/challenge_cup_submission_package.zip`
+32. `reproducibility/verify_submission_package.py`
 
 ## 当前核心数字
 

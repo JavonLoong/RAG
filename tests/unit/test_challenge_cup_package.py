@@ -72,6 +72,7 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/hard_evidence/README.md",
     "reproducibility/hard_evidence/expert_feedback/README.md",
     "reproducibility/hard_evidence/timed_rehearsal/README.md",
+    "reproducibility/verify_submission_package.py",
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
@@ -286,6 +287,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
     assert "check_challenge_cup_goal_completion.py" in runbook
+    assert "verify_submission_package.py" in runbook
     manifest = (PACKAGE_DIR / "reproducibility" / "dataset_manifest.md").read_text(encoding="utf-8")
     assert "live_demo_smoke_report.md" in manifest
     assert "browser_demo_smoke_report.md" in manifest
@@ -328,6 +330,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "hard_evidence/timed_rehearsal/README.md" in manifest
     assert "challenge_cup_submission_package.zip" in manifest
     assert "challenge_cup_submission_archive_manifest.json" in manifest
+    assert "verify_submission_package.py" in manifest
     assert "browser_demo_smoke_report.json" in manifest
     assert "desktop_overview.png" in manifest
     assert "desktop_search_results.png" in manifest
@@ -349,7 +352,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
-    assert "Status: pass (34/34 gates)" in command_log
+    assert "Status: pass (35/35 gates)" in command_log
     assert "Status: pass (33/33 gates)" not in command_log
     assert "Status: pass (32/32 gates)" not in command_log
     assert "Status: pass (30/30 gates)" not in command_log
@@ -431,6 +434,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/goal_completion_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_overview.png" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_screenshots/desktop_kg_artifacts.png" in evidence_files
     hashes = json.loads((PACKAGE_DIR / "reproducibility" / "evidence_hashes.json").read_text(encoding="utf-8"))
@@ -548,6 +552,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert archive_manifest["file_count"] == len(archive_entries)
     assert archive_relative not in archive_entries
     assert archive_manifest_relative not in archive_entries
+    assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in archive_entries
     self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
     assert self_report not in archive_entries
     assert self_report in archive_manifest["excluded_files"]
@@ -573,6 +578,43 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     required_archive_entries.discard(self_report)
     assert required_archive_entries <= set(archive_entries)
+
+
+def test_submission_package_verifier_runs_from_extracted_archive(tmp_path: Path) -> None:
+    subprocess.run(
+        [sys.executable, "scripts/build_challenge_cup_package.py"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+    archive_path = PACKAGE_DIR / "reproducibility" / "challenge_cup_submission_package.zip"
+    extract_root = tmp_path / "submission"
+    with zipfile.ZipFile(archive_path) as archive:
+        archive.extractall(extract_root)
+
+    verifier = extract_root / "docs" / "challenge_cup" / "reproducibility" / "verify_submission_package.py"
+    output_json = tmp_path / "verification.json"
+    result = subprocess.run(
+        [sys.executable, str(verifier), "--root", str(extract_root), "--json-output", str(output_json)],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+    assert "Status: pass" in result.stdout
+    payload = json.loads(output_json.read_text(encoding="utf-8"))
+    assert payload["report_type"] == "challenge_cup_submission_package_verification"
+    assert payload["status"] == "pass"
+    assert payload["hashed_files_verified"] >= 50
+    assert payload["live_smoke_status"] == "pass"
+    assert payload["browser_smoke_status"] == "pass"
+    assert payload["completion_claim_allowed"] is False
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:

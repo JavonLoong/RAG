@@ -104,6 +104,8 @@ EVIDENCE_HASHES = REPRO / "evidence_hashes.json"
 EVAL_COVERAGE_PROFILE = REPRO / "evaluation_coverage_profile.json"
 SUBMISSION_ARCHIVE = REPRO / "challenge_cup_submission_package.zip"
 SUBMISSION_ARCHIVE_MANIFEST = REPRO / "challenge_cup_submission_archive_manifest.json"
+SUBMISSION_PACKAGE_VERIFIER_SOURCE = REPO_ROOT / "scripts" / "verify_challenge_cup_submission_package.py"
+SUBMISSION_PACKAGE_VERIFIER = REPRO / "verify_submission_package.py"
 APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO / "expert_feedback_form.md"
 BROWSER_SCREENSHOT_DIR = REPRO / "browser_screenshots"
@@ -355,6 +357,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 29. `reproducibility/hard_evidence_ledger.md`
 30. `reproducibility/challenge_cup_submission_archive_manifest.json`
 31. `reproducibility/challenge_cup_submission_package.zip`
+32. `reproducibility/verify_submission_package.py`
 
 ## 当前核心数字
 
@@ -983,6 +986,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py
+.\.venv\Scripts\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .
 ```
 
 当前缺少真实专家反馈和真实计时彩排时，该门禁应返回 fail；这不是包生成失败，而是防止把 package readiness 误写成总目标已完成。
@@ -1020,6 +1024,10 @@ def build_official_rubric_dataset_manifest_section() -> str:
             "",
             f"- 官方评审口径对齐表：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD)}`",
             f"- 官方评审口径 JSON：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON)}`",
+            "",
+            "## Submission Package Offline Verification",
+            "",
+            f"- Offline verifier: `{md_link(SUBMISSION_PACKAGE_VERIFIER)}`",
         ]
     )
 
@@ -1181,9 +1189,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
 -> Status: pass (13/13 checks)
 
+python docs/challenge_cup/reproducibility/verify_submission_package.py --root .
+-> Status: pass
+
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (34/34 gates)
+-> Status: pass (35/35 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1212,6 +1223,7 @@ def main() -> int:
     write(EXPERT_FEEDBACK_PROTOCOL, build_expert_feedback_protocol(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
+    write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
     write_defense_scorecard_outputs(build_defense_scorecard_payload())
     write_defense_result_outputs(build_defense_result_payload())
     write_expert_request_outputs(build_expert_request_payload())
@@ -1278,6 +1290,7 @@ def main() -> int:
         md_link(BROWSER_SMOKE_JSON),
         md_link(READINESS_GATE_REPORT),
         md_link(GOAL_COMPLETION_REPORT),
+        md_link(SUBMISSION_PACKAGE_VERIFIER),
         *(md_link(path) for path in BROWSER_SCREENSHOTS),
         *(
             md_link(path)

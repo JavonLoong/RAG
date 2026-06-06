@@ -50,6 +50,10 @@
 
 - 官方评审口径对齐表：`docs/challenge_cup/reproducibility/official_rubric_alignment.md`
 - 官方评审口径 JSON：`docs/challenge_cup/reproducibility/official_rubric_alignment.json`
+
+## Submission Package Offline Verification
+
+- Offline verifier: `docs/challenge_cup/reproducibility/verify_submission_package.py`
 ## 硬证据台账
 
 - 硬证据台账：`docs/challenge_cup/reproducibility/hard_evidence_ledger.md`

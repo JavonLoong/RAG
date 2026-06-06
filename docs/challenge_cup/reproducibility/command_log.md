@@ -103,9 +103,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 -> docs/challenge_cup/reproducibility/browser_screenshots/mobile_overview.png
 -> Status: pass (13/13 checks)
 
+python docs/challenge_cup/reproducibility/verify_submission_package.py --root .
+-> Status: pass
+
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (34/34 gates)
+-> Status: pass (35/35 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

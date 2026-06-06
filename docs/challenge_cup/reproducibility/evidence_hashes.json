@@ -211,6 +211,11 @@
       "sha256": "1aa9f0db9fd9d1e687d3b1c6685adf9e86e98035d7f480545b5ea8253d06f72f"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/verify_submission_package.py",
+      "bytes": 7619,
+      "sha256": "384328dc40a3011e7bd3dd8aba8a04d12b874fa70174b5e74a010ae1e599beba"
+    },
+    {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
       "bytes": 22429,
       "sha256": "662c055d8d3146ac49208e39de79d42ba7d3651698bfac296efef013c7397760"

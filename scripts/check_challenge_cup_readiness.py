@@ -5,6 +5,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 from collections import Counter
@@ -116,6 +117,8 @@ SUBMISSION_ARCHIVE_MANIFEST_RELATIVE = (
 )
 SUBMISSION_ARCHIVE = REPO_ROOT / SUBMISSION_ARCHIVE_RELATIVE
 SUBMISSION_ARCHIVE_MANIFEST = REPO_ROOT / SUBMISSION_ARCHIVE_MANIFEST_RELATIVE
+SUBMISSION_PACKAGE_VERIFIER_RELATIVE = "docs/challenge_cup/reproducibility/verify_submission_package.py"
+SUBMISSION_PACKAGE_VERIFIER = REPO_ROOT / SUBMISSION_PACKAGE_VERIFIER_RELATIVE
 APPLICATION_VALIDATION_REPORT = REPRO_DIR / "application_validation_report.md"
 EXPERT_FEEDBACK_FORM = REPRO_DIR / "expert_feedback_form.md"
 GRAPH_REPORT_JSON = REPO_ROOT / "evaluation" / "reports" / "challenge_cup_graphrag_same_question_report.json"
@@ -249,6 +252,7 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/hard_evidence/README.md",
     "reproducibility/hard_evidence/expert_feedback/README.md",
     "reproducibility/hard_evidence/timed_rehearsal/README.md",
+    "reproducibility/verify_submission_package.py",
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
@@ -1024,6 +1028,66 @@ def check_submission_archive() -> GateCheck:
         "submission archive",
         not failures,
         f"{len(included_files)} files archived; {SUBMISSION_ARCHIVE.stat().st_size} bytes; sha256 verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_submission_package_verifier() -> GateCheck:
+    failures: list[str] = []
+    if not nonempty(SUBMISSION_ARCHIVE):
+        failures.append(f"{SUBMISSION_ARCHIVE_RELATIVE} missing or empty")
+    if not nonempty(SUBMISSION_PACKAGE_VERIFIER):
+        failures.append(f"{SUBMISSION_PACKAGE_VERIFIER_RELATIVE} missing or empty")
+    if failures:
+        return GateCheck("submission package verifier", False, "; ".join(failures))
+
+    with tempfile.TemporaryDirectory(prefix="challenge-cup-submission-verify-") as temp_name:
+        extract_root = Path(temp_name)
+        try:
+            with zipfile.ZipFile(SUBMISSION_ARCHIVE) as archive:
+                archive.extractall(extract_root)
+        except zipfile.BadZipFile as exc:
+            return GateCheck("submission package verifier", False, f"invalid zip archive: {exc}")
+
+        verifier = extract_root / SUBMISSION_PACKAGE_VERIFIER_RELATIVE
+        output_json = extract_root / "submission_package_verification.json"
+        if not nonempty(verifier):
+            failures.append(f"verifier missing from archive: {SUBMISSION_PACKAGE_VERIFIER_RELATIVE}")
+        else:
+            result = subprocess.run(
+                [sys.executable, str(verifier), "--root", str(extract_root), "--json-output", str(output_json)],
+                cwd=extract_root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            if result.returncode != 0:
+                failures.append(f"verifier exit={result.returncode}: {result.stdout.strip()} {result.stderr.strip()}")
+            if not output_json.exists():
+                failures.append("verifier json output missing")
+            else:
+                try:
+                    payload = json.loads(output_json.read_text(encoding="utf-8"))
+                except json.JSONDecodeError as exc:
+                    failures.append(f"verifier json invalid: {exc}")
+                    payload = {}
+                if payload.get("report_type") != "challenge_cup_submission_package_verification":
+                    failures.append(f"verifier report_type={payload.get('report_type')}")
+                if payload.get("status") != "pass":
+                    failures.append(f"verifier status={payload.get('status')}")
+                if int(payload.get("hashed_files_verified") or 0) < 50:
+                    failures.append(f"hashed_files_verified={payload.get('hashed_files_verified')}")
+                if payload.get("live_smoke_status") != "pass":
+                    failures.append(f"live_smoke_status={payload.get('live_smoke_status')}")
+                if payload.get("browser_smoke_status") != "pass":
+                    failures.append(f"browser_smoke_status={payload.get('browser_smoke_status')}")
+
+    return GateCheck(
+        "submission package verifier",
+        not failures,
+        "extracted submission package verifier passed from archived script"
         if not failures
         else "; ".join(failures),
     )
@@ -2880,6 +2944,7 @@ def run_gate() -> list[GateCheck]:
         check_evidence_hashes(),
         check_defense_deck(),
         check_submission_archive(),
+        check_submission_package_verifier(),
         check_numeric_consistency(),
         check_graphrag_same_question_evidence(),
         check_graphrag_context_demo(),
@@ -2920,7 +2985,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
