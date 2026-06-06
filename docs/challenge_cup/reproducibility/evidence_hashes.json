@@ -171,6 +171,16 @@
       "sha256": "57840a9d9b918ce7bd333d1111645e6409b40b75460523d5666ef0cbd570bbb5"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
+      "bytes": 5765,
+      "sha256": "f76d70751be2349e912205a5ea91dba1bf1bcd1938339563ce4954efef20ea27"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
+      "bytes": 5089,
+      "sha256": "84839e392c9458f80e919416ede9d463dbb8c3832c8772fc26e136163d36877b"
+    },
+    {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
       "bytes": 4738,
       "sha256": "e43660b654da007bf1276ff5b7a45a47bb8edd24f72ec8a2d631f9824a52535f"

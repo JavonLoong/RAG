@@ -86,6 +86,10 @@ python scripts/build_challenge_cup_hard_evidence_closure_board.py
 -> docs/challenge_cup/reproducibility/hard_evidence_closure_board.md
 -> docs/challenge_cup/reproducibility/hard_evidence_closure_board.json
 
+python scripts/build_challenge_cup_hard_evidence_action_pack.py
+-> docs/challenge_cup/reproducibility/hard_evidence_action_pack.md
+-> Status: ready_for_real_external_evidence_collection
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -112,7 +116,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (36/36 gates)
+-> Status: pass (37/37 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

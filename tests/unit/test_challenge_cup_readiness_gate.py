@@ -94,6 +94,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "expert feedback outreach ledger" in report
     assert "timed rehearsal schedule ledger" in report
     assert "hard evidence closure board" in report
+    assert "hard evidence action pack" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report

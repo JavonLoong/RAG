@@ -34,11 +34,12 @@
 26. `reproducibility/timed_rehearsal_schedule_ledger.md`
 27. `reproducibility/official_rubric_alignment.md`
 28. `reproducibility/hard_evidence_closure_board.md`
-29. `reproducibility/hard_evidence_ledger.md`
-30. `reproducibility/challenge_cup_submission_archive_manifest.json`
-31. `reproducibility/challenge_cup_submission_package.zip`
-32. `reproducibility/verify_submission_package.py`
-33. `reproducibility/final_acceptance_audit.md`
+29. `reproducibility/hard_evidence_action_pack.md`
+30. `reproducibility/hard_evidence_ledger.md`
+31. `reproducibility/challenge_cup_submission_archive_manifest.json`
+32. `reproducibility/challenge_cup_submission_package.zip`
+33. `reproducibility/verify_submission_package.py`
+34. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 

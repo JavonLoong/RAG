@@ -71,3 +71,5 @@
 - Timed rehearsal schedule intake: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md`
 - Hard evidence closure board: `docs/challenge_cup/reproducibility/hard_evidence_closure_board.md`
 - Hard evidence closure JSON: `docs/challenge_cup/reproducibility/hard_evidence_closure_board.json`
+- Hard evidence action pack: `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md`
+- Hard evidence action pack JSON: `docs/challenge_cup/reproducibility/hard_evidence_action_pack.json`

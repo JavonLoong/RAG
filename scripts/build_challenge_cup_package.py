@@ -45,6 +45,11 @@ from build_challenge_cup_hard_evidence_closure_board import (
     OUTPUT_MD as HARD_EVIDENCE_CLOSURE_BOARD_MD,
     write_outputs as write_hard_evidence_closure_board_outputs,
 )
+from build_challenge_cup_hard_evidence_action_pack import (
+    OUTPUT_JSON as HARD_EVIDENCE_ACTION_PACK_JSON,
+    OUTPUT_MD as HARD_EVIDENCE_ACTION_PACK_MD,
+    write_outputs as write_hard_evidence_action_pack_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -359,11 +364,12 @@ def build_readme(ctx: dict[str, Any]) -> str:
 26. `reproducibility/timed_rehearsal_schedule_ledger.md`
 27. `reproducibility/official_rubric_alignment.md`
 28. `reproducibility/hard_evidence_closure_board.md`
-29. `reproducibility/hard_evidence_ledger.md`
-30. `reproducibility/challenge_cup_submission_archive_manifest.json`
-31. `reproducibility/challenge_cup_submission_package.zip`
-32. `reproducibility/verify_submission_package.py`
-33. `reproducibility/final_acceptance_audit.md`
+29. `reproducibility/hard_evidence_action_pack.md`
+30. `reproducibility/hard_evidence_ledger.md`
+31. `reproducibility/challenge_cup_submission_archive_manifest.json`
+32. `reproducibility/challenge_cup_submission_package.zip`
+33. `reproducibility/verify_submission_package.py`
+34. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -979,6 +985,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 
@@ -1019,6 +1026,8 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Timed rehearsal schedule intake: `{md_link(TIMED_REHEARSAL_SCHEDULE_README)}`",
             f"- Hard evidence closure board: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD)}`",
             f"- Hard evidence closure JSON: `{md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON)}`",
+            f"- Hard evidence action pack: `{md_link(HARD_EVIDENCE_ACTION_PACK_MD)}`",
+            f"- Hard evidence action pack JSON: `{md_link(HARD_EVIDENCE_ACTION_PACK_JSON)}`",
         ]
     )
 
@@ -1181,6 +1190,10 @@ python scripts/build_challenge_cup_hard_evidence_closure_board.py
 -> docs/challenge_cup/reproducibility/hard_evidence_closure_board.md
 -> docs/challenge_cup/reproducibility/hard_evidence_closure_board.json
 
+python scripts/build_challenge_cup_hard_evidence_action_pack.py
+-> docs/challenge_cup/reproducibility/hard_evidence_action_pack.md
+-> Status: ready_for_real_external_evidence_collection
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -1207,7 +1220,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (36/36 gates)
+-> Status: pass (37/37 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1243,6 +1256,7 @@ def main() -> int:
     expert_outreach_payload = write_expert_outreach_outputs()
     timed_rehearsal_schedule_payload = write_timed_rehearsal_schedule_outputs()
     write_hard_evidence_closure_board_outputs()
+    write_hard_evidence_action_pack_outputs()
     write_official_rubric_alignment_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
@@ -1288,6 +1302,8 @@ def main() -> int:
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD),
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_JSON),
+        md_link(HARD_EVIDENCE_ACTION_PACK_MD),
+        md_link(HARD_EVIDENCE_ACTION_PACK_JSON),
         md_link(HARD_EVIDENCE_LEDGER_MD),
         md_link(HARD_EVIDENCE_LEDGER_JSON),
         md_link(HARD_EVIDENCE_README),

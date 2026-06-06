@@ -88,6 +88,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 
