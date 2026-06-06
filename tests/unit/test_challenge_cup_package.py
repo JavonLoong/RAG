@@ -317,13 +317,23 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert no_answer_boundary["live_retriever_claimed"] is False
     assert no_answer_boundary["online_llm_behavior_claimed"] is False
     assert no_answer_boundary["deterministic_guard_only"] is True
-    assert no_answer_boundary["case_count"] == 4
+    assert no_answer_boundary["case_count"] == 14
+    assert no_answer_boundary["empty_context_case_count"] == 4
+    assert no_answer_boundary["noisy_retrieved_context_case_count"] == 10
+    assert no_answer_boundary["unsafe_noisy_specific_claim_count"] >= 5
+    assert no_answer_boundary["safe_noisy_boundary_count"] >= 5
     assert no_answer_boundary["all_cases_passed"] is True
     assert no_answer_boundary["failures"] == []
     no_answer_md = (
         PACKAGE_DIR / "reproducibility" / "no_answer_boundary_evaluation.md"
     ).read_text(encoding="utf-8")
-    for phrase in ["No-Answer Boundary Evaluation", "No retrieved evidence", "证据不足"]:
+    for phrase in [
+        "No-Answer Boundary Evaluation",
+        "No retrieved evidence",
+        "证据不足",
+        "Noisy/contradictory retrieved-context cases: 10",
+        "noisy_context_conflicting_temperature_restart",
+    ]:
         assert phrase in no_answer_md
     claim_integrity = json.loads(
         (PACKAGE_DIR / "reproducibility" / "claim_integrity_report.json").read_text(encoding="utf-8")
@@ -1069,6 +1079,14 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert coverage["minimums"]["source_scopes"] == 15
     assert coverage["minimums"]["graphrag_questions"] == 10
     command_log = (PACKAGE_DIR / "reproducibility" / "command_log.md").read_text(encoding="utf-8")
+    assert command_log.startswith("# 命令记录")
+    assert "生成时间" in command_log
+    assert "本轮验证记录" in command_log
+    assert "python -m pytest tests/unit -q" in command_log
+    assert "216 passed" in command_log
+    assert "86 passed" not in command_log
+    for mojibake in ["鍛戒护", "鐢熸垚", "楠岃瘉"]:
+        assert mojibake not in command_log
     assert "run_challenge_cup_browser_demo_smoke.mjs" in command_log
     assert "browser_demo_smoke_report.json" in command_log
     assert "build_challenge_cup_final_acceptance_audit.py" in command_log

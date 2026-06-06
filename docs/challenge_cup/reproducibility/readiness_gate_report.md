@@ -14,7 +14,7 @@
 | package evidence files | pass | 102 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 101 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 112 files archived; 2527041 bytes; sha256 verified |
+| submission archive | pass | 112 files archived; 2528394 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 102 evidence files, and 5 visible search records are consistent |
@@ -56,7 +56,7 @@
 | application validation evidence | pass | fixed GT-07 application case, evidence records, benefits, and boundaries verified; 10 evidence links verified |
 | application value quantification | pass | GT-07 application value quantified with 5-stage traceability, 41.8 ms latency, and no-external-claim boundary |
 | numeric traceability report | pass | GT-07 browser/application/application-validation numbers are traceable: 41.80 ms, 5 records, 2,655 chunks, 1,185,989 tokens |
-| no-answer boundary evaluation | pass | empty-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims |
+| no-answer boundary evaluation | pass | empty/noisy-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims |
 | claim integrity report | pass | 8 defense claim families are evidence-bound with no award, expert-approval, timed-rehearsal, or production-deployment overclaim |
 | rubric defense coverage | pass | 5 rubric dimensions linked to 31 evidence paths, judge objections, claim ids, and defense assets |
 | defense slide traceability | pass | 10 slides linked to 31 evidence paths, judge objections, claim ids, and no-overclaim boundaries |

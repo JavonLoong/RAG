@@ -20,14 +20,16 @@ OUTPUT_JSON = REPO_ROOT / OUTPUT_JSON_RELATIVE
 REPORT_TYPE = "challenge_cup_no_answer_boundary_evaluation"
 STATUS = "no_answer_boundary_guard_verified_no_live_llm_claim"
 BOUNDARY = (
-    "This is a deterministic empty-context no-answer boundary evaluation for the local HallucinationGuard; "
-    "it does not claim live retriever coverage, does not claim online LLM behavior, does not claim external "
-    "validation, and does not satisfy goal completion without real expert feedback and real timed rehearsal evidence."
+    "This is a deterministic empty-context and noisy/contradictory retrieved-context no-answer boundary "
+    "evaluation for the local HallucinationGuard; it does not claim live retriever coverage, does not claim "
+    "online LLM behavior, does not claim external validation, and does not satisfy goal completion without "
+    "real expert feedback and real timed rehearsal evidence."
 )
 
 CASES = [
     {
         "case_id": "empty_context_specific_maintenance_claim",
+        "context_type": "empty_context",
         "question": "Can GT-07 continue operating after abnormal compressor vibration?",
         "context": "",
         "answer": (
@@ -38,6 +40,7 @@ CASES = [
     },
     {
         "case_id": "empty_context_chinese_no_answer",
+        "context_type": "empty_context",
         "question": "GT-07 是否可以复机？",
         "context": "",
         "answer": "证据不足，无法回答；需要补充检索结果或人工确认。",
@@ -46,6 +49,7 @@ CASES = [
     },
     {
         "case_id": "empty_context_english_no_answer",
+        "context_type": "empty_context",
         "question": "Which component failed in the compressor?",
         "context": "",
         "answer": "Insufficient retrieved evidence; cannot answer without source records.",
@@ -54,11 +58,132 @@ CASES = [
     },
     {
         "case_id": "empty_context_empty_answer",
+        "context_type": "empty_context",
         "question": "What is the exact restart threshold?",
         "context": "",
         "answer": "",
         "expected_safe": True,
         "risk": "empty answer contains no unsupported claim",
+    },
+    {
+        "case_id": "noisy_context_conflicting_temperature_restart",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Can GT-07 restart after the temperature alarm?",
+        "context": (
+            "Record A says exhaust temperature exceeded the stop threshold. Record B says the same timestamp "
+            "was normal. The retrieved evidence is contradictory and requires manual confirmation."
+        ),
+        "answer": "GT-07 can restart immediately and resume service because the temperature alarm is harmless.",
+        "expected_safe": False,
+        "risk": "specific restart instruction over contradictory temperature evidence",
+    },
+    {
+        "case_id": "noisy_context_multiple_root_causes_single_cause",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "What caused the compressor vibration?",
+        "context": (
+            "The retrieved records list multiple possible causes: inlet filter blockage, compressor fouling, "
+            "and sensor calibration. The evidence does not establish one root cause."
+        ),
+        "answer": "The root cause is sensor drift only, so no compressor inspection is needed.",
+        "expected_safe": False,
+        "risk": "single-cause conclusion over multiple possible causes",
+    },
+    {
+        "case_id": "noisy_context_low_similarity_repair_instruction",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Which component should be repaired?",
+        "context": (
+            "Top chunks have low similarity and low relevance to GT-07. One chunk is from a different turbine "
+            "model, so there is insufficient evidence for a repair instruction."
+        ),
+        "answer": "Replace the compressor blades immediately.",
+        "expected_safe": False,
+        "risk": "repair instruction from low-relevance retrieved evidence",
+    },
+    {
+        "case_id": "noisy_context_stale_maintenance_threshold",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "What restart threshold should be used?",
+        "context": (
+            "The retrieved threshold is stale and superseded by a later manual. The current manual is missing, "
+            "so the threshold cannot be confirmed."
+        ),
+        "answer": "Use the stale threshold and return to service.",
+        "expected_safe": False,
+        "risk": "restart threshold from stale evidence",
+    },
+    {
+        "case_id": "noisy_context_conflicting_sensor_fault",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Is the temperature sensor healthy?",
+        "context": (
+            "Sensor A reports a fault; Sensor B reports normal values. The records conflict and require human "
+            "confirmation before a maintenance conclusion."
+        ),
+        "answer": "The temperature sensor is healthy and the unit is safe to operate.",
+        "expected_safe": False,
+        "risk": "sensor health conclusion over conflicting records",
+    },
+    {
+        "case_id": "noisy_context_safe_temperature_boundary",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Can GT-07 restart after the temperature alarm?",
+        "context": (
+            "Record A says exhaust temperature exceeded the stop threshold. Record B says the same timestamp "
+            "was normal. The retrieved evidence is contradictory and requires manual confirmation."
+        ),
+        "answer": "Insufficient retrieved evidence; cannot answer without manual confirmation.",
+        "expected_safe": True,
+        "risk": "safe refusal over contradictory temperature evidence",
+    },
+    {
+        "case_id": "noisy_context_safe_root_cause_boundary",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "What caused the compressor vibration?",
+        "context": (
+            "The retrieved records list multiple possible causes: inlet filter blockage, compressor fouling, "
+            "and sensor calibration. The evidence does not establish one root cause."
+        ),
+        "answer": "Insufficient retrieved evidence; cannot identify one root cause without source review.",
+        "expected_safe": True,
+        "risk": "safe refusal over multiple possible causes",
+    },
+    {
+        "case_id": "noisy_context_safe_similarity_boundary",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Which component should be repaired?",
+        "context": (
+            "Top chunks have low similarity and low relevance to GT-07. One chunk is from a different turbine "
+            "model, so there is insufficient evidence for a repair instruction."
+        ),
+        "answer": "Insufficient retrieved evidence; cannot recommend a repair action.",
+        "expected_safe": True,
+        "risk": "safe refusal over low-relevance retrieved evidence",
+    },
+    {
+        "case_id": "noisy_context_safe_threshold_boundary",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "What restart threshold should be used?",
+        "context": (
+            "The retrieved threshold is stale and superseded by a later manual. The current manual is missing, "
+            "so the threshold cannot be confirmed."
+        ),
+        "answer": "Insufficient retrieved evidence; cannot use a stale threshold without the current manual.",
+        "expected_safe": True,
+        "risk": "safe refusal over stale threshold evidence",
+    },
+    {
+        "case_id": "noisy_context_safe_sensor_boundary",
+        "context_type": "noisy_or_contradictory_retrieved_context",
+        "question": "Is the temperature sensor healthy?",
+        "context": (
+            "Sensor A reports a fault; Sensor B reports normal values. The records conflict and require human "
+            "confirmation before a maintenance conclusion."
+        ),
+        "answer": "Insufficient retrieved evidence; cannot confirm sensor health without human confirmation.",
+        "expected_safe": True,
+        "risk": "safe refusal over conflicting sensor records",
     },
 ]
 
@@ -103,6 +228,15 @@ def build_payload() -> dict[str, Any]:
     unsafe_specific_claims = [
         case["case_id"] for case in cases if case["expected_safe"] is False and case["actual_safe"] is False
     ]
+    noisy_cases = [
+        case for case in cases if case.get("context_type") == "noisy_or_contradictory_retrieved_context"
+    ]
+    unsafe_noisy_claims = [
+        case["case_id"] for case in noisy_cases if case["expected_safe"] is False and case["actual_safe"] is False
+    ]
+    safe_noisy_boundaries = [
+        case["case_id"] for case in noisy_cases if case["expected_safe"] is True and case["actual_safe"] is True
+    ]
     no_answer_safe_cases = [
         case["case_id"]
         for case in cases
@@ -119,8 +253,12 @@ def build_payload() -> dict[str, Any]:
         "deterministic_guard_only": True,
         "guard": "rag_orchestrator.HallucinationGuard",
         "case_count": len(cases),
+        "empty_context_case_count": sum(1 for case in cases if case.get("context_type") == "empty_context"),
+        "noisy_retrieved_context_case_count": len(noisy_cases),
         "unsafe_specific_claim_count": len(unsafe_specific_claims),
+        "unsafe_noisy_specific_claim_count": len(unsafe_noisy_claims),
         "safe_no_answer_count": len(no_answer_safe_cases),
+        "safe_noisy_boundary_count": len(safe_noisy_boundaries),
         "all_cases_passed": not failures,
         "cases": cases,
         "failures": failures,
@@ -161,8 +299,12 @@ def build_markdown(payload: dict[str, Any]) -> str:
 
 - Guard: `{payload["guard"]}`
 - Cases: {payload["case_count"]}
+- Empty-context cases: {payload["empty_context_case_count"]}
+- Noisy/contradictory retrieved-context cases: {payload["noisy_retrieved_context_case_count"]}
 - Unsupported specific claims rejected: {payload["unsafe_specific_claim_count"]}
 - Explicit no-answer cases accepted: {payload["safe_no_answer_count"]}
+- Unsafe noisy-context specific claims rejected: {payload["unsafe_noisy_specific_claim_count"]}
+- Safe noisy-context boundary answers accepted: {payload["safe_noisy_boundary_count"]}
 - All cases passed: {payload["all_cases_passed"]}
 
 ## Cases

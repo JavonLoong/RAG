@@ -2455,7 +2455,7 @@ python scripts/analyze_day4_failure_cases.py
 -> Analyzed cases: 40
 
 python -m pytest tests/unit -q
--> 86 passed
+-> 216 passed
 
 python -m pytest api_server/current_console/chroma_rag_poc/tests -q
 -> 21 passed

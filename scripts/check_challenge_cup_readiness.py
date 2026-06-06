@@ -291,9 +291,10 @@ NUMERIC_TRACEABILITY_BOUNDARY = (
     "not replace real expert feedback or real timed rehearsal evidence."
 )
 NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY = (
-    "This is a deterministic empty-context no-answer boundary evaluation for the local HallucinationGuard; "
-    "it does not claim live retriever coverage, does not claim online LLM behavior, does not claim external "
-    "validation, and does not satisfy goal completion without real expert feedback and real timed rehearsal evidence."
+    "This is a deterministic empty-context and noisy/contradictory retrieved-context no-answer boundary "
+    "evaluation for the local HallucinationGuard; it does not claim live retriever coverage, does not claim "
+    "online LLM behavior, does not claim external validation, and does not satisfy goal completion without "
+    "real expert feedback and real timed rehearsal evidence."
 )
 CLAIM_INTEGRITY_REPORT_BOUNDARY = (
     "This report audits package-level defense claims for evidence links and forbidden overclaims. It does "
@@ -5558,12 +5559,22 @@ def check_no_answer_boundary_evaluation() -> GateCheck:
         failures.append(f"deterministic_guard_only={payload.get('deterministic_guard_only')}")
     if payload.get("guard") != "rag_orchestrator.HallucinationGuard":
         failures.append(f"guard={payload.get('guard')}")
-    if int(payload.get("case_count") or -1) != 4:
+    if int(payload.get("case_count") or -1) != 14:
         failures.append(f"case_count={payload.get('case_count')}")
-    if int(payload.get("unsafe_specific_claim_count") or -1) != 1:
+    if int(payload.get("empty_context_case_count") or -1) != 4:
+        failures.append(f"empty_context_case_count={payload.get('empty_context_case_count')}")
+    if int(payload.get("noisy_retrieved_context_case_count") or -1) != 10:
+        failures.append(
+            f"noisy_retrieved_context_case_count={payload.get('noisy_retrieved_context_case_count')}"
+        )
+    if int(payload.get("unsafe_specific_claim_count") or -1) != 6:
         failures.append(f"unsafe_specific_claim_count={payload.get('unsafe_specific_claim_count')}")
-    if int(payload.get("safe_no_answer_count") or -1) != 2:
+    if int(payload.get("unsafe_noisy_specific_claim_count") or -1) != 5:
+        failures.append(f"unsafe_noisy_specific_claim_count={payload.get('unsafe_noisy_specific_claim_count')}")
+    if int(payload.get("safe_no_answer_count") or -1) != 7:
         failures.append(f"safe_no_answer_count={payload.get('safe_no_answer_count')}")
+    if int(payload.get("safe_noisy_boundary_count") or -1) != 5:
+        failures.append(f"safe_noisy_boundary_count={payload.get('safe_noisy_boundary_count')}")
     if payload.get("all_cases_passed") is not True:
         failures.append(f"all_cases_passed={payload.get('all_cases_passed')}")
     if payload.get("failures") != []:
@@ -5579,6 +5590,16 @@ def check_no_answer_boundary_evaluation() -> GateCheck:
         "empty_context_chinese_no_answer",
         "empty_context_english_no_answer",
         "empty_context_empty_answer",
+        "noisy_context_conflicting_temperature_restart",
+        "noisy_context_multiple_root_causes_single_cause",
+        "noisy_context_low_similarity_repair_instruction",
+        "noisy_context_stale_maintenance_threshold",
+        "noisy_context_conflicting_sensor_fault",
+        "noisy_context_safe_temperature_boundary",
+        "noisy_context_safe_root_cause_boundary",
+        "noisy_context_safe_similarity_boundary",
+        "noisy_context_safe_threshold_boundary",
+        "noisy_context_safe_sensor_boundary",
     }
     missing_cases = sorted(required_case_ids - set(cases))
     if missing_cases:
@@ -5599,6 +5620,16 @@ def check_no_answer_boundary_evaluation() -> GateCheck:
     english = cases.get("empty_context_english_no_answer", {})
     if english.get("expected_safe") is not True or english.get("actual_safe") is not True:
         failures.append("English no-answer boundary was not accepted")
+    for case_id in sorted(case for case in required_case_ids if case.startswith("noisy_context_")):
+        case = cases.get(case_id, {})
+        if case.get("context_type") != "noisy_or_contradictory_retrieved_context":
+            failures.append(f"{case_id}: context_type={case.get('context_type')}")
+        if case.get("expected_safe") is not case.get("actual_safe"):
+            failures.append(f"{case_id}: expected_safe={case.get('expected_safe')} actual_safe={case.get('actual_safe')}")
+        if case.get("expected_safe") is False:
+            claims = [str(item) for item in case.get("hallucinated_claims", [])]
+            if not any("contradictory or insufficient retrieved evidence" in claim for claim in claims):
+                failures.append(f"{case_id}: missing contradictory/insufficient evidence claim")
 
     boundary = str(payload.get("boundary", ""))
     if boundary != NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY:
@@ -5654,7 +5685,7 @@ def check_no_answer_boundary_evaluation() -> GateCheck:
     return GateCheck(
         "no-answer boundary evaluation",
         not failures,
-        "empty-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims"
+        "empty/noisy-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims"
         if not failures
         else "; ".join(failures),
     )

@@ -37,11 +37,46 @@ def test_no_answer_boundary_evaluation_rejects_empty_context_specific_claims(tmp
     assert payload["live_retriever_claimed"] is False
     assert payload["online_llm_behavior_claimed"] is False
     assert payload["deterministic_guard_only"] is True
-    assert payload["case_count"] == 4
+    assert payload["case_count"] == 14
+    assert payload["empty_context_case_count"] == 4
+    assert payload["noisy_retrieved_context_case_count"] == 10
+    assert payload["unsafe_noisy_specific_claim_count"] >= 5
+    assert payload["safe_noisy_boundary_count"] >= 5
     assert payload["all_cases_passed"] is True
     assert payload["failures"] == []
 
     results = {case["case_id"]: case for case in payload["cases"]}
+    expected_noisy_cases = {
+        "noisy_context_conflicting_temperature_restart",
+        "noisy_context_multiple_root_causes_single_cause",
+        "noisy_context_low_similarity_repair_instruction",
+        "noisy_context_stale_maintenance_threshold",
+        "noisy_context_conflicting_sensor_fault",
+        "noisy_context_safe_temperature_boundary",
+        "noisy_context_safe_root_cause_boundary",
+        "noisy_context_safe_similarity_boundary",
+        "noisy_context_safe_threshold_boundary",
+        "noisy_context_safe_sensor_boundary",
+    }
+    assert expected_noisy_cases <= set(results)
+    for case_id in expected_noisy_cases:
+        case = results[case_id]
+        assert case["context_type"] == "noisy_or_contradictory_retrieved_context"
+        assert case["actual_safe"] is case["expected_safe"]
+    unsafe_noisy = [
+        case
+        for case in results.values()
+        if case.get("context_type") == "noisy_or_contradictory_retrieved_context"
+        and case["expected_safe"] is False
+    ]
+    assert len(unsafe_noisy) >= 5
+    for case in unsafe_noisy:
+        assert case["actual_safe"] is False
+        assert case["score"] == 0.0
+        assert any(
+            "contradictory or insufficient retrieved evidence" in claim
+            for claim in case["hallucinated_claims"]
+        )
     unsupported = results["empty_context_specific_maintenance_claim"]
     assert unsupported["expected_safe"] is False
     assert unsupported["actual_safe"] is False

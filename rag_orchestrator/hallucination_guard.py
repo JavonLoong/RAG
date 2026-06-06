@@ -60,6 +60,18 @@ class HallucinationGuard:
                 hallucinated_claims=["No retrieved evidence is available to support this answer."],
                 score=0.0,
             )
+        if self._is_no_answer_boundary(stripped_answer):
+            return GuardResult(is_safe=True, hallucinated_claims=[], score=1.0)
+        if self._has_uncertain_or_contradictory_context(
+            stripped_context
+        ) and self._contains_high_risk_maintenance_conclusion(stripped_answer):
+            return GuardResult(
+                is_safe=False,
+                hallucinated_claims=[
+                    "Specific maintenance conclusion conflicts with contradictory or insufficient retrieved evidence."
+                ],
+                score=0.0,
+            )
 
         prompt = GUARD_PROMPT.format(evidence=stripped_context[:3000], answer=stripped_answer[:2000])
 
@@ -116,3 +128,45 @@ class HallucinationGuard:
             r"unable to answer",
         )
         return any(re.search(pattern, normalized, flags=re.IGNORECASE) for pattern in boundary_patterns)
+
+    @staticmethod
+    def _has_uncertain_or_contradictory_context(context: str) -> bool:
+        normalized = context.casefold()
+        uncertainty_markers = (
+            "contradict",
+            "conflict",
+            "inconsistent",
+            "insufficient evidence",
+            "not enough evidence",
+            "does not establish",
+            "cannot confirm",
+            "manual confirmation",
+            "human confirmation",
+            "multiple possible",
+            "low similarity",
+            "low relevance",
+            "stale",
+            "outdated",
+            "superseded",
+        )
+        return any(marker in normalized for marker in uncertainty_markers)
+
+    @staticmethod
+    def _contains_high_risk_maintenance_conclusion(answer: str) -> bool:
+        normalized = answer.casefold()
+        conclusion_patterns = (
+            r"\bcontinue running\b",
+            r"\bcan restart\b",
+            r"\brestart immediately\b",
+            r"\bsafe to operate\b",
+            r"\bresume service\b",
+            r"\breturn to service\b",
+            r"\breplace\b",
+            r"\brepair\b",
+            r"\bshutdown\b",
+            r"\broot cause is\b",
+            r"\bcaused only by\b",
+            r"\bmust\b",
+            r"\bshould\b",
+        )
+        return any(re.search(pattern, normalized, flags=re.IGNORECASE) for pattern in conclusion_patterns)
