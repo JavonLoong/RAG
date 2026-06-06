@@ -69,6 +69,10 @@
 
 - Numeric traceability report: `docs/challenge_cup/reproducibility/numeric_traceability_report.md`
 - Numeric traceability JSON: `docs/challenge_cup/reproducibility/numeric_traceability_report.json`
+## No-Answer Boundary Evaluation
+
+- No-answer boundary evaluation: `docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md`
+- No-answer boundary JSON: `docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json`
 ## Runtime Reproducibility Snapshot
 
 - Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`

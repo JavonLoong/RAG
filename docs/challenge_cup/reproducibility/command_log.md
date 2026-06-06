@@ -82,6 +82,11 @@ python scripts/build_challenge_cup_numeric_traceability_report.py
 -> docs/challenge_cup/reproducibility/numeric_traceability_report.json
 -> Status: numeric_traceability_consistent_no_external_claim
 
+python scripts/build_challenge_cup_no_answer_boundary_evaluation.py
+-> docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md
+-> docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json
+-> Status: no_answer_boundary_guard_verified_no_live_llm_claim
+
 python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
@@ -158,7 +163,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (58/58 gates)
+-> Status: pass (59/59 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

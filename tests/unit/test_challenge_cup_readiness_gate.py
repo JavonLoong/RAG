@@ -122,6 +122,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "application validation evidence" in report
     assert "application value quantification" in report
     assert "numeric traceability report" in report
+    assert "no-answer boundary evaluation" in report
     assert "runtime reproducibility snapshot" in report
     assert "verification transcript" in report
     assert "scenario demo evidence" in report
@@ -222,12 +223,12 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "58 readiness gates", "53 readiness gates"
+                "59 readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("58 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("59 readiness gates", "53 readiness gates"),
         encoding="utf-8",
     )
 
@@ -2441,6 +2442,91 @@ def test_numeric_traceability_report_gate_rejects_latency_drift(monkeypatch, tmp
     assert "numeric_traceability_failed" in check.detail
 
 
+def test_no_answer_boundary_evaluation_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "no_answer_boundary_evaluation.md"
+    metadata = tmp_path / "no_answer_boundary_evaluation.json"
+    monkeypatch.setattr(module, "NO_ANSWER_BOUNDARY_EVALUATION_MD", markdown)
+    monkeypatch.setattr(module, "NO_ANSWER_BOUNDARY_EVALUATION_JSON", metadata)
+
+    check = module.check_no_answer_boundary_evaluation()
+
+    assert not check.passed
+    assert "no_answer_boundary_evaluation.md" in check.detail
+    assert "no_answer_boundary_evaluation.json" in check.detail
+
+
+def test_no_answer_boundary_evaluation_gate_rejects_live_llm_claim(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "no_answer_boundary_evaluation.md"
+    metadata = tmp_path / "no_answer_boundary_evaluation.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = [
+        "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md",
+        "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json",
+    ]
+    monkeypatch.setattr(module, "NO_ANSWER_BOUNDARY_EVALUATION_MD", markdown)
+    monkeypatch.setattr(module, "NO_ANSWER_BOUNDARY_EVALUATION_JSON", metadata)
+    monkeypatch.setattr(module, "NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    markdown.write_text(
+        "No-Answer Boundary Evaluation\nno_answer_boundary_guard_verified_no_live_llm_claim\n"
+        "No retrieved evidence\n证据不足\n",
+        encoding="utf-8",
+    )
+    metadata.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_no_answer_boundary_evaluation",
+                "status": "no_answer_boundary_guard_verified_no_live_llm_claim",
+                "completion_claim_allowed": False,
+                "does_not_satisfy_goal_completion": True,
+                "external_validation_claimed": False,
+                "live_retriever_claimed": False,
+                "online_llm_behavior_claimed": True,
+                "deterministic_guard_only": True,
+                "case_count": 4,
+                "unsafe_specific_claim_count": 1,
+                "safe_no_answer_count": 2,
+                "all_cases_passed": True,
+                "cases": [
+                    {
+                        "case_id": "empty_context_specific_maintenance_claim",
+                        "expected_safe": False,
+                        "actual_safe": False,
+                        "score": 0.0,
+                        "hallucinated_claims": ["No retrieved evidence is available to support this answer."],
+                        "passed": True,
+                    }
+                ],
+                "failures": [],
+                "boundary": module.NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY,
+                "output_files": required_paths,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(
+        json.dumps({"included_files": required_paths}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    check = module.check_no_answer_boundary_evaluation()
+
+    assert not check.passed
+    assert "online_llm_behavior_claimed=True" in check.detail
+
+
 def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "runtime_reproducibility_snapshot.md"
@@ -2490,7 +2576,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 58/58\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 59/59\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -2504,9 +2590,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 58,
-                    "total": 58,
-                    "current_gate_count": 58,
+                    "passed": 59,
+                    "total": 59,
+                    "current_gate_count": 59,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

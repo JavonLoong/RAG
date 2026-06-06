@@ -84,6 +84,11 @@ from build_challenge_cup_numeric_traceability_report import (
     OUTPUT_MD as NUMERIC_TRACEABILITY_REPORT_MD,
     write_outputs as write_numeric_traceability_report_outputs,
 )
+from build_challenge_cup_no_answer_boundary_evaluation import (
+    OUTPUT_JSON as NO_ANSWER_BOUNDARY_EVALUATION_JSON,
+    OUTPUT_MD as NO_ANSWER_BOUNDARY_EVALUATION_MD,
+    write_outputs as write_no_answer_boundary_evaluation_outputs,
+)
 from build_challenge_cup_runtime_reproducibility_snapshot import (
     OUTPUT_JSON as RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON,
     OUTPUT_MD as RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD,
@@ -176,6 +181,8 @@ APPLICATION_VALUE_QUANTIFICATION_REPORT = APPLICATION_VALUE_QUANTIFICATION_MD
 APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON = APPLICATION_VALUE_QUANTIFICATION_JSON
 NUMERIC_TRACEABILITY_REPORT = NUMERIC_TRACEABILITY_REPORT_MD
 NUMERIC_TRACEABILITY_REPORT_JSON_PATH = NUMERIC_TRACEABILITY_REPORT_JSON
+NO_ANSWER_BOUNDARY_EVALUATION_REPORT = NO_ANSWER_BOUNDARY_EVALUATION_MD
+NO_ANSWER_BOUNDARY_EVALUATION_REPORT_JSON = NO_ANSWER_BOUNDARY_EVALUATION_JSON
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT = RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT_JSON = RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON
 VERIFICATION_TRANSCRIPT_REPORT = VERIFICATION_TRANSCRIPT_MD
@@ -439,30 +446,31 @@ def build_readme(ctx: dict[str, Any]) -> str:
 29. `reproducibility/application_validation_report.md`
 30. `reproducibility/application_value_quantification.md`
 31. `reproducibility/numeric_traceability_report.md`
-32. `reproducibility/runtime_reproducibility_snapshot.md`
-33. `reproducibility/verification_transcript.md`
-34. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
-35. `reproducibility/expert_feedback_form.md`
-36. `reproducibility/runbook.md`
-37. `reproducibility/dataset_manifest.md`
-38. `reproducibility/readiness_gate_report.md`
-39. `reproducibility/goal_completion_report.md`
-40. `reproducibility/defense_rehearsal_scorecard.md`
-41. `reproducibility/defense_rehearsal_result_packet.md`
-42. `reproducibility/expert_feedback_request_packet.md`
-43. `reproducibility/expert_feedback_outreach_ledger.md`
-44. `reproducibility/timed_rehearsal_schedule_ledger.md`
-45. `reproducibility/official_rubric_alignment.md`
-46. `reproducibility/judge_objection_response_matrix.md`
-47. `reproducibility/special_prize_readiness_dashboard.md`
-48. `reproducibility/hard_evidence_closure_board.md`
-49. `reproducibility/hard_evidence_action_pack.md`
-50. `reproducibility/external_evidence_execution_kit.md`
-51. `reproducibility/hard_evidence_ledger.md`
-52. `reproducibility/challenge_cup_submission_archive_manifest.json`
-53. `reproducibility/challenge_cup_submission_package.zip`
-54. `reproducibility/verify_submission_package.py`
-55. `reproducibility/final_acceptance_audit.md`
+32. `reproducibility/no_answer_boundary_evaluation.md`
+33. `reproducibility/runtime_reproducibility_snapshot.md`
+34. `reproducibility/verification_transcript.md`
+35. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
+36. `reproducibility/expert_feedback_form.md`
+37. `reproducibility/runbook.md`
+38. `reproducibility/dataset_manifest.md`
+39. `reproducibility/readiness_gate_report.md`
+40. `reproducibility/goal_completion_report.md`
+41. `reproducibility/defense_rehearsal_scorecard.md`
+42. `reproducibility/defense_rehearsal_result_packet.md`
+43. `reproducibility/expert_feedback_request_packet.md`
+44. `reproducibility/expert_feedback_outreach_ledger.md`
+45. `reproducibility/timed_rehearsal_schedule_ledger.md`
+46. `reproducibility/official_rubric_alignment.md`
+47. `reproducibility/judge_objection_response_matrix.md`
+48. `reproducibility/special_prize_readiness_dashboard.md`
+49. `reproducibility/hard_evidence_closure_board.md`
+50. `reproducibility/hard_evidence_action_pack.md`
+51. `reproducibility/external_evidence_execution_kit.md`
+52. `reproducibility/hard_evidence_ledger.md`
+53. `reproducibility/challenge_cup_submission_archive_manifest.json`
+54. `reproducibility/challenge_cup_submission_package.zip`
+55. `reproducibility/verify_submission_package.py`
+56. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -729,7 +737,7 @@ def build_claim_evidence_matrix(ctx: dict[str, Any]) -> str:
 | 工程闭环 | 已形成资料处理、OCR、chunk 入库、检索、KG POC、演示、验收的端到端链路。 | `docs/challenge_cup/06_结项验收清单.md`; `docs/challenge_cup/reproducibility/dataset_manifest.md`; `docs/project_deliverables/03_普通RAG数据库_14本资料/数据库构建结果_人话版.md` | `python scripts/build_challenge_cup_package.py` | 当前交付强调可结项与可答辩，不等同于生产级运维系统上线。 |
 | 科学评测 | 评测不是只挑成功案例，而是包含 60 题评测集、baseline、失败归因、GraphRAG 同题子集、Day4 失败整改 before/after 和补证闭环；固定 GraphRAG 子集当前本地证据缺口已关闭。 | `evaluation/system_eval_questions.jsonl`; `{day3_ref}`; `{day4_ref}`; `{graph_ref}`; `evaluation/reports/challenge_cup_failure_remediation_before_after.md`; `evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.md` | `python scripts/run_day3_retrieval_baselines.py --dataset evaluation/system_eval_questions.jsonl --top-k 5`; `python scripts/analyze_day4_failure_cases.py`; `python scripts/build_challenge_cup_failure_remediation_before_after.py`; `python scripts/build_graphrag_gap_remediation_plan.py` | 评测集是当前阶段的课程 / 挑战杯评测集；整改报告是 remediation-card ablation，不等于在线 LLM 胜率、live retriever 升级或外部专家验证。 |
 | 可复现 | 评委可以按 runbook 复现包生成、live smoke、browser smoke 和 readiness gate。 | `docs/challenge_cup/reproducibility/runbook.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` | `python scripts/check_challenge_cup_readiness.py`; `node scripts/run_challenge_cup_browser_demo_smoke.mjs` | Browser smoke 证明本地演示与关键资源可用，不替代生产压测。 |
-| 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/application_value_quantification.md`; `docs/challenge_cup/reproducibility/numeric_traceability_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_application_value_quantification.py`; `python scripts/build_challenge_cup_numeric_traceability_report.py`; `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
+| 应用验证 | 项目已把“燃气轮机异常振动诊断”固化为可复核应用案例，能展示阈值、机理、现象、检修措施和复机结果的证据链。 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/application_value_quantification.md`; `docs/challenge_cup/reproducibility/numeric_traceability_report.md`; `docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json`; `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` | `python scripts/build_challenge_cup_application_value_quantification.py`; `python scripts/build_challenge_cup_numeric_traceability_report.py`; `python scripts/build_challenge_cup_no_answer_boundary_evaluation.py`; `python scripts/build_challenge_cup_package.py`; `python scripts/check_challenge_cup_readiness.py` | 当前是公开演示快照和角色化审查，不伪造外部生产签字；高风险维修仍需人工确认。 |
 | 专家反馈闭环 | 项目已准备好可发送给老师或行业专家的反馈采集表、评分维度、签字或邮件证据归档规则和整改闭环。 | `docs/challenge_cup/12_专家反馈采集与整改闭环.md`; `docs/challenge_cup/reproducibility/expert_feedback_form.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | `python scripts/check_challenge_cup_readiness.py` | 未收到真实反馈前不得宣称已通过专家验证；反馈必须按签字、邮件或会议纪要归档。 |
 | 应用边界 | 系统定位为证据型辅助和知识资产整理，不替代工程师做最终运维决策。 | `docs/challenge_cup/05_答辩问答手册.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/03_实验评测报告.md` | `python scripts/check_challenge_cup_readiness.py` | 对高风险维修决策保留人工确认和证据不足提示。 |
 """
@@ -893,7 +901,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 58 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 59 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1553,7 +1561,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>58 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>59 gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1744,7 +1752,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
     <div class="status" aria-label="readiness summary">
       <div class="metric"><strong>3-minute timer</strong><span>演示主线固定为 180 秒</span></div>
       <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
-      <div class="metric"><strong>58 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>59 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
       <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
     </div>
 
@@ -2039,6 +2047,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_numeric_traceability_report.py
 ```
 
+## 生成无答案边界评测报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_no_answer_boundary_evaluation.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell
@@ -2204,6 +2218,18 @@ def build_numeric_traceability_dataset_manifest_section() -> str:
             "",
             f"- Numeric traceability report: `{md_link(NUMERIC_TRACEABILITY_REPORT)}`",
             f"- Numeric traceability JSON: `{md_link(NUMERIC_TRACEABILITY_REPORT_JSON_PATH)}`",
+        ]
+    )
+
+
+def build_no_answer_boundary_dataset_manifest_section() -> str:
+    return "\n".join(
+        [
+            "",
+            "## No-Answer Boundary Evaluation",
+            "",
+            f"- No-answer boundary evaluation: `{md_link(NO_ANSWER_BOUNDARY_EVALUATION_REPORT)}`",
+            f"- No-answer boundary JSON: `{md_link(NO_ANSWER_BOUNDARY_EVALUATION_REPORT_JSON)}`",
         ]
     )
 
@@ -2383,6 +2409,11 @@ python scripts/build_challenge_cup_numeric_traceability_report.py
 -> docs/challenge_cup/reproducibility/numeric_traceability_report.json
 -> Status: numeric_traceability_consistent_no_external_claim
 
+python scripts/build_challenge_cup_no_answer_boundary_evaluation.py
+-> docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md
+-> docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json
+-> Status: no_answer_boundary_guard_verified_no_live_llm_claim
+
 python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
@@ -2459,7 +2490,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (58/58 gates)
+-> Status: pass (59/59 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2502,6 +2533,7 @@ def main() -> int:
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write_application_value_quantification_outputs()
     write_numeric_traceability_report_outputs()
+    write_no_answer_boundary_evaluation_outputs()
     write_runtime_reproducibility_snapshot_outputs()
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
@@ -2529,6 +2561,7 @@ def main() -> int:
         build_dataset_manifest(ctx)
         + build_application_value_dataset_manifest_section()
         + build_numeric_traceability_dataset_manifest_section()
+        + build_no_answer_boundary_dataset_manifest_section()
         + build_runtime_reproducibility_dataset_manifest_section()
         + build_verification_transcript_dataset_manifest_section()
         + build_official_rubric_dataset_manifest_section()
@@ -2604,6 +2637,8 @@ def main() -> int:
         md_link(APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON),
         md_link(NUMERIC_TRACEABILITY_REPORT),
         md_link(NUMERIC_TRACEABILITY_REPORT_JSON_PATH),
+        md_link(NO_ANSWER_BOUNDARY_EVALUATION_REPORT),
+        md_link(NO_ANSWER_BOUNDARY_EVALUATION_REPORT_JSON),
         md_link(RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT),
         md_link(RUNTIME_REPRODUCIBILITY_SNAPSHOT_REPORT_JSON),
         md_link(VERIFICATION_TRANSCRIPT_REPORT),

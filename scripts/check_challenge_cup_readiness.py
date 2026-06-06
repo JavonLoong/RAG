@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 58
+CURRENT_READINESS_GATE_COUNT = 59
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -111,6 +111,12 @@ APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE = (
 )
 NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE = "docs/challenge_cup/reproducibility/numeric_traceability_report.md"
 NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/numeric_traceability_report.json"
+NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.md"
+)
+NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json"
+)
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md"
 )
@@ -152,6 +158,8 @@ APPLICATION_VALUE_QUANTIFICATION_MD = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATI
 APPLICATION_VALUE_QUANTIFICATION_JSON = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE
 NUMERIC_TRACEABILITY_REPORT_MD = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE
 NUMERIC_TRACEABILITY_REPORT_JSON = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE
+NO_ANSWER_BOUNDARY_EVALUATION_MD = REPO_ROOT / NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE
+NO_ANSWER_BOUNDARY_EVALUATION_JSON = REPO_ROOT / NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
 VERIFICATION_TRANSCRIPT_MD = REPO_ROOT / VERIFICATION_TRANSCRIPT_MD_RELATIVE
@@ -215,6 +223,10 @@ NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS = [
     NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE,
     NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE,
 ]
+NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS = [
+    NO_ANSWER_BOUNDARY_EVALUATION_MD_RELATIVE,
+    NO_ANSWER_BOUNDARY_EVALUATION_JSON_RELATIVE,
+]
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
@@ -253,6 +265,11 @@ NUMERIC_TRACEABILITY_BOUNDARY = (
     "This is a local numeric traceability report for the fixed GT-07 browser-smoke scenario; it does not "
     "claim production validation, does not claim external validation, does not replace engineers, and does "
     "not replace real expert feedback or real timed rehearsal evidence."
+)
+NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY = (
+    "This is a deterministic empty-context no-answer boundary evaluation for the local HallucinationGuard; "
+    "it does not claim live retriever coverage, does not claim online LLM behavior, does not claim external "
+    "validation, and does not satisfy goal completion without real expert feedback and real timed rehearsal evidence."
 )
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY = (
     "This snapshot records the local runtime used to reproduce the challenge-cup package; it is not a "
@@ -396,6 +413,10 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
+    "reproducibility/numeric_traceability_report.md",
+    "reproducibility/numeric_traceability_report.json",
+    "reproducibility/no_answer_boundary_evaluation.md",
+    "reproducibility/no_answer_boundary_evaluation.json",
     "reproducibility/runtime_reproducibility_snapshot.md",
     "reproducibility/runtime_reproducibility_snapshot.json",
     "reproducibility/verification_transcript.md",
@@ -1122,6 +1143,14 @@ NUMERIC_TRACEABILITY_MARKDOWN_TERMS = {
     "1,185,989 tokens",
     "does not claim production validation",
     *NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS,
+}
+NO_ANSWER_BOUNDARY_MARKDOWN_TERMS = {
+    "No-Answer Boundary Evaluation",
+    "no_answer_boundary_guard_verified_no_live_llm_claim",
+    "No retrieved evidence",
+    "证据不足",
+    "does not claim live retriever coverage",
+    "does not claim online LLM behavior",
 }
 REQUIRED_SCENARIO_TERMS = {
     "demo-maint-thresholds-076",
@@ -5284,6 +5313,139 @@ def check_numeric_traceability_report() -> GateCheck:
     )
 
 
+def check_no_answer_boundary_evaluation() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path
+        for path in (NO_ANSWER_BOUNDARY_EVALUATION_MD, NO_ANSWER_BOUNDARY_EVALUATION_JSON)
+        if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("no-answer boundary evaluation", False, f"missing or empty: {missing}")
+
+    payload = load_json(NO_ANSWER_BOUNDARY_EVALUATION_JSON)
+    markdown = NO_ANSWER_BOUNDARY_EVALUATION_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_no_answer_boundary_evaluation":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "no_answer_boundary_guard_verified_no_live_llm_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("external_validation_claimed") is not False:
+        failures.append(f"external_validation_claimed={payload.get('external_validation_claimed')}")
+    if payload.get("live_retriever_claimed") is not False:
+        failures.append(f"live_retriever_claimed={payload.get('live_retriever_claimed')}")
+    if payload.get("online_llm_behavior_claimed") is not False:
+        failures.append(f"online_llm_behavior_claimed={payload.get('online_llm_behavior_claimed')}")
+    if payload.get("deterministic_guard_only") is not True:
+        failures.append(f"deterministic_guard_only={payload.get('deterministic_guard_only')}")
+    if payload.get("guard") != "rag_orchestrator.HallucinationGuard":
+        failures.append(f"guard={payload.get('guard')}")
+    if int(payload.get("case_count") or -1) != 4:
+        failures.append(f"case_count={payload.get('case_count')}")
+    if int(payload.get("unsafe_specific_claim_count") or -1) != 1:
+        failures.append(f"unsafe_specific_claim_count={payload.get('unsafe_specific_claim_count')}")
+    if int(payload.get("safe_no_answer_count") or -1) != 2:
+        failures.append(f"safe_no_answer_count={payload.get('safe_no_answer_count')}")
+    if payload.get("all_cases_passed") is not True:
+        failures.append(f"all_cases_passed={payload.get('all_cases_passed')}")
+    if payload.get("failures") != []:
+        failures.append(f"failures={payload.get('failures')}")
+
+    cases = {
+        str(case.get("case_id")): case
+        for case in payload.get("cases", [])
+        if isinstance(case, dict)
+    }
+    required_case_ids = {
+        "empty_context_specific_maintenance_claim",
+        "empty_context_chinese_no_answer",
+        "empty_context_english_no_answer",
+        "empty_context_empty_answer",
+    }
+    missing_cases = sorted(required_case_ids - set(cases))
+    if missing_cases:
+        failures.append(f"missing cases: {missing_cases}")
+    unsupported = cases.get("empty_context_specific_maintenance_claim", {})
+    if unsupported.get("expected_safe") is not False or unsupported.get("actual_safe") is not False:
+        failures.append("unsupported maintenance claim was not rejected")
+    if float(unsupported.get("score") or 0) != 0.0:
+        failures.append(f"unsupported score={unsupported.get('score')}")
+    unsupported_claims = [str(item) for item in unsupported.get("hallucinated_claims", [])]
+    if not any("No retrieved evidence" in claim for claim in unsupported_claims):
+        failures.append("unsupported case missing No retrieved evidence claim")
+    chinese = cases.get("empty_context_chinese_no_answer", {})
+    if chinese.get("expected_safe") is not True or chinese.get("actual_safe") is not True:
+        failures.append("Chinese no-answer boundary was not accepted")
+    if "证据不足" not in str(chinese.get("answer", "")):
+        failures.append("Chinese no-answer case missing 证据不足")
+    english = cases.get("empty_context_english_no_answer", {})
+    if english.get("expected_safe") is not True or english.get("actual_safe") is not True:
+        failures.append("English no-answer boundary was not accepted")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != NO_ANSWER_BOUNDARY_EVALUATION_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "does not claim live retriever coverage",
+        "does not claim online LLM behavior",
+        "does not claim external validation",
+        "real expert feedback",
+        "real timed rehearsal",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(term for term in NO_ANSWER_BOUNDARY_MARKDOWN_TERMS if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(NO_ANSWER_BOUNDARY_EVALUATION_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked no-answer boundary evaluation files: {untracked}")
+    if dirty:
+        failures.append(f"dirty no-answer boundary evaluation files: {dirty}")
+
+    return GateCheck(
+        "no-answer boundary evaluation",
+        not failures,
+        "empty-context guard rejects unsupported maintenance claims and accepts explicit no-answer boundaries without live retriever or online LLM claims"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_runtime_reproducibility_snapshot() -> GateCheck:
     failures: list[str] = []
     missing_files = [
@@ -5709,6 +5871,7 @@ def run_gate() -> list[GateCheck]:
         check_application_validation_evidence(),
         check_application_value_quantification(),
         check_numeric_traceability_report(),
+        check_no_answer_boundary_evaluation(),
         check_runtime_reproducibility_snapshot(),
         check_verification_transcript(),
         check_scenario_demo_evidence(),
@@ -5732,7 +5895,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

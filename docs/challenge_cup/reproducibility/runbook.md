@@ -50,6 +50,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_numeric_traceability_report.py
 ```
 
+## 生成无答案边界评测报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_no_answer_boundary_evaluation.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell

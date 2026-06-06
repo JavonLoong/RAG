@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,10 +48,20 @@ class HallucinationGuard:
         self.llm_client = llm_client
 
     def verify(self, answer: str, context: str) -> GuardResult:
-        if not answer.strip() or not context.strip():
+        stripped_answer = answer.strip()
+        stripped_context = context.strip()
+        if not stripped_answer:
             return GuardResult(is_safe=True, hallucinated_claims=[], score=1.0)
+        if not stripped_context:
+            if self._is_no_answer_boundary(stripped_answer):
+                return GuardResult(is_safe=True, hallucinated_claims=[], score=1.0)
+            return GuardResult(
+                is_safe=False,
+                hallucinated_claims=["No retrieved evidence is available to support this answer."],
+                score=0.0,
+            )
 
-        prompt = GUARD_PROMPT.format(evidence=context[:3000], answer=answer[:2000])
+        prompt = GUARD_PROMPT.format(evidence=stripped_context[:3000], answer=stripped_answer[:2000])
 
         try:
             response = self._call_llm(prompt)
@@ -86,3 +97,22 @@ class HallucinationGuard:
             if "false" in text.lower() or "hallucinated" in text.lower():
                 return GuardResult(is_safe=False, hallucinated_claims=["Heuristic match: hallucination detected"], score=0.0)
             return GuardResult(is_safe=True, hallucinated_claims=[], score=1.0)
+
+    @staticmethod
+    def _is_no_answer_boundary(answer: str) -> bool:
+        normalized = answer.casefold()
+        boundary_patterns = (
+            r"证据不足",
+            r"无法回答",
+            r"不能回答",
+            r"没有检索到",
+            r"未检索到",
+            r"缺少(?:检索)?(?:结果|证据|上下文)",
+            r"insufficient (?:retrieved )?evidence",
+            r"not enough (?:retrieved )?evidence",
+            r"no (?:retrieved )?(?:evidence|context|sources?)",
+            r"cannot answer",
+            r"can't answer",
+            r"unable to answer",
+        )
+        return any(re.search(pattern, normalized, flags=re.IGNORECASE) for pattern in boundary_patterns)
