@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -92,6 +93,7 @@ def test_records_confirmed_timed_rehearsal_schedule_and_refreshes_ledger(tmp_pat
         "schedule_source_path": (
             "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/rehearsal-schedule-20260606.txt"
         ),
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "planned_timing_targets": {
             "opening_planned_seconds": 90,
             "demo_planned_seconds": 180,
@@ -130,6 +132,32 @@ def test_records_confirmed_timed_rehearsal_schedule_and_refreshes_ledger(tmp_pat
     assert ledger["does_not_satisfy_goal_completion"] is True
     assert ledger["schedule_record_count"] == 2
     assert metadata["schedule_source_path"] in ledger["schedule_files"]
+
+
+def test_rejects_empty_schedule_source_file(tmp_path: Path) -> None:
+    module = load_schedule_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "calendar_invite.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("", encoding="utf-8")
+
+    exit_code = module.main(schedule_args(source, "--confirm-real-schedule"))
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_rejects_json_schedule_source_file(tmp_path: Path) -> None:
+    module = load_schedule_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "calendar_invite.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"scheduled": true}', encoding="utf-8")
+
+    exit_code = module.main(schedule_args(source, "--confirm-real-schedule"))
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
 
 
 def test_rejects_under_scoped_or_not_timed_schedule(tmp_path: Path) -> None:

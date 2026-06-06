@@ -14,6 +14,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_challenge_cup_expert_outreach_ledger as ledger
+from challenge_cup_hard_evidence_dates import parse_not_future_iso_date
+from challenge_cup_hard_evidence_sources import sha256_file, source_attachment_failure
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +55,14 @@ def parse_iso_date(value: str) -> str:
     return value
 
 
+def parse_sent_date(value: str) -> str:
+    try:
+        parse_not_future_iso_date(value)
+    except ValueError as exc:
+        raise OutreachInputError("sent_date must be YYYY-MM-DD and not in the future") from exc
+    return value
+
+
 def safe_outreach_id(value: str) -> str:
     candidate = value.strip().lower()
     if not SAFE_ID_PATTERN.fullmatch(candidate):
@@ -65,6 +75,14 @@ def existing_source(path_value: str) -> Path:
     if not path.is_file():
         raise FileNotFoundError(f"source outreach evidence file missing: {path}")
     return path
+
+
+def valid_source_attachment(path_value: str) -> Path:
+    source = existing_source(path_value)
+    failure = source_attachment_failure(source)
+    if failure:
+        raise OutreachInputError(failure)
+    return source
 
 
 def copy_source(source: Path, evidence_id: str, force: bool = False) -> Path:
@@ -92,7 +110,7 @@ def validate_args(args: argparse.Namespace) -> None:
         raise OutreachInputError(f"unsupported outreach channel: {args.channel}")
     if args.status not in STATUSES:
         raise OutreachInputError(f"unsupported outreach status: {args.status}")
-    parse_iso_date(args.sent_date)
+    parse_sent_date(args.sent_date)
     if args.followup_due_date:
         parse_iso_date(args.followup_due_date)
     if len(args.requested_review_dimension) < 3:
@@ -101,7 +119,7 @@ def validate_args(args: argparse.Namespace) -> None:
 
 def record_outreach(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any]]:
     validate_args(args)
-    source = existing_source(args.source)
+    source = valid_source_attachment(args.source)
     copied_source = copy_source(source, args.id, force=args.force)
     metadata = {
         "outreach_type": "expert_feedback_request",
@@ -111,6 +129,7 @@ def record_outreach(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any
         "sent_date": args.sent_date,
         "status": args.status,
         "request_source_path": repo_path(copied_source),
+        "source_sha256": sha256_file(copied_source),
         "requested_review_dimensions": args.requested_review_dimension,
         "requested_attachment_paths": args.requested_attachment,
         "followup_due_date": args.followup_due_date,
@@ -148,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_outreach(args)
-    except OutreachInputError as exc:
+    except (FileNotFoundError, OutreachInputError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(f"Recorded outreach metadata: {repo_path(metadata_path)}")

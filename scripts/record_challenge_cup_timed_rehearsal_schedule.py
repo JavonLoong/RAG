@@ -14,6 +14,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_challenge_cup_timed_rehearsal_schedule_ledger as ledger
+from challenge_cup_hard_evidence_sources import sha256_file, source_attachment_failure
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +80,14 @@ def existing_source(path_value: str) -> Path:
     return path
 
 
+def valid_source_attachment(path_value: str) -> Path:
+    source = existing_source(path_value)
+    failure = source_attachment_failure(source)
+    if failure:
+        raise ScheduleInputError(failure)
+    return source
+
+
 def copy_source(source: Path, evidence_id: str, force: bool = False) -> Path:
     suffix = source.suffix or ".evidence"
     target = SCHEDULE_DIR / f"{evidence_id}{suffix.lower()}"
@@ -128,7 +137,7 @@ def validate_args(args: argparse.Namespace) -> None:
 
 def record_schedule(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any]]:
     validate_args(args)
-    source = existing_source(args.source)
+    source = valid_source_attachment(args.source)
     copied_source = copy_source(source, args.id, force=args.force)
     metadata = {
         "schedule_type": "timed_rehearsal_schedule",
@@ -137,6 +146,7 @@ def record_schedule(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any
         "venue_or_channel": args.venue_or_channel,
         "status": args.status,
         "schedule_source_path": repo_path(copied_source),
+        "source_sha256": sha256_file(copied_source),
         "planned_timing_targets": {
             "opening_planned_seconds": args.opening_planned_seconds,
             "demo_planned_seconds": args.demo_planned_seconds,
@@ -182,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_schedule(args)
-    except ScheduleInputError as exc:
+    except (FileNotFoundError, ScheduleInputError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(f"Recorded timed rehearsal schedule metadata: {repo_path(metadata_path)}")

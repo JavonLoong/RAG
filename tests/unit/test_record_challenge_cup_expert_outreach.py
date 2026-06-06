@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -89,6 +90,7 @@ def test_records_confirmed_expert_outreach_and_refreshes_ledger(tmp_path: Path) 
         "request_source_path": (
             "docs/challenge_cup/reproducibility/expert_feedback_outreach/advisor-a-20260606.txt"
         ),
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "requested_review_dimensions": ["practicality", "innovation", "boundary rigor"],
         "requested_attachment_paths": [
             "docs/challenge_cup/00_项目一页纸.md",
@@ -110,6 +112,48 @@ def test_records_confirmed_expert_outreach_and_refreshes_ledger(tmp_path: Path) 
     assert ledger["does_not_satisfy_goal_completion"] is True
     assert ledger["outreach_record_count"] == 2
     assert metadata["request_source_path"] in ledger["outreach_files"]
+
+
+def test_rejects_empty_outreach_source_file(tmp_path: Path) -> None:
+    module = load_outreach_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "sent_email.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("", encoding="utf-8")
+
+    exit_code = module.main(outreach_args(source, "--confirm-real-outreach"))
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_rejects_json_outreach_source_file(tmp_path: Path) -> None:
+    module = load_outreach_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "sent_email.json"
+    source.parent.mkdir(parents=True)
+    source.write_text('{"sent": true}', encoding="utf-8")
+
+    exit_code = module.main(outreach_args(source, "--confirm-real-outreach"))
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_rejects_future_sent_date(tmp_path: Path) -> None:
+    module = load_outreach_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "sent_email.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("sent email receipt", encoding="utf-8")
+    args = outreach_args(source, "--confirm-real-outreach")
+    sent_index = args.index("--sent-date")
+    args[sent_index + 1] = "2999-01-01"
+
+    exit_code = module.main(args)
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
 
 
 def test_rejects_under_scoped_review_request(tmp_path: Path) -> None:

@@ -227,8 +227,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md",
-      "bytes": 699,
-      "sha256": "85a58e27ca6135dd348fe9eeca55e370dc070f050d3ac72a67124809d9853a3c"
+      "bytes": 816,
+      "sha256": "9a740db56765a7f927dbebafcb44e459b76a905c73c90f574d245a2b2a3db7dd"
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json",
@@ -412,8 +412,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md",
-      "bytes": 929,
-      "sha256": "783e23c8f09840d1547134e21b16e42f922502482229bad0923335e6af92102b"
+      "bytes": 1046,
+      "sha256": "06907478c19a56a50aebbb5f3bbc5b4fa954d2a4cc9390b2d67c30860378af86"
     },
     {
       "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json",
