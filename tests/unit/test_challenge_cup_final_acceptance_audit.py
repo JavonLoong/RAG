@@ -36,9 +36,13 @@ def test_final_acceptance_audit_summarizes_package_ready_but_goal_incomplete() -
     assert payload["can_submit_for_package_review"] is True
     assert payload["can_mark_goal_complete"] is False
     assert {item["category"] for item in payload["blocking_items"]} == {"expert_feedback", "timed_rehearsal"}
+    assert "--confirm-real-feedback" in "\n".join(payload["next_required_actions"])
+    assert "--confirm-real-rehearsal" in "\n".join(payload["next_required_actions"])
 
     markdown = REPORT_MD.read_text(encoding="utf-8")
     assert "Final Acceptance Audit" in markdown
     assert "package_ready_awaiting_external_hard_evidence" in markdown
     assert "verify_submission_package.py" in markdown
     assert "completion_claim_allowed=False" in markdown
+    assert "--confirm-real-feedback" in markdown
+    assert "--confirm-real-rehearsal" in markdown

@@ -954,7 +954,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         encoding="utf-8"
     )
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
+    assert "--confirm-real-feedback" in hard_evidence_readme
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
+    assert "--confirm-real-rehearsal" in hard_evidence_readme
     assert "run_challenge_cup_timed_rehearsal.py" in hard_evidence_readme
     outreach_ledger = json.loads(
         (PACKAGE_DIR / "reproducibility" / "expert_feedback_outreach_ledger.json").read_text(encoding="utf-8")
@@ -1006,6 +1008,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "expert_feedback",
         "timed_rehearsal",
     }
+    assert "--confirm-real-feedback" in json.dumps(action_pack, ensure_ascii=False)
+    assert "--confirm-real-rehearsal" in json.dumps(action_pack, ensure_ascii=False)
     execution_kit = json.loads(
         (PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit.json").read_text(encoding="utf-8")
     )
@@ -1017,6 +1021,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "expert_feedback",
         "timed_rehearsal",
     }
+    assert "--confirm-real-feedback" in json.dumps(execution_kit, ensure_ascii=False)
+    assert "--confirm-real-rehearsal" in json.dumps(execution_kit, ensure_ascii=False)
     goal_completion = (PACKAGE_DIR / "reproducibility" / "goal_completion_report.md").read_text(encoding="utf-8")
     assert "Challenge Cup Goal Completion Gate" in goal_completion
     assert "Status: `fail`" in goal_completion

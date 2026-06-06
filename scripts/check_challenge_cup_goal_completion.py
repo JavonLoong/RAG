@@ -15,6 +15,10 @@ REQUIRED_HARD_EVIDENCE = {
     "expert_feedback": "真实专家反馈",
     "timed_rehearsal": "真实计时彩排",
 }
+CONFIRMATION_FIELDS = {
+    "expert_feedback": ("real_feedback_confirmed", "feedback_source_path"),
+    "timed_rehearsal": ("real_rehearsal_confirmed", "recording_or_timer_source_path"),
+}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -77,6 +81,8 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
             failures.append(f"{key}: missing {label}; collected_count={collected}")
         if len(evidence_files) < max(1, required_min):
             failures.append(f"{key}: evidence_files below required minimum")
+        metadata_files = [relative for relative in evidence_files if relative.lower().endswith(".json")]
+        confirmed_metadata_found = False
         missing_paths = []
         unsafe_paths = []
         for relative in evidence_files:
@@ -85,10 +91,31 @@ def hard_evidence_status(repo_root: Path) -> tuple[bool, list[str], dict[str, An
                 continue
             if not nonempty(repo_root / relative):
                 missing_paths.append(relative)
+        confirmation_field, source_field = CONFIRMATION_FIELDS[key]
+        if not metadata_files:
+            failures.append(f"{key}: metadata json missing")
+        for relative in metadata_files:
+            if not safe_repo_relative(relative) or not nonempty(repo_root / relative):
+                continue
+            try:
+                metadata = load_json(repo_root / relative)
+            except json.JSONDecodeError as exc:
+                failures.append(f"{relative}: invalid metadata json: {exc}")
+                continue
+            if metadata.get(confirmation_field) is not True:
+                failures.append(f"{relative}: {confirmation_field} must be true")
+                continue
+            source_relative = str(metadata.get(source_field, ""))
+            if not safe_repo_relative(source_relative) or not nonempty(repo_root / source_relative):
+                failures.append(f"{relative}: {source_field} must point to a real source attachment")
+                continue
+            confirmed_metadata_found = True
         if unsafe_paths:
             failures.append(f"{key}: unsafe evidence paths={unsafe_paths}")
         if missing_paths:
             failures.append(f"{key}: missing evidence paths={missing_paths}")
+        if evidence_files and not confirmed_metadata_found:
+            failures.append(f"{key}: no metadata file confirms real hard evidence with {confirmation_field}=true")
 
     return not failures, failures, ledger
 

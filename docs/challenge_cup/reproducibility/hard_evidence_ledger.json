@@ -24,7 +24,8 @@
         "review_date",
         "feedback_source_path",
         "review_dimensions",
-        "remediation_record"
+        "remediation_record",
+        "real_feedback_confirmed"
       ],
       "evidence_files": []
     },
@@ -46,7 +47,8 @@
         "demo_actual_seconds",
         "offline_fallback_actual_seconds",
         "killer_question_results",
-        "recording_or_timer_source_path"
+        "recording_or_timer_source_path",
+        "real_rehearsal_confirmed"
       ],
       "evidence_files": []
     }

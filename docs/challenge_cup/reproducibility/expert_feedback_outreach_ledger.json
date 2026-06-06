@@ -11,7 +11,7 @@
   "channels": [],
   "statuses": [],
   "outreach_files": [],
-  "required_next_step": "Archive a real signed form, email reply, meeting minute, or chat screenshot with record_challenge_cup_hard_evidence.py expert_feedback after a response arrives.",
+  "required_next_step": "Archive a real signed form, email reply, meeting minute, or chat screenshot with record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback after a response arrives.",
   "rerun_commands": [
     "python scripts/build_challenge_cup_expert_outreach_ledger.py",
     "python scripts/build_challenge_cup_package.py",

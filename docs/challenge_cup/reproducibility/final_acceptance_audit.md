@@ -14,8 +14,8 @@
 
 ## Next Required Actions
 
-- Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ...
-- Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ...
+- Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback
+- Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal
 - Rebuild package, rerun readiness, rerun goal completion, and rerun this audit.
 
 ## Boundary

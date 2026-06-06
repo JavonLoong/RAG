@@ -78,7 +78,7 @@ def build_payload() -> dict[str, Any]:
         "outreach_files": files,
         "required_next_step": (
             "Archive a real signed form, email reply, meeting minute, or chat screenshot with "
-            "record_challenge_cup_hard_evidence.py expert_feedback after a response arrives."
+            "record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback after a response arrives."
         ),
         "rerun_commands": [
             "python scripts/build_challenge_cup_expert_outreach_ledger.py",
@@ -100,7 +100,7 @@ def write_readme() -> None:
                 "",
                 "- Use `python scripts/record_challenge_cup_expert_outreach.py ... --confirm-real-outreach` after a real send or follow-up.",
                 "- Keep the sent email receipt, chat record, meeting invite, or follow-up note as the source attachment.",
-                "- Do not count outreach as expert feedback. A real response must be archived with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ...`.",
+                "- Do not count outreach as expert feedback. A real response must be archived with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback`.",
             ]
         ),
     )

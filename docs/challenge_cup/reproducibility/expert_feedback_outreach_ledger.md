@@ -14,7 +14,7 @@
 
 ## Required Next Step
 
-Archive a real signed form, email reply, meeting minute, or chat screenshot with record_challenge_cup_hard_evidence.py expert_feedback after a response arrives.
+Archive a real signed form, email reply, meeting minute, or chat screenshot with record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback after a response arrives.
 
 ## Rerun Commands
 

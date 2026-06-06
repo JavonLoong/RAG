@@ -5,4 +5,4 @@ Outreach records prove that a real request was sent or followed up. They do not 
 
 - Use `python scripts/record_challenge_cup_expert_outreach.py ... --confirm-real-outreach` after a real send or follow-up.
 - Keep the sent email receipt, chat record, meeting invite, or follow-up note as the source attachment.
-- Do not count outreach as expert feedback. A real response must be archived with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ...`.
+- Do not count outreach as expert feedback. A real response must be archived with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback`.

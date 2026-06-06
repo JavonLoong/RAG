@@ -28,6 +28,10 @@ REHEARSAL_EVIDENCE_TYPES = {"timer_screenshot", "screen_recording", "observer_no
 SAFE_ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]{1,80}")
 
 
+class HardEvidenceInputError(ValueError):
+    pass
+
+
 def configure_paths(repo_root: Path) -> None:
     global REPO_ROOT, OUTPUT_DIR, INTAKE_ROOT, EXPERT_DIR, REHEARSAL_DIR
 
@@ -89,6 +93,11 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
+    if not args.confirm_real_feedback:
+        raise HardEvidenceInputError(
+            "refusing to record expert feedback without --confirm-real-feedback; do not archive feedback "
+            "unless the source is a real signed form, email reply, meeting minute, or chat screenshot"
+        )
     if args.evidence_type not in EXPERT_EVIDENCE_TYPES:
         raise ValueError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
     if len(args.review_dimension) < 3:
@@ -103,6 +112,7 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         "feedback_source_path": repo_path(copied_source),
         "review_dimensions": args.review_dimension,
         "remediation_record": [{"issue": args.remediation_issue, "action": args.remediation_action}],
+        "real_feedback_confirmed": True,
     }
     metadata_path = EXPERT_DIR / f"{args.id}.json"
     write_json(metadata_path, metadata)
@@ -110,6 +120,11 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
 
 
 def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
+    if not args.confirm_real_rehearsal:
+        raise HardEvidenceInputError(
+            "refusing to record timed rehearsal without --confirm-real-rehearsal; do not archive rehearsal data "
+            "unless these timings came from an actual observed run"
+        )
     if args.evidence_type not in REHEARSAL_EVIDENCE_TYPES:
         raise ValueError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
     if len(args.killer_question_seconds) != 5:
@@ -128,6 +143,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
             for index, seconds in enumerate(args.killer_question_seconds, start=1)
         ],
         "recording_or_timer_source_path": repo_path(copied_source),
+        "real_rehearsal_confirmed": True,
     }
     metadata_path = REHEARSAL_DIR / f"{args.id}.json"
     write_json(metadata_path, metadata)
@@ -150,6 +166,7 @@ def build_parser() -> argparse.ArgumentParser:
     expert.add_argument("--review-dimension", action="append", required=True)
     expert.add_argument("--remediation-issue", required=True)
     expert.add_argument("--remediation-action", required=True)
+    expert.add_argument("--confirm-real-feedback", action="store_true")
     expert.add_argument("--force", action="store_true")
 
     rehearsal = subparsers.add_parser("timed_rehearsal", help="Record real timed rehearsal evidence.")
@@ -162,6 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
     rehearsal.add_argument("--demo-actual-seconds", required=True, type=int)
     rehearsal.add_argument("--offline-fallback-actual-seconds", required=True, type=int)
     rehearsal.add_argument("--killer-question-seconds", nargs="+", required=True, type=int)
+    rehearsal.add_argument("--confirm-real-rehearsal", action="store_true")
     rehearsal.add_argument("--force", action="store_true")
 
     return parser
@@ -169,12 +187,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if args.category == "expert_feedback":
-        metadata_path, source_path = record_expert_feedback(args)
-    elif args.category == "timed_rehearsal":
-        metadata_path, source_path = record_timed_rehearsal(args)
-    else:
-        raise ValueError(f"unsupported hard evidence category: {args.category}")
+    try:
+        if args.category == "expert_feedback":
+            metadata_path, source_path = record_expert_feedback(args)
+        elif args.category == "timed_rehearsal":
+            metadata_path, source_path = record_timed_rehearsal(args)
+        else:
+            raise ValueError(f"unsupported hard evidence category: {args.category}")
+    except HardEvidenceInputError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     payload = ledger.write_outputs()
     print(f"Recorded metadata: {repo_path(metadata_path)}")

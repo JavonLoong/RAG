@@ -680,7 +680,9 @@ def test_external_evidence_execution_kit_gate_rejects_missing_manifest_hash_arch
                 "attachment_files": [required_paths[2]],
                 "execution_steps": ["send real packet"],
                 "done_when": ["real expert feedback archived"],
-                "recording_commands": ["python scripts/record_challenge_cup_hard_evidence.py expert_feedback ..."],
+                "recording_commands": [
+                    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback"
+                ],
                 "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
                 "does_not_satisfy_goal_completion": True,
             },
@@ -692,7 +694,7 @@ def test_external_evidence_execution_kit_gate_rejects_missing_manifest_hash_arch
                 "attachment_files": [required_paths[3]],
                 "execution_steps": ["run real timed rehearsal"],
                 "done_when": ["real timed rehearsal archived"],
-                "recording_commands": ["python scripts/run_challenge_cup_timed_rehearsal.py ..."],
+                "recording_commands": ["python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal"],
                 "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
                 "does_not_satisfy_goal_completion": True,
             },
@@ -1566,6 +1568,7 @@ def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dic
                     "feedback_source_path",
                     "review_dimensions",
                     "remediation_record",
+                    "real_feedback_confirmed",
                 ],
                 "evidence_files": [expert_file],
             },
@@ -1581,6 +1584,7 @@ def hard_evidence_complete_payload(expert_file: str, rehearsal_file: str) -> dic
                     "offline_fallback_actual_seconds",
                     "killer_question_results",
                     "recording_or_timer_source_path",
+                    "real_rehearsal_confirmed",
                 ],
                 "evidence_files": [rehearsal_file],
             },
@@ -1606,6 +1610,7 @@ def test_hard_evidence_ledger_gate_rejects_expert_feedback_without_required_meta
                 "feedback_source_path": expert_file,
                 "review_dimensions": ["usefulness", "innovation", "boundary"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
             },
             rehearsal_file: {
                 "evidence_type": "observer_note",
@@ -1616,6 +1621,7 @@ def test_hard_evidence_ledger_gate_rejects_expert_feedback_without_required_meta
                 "offline_fallback_actual_seconds": 18,
                 "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
                 "recording_or_timer_source_path": rehearsal_file,
+                "real_rehearsal_confirmed": True,
             },
         },
     )
@@ -1647,6 +1653,7 @@ def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_qu
                 "feedback_source_path": expert_file,
                 "review_dimensions": ["usefulness", "innovation", "boundary"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
             },
             rehearsal_file: {
                 "evidence_type": "observer_note",
@@ -1657,6 +1664,7 @@ def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_qu
                 "offline_fallback_actual_seconds": 18,
                 "killer_question_results": [{"question_index": 1, "actual_seconds": 25}],
                 "recording_or_timer_source_path": rehearsal_file,
+                "real_rehearsal_confirmed": True,
             },
         },
     )
@@ -1686,6 +1694,7 @@ def test_hard_evidence_ledger_gate_rejects_metadata_without_real_source_attachme
                 "feedback_source_path": expert_file,
                 "review_dimensions": ["usefulness", "innovation", "boundary"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
             },
             rehearsal_file: {
                 "evidence_type": "observer_note",
@@ -1696,6 +1705,7 @@ def test_hard_evidence_ledger_gate_rejects_metadata_without_real_source_attachme
                 "offline_fallback_actual_seconds": 18,
                 "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
                 "recording_or_timer_source_path": rehearsal_file,
+                "real_rehearsal_confirmed": True,
             },
         },
     )
@@ -1705,6 +1715,50 @@ def test_hard_evidence_ledger_gate_rejects_metadata_without_real_source_attachme
     assert not check.passed
     assert "feedback_source_path" in check.detail
     assert "recording_or_timer_source_path" in check.detail
+
+
+def test_hard_evidence_ledger_gate_rejects_metadata_without_real_confirmation(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_file = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/expert_feedback_summary.json"
+    rehearsal_file = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timed_rehearsal_summary.json"
+    expert_attachment = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/email_reply.txt"
+    rehearsal_attachment = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/timer_note.txt"
+    install_hard_evidence_fixture(
+        module,
+        monkeypatch,
+        tmp_path,
+        hard_evidence_complete_payload(expert_file, rehearsal_file),
+        {
+            expert_file: {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "reviewer-a",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": expert_attachment,
+                "review_dimensions": ["usefulness", "innovation", "boundary"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": False,
+            },
+            rehearsal_file: {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 88,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+                "recording_or_timer_source_path": rehearsal_attachment,
+            },
+            expert_attachment: {"note": "source attachment placeholder for test"},
+            rehearsal_attachment: {"note": "timer source attachment placeholder for test"},
+        },
+    )
+
+    check = module.check_hard_evidence_ledger()
+
+    assert not check.passed
+    assert "real_feedback_confirmed" in check.detail
+    assert "real_rehearsal_confirmed" in check.detail
 
 
 def test_hard_evidence_ledger_gate_rejects_non_iso_evidence_dates(monkeypatch, tmp_path) -> None:
@@ -1727,6 +1781,7 @@ def test_hard_evidence_ledger_gate_rejects_non_iso_evidence_dates(monkeypatch, t
                 "feedback_source_path": expert_attachment,
                 "review_dimensions": ["usefulness", "innovation", "boundary"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
             },
             rehearsal_file: {
                 "evidence_type": "observer_note",
@@ -1737,6 +1792,7 @@ def test_hard_evidence_ledger_gate_rejects_non_iso_evidence_dates(monkeypatch, t
                 "offline_fallback_actual_seconds": 18,
                 "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
                 "recording_or_timer_source_path": rehearsal_attachment,
+                "real_rehearsal_confirmed": True,
             },
             expert_attachment: {"note": "source attachment placeholder for test"},
             rehearsal_attachment: {"note": "timer source attachment placeholder for test"},

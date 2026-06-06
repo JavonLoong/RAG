@@ -49,8 +49,14 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
         packets["expert_feedback_review"]["recording_commands"]
     )
+    assert "--confirm-real-feedback" in "\n".join(packets["expert_feedback_review"]["recording_commands"])
     assert "run_challenge_cup_timed_rehearsal.py" in "\n".join(
         packets["timed_rehearsal_observer"]["recording_commands"]
+    )
+    assert any(
+        "record_challenge_cup_hard_evidence.py timed_rehearsal" in command
+        and "--confirm-real-rehearsal" in command
+        for command in packets["timed_rehearsal_observer"]["recording_commands"]
     )
 
     output_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility"

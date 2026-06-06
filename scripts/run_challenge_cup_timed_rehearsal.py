@@ -89,6 +89,7 @@ def build_intake_args(source: Path, args: argparse.Namespace) -> argparse.Namesp
         demo_actual_seconds=args.demo_actual_seconds,
         offline_fallback_actual_seconds=args.offline_fallback_actual_seconds,
         killer_question_seconds=args.killer_question_seconds,
+        confirm_real_rehearsal=True,
         force=args.force,
     )
 

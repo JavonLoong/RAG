@@ -50,11 +50,17 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
         streams["expert_feedback"]["recording_commands"]
     )
+    assert "--confirm-real-feedback" in "\n".join(streams["expert_feedback"]["recording_commands"])
     assert "record_challenge_cup_timed_rehearsal_schedule.py" in "\n".join(
         streams["timed_rehearsal"]["recording_commands"]
     )
     assert "run_challenge_cup_timed_rehearsal.py" in "\n".join(
         streams["timed_rehearsal"]["recording_commands"]
+    )
+    assert any(
+        "record_challenge_cup_hard_evidence.py timed_rehearsal" in command
+        and "--confirm-real-rehearsal" in command
+        for command in streams["timed_rehearsal"]["recording_commands"]
     )
     assert "check_challenge_cup_goal_completion.py" in "\n".join(payload["verification_commands"])
 

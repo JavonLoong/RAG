@@ -17,8 +17,10 @@
 - hard evidence status=awaiting_real_external_feedback_and_timed_rehearsal
 - expert_feedback: missing 真实专家反馈; collected_count=0
 - expert_feedback: evidence_files below required minimum
+- expert_feedback: metadata json missing
 - timed_rehearsal: missing 真实计时彩排; collected_count=0
 - timed_rehearsal: evidence_files below required minimum
+- timed_rehearsal: metadata json missing
 
 ## Boundary
 

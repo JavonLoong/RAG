@@ -10,7 +10,7 @@
   "observers": [],
   "statuses": [],
   "schedule_files": [],
-  "required_next_step": "After the timed rehearsal is actually run, archive measured seconds and observer evidence with run_challenge_cup_timed_rehearsal.py --confirm-real-rehearsal or record_challenge_cup_hard_evidence.py timed_rehearsal.",
+  "required_next_step": "After the timed rehearsal is actually run, archive measured seconds and observer evidence with run_challenge_cup_timed_rehearsal.py --confirm-real-rehearsal or record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal.",
   "rerun_commands": [
     "python scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py",
     "python scripts/build_challenge_cup_package.py",

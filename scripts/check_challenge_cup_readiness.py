@@ -3655,10 +3655,16 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
         failures.append(f"{category}: ready_to_execute_commands missing")
     else:
         joined = "\n".join(str(item) for item in ready_commands)
-        if category == "expert_feedback" and "record_challenge_cup_hard_evidence.py expert_feedback" not in joined:
-            failures.append(f"{category}: ready_to_execute_commands missing expert hard-evidence recorder")
-        if category == "timed_rehearsal" and "run_challenge_cup_timed_rehearsal.py" not in joined:
-            failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
+        if category == "expert_feedback":
+            if "record_challenge_cup_hard_evidence.py expert_feedback" not in joined:
+                failures.append(f"{category}: ready_to_execute_commands missing expert hard-evidence recorder")
+            if "--confirm-real-feedback" not in joined:
+                failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-feedback")
+        if category == "timed_rehearsal":
+            if "run_challenge_cup_timed_rehearsal.py" not in joined:
+                failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
+            if "--confirm-real-rehearsal" not in joined:
+                failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-rehearsal")
     post_commands = stream.get("post_collection_commands")
     if not isinstance(post_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
         str(item) for item in post_commands
@@ -3826,11 +3832,15 @@ def check_hard_evidence_action_pack() -> GateCheck:
                 failures.append(f"{category}: recording_commands missing outreach recorder")
             if "record_challenge_cup_hard_evidence.py expert_feedback" not in commands:
                 failures.append(f"{category}: recording_commands missing expert hard-evidence recorder")
+            if "--confirm-real-feedback" not in commands:
+                failures.append(f"{category}: recording_commands missing --confirm-real-feedback")
         if category == "timed_rehearsal":
             if "record_challenge_cup_timed_rehearsal_schedule.py" not in commands:
                 failures.append(f"{category}: recording_commands missing schedule recorder")
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{category}: recording_commands missing timed rehearsal runner")
+            if "--confirm-real-rehearsal" not in commands:
+                failures.append(f"{category}: recording_commands missing --confirm-real-rehearsal")
 
     verification_commands = payload.get("verification_commands")
     if not isinstance(verification_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
@@ -3969,10 +3979,16 @@ def check_external_evidence_execution_kit() -> GateCheck:
             failures.append(f"{packet_id}: attachment_files missing or empty: {missing_attachments}")
 
         commands = "\n".join(str(item) for item in packet.get("recording_commands", []))
-        if category == "expert_feedback" and "record_challenge_cup_hard_evidence.py expert_feedback" not in commands:
-            failures.append(f"{packet_id}: recording_commands missing expert hard-evidence recorder")
-        if category == "timed_rehearsal" and "run_challenge_cup_timed_rehearsal.py" not in commands:
-            failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
+        if category == "expert_feedback":
+            if "record_challenge_cup_hard_evidence.py expert_feedback" not in commands:
+                failures.append(f"{packet_id}: recording_commands missing expert hard-evidence recorder")
+            if "--confirm-real-feedback" not in commands:
+                failures.append(f"{packet_id}: recording_commands missing --confirm-real-feedback")
+        if category == "timed_rehearsal":
+            if "run_challenge_cup_timed_rehearsal.py" not in commands:
+                failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
+            if "--confirm-real-rehearsal" not in commands:
+                failures.append(f"{packet_id}: recording_commands missing --confirm-real-rehearsal")
 
     verification_commands = {str(item) for item in payload.get("verification_commands", [])}
     for command in (
@@ -4056,6 +4072,8 @@ def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], ca
         failures.append(f"{relative}: remediation_record missing")
     if not is_iso_date(payload.get("review_date")):
         failures.append(f"{relative}: review_date must be YYYY-MM-DD")
+    if payload.get("real_feedback_confirmed") is not True:
+        failures.append(f"{relative}: real_feedback_confirmed must be true")
     failures.extend(validate_source_path(relative, payload, "feedback_source_path"))
     return failures
 
@@ -4080,6 +4098,8 @@ def validate_timed_rehearsal_metadata(relative: str, payload: dict[str, Any], ca
 
     if not is_iso_date(payload.get("rehearsal_date")):
         failures.append(f"{relative}: rehearsal_date must be YYYY-MM-DD")
+    if payload.get("real_rehearsal_confirmed") is not True:
+        failures.append(f"{relative}: real_rehearsal_confirmed must be true")
     failures.extend(validate_source_path(relative, payload, "recording_or_timer_source_path"))
 
     killer_results = payload.get("killer_question_results")
@@ -4174,8 +4194,13 @@ def check_hard_evidence_ledger() -> GateCheck:
             category_satisfied = False
         if not category.get("accepted_evidence_types"):
             failures.append(f"{key}.accepted_evidence_types missing")
-        if not category.get("required_metadata_fields"):
+        required_metadata_fields = [str(item) for item in category.get("required_metadata_fields", [])]
+        if not required_metadata_fields:
             failures.append(f"{key}.required_metadata_fields missing")
+        if key == "expert_feedback" and "real_feedback_confirmed" not in required_metadata_fields:
+            failures.append(f"{key}.required_metadata_fields missing real_feedback_confirmed")
+        if key == "timed_rehearsal" and "real_rehearsal_confirmed" not in required_metadata_fields:
+            failures.append(f"{key}.required_metadata_fields missing real_rehearsal_confirmed")
         metadata_failures = validate_hard_evidence_metadata(key, files, category)
         if metadata_failures:
             category_satisfied = False

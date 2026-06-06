@@ -53,6 +53,7 @@ def test_records_expert_feedback_attachment_and_metadata(tmp_path: Path) -> None
             "demo pacing",
             "--remediation-action",
             "tighten opening",
+            "--confirm-real-feedback",
         ]
     )
 
@@ -70,6 +71,7 @@ def test_records_expert_feedback_attachment_and_metadata(tmp_path: Path) -> None
         "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
         "review_dimensions": ["实用性", "创新性", "边界严谨性"],
         "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+        "real_feedback_confirmed": True,
     }
     ledger = json.loads(
         (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_ledger.json").read_text(
@@ -112,6 +114,7 @@ def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None
             "27",
             "28",
             "29",
+            "--confirm-real-rehearsal",
         ]
     )
 
@@ -124,6 +127,7 @@ def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None
     assert metadata["recording_or_timer_source_path"] == (
         "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
     )
+    assert metadata["real_rehearsal_confirmed"] is True
     assert metadata["killer_question_results"] == [
         {"question_index": index, "actual_seconds": seconds}
         for index, seconds in enumerate([25, 26, 27, 28, 29], start=1)
@@ -167,5 +171,84 @@ def test_rejects_missing_source_file(tmp_path: Path) -> None:
                 "demo pacing",
                 "--remediation-action",
                 "tighten opening",
+                "--confirm-real-feedback",
             ]
         )
+
+
+def test_refuses_expert_feedback_without_real_feedback_confirmation(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实专家邮件回复。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实计时记录。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()

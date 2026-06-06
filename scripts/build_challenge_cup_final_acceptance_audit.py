@@ -18,6 +18,10 @@ SUBMISSION_VERIFIER = REPRO_DIR / "verify_submission_package.py"
 SUBMISSION_VERIFIER_RELATIVE = "docs/challenge_cup/reproducibility/verify_submission_package.py"
 REPORT_TYPE = "challenge_cup_final_acceptance_audit"
 READY_AWAITING_STATUS = "package_ready_awaiting_external_hard_evidence"
+CONFIRMATION_FIELDS = {
+    "expert_feedback": ("real_feedback_confirmed", "feedback_source_path"),
+    "timed_rehearsal": ("real_rehearsal_confirmed", "recording_or_timer_source_path"),
+}
 BOUNDARY = (
     "This audit proves package-level acceptance readiness and explicitly preserves the hard-evidence "
     "boundary. It does not claim expert approval, timed rehearsal completion, final goal completion, "
@@ -35,6 +39,11 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+
+
+def safe_repo_relative(path: str) -> bool:
+    parts = Path(path).parts
+    return path and not Path(path).is_absolute() and ".." not in parts and "\\" not in path
 
 
 def parse_status_line(text: str) -> str:
@@ -68,7 +77,8 @@ def blocking_items_from_ledger(ledger: dict[str, Any]) -> list[dict[str, Any]]:
         required = int(category.get("required_min_count") or 0)
         collected = int(category.get("collected_count") or 0)
         evidence_files = [str(item) for item in category.get("evidence_files", [])]
-        if collected < max(1, required) or len(evidence_files) < max(1, required):
+        confirmed = category_has_confirmed_metadata(str(category_name), evidence_files)
+        if collected < max(1, required) or len(evidence_files) < max(1, required) or not confirmed:
             items.append(
                 {
                     "category": str(category_name),
@@ -76,9 +86,35 @@ def blocking_items_from_ledger(ledger: dict[str, Any]) -> list[dict[str, Any]]:
                     "collected_count": collected,
                     "evidence_files": evidence_files,
                     "intake_dir": str(category.get("intake_dir") or ""),
+                    "confirmed_metadata_found": confirmed,
                 }
             )
     return items
+
+
+def category_has_confirmed_metadata(category_name: str, evidence_files: list[str]) -> bool:
+    if category_name not in CONFIRMATION_FIELDS:
+        return bool(evidence_files)
+    confirmation_field, source_field = CONFIRMATION_FIELDS[category_name]
+    for relative in evidence_files:
+        if not relative.lower().endswith(".json") or not safe_repo_relative(relative):
+            continue
+        path = REPO_ROOT / relative
+        if not path.exists() or path.stat().st_size == 0:
+            continue
+        try:
+            metadata = load_json(path)
+        except json.JSONDecodeError:
+            continue
+        source_relative = str(metadata.get(source_field, ""))
+        if (
+            metadata.get(confirmation_field) is True
+            and safe_repo_relative(source_relative)
+            and (REPO_ROOT / source_relative).exists()
+            and (REPO_ROOT / source_relative).stat().st_size > 0
+        ):
+            return True
+    return False
 
 
 def build_payload() -> dict[str, Any]:
@@ -133,8 +169,8 @@ def build_payload() -> dict[str, Any]:
         "can_mark_goal_complete": can_mark_goal_complete,
         "blocking_items": blocking_items,
         "next_required_actions": [
-            "Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ...",
-            "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ...",
+            "Archive real expert feedback with scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback",
+            "Archive real timed rehearsal evidence with scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal or scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
             "Rebuild package, rerun readiness, rerun goal completion, and rerun this audit.",
         ],
         "boundary": BOUNDARY,

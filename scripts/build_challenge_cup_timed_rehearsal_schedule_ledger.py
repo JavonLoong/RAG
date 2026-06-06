@@ -79,7 +79,7 @@ def build_payload() -> dict[str, Any]:
         "required_next_step": (
             "After the timed rehearsal is actually run, archive measured seconds and observer evidence "
             "with run_challenge_cup_timed_rehearsal.py --confirm-real-rehearsal or "
-            "record_challenge_cup_hard_evidence.py timed_rehearsal."
+            "record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal."
         ),
         "rerun_commands": [
             "python scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py",
@@ -101,7 +101,7 @@ def write_readme() -> None:
                 "",
                 "- Use `python scripts/record_challenge_cup_timed_rehearsal_schedule.py ... --confirm-real-schedule` after a real calendar invite, meeting notice, or observer preparation note exists.",
                 "- Keep the calendar invite, meeting notice, chat confirmation, or observer checklist as the source attachment.",
-                "- Do not count schedule records as timed rehearsal completion. A real run must be archived with `python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal` or `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ...`.",
+                "- Do not count schedule records as timed rehearsal completion. A real run must be archived with `python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal` or `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.",
             ]
         ),
     )
