@@ -3,7 +3,7 @@
 - Status: `package_ready_awaiting_external_hard_evidence`
 - Can submit for package review: `True`
 - Can mark goal complete: `False`
-- Readiness gate: `pass` (45/45)
+- Readiness gate: `pass` (46/46)
 - Submission verifier: `verify_submission_package.py` available=True archived=True
 - Goal completion: `fail`; completion_claim_allowed=False
 

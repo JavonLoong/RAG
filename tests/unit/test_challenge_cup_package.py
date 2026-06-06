@@ -49,6 +49,7 @@ REQUIRED_PACKAGE_FILES = [
     "17_评审风险控制与应急预案.md",
     "18_特等奖打分模拟与整改清单.md",
     "19_作品展墙报问辩与展台脚本.md",
+    "20_成果转化与持续迭代路线图.md",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
     "reproducibility/runbook.md",
     "reproducibility/dataset_manifest.md",
@@ -163,6 +164,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "17_评审风险控制与应急预案.md" in readme
     assert "18_特等奖打分模拟与整改清单.md" in readme
     assert "19_作品展墙报问辩与展台脚本.md" in readme
+    assert "20_成果转化与持续迭代路线图.md" in readme
     assert "defense_deck/challenge_cup_defense_deck.pptx" in readme
     assert "defense_deck/challenge_cup_defense_speaker_notes.md" in readme
     assert "reproducibility/official_rubric_alignment.md" in readme
@@ -289,7 +291,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "45 项 readiness gate" in onsite_runbook
+    assert "46 项 readiness gate" in onsite_runbook
+    assert "45 项 readiness gate" not in onsite_runbook
     assert "44 项 readiness gate" not in onsite_runbook
     assert "43 项 readiness gate" not in onsite_runbook
     assert "42 项 readiness gate" not in onsite_runbook
@@ -445,6 +448,39 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "hard_evidence_ledger.md",
     ]:
         assert evidence in poster_booth
+    commercialization_plan = (PACKAGE_DIR / "20_成果转化与持续迭代路线图.md").read_text(encoding="utf-8")
+    for phrase in [
+        "成果转化与持续迭代路线图",
+        "服务国家战略",
+        "高质量发展",
+        "成果转化",
+        "新质生产力",
+        "试点路径",
+        "推广对象",
+        "迭代里程碑",
+        "验收指标",
+        "风险边界",
+        "数据治理",
+        "人工确认",
+        "真实专家反馈",
+        "真实计时彩排",
+        "不承诺商业落地",
+    ]:
+        assert phrase in commercialization_plan
+    for evidence in [
+        "01_挑战杯项目书.md",
+        "07_评审主张证据矩阵.md",
+        "11_应用场景与专家验证.md",
+        "18_特等奖打分模拟与整改清单.md",
+        "19_作品展墙报问辩与展台脚本.md",
+        "application_validation_report.md",
+        "official_rubric_alignment.md",
+        "special_prize_readiness_dashboard.md",
+        "hard_evidence_action_pack.md",
+        "hard_evidence_ledger.md",
+        "goal_completion_report.md",
+    ]:
+        assert evidence in commercialization_plan
     defense_card = (PACKAGE_DIR / "10_答辩攻防与彩排卡.md").read_text(encoding="utf-8")
     for phrase in ["90秒开场", "三分钟演示节奏", "杀手问题", "不可夸大边界", "彩排通过标准"]:
         assert phrase in defense_card
@@ -559,6 +595,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "17_评审风险控制与应急预案.md" in manifest
     assert "18_特等奖打分模拟与整改清单.md" in manifest
     assert "19_作品展墙报问辩与展台脚本.md" in manifest
+    assert "20_成果转化与持续迭代路线图.md" in manifest
     assert "hard_evidence_closure_board.md" in manifest
     assert "hard_evidence_closure_board.json" in manifest
     assert "hard_evidence_action_pack.md" in manifest
@@ -598,7 +635,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (45/45 gates)" in command_log
+    assert "Status: pass (46/46 gates)" in command_log
+    assert "Status: pass (45/45 gates)" not in command_log
     assert "Status: pass (44/44 gates)" not in command_log
     assert "Status: pass (43/43 gates)" not in command_log
     assert "Status: pass (42/42 gates)" not in command_log
@@ -666,6 +704,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/17_评审风险控制与应急预案.md" in evidence_files
     assert "docs/challenge_cup/18_特等奖打分模拟与整改清单.md" in evidence_files
     assert "docs/challenge_cup/19_作品展墙报问辩与展台脚本.md" in evidence_files
+    assert "docs/challenge_cup/20_成果转化与持续迭代路线图.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.md" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_context_demo.json" in evidence_files
     assert "evaluation/reports/challenge_cup_graphrag_answer_benchmark.md" in evidence_files
@@ -806,8 +845,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 45
-    assert final_acceptance["package_readiness"]["total"] == 45
+    assert final_acceptance["package_readiness"]["passed"] == 46
+    assert final_acceptance["package_readiness"]["total"] == 46
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -875,6 +914,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/17_评审风险控制与应急预案.md" in archive_entries
     assert "docs/challenge_cup/18_特等奖打分模拟与整改清单.md" in archive_entries
     assert "docs/challenge_cup/19_作品展墙报问辩与展台脚本.md" in archive_entries
+    assert "docs/challenge_cup/20_成果转化与持续迭代路线图.md" in archive_entries
     self_report = "docs/challenge_cup/reproducibility/readiness_gate_report.md"
     assert self_report not in archive_entries
     assert self_report in archive_manifest["excluded_files"]
@@ -965,6 +1005,7 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "17_评审风险控制与应急预案.md",
         PACKAGE_DIR / "18_特等奖打分模拟与整改清单.md",
         PACKAGE_DIR / "19_作品展墙报问辩与展台脚本.md",
+        PACKAGE_DIR / "20_成果转化与持续迭代路线图.md",
         PACKAGE_DIR / "03_实验评测报告.md",
         PACKAGE_DIR / "reproducibility" / "command_log.md",
         PACKAGE_DIR / "reproducibility" / "goal_completion_report.md",

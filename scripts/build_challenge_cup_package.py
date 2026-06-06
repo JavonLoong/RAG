@@ -112,6 +112,7 @@ DEFENSE_QA_REMEDIATION_LEDGER = OUT / "16_现场问辩记录与整改台账.md"
 REVIEW_RISK_RESPONSE_PLAN = OUT / "17_评审风险控制与应急预案.md"
 SPECIAL_PRIZE_SCORING_DRILL = OUT / "18_特等奖打分模拟与整改清单.md"
 POSTER_BOOTH_QA_PACK = OUT / "19_作品展墙报问辩与展台脚本.md"
+COMMERCIALIZATION_ROADMAP = OUT / "20_成果转化与持续迭代路线图.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_CONTEXT_DEMO_MD = REPORTS / "challenge_cup_graphrag_context_demo.md"
@@ -368,28 +369,29 @@ def build_readme(ctx: dict[str, Any]) -> str:
 18. `17_评审风险控制与应急预案.md`
 19. `18_特等奖打分模拟与整改清单.md`
 20. `19_作品展墙报问辩与展台脚本.md`
-21. `defense_deck/challenge_cup_defense_deck.pptx`
-22. `defense_deck/challenge_cup_defense_speaker_notes.md`
-23. `reproducibility/application_validation_report.md`
-24. `reproducibility/expert_feedback_form.md`
-25. `reproducibility/runbook.md`
-26. `reproducibility/dataset_manifest.md`
-27. `reproducibility/readiness_gate_report.md`
-28. `reproducibility/goal_completion_report.md`
-29. `reproducibility/defense_rehearsal_scorecard.md`
-30. `reproducibility/defense_rehearsal_result_packet.md`
-31. `reproducibility/expert_feedback_request_packet.md`
-32. `reproducibility/expert_feedback_outreach_ledger.md`
-33. `reproducibility/timed_rehearsal_schedule_ledger.md`
-34. `reproducibility/official_rubric_alignment.md`
-35. `reproducibility/special_prize_readiness_dashboard.md`
-36. `reproducibility/hard_evidence_closure_board.md`
-37. `reproducibility/hard_evidence_action_pack.md`
-38. `reproducibility/hard_evidence_ledger.md`
-39. `reproducibility/challenge_cup_submission_archive_manifest.json`
-40. `reproducibility/challenge_cup_submission_package.zip`
-41. `reproducibility/verify_submission_package.py`
-42. `reproducibility/final_acceptance_audit.md`
+21. `20_成果转化与持续迭代路线图.md`
+22. `defense_deck/challenge_cup_defense_deck.pptx`
+23. `defense_deck/challenge_cup_defense_speaker_notes.md`
+24. `reproducibility/application_validation_report.md`
+25. `reproducibility/expert_feedback_form.md`
+26. `reproducibility/runbook.md`
+27. `reproducibility/dataset_manifest.md`
+28. `reproducibility/readiness_gate_report.md`
+29. `reproducibility/goal_completion_report.md`
+30. `reproducibility/defense_rehearsal_scorecard.md`
+31. `reproducibility/defense_rehearsal_result_packet.md`
+32. `reproducibility/expert_feedback_request_packet.md`
+33. `reproducibility/expert_feedback_outreach_ledger.md`
+34. `reproducibility/timed_rehearsal_schedule_ledger.md`
+35. `reproducibility/official_rubric_alignment.md`
+36. `reproducibility/special_prize_readiness_dashboard.md`
+37. `reproducibility/hard_evidence_closure_board.md`
+38. `reproducibility/hard_evidence_action_pack.md`
+39. `reproducibility/hard_evidence_ledger.md`
+40. `reproducibility/challenge_cup_submission_archive_manifest.json`
+41. `reproducibility/challenge_cup_submission_package.zip`
+42. `reproducibility/verify_submission_package.py`
+43. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -815,7 +817,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 45 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 46 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1083,6 +1085,47 @@ def build_poster_booth_qa_pack(ctx: dict[str, Any]) -> str:
 - 离线备份必须包含 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png` 和 `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。
 - 展台话术必须保留真实专家反馈和真实计时彩排缺口；这两项未归档前，不能标记目标完成。
 - 不承诺获奖，不把二维码访问量、墙报问辩表现或 readiness gate 说成特等奖保证。
+"""
+
+
+def build_commercialization_roadmap(ctx: dict[str, Any]) -> str:
+    return """# 成果转化与持续迭代路线图
+
+本路线图用于把“服务国家战略、高质量发展、成果转化、新质生产力”这些宏观口径落到本项目的可执行试点路径。它不承诺商业落地，不把课程资料验证包装成生产级系统；真实专家反馈、真实计时彩排、真实场景试点证据未归档前，不能标记目标完成。
+
+## 转化定位
+
+| 方向 | 推广对象 | 当前证据 | 近期试点路径 | 风险边界 |
+| --- | --- | --- | --- | --- |
+| 教学科研知识资产 | 课程组、实验室、学生科创团队 | `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/07_评审主张证据矩阵.md` | 先服务课程资料检索、实验报告复核和答辩证据组织。 | 不宣称已经成为校级平台。 |
+| 动力装备运维资料整理 | 动力装备课程、实验室或企业导师审阅场景 | `docs/challenge_cup/11_应用场景与专家验证.md`; `docs/challenge_cup/reproducibility/application_validation_report.md` | 用 GT-07 固定场景邀请老师或行业专家审阅，收集真实专家反馈。 | 高风险运维决策必须人工确认。 |
+| 科创展示与推广 | 挑战杯作品展、墙报问辩、线上材料浏览 | `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/reproducibility/official_rubric_alignment.md` | 用二维码入口、离线截图和提交包 verifier 证明可复核。 | 不把访问量或展示效果说成特等奖保证。 |
+| 工程化持续迭代 | 后续项目组、课程助教、潜在试点单位 | `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md`; `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md` | 逐步补齐外部反馈、数据治理、权限控制、评测扩展和部署脚本。 | 不承诺商业落地，不承诺生产 SLA。 |
+
+## 迭代里程碑
+
+| 阶段 | 时间窗口 | 关键动作 | 验收指标 | 关闭证据 |
+| --- | --- | --- | --- | --- |
+| M0 结项包冻结 | 当前 | 固化 README、manifest、hash、submission zip、readiness gate。 | `docs/challenge_cup/reproducibility/readiness_gate_report.md` 通过，submission verifier 通过。 | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json` |
+| M1 专家审阅 | 答辩前/赛后 1 周 | 向老师、行业专家或实验室同学发送反馈包。 | 至少归档 1 份真实签字、邮件或会议纪要反馈。 | `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/expert_feedback_request_packet.md` |
+| M2 计时彩排 | 答辩前 | 完成 90 秒开场、三分钟演示、killer questions 和离线切换演练。 | 真实计时彩排结果归档，关键问题 30 秒内可回答。 | `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
+| M3 试点数据治理 | 后续迭代 | 明确数据来源、授权范围、脱敏规则、人工复核责任。 | 新数据进入前完成数据治理记录和评测集扩展。 | `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
+| M4 推广复盘 | 作品展/结项后 | 汇总评委追问、墙报问辩反馈、演示失败点和补证动作。 | 所有 open 问题进入整改台账并重新跑 gate。 | `docs/challenge_cup/16_现场问辩记录与整改台账.md`; `docs/challenge_cup/18_特等奖打分模拟与整改清单.md` |
+
+## 验收指标
+
+- 可复核性：README、manifest、evidence hashes、submission zip 和 verifier 一致。
+- 实用性：固定 GT-07 场景能说明动力装备运维知识整理价值，且保留人工确认边界。
+- 创新性：GraphRAG 价值必须绑定 evidence、同题对照和失败归因，不靠概念包装。
+- 推广性：能被课程组、实验室或外部审阅者按路径打开材料，不依赖作者口头解释。
+- 诚信性：真实专家反馈和真实计时彩排未归档前，目标完成报告必须继续阻止完成声明。
+
+## 风险边界
+
+- 不承诺商业落地，不承诺生产部署，不承诺生产级 SLA。
+- 数据治理未完成前，不接入未授权生产资料。
+- 所有运维建议必须经过人工确认；系统只做证据型辅助和知识资产整理。
+- 若后续出现试点单位或外部反馈，必须归档原始证据并重跑 `docs/challenge_cup/reproducibility/verify_submission_package.py`、`scripts/check_challenge_cup_readiness.py` 和 `scripts/check_challenge_cup_goal_completion.py`。
 """
 
 
@@ -1469,6 +1512,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 评审风险控制与应急预案：`{md_link(REVIEW_RISK_RESPONSE_PLAN)}`。
 - 特等奖打分模拟与整改清单：`{md_link(SPECIAL_PRIZE_SCORING_DRILL)}`。
 - 作品展墙报问辩与展台脚本：`{md_link(POSTER_BOOTH_QA_PACK)}`。
+- 成果转化与持续迭代路线图：`{md_link(COMMERCIALIZATION_ROADMAP)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 终审答辩 PPTX：`{md_link(DEFENSE_DECK_PPTX)}`。
 - 终审答辩讲稿：`{md_link(DEFENSE_DECK_NOTES)}`。
@@ -1622,7 +1666,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (45/45 gates)
+-> Status: pass (46/46 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1656,6 +1700,7 @@ def main() -> int:
     write(REVIEW_RISK_RESPONSE_PLAN, build_review_risk_response_plan(ctx))
     write(SPECIAL_PRIZE_SCORING_DRILL, build_special_prize_scoring_drill(ctx))
     write(POSTER_BOOTH_QA_PACK, build_poster_booth_qa_pack(ctx))
+    write(COMMERCIALIZATION_ROADMAP, build_commercialization_roadmap(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
@@ -1701,6 +1746,7 @@ def main() -> int:
         md_link(REVIEW_RISK_RESPONSE_PLAN),
         md_link(SPECIAL_PRIZE_SCORING_DRILL),
         md_link(POSTER_BOOTH_QA_PACK),
+        md_link(COMMERCIALIZATION_ROADMAP),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_MD),
