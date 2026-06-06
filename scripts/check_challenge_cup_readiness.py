@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 57
+CURRENT_READINESS_GATE_COUNT = 58
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -109,6 +109,8 @@ APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE = (
 APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE = (
     "docs/challenge_cup/reproducibility/application_value_quantification.json"
 )
+NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE = "docs/challenge_cup/reproducibility/numeric_traceability_report.md"
+NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/numeric_traceability_report.json"
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md"
 )
@@ -148,6 +150,8 @@ FINAL_ACCEPTANCE_AUDIT_MD = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE
 FINAL_ACCEPTANCE_AUDIT_JSON = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_JSON_RELATIVE
 APPLICATION_VALUE_QUANTIFICATION_MD = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE
 APPLICATION_VALUE_QUANTIFICATION_JSON = REPO_ROOT / APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE
+NUMERIC_TRACEABILITY_REPORT_MD = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE
+NUMERIC_TRACEABILITY_REPORT_JSON = REPO_ROOT / NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
 VERIFICATION_TRANSCRIPT_MD = REPO_ROOT / VERIFICATION_TRANSCRIPT_MD_RELATIVE
@@ -207,6 +211,10 @@ APPLICATION_VALUE_QUANTIFICATION_REQUIRED_PATHS = [
     APPLICATION_VALUE_QUANTIFICATION_MD_RELATIVE,
     APPLICATION_VALUE_QUANTIFICATION_JSON_RELATIVE,
 ]
+NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS = [
+    NUMERIC_TRACEABILITY_REPORT_MD_RELATIVE,
+    NUMERIC_TRACEABILITY_REPORT_JSON_RELATIVE,
+]
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
@@ -240,6 +248,11 @@ APPLICATION_VALUE_QUANTIFICATION_BOUNDARY = (
     "This is a local application-value quantification over the fixed GT-07 browser-smoke scenario; "
     "it is not a production validation, does not replace engineers, provides no external validation "
     "claim, and does not replace real expert feedback or real timed rehearsal evidence."
+)
+NUMERIC_TRACEABILITY_BOUNDARY = (
+    "This is a local numeric traceability report for the fixed GT-07 browser-smoke scenario; it does not "
+    "claim production validation, does not claim external validation, does not replace engineers, and does "
+    "not replace real expert feedback or real timed rehearsal evidence."
 )
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_BOUNDARY = (
     "This snapshot records the local runtime used to reproduce the challenge-cup package; it is not a "
@@ -1087,6 +1100,7 @@ APPLICATION_VALUE_EXPECTED_RECORD_IDS = [
     "demo-gt07-repair-022",
     "demo-gt07-manual-023",
 ]
+NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS = APPLICATION_VALUE_EXPECTED_RECORD_IDS
 APPLICATION_VALUE_REQUIRED_CLAIM_IDS = {
     "practical_value",
     "review_efficiency",
@@ -1099,6 +1113,15 @@ APPLICATION_VALUE_MARKDOWN_TERMS = {
     "5.0x evidence consolidation",
     "not a production validation",
     *APPLICATION_VALUE_EXPECTED_RECORD_IDS,
+}
+NUMERIC_TRACEABILITY_MARKDOWN_TERMS = {
+    "Numeric Traceability Report",
+    "numeric_traceability_consistent_no_external_claim",
+    "41.80 ms",
+    "2,655 chunks",
+    "1,185,989 tokens",
+    "does not claim production validation",
+    *NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS,
 }
 REQUIRED_SCENARIO_TERMS = {
     "demo-maint-thresholds-076",
@@ -5133,6 +5156,134 @@ def check_application_value_quantification() -> GateCheck:
     )
 
 
+def check_numeric_traceability_report() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path
+        for path in (NUMERIC_TRACEABILITY_REPORT_MD, NUMERIC_TRACEABILITY_REPORT_JSON)
+        if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("numeric traceability report", False, f"missing or empty: {missing}")
+
+    payload = load_json(NUMERIC_TRACEABILITY_REPORT_JSON)
+    markdown = NUMERIC_TRACEABILITY_REPORT_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_numeric_traceability_report":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "numeric_traceability_consistent_no_external_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("external_validation_claimed") is not False:
+        failures.append(f"external_validation_claimed={payload.get('external_validation_claimed')}")
+
+    latency = payload.get("latency_ms", {})
+    if not isinstance(latency, dict):
+        failures.append("latency_ms missing")
+        latency = {}
+    if float(latency.get("browser_smoke") or 0) != 41.8:
+        failures.append(f"browser_smoke latency={latency.get('browser_smoke')}")
+    if float(latency.get("application_value") or 0) != 41.8:
+        failures.append(f"application_value latency={latency.get('application_value')}")
+    validation_latencies = latency.get("application_validation_report")
+    if validation_latencies != [41.8, 41.8]:
+        failures.append(f"application_validation_report latency={validation_latencies}")
+
+    result_counts = payload.get("result_counts", {})
+    if not isinstance(result_counts, dict):
+        failures.append("result_counts missing")
+        result_counts = {}
+    for key, expected in {
+        "browser_smoke": 5,
+        "application_value": 5,
+        "browser_visible_record_ids": 5,
+        "application_value_visible_record_count": 5,
+    }.items():
+        if int(result_counts.get(key) or -1) != expected:
+            failures.append(f"{key}={result_counts.get(key)}")
+
+    index_scale = payload.get("index_scale", {})
+    if not isinstance(index_scale, dict):
+        failures.append("index_scale missing")
+        index_scale = {}
+    if int(index_scale.get("chunks") or -1) != 2655:
+        failures.append(f"chunks={index_scale.get('chunks')}")
+    if int(index_scale.get("tokens") or -1) != 1185989:
+        failures.append(f"tokens={index_scale.get('tokens')}")
+
+    if payload.get("record_ids") != NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS:
+        failures.append(f"record_ids={payload.get('record_ids')}")
+    if payload.get("application_value_record_ids") != NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS:
+        failures.append(f"application_value_record_ids={payload.get('application_value_record_ids')}")
+    report_failures = payload.get("failures")
+    if report_failures != []:
+        failures.append(f"failures={report_failures}")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != NUMERIC_TRACEABILITY_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "does not claim production validation",
+        "does not claim external validation",
+        "does not replace engineers",
+        "real expert feedback",
+        "real timed rehearsal",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(term for term in NUMERIC_TRACEABILITY_MARKDOWN_TERMS if term not in markdown)
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+    if "42.10 ms" in markdown:
+        failures.append("markdown contains stale 42.10 ms drift")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked numeric traceability report files: {untracked}")
+    if dirty:
+        failures.append(f"dirty numeric traceability report files: {dirty}")
+
+    return GateCheck(
+        "numeric traceability report",
+        not failures,
+        "GT-07 browser/application/application-validation numbers are traceable: 41.80 ms, 5 records, 2,655 chunks, 1,185,989 tokens"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_runtime_reproducibility_snapshot() -> GateCheck:
     failures: list[str] = []
     missing_files = [
@@ -5557,6 +5708,7 @@ def run_gate() -> list[GateCheck]:
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_application_value_quantification(),
+        check_numeric_traceability_report(),
         check_runtime_reproducibility_snapshot(),
         check_verification_transcript(),
         check_scenario_demo_evidence(),

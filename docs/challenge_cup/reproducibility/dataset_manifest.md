@@ -65,6 +65,10 @@
 
 - Application value quantification: `docs/challenge_cup/reproducibility/application_value_quantification.md`
 - Application value quantification JSON: `docs/challenge_cup/reproducibility/application_value_quantification.json`
+## Numeric Traceability Report
+
+- Numeric traceability report: `docs/challenge_cup/reproducibility/numeric_traceability_report.md`
+- Numeric traceability JSON: `docs/challenge_cup/reproducibility/numeric_traceability_report.json`
 ## Runtime Reproducibility Snapshot
 
 - Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`

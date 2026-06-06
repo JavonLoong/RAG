@@ -44,6 +44,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_application_value_quantification.py
 ```
 
+## 生成数值追溯一致性报告
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_numeric_traceability_report.py
+```
+
 ## 生成运行环境复现快照
 
 ```powershell

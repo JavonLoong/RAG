@@ -180,7 +180,7 @@
       "objection_id": "OJ-10-project-closure",
       "severity": "P1",
       "judge_objection": "Can this be accepted as a closure package today?",
-      "one_sentence_answer": "Yes for package review: the submission archive, verifier, hashes, and 57 readiness gates prove the materials are organized and reproducible, while goal completion still waits for real hard evidence.",
+      "one_sentence_answer": "Yes for package review: the submission archive, verifier, hashes, and 58 readiness gates prove the materials are organized and reproducible, while goal completion still waits for real hard evidence.",
       "evidence_files": [
         "docs/challenge_cup/reproducibility/readiness_gate_report.md",
         "docs/challenge_cup/reproducibility/verify_submission_package.py",

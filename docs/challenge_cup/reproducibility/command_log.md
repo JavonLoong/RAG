@@ -77,6 +77,11 @@ python scripts/build_challenge_cup_application_value_quantification.py
 -> docs/challenge_cup/reproducibility/application_value_quantification.json
 -> Status: application_value_quantified_no_external_validation_claim
 
+python scripts/build_challenge_cup_numeric_traceability_report.py
+-> docs/challenge_cup/reproducibility/numeric_traceability_report.md
+-> docs/challenge_cup/reproducibility/numeric_traceability_report.json
+-> Status: numeric_traceability_consistent_no_external_claim
+
 python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
@@ -153,7 +158,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (57/57 gates)
+-> Status: pass (58/58 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

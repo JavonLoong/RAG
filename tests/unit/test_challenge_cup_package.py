@@ -66,6 +66,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
+    "reproducibility/numeric_traceability_report.md",
+    "reproducibility/numeric_traceability_report.json",
     "reproducibility/runtime_reproducibility_snapshot.md",
     "reproducibility/runtime_reproducibility_snapshot.json",
     "reproducibility/verification_transcript.md",
@@ -194,6 +196,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/hard_evidence_ledger.md" in readme
     assert "reproducibility/application_validation_report.md" in readme
     assert "reproducibility/application_value_quantification.md" in readme
+    assert "reproducibility/numeric_traceability_report.md" in readme
     assert "reproducibility/runtime_reproducibility_snapshot.md" in readme
     assert "reproducibility/verification_transcript.md" in readme
     assert "reproducibility/expert_feedback_form.md" in readme
@@ -271,6 +274,27 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     ).read_text(encoding="utf-8")
     for phrase in ["Application Value Quantification", "GT-07", "41.8 ms", "5.0x evidence consolidation"]:
         assert phrase in application_value_md
+    numeric_traceability = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "numeric_traceability_report.json").read_text(encoding="utf-8")
+    )
+    assert numeric_traceability["status"] == "numeric_traceability_consistent_no_external_claim"
+    assert numeric_traceability["completion_claim_allowed"] is False
+    assert numeric_traceability["does_not_satisfy_goal_completion"] is True
+    assert numeric_traceability["latency_ms"] == {
+        "browser_smoke": 41.8,
+        "application_value": 41.8,
+        "application_validation_report": [41.8, 41.8],
+    }
+    assert numeric_traceability["result_counts"]["browser_smoke"] == 5
+    assert numeric_traceability["index_scale"] == {"chunks": 2655, "tokens": 1185989}
+    assert numeric_traceability["failures"] == []
+    numeric_traceability_md = (
+        PACKAGE_DIR / "reproducibility" / "numeric_traceability_report.md"
+    ).read_text(encoding="utf-8")
+    for phrase in ["Numeric Traceability Report", "41.80 ms", "2,655 chunks", "1,185,989 tokens"]:
+        assert phrase in numeric_traceability_md
+    assert "42.10 ms" not in numeric_traceability_md
+    assert "42.10 ms" not in application_report
     runtime_snapshot = json.loads(
         (PACKAGE_DIR / "reproducibility" / "runtime_reproducibility_snapshot.json").read_text(encoding="utf-8")
     )
@@ -291,13 +315,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert verification_transcript["status"] == "package_verification_transcript_ready_goal_still_blocked"
     assert verification_transcript["completion_claim_allowed"] is False
     assert verification_transcript["does_not_satisfy_goal_completion"] is True
-    assert verification_transcript["readiness_gate"]["passed"] == 57
+    assert verification_transcript["readiness_gate"]["passed"] == 58
     assert verification_transcript["goal_completion"]["expected_failure"] is True
     assert "does not claim goal completion" in verification_transcript["boundary"]
     verification_transcript_md = (
         PACKAGE_DIR / "reproducibility" / "verification_transcript.md"
     ).read_text(encoding="utf-8")
-    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 57/57"]:
+    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 58/58"]:
         assert phrase in verification_transcript_md
     expert_feedback_loop = (PACKAGE_DIR / "12_专家反馈采集与整改闭环.md").read_text(encoding="utf-8")
     for phrase in ["反馈采集状态", "待真实反馈归档", "不伪造外部意见", "整改闭环", "专家反馈采集表"]:
@@ -375,7 +399,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "57 项 readiness gate" in onsite_runbook
+    assert "58 项 readiness gate" in onsite_runbook
+    assert "57 项 readiness gate" not in onsite_runbook
     assert "56 项 readiness gate" not in onsite_runbook
     assert "55 项 readiness gate" not in onsite_runbook
     assert "54 项 readiness gate" not in onsite_runbook
@@ -830,6 +855,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_special_prize_readiness_dashboard.py" in runbook
     assert "build_challenge_cup_failure_remediation_before_after.py" in runbook
     assert "build_challenge_cup_application_value_quantification.py" in runbook
+    assert "build_challenge_cup_numeric_traceability_report.py" in runbook
     assert "run_challenge_cup_live_demo_smoke.py" in runbook
     assert "run_challenge_cup_browser_demo_smoke.mjs" in runbook
     assert "check_challenge_cup_readiness.py" in runbook
@@ -842,6 +868,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "application_validation_report.md" in manifest
     assert "application_value_quantification.md" in manifest
     assert "application_value_quantification.json" in manifest
+    assert "numeric_traceability_report.md" in manifest
+    assert "numeric_traceability_report.json" in manifest
     assert "runtime_reproducibility_snapshot.md" in manifest
     assert "runtime_reproducibility_snapshot.json" in manifest
     assert "verification_transcript.md" in manifest
@@ -939,14 +967,17 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_judge_objection_matrix.py" in command_log
     assert "build_challenge_cup_failure_remediation_before_after.py" in command_log
     assert "build_challenge_cup_application_value_quantification.py" in command_log
+    assert "build_challenge_cup_numeric_traceability_report.py" in command_log
     assert "build_challenge_cup_runtime_reproducibility_snapshot.py" in command_log
     assert "build_challenge_cup_verification_transcript.py" in command_log
     assert "Status: remediation_card_ablation_ready_no_live_retriever_claim" in command_log
     assert "Status: application_value_quantified_no_external_validation_claim" in command_log
+    assert "Status: numeric_traceability_consistent_no_external_claim" in command_log
     assert "Status: runtime_snapshot_ready_no_environment_portability_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (57/57 gates)" in command_log
+    assert "Status: pass (58/58 gates)" in command_log
+    assert "Status: pass (57/57 gates)" not in command_log
     assert "Status: pass (56/56 gates)" not in command_log
     assert "Status: pass (55/55 gates)" not in command_log
     assert "Status: pass (54/54 gates)" not in command_log
@@ -1046,6 +1077,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/application_validation_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_value_quantification.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/application_value_quantification.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/numeric_traceability_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/numeric_traceability_report.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/verification_transcript.md" in evidence_files
@@ -1210,8 +1243,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 57
-    assert final_acceptance["package_readiness"]["total"] == 57
+    assert final_acceptance["package_readiness"]["passed"] == 58
+    assert final_acceptance["package_readiness"]["total"] == 58
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
@@ -1296,6 +1329,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/final_acceptance_audit.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/application_value_quantification.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/application_value_quantification.json" in archive_entries
+    assert "docs/challenge_cup/reproducibility/numeric_traceability_report.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/numeric_traceability_report.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/verification_transcript.md" in archive_entries

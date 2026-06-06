@@ -121,6 +121,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "evaluation coverage profile" in report
     assert "application validation evidence" in report
     assert "application value quantification" in report
+    assert "numeric traceability report" in report
     assert "runtime reproducibility snapshot" in report
     assert "verification transcript" in report
     assert "scenario demo evidence" in report
@@ -221,12 +222,12 @@ def test_judge_objection_matrix_gate_rejects_stale_readiness_count(monkeypatch, 
             path.write_text("evidence", encoding="utf-8")
         if item["objection_id"] == "OJ-10-project-closure":
             item["one_sentence_answer"] = item["one_sentence_answer"].replace(
-                "57 readiness gates", "53 readiness gates"
+                "58 readiness gates", "53 readiness gates"
             )
 
     builder.OUTPUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     builder.OUTPUT_MD.write_text(
-        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("57 readiness gates", "53 readiness gates"),
+        builder.OUTPUT_MD.read_text(encoding="utf-8").replace("58 readiness gates", "53 readiness gates"),
         encoding="utf-8",
     )
 
@@ -2358,6 +2359,88 @@ def test_application_value_quantification_gate_rejects_missing_report(monkeypatc
     assert "application_value_quantification.json" in check.detail
 
 
+def test_numeric_traceability_report_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "numeric_traceability_report.md"
+    metadata = tmp_path / "numeric_traceability_report.json"
+    monkeypatch.setattr(module, "NUMERIC_TRACEABILITY_REPORT_MD", markdown)
+    monkeypatch.setattr(module, "NUMERIC_TRACEABILITY_REPORT_JSON", metadata)
+
+    check = module.check_numeric_traceability_report()
+
+    assert not check.passed
+    assert "numeric_traceability_report.md" in check.detail
+    assert "numeric_traceability_report.json" in check.detail
+
+
+def test_numeric_traceability_report_gate_rejects_latency_drift(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "numeric_traceability_report.md"
+    metadata = tmp_path / "numeric_traceability_report.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = [
+        "docs/challenge_cup/reproducibility/numeric_traceability_report.md",
+        "docs/challenge_cup/reproducibility/numeric_traceability_report.json",
+    ]
+    monkeypatch.setattr(module, "NUMERIC_TRACEABILITY_REPORT_MD", markdown)
+    monkeypatch.setattr(module, "NUMERIC_TRACEABILITY_REPORT_JSON", metadata)
+    monkeypatch.setattr(module, "NUMERIC_TRACEABILITY_REPORT_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    markdown.write_text(
+        "Numeric Traceability Report\nnumeric_traceability_failed\n41.80 ms\n42.10 ms\n2,655 chunks\n"
+        "1,185,989 tokens\n",
+        encoding="utf-8",
+    )
+    metadata.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_numeric_traceability_report",
+                "status": "numeric_traceability_failed",
+                "completion_claim_allowed": False,
+                "does_not_satisfy_goal_completion": True,
+                "external_validation_claimed": False,
+                "latency_ms": {
+                    "browser_smoke": 41.8,
+                    "application_value": 41.8,
+                    "application_validation_report": [41.8, 42.1],
+                },
+                "result_counts": {
+                    "browser_smoke": 5,
+                    "application_value": 5,
+                    "browser_visible_record_ids": 5,
+                    "application_value_visible_record_count": 5,
+                },
+                "index_scale": {"chunks": 2655, "tokens": 1185989},
+                "record_ids": module.NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS,
+                "application_value_record_ids": module.NUMERIC_TRACEABILITY_EXPECTED_RECORD_IDS,
+                "failures": ["application_validation_report latency 42.10 ms does not match browser_smoke 41.80 ms"],
+                "boundary": module.NUMERIC_TRACEABILITY_BOUNDARY,
+                "output_files": required_paths,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(
+        json.dumps({"included_files": required_paths}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    check = module.check_numeric_traceability_report()
+
+    assert not check.passed
+    assert "numeric_traceability_failed" in check.detail
+
+
 def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "runtime_reproducibility_snapshot.md"
@@ -2407,7 +2490,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 57/57\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 58/58\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -2421,9 +2504,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 57,
-                    "total": 57,
-                    "current_gate_count": 57,
+                    "passed": 58,
+                    "total": 58,
+                    "current_gate_count": 58,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",
