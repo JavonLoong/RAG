@@ -101,6 +101,10 @@ def powershell_repo_root() -> str:
     return str(REPO_ROOT).replace("'", "''")
 
 
+def guarded_powershell_command(command: str) -> list[str]:
+    return [command, "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"]
+
+
 def expert_feedback_powershell_block() -> list[str]:
     return [
         f"Set-Location '{powershell_repo_root()}'",
@@ -111,8 +115,12 @@ def expert_feedback_powershell_block() -> list[str]:
         "$reviewerRole = 'real-reviewer-role-or-org'",
         "$remediationIssue = 'demo-pacing'",
         "$remediationAction = 'tighten-opening'",
-        f"{POWERSHELL_PYTHON} .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
-        f"{POWERSHELL_PYTHON} .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
+        *guarded_powershell_command(
+            f"{POWERSHELL_PYTHON} .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback"
+        ),
+        *guarded_powershell_command(
+            f"{POWERSHELL_PYTHON} .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback"
+        ),
     ]
 
 
@@ -126,7 +134,9 @@ def timed_rehearsal_powershell_block() -> list[str]:
         "$demo = 170",
         "$offline = 18",
         "$killer = 25,25,25,25,25",
-        f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
+        *guarded_powershell_command(
+            f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal"
+        ),
     ]
 
 

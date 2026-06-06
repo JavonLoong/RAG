@@ -58,7 +58,9 @@ $reviewerRole = 'real-reviewer-role-or-org'
 $remediationIssue = 'demo-pacing'
 $remediationAction = 'tighten-opening'
 .\.venv\Scripts\python.exe .\scripts\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 .\.venv\Scripts\python.exe .\scripts\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 ```
 
 ### timed_rehearsal
@@ -105,6 +107,7 @@ $demo = 170
 $offline = 18
 $killer = 25,25,25,25,25
 .\.venv\Scripts\python.exe .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 ```
 
 Failed rehearsal archival rule:

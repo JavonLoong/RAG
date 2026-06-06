@@ -82,6 +82,12 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert str(tmp_path) in powershell
         assert ".\\.venv\\Scripts\\python.exe" in powershell
         assert "python .\\scripts" not in powershell
+        python_lines = [
+            line for line in packet["powershell_execution_block"] if ".\\.venv\\Scripts\\python.exe" in line
+        ]
+        guard_lines = [line for line in packet["powershell_execution_block"] if "$LASTEXITCODE" in line]
+        assert len(guard_lines) == len(python_lines)
+        assert all("exit $LASTEXITCODE" in line for line in guard_lines)
         assert "<" not in powershell
         assert ">" not in powershell
 

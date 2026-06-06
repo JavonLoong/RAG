@@ -252,23 +252,23 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
-      "bytes": 21482,
-      "sha256": "42c6fa7d033bb841f0b98f68a5c188d769d00f038c61318c49d864935961cd3c"
+      "bytes": 21662,
+      "sha256": "652b8dc4ca54be048c4e0453ad04bc852652efd4daff26983b333495a3bd9bf6"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
-      "bytes": 17689,
-      "sha256": "6c145d1c72a03179ef2736e0f200769190701fb7f2e8072239743973c8ae9433"
+      "bytes": 17836,
+      "sha256": "0b337534ca5c855a50b4d02882c3e5fd0ca72576aba92281ccc2174b13d43ad8"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
-      "bytes": 4847,
-      "sha256": "33783baadb9957dfaddc251599df3bf38036e86ec36e2e07b658cead8eaefa55"
+      "bytes": 4945,
+      "sha256": "7df79cff2d810f6009ad1122d6f79ecd0e9e896c077fec91ea49b9bdf556f862"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
-      "bytes": 5081,
-      "sha256": "538eca75ecfd1de0fb83855aeddbe7940b731f573251ab9be39ea40174282144"
+      "bytes": 5130,
+      "sha256": "7707fa3f7dd7d8903195ccb4fbae4c7b1f04f46e92ad733314117220828010c6"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
@@ -307,13 +307,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
-      "bytes": 10593,
-      "sha256": "17e0536f5991de3ab0d0bd6d3c92083859cf1fbf74f959696080743d69fba9f6"
+      "bytes": 10773,
+      "sha256": "7fced65fd34c770ec4738d89bebe8311fd819269ae8f2a78f8f8dcb0913433de"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
-      "bytes": 9570,
-      "sha256": "f9261e74509161764554dfc7cc89cfe192bc51edd9ca29dc7b388ee2dda1a015"
+      "bytes": 9717,
+      "sha256": "b00b2e2c2a90b00c151a99b4774f3150e3a9de909e34aa2240c5ec280b6b3b5b"
     },
     {
       "path": "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",

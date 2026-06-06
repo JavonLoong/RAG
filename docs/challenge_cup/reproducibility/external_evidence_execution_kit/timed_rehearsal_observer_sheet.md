@@ -60,6 +60,7 @@ $demo = 170
 $offline = 18
 $killer = 25,25,25,25,25
 .\.venv\Scripts\python.exe .\scripts\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 ```
 
 ## Failed Rehearsal Archival Rule
