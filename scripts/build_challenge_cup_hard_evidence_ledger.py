@@ -13,6 +13,7 @@ from challenge_cup_expert_review_dimensions import (
     REQUIRED_EXPERT_REVIEW_DIMENSION_GROUPS,
     missing_required_review_dimension_groups,
 )
+from challenge_cup_hard_evidence_dates import is_not_future_iso_date
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -183,6 +184,14 @@ def timed_rehearsal_timings_within_limits(payload: dict[str, Any]) -> bool:
     return True
 
 
+def metadata_date_not_future(category_key: str, payload: dict[str, Any]) -> bool:
+    if category_key == "expert_feedback":
+        return is_not_future_iso_date(payload.get("review_date"))
+    if category_key == "timed_rehearsal":
+        return is_not_future_iso_date(payload.get("rehearsal_date"))
+    raise ValueError(f"unknown hard evidence category: {category_key}")
+
+
 def build_evidence_records(
     category_key: str,
     paths: list[Path],
@@ -204,6 +213,8 @@ def build_evidence_records(
         if payload.get(confirmed_field) is not True:
             continue
         if payload.get("evidence_type") not in accepted_types:
+            continue
+        if not metadata_date_not_future(category_key, payload):
             continue
         if category_key == "expert_feedback" and missing_required_review_dimension_groups(
             payload.get("review_dimensions")
@@ -377,7 +388,7 @@ def write_readmes() -> None:
                 ),
                 "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, review_dimensions, remediation_record, real_feedback_confirmed.",
                 "Required review dimension groups: practical_value, innovation, boundary_rigor.",
-                "Use YYYY-MM-DD for review_date. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
+                "Use YYYY-MM-DD for review_date; it must not be in the future. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
             ]
@@ -397,7 +408,7 @@ def write_readmes() -> None:
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
                 "Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.",
                 "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, real_rehearsal_confirmed.",
-                "Use YYYY-MM-DD for rehearsal_date. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
+                "Use YYYY-MM-DD for rehearsal_date; it must not be in the future. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
                 f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{REHEARSAL_RECORD_COMMAND}`.",

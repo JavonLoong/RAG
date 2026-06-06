@@ -4,7 +4,6 @@ import argparse
 import json
 import re
 import sys
-from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -13,6 +12,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
+from challenge_cup_hard_evidence_dates import is_not_future_iso_date
 
 
 DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -80,13 +80,7 @@ def nonempty_string(value: Any) -> bool:
 
 
 def iso_date_string(value: Any) -> bool:
-    if not nonempty_string(value):
-        return False
-    try:
-        date.fromisoformat(value)
-    except ValueError:
-        return False
-    return True
+    return is_not_future_iso_date(value)
 
 
 def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
@@ -98,7 +92,7 @@ def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: s
         if not nonempty_string(metadata.get(field)):
             failures.append(f"{metadata_path}: {field} must be non-empty")
     if not iso_date_string(metadata.get("review_date")):
-        failures.append(f"{metadata_path}: review_date must be YYYY-MM-DD")
+        failures.append(f"{metadata_path}: review_date must be YYYY-MM-DD and not in the future")
 
     review_dimensions = metadata.get("review_dimensions")
     if not isinstance(review_dimensions, list):
@@ -134,6 +128,8 @@ def expert_feedback_metadata_failures(metadata: dict[str, Any], metadata_path: s
 
 def timed_rehearsal_timing_failures(metadata: dict[str, Any], metadata_path: str) -> list[str]:
     failures: list[str] = []
+    if not iso_date_string(metadata.get("rehearsal_date")):
+        failures.append(f"{metadata_path}: rehearsal_date must be YYYY-MM-DD and not in the future")
     for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
         actual = metadata.get(field)
         limit = TIMED_REHEARSAL_LIMITS[field]

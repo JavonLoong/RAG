@@ -2384,6 +2384,75 @@ def test_expert_feedback_metadata_rejects_generic_review_dimensions(monkeypatch,
     assert any("missing required expert review dimension groups" in item for item in failures)
 
 
+def test_hard_evidence_metadata_rejects_future_dates(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    expert_source_relative = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"
+    rehearsal_source_relative = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
+    for relative in (expert_source_relative, rehearsal_source_relative):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("real source", encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    expert_category = {
+        "accepted_evidence_types": ["email_reply"],
+        "required_metadata_fields": [
+            "reviewer_identity",
+            "role_or_org",
+            "review_date",
+            "feedback_source_path",
+            "review_dimensions",
+            "remediation_record",
+            "real_feedback_confirmed",
+        ],
+    }
+    rehearsal_category = {
+        "accepted_evidence_types": ["observer_note"],
+        "required_metadata_fields": [
+            "rehearsal_date",
+            "observer",
+            "opening_actual_seconds",
+            "demo_actual_seconds",
+            "offline_fallback_actual_seconds",
+            "killer_question_results",
+            "recording_or_timer_source_path",
+            "real_rehearsal_confirmed",
+        ],
+    }
+
+    expert_failures = module.validate_expert_feedback_metadata(
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+        {
+            "evidence_type": "email_reply",
+            "reviewer_identity": "advisor-a",
+            "role_or_org": "advisor",
+            "review_date": "2999-01-01",
+            "feedback_source_path": expert_source_relative,
+            "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+            "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            "real_feedback_confirmed": True,
+        },
+        expert_category,
+    )
+    rehearsal_failures = module.validate_timed_rehearsal_metadata(
+        "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+        {
+            "evidence_type": "observer_note",
+            "rehearsal_date": "2999-01-01",
+            "observer": "observer-a",
+            "opening_actual_seconds": 88,
+            "demo_actual_seconds": 170,
+            "offline_fallback_actual_seconds": 18,
+            "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+            "recording_or_timer_source_path": rehearsal_source_relative,
+            "real_rehearsal_confirmed": True,
+        },
+        rehearsal_category,
+    )
+
+    assert any("review_date must be YYYY-MM-DD and not in the future" in item for item in expert_failures)
+    assert any("rehearsal_date must be YYYY-MM-DD and not in the future" in item for item in rehearsal_failures)
+
+
 def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_question_count(
     monkeypatch,
     tmp_path,

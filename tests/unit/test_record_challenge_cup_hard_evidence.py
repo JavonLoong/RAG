@@ -278,6 +278,46 @@ def test_refuses_expert_feedback_with_generic_dimensions(tmp_path: Path) -> None
     assert not (tmp_path / "docs").exists()
 
 
+def test_refuses_expert_feedback_with_future_review_date(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实专家邮件回复。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2999-01-01",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
 def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: Path) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)
@@ -310,6 +350,46 @@ def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: P
             "27",
             "28",
             "29",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_timed_rehearsal_with_future_rehearsal_date(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实计时记录。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2999-01-01",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "88",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
         ]
     )
 

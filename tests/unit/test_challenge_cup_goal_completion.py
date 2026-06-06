@@ -514,3 +514,36 @@ def test_goal_completion_gate_rejects_generic_expert_feedback_dimensions_even_if
 
     assert payload["status"] == "fail"
     assert any("missing required expert review dimension groups" in item for item in payload["hard_evidence_failures"])
+
+
+def test_goal_completion_metadata_rejects_future_hard_evidence_dates() -> None:
+    module = load_goal_module()
+
+    expert_failures = module.expert_feedback_metadata_failures(
+        {
+            "evidence_type": "email_reply",
+            "reviewer_identity": "advisor-a",
+            "role_or_org": "advisor",
+            "review_date": "2999-01-01",
+            "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+            "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+            "real_feedback_confirmed": True,
+        },
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+    )
+    rehearsal_failures = module.timed_rehearsal_timing_failures(
+        {
+            "evidence_type": "observer_note",
+            "rehearsal_date": "2999-01-01",
+            "observer": "observer-a",
+            "opening_actual_seconds": 88,
+            "demo_actual_seconds": 170,
+            "offline_fallback_actual_seconds": 18,
+            "killer_question_results": [{"question_index": index, "actual_seconds": 25} for index in range(1, 6)],
+            "real_rehearsal_confirmed": True,
+        },
+        "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.json",
+    )
+
+    assert any("review_date must be YYYY-MM-DD and not in the future" in item for item in expert_failures)
+    assert any("rehearsal_date must be YYYY-MM-DD and not in the future" in item for item in rehearsal_failures)

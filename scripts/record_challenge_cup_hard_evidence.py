@@ -5,7 +5,6 @@ import json
 import re
 import shutil
 import sys
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +14,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_challenge_cup_hard_evidence_ledger as ledger
+from challenge_cup_hard_evidence_dates import parse_not_future_iso_date
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 
 
@@ -66,7 +66,10 @@ def repo_path(path: Path) -> str:
 
 
 def parse_iso_date(value: str) -> str:
-    date.fromisoformat(value)
+    try:
+        parse_not_future_iso_date(value)
+    except ValueError as exc:
+        raise HardEvidenceInputError("date must be YYYY-MM-DD and not in the future") from exc
     return value
 
 
@@ -143,13 +146,14 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
             "expert feedback missing required review dimension groups: "
             + ", ".join(missing_dimension_groups)
         )
+    review_date = parse_iso_date(args.review_date)
     source = existing_source(args.source)
     copied_source = copy_source(source, EXPERT_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,
         "reviewer_identity": args.reviewer_identity,
         "role_or_org": args.role_or_org,
-        "review_date": parse_iso_date(args.review_date),
+        "review_date": review_date,
         "feedback_source_path": repo_path(copied_source),
         "review_dimensions": args.review_dimension,
         "remediation_record": [{"issue": args.remediation_issue, "action": args.remediation_action}],
@@ -168,12 +172,13 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         )
     if args.evidence_type not in REHEARSAL_EVIDENCE_TYPES:
         raise ValueError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
+    rehearsal_date = parse_iso_date(args.rehearsal_date)
     validate_timed_rehearsal_limits(args)
     source = existing_source(args.source)
     copied_source = copy_source(source, REHEARSAL_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,
-        "rehearsal_date": parse_iso_date(args.rehearsal_date),
+        "rehearsal_date": rehearsal_date,
         "observer": args.observer,
         "opening_actual_seconds": args.opening_actual_seconds,
         "demo_actual_seconds": args.demo_actual_seconds,

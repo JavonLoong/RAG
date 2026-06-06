@@ -19,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
+from challenge_cup_hard_evidence_dates import is_not_future_iso_date
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -5066,6 +5067,8 @@ def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], ca
         failures.append(f"{relative}: remediation_record missing")
     if not is_iso_date(payload.get("review_date")):
         failures.append(f"{relative}: review_date must be YYYY-MM-DD")
+    elif not is_not_future_iso_date(payload.get("review_date")):
+        failures.append(f"{relative}: review_date must be YYYY-MM-DD and not in the future")
     if payload.get("real_feedback_confirmed") is not True:
         failures.append(f"{relative}: real_feedback_confirmed must be true")
     failures.extend(validate_source_path(relative, payload, "feedback_source_path"))
@@ -5092,6 +5095,8 @@ def validate_timed_rehearsal_metadata(relative: str, payload: dict[str, Any], ca
 
     if not is_iso_date(payload.get("rehearsal_date")):
         failures.append(f"{relative}: rehearsal_date must be YYYY-MM-DD")
+    elif not is_not_future_iso_date(payload.get("rehearsal_date")):
+        failures.append(f"{relative}: rehearsal_date must be YYYY-MM-DD and not in the future")
     if payload.get("real_rehearsal_confirmed") is not True:
         failures.append(f"{relative}: real_rehearsal_confirmed must be true")
     failures.extend(validate_source_path(relative, payload, "recording_or_timer_source_path"))
