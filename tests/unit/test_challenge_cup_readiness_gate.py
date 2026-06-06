@@ -97,6 +97,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "poster board asset" in report
     assert "ip and open-source compliance" in report
     assert "local baseline differentiation evidence" in report
+    assert "final submission handoff sheet" in report
     assert "expert review index" in report
     assert "defense rehearsal pack" in report
     assert "defense deck" in report

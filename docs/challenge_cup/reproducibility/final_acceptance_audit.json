@@ -3,8 +3,8 @@
   "status": "package_ready_awaiting_external_hard_evidence",
   "package_readiness": {
     "status": "pass",
-    "passed": 50,
-    "total": 50,
+    "passed": 51,
+    "total": 51,
     "report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
   },
   "submission_package_verifier": {

@@ -36,6 +36,7 @@ POSTER_BOOTH_QA_PACK = PACKAGE_DIR / "19_作品展墙报问辩与展台脚本.md
 COMMERCIALIZATION_ROADMAP = PACKAGE_DIR / "20_成果转化与持续迭代路线图.md"
 IP_OPEN_SOURCE_COMPLIANCE = PACKAGE_DIR / "21_知识产权与开源合规说明.md"
 LOCAL_BASELINE_DIFFERENTIATION = PACKAGE_DIR / "22_同类方案对比与创新性证据卡.md"
+FINAL_SUBMISSION_HANDOFF = PACKAGE_DIR / "23_终审提交总目录与签收页.md"
 POSTER_BOARD_HTML = PACKAGE_DIR / "poster" / "challenge_cup_a0_poster.html"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
@@ -292,6 +293,7 @@ REQUIRED_PACKAGE_DOCS = [
     "20_成果转化与持续迭代路线图.md",
     "21_知识产权与开源合规说明.md",
     "22_同类方案对比与创新性证据卡.md",
+    "23_终审提交总目录与签收页.md",
     "poster/challenge_cup_a0_poster.html",
     "defense_deck/challenge_cup_defense_deck.pptx",
     "defense_deck/challenge_cup_defense_speaker_notes.md",
@@ -837,6 +839,34 @@ REQUIRED_LOCAL_BASELINE_DIFFERENTIATION_TERMS = {
     "docs/challenge_cup/03_实验评测报告.md",
     "docs/challenge_cup/07_评审主张证据矩阵.md",
     "docs/challenge_cup/08_特等奖评审自评表.md",
+}
+REQUIRED_FINAL_SUBMISSION_HANDOFF_TERMS = {
+    "终审提交总目录与签收页",
+    "提交状态",
+    "评委三分钟入口",
+    "正式提交文件",
+    "复核命令",
+    "签收确认",
+    "真实专家反馈",
+    "真实计时彩排",
+    "不能标记目标完成",
+    "不承诺获奖",
+    "package_ready_awaiting_external_hard_evidence",
+    "README_先看这里.md",
+    "00_项目一页纸.md",
+    "01_挑战杯项目书.md",
+    "13_评委现场速览卡.md",
+    "19_作品展墙报问辩与展台脚本.md",
+    "challenge_cup_defense_deck.pptx",
+    "challenge_cup_a0_poster.html",
+    "package_manifest.json",
+    "challenge_cup_submission_package.zip",
+    "verify_submission_package.py",
+    "readiness_gate_report.md",
+    "final_acceptance_audit.md",
+    "goal_completion_report.md",
+    "external_evidence_execution_kit.md",
+    "hard_evidence_ledger.md",
 }
 REQUIRED_DEFENSE_REHEARSAL_TERMS = {
     "90秒开场",
@@ -2943,6 +2973,50 @@ def check_local_baseline_differentiation_evidence() -> GateCheck:
     )
 
 
+def check_final_submission_handoff_sheet() -> GateCheck:
+    if not FINAL_SUBMISSION_HANDOFF.exists():
+        return GateCheck("final submission handoff sheet", False, "23_终审提交总目录与签收页.md missing")
+    text = FINAL_SUBMISSION_HANDOFF.read_text(encoding="utf-8")
+    handoff_relative = FINAL_SUBMISSION_HANDOFF.relative_to(REPO_ROOT).as_posix()
+    missing_terms = sorted(term for term in REQUIRED_FINAL_SUBMISSION_HANDOFF_TERMS if term not in text)
+    evidence_paths = extract_markdown_code_span_paths(text)
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
+    failures = missing_terms + missing_paths
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    if handoff_relative not in manifest_evidence:
+        failures.append(f"missing manifest entries: ['{handoff_relative}']")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    if handoff_relative not in hashed_paths:
+        failures.append(f"missing hash entries: ['{handoff_relative}']")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and handoff_relative not in archived_paths:
+        failures.append(f"missing archive entries: ['{handoff_relative}']")
+
+    tracked = git_tracked_paths()
+    dirty = sorted(git_dirty_paths([handoff_relative]))
+    if handoff_relative not in tracked:
+        failures.append(f"untracked final submission handoff sheet: {handoff_relative}")
+    if dirty:
+        failures.append(f"dirty final submission handoff sheet: {dirty}")
+
+    return GateCheck(
+        "final submission handoff sheet",
+        not failures,
+        f"final review directory, signoff fields, verification commands, external hard-evidence boundary, and no-award-guarantee language verified; {len(evidence_paths)} evidence links verified"
+        if not failures
+        else f"missing terms, evidence paths, or package links: {', '.join(failures)}",
+    )
+
+
 def check_defense_rehearsal_card() -> GateCheck:
     if not DEFENSE_REHEARSAL_CARD.exists():
         return GateCheck("defense rehearsal pack", False, "10_答辩攻防与彩排卡.md missing")
@@ -4308,6 +4382,7 @@ def run_gate() -> list[GateCheck]:
         check_poster_board_asset(),
         check_ip_open_source_compliance(),
         check_local_baseline_differentiation_evidence(),
+        check_final_submission_handoff_sheet(),
         check_expert_review_index(),
         check_defense_rehearsal_card(),
         check_defense_rehearsal_scorecard(),
@@ -4341,7 +4416,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, ip and open-source compliance, local baseline differentiation evidence, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

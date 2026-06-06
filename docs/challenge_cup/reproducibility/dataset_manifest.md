@@ -90,3 +90,4 @@
 - Timed rehearsal observer sheet: `docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md`
 - Special prize readiness dashboard: `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md`
 - Special prize readiness dashboard JSON: `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json`
+- 终审提交总目录与签收页：`docs/challenge_cup/23_终审提交总目录与签收页.md`

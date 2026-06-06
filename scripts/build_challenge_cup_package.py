@@ -122,6 +122,7 @@ POSTER_BOOTH_QA_PACK = OUT / "19_作品展墙报问辩与展台脚本.md"
 COMMERCIALIZATION_ROADMAP = OUT / "20_成果转化与持续迭代路线图.md"
 IP_OPEN_SOURCE_COMPLIANCE = OUT / "21_知识产权与开源合规说明.md"
 LOCAL_BASELINE_DIFFERENTIATION = OUT / "22_同类方案对比与创新性证据卡.md"
+FINAL_SUBMISSION_HANDOFF = OUT / "23_终审提交总目录与签收页.md"
 POSTER_BOARD_HTML = OUT / "poster" / "challenge_cup_a0_poster.html"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
@@ -382,30 +383,31 @@ def build_readme(ctx: dict[str, Any]) -> str:
 21. `20_成果转化与持续迭代路线图.md`
 22. `21_知识产权与开源合规说明.md`
 23. `22_同类方案对比与创新性证据卡.md`
-24. `poster/challenge_cup_a0_poster.html`
-25. `defense_deck/challenge_cup_defense_deck.pptx`
-26. `defense_deck/challenge_cup_defense_speaker_notes.md`
-27. `reproducibility/application_validation_report.md`
-28. `reproducibility/expert_feedback_form.md`
-29. `reproducibility/runbook.md`
-30. `reproducibility/dataset_manifest.md`
-31. `reproducibility/readiness_gate_report.md`
-32. `reproducibility/goal_completion_report.md`
-33. `reproducibility/defense_rehearsal_scorecard.md`
-34. `reproducibility/defense_rehearsal_result_packet.md`
-35. `reproducibility/expert_feedback_request_packet.md`
-36. `reproducibility/expert_feedback_outreach_ledger.md`
-37. `reproducibility/timed_rehearsal_schedule_ledger.md`
-38. `reproducibility/official_rubric_alignment.md`
-39. `reproducibility/special_prize_readiness_dashboard.md`
-40. `reproducibility/hard_evidence_closure_board.md`
-41. `reproducibility/hard_evidence_action_pack.md`
-42. `reproducibility/external_evidence_execution_kit.md`
-43. `reproducibility/hard_evidence_ledger.md`
-44. `reproducibility/challenge_cup_submission_archive_manifest.json`
-45. `reproducibility/challenge_cup_submission_package.zip`
-46. `reproducibility/verify_submission_package.py`
-47. `reproducibility/final_acceptance_audit.md`
+24. `23_终审提交总目录与签收页.md`
+25. `poster/challenge_cup_a0_poster.html`
+26. `defense_deck/challenge_cup_defense_deck.pptx`
+27. `defense_deck/challenge_cup_defense_speaker_notes.md`
+28. `reproducibility/application_validation_report.md`
+29. `reproducibility/expert_feedback_form.md`
+30. `reproducibility/runbook.md`
+31. `reproducibility/dataset_manifest.md`
+32. `reproducibility/readiness_gate_report.md`
+33. `reproducibility/goal_completion_report.md`
+34. `reproducibility/defense_rehearsal_scorecard.md`
+35. `reproducibility/defense_rehearsal_result_packet.md`
+36. `reproducibility/expert_feedback_request_packet.md`
+37. `reproducibility/expert_feedback_outreach_ledger.md`
+38. `reproducibility/timed_rehearsal_schedule_ledger.md`
+39. `reproducibility/official_rubric_alignment.md`
+40. `reproducibility/special_prize_readiness_dashboard.md`
+41. `reproducibility/hard_evidence_closure_board.md`
+42. `reproducibility/hard_evidence_action_pack.md`
+43. `reproducibility/external_evidence_execution_kit.md`
+44. `reproducibility/hard_evidence_ledger.md`
+45. `reproducibility/challenge_cup_submission_archive_manifest.json`
+46. `reproducibility/challenge_cup_submission_package.zip`
+47. `reproducibility/verify_submission_package.py`
+48. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -831,7 +833,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 50 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 51 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1246,6 +1248,78 @@ def build_local_baseline_differentiation_card(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
+    return f"""# 终审提交总目录与签收页
+
+本页用于终审提交、教师复核和现场移交时快速确认：哪些文件是正式提交文件，哪些命令可以复核包完整性，哪些外部硬证据仍未完成。它只证明材料包已经组织成可复核结项形态，不承诺获奖。
+
+## 提交状态
+
+| 项目 | 当前状态 | 复核证据 |
+| --- | --- | --- |
+| 结项提交包 | 已生成，可按 verifier 和 readiness gate 复核。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip` |
+| 现场答辩材料 | README、一页纸、项目书、评委速览卡、展墙脚本、PPT 和 A0 海报均已进入包。 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
+| 外部硬证据 | 真实专家反馈、真实计时彩排仍待实际归档；未归档前不能标记目标完成。 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
+| 最终状态口径 | package_ready_awaiting_external_hard_evidence。 | `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
+
+## 评委三分钟入口
+
+| 用途 | 优先打开 | 说明 |
+| --- | --- | --- |
+| 先看项目定位 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md` | 30 秒确认项目名称、场景、贡献和边界。 |
+| 看正式项目书 | `docs/challenge_cup/01_挑战杯项目书.md` | 用于正式材料审阅和结项归档。 |
+| 看现场答辩口径 | `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx` | 现场不临时翻材料，按速览卡和 PPT 主线答。 |
+| 看展墙问辩 | `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` | 展墙、海报和 booth 问辩统一口径。 |
+
+## 正式提交文件
+
+| 类别 | 文件 |
+| --- | --- |
+| 主材料 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/02_技术白皮书.md`; `docs/challenge_cup/03_实验评测报告.md` |
+| 现场材料 | `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/14_现场答辩操作Runbook.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
+| 包与校验 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/evidence_hashes.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`; `docs/challenge_cup/reproducibility/verify_submission_package.py` |
+| 总结与门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/command_log.md` |
+| 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
+
+## 复核命令
+
+```powershell
+.\.venv\Scripts\python.exe docs\challenge_cup\reproducibility\verify_submission_package.py --root .
+.\.venv\Scripts\python.exe scripts\check_challenge_cup_readiness.py
+.\.venv\Scripts\python.exe scripts\build_challenge_cup_final_acceptance_audit.py
+.\.venv\Scripts\python.exe scripts\check_challenge_cup_goal_completion.py
+```
+
+预期口径：
+
+- submission verifier 必须 pass。
+- readiness gate 必须 pass。
+- final acceptance audit 当前应保持 package_ready_awaiting_external_hard_evidence。
+- goal completion 在真实专家反馈和真实计时彩排归档前应 fail，不能标记目标完成。
+
+## 未完成项与边界
+
+- 真实专家反馈：必须有真实专家、真实渠道、反馈原件或可追溯摘要；准备材料不能替代反馈结果。
+- 真实计时彩排：必须有真实计时、观察记录和问题整改闭环；彩排模板不能替代已完成彩排。
+- 不承诺获奖：readiness gate、内部自评、PPT、海报和本签收页均不证明能够获得特等奖，只证明提交包完整、证据可复核、边界清楚。
+- 目标完成条件：只有真实专家反馈和真实计时彩排完成归档，并重跑 verifier、readiness gate、final acceptance audit、goal completion 后，才允许讨论目标完成。
+
+## 签收确认
+
+| 签收项 | 确认 |
+| --- | --- |
+| 接收人 |  |
+| 接收时间 |  |
+| 是否已运行复核命令 |  |
+| 是否确认 package_ready_awaiting_external_hard_evidence 状态 |  |
+| 是否确认真实专家反馈仍需归档 |  |
+| 是否确认真实计时彩排仍需归档 |  |
+| 签收备注 |  |
+
+生成时间：{ctx["now"]}
+"""
+
+
 def build_poster_board_html(ctx: dict[str, Any]) -> str:
     question_count = ctx["question_count"]
     return f"""<!doctype html>
@@ -1419,7 +1493,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>49 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>51 gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1818,6 +1892,7 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Timed rehearsal observer sheet: `{md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD)}`",
             f"- Special prize readiness dashboard: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD)}`",
             f"- Special prize readiness dashboard JSON: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON)}`",
+            f"- 终审提交总目录与签收页：`{md_link(FINAL_SUBMISSION_HANDOFF)}`",
         ]
     )
 
@@ -2029,7 +2104,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (50/50 gates)
+-> Status: pass (51/51 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2066,6 +2141,7 @@ def main() -> int:
     write(COMMERCIALIZATION_ROADMAP, build_commercialization_roadmap(ctx))
     write(IP_OPEN_SOURCE_COMPLIANCE, build_ip_open_source_compliance(ctx))
     write(LOCAL_BASELINE_DIFFERENTIATION, build_local_baseline_differentiation_card(ctx))
+    write(FINAL_SUBMISSION_HANDOFF, build_final_submission_handoff(ctx))
     write(POSTER_BOARD_HTML, build_poster_board_html(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
@@ -2116,6 +2192,7 @@ def main() -> int:
         md_link(COMMERCIALIZATION_ROADMAP),
         md_link(IP_OPEN_SOURCE_COMPLIANCE),
         md_link(LOCAL_BASELINE_DIFFERENTIATION),
+        md_link(FINAL_SUBMISSION_HANDOFF),
         md_link(POSTER_BOARD_HTML),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
