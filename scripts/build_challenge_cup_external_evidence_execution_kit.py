@@ -94,6 +94,7 @@ FAILED_REHEARSAL_ARCHIVAL_RULE = (
     "still archive the real rehearsal evidence with timing_acceptance_pass=false; the hard evidence ledger "
     "must place the metadata in rejected_metadata_records and collected_count must not satisfy the acceptance gate."
 )
+POWERSHELL_PYTHON = ".\\.venv\\Scripts\\python.exe"
 
 
 def powershell_repo_root() -> str:
@@ -110,8 +111,8 @@ def expert_feedback_powershell_block() -> list[str]:
         "$reviewerRole = 'real-reviewer-role-or-org'",
         "$remediationIssue = 'demo-pacing'",
         "$remediationAction = 'tighten-opening'",
-        "python .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
-        "python .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
+        f"{POWERSHELL_PYTHON} .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
+        f"{POWERSHELL_PYTHON} .\\scripts\\record_challenge_cup_hard_evidence.py expert_feedback --id $feedbackId --source $feedbackSource --evidence-type email_reply --reviewer-identity $reviewer --role-or-org $reviewerRole --review-date $reviewDate --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue $remediationIssue --remediation-action $remediationAction --confirm-real-feedback",
     ]
 
 
@@ -125,7 +126,7 @@ def timed_rehearsal_powershell_block() -> list[str]:
         "$demo = 170",
         "$offline = 18",
         "$killer = 25,25,25,25,25",
-        "python .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
+        f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal",
     ]
 
 

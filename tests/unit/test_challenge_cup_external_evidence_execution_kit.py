@@ -80,6 +80,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         powershell = "\n".join(packet["powershell_execution_block"])
         assert "Set-Location" in powershell
         assert str(tmp_path) in powershell
+        assert ".\\.venv\\Scripts\\python.exe" in powershell
+        assert "python .\\scripts" not in powershell
         assert "<" not in powershell
         assert ">" not in powershell
 

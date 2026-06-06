@@ -51,6 +51,8 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         powershell = "\n".join(stream["powershell_execution_block"])
         assert "Set-Location" in powershell
         assert str(tmp_path) in powershell
+        assert ".\\.venv\\Scripts\\python.exe" in powershell
+        assert "python .\\scripts" not in powershell
         assert "<" not in powershell
         assert ">" not in powershell
 
