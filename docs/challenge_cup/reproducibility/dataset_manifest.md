@@ -81,6 +81,10 @@
 
 - Rubric defense coverage report: `docs/challenge_cup/reproducibility/rubric_defense_coverage.md`
 - Rubric defense coverage JSON: `docs/challenge_cup/reproducibility/rubric_defense_coverage.json`
+## Defense Slide Traceability
+
+- Defense slide traceability report: `docs/challenge_cup/reproducibility/defense_slide_traceability.md`
+- Defense slide traceability JSON: `docs/challenge_cup/reproducibility/defense_slide_traceability.json`
 ## Runtime Reproducibility Snapshot
 
 - Runtime reproducibility snapshot: `docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md`

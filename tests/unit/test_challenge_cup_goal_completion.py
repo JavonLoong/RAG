@@ -39,7 +39,8 @@ def test_goal_completion_gate_fails_until_real_hard_evidence_is_archived() -> No
     assert "expert_feedback" in report
     assert "timed_rehearsal" in report
     assert "completion_claim_allowed=False" in report
-    assert "readiness gate passed 61/61" in report
+    assert "readiness gate passed 62/62" in report
+    assert "61/61" not in report
     assert "60/60" not in report
     assert "59/59" not in report
     assert "56/56" not in report

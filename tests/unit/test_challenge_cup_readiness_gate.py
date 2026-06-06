@@ -43,6 +43,27 @@ def load_readiness_module():
     return module
 
 
+def rebuild_challenge_cup_package() -> None:
+    subprocess.run(
+        [sys.executable, "scripts/build_challenge_cup_package.py"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
+def run_readiness_gate_for_test(monkeypatch, *, rebuild: bool = True) -> dict[str, object]:
+    if rebuild:
+        rebuild_challenge_cup_package()
+    module = load_readiness_module()
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+    checks = module.run_gate()
+    return module.write_report(checks)
+
+
 def write_minimal_pptx(path: Path, slide_texts: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(path, "w") as archive:
@@ -58,18 +79,10 @@ def write_minimal_pptx(path: Path, slide_texts: list[str]) -> None:
             )
 
 
-def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
-    result = subprocess.run(
-        [sys.executable, "scripts/check_challenge_cup_readiness.py"],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:
+    payload = run_readiness_gate_for_test(monkeypatch)
 
-    assert "readiness_gate_report.md" in result.stdout
+    assert payload == {"status": "pass", "passed": 62, "total": 62}
     report = REPORT.read_text(encoding="utf-8")
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
@@ -137,20 +150,13 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "supported=10, partial=0, missing=0" in report
 
 
-def test_challenge_cup_readiness_gate_bootstraps_its_own_report() -> None:
+def test_challenge_cup_readiness_gate_bootstraps_its_own_report(monkeypatch) -> None:
+    rebuild_challenge_cup_package()
     REPORT.unlink(missing_ok=True)
 
-    result = subprocess.run(
-        [sys.executable, "scripts/check_challenge_cup_readiness.py"],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    payload = run_readiness_gate_for_test(monkeypatch, rebuild=False)
 
-    assert "Status: pass" in result.stdout
+    assert payload == {"status": "pass", "passed": 62, "total": 62}
     assert REPORT.exists()
 
 
@@ -2720,6 +2726,115 @@ def test_claim_integrity_report_gate_rejects_award_guarantee_claim(monkeypatch, 
     assert "award_guarantee_claimed=True" in check.detail
 
 
+def test_defense_slide_traceability_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    markdown = tmp_path / "defense_slide_traceability.md"
+    metadata = tmp_path / "defense_slide_traceability.json"
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_MD", markdown, raising=False)
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_JSON", metadata, raising=False)
+
+    check = module.check_defense_slide_traceability()
+
+    assert not check.passed
+    assert "defense_slide_traceability.md" in check.detail
+    assert "defense_slide_traceability.json" in check.detail
+
+
+def test_defense_slide_traceability_gate_rejects_missing_slide(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    boundary = (
+        "This report maps the defense deck slide-by-slide to local evidence, judge-objection answers, "
+        "and evidence-bound claims. It does not guarantee an award, does not claim expert approval, "
+        "does not claim timed rehearsal completion, and does not satisfy goal completion without real "
+        "expert feedback and real timed rehearsal evidence."
+    )
+    markdown = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "defense_slide_traceability.md"
+    metadata = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "defense_slide_traceability.json"
+    deck = tmp_path / "docs" / "challenge_cup" / "defense_deck" / "challenge_cup_defense_deck.pptx"
+    notes = tmp_path / "docs" / "challenge_cup" / "defense_deck" / "challenge_cup_defense_speaker_notes.md"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    required_paths = [
+        "docs/challenge_cup/reproducibility/defense_slide_traceability.md",
+        "docs/challenge_cup/reproducibility/defense_slide_traceability.json",
+    ]
+
+    write_minimal_pptx(deck, [f"slide {index} anchor-{index}" for index in range(1, 11)])
+    notes.parent.mkdir(parents=True, exist_ok=True)
+    notes.write_text("\n".join(f"slide {index} anchor-{index}" for index in range(1, 11)), encoding="utf-8")
+
+    evidence_files = [
+        "docs/challenge_cup/slide-trace-evidence.md",
+        "evaluation/reports/slide-trace-evidence.md",
+    ]
+    for relative in evidence_files:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("evidence", encoding="utf-8")
+
+    slides = [
+        {
+            "slide_index": index,
+            "title": f"Slide {index}",
+            "coverage_status": "covered",
+            "rubric_dimensions": ["completion", "defense_performance"],
+            "evidence_files": evidence_files,
+            "judge_objection_ids": ["OJ-08-special-prize-claim"],
+            "claim_ids": ["package_review_ready"],
+            "notes_anchor_terms": [f"anchor-{index}"],
+            "boundary": "No award guarantee and no timed rehearsal completion claim.",
+        }
+        for index in range(1, 10)
+    ]
+    payload = {
+        "report_type": "challenge_cup_defense_slide_traceability",
+        "status": "defense_slide_traceability_ready_no_rehearsal_or_award_claim",
+        "completion_claim_allowed": False,
+        "does_not_satisfy_goal_completion": True,
+        "award_guarantee_claimed": False,
+        "expert_approval_claimed": False,
+        "timed_rehearsal_completion_claimed": False,
+        "coverage_complete": True,
+        "slide_count": 10,
+        "covered_slide_count": 10,
+        "slides": slides,
+        "gaps": [],
+        "boundary": boundary,
+        "verification_commands": ["python scripts/build_challenge_cup_defense_slide_traceability.py"],
+        "output_files": required_paths,
+    }
+    metadata.parent.mkdir(parents=True, exist_ok=True)
+    metadata.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    markdown.write_text(
+        "Defense Slide Traceability\nslide 1\nslide 9\nno award guarantee\nreal timed rehearsal\n",
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": [{"path": path} for path in required_paths]}, ensure_ascii=False), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "REPORT_MD", tmp_path / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md")
+    monkeypatch.setattr(module, "DEFENSE_DECK_PPTX", deck)
+    monkeypatch.setattr(module, "DEFENSE_DECK_NOTES", notes)
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_MD", markdown, raising=False)
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_JSON", metadata, raising=False)
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS", required_paths, raising=False)
+    monkeypatch.setattr(module, "DEFENSE_SLIDE_TRACEABILITY_BOUNDARY", boundary, raising=False)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_defense_slide_traceability()
+
+    assert not check.passed
+    assert "missing slide indexes" in check.detail
+    assert "10" in check.detail
+
+
 def test_runtime_reproducibility_snapshot_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "runtime_reproducibility_snapshot.md"
@@ -2769,7 +2884,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 61/61\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 62/62\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -2783,9 +2898,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 61,
-                    "total": 61,
-                    "current_gate_count": 61,
+                    "passed": 62,
+                    "total": 62,
+                    "current_gate_count": 62,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

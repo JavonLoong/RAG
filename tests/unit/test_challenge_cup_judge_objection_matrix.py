@@ -68,7 +68,8 @@ def test_judge_objection_matrix_builds_evidence_bound_responses(tmp_path: Path) 
     assert "real timed rehearsal" in serialized
     assert "readiness gate is not an award guarantee" in serialized
     project_closure = next(item for item in objections if item["objection_id"] == "OJ-10-project-closure")
-    assert "61 readiness gates" in project_closure["one_sentence_answer"]
+    assert "62 readiness gates" in project_closure["one_sentence_answer"]
+    assert "61 readiness gates" not in project_closure["one_sentence_answer"]
     assert "60 readiness gates" not in project_closure["one_sentence_answer"]
     assert "59 readiness gates" not in project_closure["one_sentence_answer"]
     assert "58 readiness gates" not in project_closure["one_sentence_answer"]

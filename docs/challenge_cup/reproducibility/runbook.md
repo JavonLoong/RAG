@@ -143,6 +143,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_judge_objection_matrix.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_defense_slide_traceability.py
 ```
 
 ## 运行结项 readiness gate

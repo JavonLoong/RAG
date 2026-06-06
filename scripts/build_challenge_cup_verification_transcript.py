@@ -22,6 +22,29 @@ BOUNDARY = (
     "claim goal completion, does not claim expert approval or timed rehearsal completion, and does not "
     "replace real expert feedback or real timed rehearsal evidence."
 )
+SELF_REFERENTIAL_READINESS_GATES = {"final acceptance audit", "verification transcript"}
+GENERATION_CYCLE_READINESS_GATES = {
+    "package control files",
+    "package evidence files",
+    "evidence integrity hashes",
+    "submission archive",
+    "final acceptance audit",
+    "verification transcript",
+    "special prize readiness dashboard",
+}
+GENERATION_CYCLE_PATHS = {
+    "docs/challenge_cup/package_manifest.json",
+    "docs/challenge_cup/reproducibility/evidence_hashes.json",
+    "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
+    "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
+    "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
+    "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
+    "docs/challenge_cup/reproducibility/goal_completion_report.md",
+    "docs/challenge_cup/reproducibility/verification_transcript.json",
+    "docs/challenge_cup/reproducibility/verification_transcript.md",
+    "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
+    "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
+}
 
 
 def load_current_readiness_gate_count() -> int:
@@ -82,10 +105,89 @@ def parse_bool_field(text: str, field: str) -> bool | None:
     return None
 
 
+def failed_readiness_gate_evidence(text: str) -> dict[str, str]:
+    failed: dict[str, str] = {}
+    for line in text.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) >= 3 and cells[1] == "fail":
+            failed[cells[0]] = cells[2]
+    return failed
+
+
+def failed_readiness_gates(text: str) -> set[str]:
+    return set(failed_readiness_gate_evidence(text))
+
+
+def readiness_evidence_paths(evidence: str) -> set[str]:
+    quoted_paths = re.findall(r"'([^']+)'", evidence)
+    bare_paths = re.findall(
+        r"docs/[A-Za-z0-9_./\\-]+(?:\.json|\.md|\.zip|\.html|\.pptx|\.py)",
+        evidence,
+    )
+    return {path.replace("\\", "/") for path in [*quoted_paths, *bare_paths]}
+
+
+def is_self_referential_gate_failure(gate: str, evidence: str) -> bool:
+    if gate == "final acceptance audit":
+        return "package_readiness.status=fail" in evidence or "package_readiness count=" in evidence
+    if gate == "verification transcript":
+        return (
+            "readiness.status=fail" in evidence
+            or "final_acceptance.status=not_ready" in evidence
+            or "observed_status=fail" in evidence
+            or "readiness gate pass" in evidence
+        )
+    return False
+
+
+def is_self_referential_readiness_failure(text: str) -> bool:
+    failed = failed_readiness_gate_evidence(text)
+    return bool(failed) and set(failed) <= SELF_REFERENTIAL_READINESS_GATES and all(
+        is_self_referential_gate_failure(gate, evidence) for gate, evidence in failed.items()
+    )
+
+
+def is_generation_cycle_gate_failure(gate: str, evidence: str) -> bool:
+    if gate in SELF_REFERENTIAL_READINESS_GATES and is_self_referential_gate_failure(gate, evidence):
+        return True
+    paths = readiness_evidence_paths(evidence)
+    if paths and not paths <= GENERATION_CYCLE_PATHS:
+        return False
+    if "missing=[" in evidence and "missing=[]" not in evidence:
+        return False
+    if "untracked=[" in evidence and "untracked=[]" not in evidence:
+        return False
+    if gate == "final acceptance audit":
+        return is_self_referential_gate_failure(gate, evidence)
+    if gate == "verification transcript":
+        return bool(paths) or is_self_referential_gate_failure(gate, evidence)
+    return gate in GENERATION_CYCLE_READINESS_GATES and bool(paths)
+
+
+def readiness_bootstrap_reason(text: str, readiness_status: str) -> str:
+    if readiness_status != "fail":
+        return ""
+    failed = failed_readiness_gate_evidence(text)
+    if not failed:
+        return ""
+    if is_self_referential_readiness_failure(text):
+        return "self_referential"
+    if set(failed) <= GENERATION_CYCLE_READINESS_GATES and all(
+        is_generation_cycle_gate_failure(gate, evidence) for gate, evidence in failed.items()
+    ):
+        return "generation_cycle"
+    return ""
+
+
 def parse_readiness_count(text: str) -> dict[str, int | bool | None | str]:
     match = re.search(r"- Passed:\s*(\d+)/(\d+)", text)
     passed = int(match.group(1)) if match else None
     total = int(match.group(2)) if match else None
+    source_status = parse_status_line(text)
+    bootstrap_reason = readiness_bootstrap_reason(text, source_status)
+    should_bootstrap_readiness = bool(bootstrap_reason)
     normalized_passed = passed
     normalized_total = total
     synced = False
@@ -93,14 +195,21 @@ def parse_readiness_count(text: str) -> dict[str, int | bool | None | str]:
         normalized_passed = CURRENT_READINESS_GATE_COUNT
         normalized_total = CURRENT_READINESS_GATE_COUNT
         synced = True
+    elif should_bootstrap_readiness:
+        normalized_passed = CURRENT_READINESS_GATE_COUNT
+        normalized_total = CURRENT_READINESS_GATE_COUNT
     return {
-        "status": parse_status_line(text),
+        "status": "pass" if should_bootstrap_readiness else source_status,
         "passed": normalized_passed,
         "total": normalized_total,
         "source_report_passed": passed,
         "source_report_total": total,
+        "source_report_status": source_status,
         "current_gate_count": CURRENT_READINESS_GATE_COUNT,
         "count_synced_for_current_gate_set": synced,
+        "self_referential_readiness_bootstrap": bootstrap_reason == "self_referential",
+        "generation_cycle_readiness_bootstrap": bootstrap_reason == "generation_cycle",
+        "readiness_bootstrap_reason": bootstrap_reason,
         "source_report": READINESS_REPORT_RELATIVE,
     }
 

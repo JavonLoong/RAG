@@ -18,7 +18,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 61
+CURRENT_READINESS_GATE_COUNT = 62
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -121,6 +121,8 @@ CLAIM_INTEGRITY_REPORT_MD_RELATIVE = "docs/challenge_cup/reproducibility/claim_i
 CLAIM_INTEGRITY_REPORT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/claim_integrity_report.json"
 RUBRIC_DEFENSE_COVERAGE_MD_RELATIVE = "docs/challenge_cup/reproducibility/rubric_defense_coverage.md"
 RUBRIC_DEFENSE_COVERAGE_JSON_RELATIVE = "docs/challenge_cup/reproducibility/rubric_defense_coverage.json"
+DEFENSE_SLIDE_TRACEABILITY_MD_RELATIVE = "docs/challenge_cup/reproducibility/defense_slide_traceability.md"
+DEFENSE_SLIDE_TRACEABILITY_JSON_RELATIVE = "docs/challenge_cup/reproducibility/defense_slide_traceability.json"
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.md"
 )
@@ -168,6 +170,8 @@ CLAIM_INTEGRITY_REPORT_MD = REPO_ROOT / CLAIM_INTEGRITY_REPORT_MD_RELATIVE
 CLAIM_INTEGRITY_REPORT_JSON = REPO_ROOT / CLAIM_INTEGRITY_REPORT_JSON_RELATIVE
 RUBRIC_DEFENSE_COVERAGE_MD = REPO_ROOT / RUBRIC_DEFENSE_COVERAGE_MD_RELATIVE
 RUBRIC_DEFENSE_COVERAGE_JSON = REPO_ROOT / RUBRIC_DEFENSE_COVERAGE_JSON_RELATIVE
+DEFENSE_SLIDE_TRACEABILITY_MD = REPO_ROOT / DEFENSE_SLIDE_TRACEABILITY_MD_RELATIVE
+DEFENSE_SLIDE_TRACEABILITY_JSON = REPO_ROOT / DEFENSE_SLIDE_TRACEABILITY_JSON_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON = REPO_ROOT / RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE
 VERIFICATION_TRANSCRIPT_MD = REPO_ROOT / VERIFICATION_TRANSCRIPT_MD_RELATIVE
@@ -243,6 +247,10 @@ RUBRIC_DEFENSE_COVERAGE_REQUIRED_PATHS = [
     RUBRIC_DEFENSE_COVERAGE_MD_RELATIVE,
     RUBRIC_DEFENSE_COVERAGE_JSON_RELATIVE,
 ]
+DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS = [
+    DEFENSE_SLIDE_TRACEABILITY_MD_RELATIVE,
+    DEFENSE_SLIDE_TRACEABILITY_JSON_RELATIVE,
+]
 RUNTIME_REPRODUCIBILITY_SNAPSHOT_REQUIRED_PATHS = [
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_MD_RELATIVE,
     RUNTIME_REPRODUCIBILITY_SNAPSHOT_JSON_RELATIVE,
@@ -295,6 +303,12 @@ CLAIM_INTEGRITY_REPORT_BOUNDARY = (
 )
 RUBRIC_DEFENSE_COVERAGE_BOUNDARY = (
     "This report maps public rubric dimensions to local defense assets, judge-objection answers, "
+    "and evidence-bound claims. It does not guarantee an award, does not claim expert approval, "
+    "does not claim timed rehearsal completion, and does not satisfy goal completion without real "
+    "expert feedback and real timed rehearsal evidence."
+)
+DEFENSE_SLIDE_TRACEABILITY_BOUNDARY = (
+    "This report maps the defense deck slide-by-slide to local evidence, judge-objection answers, "
     "and evidence-bound claims. It does not guarantee an award, does not claim expert approval, "
     "does not claim timed rehearsal completion, and does not satisfy goal completion without real "
     "expert feedback and real timed rehearsal evidence."
@@ -744,6 +758,14 @@ RUBRIC_DEFENSE_COVERAGE_MARKDOWN_TERMS = {
     "defense_performance",
     "academic_norms_and_rigor",
     "no award guarantee",
+}
+DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES = set(range(1, 11))
+DEFENSE_SLIDE_TRACEABILITY_MARKDOWN_TERMS = {
+    "Defense Slide Traceability",
+    "slide 1",
+    "slide 10",
+    "no award guarantee",
+    "timed rehearsal",
 }
 OFFICIAL_RUBRIC_REQUIRED_TERMS = {
     "学术/实用价值",
@@ -5800,6 +5822,191 @@ def check_rubric_defense_coverage() -> GateCheck:
     )
 
 
+def check_defense_slide_traceability() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        path for path in (DEFENSE_SLIDE_TRACEABILITY_MD, DEFENSE_SLIDE_TRACEABILITY_JSON) if not nonempty(path)
+    ]
+    if missing_files:
+        missing = [display_path(path) for path in missing_files]
+        return GateCheck("defense slide traceability", False, f"missing or empty: {missing}")
+
+    try:
+        payload = load_json(DEFENSE_SLIDE_TRACEABILITY_JSON)
+    except (OSError, json.JSONDecodeError) as exc:
+        return GateCheck("defense slide traceability", False, f"invalid defense slide traceability json: {exc}")
+    markdown = DEFENSE_SLIDE_TRACEABILITY_MD.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_defense_slide_traceability":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "defense_slide_traceability_ready_no_rehearsal_or_award_claim":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    for field in (
+        "award_guarantee_claimed",
+        "expert_approval_claimed",
+        "timed_rehearsal_completion_claimed",
+    ):
+        if payload.get(field) is not False:
+            failures.append(f"{field}={payload.get(field)}")
+    if payload.get("coverage_complete") is not True:
+        failures.append(f"coverage_complete={payload.get('coverage_complete')}")
+    if int(payload.get("slide_count") or -1) != len(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES):
+        failures.append(f"slide_count={payload.get('slide_count')}")
+    if int(payload.get("covered_slide_count") or -1) != len(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES):
+        failures.append(f"covered_slide_count={payload.get('covered_slide_count')}")
+    if payload.get("gaps") != []:
+        failures.append(f"gaps={payload.get('gaps')}")
+
+    if not nonempty(DEFENSE_DECK_PPTX):
+        failures.append(f"defense deck missing or empty: {DEFENSE_DECK_PPTX_RELATIVE}")
+    else:
+        try:
+            actual_slide_count, _ = pptx_text_and_slide_count(DEFENSE_DECK_PPTX)
+            if actual_slide_count != len(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES):
+                failures.append(f"actual defense deck slide count={actual_slide_count}")
+        except (OSError, zipfile.BadZipFile, ET.ParseError) as exc:
+            failures.append(f"defense deck unreadable: {exc}")
+    if not nonempty(DEFENSE_DECK_NOTES):
+        failures.append(f"speaker notes missing or empty: {DEFENSE_DECK_NOTES_RELATIVE}")
+
+    slides = payload.get("slides")
+    if not isinstance(slides, list):
+        failures.append("slides missing")
+        slides = []
+    slide_indexes: set[int] = set()
+    covered_rows = 0
+    report_outputs = set(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS)
+    evidence_paths: set[str] = set()
+    for row_number, item in enumerate(slides, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"slides[{row_number}] invalid")
+            continue
+        try:
+            slide_index = int(item.get("slide_index"))
+        except (TypeError, ValueError):
+            failures.append(f"slides[{row_number}]: slide_index={item.get('slide_index')}")
+            continue
+        slide_indexes.add(slide_index)
+        if item.get("coverage_status") != "covered":
+            failures.append(f"slide {slide_index}: coverage_status={item.get('coverage_status')}")
+        else:
+            covered_rows += 1
+        if not str(item.get("title", "")).strip():
+            failures.append(f"slide {slide_index}: title missing")
+        rubric_dimensions = [str(value) for value in item.get("rubric_dimensions", [])]
+        if not rubric_dimensions:
+            failures.append(f"slide {slide_index}: rubric_dimensions missing")
+        unknown_dimensions = sorted(set(rubric_dimensions) - RUBRIC_DEFENSE_COVERAGE_REQUIRED_DIMENSIONS)
+        if unknown_dimensions:
+            failures.append(f"slide {slide_index}: unknown rubric dimensions {unknown_dimensions}")
+        evidence_files = [str(path) for path in item.get("evidence_files", [])]
+        if len(evidence_files) < 2:
+            failures.append(f"slide {slide_index}: fewer than 2 evidence_files")
+        for field in ("judge_objection_ids", "claim_ids", "notes_anchor_terms"):
+            values = item.get(field)
+            if not isinstance(values, list) or not values:
+                failures.append(f"slide {slide_index}: {field} missing")
+        if not str(item.get("boundary", "")).strip():
+            failures.append(f"slide {slide_index}: boundary missing")
+
+        for relative in sorted(set(evidence_files)):
+            posix = PurePosixPath(relative)
+            if not relative:
+                failures.append(f"slide {slide_index}: empty path")
+                continue
+            if relative.startswith(("http://", "https://")):
+                failures.append(f"slide {slide_index}: repo path required, got URL: {relative}")
+                continue
+            if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+                failures.append(f"slide {slide_index}: unsafe path: {relative}")
+                continue
+            if not relative.startswith(("docs/", "evaluation/")):
+                failures.append(f"slide {slide_index}: path outside allowed scope: {relative}")
+                continue
+            if relative in report_outputs:
+                failures.append(f"slide {slide_index}: self-references defense slide traceability output: {relative}")
+                continue
+            evidence_paths.add(relative)
+            if relative != REPORT_MD.relative_to(REPO_ROOT).as_posix() and not nonempty(REPO_ROOT / relative):
+                failures.append(f"slide {slide_index}: evidence path missing or empty: {relative}")
+
+    missing_slide_indexes = sorted(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES - slide_indexes)
+    if missing_slide_indexes:
+        failures.append(f"missing slide indexes: {missing_slide_indexes}")
+    extra_slide_indexes = sorted(slide_indexes - DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES)
+    if extra_slide_indexes:
+        failures.append(f"unexpected slide indexes: {extra_slide_indexes}")
+    if covered_rows != len(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES):
+        failures.append(f"covered slide rows={covered_rows}")
+
+    boundary = str(payload.get("boundary", ""))
+    if boundary != DEFENSE_SLIDE_TRACEABILITY_BOUNDARY:
+        failures.append("boundary mismatch")
+    for term in (
+        "does not guarantee an award",
+        "does not claim expert approval",
+        "does not claim timed rehearsal completion",
+        "does not satisfy goal completion",
+        "real expert feedback",
+        "real timed rehearsal",
+    ):
+        if term not in boundary:
+            failures.append(f"boundary missing {term}")
+
+    output_files = {str(item) for item in payload.get("output_files", [])}
+    missing_output_files = sorted(path for path in DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS if path not in output_files)
+    if missing_output_files:
+        failures.append(f"output_files missing: {missing_output_files}")
+    missing_markdown_terms = sorted(
+        term for term in DEFENSE_SLIDE_TRACEABILITY_MARKDOWN_TERMS if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+    commands = {str(item) for item in payload.get("verification_commands", [])}
+    if "python scripts/build_challenge_cup_defense_slide_traceability.py" not in commands:
+        failures.append("verification command missing: build_challenge_cup_defense_slide_traceability.py")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked defense slide traceability files: {untracked}")
+    if dirty:
+        failures.append(f"dirty defense slide traceability files: {dirty}")
+
+    return GateCheck(
+        "defense slide traceability",
+        not failures,
+        f"{len(DEFENSE_SLIDE_TRACEABILITY_REQUIRED_SLIDE_INDEXES)} slides linked to {len(evidence_paths)} evidence paths, judge objections, claim ids, and no-overclaim boundaries"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def check_runtime_reproducibility_snapshot() -> GateCheck:
     failures: list[str] = []
     missing_files = [
@@ -6228,6 +6435,7 @@ def run_gate() -> list[GateCheck]:
         check_no_answer_boundary_evaluation(),
         check_claim_integrity_report(),
         check_rubric_defense_coverage(),
+        check_defense_slide_traceability(),
         check_runtime_reproducibility_snapshot(),
         check_verification_transcript(),
         check_scenario_demo_evidence(),

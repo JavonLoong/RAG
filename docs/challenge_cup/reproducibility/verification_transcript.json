@@ -6,12 +6,16 @@
   "external_validation_claimed": false,
   "readiness_gate": {
     "status": "pass",
-    "passed": 61,
-    "total": 61,
-    "source_report_passed": 61,
-    "source_report_total": 61,
-    "current_gate_count": 61,
+    "passed": 62,
+    "total": 62,
+    "source_report_passed": 62,
+    "source_report_total": 62,
+    "source_report_status": "pass",
+    "current_gate_count": 62,
     "count_synced_for_current_gate_set": false,
+    "self_referential_readiness_bootstrap": false,
+    "generation_cycle_readiness_bootstrap": false,
+    "readiness_bootstrap_reason": "",
     "source_report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
   },
   "final_acceptance": {
