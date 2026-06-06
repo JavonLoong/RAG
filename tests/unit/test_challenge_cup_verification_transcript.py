@@ -182,6 +182,7 @@ def test_verification_transcript_parse_readiness_bootstraps_generation_cycle_fai
         "| package evidence files | fail | evidence=97, questions=60, missing=[], untracked=[], dirty=['docs/challenge_cup/reproducibility/final_acceptance_audit.json', 'docs/challenge_cup/reproducibility/verification_transcript.md'] |\n"
         "| evidence integrity hashes | fail | bytes mismatch: docs/challenge_cup/reproducibility/final_acceptance_audit.json; sha256 mismatch: docs/challenge_cup/reproducibility/verification_transcript.md |\n"
         "| submission archive | fail | stale archive entry: docs/challenge_cup/reproducibility/final_acceptance_audit.json; stale archive entry: docs/challenge_cup/reproducibility/verification_transcript.md |\n"
+        "| external evidence execution kit | fail | dirty external evidence execution kit files: ['docs/challenge_cup/reproducibility/external_evidence_execution_kit.json', 'docs/challenge_cup/reproducibility/external_evidence_execution_kit.md'] |\n"
         "| verification transcript | fail | dirty verification transcript files: ['docs/challenge_cup/reproducibility/verification_transcript.json', 'docs/challenge_cup/reproducibility/verification_transcript.md'] |\n"
     )
 

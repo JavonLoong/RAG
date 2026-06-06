@@ -31,6 +31,28 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert payload["does_not_satisfy_goal_completion"] is True
     assert payload["required_before_goal_completion"] == ["expert_feedback", "timed_rehearsal"]
 
+    sequence = {item["step_id"]: item for item in payload["operator_sequence"]}
+    assert list(sequence) == [
+        "verify_package_ready",
+        "record_expert_outreach",
+        "record_rehearsal_schedule",
+        "preflight_expert_feedback",
+        "record_expert_feedback",
+        "run_timed_rehearsal",
+        "rebuild_package_and_gates",
+        "refresh_final_audit",
+    ]
+    assert sequence["record_expert_outreach"]["counts_as_hard_evidence"] is False
+    assert sequence["record_rehearsal_schedule"]["counts_as_hard_evidence"] is False
+    assert sequence["record_expert_feedback"]["counts_as_hard_evidence"] is True
+    assert sequence["run_timed_rehearsal"]["counts_as_hard_evidence"] is True
+    for item in sequence.values():
+        assert item["command"]
+        assert item["human_proof_required"]
+        assert item["expected_after_step"]
+        assert item["guardrail"]
+        assert item["does_not_claim_award_or_completion"] is True
+
     packets = {item["packet_id"]: item for item in payload["execution_packets"]}
     assert set(packets) == {"expert_feedback_review", "timed_rehearsal_observer"}
     assert packets["expert_feedback_review"]["hard_evidence_category"] == "expert_feedback"
@@ -77,6 +99,10 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
 
     markdown = output_md.read_text(encoding="utf-8")
     assert "External Evidence Execution Kit" in markdown
+    assert "Operator Sequence" in markdown
+    assert "verify_package_ready" in markdown
+    assert "record_expert_feedback" in markdown
+    assert "run_timed_rehearsal" in markdown
     assert "does_not_satisfy_goal_completion=True" in markdown
     assert "\u4e0d\u4f2a\u9020" in markdown
     assert "\u771f\u5b9e\u4e13\u5bb6\u53cd\u9988" in markdown

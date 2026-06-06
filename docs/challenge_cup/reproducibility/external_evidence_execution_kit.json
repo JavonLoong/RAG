@@ -8,6 +8,96 @@
     "timed_rehearsal"
   ],
   "boundary": "This kit packages the final human handoff materials for collecting real external hard evidence. It does not satisfy goal completion, does not claim expert approval, and does not claim a timed rehearsal has been completed.",
+  "operator_sequence": [
+    {
+      "step_id": "verify_package_ready",
+      "phase": "machine_package_preflight",
+      "category": "package_readiness",
+      "command": "python scripts/check_challenge_cup_readiness.py",
+      "human_proof_required": "none; this is a machine gate before contacting reviewers or observers",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "readiness gate reports pass 62/62",
+      "guardrail": "A passing package gate is not expert approval, timed rehearsal completion, or award proof.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "record_expert_outreach",
+      "phase": "expert_feedback_outreach",
+      "category": "expert_feedback",
+      "command": "python scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <real-outreach-proof> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/reproducibility/final_acceptance_audit.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach",
+      "human_proof_required": "real sent email, chat message, meeting notice, or follow-up screenshot",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "expert_feedback_outreach_ledger records the outreach but hard_evidence_ledger remains open",
+      "guardrail": "Outreach proves a request was sent; it does not prove expert feedback was received.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "record_rehearsal_schedule",
+      "phase": "timed_rehearsal_scheduling",
+      "category": "timed_rehearsal",
+      "command": "python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id rehearsal-schedule-20260606 --source <real-calendar-or-observer-prep-file> --scheduled-date 2026-06-06 --observer observer-a --venue-or-channel meeting-room-a --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule",
+      "human_proof_required": "real calendar invite, meeting notice, or observer preparation record",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "timed_rehearsal_schedule_ledger records the schedule but timed_rehearsal evidence remains open",
+      "guardrail": "A schedule proves intent to rehearse; it does not prove a timed rehearsal happened.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "preflight_expert_feedback",
+      "phase": "expert_feedback_validation",
+      "category": "expert_feedback",
+      "command": "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback",
+      "human_proof_required": "real signed form, email reply, meeting minutes, or chat screenshot from reviewer",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "preflight returns pass and does not write hard evidence",
+      "guardrail": "Preflight is a dry run; only record_challenge_cup_hard_evidence.py archives evidence.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "record_expert_feedback",
+      "phase": "expert_feedback_archival",
+      "category": "expert_feedback",
+      "command": "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a --source <real-feedback-file> --evidence-type email_reply --reviewer-identity advisor-a --role-or-org advisor --review-date 2026-06-06 --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue <issue> --remediation-action <action> --confirm-real-feedback",
+      "human_proof_required": "same real reviewer feedback source that passed preflight",
+      "counts_as_hard_evidence": true,
+      "expected_after_step": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+      "guardrail": "Records feedback evidence only; it still does not guarantee an award.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "run_timed_rehearsal",
+      "phase": "timed_rehearsal_archival",
+      "category": "timed_rehearsal",
+      "command": "python scripts/run_challenge_cup_timed_rehearsal.py --id rehearsal-1 --rehearsal-date 2026-06-06 --observer observer-a --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 26 27 28 29 --confirm-real-rehearsal",
+      "human_proof_required": "actual observed rehearsal timings from a visible timer or observer note",
+      "counts_as_hard_evidence": true,
+      "expected_after_step": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
+      "guardrail": "Measured rehearsal timing supports defense readiness; it is not expert approval or award proof.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "rebuild_package_and_gates",
+      "phase": "post_evidence_package_refresh",
+      "category": "package_readiness",
+      "command": "python scripts/build_challenge_cup_package.py && python scripts/check_challenge_cup_readiness.py && python docs/challenge_cup/reproducibility/verify_submission_package.py --root . && python scripts/check_challenge_cup_goal_completion.py",
+      "human_proof_required": "archived expert feedback and archived timed rehearsal evidence are already present",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "package, readiness, archive verifier, and goal-completion gate reflect the new evidence",
+      "guardrail": "Do not treat rebuild success as proof unless goal completion explicitly passes.",
+      "does_not_claim_award_or_completion": true
+    },
+    {
+      "step_id": "refresh_final_audit",
+      "phase": "final_acceptance_refresh",
+      "category": "final_audit",
+      "command": "python scripts/build_challenge_cup_final_acceptance_audit.py",
+      "human_proof_required": "goal completion report and hard-evidence ledger from the refreshed package",
+      "counts_as_hard_evidence": false,
+      "expected_after_step": "final_acceptance_audit states whether package review or goal completion is allowed",
+      "guardrail": "Final audit must preserve no-award-guarantee language even after hard evidence is collected.",
+      "does_not_claim_award_or_completion": true
+    }
+  ],
   "integrity_rules": [
     "不伪造真实专家反馈",
     "不伪造真实计时彩排",

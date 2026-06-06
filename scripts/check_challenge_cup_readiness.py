@@ -4731,6 +4731,59 @@ def check_external_evidence_execution_kit() -> GateCheck:
     if required_before != ["expert_feedback", "timed_rehearsal"]:
         failures.append(f"required_before_goal_completion={required_before}")
 
+    operator_sequence = payload.get("operator_sequence")
+    expected_sequence = [
+        "verify_package_ready",
+        "record_expert_outreach",
+        "record_rehearsal_schedule",
+        "preflight_expert_feedback",
+        "record_expert_feedback",
+        "run_timed_rehearsal",
+        "rebuild_package_and_gates",
+        "refresh_final_audit",
+    ]
+    if not isinstance(operator_sequence, list):
+        failures.append("operator_sequence missing")
+        operator_sequence = []
+    actual_sequence = [str(item.get("step_id", "")) for item in operator_sequence if isinstance(item, dict)]
+    if actual_sequence != expected_sequence:
+        failures.append(f"operator_sequence={actual_sequence}")
+    sequence_by_id = {str(item.get("step_id", "")): item for item in operator_sequence if isinstance(item, dict)}
+    for step_id in expected_sequence:
+        item = sequence_by_id.get(step_id)
+        if not isinstance(item, dict):
+            failures.append(f"{step_id}: operator step missing")
+            continue
+        for field in ("phase", "category", "command", "human_proof_required", "expected_after_step", "guardrail"):
+            if not has_value(item.get(field)):
+                failures.append(f"{step_id}: {field} missing")
+        if item.get("does_not_claim_award_or_completion") is not True:
+            failures.append(
+                f"{step_id}: does_not_claim_award_or_completion={item.get('does_not_claim_award_or_completion')}"
+            )
+    for step_id in ("record_expert_outreach", "record_rehearsal_schedule", "preflight_expert_feedback"):
+        item = sequence_by_id.get(step_id, {})
+        if isinstance(item, dict) and item.get("counts_as_hard_evidence") is not False:
+            failures.append(f"{step_id}: counts_as_hard_evidence={item.get('counts_as_hard_evidence')}")
+    for step_id in ("record_expert_feedback", "run_timed_rehearsal"):
+        item = sequence_by_id.get(step_id, {})
+        if isinstance(item, dict) and item.get("counts_as_hard_evidence") is not True:
+            failures.append(f"{step_id}: counts_as_hard_evidence={item.get('counts_as_hard_evidence')}")
+    command_requirements = {
+        "record_expert_outreach": "record_challenge_cup_expert_outreach.py",
+        "record_rehearsal_schedule": "record_challenge_cup_timed_rehearsal_schedule.py",
+        "preflight_expert_feedback": "preflight_challenge_cup_hard_evidence.py expert_feedback",
+        "record_expert_feedback": "record_challenge_cup_hard_evidence.py expert_feedback",
+        "run_timed_rehearsal": "run_challenge_cup_timed_rehearsal.py",
+        "rebuild_package_and_gates": "check_challenge_cup_goal_completion.py",
+        "refresh_final_audit": "build_challenge_cup_final_acceptance_audit.py",
+    }
+    for step_id, required_command in command_requirements.items():
+        item = sequence_by_id.get(step_id, {})
+        command = str(item.get("command", "")) if isinstance(item, dict) else ""
+        if required_command not in command:
+            failures.append(f"{step_id}: command missing {required_command}")
+
     packets = payload.get("execution_packets")
     if not isinstance(packets, list):
         failures.append("execution_packets missing")
@@ -4813,6 +4866,10 @@ def check_external_evidence_execution_kit() -> GateCheck:
         term
         for term in (
             "External Evidence Execution Kit",
+            "Operator Sequence",
+            "verify_package_ready",
+            "record_expert_feedback",
+            "run_timed_rehearsal",
             "does_not_satisfy_goal_completion=True",
             "不伪造",
             "真实专家反馈",
