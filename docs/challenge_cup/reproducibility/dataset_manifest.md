@@ -30,6 +30,7 @@
 - 同类方案对比与创新性证据卡：`docs/challenge_cup/22_同类方案对比与创新性证据卡.md`。
 - 作品展 A0 展板源文件：`docs/challenge_cup/poster/challenge_cup_a0_poster.html`。
 - 现场答辩总控台：`docs/challenge_cup/defense_console/index.html`。
+- 评委质疑攻防矩阵：`docs/challenge_cup/reproducibility/judge_objection_response_matrix.md`。
 - 答辩攻防与彩排卡：`docs/challenge_cup/10_答辩攻防与彩排卡.md`。
 - 终审答辩 PPTX：`docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`。
 - 终审答辩讲稿：`docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md`。

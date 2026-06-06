@@ -70,6 +70,8 @@ HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
 OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+JUDGE_OBJECTION_MATRIX_MD_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.md"
+JUDGE_OBJECTION_MATRIX_JSON_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json"
 SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE = (
     "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md"
 )
@@ -107,6 +109,8 @@ HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
 HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
+JUDGE_OBJECTION_MATRIX_MD = REPO_ROOT / JUDGE_OBJECTION_MATRIX_MD_RELATIVE
+JUDGE_OBJECTION_MATRIX_JSON = REPO_ROOT / JUDGE_OBJECTION_MATRIX_JSON_RELATIVE
 SPECIAL_PRIZE_READINESS_DASHBOARD_MD = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE
 SPECIAL_PRIZE_READINESS_DASHBOARD_JSON = REPO_ROOT / SPECIAL_PRIZE_READINESS_DASHBOARD_JSON_RELATIVE
 HARD_EVIDENCE_CLOSURE_BOARD_MD = REPO_ROOT / HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE
@@ -139,6 +143,10 @@ TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS = [
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
     OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE,
+]
+JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS = [
+    JUDGE_OBJECTION_MATRIX_MD_RELATIVE,
+    JUDGE_OBJECTION_MATRIX_JSON_RELATIVE,
 ]
 SPECIAL_PRIZE_DASHBOARD_REQUIRED_PATHS = [
     SPECIAL_PRIZE_READINESS_DASHBOARD_MD_RELATIVE,
@@ -323,6 +331,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/judge_objection_response_matrix.md",
+    "reproducibility/judge_objection_response_matrix.json",
     "reproducibility/special_prize_readiness_dashboard.md",
     "reproducibility/special_prize_readiness_dashboard.json",
     "reproducibility/hard_evidence_closure_board.md",
@@ -559,6 +569,28 @@ OFFICIAL_RUBRIC_REQUIRED_TERMS = {
 }
 OFFICIAL_RUBRIC_MIN_SOURCE_COUNT = 5
 OFFICIAL_RUBRIC_LATEST_SOURCE_ID = "tsinghua_44th_2026"
+JUDGE_OBJECTION_MATRIX_REQUIRED_IDS = {
+    "OJ-01-normal-rag",
+    "OJ-02-graphrag-baseline",
+    "OJ-03-engineer-replacement",
+    "OJ-04-production-data",
+    "OJ-05-live-demo-failure",
+    "OJ-06-cherry-picked-evaluation",
+    "OJ-07-expert-validation",
+    "OJ-08-special-prize-claim",
+    "OJ-09-ip-and-compliance",
+    "OJ-10-project-closure",
+}
+JUDGE_OBJECTION_MATRIX_REQUIRED_TERMS = {
+    "Judge Objection Response Matrix",
+    "OJ-01-normal-rag",
+    "OJ-08-special-prize-claim",
+    "30 seconds",
+    "no award guarantee",
+    "real expert feedback",
+    "real timed rehearsal",
+    "readiness gate is not an award guarantee",
+}
 REQUIRED_EXPERT_REVIEW_INDEX_TERMS = {
     "三分钟审阅路径",
     "特等奖主张",
@@ -2443,6 +2475,151 @@ def check_official_rubric_alignment() -> GateCheck:
             f"{len(official_sources)} official sources, {len(dimensions)} rubric dimensions, "
             f"and {len(evidence_paths)} project evidence paths verified"
         )
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_judge_objection_response_matrix() -> GateCheck:
+    failures: list[str] = []
+    required_files = [JUDGE_OBJECTION_MATRIX_MD, JUDGE_OBJECTION_MATRIX_JSON]
+    missing_files = [path.name + " missing" for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("judge objection response matrix", False, ", ".join(missing_files))
+
+    try:
+        payload = load_json(JUDGE_OBJECTION_MATRIX_JSON)
+    except (OSError, json.JSONDecodeError) as exc:
+        return GateCheck("judge objection response matrix", False, f"invalid objection matrix json: {exc}")
+    markdown = JUDGE_OBJECTION_MATRIX_MD.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_judge_objection_response_matrix":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "ready_for_judge_objection_drill_no_external_claims":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+
+    response_rules = payload.get("response_rules", {})
+    if not isinstance(response_rules, dict):
+        failures.append("response_rules missing")
+        response_rules = {}
+    if response_rules.get("max_answer_seconds") != 30:
+        failures.append(f"max_answer_seconds={response_rules.get('max_answer_seconds')}")
+    if response_rules.get("must_cite_evidence") is not True:
+        failures.append(f"must_cite_evidence={response_rules.get('must_cite_evidence')}")
+    if response_rules.get("must_state_boundary_when_external_validation_is_missing") is not True:
+        failures.append(
+            "must_state_boundary_when_external_validation_is_missing="
+            f"{response_rules.get('must_state_boundary_when_external_validation_is_missing')}"
+        )
+    if response_rules.get("no_award_guarantee") is not True:
+        failures.append(f"no_award_guarantee={response_rules.get('no_award_guarantee')}")
+    if response_rules.get("no_fake_external_validation") is not True:
+        failures.append(f"no_fake_external_validation={response_rules.get('no_fake_external_validation')}")
+
+    objections = payload.get("objections")
+    if not isinstance(objections, list):
+        failures.append("objections missing")
+        objections = []
+    if len(objections) < len(JUDGE_OBJECTION_MATRIX_REQUIRED_IDS):
+        failures.append(
+            f"objection count below {len(JUDGE_OBJECTION_MATRIX_REQUIRED_IDS)}: {len(objections)}"
+        )
+    objection_ids = {str(item.get("objection_id", "")) for item in objections if isinstance(item, dict)}
+    missing_ids = sorted(JUDGE_OBJECTION_MATRIX_REQUIRED_IDS - objection_ids)
+    if missing_ids:
+        failures.append(f"missing objection ids: {missing_ids}")
+
+    evidence_paths: set[str] = set()
+    self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
+    for index, item in enumerate(objections, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"objections[{index}] invalid")
+            continue
+        objection_id = str(item.get("objection_id", f"objections[{index}]"))
+        if item.get("severity") not in {"P0", "P1"}:
+            failures.append(f"{objection_id}: severity={item.get('severity')}")
+        if item.get("answer_time_limit_seconds", 999) > 30:
+            failures.append(f"{objection_id}: answer_time_limit_seconds={item.get('answer_time_limit_seconds')}")
+        for field in (
+            "judge_objection",
+            "one_sentence_answer",
+            "fallback_if_challenged",
+            "forbidden_overclaim",
+            "rubric_dimensions",
+        ):
+            if not has_value(item.get(field)):
+                failures.append(f"{objection_id}: {field} missing")
+
+        item_evidence = item.get("evidence_files", [])
+        if not isinstance(item_evidence, list) or not item_evidence:
+            failures.append(f"{objection_id}: evidence_files missing")
+            continue
+        for value in item_evidence:
+            relative = str(value).strip()
+            if not relative:
+                failures.append(f"{objection_id}: empty evidence file")
+                continue
+            posix = PurePosixPath(relative)
+            if relative.startswith(("http://", "https://")):
+                failures.append(f"{objection_id}: evidence_files must be repo paths, not URLs: {relative}")
+                continue
+            if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+                failures.append(f"{objection_id}: unsafe evidence path: {relative}")
+                continue
+            if not relative.startswith(("docs/", "evaluation/")):
+                failures.append(f"{objection_id}: evidence path outside allowed scope: {relative}")
+                continue
+            evidence_paths.add(relative)
+            if relative != self_report and not nonempty(REPO_ROOT / relative):
+                failures.append(f"{objection_id}: evidence path missing or empty: {relative}")
+
+    payload_evidence = {str(item) for item in payload.get("evidence_files", [])}
+    missing_payload_evidence = sorted(
+        path for path in JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS if path not in payload_evidence
+    )
+    if missing_payload_evidence:
+        failures.append(f"payload evidence_files missing: {missing_payload_evidence}")
+
+    missing_terms = sorted(term for term in JUDGE_OBJECTION_MATRIX_REQUIRED_TERMS if term not in markdown)
+    if missing_terms:
+        failures.append(f"markdown missing terms: {missing_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(path for path in JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked judge objection matrix files: {untracked}")
+    if dirty:
+        failures.append(f"dirty judge objection matrix files: {dirty}")
+
+    return GateCheck(
+        "judge objection response matrix",
+        not failures,
+        f"{len(objections)} objection responses, 30-second boundary, and {len(evidence_paths)} evidence links verified"
         if not failures
         else "; ".join(failures),
     )
@@ -4556,6 +4733,7 @@ def run_gate() -> list[GateCheck]:
         check_acceptance_checklist(),
         check_award_self_eval(),
         check_official_rubric_alignment(),
+        check_judge_objection_response_matrix(),
         check_special_prize_readiness_dashboard(),
         check_judge_briefing_card(),
         check_onsite_defense_runbook(),
@@ -4603,7 +4781,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

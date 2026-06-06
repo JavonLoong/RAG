@@ -87,6 +87,11 @@ from build_challenge_cup_official_rubric_alignment import (
     OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
     write_outputs as write_official_rubric_alignment_outputs,
 )
+from build_challenge_cup_judge_objection_matrix import (
+    OUTPUT_JSON as JUDGE_OBJECTION_MATRIX_JSON,
+    OUTPUT_MD as JUDGE_OBJECTION_MATRIX_MD,
+    write_outputs as write_judge_objection_matrix_outputs,
+)
 from build_challenge_cup_special_prize_readiness_dashboard import (
     OUTPUT_JSON as SPECIAL_PRIZE_READINESS_DASHBOARD_JSON,
     OUTPUT_MD as SPECIAL_PRIZE_READINESS_DASHBOARD_MD,
@@ -401,15 +406,16 @@ def build_readme(ctx: dict[str, Any]) -> str:
 38. `reproducibility/expert_feedback_outreach_ledger.md`
 39. `reproducibility/timed_rehearsal_schedule_ledger.md`
 40. `reproducibility/official_rubric_alignment.md`
-41. `reproducibility/special_prize_readiness_dashboard.md`
-42. `reproducibility/hard_evidence_closure_board.md`
-43. `reproducibility/hard_evidence_action_pack.md`
-44. `reproducibility/external_evidence_execution_kit.md`
-45. `reproducibility/hard_evidence_ledger.md`
-46. `reproducibility/challenge_cup_submission_archive_manifest.json`
-47. `reproducibility/challenge_cup_submission_package.zip`
-48. `reproducibility/verify_submission_package.py`
-49. `reproducibility/final_acceptance_audit.md`
+41. `reproducibility/judge_objection_response_matrix.md`
+42. `reproducibility/special_prize_readiness_dashboard.md`
+43. `reproducibility/hard_evidence_closure_board.md`
+44. `reproducibility/hard_evidence_action_pack.md`
+45. `reproducibility/external_evidence_execution_kit.md`
+46. `reproducibility/hard_evidence_ledger.md`
+47. `reproducibility/challenge_cup_submission_archive_manifest.json`
+48. `reproducibility/challenge_cup_submission_package.zip`
+49. `reproducibility/verify_submission_package.py`
+50. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -835,7 +841,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 52 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 53 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -1495,7 +1501,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>52 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>53 gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1686,7 +1692,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
     <div class="status" aria-label="readiness summary">
       <div class="metric"><strong>3-minute timer</strong><span>演示主线固定为 180 秒</span></div>
       <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
-      <div class="metric"><strong>52 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>53 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
       <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
     </div>
 
@@ -2023,6 +2029,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_execution_kit.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_judge_objection_matrix.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
 ```
 
@@ -2127,6 +2134,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 同类方案对比与创新性证据卡：`{md_link(LOCAL_BASELINE_DIFFERENTIATION)}`。
 - 作品展 A0 展板源文件：`{md_link(POSTER_BOARD_HTML)}`。
 - 现场答辩总控台：`{md_link(DEFENSE_CONTROL_CONSOLE)}`。
+- 评委质疑攻防矩阵：`{md_link(JUDGE_OBJECTION_MATRIX_MD)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 终审答辩 PPTX：`{md_link(DEFENSE_DECK_PPTX)}`。
 - 终审答辩讲稿：`{md_link(DEFENSE_DECK_NOTES)}`。
@@ -2258,6 +2266,10 @@ python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
 
+python scripts/build_challenge_cup_judge_objection_matrix.py
+-> docs/challenge_cup/reproducibility/judge_objection_response_matrix.md
+-> Status: ready_for_judge_objection_drill_no_external_claims
+
 python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
@@ -2284,7 +2296,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (52/52 gates)
+-> Status: pass (53/53 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2336,6 +2348,7 @@ def main() -> int:
     write_hard_evidence_action_pack_outputs()
     write_external_evidence_execution_kit_outputs()
     write_official_rubric_alignment_outputs()
+    write_judge_objection_matrix_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
     write(GRAPH_ANSWER_BENCHMARK_JSON, json.dumps(graph_answer_payload, ensure_ascii=False, indent=2))
@@ -2392,6 +2405,8 @@ def main() -> int:
         *timed_rehearsal_schedule_payload.get("schedule_files", []),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
+        md_link(JUDGE_OBJECTION_MATRIX_MD),
+        md_link(JUDGE_OBJECTION_MATRIX_JSON),
         md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD),
         md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_JSON),
         md_link(HARD_EVIDENCE_CLOSURE_BOARD_MD),

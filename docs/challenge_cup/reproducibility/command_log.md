@@ -98,6 +98,10 @@ python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
 
+python scripts/build_challenge_cup_judge_objection_matrix.py
+-> docs/challenge_cup/reproducibility/judge_objection_response_matrix.md
+-> Status: ready_for_judge_objection_drill_no_external_claims
+
 python scripts/build_challenge_cup_hard_evidence_ledger.py
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.md
 -> docs/challenge_cup/reproducibility/hard_evidence_ledger.json
@@ -124,7 +128,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (52/52 gates)
+-> Status: pass (53/53 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

@@ -46,15 +46,16 @@
 38. `reproducibility/expert_feedback_outreach_ledger.md`
 39. `reproducibility/timed_rehearsal_schedule_ledger.md`
 40. `reproducibility/official_rubric_alignment.md`
-41. `reproducibility/special_prize_readiness_dashboard.md`
-42. `reproducibility/hard_evidence_closure_board.md`
-43. `reproducibility/hard_evidence_action_pack.md`
-44. `reproducibility/external_evidence_execution_kit.md`
-45. `reproducibility/hard_evidence_ledger.md`
-46. `reproducibility/challenge_cup_submission_archive_manifest.json`
-47. `reproducibility/challenge_cup_submission_package.zip`
-48. `reproducibility/verify_submission_package.py`
-49. `reproducibility/final_acceptance_audit.md`
+41. `reproducibility/judge_objection_response_matrix.md`
+42. `reproducibility/special_prize_readiness_dashboard.md`
+43. `reproducibility/hard_evidence_closure_board.md`
+44. `reproducibility/hard_evidence_action_pack.md`
+45. `reproducibility/external_evidence_execution_kit.md`
+46. `reproducibility/hard_evidence_ledger.md`
+47. `reproducibility/challenge_cup_submission_archive_manifest.json`
+48. `reproducibility/challenge_cup_submission_package.zip`
+49. `reproducibility/verify_submission_package.py`
+50. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 

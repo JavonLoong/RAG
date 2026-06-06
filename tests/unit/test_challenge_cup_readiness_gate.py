@@ -85,6 +85,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "numeric consistency" in report
     assert "special-prize rubric self-assessment" in report
     assert "official rubric alignment" in report
+    assert "judge objection response matrix" in report
     assert "special prize readiness dashboard" in report
     assert "judge briefing card" in report
     assert "onsite defense runbook" in report
@@ -165,6 +166,30 @@ def test_defense_control_console_gate_rejects_missing_console(monkeypatch, tmp_p
 
     assert not check.passed
     assert "defense_console/index.html missing" in check.detail
+
+
+def test_judge_objection_matrix_gate_rejects_missing_matrix(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    matrix_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "judge_objection_response_matrix.md"
+    matrix_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "judge_objection_response_matrix.json"
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "JUDGE_OBJECTION_MATRIX_MD", matrix_md)
+    monkeypatch.setattr(module, "JUDGE_OBJECTION_MATRIX_JSON", matrix_json)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+
+    check = module.check_judge_objection_response_matrix()
+
+    assert not check.passed
+    assert "judge_objection_response_matrix.md missing" in check.detail
+    assert "judge_objection_response_matrix.json missing" in check.detail
 
 
 def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tmp_path) -> None:
