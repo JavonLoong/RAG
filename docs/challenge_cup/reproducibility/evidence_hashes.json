@@ -138,17 +138,17 @@
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
       "bytes": 1857,
-      "sha256": "153c748e347776bf3601ccf909cc2e7a79bf638a29de4ccdb6fed5fd240a913d"
+      "sha256": "affe8c525626e46fab0772040f39682fef4d7437dd3e36ce2e6ac8a106f2bf22"
     },
     {
       "path": "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
       "bytes": 1241,
-      "sha256": "d859c8711aec9bef668e49d56e2a04b3ed906a53e63078749106a8fe8724636b"
+      "sha256": "bb2637b0846ce00692a0f02c71278db564a0477d4d3ea981641964ecf2c3faf0"
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
       "bytes": 957,
-      "sha256": "aa5281b7012c7ba63a985d2b42272b54c78b13f61454a232515e0b8fd3a64a19"
+      "sha256": "2aceced4a9b4322162e5ef671077153461f6d42018bef74d00ed536e4cfb5db8"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
