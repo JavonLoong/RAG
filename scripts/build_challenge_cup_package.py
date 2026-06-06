@@ -106,6 +106,7 @@ DEFENSE_REHEARSAL_CARD = OUT / "10_答辩攻防与彩排卡.md"
 APPLICATION_VALIDATION_DOC = OUT / "11_应用场景与专家验证.md"
 EXPERT_FEEDBACK_PROTOCOL = OUT / "12_专家反馈采集与整改闭环.md"
 JUDGE_BRIEFING_CARD = OUT / "13_评委现场速览卡.md"
+ONSITE_DEFENSE_RUNBOOK = OUT / "14_现场答辩操作Runbook.md"
 GRAPH_REPORT = REPORTS / "challenge_cup_graphrag_same_question_report.md"
 GRAPH_REPORT_JSON = REPORTS / "challenge_cup_graphrag_same_question_report.json"
 GRAPH_CONTEXT_DEMO_MD = REPORTS / "challenge_cup_graphrag_context_demo.md"
@@ -356,28 +357,29 @@ def build_readme(ctx: dict[str, Any]) -> str:
 12. `11_应用场景与专家验证.md`
 13. `12_专家反馈采集与整改闭环.md`
 14. `13_评委现场速览卡.md`
-15. `defense_deck/challenge_cup_defense_deck.pptx`
-16. `defense_deck/challenge_cup_defense_speaker_notes.md`
-17. `reproducibility/application_validation_report.md`
-18. `reproducibility/expert_feedback_form.md`
-19. `reproducibility/runbook.md`
-20. `reproducibility/dataset_manifest.md`
-21. `reproducibility/readiness_gate_report.md`
-22. `reproducibility/goal_completion_report.md`
-23. `reproducibility/defense_rehearsal_scorecard.md`
-24. `reproducibility/defense_rehearsal_result_packet.md`
-25. `reproducibility/expert_feedback_request_packet.md`
-26. `reproducibility/expert_feedback_outreach_ledger.md`
-27. `reproducibility/timed_rehearsal_schedule_ledger.md`
-28. `reproducibility/official_rubric_alignment.md`
-29. `reproducibility/special_prize_readiness_dashboard.md`
-30. `reproducibility/hard_evidence_closure_board.md`
-31. `reproducibility/hard_evidence_action_pack.md`
-32. `reproducibility/hard_evidence_ledger.md`
-33. `reproducibility/challenge_cup_submission_archive_manifest.json`
-34. `reproducibility/challenge_cup_submission_package.zip`
-35. `reproducibility/verify_submission_package.py`
-36. `reproducibility/final_acceptance_audit.md`
+15. `14_现场答辩操作Runbook.md`
+16. `defense_deck/challenge_cup_defense_deck.pptx`
+17. `defense_deck/challenge_cup_defense_speaker_notes.md`
+18. `reproducibility/application_validation_report.md`
+19. `reproducibility/expert_feedback_form.md`
+20. `reproducibility/runbook.md`
+21. `reproducibility/dataset_manifest.md`
+22. `reproducibility/readiness_gate_report.md`
+23. `reproducibility/goal_completion_report.md`
+24. `reproducibility/defense_rehearsal_scorecard.md`
+25. `reproducibility/defense_rehearsal_result_packet.md`
+26. `reproducibility/expert_feedback_request_packet.md`
+27. `reproducibility/expert_feedback_outreach_ledger.md`
+28. `reproducibility/timed_rehearsal_schedule_ledger.md`
+29. `reproducibility/official_rubric_alignment.md`
+30. `reproducibility/special_prize_readiness_dashboard.md`
+31. `reproducibility/hard_evidence_closure_board.md`
+32. `reproducibility/hard_evidence_action_pack.md`
+33. `reproducibility/hard_evidence_ledger.md`
+34. `reproducibility/challenge_cup_submission_archive_manifest.json`
+35. `reproducibility/challenge_cup_submission_package.zip`
+36. `reproducibility/verify_submission_package.py`
+37. `reproducibility/final_acceptance_audit.md`
 
 ## 当前核心数字
 
@@ -761,6 +763,69 @@ def build_judge_briefing_card(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
+    return """# 现场答辩操作Runbook
+
+本 Runbook 面向答辩当天的操作者、主讲人和计时观察员。它不声明已经完成真实计时彩排，也不声明已经获得真实专家反馈；它只规定现场如何稳定地展示已经归档的材料、何时切换离线证据、以及追问时打开哪个证据锚点。
+
+## Preflight
+
+| 时间点 | 负责人 | 动作 | 验收口径 |
+| --- | --- | --- | --- |
+| 答辩前 30 分钟 | 操作者 | 打开 `docs/challenge_cup/13_评委现场速览卡.md`、`docs/challenge_cup/09_专家快速审阅索引.md`、`docs/challenge_cup/reproducibility/final_acceptance_audit.md`。 | 三个留存入口均可打开。 |
+| 答辩前 20 分钟 | 操作者 | 打开 `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md` 和 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`。 | 离线证据可在 20 秒内展示。 |
+| 答辩前 15 分钟 | 主讲人 | 复读 `docs/challenge_cup/04_系统演示脚本.md` 的 GT-07 固定场景。 | 能说出五个 record id 和人工确认边界。 |
+| 答辩前 10 分钟 | 计时观察员 | 打开 `docs/challenge_cup/10_答辩攻防与彩排卡.md`。 | 90 秒开场、3 分钟演示、20 秒离线切换、30 秒追问回答规则清楚。 |
+
+## 标签页顺序
+
+1. `docs/challenge_cup/13_评委现场速览卡.md`
+2. `docs/challenge_cup/00_项目一页纸.md`
+3. `docs/challenge_cup/07_评审主张证据矩阵.md`
+4. `docs/challenge_cup/reproducibility/application_validation_report.md`
+5. `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`
+6. `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`
+7. `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md`
+8. `docs/challenge_cup/reproducibility/readiness_gate_report.md`
+9. `docs/challenge_cup/reproducibility/final_acceptance_audit.md`
+10. `docs/challenge_cup/reproducibility/goal_completion_report.md`
+
+## 离线切换触发条件
+
+| 触发条件 | 最大等待 | 切换动作 | 说明 |
+| --- | ---: | --- | --- |
+| 浏览器服务打不开 | 20 秒 | 打开 `docs/challenge_cup/reproducibility/browser_demo_smoke_report.md`。 | 不在现场排查环境。 |
+| 搜索结果未出现 | 20 秒 | 打开 `docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png`。 | 用已归档截图继续说明 GT-07 五段证据链。 |
+| KG artifact 无法打开 | 20 秒 | 打开 `docs/challenge_cup/07_评审主张证据矩阵.md`。 | 用矩阵说明 GraphRAG 证据组织价值。 |
+| 评委要求复核包完整性 | 30 秒 | 打开 `docs/challenge_cup/reproducibility/readiness_gate_report.md` 和 `docs/challenge_cup/reproducibility/verify_submission_package.py`。 | 只解释门禁范围，不把门禁说成获奖保证。 |
+
+## Q&A 证据映射
+
+| 追问 | 先答一句 | 立即打开 |
+| --- | --- | --- |
+| 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
+| 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 40 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
+| 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
+
+## 留存材料
+
+- 递交给评委的第一份文件：`docs/challenge_cup/13_评委现场速览卡.md`。
+- 评委想快速审阅时：`docs/challenge_cup/09_专家快速审阅索引.md`。
+- 评委想看特等奖维度时：`docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md`。
+- 评委想看结项状态时：`docs/challenge_cup/reproducibility/final_acceptance_audit.md`。
+- 评委想看未完成边界时：`docs/challenge_cup/reproducibility/goal_completion_report.md`。
+
+## 禁止现场调试
+
+- 不在评委面前安装依赖、改代码、改端口或现场修复服务。
+- 不把临时打不开解释成项目不可复现；直接切到已归档 smoke 报告、截图和 zip verifier。
+- 不口头声称真实专家反馈或真实计时彩排已经完成；只有硬证据归档后才能改变这个口径。
+- 不把 readiness gate 说成获奖保证；它只证明结项包和演示证据可复核。
+"""
+
+
 def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
     return """# 答辩攻防与彩排卡
 
@@ -1138,6 +1203,7 @@ def build_dataset_manifest(ctx: dict[str, Any]) -> str:
 - 特等奖评审自评表：`{md_link(AWARD_SELF_EVAL)}`。
 - 专家快速审阅索引：`{md_link(EXPERT_REVIEW_INDEX)}`。
 - 评委现场速览卡：`{md_link(JUDGE_BRIEFING_CARD)}`。
+- 现场答辩操作 Runbook：`{md_link(ONSITE_DEFENSE_RUNBOOK)}`。
 - 答辩攻防与彩排卡：`{md_link(DEFENSE_REHEARSAL_CARD)}`。
 - 终审答辩 PPTX：`{md_link(DEFENSE_DECK_PPTX)}`。
 - 终审答辩讲稿：`{md_link(DEFENSE_DECK_NOTES)}`。
@@ -1291,7 +1357,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (39/39 gates)
+-> Status: pass (40/40 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -1319,6 +1385,7 @@ def main() -> int:
     write(APPLICATION_VALIDATION_DOC, build_application_validation_doc(ctx))
     write(EXPERT_FEEDBACK_PROTOCOL, build_expert_feedback_protocol(ctx))
     write(JUDGE_BRIEFING_CARD, build_judge_briefing_card(ctx))
+    write(ONSITE_DEFENSE_RUNBOOK, build_onsite_defense_runbook(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write(EXPERT_FEEDBACK_FORM, build_expert_feedback_form(ctx))
     write(SUBMISSION_PACKAGE_VERIFIER, SUBMISSION_PACKAGE_VERIFIER_SOURCE.read_text(encoding="utf-8"))
@@ -1358,6 +1425,7 @@ def main() -> int:
         md_link(EXPERT_REVIEW_INDEX),
         md_link(DEFENSE_REHEARSAL_CARD),
         md_link(JUDGE_BRIEFING_CARD),
+        md_link(ONSITE_DEFENSE_RUNBOOK),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
         md_link(DEFENSE_REHEARSAL_RESULT_PACKET_MD),
