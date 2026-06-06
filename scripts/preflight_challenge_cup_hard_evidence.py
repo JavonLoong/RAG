@@ -15,13 +15,7 @@ import record_challenge_cup_hard_evidence as intake
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-TIMING_LIMITS = {
-    "opening_actual_seconds": 90,
-    "demo_actual_seconds": 180,
-    "offline_fallback_actual_seconds": 20,
-    "killer_question_actual_seconds": 30,
-    "killer_question_count": 5,
-}
+TIMING_LIMITS = intake.TIMING_LIMITS
 
 
 class PreflightInputError(ValueError):
@@ -108,21 +102,15 @@ def preflight_timed_rehearsal(args: argparse.Namespace) -> dict[str, Any]:
         raise PreflightInputError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
     intake.parse_iso_date(args.rehearsal_date)
     source = nonempty_source(args.source)
-    if len(args.killer_question_seconds) != TIMING_LIMITS["killer_question_count"]:
-        raise PreflightInputError("timed rehearsal preflight needs exactly five killer-question timings")
+    try:
+        intake.validate_timed_rehearsal_limits(args)
+    except intake.HardEvidenceInputError as exc:
+        raise PreflightInputError(str(exc)) from exc
     timing_fields = {
         "opening_actual_seconds": args.opening_actual_seconds,
         "demo_actual_seconds": args.demo_actual_seconds,
         "offline_fallback_actual_seconds": args.offline_fallback_actual_seconds,
     }
-    for field, actual in timing_fields.items():
-        limit = TIMING_LIMITS[field]
-        if actual > limit:
-            raise PreflightInputError(f"{field}={actual} exceeds {limit}")
-    for index, seconds in enumerate(args.killer_question_seconds, start=1):
-        limit = TIMING_LIMITS["killer_question_actual_seconds"]
-        if seconds > limit:
-            raise PreflightInputError(f"killer_question_seconds[{index}]={seconds} exceeds {limit}")
 
     payload = base_payload("timed_rehearsal", args, source, intake.REHEARSAL_DIR)
     payload["validated_metadata"] = {

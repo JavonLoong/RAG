@@ -176,3 +176,45 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
         }
     ]
     assert payload["completion_claim_allowed"] is True
+
+
+def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Path) -> None:
+    module = load_ledger_module()
+    configure_module_paths(module, tmp_path)
+    rehearsal_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    rehearsal_dir.mkdir(parents=True)
+    rehearsal_source = rehearsal_dir / "rehearsal-over-limit.txt"
+    rehearsal_source.write_text("real timer record with opening over limit", encoding="utf-8")
+    (rehearsal_dir / "rehearsal-over-limit.json").write_text(
+        json.dumps(
+            {
+                "evidence_type": "observer_note",
+                "rehearsal_date": "2026-06-06",
+                "observer": "observer-a",
+                "opening_actual_seconds": 91,
+                "demo_actual_seconds": 170,
+                "offline_fallback_actual_seconds": 18,
+                "killer_question_results": [
+                    {"question_index": index, "actual_seconds": seconds}
+                    for index, seconds in enumerate([25, 26, 27, 28, 29], start=1)
+                ],
+                "recording_or_timer_source_path": (
+                    "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-over-limit.txt"
+                ),
+                "real_rehearsal_confirmed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    payload = module.write_outputs()
+
+    rehearsal = payload["categories"]["timed_rehearsal"]
+    assert rehearsal["raw_file_count"] == 2
+    assert rehearsal["metadata_file_count"] == 1
+    assert rehearsal["source_file_count"] == 1
+    assert rehearsal["evidence_record_count"] == 0
+    assert rehearsal["collected_count"] == 0
+    assert rehearsal["evidence_records"] == []
+    assert payload["completion_claim_allowed"] is False

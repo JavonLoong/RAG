@@ -2,6 +2,7 @@
 
 放入真实计时彩排证据：计时截图、录屏、观察员备注或问题遗漏清单。
 Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.
+Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.
 Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, real_rehearsal_confirmed.
 Use YYYY-MM-DD for rehearsal_date. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.
 Preferred CLI: `python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> --rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> --opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> --offline-fallback-actual-seconds <actual-offline-fallback-seconds> --killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> --confirm-real-rehearsal`.

@@ -44,8 +44,10 @@ def validate_args(args: argparse.Namespace) -> None:
             "unless these seconds came from an actual timed run"
         )
     intake.parse_iso_date(args.rehearsal_date)
-    if len(args.killer_question_seconds) != 5:
-        raise RehearsalInputError("timed rehearsal needs exactly five killer-question timings")
+    try:
+        intake.validate_timed_rehearsal_limits(args)
+    except intake.HardEvidenceInputError as exc:
+        raise RehearsalInputError(str(exc)) from exc
 
 
 def build_rehearsal_note(args: argparse.Namespace) -> str:

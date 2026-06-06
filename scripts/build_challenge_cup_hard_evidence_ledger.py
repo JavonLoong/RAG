@@ -70,6 +70,13 @@ PLACEHOLDER_NAME_FRAGMENTS = {
     "template",
     "todo",
 }
+TIMED_REHEARSAL_LIMITS = {
+    "opening_actual_seconds": 90,
+    "demo_actual_seconds": 180,
+    "offline_fallback_actual_seconds": 20,
+    "killer_question_actual_seconds": 30,
+    "killer_question_count": 5,
+}
 
 
 def configure_paths(repo_root: Path) -> None:
@@ -143,6 +150,29 @@ def confirmation_field(category_key: str) -> str:
     raise ValueError(f"unknown hard evidence category: {category_key}")
 
 
+def positive_int_within_limit(value: Any, limit: int) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and 0 < value <= limit
+
+
+def timed_rehearsal_timings_within_limits(payload: dict[str, Any]) -> bool:
+    for field in ("opening_actual_seconds", "demo_actual_seconds", "offline_fallback_actual_seconds"):
+        if not positive_int_within_limit(payload.get(field), TIMED_REHEARSAL_LIMITS[field]):
+            return False
+
+    killer_results = payload.get("killer_question_results")
+    if not isinstance(killer_results, list) or len(killer_results) != TIMED_REHEARSAL_LIMITS["killer_question_count"]:
+        return False
+    question_limit = TIMED_REHEARSAL_LIMITS["killer_question_actual_seconds"]
+    for expected_index, item in enumerate(killer_results, start=1):
+        if not isinstance(item, dict):
+            return False
+        if item.get("question_index") != expected_index:
+            return False
+        if not positive_int_within_limit(item.get("actual_seconds"), question_limit):
+            return False
+    return True
+
+
 def build_evidence_records(
     category_key: str,
     paths: list[Path],
@@ -164,6 +194,8 @@ def build_evidence_records(
         if payload.get(confirmed_field) is not True:
             continue
         if payload.get("evidence_type") not in accepted_types:
+            continue
+        if category_key == "timed_rehearsal" and not timed_rehearsal_timings_within_limits(payload):
             continue
         source_path = payload.get(source_field)
         if not isinstance(source_path, str) or not source_path:
@@ -347,6 +379,7 @@ def write_readmes() -> None:
                     "\\u89c2\\u5bdf\\u5458\\u5907\\u6ce8\\u6216\\u95ee\\u9898\\u9057\\u6f0f\\u6e05\\u5355\\u3002"
                 ),
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
+                "Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.",
                 "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, real_rehearsal_confirmed.",
                 "Use YYYY-MM-DD for rehearsal_date. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",

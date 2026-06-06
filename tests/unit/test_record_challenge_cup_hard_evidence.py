@@ -275,3 +275,43 @@ def test_refuses_timed_rehearsal_without_real_rehearsal_confirmation(tmp_path: P
 
     assert exit_code == 2
     assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_timed_rehearsal_when_any_timing_exceeds_defense_limit(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer_note.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("真实计时记录：开场 91 秒。", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "timed_rehearsal",
+            "--id",
+            "rehearsal-1",
+            "--source",
+            str(source),
+            "--evidence-type",
+            "observer_note",
+            "--rehearsal-date",
+            "2026-06-06",
+            "--observer",
+            "observer-a",
+            "--opening-actual-seconds",
+            "91",
+            "--demo-actual-seconds",
+            "170",
+            "--offline-fallback-actual-seconds",
+            "18",
+            "--killer-question-seconds",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "--confirm-real-rehearsal",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()

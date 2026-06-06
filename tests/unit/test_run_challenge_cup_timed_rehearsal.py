@@ -101,3 +101,16 @@ def test_rejects_wrong_killer_question_count(tmp_path: Path) -> None:
 
     assert exit_code == 2
     assert not (tmp_path / "docs").exists()
+
+
+def test_rejects_over_limit_timing_before_writing_observer_note(tmp_path: Path) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+
+    args = timed_rehearsal_args("--confirm-real-rehearsal")
+    opening_index = args.index("--opening-actual-seconds")
+    args[opening_index + 1] = "91"
+    exit_code = module.main(args)
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs").exists()
