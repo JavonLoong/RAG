@@ -90,6 +90,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report() -> None:
     assert "defense rehearsal result packet" in report
     assert "expert feedback request packet" in report
     assert "expert feedback outreach ledger" in report
+    assert "timed rehearsal schedule ledger" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -813,6 +814,104 @@ def test_expert_feedback_outreach_ledger_gate_rejects_overclaim_and_invalid_meta
     assert "followup_due_date" in check.detail
     assert "request_source_path" in check.detail
     assert "requested_review_dimensions" in check.detail
+
+
+def test_timed_rehearsal_schedule_ledger_gate_rejects_overclaim_and_invalid_metadata(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    module = load_readiness_module()
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+
+    ledger_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "timed_rehearsal_schedule_ledger.json"
+    ledger_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "timed_rehearsal_schedule_ledger.md"
+    schedule_readme = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "timed_rehearsal_schedule" / "README.md"
+    metadata_relative = "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/rehearsal-schedule.json"
+    metadata_path = tmp_path / metadata_relative
+    metadata_path.parent.mkdir(parents=True)
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "schedule_type": "timed_rehearsal_schedule",
+                "scheduled_date": "June 6 2026",
+                "observer": "observer-a",
+                "venue_or_channel": "meeting-room-a",
+                "status": "scheduled",
+                "schedule_source_path": metadata_relative,
+                "planned_timing_targets": {
+                    "opening_planned_seconds": 90,
+                    "demo_planned_seconds": 180,
+                    "offline_fallback_planned_seconds": 20,
+                    "killer_question_planned_seconds": 30,
+                    "killer_question_count": 4,
+                },
+                "checklist_items": ["timer visible"],
+                "required_hard_evidence_after_run": ["observer_note"],
+                "no_timed_rehearsal_claimed": False,
+                "does_not_satisfy_hard_evidence": False,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    ledger_json.parent.mkdir(parents=True, exist_ok=True)
+    ledger_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_timed_rehearsal_schedule_ledger",
+                "status": "rehearsal_scheduled_awaiting_run",
+                "no_timed_rehearsal_claimed": False,
+                "does_not_satisfy_goal_completion": False,
+                "boundary": module.TIMED_REHEARSAL_SCHEDULE_LEDGER_BOUNDARY,
+                "schedule_record_count": 1,
+                "metadata_record_count": 1,
+                "schedule_files": [metadata_relative],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    ledger_md.write_text(
+        "Timed Rehearsal Schedule Ledger\n"
+        "Schedule records prove that a real timed rehearsal was scheduled or observer preparation was recorded.\n"
+        "They do not prove a timed rehearsal was completed.\n",
+        encoding="utf-8",
+    )
+    schedule_readme.write_text("Timed Rehearsal Schedule Intake\n", encoding="utf-8")
+    package_manifest = tmp_path / "package_manifest.json"
+    evidence_files = [
+        "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md",
+        "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json",
+        "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md",
+        metadata_relative,
+    ]
+    package_manifest.write_text(json.dumps({"evidence_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    evidence_hashes = tmp_path / "evidence_hashes.json"
+    evidence_hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in evidence_files]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive_manifest = tmp_path / "archive_manifest.json"
+    archive_manifest.write_text(json.dumps({"included_files": evidence_files}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON", ledger_json)
+    monkeypatch.setattr(module, "TIMED_REHEARSAL_SCHEDULE_LEDGER_MD", ledger_md)
+    monkeypatch.setattr(module, "TIMED_REHEARSAL_SCHEDULE_README", schedule_readme)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", package_manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", evidence_hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(evidence_files))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_timed_rehearsal_schedule_ledger()
+
+    assert not check.passed
+    assert "no_timed_rehearsal_claimed" in check.detail
+    assert "does_not_satisfy_goal_completion" in check.detail
+    assert "does_not_satisfy_hard_evidence" in check.detail
+    assert "scheduled_date" in check.detail
+    assert "schedule_source_path" in check.detail
+    assert "killer_question_count" in check.detail
+    assert "checklist_items" in check.detail
 
 
 def test_hard_evidence_ledger_gate_rejects_fake_completion(monkeypatch, tmp_path) -> None:

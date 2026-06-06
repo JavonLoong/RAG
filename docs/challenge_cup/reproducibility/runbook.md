@@ -64,6 +64,12 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/record_challenge_cup_expert_outreach.py --id advisor-a-20260606 --source <真实外发邮件或聊天凭证路径> --recipient-alias advisor-a --recipient-role advisor --channel email --sent-date 2026-06-06 --status sent --requested-review-dimension 实用性 --requested-review-dimension 创新性 --requested-review-dimension 边界严谨性 --requested-attachment docs/challenge_cup/00_项目一页纸.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date 2026-06-09 --confirm-real-outreach
 ```
 
+真实计时彩排排期或观察员准备完成后，先记录排期凭证；这不等同于真实计时彩排硬证据：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/record_challenge_cup_timed_rehearsal_schedule.py --id rehearsal-schedule-20260606 --source <真实日历邀请或观察员准备记录路径> --scheduled-date 2026-06-06 --observer observer-a --venue-or-channel meeting-room-a --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item "timer visible to observer" --checklist-item "browser smoke report opened" --checklist-item "offline fallback archive ready" --checklist-item "five killer questions assigned" --confirm-real-schedule
+```
+
 完成真实计时彩排后，首选用测得秒数生成观察员记录并归档：
 
 ```powershell
@@ -80,6 +86,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_expert_outreach_ledger.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_timed_rehearsal_schedule_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 ```
 

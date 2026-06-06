@@ -60,3 +60,6 @@
 - 专家反馈外发追踪台账：`docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.md`
 - 专家反馈外发追踪 JSON：`docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json`
 - 专家反馈外发追踪入口：`docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md`
+- Timed rehearsal schedule ledger: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md`
+- Timed rehearsal schedule JSON: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json`
+- Timed rehearsal schedule intake: `docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md`

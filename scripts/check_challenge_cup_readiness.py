@@ -40,6 +40,15 @@ EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE = (
 EXPERT_FEEDBACK_OUTREACH_README_RELATIVE = (
     "docs/challenge_cup/reproducibility/expert_feedback_outreach/README.md"
 )
+TIMED_REHEARSAL_SCHEDULE_LEDGER_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md"
+)
+TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json"
+)
+TIMED_REHEARSAL_SCHEDULE_README_RELATIVE = (
+    "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md"
+)
 HARD_EVIDENCE_LEDGER_MD_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.md"
 HARD_EVIDENCE_LEDGER_JSON_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence_ledger.json"
 HARD_EVIDENCE_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/README.md"
@@ -50,6 +59,9 @@ OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/of
 EXPERT_FEEDBACK_OUTREACH_LEDGER_MD = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE
 EXPERT_FEEDBACK_OUTREACH_README = REPO_ROOT / EXPERT_FEEDBACK_OUTREACH_README_RELATIVE
+TIMED_REHEARSAL_SCHEDULE_LEDGER_MD = REPO_ROOT / TIMED_REHEARSAL_SCHEDULE_LEDGER_MD_RELATIVE
+TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON = REPO_ROOT / TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON_RELATIVE
+TIMED_REHEARSAL_SCHEDULE_README = REPO_ROOT / TIMED_REHEARSAL_SCHEDULE_README_RELATIVE
 HARD_EVIDENCE_LEDGER_MD = REPO_ROOT / HARD_EVIDENCE_LEDGER_MD_RELATIVE
 HARD_EVIDENCE_LEDGER_JSON = REPO_ROOT / HARD_EVIDENCE_LEDGER_JSON_RELATIVE
 HARD_EVIDENCE_README = REPO_ROOT / HARD_EVIDENCE_README_RELATIVE
@@ -68,6 +80,11 @@ EXPERT_FEEDBACK_OUTREACH_REQUIRED_PATHS = [
     EXPERT_FEEDBACK_OUTREACH_LEDGER_MD_RELATIVE,
     EXPERT_FEEDBACK_OUTREACH_LEDGER_JSON_RELATIVE,
     EXPERT_FEEDBACK_OUTREACH_README_RELATIVE,
+]
+TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS = [
+    TIMED_REHEARSAL_SCHEDULE_LEDGER_MD_RELATIVE,
+    TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON_RELATIVE,
+    TIMED_REHEARSAL_SCHEDULE_README_RELATIVE,
 ]
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
@@ -134,12 +151,29 @@ EXPERT_FEEDBACK_OUTREACH_LEDGER_BOUNDARY = (
     "Outreach records prove that a real request was sent or followed up. They do not prove expert "
     "approval and do not satisfy the expert_feedback hard-evidence requirement."
 )
+TIMED_REHEARSAL_SCHEDULE_LEDGER_BOUNDARY = (
+    "Schedule records prove that a real timed rehearsal was scheduled or observer preparation was "
+    "recorded. They do not prove a timed rehearsal was completed and do not satisfy the "
+    "timed_rehearsal hard-evidence requirement."
+)
 EXPERT_FEEDBACK_OUTREACH_STATUSES = {
     "ready_to_send_no_outreach_recorded",
     "outreach_recorded_awaiting_response",
 }
 EXPERT_FEEDBACK_OUTREACH_METADATA_STATUSES = {"sent", "followed_up", "no_response_yet", "declined"}
 EXPERT_FEEDBACK_OUTREACH_CHANNELS = {"email", "chat", "meeting", "phone", "in_person"}
+TIMED_REHEARSAL_SCHEDULE_STATUSES = {
+    "ready_to_schedule_no_rehearsal_recorded",
+    "rehearsal_scheduled_awaiting_run",
+}
+TIMED_REHEARSAL_SCHEDULE_METADATA_STATUSES = {"scheduled", "rescheduled", "cancelled", "observer_ready"}
+TIMED_REHEARSAL_SCHEDULE_TIMING_LIMITS = {
+    "opening_planned_seconds": 90,
+    "demo_planned_seconds": 180,
+    "offline_fallback_planned_seconds": 20,
+    "killer_question_planned_seconds": 30,
+    "killer_question_count": 5,
+}
 DEFENSE_DECK_REQUIRED_TERMS = {"GraphRAG", "GT-07", "60", "readiness", "专家反馈"}
 DEFENSE_DECK_NOTES_REQUIRED_TERMS = {
     "90秒开场",
@@ -191,6 +225,9 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/expert_feedback_outreach_ledger.md",
     "reproducibility/expert_feedback_outreach_ledger.json",
     "reproducibility/expert_feedback_outreach/README.md",
+    "reproducibility/timed_rehearsal_schedule_ledger.md",
+    "reproducibility/timed_rehearsal_schedule_ledger.json",
+    "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
     "reproducibility/hard_evidence_ledger.md",
@@ -2188,6 +2225,185 @@ def check_expert_feedback_outreach_ledger() -> GateCheck:
     )
 
 
+def validate_timed_rehearsal_schedule_metadata(relative: str, payload: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if payload.get("schedule_type") != "timed_rehearsal_schedule":
+        failures.append(f"{relative}: schedule_type={payload.get('schedule_type')}")
+    for field in (
+        "scheduled_date",
+        "observer",
+        "venue_or_channel",
+        "status",
+        "schedule_source_path",
+        "planned_timing_targets",
+        "checklist_items",
+        "required_hard_evidence_after_run",
+    ):
+        if not has_value(payload.get(field)):
+            failures.append(f"{relative}: {field} missing")
+    status = str(payload.get("status", ""))
+    if status and status not in TIMED_REHEARSAL_SCHEDULE_METADATA_STATUSES:
+        failures.append(f"{relative}: status={status}")
+    if payload.get("no_timed_rehearsal_claimed") is not True:
+        failures.append(f"{relative}: no_timed_rehearsal_claimed={payload.get('no_timed_rehearsal_claimed')}")
+    if payload.get("does_not_satisfy_hard_evidence") is not True:
+        failures.append(
+            f"{relative}: does_not_satisfy_hard_evidence={payload.get('does_not_satisfy_hard_evidence')}"
+        )
+    if payload.get("actual_rehearsal_completed") is True:
+        failures.append(f"{relative}: actual_rehearsal_completed overclaims schedule evidence")
+    if not is_iso_date(payload.get("scheduled_date")):
+        failures.append(f"{relative}: scheduled_date must be YYYY-MM-DD")
+    failures.extend(validate_source_path(relative, payload, "schedule_source_path"))
+
+    planned = payload.get("planned_timing_targets")
+    if not isinstance(planned, dict):
+        failures.append(f"{relative}: planned_timing_targets invalid")
+    else:
+        for field, limit in TIMED_REHEARSAL_SCHEDULE_TIMING_LIMITS.items():
+            actual = numeric_value(planned.get(field))
+            if actual is None:
+                failures.append(f"{relative}: planned_timing_targets.{field} must be numeric")
+                continue
+            if field == "killer_question_count":
+                if int(actual) != limit:
+                    failures.append(f"{relative}: planned_timing_targets.{field} must be {limit}")
+            elif actual > limit:
+                failures.append(f"{relative}: planned_timing_targets.{field}={actual:g} exceeds {limit}")
+            elif actual <= 0:
+                failures.append(f"{relative}: planned_timing_targets.{field} must be positive")
+
+    checklist = payload.get("checklist_items")
+    if not isinstance(checklist, list) or len(checklist) < 4:
+        failures.append(f"{relative}: checklist_items below 4")
+
+    required_hard_evidence = payload.get("required_hard_evidence_after_run")
+    if not isinstance(required_hard_evidence, list) or len(required_hard_evidence) < 4:
+        failures.append(f"{relative}: required_hard_evidence_after_run below 4")
+
+    for hard_evidence_field in (
+        "opening_actual_seconds",
+        "demo_actual_seconds",
+        "offline_fallback_actual_seconds",
+        "killer_question_results",
+        "recording_or_timer_source_path",
+    ):
+        if has_value(payload.get(hard_evidence_field)):
+            failures.append(f"{relative}: {hard_evidence_field} belongs to timed_rehearsal hard evidence")
+    return failures
+
+
+def check_timed_rehearsal_schedule_ledger() -> GateCheck:
+    failures: list[str] = []
+    required_files = [
+        TIMED_REHEARSAL_SCHEDULE_LEDGER_MD,
+        TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON,
+        TIMED_REHEARSAL_SCHEDULE_README,
+    ]
+    missing_files = [path.relative_to(REPO_ROOT).as_posix() for path in required_files if not nonempty(path)]
+    if missing_files:
+        return GateCheck("timed rehearsal schedule ledger", False, f"missing or empty: {missing_files}")
+
+    payload = load_json(TIMED_REHEARSAL_SCHEDULE_LEDGER_JSON)
+    markdown = TIMED_REHEARSAL_SCHEDULE_LEDGER_MD.read_text(encoding="utf-8")
+    if payload.get("report_type") != "challenge_cup_timed_rehearsal_schedule_ledger":
+        failures.append(f"report_type={payload.get('report_type')}")
+    status = str(payload.get("status", ""))
+    if status not in TIMED_REHEARSAL_SCHEDULE_STATUSES:
+        failures.append(f"status={status}")
+    if payload.get("no_timed_rehearsal_claimed") is not True:
+        failures.append(f"no_timed_rehearsal_claimed={payload.get('no_timed_rehearsal_claimed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    if payload.get("boundary") != TIMED_REHEARSAL_SCHEDULE_LEDGER_BOUNDARY:
+        failures.append("boundary mismatch")
+
+    schedule_files = [str(item) for item in payload.get("schedule_files", [])]
+    metadata_files = [relative for relative in schedule_files if relative.lower().endswith(".json")]
+    if int(payload.get("schedule_record_count") or 0) != len(schedule_files):
+        failures.append("schedule_record_count mismatch")
+    if int(payload.get("metadata_record_count") or 0) != len(metadata_files):
+        failures.append("metadata_record_count mismatch")
+    if schedule_files and status != "rehearsal_scheduled_awaiting_run":
+        failures.append(f"status={status} while schedule files exist")
+    if not schedule_files and status != "ready_to_schedule_no_rehearsal_recorded":
+        failures.append(f"status={status} while no schedule files exist")
+
+    unsafe_paths: list[str] = []
+    missing_paths: list[str] = []
+    metadata_failures: list[str] = []
+    for relative in schedule_files:
+        posix = PurePosixPath(relative)
+        if posix.is_absolute() or ".." in posix.parts or "\\" in relative:
+            unsafe_paths.append(relative)
+            continue
+        path = REPO_ROOT / relative
+        if not nonempty(path):
+            missing_paths.append(relative)
+            continue
+        if relative.lower().endswith(".json"):
+            try:
+                metadata = load_json(path)
+            except (OSError, json.JSONDecodeError) as exc:
+                metadata_failures.append(f"{relative}: invalid metadata json: {exc}")
+                continue
+            metadata_failures.extend(validate_timed_rehearsal_schedule_metadata(relative, metadata))
+    if unsafe_paths:
+        failures.append(f"unsafe schedule paths: {unsafe_paths}")
+    if missing_paths:
+        failures.append(f"schedule files missing or empty: {missing_paths}")
+    failures.extend(metadata_failures)
+
+    missing_markdown_terms = sorted(
+        term
+        for term in (
+            "Timed Rehearsal Schedule Ledger",
+            "do not prove a timed rehearsal was completed",
+            TIMED_REHEARSAL_SCHEDULE_LEDGER_BOUNDARY,
+        )
+        if term not in markdown
+    )
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    required_and_schedule = TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS + schedule_files
+    missing_manifest = sorted(path for path in required_and_schedule if path not in manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(path for path in required_and_schedule if path not in hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(path for path in required_and_schedule if path not in archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in required_and_schedule if path not in tracked]
+    dirty = sorted(git_dirty_paths(required_and_schedule))
+    if untracked:
+        failures.append(f"untracked timed rehearsal schedule files: {untracked}")
+    if dirty:
+        failures.append(f"dirty timed rehearsal schedule files: {dirty}")
+
+    return GateCheck(
+        "timed rehearsal schedule ledger",
+        not failures,
+        f"schedule ledger schema, boundary, {len(schedule_files)} schedule files, and manifest/hash/archive links verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
 def validate_expert_feedback_metadata(relative: str, payload: dict[str, Any], category: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     accepted_types = {str(item) for item in category.get("accepted_evidence_types", [])}
@@ -2523,6 +2739,7 @@ def run_gate() -> list[GateCheck]:
         check_defense_rehearsal_result_packet(),
         check_expert_feedback_request_packet(),
         check_expert_feedback_outreach_ledger(),
+        check_timed_rehearsal_schedule_ledger(),
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_scenario_demo_evidence(),
@@ -2546,7 +2763,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence ledger, application validation, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

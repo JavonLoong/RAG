@@ -137,8 +137,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 957,
-      "sha256": "5b0f6004675c6ab9cc755884d86de4cf2189f6b1bb2c13a58c4b452597d4cf06"
+      "bytes": 966,
+      "sha256": "b7ed0d2158efbb75f24247664c5a6e9744f932772434f52d774eb6648690b2d9"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -184,6 +184,21 @@
       "path": "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
       "bytes": 5462,
       "sha256": "deca42d702e929e5eb1d28565cbb4f00eb2f6689eefceccb09cbaee06bb4febd"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md",
+      "bytes": 904,
+      "sha256": "905bcb2b6570b68dd0070344d4b532e595224ac99003335a1323344c94738b83"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json",
+      "bytes": 1116,
+      "sha256": "1786bf85d8fb1b30fc90088f09c89c56dac519daa40276dfca3757f8c89aa29b"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.md",
+      "bytes": 1055,
+      "sha256": "1aa9f0db9fd9d1e687d3b1c6685adf9e86e98035d7f480545b5ea8253d06f72f"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_answer_benchmark.json",
