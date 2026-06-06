@@ -38,11 +38,27 @@ def test_live_demo_smoke_writes_report_and_checks_core_routes(tmp_path) -> None:
         "trusted cors origin",
         "search top_k guard",
         "graphrag path guard",
+        "live retrieval ingest",
+        "live retrieval stats",
+        "live retrieval search",
     } <= check_names
+    retrieval = payload["retrieval"]
+    assert retrieval["collection"] == "challenge_cup_live_retrieval_smoke"
+    assert retrieval["backend"] == "hashing"
+    assert retrieval["not_public_demo"] is True
+    assert retrieval["stats"]["chunk_count"] >= 3
+    assert retrieval["result_count"] == 3
+    assert {
+        "live-gt07-threshold",
+        "live-gt07-fault",
+        "live-gt07-repair",
+    } <= set(retrieval["record_ids"])
     assert "missing frontend fallback" not in check_names
 
     markdown = (report_dir / "live_demo_smoke_report.md").read_text(encoding="utf-8")
     assert "Live Demo Smoke Report" in markdown
+    assert "Live Retrieval Evidence" in markdown
+    assert "not public-demo" in markdown
     assert "frontend root page" in markdown
     assert "GraphRAG" in markdown
     assert REPORT_JSON.read_text(encoding="utf-8") == committed_json_before

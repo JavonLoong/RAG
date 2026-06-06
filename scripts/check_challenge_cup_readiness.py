@@ -721,6 +721,9 @@ REQUIRED_LIVE_CHECKS = {
     "trusted cors origin",
     "search top_k guard",
     "graphrag path guard",
+    "live retrieval ingest",
+    "live retrieval stats",
+    "live retrieval search",
 }
 
 REQUIRED_CLAIM_MATRIX_TERMS = {

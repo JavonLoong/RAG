@@ -347,8 +347,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/live_demo_smoke_report.md",
-      "bytes": 779,
-      "sha256": "a03cd8d752a91c4a50ffffc97defed060cee7056f4aaac36f18219d75a1de8af"
+      "bytes": 1851,
+      "sha256": "95d20d739539469f46bde14c87aa5ef1c93f4c9cf0b2486ad1ea7611dbf48e89"
     },
     {
       "path": "docs/challenge_cup/reproducibility/no_answer_boundary_evaluation.json",

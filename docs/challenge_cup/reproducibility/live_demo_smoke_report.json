@@ -1,9 +1,9 @@
 {
   "report_type": "challenge_cup_live_demo_smoke",
-  "generated_at": "2026-06-06T12:05:42",
+  "generated_at": "2026-06-07T06:02:26",
   "status": "pass",
-  "passed": 5,
-  "total": 5,
+  "passed": 8,
+  "total": 8,
   "checks": [
     {
       "name": "health endpoint",
@@ -29,7 +29,61 @@
       "name": "graphrag path guard",
       "passed": true,
       "detail": "POST /api/graphrag/stats outside runtime root -> 400"
+    },
+    {
+      "name": "live retrieval ingest",
+      "passed": true,
+      "detail": "POST /api/ingest -> 200; collection=challenge_cup_live_retrieval_smoke; chunks=3; backend=hashing"
+    },
+    {
+      "name": "live retrieval stats",
+      "passed": true,
+      "detail": "GET /api/stats -> 200; collection=challenge_cup_live_retrieval_smoke; chunks=3"
+    },
+    {
+      "name": "live retrieval search",
+      "passed": true,
+      "detail": "POST /api/search -> 200; results=3; ids=live-gt07-fault, live-gt07-threshold, live-gt07-repair; not public-demo=True"
     }
   ],
-  "boundary": "This smoke test verifies local API readiness, project frontend serving, and route guards; it does not replace browser or production-load verification."
+  "retrieval": {
+    "collection": "challenge_cup_live_retrieval_smoke",
+    "query": "GT-07 abnormal vibration compressor outlet temperature repair",
+    "backend": "hashing",
+    "model": "hashing-1024",
+    "not_public_demo": true,
+    "ingest": {
+      "status_code": 200,
+      "chunks_written": 3,
+      "records_processed": 3,
+      "files_succeeded": 1
+    },
+    "stats": {
+      "status_code": 200,
+      "collection": "challenge_cup_live_retrieval_smoke",
+      "chunk_count": 3,
+      "record_count": 3,
+      "source_file_count": 1,
+      "embedding_backend": "hashing",
+      "persist_dir_storage_mb": 0.604
+    },
+    "result_count": 3,
+    "record_ids": [
+      "live-gt07-fault",
+      "live-gt07-threshold",
+      "live-gt07-repair"
+    ],
+    "raw_record_ids": [
+      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-fault",
+      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-threshold",
+      "20260607-060226-0-gt07-live-smoke.json::item-live-gt07-repair"
+    ],
+    "scores": [
+      0.749907,
+      0.628689,
+      0.599922
+    ],
+    "boundary": "This retrieval evidence is produced from a temporary Chroma collection through /api/ingest, /api/stats, and /api/search. It proves the live API retrieval path works, while the browser public-demo snapshot remains only an offline presentation fallback."
+  },
+  "boundary": "This smoke test verifies local API readiness, project frontend serving, route guards, and a temporary live Chroma retrieval path; it does not replace browser or production-load verification."
 }
