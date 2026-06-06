@@ -38,8 +38,14 @@ def test_builds_hard_evidence_closure_board_without_claiming_completion(tmp_path
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
         streams["expert_feedback"]["ready_to_execute_commands"]
     )
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
+        streams["expert_feedback"]["ready_to_execute_commands"]
+    )
     assert "--confirm-real-feedback" in "\n".join(streams["expert_feedback"]["ready_to_execute_commands"])
     assert "run_challenge_cup_timed_rehearsal.py" in "\n".join(
+        streams["timed_rehearsal"]["ready_to_execute_commands"]
+    )
+    assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" in "\n".join(
         streams["timed_rehearsal"]["ready_to_execute_commands"]
     )
     assert any(

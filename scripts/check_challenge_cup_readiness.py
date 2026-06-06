@@ -3656,11 +3656,19 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
     else:
         joined = "\n".join(str(item) for item in ready_commands)
         if category == "expert_feedback":
+            if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in joined:
+                failures.append(
+                    f"{category}: ready_to_execute_commands missing preflight_challenge_cup_hard_evidence.py expert_feedback"
+                )
             if "record_challenge_cup_hard_evidence.py expert_feedback" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing expert hard-evidence recorder")
             if "--confirm-real-feedback" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-feedback")
         if category == "timed_rehearsal":
+            if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in joined:
+                failures.append(
+                    f"{category}: ready_to_execute_commands missing preflight_challenge_cup_hard_evidence.py timed_rehearsal"
+                )
             if "run_challenge_cup_timed_rehearsal.py" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
             if "--confirm-real-rehearsal" not in joined:
@@ -3828,6 +3836,10 @@ def check_hard_evidence_action_pack() -> GateCheck:
             failures.append(f"{category}: ready_packet_files missing or empty: {missing_ready_files}")
         commands = "\n".join(str(item) for item in stream.get("recording_commands", []))
         if category == "expert_feedback":
+            if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in commands:
+                failures.append(
+                    f"{category}: recording_commands missing preflight_challenge_cup_hard_evidence.py expert_feedback"
+                )
             if "record_challenge_cup_expert_outreach.py" not in commands:
                 failures.append(f"{category}: recording_commands missing outreach recorder")
             if "record_challenge_cup_hard_evidence.py expert_feedback" not in commands:
@@ -3835,6 +3847,10 @@ def check_hard_evidence_action_pack() -> GateCheck:
             if "--confirm-real-feedback" not in commands:
                 failures.append(f"{category}: recording_commands missing --confirm-real-feedback")
         if category == "timed_rehearsal":
+            if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in commands:
+                failures.append(
+                    f"{category}: recording_commands missing preflight_challenge_cup_hard_evidence.py timed_rehearsal"
+                )
             if "record_challenge_cup_timed_rehearsal_schedule.py" not in commands:
                 failures.append(f"{category}: recording_commands missing schedule recorder")
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
@@ -3980,11 +3996,19 @@ def check_external_evidence_execution_kit() -> GateCheck:
 
         commands = "\n".join(str(item) for item in packet.get("recording_commands", []))
         if category == "expert_feedback":
+            if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in commands:
+                failures.append(
+                    f"{packet_id}: recording_commands missing preflight_challenge_cup_hard_evidence.py expert_feedback"
+                )
             if "record_challenge_cup_hard_evidence.py expert_feedback" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing expert hard-evidence recorder")
             if "--confirm-real-feedback" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing --confirm-real-feedback")
         if category == "timed_rehearsal":
+            if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in commands:
+                failures.append(
+                    f"{packet_id}: recording_commands missing preflight_challenge_cup_hard_evidence.py timed_rehearsal"
+                )
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
             if "--confirm-real-rehearsal" not in commands:

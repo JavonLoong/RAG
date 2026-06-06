@@ -726,6 +726,241 @@ def test_external_evidence_execution_kit_gate_rejects_missing_manifest_hash_arch
     assert required_paths[0] in check.detail
 
 
+def install_control_artifact_links(module, monkeypatch, tmp_path: Path, required_paths: list[str]) -> None:
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in required_paths]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive_manifest.write_text(json.dumps({"included_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+
+def test_hard_evidence_action_pack_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    required_paths = [
+        "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md",
+        "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",
+    ]
+    action_md = tmp_path / required_paths[0]
+    action_json = tmp_path / required_paths[1]
+    action_md.parent.mkdir(parents=True, exist_ok=True)
+    action_md.write_text(
+        "External Hard Evidence Action Pack\n"
+        "does_not_satisfy_goal_completion=True\n"
+        "expert_feedback\n"
+        "timed_rehearsal\n"
+        "不伪造\n",
+        encoding="utf-8",
+    )
+    payload = {
+        "report_type": "challenge_cup_hard_evidence_action_pack",
+        "status": "ready_for_real_external_evidence_collection",
+        "completion_claim_allowed": False,
+        "does_not_satisfy_goal_completion": True,
+        "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+        "operator_outcome": "package can be reviewed; goal cannot be closed",
+        "action_streams": [
+            {
+                "category": "expert_feedback",
+                "human_owner": "lead",
+                "human_action": "collect real feedback",
+                "proof_to_collect": ["source"],
+                "ready_packet_files": [required_paths[0]],
+                "recording_commands": [
+                    "python scripts/record_challenge_cup_expert_outreach.py ...",
+                    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback",
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+            {
+                "category": "timed_rehearsal",
+                "human_owner": "observer",
+                "human_action": "run real timed rehearsal",
+                "proof_to_collect": ["timer"],
+                "ready_packet_files": [required_paths[0]],
+                "recording_commands": [
+                    "python scripts/record_challenge_cup_timed_rehearsal_schedule.py ...",
+                    "python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal",
+                    "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+        ],
+        "verification_commands": ["python scripts/check_challenge_cup_goal_completion.py"],
+    }
+    action_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "HARD_EVIDENCE_ACTION_PACK_MD", action_md)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_ACTION_PACK_JSON", action_json)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_ACTION_PACK_REQUIRED_PATHS", required_paths)
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_hard_evidence_action_pack()
+
+    assert not check.passed
+    assert "preflight_challenge_cup_hard_evidence.py" in check.detail
+
+
+def test_hard_evidence_closure_board_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    required_paths = [
+        "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md",
+        "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
+    ]
+    board_md = tmp_path / required_paths[0]
+    board_json = tmp_path / required_paths[1]
+    board_md.parent.mkdir(parents=True, exist_ok=True)
+    board_md.write_text(
+        "Hard Evidence Closure Board\n"
+        "does not satisfy goal completion\n"
+        "expert_feedback\n"
+        "timed_rehearsal\n"
+        f"{module.HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY}\n",
+        encoding="utf-8",
+    )
+    base_stream = {
+        "target_min_count": 1,
+        "current_collected_count": 0,
+        "required_source_examples": ["signed_feedback_form", "email_reply", "meeting_minutes", "chat_screenshot"],
+        "post_collection_commands": [
+            "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+            "python scripts/build_challenge_cup_package.py",
+            "python scripts/check_challenge_cup_readiness.py",
+            "python scripts/check_challenge_cup_goal_completion.py",
+        ],
+    }
+    payload = {
+        "report_type": "challenge_cup_hard_evidence_closure_board",
+        "status": "awaiting_real_external_evidence_closure",
+        "no_completion_claimed": True,
+        "does_not_satisfy_goal_completion": True,
+        "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+        "blocker_count": 2,
+        "boundary": module.HARD_EVIDENCE_CLOSURE_BOARD_BOUNDARY,
+        "closure_streams": [
+            {
+                **base_stream,
+                "category": "expert_feedback",
+                "closure_phase": "collect_real_external_feedback",
+                "ready_to_execute_commands": [
+                    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback"
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+            },
+            {
+                **base_stream,
+                "category": "timed_rehearsal",
+                "closure_phase": "run_real_timed_rehearsal",
+                "required_source_examples": [
+                    "timer_screenshot",
+                    "screen_recording",
+                    "observer_note",
+                    "missed_question_list",
+                ],
+                "ready_to_execute_commands": [
+                    "python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal",
+                    "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
+            },
+        ],
+        "post_closure_verification_commands": ["python scripts/check_challenge_cup_goal_completion.py"],
+    }
+    board_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "HARD_EVIDENCE_CLOSURE_BOARD_MD", board_md)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_CLOSURE_BOARD_JSON", board_json)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS", required_paths)
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_hard_evidence_closure_board()
+
+    assert not check.passed
+    assert "preflight_challenge_cup_hard_evidence.py" in check.detail
+
+
+def test_external_evidence_execution_kit_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    required_paths = [
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
+        "docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
+    ]
+    for relative in required_paths:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "External Evidence Execution Kit\n"
+            "does_not_satisfy_goal_completion=True\n"
+            "不伪造\n"
+            "真实专家反馈\n"
+            "真实计时彩排\n",
+            encoding="utf-8",
+        )
+    payload = {
+        "report_type": "challenge_cup_external_evidence_execution_kit",
+        "status": "ready_for_external_execution_handoff",
+        "completion_claim_allowed": False,
+        "does_not_satisfy_goal_completion": True,
+        "required_before_goal_completion": ["expert_feedback", "timed_rehearsal"],
+        "execution_packets": [
+            {
+                "packet_id": "expert_feedback_review",
+                "hard_evidence_category": "expert_feedback",
+                "owner": "lead",
+                "handoff_file": required_paths[2],
+                "attachment_files": [required_paths[2]],
+                "execution_steps": ["send real packet"],
+                "done_when": ["real feedback archived"],
+                "recording_commands": [
+                    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback"
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+            {
+                "packet_id": "timed_rehearsal_observer",
+                "hard_evidence_category": "timed_rehearsal",
+                "owner": "observer",
+                "handoff_file": required_paths[3],
+                "attachment_files": [required_paths[3]],
+                "execution_steps": ["run real timed rehearsal"],
+                "done_when": ["real timed rehearsal archived"],
+                "recording_commands": [
+                    "python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal",
+                    "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal",
+                ],
+                "acceptance_gate": "hard_evidence_ledger.categories.timed_rehearsal.collected_count >= 1",
+                "does_not_satisfy_goal_completion": True,
+            },
+        ],
+        "verification_commands": [
+            "python scripts/build_challenge_cup_external_evidence_execution_kit.py",
+            "python scripts/check_challenge_cup_goal_completion.py",
+        ],
+    }
+    (tmp_path / required_paths[1]).write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_REQUIRED_PATHS", required_paths)
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_MD", tmp_path / required_paths[0])
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON", tmp_path / required_paths[1])
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_external_evidence_execution_kit()
+
+    assert not check.passed
+    assert "preflight_challenge_cup_hard_evidence.py" in check.detail
+
+
 def test_evaluation_coverage_profile_gate_rejects_count_mismatch(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     dataset = tmp_path / "system_eval_questions.jsonl"

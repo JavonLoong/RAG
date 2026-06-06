@@ -5,7 +5,9 @@
 - `expert_feedback/`: signed feedback, email replies, meeting minutes, or chat screenshots.
 - `timed_rehearsal/`: timer screenshots, recordings, observer notes, or missed-question lists.
 - Each category must include at least one JSON summary with the required metadata fields; screenshots or recordings alone do not satisfy the readiness gate.
+- Preflight expert feedback with `python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback` before recording.
 - Record expert feedback with `python scripts/record_challenge_cup_hard_evidence.py expert_feedback ... --confirm-real-feedback`.
 - Preferred timed rehearsal flow: `python scripts/run_challenge_cup_timed_rehearsal.py ... --confirm-real-rehearsal` generates an observer note from measured seconds and archives it.
+- Preflight source-based timed rehearsal evidence with `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal` before source-based recording.
 - Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.
 - 不伪造证据；没有这两类真实证据前，不能标记目标完成。

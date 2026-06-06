@@ -683,9 +683,11 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_defense_deck.py" in runbook
     assert "build_challenge_cup_official_rubric_alignment.py" in runbook
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in runbook
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" in runbook
     assert "record_challenge_cup_expert_outreach.py" in runbook
     assert "record_challenge_cup_timed_rehearsal_schedule.py" in runbook
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
+    assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" in runbook
     assert "run_challenge_cup_timed_rehearsal.py" in runbook
     assert "build_challenge_cup_expert_outreach_ledger.py" in runbook
     assert "build_challenge_cup_timed_rehearsal_schedule_ledger.py" in runbook
@@ -954,8 +956,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         encoding="utf-8"
     )
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" in hard_evidence_readme
     assert "--confirm-real-feedback" in hard_evidence_readme
     assert "record_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
+    assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" in hard_evidence_readme
     assert "--confirm-real-rehearsal" in hard_evidence_readme
     assert "run_challenge_cup_timed_rehearsal.py" in hard_evidence_readme
     outreach_ledger = json.loads(
@@ -1010,6 +1014,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     assert "--confirm-real-feedback" in json.dumps(action_pack, ensure_ascii=False)
     assert "--confirm-real-rehearsal" in json.dumps(action_pack, ensure_ascii=False)
+    assert "preflight_challenge_cup_hard_evidence.py" in json.dumps(action_pack, ensure_ascii=False)
     execution_kit = json.loads(
         (PACKAGE_DIR / "reproducibility" / "external_evidence_execution_kit.json").read_text(encoding="utf-8")
     )
@@ -1023,6 +1028,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     }
     assert "--confirm-real-feedback" in json.dumps(execution_kit, ensure_ascii=False)
     assert "--confirm-real-rehearsal" in json.dumps(execution_kit, ensure_ascii=False)
+    assert "preflight_challenge_cup_hard_evidence.py" in json.dumps(execution_kit, ensure_ascii=False)
     goal_completion = (PACKAGE_DIR / "reproducibility" / "goal_completion_report.md").read_text(encoding="utf-8")
     assert "Challenge Cup Goal Completion Gate" in goal_completion
     assert "Status: `fail`" in goal_completion
