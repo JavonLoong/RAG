@@ -27,6 +27,7 @@
         "role_or_org",
         "review_date",
         "feedback_source_path",
+        "source_sha256",
         "review_dimensions",
         "remediation_record",
         "real_feedback_confirmed"
@@ -64,6 +65,7 @@
         "offline_fallback_actual_seconds",
         "killer_question_results",
         "recording_or_timer_source_path",
+        "source_sha256",
         "real_rehearsal_confirmed"
       ],
       "evidence_files": [],

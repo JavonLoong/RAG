@@ -14,7 +14,7 @@ from challenge_cup_expert_review_dimensions import (
     missing_required_review_dimension_groups,
 )
 from challenge_cup_hard_evidence_dates import is_not_future_iso_date
-from challenge_cup_hard_evidence_sources import source_attachment_failure
+from challenge_cup_hard_evidence_sources import source_attachment_failure, source_sha256_failure
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -200,11 +200,12 @@ def build_evidence_records(
     required_fields: list[str],
 ) -> list[dict[str, str]]:
     metadata_paths = [path for path in paths if path.suffix.lower() == ".json"]
-    source_files = {
-        repo_path(path)
+    source_paths = {
+        repo_path(path): path
         for path in paths
         if path.suffix.lower() != ".json" and source_attachment_failure(path) is None
     }
+    source_files = set(source_paths)
     required = set(required_fields)
     source_field = source_path_field(category_key)
     confirmed_field = confirmation_field(category_key)
@@ -231,6 +232,8 @@ def build_evidence_records(
         if not isinstance(source_path, str) or not source_path:
             continue
         if source_path not in source_files:
+            continue
+        if source_sha256_failure(source_paths[source_path], payload.get("source_sha256")):
             continue
         records.append(
             {
@@ -285,6 +288,7 @@ def build_payload() -> dict[str, Any]:
             "role_or_org",
             "review_date",
             "feedback_source_path",
+            "source_sha256",
             "review_dimensions",
             "remediation_record",
             "real_feedback_confirmed",
@@ -308,6 +312,7 @@ def build_payload() -> dict[str, Any]:
             "offline_fallback_actual_seconds",
             "killer_question_results",
             "recording_or_timer_source_path",
+            "source_sha256",
             "real_rehearsal_confirmed",
         ],
     )
@@ -391,10 +396,11 @@ def write_readmes() -> None:
                     "\\u6bcf\\u4efd\\u8bc1\\u636e\\u5e94\\u80fd\\u770b\\u5230 reviewer identity\\u3001"
                     "role/org\\u3001date\\u3001review dimensions \\u548c remediation record\\u3002"
                 ),
-                "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, review_dimensions, remediation_record, real_feedback_confirmed.",
+                "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, review_dimensions, remediation_record, real_feedback_confirmed.",
                 "Required review dimension groups: practical_value, innovation, boundary_rigor.",
                 "Use YYYY-MM-DD for review_date; it must not be in the future. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
+                "source_sha256 must match the source attachment content.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
             ]
@@ -413,9 +419,10 @@ def write_readmes() -> None:
                 ),
                 "Required timing fields: opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results.",
                 "Acceptance timing limits: opening_actual_seconds <= 90, demo_actual_seconds <= 180, offline_fallback_actual_seconds <= 20, each killer-question actual_seconds <= 30, exactly five killer questions.",
-                "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, real_rehearsal_confirmed.",
+                "Required JSON fields: evidence_type, rehearsal_date, observer, opening_actual_seconds, demo_actual_seconds, offline_fallback_actual_seconds, killer_question_results, recording_or_timer_source_path, source_sha256, real_rehearsal_confirmed.",
                 "Use YYYY-MM-DD for rehearsal_date; it must not be in the future. recording_or_timer_source_path must point to the real timer screenshot, recording, or observer note, not the JSON summary itself.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
+                "source_sha256 must match the source attachment content.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
                 f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{REHEARSAL_RECORD_COMMAND}`.",

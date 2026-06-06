@@ -15,7 +15,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_challenge_cup_hard_evidence_ledger as ledger
 from challenge_cup_hard_evidence_dates import parse_not_future_iso_date
-from challenge_cup_hard_evidence_sources import source_attachment_failure
+from challenge_cup_hard_evidence_sources import sha256_file, source_attachment_failure
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 
 
@@ -164,6 +164,7 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         "role_or_org": args.role_or_org,
         "review_date": review_date,
         "feedback_source_path": repo_path(copied_source),
+        "source_sha256": sha256_file(copied_source),
         "review_dimensions": args.review_dimension,
         "remediation_record": [{"issue": args.remediation_issue, "action": args.remediation_action}],
         "real_feedback_confirmed": True,
@@ -197,6 +198,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
             for index, seconds in enumerate(args.killer_question_seconds, start=1)
         ],
         "recording_or_timer_source_path": repo_path(copied_source),
+        "source_sha256": sha256_file(copied_source),
         "real_rehearsal_confirmed": True,
     }
     metadata_path = REHEARSAL_DIR / f"{args.id}.json"

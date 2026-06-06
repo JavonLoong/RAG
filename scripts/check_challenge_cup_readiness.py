@@ -20,7 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 from challenge_cup_hard_evidence_dates import is_not_future_iso_date
-from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata
+from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata, source_sha256_failure
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1421,8 +1421,13 @@ def validate_source_path(relative: str, payload: dict[str, Any], field: str) -> 
     if source_path_looks_like_metadata(source):
         failures.append(f"{relative}: {field} must not be a json metadata file")
         return failures
-    if not nonempty(REPO_ROOT / source):
+    source_path = REPO_ROOT / source
+    if not nonempty(source_path):
         failures.append(f"{relative}: {field} missing or empty")
+        return failures
+    sha_failure = source_sha256_failure(source_path, payload.get("source_sha256"))
+    if sha_failure:
+        failures.append(f"{relative}: {sha_failure}")
     return failures
 
 

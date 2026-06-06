@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -93,6 +94,7 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
                 "role_or_org": "advisor",
                 "review_date": "2026-06-06",
                 "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                "source_sha256": hashlib.sha256(expert_source.read_bytes()).hexdigest(),
                 "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
                 "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
                 "real_feedback_confirmed": True,
@@ -121,6 +123,7 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
                 "recording_or_timer_source_path": (
                     "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
                 ),
+                "source_sha256": hashlib.sha256(rehearsal_source.read_bytes()).hexdigest(),
                 "real_rehearsal_confirmed": True,
             },
             ensure_ascii=False,
@@ -178,6 +181,38 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
         }
     ]
     assert payload["completion_claim_allowed"] is True
+
+
+def test_hard_evidence_ledger_rejects_source_sha256_mismatch(tmp_path: Path) -> None:
+    module = load_ledger_module()
+    configure_module_paths(module, tmp_path)
+    expert_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    expert_dir.mkdir(parents=True)
+    expert_source = expert_dir / "advisor-a.txt"
+    expert_source.write_text("tampered expert reply", encoding="utf-8")
+    (expert_dir / "advisor-a.json").write_text(
+        json.dumps(
+            {
+                "evidence_type": "email_reply",
+                "reviewer_identity": "advisor-a",
+                "role_or_org": "advisor",
+                "review_date": "2026-06-06",
+                "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+                "source_sha256": "0" * 64,
+                "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+                "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                "real_feedback_confirmed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    payload = module.write_outputs()
+
+    expert = payload["categories"]["expert_feedback"]
+    assert expert["collected_count"] == 0
+    assert expert["evidence_records"] == []
 
 
 def test_hard_evidence_ledger_rejects_over_limit_rehearsal_metadata(tmp_path: Path) -> None:

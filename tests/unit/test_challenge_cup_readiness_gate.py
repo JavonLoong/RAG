@@ -2478,6 +2478,23 @@ def test_hard_evidence_metadata_rejects_json_source_attachments(monkeypatch, tmp
     assert any("must not be a json metadata file" in item for item in rehearsal_failures)
 
 
+def test_hard_evidence_metadata_rejects_source_sha256_mismatch(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    source_relative = "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"
+    source = tmp_path / source_relative
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text("tampered expert reply", encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+
+    failures = module.validate_source_path(
+        "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json",
+        {"feedback_source_path": source_relative, "source_sha256": "0" * 64},
+        "feedback_source_path",
+    )
+
+    assert any("source_sha256 mismatch" in item for item in failures)
+
+
 def test_hard_evidence_ledger_gate_rejects_timed_rehearsal_over_time_or_under_question_count(
     monkeypatch,
     tmp_path,

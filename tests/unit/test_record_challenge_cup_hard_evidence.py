@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -69,6 +70,7 @@ def test_records_expert_feedback_attachment_and_metadata(tmp_path: Path) -> None
         "role_or_org": "advisor",
         "review_date": "2026-06-06",
         "feedback_source_path": "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt",
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "review_dimensions": ["实用性", "创新性", "边界严谨性"],
         "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
         "real_feedback_confirmed": True,
@@ -139,6 +141,7 @@ def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None
     assert metadata["recording_or_timer_source_path"] == (
         "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/rehearsal-1.txt"
     )
+    assert metadata["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
     assert metadata["real_rehearsal_confirmed"] is True
     assert metadata["killer_question_results"] == [
         {"question_index": index, "actual_seconds": seconds}
