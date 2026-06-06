@@ -697,6 +697,18 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "hard_evidence_ledger.md",
     ]:
         assert evidence in final_submission_handoff
+    forbidden_control_chars = [
+        ch for ch in final_submission_handoff if ord(ch) < 32 and ch not in {"\n", "\t"}
+    ]
+    assert forbidden_control_chars == []
+    assert (
+        ".\\.venv\\Scripts\\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root ."
+        in final_submission_handoff
+    )
+    assert (
+        ".\\.venv\\Scripts\\python.exe scripts/build_challenge_cup_final_acceptance_audit.py"
+        in final_submission_handoff
+    )
     defense_card = (PACKAGE_DIR / "10_答辩攻防与彩排卡.md").read_text(encoding="utf-8")
     for phrase in ["90秒开场", "三分钟演示节奏", "杀手问题", "不可夸大边界", "彩排通过标准"]:
         assert phrase in defense_card

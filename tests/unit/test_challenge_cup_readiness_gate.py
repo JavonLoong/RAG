@@ -302,6 +302,27 @@ def test_challenge_cup_chinese_readability_gate_rejects_mojibake(monkeypatch, tm
     assert "01_挑战杯项目书.md" in check.detail
 
 
+def test_challenge_cup_chinese_readability_gate_rejects_control_characters(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    package_dir.mkdir(parents=True)
+    (package_dir / "README_先看这里.md").write_text(
+        " ".join(module.CHINESE_READABILITY_REQUIRED_TERMS),
+        encoding="utf-8",
+    )
+    (package_dir / "23_终审提交总目录与签收页.md").write_text(
+        ".\\.venv\\Scripts\\python.exe docs\\challenge_cup\x0breproducibility\\verify_submission_package.py --root .\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_challenge_cup_chinese_readability()
+
+    assert not check.passed
+    assert "control characters" in check.detail
+    assert "U+000B" in check.detail
+
+
 def test_challenge_cup_chinese_readability_ignores_readiness_self_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     package_dir = tmp_path / "docs" / "challenge_cup"

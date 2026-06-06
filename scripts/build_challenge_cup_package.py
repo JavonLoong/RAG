@@ -1313,10 +1313,10 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 ## 复核命令
 
 ```powershell
-.\.venv\Scripts\python.exe docs\challenge_cup\reproducibility\verify_submission_package.py --root .
-.\.venv\Scripts\python.exe scripts\check_challenge_cup_readiness.py
-.\.venv\Scripts\python.exe scripts\build_challenge_cup_final_acceptance_audit.py
-.\.venv\Scripts\python.exe scripts\check_challenge_cup_goal_completion.py
+.\.venv\Scripts\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_final_acceptance_audit.py
+.\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py
 ```
 
 预期口径：

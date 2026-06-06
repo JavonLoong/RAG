@@ -1332,6 +1332,11 @@ def check_challenge_cup_chinese_readability() -> GateCheck:
         hits = [marker for marker in MOJIBAKE_MARKERS if marker in text]
         if hits:
             failures.append(f"{display_path(path)}: mojibake markers {', '.join(hits[:4])}")
+        control_chars = sorted(
+            {f"U+{ord(ch):04X}" for ch in text if ord(ch) < 32 and ch not in {"\n", "\t"}}
+        )
+        if control_chars:
+            failures.append(f"{display_path(path)}: control characters {', '.join(control_chars)}")
 
     aggregate_text = "\n".join(combined)
     missing_terms = sorted(term for term in CHINESE_READABILITY_REQUIRED_TERMS if term not in aggregate_text)
