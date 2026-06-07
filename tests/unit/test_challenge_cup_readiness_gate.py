@@ -84,7 +84,10 @@ def write_required_package_docs(module, package_dir: Path, *, readme_text: str) 
     for relative in module.REQUIRED_PACKAGE_DOCS:
         path = package_dir / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("placeholder\n", encoding="utf-8")
+        if relative == "reproducibility/submission_integrity_card.md":
+            path.write_text("\n".join(module.SUBMISSION_INTEGRITY_CARD_REQUIRED_TERMS), encoding="utf-8")
+        else:
+            path.write_text("placeholder\n", encoding="utf-8")
     (package_dir / "README_先看这里.md").write_text(readme_text, encoding="utf-8")
 
 
@@ -121,6 +124,48 @@ def test_package_docs_gate_accepts_readme_first_view_route(monkeypatch, tmp_path
 
     assert check.passed
     assert "README first-view route" in check.detail
+
+
+def test_package_docs_gate_rejects_missing_submission_integrity_card(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    write_required_package_docs(
+        module,
+        package_dir,
+        readme_text="\n".join(module.README_FIRST_VIEW_REQUIRED_TERMS),
+    )
+    integrity_card = package_dir / "reproducibility" / "submission_integrity_card.md"
+    if integrity_card.exists():
+        integrity_card.unlink()
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_package_docs()
+
+    assert not check.passed
+    assert "submission_integrity_card.md" in check.detail
+
+
+def test_package_docs_gate_rejects_submission_integrity_card_without_status_terms(
+    monkeypatch, tmp_path
+) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    write_required_package_docs(
+        module,
+        package_dir,
+        readme_text="\n".join(module.README_FIRST_VIEW_REQUIRED_TERMS),
+    )
+    card = package_dir / "reproducibility" / "submission_integrity_card.md"
+    card.parent.mkdir(parents=True, exist_ok=True)
+    card.write_text("# 提交完整性快照\n\n只有标题，没有复核状态。\n", encoding="utf-8")
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_package_docs()
+
+    assert not check.passed
+    assert "submission_integrity_card.md missing integrity terms" in check.detail
+    assert "challenge_cup_submission_package.zip" in check.detail
+    assert "package_ready_awaiting_external_hard_evidence" in check.detail
 
 
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:

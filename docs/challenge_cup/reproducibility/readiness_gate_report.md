@@ -6,18 +6,18 @@
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| package documents | pass | all required challenge cup docs exist with README first-view route |
-| chinese readability | pass | 90 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| package documents | pass | all required challenge cup docs exist with README first-view route and submission integrity card |
+| chinese readability | pass | 91 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 102 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 101 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| package evidence files | pass | 103 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 102 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 112 files archived; 2538121 bytes; sha256 verified |
+| submission archive | pass | 113 files archived; 2539425 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
-| numeric consistency | pass | 60 questions, 102 evidence files, and 5 visible search records are consistent |
+| numeric consistency | pass | 60 questions, 103 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |
@@ -41,7 +41,7 @@
 | defense control console | pass | offline defense console, timer, launchpad, fallback, and no-overclaim boundaries verified |
 | ip and open-source compliance | pass | originality, third-party dependency, open-source license, data authorization, citation, and no-overclaim boundaries verified; 21 evidence links verified |
 | local baseline differentiation evidence | pass | baseline comparison, GraphRAG subset, GT-07 application anchor, and no-overclaim boundaries verified; 25 evidence links verified |
-| final submission handoff sheet | pass | final review directory, signoff fields, verification commands, external hard-evidence boundary, and no-award-guarantee language verified; 43 evidence links verified |
+| final submission handoff sheet | pass | final review directory, signoff fields, verification commands, external hard-evidence boundary, and no-award-guarantee language verified; 44 evidence links verified |
 | expert review index | pass | judge-facing review path maps claims, commands, and boundaries; 20 evidence links verified |
 | defense rehearsal pack | pass | timed defense script, killer questions, and boundaries mapped to evidence; 17 evidence links verified |
 | defense rehearsal scorecard | pass | 5 timed demo steps, 5 killer questions, 12 evidence files |

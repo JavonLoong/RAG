@@ -193,6 +193,7 @@ SUBMISSION_ARCHIVE = REPRO / "challenge_cup_submission_package.zip"
 SUBMISSION_ARCHIVE_MANIFEST = REPRO / "challenge_cup_submission_archive_manifest.json"
 SUBMISSION_PACKAGE_VERIFIER_SOURCE = REPO_ROOT / "scripts" / "verify_challenge_cup_submission_package.py"
 SUBMISSION_PACKAGE_VERIFIER = REPRO / "verify_submission_package.py"
+SUBMISSION_INTEGRITY_CARD = REPRO / "submission_integrity_card.md"
 APPLICATION_VALIDATION_REPORT = REPRO / "application_validation_report.md"
 APPLICATION_VALUE_QUANTIFICATION_REPORT = APPLICATION_VALUE_QUANTIFICATION_MD
 APPLICATION_VALUE_QUANTIFICATION_REPORT_JSON = APPLICATION_VALUE_QUANTIFICATION_JSON
@@ -542,6 +543,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 57. `reproducibility/challenge_cup_submission_package.zip`
 58. `reproducibility/verify_submission_package.py`
 59. `reproducibility/final_acceptance_audit.md`
+60. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 
@@ -1387,6 +1389,49 @@ def build_local_baseline_differentiation_card(ctx: dict[str, Any]) -> str:
 """
 
 
+def build_submission_integrity_card(ctx: dict[str, Any]) -> str:
+    return f"""# 提交完整性快照
+
+本卡给评委、导师和结项接收人一页式复核入口：先确认包在哪里，再确认 hash / verifier / readiness / hard-evidence boundary。它不替代 manifest，也不承诺获奖。
+
+## Package Snapshot
+
+| Item | Current Value | Verification Source |
+| --- | --- | --- |
+| package path | `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip` | `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json` |
+| archive manifest | `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json` | records archive bytes, file_count and sha256 |
+| evidence hash manifest | `docs/challenge_cup/reproducibility/evidence_hashes.json` | records per-evidence sha256 except self reports |
+| package manifest | `docs/challenge_cup/package_manifest.json` | records evidence_files, question_count and archive paths |
+| offline verifier | `docs/challenge_cup/reproducibility/verify_submission_package.py --root .` | expected pass before handoff |
+
+## Review Status
+
+| Gate | Expected Result | Evidence |
+| --- | --- | --- |
+| readiness gate | pass `62/62` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| submission verifier | pass | `docs/challenge_cup/reproducibility/verify_submission_package.py` |
+| final acceptance audit | `package_ready_awaiting_external_hard_evidence` | `docs/challenge_cup/reproducibility/final_acceptance_audit.md` |
+| goal completion expected fail | fail until hard evidence is archived | `docs/challenge_cup/reproducibility/goal_completion_report.md` |
+
+## Hard Evidence Boundary
+
+- 真实专家反馈：尚未归档，必须按 `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md` 采集真实来源。
+- 真实计时彩排：尚未归档，必须按 `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md` 记录真实观察与计时。
+- 不承诺获奖；readiness gate、verifier、manifest 和本卡只证明提交包完整、可复核、边界清楚。
+
+## One-command Verification
+
+```powershell
+.\\.venv\\Scripts\\python.exe docs\\challenge_cup\\reproducibility\\verify_submission_package.py --root .
+.\\.venv\\Scripts\\python.exe scripts\\check_challenge_cup_readiness.py
+.\\.venv\\Scripts\\python.exe scripts\\build_challenge_cup_final_acceptance_audit.py
+.\\.venv\\Scripts\\python.exe scripts\\check_challenge_cup_goal_completion.py
+```
+
+生成时间：{ctx["now"]}
+"""
+
+
 def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
     return f"""# 终审提交总目录与签收页
 
@@ -1416,7 +1461,7 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 | --- | --- |
 | 主材料 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/02_技术白皮书.md`; `docs/challenge_cup/03_实验评测报告.md` |
 | 现场材料 | `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/14_现场答辩操作Runbook.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
-| 包与校验 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/evidence_hashes.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`; `docs/challenge_cup/reproducibility/verify_submission_package.py` |
+| 包与校验 | `docs/challenge_cup/reproducibility/submission_integrity_card.md`; `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/evidence_hashes.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`; `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | 总结与门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/command_log.md` |
 | 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
 
@@ -2678,6 +2723,7 @@ def main() -> int:
     write(COMMERCIALIZATION_ROADMAP, build_commercialization_roadmap(ctx))
     write(IP_OPEN_SOURCE_COMPLIANCE, build_ip_open_source_compliance(ctx))
     write(LOCAL_BASELINE_DIFFERENTIATION, build_local_baseline_differentiation_card(ctx))
+    write(SUBMISSION_INTEGRITY_CARD, build_submission_integrity_card(ctx))
     write(FINAL_SUBMISSION_HANDOFF, build_final_submission_handoff(ctx))
     write(POSTER_BOARD_HTML, build_poster_board_html(ctx))
     write(DEFENSE_CONTROL_CONSOLE, build_defense_control_console_html(ctx))
@@ -2750,6 +2796,7 @@ def main() -> int:
         md_link(COMMERCIALIZATION_ROADMAP),
         md_link(IP_OPEN_SOURCE_COMPLIANCE),
         md_link(LOCAL_BASELINE_DIFFERENTIATION),
+        md_link(SUBMISSION_INTEGRITY_CARD),
         md_link(FINAL_SUBMISSION_HANDOFF),
         md_link(POSTER_BOARD_HTML),
         md_link(DEFENSE_CONTROL_CONSOLE),

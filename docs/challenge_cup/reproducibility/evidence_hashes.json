@@ -112,8 +112,8 @@
     },
     {
       "path": "docs/challenge_cup/23_终审提交总目录与签收页.md",
-      "bytes": 5578,
-      "sha256": "a40689c53493a51d10088c65d8be467a17577f70bda3a33048fdd273ca70b434"
+      "bytes": 5645,
+      "sha256": "51f7381ee656ffd409b957db72064bb3f4c273caca0922e07d4b726896b3ac82"
     },
     {
       "path": "docs/challenge_cup/defense_console/index.html",
@@ -409,6 +409,11 @@
       "path": "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
       "bytes": 2942,
       "sha256": "28747f0ca1f56c45bdd07fe7bfbda8d38fba640cf267c255e0a2c64b52be9a29"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/submission_integrity_card.md",
+      "bytes": 2478,
+      "sha256": "73ecb03dd64c96be45102e310b9611c93df65ee4c1b1bc2e6b0d05ef8e1deece"
     },
     {
       "path": "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md",

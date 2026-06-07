@@ -66,6 +66,7 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/final_acceptance_audit.json",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
+    "reproducibility/submission_integrity_card.md",
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
@@ -232,6 +233,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/hard_evidence_closure_board.md" in readme
     assert "reproducibility/hard_evidence_action_pack.md" in readme
     assert "reproducibility/external_evidence_execution_kit.md" in readme
+    assert "reproducibility/submission_integrity_card.md" in readme
     assert "reproducibility/special_prize_readiness_dashboard.md" in readme
     assert "reproducibility/judge_objection_response_matrix.md" in readme
     assert "poster/challenge_cup_a0_poster.html" in readme
@@ -265,6 +267,22 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "reproducibility/external_evidence_execution_kit.md",
     ]:
         assert evidence in readme
+    integrity_card = (PACKAGE_DIR / "reproducibility" / "submission_integrity_card.md").read_text(encoding="utf-8")
+    for phrase in [
+        "提交完整性快照",
+        "challenge_cup_submission_package.zip",
+        "challenge_cup_submission_archive_manifest.json",
+        "evidence_hashes.json",
+        "verify_submission_package.py --root .",
+        "readiness gate",
+        "62/62",
+        "package_ready_awaiting_external_hard_evidence",
+        "goal completion expected fail",
+        "真实专家反馈",
+        "真实计时彩排",
+        "不承诺获奖",
+    ]:
+        assert phrase in integrity_card
     acceptance_checklist = (PACKAGE_DIR / "06_结项验收清单.md").read_text(encoding="utf-8")
     for phrase in ["结项验收口径", "可提交材料", "验收步骤", "现场演示与离线备份", "未完成项与边界", "验收结论"]:
         assert phrase in acceptance_checklist
@@ -1250,6 +1268,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/defense_deck/challenge_cup_defense_speaker_notes.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_ledger.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence_ledger.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/submission_integrity_card.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md" in evidence_files

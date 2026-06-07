@@ -462,6 +462,7 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/final_acceptance_audit.json",
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
+    "reproducibility/submission_integrity_card.md",
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
@@ -531,6 +532,20 @@ README_FIRST_VIEW_REQUIRED_TERMS = [
     "reproducibility/readiness_gate_report.md",
     "reproducibility/goal_completion_report.md",
     "reproducibility/external_evidence_execution_kit.md",
+]
+SUBMISSION_INTEGRITY_CARD_REQUIRED_TERMS = [
+    "提交完整性快照",
+    "challenge_cup_submission_package.zip",
+    "challenge_cup_submission_archive_manifest.json",
+    "evidence_hashes.json",
+    "verify_submission_package.py --root .",
+    "readiness gate",
+    "62/62",
+    "package_ready_awaiting_external_hard_evidence",
+    "goal completion expected fail",
+    "真实专家反馈",
+    "真实计时彩排",
+    "不承诺获奖",
 ]
 DEFENSE_REHEARSAL_TIMING_TARGETS = {
     "opening_seconds": 90,
@@ -1776,17 +1791,31 @@ def check_package_docs() -> GateCheck:
     if "README_先看这里.md" not in missing:
         readme = readme_path.read_text(encoding="utf-8")
         readme_missing_terms = [term for term in README_FIRST_VIEW_REQUIRED_TERMS if term not in readme]
+    integrity_card_missing_terms: list[str] = []
+    integrity_card_path = PACKAGE_DIR / "reproducibility" / "submission_integrity_card.md"
+    if "reproducibility/submission_integrity_card.md" not in missing:
+        integrity_card = integrity_card_path.read_text(encoding="utf-8")
+        integrity_card_missing_terms = [
+            term for term in SUBMISSION_INTEGRITY_CARD_REQUIRED_TERMS if term not in integrity_card
+        ]
 
-    passed = not missing and not readme_missing_terms
+    passed = not missing and not readme_missing_terms and not integrity_card_missing_terms
     details: list[str] = []
     if missing:
         details.append(f"missing: {', '.join(missing)}")
     if readme_missing_terms:
         details.append(f"README_先看这里.md missing first-view terms: {', '.join(readme_missing_terms)}")
+    if integrity_card_missing_terms:
+        details.append(
+            "submission_integrity_card.md missing integrity terms: "
+            + ", ".join(integrity_card_missing_terms)
+        )
     return GateCheck(
         "package documents",
         passed,
-        "all required challenge cup docs exist with README first-view route" if passed else "; ".join(details),
+        "all required challenge cup docs exist with README first-view route and submission integrity card"
+        if passed
+        else "; ".join(details),
     )
 
 

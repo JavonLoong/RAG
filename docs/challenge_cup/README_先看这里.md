@@ -80,6 +80,7 @@
 57. `reproducibility/challenge_cup_submission_package.zip`
 58. `reproducibility/verify_submission_package.py`
 59. `reproducibility/final_acceptance_audit.md`
+60. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 
