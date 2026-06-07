@@ -993,6 +993,14 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "<real-rehearsal-date-yyyy-mm-dd>",
     ]:
         assert placeholder in runbook
+    assert "<actual-opening-seconds>" not in runbook
+    assert "<actual-demo-seconds>" not in runbook
+    assert "<actual-offline-fallback-seconds>" not in runbook
+    assert "<q1-seconds>" not in runbook
+    assert "--opening-actual-seconds 88" in runbook
+    assert "--demo-actual-seconds 170" in runbook
+    assert "--offline-fallback-actual-seconds 18" in runbook
+    assert "--killer-question-seconds 25 25 25 25 25" in runbook
     assert "build_challenge_cup_expert_outreach_ledger.py" in runbook
     assert "build_challenge_cup_timed_rehearsal_schedule_ledger.py" in runbook
     assert "build_challenge_cup_hard_evidence_closure_board.py" in runbook

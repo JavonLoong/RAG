@@ -1377,6 +1377,12 @@ REQUIRED_EXPERT_FEEDBACK_FORM_TERMS = {
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 COMMAND_FRAGMENTS = (";", "http://", "https://")
 TIMED_REHEARSAL_RUNNER = "run_challenge_cup_timed_rehearsal.py"
+EXPERT_OUTREACH_RECORDER = "record_challenge_cup_expert_outreach.py"
+EXPERT_PREFLIGHT_COMMAND = "preflight_challenge_cup_hard_evidence.py expert_feedback"
+EXPERT_HARD_EVIDENCE_RECORDER = "record_challenge_cup_hard_evidence.py expert_feedback"
+TIMED_SCHEDULE_RECORDER = "record_challenge_cup_timed_rehearsal_schedule.py"
+TIMED_PREFLIGHT_COMMAND = "preflight_challenge_cup_hard_evidence.py timed_rehearsal"
+TIMED_HARD_EVIDENCE_RECORDER = "record_challenge_cup_hard_evidence.py timed_rehearsal"
 CHALLENGE_CUP_TEXT_SUFFIXES = {".md", ".json", ".txt"}
 CHINESE_READABILITY_REQUIRED_TERMS = {
     "挑战杯",
@@ -1440,6 +1446,109 @@ def commands_missing_options(commands: list[str], command_fragment: str, options
         for option in options
         if not any(option in command for command in matching)
     ]
+
+
+EXPERT_FEEDBACK_COMMAND_OPTIONS = (
+    "--source",
+    "--evidence-type",
+    "--reviewer-identity",
+    "--role-or-org",
+    "--review-date",
+    "--review-dimension practicality",
+    "--review-dimension innovation",
+    "--review-dimension boundary_rigor",
+    "--remediation-issue",
+    "--remediation-action",
+    "--confirm-real-feedback",
+)
+EXPERT_OUTREACH_COMMAND_OPTIONS = (
+    "--source",
+    "--recipient-alias",
+    "--recipient-role",
+    "--channel",
+    "--sent-date",
+    "--status",
+    "--requested-review-dimension practicality",
+    "--requested-review-dimension innovation",
+    "--requested-review-dimension boundary_rigor",
+    "--requested-attachment",
+    "--followup-due-date",
+    "--confirm-real-outreach",
+)
+TIMED_SCHEDULE_COMMAND_OPTIONS = (
+    "--source",
+    "--scheduled-date",
+    "--observer",
+    "--venue-or-channel",
+    "--status",
+    "--opening-planned-seconds",
+    "--demo-planned-seconds",
+    "--offline-fallback-planned-seconds",
+    "--killer-question-planned-seconds",
+    "--killer-question-count",
+    "--checklist-item timer-visible",
+    "--checklist-item browser-smoke-opened",
+    "--checklist-item offline-archive-ready",
+    "--checklist-item five-killer-questions-assigned",
+    "--confirm-real-schedule",
+)
+TIMED_REHEARSAL_COMMAND_OPTIONS = (
+    "--source",
+    "--rehearsal-date",
+    "--observer",
+    "--opening-actual-seconds",
+    "--demo-actual-seconds",
+    "--offline-fallback-actual-seconds",
+    "--killer-question-seconds",
+    "--confirm-real-rehearsal",
+)
+TIMED_PREFLIGHT_RECORD_COMMAND_OPTIONS = (
+    "--source",
+    "--evidence-type",
+    "--rehearsal-date",
+    "--observer",
+    "--opening-actual-seconds",
+    "--demo-actual-seconds",
+    "--offline-fallback-actual-seconds",
+    "--killer-question-seconds",
+    "--confirm-real-rehearsal",
+)
+
+
+def validate_expert_feedback_command_contract(
+    label: str,
+    commands: list[str],
+    *,
+    require_outreach: bool,
+) -> list[str]:
+    failures: list[str] = []
+    if "--remediation " in "\n".join(commands):
+        failures.append(f"{label}: commands use obsolete --remediation syntax")
+    for command_fragment in (EXPERT_PREFLIGHT_COMMAND, EXPERT_HARD_EVIDENCE_RECORDER):
+        for failure in commands_missing_options(commands, command_fragment, EXPERT_FEEDBACK_COMMAND_OPTIONS):
+            failures.append(f"{label}: {failure}")
+    if require_outreach:
+        for failure in commands_missing_options(commands, EXPERT_OUTREACH_RECORDER, EXPERT_OUTREACH_COMMAND_OPTIONS):
+            failures.append(f"{label}: {failure}")
+    return failures
+
+
+def validate_timed_rehearsal_command_contract(
+    label: str,
+    commands: list[str],
+    *,
+    require_schedule: bool,
+) -> list[str]:
+    failures: list[str] = []
+    if require_schedule:
+        for failure in commands_missing_options(commands, TIMED_SCHEDULE_RECORDER, TIMED_SCHEDULE_COMMAND_OPTIONS):
+            failures.append(f"{label}: {failure}")
+    for failure in commands_missing_options(commands, TIMED_REHEARSAL_RUNNER, TIMED_REHEARSAL_COMMAND_OPTIONS):
+        failures.append(f"{label}: {failure}")
+    for command_fragment in (TIMED_PREFLIGHT_COMMAND, TIMED_HARD_EVIDENCE_RECORDER):
+        for failure in commands_missing_options(commands, command_fragment, TIMED_PREFLIGHT_RECORD_COMMAND_OPTIONS):
+            failures.append(f"{label}: {failure}")
+    return failures
 
 
 def numeric_value(value: Any) -> float | None:
@@ -4747,6 +4856,13 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
                 failures.append(f"{category}: ready_to_execute_commands missing expert hard-evidence recorder")
             if "--confirm-real-feedback" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-feedback")
+            failures.extend(
+                validate_expert_feedback_command_contract(
+                    f"{category}: ready_to_execute_commands",
+                    ready_commands,
+                    require_outreach=True,
+                )
+            )
         if category == "timed_rehearsal":
             if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in joined:
                 failures.append(
@@ -4761,6 +4877,13 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
                     )
                 if not command_with_option(ready_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
                     failures.append(f"{category}: timed rehearsal runner missing --confirm-real-rehearsal")
+            failures.extend(
+                validate_timed_rehearsal_command_contract(
+                    f"{category}: ready_to_execute_commands",
+                    ready_commands,
+                    require_schedule=True,
+                )
+            )
     post_commands = stream.get("post_collection_commands")
     if not isinstance(post_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
         str(item) for item in post_commands
@@ -4954,6 +5077,13 @@ def check_hard_evidence_action_pack() -> GateCheck:
                 failures.append(f"{category}: recording_commands missing expert hard-evidence recorder")
             if "--confirm-real-feedback" not in commands:
                 failures.append(f"{category}: recording_commands missing --confirm-real-feedback")
+            failures.extend(
+                validate_expert_feedback_command_contract(
+                    f"{category}: recording_commands",
+                    recording_commands,
+                    require_outreach=True,
+                )
+            )
         if category == "timed_rehearsal":
             if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in commands:
                 failures.append(
@@ -4968,6 +5098,13 @@ def check_hard_evidence_action_pack() -> GateCheck:
                     failures.append(f"{category}: timed rehearsal runner missing independent --source attachment")
                 if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
                     failures.append(f"{category}: timed rehearsal runner missing --confirm-real-rehearsal")
+            failures.extend(
+                validate_timed_rehearsal_command_contract(
+                    f"{category}: recording_commands",
+                    recording_commands,
+                    require_schedule=True,
+                )
+            )
             failed_rule = str(stream.get("failed_rehearsal_archival_rule", ""))
             for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
                 if term not in failed_rule:
@@ -5208,6 +5345,13 @@ def check_external_evidence_execution_kit() -> GateCheck:
                 failures.append(f"{packet_id}: recording_commands missing expert hard-evidence recorder")
             if "--confirm-real-feedback" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing --confirm-real-feedback")
+            failures.extend(
+                validate_expert_feedback_command_contract(
+                    f"{packet_id}: recording_commands",
+                    recording_commands,
+                    require_outreach=True,
+                )
+            )
         if category == "timed_rehearsal":
             if "preflight_challenge_cup_hard_evidence.py timed_rehearsal" not in commands:
                 failures.append(
@@ -5220,6 +5364,13 @@ def check_external_evidence_execution_kit() -> GateCheck:
                     failures.append(f"{packet_id}: timed rehearsal runner missing independent --source attachment")
                 if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
                     failures.append(f"{packet_id}: timed rehearsal runner missing --confirm-real-rehearsal")
+            failures.extend(
+                validate_timed_rehearsal_command_contract(
+                    f"{packet_id}: recording_commands",
+                    recording_commands,
+                    require_schedule=True,
+                )
+            )
             failed_rule = str(packet.get("failed_rehearsal_archival_rule", ""))
             for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
                 if term not in failed_rule:

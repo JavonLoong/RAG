@@ -127,6 +127,14 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "20260606" not in command_text
     assert "<" not in command_text
     assert ">" not in command_text
+    assert "actual-opening-seconds" not in command_text
+    assert "actual-demo-seconds" not in command_text
+    assert "actual-offline-fallback-seconds" not in command_text
+    assert "q1-seconds" not in command_text
+    assert "--opening-actual-seconds 88" in command_text
+    assert "--demo-actual-seconds 170" in command_text
+    assert "--offline-fallback-actual-seconds 18" in command_text
+    assert "--killer-question-seconds 25 25 25 25 25" in command_text
     rehearsal_packet = packets["timed_rehearsal_observer"]
     assert "timing_acceptance_pass=false" in rehearsal_packet["failed_rehearsal_archival_rule"]
     assert "rejected_metadata_records" in rehearsal_packet["failed_rehearsal_archival_rule"]

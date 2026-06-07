@@ -68,10 +68,16 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
         "<real-rehearsal-id>",
         "<real-timer-or-observer-file>",
         "<real-rehearsal-date-yyyy-mm-dd>",
-        "<actual-opening-seconds>",
-        "<q5-seconds>",
     ]:
         assert placeholder in command_text
+    assert "<actual-opening-seconds>" not in command_text
+    assert "<actual-demo-seconds>" not in command_text
+    assert "<actual-offline-fallback-seconds>" not in command_text
+    assert "<q1-seconds>" not in command_text
+    assert "--opening-actual-seconds 88" in command_text
+    assert "--demo-actual-seconds 170" in command_text
+    assert "--offline-fallback-actual-seconds 18" in command_text
+    assert "--killer-question-seconds 25 25 25 25 25" in command_text
     assert "must not be in the future" in command_text
     assert "source attachment must be non-empty and must not be a JSON metadata file" in command_text
     assert "source_origin" in command_text

@@ -1438,6 +1438,43 @@ def test_external_evidence_execution_kit_gate_rejects_runner_without_command_lev
     assert "timed rehearsal runner missing independent --source attachment" in check.detail
 
 
+def test_hard_evidence_command_contract_rejects_incomplete_outreach_command() -> None:
+    module = load_readiness_module()
+    commands = [
+        "python scripts/record_challenge_cup_expert_outreach.py --id real-outreach-id --source path/to/real-outreach-proof.eml --recipient-alias reviewer --recipient-role advisor --channel email --sent-date YYYY-MM-DD --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md",
+        "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/real-feedback.eml --evidence-type email_reply --reviewer-identity reviewer --role-or-org advisor --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+        "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/real-feedback.eml --evidence-type email_reply --reviewer-identity reviewer --role-or-org advisor --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+    ]
+
+    failures = module.validate_expert_feedback_command_contract(
+        "expert_feedback: recording_commands",
+        commands,
+        require_outreach=True,
+    )
+
+    assert any("--confirm-real-outreach" in item for item in failures)
+    assert any("--followup-due-date" in item for item in failures)
+
+
+def test_hard_evidence_command_contract_rejects_incomplete_schedule_command() -> None:
+    module = load_readiness_module()
+    commands = [
+        "python scripts/record_challenge_cup_timed_rehearsal_schedule.py --id real-schedule-id --source path/to/real-calendar.txt --scheduled-date YYYY-MM-DD --observer observer --venue-or-channel room --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --confirm-real-schedule",
+        "python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --source path/to/real-timer.txt --rehearsal-date YYYY-MM-DD --observer observer --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+        "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer observer --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+        "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer observer --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+    ]
+
+    failures = module.validate_timed_rehearsal_command_contract(
+        "timed_rehearsal: recording_commands",
+        commands,
+        require_schedule=True,
+    )
+
+    assert any("offline-archive-ready" in item for item in failures)
+    assert any("five-killer-questions-assigned" in item for item in failures)
+
+
 def test_hard_evidence_action_pack_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     required_paths = [

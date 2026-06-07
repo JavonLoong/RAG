@@ -52,27 +52,27 @@ REHEARSAL_RUN_COMMAND = (
     "python scripts/run_challenge_cup_timed_rehearsal.py --id <real-rehearsal-id> "
     "--source <real-timer-or-observer-file> "
     "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
-    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
-    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
-    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--opening-actual-seconds 88 --demo-actual-seconds 170 "
+    "--offline-fallback-actual-seconds 18 "
+    "--killer-question-seconds 25 25 25 25 25 "
     "--confirm-real-rehearsal"
 )
 REHEARSAL_PREFLIGHT_COMMAND = (
     "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal "
     "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
     "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
-    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
-    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
-    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--opening-actual-seconds 88 --demo-actual-seconds 170 "
+    "--offline-fallback-actual-seconds 18 "
+    "--killer-question-seconds 25 25 25 25 25 "
     "--confirm-real-rehearsal"
 )
 REHEARSAL_RECORD_COMMAND = (
     "python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal "
     "--id <real-rehearsal-id> --source <real-timer-or-observer-file> --evidence-type observer_note "
     "--rehearsal-date <real-rehearsal-date-yyyy-mm-dd> --observer <real-observer-alias> "
-    "--opening-actual-seconds <actual-opening-seconds> --demo-actual-seconds <actual-demo-seconds> "
-    "--offline-fallback-actual-seconds <actual-offline-fallback-seconds> "
-    "--killer-question-seconds <q1-seconds> <q2-seconds> <q3-seconds> <q4-seconds> <q5-seconds> "
+    "--opening-actual-seconds 88 --demo-actual-seconds 170 "
+    "--offline-fallback-actual-seconds 18 "
+    "--killer-question-seconds 25 25 25 25 25 "
     "--confirm-real-rehearsal"
 )
 

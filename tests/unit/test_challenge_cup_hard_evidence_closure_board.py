@@ -71,6 +71,14 @@ def test_builds_hard_evidence_closure_board_without_claiming_completion(tmp_path
         "<real-rehearsal-date-yyyy-mm-dd>",
     ]:
         assert placeholder in command_text
+    assert "<actual-opening-seconds>" not in command_text
+    assert "<actual-demo-seconds>" not in command_text
+    assert "<actual-offline-fallback-seconds>" not in command_text
+    assert "<q1-seconds>" not in command_text
+    assert "--opening-actual-seconds 88" in command_text
+    assert "--demo-actual-seconds 170" in command_text
+    assert "--offline-fallback-actual-seconds 18" in command_text
+    assert "--killer-question-seconds 25 25 25 25 25" in command_text
     assert "check_challenge_cup_goal_completion.py" in "\n".join(payload["post_closure_verification_commands"])
 
     output_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence_closure_board.json"
