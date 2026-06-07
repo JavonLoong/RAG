@@ -248,7 +248,7 @@ def review_metadata_records(
     accepted_types: list[str],
     required_fields: list[str],
 ) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
-    metadata_paths = [path for path in paths if path.suffix.lower() == ".json"]
+    metadata_paths = sorted([path for path in paths if path.suffix.lower() == ".json"], key=repo_path)
     source_paths = {
         repo_path(path): path
         for path in paths
@@ -260,9 +260,11 @@ def review_metadata_records(
     confirmed_field = confirmation_field(category_key)
     records: list[dict[str, str]] = []
     rejected: list[dict[str, Any]] = []
+    accepted_source_sha256: dict[str, str] = {}
     for metadata_path in metadata_paths:
         metadata_relative = repo_path(metadata_path)
         source_path = ""
+        source_sha256 = ""
         reasons: list[str] = []
         payload = read_json_object(metadata_path)
         if payload is None:
@@ -316,6 +318,10 @@ def review_metadata_records(
             sha_failure = source_sha256_failure(source_paths[source_path_value], payload.get("source_sha256"))
             if sha_failure:
                 reasons.append(sha_failure)
+            else:
+                source_sha256 = payload["source_sha256"]
+                if source_sha256 in accepted_source_sha256:
+                    reasons.append("duplicate source_sha256")
         if reasons:
             rejected.append(
                 {
@@ -331,6 +337,7 @@ def review_metadata_records(
                 "source_path": source_path_value,
             }
         )
+        accepted_source_sha256[source_sha256] = metadata_relative
     return (
         sorted(records, key=lambda item: (item["metadata_path"], item["source_path"])),
         sorted(rejected, key=lambda item: (item["metadata_path"], item["source_path"])),
@@ -473,6 +480,8 @@ def write_readmes() -> None:
                 "- Preferred timed rehearsal flow: `python scripts/run_challenge_cup_timed_rehearsal.py ... --source <real-timer-or-observer-file> --confirm-real-rehearsal` archives an independent real timer or observer attachment.",
                 "- Preflight source-based timed rehearsal evidence with `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal` before source-based recording.",
                 "- Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.",
+                "- Recording and preflight `--source` paths must be the original external attachments, not files already inside `docs/challenge_cup/reproducibility/hard_evidence/**`.",
+                "- Within each category, duplicate `source_sha256` values are rejected so one attachment cannot count as multiple hard evidence records.",
                 text("- \\u4e0d\\u4f2a\\u9020\\u8bc1\\u636e\\uff1b\\u6ca1\\u6709\\u8fd9\\u4e24\\u7c7b\\u771f\\u5b9e\\u8bc1\\u636e\\u524d\\uff0c\\u4e0d\\u80fd\\u6807\\u8bb0\\u76ee\\u6807\\u5b8c\\u6210\\u3002"),
             ]
         ),
@@ -498,6 +507,7 @@ def write_readmes() -> None:
                 "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
+                "During preflight/record, --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; duplicate source_sha256 values in this category are rejected.",
                 "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
@@ -522,6 +532,7 @@ def write_readmes() -> None:
                 "observer must be non-empty text.",
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
+                "During preflight/record, --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; duplicate source_sha256 values in this category are rejected.",
                 "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
                 f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",

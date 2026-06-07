@@ -57,6 +57,10 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
         path.read_text(encoding="utf-8")
         for path in [expert_readme, rehearsal_readme]
     )
+    readme_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [root_readme, expert_readme, rehearsal_readme]
+    )
     assert "2026-06-06" not in command_text
     assert "20260606" not in command_text
     for placeholder in [
@@ -80,6 +84,8 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
     assert "--killer-question-seconds 25 25 25 25 25" in command_text
     assert "must not be in the future" in command_text
     assert "source attachment must be non-empty and must not be a JSON metadata file" in command_text
+    assert "docs/challenge_cup/reproducibility/hard_evidence/**" in readme_text
+    assert "duplicate `source_sha256`" in readme_text
     assert "source_origin" in command_text
     assert "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text" in command_text
     assert "observer must be non-empty text" in command_text
@@ -192,6 +198,47 @@ def test_hard_evidence_ledger_counts_valid_metadata_source_pair_as_one_record(tm
         }
     ]
     assert payload["completion_claim_allowed"] is True
+
+
+def test_hard_evidence_ledger_rejects_duplicate_source_sha256_within_category(tmp_path: Path) -> None:
+    module = load_ledger_module()
+    configure_module_paths(module, tmp_path)
+    expert_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    expert_dir.mkdir(parents=True)
+    first_source = expert_dir / "advisor-a.txt"
+    second_source = expert_dir / "advisor-b.txt"
+    for source in [first_source, second_source]:
+        source.write_text("same external attachment bytes", encoding="utf-8")
+    source_digest = hashlib.sha256(first_source.read_bytes()).hexdigest()
+    for advisor in ["advisor-a", "advisor-b"]:
+        (expert_dir / f"{advisor}.json").write_text(
+            json.dumps(
+                {
+                    "evidence_type": "email_reply",
+                    "reviewer_identity": advisor,
+                    "role_or_org": "advisor",
+                    "review_date": "2026-06-06",
+                    "feedback_source_path": (
+                        f"docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/{advisor}.txt"
+                    ),
+                    "source_sha256": source_digest,
+                    "source_origin": "external_attachment",
+                    "review_dimensions": ["practicality", "innovation", "boundary_rigor"],
+                    "remediation_record": [{"issue": "demo pacing", "action": "tighten opening"}],
+                    "real_feedback_confirmed": True,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+    payload = module.write_outputs()
+
+    expert = payload["categories"]["expert_feedback"]
+    assert expert["collected_count"] == 1
+    assert expert["evidence_record_count"] == 1
+    assert len(expert["rejected_metadata_records"]) == 1
+    assert "duplicate source_sha256" in expert["rejected_metadata_records"][0]["reasons"]
 
 
 def test_hard_evidence_ledger_rejects_source_sha256_mismatch(tmp_path: Path) -> None:

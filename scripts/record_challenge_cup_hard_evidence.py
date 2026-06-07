@@ -92,7 +92,7 @@ def existing_source(path_value: str) -> Path:
 
 def valid_source_attachment(path_value: str) -> Path:
     source = existing_source(path_value)
-    failure = source_attachment_failure(source)
+    failure = source_attachment_failure(source, forbidden_source_root=INTAKE_ROOT)
     if failure:
         raise HardEvidenceInputError(failure)
     return source

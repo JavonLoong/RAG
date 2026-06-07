@@ -10,4 +10,6 @@
 - Preferred timed rehearsal flow: `python scripts/run_challenge_cup_timed_rehearsal.py ... --source <real-timer-or-observer-file> --confirm-real-rehearsal` archives an independent real timer or observer attachment.
 - Preflight source-based timed rehearsal evidence with `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal` before source-based recording.
 - Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.
+- Recording and preflight `--source` paths must be the original external attachments, not files already inside `docs/challenge_cup/reproducibility/hard_evidence/**`.
+- Within each category, duplicate `source_sha256` values are rejected so one attachment cannot count as multiple hard evidence records.
 - 不伪造证据；没有这两类真实证据前，不能标记目标完成。

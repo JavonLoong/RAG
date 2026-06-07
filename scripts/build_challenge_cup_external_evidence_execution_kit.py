@@ -25,6 +25,8 @@ SOURCE_INTEGRITY_GUARDRAILS = [
     "preflight and record commands calculate source_sha256 from the real source attachment",
     "metadata source_sha256 must match the archived source attachment content",
     "--source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file",
+    "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs",
+    "hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category",
     "do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates",
 ]
 EXPERT_OUTREACH_COMMAND = (

@@ -632,6 +632,8 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
     "source_sha256",
     "source_origin",
     "must not be a JSON metadata file",
+    "hard_evidence/**",
+    "duplicate source_sha256",
 }
 EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS = {
     "reviewer_identity",
@@ -648,7 +650,16 @@ EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_GUARDRAIL_TERMS = {
     "source_sha256",
     "source_origin",
     "must not be a JSON metadata file",
+    "hard_evidence/**",
+    "duplicate source_sha256",
 }
+HARD_EVIDENCE_SOURCE_GUARDRAIL_TERMS = (
+    "source_sha256",
+    "source attachment",
+    "must not be a JSON metadata file",
+    "hard_evidence/**",
+    "duplicate source_sha256",
+)
 HARD_EVIDENCE_MARKDOWN_TERMS = {
     "真实专家反馈",
     "真实计时彩排",
@@ -5178,7 +5189,7 @@ def check_hard_evidence_action_pack() -> GateCheck:
             )
         )
         guardrails = "\n".join(str(item) for item in stream.get("source_integrity_guardrails", []))
-        for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
+        for term in HARD_EVIDENCE_SOURCE_GUARDRAIL_TERMS:
             if term not in guardrails:
                 failures.append(f"{category}: source_integrity_guardrails missing {term}")
         if category == "expert_feedback":
@@ -5240,6 +5251,8 @@ def check_hard_evidence_action_pack() -> GateCheck:
             "source_sha256",
             "--source",
             "must not be a JSON metadata file",
+            "hard_evidence/**",
+            "duplicate source_sha256",
             "timing_acceptance_pass=false",
             "rejected_metadata_records",
             "expert_feedback",
@@ -5456,7 +5469,7 @@ def check_external_evidence_execution_kit() -> GateCheck:
             )
         )
         guardrails = "\n".join(str(item) for item in packet.get("source_integrity_guardrails", []))
-        for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
+        for term in HARD_EVIDENCE_SOURCE_GUARDRAIL_TERMS:
             if term not in guardrails:
                 failures.append(f"{packet_id}: source_integrity_guardrails missing {term}")
         if category == "expert_feedback":
@@ -5519,6 +5532,8 @@ def check_external_evidence_execution_kit() -> GateCheck:
             "PowerShell execution block",
             "source_sha256",
             "must not be a JSON metadata file",
+            "hard_evidence/**",
+            "duplicate source_sha256",
             "timing_acceptance_pass=false",
             "rejected_metadata_records",
             "不伪造",

@@ -54,6 +54,8 @@ def test_build_expert_feedback_request_packet_outputs_sendable_integrity_pack() 
     assert any("source_sha256" in item for item in intake["source_integrity_guardrails"])
     assert any("source_origin" in item for item in intake["source_integrity_guardrails"])
     assert any("must not be a JSON metadata file" in item for item in intake["source_integrity_guardrails"])
+    assert any("hard_evidence/**" in item for item in intake["source_integrity_guardrails"])
+    assert any("duplicate source_sha256" in item for item in intake["source_integrity_guardrails"])
     commands = "\n".join(intake["recording_commands"])
     assert "preflight_challenge_cup_hard_evidence.py expert_feedback" in commands
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in commands
@@ -77,6 +79,8 @@ def test_build_expert_feedback_request_packet_outputs_sendable_integrity_pack() 
     assert "source_sha256" in markdown
     assert "source_origin" in markdown
     assert "must not be a JSON metadata file" in markdown
+    assert "hard_evidence/**" in markdown
+    assert "duplicate source_sha256" in markdown
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in markdown
     assert "--remediation-issue demo-pacing" in markdown
     assert "--remediation-action tighten-opening" in markdown

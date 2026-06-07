@@ -2355,6 +2355,8 @@ def test_expert_feedback_request_packet_gate_rejects_obsolete_remediation_comman
                         "source_sha256 is calculated from the real source attachment",
                         "source_origin must be external_attachment",
                         "the source attachment must be non-empty and must not be a JSON metadata file",
+                        "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**",
+                        "hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category",
                     ],
                     "recording_commands": [
                         "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback",

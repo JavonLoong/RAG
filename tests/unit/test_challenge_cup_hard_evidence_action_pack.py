@@ -43,9 +43,12 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert stream["pre_hard_evidence_powershell_block"]
         assert stream["powershell_execution_block"]
         assert stream["source_integrity_guardrails"]
-        assert "source_sha256" in "\n".join(stream["source_integrity_guardrails"])
-        assert "source attachment" in "\n".join(stream["source_integrity_guardrails"])
-        assert "must not be a JSON metadata file" in "\n".join(stream["source_integrity_guardrails"])
+        guardrails = "\n".join(stream["source_integrity_guardrails"])
+        assert "source_sha256" in guardrails
+        assert "source attachment" in guardrails
+        assert "must not be a JSON metadata file" in guardrails
+        assert "hard_evidence/**" in guardrails
+        assert "duplicate source_sha256" in guardrails
         assert stream["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert stream["does_not_satisfy_goal_completion"] is True
         assert category in stream["acceptance_gate"]
@@ -146,6 +149,8 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
     assert "source_sha256" in markdown
     assert "source attachment" in markdown
     assert "must not be a JSON metadata file" in markdown
+    assert "hard_evidence/**" in markdown
+    assert "duplicate source_sha256" in markdown
     assert "PowerShell execution block" in markdown
     assert "timing_acceptance_pass=false" in markdown
     assert "rejected_metadata_records" in markdown

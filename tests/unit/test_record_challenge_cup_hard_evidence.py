@@ -97,6 +97,54 @@ def test_records_expert_feedback_attachment_and_metadata(tmp_path: Path) -> None
     ]
 
 
+def test_refuses_record_source_from_hard_evidence_intake(tmp_path: Path) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    archived_source = (
+        tmp_path
+        / "docs"
+        / "challenge_cup"
+        / "reproducibility"
+        / "hard_evidence"
+        / "expert_feedback"
+        / "archived-source.txt"
+    )
+    archived_source.parent.mkdir(parents=True)
+    archived_source.write_text("previously archived source should not be reused as a new source", encoding="utf-8")
+
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-b",
+            "--source",
+            str(archived_source),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-b",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    assert exit_code == 2
+    assert not (archived_source.parent / "advisor-b.json").exists()
+
+
 def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)

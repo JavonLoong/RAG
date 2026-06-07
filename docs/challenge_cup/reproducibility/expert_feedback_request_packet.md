@@ -76,8 +76,10 @@ Required metadata fields:
 Source integrity guardrails:
 - feedback_source_path must point to the real source attachment returned by the reviewer
 - the source attachment must be non-empty and must not be a JSON metadata file
+- --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs
 - preflight and record commands calculate source_sha256 from the real source attachment
 - metadata source_sha256 must match the archived source attachment content
+- hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category
 - source_origin must be external_attachment for post-receipt expert feedback
 
 Recording commands:

@@ -73,9 +73,12 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert packet["pre_hard_evidence_powershell_block"]
         assert packet["powershell_execution_block"]
         assert packet["source_integrity_guardrails"]
-        assert "source_sha256" in "\n".join(packet["source_integrity_guardrails"])
-        assert "source attachment" in "\n".join(packet["source_integrity_guardrails"])
-        assert "must not be a JSON metadata file" in "\n".join(packet["source_integrity_guardrails"])
+        guardrails = "\n".join(packet["source_integrity_guardrails"])
+        assert "source_sha256" in guardrails
+        assert "source attachment" in guardrails
+        assert "must not be a JSON metadata file" in guardrails
+        assert "hard_evidence/**" in guardrails
+        assert "duplicate source_sha256" in guardrails
         assert packet["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
         assert packet["does_not_satisfy_goal_completion"] is True
         powershell = "\n".join(packet["powershell_execution_block"])
@@ -183,6 +186,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "source_sha256" in markdown
     assert "source attachment" in markdown
     assert "must not be a JSON metadata file" in markdown
+    assert "hard_evidence/**" in markdown
+    assert "duplicate source_sha256" in markdown
     assert "PowerShell execution block" in markdown
     assert "Pre-hard-evidence PowerShell block" in markdown
     assert "timing_acceptance_pass=false" in markdown
@@ -196,4 +201,6 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert "source_sha256" in handoff_text
         assert "source attachment" in handoff_text
         assert "must not be a JSON metadata file" in handoff_text
+        assert "hard_evidence/**" in handoff_text
+        assert "duplicate source_sha256" in handoff_text
         assert "PowerShell execution block" in handoff_text

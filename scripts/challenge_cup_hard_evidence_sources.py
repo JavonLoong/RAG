@@ -14,11 +14,24 @@ def source_path_looks_like_metadata(path_value: str | Path) -> bool:
     return PurePosixPath(path_text).suffix.lower() == ".json"
 
 
-def source_attachment_failure(path: Path) -> str | None:
+def path_is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+    except ValueError:
+        return False
+    return True
+
+
+def source_attachment_failure(path: Path, *, forbidden_source_root: Path | None = None) -> str | None:
     if path.stat().st_size <= 0:
         return f"source evidence file is empty: {path}"
     if source_path_looks_like_metadata(path):
         return f"source evidence file must not be a json metadata file: {path}"
+    if forbidden_source_root is not None and path_is_relative_to(path, forbidden_source_root):
+        return (
+            "source evidence file must be the original external attachment, not an existing "
+            f"hard_evidence intake file: {path}"
+        )
     return None
 
 
