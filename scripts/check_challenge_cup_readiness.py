@@ -510,6 +510,28 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/challenge_cup_submission_archive_manifest.json",
     "reproducibility/command_log.md",
 ]
+README_FIRST_VIEW_REQUIRED_TERMS = [
+    "评委三分钟速览",
+    "0:00-0:30",
+    "项目定位",
+    "0:30-1:30",
+    "证据链",
+    "1:30-2:30",
+    "现场演示",
+    "2:30-3:00",
+    "边界与缺口",
+    "当前硬证据状态",
+    "package_ready_awaiting_external_hard_evidence",
+    "真实专家反馈尚未归档",
+    "真实计时彩排尚未归档",
+    "不能标记目标完成",
+    "00_项目一页纸.md",
+    "13_评委现场速览卡.md",
+    "04_系统演示脚本.md",
+    "reproducibility/readiness_gate_report.md",
+    "reproducibility/goal_completion_report.md",
+    "reproducibility/external_evidence_execution_kit.md",
+]
 DEFENSE_REHEARSAL_TIMING_TARGETS = {
     "opening_seconds": 90,
     "demo_seconds": 180,
@@ -1749,10 +1771,22 @@ def git_dirty_paths(paths: list[str]) -> set[str]:
 
 def check_package_docs() -> GateCheck:
     missing = [relative for relative in REQUIRED_PACKAGE_DOCS if not nonempty(PACKAGE_DIR / relative)]
+    readme_missing_terms: list[str] = []
+    readme_path = PACKAGE_DIR / "README_先看这里.md"
+    if "README_先看这里.md" not in missing:
+        readme = readme_path.read_text(encoding="utf-8")
+        readme_missing_terms = [term for term in README_FIRST_VIEW_REQUIRED_TERMS if term not in readme]
+
+    passed = not missing and not readme_missing_terms
+    details: list[str] = []
+    if missing:
+        details.append(f"missing: {', '.join(missing)}")
+    if readme_missing_terms:
+        details.append(f"README_先看这里.md missing first-view terms: {', '.join(readme_missing_terms)}")
     return GateCheck(
         "package documents",
-        not missing,
-        "all required challenge cup docs exist" if not missing else f"missing: {', '.join(missing)}",
+        passed,
+        "all required challenge cup docs exist with README first-view route" if passed else "; ".join(details),
     )
 
 

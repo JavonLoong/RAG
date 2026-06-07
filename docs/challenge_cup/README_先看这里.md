@@ -4,6 +4,21 @@
 
 本目录是“知燃知维：面向动力装备运维知识的可信 GraphRAG 系统”的结项与挑战杯评审入口。先看本页，再按顺序阅读项目一页纸、项目书、技术白皮书、实验评测报告、演示脚本和答辩问答手册。
 
+## 评委三分钟速览
+
+| 时间 | 看什么 | 证据入口 |
+| --- | --- | --- |
+| 0:00-0:30 | 项目定位：知燃知维 GraphRAG 面向动力装备运维知识，先确认问题、场景、贡献和边界。 | `00_项目一页纸.md`; `13_评委现场速览卡.md` |
+| 0:30-1:30 | 证据链：从 60 题评测、GT-07 固定场景、GraphRAG 证据组织和失败整改看完成度。 | `03_实验评测报告.md`; `07_评审主张证据矩阵.md`; `reproducibility/readiness_gate_report.md` |
+| 1:30-2:30 | 现场演示：按固定脚本看浏览器控制台、检索结果、KG 证据和离线兜底。 | `04_系统演示脚本.md`; `defense_console/index.html`; `reproducibility/browser_demo_smoke_report.md` |
+| 2:30-3:00 | 边界与缺口：包可复核，但真实专家反馈和真实计时彩排尚未归档，不能标记目标完成。 | `reproducibility/goal_completion_report.md`; `reproducibility/external_evidence_execution_kit.md` |
+
+## 当前硬证据状态
+
+- 状态：`package_ready_awaiting_external_hard_evidence`。
+- 真实专家反馈尚未归档；真实计时彩排尚未归档；不能标记目标完成。
+- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`。
+
 ## 推荐阅读顺序
 
 1. `00_项目一页纸.md`

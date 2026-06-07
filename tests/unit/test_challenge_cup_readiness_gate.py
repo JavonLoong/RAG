@@ -80,6 +80,49 @@ def write_minimal_pptx(path: Path, slide_texts: list[str]) -> None:
             )
 
 
+def write_required_package_docs(module, package_dir: Path, *, readme_text: str) -> None:
+    for relative in module.REQUIRED_PACKAGE_DOCS:
+        path = package_dir / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("placeholder\n", encoding="utf-8")
+    (package_dir / "README_先看这里.md").write_text(readme_text, encoding="utf-8")
+
+
+def test_package_docs_gate_rejects_readme_without_first_view_route(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    write_required_package_docs(
+        module,
+        package_dir,
+        readme_text="# 挑战杯项目成果入口\n\n旧版阅读顺序还没有评委首屏导航。\n",
+    )
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_package_docs()
+
+    assert not check.passed
+    assert "README_先看这里.md missing first-view terms" in check.detail
+    assert "评委三分钟速览" in check.detail
+    assert "package_ready_awaiting_external_hard_evidence" in check.detail
+    assert "真实专家反馈尚未归档" in check.detail
+
+
+def test_package_docs_gate_accepts_readme_first_view_route(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    package_dir = tmp_path / "docs" / "challenge_cup"
+    write_required_package_docs(
+        module,
+        package_dir,
+        readme_text="\n".join(module.README_FIRST_VIEW_REQUIRED_TERMS),
+    )
+    monkeypatch.setattr(module, "PACKAGE_DIR", package_dir)
+
+    check = module.check_package_docs()
+
+    assert check.passed
+    assert "README first-view route" in check.detail
+
+
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:
     payload = run_readiness_gate_for_test(monkeypatch)
 

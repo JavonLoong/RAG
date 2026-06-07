@@ -239,6 +239,32 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "reproducibility/readiness_gate_report.md" in readme
     assert "reproducibility/goal_completion_report.md" in readme
     assert "reproducibility/final_acceptance_audit.md" in readme
+    for phrase in [
+        "评委三分钟速览",
+        "0:00-0:30",
+        "项目定位",
+        "0:30-1:30",
+        "证据链",
+        "1:30-2:30",
+        "现场演示",
+        "2:30-3:00",
+        "边界与缺口",
+        "当前硬证据状态",
+        "package_ready_awaiting_external_hard_evidence",
+        "真实专家反馈尚未归档",
+        "真实计时彩排尚未归档",
+        "不能标记目标完成",
+    ]:
+        assert phrase in readme
+    for evidence in [
+        "00_项目一页纸.md",
+        "13_评委现场速览卡.md",
+        "04_系统演示脚本.md",
+        "reproducibility/readiness_gate_report.md",
+        "reproducibility/goal_completion_report.md",
+        "reproducibility/external_evidence_execution_kit.md",
+    ]:
+        assert evidence in readme
     acceptance_checklist = (PACKAGE_DIR / "06_结项验收清单.md").read_text(encoding="utf-8")
     for phrase in ["结项验收口径", "可提交材料", "验收步骤", "现场演示与离线备份", "未完成项与边界", "验收结论"]:
         assert phrase in acceptance_checklist
