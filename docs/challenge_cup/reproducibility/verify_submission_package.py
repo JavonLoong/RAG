@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -14,6 +15,15 @@ LIVE_SMOKE_RELATIVE = PACKAGE_RELATIVE / "reproducibility/live_demo_smoke_report
 BROWSER_SMOKE_RELATIVE = PACKAGE_RELATIVE / "reproducibility/browser_demo_smoke_report.json"
 GOAL_COMPLETION_RELATIVE = PACKAGE_RELATIVE / "reproducibility/goal_completion_report.md"
 REPORT_TYPE = "challenge_cup_submission_package_verification"
+COMPLETION_CLAIM_ALLOWED_RE = re.compile(r"^- completion_claim_allowed=(True|False)\s*$", re.MULTILINE)
+REQUIRED_GOAL_COMPLETION_NEXT_ACTION_TERMS = (
+    "## Next Actions",
+    "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md",
+    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback",
+    "python scripts/run_challenge_cup_timed_rehearsal.py",
+    "python scripts/build_challenge_cup_package.py",
+    "python scripts/check_challenge_cup_goal_completion.py",
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -57,12 +67,19 @@ def read_text(root: Path, relative: str | PurePosixPath, failures: list[str]) ->
 
 
 def parse_completion_claim_allowed(text: str, failures: list[str]) -> bool | None:
-    if "completion_claim_allowed=True" in text:
-        return True
-    if "completion_claim_allowed=False" in text:
-        return False
+    match = COMPLETION_CLAIM_ALLOWED_RE.search(text)
+    if match:
+        return match.group(1) == "True"
     failures.append("goal completion report missing completion_claim_allowed")
     return None
+
+
+def goal_completion_next_actions_ready(text: str, failures: list[str]) -> bool:
+    missing = [term for term in REQUIRED_GOAL_COMPLETION_NEXT_ACTION_TERMS if term not in text]
+    if missing:
+        failures.append(f"goal completion report missing next actions: {missing}")
+        return False
+    return True
 
 
 def verify_package(root: Path) -> dict[str, Any]:
@@ -132,6 +149,9 @@ def verify_package(root: Path) -> dict[str, Any]:
         failures.append("goal completion failed while completion_claim_allowed=True")
     if goal_status == "unknown":
         failures.append("goal completion status missing")
+    next_actions_ready = True
+    if goal_status == "fail":
+        next_actions_ready = goal_completion_next_actions_ready(goal_completion, failures)
 
     return {
         "report_type": REPORT_TYPE,
@@ -145,6 +165,7 @@ def verify_package(root: Path) -> dict[str, Any]:
         "browser_smoke_status": browser_status,
         "goal_completion_status": goal_status,
         "completion_claim_allowed": completion_claim_allowed,
+        "goal_completion_next_actions_ready": next_actions_ready,
     }
 
 

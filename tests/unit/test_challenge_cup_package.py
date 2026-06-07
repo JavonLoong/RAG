@@ -1755,6 +1755,7 @@ def test_submission_package_verifier_runs_from_extracted_archive(tmp_path: Path)
     assert payload["live_smoke_status"] == "pass"
     assert payload["browser_smoke_status"] == "pass"
     assert payload["completion_claim_allowed"] is False
+    assert payload["goal_completion_next_actions_ready"] is True
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:

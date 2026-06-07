@@ -54,7 +54,9 @@ def test_verification_transcript_summarizes_current_gates_without_goal_overclaim
         "# Challenge Cup Goal Completion Gate\n\n"
         "- Status: `fail`\n"
         "- completion_claim_allowed=False\n"
-        "- Package readiness: `True` (readiness gate passed 56/56)\n",
+        "- Package readiness: `True` (readiness gate passed 56/56)\n"
+        "\n"
+        "Do not finish until a later rerun reports completion_claim_allowed=True.\n",
         encoding="utf-8",
     )
 
@@ -71,6 +73,7 @@ def test_verification_transcript_summarizes_current_gates_without_goal_overclaim
     assert payload["readiness_gate"]["source_report_passed"] == 56
     assert payload["final_acceptance"]["status"] == "package_ready_awaiting_external_hard_evidence"
     assert payload["goal_completion"]["status"] == "fail"
+    assert payload["goal_completion"]["completion_claim_allowed"] is False
     assert payload["goal_completion"]["expected_failure"] is True
     assert {item["category"] for item in payload["blocking_items"]} == {
         "expert_feedback",

@@ -20,6 +20,7 @@ SUBMISSION_VERIFIER = REPRO_DIR / "verify_submission_package.py"
 SUBMISSION_VERIFIER_RELATIVE = "docs/challenge_cup/reproducibility/verify_submission_package.py"
 REPORT_TYPE = "challenge_cup_final_acceptance_audit"
 READY_AWAITING_STATUS = "package_ready_awaiting_external_hard_evidence"
+COMPLETION_CLAIM_ALLOWED_RE = re.compile(r"^- completion_claim_allowed=(True|False)\s*$", re.MULTILINE)
 CONFIRMATION_FIELDS = {
     "expert_feedback": ("real_feedback_confirmed", "feedback_source_path"),
     "timed_rehearsal": ("real_rehearsal_confirmed", "recording_or_timer_source_path"),
@@ -204,11 +205,8 @@ def normalize_readiness_count(
 
 
 def parse_completion_claim_allowed(text: str) -> bool | None:
-    if "completion_claim_allowed=True" in text:
-        return True
-    if "completion_claim_allowed=False" in text:
-        return False
-    return None
+    match = COMPLETION_CLAIM_ALLOWED_RE.search(text)
+    return (match.group(1) == "True") if match else None
 
 
 def blocking_items_from_ledger(ledger: dict[str, Any]) -> list[dict[str, Any]]:

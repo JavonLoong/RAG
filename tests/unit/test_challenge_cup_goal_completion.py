@@ -47,6 +47,14 @@ def test_goal_completion_gate_fails_until_real_hard_evidence_is_archived() -> No
     assert "56/56" not in report
     assert "55/55" not in report
     assert "不能标记目标完成" in report
+    assert "## Next Actions" in report
+    assert "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md" in report
+    assert "python scripts/record_challenge_cup_hard_evidence.py expert_feedback" in report
+    assert "python scripts/run_challenge_cup_timed_rehearsal.py" in report
+    assert "python scripts/build_challenge_cup_package.py" in report
+    assert "python scripts/check_challenge_cup_goal_completion.py" in report
+    for mojibake in ("鐪熚疄", "涓嶈兘", "鎶?readiness"):
+        assert mojibake not in report
 
 
 def test_goal_completion_gate_rejects_stale_readiness_gate_count(tmp_path: Path) -> None:

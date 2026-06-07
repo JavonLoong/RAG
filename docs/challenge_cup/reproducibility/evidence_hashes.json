@@ -292,8 +292,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/goal_completion_report.md",
-      "bytes": 1041,
-      "sha256": "3b02929377ac1d5bba4893fc3d8d942e6457f64a880ab1bbc572a4e5d4ada938"
+      "bytes": 2348,
+      "sha256": "75309dcee0ff9e0d8ef3522c18c00b0c74344a44aaba9691b46376a2c8f2e662"
     },
     {
       "path": "docs/challenge_cup/reproducibility/graphrag_manual_evidence_supplement.csv",
@@ -462,8 +462,8 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/verify_submission_package.py",
-      "bytes": 7619,
-      "sha256": "384328dc40a3011e7bd3dd8aba8a04d12b874fa70174b5e74a010ae1e599beba"
+      "bytes": 8657,
+      "sha256": "01f5f5a741406a17f9497678a5cf19bafcf41799b28c732264f4edbcdc974ec9"
     },
     {
       "path": "docs/project_deliverables/06_汇报材料_发群和组会/发群进度清单.md",

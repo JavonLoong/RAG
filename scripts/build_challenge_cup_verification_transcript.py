@@ -54,6 +54,7 @@ GENERATION_CYCLE_PATHS = {
     "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
     "docs/challenge_cup/reproducibility/final_acceptance_audit.md",
     "docs/challenge_cup/reproducibility/goal_completion_report.md",
+    "docs/challenge_cup/reproducibility/verify_submission_package.py",
     "docs/challenge_cup/reproducibility/verification_transcript.json",
     "docs/challenge_cup/reproducibility/verification_transcript.md",
     "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
@@ -112,10 +113,13 @@ def parse_status_line(text: str) -> str:
 
 
 def parse_bool_field(text: str, field: str) -> bool | None:
-    if f"{field}=True" in text:
-        return True
-    if f"{field}=False" in text:
-        return False
+    for pattern in (
+        rf"^- {re.escape(field)}=(True|False)\s*$",
+        rf"^- {re.escape(field)}: `(True|False)`\s*$",
+    ):
+        match = re.search(pattern, text, flags=re.MULTILINE)
+        if match:
+            return match.group(1) == "True"
     return None
 
 
