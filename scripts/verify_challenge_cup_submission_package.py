@@ -24,6 +24,20 @@ REQUIRED_GOAL_COMPLETION_NEXT_ACTION_TERMS = (
     "python scripts/build_challenge_cup_package.py",
     "python scripts/check_challenge_cup_goal_completion.py",
 )
+REQUIRED_GOAL_COMPLETION_READABLE_BOUNDARY_TERMS = (
+    "真实专家反馈",
+    "真实计时彩排",
+    "不能标记目标完成",
+    "不能把 readiness gate 说成获奖保证",
+)
+FORBIDDEN_GOAL_COMPLETION_MOJIBAKE_TERMS = (
+    "鐪熚疄",
+    "鍙嶉",
+    "褰╂帓",
+    "涓嶈兘",
+    "鏈姤",
+    "鎶?readiness",
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -80,6 +94,16 @@ def goal_completion_next_actions_ready(text: str, failures: list[str]) -> bool:
         failures.append(f"goal completion report missing next actions: {missing}")
         return False
     return True
+
+
+def goal_completion_boundary_readable(text: str, failures: list[str]) -> bool:
+    missing = [term for term in REQUIRED_GOAL_COMPLETION_READABLE_BOUNDARY_TERMS if term not in text]
+    forbidden = [term for term in FORBIDDEN_GOAL_COMPLETION_MOJIBAKE_TERMS if term in text]
+    if missing:
+        failures.append(f"goal completion report missing readable boundary terms: {missing}")
+    if forbidden:
+        failures.append(f"goal completion report contains mojibake boundary terms: {forbidden}")
+    return not missing and not forbidden
 
 
 def verify_package(root: Path) -> dict[str, Any]:
@@ -150,6 +174,7 @@ def verify_package(root: Path) -> dict[str, Any]:
     if goal_status == "unknown":
         failures.append("goal completion status missing")
     next_actions_ready = True
+    readable_boundary_ready = goal_completion_boundary_readable(goal_completion, failures)
     if goal_status == "fail":
         next_actions_ready = goal_completion_next_actions_ready(goal_completion, failures)
 
@@ -166,6 +191,7 @@ def verify_package(root: Path) -> dict[str, Any]:
         "goal_completion_status": goal_status,
         "completion_claim_allowed": completion_claim_allowed,
         "goal_completion_next_actions_ready": next_actions_ready,
+        "goal_completion_readable_boundary_ready": readable_boundary_ready,
     }
 
 

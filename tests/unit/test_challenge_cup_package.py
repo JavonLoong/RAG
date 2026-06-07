@@ -1796,6 +1796,80 @@ def test_submission_package_verifier_runs_from_extracted_archive(tmp_path: Path)
     assert payload["browser_smoke_status"] == "pass"
     assert payload["completion_claim_allowed"] is False
     assert payload["goal_completion_next_actions_ready"] is True
+    assert payload["goal_completion_readable_boundary_ready"] is True
+
+
+def test_submission_package_verifier_rejects_unreadable_goal_completion_boundary(tmp_path: Path) -> None:
+    verifier_path = PACKAGE_DIR / "reproducibility" / "verify_submission_package.py"
+    spec = importlib.util.spec_from_file_location("verify_submission_package_for_test", verifier_path)
+    assert spec and spec.loader
+    verifier = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = verifier
+    spec.loader.exec_module(verifier)
+
+    root = tmp_path / "submission"
+    repro = root / "docs" / "challenge_cup" / "reproducibility"
+    repro.mkdir(parents=True)
+    goal_report = repro / "goal_completion_report.md"
+    live_smoke = repro / "live_demo_smoke_report.json"
+    browser_smoke = repro / "browser_demo_smoke_report.json"
+    goal_report.write_text(
+        "\n".join(
+            [
+                "# Challenge Cup Goal Completion Gate",
+                "",
+                "- Status: `fail`",
+                "- completion_claim_allowed=False",
+                "",
+                "## Next Actions",
+                "",
+                "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md",
+                "python scripts/record_challenge_cup_hard_evidence.py expert_feedback",
+                "python scripts/run_challenge_cup_timed_rehearsal.py",
+                "python scripts/build_challenge_cup_package.py",
+                "python scripts/check_challenge_cup_goal_completion.py",
+                "",
+                "## Boundary",
+                "",
+                "missing readable Chinese hard-evidence boundary language",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    live_smoke.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
+    browser_smoke.write_text(json.dumps({"status": "pass"}), encoding="utf-8")
+
+    evidence_files = [
+        "docs/challenge_cup/reproducibility/goal_completion_report.md",
+        "docs/challenge_cup/reproducibility/live_demo_smoke_report.json",
+        "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json",
+    ]
+    hashes = []
+    for relative in evidence_files:
+        path = root / Path(*relative.split("/"))
+        data = path.read_bytes()
+        hashes.append({"path": relative, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+    (root / "docs" / "challenge_cup").mkdir(parents=True, exist_ok=True)
+    (root / "docs" / "challenge_cup" / "package_manifest.json").write_text(
+        json.dumps(
+            {
+                "integrity_manifest": "docs/challenge_cup/reproducibility/evidence_hashes.json",
+                "evidence_files": evidence_files,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (repro / "evidence_hashes.json").write_text(
+        json.dumps({"algorithm": "sha256", "excluded_self_reports": [], "files": hashes}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    payload = verifier.verify_package(root)
+
+    assert payload["status"] == "fail"
+    assert any("goal completion report missing readable boundary terms" in item for item in payload["failures"])
 
 
 def test_build_challenge_cup_package_is_idempotent() -> None:
