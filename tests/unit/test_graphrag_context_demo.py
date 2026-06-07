@@ -13,6 +13,17 @@ BOUNDARY = (
     "This report is a context-only GraphRAG retrieval demo; it does not generate LLM answers "
     "or prove online answer win-rate."
 )
+FORBIDDEN_VISIBLE_SOURCE_TOKENS = (
+    "z-library",
+    "z-lib",
+    "1lib",
+    "libgen",
+    "sci-hub",
+    "anna's archive",
+    "annas-archive",
+    "盗版",
+    "pirat",
+)
 
 
 def test_build_graphrag_context_demo_outputs_text_and_graph_context() -> None:
@@ -63,8 +74,15 @@ def test_build_graphrag_context_demo_outputs_text_and_graph_context() -> None:
         assert "Context-only debug mode" in case["prompt_context"]
         assert case["answer"] is None
 
+    payload_text = json.dumps(payload, ensure_ascii=False).lower()
+    for forbidden in FORBIDDEN_VISIBLE_SOURCE_TOKENS:
+        assert forbidden not in payload_text
+
     markdown = REPORT_MD.read_text(encoding="utf-8")
     assert "GraphRAG context-only QA demo" in markdown
     assert "不生成 LLM 答案" in markdown
     assert "triples.csv" in markdown
     assert BOUNDARY in markdown
+    markdown_lower = markdown.lower()
+    for forbidden in FORBIDDEN_VISIBLE_SOURCE_TOKENS:
+        assert forbidden not in markdown_lower

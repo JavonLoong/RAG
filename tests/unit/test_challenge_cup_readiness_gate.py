@@ -2024,6 +2024,24 @@ def test_graphrag_evidence_audit_gate_rejects_missing_required_fields(monkeypatc
     assert "graph_evidence_source" in check.detail
 
 
+def test_graphrag_evidence_audit_gate_rejects_visible_risky_source_labels(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    risky_source = "Advanced Gas Turbine Combustor (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    payload = json.loads(module.GRAPH_REPORT_JSON.read_text(encoding="utf-8"))
+    payload["cases"][0]["matched_graph_evidence"][0]["source_file"] = risky_source
+    graph_json = tmp_path / "challenge_cup_graphrag_same_question_report.json"
+    graph_json.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    graph_md = tmp_path / "challenge_cup_graphrag_same_question_report.md"
+    graph_md.write_text(module.GRAPH_REPORT_MD.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.setattr(module, "GRAPH_REPORT_JSON", graph_json)
+    monkeypatch.setattr(module, "GRAPH_REPORT_MD", graph_md)
+
+    check = module.check_graphrag_same_question_evidence()
+
+    assert not check.passed
+    assert "forbidden visible source labels" in check.detail
+
+
 def test_graphrag_context_demo_gate_rejects_generated_answers(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     demo_json = tmp_path / "challenge_cup_graphrag_context_demo.json"
@@ -2065,6 +2083,64 @@ def test_graphrag_context_demo_gate_rejects_generated_answers(monkeypatch, tmp_p
 
     assert not check.passed
     assert "context_only" in check.detail
+
+
+def test_graphrag_context_demo_gate_rejects_visible_risky_source_labels(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    risky_source = "Advanced Gas Turbine Combustor (z-library.sk, 1lib.sk, z-lib.sk).pdf"
+    demo_json = tmp_path / "challenge_cup_graphrag_context_demo.json"
+    demo_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_graphrag_context_demo",
+                "context_only": True,
+                "answer_generated": False,
+                "boundary": module.GRAPH_CONTEXT_DEMO_BOUNDARY,
+                "source_graph": "docs/project_deliverables/06_四本书KG工具跑通演示/triples.csv",
+                "text_baseline_method": "keyword",
+                "demo_case_count": 3,
+                "case_ids": ["cc039", "cc040", "cc041"],
+                "cases": [
+                    {
+                        "id": case_id,
+                        "text_evidence": [{"id": "T1", "source_type": "text"}],
+                        "graph_evidence": [{"id": "G1", "source_type": "graph", "source": risky_source}],
+                        "citations": [
+                            {"id": "T1", "source_type": "text"},
+                            {"id": "G1", "source_type": "graph", "source": risky_source},
+                        ],
+                        "prompt_context": (
+                            "Context-only debug mode\n"
+                            "## Text retrieval evidence\n"
+                            "## Graph retrieval evidence\n"
+                            f"[G1] source={risky_source}"
+                        ),
+                        "answer": None,
+                    }
+                    for case_id in ["cc039", "cc040", "cc041"]
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    demo_md = tmp_path / "challenge_cup_graphrag_context_demo.md"
+    demo_md.write_text(
+        "GraphRAG context-only QA demo\n"
+        "不生成 LLM 答案\n"
+        "涓嶇敓鎴?LLM 绛旀\n"
+        "triples.csv\n"
+        f"{module.GRAPH_CONTEXT_DEMO_BOUNDARY}\n"
+        f"source={risky_source}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "GRAPH_CONTEXT_DEMO_JSON", demo_json)
+    monkeypatch.setattr(module, "GRAPH_CONTEXT_DEMO_MD", demo_md)
+
+    check = module.check_graphrag_context_demo()
+
+    assert not check.passed
+    assert "forbidden visible source labels" in check.detail
 
 
 def test_graphrag_answer_benchmark_gate_rejects_online_win_rate_claim(monkeypatch, tmp_path) -> None:

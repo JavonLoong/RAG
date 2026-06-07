@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from challenge_cup_source_labels import sanitize_visible_source_label
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = REPO_ROOT / "evaluation" / "reports"
@@ -64,7 +66,7 @@ def text_evidence_for(row: dict[str, Any], limit: int = 2) -> list[dict[str, Any
                 "source_type": "text",
                 "rank": int(hit.get("rank") or index),
                 "raw_id": str(hit.get("id", "")),
-                "source": str(hit.get("source_file", "")),
+                "source": sanitize_visible_source_label(str(hit.get("source_file", ""))),
                 "source_scope": str(hit.get("source_scope", "")),
                 "score": hit.get("score"),
                 "preview": preview,
@@ -86,7 +88,7 @@ def graph_evidence_for(case: dict[str, Any], limit: int = 3) -> list[dict[str, A
                 "subject": str(hit.get("subject", "")),
                 "predicate": str(hit.get("predicate", "")),
                 "object": str(hit.get("object", "")),
-                "source": str(hit.get("source_file", "")),
+                "source": sanitize_visible_source_label(str(hit.get("source_file", ""))),
                 "source_page": str(hit.get("source_page", "")),
                 "confidence": str(hit.get("confidence", "")),
                 "evidence_preview": str(hit.get("evidence_preview", "")),

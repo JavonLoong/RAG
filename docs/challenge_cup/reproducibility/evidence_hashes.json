@@ -102,8 +102,8 @@
     },
     {
       "path": "docs/challenge_cup/21_知识产权与开源合规说明.md",
-      "bytes": 5019,
-      "sha256": "67f6fe1e35eddbc565273bceb3f13aa8993ac7c1c32e5c0f3489899ff0628530"
+      "bytes": 5248,
+      "sha256": "b151d332f0dfa74678dd58bb235d6d82c5b76209f69450309c3ff4954134fc91"
     },
     {
       "path": "docs/challenge_cup/22_同类方案对比与创新性证据卡.md",
@@ -492,13 +492,13 @@
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.json",
-      "bytes": 41732,
-      "sha256": "ed0aabc3ef8e32ed867291c050f0c60e2e787e87102f4cd6d6aaa07393fec266"
+      "bytes": 40814,
+      "sha256": "a3861a0eb167057c6adc6309e7c9db6d85baef5b81f7684cc6dd4cd69eacefce"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_context_demo.md",
-      "bytes": 11795,
-      "sha256": "d59affe6200907f799d967fbf2445969ac588e9e8752a632d86522b200376d48"
+      "bytes": 11489,
+      "sha256": "84b6138b72dad0d60b3eb176e9df3b1a81d0a5f95ede941c8abedd23357b51d5"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_gap_remediation_plan.json",
@@ -512,8 +512,8 @@
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.json",
-      "bytes": 45876,
-      "sha256": "247e40d17d4337830c7d9131371a733bbd3c43c774296994ce20b594f586a482"
+      "bytes": 45264,
+      "sha256": "762961ecaf5d13fa7019e46b961c730f87e22be59f684cf6eeeead8aaffa469e"
     },
     {
       "path": "evaluation/reports/challenge_cup_graphrag_same_question_report.md",

@@ -22,6 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
 from challenge_cup_expert_review_dimensions import missing_required_review_dimension_groups
 from challenge_cup_hard_evidence_dates import is_not_future_iso_date
 from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata, source_sha256_failure
+from challenge_cup_source_labels import FORBIDDEN_VISIBLE_SOURCE_LABEL_RE
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1229,6 +1230,17 @@ REQUIRED_IP_OPEN_SOURCE_COMPLIANCE_TERMS = {
     "hard_evidence_ledger.md",
     "final_acceptance_audit.md",
 }
+VISIBLE_EVIDENCE_TEXT_SUFFIXES = {
+    ".csv",
+    ".css",
+    ".html",
+    ".js",
+    ".json",
+    ".jsonl",
+    ".md",
+    ".py",
+    ".txt",
+}
 REQUIRED_LOCAL_BASELINE_DIFFERENTIATION_TERMS = {
     "同类方案对比与创新性证据卡",
     "不是普通 RAG 页面",
@@ -1481,6 +1493,48 @@ class GateCheck:
 
 def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def forbidden_visible_source_label_hits(label: str, text: str, *, limit: int = 5) -> list[str]:
+    hits: list[str] = []
+    for match in FORBIDDEN_VISIBLE_SOURCE_LABEL_RE.finditer(text):
+        line_number = text.count("\n", 0, match.start()) + 1
+        hits.append(f"{label}:{line_number}:{match.group(0)}")
+        if len(hits) >= limit:
+            break
+    return hits
+
+
+def display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.name
+
+
+def readable_visible_evidence(relative: str) -> bool:
+    path = PurePosixPath(relative)
+    if path.suffix.lower() not in VISIBLE_EVIDENCE_TEXT_SUFFIXES:
+        return False
+    return relative.startswith("docs/challenge_cup/") or relative.startswith("evaluation/reports/challenge_cup_")
+
+
+def forbidden_visible_source_label_failures(relatives: list[str]) -> list[str]:
+    failures: list[str] = []
+    for relative in sorted(set(relatives)):
+        if not readable_visible_evidence(relative):
+            continue
+        path = REPO_ROOT / relative
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        hits = forbidden_visible_source_label_hits(relative, text)
+        if hits:
+            failures.append(", ".join(hits))
+    return failures
 
 
 def has_value(value: Any) -> bool:
@@ -2399,6 +2453,12 @@ def check_graphrag_same_question_evidence() -> GateCheck:
 
     payload = load_json(GRAPH_REPORT_JSON)
     markdown = GRAPH_REPORT_MD.read_text(encoding="utf-8")
+    forbidden_source_hits = [
+        *forbidden_visible_source_label_hits(display_path(GRAPH_REPORT_JSON), json.dumps(payload, ensure_ascii=False)),
+        *forbidden_visible_source_label_hits(display_path(GRAPH_REPORT_MD), markdown),
+    ]
+    if forbidden_source_hits:
+        failures.append(f"forbidden visible source labels: {forbidden_source_hits}")
     if int(payload.get("total_questions") or 0) != 60:
         failures.append("total_questions must be 60")
     if int(payload.get("graphrag_question_count") or 0) != 10:
@@ -2504,6 +2564,12 @@ def check_graphrag_context_demo() -> GateCheck:
 
     payload = load_json(GRAPH_CONTEXT_DEMO_JSON)
     markdown = GRAPH_CONTEXT_DEMO_MD.read_text(encoding="utf-8")
+    forbidden_source_hits = [
+        *forbidden_visible_source_label_hits(display_path(GRAPH_CONTEXT_DEMO_JSON), json.dumps(payload, ensure_ascii=False)),
+        *forbidden_visible_source_label_hits(display_path(GRAPH_CONTEXT_DEMO_MD), markdown),
+    ]
+    if forbidden_source_hits:
+        failures.append(f"forbidden visible source labels: {forbidden_source_hits}")
     if payload.get("report_type") != "challenge_cup_graphrag_context_demo":
         failures.append(f"report_type={payload.get('report_type')}")
     if payload.get("context_only") is not True:
@@ -4321,6 +4387,15 @@ def check_ip_open_source_compliance() -> GateCheck:
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
     if compliance_relative not in manifest_evidence:
         failures.append(f"missing manifest entries: ['{compliance_relative}']")
+    visible_scan_paths = set(manifest_evidence) | {compliance_relative}
+    for path in (GRAPH_CONTEXT_DEMO_JSON, GRAPH_CONTEXT_DEMO_MD):
+        try:
+            visible_scan_paths.add(path.relative_to(REPO_ROOT).as_posix())
+        except ValueError:
+            continue
+    forbidden_source_failures = forbidden_visible_source_label_failures(sorted(visible_scan_paths))
+    if forbidden_source_failures:
+        failures.append(f"forbidden visible source labels: {forbidden_source_failures}")
 
     hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
     hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}

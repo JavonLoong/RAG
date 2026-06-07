@@ -6,6 +6,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from challenge_cup_source_labels import sanitize_visible_source_label
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET = REPO_ROOT / "evaluation" / "system_eval_questions.jsonl"
@@ -89,7 +91,7 @@ def graph_keyword_hits(keywords: list[str], triples: list[dict[str, str]]) -> li
                     "subject": triple.get("subject", ""),
                     "predicate": triple.get("predicate", ""),
                     "object": triple.get("object", ""),
-                    "source_file": triple.get("source_file", ""),
+                    "source_file": sanitize_visible_source_label(triple.get("source_file", "")),
                     "source_page": triple.get("source_page", ""),
                     "confidence": triple.get("confidence", ""),
                     "evidence_preview": str(triple.get("evidence", ""))[:160],
