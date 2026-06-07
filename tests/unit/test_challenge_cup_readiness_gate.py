@@ -1289,6 +1289,155 @@ def install_control_artifact_links(module, monkeypatch, tmp_path: Path, required
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
 
+def timed_runner_without_source_commands(module, commands: list[str]) -> list[str]:
+    runner_without_source = (
+        "python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id "
+        "--rehearsal-date YYYY-MM-DD --observer real-observer-alias "
+        "--opening-actual-seconds actual-opening-seconds --demo-actual-seconds actual-demo-seconds "
+        "--offline-fallback-actual-seconds actual-offline-fallback-seconds "
+        "--killer-question-seconds q1-seconds q2-seconds q3-seconds q4-seconds q5-seconds "
+        "--confirm-real-rehearsal"
+    )
+    return [
+        runner_without_source if module.TIMED_REHEARSAL_RUNNER in command else command
+        for command in commands
+    ]
+
+
+def write_current_artifacts(tmp_path: Path, relative_paths: list[str]) -> None:
+    for relative in relative_paths:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        source = REPO_ROOT / relative
+        target.write_text(
+            source.read_text(encoding="utf-8") if source.exists() else "challenge cup artifact\n",
+            encoding="utf-8",
+        )
+
+
+def write_ready_packet_files(tmp_path: Path, streams_or_packets: list[dict]) -> None:
+    for item in streams_or_packets:
+        for key in ("ready_packet_files", "attachment_files"):
+            for relative in item.get(key, []):
+                path = tmp_path / str(relative)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("challenge cup handoff artifact\n", encoding="utf-8")
+        handoff_file = item.get("handoff_file")
+        if handoff_file:
+            path = tmp_path / str(handoff_file)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("challenge cup handoff artifact\n", encoding="utf-8")
+
+
+def test_hard_evidence_closure_board_gate_rejects_runner_without_command_level_source(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    required_paths = list(module.HARD_EVIDENCE_CLOSURE_BOARD_REQUIRED_PATHS)
+    payload = json.loads(module.HARD_EVIDENCE_CLOSURE_BOARD_JSON.read_text(encoding="utf-8"))
+    for stream in payload["closure_streams"]:
+        if stream["category"] == "timed_rehearsal":
+            stream["ready_to_execute_commands"] = timed_runner_without_source_commands(
+                module,
+                stream["ready_to_execute_commands"],
+            )
+
+    write_current_artifacts(tmp_path, required_paths)
+    (tmp_path / module.HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE).write_text(
+        json.dumps(payload, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        module,
+        "HARD_EVIDENCE_CLOSURE_BOARD_MD",
+        tmp_path / module.HARD_EVIDENCE_CLOSURE_BOARD_MD_RELATIVE,
+    )
+    monkeypatch.setattr(
+        module,
+        "HARD_EVIDENCE_CLOSURE_BOARD_JSON",
+        tmp_path / module.HARD_EVIDENCE_CLOSURE_BOARD_JSON_RELATIVE,
+    )
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_hard_evidence_closure_board()
+
+    assert not check.passed
+    assert "timed rehearsal runner missing independent --source attachment" in check.detail
+
+
+def test_hard_evidence_action_pack_gate_rejects_runner_without_command_level_source(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    required_paths = list(module.HARD_EVIDENCE_ACTION_PACK_REQUIRED_PATHS)
+    payload = json.loads(module.HARD_EVIDENCE_ACTION_PACK_JSON.read_text(encoding="utf-8"))
+    for stream in payload["action_streams"]:
+        if stream["category"] == "timed_rehearsal":
+            stream["recording_commands"] = timed_runner_without_source_commands(
+                module,
+                stream["recording_commands"],
+            )
+    write_ready_packet_files(tmp_path, payload["action_streams"])
+
+    write_current_artifacts(tmp_path, required_paths)
+    (tmp_path / module.HARD_EVIDENCE_ACTION_PACK_JSON_RELATIVE).write_text(
+        json.dumps(payload, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "HARD_EVIDENCE_ACTION_PACK_MD", tmp_path / module.HARD_EVIDENCE_ACTION_PACK_MD_RELATIVE)
+    monkeypatch.setattr(
+        module,
+        "HARD_EVIDENCE_ACTION_PACK_JSON",
+        tmp_path / module.HARD_EVIDENCE_ACTION_PACK_JSON_RELATIVE,
+    )
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_hard_evidence_action_pack()
+
+    assert not check.passed
+    assert "timed rehearsal runner missing independent --source attachment" in check.detail
+
+
+def test_external_evidence_execution_kit_gate_rejects_runner_without_command_level_source(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    required_paths = list(module.EXTERNAL_EVIDENCE_EXECUTION_KIT_REQUIRED_PATHS)
+    payload = json.loads(module.EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON.read_text(encoding="utf-8"))
+    for packet in payload["execution_packets"]:
+        if packet["hard_evidence_category"] == "timed_rehearsal":
+            packet["recording_commands"] = timed_runner_without_source_commands(
+                module,
+                packet["recording_commands"],
+            )
+    write_ready_packet_files(tmp_path, payload["execution_packets"])
+
+    write_current_artifacts(tmp_path, required_paths)
+    (tmp_path / module.EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON_RELATIVE).write_text(
+        json.dumps(payload, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        module,
+        "EXTERNAL_EVIDENCE_EXECUTION_KIT_MD",
+        tmp_path / module.EXTERNAL_EVIDENCE_EXECUTION_KIT_MD_RELATIVE,
+    )
+    monkeypatch.setattr(
+        module,
+        "EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON",
+        tmp_path / module.EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON_RELATIVE,
+    )
+    install_control_artifact_links(module, monkeypatch, tmp_path, required_paths)
+
+    check = module.check_external_evidence_execution_kit()
+
+    assert not check.passed
+    assert "timed rehearsal runner missing independent --source attachment" in check.detail
+
+
 def test_hard_evidence_action_pack_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     required_paths = [

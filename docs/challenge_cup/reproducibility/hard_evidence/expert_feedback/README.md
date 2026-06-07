@@ -2,7 +2,7 @@
 
 放入真实专家反馈证据：签字页、邮件回复、会议纪要或聊天截图。
 每份证据应能看到 reviewer identity、role/org、date、review dimensions 和 remediation record。
-Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, review_dimensions, remediation_record, real_feedback_confirmed.
+Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, source_origin, review_dimensions, remediation_record, real_feedback_confirmed.
 Required review dimension groups: practical_value, innovation, boundary_rigor.
 Use YYYY-MM-DD for review_date; it must not be in the future. feedback_source_path must point to the real source attachment, not the JSON summary itself.
 reviewer_identity, role_or_org, and remediation issue/action must be non-empty text.

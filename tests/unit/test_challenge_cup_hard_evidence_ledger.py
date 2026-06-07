@@ -74,6 +74,7 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
         assert placeholder in command_text
     assert "must not be in the future" in command_text
     assert "source attachment must be non-empty and must not be a JSON metadata file" in command_text
+    assert "source_origin" in command_text
     assert "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text" in command_text
     assert "observer must be non-empty text" in command_text
 

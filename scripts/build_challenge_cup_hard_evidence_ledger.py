@@ -492,7 +492,7 @@ def write_readmes() -> None:
                     "\\u6bcf\\u4efd\\u8bc1\\u636e\\u5e94\\u80fd\\u770b\\u5230 reviewer identity\\u3001"
                     "role/org\\u3001date\\u3001review dimensions \\u548c remediation record\\u3002"
                 ),
-                "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, review_dimensions, remediation_record, real_feedback_confirmed.",
+                "Required JSON fields: evidence_type, reviewer_identity, role_or_org, review_date, feedback_source_path, source_sha256, source_origin, review_dimensions, remediation_record, real_feedback_confirmed.",
                 "Required review dimension groups: practical_value, innovation, boundary_rigor.",
                 "Use YYYY-MM-DD for review_date; it must not be in the future. feedback_source_path must point to the real source attachment, not the JSON summary itself.",
                 "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text.",

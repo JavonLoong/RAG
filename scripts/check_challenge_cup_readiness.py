@@ -1373,6 +1373,7 @@ REQUIRED_EXPERT_FEEDBACK_FORM_TERMS = {
 }
 COMMAND_PREFIXES = ("python ", "node ", ".\\", "npm ", "uv ")
 COMMAND_FRAGMENTS = (";", "http://", "https://")
+TIMED_REHEARSAL_RUNNER = "run_challenge_cup_timed_rehearsal.py"
 CHALLENGE_CUP_TEXT_SUFFIXES = {".md", ".json", ".txt"}
 CHINESE_READABILITY_REQUIRED_TERMS = {
     "挑战杯",
@@ -1415,6 +1416,16 @@ def has_value(value: Any) -> bool:
     if isinstance(value, (list, dict, tuple, set)):
         return bool(value)
     return True
+
+
+def command_items(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value]
+
+
+def command_with_option(commands: list[str], command_fragment: str, option: str) -> bool:
+    return any(command_fragment in command and option in command for command in commands)
 
 
 def numeric_value(value: Any) -> float | None:
@@ -4690,11 +4701,11 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
     examples = stream.get("required_source_examples")
     if not isinstance(examples, list) or len(examples) < 4:
         failures.append(f"{category}: required_source_examples below 4")
-    ready_commands = stream.get("ready_to_execute_commands")
-    if not isinstance(ready_commands, list) or not ready_commands:
+    ready_commands = command_items(stream.get("ready_to_execute_commands"))
+    if not ready_commands:
         failures.append(f"{category}: ready_to_execute_commands missing")
     else:
-        joined = "\n".join(str(item) for item in ready_commands)
+        joined = "\n".join(ready_commands)
         if category == "expert_feedback":
             if "preflight_challenge_cup_hard_evidence.py expert_feedback" not in joined:
                 failures.append(
@@ -4711,10 +4722,13 @@ def validate_hard_evidence_closure_stream(stream: dict[str, Any]) -> list[str]:
                 )
             if "run_challenge_cup_timed_rehearsal.py" not in joined:
                 failures.append(f"{category}: ready_to_execute_commands missing timed rehearsal runner")
-            if "--source" not in joined:
-                failures.append(f"{category}: ready_to_execute_commands missing independent --source attachment")
-            if "--confirm-real-rehearsal" not in joined:
-                failures.append(f"{category}: ready_to_execute_commands missing --confirm-real-rehearsal")
+            else:
+                if not command_with_option(ready_commands, TIMED_REHEARSAL_RUNNER, "--source"):
+                    failures.append(
+                        f"{category}: timed rehearsal runner missing independent --source attachment"
+                    )
+                if not command_with_option(ready_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
+                    failures.append(f"{category}: timed rehearsal runner missing --confirm-real-rehearsal")
     post_commands = stream.get("post_collection_commands")
     if not isinstance(post_commands, list) or "python scripts/check_challenge_cup_goal_completion.py" not in {
         str(item) for item in post_commands
@@ -4884,7 +4898,8 @@ def check_hard_evidence_action_pack() -> GateCheck:
         missing_ready_files = sorted(relative for relative in ready_files if not nonempty(REPO_ROOT / relative))
         if missing_ready_files:
             failures.append(f"{category}: ready_packet_files missing or empty: {missing_ready_files}")
-        commands = "\n".join(str(item) for item in stream.get("recording_commands", []))
+        recording_commands = command_items(stream.get("recording_commands"))
+        commands = "\n".join(recording_commands)
         if "<" in commands or ">" in commands:
             failures.append(f"{category}: recording_commands contain PowerShell-unsafe angle placeholders")
         powershell = "\n".join(str(item) for item in stream.get("powershell_execution_block", []))
@@ -4916,10 +4931,11 @@ def check_hard_evidence_action_pack() -> GateCheck:
                 failures.append(f"{category}: recording_commands missing schedule recorder")
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{category}: recording_commands missing timed rehearsal runner")
-            if "--source" not in commands:
-                failures.append(f"{category}: recording_commands missing independent --source attachment")
-            if "--confirm-real-rehearsal" not in commands:
-                failures.append(f"{category}: recording_commands missing --confirm-real-rehearsal")
+            else:
+                if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--source"):
+                    failures.append(f"{category}: timed rehearsal runner missing independent --source attachment")
+                if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
+                    failures.append(f"{category}: timed rehearsal runner missing --confirm-real-rehearsal")
             failed_rule = str(stream.get("failed_rehearsal_archival_rule", ""))
             for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
                 if term not in failed_rule:
@@ -5138,7 +5154,8 @@ def check_external_evidence_execution_kit() -> GateCheck:
         if missing_attachments:
             failures.append(f"{packet_id}: attachment_files missing or empty: {missing_attachments}")
 
-        commands = "\n".join(str(item) for item in packet.get("recording_commands", []))
+        recording_commands = command_items(packet.get("recording_commands"))
+        commands = "\n".join(recording_commands)
         if "<" in commands or ">" in commands:
             failures.append(f"{packet_id}: recording_commands contain PowerShell-unsafe angle placeholders")
         powershell = "\n".join(str(item) for item in packet.get("powershell_execution_block", []))
@@ -5166,10 +5183,11 @@ def check_external_evidence_execution_kit() -> GateCheck:
                 )
             if "run_challenge_cup_timed_rehearsal.py" not in commands:
                 failures.append(f"{packet_id}: recording_commands missing timed rehearsal runner")
-            if "--source" not in commands:
-                failures.append(f"{packet_id}: recording_commands missing independent --source attachment")
-            if "--confirm-real-rehearsal" not in commands:
-                failures.append(f"{packet_id}: recording_commands missing --confirm-real-rehearsal")
+            else:
+                if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--source"):
+                    failures.append(f"{packet_id}: timed rehearsal runner missing independent --source attachment")
+                if not command_with_option(recording_commands, TIMED_REHEARSAL_RUNNER, "--confirm-real-rehearsal"):
+                    failures.append(f"{packet_id}: timed rehearsal runner missing --confirm-real-rehearsal")
             failed_rule = str(packet.get("failed_rehearsal_archival_rule", ""))
             for term in ("timing_acceptance_pass=false", "rejected_metadata_records", "collected_count"):
                 if term not in failed_rule:
