@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import UTC, datetime
 import json
 import re
 import shutil
@@ -24,6 +25,7 @@ OUTPUT_DIR = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility"
 INTAKE_ROOT = OUTPUT_DIR / "hard_evidence"
 EXPERT_DIR = INTAKE_ROOT / "expert_feedback"
 REHEARSAL_DIR = INTAKE_ROOT / "timed_rehearsal"
+OVERRIDE_LOG = INTAKE_ROOT / "override_log.jsonl"
 
 EXPERT_EVIDENCE_TYPES = {"signed_feedback_form", "email_reply", "meeting_minutes", "chat_screenshot"}
 REHEARSAL_EVIDENCE_TYPES = {"timer_screenshot", "screen_recording", "observer_note", "missed_question_list"}
@@ -44,13 +46,14 @@ class HardEvidenceInputError(ValueError):
 
 
 def configure_paths(repo_root: Path) -> None:
-    global REPO_ROOT, OUTPUT_DIR, INTAKE_ROOT, EXPERT_DIR, REHEARSAL_DIR
+    global REPO_ROOT, OUTPUT_DIR, INTAKE_ROOT, EXPERT_DIR, REHEARSAL_DIR, OVERRIDE_LOG
 
     REPO_ROOT = repo_root
     OUTPUT_DIR = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility"
     INTAKE_ROOT = OUTPUT_DIR / "hard_evidence"
     EXPERT_DIR = INTAKE_ROOT / "expert_feedback"
     REHEARSAL_DIR = INTAKE_ROOT / "timed_rehearsal"
+    OVERRIDE_LOG = INTAKE_ROOT / "override_log.jsonl"
 
     ledger.REPO_ROOT = REPO_ROOT
     ledger.OUTPUT_DIR = OUTPUT_DIR
@@ -90,6 +93,11 @@ def existing_source(path_value: str) -> Path:
     return path
 
 
+def target_source_path(source: Path, target_dir: Path, evidence_id: str) -> Path:
+    suffix = source.suffix or ".evidence"
+    return target_dir / f"{evidence_id}{suffix.lower()}"
+
+
 def valid_source_attachment(path_value: str) -> Path:
     source = existing_source(path_value)
     failure = source_attachment_failure(source, forbidden_source_root=INTAKE_ROOT)
@@ -107,6 +115,15 @@ def required_nonempty_text(field: str, value: str) -> str:
 
 def required_nonempty_text_list(field: str, values: list[str]) -> list[str]:
     return [required_nonempty_text(f"{field}[{index}]", value) for index, value in enumerate(values, start=1)]
+
+
+def validate_force_reason(args: argparse.Namespace) -> str | None:
+    if not getattr(args, "force", False):
+        return None
+    value = getattr(args, "force_reason", None)
+    if value is None or not str(value).strip():
+        raise HardEvidenceInputError("--force-reason must be non-empty text when --force is supplied")
+    return str(value).strip()
 
 
 def validate_positive_timing(field: str, actual: int) -> None:
@@ -150,8 +167,7 @@ def timed_rehearsal_acceptance_failures(args: argparse.Namespace) -> list[str]:
 
 
 def copy_source(source: Path, target_dir: Path, evidence_id: str, force: bool = False) -> Path:
-    suffix = source.suffix or ".evidence"
-    target = target_dir / f"{evidence_id}{suffix.lower()}"
+    target = target_source_path(source, target_dir, evidence_id)
     target.parent.mkdir(parents=True, exist_ok=True)
     source_bytes = source.read_bytes()
     if target.exists() and target.read_bytes() != source_bytes and not force:
@@ -171,12 +187,45 @@ def write_metadata(path: Path, payload: dict[str, Any], *, force: bool = False) 
     write_json(path, payload)
 
 
+def existing_sha256(path: Path) -> str | None:
+    return sha256_file(path) if path.exists() and path.is_file() else None
+
+
+def append_override_audit_record(
+    *,
+    category: str,
+    evidence_id: str,
+    metadata_path: Path,
+    source_path: Path,
+    force_reason: str,
+    previous_metadata_sha256: str | None,
+    previous_source_sha256: str | None,
+) -> None:
+    OVERRIDE_LOG.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "audit_event": "hard_evidence_force_override",
+        "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "category": category,
+        "evidence_id": evidence_id,
+        "metadata_path": repo_path(metadata_path),
+        "source_path": repo_path(source_path),
+        "force_reason": force_reason,
+        "previous_metadata_sha256": previous_metadata_sha256,
+        "new_metadata_sha256": sha256_file(metadata_path),
+        "previous_source_sha256": previous_source_sha256,
+        "new_source_sha256": sha256_file(source_path),
+    }
+    with OVERRIDE_LOG.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+
+
 def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
     if not args.confirm_real_feedback:
         raise HardEvidenceInputError(
             "refusing to record expert feedback without --confirm-real-feedback; do not archive feedback "
             "unless the source is a real signed form, email reply, meeting minute, or chat screenshot"
         )
+    force_reason = validate_force_reason(args)
     if args.evidence_type not in EXPERT_EVIDENCE_TYPES:
         raise ValueError(f"unsupported expert feedback evidence_type: {args.evidence_type}")
     reviewer_identity = required_nonempty_text("reviewer_identity", args.reviewer_identity)
@@ -194,6 +243,10 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         )
     review_date = parse_iso_date(args.review_date)
     source = valid_source_attachment(args.source)
+    target_source = target_source_path(source, EXPERT_DIR, args.id)
+    metadata_path = EXPERT_DIR / f"{args.id}.json"
+    previous_metadata_sha256 = existing_sha256(metadata_path)
+    previous_source_sha256 = existing_sha256(target_source)
     copied_source = copy_source(source, EXPERT_DIR, args.id, force=args.force)
     metadata = {
         "evidence_type": args.evidence_type,
@@ -207,8 +260,17 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         "remediation_record": [{"issue": remediation_issue, "action": remediation_action}],
         "real_feedback_confirmed": True,
     }
-    metadata_path = EXPERT_DIR / f"{args.id}.json"
     write_metadata(metadata_path, metadata, force=args.force)
+    if force_reason:
+        append_override_audit_record(
+            category="expert_feedback",
+            evidence_id=args.id,
+            metadata_path=metadata_path,
+            source_path=copied_source,
+            force_reason=force_reason,
+            previous_metadata_sha256=previous_metadata_sha256,
+            previous_source_sha256=previous_source_sha256,
+        )
     return metadata_path, copied_source
 
 
@@ -218,12 +280,17 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
             "refusing to record timed rehearsal without --confirm-real-rehearsal; do not archive rehearsal data "
             "unless these timings came from an actual observed run"
         )
+    force_reason = validate_force_reason(args)
     if args.evidence_type not in REHEARSAL_EVIDENCE_TYPES:
         raise ValueError(f"unsupported timed rehearsal evidence_type: {args.evidence_type}")
     observer = required_nonempty_text("observer", args.observer)
     rehearsal_date = parse_iso_date(args.rehearsal_date)
     validate_timed_rehearsal_limits(args)
     source = valid_source_attachment(args.source)
+    target_source = target_source_path(source, REHEARSAL_DIR, args.id)
+    metadata_path = REHEARSAL_DIR / f"{args.id}.json"
+    previous_metadata_sha256 = existing_sha256(metadata_path)
+    previous_source_sha256 = existing_sha256(target_source)
     copied_source = copy_source(source, REHEARSAL_DIR, args.id, force=args.force)
     timing_failures = timed_rehearsal_acceptance_failures(args)
     source_origin = getattr(args, "source_origin", SOURCE_ORIGIN_EXTERNAL_ATTACHMENT)
@@ -245,8 +312,17 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         "timing_acceptance_failures": timing_failures,
         "real_rehearsal_confirmed": True,
     }
-    metadata_path = REHEARSAL_DIR / f"{args.id}.json"
     write_metadata(metadata_path, metadata, force=args.force)
+    if force_reason:
+        append_override_audit_record(
+            category="timed_rehearsal",
+            evidence_id=args.id,
+            metadata_path=metadata_path,
+            source_path=copied_source,
+            force_reason=force_reason,
+            previous_metadata_sha256=previous_metadata_sha256,
+            previous_source_sha256=previous_source_sha256,
+        )
     return metadata_path, copied_source
 
 
@@ -268,6 +344,7 @@ def build_parser() -> argparse.ArgumentParser:
     expert.add_argument("--remediation-action", required=True)
     expert.add_argument("--confirm-real-feedback", action="store_true")
     expert.add_argument("--force", action="store_true")
+    expert.add_argument("--force-reason")
 
     rehearsal = subparsers.add_parser("timed_rehearsal", help="Record real timed rehearsal evidence.")
     rehearsal.add_argument("--id", required=True, type=safe_evidence_id)
@@ -281,6 +358,7 @@ def build_parser() -> argparse.ArgumentParser:
     rehearsal.add_argument("--killer-question-seconds", nargs="+", required=True, type=int)
     rehearsal.add_argument("--confirm-real-rehearsal", action="store_true")
     rehearsal.add_argument("--force", action="store_true")
+    rehearsal.add_argument("--force-reason")
 
     return parser
 

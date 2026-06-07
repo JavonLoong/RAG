@@ -83,7 +83,7 @@
       "proof_required": "archived expert_feedback and timed_rehearsal intake files",
       "command": "python scripts/build_challenge_cup_hard_evidence_ledger.py",
       "expected_after_step": "ledger shows both hard evidence categories collected and no rejected metadata blocks goal completion",
-      "acceptance_signal": "hard_evidence_ledger.json has status=hard_evidence_complete and completion_claim_allowed=true",
+      "acceptance_signal": "hard_evidence_ledger.json has status=hard_evidence_collected_pending_review and completion_claim_allowed=true",
       "cannot_substitute": "manual edits to the ledger do not substitute for recorded source attachments and metadata",
       "counts_as_hard_evidence": false,
       "does_not_claim_award_or_completion": true

@@ -12,4 +12,5 @@
 - Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.
 - Recording and preflight `--source` paths must be the original external attachments, not files already inside `docs/challenge_cup/reproducibility/hard_evidence/**`.
 - Within each category, duplicate `source_sha256` values are rejected so one attachment cannot count as multiple hard evidence records.
+- If a previously recorded item must be replaced, `--force` requires a non-empty `--force-reason` and appends an audit entry to `docs/challenge_cup/reproducibility/hard_evidence/override_log.jsonl`.
 - 不伪造证据；没有这两类真实证据前，不能标记目标完成。

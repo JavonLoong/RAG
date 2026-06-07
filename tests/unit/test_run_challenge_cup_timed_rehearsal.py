@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -144,6 +145,51 @@ def test_refuses_duplicate_rehearsal_id_without_traceback(tmp_path: Path, capsys
     assert exit_code == 2
     assert "metadata already exists" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_force_override_requires_reason_for_timed_rehearsal_runner(tmp_path: Path, capsys) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer-screenshot.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real timer screenshot v1", encoding="utf-8")
+    args = timed_rehearsal_args("--source", str(source), "--confirm-real-rehearsal")
+    assert module.main(args) == 0
+    capsys.readouterr()
+    source.write_text("real timer screenshot v2", encoding="utf-8")
+
+    exit_code = module.main([*args, "--force"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "--force-reason" in captured.err
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    assert (evidence_dir / "rehearsal-1.txt").read_text(encoding="utf-8") == "real timer screenshot v1"
+
+
+def test_force_override_reason_is_logged_for_timed_rehearsal_runner(tmp_path: Path, capsys) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "timer-screenshot.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real timer screenshot v1", encoding="utf-8")
+    args = timed_rehearsal_args("--source", str(source), "--confirm-real-rehearsal")
+    assert module.main(args) == 0
+    capsys.readouterr()
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "timed_rehearsal"
+    old_source_sha256 = hashlib.sha256((evidence_dir / "rehearsal-1.txt").read_bytes()).hexdigest()
+
+    source.write_text("real timer screenshot v2", encoding="utf-8")
+    assert module.main([*args, "--force", "--force-reason", "replace with corrected observer timer file"]) == 0
+
+    audit_log = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "override_log.jsonl"
+    record = json.loads(audit_log.read_text(encoding="utf-8").splitlines()[0])
+    assert record["category"] == "timed_rehearsal"
+    assert record["evidence_id"] == "rehearsal-1"
+    assert record["force_reason"] == "replace with corrected observer timer file"
+    assert record["previous_source_sha256"] == old_source_sha256
+    assert record["new_source_sha256"] == hashlib.sha256((evidence_dir / "rehearsal-1.txt").read_bytes()).hexdigest()
+    assert record["new_source_sha256"] != record["previous_source_sha256"]
 
 
 def test_rejects_wrong_killer_question_count(tmp_path: Path) -> None:

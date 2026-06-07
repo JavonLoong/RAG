@@ -482,6 +482,7 @@ def write_readmes() -> None:
                 "- Record timed rehearsal evidence with `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal ... --confirm-real-rehearsal`.",
                 "- Recording and preflight `--source` paths must be the original external attachments, not files already inside `docs/challenge_cup/reproducibility/hard_evidence/**`.",
                 "- Within each category, duplicate `source_sha256` values are rejected so one attachment cannot count as multiple hard evidence records.",
+                "- If a previously recorded item must be replaced, `--force` requires a non-empty `--force-reason` and appends an audit entry to `docs/challenge_cup/reproducibility/hard_evidence/override_log.jsonl`.",
                 text("- \\u4e0d\\u4f2a\\u9020\\u8bc1\\u636e\\uff1b\\u6ca1\\u6709\\u8fd9\\u4e24\\u7c7b\\u771f\\u5b9e\\u8bc1\\u636e\\u524d\\uff0c\\u4e0d\\u80fd\\u6807\\u8bb0\\u76ee\\u6807\\u5b8c\\u6210\\u3002"),
             ]
         ),
@@ -508,6 +509,7 @@ def write_readmes() -> None:
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
                 "During preflight/record, --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; duplicate source_sha256 values in this category are rejected.",
+                "If --force is used to replace an existing evidence item, --force-reason is mandatory and the replacement is recorded in hard_evidence/override_log.jsonl.",
                 "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preflight CLI: `{EXPERT_PREFLIGHT_COMMAND}`.",
                 f"Recommended CLI: `{EXPERT_RECORD_COMMAND}`.",
@@ -533,6 +535,7 @@ def write_readmes() -> None:
                 "The source attachment must be non-empty and must not be a JSON metadata file.",
                 "source_sha256 must match the source attachment content.",
                 "During preflight/record, --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; duplicate source_sha256 values in this category are rejected.",
+                "If --force is used to replace an existing evidence item, --force-reason is mandatory and the replacement is recorded in hard_evidence/override_log.jsonl.",
                 "source_origin must be external_attachment; generated observer notes are archived but do not count.",
                 f"Preferred CLI: `{REHEARSAL_RUN_COMMAND}`.",
                 f"Preflight CLI: `{REHEARSAL_PREFLIGHT_COMMAND}`.",

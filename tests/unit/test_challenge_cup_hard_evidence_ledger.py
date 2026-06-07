@@ -86,6 +86,8 @@ def test_hard_evidence_ledger_readme_commands_require_real_dates(tmp_path: Path)
     assert "source attachment must be non-empty and must not be a JSON metadata file" in command_text
     assert "docs/challenge_cup/reproducibility/hard_evidence/**" in readme_text
     assert "duplicate `source_sha256`" in readme_text
+    assert "--force-reason" in readme_text
+    assert "override_log.jsonl" in readme_text
     assert "source_origin" in command_text
     assert "reviewer_identity, role_or_org, and remediation issue/action must be non-empty text" in command_text
     assert "observer must be non-empty text" in command_text

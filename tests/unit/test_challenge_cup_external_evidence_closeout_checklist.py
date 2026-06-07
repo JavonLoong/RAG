@@ -73,6 +73,8 @@ def test_builds_external_evidence_closeout_checklist_for_day_of_execution(tmp_pa
     assert "run_challenge_cup_timed_rehearsal.py" in items["timed_rehearsal_archived"]["command"]
     assert "real timed rehearsal timer or observer attachment" in items["timed_rehearsal_archived"]["proof_required"]
     assert "timing_acceptance_pass=true" in items["timed_rehearsal_archived"]["acceptance_signal"]
+    assert "hard_evidence_collected_pending_review" in items["hard_evidence_ledger_rebuilt"]["acceptance_signal"]
+    assert "hard_evidence_complete" not in items["hard_evidence_ledger_rebuilt"]["acceptance_signal"]
     assert "Status: `pass`" in items["goal_completion_gate_rerun"]["acceptance_signal"]
     assert "completion_claim_allowed=True" in items["goal_completion_gate_rerun"]["acceptance_signal"]
 
@@ -98,6 +100,8 @@ def test_builds_external_evidence_closeout_checklist_for_day_of_execution(tmp_pa
     assert "real timed rehearsal" in markdown
     assert "source_sha256" in markdown
     assert "timing_acceptance_pass=true" in markdown
+    assert "hard_evidence_collected_pending_review" in markdown
+    assert "hard_evidence_complete" not in markdown
     assert "completion_claim_allowed=True" in markdown
     assert "no award guarantee" in markdown
     assert "does_not_satisfy_goal_completion=True" in markdown

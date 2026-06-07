@@ -12,6 +12,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPORT = REPO_ROOT / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md"
 READINESS_SCRIPT = REPO_ROOT / "scripts" / "check_challenge_cup_readiness.py"
+CLOSEOUT_SCRIPT = REPO_ROOT / "scripts" / "build_challenge_cup_external_evidence_closeout_checklist.py"
 DEFENSE_REHEARSAL_SCORECARD_BOUNDARY = (
     "This scorecard proves rehearsal readiness and evidence anchors; it does not prove a live defense "
     "has already happened or guarantee an award."
@@ -37,6 +38,18 @@ GRAPH_GAP_REMEDIATION_BOUNDARY = (
 
 def load_readiness_module():
     spec = importlib.util.spec_from_file_location("check_challenge_cup_readiness", READINESS_SCRIPT)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_closeout_module_for_readiness_tests():
+    spec = importlib.util.spec_from_file_location(
+        "build_challenge_cup_external_evidence_closeout_checklist_for_readiness_tests",
+        CLOSEOUT_SCRIPT,
+    )
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -123,7 +136,52 @@ def test_package_docs_gate_accepts_readme_first_view_route(monkeypatch, tmp_path
     check = module.check_package_docs()
 
     assert check.passed
-    assert "README first-view route" in check.detail
+
+
+def test_external_evidence_closeout_gate_rejects_stale_hard_evidence_status(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    closeout = load_closeout_module_for_readiness_tests()
+    closeout.configure_paths(tmp_path)
+    payload = closeout.write_outputs()
+    closeout_json = tmp_path / module.EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON_RELATIVE
+    closeout_md = tmp_path / module.EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD_RELATIVE
+    for item in payload["closeout_items"]:
+        if item["check_id"] == "hard_evidence_ledger_rebuilt":
+            item["acceptance_signal"] = (
+                "hard_evidence_ledger.json has status=hard_evidence_complete "
+                "and completion_claim_allowed=true"
+            )
+    closeout_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    closeout_md.write_text(
+        closeout_md.read_text(encoding="utf-8").replace(
+            "hard_evidence_collected_pending_review",
+            "hard_evidence_complete",
+        ),
+        encoding="utf-8",
+    )
+    required_paths = set(module.EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS)
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": sorted(required_paths)}), encoding="utf-8")
+    hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in sorted(required_paths)]}),
+        encoding="utf-8",
+    )
+    archive.write_text(json.dumps({"included_files": sorted(required_paths)}), encoding="utf-8")
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON", closeout_json)
+    monkeypatch.setattr(module, "EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD", closeout_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: required_paths)
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_external_evidence_closeout_checklist()
+
+    assert not check.passed
+    assert "hard_evidence_complete" in check.detail
+    assert "hard_evidence_collected_pending_review" in check.detail
 
 
 def test_package_docs_gate_rejects_missing_submission_integrity_card(monkeypatch, tmp_path) -> None:

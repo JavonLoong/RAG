@@ -98,6 +98,7 @@ def build_intake_args(source: Path, args: argparse.Namespace, source_origin: str
         confirm_real_rehearsal=True,
         source_origin=source_origin,
         force=args.force,
+        force_reason=args.force_reason,
     )
 
 
@@ -143,6 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--note", action="append", default=[])
     parser.add_argument("--confirm-real-rehearsal", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--force-reason")
     return parser
 
 

@@ -14,6 +14,7 @@ REPORT_TYPE = "challenge_cup_external_evidence_closeout_checklist"
 STATUS = "ready_for_real_external_evidence_closeout"
 REQUIRED_BEFORE_GOAL_COMPLETION = ["expert_feedback", "timed_rehearsal"]
 DAY_OF_EXECUTION_OWNER = "project lead"
+HARD_EVIDENCE_READY_STATUS = "hard_evidence_collected_pending_review"
 BOUNDARY = (
     "Day-of closeout support only: this checklist does not satisfy goal completion, does not claim "
     "expert approval, does not claim a timed rehearsal was completed, and provides no award guarantee."
@@ -164,7 +165,10 @@ def closeout_items() -> list[dict[str, Any]]:
             proof_required="archived expert_feedback and timed_rehearsal intake files",
             command="python scripts/build_challenge_cup_hard_evidence_ledger.py",
             expected_after_step="ledger shows both hard evidence categories collected and no rejected metadata blocks goal completion",
-            acceptance_signal="hard_evidence_ledger.json has status=hard_evidence_complete and completion_claim_allowed=true",
+            acceptance_signal=(
+                "hard_evidence_ledger.json has status="
+                f"{HARD_EVIDENCE_READY_STATUS} and completion_claim_allowed=true"
+            ),
             cannot_substitute="manual edits to the ledger do not substitute for recorded source attachments and metadata",
         ),
         item(

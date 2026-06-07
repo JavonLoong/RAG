@@ -832,3 +832,123 @@ def test_records_over_limit_timed_rehearsal_but_ledger_does_not_count_it_complet
     assert rehearsal["collected_count"] == 0
     assert rehearsal["evidence_records"] == []
     assert "opening_actual_seconds=91 exceeds 90" in rehearsal["rejected_metadata_records"][0]["reasons"]
+
+
+def test_force_override_requires_nonempty_reason(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor reply v1", encoding="utf-8")
+    args = [
+        "expert_feedback",
+        "--id",
+        "advisor-a",
+        "--source",
+        str(source),
+        "--evidence-type",
+        "email_reply",
+        "--reviewer-identity",
+        "advisor-a",
+        "--role-or-org",
+        "advisor",
+        "--review-date",
+        "2026-06-06",
+        "--review-dimension",
+        "practicality",
+        "--review-dimension",
+        "innovation",
+        "--review-dimension",
+        "boundary_rigor",
+        "--remediation-issue",
+        "demo pacing",
+        "--remediation-action",
+        "tighten opening",
+        "--confirm-real-feedback",
+    ]
+    assert module.main(args) == 0
+    capsys.readouterr()
+    source.write_text("real advisor reply v2", encoding="utf-8")
+
+    exit_code = module.main([*args, "--force"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "--force-reason" in captured.err
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    assert (evidence_dir / "advisor-a.txt").read_text(encoding="utf-8") == "real advisor reply v1"
+    assert not (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "override_log.jsonl").exists()
+
+
+def test_force_override_records_append_only_audit_log(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor reply v1", encoding="utf-8")
+    args = [
+        "expert_feedback",
+        "--id",
+        "advisor-a",
+        "--source",
+        str(source),
+        "--evidence-type",
+        "email_reply",
+        "--reviewer-identity",
+        "advisor-a",
+        "--role-or-org",
+        "advisor",
+        "--review-date",
+        "2026-06-06",
+        "--review-dimension",
+        "practicality",
+        "--review-dimension",
+        "innovation",
+        "--review-dimension",
+        "boundary_rigor",
+        "--remediation-issue",
+        "demo pacing",
+        "--remediation-action",
+        "tighten opening",
+        "--confirm-real-feedback",
+    ]
+    assert module.main(args) == 0
+    capsys.readouterr()
+    evidence_dir = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "expert_feedback"
+    old_metadata_sha256 = hashlib.sha256((evidence_dir / "advisor-a.json").read_bytes()).hexdigest()
+    old_source_sha256 = hashlib.sha256((evidence_dir / "advisor-a.txt").read_bytes()).hexdigest()
+
+    source.write_text("real advisor reply v2", encoding="utf-8")
+    exit_code = module.main(
+        [
+            *args,
+            "--force",
+            "--force-reason",
+            "replace with reviewer corrected signed reply",
+        ]
+    )
+
+    assert exit_code == 0
+    metadata_path = evidence_dir / "advisor-a.json"
+    copied_source = evidence_dir / "advisor-a.txt"
+    assert copied_source.read_text(encoding="utf-8") == "real advisor reply v2"
+    audit_log = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "hard_evidence" / "override_log.jsonl"
+    records = [json.loads(line) for line in audit_log.read_text(encoding="utf-8").splitlines()]
+    assert len(records) == 1
+    record = records[0]
+    assert record["category"] == "expert_feedback"
+    assert record["evidence_id"] == "advisor-a"
+    assert record["force_reason"] == "replace with reviewer corrected signed reply"
+    assert record["metadata_path"] == "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.json"
+    assert record["source_path"] == "docs/challenge_cup/reproducibility/hard_evidence/expert_feedback/advisor-a.txt"
+    assert record["previous_metadata_sha256"] == old_metadata_sha256
+    assert record["new_metadata_sha256"] == hashlib.sha256(metadata_path.read_bytes()).hexdigest()
+    assert record["previous_source_sha256"] == old_source_sha256
+    assert record["new_source_sha256"] == hashlib.sha256(copied_source.read_bytes()).hexdigest()
+    assert record["new_source_sha256"] != record["previous_source_sha256"]
+    assert record["audit_event"] == "hard_evidence_force_override"
+    assert record["timestamp_utc"].endswith("Z")

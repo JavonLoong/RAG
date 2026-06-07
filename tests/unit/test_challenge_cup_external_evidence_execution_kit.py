@@ -80,6 +80,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert "hard_evidence/**" in guardrails
         assert "duplicate source_sha256" in guardrails
         assert "metadata already exists" in guardrails
+        assert "--force-reason" in guardrails
+        assert "override_log.jsonl" in guardrails
         assert "requested_attachment_paths" in guardrails
         assert "missing or empty" in guardrails
         assert packet["acceptance_gate"].startswith("hard_evidence_ledger.categories.")
@@ -192,6 +194,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "hard_evidence/**" in markdown
     assert "duplicate source_sha256" in markdown
     assert "metadata already exists" in markdown
+    assert "--force-reason" in markdown
+    assert "override_log.jsonl" in markdown
     assert "requested_attachment_paths" in markdown
     assert "missing or empty" in markdown
     assert "PowerShell execution block" in markdown
@@ -210,6 +214,8 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert "hard_evidence/**" in handoff_text
         assert "duplicate source_sha256" in handoff_text
         assert "metadata already exists" in handoff_text
+        assert "--force-reason" in handoff_text
+        assert "override_log.jsonl" in handoff_text
         assert "requested_attachment_paths" in handoff_text
         assert "missing or empty" in handoff_text
         assert "PowerShell execution block" in handoff_text

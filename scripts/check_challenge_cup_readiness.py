@@ -696,6 +696,8 @@ HARD_EVIDENCE_MARKDOWN_TERMS = {
     "不能标记目标完成",
 }
 HARD_EVIDENCE_REQUIRED_CATEGORIES = {"expert_feedback", "timed_rehearsal"}
+HARD_EVIDENCE_READY_STATUS = "hard_evidence_collected_pending_review"
+STALE_HARD_EVIDENCE_COMPLETE_STATUS = "hard_evidence_complete"
 HARD_EVIDENCE_MIN_REVIEW_DIMENSIONS = 3
 HARD_EVIDENCE_TIMING_LIMITS = {
     "opening_actual_seconds": 90,
@@ -6027,6 +6029,18 @@ def check_external_evidence_closeout_checklist() -> GateCheck:
         failures.append(f"counts_as_hard_evidence steps={hard_evidence_steps}")
 
     items_by_id = {str(item.get("check_id", "")): item for item in closeout_items if isinstance(item, dict)}
+    ledger_acceptance = str(items_by_id.get("hard_evidence_ledger_rebuilt", {}).get("acceptance_signal", ""))
+    closeout_status_texts = {
+        "hard_evidence_ledger_rebuilt acceptance_signal": ledger_acceptance,
+        "markdown": markdown,
+        "json": json_text,
+    }
+    for label, text in closeout_status_texts.items():
+        if STALE_HARD_EVIDENCE_COMPLETE_STATUS in text:
+            failures.append(f"{label} contains stale {STALE_HARD_EVIDENCE_COMPLETE_STATUS}")
+        if HARD_EVIDENCE_READY_STATUS not in text:
+            failures.append(f"{label} missing {HARD_EVIDENCE_READY_STATUS}")
+
     command_requirements = {
         "package_preflight_clean": "check_challenge_cup_readiness.py",
         "expert_feedback_source_ready": "preflight_challenge_cup_hard_evidence.py expert_feedback",
