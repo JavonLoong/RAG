@@ -391,6 +391,51 @@
       "sha256": "47c9a1bfb6781d405acaa62fcf85812f3f718a4657bfd2c1f3e3811610832232"
     },
     {
+      "path": "docs/challenge_cup/reproducibility/official_source_recheck_pack.json",
+      "bytes": 10222,
+      "sha256": "bbf28d4a2bd35f3fdf1aba16d32a104a4f8ccca44160454eb22b752a73ff17b1"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_recheck_pack.md",
+      "bytes": 6028,
+      "sha256": "be2496b06a5689ca08c8cca2acfc52176b56a32e112c4d76c876f8e43bedb032"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_37th_2019.md",
+      "bytes": 831,
+      "sha256": "1c83f88d215b2f01355a1771f438e11e96c47e7f6277262233a1255ee09ad82f"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_39th_2021.md",
+      "bytes": 782,
+      "sha256": "d91c594453d42c2573247eea498dc9599948483d20d3a6c3bc990118529f0344"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_43rd_2025.md",
+      "bytes": 871,
+      "sha256": "7df26049e1ef24f5b9a0947ae5d92a3dc00478d7266a408f59d527b412590d7a"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_44th_2026.md",
+      "bytes": 820,
+      "sha256": "99e1fdc19cf890f00e124851d148d76f8039a7ab7c5c80cd0f913d0106869b5c"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_auto_44th_2026.md",
+      "bytes": 863,
+      "sha256": "f6d09597adf1d2f69b15fb0552ee80014e54b5277877fc7ee65ffd92ccb61948"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_ee_44th_2026.md",
+      "bytes": 842,
+      "sha256": "cb7742f7512ec30f06525477008198742c0909bed3e6a3422b43e27c849a0ec8"
+    },
+    {
+      "path": "docs/challenge_cup/reproducibility/official_source_snapshots/tsinghua_rules_pdf_2017.md",
+      "bytes": 943,
+      "sha256": "7990debef94f7e5bb10f5649d607135b780a66eaba6c1f4b7e1c54629b996101"
+    },
+    {
       "path": "docs/challenge_cup/reproducibility/poster_render_smoke_report.json",
       "bytes": 2884,
       "sha256": "0878595dcffe49b2136aa5e19a0bee8f2eb8a64159140912615e1c6bcea5fa0f"

@@ -139,6 +139,11 @@ from build_challenge_cup_official_rubric_alignment import (
     OUTPUT_MD as OFFICIAL_RUBRIC_ALIGNMENT_MD,
     write_outputs as write_official_rubric_alignment_outputs,
 )
+from build_challenge_cup_official_source_recheck_pack import (
+    OUTPUT_JSON as OFFICIAL_SOURCE_RECHECK_PACK_JSON,
+    OUTPUT_MD as OFFICIAL_SOURCE_RECHECK_PACK_MD,
+    write_outputs as write_official_source_recheck_pack_outputs,
+)
 from build_challenge_cup_judge_objection_matrix import (
     OUTPUT_JSON as JUDGE_OBJECTION_MATRIX_JSON,
     OUTPUT_MD as JUDGE_OBJECTION_MATRIX_MD,
@@ -2357,6 +2362,8 @@ def build_official_rubric_dataset_manifest_section() -> str:
             "",
             f"- 官方评审口径对齐表：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD)}`",
             f"- 官方评审口径 JSON：`{md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON)}`",
+            f"- Official source recheck pack: `{md_link(OFFICIAL_SOURCE_RECHECK_PACK_MD)}`",
+            f"- Official source recheck JSON: `{md_link(OFFICIAL_SOURCE_RECHECK_PACK_JSON)}`",
             "",
             "## Submission Package Offline Verification",
             "",
@@ -2690,6 +2697,11 @@ python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
 
+python scripts/build_challenge_cup_official_source_recheck_pack.py
+-> docs/challenge_cup/reproducibility/official_source_recheck_pack.md
+-> docs/challenge_cup/reproducibility/official_source_recheck_pack.json
+-> Status: ready_for_final_submission_source_recheck
+
 python scripts/build_challenge_cup_judge_objection_matrix.py
 -> docs/challenge_cup/reproducibility/judge_objection_response_matrix.md
 -> Status: ready_for_judge_objection_drill_no_external_claims
@@ -2780,6 +2792,7 @@ def main() -> int:
     write_external_evidence_execution_kit_outputs()
     write_external_evidence_closeout_checklist_outputs()
     write_official_rubric_alignment_outputs()
+    official_source_recheck_payload = write_official_source_recheck_pack_outputs()
     write_judge_objection_matrix_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
     graph_answer_payload = build_graph_answer_benchmark_payload()
@@ -2854,6 +2867,13 @@ def main() -> int:
         *timed_rehearsal_schedule_payload.get("schedule_files", []),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_MD),
         md_link(OFFICIAL_RUBRIC_ALIGNMENT_JSON),
+        md_link(OFFICIAL_SOURCE_RECHECK_PACK_MD),
+        md_link(OFFICIAL_SOURCE_RECHECK_PACK_JSON),
+        *(
+            str(item.get("snapshot_path"))
+            for item in official_source_recheck_payload.get("source_recheck_items", [])
+            if item.get("snapshot_path")
+        ),
         md_link(JUDGE_OBJECTION_MATRIX_MD),
         md_link(JUDGE_OBJECTION_MATRIX_JSON),
         md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD),

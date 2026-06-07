@@ -83,6 +83,8 @@ HARD_EVIDENCE_EXPERT_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_
 HARD_EVIDENCE_REHEARSAL_README_RELATIVE = "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md"
 OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.md"
 OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+OFFICIAL_SOURCE_RECHECK_PACK_MD_RELATIVE = "docs/challenge_cup/reproducibility/official_source_recheck_pack.md"
+OFFICIAL_SOURCE_RECHECK_PACK_JSON_RELATIVE = "docs/challenge_cup/reproducibility/official_source_recheck_pack.json"
 JUDGE_OBJECTION_MATRIX_MD_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.md"
 JUDGE_OBJECTION_MATRIX_JSON_RELATIVE = "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json"
 FAILURE_REMEDIATION_BEFORE_AFTER_MD_RELATIVE = (
@@ -162,6 +164,8 @@ HARD_EVIDENCE_EXPERT_README = REPO_ROOT / HARD_EVIDENCE_EXPERT_README_RELATIVE
 HARD_EVIDENCE_REHEARSAL_README = REPO_ROOT / HARD_EVIDENCE_REHEARSAL_README_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_MD = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE
 OFFICIAL_RUBRIC_ALIGNMENT_JSON = REPO_ROOT / OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE
+OFFICIAL_SOURCE_RECHECK_PACK_MD = REPO_ROOT / OFFICIAL_SOURCE_RECHECK_PACK_MD_RELATIVE
+OFFICIAL_SOURCE_RECHECK_PACK_JSON = REPO_ROOT / OFFICIAL_SOURCE_RECHECK_PACK_JSON_RELATIVE
 JUDGE_OBJECTION_MATRIX_MD = REPO_ROOT / JUDGE_OBJECTION_MATRIX_MD_RELATIVE
 JUDGE_OBJECTION_MATRIX_JSON = REPO_ROOT / JUDGE_OBJECTION_MATRIX_JSON_RELATIVE
 FAILURE_REMEDIATION_BEFORE_AFTER_MD = REPO_ROOT / FAILURE_REMEDIATION_BEFORE_AFTER_MD_RELATIVE
@@ -216,6 +220,10 @@ TIMED_REHEARSAL_SCHEDULE_REQUIRED_PATHS = [
 OFFICIAL_RUBRIC_REQUIRED_PATHS = [
     OFFICIAL_RUBRIC_ALIGNMENT_MD_RELATIVE,
     OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE,
+]
+OFFICIAL_SOURCE_RECHECK_REQUIRED_PATHS = [
+    OFFICIAL_SOURCE_RECHECK_PACK_MD_RELATIVE,
+    OFFICIAL_SOURCE_RECHECK_PACK_JSON_RELATIVE,
 ]
 JUDGE_OBJECTION_MATRIX_REQUIRED_PATHS = [
     JUDGE_OBJECTION_MATRIX_MD_RELATIVE,
@@ -507,6 +515,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/official_source_recheck_pack.md",
+    "reproducibility/official_source_recheck_pack.json",
     "reproducibility/judge_objection_response_matrix.md",
     "reproducibility/judge_objection_response_matrix.json",
     "reproducibility/special_prize_readiness_dashboard.md",
@@ -3454,13 +3464,134 @@ def check_official_rubric_alignment() -> GateCheck:
     if integrity_rules.get("no_award_guarantee") is not True:
         failures.append(f"no_award_guarantee={integrity_rules.get('no_award_guarantee')}")
 
+    recheck_required_files = [OFFICIAL_SOURCE_RECHECK_PACK_MD, OFFICIAL_SOURCE_RECHECK_PACK_JSON]
+    recheck_missing = [display_path(path) for path in recheck_required_files if not nonempty(path)]
+    recheck_snapshot_paths: list[str] = []
+    if recheck_missing:
+        failures.append(f"official_source_recheck_pack missing or empty: {recheck_missing}")
+    else:
+        try:
+            recheck = load_json(OFFICIAL_SOURCE_RECHECK_PACK_JSON)
+        except (OSError, json.JSONDecodeError) as exc:
+            failures.append(f"invalid official source recheck json: {exc}")
+            recheck = {}
+        recheck_markdown = OFFICIAL_SOURCE_RECHECK_PACK_MD.read_text(encoding="utf-8")
+        if recheck.get("report_type") != "challenge_cup_official_source_recheck_pack":
+            failures.append(f"official_source_recheck_pack.report_type={recheck.get('report_type')}")
+        if recheck.get("status") != "ready_for_final_submission_source_recheck":
+            failures.append(f"official_source_recheck_pack.status={recheck.get('status')}")
+        if recheck.get("generated_from") != OFFICIAL_RUBRIC_ALIGNMENT_JSON_RELATIVE:
+            failures.append(f"official_source_recheck_pack.generated_from={recheck.get('generated_from')}")
+        if recheck.get("source_lock_current_as_of") != OFFICIAL_RUBRIC_CURRENT_AS_OF:
+            failures.append(
+                "official_source_recheck_pack.source_lock_current_as_of="
+                f"{recheck.get('source_lock_current_as_of')}"
+            )
+        if recheck.get("latest_public_result_source_id") != OFFICIAL_RUBRIC_LATEST_SOURCE_ID:
+            failures.append(
+                "official_source_recheck_pack.latest_public_result_source_id="
+                f"{recheck.get('latest_public_result_source_id')}"
+            )
+        for field in (
+            "requires_manual_recheck_before_final_submission",
+            "no_award_guarantee",
+            "does_not_satisfy_goal_completion",
+        ):
+            if recheck.get(field) is not True:
+                failures.append(f"official_source_recheck_pack.{field}={recheck.get(field)}")
+        if recheck.get("completion_claim_allowed") is not False:
+            failures.append(
+                f"official_source_recheck_pack.completion_claim_allowed={recheck.get('completion_claim_allowed')}"
+            )
+        recheck_items = recheck.get("source_recheck_items")
+        if not isinstance(recheck_items, list):
+            failures.append("official_source_recheck_pack.source_recheck_items missing")
+            recheck_items = []
+        recheck_by_source: dict[str, dict[str, Any]] = {}
+        for item in recheck_items:
+            if not isinstance(item, dict):
+                failures.append("official_source_recheck_pack.source_recheck_items item invalid")
+                continue
+            source_id = str(item.get("source_id", "")).strip()
+            if not source_id:
+                failures.append("official_source_recheck_pack.source_id missing")
+                continue
+            recheck_by_source[source_id] = item
+            url = str(item.get("url", "")).strip()
+            if not url.startswith("https://") or not is_allowed_official_rubric_source_url(url):
+                failures.append(f"official_source_recheck_pack.{source_id}.url invalid: {url}")
+            if item.get("required_action") != "open_official_url_and_compare_anchor_terms":
+                failures.append(
+                    f"official_source_recheck_pack.{source_id}.required_action={item.get('required_action')}"
+                )
+            if item.get("manual_recheck_required") is not True:
+                failures.append(
+                    f"official_source_recheck_pack.{source_id}.manual_recheck_required="
+                    f"{item.get('manual_recheck_required')}"
+                )
+            anchors = [str(term) for term in item.get("anchor_terms", [])]
+            if not anchors:
+                failures.append(f"official_source_recheck_pack.{source_id}.anchor_terms missing")
+            snapshot_relative = str(item.get("snapshot_path", "")).strip()
+            if not snapshot_relative:
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot_path missing")
+                continue
+            posix = PurePosixPath(snapshot_relative)
+            if posix.is_absolute() or ".." in posix.parts or "\\" in snapshot_relative:
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot_path unsafe")
+                continue
+            if not snapshot_relative.startswith("docs/challenge_cup/reproducibility/official_source_snapshots/"):
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot_path outside snapshot dir")
+            snapshot = REPO_ROOT / snapshot_relative
+            if not nonempty(snapshot):
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot missing or empty")
+                continue
+            recheck_snapshot_paths.append(snapshot_relative)
+            sha = item.get("snapshot_sha256")
+            if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{64}", sha):
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot_sha256 invalid")
+            elif sha256_file(snapshot) != sha:
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot_sha256 mismatch")
+            snapshot_text = snapshot.read_text(encoding="utf-8")
+            if source_id not in snapshot_text or url not in snapshot_text:
+                failures.append(f"official_source_recheck_pack.{source_id}.snapshot missing identity")
+            missing_anchor_terms = [term for term in anchors if term not in snapshot_text]
+            if missing_anchor_terms:
+                failures.append(
+                    f"official_source_recheck_pack.{source_id}.snapshot missing anchors: {missing_anchor_terms[:3]}"
+                )
+        if set(recheck_by_source) != source_ids:
+            failures.append(f"official_source_recheck_pack.source_ids={sorted(recheck_by_source)}")
+        final_checks = recheck.get("final_submission_checks")
+        final_check_ids = {str(item.get("check_id")) for item in final_checks if isinstance(item, dict)} if isinstance(final_checks, list) else set()
+        expected_final_checks = {
+            "official_url_access",
+            "latest_public_result_not_superseded",
+            "rubric_dimension_recheck",
+            "department_benchmark_recheck",
+            "boundary_recheck",
+        }
+        if final_check_ids != expected_final_checks:
+            failures.append(f"official_source_recheck_pack.final_submission_checks={sorted(final_check_ids)}")
+        for term in (
+            "Official Source Recheck Pack",
+            "manual_web_recheck_required",
+            "official_source_snapshots",
+            "snapshot_sha256",
+            "no award guarantee",
+            "does not satisfy goal completion",
+        ):
+            if term not in recheck_markdown:
+                failures.append(f"official_source_recheck_pack markdown missing {term}")
+
     missing_terms = sorted(term for term in OFFICIAL_RUBRIC_REQUIRED_TERMS if term not in markdown)
     if missing_terms:
         failures.append(f"markdown missing terms: {missing_terms}")
 
+    official_rubric_all_required_paths = OFFICIAL_RUBRIC_REQUIRED_PATHS + OFFICIAL_SOURCE_RECHECK_REQUIRED_PATHS + sorted(set(recheck_snapshot_paths))
     manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
-    required_manifest_missing = sorted(path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in manifest_evidence)
+    required_manifest_missing = sorted(path for path in official_rubric_all_required_paths if path not in manifest_evidence)
     if required_manifest_missing:
         failures.append(f"missing manifest entries: {required_manifest_missing}")
 
@@ -3468,20 +3599,20 @@ def check_official_rubric_alignment() -> GateCheck:
     excluded_hashes = {str(item) for item in hashes.get("excluded_self_reports", [])}
     hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
     missing_hashes = sorted(
-        path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in excluded_hashes and path not in hashed_paths
+        path for path in official_rubric_all_required_paths if path not in excluded_hashes and path not in hashed_paths
     )
     if missing_hashes:
         failures.append(f"missing hash entries: {missing_hashes}")
 
     archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {"included_files": []}
     archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
-    missing_archive = sorted(path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in archived_paths)
+    missing_archive = sorted(path for path in official_rubric_all_required_paths if path not in archived_paths)
     if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
         failures.append(f"missing archive entries: {missing_archive}")
 
     tracked = git_tracked_paths()
-    untracked = [path for path in OFFICIAL_RUBRIC_REQUIRED_PATHS if path not in tracked]
-    dirty = sorted(git_dirty_paths(OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    untracked = [path for path in official_rubric_all_required_paths if path not in tracked]
+    dirty = sorted(git_dirty_paths(official_rubric_all_required_paths))
     if untracked:
         failures.append(f"untracked official rubric files: {untracked}")
     if dirty:

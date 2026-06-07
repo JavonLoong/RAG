@@ -7,17 +7,17 @@
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist with README first-view route and submission integrity card |
-| chinese readability | pass | 95 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 104 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 107 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 106 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| package evidence files | pass | 116 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 115 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 117 files archived; 2548711 bytes; sha256 verified |
+| submission archive | pass | 126 files archived; 2561573 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
-| numeric consistency | pass | 60 questions, 107 evidence files, and 5 visible search records are consistent |
+| numeric consistency | pass | 60 questions, 116 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |

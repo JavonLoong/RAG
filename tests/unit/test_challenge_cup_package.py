@@ -102,6 +102,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/timed_rehearsal_schedule/README.md",
     "reproducibility/official_rubric_alignment.md",
     "reproducibility/official_rubric_alignment.json",
+    "reproducibility/official_source_recheck_pack.md",
+    "reproducibility/official_source_recheck_pack.json",
     "reproducibility/judge_objection_response_matrix.md",
     "reproducibility/judge_objection_response_matrix.json",
     "reproducibility/special_prize_readiness_dashboard.md",
@@ -1351,6 +1353,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/timed_rehearsal_schedule/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/official_rubric_alignment.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/official_source_recheck_pack.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/official_source_recheck_pack.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/judge_objection_response_matrix.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json" in evidence_files
     assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md" in evidence_files
@@ -1595,6 +1599,36 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "114",
     ]:
         assert term in official_rubric_md
+    official_source_recheck = json.loads(
+        (PACKAGE_DIR / "reproducibility" / "official_source_recheck_pack.json").read_text(encoding="utf-8")
+    )
+    assert official_source_recheck["report_type"] == "challenge_cup_official_source_recheck_pack"
+    assert official_source_recheck["status"] == "ready_for_final_submission_source_recheck"
+    assert official_source_recheck["generated_from"] == (
+        "docs/challenge_cup/reproducibility/official_rubric_alignment.json"
+    )
+    assert official_source_recheck["requires_manual_recheck_before_final_submission"] is True
+    assert official_source_recheck["completion_claim_allowed"] is False
+    assert official_source_recheck["no_award_guarantee"] is True
+    assert official_source_recheck["does_not_satisfy_goal_completion"] is True
+    assert {item["source_id"] for item in official_source_recheck["source_recheck_items"]} == source_ids
+    for item in official_source_recheck["source_recheck_items"]:
+        assert item["snapshot_path"] in evidence_files
+        snapshot_path = REPO_ROOT / item["snapshot_path"]
+        assert snapshot_path.exists()
+        assert item["snapshot_sha256"] == sha256_file(snapshot_path)
+    official_source_recheck_md = (
+        PACKAGE_DIR / "reproducibility" / "official_source_recheck_pack.md"
+    ).read_text(encoding="utf-8")
+    for term in [
+        "Official Source Recheck Pack",
+        "manual_web_recheck_required",
+        "official_source_snapshots",
+        "snapshot_sha256",
+        "no award guarantee",
+        "does not satisfy goal completion",
+    ]:
+        assert term in official_source_recheck_md
     archive_path = REPO_ROOT / archive_relative
     archive_manifest = json.loads((REPO_ROOT / archive_manifest_relative).read_text(encoding="utf-8"))
     assert archive_path.exists()
@@ -1612,6 +1646,10 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/verify_submission_package.py" in archive_entries
     assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json" in archive_entries
+    assert "docs/challenge_cup/reproducibility/official_source_recheck_pack.md" in archive_entries
+    assert "docs/challenge_cup/reproducibility/official_source_recheck_pack.json" in archive_entries
+    for item in official_source_recheck["source_recheck_items"]:
+        assert item["snapshot_path"] in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.md" in archive_entries
     assert "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json" in archive_entries
     assert "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md" in archive_entries
@@ -1669,6 +1707,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "docs/challenge_cup/reproducibility/final_acceptance_audit.json",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.md",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
+        "docs/challenge_cup/reproducibility/official_source_recheck_pack.md",
+        "docs/challenge_cup/reproducibility/official_source_recheck_pack.json",
         "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md",
         "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.md",
@@ -1814,6 +1854,15 @@ def test_build_challenge_cup_package_is_idempotent() -> None:
         PACKAGE_DIR / "reproducibility" / "timed_rehearsal_schedule" / "README.md",
         PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.md",
         PACKAGE_DIR / "reproducibility" / "official_rubric_alignment.json",
+        PACKAGE_DIR / "reproducibility" / "official_source_recheck_pack.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_recheck_pack.json",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_44th_2026.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_ee_44th_2026.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_auto_44th_2026.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_43rd_2025.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_39th_2021.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_37th_2019.md",
+        PACKAGE_DIR / "reproducibility" / "official_source_snapshots" / "tsinghua_rules_pdf_2017.md",
         PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.md",
         PACKAGE_DIR / "reproducibility" / "special_prize_readiness_dashboard.json",
         PACKAGE_DIR / "reproducibility" / "hard_evidence_closure_board.md",
@@ -1905,6 +1954,7 @@ def test_browser_smoke_json_is_not_ignored_by_repo_rules() -> None:
         "docs/challenge_cup/reproducibility/expert_feedback_outreach_ledger.json",
         "docs/challenge_cup/reproducibility/timed_rehearsal_schedule_ledger.json",
         "docs/challenge_cup/reproducibility/official_rubric_alignment.json",
+        "docs/challenge_cup/reproducibility/official_source_recheck_pack.json",
         "docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.json",
         "docs/challenge_cup/reproducibility/hard_evidence_closure_board.json",
         "docs/challenge_cup/reproducibility/hard_evidence_action_pack.json",

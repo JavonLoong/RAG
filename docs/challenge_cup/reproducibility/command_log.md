@@ -158,6 +158,11 @@ python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
 
+python scripts/build_challenge_cup_official_source_recheck_pack.py
+-> docs/challenge_cup/reproducibility/official_source_recheck_pack.md
+-> docs/challenge_cup/reproducibility/official_source_recheck_pack.json
+-> Status: ready_for_final_submission_source_recheck
+
 python scripts/build_challenge_cup_judge_objection_matrix.py
 -> docs/challenge_cup/reproducibility/judge_objection_response_matrix.md
 -> Status: ready_for_judge_objection_drill_no_external_claims

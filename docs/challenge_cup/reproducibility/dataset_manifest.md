@@ -97,6 +97,8 @@
 
 - 官方评审口径对齐表：`docs/challenge_cup/reproducibility/official_rubric_alignment.md`
 - 官方评审口径 JSON：`docs/challenge_cup/reproducibility/official_rubric_alignment.json`
+- Official source recheck pack: `docs/challenge_cup/reproducibility/official_source_recheck_pack.md`
+- Official source recheck JSON: `docs/challenge_cup/reproducibility/official_source_recheck_pack.json`
 
 ## Submission Package Offline Verification
 

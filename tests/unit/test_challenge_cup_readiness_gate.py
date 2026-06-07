@@ -835,6 +835,25 @@ def test_official_rubric_alignment_gate_rejects_non_tsinghua_source_urls(monkeyp
     assert "example.com" in check.detail
 
 
+def test_official_rubric_alignment_gate_rejects_missing_source_recheck_pack(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    missing_md = tmp_path / "official_source_recheck_pack.md"
+    missing_json = tmp_path / "official_source_recheck_pack.json"
+    monkeypatch.setattr(module, "OFFICIAL_SOURCE_RECHECK_PACK_MD", missing_md, raising=False)
+    monkeypatch.setattr(module, "OFFICIAL_SOURCE_RECHECK_PACK_JSON", missing_json, raising=False)
+    monkeypatch.setattr(module, "OFFICIAL_SOURCE_RECHECK_REQUIRED_PATHS", [
+        "docs/challenge_cup/reproducibility/official_source_recheck_pack.md",
+        "docs/challenge_cup/reproducibility/official_source_recheck_pack.json",
+    ], raising=False)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(module.OFFICIAL_RUBRIC_REQUIRED_PATHS))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_official_rubric_alignment()
+
+    assert not check.passed
+    assert "official_source_recheck_pack" in check.detail
+
+
 def test_rubric_defense_coverage_gate_rejects_missing_report(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     markdown = tmp_path / "rubric_defense_coverage.md"
