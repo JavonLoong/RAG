@@ -242,13 +242,13 @@
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.json",
-      "bytes": 6025,
-      "sha256": "17037bba88d199c36a5af3da686bfaffc5e6e596063993c46b712ccb01ed8fed"
+      "bytes": 6186,
+      "sha256": "584f34013666fd0f8eb56757dc1aace76734ef9536875c617d29137b552542e4"
     },
     {
       "path": "docs/challenge_cup/reproducibility/expert_feedback_request_packet.md",
-      "bytes": 5300,
-      "sha256": "95a6be593d4021defb7e4f55aaa3da9f2718140a452a0b2d531a7ae43d9cc4db"
+      "bytes": 5449,
+      "sha256": "fd21900c6936ff82c93f93fe86d5b58f7ba323e8e1ab41b29ad7b72a2592680e"
     },
     {
       "path": "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",

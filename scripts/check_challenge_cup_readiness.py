@@ -593,6 +593,7 @@ EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS = {
     "聊天记录截图",
     "post-receipt hard evidence intake",
     "source_sha256",
+    "source_origin",
     "must not be a JSON metadata file",
 }
 EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS = {
@@ -601,12 +602,14 @@ EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS = {
     "review_date",
     "feedback_source_path",
     "source_sha256",
+    "source_origin",
     "review_dimensions",
     "remediation_record",
     "real_feedback_confirmed",
 }
 EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_GUARDRAIL_TERMS = {
     "source_sha256",
+    "source_origin",
     "must not be a JSON metadata file",
 }
 HARD_EVIDENCE_MARKDOWN_TERMS = {
@@ -1426,6 +1429,17 @@ def command_items(value: Any) -> list[str]:
 
 def command_with_option(commands: list[str], command_fragment: str, option: str) -> bool:
     return any(command_fragment in command and option in command for command in commands)
+
+
+def commands_missing_options(commands: list[str], command_fragment: str, options: tuple[str, ...]) -> list[str]:
+    matching = [command for command in commands if command_fragment in command]
+    if not matching:
+        return [f"{command_fragment} command missing"]
+    return [
+        f"{command_fragment} command missing {option}"
+        for option in options
+        if not any(option in command for command in matching)
+    ]
 
 
 def numeric_value(value: Any) -> float | None:
@@ -4298,7 +4312,8 @@ def check_expert_feedback_request_packet() -> GateCheck:
         for term in EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_GUARDRAIL_TERMS:
             if term not in guardrails:
                 failures.append(f"post_receipt_hard_evidence_intake.source_integrity_guardrails missing {term}")
-        commands = "\n".join(str(item) for item in intake.get("recording_commands", []))
+        command_list = command_items(intake.get("recording_commands"))
+        commands = "\n".join(command_list)
         for term in (
             "preflight_challenge_cup_hard_evidence.py expert_feedback",
             "record_challenge_cup_hard_evidence.py expert_feedback",
@@ -4306,6 +4321,23 @@ def check_expert_feedback_request_packet() -> GateCheck:
         ):
             if term not in commands:
                 failures.append(f"post_receipt_hard_evidence_intake.recording_commands missing {term}")
+        if "--remediation " in commands:
+            failures.append("post_receipt_hard_evidence_intake.recording_commands use obsolete --remediation syntax")
+        required_command_options = (
+            "--source",
+            "--review-dimension practicality",
+            "--review-dimension innovation",
+            "--review-dimension boundary_rigor",
+            "--remediation-issue",
+            "--remediation-action",
+            "--confirm-real-feedback",
+        )
+        for command_fragment in (
+            "preflight_challenge_cup_hard_evidence.py expert_feedback",
+            "record_challenge_cup_hard_evidence.py expert_feedback",
+        ):
+            for failure in commands_missing_options(command_list, command_fragment, required_command_options):
+                failures.append(f"post_receipt_hard_evidence_intake.recording_commands {failure}")
 
     evidence_files = {str(item) for item in payload.get("evidence_files", [])}
     missing_required_evidence = sorted(EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES - evidence_files)

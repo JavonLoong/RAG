@@ -49,12 +49,22 @@ def test_build_expert_feedback_request_packet_outputs_sendable_integrity_pack() 
     assert "docs/challenge_cup/reproducibility/readiness_gate_report.md" in payload["evidence_files"]
     intake = payload["post_receipt_hard_evidence_intake"]
     assert "source_sha256" in intake["required_metadata_fields"]
+    assert "source_origin" in intake["required_metadata_fields"]
     assert "feedback_source_path" in intake["required_metadata_fields"]
     assert any("source_sha256" in item for item in intake["source_integrity_guardrails"])
+    assert any("source_origin" in item for item in intake["source_integrity_guardrails"])
     assert any("must not be a JSON metadata file" in item for item in intake["source_integrity_guardrails"])
-    assert any("preflight_challenge_cup_hard_evidence.py expert_feedback" in item for item in intake["recording_commands"])
-    assert any("record_challenge_cup_hard_evidence.py expert_feedback" in item for item in intake["recording_commands"])
-    assert any("--confirm-real-feedback" in item for item in intake["recording_commands"])
+    commands = "\n".join(intake["recording_commands"])
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" in commands
+    assert "record_challenge_cup_hard_evidence.py expert_feedback" in commands
+    assert "--source path/to/real-feedback.eml" in commands
+    assert "--review-dimension practicality" in commands
+    assert "--review-dimension innovation" in commands
+    assert "--review-dimension boundary_rigor" in commands
+    assert "--remediation-issue demo-pacing" in commands
+    assert "--remediation-action tighten-opening" in commands
+    assert "--confirm-real-feedback" in commands
+    assert "--remediation issue=" not in commands
     assert "已经获得专家认可" not in payload["sendable_message"]["body"]
     assert "通过专家验证" not in payload["sendable_message"]["body"]
 
@@ -65,8 +75,12 @@ def test_build_expert_feedback_request_packet_outputs_sendable_integrity_pack() 
     assert "建议邮件主题" in markdown
     assert "post-receipt hard evidence intake" in markdown
     assert "source_sha256" in markdown
+    assert "source_origin" in markdown
     assert "must not be a JSON metadata file" in markdown
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in markdown
+    assert "--remediation-issue demo-pacing" in markdown
+    assert "--remediation-action tighten-opening" in markdown
+    assert "--remediation issue=" not in markdown
     for term in ["签字页", "邮件回复", "会议纪要", "聊天记录截图"]:
         assert term in markdown
     assert BOUNDARY in markdown

@@ -2162,6 +2162,72 @@ def test_expert_feedback_request_packet_gate_requires_post_receipt_hard_evidence
     assert "post_receipt_hard_evidence_intake" in check.detail
 
 
+def test_expert_feedback_request_packet_gate_rejects_obsolete_remediation_command(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    packet_json = tmp_path / "expert_feedback_request_packet.json"
+    packet_md = tmp_path / "expert_feedback_request_packet.md"
+    evidence_files = sorted(module.EXPERT_FEEDBACK_REQUEST_REQUIRED_EVIDENCE_FILES)
+    write_current_artifacts(tmp_path, evidence_files)
+    packet_json.parent.mkdir(parents=True, exist_ok=True)
+    packet_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_expert_feedback_request_packet",
+                "status": "ready_to_send",
+                "no_external_feedback_claimed": True,
+                "boundary": EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY,
+                "recipient_roles": ["advisor", "domain expert", "reviewer"],
+                "review_dimensions": module.EXPERT_FEEDBACK_REQUEST_DIMENSIONS,
+                "required_archive_evidence_types": module.EXPERT_FEEDBACK_REQUIRED_ARCHIVE_TYPES,
+                "review_questions": ["q1"] * 8,
+                "sendable_message": {
+                    "subject": "sample",
+                    "body": "pending real feedback archive",
+                    "attachments": evidence_files[:5],
+                },
+                "minimum_evidence_file_count": 10,
+                "evidence_files": evidence_files,
+                "post_receipt_hard_evidence_intake": {
+                    "required_metadata_fields": sorted(module.EXPERT_FEEDBACK_POST_RECEIPT_REQUIRED_FIELDS),
+                    "source_integrity_guardrails": [
+                        "source_sha256 is calculated from the real source attachment",
+                        "source_origin must be external_attachment",
+                        "the source attachment must be non-empty and must not be a JSON metadata file",
+                    ],
+                    "recording_commands": [
+                        "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback",
+                        "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback",
+                    ],
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    packet_md.write_text(
+        "\n".join(sorted(module.EXPERT_FEEDBACK_REQUEST_MARKDOWN_TERMS | {EXPERT_FEEDBACK_REQUEST_PACKET_BOUNDARY})),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_JSON", packet_json)
+    monkeypatch.setattr(module, "EXPERT_FEEDBACK_REQUEST_PACKET_MD", packet_md)
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(
+        module,
+        "REPORT_MD",
+        tmp_path / "docs" / "challenge_cup" / "reproducibility" / "readiness_gate_report.md",
+    )
+
+    check = module.check_expert_feedback_request_packet()
+
+    assert not check.passed
+    assert "obsolete --remediation syntax" in check.detail
+    assert "--remediation-issue" in check.detail
+    assert "--remediation-action" in check.detail
+
+
 def test_expert_feedback_outreach_ledger_gate_rejects_overclaim_and_invalid_metadata(
     monkeypatch,
     tmp_path: Path,

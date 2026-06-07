@@ -16,6 +16,20 @@ BOUNDARY = (
     "This packet proves review outreach readiness; it does not claim expert approval, signed feedback, "
     "or production validation."
 )
+PREFLIGHT_COMMAND = (
+    "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback "
+    "--id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER "
+    "--role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml "
+    "--review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor "
+    "--remediation-issue demo-pacing --remediation-action tighten-opening --confirm-real-feedback"
+)
+RECORD_COMMAND = (
+    "python scripts/record_challenge_cup_hard_evidence.py expert_feedback "
+    "--id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER "
+    "--role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml "
+    "--review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor "
+    "--remediation-issue demo-pacing --remediation-action tighten-opening --confirm-real-feedback"
+)
 
 REVIEW_DIMENSIONS = [
     "实用性",
@@ -49,6 +63,7 @@ POST_RECEIPT_HARD_EVIDENCE_INTAKE = {
         "review_date",
         "feedback_source_path",
         "source_sha256",
+        "source_origin",
         "review_dimensions",
         "remediation_record",
         "real_feedback_confirmed",
@@ -58,10 +73,11 @@ POST_RECEIPT_HARD_EVIDENCE_INTAKE = {
         "the source attachment must be non-empty and must not be a JSON metadata file",
         "preflight and record commands calculate source_sha256 from the real source attachment",
         "metadata source_sha256 must match the archived source attachment content",
+        "source_origin must be external_attachment for post-receipt expert feedback",
     ],
     "recording_commands": [
-        "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening",
-        "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id advisor-a-YYYYMMDD --evidence-type email_reply --reviewer-identity REVIEWER --role-or-org ROLE --review-date YYYY-MM-DD --source path/to/real-feedback.eml --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation issue=demo-pacing;action=tighten-opening --confirm-real-feedback",
+        PREFLIGHT_COMMAND,
+        RECORD_COMMAND,
         "python scripts/build_challenge_cup_hard_evidence_ledger.py",
         "python scripts/build_challenge_cup_package.py",
         "python scripts/check_challenge_cup_readiness.py",
