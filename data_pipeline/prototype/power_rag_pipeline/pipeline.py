@@ -23,9 +23,12 @@ Label Studio JSON → 解析 → 清洗 → 分块 → BGE-m3 向量化 → Chro
 """
 
 import sys
-import io
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 import orjson
 from pathlib import Path

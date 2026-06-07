@@ -1,9 +1,9 @@
 # Final Acceptance Audit
 
-- Status: `package_ready_awaiting_external_hard_evidence`
-- Can submit for package review: `True`
+- Status: `not_ready`
+- Can submit for package review: `False`
 - Can mark goal complete: `False`
-- Readiness gate: `pass` (64/64)
+- Readiness gate: `fail` (62/65)
 - Submission verifier: `verify_submission_package.py` available=True archived=True
 - Goal completion: `fail`; completion_claim_allowed=False
 

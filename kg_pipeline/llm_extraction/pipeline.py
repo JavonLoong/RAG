@@ -192,16 +192,19 @@ def _parse_triples(raw_response: str) -> list[dict[str, Any]]:
 
 
 def _normalize_triple(triple: dict[str, Any], chunk: ChunkRecord) -> dict[str, Any]:
-    return {
+    normalized = {
         "subject": _coerce_text(triple.get("subject")),
         "relation": _coerce_text(triple.get("relation") or triple.get("predicate")),
         "object": _coerce_text(triple.get("object") or triple.get("target")),
         "evidence": _coerce_text(triple.get("evidence")),
         "source": _coerce_text(triple.get("source") or chunk.source),
         "page": triple.get("page") or chunk.page,
-        "valid_time": _coerce_text(triple.get("valid_time") or triple.get("timestamp")),
         "chunk_id": chunk.id,
     }
+    valid_time = _coerce_text(triple.get("valid_time") or triple.get("timestamp"))
+    if valid_time:
+        normalized["valid_time"] = valid_time
+    return normalized
 
 
 def _validate_triple(triple: dict[str, Any], relation_types: set[str]) -> list[str]:

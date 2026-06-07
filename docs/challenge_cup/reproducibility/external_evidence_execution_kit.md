@@ -21,7 +21,7 @@
 - Command: `python scripts/check_challenge_cup_readiness.py`
 - Human proof required: none; this is a machine gate before contacting reviewers or observers
 - counts_as_hard_evidence: `False`
-- Expected after step: readiness gate reports pass 64/64
+- Expected after step: readiness gate reports pass 65/65
 - Guardrail: A passing package gate is not expert approval, timed rehearsal completion, or award proof.
 - does_not_claim_award_or_completion: `True`
 

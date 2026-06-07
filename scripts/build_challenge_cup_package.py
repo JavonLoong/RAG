@@ -64,6 +64,11 @@ from build_challenge_cup_external_evidence_closeout_checklist import (
     OUTPUT_MD as EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD,
     write_outputs as write_external_evidence_closeout_checklist_outputs,
 )
+from build_challenge_cup_hard_evidence_source_custody import (
+    OUTPUT_JSON as HARD_EVIDENCE_SOURCE_CUSTODY_JSON,
+    OUTPUT_MD as HARD_EVIDENCE_SOURCE_CUSTODY_MD,
+    write_outputs as write_hard_evidence_source_custody_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -240,7 +245,7 @@ EVAL_COVERAGE_MINIMUMS = {
     "graphrag_questions": 10,
 }
 ARCHIVE_TIMESTAMP = (2026, 6, 5, 21, 6, 0)
-READINESS_GATE_COUNT = 64
+READINESS_GATE_COUNT = 65
 
 
 def write(path: Path, content: str) -> None:
@@ -496,7 +501,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 
 - 状态：`package_ready_awaiting_external_hard_evidence`。
 - 真实专家反馈尚未归档；真实计时彩排尚未归档；不能标记目标完成。
-- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`；当天归档闭环看 `reproducibility/external_evidence_closeout_checklist.md`。
+- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`；源文件入库保管看 `reproducibility/hard_evidence_source_custody.md`；当天归档闭环看 `reproducibility/external_evidence_closeout_checklist.md`。
 
 ## 推荐阅读顺序
 
@@ -556,12 +561,13 @@ def build_readme(ctx: dict[str, Any]) -> str:
 54. `reproducibility/hard_evidence_action_pack.md`
 55. `reproducibility/external_evidence_execution_kit.md`
 56. `reproducibility/external_evidence_closeout_checklist.md`
-57. `reproducibility/hard_evidence_ledger.md`
-58. `reproducibility/challenge_cup_submission_archive_manifest.json`
-59. `reproducibility/challenge_cup_submission_package.zip`
-60. `reproducibility/verify_submission_package.py`
-61. `reproducibility/final_acceptance_audit.md`
-62. `reproducibility/submission_integrity_card.md`
+57. `reproducibility/hard_evidence_source_custody.md`
+58. `reproducibility/hard_evidence_ledger.md`
+59. `reproducibility/challenge_cup_submission_archive_manifest.json`
+60. `reproducibility/challenge_cup_submission_package.zip`
+61. `reproducibility/verify_submission_package.py`
+62. `reproducibility/final_acceptance_audit.md`
+63. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 
@@ -1467,7 +1473,7 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 结项提交包 | 已生成，可按 verifier 和 readiness gate 复核。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip` |
 | 现场答辩材料 | README、一页纸、项目书、评委速览卡、展墙脚本、PPT 和 A0 海报均已进入包。 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
-| 外部硬证据 | 真实专家反馈、真实计时彩排仍待实际归档；未归档前不能标记目标完成。 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
+| 外部硬证据 | 真实专家反馈、真实计时彩排仍待实际归档；未归档前不能标记目标完成。 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_source_custody.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
 | 最终状态口径 | package_ready_awaiting_external_hard_evidence。 | `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
 
 ## 评委三分钟入口
@@ -1487,7 +1493,7 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 | 现场材料 | `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/14_现场答辩操作Runbook.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
 | 包与校验 | `docs/challenge_cup/reproducibility/submission_integrity_card.md`; `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/evidence_hashes.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`; `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | 总结与门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/command_log.md` |
-| 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
+| 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_source_custody.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
 
 ## 复核命令
 
@@ -2296,6 +2302,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_execution_kit.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_closeout_checklist.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_source_custody.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_judge_objection_matrix.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
@@ -2345,6 +2352,8 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- External evidence execution kit JSON: `{md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON)}`",
             f"- External evidence closeout checklist: `{md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD)}`",
             f"- External evidence closeout checklist JSON: `{md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON)}`",
+            f"- Hard evidence source custody: `{md_link(HARD_EVIDENCE_SOURCE_CUSTODY_MD)}`",
+            f"- Hard evidence source custody JSON: `{md_link(HARD_EVIDENCE_SOURCE_CUSTODY_JSON)}`",
             f"- Expert review handoff: `{md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD)}`",
             f"- Timed rehearsal observer sheet: `{md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD)}`",
             f"- Special prize readiness dashboard: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD)}`",
@@ -2693,6 +2702,11 @@ python scripts/build_challenge_cup_external_evidence_closeout_checklist.py
 -> docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json
 -> Status: ready_for_real_external_evidence_closeout
 
+python scripts/build_challenge_cup_hard_evidence_source_custody.py
+-> docs/challenge_cup/reproducibility/hard_evidence_source_custody.md
+-> docs/challenge_cup/reproducibility/hard_evidence_source_custody.json
+-> Status: ready_for_real_source_custody_no_external_evidence_claim
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -2791,6 +2805,7 @@ def main() -> int:
     write_hard_evidence_action_pack_outputs()
     write_external_evidence_execution_kit_outputs()
     write_external_evidence_closeout_checklist_outputs()
+    write_hard_evidence_source_custody_outputs()
     write_official_rubric_alignment_outputs()
     official_source_recheck_payload = write_official_source_recheck_pack_outputs()
     write_judge_objection_matrix_outputs()
@@ -2886,6 +2901,8 @@ def main() -> int:
         md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON),
         md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD),
         md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON),
+        md_link(HARD_EVIDENCE_SOURCE_CUSTODY_MD),
+        md_link(HARD_EVIDENCE_SOURCE_CUSTODY_JSON),
         md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD),
         md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD),
         md_link(HARD_EVIDENCE_LEDGER_MD),

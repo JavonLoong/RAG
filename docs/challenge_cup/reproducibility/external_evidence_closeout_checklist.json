@@ -17,8 +17,8 @@
       "evidence_category": "package_readiness",
       "proof_required": "current package tree and readiness report",
       "command": "python scripts/check_challenge_cup_readiness.py",
-      "expected_after_step": "readiness gate reports pass 64/64 before external execution starts",
-      "acceptance_signal": "docs/challenge_cup/reproducibility/readiness_gate_report.md contains Status: `pass` and Passed: 64/64",
+      "expected_after_step": "readiness gate reports pass 65/65 before external execution starts",
+      "acceptance_signal": "docs/challenge_cup/reproducibility/readiness_gate_report.md contains Status: `pass` and Passed: 65/65",
       "cannot_substitute": "a clean package preflight does not substitute for real expert feedback or real timed rehearsal evidence",
       "counts_as_hard_evidence": false,
       "does_not_claim_award_or_completion": true
@@ -109,7 +109,7 @@
       "proof_required": "rebuilt package files",
       "command": "python scripts/check_challenge_cup_readiness.py",
       "expected_after_step": "readiness gate passes after evidence refresh",
-      "acceptance_signal": "readiness_gate_report.md contains Status: `pass` and Passed: 64/64",
+      "acceptance_signal": "readiness_gate_report.md contains Status: `pass` and Passed: 65/65",
       "cannot_substitute": "a stale readiness report does not substitute for a rerun after evidence changes",
       "counts_as_hard_evidence": false,
       "does_not_claim_award_or_completion": true

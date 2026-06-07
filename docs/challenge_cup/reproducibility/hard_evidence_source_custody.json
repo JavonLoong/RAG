@@ -1,0 +1,221 @@
+{
+  "report_type": "challenge_cup_hard_evidence_source_custody",
+  "status": "ready_for_real_source_custody_no_external_evidence_claim",
+  "completion_claim_allowed": false,
+  "does_not_satisfy_goal_completion": true,
+  "required_before_goal_completion": [
+    "expert_feedback",
+    "timed_rehearsal"
+  ],
+  "boundary": "Source custody preflight only: this pack does not satisfy goal completion, does not claim expert approval, does not claim a timed rehearsal was completed, and provides no award guarantee.",
+  "source_custody_categories": [
+    {
+      "category_id": "expert_feedback",
+      "source_role": "real reviewer signed form, email reply, meeting minutes, or chat screenshot",
+      "counts_as_hard_evidence_after_record_only": true,
+      "does_not_satisfy_goal_completion_before_record": true,
+      "source_restrictions": [
+        "the source must be the original evidence attachment received from the reviewer, observer, timer, or meeting record",
+        "the source attachment must be non-empty before preflight and before record",
+        "the source attachment must not be a JSON metadata file",
+        "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that tree is for archived intake outputs",
+        "duplicate source_sha256 values within a hard evidence category must be rejected by the ledger",
+        "--force is allowed only for a deliberate correction and must include a non-empty --force-reason",
+        "every --force overwrite must append docs/challenge_cup/reproducibility/hard_evidence/override_log.jsonl with previous and new source_sha256 values"
+      ],
+      "custody_checkpoints": [
+        {
+          "checkpoint_id": "source_received",
+          "owner": "project lead",
+          "evidence_state": "external source exists outside archived hard_evidence intake",
+          "required_proof": "original evidence attachment is present, non-empty, and traceable to a real human source",
+          "command": "manual source receipt check before running preflight",
+          "acceptance_signal": "source file path, source owner, source date, and source type are known",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "source_sha256_preflighted",
+          "owner": "evidence administrator",
+          "evidence_state": "source hash calculated without writing intake files",
+          "required_proof": "preflight output contains source_sha256 and does not create archived metadata",
+          "command": "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/original-real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+          "acceptance_signal": "preflight status=pass and source_sha256 is recorded for the original source attachment",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "record_command_archives_source",
+          "owner": "evidence administrator",
+          "evidence_state": "source copied into the hard_evidence intake tree by the record command",
+          "required_proof": "metadata source_path and source_sha256 match the archived source copy",
+          "command": "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/original-real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+          "acceptance_signal": "hard_evidence metadata for expert_feedback records source_origin=external_attachment and matching source_sha256",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "ledger_rebuilt",
+          "owner": "evidence administrator",
+          "evidence_state": "hard evidence ledger rebuilt from archived intake files",
+          "required_proof": "ledger category reflects accepted or rejected metadata without manual edits",
+          "command": "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+          "acceptance_signal": "hard_evidence_ledger.categories.expert_feedback reflects the recorded source status",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "package_rebuilt",
+          "owner": "evidence administrator",
+          "evidence_state": "package manifests and archive regenerated after source archival",
+          "required_proof": "package manifest, evidence hashes, command log, and archive include the new source and metadata",
+          "command": "python scripts/build_challenge_cup_package.py",
+          "acceptance_signal": "package_manifest.json, evidence_hashes.json, and challenge_cup_submission_archive_manifest.json are refreshed",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "submission_verifier_rerun",
+          "owner": "evidence administrator",
+          "evidence_state": "submission archive verified after package rebuild",
+          "required_proof": "verifier checks the refreshed archive, manifest, and hash inventory",
+          "command": "python docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+          "acceptance_signal": "submission package verifier reports Status: pass",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "readiness_gate_rerun",
+          "owner": "evidence administrator",
+          "evidence_state": "readiness gate rerun after package rebuild",
+          "required_proof": "readiness report reflects the current package state after hard evidence changes",
+          "command": "python scripts/check_challenge_cup_readiness.py",
+          "acceptance_signal": "readiness gate reports Status: pass for the current gate count",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "goal_gate_rerun",
+          "owner": "project lead",
+          "evidence_state": "goal completion decision made only by the goal gate",
+          "required_proof": "goal completion gate reads current readiness report and hard evidence ledger",
+          "command": "python scripts/check_challenge_cup_goal_completion.py",
+          "acceptance_signal": "goal_completion_report.md explicitly states whether completion_claim_allowed is True or False",
+          "does_not_claim_award_or_completion": true
+        }
+      ],
+      "operator_commands": [
+        "python scripts/preflight_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/original-real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+        "python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id real-feedback-id --source path/to/original-real-feedback.eml --evidence-type email_reply --reviewer-identity real-reviewer-identity --role-or-org real-reviewer-role-or-org --review-date YYYY-MM-DD --review-dimension practicality --review-dimension innovation --review-dimension boundary_rigor --remediation-issue issue --remediation-action action --confirm-real-feedback",
+        "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+        "python scripts/build_challenge_cup_package.py",
+        "python docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+        "python scripts/check_challenge_cup_readiness.py",
+        "python scripts/check_challenge_cup_goal_completion.py"
+      ]
+    },
+    {
+      "category_id": "timed_rehearsal",
+      "source_role": "real timer screenshot, screen recording, observer note, or missed-question list",
+      "counts_as_hard_evidence_after_record_only": true,
+      "does_not_satisfy_goal_completion_before_record": true,
+      "source_restrictions": [
+        "the source must be the original evidence attachment received from the reviewer, observer, timer, or meeting record",
+        "the source attachment must be non-empty before preflight and before record",
+        "the source attachment must not be a JSON metadata file",
+        "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that tree is for archived intake outputs",
+        "duplicate source_sha256 values within a hard evidence category must be rejected by the ledger",
+        "--force is allowed only for a deliberate correction and must include a non-empty --force-reason",
+        "every --force overwrite must append docs/challenge_cup/reproducibility/hard_evidence/override_log.jsonl with previous and new source_sha256 values"
+      ],
+      "custody_checkpoints": [
+        {
+          "checkpoint_id": "source_received",
+          "owner": "project lead",
+          "evidence_state": "external source exists outside archived hard_evidence intake",
+          "required_proof": "original evidence attachment is present, non-empty, and traceable to a real human source",
+          "command": "manual source receipt check before running preflight",
+          "acceptance_signal": "source file path, source owner, source date, and source type are known",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "source_sha256_preflighted",
+          "owner": "evidence administrator",
+          "evidence_state": "source hash calculated without writing intake files",
+          "required_proof": "preflight output contains source_sha256 and does not create archived metadata",
+          "command": "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/original-real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+          "acceptance_signal": "preflight status=pass and source_sha256 is recorded for the original source attachment",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "record_command_archives_source",
+          "owner": "evidence administrator",
+          "evidence_state": "source copied into the hard_evidence intake tree by the record command",
+          "required_proof": "metadata source_path and source_sha256 match the archived source copy",
+          "command": "python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --source path/to/original-real-timer-or-observer-file.txt --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+          "acceptance_signal": "hard_evidence metadata for timed_rehearsal records source_origin=external_attachment and matching source_sha256",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "ledger_rebuilt",
+          "owner": "evidence administrator",
+          "evidence_state": "hard evidence ledger rebuilt from archived intake files",
+          "required_proof": "ledger category reflects accepted or rejected metadata without manual edits",
+          "command": "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+          "acceptance_signal": "hard_evidence_ledger.categories.timed_rehearsal reflects the recorded source status",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "package_rebuilt",
+          "owner": "evidence administrator",
+          "evidence_state": "package manifests and archive regenerated after source archival",
+          "required_proof": "package manifest, evidence hashes, command log, and archive include the new source and metadata",
+          "command": "python scripts/build_challenge_cup_package.py",
+          "acceptance_signal": "package_manifest.json, evidence_hashes.json, and challenge_cup_submission_archive_manifest.json are refreshed",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "submission_verifier_rerun",
+          "owner": "evidence administrator",
+          "evidence_state": "submission archive verified after package rebuild",
+          "required_proof": "verifier checks the refreshed archive, manifest, and hash inventory",
+          "command": "python docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+          "acceptance_signal": "submission package verifier reports Status: pass",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "readiness_gate_rerun",
+          "owner": "evidence administrator",
+          "evidence_state": "readiness gate rerun after package rebuild",
+          "required_proof": "readiness report reflects the current package state after hard evidence changes",
+          "command": "python scripts/check_challenge_cup_readiness.py",
+          "acceptance_signal": "readiness gate reports Status: pass for the current gate count",
+          "does_not_claim_award_or_completion": true
+        },
+        {
+          "checkpoint_id": "goal_gate_rerun",
+          "owner": "project lead",
+          "evidence_state": "goal completion decision made only by the goal gate",
+          "required_proof": "goal completion gate reads current readiness report and hard evidence ledger",
+          "command": "python scripts/check_challenge_cup_goal_completion.py",
+          "acceptance_signal": "goal_completion_report.md explicitly states whether completion_claim_allowed is True or False",
+          "does_not_claim_award_or_completion": true
+        }
+      ],
+      "operator_commands": [
+        "python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/original-real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+        "python scripts/run_challenge_cup_timed_rehearsal.py --id real-rehearsal-id --source path/to/original-real-timer-or-observer-file.txt --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal",
+        "python scripts/build_challenge_cup_hard_evidence_ledger.py",
+        "python scripts/build_challenge_cup_package.py",
+        "python docs/challenge_cup/reproducibility/verify_submission_package.py --root .",
+        "python scripts/check_challenge_cup_readiness.py",
+        "python scripts/check_challenge_cup_goal_completion.py"
+      ]
+    }
+  ],
+  "integrity_guardrails": [
+    "do not fabricate evidence or create placeholder hard evidence attachments",
+    "do not claim expert approval before source archival and hard_evidence_ledger rebuild",
+    "do not claim a timed rehearsal before source archival and hard_evidence_ledger rebuild",
+    "no award guarantee is created by this source custody pack, readiness gate, or verifier",
+    "source_sha256 must be calculated from the original source attachment before and after archival",
+    "override_log.jsonl is mandatory for intentional replacement of archived metadata or source copies"
+  ],
+  "output_files": [
+    "docs/challenge_cup/reproducibility/hard_evidence_source_custody.md",
+    "docs/challenge_cup/reproducibility/hard_evidence_source_custody.json"
+  ]
+}

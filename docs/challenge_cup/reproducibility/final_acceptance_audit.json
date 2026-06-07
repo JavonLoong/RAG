@@ -1,14 +1,14 @@
 {
   "report_type": "challenge_cup_final_acceptance_audit",
-  "status": "package_ready_awaiting_external_hard_evidence",
+  "status": "not_ready",
   "package_readiness": {
-    "status": "pass",
-    "passed": 64,
-    "total": 64,
-    "source_report_passed": 64,
-    "source_report_total": 64,
-    "current_gate_count": 64,
-    "source_report_status": "pass",
+    "status": "fail",
+    "passed": 62,
+    "total": 65,
+    "source_report_passed": 62,
+    "source_report_total": 65,
+    "current_gate_count": 65,
+    "source_report_status": "fail",
     "count_synced_for_current_gate_set": false,
     "count_synced_for_self_referential_audit": false,
     "self_referential_readiness_bootstrap": false,
@@ -26,7 +26,7 @@
     "completion_claim_allowed": false,
     "report": "docs/challenge_cup/reproducibility/goal_completion_report.md"
   },
-  "can_submit_for_package_review": true,
+  "can_submit_for_package_review": false,
   "can_mark_goal_complete": false,
   "blocking_items": [
     {

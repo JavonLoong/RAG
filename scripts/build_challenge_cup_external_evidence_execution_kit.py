@@ -288,7 +288,7 @@ def operator_sequence() -> list[dict[str, Any]]:
             "command": "python scripts/check_challenge_cup_readiness.py",
             "human_proof_required": "none; this is a machine gate before contacting reviewers or observers",
             "counts_as_hard_evidence": False,
-            "expected_after_step": "readiness gate reports pass 64/64",
+            "expected_after_step": "readiness gate reports pass 65/65",
             "guardrail": "A passing package gate is not expert approval, timed rehearsal completion, or award proof.",
             "does_not_claim_award_or_completion": True,
         },

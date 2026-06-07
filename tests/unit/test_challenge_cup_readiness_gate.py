@@ -184,6 +184,64 @@ def test_external_evidence_closeout_gate_rejects_stale_hard_evidence_status(monk
     assert "hard_evidence_collected_pending_review" in check.detail
 
 
+def test_hard_evidence_source_custody_gate_rejects_overclaim_and_missing_chain(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    module = load_readiness_module()
+    required_paths = list(module.HARD_EVIDENCE_SOURCE_CUSTODY_REQUIRED_PATHS)
+    custody_json = tmp_path / module.HARD_EVIDENCE_SOURCE_CUSTODY_JSON_RELATIVE
+    custody_md = tmp_path / module.HARD_EVIDENCE_SOURCE_CUSTODY_MD_RELATIVE
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive = tmp_path / "archive_manifest.json"
+
+    custody_json.parent.mkdir(parents=True, exist_ok=True)
+    custody_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_hard_evidence_source_custody",
+                "status": "hard_evidence_complete",
+                "completion_claim_allowed": True,
+                "does_not_satisfy_goal_completion": False,
+                "required_before_goal_completion": [],
+                "boundary": "award guarantee",
+                "source_custody_categories": [],
+                "integrity_guardrails": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    custody_md.write_text(
+        "Hard Evidence Source Custody\ncompletion_claim_allowed=True\naward guarantee\n",
+        encoding="utf-8",
+    )
+    manifest.write_text(json.dumps({"evidence_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    hashes.write_text(
+        json.dumps({"files": [{"path": relative} for relative in required_paths]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    archive.write_text(json.dumps({"included_files": required_paths}, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_SOURCE_CUSTODY_JSON", custody_json)
+    monkeypatch.setattr(module, "HARD_EVIDENCE_SOURCE_CUSTODY_MD", custody_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: set(required_paths))
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_hard_evidence_source_custody()
+
+    assert not check.passed
+    assert "completion_claim_allowed" in check.detail
+    assert "does_not_satisfy_goal_completion" in check.detail
+    assert "hard_evidence_complete" in check.detail
+    assert "source_custody_categories" in check.detail
+    assert "no award guarantee" in check.detail
+
+
 def test_package_docs_gate_rejects_missing_submission_integrity_card(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     package_dir = tmp_path / "docs" / "challenge_cup"
@@ -229,7 +287,7 @@ def test_package_docs_gate_rejects_submission_integrity_card_without_status_term
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:
     payload = run_readiness_gate_for_test(monkeypatch)
 
-    assert payload == {"status": "pass", "passed": 64, "total": 64}
+    assert payload == {"status": "pass", "passed": 65, "total": 65}
     report = REPORT.read_text(encoding="utf-8")
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
@@ -305,7 +363,7 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report(monkeypatch) -> 
 
     payload = run_readiness_gate_for_test(monkeypatch, rebuild=False)
 
-    assert payload == {"status": "pass", "passed": 64, "total": 64}
+    assert payload == {"status": "pass", "passed": 65, "total": 65}
     assert REPORT.exists()
 
 
@@ -3966,7 +4024,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 64/64\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 65/65\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -3980,9 +4038,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 64,
-                    "total": 64,
-                    "current_gate_count": 64,
+                    "passed": 65,
+                    "total": 65,
+                    "current_gate_count": 65,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

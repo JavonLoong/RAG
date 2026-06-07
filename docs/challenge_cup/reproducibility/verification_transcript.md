@@ -8,8 +8,8 @@
 
 ## Current Machine Gates
 
-- readiness gate pass 64/64
-- final acceptance: `package_ready_awaiting_external_hard_evidence`
+- readiness gate pass 65/65
+- final acceptance: `not_ready`
 - goal completion: `fail`
 
 ## Verification Commands
@@ -18,7 +18,7 @@
 | --- | ---: | --- | --- |
 | `.\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py` | 0 | `pass` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | `.\.venv\Scripts\python.exe docs/challenge_cup/reproducibility/verify_submission_package.py --root .` | 0 | `pass` | `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
-| `.\.venv\Scripts\python.exe scripts/build_challenge_cup_final_acceptance_audit.py` | 0 | `package_ready_awaiting_external_hard_evidence` | `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
+| `.\.venv\Scripts\python.exe scripts/build_challenge_cup_final_acceptance_audit.py` | 0 | `not_ready` | `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
 | `.\.venv\Scripts\python.exe scripts/check_challenge_cup_goal_completion.py` | 1 | `fail` | `docs/challenge_cup/reproducibility/goal_completion_report.md` |
 
 ## Expected Failure

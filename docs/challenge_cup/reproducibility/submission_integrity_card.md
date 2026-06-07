@@ -16,7 +16,7 @@
 
 | Gate | Expected Result | Evidence |
 | --- | --- | --- |
-| readiness gate | pass `64/64` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| readiness gate | pass `65/65` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | submission verifier | pass | `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | final acceptance audit | `package_ready_awaiting_external_hard_evidence` | `docs/challenge_cup/reproducibility/final_acceptance_audit.md` |
 | goal completion expected fail | fail until hard evidence is archived | `docs/challenge_cup/reproducibility/goal_completion_report.md` |

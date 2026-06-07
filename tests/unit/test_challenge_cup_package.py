@@ -118,6 +118,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
     "reproducibility/external_evidence_closeout_checklist.md",
     "reproducibility/external_evidence_closeout_checklist.json",
+    "reproducibility/hard_evidence_source_custody.md",
+    "reproducibility/hard_evidence_source_custody.json",
     "reproducibility/hard_evidence_ledger.md",
     "reproducibility/hard_evidence_ledger.json",
     "reproducibility/hard_evidence/README.md",
@@ -282,7 +284,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "evidence_hashes.json",
         "verify_submission_package.py --root .",
         "readiness gate",
-        "64/64",
+        "65/65",
         "package_ready_awaiting_external_hard_evidence",
         "goal completion expected fail",
         "真实专家反馈",
@@ -448,13 +450,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert verification_transcript["status"] == "package_verification_transcript_ready_goal_still_blocked"
     assert verification_transcript["completion_claim_allowed"] is False
     assert verification_transcript["does_not_satisfy_goal_completion"] is True
-    assert verification_transcript["readiness_gate"]["passed"] == 64
+    assert verification_transcript["readiness_gate"]["passed"] == 65
     assert verification_transcript["goal_completion"]["expected_failure"] is True
     assert "does not claim goal completion" in verification_transcript["boundary"]
     verification_transcript_md = (
         PACKAGE_DIR / "reproducibility" / "verification_transcript.md"
     ).read_text(encoding="utf-8")
-    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 64/64"]:
+    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 65/65"]:
         assert phrase in verification_transcript_md
     rubric_defense = json.loads(
         (PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.json").read_text(encoding="utf-8")
@@ -568,7 +570,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "goal_completion_report.md",
     ]:
         assert evidence in onsite_runbook
-    assert "64 项 readiness gate" in onsite_runbook
+    assert "65 项 readiness gate" in onsite_runbook
+    assert "64 项 readiness gate" not in onsite_runbook
     assert "63 项 readiness gate" not in onsite_runbook
     assert "62 项 readiness gate" not in onsite_runbook
     assert "61 项 readiness gate" not in onsite_runbook
@@ -1149,6 +1152,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "external_evidence_execution_kit/timed_rehearsal_observer_sheet.md" in manifest
     assert "external_evidence_closeout_checklist.md" in manifest
     assert "external_evidence_closeout_checklist.json" in manifest
+    assert "hard_evidence_source_custody.md" in manifest
+    assert "hard_evidence_source_custody.json" in manifest
     assert "challenge_cup_defense_deck.pptx" in manifest
     assert "challenge_cup_defense_speaker_notes.md" in manifest
     assert "hard_evidence_ledger.md" in manifest
@@ -1215,7 +1220,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "Status: runtime_snapshot_ready_no_environment_portability_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (64/64 gates)" in command_log
+    assert "Status: pass (65/65 gates)" in command_log
     assert "Status: pass (63/63 gates)" not in command_log
     assert "Status: pass (61/61 gates)" not in command_log
     assert "Status: pass (60/60 gates)" not in command_log
@@ -1518,8 +1523,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 64
-    assert final_acceptance["package_readiness"]["total"] == 64
+    assert final_acceptance["package_readiness"]["passed"] == 65
+    assert final_acceptance["package_readiness"]["total"] == 65
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"
