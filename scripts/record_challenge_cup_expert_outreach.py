@@ -5,7 +5,7 @@ import json
 import re
 import sys
 from datetime import date
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -85,6 +85,16 @@ def valid_source_attachment(path_value: str) -> Path:
     return source
 
 
+def valid_requested_attachment(path_value: str) -> str:
+    posix = PurePosixPath(path_value)
+    if posix.is_absolute() or ".." in posix.parts or "\\" in path_value:
+        raise OutreachInputError(f"requested attachment path is unsafe: {path_value}")
+    attachment = REPO_ROOT / path_value
+    if not attachment.is_file() or attachment.stat().st_size <= 0:
+        raise OutreachInputError(f"requested attachment path missing or empty: {path_value}")
+    return path_value
+
+
 def copy_source(source: Path, evidence_id: str, force: bool = False) -> Path:
     suffix = source.suffix or ".evidence"
     target = OUTREACH_DIR / f"{evidence_id}{suffix.lower()}"
@@ -101,6 +111,12 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def write_metadata(path: Path, payload: dict[str, Any], *, force: bool = False) -> None:
+    if path.exists() and not force:
+        raise FileExistsError(f"metadata already exists: {repo_path(path)}; use --force to overwrite")
+    write_json(path, payload)
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if not args.confirm_real_outreach:
         raise OutreachInputError(
@@ -115,6 +131,10 @@ def validate_args(args: argparse.Namespace) -> None:
         parse_iso_date(args.followup_due_date)
     if len(args.requested_review_dimension) < 3:
         raise OutreachInputError("expert outreach needs at least three requested review dimensions")
+    args.requested_attachment = [
+        valid_requested_attachment(attachment)
+        for attachment in args.requested_attachment
+    ]
 
 
 def record_outreach(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any]]:
@@ -138,7 +158,7 @@ def record_outreach(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any
         "does_not_satisfy_hard_evidence": True,
     }
     metadata_path = OUTREACH_DIR / f"{args.id}.json"
-    write_json(metadata_path, metadata)
+    write_metadata(metadata_path, metadata, force=args.force)
     payload = ledger.write_outputs()
     return metadata_path, copied_source, payload
 
@@ -167,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_outreach(args)
-    except (FileNotFoundError, OutreachInputError) as exc:
+    except (FileNotFoundError, FileExistsError, OutreachInputError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(f"Recorded outreach metadata: {repo_path(metadata_path)}")

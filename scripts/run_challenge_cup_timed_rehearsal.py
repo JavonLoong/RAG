@@ -150,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_timed_rehearsal(args)
-    except (RehearsalInputError, intake.HardEvidenceInputError, FileNotFoundError) as exc:
+    except (RehearsalInputError, intake.HardEvidenceInputError, FileNotFoundError, FileExistsError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

@@ -131,6 +131,21 @@ def test_records_external_timed_rehearsal_source_and_refreshes_ledger(tmp_path: 
     assert ledger["categories"]["timed_rehearsal"]["collected_count"] == 1
 
 
+def test_refuses_duplicate_rehearsal_id_without_traceback(tmp_path: Path, capsys) -> None:
+    module = load_runner_module()
+    module.configure_paths(tmp_path)
+
+    assert module.main(timed_rehearsal_args("--confirm-real-rehearsal")) == 0
+    capsys.readouterr()
+
+    exit_code = module.main(timed_rehearsal_args("--confirm-real-rehearsal"))
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "metadata already exists" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def test_rejects_wrong_killer_question_count(tmp_path: Path) -> None:
     module = load_runner_module()
     module.configure_paths(tmp_path)

@@ -165,6 +165,12 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def write_metadata(path: Path, payload: dict[str, Any], *, force: bool = False) -> None:
+    if path.exists() and not force:
+        raise FileExistsError(f"metadata already exists: {repo_path(path)}; use --force to overwrite")
+    write_json(path, payload)
+
+
 def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
     if not args.confirm_real_feedback:
         raise HardEvidenceInputError(
@@ -202,7 +208,7 @@ def record_expert_feedback(args: argparse.Namespace) -> tuple[Path, Path]:
         "real_feedback_confirmed": True,
     }
     metadata_path = EXPERT_DIR / f"{args.id}.json"
-    write_json(metadata_path, metadata)
+    write_metadata(metadata_path, metadata, force=args.force)
     return metadata_path, copied_source
 
 
@@ -240,7 +246,7 @@ def record_timed_rehearsal(args: argparse.Namespace) -> tuple[Path, Path]:
         "real_rehearsal_confirmed": True,
     }
     metadata_path = REHEARSAL_DIR / f"{args.id}.json"
-    write_json(metadata_path, metadata)
+    write_metadata(metadata_path, metadata, force=args.force)
     return metadata_path, copied_source
 
 
@@ -288,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
             metadata_path, source_path = record_timed_rehearsal(args)
         else:
             raise ValueError(f"unsupported hard evidence category: {args.category}")
-    except HardEvidenceInputError as exc:
+    except (FileNotFoundError, FileExistsError, HardEvidenceInputError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

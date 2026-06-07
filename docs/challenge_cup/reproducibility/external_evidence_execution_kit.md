@@ -161,6 +161,8 @@ Source integrity guardrails:
 - --source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file
 - --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs
 - hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category
+- metadata already exists is treated as an input error unless --force is supplied intentionally
+- record_challenge_cup_expert_outreach.py rejects requested_attachment_paths that are unsafe, missing or empty
 - do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Recording commands:
@@ -223,6 +225,8 @@ Source integrity guardrails:
 - --source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file
 - --source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs
 - hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category
+- metadata already exists is treated as an input error unless --force is supplied intentionally
+- record_challenge_cup_expert_outreach.py rejects requested_attachment_paths that are unsafe, missing or empty
 - do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates
 
 Recording commands:

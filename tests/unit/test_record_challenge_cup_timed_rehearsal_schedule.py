@@ -134,6 +134,24 @@ def test_records_confirmed_timed_rehearsal_schedule_and_refreshes_ledger(tmp_pat
     assert metadata["schedule_source_path"] in ledger["schedule_files"]
 
 
+def test_refuses_duplicate_schedule_id_without_traceback(tmp_path: Path, capsys) -> None:
+    module = load_schedule_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "calendar_invite.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real rehearsal calendar invite", encoding="utf-8")
+
+    assert module.main(schedule_args(source, "--confirm-real-schedule")) == 0
+    capsys.readouterr()
+
+    exit_code = module.main(schedule_args(source, "--confirm-real-schedule"))
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "metadata already exists" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def test_rejects_empty_schedule_source_file(tmp_path: Path) -> None:
     module = load_schedule_module()
     module.configure_paths(tmp_path)

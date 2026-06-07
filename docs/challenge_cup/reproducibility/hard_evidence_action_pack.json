@@ -62,6 +62,8 @@
         "--source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file",
         "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs",
         "hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category",
+        "metadata already exists is treated as an input error unless --force is supplied intentionally",
+        "record_challenge_cup_expert_outreach.py rejects requested_attachment_paths that are unsafe, missing or empty",
         "do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates"
       ],
       "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
@@ -119,6 +121,8 @@
         "--source must be the original evidence attachment, not the generated .json metadata summary; the source attachment must be non-empty and must not be a JSON metadata file",
         "--source must not point inside docs/challenge_cup/reproducibility/hard_evidence/**; that directory is for archived intake outputs, not new source inputs",
         "hard_evidence_ledger rejects duplicate source_sha256 values within the same hard evidence category",
+        "metadata already exists is treated as an input error unless --force is supplied intentionally",
+        "record_challenge_cup_expert_outreach.py rejects requested_attachment_paths that are unsafe, missing or empty",
         "do not edit or replace the source attachment after recording; changed bytes will fail readiness and goal gates"
       ],
       "failed_rehearsal_archival_rule": "If any measured rehearsal segment exceeds the limit or a required killer-question timing is missing, still archive the real rehearsal evidence with timing_acceptance_pass=false; the hard evidence ledger must place the metadata in rejected_metadata_records and collected_count must not satisfy the acceptance gate.",

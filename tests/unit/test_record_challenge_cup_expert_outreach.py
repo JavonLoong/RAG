@@ -52,6 +52,15 @@ def outreach_args(source: Path, *extra: str) -> list[str]:
     ]
 
 
+def write_requested_attachments(repo_root: Path) -> None:
+    one_page = repo_root / "docs" / "challenge_cup" / "00_项目一页纸.md"
+    feedback_form = repo_root / "docs" / "challenge_cup" / "reproducibility" / "expert_feedback_form.md"
+    one_page.parent.mkdir(parents=True, exist_ok=True)
+    feedback_form.parent.mkdir(parents=True, exist_ok=True)
+    one_page.write_text("one page", encoding="utf-8")
+    feedback_form.write_text("feedback form", encoding="utf-8")
+
+
 def test_refuses_to_write_without_real_outreach_confirmation(tmp_path: Path) -> None:
     module = load_outreach_module()
     module.configure_paths(tmp_path)
@@ -68,6 +77,7 @@ def test_refuses_to_write_without_real_outreach_confirmation(tmp_path: Path) -> 
 def test_records_confirmed_expert_outreach_and_refreshes_ledger(tmp_path: Path) -> None:
     module = load_outreach_module()
     module.configure_paths(tmp_path)
+    write_requested_attachments(tmp_path)
     source = tmp_path / "incoming" / "sent_email.txt"
     source.parent.mkdir(parents=True)
     source.write_text("real sent email receipt", encoding="utf-8")
@@ -112,6 +122,38 @@ def test_records_confirmed_expert_outreach_and_refreshes_ledger(tmp_path: Path) 
     assert ledger["does_not_satisfy_goal_completion"] is True
     assert ledger["outreach_record_count"] == 2
     assert metadata["request_source_path"] in ledger["outreach_files"]
+
+
+def test_rejects_missing_requested_attachment_path(tmp_path: Path) -> None:
+    module = load_outreach_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "sent_email.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real sent email receipt", encoding="utf-8")
+
+    exit_code = module.main(outreach_args(source, "--confirm-real-outreach"))
+
+    assert exit_code == 2
+    assert not (tmp_path / "docs" / "challenge_cup" / "reproducibility" / "expert_feedback_outreach").exists()
+
+
+def test_refuses_duplicate_outreach_id_without_traceback(tmp_path: Path, capsys) -> None:
+    module = load_outreach_module()
+    module.configure_paths(tmp_path)
+    write_requested_attachments(tmp_path)
+    source = tmp_path / "incoming" / "sent_email.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real sent email receipt", encoding="utf-8")
+
+    assert module.main(outreach_args(source, "--confirm-real-outreach")) == 0
+    capsys.readouterr()
+
+    exit_code = module.main(outreach_args(source, "--confirm-real-outreach"))
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "metadata already exists" in captured.err
+    assert "Traceback" not in captured.err
 
 
 def test_rejects_empty_outreach_source_file(tmp_path: Path) -> None:

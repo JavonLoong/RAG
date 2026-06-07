@@ -104,6 +104,12 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def write_metadata(path: Path, payload: dict[str, Any], *, force: bool = False) -> None:
+    if path.exists() and not force:
+        raise FileExistsError(f"metadata already exists: {repo_path(path)}; use --force to overwrite")
+    write_json(path, payload)
+
+
 def positive_int(value: int, field: str) -> None:
     if value <= 0:
         raise ScheduleInputError(f"{field} must be positive")
@@ -161,7 +167,7 @@ def record_schedule(args: argparse.Namespace) -> tuple[Path, Path, dict[str, Any
         "does_not_satisfy_hard_evidence": True,
     }
     metadata_path = SCHEDULE_DIR / f"{args.id}.json"
-    write_json(metadata_path, metadata)
+    write_metadata(metadata_path, metadata, force=args.force)
     payload = ledger.write_outputs()
     return metadata_path, copied_source, payload
 
@@ -192,7 +198,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         metadata_path, source_path, payload = record_schedule(args)
-    except (FileNotFoundError, ScheduleInputError) as exc:
+    except (FileNotFoundError, FileExistsError, ScheduleInputError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     print(f"Recorded timed rehearsal schedule metadata: {repo_path(metadata_path)}")

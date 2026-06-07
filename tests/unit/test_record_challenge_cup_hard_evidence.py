@@ -217,39 +217,91 @@ def test_records_timed_rehearsal_attachment_and_metadata(tmp_path: Path) -> None
     assert ledger["completion_claim_allowed"] is False
 
 
-def test_rejects_missing_source_file(tmp_path: Path) -> None:
+def test_missing_source_file_returns_input_error_without_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     module = load_record_module()
     module.configure_paths(tmp_path)
 
-    with pytest.raises(FileNotFoundError):
-        module.main(
-            [
-                "expert_feedback",
-                "--id",
-                "advisor-a",
-                "--source",
-                str(tmp_path / "missing.txt"),
-                "--evidence-type",
-                "email_reply",
-                "--reviewer-identity",
-                "advisor-a",
-                "--role-or-org",
-                "advisor",
-                "--review-date",
-                "2026-06-06",
-                "--review-dimension",
-                "实用性",
-                "--review-dimension",
-                "创新性",
-                "--review-dimension",
-                "边界严谨性",
-                "--remediation-issue",
-                "demo pacing",
-                "--remediation-action",
-                "tighten opening",
-                "--confirm-real-feedback",
-            ]
-        )
+    exit_code = module.main(
+        [
+            "expert_feedback",
+            "--id",
+            "advisor-a",
+            "--source",
+            str(tmp_path / "missing.txt"),
+            "--evidence-type",
+            "email_reply",
+            "--reviewer-identity",
+            "advisor-a",
+            "--role-or-org",
+            "advisor",
+            "--review-date",
+            "2026-06-06",
+            "--review-dimension",
+            "实用性",
+            "--review-dimension",
+            "创新性",
+            "--review-dimension",
+            "边界严谨性",
+            "--remediation-issue",
+            "demo pacing",
+            "--remediation-action",
+            "tighten opening",
+            "--confirm-real-feedback",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "source evidence file missing" in captured.err
+    assert "Traceback" not in captured.err
+    assert not (tmp_path / "docs").exists()
+
+
+def test_refuses_duplicate_expert_feedback_id_without_force(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_record_module()
+    module.configure_paths(tmp_path)
+    source = tmp_path / "incoming" / "advisor_reply.txt"
+    source.parent.mkdir(parents=True)
+    source.write_text("real advisor reply", encoding="utf-8")
+    args = [
+        "expert_feedback",
+        "--id",
+        "advisor-a",
+        "--source",
+        str(source),
+        "--evidence-type",
+        "email_reply",
+        "--reviewer-identity",
+        "advisor-a",
+        "--role-or-org",
+        "advisor",
+        "--review-date",
+        "2026-06-06",
+        "--review-dimension",
+        "实用性",
+        "--review-dimension",
+        "创新性",
+        "--review-dimension",
+        "边界严谨性",
+        "--remediation-issue",
+        "demo pacing",
+        "--remediation-action",
+        "tighten opening",
+        "--confirm-real-feedback",
+    ]
+    assert module.main(args) == 0
+    capsys.readouterr()
+
+    exit_code = module.main(args)
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "metadata already exists" in captured.err
+    assert "Traceback" not in captured.err
 
 
 def test_refuses_empty_expert_feedback_source_file(tmp_path: Path) -> None:
