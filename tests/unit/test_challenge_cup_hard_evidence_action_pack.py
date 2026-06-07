@@ -40,6 +40,7 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert stream["proof_to_collect"]
         assert stream["ready_packet_files"]
         assert stream["recording_commands"]
+        assert stream["pre_hard_evidence_powershell_block"]
         assert stream["powershell_execution_block"]
         assert stream["source_integrity_guardrails"]
         assert "source_sha256" in "\n".join(stream["source_integrity_guardrails"])
@@ -61,6 +62,19 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         assert all("exit $LASTEXITCODE" in line for line in guard_lines)
         assert "<" not in powershell
         assert ">" not in powershell
+        pre_block = "\n".join(stream["pre_hard_evidence_powershell_block"])
+        assert "Set-Location" in pre_block
+        assert str(tmp_path) in pre_block
+        assert ".\\.venv\\Scripts\\python.exe" in pre_block
+        assert "python .\\scripts" not in pre_block
+        pre_python_lines = [
+            line for line in stream["pre_hard_evidence_powershell_block"] if ".\\.venv\\Scripts\\python.exe" in line
+        ]
+        pre_guard_lines = [line for line in stream["pre_hard_evidence_powershell_block"] if "$LASTEXITCODE" in line]
+        assert len(pre_guard_lines) == len(pre_python_lines)
+        assert all("exit $LASTEXITCODE" in line for line in pre_guard_lines)
+        assert "<" not in pre_block
+        assert ">" not in pre_block
 
     assert "record_challenge_cup_expert_outreach.py" in "\n".join(
         streams["expert_feedback"]["recording_commands"]
@@ -72,9 +86,18 @@ def test_builds_human_handoff_pack_without_claiming_completion(tmp_path: Path) -
         streams["expert_feedback"]["recording_commands"]
     )
     assert "--confirm-real-feedback" in "\n".join(streams["expert_feedback"]["recording_commands"])
+    expert_pre_block = "\n".join(streams["expert_feedback"]["pre_hard_evidence_powershell_block"])
+    assert "record_challenge_cup_expert_outreach.py" in expert_pre_block
+    assert "--confirm-real-outreach" in expert_pre_block
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" not in expert_pre_block
+    assert "record_challenge_cup_hard_evidence.py expert_feedback" not in expert_pre_block
     assert "record_challenge_cup_timed_rehearsal_schedule.py" in "\n".join(
         streams["timed_rehearsal"]["recording_commands"]
     )
+    timed_pre_block = "\n".join(streams["timed_rehearsal"]["pre_hard_evidence_powershell_block"])
+    assert "record_challenge_cup_timed_rehearsal_schedule.py" in timed_pre_block
+    assert "--confirm-real-schedule" in timed_pre_block
+    assert "run_challenge_cup_timed_rehearsal.py" not in timed_pre_block
     assert "run_challenge_cup_timed_rehearsal.py" in "\n".join(
         streams["timed_rehearsal"]["recording_commands"]
     )

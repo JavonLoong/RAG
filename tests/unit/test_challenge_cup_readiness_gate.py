@@ -1475,6 +1475,40 @@ def test_hard_evidence_command_contract_rejects_incomplete_schedule_command() ->
     assert any("five-killer-questions-assigned" in item for item in failures)
 
 
+def test_pre_hard_evidence_powershell_contract_rejects_missing_outreach_block() -> None:
+    module = load_readiness_module()
+
+    failures = module.validate_pre_hard_evidence_powershell_contract(
+        "expert_feedback: pre_hard_evidence_powershell_block",
+        "expert_feedback",
+        [
+            "Set-Location 'D:\\repo'",
+            ".\\.venv\\Scripts\\python.exe .\\scripts\\preflight_challenge_cup_hard_evidence.py expert_feedback --confirm-real-feedback",
+            "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+        ],
+    )
+
+    assert any("record_challenge_cup_expert_outreach.py" in item for item in failures)
+    assert any("--confirm-real-outreach" in item for item in failures)
+
+
+def test_pre_hard_evidence_powershell_contract_rejects_missing_schedule_block() -> None:
+    module = load_readiness_module()
+
+    failures = module.validate_pre_hard_evidence_powershell_contract(
+        "timed_rehearsal: pre_hard_evidence_powershell_block",
+        "timed_rehearsal",
+        [
+            "Set-Location 'D:\\repo'",
+            ".\\.venv\\Scripts\\python.exe .\\scripts\\run_challenge_cup_timed_rehearsal.py --confirm-real-rehearsal",
+            "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
+        ],
+    )
+
+    assert any("record_challenge_cup_timed_rehearsal_schedule.py" in item for item in failures)
+    assert any("--confirm-real-schedule" in item for item in failures)
+
+
 def test_hard_evidence_action_pack_gate_rejects_missing_preflight_commands(monkeypatch, tmp_path) -> None:
     module = load_readiness_module()
     required_paths = [

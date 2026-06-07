@@ -70,6 +70,7 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert packet["execution_steps"]
         assert packet["done_when"]
         assert packet["recording_commands"]
+        assert packet["pre_hard_evidence_powershell_block"]
         assert packet["powershell_execution_block"]
         assert packet["source_integrity_guardrails"]
         assert "source_sha256" in "\n".join(packet["source_integrity_guardrails"])
@@ -90,6 +91,19 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         assert all("exit $LASTEXITCODE" in line for line in guard_lines)
         assert "<" not in powershell
         assert ">" not in powershell
+        pre_block = "\n".join(packet["pre_hard_evidence_powershell_block"])
+        assert "Set-Location" in pre_block
+        assert str(tmp_path) in pre_block
+        assert ".\\.venv\\Scripts\\python.exe" in pre_block
+        assert "python .\\scripts" not in pre_block
+        pre_python_lines = [
+            line for line in packet["pre_hard_evidence_powershell_block"] if ".\\.venv\\Scripts\\python.exe" in line
+        ]
+        pre_guard_lines = [line for line in packet["pre_hard_evidence_powershell_block"] if "$LASTEXITCODE" in line]
+        assert len(pre_guard_lines) == len(pre_python_lines)
+        assert all("exit $LASTEXITCODE" in line for line in pre_guard_lines)
+        assert "<" not in pre_block
+        assert ">" not in pre_block
 
     assert "record_challenge_cup_hard_evidence.py expert_feedback" in "\n".join(
         packets["expert_feedback_review"]["recording_commands"]
@@ -98,9 +112,18 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
         packets["expert_feedback_review"]["recording_commands"]
     )
     assert "--confirm-real-feedback" in "\n".join(packets["expert_feedback_review"]["recording_commands"])
+    expert_pre_block = "\n".join(packets["expert_feedback_review"]["pre_hard_evidence_powershell_block"])
+    assert "record_challenge_cup_expert_outreach.py" in expert_pre_block
+    assert "--confirm-real-outreach" in expert_pre_block
+    assert "preflight_challenge_cup_hard_evidence.py expert_feedback" not in expert_pre_block
+    assert "record_challenge_cup_hard_evidence.py expert_feedback" not in expert_pre_block
     assert "run_challenge_cup_timed_rehearsal.py" in "\n".join(
         packets["timed_rehearsal_observer"]["recording_commands"]
     )
+    timed_pre_block = "\n".join(packets["timed_rehearsal_observer"]["pre_hard_evidence_powershell_block"])
+    assert "record_challenge_cup_timed_rehearsal_schedule.py" in timed_pre_block
+    assert "--confirm-real-schedule" in timed_pre_block
+    assert "run_challenge_cup_timed_rehearsal.py" not in timed_pre_block
     assert "preflight_challenge_cup_hard_evidence.py timed_rehearsal" in "\n".join(
         packets["timed_rehearsal_observer"]["recording_commands"]
     )
@@ -161,6 +184,7 @@ def test_builds_external_evidence_execution_kit_without_claiming_completion(tmp_
     assert "source attachment" in markdown
     assert "must not be a JSON metadata file" in markdown
     assert "PowerShell execution block" in markdown
+    assert "Pre-hard-evidence PowerShell block" in markdown
     assert "timing_acceptance_pass=false" in markdown
     assert "rejected_metadata_records" in markdown
     assert "\u4e0d\u4f2a\u9020" in markdown

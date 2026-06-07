@@ -48,6 +48,19 @@
 - `python scripts/preflight_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal`
 - `python scripts/record_challenge_cup_hard_evidence.py timed_rehearsal --id real-rehearsal-id --source path/to/real-timer-or-observer-file.txt --evidence-type observer_note --rehearsal-date YYYY-MM-DD --observer real-observer-alias --opening-actual-seconds 88 --demo-actual-seconds 170 --offline-fallback-actual-seconds 18 --killer-question-seconds 25 25 25 25 25 --confirm-real-rehearsal`
 
+## Pre-hard-evidence PowerShell block
+
+```powershell
+Set-Location 'D:\虚拟C盘\RAG'
+$scheduleId = 'rehearsal-schedule-YYYYMMDD-01'
+$scheduleSource = 'D:\path\to\real-calendar-or-observer-prep-file.txt'
+$scheduledDate = 'YYYY-MM-DD'
+$observer = 'real-observer-alias'
+$venue = 'real-venue-or-channel'
+.\.venv\Scripts\python.exe .\scripts\record_challenge_cup_timed_rehearsal_schedule.py --id $scheduleId --source $scheduleSource --scheduled-date $scheduledDate --observer $observer --venue-or-channel $venue --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+```
+
 ## PowerShell execution block
 
 ```powershell

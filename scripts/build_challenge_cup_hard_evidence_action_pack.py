@@ -102,6 +102,21 @@ def guarded_powershell_command(command: str) -> list[str]:
     return [command, "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }"]
 
 
+def expert_outreach_powershell_block() -> list[str]:
+    return [
+        f"Set-Location '{powershell_repo_root()}'",
+        "$outreachId = 'outreach-YYYYMMDD-01'",
+        "$outreachSource = 'D:\\path\\to\\real-outreach-proof.eml'",
+        "$sentDate = 'YYYY-MM-DD'",
+        "$followupDueDate = 'YYYY-MM-DD'",
+        "$reviewer = 'real-reviewer-alias'",
+        "$reviewerRole = 'real-reviewer-role'",
+        *guarded_powershell_command(
+            f"{POWERSHELL_PYTHON} .\\scripts\\record_challenge_cup_expert_outreach.py --id $outreachId --source $outreachSource --recipient-alias $reviewer --recipient-role $reviewerRole --channel email --sent-date $sentDate --status sent --requested-review-dimension practicality --requested-review-dimension innovation --requested-review-dimension boundary_rigor --requested-attachment docs/challenge_cup/00_椤圭洰涓€椤电焊.md --requested-attachment docs/challenge_cup/reproducibility/expert_feedback_form.md --followup-due-date $followupDueDate --confirm-real-outreach"
+        ),
+    ]
+
+
 def expert_feedback_powershell_block() -> list[str]:
     return [
         f"Set-Location '{powershell_repo_root()}'",
@@ -134,6 +149,20 @@ def timed_rehearsal_powershell_block() -> list[str]:
         "$killer = 25,25,25,25,25",
         *guarded_powershell_command(
             f"{POWERSHELL_PYTHON} .\\scripts\\run_challenge_cup_timed_rehearsal.py --id $rehearsalId --source $rehearsalSource --rehearsal-date $rehearsalDate --observer $observer --opening-actual-seconds $opening --demo-actual-seconds $demo --offline-fallback-actual-seconds $offline --killer-question-seconds $killer --confirm-real-rehearsal"
+        ),
+    ]
+
+
+def timed_rehearsal_schedule_powershell_block() -> list[str]:
+    return [
+        f"Set-Location '{powershell_repo_root()}'",
+        "$scheduleId = 'rehearsal-schedule-YYYYMMDD-01'",
+        "$scheduleSource = 'D:\\path\\to\\real-calendar-or-observer-prep-file.txt'",
+        "$scheduledDate = 'YYYY-MM-DD'",
+        "$observer = 'real-observer-alias'",
+        "$venue = 'real-venue-or-channel'",
+        *guarded_powershell_command(
+            f"{POWERSHELL_PYTHON} .\\scripts\\record_challenge_cup_timed_rehearsal_schedule.py --id $scheduleId --source $scheduleSource --scheduled-date $scheduledDate --observer $observer --venue-or-channel $venue --status scheduled --opening-planned-seconds 90 --demo-planned-seconds 180 --offline-fallback-planned-seconds 20 --killer-question-planned-seconds 30 --killer-question-count 5 --checklist-item timer-visible --checklist-item browser-smoke-opened --checklist-item offline-archive-ready --checklist-item five-killer-questions-assigned --confirm-real-schedule"
         ),
     ]
 
@@ -183,6 +212,7 @@ def action_streams() -> list[dict[str, Any]]:
                 EXPERT_PREFLIGHT_COMMAND,
                 EXPERT_RECORD_COMMAND,
             ],
+            "pre_hard_evidence_powershell_block": expert_outreach_powershell_block(),
             "powershell_execution_block": expert_feedback_powershell_block(),
             "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "acceptance_gate": "hard_evidence_ledger.categories.expert_feedback.collected_count >= 1",
@@ -214,6 +244,7 @@ def action_streams() -> list[dict[str, Any]]:
                 REHEARSAL_PREFLIGHT_COMMAND,
                 REHEARSAL_RECORD_COMMAND,
             ],
+            "pre_hard_evidence_powershell_block": timed_rehearsal_schedule_powershell_block(),
             "powershell_execution_block": timed_rehearsal_powershell_block(),
             "source_integrity_guardrails": SOURCE_INTEGRITY_GUARDRAILS,
             "failed_rehearsal_archival_rule": FAILED_REHEARSAL_ARCHIVAL_RULE,
@@ -285,6 +316,10 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         lines.extend(f"- `{item}`" for item in stream["ready_packet_files"])
         lines.extend(["", "Recording commands:"])
         lines.extend(f"- `{item}`" for item in stream["recording_commands"])
+        lines.extend(["", "Pre-hard-evidence PowerShell block:", ""])
+        lines.append("```powershell")
+        lines.extend(stream["pre_hard_evidence_powershell_block"])
+        lines.append("```")
         lines.extend(["", "PowerShell execution block:", ""])
         lines.append("```powershell")
         lines.extend(stream["powershell_execution_block"])

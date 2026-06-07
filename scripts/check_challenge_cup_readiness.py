@@ -1551,6 +1551,50 @@ def validate_timed_rehearsal_command_contract(
     return failures
 
 
+def validate_pre_hard_evidence_powershell_contract(
+    label: str,
+    category: str,
+    block: Any,
+) -> list[str]:
+    failures: list[str] = []
+    if not isinstance(block, list) or not block:
+        return [f"{label} missing"]
+    lines = [str(item) for item in block]
+    joined = "\n".join(lines)
+    if "Set-Location" not in joined:
+        failures.append(f"{label} missing Set-Location")
+    if "<" in joined or ">" in joined:
+        failures.append(f"{label} contains angle placeholders")
+    python_lines = [line for line in lines if ".\\.venv\\Scripts\\python.exe" in line]
+    guard_lines = [line for line in lines if "$LASTEXITCODE" in line]
+    if not python_lines:
+        failures.append(f"{label} missing guarded Python command")
+    if len(guard_lines) != len(python_lines):
+        failures.append(f"{label} guard count does not match Python command count")
+    if any("exit $LASTEXITCODE" not in line for line in guard_lines):
+        failures.append(f"{label} guard missing exit $LASTEXITCODE")
+
+    if category == "expert_feedback":
+        if EXPERT_OUTREACH_RECORDER not in joined:
+            failures.append(f"{label} missing {EXPERT_OUTREACH_RECORDER}")
+        if "--confirm-real-outreach" not in joined:
+            failures.append(f"{label} missing --confirm-real-outreach")
+        for forbidden in (EXPERT_PREFLIGHT_COMMAND, EXPERT_HARD_EVIDENCE_RECORDER):
+            if forbidden in joined:
+                failures.append(f"{label} must not include hard-evidence feedback archival command: {forbidden}")
+    elif category == "timed_rehearsal":
+        if TIMED_SCHEDULE_RECORDER not in joined:
+            failures.append(f"{label} missing {TIMED_SCHEDULE_RECORDER}")
+        if "--confirm-real-schedule" not in joined:
+            failures.append(f"{label} missing --confirm-real-schedule")
+        for forbidden in (TIMED_REHEARSAL_RUNNER, TIMED_PREFLIGHT_COMMAND, TIMED_HARD_EVIDENCE_RECORDER):
+            if forbidden in joined:
+                failures.append(f"{label} must not include timed rehearsal hard-evidence command: {forbidden}")
+    else:
+        failures.append(f"{label} unknown hard-evidence category: {category}")
+    return failures
+
+
 def numeric_value(value: Any) -> float | None:
     if isinstance(value, bool):
         return None
@@ -5039,6 +5083,7 @@ def check_hard_evidence_action_pack() -> GateCheck:
             "proof_to_collect",
             "ready_packet_files",
             "recording_commands",
+            "pre_hard_evidence_powershell_block",
             "powershell_execution_block",
             "source_integrity_guardrails",
         ):
@@ -5062,6 +5107,13 @@ def check_hard_evidence_action_pack() -> GateCheck:
             failures.append(f"{category}: powershell_execution_block missing Set-Location")
         if "<" in powershell or ">" in powershell:
             failures.append(f"{category}: powershell_execution_block contains angle placeholders")
+        failures.extend(
+            validate_pre_hard_evidence_powershell_contract(
+                f"{category}: pre_hard_evidence_powershell_block",
+                category,
+                stream.get("pre_hard_evidence_powershell_block"),
+            )
+        )
         guardrails = "\n".join(str(item) for item in stream.get("source_integrity_guardrails", []))
         for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
             if term not in guardrails:
@@ -5295,6 +5347,7 @@ def check_external_evidence_execution_kit() -> GateCheck:
             "execution_steps",
             "done_when",
             "recording_commands",
+            "pre_hard_evidence_powershell_block",
             "powershell_execution_block",
             "source_integrity_guardrails",
             "acceptance_gate",
@@ -5332,6 +5385,13 @@ def check_external_evidence_execution_kit() -> GateCheck:
             failures.append(f"{packet_id}: powershell_execution_block missing Set-Location")
         if "<" in powershell or ">" in powershell:
             failures.append(f"{packet_id}: powershell_execution_block contains angle placeholders")
+        failures.extend(
+            validate_pre_hard_evidence_powershell_contract(
+                f"{packet_id}: pre_hard_evidence_powershell_block",
+                category,
+                packet.get("pre_hard_evidence_powershell_block"),
+            )
+        )
         guardrails = "\n".join(str(item) for item in packet.get("source_integrity_guardrails", []))
         for term in ("source_sha256", "source attachment", "must not be a JSON metadata file"):
             if term not in guardrails:
