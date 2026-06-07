@@ -107,6 +107,11 @@ python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
 -> Status: runtime_snapshot_ready_no_environment_portability_claim
 
+python scripts/build_challenge_cup_poster_render_smoke.py
+-> docs/challenge_cup/reproducibility/poster_render_smoke_report.md
+-> docs/challenge_cup/reproducibility/poster_render_smoke_report.json
+-> Status: pass
+
 python scripts/build_challenge_cup_verification_transcript.py
 -> docs/challenge_cup/reproducibility/verification_transcript.md
 -> docs/challenge_cup/reproducibility/verification_transcript.json
@@ -178,7 +183,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (62/62 gates)
+-> Status: pass (63/63 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

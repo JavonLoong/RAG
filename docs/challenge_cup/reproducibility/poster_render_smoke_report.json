@@ -1,0 +1,86 @@
+{
+  "report_type": "challenge_cup_poster_render_smoke",
+  "status": "pass",
+  "poster_path": "docs/challenge_cup/poster/challenge_cup_a0_poster.html",
+  "render_contract": {
+    "page_size": "A0 landscape",
+    "poster_dimensions_mm": {
+      "width": 1189,
+      "height": 841
+    },
+    "print_css_detected": true,
+    "smoke_type": "static_html_print_contract"
+  },
+  "required_term_checks": {
+    "required": [
+      "A0",
+      "GraphRAG",
+      "GT-07",
+      "readiness gate",
+      "browser smoke"
+    ],
+    "present": [
+      "A0",
+      "GraphRAG",
+      "GT-07",
+      "readiness gate",
+      "browser smoke"
+    ],
+    "missing": []
+  },
+  "link_checks": {
+    "checked": [
+      {
+        "reference": "docs/challenge_cup/13_评委现场速览卡.md",
+        "target_path": "docs/challenge_cup/13_评委现场速览卡.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/19_作品展墙报问辩与展台脚本.md",
+        "target_path": "docs/challenge_cup/19_作品展墙报问辩与展台脚本.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/20_成果转化与持续迭代路线图.md",
+        "target_path": "docs/challenge_cup/20_成果转化与持续迭代路线图.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/README_先看这里.md",
+        "target_path": "docs/challenge_cup/README_先看这里.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/reproducibility/application_validation_report.md",
+        "target_path": "docs/challenge_cup/reproducibility/application_validation_report.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+        "target_path": "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+        "target_path": "docs/challenge_cup/reproducibility/browser_screenshots/desktop_search_results.png",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+        "target_path": "docs/challenge_cup/reproducibility/readiness_gate_report.md",
+        "exists": true
+      },
+      {
+        "reference": "docs/challenge_cup/reproducibility/verify_submission_package.py",
+        "target_path": "docs/challenge_cup/reproducibility/verify_submission_package.py",
+        "exists": true
+      }
+    ],
+    "missing_targets": []
+  },
+  "boundary_checks": {
+    "no_award_guarantee": true,
+    "external_hard_evidence_pending": true
+  },
+  "does_not_claim_award_or_external_hard_evidence": true
+}

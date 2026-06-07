@@ -67,6 +67,8 @@ REQUIRED_PACKAGE_FILES = [
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/submission_integrity_card.md",
+    "reproducibility/poster_render_smoke_report.md",
+    "reproducibility/poster_render_smoke_report.json",
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
@@ -275,7 +277,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
         "evidence_hashes.json",
         "verify_submission_package.py --root .",
         "readiness gate",
-        "62/62",
+        "63/63",
         "package_ready_awaiting_external_hard_evidence",
         "goal completion expected fail",
         "真实专家反馈",
@@ -441,13 +443,13 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert verification_transcript["status"] == "package_verification_transcript_ready_goal_still_blocked"
     assert verification_transcript["completion_claim_allowed"] is False
     assert verification_transcript["does_not_satisfy_goal_completion"] is True
-    assert verification_transcript["readiness_gate"]["passed"] == 62
+    assert verification_transcript["readiness_gate"]["passed"] == 63
     assert verification_transcript["goal_completion"]["expected_failure"] is True
     assert "does not claim goal completion" in verification_transcript["boundary"]
     verification_transcript_md = (
         PACKAGE_DIR / "reproducibility" / "verification_transcript.md"
     ).read_text(encoding="utf-8")
-    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 62/62"]:
+    for phrase in ["Verification Transcript", "Expected Failure", "readiness gate pass 63/63"]:
         assert phrase in verification_transcript_md
     rubric_defense = json.loads(
         (PACKAGE_DIR / "reproducibility" / "rubric_defense_coverage.json").read_text(encoding="utf-8")
@@ -1189,6 +1191,9 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "build_challenge_cup_rubric_defense_coverage.py" in command_log
     assert "build_challenge_cup_defense_slide_traceability.py" in command_log
     assert "build_challenge_cup_runtime_reproducibility_snapshot.py" in command_log
+    assert "build_challenge_cup_poster_render_smoke.py" in command_log
+    assert "poster_render_smoke_report.md" in command_log
+    assert "poster_render_smoke_report.json" in command_log
     assert "build_challenge_cup_verification_transcript.py" in command_log
     assert "Status: remediation_card_ablation_ready_no_live_retriever_claim" in command_log
     assert "Status: application_value_quantified_no_external_validation_claim" in command_log
@@ -1200,7 +1205,7 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "Status: runtime_snapshot_ready_no_environment_portability_claim" in command_log
     assert "Status: package_ready_awaiting_external_hard_evidence" in command_log
     assert "Status: special_prize_review_ready_with_external_evidence_gaps" in command_log
-    assert "Status: pass (62/62 gates)" in command_log
+    assert "Status: pass (63/63 gates)" in command_log
     assert "Status: pass (61/61 gates)" not in command_log
     assert "Status: pass (60/60 gates)" not in command_log
     assert "Status: pass (59/59 gates)" not in command_log
@@ -1274,6 +1279,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert "docs/challenge_cup/reproducibility/hard_evidence/timed_rehearsal/README.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.md" in evidence_files
     assert "docs/challenge_cup/reproducibility/browser_demo_smoke_report.json" in evidence_files
+    assert "docs/challenge_cup/reproducibility/poster_render_smoke_report.md" in evidence_files
+    assert "docs/challenge_cup/reproducibility/poster_render_smoke_report.json" in evidence_files
     assert "docs/challenge_cup/06_结项验收清单.md" in evidence_files
     assert "docs/challenge_cup/07_评审主张证据矩阵.md" in evidence_files
     assert "docs/challenge_cup/08_特等奖评审自评表.md" in evidence_files
@@ -1480,8 +1487,8 @@ def test_build_challenge_cup_package_outputs_required_files() -> None:
     assert final_acceptance["report_type"] == "challenge_cup_final_acceptance_audit"
     assert final_acceptance["status"] == "package_ready_awaiting_external_hard_evidence"
     assert final_acceptance["package_readiness"]["status"] == "pass"
-    assert final_acceptance["package_readiness"]["passed"] == 62
-    assert final_acceptance["package_readiness"]["total"] == 62
+    assert final_acceptance["package_readiness"]["passed"] == 63
+    assert final_acceptance["package_readiness"]["total"] == 63
     assert final_acceptance["submission_package_verifier"]["available"] is True
     assert final_acceptance["submission_package_verifier"]["archived"] is True
     assert final_acceptance["goal_completion"]["status"] == "fail"

@@ -171,7 +171,7 @@ def test_package_docs_gate_rejects_submission_integrity_card_without_status_term
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:
     payload = run_readiness_gate_for_test(monkeypatch)
 
-    assert payload == {"status": "pass", "passed": 62, "total": 62}
+    assert payload == {"status": "pass", "passed": 63, "total": 63}
     report = REPORT.read_text(encoding="utf-8")
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
@@ -198,6 +198,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatc
     assert "poster booth q&a pack" in report
     assert "commercialization roadmap" in report
     assert "poster board asset" in report
+    assert "poster render smoke" in report
     assert "defense control console" in report
     assert "ip and open-source compliance" in report
     assert "local baseline differentiation evidence" in report
@@ -245,7 +246,7 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report(monkeypatch) -> 
 
     payload = run_readiness_gate_for_test(monkeypatch, rebuild=False)
 
-    assert payload == {"status": "pass", "passed": 62, "total": 62}
+    assert payload == {"status": "pass", "passed": 63, "total": 63}
     assert REPORT.exists()
 
 
@@ -1226,6 +1227,65 @@ def test_poster_board_asset_gate_rejects_missing_manifest_hash_archive_links(mon
     assert "missing hash entries" in check.detail
     assert "missing archive entries" in check.detail
     assert poster_relative in check.detail
+
+
+def test_poster_render_smoke_gate_rejects_missing_manifest_hash_archive_links(monkeypatch, tmp_path) -> None:
+    module = load_readiness_module()
+    manifest = tmp_path / "package_manifest.json"
+    hashes = tmp_path / "evidence_hashes.json"
+    archive_manifest = tmp_path / "archive_manifest.json"
+    manifest.write_text(json.dumps({"evidence_files": []}), encoding="utf-8")
+    hashes.write_text(json.dumps({"files": []}), encoding="utf-8")
+    archive_manifest.write_text(json.dumps({"included_files": []}), encoding="utf-8")
+    poster_html = tmp_path / "docs" / "challenge_cup" / "poster" / "challenge_cup_a0_poster.html"
+    smoke_json = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "poster_render_smoke_report.json"
+    smoke_md = tmp_path / "docs" / "challenge_cup" / "reproducibility" / "poster_render_smoke_report.md"
+    poster_html.parent.mkdir(parents=True)
+    poster_html.write_text("<html>A0 landscape</html>", encoding="utf-8")
+    smoke_json.parent.mkdir(parents=True)
+    smoke_json.write_text(
+        json.dumps(
+            {
+                "report_type": "challenge_cup_poster_render_smoke",
+                "status": "pass",
+                "poster_path": "docs/challenge_cup/poster/challenge_cup_a0_poster.html",
+                "render_contract": {
+                    "page_size": "A0 landscape",
+                    "poster_dimensions_mm": {"width": 1189, "height": 841},
+                    "print_css_detected": True,
+                },
+                "required_term_checks": {"missing": []},
+                "link_checks": {"missing_targets": []},
+                "boundary_checks": {
+                    "no_award_guarantee": True,
+                    "external_hard_evidence_pending": True,
+                },
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    smoke_md.write_text("Poster Render Smoke\nA0 landscape\nno award guarantee\nreal expert feedback", encoding="utf-8")
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "POSTER_BOARD_HTML", poster_html)
+    monkeypatch.setattr(module, "POSTER_RENDER_SMOKE_JSON", smoke_json)
+    monkeypatch.setattr(module, "POSTER_RENDER_SMOKE_MD", smoke_md)
+    monkeypatch.setattr(module, "PACKAGE_MANIFEST", manifest)
+    monkeypatch.setattr(module, "EVIDENCE_HASHES", hashes)
+    monkeypatch.setattr(module, "SUBMISSION_ARCHIVE_MANIFEST", archive_manifest)
+    monkeypatch.setattr(module, "git_tracked_paths", lambda: {
+        "docs/challenge_cup/poster/challenge_cup_a0_poster.html",
+        "docs/challenge_cup/reproducibility/poster_render_smoke_report.json",
+        "docs/challenge_cup/reproducibility/poster_render_smoke_report.md",
+    })
+    monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
+
+    check = module.check_poster_render_smoke()
+
+    assert not check.passed
+    assert "missing manifest entries" in check.detail
+    assert "missing hash entries" in check.detail
+    assert "missing archive entries" in check.detail
 
 
 def test_ip_open_source_compliance_gate_rejects_missing_manifest_hash_archive_links(monkeypatch, tmp_path) -> None:
@@ -3752,7 +3812,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 62/62\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 63/63\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -3766,9 +3826,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 62,
-                    "total": 62,
-                    "current_gate_count": 62,
+                    "passed": 63,
+                    "total": 63,
+                    "current_gate_count": 63,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

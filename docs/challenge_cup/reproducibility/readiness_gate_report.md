@@ -1,23 +1,23 @@
 # Challenge Cup Readiness Gate
 
 - Status: `pass`
-- Passed: 62/62
-- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
+- Passed: 63/63
+- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
 | package documents | pass | all required challenge cup docs exist with README first-view route and submission integrity card |
-| chinese readability | pass | 91 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
+| chinese readability | pass | 93 challenge-cup text artifacts are UTF-8 readable with required Chinese review terms |
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | pass | 103 evidence files exist, are git-tracked, and are clean; 60 questions |
-| evidence integrity hashes | pass | 102 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
+| package evidence files | pass | 105 evidence files exist, are git-tracked, and are clean; 60 questions |
+| evidence integrity hashes | pass | 104 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 113 files archived; 2540501 bytes; sha256 verified |
+| submission archive | pass | 115 files archived; 2542493 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
-| numeric consistency | pass | 60 questions, 103 evidence files, and 5 visible search records are consistent |
+| numeric consistency | pass | 60 questions, 105 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
 | graphrag answer benchmark | pass | 10 fixed GraphRAG answer cases; supported=10, partial=0, missing=0, graph_avg=0.866667 |
@@ -38,6 +38,7 @@
 | poster booth q&a pack | pass | poster structure, QR path, booth script, interactive Q&A, offline fallback, and no-overclaim boundary verified; 31 evidence links verified |
 | commercialization roadmap | pass | strategic value, pilot path, milestones, acceptance metrics, governance, and no-commercial-overclaim boundary verified; 22 evidence links verified |
 | poster board asset | pass | printable A0 HTML poster, QR/material links, evidence anchors, and no-overclaim boundaries verified |
+| poster render smoke | pass | A0 print contract, poster references, local targets, and no-overclaim boundaries verified |
 | defense control console | pass | offline defense console, timer, launchpad, fallback, and no-overclaim boundaries verified |
 | ip and open-source compliance | pass | originality, third-party dependency, open-source license, data authorization, citation, and no-overclaim boundaries verified; 21 evidence links verified |
 | local baseline differentiation evidence | pass | baseline comparison, GraphRAG subset, GT-07 application anchor, and no-overclaim boundaries verified; 25 evidence links verified |

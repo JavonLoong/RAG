@@ -27,7 +27,7 @@ from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata,
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 62
+CURRENT_READINESS_GATE_COUNT = 63
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -48,6 +48,8 @@ IP_OPEN_SOURCE_COMPLIANCE = PACKAGE_DIR / "21_知识产权与开源合规说明.
 LOCAL_BASELINE_DIFFERENTIATION = PACKAGE_DIR / "22_同类方案对比与创新性证据卡.md"
 FINAL_SUBMISSION_HANDOFF = PACKAGE_DIR / "23_终审提交总目录与签收页.md"
 POSTER_BOARD_HTML = PACKAGE_DIR / "poster" / "challenge_cup_a0_poster.html"
+POSTER_RENDER_SMOKE_MD = REPRO_DIR / "poster_render_smoke_report.md"
+POSTER_RENDER_SMOKE_JSON = REPRO_DIR / "poster_render_smoke_report.json"
 DEFENSE_CONTROL_CONSOLE = PACKAGE_DIR / "defense_console" / "index.html"
 DEFENSE_REHEARSAL_SCORECARD_MD = REPRO_DIR / "defense_rehearsal_scorecard.md"
 DEFENSE_REHEARSAL_SCORECARD_JSON = REPRO_DIR / "defense_rehearsal_scorecard.json"
@@ -463,6 +465,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/evaluation_coverage_profile.json",
     "reproducibility/evidence_hashes.json",
     "reproducibility/submission_integrity_card.md",
+    "reproducibility/poster_render_smoke_report.md",
+    "reproducibility/poster_render_smoke_report.json",
     "reproducibility/application_validation_report.md",
     "reproducibility/application_value_quantification.md",
     "reproducibility/application_value_quantification.json",
@@ -540,7 +544,7 @@ SUBMISSION_INTEGRITY_CARD_REQUIRED_TERMS = [
     "evidence_hashes.json",
     "verify_submission_package.py --root .",
     "readiness gate",
-    "62/62",
+    f"{CURRENT_READINESS_GATE_COUNT}/{CURRENT_READINESS_GATE_COUNT}",
     "package_ready_awaiting_external_hard_evidence",
     "goal completion expected fail",
     "真实专家反馈",
@@ -4113,6 +4117,98 @@ def check_poster_board_asset() -> GateCheck:
     )
 
 
+def check_poster_render_smoke() -> GateCheck:
+    missing_files = [
+        path
+        for path in (POSTER_RENDER_SMOKE_MD, POSTER_RENDER_SMOKE_JSON)
+        if not path.exists() or path.stat().st_size <= 0
+    ]
+    if missing_files:
+        return GateCheck(
+            "poster render smoke",
+            False,
+            "poster render smoke files missing: " + ", ".join(display_path(path) for path in missing_files),
+        )
+
+    payload = load_json(POSTER_RENDER_SMOKE_JSON)
+    markdown = POSTER_RENDER_SMOKE_MD.read_text(encoding="utf-8")
+    md_relative = POSTER_RENDER_SMOKE_MD.relative_to(REPO_ROOT).as_posix()
+    json_relative = POSTER_RENDER_SMOKE_JSON.relative_to(REPO_ROOT).as_posix()
+    expected_paths = {md_relative, json_relative}
+    failures: list[str] = []
+    if payload.get("report_type") != "challenge_cup_poster_render_smoke":
+        failures.append(f"report_type={payload.get('report_type')!r}")
+    if payload.get("status") != "pass":
+        failures.append(f"status={payload.get('status')!r}")
+    if payload.get("poster_path") != POSTER_BOARD_HTML.relative_to(REPO_ROOT).as_posix():
+        failures.append(f"poster_path={payload.get('poster_path')!r}")
+
+    render_contract = payload.get("render_contract")
+    if not isinstance(render_contract, dict):
+        failures.append("render_contract missing")
+    else:
+        if render_contract.get("page_size") != "A0 landscape":
+            failures.append(f"page_size={render_contract.get('page_size')!r}")
+        if render_contract.get("poster_dimensions_mm") != {"width": 1189, "height": 841}:
+            failures.append(f"poster_dimensions_mm={render_contract.get('poster_dimensions_mm')!r}")
+        if render_contract.get("print_css_detected") is not True:
+            failures.append(f"print_css_detected={render_contract.get('print_css_detected')!r}")
+
+    required_terms = payload.get("required_term_checks")
+    if not isinstance(required_terms, dict) or required_terms.get("missing"):
+        failures.append(f"required terms missing: {required_terms.get('missing') if isinstance(required_terms, dict) else required_terms!r}")
+    links = payload.get("link_checks")
+    if not isinstance(links, dict) or links.get("missing_targets"):
+        failures.append(f"missing linked targets: {links.get('missing_targets') if isinstance(links, dict) else links!r}")
+    boundaries = payload.get("boundary_checks")
+    if not isinstance(boundaries, dict):
+        failures.append("boundary_checks missing")
+    else:
+        for key in ("no_award_guarantee", "external_hard_evidence_pending"):
+            if boundaries.get(key) is not True:
+                failures.append(f"{key}={boundaries.get(key)!r}")
+
+    for term in ("Poster Render Smoke", "A0 landscape", "no award guarantee", "real expert feedback"):
+        if term not in markdown:
+            failures.append(f"markdown missing {term}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(expected_paths - manifest_evidence)
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(expected_paths - hashed_paths)
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(expected_paths - archived_paths)
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = sorted(path for path in expected_paths if path not in tracked)
+    if untracked:
+        failures.append(f"untracked poster render smoke files: {untracked}")
+    dirty = sorted(git_dirty_paths(expected_paths))
+    if dirty:
+        failures.append(f"dirty poster render smoke files: {dirty}")
+
+    return GateCheck(
+        "poster render smoke",
+        not failures,
+        "A0 print contract, poster references, local targets, and no-overclaim boundaries verified"
+        if not failures
+        else f"poster render smoke failures: {', '.join(failures)}",
+    )
+
+
 def check_defense_control_console() -> GateCheck:
     if not DEFENSE_CONTROL_CONSOLE.exists():
         return GateCheck("defense control console", False, "defense_console/index.html missing")
@@ -7283,6 +7379,7 @@ def run_gate() -> list[GateCheck]:
         check_poster_booth_qa_pack(),
         check_commercialization_roadmap(),
         check_poster_board_asset(),
+        check_poster_render_smoke(),
         check_defense_control_console(),
         check_ip_open_source_compliance(),
         check_local_baseline_differentiation_evidence(),
@@ -7328,7 +7425,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",

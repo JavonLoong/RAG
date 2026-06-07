@@ -40,7 +40,7 @@ def test_goal_completion_gate_fails_until_real_hard_evidence_is_archived() -> No
     assert "expert_feedback" in report
     assert "timed_rehearsal" in report
     assert "completion_claim_allowed=False" in report
-    assert "readiness gate passed 62/62" in report
+    assert "readiness gate passed 63/63" in report
     assert "61/61" not in report
     assert "60/60" not in report
     assert "59/59" not in report
@@ -62,7 +62,7 @@ def test_goal_completion_gate_rejects_stale_readiness_gate_count(tmp_path: Path)
 
     assert ok is False
     assert "stale readiness gate count" in detail
-    assert "62/62" in detail
+    assert "63/63" in detail
 
 
 def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_evidence(tmp_path: Path) -> None:
@@ -115,7 +115,7 @@ def test_goal_completion_gate_passes_with_ready_package_and_complete_hard_eviden
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {
@@ -340,7 +340,7 @@ def test_goal_completion_gate_rejects_over_limit_timed_rehearsal_even_if_ledger_
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {
@@ -425,7 +425,7 @@ def test_goal_completion_gate_rejects_incomplete_expert_feedback_even_if_ledger_
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {
@@ -510,7 +510,7 @@ def test_goal_completion_gate_rejects_generic_expert_feedback_dimensions_even_if
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {
@@ -629,7 +629,7 @@ def test_goal_completion_gate_rejects_json_source_attachment_even_if_ledger_clai
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {
@@ -711,7 +711,7 @@ def test_goal_completion_gate_rejects_source_sha256_mismatch_even_if_ledger_clai
         encoding="utf-8",
     )
     (repro / "readiness_gate_report.md").write_text(
-        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 62/62\n",
+        "# Challenge Cup Readiness Gate\n\n- Status: `pass`\n- Passed: 63/63\n",
         encoding="utf-8",
     )
     ledger = {

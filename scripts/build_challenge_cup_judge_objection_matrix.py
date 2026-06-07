@@ -12,6 +12,7 @@ OUTPUT_MD = OUTPUT_DIR / "judge_objection_response_matrix.md"
 
 REPORT_TYPE = "challenge_cup_judge_objection_response_matrix"
 STATUS = "ready_for_judge_objection_drill_no_external_claims"
+CURRENT_READINESS_GATE_COUNT = 63
 BOUNDARY = (
     "This matrix prepares judge-objection responses for defense rehearsal. It does not claim expert "
     "approval, real timed rehearsal completion, production validation, award probability, or goal completion."
@@ -196,7 +197,7 @@ def build_payload() -> dict[str, Any]:
             "severity": "P1",
             "judge_objection": "Can this be accepted as a closure package today?",
             "one_sentence_answer": (
-                "Yes for package review: the submission archive, verifier, hashes, and 62 readiness gates prove the "
+                f"Yes for package review: the submission archive, verifier, hashes, and {CURRENT_READINESS_GATE_COUNT} readiness gates prove the "
                 "materials are organized and reproducible, while goal completion still waits for real hard evidence."
             ),
             "evidence_files": [

@@ -8,7 +8,7 @@
 
 ## Current Machine Gates
 
-- readiness gate pass 62/62
+- readiness gate pass 63/63
 - final acceptance: `package_ready_awaiting_external_hard_evidence`
 - goal completion: `fail`
 

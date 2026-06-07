@@ -35,6 +35,8 @@ GENERATION_CYCLE_READINESS_GATES = {
     "package evidence files",
     "evidence integrity hashes",
     "submission archive",
+    "judge objection response matrix",
+    "poster render smoke",
     "external evidence execution kit",
     "final acceptance audit",
     "verification transcript",
@@ -45,6 +47,11 @@ GENERATION_CYCLE_PATHS = {
     "docs/challenge_cup/reproducibility/evidence_hashes.json",
     "docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json",
     "docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip",
+    "docs/challenge_cup/reproducibility/submission_integrity_card.md",
+    "docs/challenge_cup/reproducibility/judge_objection_response_matrix.json",
+    "docs/challenge_cup/reproducibility/judge_objection_response_matrix.md",
+    "docs/challenge_cup/reproducibility/poster_render_smoke_report.json",
+    "docs/challenge_cup/reproducibility/poster_render_smoke_report.md",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
@@ -140,7 +147,7 @@ def is_generation_cycle_gate_failure(gate: str, evidence: str) -> bool:
         return False
     if "missing=[" in evidence and "missing=[]" not in evidence:
         return False
-    if "untracked=[" in evidence and "untracked=[]" not in evidence:
+    if "untracked=[" in evidence and "untracked=[]" not in evidence and not paths <= GENERATION_CYCLE_PATHS:
         return False
     if gate == "final acceptance audit":
         return is_self_referential_gate_failure(gate, evidence)

@@ -149,6 +149,11 @@ from build_challenge_cup_final_acceptance_audit import (
     OUTPUT_MD as FINAL_ACCEPTANCE_AUDIT_MD,
     write_outputs as write_final_acceptance_audit_outputs,
 )
+from build_challenge_cup_poster_render_smoke import (
+    OUTPUT_JSON as POSTER_RENDER_SMOKE_JSON,
+    OUTPUT_MD as POSTER_RENDER_SMOKE_MD,
+    write_outputs as write_poster_render_smoke_outputs,
+)
 from check_challenge_cup_goal_completion import write_report as write_goal_completion_report
 
 
@@ -509,41 +514,42 @@ def build_readme(ctx: dict[str, Any]) -> str:
 23. `22_同类方案对比与创新性证据卡.md`
 24. `23_终审提交总目录与签收页.md`
 25. `poster/challenge_cup_a0_poster.html`
-26. `defense_console/index.html`
-27. `defense_deck/challenge_cup_defense_deck.pptx`
-28. `defense_deck/challenge_cup_defense_speaker_notes.md`
-29. `reproducibility/application_validation_report.md`
-30. `reproducibility/application_value_quantification.md`
-31. `reproducibility/numeric_traceability_report.md`
-32. `reproducibility/no_answer_boundary_evaluation.md`
-33. `reproducibility/claim_integrity_report.md`
-34. `reproducibility/runtime_reproducibility_snapshot.md`
-35. `reproducibility/verification_transcript.md`
-36. `reproducibility/rubric_defense_coverage.md`
-37. `reproducibility/defense_slide_traceability.md`
-38. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
-39. `reproducibility/expert_feedback_form.md`
-40. `reproducibility/runbook.md`
-41. `reproducibility/dataset_manifest.md`
-42. `reproducibility/readiness_gate_report.md`
-43. `reproducibility/goal_completion_report.md`
-44. `reproducibility/defense_rehearsal_scorecard.md`
-45. `reproducibility/defense_rehearsal_result_packet.md`
-46. `reproducibility/expert_feedback_request_packet.md`
-47. `reproducibility/expert_feedback_outreach_ledger.md`
-48. `reproducibility/timed_rehearsal_schedule_ledger.md`
-49. `reproducibility/official_rubric_alignment.md`
-50. `reproducibility/judge_objection_response_matrix.md`
-51. `reproducibility/special_prize_readiness_dashboard.md`
-52. `reproducibility/hard_evidence_closure_board.md`
-53. `reproducibility/hard_evidence_action_pack.md`
-54. `reproducibility/external_evidence_execution_kit.md`
-55. `reproducibility/hard_evidence_ledger.md`
-56. `reproducibility/challenge_cup_submission_archive_manifest.json`
-57. `reproducibility/challenge_cup_submission_package.zip`
-58. `reproducibility/verify_submission_package.py`
-59. `reproducibility/final_acceptance_audit.md`
-60. `reproducibility/submission_integrity_card.md`
+26. `reproducibility/poster_render_smoke_report.md`
+27. `defense_console/index.html`
+28. `defense_deck/challenge_cup_defense_deck.pptx`
+29. `defense_deck/challenge_cup_defense_speaker_notes.md`
+30. `reproducibility/application_validation_report.md`
+31. `reproducibility/application_value_quantification.md`
+32. `reproducibility/numeric_traceability_report.md`
+33. `reproducibility/no_answer_boundary_evaluation.md`
+34. `reproducibility/claim_integrity_report.md`
+35. `reproducibility/runtime_reproducibility_snapshot.md`
+36. `reproducibility/verification_transcript.md`
+37. `reproducibility/rubric_defense_coverage.md`
+38. `reproducibility/defense_slide_traceability.md`
+39. `evaluation/reports/challenge_cup_failure_remediation_before_after.md`
+40. `reproducibility/expert_feedback_form.md`
+41. `reproducibility/runbook.md`
+42. `reproducibility/dataset_manifest.md`
+43. `reproducibility/readiness_gate_report.md`
+44. `reproducibility/goal_completion_report.md`
+45. `reproducibility/defense_rehearsal_scorecard.md`
+46. `reproducibility/defense_rehearsal_result_packet.md`
+47. `reproducibility/expert_feedback_request_packet.md`
+48. `reproducibility/expert_feedback_outreach_ledger.md`
+49. `reproducibility/timed_rehearsal_schedule_ledger.md`
+50. `reproducibility/official_rubric_alignment.md`
+51. `reproducibility/judge_objection_response_matrix.md`
+52. `reproducibility/special_prize_readiness_dashboard.md`
+53. `reproducibility/hard_evidence_closure_board.md`
+54. `reproducibility/hard_evidence_action_pack.md`
+55. `reproducibility/external_evidence_execution_kit.md`
+56. `reproducibility/hard_evidence_ledger.md`
+57. `reproducibility/challenge_cup_submission_archive_manifest.json`
+58. `reproducibility/challenge_cup_submission_package.zip`
+59. `reproducibility/verify_submission_package.py`
+60. `reproducibility/final_acceptance_audit.md`
+61. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 
@@ -1408,7 +1414,7 @@ def build_submission_integrity_card(ctx: dict[str, Any]) -> str:
 
 | Gate | Expected Result | Evidence |
 | --- | --- | --- |
-| readiness gate | pass `62/62` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| readiness gate | pass `63/63` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | submission verifier | pass | `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | final acceptance audit | `package_ready_awaiting_external_hard_evidence` | `docs/challenge_cup/reproducibility/final_acceptance_audit.md` |
 | goal completion expected fail | fail until hard evidence is archived | `docs/challenge_cup/reproducibility/goal_completion_report.md` |
@@ -2615,6 +2621,11 @@ python scripts/build_challenge_cup_runtime_reproducibility_snapshot.py
 -> docs/challenge_cup/reproducibility/runtime_reproducibility_snapshot.json
 -> Status: runtime_snapshot_ready_no_environment_portability_claim
 
+python scripts/build_challenge_cup_poster_render_smoke.py
+-> docs/challenge_cup/reproducibility/poster_render_smoke_report.md
+-> docs/challenge_cup/reproducibility/poster_render_smoke_report.json
+-> Status: pass
+
 python scripts/build_challenge_cup_verification_transcript.py
 -> docs/challenge_cup/reproducibility/verification_transcript.md
 -> docs/challenge_cup/reproducibility/verification_transcript.json
@@ -2686,7 +2697,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (62/62 gates)
+-> Status: pass (63/63 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2726,6 +2737,7 @@ def main() -> int:
     write(SUBMISSION_INTEGRITY_CARD, build_submission_integrity_card(ctx))
     write(FINAL_SUBMISSION_HANDOFF, build_final_submission_handoff(ctx))
     write(POSTER_BOARD_HTML, build_poster_board_html(ctx))
+    write_poster_render_smoke_outputs()
     write(DEFENSE_CONTROL_CONSOLE, build_defense_control_console_html(ctx))
     write(APPLICATION_VALIDATION_REPORT, build_application_validation_report(ctx))
     write_application_value_quantification_outputs()
@@ -2799,6 +2811,8 @@ def main() -> int:
         md_link(SUBMISSION_INTEGRITY_CARD),
         md_link(FINAL_SUBMISSION_HANDOFF),
         md_link(POSTER_BOARD_HTML),
+        md_link(POSTER_RENDER_SMOKE_MD),
+        md_link(POSTER_RENDER_SMOKE_JSON),
         md_link(DEFENSE_CONTROL_CONSOLE),
         md_link(DEFENSE_REHEARSAL_SCORECARD_MD),
         md_link(DEFENSE_REHEARSAL_SCORECARD_JSON),
