@@ -1,7 +1,7 @@
 # Challenge Cup Readiness Gate
 
-- Status: `fail`
-- Passed: 63/65
+- Status: `pass`
+- Passed: 65/65
 - Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, external evidence closeout checklist, hard evidence source custody, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
@@ -14,9 +14,9 @@
 | package evidence files | pass | 118 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 117 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 129 files archived; 2574864 bytes; sha256 verified |
+| submission archive | pass | 129 files archived; 2574902 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
-| final acceptance audit | fail | status=not_ready; package_readiness.status=fail; package_readiness count=62/65 |
+| final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 118 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
@@ -64,7 +64,7 @@
 | rubric defense coverage | pass | 5 rubric dimensions linked to 31 evidence paths, judge objections, claim ids, and defense assets |
 | defense slide traceability | pass | 10 slides linked to 31 evidence paths, judge objections, claim ids, and no-overclaim boundaries |
 | runtime reproducibility snapshot | pass | local Python, Node, Playwright, verification commands, and no-portability-claim boundary verified |
-| verification transcript | fail | final_acceptance.status=not_ready; can_submit_for_package_review=False; .\.venv\Scripts\python.exe scripts/build_challenge_cup_final_acceptance_audit.py observed_status=not_ready |
+| verification transcript | pass | current verifier, readiness, final audit, and expected goal-completion failure summarized |
 | scenario demo evidence | pass | fixed abnormal-vibration query returns 5 GT-07 evidence records with human-confirmation boundary |
 | scenario walkthrough script | pass | fixed scenario walkthrough, fallback screenshot, evidence records, and human-confirmation boundary verified; 8 evidence links verified |
 | expert feedback protocol | pass | feedback form, integrity boundary, archival rule, and remediation loop verified; 10 evidence links verified |

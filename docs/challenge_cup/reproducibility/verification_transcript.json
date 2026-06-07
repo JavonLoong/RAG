@@ -8,14 +8,14 @@
     "status": "pass",
     "passed": 65,
     "total": 65,
-    "source_report_passed": 63,
+    "source_report_passed": 65,
     "source_report_total": 65,
-    "source_report_status": "fail",
+    "source_report_status": "pass",
     "current_gate_count": 65,
     "count_synced_for_current_gate_set": false,
-    "self_referential_readiness_bootstrap": true,
+    "self_referential_readiness_bootstrap": false,
     "generation_cycle_readiness_bootstrap": false,
-    "readiness_bootstrap_reason": "self_referential",
+    "readiness_bootstrap_reason": "",
     "source_report": "docs/challenge_cup/reproducibility/readiness_gate_report.md"
   },
   "final_acceptance": {
