@@ -1,7 +1,7 @@
 # Challenge Cup Readiness Gate
 
 - Status: `fail`
-- Passed: 62/65
+- Passed: 63/65
 - Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, external evidence closeout checklist, hard evidence source custody, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links
 
 | Gate | Result | Evidence |
@@ -11,12 +11,12 @@
 | package control files | pass | 2 control files exist, are git-tracked, and are clean |
 | 60 evaluation questions | pass | 60 evaluation questions |
 | evaluation coverage profile | pass | 60 questions across 11 task types, 17 source scopes, 10 GraphRAG-tagged questions |
-| package evidence files | fail | evidence=118, questions=60, missing=[], untracked=['docs/challenge_cup/reproducibility/hard_evidence_source_custody.md', 'docs/challenge_cup/reproducibility/hard_evidence_source_custody.json'], dirty=[] |
+| package evidence files | pass | 118 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 117 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 129 files archived; 2574860 bytes; sha256 verified |
+| submission archive | pass | 129 files archived; 2574864 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
-| final acceptance audit | pass | goal completion audit passed |
+| final acceptance audit | fail | status=not_ready; package_readiness.status=fail; package_readiness count=62/65 |
 | numeric consistency | pass | 60 questions, 118 evidence files, and 5 visible search records are consistent |
 | graphrag evidence audit | pass | 10 supported, 0 partial, 0 missing cases over 245 triples |
 | graphrag context demo | pass | 3 context-only cases with text and graph citations |
@@ -54,7 +54,7 @@
 | hard evidence action pack | pass | human handoff, no-fake boundary, recording commands, and manifest/hash/archive links verified |
 | external evidence execution kit | pass | expert-review and timed-rehearsal handoff packets, no-fake boundary, commands, and manifest/hash/archive links verified |
 | external evidence closeout checklist | pass | day-of expert-feedback and timed-rehearsal closeout checklist, source integrity, commands, and manifest/hash/archive links verified |
-| hard evidence source custody | fail | untracked hard evidence source custody files: ['docs/challenge_cup/reproducibility/hard_evidence_source_custody.md', 'docs/challenge_cup/reproducibility/hard_evidence_source_custody.json'] |
+| hard evidence source custody | pass | source custody restrictions, checkpoints, no-overclaim boundary, and manifest/hash/archive links verified |
 | hard evidence ledger | pass | ledger schema, no-fake boundary, 0 raw hard evidence files, and manifest/hash/archive links verified |
 | application validation evidence | pass | fixed GT-07 application case, multi-scenario matrix, evidence records, benefits, and boundaries verified; 14 evidence links verified |
 | application value quantification | pass | GT-07 application value quantified with 5-stage traceability, 41.8 ms latency, and no-external-claim boundary |
