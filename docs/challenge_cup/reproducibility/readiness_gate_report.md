@@ -14,7 +14,7 @@
 | package evidence files | pass | 102 evidence files exist, are git-tracked, and are clean; 60 questions |
 | evidence integrity hashes | pass | 101 evidence hashes verified; excluded=['docs/challenge_cup/reproducibility/readiness_gate_report.md'] |
 | defense deck | pass | 10 slides, speaker notes, fixed GT-07 scenario, GraphRAG, readiness, and feedback boundary verified |
-| submission archive | pass | 112 files archived; 2536885 bytes; sha256 verified |
+| submission archive | pass | 112 files archived; 2536925 bytes; sha256 verified |
 | submission package verifier | pass | extracted submission package verifier passed from archived script |
 | final acceptance audit | pass | package can be reviewed while goal completion remains blocked by expert feedback and timed rehearsal |
 | numeric consistency | pass | 60 questions, 102 evidence files, and 5 visible search records are consistent |
