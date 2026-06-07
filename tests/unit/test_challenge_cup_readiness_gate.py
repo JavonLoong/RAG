@@ -171,7 +171,7 @@ def test_package_docs_gate_rejects_submission_integrity_card_without_status_term
 def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatch) -> None:
     payload = run_readiness_gate_for_test(monkeypatch)
 
-    assert payload == {"status": "pass", "passed": 63, "total": 63}
+    assert payload == {"status": "pass", "passed": 64, "total": 64}
     report = REPORT.read_text(encoding="utf-8")
     assert "# Challenge Cup Readiness Gate" in report
     assert "Status: `pass`" in report
@@ -214,6 +214,7 @@ def test_challenge_cup_readiness_gate_passes_and_writes_review_report(monkeypatc
     assert "hard evidence closure board" in report
     assert "hard evidence action pack" in report
     assert "external evidence execution kit" in report
+    assert "external evidence closeout checklist" in report
     assert "hard evidence ledger" in report
     assert "evidence integrity hashes" in report
     assert "browser smoke checks" in report
@@ -246,7 +247,7 @@ def test_challenge_cup_readiness_gate_bootstraps_its_own_report(monkeypatch) -> 
 
     payload = run_readiness_gate_for_test(monkeypatch, rebuild=False)
 
-    assert payload == {"status": "pass", "passed": 63, "total": 63}
+    assert payload == {"status": "pass", "passed": 64, "total": 64}
     assert REPORT.exists()
 
 
@@ -3812,7 +3813,7 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
     monkeypatch.setattr(module, "git_dirty_paths", lambda paths: set())
 
     markdown.write_text(
-        "Verification Transcript\nExpected Failure\nreadiness gate pass 63/63\n"
+        "Verification Transcript\nExpected Failure\nreadiness gate pass 64/64\n"
         "does not claim goal completion\n",
         encoding="utf-8",
     )
@@ -3826,9 +3827,9 @@ def test_verification_transcript_gate_accepts_zero_exit_code_commands(monkeypatc
                 "external_validation_claimed": False,
                 "readiness_gate": {
                     "status": "pass",
-                    "passed": 63,
-                    "total": 63,
-                    "current_gate_count": 63,
+                    "passed": 64,
+                    "total": 64,
+                    "current_gate_count": 64,
                 },
                 "final_acceptance": {
                     "status": "package_ready_awaiting_external_hard_evidence",

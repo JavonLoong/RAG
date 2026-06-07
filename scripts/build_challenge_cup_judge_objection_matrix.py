@@ -12,7 +12,7 @@ OUTPUT_MD = OUTPUT_DIR / "judge_objection_response_matrix.md"
 
 REPORT_TYPE = "challenge_cup_judge_objection_response_matrix"
 STATUS = "ready_for_judge_objection_drill_no_external_claims"
-CURRENT_READINESS_GATE_COUNT = 63
+CURRENT_READINESS_GATE_COUNT = 64
 BOUNDARY = (
     "This matrix prepares judge-objection responses for defense rehearsal. It does not claim expert "
     "approval, real timed rehearsal completion, production validation, award probability, or goal completion."

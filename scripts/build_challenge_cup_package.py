@@ -59,6 +59,11 @@ from build_challenge_cup_external_evidence_execution_kit import (
     TIMED_REHEARSAL_OBSERVER_MD as EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD,
     write_outputs as write_external_evidence_execution_kit_outputs,
 )
+from build_challenge_cup_external_evidence_closeout_checklist import (
+    OUTPUT_JSON as EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON,
+    OUTPUT_MD as EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD,
+    write_outputs as write_external_evidence_closeout_checklist_outputs,
+)
 from build_graphrag_answer_benchmark import (
     OUTPUT_JSON as GRAPH_ANSWER_BENCHMARK_JSON,
     OUTPUT_MD as GRAPH_ANSWER_BENCHMARK_MD,
@@ -230,6 +235,7 @@ EVAL_COVERAGE_MINIMUMS = {
     "graphrag_questions": 10,
 }
 ARCHIVE_TIMESTAMP = (2026, 6, 5, 21, 6, 0)
+READINESS_GATE_COUNT = 64
 
 
 def write(path: Path, content: str) -> None:
@@ -485,7 +491,7 @@ def build_readme(ctx: dict[str, Any]) -> str:
 
 - 状态：`package_ready_awaiting_external_hard_evidence`。
 - 真实专家反馈尚未归档；真实计时彩排尚未归档；不能标记目标完成。
-- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`。
+- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`；当天归档闭环看 `reproducibility/external_evidence_closeout_checklist.md`。
 
 ## 推荐阅读顺序
 
@@ -544,12 +550,13 @@ def build_readme(ctx: dict[str, Any]) -> str:
 53. `reproducibility/hard_evidence_closure_board.md`
 54. `reproducibility/hard_evidence_action_pack.md`
 55. `reproducibility/external_evidence_execution_kit.md`
-56. `reproducibility/hard_evidence_ledger.md`
-57. `reproducibility/challenge_cup_submission_archive_manifest.json`
-58. `reproducibility/challenge_cup_submission_package.zip`
-59. `reproducibility/verify_submission_package.py`
-60. `reproducibility/final_acceptance_audit.md`
-61. `reproducibility/submission_integrity_card.md`
+56. `reproducibility/external_evidence_closeout_checklist.md`
+57. `reproducibility/hard_evidence_ledger.md`
+58. `reproducibility/challenge_cup_submission_archive_manifest.json`
+59. `reproducibility/challenge_cup_submission_package.zip`
+60. `reproducibility/verify_submission_package.py`
+61. `reproducibility/final_acceptance_audit.md`
+62. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 
@@ -939,7 +946,7 @@ def build_judge_briefing_card(ctx: dict[str, Any]) -> str:
 
 
 def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
-    return """# 现场答辩操作Runbook
+    text = """# 现场答辩操作Runbook
 
 本 Runbook 面向答辩当天的操作者、主讲人和计时观察员。它不声明已经完成真实计时彩排，也不声明已经获得真实专家反馈；它只规定现场如何稳定地展示已经归档的材料、何时切换离线证据、以及追问时打开哪个证据锚点。
 
@@ -980,7 +987,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 为什么不是普通 RAG？ | 普通 RAG 做片段召回，本项目还做 evidence-bound GraphRAG、失败归因和人工补证闭环。 | `docs/challenge_cup/02_技术白皮书.md`; `evaluation/reports/challenge_cup_graphrag_same_question_report.md` |
 | 固定场景证据在哪里？ | GT-07 场景有阈值、机理、现象、检修、建议五段证据链。 | `docs/challenge_cup/reproducibility/application_validation_report.md`; `docs/challenge_cup/reproducibility/browser_demo_smoke_report.json` |
-| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 62 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| 如何证明材料完整？ | 先看 package manifest、hash、zip manifest，再看 {READINESS_GATE_COUNT} 项 readiness gate。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | 是否已经有专家认可？ | 还没有归档真实专家反馈；当前只有外发包、采集表和硬证据行动包。 | `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/hard_evidence_action_pack.md` |
 | 是否已经完成彩排？ | 还没有归档真实计时彩排；当前只有计分卡、结果包模板和操作 Runbook。 | `docs/challenge_cup/10_答辩攻防与彩排卡.md`; `docs/challenge_cup/reproducibility/defense_rehearsal_result_packet.md` |
 
@@ -999,6 +1006,7 @@ def build_onsite_defense_runbook(ctx: dict[str, Any]) -> str:
 - 不口头声称真实专家反馈或真实计时彩排已经完成；只有硬证据归档后才能改变这个口径。
 - 不把 readiness gate 说成获奖保证；它只证明结项包和演示证据可复核。
 """
+    return text.replace("{READINESS_GATE_COUNT}", str(READINESS_GATE_COUNT))
 
 
 def build_project_handoff_checklist(ctx: dict[str, Any]) -> str:
@@ -1123,6 +1131,9 @@ def build_defense_qa_remediation_ledger(ctx: dict[str, Any]) -> str:
 - 没有真实专家反馈和真实计时彩排同时归档前，`docs/challenge_cup/reproducibility/goal_completion_report.md` 应继续显示不能标记目标完成。
 - 若评委质疑某个主张，保留问题原文和整改动作，比删除问题更能体现学术诚信。
 """
+
+
+    return text.replace("{READINESS_GATE_COUNT}", str(READINESS_GATE_COUNT))
 
 
 def build_review_risk_response_plan(ctx: dict[str, Any]) -> str:
@@ -1414,7 +1425,7 @@ def build_submission_integrity_card(ctx: dict[str, Any]) -> str:
 
 | Gate | Expected Result | Evidence |
 | --- | --- | --- |
-| readiness gate | pass `63/63` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
+| readiness gate | pass `{READINESS_GATE_COUNT}/{READINESS_GATE_COUNT}` | `docs/challenge_cup/reproducibility/readiness_gate_report.md` |
 | submission verifier | pass | `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | final acceptance audit | `package_ready_awaiting_external_hard_evidence` | `docs/challenge_cup/reproducibility/final_acceptance_audit.md` |
 | goal completion expected fail | fail until hard evidence is archived | `docs/challenge_cup/reproducibility/goal_completion_report.md` |
@@ -1449,7 +1460,7 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 | --- | --- | --- |
 | 结项提交包 | 已生成，可按 verifier 和 readiness gate 复核。 | `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip` |
 | 现场答辩材料 | README、一页纸、项目书、评委速览卡、展墙脚本、PPT 和 A0 海报均已进入包。 | `docs/challenge_cup/README_先看这里.md`; `docs/challenge_cup/00_项目一页纸.md`; `docs/challenge_cup/01_挑战杯项目书.md`; `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
-| 外部硬证据 | 真实专家反馈、真实计时彩排仍待实际归档；未归档前不能标记目标完成。 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
+| 外部硬证据 | 真实专家反馈、真实计时彩排仍待实际归档；未归档前不能标记目标完成。 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md` |
 | 最终状态口径 | package_ready_awaiting_external_hard_evidence。 | `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.json` |
 
 ## 评委三分钟入口
@@ -1469,7 +1480,7 @@ def build_final_submission_handoff(ctx: dict[str, Any]) -> str:
 | 现场材料 | `docs/challenge_cup/13_评委现场速览卡.md`; `docs/challenge_cup/14_现场答辩操作Runbook.md`; `docs/challenge_cup/19_作品展墙报问辩与展台脚本.md`; `docs/challenge_cup/defense_deck/challenge_cup_defense_deck.pptx`; `docs/challenge_cup/poster/challenge_cup_a0_poster.html` |
 | 包与校验 | `docs/challenge_cup/reproducibility/submission_integrity_card.md`; `docs/challenge_cup/package_manifest.json`; `docs/challenge_cup/reproducibility/evidence_hashes.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_archive_manifest.json`; `docs/challenge_cup/reproducibility/challenge_cup_submission_package.zip`; `docs/challenge_cup/reproducibility/verify_submission_package.py` |
 | 总结与门禁 | `docs/challenge_cup/reproducibility/readiness_gate_report.md`; `docs/challenge_cup/reproducibility/final_acceptance_audit.md`; `docs/challenge_cup/reproducibility/goal_completion_report.md`; `docs/challenge_cup/reproducibility/command_log.md` |
-| 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
+| 外部硬证据执行包 | `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`; `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`; `docs/challenge_cup/reproducibility/hard_evidence_ledger.md` |
 
 ## 复核命令
 
@@ -1683,7 +1694,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
       <div class="metrics">
         <div class="metric"><strong>9080 chunks</strong><span>课程与工程资料切分入库</span></div>
         <div class="metric"><strong>{question_count} 题评测</strong><span>覆盖事实、流程、诊断、证据追溯</span></div>
-        <div class="metric"><strong>62 gates</strong><span>readiness gate 校验交付包完整性</span></div>
+        <div class="metric"><strong>{READINESS_GATE_COUNT} gates</strong><span>readiness gate 校验交付包完整性</span></div>
       </div>
     </header>
 
@@ -1745,7 +1756,7 @@ def build_poster_board_html(ctx: dict[str, Any]) -> str:
 
 
 def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
-    return """<!doctype html>
+    text = """<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -1874,7 +1885,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
     <div class="status" aria-label="readiness summary">
       <div class="metric"><strong>3-minute timer</strong><span>三分钟演示主线固定为 180 秒</span></div>
       <div class="metric"><strong>90-second opening</strong><span>开场覆盖问题、方法、完成度、边界</span></div>
-      <div class="metric"><strong>62 gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
+      <div class="metric"><strong>{READINESS_GATE_COUNT} gates</strong><span>readiness gate 覆盖提交包完整性</span></div>
       <div class="metric"><strong>offline fallback</strong><span>20 秒内切换到截图和归档报告</span></div>
     </div>
 
@@ -1917,6 +1928,7 @@ def build_defense_control_console_html(ctx: dict[str, Any]) -> str:
 </body>
 </html>
 """
+    return text.replace("{READINESS_GATE_COUNT}", str(READINESS_GATE_COUNT))
 
 
 def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
@@ -1971,6 +1983,7 @@ def build_defense_rehearsal_card(ctx: dict[str, Any]) -> str:
 .\.venv\Scripts\python.exe scripts/check_challenge_cup_readiness.py
 ```
 """
+    return text.replace("{READINESS_GATE_COUNT}", str(READINESS_GATE_COUNT))
 
 
 def build_application_validation_doc(ctx: dict[str, Any]) -> str:
@@ -2275,6 +2288,7 @@ node scripts/run_challenge_cup_browser_demo_smoke.mjs
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_closure_board.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_action_pack.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_execution_kit.py
+.\.venv\Scripts\python.exe scripts/build_challenge_cup_external_evidence_closeout_checklist.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_hard_evidence_ledger.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_judge_objection_matrix.py
 .\.venv\Scripts\python.exe scripts/build_challenge_cup_special_prize_readiness_dashboard.py
@@ -2322,6 +2336,8 @@ def build_hard_evidence_dataset_manifest_section() -> str:
             f"- Hard evidence action pack JSON: `{md_link(HARD_EVIDENCE_ACTION_PACK_JSON)}`",
             f"- External evidence execution kit: `{md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_MD)}`",
             f"- External evidence execution kit JSON: `{md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON)}`",
+            f"- External evidence closeout checklist: `{md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD)}`",
+            f"- External evidence closeout checklist JSON: `{md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON)}`",
             f"- Expert review handoff: `{md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD)}`",
             f"- Timed rehearsal observer sheet: `{md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD)}`",
             f"- Special prize readiness dashboard: `{md_link(SPECIAL_PRIZE_READINESS_DASHBOARD_MD)}`",
@@ -2663,6 +2679,11 @@ python scripts/build_challenge_cup_external_evidence_execution_kit.py
 -> docs/challenge_cup/reproducibility/external_evidence_execution_kit.md
 -> Status: ready_for_external_execution_handoff
 
+python scripts/build_challenge_cup_external_evidence_closeout_checklist.py
+-> docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md
+-> docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json
+-> Status: ready_for_real_external_evidence_closeout
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -2697,7 +2718,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (63/63 gates)
+-> Status: pass ({READINESS_GATE_COUNT}/{READINESS_GATE_COUNT} gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md
@@ -2755,6 +2776,7 @@ def main() -> int:
     write_hard_evidence_closure_board_outputs()
     write_hard_evidence_action_pack_outputs()
     write_external_evidence_execution_kit_outputs()
+    write_external_evidence_closeout_checklist_outputs()
     write_official_rubric_alignment_outputs()
     write_judge_objection_matrix_outputs()
     hard_evidence_payload = write_hard_evidence_ledger_outputs()
@@ -2840,6 +2862,8 @@ def main() -> int:
         md_link(HARD_EVIDENCE_ACTION_PACK_JSON),
         md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_MD),
         md_link(EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON),
+        md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD),
+        md_link(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON),
         md_link(EXTERNAL_EVIDENCE_EXPERT_HANDOFF_MD),
         md_link(EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_MD),
         md_link(HARD_EVIDENCE_LEDGER_MD),

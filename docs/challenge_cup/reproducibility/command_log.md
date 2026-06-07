@@ -149,6 +149,11 @@ python scripts/build_challenge_cup_external_evidence_execution_kit.py
 -> docs/challenge_cup/reproducibility/external_evidence_execution_kit.md
 -> Status: ready_for_external_execution_handoff
 
+python scripts/build_challenge_cup_external_evidence_closeout_checklist.py
+-> docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md
+-> docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json
+-> Status: ready_for_real_external_evidence_closeout
+
 python scripts/build_challenge_cup_official_rubric_alignment.py
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.md
 -> docs/challenge_cup/reproducibility/official_rubric_alignment.json
@@ -183,7 +188,7 @@ python scripts/build_challenge_cup_final_acceptance_audit.py
 
 python scripts/check_challenge_cup_readiness.py
 -> docs/challenge_cup/reproducibility/readiness_gate_report.md
--> Status: pass (63/63 gates)
+-> Status: pass (64/64 gates)
 
 python scripts/check_challenge_cup_goal_completion.py
 -> docs/challenge_cup/reproducibility/goal_completion_report.md

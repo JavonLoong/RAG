@@ -122,6 +122,8 @@
 - Hard evidence action pack JSON: `docs/challenge_cup/reproducibility/hard_evidence_action_pack.json`
 - External evidence execution kit: `docs/challenge_cup/reproducibility/external_evidence_execution_kit.md`
 - External evidence execution kit JSON: `docs/challenge_cup/reproducibility/external_evidence_execution_kit.json`
+- External evidence closeout checklist: `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md`
+- External evidence closeout checklist JSON: `docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json`
 - Expert review handoff: `docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md`
 - Timed rehearsal observer sheet: `docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md`
 - Special prize readiness dashboard: `docs/challenge_cup/reproducibility/special_prize_readiness_dashboard.md`

@@ -17,7 +17,7 @@
 
 - 状态：`package_ready_awaiting_external_hard_evidence`。
 - 真实专家反馈尚未归档；真实计时彩排尚未归档；不能标记目标完成。
-- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`。
+- 外部硬证据补齐入口：`reproducibility/external_evidence_execution_kit.md`；当天归档闭环看 `reproducibility/external_evidence_closeout_checklist.md`。
 
 ## 推荐阅读顺序
 
@@ -76,12 +76,13 @@
 53. `reproducibility/hard_evidence_closure_board.md`
 54. `reproducibility/hard_evidence_action_pack.md`
 55. `reproducibility/external_evidence_execution_kit.md`
-56. `reproducibility/hard_evidence_ledger.md`
-57. `reproducibility/challenge_cup_submission_archive_manifest.json`
-58. `reproducibility/challenge_cup_submission_package.zip`
-59. `reproducibility/verify_submission_package.py`
-60. `reproducibility/final_acceptance_audit.md`
-61. `reproducibility/submission_integrity_card.md`
+56. `reproducibility/external_evidence_closeout_checklist.md`
+57. `reproducibility/hard_evidence_ledger.md`
+58. `reproducibility/challenge_cup_submission_archive_manifest.json`
+59. `reproducibility/challenge_cup_submission_package.zip`
+60. `reproducibility/verify_submission_package.py`
+61. `reproducibility/final_acceptance_audit.md`
+62. `reproducibility/submission_integrity_card.md`
 
 ## 当前核心数字
 

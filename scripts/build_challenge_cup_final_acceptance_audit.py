@@ -54,6 +54,8 @@ GENERATION_CYCLE_PATHS = {
     "docs/challenge_cup/reproducibility/poster_render_smoke_report.md",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit.md",
+    "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json",
+    "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
     "docs/challenge_cup/reproducibility/final_acceptance_audit.json",

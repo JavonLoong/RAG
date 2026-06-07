@@ -27,7 +27,7 @@ from challenge_cup_hard_evidence_sources import source_path_looks_like_metadata,
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = REPO_ROOT / "docs" / "challenge_cup"
 REPRO_DIR = PACKAGE_DIR / "reproducibility"
-CURRENT_READINESS_GATE_COUNT = 63
+CURRENT_READINESS_GATE_COUNT = 64
 PACKAGE_MANIFEST = PACKAGE_DIR / "package_manifest.json"
 BROWSER_SMOKE_JSON = REPRO_DIR / "browser_demo_smoke_report.json"
 LIVE_SMOKE_JSON = REPRO_DIR / "live_demo_smoke_report.json"
@@ -106,6 +106,12 @@ EXTERNAL_EVIDENCE_EXECUTION_KIT_MD_RELATIVE = (
 EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON_RELATIVE = (
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit.json"
 )
+EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD_RELATIVE = (
+    "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.md"
+)
+EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON_RELATIVE = (
+    "docs/challenge_cup/reproducibility/external_evidence_closeout_checklist.json"
+)
 EXTERNAL_EVIDENCE_EXPERT_HANDOFF_RELATIVE = (
     "docs/challenge_cup/reproducibility/external_evidence_execution_kit/expert_review_handoff.md"
 )
@@ -167,6 +173,8 @@ HARD_EVIDENCE_ACTION_PACK_MD = REPO_ROOT / HARD_EVIDENCE_ACTION_PACK_MD_RELATIVE
 HARD_EVIDENCE_ACTION_PACK_JSON = REPO_ROOT / HARD_EVIDENCE_ACTION_PACK_JSON_RELATIVE
 EXTERNAL_EVIDENCE_EXECUTION_KIT_MD = REPO_ROOT / EXTERNAL_EVIDENCE_EXECUTION_KIT_MD_RELATIVE
 EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON = REPO_ROOT / EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON_RELATIVE
+EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD = REPO_ROOT / EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD_RELATIVE
+EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON = REPO_ROOT / EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON_RELATIVE
 EXTERNAL_EVIDENCE_EXPERT_HANDOFF = REPO_ROOT / EXTERNAL_EVIDENCE_EXPERT_HANDOFF_RELATIVE
 EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER = REPO_ROOT / EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_RELATIVE
 FINAL_ACCEPTANCE_AUDIT_MD = REPO_ROOT / FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE
@@ -233,6 +241,10 @@ EXTERNAL_EVIDENCE_EXECUTION_KIT_REQUIRED_PATHS = [
     EXTERNAL_EVIDENCE_EXECUTION_KIT_JSON_RELATIVE,
     EXTERNAL_EVIDENCE_EXPERT_HANDOFF_RELATIVE,
     EXTERNAL_EVIDENCE_TIMED_REHEARSAL_OBSERVER_RELATIVE,
+]
+EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS = [
+    EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD_RELATIVE,
+    EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON_RELATIVE,
 ]
 FINAL_ACCEPTANCE_AUDIT_REQUIRED_PATHS = [
     FINAL_ACCEPTANCE_AUDIT_MD_RELATIVE,
@@ -504,6 +516,8 @@ REQUIRED_PACKAGE_DOCS = [
     "reproducibility/hard_evidence_action_pack.json",
     "reproducibility/external_evidence_execution_kit.md",
     "reproducibility/external_evidence_execution_kit.json",
+    "reproducibility/external_evidence_closeout_checklist.md",
+    "reproducibility/external_evidence_closeout_checklist.json",
     "reproducibility/external_evidence_execution_kit/expert_review_handoff.md",
     "reproducibility/external_evidence_execution_kit/timed_rehearsal_observer_sheet.md",
     "reproducibility/hard_evidence_ledger.md",
@@ -3735,7 +3749,6 @@ def check_judge_briefing_card() -> GateCheck:
     self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
     missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
     failures = missing_terms + missing_paths
-
     manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
     if card_relative not in manifest_evidence:
@@ -3768,6 +3781,17 @@ def check_judge_briefing_card() -> GateCheck:
     )
 
 
+def stale_numbered_phrases(text: str, patterns: tuple[str, ...], expected_number: int) -> list[str]:
+    stale: set[str] = set()
+    for pattern in patterns:
+        for match in re.finditer(pattern, text):
+            phrase = match.group(0)
+            number_match = re.search(r"\d+", phrase)
+            if number_match and int(number_match.group(0)) != expected_number:
+                stale.add(phrase)
+    return sorted(stale)
+
+
 def check_onsite_defense_runbook() -> GateCheck:
     if not ONSITE_DEFENSE_RUNBOOK.exists():
         return GateCheck("onsite defense runbook", False, "14_现场答辩操作Runbook.md missing")
@@ -3778,6 +3802,16 @@ def check_onsite_defense_runbook() -> GateCheck:
     self_report = REPORT_MD.relative_to(REPO_ROOT).as_posix()
     missing_paths = sorted(path for path in evidence_paths if path != self_report and not nonempty(REPO_ROOT / path))
     failures = missing_terms + missing_paths
+    expected_gate_phrase = f"{CURRENT_READINESS_GATE_COUNT} \u9879 readiness gate"
+    if expected_gate_phrase not in text:
+        failures.append(f"missing current readiness gate count: {expected_gate_phrase}")
+    stale_gate_phrases = stale_numbered_phrases(
+        text,
+        (r"\b\d+\s+" + "\u9879" + r" readiness gate\b",),
+        CURRENT_READINESS_GATE_COUNT,
+    )
+    if stale_gate_phrases:
+        failures.append(f"stale readiness gate count: {stale_gate_phrases}")
 
     manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
@@ -4083,6 +4117,16 @@ def check_poster_board_asset() -> GateCheck:
     poster_relative = POSTER_BOARD_HTML.relative_to(REPO_ROOT).as_posix()
     missing_terms = sorted(term for term in REQUIRED_POSTER_BOARD_HTML_TERMS if term not in text)
     failures = missing_terms
+    expected_gate_phrase = f"{CURRENT_READINESS_GATE_COUNT} gates"
+    if expected_gate_phrase not in text:
+        failures.append(f"missing current readiness gate count: {expected_gate_phrase}")
+    stale_gate_phrases = stale_numbered_phrases(
+        text,
+        (r"\b\d+\s+gates\b",),
+        CURRENT_READINESS_GATE_COUNT,
+    )
+    if stale_gate_phrases:
+        failures.append(f"stale readiness gate count: {stale_gate_phrases}")
 
     manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
     manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
@@ -4215,6 +4259,16 @@ def check_defense_control_console() -> GateCheck:
     text = DEFENSE_CONTROL_CONSOLE.read_text(encoding="utf-8")
     console_relative = DEFENSE_CONTROL_CONSOLE.relative_to(REPO_ROOT).as_posix()
     failures = sorted(term for term in REQUIRED_DEFENSE_CONTROL_CONSOLE_TERMS if term not in text)
+    expected_gate_phrase = f"{CURRENT_READINESS_GATE_COUNT} gates"
+    if expected_gate_phrase not in text:
+        failures.append(f"missing current readiness gate count: {expected_gate_phrase}")
+    stale_gate_phrases = stale_numbered_phrases(
+        text,
+        (r"\b\d+\s+gates\b",),
+        CURRENT_READINESS_GATE_COUNT,
+    )
+    if stale_gate_phrases:
+        failures.append(f"stale readiness gate count: {stale_gate_phrases}")
     mojibake_hits = [marker for marker in DEFENSE_CONTROL_CONSOLE_MOJIBAKE_MARKERS if marker in text]
     if mojibake_hits:
         failures.append(f"mojibake markers in defense console: {', '.join(mojibake_hits)}")
@@ -5679,6 +5733,199 @@ def check_external_evidence_execution_kit() -> GateCheck:
         "external evidence execution kit",
         not failures,
         "expert-review and timed-rehearsal handoff packets, no-fake boundary, commands, and manifest/hash/archive links verified"
+        if not failures
+        else "; ".join(failures),
+    )
+
+
+def check_external_evidence_closeout_checklist() -> GateCheck:
+    failures: list[str] = []
+    missing_files = [
+        relative
+        for relative in EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS
+        if not nonempty(REPO_ROOT / relative)
+    ]
+    if missing_files:
+        return GateCheck("external evidence closeout checklist", False, f"missing or empty: {missing_files}")
+
+    payload = load_json(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON)
+    markdown = EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_MD.read_text(encoding="utf-8")
+    json_text = EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_JSON.read_text(encoding="utf-8")
+
+    if payload.get("report_type") != "challenge_cup_external_evidence_closeout_checklist":
+        failures.append(f"report_type={payload.get('report_type')}")
+    if payload.get("status") != "ready_for_real_external_evidence_closeout":
+        failures.append(f"status={payload.get('status')}")
+    if payload.get("completion_claim_allowed") is not False:
+        failures.append(f"completion_claim_allowed={payload.get('completion_claim_allowed')}")
+    if payload.get("does_not_satisfy_goal_completion") is not True:
+        failures.append(f"does_not_satisfy_goal_completion={payload.get('does_not_satisfy_goal_completion')}")
+    required_before = [str(item) for item in payload.get("required_before_goal_completion", [])]
+    if required_before != ["expert_feedback", "timed_rehearsal"]:
+        failures.append(f"required_before_goal_completion={required_before}")
+    if payload.get("day_of_execution_owner") != "project lead":
+        failures.append(f"day_of_execution_owner={payload.get('day_of_execution_owner')}")
+    if "no award guarantee" not in str(payload.get("boundary", "")):
+        failures.append("boundary missing no award guarantee")
+
+    expected_ids = [
+        "package_preflight_clean",
+        "expert_feedback_source_ready",
+        "expert_feedback_archived",
+        "timed_rehearsal_source_ready",
+        "timed_rehearsal_archived",
+        "hard_evidence_ledger_rebuilt",
+        "package_rebuilt_after_evidence",
+        "readiness_gate_rerun",
+        "submission_archive_verified",
+        "goal_completion_gate_rerun",
+        "final_acceptance_audit_refreshed",
+    ]
+    closeout_items = payload.get("closeout_items")
+    if not isinstance(closeout_items, list):
+        failures.append("closeout_items missing")
+        closeout_items = []
+    actual_ids = [str(item.get("check_id", "")) for item in closeout_items if isinstance(item, dict)]
+    if actual_ids != expected_ids:
+        failures.append(f"closeout_items={actual_ids}")
+
+    required_fields = (
+        "owner",
+        "phase",
+        "evidence_category",
+        "proof_required",
+        "command",
+        "expected_after_step",
+        "acceptance_signal",
+        "cannot_substitute",
+    )
+    for item in closeout_items:
+        if not isinstance(item, dict):
+            failures.append("closeout_items item invalid")
+            continue
+        check_id = str(item.get("check_id", "unknown"))
+        for field in required_fields:
+            if not has_value(item.get(field)):
+                failures.append(f"{check_id}: {field} missing")
+        if item.get("does_not_claim_award_or_completion") is not True:
+            failures.append(
+                f"{check_id}: does_not_claim_award_or_completion={item.get('does_not_claim_award_or_completion')}"
+            )
+
+    hard_evidence_steps = [
+        str(item.get("check_id", ""))
+        for item in closeout_items
+        if isinstance(item, dict) and item.get("counts_as_hard_evidence") is True
+    ]
+    if hard_evidence_steps != ["expert_feedback_archived", "timed_rehearsal_archived"]:
+        failures.append(f"counts_as_hard_evidence steps={hard_evidence_steps}")
+
+    items_by_id = {str(item.get("check_id", "")): item for item in closeout_items if isinstance(item, dict)}
+    command_requirements = {
+        "package_preflight_clean": "check_challenge_cup_readiness.py",
+        "expert_feedback_source_ready": "preflight_challenge_cup_hard_evidence.py expert_feedback",
+        "expert_feedback_archived": "record_challenge_cup_hard_evidence.py expert_feedback",
+        "timed_rehearsal_source_ready": "preflight_challenge_cup_hard_evidence.py timed_rehearsal",
+        "timed_rehearsal_archived": "run_challenge_cup_timed_rehearsal.py",
+        "hard_evidence_ledger_rebuilt": "build_challenge_cup_hard_evidence_ledger.py",
+        "package_rebuilt_after_evidence": "build_challenge_cup_package.py",
+        "readiness_gate_rerun": "check_challenge_cup_readiness.py",
+        "submission_archive_verified": "verify_submission_package.py --root .",
+        "goal_completion_gate_rerun": "check_challenge_cup_goal_completion.py",
+        "final_acceptance_audit_refreshed": "build_challenge_cup_final_acceptance_audit.py",
+    }
+    for check_id, required_command in command_requirements.items():
+        command = str(items_by_id.get(check_id, {}).get("command", ""))
+        if required_command not in command:
+            failures.append(f"{check_id}: command missing {required_command}")
+        if "&&" in command:
+            failures.append(f"{check_id}: command must not use PowerShell-incompatible && chaining")
+        if "<" in command or ">" in command:
+            failures.append(f"{check_id}: command contains PowerShell-unsafe angle placeholders")
+
+    expert_archived = items_by_id.get("expert_feedback_archived", {})
+    if isinstance(expert_archived, dict):
+        expert_text = "\n".join(
+            str(expert_archived.get(field, ""))
+            for field in ("proof_required", "command", "expected_after_step", "acceptance_signal", "cannot_substitute")
+        )
+        for term in ("real expert feedback", "source_sha256", "source_origin=external_attachment"):
+            if term not in expert_text:
+                failures.append(f"expert_feedback_archived missing {term}")
+    timed_archived = items_by_id.get("timed_rehearsal_archived", {})
+    if isinstance(timed_archived, dict):
+        timed_text = "\n".join(
+            str(timed_archived.get(field, ""))
+            for field in ("proof_required", "command", "expected_after_step", "acceptance_signal", "cannot_substitute")
+        )
+        for term in ("real timed rehearsal", "source_sha256", "timing_acceptance_pass=true"):
+            if term not in timed_text:
+                failures.append(f"timed_rehearsal_archived missing {term}")
+
+    required_terms = (
+        "External Evidence Closeout Checklist",
+        "day-of closeout",
+        "real expert feedback",
+        "real timed rehearsal",
+        "source_sha256",
+        "timing_acceptance_pass=true",
+        "completion_claim_allowed=True",
+        "no award guarantee",
+        "does_not_satisfy_goal_completion=True",
+    )
+    missing_markdown_terms = [term for term in required_terms if term not in markdown]
+    if missing_markdown_terms:
+        failures.append(f"markdown missing terms: {missing_markdown_terms}")
+    json_required_terms = (
+        "real expert feedback",
+        "real timed rehearsal",
+        "source_sha256",
+        "timing_acceptance_pass=true",
+        "completion_claim_allowed=True",
+        "no award guarantee",
+    )
+    missing_payload_terms = [term for term in json_required_terms if term not in json_text]
+    if missing_payload_terms:
+        failures.append(f"json missing terms: {missing_payload_terms}")
+
+    manifest = load_json(PACKAGE_MANIFEST) if PACKAGE_MANIFEST.exists() else {}
+    manifest_evidence = {str(item) for item in manifest.get("evidence_files", [])}
+    missing_manifest = sorted(
+        path for path in EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS if path not in manifest_evidence
+    )
+    if missing_manifest:
+        failures.append(f"missing manifest entries: {missing_manifest}")
+
+    hashes = load_json(EVIDENCE_HASHES) if EVIDENCE_HASHES.exists() else {"files": []}
+    hashed_paths = {str(item.get("path", "")) for item in hashes.get("files", [])}
+    missing_hashes = sorted(
+        path for path in EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS if path not in hashed_paths
+    )
+    if missing_hashes:
+        failures.append(f"missing hash entries: {missing_hashes}")
+
+    archive_manifest = load_json(SUBMISSION_ARCHIVE_MANIFEST) if SUBMISSION_ARCHIVE_MANIFEST.exists() else {
+        "included_files": []
+    }
+    archived_paths = {str(item) for item in archive_manifest.get("included_files", [])}
+    missing_archive = sorted(
+        path for path in EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS if path not in archived_paths
+    )
+    if SUBMISSION_ARCHIVE_MANIFEST.exists() and missing_archive:
+        failures.append(f"missing archive entries: {missing_archive}")
+
+    tracked = git_tracked_paths()
+    untracked = [path for path in EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS if path not in tracked]
+    dirty = sorted(git_dirty_paths(EXTERNAL_EVIDENCE_CLOSEOUT_CHECKLIST_REQUIRED_PATHS))
+    if untracked:
+        failures.append(f"untracked external evidence closeout checklist files: {untracked}")
+    if dirty:
+        failures.append(f"dirty external evidence closeout checklist files: {dirty}")
+
+    return GateCheck(
+        "external evidence closeout checklist",
+        not failures,
+        "day-of expert-feedback and timed-rehearsal closeout checklist, source integrity, commands, and manifest/hash/archive links verified"
         if not failures
         else "; ".join(failures),
     )
@@ -7394,6 +7641,7 @@ def run_gate() -> list[GateCheck]:
         check_hard_evidence_closure_board(),
         check_hard_evidence_action_pack(),
         check_external_evidence_execution_kit(),
+        check_external_evidence_closeout_checklist(),
         check_hard_evidence_ledger(),
         check_application_validation_evidence(),
         check_application_value_quantification(),
@@ -7425,7 +7673,7 @@ def write_report(checks: list[GateCheck]) -> dict[str, Any]:
         "",
         f"- Status: `{payload['status']}`",
         f"- Passed: {passed}/{len(checks)}",
-        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
+        "- Scope: challenge-cup package docs, Chinese readability, control files, defense deck, submission archive, submission package verifier, final acceptance audit, numeric consistency, GraphRAG evidence audit, GraphRAG context demo, GraphRAG answer benchmark, GraphRAG gap remediation plan, failure remediation before/after, claim-evidence matrix, acceptance checklist, special-prize rubric, official rubric alignment, judge objection response matrix, special prize readiness dashboard, judge briefing card, onsite defense runbook, project handoff checklist, defense q&a remediation ledger, review risk response plan, special prize scoring drill, poster booth q&a pack, commercialization roadmap, poster board asset, poster render smoke, defense control console, ip and open-source compliance, local baseline differentiation evidence, final submission handoff sheet, expert review index, defense rehearsal pack, defense rehearsal scorecard, defense rehearsal result packet, expert feedback request packet, expert feedback outreach ledger, timed rehearsal schedule ledger, hard evidence closure board, hard evidence action pack, external evidence execution kit, external evidence closeout checklist, hard evidence ledger, application validation, application value quantification, numeric traceability, no-answer boundary, claim integrity, rubric defense coverage, runtime reproducibility snapshot, verification transcript, fixed scenario demo, scenario walkthrough script, expert feedback protocol, evaluation dataset, evaluation coverage profile, evidence manifest, evidence hashes, live smoke, browser smoke, screenshots, KG artifact links",
         "",
         "| Gate | Result | Evidence |",
         "| --- | --- | --- |",
