@@ -1,0 +1,9 @@
+Sources used:
+        - D:\虚拟C盘\RAG\evaluation\reports\day3_retrieval_baseline_comparison_20260604_004434.json
+        - D:\虚拟C盘\RAG\evaluation\reports\day4_failure_analysis_20260604_012258.json
+        - evaluation/system_eval_questions.jsonl
+        - docs/project_deliverables/06_汇报材料_发群和组会/30题评测集说明.md
+        - docs/project_deliverables/06_汇报材料_发群和组会/第三天检索评测结果.md
+        - docs/project_deliverables/06_汇报材料_发群和组会/第四天失败案例分析.md
+
+        Identity assets: none. The deck uses editable geometric proof objects only.

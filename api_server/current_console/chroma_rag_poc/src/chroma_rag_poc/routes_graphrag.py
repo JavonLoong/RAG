@@ -6,11 +6,15 @@ capabilities: community detection, global search, and evaluation.
 """
 from __future__ import annotations
 
+import io
+import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 _REPO_ROOT = Path(__file__).resolve().parents[5]
@@ -207,6 +211,33 @@ async def graph_stats(request: Request, payload: GraphStatsRequest):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Graph stats failed: {exc}") from exc
+
+
+@router.get("/export")
+async def export_graph(request: Request, graph_db_path: str):
+    """Export the SQLite knowledge graph as portable JSON."""
+    try:
+        from storage_layer.graph_store import GraphStore
+
+        db_path = _resolve_graph_db_path(request, graph_db_path)
+        store = GraphStore(db_path)
+        store.initialize(reset=False)
+        payload = store.export_graph()
+        body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+        buffer = io.BytesIO(body)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_stem = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in db_path.stem).strip("_")
+        filename = f"graphrag_graph_export_{safe_stem or 'graph'}_{timestamp}.json"
+        return StreamingResponse(
+            buffer,
+            media_type="application/json; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Graph export failed: {exc}") from exc
 
 
 @router.get("/communities")

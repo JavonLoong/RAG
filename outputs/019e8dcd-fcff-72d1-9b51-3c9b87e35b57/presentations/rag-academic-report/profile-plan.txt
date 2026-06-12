@@ -1,0 +1,8 @@
+task mode: create
+        primary deck-profile: engineering-platform
+        secondary gates: academic reporting, evaluation narrative
+        required proof objects: architecture map, data pipeline, evaluation taxonomy, baseline chart, failure category table, demo workflow
+        source requirements: use local project reports only; no external metrics
+        brand constraints: no fabricated logos; use neutral technical visual system
+        QA gates: claims must point to data or diagram; diagrams must preserve technical labels; rendered text must not overlap
+        known missing inputs: no class template deck was provided

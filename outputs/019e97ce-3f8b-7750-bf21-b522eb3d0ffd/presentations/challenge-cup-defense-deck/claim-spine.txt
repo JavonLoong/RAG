@@ -1,0 +1,7 @@
+1. The project is a verifiable knowledge engineering system, not a generic RAG page.
+        2. The data and evaluation surface are broad enough for completion review.
+        3. GT-07 provides a fixed application scenario that can be shown live or offline.
+        4. GraphRAG is framed as relationship evidence, not universal answer superiority.
+        5. The submission archive and readiness gate make the package auditable.
+        6. The special-prize argument is completion plus innovation plus rigorous boundaries.
+        7. External feedback and real rehearsal evidence remain the last non-fabricable proof items.

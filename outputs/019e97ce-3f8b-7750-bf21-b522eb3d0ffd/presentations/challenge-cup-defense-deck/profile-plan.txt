@@ -1,0 +1,8 @@
+task mode: create
+        primary deck-profile: engineering-platform
+        secondary gates: academic defense, challenge-cup special-prize narrative
+        required proof objects: system architecture, evaluation coverage, GT-07 browser screenshot, GraphRAG evidence screenshot, readiness/archive proof, external validation boundary
+        source requirements: use local project reports and screenshots only; no fabricated external feedback
+        brand authenticity constraints: no logos or fake badges; neutral technical visual system
+        profile-specific QA gates: every claim has evidence; no overclaim of award, production deployment, expert approval, or live rehearsal completion
+        known missing inputs: true signed expert feedback and true timed rehearsal record are not yet available

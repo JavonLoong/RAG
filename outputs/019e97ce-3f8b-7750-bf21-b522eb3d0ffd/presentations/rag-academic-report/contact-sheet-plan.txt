@@ -1,0 +1,11 @@
+Slide rhythm:
+        1 cover with metric rail
+        2 research question and evidence chain
+        3 data pipeline map with metrics
+        4 two-lane architecture diagram
+        5 evaluation taxonomy bar proof
+        6 baseline results bar proof with side conclusion
+        7 success/partial/failure diagnostic comparison
+        8 failure category bar proof
+        9 live demo sequence with fallback rail
+        10 final week plan and deliverable list

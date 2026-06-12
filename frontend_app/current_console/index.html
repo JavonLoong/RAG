@@ -13035,6 +13035,201 @@ function exportChromaFromPublicBooksPanel() {
 }
 
 
+function downloadBlobAsFile(blob, filename) {
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+
+  link.download = filename;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+
+function filenameFromContentDisposition(headerValue, fallback) {
+
+  const match = /filename="?([^";]+)"?/i.exec(headerValue || "");
+
+  return match?.[1] || fallback;
+
+}
+
+
+
+function graphEndpointId(value) {
+
+  if (value && typeof value === "object") return value.id || value.name || value.label || "";
+
+  return value == null ? "" : String(value);
+
+}
+
+
+
+function exportBrowserKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length) {
+
+    showToast("当前没有可导出的图谱，请先构建知识图谱。", "warning");
+
+    return false;
+
+  }
+
+
+
+  const links = Array.isArray(kg.links) ? kg.links : Array.from(kg.edges?.values?.() || []);
+
+  const entities = kg.entities instanceof Map
+
+    ? Array.from(kg.entities.entries()).map(([name, data]) => ({ name, ...(data || {}) }))
+
+    : [];
+
+  const payload = {
+
+    version: 1,
+
+    format: "browser_kg_graph_export",
+
+    exported_at: new Date().toISOString(),
+
+    engine_mode: kg.engineMode || null,
+
+    summary: {
+
+      node_count: kg.nodes.length,
+
+      edge_count: links.length,
+
+      entity_count: entities.length,
+
+    },
+
+    nodes: kg.nodes.map((node) => ({
+
+      id: node.id,
+
+      label: node.label || node.name || node.id,
+
+      type: node.type || null,
+
+      count: node.count ?? null,
+
+      radius: node.radius ?? null,
+
+      x: Number.isFinite(node.x) ? node.x : null,
+
+      y: Number.isFinite(node.y) ? node.y : null,
+
+    })),
+
+    edges: links.map((edge, index) => ({
+
+      id: edge.id || edge.triple_id || `EDGE-${String(index + 1).padStart(4, "0")}`,
+
+      source: graphEndpointId(edge.source),
+
+      target: graphEndpointId(edge.target),
+
+      predicate: edge.predicate || edge.relation || "RELATES_TO",
+
+      weight: edge.weight ?? null,
+
+      confidence: edge.confidence ?? null,
+
+      evidence: edge.evidence || null,
+
+      source_file: edge.source_file || null,
+
+      source_page: edge.source_page || null,
+
+    })),
+
+    entities,
+
+  };
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+
+  downloadBlobAsFile(blob, `kg_graph_snapshot_${timestamp}.json`);
+
+  addActivity("success", "图谱快照已导出", `${formatNumber(payload.summary.node_count)} 节点 / ${formatNumber(payload.summary.edge_count)} 边`);
+
+  showToast("已导出当前页面图谱 JSON。", "success");
+
+  return true;
+
+}
+
+
+
+async function exportKgGraphSnapshot() {
+
+  if (state.localMode || state.publicDemo) {
+
+    exportBrowserKgGraphSnapshot();
+
+    return;
+
+  }
+
+
+
+  const graphDbPath = KG_DEMO?.summary?.sqlite || "graph_store.sqlite";
+
+  showToast("正在导出知识图谱 JSON…", "success");
+
+  try {
+
+    const response = await fetch(apiUrl(`/api/graphrag/export?graph_db_path=${encodeURIComponent(graphDbPath)}`));
+
+    if (!response.ok) {
+
+      const detail = await response.text();
+
+      throw new Error(detail || response.statusText);
+
+    }
+
+    const blob = await response.blob();
+
+    const fallbackName = `graphrag_graph_export_${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.json`;
+
+    const filename = filenameFromContentDisposition(response.headers.get("Content-Disposition"), fallbackName);
+
+    downloadBlobAsFile(blob, filename);
+
+    addActivity("success", "知识图谱已导出", `${graphDbPath} → JSON`);
+
+    showToast("知识图谱 JSON 已导出。", "success");
+
+  } catch (err) {
+
+    const usedBrowserSnapshot = exportBrowserKgGraphSnapshot();
+
+    if (!usedBrowserSnapshot) showToast(`图谱导出失败: ${err.message || err}`, "danger");
+
+  }
+
+}
+
+
 
 async function runSearch() {
 
@@ -17132,7 +17327,7 @@ function bindEvents() {
 
   });
 
-  $("btnKgPublicBooksExportChroma")?.addEventListener("click", exportChromaFromPublicBooksPanel);
+  $("btnKgPublicBooksExportChroma")?.addEventListener("click", exportKgGraphSnapshot);
 
 
 
@@ -19800,7 +19995,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                     <button class="btn" id="btnKgExportPdfText" type="button" onclick="exportKgPdfTexts()" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="导出OCR识别结果为.txt文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
 
-                    <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:hard-drive-download"></iconify-icon><span>导出 向量库/图谱</span></button>
+                    <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>导出图谱 JSON</span></button>
 
                   </div>
 

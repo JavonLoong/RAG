@@ -300,6 +300,116 @@ class GraphStore:
             "entity_type_counts": entity_type_counts,
         }
 
+    def export_graph(self) -> dict[str, Any]:
+        """Return a portable graph export with structure, evidence, and community data."""
+        with self._connect() as connection:
+            nodes = [
+                _row_to_export_dict(row)
+                for row in connection.execute(
+                    """
+                    SELECT id, name, type, metadata_json, created_at
+                    FROM nodes
+                    ORDER BY id
+                    """
+                ).fetchall()
+            ]
+
+            edges = [
+                _row_to_export_dict(row)
+                for row in connection.execute(
+                    """
+                    SELECT
+                        e.id,
+                        e.triple_id,
+                        e.subject_node_id,
+                        s.name AS subject,
+                        s.type AS subject_type,
+                        e.object_node_id,
+                        o.name AS object,
+                        o.type AS object_type,
+                        e.predicate,
+                        e.confidence,
+                        e.source_file,
+                        e.source_page,
+                        e.source_chunk_id,
+                        e.metadata_json,
+                        e.created_at
+                    FROM edges e
+                    JOIN nodes s ON s.id = e.subject_node_id
+                    JOIN nodes o ON o.id = e.object_node_id
+                    ORDER BY e.id
+                    """
+                ).fetchall()
+            ]
+
+            evidence = [
+                _row_to_export_dict(row)
+                for row in connection.execute(
+                    """
+                    SELECT
+                        id,
+                        edge_id,
+                        triple_id,
+                        text,
+                        source_file,
+                        source_page,
+                        source_chunk_id,
+                        metadata_json,
+                        created_at
+                    FROM evidence
+                    ORDER BY id
+                    """
+                ).fetchall()
+            ]
+
+            communities = [
+                _row_to_dict(row)
+                for row in connection.execute(
+                    """
+                    SELECT
+                        c.community_id,
+                        c.level,
+                        c.node_id,
+                        n.name AS node_name,
+                        n.type AS node_type,
+                        c.created_at
+                    FROM communities c
+                    JOIN nodes n ON n.id = c.node_id
+                    ORDER BY c.level, c.community_id, n.name
+                    """
+                ).fetchall()
+            ]
+
+            community_summaries = [
+                _row_to_export_dict(row)
+                for row in connection.execute(
+                    """
+                    SELECT
+                        community_id,
+                        level,
+                        title,
+                        summary,
+                        entity_count,
+                        edge_count,
+                        metadata_json,
+                        created_at
+                    FROM community_summaries
+                    ORDER BY level, community_id
+                    """
+                ).fetchall()
+            ]
+
+        return {
+            "version": 1,
+            "format": "graphrag_graph_export",
+            "summary": self.summary(),
+            "nodes": nodes,
+            "edges": edges,
+            "evidence": evidence,
+            "communities": communities,
+            "community_summaries": community_summaries,
+        }
+
     def store_communities(
         self, assignments: list[dict[str, Any]], *, level: int = 0, reset_level: bool = True
     ) -> None:
@@ -680,8 +790,24 @@ def _json_dumps(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
 
+def _json_loads(payload: str | None) -> dict[str, Any]:
+    if not payload:
+        return {}
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     return {key: row[key] for key in row.keys()}
+
+
+def _row_to_export_dict(row: sqlite3.Row) -> dict[str, Any]:
+    data = _row_to_dict(row)
+    data["metadata"] = _json_loads(data.pop("metadata_json", None))
+    return data
 
 
 def _sanitize_relationship_type(predicate: str) -> str:

@@ -1,0 +1,10 @@
+1. The project has moved from demo to evaluated RAG system.
+        2. The research question is whether retrieval evidence can be evaluated and explained.
+        3. The data pipeline is large enough to support a real report, not just a toy example.
+        4. The system architecture has two tracks: Standard RAG and KG/GraphRAG.
+        5. The 30-question evaluation set gives a reproducible grading surface.
+        6. Current baseline results show keyword retrieval is strongest under offline hashing constraints.
+        7. Case diagnostics expose useful boundaries instead of hiding failures.
+        8. Failure categories translate directly into optimization work.
+        9. The live demo should emphasize evidence chain and POC review.
+        10. The final week plan protects presentation quality and future research direction.
