@@ -1026,140 +1026,6 @@ iconify-icon {
 
 
 
-/* ── Demo Toggle ── */
-
-.demo-toggle {
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  cursor: pointer;
-
-  user-select: none;
-
-  padding: 4px 10px;
-
-  border-radius: 999px;
-
-  border: 1px solid var(--line);
-
-  background: rgba(255, 255, 255, 0.04);
-
-  transition: background var(--transition-fast);
-
-}
-
-
-
-.demo-toggle:hover {
-
-  background: rgba(255, 255, 255, 0.08);
-
-}
-
-
-
-.demo-toggle input {
-
-  position: absolute;
-
-  opacity: 0;
-
-  width: 0;
-
-  height: 0;
-
-}
-
-
-
-.demo-toggle-track {
-
-  position: relative;
-
-  width: 34px;
-
-  height: 20px;
-
-  border-radius: 999px;
-
-  background: rgba(255, 255, 255, 0.15);
-
-  transition: background var(--transition-fast);
-
-  flex: 0 0 34px;
-
-}
-
-
-
-.demo-toggle-thumb {
-
-  position: absolute;
-
-  top: 2px;
-
-  left: 2px;
-
-  width: 16px;
-
-  height: 16px;
-
-  border-radius: 999px;
-
-  background: #fff;
-
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-
-  transition: transform var(--transition-fast);
-
-}
-
-
-
-.demo-toggle input:checked ~ .demo-toggle-track {
-
-  background: var(--accent);
-
-}
-
-
-
-.demo-toggle input:checked ~ .demo-toggle-track .demo-toggle-thumb {
-
-  transform: translateX(14px);
-
-}
-
-
-
-.demo-toggle-text {
-
-  font-size: 12px;
-
-  font-weight: 500;
-
-  color: var(--ink-soft);
-
-  white-space: nowrap;
-
-}
-
-
-
-/* Demo-only content visibility */
-
-.app-shell:not(.demo-mode) .demo-only {
-
-  display: none !important;
-
-}
-
-
-
 .overview-grid,
 
 .data-grid,
@@ -3992,8 +3858,6 @@ if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
 
 const FORCE_LOCAL_RUNTIME = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
 
-const DEFAULT_PUBLIC_DEMO = window.location.protocol === "file:" || /\.github\.io$/i.test(window.location.hostname);
-
 const API_BASE = "";
 
 const LOCAL_COLLECTION_NAME = "browser_local_index";
@@ -4520,508 +4384,6 @@ const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf",
 
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
 
-const PUBLIC_DEMO_COLLECTION = "gas_turbine_ocr_demo_snapshot";
-
-const PUBLIC_DEMO_UPDATED_AT = 1779033600;
-
-const PUBLIC_DEMO_FILES = [
-
-  { filename: "ocr_ready__gas_turbine_combustion_3rd.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气涡轮发动机燃烧 第3版.txt", size_kb: 9120, records: 442, chunks: 760, low_confidence: 1, avg_confidence: 0.724 },
-
-  { filename: "ocr_ready__advanced_gas_turbine_combustor.txt", display_name: "第一梯队_OCR质量较放心_4本/先进燃气轮机燃烧室.txt", size_kb: 12680, records: 603, chunks: 980, low_confidence: 5, avg_confidence: 0.714 },
-
-  { filename: "ocr_ready__gas_turbine_principle_structure_application_1.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机原理、结构与应用 上.txt", size_kb: 10140, records: 485, chunks: 820, low_confidence: 0, avg_confidence: 0.715 },
-
-  { filename: "ocr_ready__nanjing_gas_turbine_research_institute.txt", display_name: "第一梯队_OCR质量较放心_4本/燃气轮机（南京燃气轮机研究所编）.txt", size_kb: 1420, records: 62, chunks: 95, low_confidence: 1, avg_confidence: 0.764 }
-
-];
-
-const PUBLIC_DEMO_STATS = {
-
-  status: "public-demo",
-
-  collections: [{
-
-    name: PUBLIC_DEMO_COLLECTION,
-
-    count: 2655,
-
-    estimated_tokens: 1186000,
-
-    estimated_chars: 1740000,
-
-    source_type_counts: { PDF: 4, Text: 4, JSON: 2 },
-
-    sources: PUBLIC_DEMO_FILES.map((item) => item.display_name)
-
-  }],
-
-  total_documents: 4,
-
-  total_tokens_estimate: 1186000,
-
-  storage_size_mb: 33.56,
-
-  embedding_dim: ENGINE_DEFAULTS.dimension,
-
-  source_type_breakdown: { PDF: 4, Text: 4, JSON: 2 }
-
-};
-
-const PUBLIC_DEMO_SEARCH_RESULTS = [
-
-  {
-
-    text: "燃气轮机燃烧室的主要问题包括稳定燃烧、点火、燃烧效率、温度场均匀性以及污染物排放控制。检索时应同时保留原文证据和页码，便于后续人工复核。",
-
-    score: 0.842,
-
-    distance: 0.158,
-
-    metadata: { filename: "先进燃气轮机燃烧室.txt", source_kind: "Text", chunk_index: 128, record_id: "demo-advanced-combustor-p128", estimated_tokens: 96, page_nums: "128" }
-
-  },
-
-  {
-
-    text: "OCR 后的扫描书先进入文本块，再按 chunk 切分，随后进入向量检索或知识图谱抽取。两栏版面、低置信度页和公式密集页需要单独标记风险。",
-
-    score: 0.811,
-
-    distance: 0.189,
-
-    metadata: { filename: "燃气涡轮发动机燃烧 第3版.txt", source_kind: "Text", chunk_index: 64, record_id: "demo-combustion-p064", estimated_tokens: 88, page_nums: "64" }
-
-  },
-
-  {
-
-    text: "知识图谱抽取阶段更关注实体、关系、属性和 evidence 的一致性。关系粒度过粗会丢信息，过细则接近句子谓语翻译，后续检索价值有限。",
-
-    score: 0.786,
-
-    distance: 0.214,
-
-    metadata: { filename: "KG / GraphRAG POC 记录.json", source_kind: "JSON", chunk_index: 12, record_id: "demo-kg-poc-012", estimated_tokens: 82, page_nums: "-" }
-
-  }
-
-,
-
-  {
-
-    text: "GT-07 燃气轮机升负荷至 75% 后，压气机出口温度从 430°C 升至 485°C，振动传感器 VIB-CMP-01 的读数升至 7.2 mm/s，DCS 触发“压气机出口温度偏高”报警。运行员记录：燃烧室火焰稳定，未见明显燃烧波动。",
-
-    score: 0.84,
-
-    distance: 0.16,
-
-    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 21, record_id: "demo-gt07-fault-021", estimated_tokens: 112, page_nums: "POC-1" }
-
-  },
-
-  {
-
-    text: "停机检查发现，进气滤网压差偏高，滤网局部堵塞；压气机前三级叶片表面积灰明显。检修人员清理进气滤网，安排压气机叶片离线清洗，并复位温度传感器 TT-COMP-02。复机后，压气机出口温度回落至 438°C，振动值降至 3.1 mm/s。",
-
-    score: 0.83,
-
-    distance: 0.17,
-
-    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 22, record_id: "demo-gt07-repair-022", estimated_tokens: 118, page_nums: "POC-2" }
-
-  },
-
-  {
-
-    text: "压气机出口温度偏高的常见原因包括进气阻力增大、压气机叶片污染和温度传感器漂移。建议检查进气滤网压差，清理或更换滤网，清洗压气机叶片，并对温度传感器进行校验。若振动值持续偏高，应进一步检查轴承状态和联轴器对中情况。",
-
-    score: 0.82,
-
-    distance: 0.18,
-
-    metadata: { filename: "燃气轮机设备故障样例文本.md", source_kind: "Text", chunk_index: 23, record_id: "demo-gt07-manual-023", estimated_tokens: 115, page_nums: "POC-3" }
-
-  },
-
-  {
-
-    text: "紧急停机仅在出现超温、超速、失火或振动超限等危急情况下使用。正常停机应按负荷递减程序执行，严禁在满负荷状态下直接切断燃油。",
-
-    score: 0.8,
-
-    distance: 0.2,
-
-    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 56, record_id: "demo-maint-emergency-stop-056", estimated_tokens: 78, page_nums: "5.6" }
-
-  },
-
-  {
-
-    text: "故障诊断应遵循“症状-机理-定位-处置”四步法。常见故障模式包括：压气机喘振、燃烧室热点、涡轮叶片裂纹、轴承磨损和控制系统失灵。",
-
-    score: 0.79,
-
-    distance: 0.21,
-
-    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 88, record_id: "demo-maint-diagnosis-088", estimated_tokens: 84, page_nums: "5.8" }
-
-  },
-
-  {
-
-    text: "压气机喘振的典型症状为：运行中出现周期性“砰砰”声响，排气温度急剧波动，压气机出口压力大幅下降。处置方法：立即降低负荷至喘振线以下，检查进气系统是否有异物堵塞。",
-
-    score: 0.78,
-
-    distance: 0.22,
-
-    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 92, record_id: "demo-maint-surge-092", estimated_tokens: 96, page_nums: "5.9" }
-
-  },
-
-  {
-
-    text: "关键监测参数阈值包括：排气温度散布度不大于 25°C，轴承振动不大于 25.4 mm/s，滑油金属颗粒不大于 5 ppm，压气机效率衰减不大于 3%。这些指标可作为运行异常和早期故障诊断线索。",
-
-    score: 0.77,
-
-    distance: 0.23,
-
-    metadata: { filename: "燃气轮机运行维护手册_doc101.json", source_kind: "JSON", chunk_index: 76, record_id: "demo-maint-thresholds-076", estimated_tokens: 94, page_nums: "5.7" }
-
-  },
-
-  {
-
-    text: "燃气轮机燃烧室工作在连续高速气流中，燃烧火焰不易稳定，容易被吹灭；燃料在燃烧区停留时间较短，容易出现燃烧不完全。因此必须采取措施确保燃烧过程稳定、完全，并控制出口温度场。",
-
-    score: 0.76,
-
-    distance: 0.24,
-
-    metadata: { filename: "燃气轮机与联合循环装置_燃烧室工作特点.txt", source_kind: "Text", chunk_index: 118, record_id: "demo-combustor-stability-118", estimated_tokens: 103, page_nums: "燃烧室" }
-
-  },
-
-  {
-
-    text: "燃气轮机结构强度故障是指发生在燃气轮机机械结构和部件中的形变或机械损伤，会引起机组不正常振动并影响正常运行；由于机组尺寸大、转速高，这些机械故障可能导致破坏性机械损伤、停机甚至机组报废。",
-
-    score: 0.75,
-
-    distance: 0.25,
-
-    metadata: { filename: "燃气轮机可靠性维护理论及应用.txt", source_kind: "Text", chunk_index: 130, record_id: "demo-structure-fault-130", estimated_tokens: 112, page_nums: "第6章" }
-
-  },
-
-  {
-
-    text: "知识图谱抽取中，GT-07 燃气轮机与“压气机出口温度偏高”“振动值升高”等故障/症状相连；进气滤网堵塞、压气机叶片污染、温度传感器漂移被记录为可能原因；清理滤网、清洗叶片、校验传感器是推荐处理动作。",
-
-    score: 0.74,
-
-    distance: 0.26,
-
-    metadata: { filename: "四本书 KG / 故障 POC 三元组.csv", source_kind: "CSV", chunk_index: 14, record_id: "demo-kg-fault-triples-014", estimated_tokens: 105, page_nums: "triples" }
-
-  }];
-
-
-
-const KG_ARTIFACT_BASE = "/deliverables/06_四本书KG工具跑通演示/";
-
-const KG_FILE_ARTIFACT_BASE = "../../docs/project_deliverables/06_四本书KG工具跑通演示/";
-
-const KG_DEMO = {
-
-  summary: {
-
-    books: 4,
-
-    pages: 1592,
-
-    chunks: 4955,
-
-    triples: 240,
-
-    nodes: 102,
-
-    evidence: 240,
-
-    sqlite: "graph_store.sqlite",
-
-    method: "小 schema + 代码规则抽取",
-
-    status: "KG construction 已跑通；GraphRAG 问答链路仍在继续接"
-
-  },
-
-  books: [
-
-    { name: "燃气涡轮发动机燃烧 第3版", pages: 442, chars: 1078898, triples: 81 },
-
-    { name: "先进燃气轮机燃烧室", pages: 603, chars: 1672703, triples: 40 },
-
-    { name: "燃气轮机原理、结构与应用 上", pages: 485, chars: 1393699, triples: 62 },
-
-    { name: "燃气轮机（南京燃气轮机研究所编）", pages: 62, chars: 223142, triples: 57 }
-
-  ],
-
-  steps: [
-
-    { title: "选资料", note: "先用 OCR 质量相对放心的 4 本燃气轮机资料，避免一上来被脏数据拖乱。" },
-
-    { title: "OCR 文本", note: "扫描 PDF 先变成 pages.jsonl，每页保留页码和来源。" },
-
-    { title: "切 chunk", note: "把页文本切成可检索片段，本次生成 4955 个 chunk。" },
-
-    { title: "定 schema", note: "先限定实体类型和关系类型，避免全部抽成 related_to。" },
-
-    { title: "抽实体", note: "从 chunk 中识别设备、部件、参数、问题、方法、燃料等候选实体。" },
-
-    { title: "抽关系", note: "用代码规则和触发词把实体连成候选三元组。" },
-
-    { title: "绑 evidence", note: "每条三元组都带原文证据、页码、来源文件和置信度。" },
-
-    { title: "成图谱", note: "产出 triples.csv、SVG 图谱和运行报告，并导入本地 SQLite 图存储。" }
-
-  ],
-
-  entityTypes: {
-
-    Equipment: "燃气轮机、燃烧室、压气机、涡轮等设备或系统。",
-
-    Component: "设备部件、子系统或结构单元。",
-
-    Fuel: "燃料类别或具体燃料。",
-
-    Parameter: "热效率、压比、功率、温度、排放等参数。",
-
-    Problem: "回火、熄火、振荡、结焦、污染排放等问题。",
-
-    Method: "冷却、预混燃烧、分级燃烧、联合循环等方法。",
-
-    Property: "优点、性能特征、约束或要求。",
-
-    Concept: "技术概念、类别、术语或抽象对象。"
-
-  },
-
-  entityTypeCounts: {
-
-    Equipment: 5,
-
-    Component: 8,
-
-    Parameter: 35,
-
-    Problem: 5,
-
-    Method: 15,
-
-    Fuel: 8,
-
-    Concept: 14,
-
-    Property: 12
-
-  },
-
-  topEntities: [
-
-    ["燃气轮机", 92],
-
-    ["燃烧室", 61],
-
-    ["排放", 47],
-
-    ["涡轮", 23],
-
-    ["功率", 18],
-
-    ["污染", 18],
-
-    ["透平", 18],
-
-    ["压气机", 17],
-
-    ["联合循环", 17]
-
-  ],
-
-  relationTypes: {
-
-    HAS_COMPONENT: "主体设备包含某个部件或子系统。",
-
-    USES_FUEL: "设备或燃烧室使用某类燃料。",
-
-    HAS_PARAMETER: "设备、部件或过程关联某个参数。",
-
-    HAS_PROBLEM: "设备、部件或过程存在某类问题或风险。",
-
-    IMPROVED_BY: "某个性能或对象可由某方法改善。",
-
-    REDUCED_BY: "某个排放、损失或风险可由某方法降低。",
-
-    HAS_FUNCTION: "部件或系统承担某个功能。",
-
-    HAS_SUBTYPE: "概念、设备或结构拥有下位类型。",
-
-    RELATED_TO: "证据中存在明确共现，但关系暂时不细分。"
-
-  },
-
-  relationCounts: {
-
-    HAS_PARAMETER: 85,
-
-    HAS_PROBLEM: 51,
-
-    HAS_COMPONENT: 24,
-
-    HAS_SUBTYPE: 20,
-
-    USES_FUEL: 19,
-
-    IMPROVED_BY: 18,
-
-    HAS_FUNCTION: 12,
-
-    RELATED_TO: 11
-
-  },
-
-  triples: [
-
-    {
-
-      id: "FBKG-0001",
-
-      s: "燃气轮机",
-
-      st: "Equipment",
-
-      p: "HAS_COMPONENT",
-
-      o: "压气机",
-
-      ot: "Component",
-
-      evidence: "本书主要叙述了燃气轮机及其组成部件：压气机、燃烧室和透平的工作原理、设计特点等。",
-
-      source: "燃气轮机原理、结构与应用 上",
-
-      page: 4,
-
-      confidence: 0.72
-
-    },
-
-    {
-
-      id: "FBKG-0002",
-
-      s: "燃气轮机",
-
-      st: "Equipment",
-
-      p: "HAS_COMPONENT",
-
-      o: "燃烧室",
-
-      ot: "Component",
-
-      evidence: "原文把燃烧室列为燃气轮机组成部件之一。",
-
-      source: "燃气轮机原理、结构与应用 上",
-
-      page: 4,
-
-      confidence: 0.72
-
-    },
-
-    {
-
-      id: "FBKG-0004",
-
-      s: "燃气轮机",
-
-      st: "Equipment",
-
-      p: "IMPROVED_BY",
-
-      o: "联合循环",
-
-      ot: "Method",
-
-      evidence: "文本中同时讨论燃气轮机调节控制、联合循环和应用，用于抽取改进/应用方向候选关系。",
-
-      source: "燃气轮机原理、结构与应用 上",
-
-      page: 4,
-
-      confidence: 0.72
-
-    },
-
-    {
-
-      id: "FBKG-0238",
-
-      s: "联合循环",
-
-      st: "Method",
-
-      p: "USES_FUEL",
-
-      o: "天然气",
-
-      ot: "Fuel",
-
-      evidence: "直至现在，联合循环主要还以天然气、轻柴油或重油为燃料。",
-
-      source: "燃气轮机（南京燃气轮机研究所编）",
-
-      page: 16,
-
-      confidence: 0.83
-
-    }
-
-  ],
-
-  methodNotes: [
-
-    "这一版实体和关系主要是代码规则抽出来的，不是让大模型自由发挥。",
-
-    "规则会先看 schema：哪些词能算设备、部件、参数、问题、方法，哪些关系允许出现。",
-
-    "关系不是越多越好。太宽会变成 related_to，太细会像把一句话的谓语硬翻译成英文。",
-
-    "后续可以让 LLM 按同一套 schema 抽取，再和这一版规则结果、人审结果对比。"
-
-  ],
-
-  artifacts: [
-
-    { file: "knowledge_graph.svg", title: "知识图谱 SVG", desc: "把三元组画成节点和边，适合展示整体结构。" },
-
-    { file: "kg_evidence_viewer.html", title: "三元组 / evidence 查看页", desc: "逐条查看三元组、原文证据、来源页码和置信度。" },
-
-    { file: "triples.csv", title: "候选三元组 CSV", desc: "240 条带 evidence 的结构化关系，可直接审阅和复算。" },
-
-    { file: "run_report.md", title: "运行记录", desc: "这次 POC 输入、输出和汇报口径。" }
-
-  ]
-
-};
-
-
-
 const state = {
 
   online: false,
@@ -5430,112 +4792,6 @@ function cjkNgrams(text, min = 2, max = 4) {
 
 
 
-function demoSearchTerms(text) {
-
-  const terms = new Set([...tokenize(text), ...cjkNgrams(text)]);
-
-  const normalized = normalizeText(text);
-
-  const expansions = [
-
-    { keys: ["爆炸", "炸了", "坏了", "事故", "危险"], add: ["故障", "危急", "紧急停机", "超温", "超速", "失火", "振动超限", "燃烧室热点", "喘振", "回火", "熄火", "轴承磨损", "叶片裂纹"] },
-
-    { keys: ["燃烧", "燃烧室", "火焰"], add: ["热点", "失火", "熄火", "回火", "吹灭", "燃烧不完全", "温度场", "燃烧稳定"] },
-
-    { keys: ["振动", "抖", "异响"], add: ["轴承", "联轴器", "叶片裂纹", "结构强度故障", "机械损伤", "振动超限"] },
-
-    { keys: ["温度", "过热", "超温"], add: ["排气温度", "压气机出口温度", "燃烧室热点", "温度散布度", "传感器漂移"] }
-
-  ];
-
-  expansions.forEach((group) => {
-
-    if (group.keys.some((key) => normalized.includes(key))) {
-
-      group.add.forEach((term) => {
-
-        terms.add(term.toLowerCase());
-
-        cjkNgrams(term).forEach((gram) => terms.add(gram));
-
-      });
-
-    }
-
-  });
-
-  return terms;
-
-}
-
-
-
-function rankPublicDemoResults(query, topK) {
-
-  const queryTerms = demoSearchTerms(query);
-
-  const queryText = normalizeText(query).toLowerCase();
-
-  return PUBLIC_DEMO_SEARCH_RESULTS
-
-    .map((item, index) => {
-
-      const haystack = normalizeText([
-
-        item.text,
-
-        item.metadata?.filename,
-
-        item.metadata?.source_kind,
-
-        item.metadata?.record_id
-
-      ].filter(Boolean).join(" ")).toLowerCase();
-
-      const itemTerms = demoSearchTerms(haystack);
-
-      let overlap = 0;
-
-      queryTerms.forEach((term) => {
-
-        if (term.length >= 2 && (itemTerms.has(term) || haystack.includes(term))) overlap += 1;
-
-      });
-
-      const overlapScore = queryTerms.size ? overlap / queryTerms.size : 0;
-
-      const phraseBonus = queryText && haystack.includes(queryText) ? 0.18 : 0;
-
-      const prior = Number(item.score || 0.6) * 0.18;
-
-      const score = Math.min(0.98, 0.22 + overlapScore * 0.68 + phraseBonus + prior);
-
-      return {
-
-        ...item,
-
-        score: Number(score.toFixed(4)),
-
-        distance: Number(Math.max(0.02, 1 - score).toFixed(4)),
-
-        _rankIndex: index
-
-      };
-
-    })
-
-    .filter((item) => item.score >= 0.3)
-
-    .sort((a, b) => (b.score - a.score) || (a._rankIndex - b._rankIndex))
-
-    .slice(0, topK)
-
-    .map(({ _rankIndex, ...item }) => item);
-
-}
-
-
-
 function estimateTokens(text) {
 
   return Math.max(1, Math.round(normalizeText(text).length / 1.7));
@@ -5820,7 +5076,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
   const engineParam = engineName ? `?engine=${engineName}` : '';
 
-  
+
 
   // 1) 上传 PDF，服务器立刻开始后台并发 OCR
 
@@ -5840,7 +5096,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
   if (startData.error) throw new Error(startData.error);
 
-  
+
 
   const { session_id, total_pages, concurrency } = startData;
 
@@ -5850,7 +5106,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
   if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency, engine: serverEngine });
 
-  
+
 
   // 2) 轮询进度直到完成
 
@@ -5860,7 +5116,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
     await new Promise(r => setTimeout(r, 1000));
 
-    
+
 
     let progResp;
 
@@ -5890,11 +5146,11 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
     if (prog.error) throw new Error(prog.error);
 
-    
+
 
     if (progressCallback) progressCallback({ phase: "processing", ...prog });
 
-    
+
 
     if (prog.complete) {
 
@@ -5942,7 +5198,7 @@ async function _loadPaddleOcr() {
 
   if (_paddleOcrPromise) return _paddleOcrPromise;
 
-  
+
 
   _paddleOcrPromise = (async () => {
 
@@ -5950,7 +5206,7 @@ async function _loadPaddleOcr() {
 
     showToast("⏳ 加载 PaddleOCR 中文引擎（首次约 30-60 秒下载模型）...", "success");
 
-    
+
 
     // 1. Load onnxruntime-web
 
@@ -5966,7 +5222,7 @@ async function _loadPaddleOcr() {
 
     }
 
-    
+
 
     // 2. Load paddleocr library
 
@@ -5974,7 +5230,7 @@ async function _loadPaddleOcr() {
 
     const { PaddleOcrService } = await import("https://esm.sh/paddleocr@1.1.1");
 
-    
+
 
     // 3. Download Chinese models and dictionary in parallel
 
@@ -5990,7 +5246,7 @@ async function _loadPaddleOcr() {
 
     ]);
 
-    
+
 
     // 4. Parse dictionary into string array
 
@@ -5998,7 +5254,7 @@ async function _loadPaddleOcr() {
 
     console.log(`[OCR] 字典加载完成: ${dictArray.length} 个字符`);
 
-    
+
 
     // 5. Initialize PaddleOCR with Chinese models
 
@@ -6032,7 +5288,7 @@ async function _loadPaddleOcr() {
 
     });
 
-    
+
 
     _paddleOcrInstance = ocr;
 
@@ -6044,7 +5300,7 @@ async function _loadPaddleOcr() {
 
   })();
 
-  
+
 
   return _paddleOcrPromise;
 
@@ -6072,7 +5328,7 @@ async function _ocrViaPaddleJs(canvas) {
 
   const ocr = await _loadPaddleOcr();
 
-  
+
 
   // Extract image data from canvas
 
@@ -6090,7 +5346,7 @@ async function _ocrViaPaddleJs(canvas) {
 
   };
 
-  
+
 
   // Run OCR with progress tracking
 
@@ -6112,7 +5368,7 @@ async function _ocrViaPaddleJs(canvas) {
 
   });
 
-  
+
 
   // Process results
 
@@ -6122,7 +5378,7 @@ async function _ocrViaPaddleJs(canvas) {
 
   });
 
-  
+
 
   const lines = processed?.lines || result?.lines || [];
 
@@ -6132,7 +5388,7 @@ async function _ocrViaPaddleJs(canvas) {
 
   const avgConf = confs.length ? confs.reduce((a, b) => a + b, 0) / confs.length : 0;
 
-  
+
 
   return {
 
@@ -6188,7 +5444,7 @@ async function _getBaiduAccessToken() {
 
   const url = `${cfg.tokenUrl}?grant_type=client_credentials&client_id=${cfg.apiKey}&client_secret=${cfg.secretKey}`;
 
-  
+
 
   // Try via local proxy first (avoids CORS), then try direct
 
@@ -6208,7 +5464,7 @@ async function _getBaiduAccessToken() {
 
   }
 
-  
+
 
   const data = await resp.json();
 
@@ -6234,7 +5490,7 @@ async function _ocrViaBaiduCloud(canvas) {
 
   const base64 = jpegDataUrl.split(",")[1]; // Remove "data:image/jpeg;base64," prefix
 
-  
+
 
   const token = await _getBaiduAccessToken();
 
@@ -6242,7 +5498,7 @@ async function _ocrViaBaiduCloud(canvas) {
 
   const body = `image=${encodeURIComponent(base64)}`;
 
-  
+
 
   // Try via local proxy first, then direct
 
@@ -6276,7 +5532,7 @@ async function _ocrViaBaiduCloud(canvas) {
 
   }
 
-  
+
 
   const data = await resp.json();
 
@@ -6286,7 +5542,7 @@ async function _ocrViaBaiduCloud(canvas) {
 
   }
 
-  
+
 
   const words = (data.words_result || []).map(w => w.words);
 
@@ -6328,7 +5584,7 @@ function _updateOcrLiveText(ocrText, pageNum) {
 
   const showLines = lines.slice(-2);
 
-  liveEl.innerHTML = showLines.map(line => 
+  liveEl.innerHTML = showLines.map(line =>
 
     `<div class="ocr-live-line"><span class="ocr-live-label">P${pageNum}</span>${_escLiveText(line)}</div>`
 
@@ -6474,7 +5730,7 @@ async function parsePdfFile(file) {
 
     const useLocalOcr = await _checkLocalOcr();
 
-    
+
 
     // Determine OCR engine: local RapidOCR > ppu-paddle-ocr browser
 
@@ -6688,7 +5944,7 @@ async function parsePdfFile(file) {
 
       pEngine.textContent = `引擎: ${engineName} — 上传 PDF...`;
 
-      
+
 
       const result = await _ocrPdfViaServer(file, (prog) => {
 
@@ -6768,7 +6024,7 @@ async function parsePdfFile(file) {
 
       const avgConf = Math.round((result.avg_confidence || 0) * 100);
 
-      
+
 
       // 从服务器的 per-page 结果创建 records
 
@@ -6788,7 +6044,7 @@ async function parsePdfFile(file) {
 
       }
 
-      
+
 
       // 整个 PDF 作为一条记录（全量文本）
 
@@ -6864,7 +6120,7 @@ async function parsePdfFile(file) {
 
           }
 
-          
+
 
           const ocrText = normalizeText(ocr.text || "");
 
@@ -6982,9 +6238,9 @@ async function parsePdfFile(file) {
 
     pBar.style.width = "100%";
 
-    pBar.style.background = avgConf >= 80 ? "linear-gradient(90deg, #66bb6a, #43a047)" : 
+    pBar.style.background = avgConf >= 80 ? "linear-gradient(90deg, #66bb6a, #43a047)" :
 
-                             avgConf >= 60 ? "linear-gradient(90deg, #ffa726, #ef6c00)" : 
+                             avgConf >= 60 ? "linear-gradient(90deg, #ffa726, #ef6c00)" :
 
                              "linear-gradient(90deg, #ef5350, #c62828)";
 
@@ -7446,7 +6702,7 @@ async function filesFromDrop(dataTransfer) {
 
 function cloneDefaultStats() { return typeof structuredClone === "function" ? structuredClone(DEFAULT_STATS) : JSON.parse(JSON.stringify(DEFAULT_STATS)); }
 
-function clonePublicDemoStats() { return typeof structuredClone === "function" ? structuredClone(PUBLIC_DEMO_STATS) : JSON.parse(JSON.stringify(PUBLIC_DEMO_STATS)); }
+function clonePublicDemoStats() { return cloneDefaultStats(); }
 
 function sourceKindFromName(name) { const ext = fileExtension(name); if (["json", "ipynb"].includes(ext)) return "JSON"; if (ext === "pdf") return "PDF"; if (ext === "docx") return "DOCX"; if (ext === "md" || ext === "markdown") return "Markdown"; if (ext === "csv") return "CSV"; if (ext === "tsv") return "TSV"; if (ext === "log") return "Log"; if (CODE_EXTENSIONS.has(ext)) return "Code"; return "Text"; }
 
@@ -7456,268 +6712,27 @@ function buildLocalStats() { if (!state.chunks.length) return cloneDefaultStats(
 
 
 
-function buildPublicDemoUploads() {
+function buildPublicDemoUploads() { return []; }
 
-  return PUBLIC_DEMO_FILES.map((item, index) => ({
-
-    filename: item.filename,
-
-    display_name: item.display_name,
-
-    size_kb: item.size_kb,
-
-    modified: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
-
-    uploaded_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 3600),
-
-    processed_at: PUBLIC_DEMO_UPDATED_AT - ((PUBLIC_DEMO_FILES.length - index) * 1800),
-
-    source_kind: "Text",
-
-    status: "processed",
-
-    last_collection: PUBLIC_DEMO_COLLECTION,
-
-    last_records: item.records,
-
-    last_chunks: item.chunks,
-
-    last_error: null,
-
-    is_demo_sample: true
-
-  }));
-
-}
-
-
-
-function buildPublicDemoProcessResult() {
-
-  const records = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.records, 0);
-
-  const chunks = PUBLIC_DEMO_FILES.reduce((sum, item) => sum + item.chunks, 0);
-
-  return {
-
-    requested_filenames: PUBLIC_DEMO_FILES.map((item) => item.filename),
-
-    records_processed: records,
-
-    chunks_written: chunks,
-
-    files_succeeded: PUBLIC_DEMO_FILES.length,
-
-    files_failed: 0,
-
-    elapsed_s: 184.6,
-
-    skipped_already_processed: [],
-
-    file_summaries: PUBLIC_DEMO_FILES.map((item) => ({
-
-      source_file: item.filename,
-
-      source_kind: "Text",
-
-      status: "ok",
-
-      records_extracted: item.records
-
-    })),
-
-    quality_report: {
-
-      chunks: { total_chunks: chunks, avg_length: 655, min_length: 118, max_length: 914 },
-
-      documents: PUBLIC_DEMO_FILES.map((item, index) => ({
-
-        doc_id: index + 1,
-
-        filenames: [item.filename],
-
-        block_count: item.records,
-
-        short_blocks: item.low_confidence,
-
-        label_distribution: { ocr_page: item.records, low_confidence: item.low_confidence }
-
-      })),
-
-      issues: [
-
-        "公开页只展示质量较稳定的 OCR 文本样例，不包含完整 1.31G 原始材料。",
-
-        "两栏页、公式密集页和低置信度页仍需要后续复核。"
-
-      ],
-
-      issue_count: 2
-
-    }
-
-  };
-
-}
-
-
+function buildPublicDemoProcessResult() { return null; }
 
 function activatePublicDemoSnapshot() {
 
-  state.publicDemo = true;
+  state.publicDemo = false;
 
-  state.localMode = true;
-
-  state.online = true;
-
-  state.version = "public-demo";
-
-  state.stats = clonePublicDemoStats();
-
-  state.primaryCollection = PUBLIC_DEMO_COLLECTION;
-
-  state.primaryStats = { record_count: 1592, chunk_count: 2655 };
-
-  state.uploads = buildPublicDemoUploads();
-
-  state.pendingUploads = [];
-
-  state.processedUploads = state.uploads.slice();
-
-  state.lastProcess = buildPublicDemoProcessResult();
-
-  state.benchmark = {
-
-    collection: PUBLIC_DEMO_COLLECTION,
-
-    insert_seconds: 184.6,
-
-    insert_docs_per_second: 8.62,
-
-    query_seconds: 0.48,
-
-    query_qps: 20.83,
-
-    avg_query_latency_ms: 46.2,
-
-    p95_query_latency_ms: 71.5,
-
-    embedding_backend: "snapshot",
-
-    embedding_model: `hash-${ENGINE_DEFAULTS.dimension}d demo`
-
-  };
-
-  state.timeline = [
-
-    { reason: "ocr", label: "OCR", docs: 4, tokens: 320000, collections: 1, latency: 0, pdf: 4, text: 0, json: 0, other: 0 },
-
-    { reason: "chunk", label: "分块", docs: 4, tokens: 780000, collections: 1, latency: 0, pdf: 4, text: 4, json: 0, other: 0 },
-
-    { reason: "index", label: "索引", docs: 4, tokens: 1186000, collections: 1, latency: 46.2, pdf: 4, text: 4, json: 2, other: 0 }
-
-  ];
-
-  state.activity = [
-
-    { id: "demo-1", level: "success", title: "公开演示快照", detail: "已展示 4 本 OCR 质量较放心的燃气轮机材料。", at: Date.now() - 1000 * 60 * 8 },
-
-    { id: "demo-2", level: "success", title: "OCR 质量检查", detail: "总页数 5483 页已完成，公开页先放较稳定样例。", at: Date.now() - 1000 * 60 * 16 },
-
-    { id: "demo-3", level: "warning", title: "演示模式提示", detail: "当前为前端演示模式，连接本地后端后可使用完整的向量检索与入库功能。", at: Date.now() - 1000 * 60 * 25 }
-
-  ];
+  return false;
 
 }
 
-
-
-function activateDemoSnapshotForEmptyLocalIndex() {
-
-  if (!FORCE_LOCAL_RUNTIME || state.publicDemo || state.chunks.length) return false;
-
-  activatePublicDemoSnapshot();
-
-  addActivity("warning", "自动切换演示快照", "当前浏览器没有本地索引，已使用内置样例数据。");
-
-  renderAll();
-
-  return true;
-
-}
-
-
+function activateDemoSnapshotForEmptyLocalIndex() { return false; }
 
 async function refreshPublicDemoStats() {
 
-  const processed = (state.uploads || []).filter((item) => item.status === "processed");
+  state.publicDemo = false;
 
-  const records = processed.reduce((sum, item) => sum + Number(item.last_records || 0), 0);
-
-  const chunks = processed.reduce((sum, item) => sum + Number(item.last_chunks || 0), 0);
-
-  const storageMb = processed.reduce((sum, item) => sum + Number(item.size_kb || 0), 0) / 1024;
-
-  const byKind = {};
-
-  processed.forEach((item) => {
-
-    const kind = item.source_kind || "Text";
-
-    byKind[kind] = (byKind[kind] || 0) + 1;
-
-  });
-
-  state.stats = {
-
-    status: "public-demo",
-
-    collections: processed.length ? [{
-
-      name: PUBLIC_DEMO_COLLECTION,
-
-      count: chunks,
-
-      estimated_tokens: Math.round(chunks * 446.7),
-
-      estimated_chars: Math.round(chunks * 655.4),
-
-      source_type_counts: byKind,
-
-      sources: processed.map((item) => item.display_name || item.filename)
-
-    }] : [],
-
-    total_documents: processed.length,
-
-    total_tokens_estimate: Math.round(chunks * 446.7),
-
-    storage_size_mb: Number(storageMb.toFixed(2)),
-
-    embedding_dim: ENGINE_DEFAULTS.dimension,
-
-    source_type_breakdown: byKind
-
-  };
-
-  state.primaryCollection = processed.length ? PUBLIC_DEMO_COLLECTION : "";
-
-  state.primaryStats = processed.length ? { record_count: records, chunk_count: chunks } : null;
-
-  rememberTimeline("stats");
-
-  renderCollectionSpectrum();
-
-  renderCollectionList();
-
-  renderTrendChart();
-
-  renderSummaryMetrics();
+  await refreshLocalStats();
 
 }
-
-
-
 function buildLocalUploadItem(file) {
 
   const displayName = relativePathOf(file);
@@ -8110,45 +7125,9 @@ async function runLocalSearch() {
 
   const started = performance.now();
 
-  activateDemoSnapshotForEmptyLocalIndex();
-
-  if (state.publicDemo && !state.chunks.length) {
-
-    const results = rankPublicDemoResults(query, topK);
-
-    state.lastSearch = {
-
-      query,
-
-      collection: PUBLIC_DEMO_COLLECTION,
-
-      latency_ms: Number((performance.now() - started + 38.6).toFixed(2)),
-
-      results,
-
-      embedding_backend: "public-demo"
-
-    };
-
-    rememberTimeline("search");
-
-    renderSearchResults();
-
-    renderTrendChart();
-
-    renderSummaryMetrics();
-
-    addActivity("success", "演示检索完成", `查询“${query}”返回 ${results.length} 条样例证据。`);
-
-    showToast(`演示检索完成，返回 ${results.length} 条样例。`, "success");
-
-    return;
-
-  }
-
   if (!state.chunks.length) {
 
-    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先上传文件并处理，或开启演示模式查看样例数据。" };
+    state.lastSearch = { query, collection: LOCAL_COLLECTION_NAME, latency_ms: 0, results: [], embedding_backend: "browser-local", message: "当前没有本地索引。请先上传文件并处理。" };
 
     renderSearchResults();
 
@@ -8285,8 +7264,6 @@ async function runLocalBenchmark() {
 function resolveEls() {
 
   els = {
-
-    demoToggle: $("demoToggle"),
 
     globalModeToggle: $("globalModeToggle"),
 
@@ -9030,7 +8007,7 @@ function normalizePageName(page) {
 
   const name = String(page || "").replace(/^#/, "");
 
-  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "kg_benchmark", "benchmark", "challenge_cup"].includes(name) ? name : "overview";
+  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "kg_benchmark", "benchmark"].includes(name) ? name : "overview";
 
 }
 
@@ -10382,385 +9359,24 @@ function renderBenchmark() {
 
 function kgArtifactHref(fileName) {
 
-  const here = window.location.pathname.replaceAll("\\", "/");
-
-  const base = window.location.protocol === "file:" || here.includes("/frontend_app/current_console/")
-
-    ? KG_FILE_ARTIFACT_BASE
-
-    : KG_ARTIFACT_BASE;
-
-  return encodeURI(`${base}${fileName}`);
+  return encodeURI(String(fileName || ""));
 
 }
-
-
 
 function renderKgWorkflow() {
 
-  if (!els.kgStats) return;
-
-  const summary = KG_DEMO.summary;
-
-  const statCards = [
-
-    ["资料", `${summary.books} 本`, `${formatNumber(summary.pages)} 页 OCR 文本`],
-
-    ["分块", formatNumber(summary.chunks), "用于普通 RAG 检索"],
-
-    ["三元组", formatNumber(summary.triples), `${formatNumber(summary.evidence)} 条 evidence`],
-
-    ["图谱", `${formatNumber(summary.nodes)} 节点`, `${summary.sqlite} 已生成`]
-
-  ];
-
-  els.kgStats.innerHTML = statCards.map(([label, value, desc]) => `
-
-    <article class="panel metric-card">
-
-      <div class="metric-top">
-
-        <div>
-
-          <p class="card-kicker">${escapeHtml(label)}</p>
-
-          <div class="metric-value">${escapeHtml(value)}</div>
-
-        </div>
-
-      </div>
-
-      <p>${escapeHtml(desc)}</p>
-
-    </article>
-
-  `).join("");
-
-
-
-  if (els.kgFlow) {
-
-    els.kgFlow.innerHTML = KG_DEMO.steps.map((step, index) => `
-
-      <article class="kg-flow-step">
-
-        <div class="kg-step-index">${String(index + 1).padStart(2, "0")}</div>
-
-        <div class="kg-step-title">${escapeHtml(step.title)}</div>
-
-        <p class="kg-step-note">${escapeHtml(step.note)}</p>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgBookList) {
-
-    els.kgBookList.innerHTML = KG_DEMO.books.map((book) => `
-
-      <article class="kg-type-row">
-
-        <div class="kg-type-name">${escapeHtml(book.name)}</div>
-
-        <div class="queue-meta">
-
-          <span>${formatNumber(book.pages)} 页</span>
-
-          <span>${formatNumber(book.chars)} 字符</span>
-
-          <span>${formatNumber(book.triples)} 条三元组</span>
-
-        </div>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  // ── Book Showcase (kg_data page) ──
-
-  if (els.kgBookShowcase) {
-
-    const totalChars = KG_DEMO.books.reduce((s, b) => s + b.chars, 0);
-
-    els.kgBookShowcase.innerHTML = KG_DEMO.books.map((book, i) => {
-
-      const pct = Math.round((book.chars / totalChars) * 100);
-
-      return `
-
-        <article class="kg-book-card">
-
-          <div class="book-header">
-
-            <span class="book-index">${String(i + 1).padStart(2, '0')}</span>
-
-            <h4 class="book-title">${escapeHtml(book.name)}</h4>
-
-          </div>
-
-          <div class="book-stats">
-
-            <span class="book-stat"><iconify-icon icon="lucide:file-text"></iconify-icon><strong>${formatNumber(book.pages)}</strong> 页</span>
-
-            <span class="book-stat"><iconify-icon icon="lucide:text"></iconify-icon><strong>${formatNumber(book.chars)}</strong> 字符</span>
-
-            <span class="book-stat"><iconify-icon icon="lucide:git-branch"></iconify-icon><strong>${formatNumber(book.triples)}</strong> 条三元组</span>
-
-          </div>
-
-          <div class="book-bar-wrap">
-
-            <div class="book-bar-label">
-
-              <span>语料占比</span>
-
-              <span>${pct}%</span>
-
-            </div>
-
-            <div class="book-bar"><div class="book-bar-fill" style="width: ${pct}%"></div></div>
-
-          </div>
-
-        </article>
-
-      `;
-
-    }).join('');
-
-  }
-
-
-
-  if (els.kgMethodNotes) {
-
-    els.kgMethodNotes.innerHTML = KG_DEMO.methodNotes.map((note) => `
-
-      <article class="kg-type-row">
-
-        <p class="kg-type-desc">${escapeHtml(note)}</p>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgEntities) {
-
-    els.kgEntities.innerHTML = Object.entries(KG_DEMO.entityTypes).map(([type, desc]) => `
-
-      <article class="kg-type-row">
-
-        <div class="queue-head">
-
-          <div class="kg-type-name">${escapeHtml(type)}</div>
-
-          <span class="kg-relation-count">${formatNumber(KG_DEMO.entityTypeCounts[type] || 0)}</span>
-
-        </div>
-
-        <p class="kg-type-desc">${escapeHtml(desc)}</p>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgEntityCloud) {
-
-    els.kgEntityCloud.innerHTML = KG_DEMO.topEntities.map(([name, degree]) => `
-
-      <span class="pill"><span>${escapeHtml(name)}</span><strong>${formatNumber(degree)}</strong></span>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgRelations) {
-
-    els.kgRelations.innerHTML = Object.entries(KG_DEMO.relationTypes).map(([type, desc]) => `
-
-      <article class="kg-type-row">
-
-        <div class="queue-head">
-
-          <div class="kg-type-name">${escapeHtml(type)}</div>
-
-          <span class="kg-relation-count">${formatNumber(KG_DEMO.relationCounts[type] || 0)}</span>
-
-        </div>
-
-        <p class="kg-type-desc">${escapeHtml(desc)}</p>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgTriples) {
-
-    els.kgTriples.innerHTML = KG_DEMO.triples.map((item) => `
-
-      <article class="kg-triple-row">
-
-        <div class="queue-head">
-
-          <div>
-
-            <div class="kg-triple-title">${escapeHtml(item.s)} <span>${escapeHtml(item.p)}</span> ${escapeHtml(item.o)}</div>
-
-            <div class="result-meta">
-
-              <span>${escapeHtml(item.st)} → ${escapeHtml(item.ot)}</span>
-
-              <span>${escapeHtml(item.id)}</span>
-
-              <span>confidence ${formatPercent(item.confidence, 0)}</span>
-
-            </div>
-
-          </div>
-
-          <span class="pill">p.${escapeHtml(item.page)}</span>
-
-        </div>
-
-        <p class="kg-triple-evidence">${escapeHtml(item.evidence)}</p>
-
-        <div class="queue-meta">
-
-          <span>${escapeHtml(item.source)}</span>
-
-          <span>每条都绑定 evidence，便于人工判断正误。</span>
-
-        </div>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgArtifacts) {
-
-    els.kgArtifacts.innerHTML = KG_DEMO.artifacts.map((item) => `
-
-      <article class="kg-artifact-row">
-
-        <div>
-
-          <div class="kg-artifact-title">${escapeHtml(item.title)}</div>
-
-          <p class="kg-artifact-desc">${escapeHtml(item.desc)}</p>
-
-        </div>
-
-        <a class="ghost-btn" href="${escapeHtml(kgArtifactHref(item.file))}" target="_blank" rel="noopener">
-
-          ${iconMarkup("lucide:external-link")}<span>打开</span>
-
-        </a>
-
-      </article>
-
-    `).join("");
-
-  }
-
-
-
-  if (els.kgGraphImage) {
-
-    els.kgGraphImage.src = kgArtifactHref("knowledge_graph.svg");
-
-  }
-
-  if (els.kgEvidenceOpen) {
-
-    els.kgEvidenceOpen.href = kgArtifactHref("kg_evidence_viewer.html");
-
-  }
-
-  if (els.kgSvgOpen) {
-
-    els.kgSvgOpen.href = kgArtifactHref("knowledge_graph.svg");
-
-  }
+  // GraphRAG renders the real empty workspace until a graph is built.
 
 }
-
-
-
-function renderAll() {
-
-  renderStatus();
-
-  renderCollectionSpectrum();
-
-  renderCollectionList();
-
-  renderTrendChart();
-
-  renderActivityFeed();
-
-  renderSummaryMetrics();
-
-  renderUploads();
-
-  renderProcessedUploads();
-
-  renderProcessSummary();
-
-  renderQualityReport();
-
-  renderSearchResults();
-
-  renderBenchmark();
-
-  renderKgWorkflow();
-
-}
-
-
-
-
-
 async function refreshHealth() {
 
   if (FORCE_LOCAL_RUNTIME) {
 
-    if (DEFAULT_PUBLIC_DEMO) activatePublicDemoSnapshot();
+    state.localMode = true;
 
-    else {
+    state.online = true;
 
-      state.localMode = true;
-
-      state.online = true;
-
-      state.version = "browser-local";
-
-    }
+    state.version = "browser-local";
 
     renderStatus();
 
@@ -11301,482 +9917,6 @@ async function runProcess() {
 // ── Shared state for file pickers ──
 
 const _pendingJsonFiles = { standard: [], kgCorpus: [] };
-
-
-
-// ── Example File Manager ──
-
-const EXAMPLE_FILES_STORAGE_KEY = 'rag_example_files_v1';
-
-let _exampleFiles = []; // Array of { file: File, name, size, kind, addedAt }
-
-
-
-function getStoredExampleMeta() {
-
-  try {
-
-    const raw = localStorage.getItem(EXAMPLE_FILES_STORAGE_KEY);
-
-    return raw ? JSON.parse(raw) : [];
-
-  } catch { return []; }
-
-}
-
-
-
-function saveExampleMeta() {
-
-  try {
-
-    const meta = _exampleFiles.map(ef => ({
-
-      name: ef.name,
-
-      size: ef.size,
-
-      kind: ef.kind,
-
-      addedAt: ef.addedAt
-
-    }));
-
-    localStorage.setItem(EXAMPLE_FILES_STORAGE_KEY, JSON.stringify(meta));
-
-  } catch {}
-
-}
-
-
-
-function addExampleFiles(fileList) {
-
-  const incoming = Array.from(fileList || []).filter(isSupportedFile);
-
-  if (!incoming.length) {
-
-    showToast('没有可用的示例文件（不支持的格式已跳过）。', 'warning');
-
-    return;
-
-  }
-
-  const existingNames = new Set(_exampleFiles.map(ef => ef.name));
-
-  let added = 0;
-
-  let replaced = 0;
-
-  for (const file of incoming) {
-
-    const name = relativePathOf(file);
-
-    const entry = {
-
-      file,
-
-      name,
-
-      size: file.size,
-
-      kind: sourceKindFromName(name),
-
-      addedAt: Date.now()
-
-    };
-
-    if (existingNames.has(name)) {
-
-      _exampleFiles = _exampleFiles.map(ef => ef.name === name ? entry : ef);
-
-      replaced++;
-
-    } else {
-
-      _exampleFiles.push(entry);
-
-      added++;
-
-    }
-
-    existingNames.add(name);
-
-  }
-
-  saveExampleMeta();
-
-  renderExampleFileList();
-
-  const parts = [];
-
-  if (added) parts.push(`新增 ${added} 个`);
-
-  if (replaced) parts.push(`替换 ${replaced} 个`);
-
-  showToast(`示例文件${parts.join('，')}。开启「演示数据」后生效。`, 'success');
-
-  addActivity('success', '示例文件已更新', `${parts.join('，')}，共 ${_exampleFiles.length} 个示例文件。`);
-
-}
-
-
-
-function removeExampleFile(name) {
-
-  _exampleFiles = _exampleFiles.filter(ef => ef.name !== name);
-
-  saveExampleMeta();
-
-  renderExampleFileList();
-
-  showToast(`已移除示例文件：${name}`, 'success');
-
-}
-
-
-
-function clearAllExampleFiles() {
-
-  if (!_exampleFiles.length) {
-
-    showToast('没有示例文件需要清除。', 'warning');
-
-    return;
-
-  }
-
-  if (!window.confirm(`确认清除全部 ${_exampleFiles.length} 个示例文件？`)) return;
-
-  _exampleFiles = [];
-
-  saveExampleMeta();
-
-  renderExampleFileList();
-
-  showToast('已清除全部示例文件。', 'success');
-
-  addActivity('warning', '示例文件已清空', '全部示例文件已被移除。');
-
-}
-
-
-
-function renderExampleFileList() {
-
-  const listEl = $('exampleFileList');
-
-  const badgeEl = $('exampleCountBadge');
-
-  if (badgeEl) badgeEl.textContent = `${_exampleFiles.length} 个示例`;
-
-  if (!listEl) return;
-
-  if (!_exampleFiles.length) {
-
-    listEl.innerHTML = `<div class="example-empty-hint">
-
-      <iconify-icon icon="lucide:info" style="font-size:16px;vertical-align:-3px;margin-right:4px;color:var(--accent)"></iconify-icon>
-
-      还没有示例文件。拖入文件或点击上方按钮添加，开启「演示数据」后会自动加载这些文件作为示例。<br>
-
-      <span style="margin-top:4px;display:inline-block;color:var(--ink-soft)">如果不添加自定义示例，将使用内置的四本书演示数据。</span>
-
-    </div>`;
-
-    return;
-
-  }
-
-  listEl.innerHTML = _exampleFiles.map(ef => {
-
-    const sizeStr = ef.size < 1024 * 1024
-
-      ? `${(ef.size / 1024).toFixed(1)} KB`
-
-      : `${(ef.size / (1024 * 1024)).toFixed(2)} MB`;
-
-    const kindIcon = ef.kind === 'JSON' ? 'lucide:file-json-2'
-
-      : ef.kind === 'PDF' ? 'lucide:file-text'
-
-      : ef.kind === 'Markdown' ? 'lucide:file-code'
-
-      : 'lucide:file';
-
-    return `
-
-      <div class="example-file-item">
-
-        <div class="example-file-icon"><iconify-icon icon="${kindIcon}"></iconify-icon></div>
-
-        <div class="example-file-info">
-
-          <div class="example-file-name" title="${escapeHtml(ef.name)}">${escapeHtml(ef.name)}</div>
-
-          <div class="example-file-meta">${escapeHtml(ef.kind)} · ${sizeStr} · ${new Date(ef.addedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
-
-        </div>
-
-        <button class="example-file-remove" type="button" data-remove-example="${escapeHtml(ef.name)}">移除</button>
-
-      </div>
-
-    `;
-
-  }).join('');
-
-}
-
-
-
-function hasUserExampleFiles() {
-
-  return _exampleFiles.length > 0;
-
-}
-
-
-
-async function activateExampleFilesAsDemo() {
-
-  if (!_exampleFiles.length) return false;
-
-
-
-  // Parse all example files and build demo data from them
-
-  state.publicDemo = true;
-
-  state.localMode = true;
-
-  state.online = true;
-
-  state.version = 'example-demo';
-
-  state.records = [];
-
-  state.chunks = [];
-
-  state.uploads = [];
-
-  state.pendingUploads = [];
-
-  state.processedUploads = [];
-
-
-
-  const fileSummaries = [];
-
-  let totalRecords = 0;
-
-  let totalChunks = 0;
-
-  let succeeded = 0;
-
-  let failed = 0;
-
-
-
-  for (const ef of _exampleFiles) {
-
-    try {
-
-      const records = await parseFileRecords(ef.file);
-
-      const mapped = records.map(r => ({
-
-        ...r,
-
-        stored_filename: ef.name,
-
-        filename: ef.name,
-
-        source_file: ef.name,
-
-        source_kind: r.source_kind || ef.kind
-
-      }));
-
-      const chunks = makeChunks(mapped);
-
-      state.records.push(...mapped);
-
-      state.chunks.push(...chunks);
-
-
-
-      const uploadItem = {
-
-        filename: ef.name,
-
-        display_name: ef.name,
-
-        size_kb: Number((ef.size / 1024).toFixed(1)),
-
-        modified: Math.floor(ef.addedAt / 1000),
-
-        uploaded_at: Math.floor(ef.addedAt / 1000),
-
-        processed_at: Math.floor(Date.now() / 1000),
-
-        source_kind: ef.kind,
-
-        status: 'processed',
-
-        last_collection: 'example_demo',
-
-        last_records: mapped.length,
-
-        last_chunks: chunks.length,
-
-        last_error: null,
-
-        is_demo_sample: true,
-
-        file: ef.file
-
-      };
-
-      state.uploads.push(uploadItem);
-
-      state.processedUploads.push(uploadItem);
-
-      totalRecords += mapped.length;
-
-      totalChunks += chunks.length;
-
-      succeeded++;
-
-      fileSummaries.push({ source_file: ef.name, source_kind: ef.kind, status: 'ok', records_extracted: mapped.length });
-
-    } catch (err) {
-
-      failed++;
-
-      fileSummaries.push({ source_file: ef.name, source_kind: ef.kind, status: 'error', records_extracted: 0, error: err.message });
-
-    }
-
-  }
-
-
-
-  state.primaryCollection = 'example_demo';
-
-  state.primaryStats = { record_count: totalRecords, chunk_count: totalChunks };
-
-  const totalTokens = state.chunks.reduce((s, c) => s + Number(c.metadata?.estimated_tokens || 0), 0);
-
-  const totalChars = state.chunks.reduce((s, c) => s + (c.text?.length || 0), 0);
-
-  const storageMb = state.uploads.reduce((s, u) => s + Number(u.size_kb || 0), 0) / 1024;
-
-  const byKind = {};
-
-  state.uploads.forEach(u => { const k = u.source_kind || 'Other'; byKind[k] = (byKind[k] || 0) + 1; });
-
-
-
-  state.stats = {
-
-    status: 'example-demo',
-
-    collections: totalChunks ? [{
-
-      name: 'example_demo',
-
-      count: totalChunks,
-
-      estimated_tokens: totalTokens,
-
-      estimated_chars: totalChars,
-
-      source_type_counts: byKind,
-
-      sources: state.uploads.map(u => u.display_name)
-
-    }] : [],
-
-    total_documents: succeeded,
-
-    total_tokens_estimate: totalTokens,
-
-    storage_size_mb: storageMb,
-
-    embedding_dim: ENGINE_DEFAULTS.dimension,
-
-    source_type_breakdown: byKind
-
-  };
-
-
-
-  state.lastProcess = {
-
-    collection: 'example_demo',
-
-    requested_filenames: _exampleFiles.map(ef => ef.name),
-
-    skipped_already_processed: [],
-
-    files_succeeded: succeeded,
-
-    files_failed: failed,
-
-    records_processed: totalRecords,
-
-    chunks_written: totalChunks,
-
-    elapsed_s: 0,
-
-    file_summaries: fileSummaries,
-
-    quality_report: buildQualityReport(state.records, state.chunks),
-
-    embedding_backend: 'browser-local'
-
-  };
-
-
-
-  state.timeline = [{
-
-    reason: 'example',
-
-    label: '示例加载',
-
-    docs: succeeded,
-
-    tokens: totalTokens,
-
-    collections: 1,
-
-    latency: 0,
-
-    pdf: byKind.PDF || 0,
-
-    text: byKind.Text || 0,
-
-    json: byKind.JSON || 0,
-
-    other: byKind.Other || 0
-
-  }];
-
-
-
-  state.activity = [
-
-    { id: `ex-${Date.now()}`, level: 'success', title: '示例文件已加载', detail: `从 ${_exampleFiles.length} 个示例文件加载了 ${formatNumber(totalChunks)} 个向量片段。`, at: Date.now() }
-
-  ];
-
-
-
-  return true;
-
-}
 
 
 
@@ -13077,11 +11217,21 @@ function graphEndpointId(value) {
 
 
 
+function hasBrowserKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  return Boolean(kg && Array.isArray(kg.nodes) && kg.nodes.length);
+
+}
+
+
+
 function exportBrowserKgGraphSnapshot() {
 
   const kg = window._kgGraph;
 
-  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length) {
+  if (!hasBrowserKgGraphSnapshot()) {
 
     showToast("当前没有可导出的图谱，请先构建知识图谱。", "warning");
 
@@ -13181,6 +11331,16 @@ function exportBrowserKgGraphSnapshot() {
 
 async function exportKgGraphSnapshot() {
 
+  if (hasBrowserKgGraphSnapshot()) {
+
+    exportBrowserKgGraphSnapshot();
+
+    return;
+
+  }
+
+
+
   if (state.localMode || state.publicDemo) {
 
     exportBrowserKgGraphSnapshot();
@@ -13191,7 +11351,7 @@ async function exportKgGraphSnapshot() {
 
 
 
-  const graphDbPath = KG_DEMO?.summary?.sqlite || "graph_store.sqlite";
+  const graphDbPath = "graph_store.sqlite";
 
   showToast("正在导出知识图谱 JSON…", "success");
 
@@ -14553,11 +12713,11 @@ function _renderMarkdownBuiltin(md) {
 
   let inList = false, listType = "";
 
-  
+
 
   function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  
+
 
   function inlineFormat(line) {
 
@@ -14587,7 +12747,7 @@ function _renderMarkdownBuiltin(md) {
 
   }
 
-  
+
 
   function closeList() {
 
@@ -14595,13 +12755,13 @@ function _renderMarkdownBuiltin(md) {
 
   }
 
-  
+
 
   for (let i = 0; i < lines.length; i++) {
 
     const line = lines[i];
 
-    
+
 
     // Code block
 
@@ -14631,13 +12791,13 @@ function _renderMarkdownBuiltin(md) {
 
     if (inCodeBlock) { codeLines.push(line); continue; }
 
-    
+
 
     const trimmed = line.trim();
 
     if (!trimmed) { closeList(); html += "<br>"; continue; }
 
-    
+
 
     // Headings
 
@@ -14645,19 +12805,19 @@ function _renderMarkdownBuiltin(md) {
 
     if (hMatch) { closeList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFormat(hMatch[2])}</h${lvl}>`; continue; }
 
-    
+
 
     // Horizontal rule
 
     if (/^[-*_]{3,}$/.test(trimmed)) { closeList(); html += "<hr>"; continue; }
 
-    
+
 
     // Blockquote
 
     if (trimmed.startsWith("> ")) { closeList(); html += `<blockquote><p>${inlineFormat(trimmed.slice(2))}</p></blockquote>`; continue; }
 
-    
+
 
     // Unordered list
 
@@ -14673,7 +12833,7 @@ function _renderMarkdownBuiltin(md) {
 
     }
 
-    
+
 
     // Ordered list
 
@@ -14689,7 +12849,7 @@ function _renderMarkdownBuiltin(md) {
 
     }
 
-    
+
 
     // Table (simple: |col|col|)
 
@@ -14717,7 +12877,7 @@ function _renderMarkdownBuiltin(md) {
 
     }
 
-    
+
 
     // Normal paragraph
 
@@ -14743,13 +12903,13 @@ function _renderMathInHtml(html) {
 
   // Replace $$...$$ with math block placeholders
 
-  html = html.replace(/\$\$(.+?)\$\$/gs, (_, tex) => 
+  html = html.replace(/\$\$(.+?)\$\$/gs, (_, tex) =>
 
     `<div class="math-block" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></div>`);
 
   // Replace $...$ with inline math (but not $$)
 
-  html = html.replace(/(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)/g, (_, tex) => 
+  html = html.replace(/(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)/g, (_, tex) =>
 
     `<span class="math-inline" data-tex="${tex.replace(/"/g, '&quot;').trim()}"></span>`);
 
@@ -14844,94 +13004,6 @@ async function _renderKatexElements(container) {
 function clearAnswer() {
 
   resetAskAnswer();
-
-}
-
-
-
-async function applyDemoMode(isDemo) {
-
-  const shell = document.querySelector('.app-shell');
-
-  if (!shell) return;
-
-  shell.classList.toggle('demo-mode', isDemo);
-
-  if (els.demoToggle) els.demoToggle.checked = isDemo;
-
-  try { localStorage.setItem('rag_demo_mode', isDemo ? '1' : '0'); } catch {}
-
-
-
-  if (isDemo) {
-
-    // Try user-provided example files first, fall back to hardcoded demo
-
-    if (hasUserExampleFiles()) {
-
-      const loaded = await activateExampleFilesAsDemo();
-
-      if (!loaded) {
-
-        state.publicDemo = true;
-
-        activatePublicDemoSnapshot();
-
-      }
-
-    } else {
-
-      state.publicDemo = true;
-
-      activatePublicDemoSnapshot();
-
-    }
-
-  } else {
-
-    // Clear all demo data back to empty
-
-    state.publicDemo = false;
-
-    state.localMode = FORCE_LOCAL_RUNTIME;
-
-    state.online = false;
-
-    state.version = "";
-
-    state.stats = cloneDefaultStats();
-
-    state.primaryStats = {};
-
-    state.primaryCollection = null;
-
-    state.lastProcess = null;
-
-    state.lastSearch = null;
-
-    state.publicBooksJson = null;
-
-    state.activity = [];
-
-    state.timeline = [];
-
-    state.uploads = [];
-
-    state.records = [];
-
-    state.chunks = [];
-
-    state.benchmark = null;
-
-    await refreshAll();
-
-    return;
-
-  }
-
-  renderAll();
-
-  renderStatus();
 
 }
 
@@ -15781,7 +13853,7 @@ function bindEvents() {
 
     activateGroupButton(els.globalModeToggle, (el) => el.dataset.mode === mode);
 
-    
+
 
     const isRag = mode === "rag";
 
@@ -15791,7 +13863,7 @@ function bindEvents() {
 
     });
 
-    
+
 
     if (isRag) {
 
@@ -15802,16 +13874,6 @@ function bindEvents() {
        if (["overview", "data", "search", "benchmark"].includes(state.page)) setPage("kg");
 
     }
-
-  });
-
-
-
-  // Demo mode toggle
-
-  els.demoToggle?.addEventListener('change', () => {
-
-    applyDemoMode(els.demoToggle.checked);
 
   });
 
@@ -15978,102 +14040,6 @@ function bindEvents() {
   els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
 
   els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
-
-
-
-  // ── Example File Manager ──
-
-  const exampleDropZone = $("exampleDropZone");
-
-  const exampleFileInput = $("exampleFileInput");
-
-  const exampleFolderInput = $("exampleFolderInput");
-
-
-
-  $("btnPickExampleFiles")?.addEventListener("click", () => exampleFileInput?.click());
-
-  $("btnPickExampleFolder")?.addEventListener("click", () => exampleFolderInput?.click());
-
-  $("btnClearAllExamples")?.addEventListener("click", clearAllExampleFiles);
-
-
-
-  exampleFileInput?.addEventListener("change", (e) => {
-
-    addExampleFiles(e.target.files);
-
-    e.target.value = "";
-
-  });
-
-  exampleFolderInput?.addEventListener("change", (e) => {
-
-    addExampleFiles(e.target.files);
-
-    e.target.value = "";
-
-  });
-
-  exampleDropZone?.addEventListener("dragenter", (e) => {
-
-    e.preventDefault();
-
-    e.stopPropagation();
-
-    exampleDropZone.classList.add("is-dragging");
-
-  });
-
-  exampleDropZone?.addEventListener("dragover", (e) => {
-
-    e.preventDefault();
-
-    e.stopPropagation();
-
-    exampleDropZone.classList.add("is-dragging");
-
-  });
-
-  exampleDropZone?.addEventListener("dragleave", (e) => {
-
-    e.preventDefault();
-
-    e.stopPropagation();
-
-    exampleDropZone.classList.remove("is-dragging");
-
-  });
-
-  exampleDropZone?.addEventListener("drop", async (e) => {
-
-    e.preventDefault();
-
-    e.stopPropagation();
-
-    exampleDropZone.classList.remove("is-dragging");
-
-    const dropped = await filesFromDrop(e.dataTransfer);
-
-    addExampleFiles(dropped);
-
-  });
-
-
-
-  // Delegated click for removing example files
-
-  $("exampleFileList")?.addEventListener("click", (e) => {
-
-    const removeBtn = e.target.closest("[data-remove-example]");
-
-    if (removeBtn) {
-
-      removeExampleFile(removeBtn.dataset.removeExample);
-
-    }
-
-  });
 
 
 
@@ -17327,7 +15293,7 @@ function bindEvents() {
 
   });
 
-  $("btnKgPublicBooksExportChroma")?.addEventListener("click", exportKgGraphSnapshot);
+  $("btnKgExportGraph")?.addEventListener("click", exportKgGraphSnapshot);
 
 
 
@@ -18619,17 +16585,13 @@ async function init() {
 
   resolveEls();
 
-  // Restore demo mode preference (default: on)
+  try { localStorage.removeItem('rag_demo_mode'); } catch {}
 
-  const savedDemo = localStorage.getItem('rag_demo_mode');
+  state.publicDemo = false;
 
-  const isDemoMode = savedDemo === null || savedDemo === '1';
+  state.stats = cloneDefaultStats();
 
-  // Render example file list from stored metadata (files won't have File objects until re-added)
-
-  renderExampleFileList();
-
-  await applyDemoMode(isDemoMode);
+  state.primaryStats = null;
 
   bindEvents();
 
@@ -18643,11 +16605,7 @@ async function init() {
 
   setPage(initialPageName(), { updateHash: false });
 
-  if (FORCE_LOCAL_RUNTIME && DEFAULT_PUBLIC_DEMO && !hasUserExampleFiles()) {
-
-    activatePublicDemoSnapshot();
-
-  } else if (!hasUserExampleFiles()) {
+  if (!state.localMode) {
 
     addActivity("warning", "前端已加载", "正在连接后端服务并同步 Chroma 统计。");
 
@@ -18707,8 +16665,6 @@ window.addEventListener("DOMContentLoaded", init);
 
         <button class="nav-item" data-page="benchmark" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
 
-        <button class="nav-item" data-page="challenge_cup" type="button" data-mode-tag="rag" style="color: var(--warning); font-weight: 600;"><iconify-icon icon="lucide:trophy"></iconify-icon><span>挑战杯总控</span></button>
-
 
 
         <button class="nav-item is-hidden" data-page="kg" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:network"></iconify-icon><span>图谱概览</span></button>
@@ -18719,23 +16675,11 @@ window.addEventListener("DOMContentLoaded", init);
 
         <button class="nav-item is-hidden" data-page="kg_benchmark" type="button" data-mode-tag="graphrag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>图谱基准</span></button>
 
-        <button class="nav-item is-hidden" data-page="challenge_cup" type="button" data-mode-tag="graphrag" style="color: var(--warning); font-weight: 600;"><iconify-icon icon="lucide:trophy"></iconify-icon><span>挑战杯总控</span></button>
-
       </nav>
 
 
 
       <div class="appbar-actions">
-
-        <label class="demo-toggle" id="demoToggleLabel" title="开启后显示预置四本书演示数据；关闭后从空白工作台开始">
-
-          <input type="checkbox" id="demoToggle" checked>
-
-          <span class="demo-toggle-track"><span class="demo-toggle-thumb"></span></span>
-
-          <span class="demo-toggle-text">演示数据</span>
-
-        </label>
 
         <div class="status-pill" id="statusPill" title="">
 
@@ -18791,7 +16735,7 @@ window.addEventListener("DOMContentLoaded", init);
 
 
 
-            <div class="overview-grid demo-only">
+            <div class="overview-grid">
 
               <div class="stack">
 
@@ -19166,60 +17110,6 @@ window.addEventListener("DOMContentLoaded", init);
                   </div>
 
                   <div class="queue-list" id="publicBooksJsonSummary"></div>
-
-                </article>
-
-
-
-                <article class="panel" id="exampleFilePanel">
-
-                  <div class="panel-head">
-
-                    <div>
-
-                      <h3><iconify-icon icon="lucide:star" style="color:var(--accent);vertical-align:-2px;margin-right:4px"></iconify-icon>示例文件管理</h3>
-
-                      <p>拖入文件设为演示示例。开启「演示数据」后，这些文件会自动加载为示例数据，可随时更换。</p>
-
-                    </div>
-
-                    <div class="panel-tools">
-
-                      <span class="example-badge" id="exampleCountBadge">0 个示例</span>
-
-                      <button class="ghost-btn" id="btnClearAllExamples" type="button" title="清除全部示例"><iconify-icon icon="lucide:trash-2"></iconify-icon><span>全部清除</span></button>
-
-                    </div>
-
-                  </div>
-
-                  <div class="example-dropzone" id="exampleDropZone">
-
-                    <div>
-
-                      <div class="surface-icon" aria-hidden="true" style="background:var(--accent-soft)"><iconify-icon icon="lucide:star" style="color:var(--accent)"></iconify-icon></div>
-
-                      <h3>拖入文件或文件夹设为示例</h3>
-
-                      <p class="muted">自动识别文件类型，文件夹中的可用文件会被自动扫描加入</p>
-
-                      <div class="queue-actions">
-
-                        <button class="btn" id="btnPickExampleFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>选择文件</span></button>
-
-                        <button class="ghost-btn" id="btnPickExampleFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  <input class="hidden-input" id="exampleFileInput" type="file" multiple>
-
-                  <input class="hidden-input" id="exampleFolderInput" type="file" multiple webkitdirectory directory>
-
-                  <div class="example-file-list" id="exampleFileList"></div>
 
                 </article>
 
@@ -19605,221 +17495,25 @@ window.addEventListener("DOMContentLoaded", init);
 
           <div class="page-stack">
 
-            <article class="panel hero-card demo-only">
+            <article class="panel hero-card">
 
-              <div class="hero-chip"><iconify-icon icon="lucide:network"></iconify-icon><span>KG Construction</span></div>
+              <div class="hero-chip"><iconify-icon icon="lucide:network"></iconify-icon><span>GraphRAG Workspace</span></div>
 
-              <h3>知识图谱构建全流程</h3>
+              <h3>尚未构建知识图谱</h3>
 
-              <p>这里展示的不是概念图，而是这次用四本资料真正跑出来的中间产物：文本、chunk、schema、实体、关系、三元组、evidence 和图谱文件。</p>
+              <p>当前没有已加载的图谱数据。可以从“图谱构建”导入资料并生成实体、关系和可视化结果。</p>
 
               <div class="hero-actions">
 
-                <a class="btn" href="#" id="kgEvidenceOpen" target="_blank" rel="noopener"><iconify-icon icon="lucide:table-properties"></iconify-icon><span>打开 evidence 查看页</span></a>
+                <button class="btn" data-jump="kg_data" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>进入图谱构建</span></button>
 
-                <a class="ghost-btn" href="#" id="kgSvgOpen" target="_blank" rel="noopener"><iconify-icon icon="lucide:image"></iconify-icon><span>打开图谱 SVG</span></a>
+                <button class="ghost-btn" data-jump="kg_search" type="button"><iconify-icon icon="lucide:message-square-dashed"></iconify-icon><span>查看图谱问答</span></button>
 
               </div>
 
             </article>
 
 
-
-            <div class="metric-grid metric-grid--summary demo-only" id="kgStats"></div>
-
-
-
-            <div class="kg-two-col demo-only">
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Pipeline</p>
-
-                    <h3>从资料到图谱</h3>
-
-                  </div>
-
-                  <span class="pill">已跑通</span>
-
-                </div>
-
-                <div class="kg-flow-grid" id="kgFlow"></div>
-
-              </article>
-
-
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Input</p>
-
-                    <h3>这次使用的四本资料</h3>
-
-                  </div>
-
-                  <span class="pill">OCR 质量较放心</span>
-
-                </div>
-
-                <div class="kg-book-list" id="kgBookList"></div>
-
-              </article>
-
-            </div>
-
-
-
-            <div class="kg-three-col demo-only">
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Entity Extraction</p>
-
-                    <h3>实体抽取看什么</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="kg-type-list" id="kgEntities"></div>
-
-              </article>
-
-
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Relation Extraction</p>
-
-                    <h3>关系抽取看什么</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="kg-type-list" id="kgRelations"></div>
-
-              </article>
-
-
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Method</p>
-
-                    <h3>这一版怎么抽的</h3>
-
-                  </div>
-
-                  <span class="pill">规则版</span>
-
-                </div>
-
-                <div class="kg-type-list" id="kgMethodNotes"></div>
-
-                <div style="margin-top:14px;">
-
-                  <p class="card-kicker">高频节点</p>
-
-                  <div class="kg-chip-cloud" id="kgEntityCloud"></div>
-
-                </div>
-
-              </article>
-
-            </div>
-
-
-
-            <div class="kg-two-col demo-only">
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Triple + Evidence</p>
-
-                    <h3>候选三元组样例</h3>
-
-                  </div>
-
-                  <span class="pill">240 条完整结果见 evidence 页</span>
-
-                </div>
-
-                <div class="kg-triple-list" id="kgTriples"></div>
-
-              </article>
-
-
-
-              <article class="panel">
-
-                <div class="panel-head">
-
-                  <div>
-
-                    <p class="card-kicker">Graph View</p>
-
-                    <h3>图谱图片</h3>
-
-                  </div>
-
-                </div>
-
-                <div class="kg-graph-frame">
-
-                  <img id="kgGraphImage" alt="四本书知识图谱 SVG">
-
-                </div>
-
-              </article>
-
-            </div>
-
-
-
-            <article class="panel demo-only">
-
-              <div class="panel-head">
-
-                <div>
-
-                  <p class="card-kicker">Artifacts</p>
-
-                  <h3>这次能交付的文件</h3>
-
-                </div>
-
-                <span class="pill">可直接打开展示</span>
-
-              </div>
-
-              <div class="kg-artifact-list" id="kgArtifacts"></div>
-
-            </article>
 
           </div>
 
@@ -19832,72 +17526,6 @@ window.addEventListener("DOMContentLoaded", init);
           <div class="page-stack">
 
 
-
-            <!-- ── Book Showcase Hero ── -->
-
-            <article class="panel hero-card demo-only">
-
-              <div class="hero-chip"><iconify-icon icon="lucide:library"></iconify-icon><span>Input Corpus</span></div>
-
-              <h3>本次图谱构建语料</h3>
-
-              <p>以下四本燃气轮机专业资料经 OCR 数字化后，被切分为 chunk 并送入知识抽取流水线，产出实体、关系和三元组。</p>
-
-            </article>
-
-
-
-            <!-- ── Corpus Summary Metrics ── -->
-
-            <div class="metric-grid metric-grid--summary demo-only" id="kgCorpusStats">
-
-              <article class="panel metric-card">
-
-                <div class="metric-top"><div><p class="card-kicker">资料总数</p><div class="metric-value" id="kgCorpusBookCount">4 本</div></div></div>
-
-                <div class="metric-subgrid"><span>全部来自扫描 PDF → OCR 文本</span></div>
-
-              </article>
-
-              <article class="panel metric-card">
-
-                <div class="metric-top"><div><p class="card-kicker">总页数</p><div class="metric-value" id="kgCorpusTotalPages">1,592 页</div></div></div>
-
-                <div class="metric-subgrid"><span>覆盖燃烧、原理、结构与应用</span></div>
-
-              </article>
-
-              <article class="panel metric-card">
-
-                <div class="metric-top"><div><p class="card-kicker">总字符</p><div class="metric-value" id="kgCorpusTotalChars">4,368,442</div></div></div>
-
-                <div class="metric-subgrid"><span>OCR 后的有效中文字符总量</span></div>
-
-              </article>
-
-              <article class="panel metric-card">
-
-                <div class="metric-top"><div><p class="card-kicker">产出三元组</p><div class="metric-value" id="kgCorpusTotalTriples">240 条</div></div></div>
-
-                <div class="metric-subgrid"><span>经 schema 约束规则引擎抽取</span></div>
-
-              </article>
-
-            </div>
-
-
-
-            <!-- ── Individual Book Cards ── -->
-
-            <div class="kg-book-showcase demo-only" id="kgBookShowcase">
-
-              <!-- JS will populate 4 book cards -->
-
-            </div>
-
-
-
-            <!-- ── Schema Config & Build ── -->
 
             <div class="data-grid">
 
@@ -19994,8 +17622,6 @@ window.addEventListener("DOMContentLoaded", init);
                     <button class="btn" id="btnKgPublicBooksJsonIngest" type="button"><iconify-icon icon="lucide:database-zap"></iconify-icon><span>检测并入库</span></button>
 
                     <button class="btn" id="btnKgExportPdfText" type="button" onclick="exportKgPdfTexts()" style="background:linear-gradient(135deg,#1e88e5,#1565c0);" title="导出OCR识别结果为.txt文件"><iconify-icon icon="lucide:file-down"></iconify-icon><span>导出OCR结果</span></button>
-
-                    <button class="ghost-btn" id="btnKgPublicBooksExportChroma" type="button"><iconify-icon icon="lucide:network"></iconify-icon><span>导出图谱 JSON</span></button>
 
                   </div>
 
@@ -20098,6 +17724,8 @@ window.addEventListener("DOMContentLoaded", init);
                     <div class="panel-tools">
 
                       <span class="pill" id="kgGraphStats">节点: 0 · 边: 0</span>
+
+                      <button class="btn btn-xs" id="btnKgExportGraph" title="导出当前知识图谱 JSON" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:var(--surface-3);color:var(--text);border:1px solid var(--line);cursor:pointer;"><iconify-icon icon="lucide:download"></iconify-icon><span>导出</span></button>
 
                       <button class="btn btn-xs" id="btnKgLongestPath" title="查找并高亮知识图谱中的最长路径" style="font-size:12px;padding:2px 10px;border-radius:var(--radius);background:linear-gradient(135deg,#f59e42,#e67e22);color:#fff;border:none;cursor:pointer;display:none;">🔗 最长路径</button>
 
@@ -20582,322 +18210,6 @@ window.addEventListener("DOMContentLoaded", init);
               </article>
 
             </div>
-
-          </div>
-
-        </section>
-
-
-
-        <!-- 挑战杯特等奖评审与就绪看板 -->
-
-        <section class="page" id="page-challenge_cup">
-
-          <div class="page-stack">
-
-            <article class="panel hero-card" style="background: linear-gradient(135deg, rgba(255, 214, 10, 0.08), rgba(28, 28, 30, 0.8)); border-color: rgba(255, 214, 10, 0.25);">
-
-              <div class="hero-chip" style="background: rgba(255, 214, 10, 0.15); color: var(--warning);"><iconify-icon icon="lucide:trophy"></iconify-icon><span>Challenge Cup Special Prize</span></div>
-
-              <h3>挑战杯特等奖评审与就绪看板</h3>
-
-              <p>系统已成功通过 65 项就绪性自动化测试门禁。本看板用于审计两项特等奖核心外部硬证据链，并一键调取答辩与评审成果材料。</p>
-
-              <div class="hero-actions" style="margin-top: 18px;">
-
-                <div class="status-pill" style="background: rgba(48, 209, 88, 0.15); border-color: rgba(48, 209, 88, 0.3); color: var(--success); font-weight: 600;">
-
-                  <iconify-icon icon="lucide:shield-check"></iconify-icon><span>65 / 65 自动化门禁已通过 (100%)</span>
-
-                </div>
-
-                <div class="status-pill" style="background: rgba(255, 69, 58, 0.15); border-color: rgba(255, 69, 58, 0.3); color: var(--danger); font-weight: 600;">
-
-                  <iconify-icon icon="lucide:lock"></iconify-icon><span>未解锁特等奖归档校验 (0/2 硬证据)</span>
-
-                </div>
-
-              </div>
-
-            </article>
-
-
-
-            <!-- 二、硬证据链闭环审计 -->
-
-            <div class="metric-grid" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
-
-              <article class="panel" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 280px;">
-
-                <div>
-
-                  <div class="panel-head" style="margin-bottom: 8px;">
-
-                    <div>
-
-                      <span class="status-tag" style="background: rgba(255, 214, 10, 0.15); color: var(--warning); margin-bottom: 8px;">
-
-                        <iconify-icon icon="lucide:help-circle" style="margin-right: 4px;"></iconify-icon>等待录入 (0/1)
-
-                      </span>
-
-                      <h3 style="font-size: 16px; font-weight: 600;">外部专家评审反馈 (Expert Feedback)</h3>
-
-                    </div>
-
-                  </div>
-
-                  <p style="font-size: 12px; color: var(--ink-soft); line-height: 1.6;">按照挑战杯终审评选标准，须录入至少 1 份来自学术界或动力装备工业界专家的签字反馈表、邮件回复或会议记录，以证明系统的行业认可度与科学实用性价值。</p>
-
-                </div>
-
-                <div style="margin-top: 16px;">
-
-                  <label class="micro-label" style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: block; margin-bottom: 6px;">录入证据命令行提示：</label>
-
-                  <pre style="margin: 0; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--line); border-radius: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--accent-2); overflow-x: auto; white-space: pre;">python scripts/record_challenge_cup_hard_evidence.py expert_feedback --id [id] --source [path-to-proof] --confirm-real-feedback</pre>
-
-                </div>
-
-              </article>
-
-
-
-              <article class="panel" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 280px;">
-
-                <div>
-
-                  <div class="panel-head" style="margin-bottom: 8px;">
-
-                    <div>
-
-                      <span class="status-tag" style="background: rgba(255, 214, 10, 0.15); color: var(--warning); margin-bottom: 8px;">
-
-                        <iconify-icon icon="lucide:help-circle" style="margin-right: 4px;"></iconify-icon>等待演练 (0/1)
-
-                      </span>
-
-                      <h3 style="font-size: 16px; font-weight: 600;">答辩计时防超时彩排 (Timed Rehearsal)</h3>
-
-                    </div>
-
-                  </div>
-
-                  <p style="font-size: 12px; color: var(--ink-soft); line-height: 1.6;">现场答辩时间极其苛刻。须录入至少 1 轮真实的答辩计时演练记录，确保满足：开场陈述 ≤ 90s、系统演示 ≤ 180s、离线兜底切换 ≤ 20s、5个杀手问题单题问答 ≤ 30s。</p>
-
-                </div>
-
-                <div style="margin-top: 16px;">
-
-                  <label class="micro-label" style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); display: block; margin-bottom: 6px;">录入演练命令行提示：</label>
-
-                  <pre style="margin: 0; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--line); border-radius: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--accent-2); overflow-x: auto; white-space: pre;">python scripts/run_challenge_cup_timed_rehearsal.py --id [id] --source [path-to-proof] --confirm-real-rehearsal</pre>
-
-                </div>
-
-              </article>
-
-            </div>
-
-
-
-            <!-- 三、交付与答辩文件通道 -->
-
-            <article class="panel">
-
-              <div class="panel-head">
-
-                <div>
-
-                  <h3>答辩现场及结项文件快速通道 (Onsite Fast-Track)</h3>
-
-                  <p>在此可直接调取前两天整理归档的全套答辩、校验及审计成果物，适合现场给评委快速投屏或查阅。</p>
-
-                </div>
-
-              </div>
-
-              
-
-              <div class="kg-book-showcase" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
-
-                <!-- 核心控制 -->
-
-                <div class="kg-book-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-
-                  <div>
-
-                    <div class="book-header" style="margin-bottom: 8px;">
-
-                      <div class="book-index" style="background: linear-gradient(135deg, #FF9F0A, #FF453A);"><iconify-icon icon="lucide:play"></iconify-icon></div>
-
-                      <h4 class="book-title" style="font-size: 13px; font-weight: 600;">启动：现场答辩总控制台</h4>
-
-                    </div>
-
-                    <p style="font-size: 12px; color: var(--ink-soft); margin: 0; line-height: 1.5;">终审答辩现场专用导航台。用于快速管理演示流程时间点，并部署 20 秒离线兜底预备方案。</p>
-
-                  </div>
-
-                  <div style="margin-top: 12px;">
-
-                    <a href="../../docs/challenge_cup/defense_console/index.html" target="_blank" class="ghost-btn" style="display: inline-flex; width: 100%; justify-content: center; text-decoration: none;">
-
-                      <iconify-icon icon="lucide:external-link" style="margin-right: 6px;"></iconify-icon>打开控制台网页
-
-                    </a>
-
-                  </div>
-
-                </div>
-
-
-
-                <!-- 答辩PPT -->
-
-                <div class="kg-book-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-
-                  <div>
-
-                    <div class="book-header" style="margin-bottom: 8px;">
-
-                      <div class="book-index"><iconify-icon icon="lucide:presentation"></iconify-icon></div>
-
-                      <h4 class="book-title" style="font-size: 13px; font-weight: 600;">PPT 与讲稿：答辩现场演示包</h4>
-
-                    </div>
-
-                    <p style="font-size: 12px; color: var(--ink-soft); margin: 0; line-height: 1.5;">包含完整的答辩演示 PPT 以及逐字备考讲稿大纲，覆盖系统三大核心创新点。</p>
-
-                  </div>
-
-                  <div style="margin-top: 12px;">
-
-                    <a href="../../docs/challenge_cup/defense_deck/README.md" target="_blank" class="ghost-btn" style="display: inline-flex; width: 100%; justify-content: center; text-decoration: none;">
-
-                      <iconify-icon icon="lucide:file-text" style="margin-right: 6px;"></iconify-icon>查看大纲与讲稿
-
-                    </a>
-
-                  </div>
-
-                </div>
-
-
-
-                <!-- 技术白皮书 -->
-
-                <div class="kg-book-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-
-                  <div>
-
-                    <div class="book-header" style="margin-bottom: 8px;">
-
-                      <div class="book-index" style="background: linear-gradient(135deg, #30D158, #147a4f);"><iconify-icon icon="lucide:book-open"></iconify-icon></div>
-
-                      <h4 class="book-title" style="font-size: 13px; font-weight: 600;">技术白皮书：知燃知维学术宣主张</h4>
-
-                    </div>
-
-                    <p style="font-size: 12px; color: var(--ink-soft); margin: 0; line-height: 1.5;">系统底层架构白皮书。阐述“证据绑定和失败归因降低专业问答幻觉”的理论支柱与评测数据。</p>
-
-                  </div>
-
-                  <div style="margin-top: 12px;">
-
-                    <a href="../../docs/challenge_cup/02_技术白皮书.md" target="_blank" class="ghost-btn" style="display: inline-flex; width: 100%; justify-content: center; text-decoration: none;">
-
-                      <iconify-icon icon="lucide:file-text" style="margin-right: 6px;"></iconify-icon>阅读白皮书
-
-                    </a>
-
-                  </div>
-
-                </div>
-
-
-
-                <!-- 防御矩阵 -->
-
-                <div class="kg-book-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-
-                  <div>
-
-                    <div class="book-header" style="margin-bottom: 8px;">
-
-                      <div class="book-index" style="background: linear-gradient(135deg, #bf5af2, #8e2de2);"><iconify-icon icon="lucide:shield-alert"></iconify-icon></div>
-
-                      <h4 class="book-title" style="font-size: 13px; font-weight: 600;">答辩防御：评委十问及应对矩阵</h4>
-
-                    </div>
-
-                    <p style="font-size: 12px; color: var(--ink-soft); margin: 0; line-height: 1.5;">收集了10大评委针对 GraphRAG 和运维可信性的尖锐质询（如“是否套壳”），并给出标准防御话术。</p>
-
-                  </div>
-
-                  <div style="margin-top: 12px;">
-
-                    <a href="../../docs/challenge_cup/reproducibility/judge_objection_response_matrix.md" target="_blank" class="ghost-btn" style="display: inline-flex; width: 100%; justify-content: center; text-decoration: none;">
-
-                      <iconify-icon icon="lucide:file-text" style="margin-right: 6px;"></iconify-icon>阅读应对矩阵
-
-                    </a>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </article>
-
-
-
-            <!-- 四、审计清单 -->
-
-            <article class="panel">
-
-              <div class="panel-head">
-
-                <div>
-
-                  <h3>系统就绪门禁通过指标清单</h3>
-
-                  <p>已通过的 65 项全链路就绪性指标细则，供最终打包结项复核审计使用。</p>
-
-                </div>
-
-              </div>
-
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-
-                <div style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 8px;">
-
-                  <span style="color: var(--success); font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">✅ 运行环境与打包 (15/15)</span>
-
-                  <p style="font-size: 11px; color: var(--muted); margin: 0;">包含 13 本 OCR enriched 扫描件、1 本直抽件及 ChromaDB 持久化。脚本一键编译和 ZIP 完美校验通过。</p>
-
-                </div>
-
-                <div style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 8px;">
-
-                  <span style="color: var(--success); font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">✅ 数据工程与图谱 (20/20)</span>
-
-                  <p style="font-size: 11px; color: var(--muted); margin: 0;">27 条 POC 三元组带 evidence 强制人工评审闭环，ChromaDB 内含 9080 个真实数据分块。</p>
-
-                </div>
-
-                <div style="padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 8px;">
-
-                  <span style="color: var(--success); font-weight: 600; font-size: 12px; display: block; margin-bottom: 4px;">✅ 系统评测与边界 (30/30)</span>
-
-                  <p style="font-size: 11px; color: var(--muted); margin: 0;">60 道系统评测集覆盖 baseline 检索；全面声明 no-award-guarantee 与 no-substitute 边界。</p>
-
-                </div>
-
-              </div>
-
-            </article>
 
           </div>
 

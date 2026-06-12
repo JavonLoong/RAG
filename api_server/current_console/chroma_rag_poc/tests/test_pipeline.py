@@ -339,6 +339,34 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.text, "<svg></svg>")
 
+    def test_frontend_exposes_kg_graph_export_action_in_graph_toolbar(self) -> None:
+        frontend_path = PROJECT_ROOT.parents[2] / "frontend_app" / "current_console" / "index.html"
+        html = frontend_path.read_text(encoding="utf-8")
+        toolbar_start = html.index('id="kgGraphStats"')
+        toolbar_end = html.index('id="kgGraphContainer"', toolbar_start)
+        toolbar_html = html[toolbar_start:toolbar_end]
+
+        self.assertIn('id="btnKgExportGraph"', toolbar_html)
+        self.assertIn("lucide:download", toolbar_html)
+        self.assertIn('$("btnKgExportGraph")?.addEventListener("click", exportKgGraphSnapshot);', html)
+        self.assertNotIn("btnKgPublicBooksExportChroma", html)
+
+    def test_graphrag_export_route_returns_downloadable_json(self) -> None:
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        graph_db_path = self.persist_dir / "graph_store.sqlite"
+        graph_db_path.write_bytes(b"")
+
+        response = client.get("/api/graphrag/export", params={"graph_db_path": str(graph_db_path)})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/json", response.headers.get("content-type", ""))
+        self.assertIn("attachment", response.headers.get("content-disposition", ""))
+        payload = response.json()
+        self.assertEqual(payload["format"], "graphrag_graph_export")
+        self.assertIn("nodes", payload)
+        self.assertIn("edges", payload)
+
     def test_default_cors_rejects_untrusted_origin(self) -> None:
         """默认 CORS 只允许本地控制台来源，不能对任意站点开放。"""
         app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
