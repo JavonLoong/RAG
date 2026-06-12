@@ -3864,6 +3864,14 @@ const LOCAL_COLLECTION_NAME = "browser_local_index";
 
 const ENGINE_DEFAULTS = { chunkSize: 680, overlap: 120, dimension: 384 };
 
+const LOCAL_WORKSPACE_DB_NAME = "rag_local_workspace_v1";
+
+const LOCAL_WORKSPACE_DB_VERSION = 1;
+
+const LOCAL_WORKSPACE_STORE_NAME = "snapshots";
+
+const LOCAL_WORKSPACE_SNAPSHOT_KEY = "workspace";
+
 
 
 // Pre-load ppu-paddle-ocr in background so it's ready when user drops a PDF
@@ -6817,6 +6825,8 @@ async function deleteLocalUpload(filename, options = {}) {
 
   showToast(options.purgeVectors ? `Removed ${label} and cleared local index.` : `Removed ${label}.`, "success");
 
+  void saveLocalWorkspaceSnapshot("upload-delete");
+
 }
 
 
@@ -6860,6 +6870,8 @@ async function deleteLocalProcessedUploads(filenames) {
   addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared local vectors.`);
 
   showToast(`Deleted ${selected.length} processed files.`, "success");
+
+  void saveLocalWorkspaceSnapshot("processed-delete");
 
 }
 
@@ -6918,6 +6930,8 @@ async function deleteLocalCollection(name) {
   addActivity("warning", "Local index cleared", `${name} was removed from this browser session.`);
 
   showToast("Local index cleared.", "warning");
+
+  void saveLocalWorkspaceSnapshot("collection-delete");
 
 }
 
@@ -7077,6 +7091,8 @@ async function runLocalProcess() {
 
     showToast(`Local processing finished. Success: ${succeeded.length}, failed: ${failed}.`, failed ? "warning" : "success");
 
+    void saveLocalWorkspaceSnapshot("process");
+
   } catch (error) {
 
     if (els.processFill) els.processFill.style.width = "0%";
@@ -7174,6 +7190,8 @@ async function runLocalSearch() {
   addActivity(results.length ? "success" : "warning", "Local search finished", `Query ?${query}? returned ${results.length} results.`);
 
   showToast(`Search finished. ${results.length} results returned.`, "success");
+
+  void saveLocalWorkspaceSnapshot("search");
 
 }
 
@@ -9368,6 +9386,43 @@ function renderKgWorkflow() {
   // GraphRAG renders the real empty workspace until a graph is built.
 
 }
+
+function renderAll() {
+
+  syncUploadSelections();
+
+  renderStatus();
+
+  renderCollectionSpectrum();
+
+  renderCollectionList();
+
+  renderTrendChart();
+
+  renderSummaryMetrics();
+
+  renderUploads();
+
+  renderProcessedUploads();
+
+  renderProcessSummary();
+
+  renderPublicBooksJsonSummary();
+
+  renderQualityReport();
+
+  renderSearchResults();
+
+  renderBenchmark();
+
+  renderActivityFeed();
+
+  renderKgWorkflow();
+
+  renderRestoredKgGraphSnapshot();
+
+}
+
 async function refreshHealth() {
 
   if (FORCE_LOCAL_RUNTIME) {
@@ -9577,6 +9632,8 @@ async function uploadFiles(fileList) {
     addActivity(skippedCount ? "warning" : "success", "Local directory updated", summary);
 
     showToast(summary, skippedCount ? "warning" : "success");
+
+    void saveLocalWorkspaceSnapshot("upload");
 
     return;
 
@@ -11074,6 +11131,8 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
 
 
 
+    void saveLocalWorkspaceSnapshot("json-ingest");
+
     // Re-render file list to show OCR status and auto-generate .txt for OCR'd PDFs
 
     const fileListContainerId = pendingKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
@@ -11212,6 +11271,516 @@ function graphEndpointId(value) {
   if (value && typeof value === "object") return value.id || value.name || value.label || "";
 
   return value == null ? "" : String(value);
+
+}
+
+
+
+function openLocalWorkspaceDb() {
+
+  if (!("indexedDB" in window)) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+
+    const request = indexedDB.open(LOCAL_WORKSPACE_DB_NAME, LOCAL_WORKSPACE_DB_VERSION);
+
+    request.onupgradeneeded = () => {
+
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(LOCAL_WORKSPACE_STORE_NAME)) {
+
+        db.createObjectStore(LOCAL_WORKSPACE_STORE_NAME, { keyPath: "key" });
+
+      }
+
+    };
+
+    request.onsuccess = () => resolve(request.result);
+
+    request.onerror = () => resolve(null);
+
+  });
+
+}
+
+
+
+async function readLocalWorkspaceSnapshot() {
+
+  const db = await openLocalWorkspaceDb();
+
+  if (!db) return null;
+
+  return new Promise((resolve) => {
+
+    const tx = db.transaction(LOCAL_WORKSPACE_STORE_NAME, "readonly");
+
+    const request = tx.objectStore(LOCAL_WORKSPACE_STORE_NAME).get(LOCAL_WORKSPACE_SNAPSHOT_KEY);
+
+    request.onsuccess = () => resolve(request.result?.snapshot || null);
+
+    request.onerror = () => resolve(null);
+
+    tx.oncomplete = () => db.close();
+
+    tx.onerror = () => db.close();
+
+  });
+
+}
+
+
+
+async function writeLocalWorkspaceSnapshot(snapshot) {
+
+  const db = await openLocalWorkspaceDb();
+
+  if (!db) return false;
+
+  return new Promise((resolve) => {
+
+    const tx = db.transaction(LOCAL_WORKSPACE_STORE_NAME, "readwrite");
+
+    tx.objectStore(LOCAL_WORKSPACE_STORE_NAME).put({
+
+      key: LOCAL_WORKSPACE_SNAPSHOT_KEY,
+
+      saved_at: snapshot.saved_at,
+
+      snapshot
+
+    });
+
+    tx.oncomplete = () => { db.close(); resolve(true); };
+
+    tx.onerror = () => { db.close(); resolve(false); };
+
+  });
+
+}
+
+
+
+function serializableUploadItem(item) {
+
+  if (!item) return null;
+
+  const { file, ...rest } = item;
+
+  return { ...rest, persisted: true, file: null };
+
+}
+
+
+
+function serializableChunk(chunk) {
+
+  if (!chunk) return null;
+
+  return {
+
+    chunk_id: chunk.chunk_id,
+
+    text: chunk.text || "",
+
+    vector: Array.from(chunk.vector || []),
+
+    tokens: Array.isArray(chunk.tokens) ? chunk.tokens : [],
+
+    normalizedText: chunk.normalizedText || String(chunk.text || "").toLowerCase(),
+
+    metadata: { ...(chunk.metadata || {}) }
+
+  };
+
+}
+
+
+
+function hydrateChunk(chunk) {
+
+  const vectorValues = Array.isArray(chunk?.vector) ? chunk.vector : [];
+
+  return {
+
+    ...chunk,
+
+    vector: Float32Array.from(vectorValues),
+
+    tokens: Array.isArray(chunk?.tokens) ? chunk.tokens : [],
+
+    normalizedText: chunk?.normalizedText || String(chunk?.text || "").toLowerCase(),
+
+    metadata: { ...(chunk?.metadata || {}) }
+
+  };
+
+}
+
+
+
+function serializeKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length) return null;
+
+  const rawLinks = Array.isArray(kg.links) ? kg.links : Array.from(kg.edges?.values?.() || []);
+
+  const entities = kg.entities instanceof Map
+
+    ? Array.from(kg.entities.entries()).map(([name, data]) => ({ name, ...(data || {}) }))
+
+    : Array.isArray(kg.entities) ? kg.entities : [];
+
+  return {
+
+    version: 1,
+
+    engineMode: kg.engineMode || null,
+
+    nodes: kg.nodes.map((node) => ({
+
+      id: node.id,
+
+      type: node.type || null,
+
+      count: Number(node.count || 0),
+
+      color: node.color || null,
+
+      radius: Number(node.radius || 8),
+
+      x: Number.isFinite(node.x) ? node.x : null,
+
+      y: Number.isFinite(node.y) ? node.y : null
+
+    })),
+
+    links: rawLinks.map((edge, index) => ({
+
+      id: edge.id || edge.triple_id || `edge-${index}`,
+
+      source: graphEndpointId(edge.source),
+
+      target: graphEndpointId(edge.target),
+
+      relation: edge.relation || edge.predicate || "RELATES_TO",
+
+      weight: Number(edge.weight || 1),
+
+      confidence: edge.confidence ?? null,
+
+      evidence: edge.evidence || null,
+
+      source_file: edge.source_file || null,
+
+      source_page: edge.source_page ?? null
+
+    })),
+
+    entities
+
+  };
+
+}
+
+
+
+function hydrateKgGraphSnapshot(snapshot) {
+
+  if (!snapshot || !Array.isArray(snapshot.nodes) || !snapshot.nodes.length) return null;
+
+  const nodes = snapshot.nodes.map((node, index) => ({
+
+    ...node,
+
+    id: String(node.id || `node-${index}`),
+
+    type: node.type || "Equipment",
+
+    count: Number(node.count || 1),
+
+    radius: Number(node.radius || 8),
+
+    color: node.color || (typeof TYPE_COLORS !== "undefined" ? TYPE_COLORS[node.type] : null) || "#aaa",
+
+    x: Number.isFinite(node.x) ? node.x : 120 + index * 24,
+
+    y: Number.isFinite(node.y) ? node.y : 120 + (index % 12) * 24
+
+  }));
+
+  const links = (snapshot.links || []).map((edge, index) => ({
+
+    ...edge,
+
+    id: edge.id || `edge-${index}`,
+
+    source: String(edge.source || ""),
+
+    target: String(edge.target || ""),
+
+    relation: edge.relation || "RELATES_TO",
+
+    weight: Number(edge.weight || 1)
+
+  })).filter((edge) => edge.source && edge.target);
+
+  const entities = new Map();
+
+  for (const item of snapshot.entities || []) {
+
+    if (!item?.name) continue;
+
+    const { name, ...data } = item;
+
+    entities.set(name, data);
+
+  }
+
+  if (!entities.size) {
+
+    for (const node of nodes) entities.set(node.id, { type: node.type, count: node.count });
+
+  }
+
+  const edges = new Map(links.map((edge, index) => [edge.id || `edge-${index}`, edge]));
+
+  return { nodes, links, entities, edges, engineMode: snapshot.engineMode || null, d3Selections: null };
+
+}
+
+
+
+function serializeLocalWorkspaceSnapshot(reason = "manual") {
+
+  return {
+
+    version: 1,
+
+    reason,
+
+    saved_at: new Date().toISOString(),
+
+    uploads: (state.uploads || []).map(serializableUploadItem).filter(Boolean),
+
+    records: (state.records || []).map((record) => ({ ...(record || {}) })),
+
+    chunks: (state.chunks || []).map(serializableChunk).filter(Boolean),
+
+    primaryCollection: state.primaryCollection || "",
+
+    lastProcess: state.lastProcess ? { ...state.lastProcess } : null,
+
+    publicBooksJson: state.publicBooksJson ? { ...state.publicBooksJson } : null,
+
+    lastSearch: state.lastSearch ? { ...state.lastSearch } : null,
+
+    benchmark: state.benchmark ? { ...state.benchmark } : null,
+
+    kgGraph: serializeKgGraphSnapshot()
+
+  };
+
+}
+
+
+
+async function saveLocalWorkspaceSnapshot(reason = "manual") {
+
+  try {
+
+    const snapshot = serializeLocalWorkspaceSnapshot(reason);
+
+    return await writeLocalWorkspaceSnapshot(snapshot);
+
+  } catch (error) {
+
+    console.warn("[workspace] failed to save snapshot", error);
+
+    return false;
+
+  }
+
+}
+
+
+
+async function restoreLocalWorkspaceSnapshot() {
+
+  try {
+
+    const snapshot = await readLocalWorkspaceSnapshot();
+
+    if (!snapshot || snapshot.version !== 1) return false;
+
+    state.uploads = Array.isArray(snapshot.uploads) ? snapshot.uploads : [];
+
+    state.records = Array.isArray(snapshot.records) ? snapshot.records : [];
+
+    state.chunks = Array.isArray(snapshot.chunks) ? snapshot.chunks.map(hydrateChunk) : [];
+
+    state.primaryCollection = snapshot.primaryCollection || state.primaryCollection || "";
+
+    state.lastProcess = snapshot.lastProcess || null;
+
+    state.publicBooksJson = snapshot.publicBooksJson || null;
+
+    state.lastSearch = snapshot.lastSearch || null;
+
+    state.benchmark = snapshot.benchmark || null;
+
+    const kgGraph = hydrateKgGraphSnapshot(snapshot.kgGraph);
+
+    if (kgGraph) window._kgGraph = kgGraph;
+
+    refreshLocalUploadBuckets();
+
+    await refreshLocalStats();
+
+    if (kgGraph) renderRestoredKgGraphSnapshot();
+
+    addActivity("success", "Local workspace restored", `${formatNumber(state.chunks.length)} chunks restored from browser storage.`);
+
+    return true;
+
+  } catch (error) {
+
+    console.warn("[workspace] failed to restore snapshot", error);
+
+    return false;
+
+  }
+
+}
+
+
+
+function renderRestoredKgGraphSnapshot() {
+
+  const kg = window._kgGraph;
+
+  if (!kg || !Array.isArray(kg.nodes) || !kg.nodes.length || !globalThis.d3) return false;
+
+  const graphEmpty = $("kgGraphEmpty");
+
+  const graphSvg = $("kgGraphSvg");
+
+  const graphStats = $("kgGraphStats");
+
+  const container = $("kgGraphContainer");
+
+  if (!graphSvg) return false;
+
+  if (graphEmpty) graphEmpty.style.display = "none";
+
+  graphSvg.style.display = "block";
+
+  if (graphStats) graphStats.textContent = `节点: ${kg.nodes.length} · 边: ${kg.links.length}`;
+
+  const btnLP = $("btnKgLongestPath"); if (btnLP) btnLP.style.display = "inline-block";
+
+  const btnCP = $("btnKgClearPath"); if (btnCP) btnCP.style.display = "none";
+
+  const width = container?.clientWidth || 800;
+
+  const height = container?.clientHeight || 480;
+
+  const nodeMap = new Map(kg.nodes.map((node) => [node.id, node]));
+
+  const drawableLinks = (kg.links || []).map((edge) => {
+
+    const source = nodeMap.get(graphEndpointId(edge.source));
+
+    const target = nodeMap.get(graphEndpointId(edge.target));
+
+    return source && target ? { ...edge, source, target } : null;
+
+  }).filter(Boolean);
+
+  const svg = d3.select("#kgGraphSvg");
+
+  svg.selectAll("*").remove();
+
+  svg.attr("viewBox", [0, 0, width, height]);
+
+  const g = svg.append("g");
+
+  svg.call(d3.zoom().scaleExtent([0.2, 5]).on("zoom", (event) => {
+
+    g.attr("transform", event.transform);
+
+  }));
+
+  const link = g.append("g")
+
+    .selectAll("line")
+
+    .data(drawableLinks)
+
+    .join("line")
+
+    .attr("stroke", "#555")
+
+    .attr("stroke-opacity", 0.3)
+
+    .attr("stroke-width", d => Math.max(0.3, Math.min(2.5, Number(d.weight || 1) * 0.4)))
+
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+  const node = g.append("g")
+
+    .selectAll("circle")
+
+    .data(kg.nodes)
+
+    .join("circle")
+
+    .attr("r", d => d.radius)
+
+    .attr("fill", d => d.color || "#aaa")
+
+    .attr("stroke", "#222")
+
+    .attr("stroke-width", 1)
+
+    .attr("opacity", 0.85)
+
+    .attr("cx", d => d.x)
+
+    .attr("cy", d => d.y);
+
+  const labelThreshold = kg.nodes.length > 25 ? kg.nodes.slice().sort((a, b) => b.count - a.count)[24]?.count || 0 : 0;
+
+  const label = g.append("g")
+
+    .selectAll("text")
+
+    .data(kg.nodes)
+
+    .join("text")
+
+    .attr("fill", "#eee")
+
+    .attr("font-size", d => Math.max(9, Math.min(14, d.radius * 0.7)) + "px")
+
+    .attr("text-anchor", "middle")
+
+    .attr("x", d => d.x)
+
+    .attr("y", d => d.y)
+
+    .attr("opacity", d => d.count >= labelThreshold ? 1 : 0)
+
+    .text(d => d.id);
+
+  kg.d3Selections = { node, link, label, g, labelThreshold };
+
+  return true;
 
 }
 
@@ -14983,6 +15552,8 @@ function bindEvents() {
 
       showToast(`图谱构建完成！${nodes.length} 实体，${links.length} 关系。`, "success");
 
+      void saveLocalWorkspaceSnapshot("kg-build");
+
     } catch (err) {
 
       addActivity("danger", "图谱构建失败", err.message || String(err));
@@ -16604,6 +17175,8 @@ async function init() {
   bindInputHistoryEvents();
 
   setPage(initialPageName(), { updateHash: false });
+
+  await restoreLocalWorkspaceSnapshot();
 
   if (!state.localMode) {
 

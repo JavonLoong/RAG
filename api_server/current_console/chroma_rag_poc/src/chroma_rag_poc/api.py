@@ -438,6 +438,11 @@ def create_app(
     app.state.persist_dir.mkdir(parents=True, exist_ok=True)
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
     app.state.log_dir.mkdir(parents=True, exist_ok=True)
+    app.state.memory_db_path = app.state.persist_dir / "memory" / "conversation_memory.sqlite3"
+    memory_vector_dir = os.environ.get("RAG_MEMORY_VECTOR_DIR", "").strip()
+    app.state.memory_vector_persist_dir = Path(memory_vector_dir) if memory_vector_dir else None
+    if app.state.memory_vector_persist_dir:
+        app.state.memory_vector_persist_dir.mkdir(parents=True, exist_ok=True)
 
     # Register modular GraphRAG routes (community detection, global search, etc.)
     try:
@@ -445,6 +450,12 @@ def create_app(
         app.include_router(graphrag_router)
     except ImportError:
         pass  # Gracefully skip if root-level modules are not available
+
+    try:
+        from .routes_memory import router as memory_router
+        app.include_router(memory_router)
+    except ImportError:
+        pass
 
     @app.get("/")
     async def index():

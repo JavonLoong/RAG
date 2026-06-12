@@ -16,6 +16,8 @@ from typing import Any
 
 import requests
 
+from .local_models import require_local_model_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -83,8 +85,9 @@ class SentenceTransformerAdapter(BaseEmbeddingAdapter):
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise ImportError("sentence-transformers required. Install with: pip install sentence-transformers") from exc
-        self.model_name = model_name
-        self.model = SentenceTransformer(model_name, device=device)
+        resolved_model = require_local_model_path(model_name, env_var="RAG_EMBEDDING_MODEL_PATH")
+        self.model_name = resolved_model
+        self.model = SentenceTransformer(resolved_model, device=device)
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         vectors = self.model.encode(texts, normalize_embeddings=True)

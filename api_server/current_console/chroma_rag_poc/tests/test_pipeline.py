@@ -516,6 +516,80 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(broken_stats.status_code, 500)
         self.assertIn(".log", broken_stats.json()["detail"])
 
+    def test_sentence_transformer_default_prefers_local_model_dir(self) -> None:
+        from chroma_rag_poc.embeddings import resolve_sentence_transformer_model_path
+
+        local_root = Path(self.tempdir.name) / "models"
+        model_dir = local_root / "BAAI" / "bge-m3"
+        model_dir.mkdir(parents=True)
+
+        resolved = resolve_sentence_transformer_model_path("BAAI/bge-m3", local_roots=[local_root])
+
+        self.assertEqual(Path(resolved), model_dir)
+
+    def test_sentence_transformer_missing_local_model_does_not_download_by_default(self) -> None:
+        from chroma_rag_poc import embeddings
+
+        embeddings._resolve_embedding_backend.cache_clear()
+        with patch("chroma_rag_poc.embeddings._online_model_loading_allowed", return_value=False):
+            resolved = create_embedding_backend(
+                backend="sentence-transformer",
+                model_name="BAAI/bge-m3",
+                dimension=32,
+            )
+        embeddings._resolve_embedding_backend.cache_clear()
+
+        self.assertEqual(resolved.name, "hashing")
+        self.assertEqual(resolved.dimension, 32)
+        self.assertIn("Local sentence-transformer model not found", resolved.warning or "")
+
+    def test_memory_routes_persist_turns_across_app_instances(self) -> None:
+        app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        client = TestClient(app)
+
+        session_response = client.post(
+            "/api/memory/sessions",
+            json={"session_id": "meeting-session", "title": "组会问答"},
+        )
+        self.assertEqual(session_response.status_code, 200)
+
+        turn_response = client.post(
+            "/api/memory/sessions/meeting-session/turns",
+            json={
+                "user": "本地模型应该从哪里读取？",
+                "assistant": "应该优先读取本地模型目录，避免默认联网下载。",
+            },
+        )
+        self.assertEqual(turn_response.status_code, 200)
+        self.assertEqual(turn_response.json()["context"]["message_count"], 2)
+
+        restored_app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
+        restored_client = TestClient(restored_app)
+        context_response = restored_client.get(
+            "/api/memory/sessions/meeting-session/context",
+            params={"query": "本地模型", "recent_limit": 4},
+        )
+
+        self.assertEqual(context_response.status_code, 200)
+        context = context_response.json()
+        self.assertEqual(context["message_count"], 2)
+        self.assertEqual([item["role"] for item in context["recent_messages"]], ["user", "assistant"])
+        self.assertTrue((self.persist_dir / "memory" / "conversation_memory.sqlite3").exists())
+
+    def test_frontend_has_persistent_local_workspace_snapshot_contract(self) -> None:
+        repo_root = PROJECT_ROOT.parents[2]
+        frontend_path = repo_root / "frontend_app" / "current_console" / "index.html"
+        html = frontend_path.read_text(encoding="utf-8")
+
+        self.assertIn("LOCAL_WORKSPACE_DB_NAME", html)
+        self.assertIn("indexedDB.open", html)
+        self.assertIn("serializeKgGraphSnapshot", html)
+        self.assertIn("saveLocalWorkspaceSnapshot", html)
+        self.assertIn("restoreLocalWorkspaceSnapshot", html)
+        self.assertIn("await restoreLocalWorkspaceSnapshot()", html)
+        self.assertIn('void saveLocalWorkspaceSnapshot("process")', html)
+        self.assertIn('void saveLocalWorkspaceSnapshot("kg-build")', html)
+
     def test_graphrag_community_detection_route_uses_available_detector(self) -> None:
         app = create_app(persist_dir=self.persist_dir, upload_dir=self.upload_dir)
         client = TestClient(app)

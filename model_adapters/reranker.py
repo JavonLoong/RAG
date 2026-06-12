@@ -10,6 +10,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
+from .local_models import DEFAULT_RERANKER_MODEL, require_local_model_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,9 +43,14 @@ class CrossEncoderReranker(BaseReranker):
                 "sentence-transformers required for CrossEncoderReranker. "
                 "Install with: pip install sentence-transformers"
             ) from exc
-        self.model_name = model_name
-        self.model = CrossEncoder(model_name, device=device)
-        logger.info("CrossEncoderReranker loaded: %s", model_name)
+        resolved_model = require_local_model_path(
+            model_name,
+            env_var="RAG_RERANKER_MODEL_PATH",
+            default_model=DEFAULT_RERANKER_MODEL,
+        )
+        self.model_name = resolved_model
+        self.model = CrossEncoder(resolved_model, device=device)
+        logger.info("CrossEncoderReranker loaded: %s", resolved_model)
 
     def rerank(
         self, query: str, documents: list[str], *, top_k: int | None = None

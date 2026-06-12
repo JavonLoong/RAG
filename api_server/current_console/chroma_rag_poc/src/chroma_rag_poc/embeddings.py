@@ -10,13 +10,111 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any
+from pathlib import Path
+from typing import Any, Iterable
 
 import numpy as np
 
 from .text_utils import TOKEN_PATTERN, normalize_text
+
+DEFAULT_SENTENCE_TRANSFORMER_MODEL = "BAAI/bge-m3"
+_MODEL_PATH_ENVS = ("RAG_EMBEDDING_MODEL_PATH", "RAG_SENTENCE_TRANSFORMER_MODEL_PATH")
+_MODEL_ROOT_ENVS = ("RAG_LOCAL_MODEL_DIR", "RAG_MODELS_DIR", "RAG_MODEL_DIR")
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+
+
+def resolve_sentence_transformer_model_path(
+    model_name: str | None = None,
+    *,
+    local_roots: Iterable[str | os.PathLike[str]] | None = None,
+) -> str:
+    """Resolve a model id such as BAAI/bge-m3 to a local offline directory."""
+    requested = str(model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL).strip() or DEFAULT_SENTENCE_TRANSFORMER_MODEL
+
+    for env_name in _MODEL_PATH_ENVS:
+        for candidate in _split_path_env(os.environ.get(env_name)):
+            if candidate.exists():
+                return str(candidate.resolve())
+
+    direct_path = Path(requested).expanduser()
+    if direct_path.exists():
+        return str(direct_path.resolve())
+
+    for root in _iter_local_model_roots(local_roots):
+        for relative in _candidate_model_paths(requested):
+            candidate = root / relative
+            if candidate.exists():
+                return str(candidate.resolve())
+
+    return requested
+
+
+def _online_model_loading_allowed() -> bool:
+    return os.environ.get("RAG_ALLOW_ONLINE_MODELS", "").strip().lower() in _TRUE_VALUES
+
+
+def _is_existing_model_path(value: str | None) -> bool:
+    if not value:
+        return False
+    try:
+        return Path(value).expanduser().exists()
+    except OSError:
+        return False
+
+
+def _iter_local_model_roots(
+    local_roots: Iterable[str | os.PathLike[str]] | None,
+) -> Iterable[Path]:
+    seen: set[Path] = set()
+    for value in local_roots or ():
+        root = Path(value).expanduser()
+        if root not in seen:
+            seen.add(root)
+            yield root
+    for env_name in _MODEL_ROOT_ENVS:
+        for root in _split_path_env(os.environ.get(env_name)):
+            if root not in seen:
+                seen.add(root)
+                yield root
+    repo_root = Path(__file__).resolve().parents[5]
+    package_root = Path(__file__).resolve().parents[2]
+    for root in (
+        repo_root / "models",
+        repo_root / "local_models",
+        package_root / "models",
+        package_root / "local_models",
+    ):
+        if root not in seen:
+            seen.add(root)
+            yield root
+
+
+def _split_path_env(value: str | None) -> list[Path]:
+    if not value:
+        return []
+    return [Path(item).expanduser() for item in value.split(os.pathsep) if item.strip()]
+
+
+def _candidate_model_paths(model_name: str) -> list[Path]:
+    normalized = model_name.strip().strip("/\\")
+    if not normalized:
+        return []
+    parts = [part for part in normalized.replace("\\", "/").split("/") if part]
+    leaf = parts[-1] if parts else normalized
+    candidates = [
+        Path(*parts),
+        Path(leaf),
+        Path(normalized.replace("/", "__").replace("\\", "__")),
+        Path(normalized.replace("/", "--").replace("\\", "--")),
+    ]
+    unique: list[Path] = []
+    for candidate in candidates:
+        if candidate not in unique:
+            unique.append(candidate)
+    return unique
 
 
 @dataclass(slots=True)
@@ -109,18 +207,34 @@ def _resolve_embedding_backend(
     加载失败时自动降级到 hashing。
     """
     requested_backend = _normalize_backend_name(backend)
-    requested_model = model_name or "BAAI/bge-m3"
+    requested_model = model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL
 
     if requested_backend == "sentence-transformer":
+        resolved_model = resolve_sentence_transformer_model_path(requested_model)
+        if not _is_existing_model_path(resolved_model) and not _online_model_loading_allowed():
+            warning = (
+                f"Local sentence-transformer model not found for '{requested_model}', "
+                "falling back to hashing. Set RAG_EMBEDDING_MODEL_PATH or "
+                "RAG_LOCAL_MODEL_DIR, or set RAG_ALLOW_ONLINE_MODELS=1 to permit downloads."
+            )
+            print(warning)
+            return ResolvedEmbeddingBackend(
+                name="hashing",
+                model_name=f"hashing-{dimension}",
+                function=HashingEmbeddingFunction(dimension=dimension),
+                dimension=dimension,
+                warning=warning,
+            )
         try:
             from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-            embedding_function = SentenceTransformerEmbeddingFunction(model_name=requested_model)
+            embedding_function = SentenceTransformerEmbeddingFunction(model_name=resolved_model)
             # 推断维度
-            dim = 1024 if "bge-m3" in requested_model else 384
+            dim_key = f"{requested_model} {resolved_model}".lower()
+            dim = 1024 if "bge-m3" in dim_key else 384
             return ResolvedEmbeddingBackend(
                 name="sentence-transformer",
-                model_name=requested_model,
+                model_name=resolved_model,
                 function=embedding_function,
                 dimension=dim,
             )
@@ -150,5 +264,5 @@ def create_embedding_backend(
     dimension: int = 1024,
 ) -> ResolvedEmbeddingBackend:
     requested_backend = _normalize_backend_name(backend)
-    requested_model = model_name or "BAAI/bge-m3"
+    requested_model = model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL
     return _resolve_embedding_backend(requested_backend, requested_model, dimension)
