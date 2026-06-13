@@ -56,6 +56,9 @@ local_chroma_db/
 .codex_temp_*/
 .pytest_cache/
 .ruff_cache/
+RAG_github_pages_publish/
+RAG_main_sync_worktree/
+archive/legacy-code/plant-graph-rag/
 tmp_inspect_chroma/
 graph.html
 local-*.png
