@@ -4,9 +4,6 @@
 
 当前根目录按照核心能力切分：每个一级文件夹代表一个高内聚模块；已经可运行的 RAG 控制台被迁移到 `api_server/current_console/`，其前端迁移到 `frontend_app/current_console/`，运行数据迁移到 `storage_layer/runtime/current_console/`。
 
-## 挑战杯 / 结项评审入口
-
-挑战杯与结项材料入口见 [`docs/challenge_cup/README_先看这里.md`](docs/challenge_cup/README_先看这里.md)。该目录把项目一页纸、挑战杯项目书、技术白皮书、实验评测报告、系统演示脚本、答辩问答手册和结项验收清单集中到一个评审入口。
 
 ## ✨ GraphRAG 核心能力
 

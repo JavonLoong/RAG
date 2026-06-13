@@ -321,7 +321,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(asset_response.status_code, 200)
 
     def test_deliverable_assets_are_served_from_stable_root_path(self) -> None:
-        """前端演示页引用的结项资产应可通过稳定 URL 访问，避免浏览器 404。"""
+        """前端演示页引用的静态资产应可通过稳定 URL 访问，避免浏览器 404。"""
         deliverables_dir = Path(self.tempdir.name) / "docs" / "project_deliverables"
         kg_dir = deliverables_dir / "06_四本书KG工具跑通演示"
         kg_dir.mkdir(parents=True)

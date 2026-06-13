@@ -1,7 +1,4 @@
 {
   "private": true,
-  "type": "module",
-  "scripts": {
-    "challenge:browser-smoke": "node scripts/run_challenge_cup_browser_demo_smoke.mjs"
-  }
+  "type": "module"
 }

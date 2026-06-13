@@ -7,7 +7,6 @@ export async function slide05(presentation, ctx) {
       title(slide, ctx, "Evaluation design", "60 题评测集覆盖事实、流程、OCR 风险和 GraphRAG", 5);
       const rows = [
         ["基础系统评测 se001-se030", 30, C.blue],
-        ["挑战杯扩展 cc031-cc060", 30, C.green],
         ["GraphRAG 同题子集", 10, C.red],
         ["graph context/global 题", 10, C.cyan],
       ];

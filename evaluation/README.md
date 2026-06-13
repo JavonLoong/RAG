@@ -4,7 +4,7 @@
 
 ## 当前评测集
 
-- `system_eval_questions.jsonl`：60 题系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据、挑战杯项目定位和评测方法。
+- `system_eval_questions.jsonl`：60 题系统评测集，覆盖普通 RAG、OCR 风险、GraphRAG/知识图谱、结构化数据和评测方法。
 - `scripts/run_system_evaluation.py`：可读取该 JSONL，并对系统输出计算 retrieval recall、answer evidence coverage、citation 缺失率和 hallucination risk 等指标。
 
 每条记录包含：

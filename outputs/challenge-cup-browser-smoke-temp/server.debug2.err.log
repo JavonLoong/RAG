@@ -1,5 +1,0 @@
-INFO:     Started server process [11572]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given
