@@ -65,7 +65,7 @@ Harbola & Purwar 2025 的 PARAM 方向和我们的应用最接近。它关注工
 
 当前项目可以分成三层。第一层是数据层：OCR 文本、Label Studio JSON、公开书籍资料、文本筛选结果和 ChromaDB。第二层是检索层：chunk 切分、embedding、向量检索、reranker、GraphRAG 图检索。第三层是生成与评估层：LLM 基于证据回答、人工评审三元组、问题集测试、日志记录和失败分析。
 
-目前已经完成的是数据入库和小规模 GraphRAG POC。更具体地说，最新 JSON 快照已经能经过筛选后进入 ChromaDB；OCR 质量较稳定的书籍可以作为公开演示数据；GraphRAG 侧已经有三元组、evidence 和可视化检查页；前端也能展示检索和问答。还没有完全完成的是：正式 embedding 对比、reranker 接入、Neo4j 或真正图数据库存储、GraphRAG 问答闭环、大规模质量评测。
+目前已经完成的是数据入库和小规模 GraphRAG POC。更具体地说，最新 JSON 快照已经能经过筛选后进入 ChromaDB；OCR 质量较稳定的书籍可以作为公开测试数据；GraphRAG 侧已经有三元组、evidence 和可视化检查页；前端也能展示检索和问答。还没有完全完成的是：正式 embedding 对比、reranker 接入、Neo4j 或真正图数据库存储、GraphRAG 问答闭环、大规模质量评测。
 
 因此，下一步建议不要直接追求“大而全”。应先做一个可发表实验雏形：以普通 RAG 为 baseline，以 GraphRAG 为结构增强方法，用同一批动力装备问题进行对比。对比指标包括检索命中率、证据可追溯性、回答完整性、幻觉率、耗时和构建成本。这样才能把工程成果变成论文论证。
 
