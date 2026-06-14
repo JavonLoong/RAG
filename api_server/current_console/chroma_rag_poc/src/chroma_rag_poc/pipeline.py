@@ -6,7 +6,10 @@
 """
 from __future__ import annotations
 
+import json
 import os
+import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -659,10 +662,79 @@ def get_collection_handle(
 
 def _create_client(persist_dir: Path) -> chromadb.PersistentClient:
     """创建 ChromaDB 客户端（关闭 telemetry 解决报错）"""
+    persist_dir = Path(persist_dir)
+    persist_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        return _open_chroma_client(persist_dir)
+    except Exception as exc:
+        if not _should_recover_chroma_store(persist_dir, exc):
+            raise
+        backup_dir = _quarantine_chroma_store(persist_dir, exc)
+        persist_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Recovered unusable Chroma store by moving it to {backup_dir}")
+        return _open_chroma_client(persist_dir)
+
+
+def _open_chroma_client(persist_dir: Path) -> chromadb.PersistentClient:
     return chromadb.PersistentClient(
         path=str(persist_dir),
         settings=Settings(anonymized_telemetry=False, is_persistent=True),
     )
+
+
+def _should_recover_chroma_store(persist_dir: Path, exc: Exception) -> bool:
+    if not persist_dir.exists() or not persist_dir.is_dir():
+        return False
+    has_chroma_artifacts = any(
+        (persist_dir / name).exists()
+        for name in ("chroma.sqlite3", "index", "chroma-collections.parquet", "chroma-embeddings.parquet")
+    )
+    if not has_chroma_artifacts:
+        try:
+            has_chroma_artifacts = any(persist_dir.iterdir())
+        except OSError:
+            return False
+    if not has_chroma_artifacts:
+        return False
+
+    message = str(exc).lower()
+    recoverable_markers = (
+        "default_tenant",
+        "could not connect to tenant",
+        "no such table",
+        "file is not a database",
+        "database disk image is malformed",
+        "sqlite",
+        "migration",
+        "tenant",
+    )
+    return any(marker in message for marker in recoverable_markers)
+
+
+def _quarantine_chroma_store(persist_dir: Path, exc: Exception) -> Path:
+    parent = persist_dir.parent
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir = parent / f"{persist_dir.name}_broken_{timestamp}"
+    counter = 1
+    while backup_dir.exists():
+        backup_dir = parent / f"{persist_dir.name}_broken_{timestamp}_{counter}"
+        counter += 1
+
+    shutil.move(str(persist_dir), str(backup_dir))
+    notice = {
+        "reason": str(exc),
+        "original_dir": str(persist_dir),
+        "recovered_at": datetime.now().isoformat(timespec="seconds"),
+        "note": "This Chroma store could not be opened and was moved aside so a clean store could be created.",
+    }
+    try:
+        (backup_dir / "RECOVERY_NOTICE.json").write_text(
+            json.dumps(notice, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    return backup_dir
 
 
 def _close_client(client: chromadb.PersistentClient) -> None:

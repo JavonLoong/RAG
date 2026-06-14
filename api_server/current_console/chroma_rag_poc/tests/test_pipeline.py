@@ -538,6 +538,43 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(payload["status"], "error")
         self.assertIn("default_tenant", payload["error"])
 
+    def test_stats_recovers_unusable_chroma_store(self) -> None:
+        broken_chroma = Path(self.tempdir.name) / "recoverable-chroma"
+        broken_chroma.mkdir()
+        (broken_chroma / "chroma.sqlite3").write_text("not a sqlite database", encoding="utf-8")
+        error = ValueError("Could not connect to tenant default_tenant. Are you sure it exists?")
+        calls = []
+
+        class FakeSystem:
+            def stop(self) -> None:
+                pass
+
+        class FakeClient:
+            _system = FakeSystem()
+
+            def list_collections(self) -> list:
+                return []
+
+            def clear_system_cache(self) -> None:
+                pass
+
+        def fake_open(path: Path):
+            calls.append(path)
+            if len(calls) == 1:
+                raise error
+            return FakeClient()
+
+        with patch("chroma_rag_poc.pipeline._open_chroma_client", side_effect=fake_open):
+            stats = get_all_stats(broken_chroma)
+
+        self.assertEqual(stats["status"], "ok")
+        self.assertEqual(calls, [broken_chroma, broken_chroma])
+        self.assertTrue(broken_chroma.exists())
+        backups = sorted(broken_chroma.parent.glob("recoverable-chroma_broken_*"))
+        self.assertEqual(len(backups), 1)
+        self.assertTrue((backups[0] / "chroma.sqlite3").exists())
+        self.assertTrue((backups[0] / "RECOVERY_NOTICE.json").exists())
+
     def test_sentence_transformer_default_prefers_local_model_dir(self) -> None:
         from chroma_rag_poc.embeddings import resolve_sentence_transformer_model_path
 

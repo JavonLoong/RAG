@@ -32,6 +32,8 @@ from .parsing import get_source_kind, is_supported_source, supported_source_exte
 from .pipeline import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_UPLOAD_DIR,
+    _close_client,
+    _create_client,
     get_all_stats,
     get_collection_stats,
     ingest_source_payloads,
@@ -330,17 +332,11 @@ def _resolve_public_books_input_dir(request: Request, raw_input_dir: str) -> Pat
 
 
 def _purge_vectors_by_source_files(persist_dir: Path, filenames: list[str]) -> dict:
-    import chromadb
-    from chromadb.config import Settings
-
     requested = [str(name).strip() for name in filenames if str(name).strip()]
     if not requested:
         return {"chunks_deleted": 0, "collections": {}}
 
-    client = chromadb.PersistentClient(
-        path=str(persist_dir),
-        settings=Settings(anonymized_telemetry=False, is_persistent=True),
-    )
+    client = _create_client(persist_dir)
     deleted_total = 0
     deleted_by_collection: dict[str, int] = {}
 
@@ -361,10 +357,7 @@ def _purge_vectors_by_source_files(persist_dir: Path, filenames: list[str]) -> d
                 deleted_by_collection[coll.name] = collection_deleted
                 deleted_total += collection_deleted
     finally:
-        try:
-            client._system.stop()
-        except Exception:
-            pass
+        _close_client(client)
 
     return {"chunks_deleted": deleted_total, "collections": deleted_by_collection}
 
@@ -1063,24 +1056,15 @@ def create_app(
     @app.delete("/api/collections/{name}")
     async def delete_collection(request: Request, name: str):
         """删除指定集合"""
-        import chromadb
-        from chromadb.config import Settings
-
         persist_dir = request.app.state.persist_dir
-        client = chromadb.PersistentClient(
-            path=str(persist_dir),
-            settings=Settings(anonymized_telemetry=False, is_persistent=True),
-        )
+        client = _create_client(persist_dir)
         try:
             client.delete_collection(name=name)
             return {"status": "ok", "deleted": name}
         except Exception as exc:
             raise HTTPException(status_code=404, detail=f"集合 '{name}' 不存在") from exc
         finally:
-            try:
-                client._system.stop()
-            except Exception:
-                pass
+            _close_client(client)
 
     @app.get("/api/export")
     async def export_all(request: Request):
@@ -1113,14 +1097,8 @@ def create_app(
     @app.get("/api/export/{collection_name}")
     async def export_collection(request: Request, collection_name: str):
         """导出单个集合的全部文档和元数据为 JSON。"""
-        import chromadb
-        from chromadb.config import Settings
-
         persist_dir = request.app.state.persist_dir
-        client = chromadb.PersistentClient(
-            path=str(persist_dir),
-            settings=Settings(anonymized_telemetry=False, is_persistent=True),
-        )
+        client = _create_client(persist_dir)
         try:
             collection = client.get_collection(name=collection_name)
             count = collection.count()
@@ -1141,10 +1119,7 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=404, detail=f"集合 '{collection_name}' 不存在或读取失败: {exc}") from exc
         finally:
-            try:
-                client._system.stop()
-            except Exception:
-                pass
+            _close_client(client)
 
         json_bytes = orjson.dumps(data, option=orjson.OPT_INDENT_2)
         buffer = io.BytesIO(json_bytes)
