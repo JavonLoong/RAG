@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence
@@ -669,6 +670,14 @@ def _create_client(persist_dir: Path) -> chromadb.PersistentClient:
     except Exception as exc:
         if not _should_recover_chroma_store(persist_dir, exc):
             raise
+        repair_note = _try_repair_legacy_chroma_store(persist_dir, exc)
+        if repair_note:
+            try:
+                client = _open_chroma_client(persist_dir)
+                print(f"Recovered legacy Chroma store in place: {repair_note}")
+                return client
+            except Exception as retry_exc:
+                exc = retry_exc
         backup_dir = _quarantine_chroma_store(persist_dir, exc)
         persist_dir.mkdir(parents=True, exist_ok=True)
         print(f"Recovered unusable Chroma store by moving it to {backup_dir}")
@@ -709,6 +718,106 @@ def _should_recover_chroma_store(persist_dir: Path, exc: Exception) -> bool:
         "tenant",
     )
     return any(marker in message for marker in recoverable_markers)
+
+
+def _try_repair_legacy_chroma_store(persist_dir: Path, exc: Exception) -> str | None:
+    db_path = persist_dir / "chroma.sqlite3"
+    if not db_path.exists() or not db_path.is_file():
+        return None
+    message = str(exc).lower()
+    if "default_tenant" not in message and "could not connect to tenant" not in message and "tenant" not in message:
+        return None
+
+    con: sqlite3.Connection | None = None
+    try:
+        con = sqlite3.connect(str(db_path))
+        table_names = {
+            row[0]
+            for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+        if not {"tenants", "databases"}.issubset(table_names):
+            return None
+
+        changes: list[str] = []
+        if not _sqlite_row_exists(con, "tenants", "id", "default_tenant"):
+            _copy_sqlite_before_repair(db_path)
+            con.execute("INSERT INTO tenants(id) VALUES (?)", ("default_tenant",))
+            changes.append("inserted default_tenant")
+
+        if not _sqlite_row_exists(con, "databases", "name", "default_database"):
+            _copy_sqlite_before_repair(db_path)
+            con.execute(
+                "INSERT INTO databases(id, name, tenant_id) VALUES (?, ?, ?)",
+                ("00000000-0000-0000-0000-000000000000", "default_database", "default_tenant"),
+            )
+            changes.append("inserted default_database")
+
+        database_row = con.execute(
+            "SELECT id FROM databases WHERE name = ? LIMIT 1",
+            ("default_database",),
+        ).fetchone()
+        default_database_id = (
+            str(database_row[0])
+            if database_row and database_row[0]
+            else "00000000-0000-0000-0000-000000000000"
+        )
+
+        database_columns = _sqlite_columns(con, "databases")
+        if "tenant_id" in database_columns:
+            updated = con.execute(
+                "UPDATE databases SET tenant_id = ? WHERE name = ? AND (tenant_id IS NULL OR tenant_id = '')",
+                ("default_tenant", "default_database"),
+            ).rowcount
+            if updated:
+                _copy_sqlite_before_repair(db_path)
+                changes.append("linked default_database to default_tenant")
+
+        collection_columns = _sqlite_columns(con, "collections")
+        if "database_id" in collection_columns:
+            updated = con.execute(
+                "UPDATE collections SET database_id = ? WHERE database_id IS NULL OR database_id = ''",
+                (default_database_id,),
+            ).rowcount
+            if updated:
+                _copy_sqlite_before_repair(db_path)
+                changes.append(f"linked {updated} collections to default_database")
+
+        if not changes:
+            return None
+        con.commit()
+        return "; ".join(changes)
+    except sqlite3.Error:
+        return None
+    except OSError:
+        return None
+    finally:
+        if con is not None:
+            con.close()
+
+
+def _sqlite_row_exists(con: sqlite3.Connection, table: str, column: str, value: str) -> bool:
+    row = con.execute(f"SELECT 1 FROM {table} WHERE {column} = ? LIMIT 1", (value,)).fetchone()
+    return row is not None
+
+
+def _sqlite_columns(con: sqlite3.Connection, table: str) -> set[str]:
+    try:
+        return {row[1] for row in con.execute(f"PRAGMA table_info({table})")}
+    except sqlite3.Error:
+        return set()
+
+
+def _copy_sqlite_before_repair(db_path: Path) -> None:
+    backup_pattern = f"{db_path.name}.repair_backup_*"
+    if any(db_path.parent.glob(backup_pattern)):
+        return
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = db_path.with_name(f"{db_path.name}.repair_backup_{timestamp}")
+    counter = 1
+    while backup_path.exists():
+        backup_path = db_path.with_name(f"{db_path.name}.repair_backup_{timestamp}_{counter}")
+        counter += 1
+    shutil.copy2(db_path, backup_path)
 
 
 def _quarantine_chroma_store(persist_dir: Path, exc: Exception) -> Path:

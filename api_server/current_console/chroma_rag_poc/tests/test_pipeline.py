@@ -8,6 +8,7 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 
@@ -537,6 +538,65 @@ class PipelineTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["status"], "error")
         self.assertIn("default_tenant", payload["error"])
+
+    def test_stats_repairs_legacy_chroma_default_tenant_metadata(self) -> None:
+        legacy_chroma = Path(self.tempdir.name) / "legacy-chroma"
+        legacy_chroma.mkdir()
+        db_path = legacy_chroma / "chroma.sqlite3"
+        con = sqlite3.connect(db_path)
+        try:
+            con.execute("CREATE TABLE tenants (id TEXT PRIMARY KEY)")
+            con.execute("CREATE TABLE databases (id TEXT PRIMARY KEY, name TEXT NOT NULL, tenant_id TEXT NOT NULL)")
+            con.execute("CREATE TABLE collections (id TEXT PRIMARY KEY, name TEXT NOT NULL, database_id TEXT)")
+            con.execute("INSERT INTO collections(id, name, database_id) VALUES (?, ?, ?)", ("c1", "legacy", ""))
+            con.commit()
+        finally:
+            con.close()
+
+        error = ValueError("Could not connect to tenant default_tenant. Are you sure it exists?")
+        calls = []
+
+        class FakeSystem:
+            def stop(self) -> None:
+                pass
+
+        class FakeClient:
+            _system = FakeSystem()
+
+            def list_collections(self) -> list:
+                return []
+
+            def clear_system_cache(self) -> None:
+                pass
+
+        def fake_open(path: Path):
+            calls.append(path)
+            if len(calls) == 1:
+                raise error
+            return FakeClient()
+
+        with patch("chroma_rag_poc.pipeline._open_chroma_client", side_effect=fake_open):
+            stats = get_all_stats(legacy_chroma)
+
+        self.assertEqual(stats["status"], "ok")
+        self.assertEqual(calls, [legacy_chroma, legacy_chroma])
+        self.assertFalse(list(legacy_chroma.parent.glob("legacy-chroma_broken_*")))
+        self.assertTrue(list(legacy_chroma.glob("chroma.sqlite3.repair_backup_*")))
+
+        con = sqlite3.connect(db_path)
+        try:
+            tenant = con.execute("SELECT id FROM tenants WHERE id = ?", ("default_tenant",)).fetchone()
+            database = con.execute(
+                "SELECT id, tenant_id FROM databases WHERE name = ?",
+                ("default_database",),
+            ).fetchone()
+            collection_db = con.execute("SELECT database_id FROM collections WHERE id = ?", ("c1",)).fetchone()
+        finally:
+            con.close()
+
+        self.assertEqual(tenant, ("default_tenant",))
+        self.assertEqual(database, ("00000000-0000-0000-0000-000000000000", "default_tenant"))
+        self.assertEqual(collection_db, ("00000000-0000-0000-0000-000000000000",))
 
     def test_stats_recovers_unusable_chroma_store(self) -> None:
         broken_chroma = Path(self.tempdir.name) / "recoverable-chroma"
