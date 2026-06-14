@@ -379,8 +379,14 @@ def get_collection_stats(
     """获取 ChromaDB 集合统计信息（合并两版）"""
     persist_dir = Path(persist_dir)
     persist_dir.mkdir(parents=True, exist_ok=True)
-    client = _create_client(persist_dir)
     safe_name = safe_collection_name(collection_name)
+    try:
+        client = _create_client(persist_dir)
+    except Exception as exc:
+        stats = _empty_stats(collection_name=safe_name, persist_dir=persist_dir)
+        stats["status"] = "error"
+        stats["error"] = str(exc)
+        return stats
 
     try:
         collection = client.get_collection(name=safe_name)
@@ -443,8 +449,9 @@ def get_all_stats(persist_dir: Path = DEFAULT_PERSIST_DIR) -> dict:
             "source_type_breakdown": {},
         }
 
-    client = _create_client(persist_dir)
+    client = None
     try:
+        client = _create_client(persist_dir)
         try:
             collections = client.list_collections()
 
@@ -524,8 +531,23 @@ def get_all_stats(persist_dir: Path = DEFAULT_PERSIST_DIR) -> dict:
                 "source_type_breakdown": {},
                 "error": str(exc),
             }
+    except Exception as exc:
+        storage_bytes = get_directory_size(persist_dir)
+        return {
+            "status": "error",
+            "collections": [],
+            "total_documents": 0,
+            "total_chars": 0,
+            "total_tokens_estimate": 0,
+            "storage_size_mb": round(storage_bytes / (1024 * 1024), 2),
+            "storage_size_bytes": storage_bytes,
+            "embedding_dim": 1024,
+            "source_type_breakdown": {},
+            "error": str(exc),
+        }
     finally:
-        _close_client(client)
+        if client is not None:
+            _close_client(client)
 
 
 # ============================================================

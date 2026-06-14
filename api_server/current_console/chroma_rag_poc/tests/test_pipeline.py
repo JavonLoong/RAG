@@ -26,7 +26,7 @@ from chroma_rag_poc.cleaning import clean_records
 from chroma_rag_poc.embeddings import HashingEmbeddingFunction, create_embedding_backend
 from chroma_rag_poc.observability import OperationLogger
 from chroma_rag_poc.parsing import load_json_payload
-from chroma_rag_poc.pipeline import get_collection_stats, ingest_json_payloads, query_collection, quality_report
+from chroma_rag_poc.pipeline import get_all_stats, get_collection_stats, ingest_json_payloads, query_collection, quality_report
 
 
 def build_label_studio_payload() -> bytes:
@@ -515,6 +515,28 @@ class PipelineTests(unittest.TestCase):
         broken_stats = broken_client.get("/api/stats?collection=broken")
         self.assertEqual(broken_stats.status_code, 500)
         self.assertIn(".log", broken_stats.json()["detail"])
+
+    def test_stats_handles_chroma_tenant_validation_error(self) -> None:
+        broken_chroma = Path(self.tempdir.name) / "broken-chroma"
+        broken_chroma.mkdir()
+        error = ValueError("Could not connect to tenant default_tenant. Are you sure it exists?")
+
+        with patch("chroma_rag_poc.pipeline._create_client", side_effect=error):
+            stats = get_all_stats(broken_chroma)
+
+        self.assertEqual(stats["status"], "error")
+        self.assertEqual(stats["collections"], [])
+        self.assertIn("default_tenant", stats["error"])
+
+        app = create_app(persist_dir=broken_chroma, upload_dir=self.upload_dir)
+        client = TestClient(app)
+        with patch("chroma_rag_poc.pipeline._create_client", side_effect=error):
+            response = client.get("/api/stats")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "error")
+        self.assertIn("default_tenant", payload["error"])
 
     def test_sentence_transformer_default_prefers_local_model_dir(self) -> None:
         from chroma_rag_poc.embeddings import resolve_sentence_transformer_model_path
