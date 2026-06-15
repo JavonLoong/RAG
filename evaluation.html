@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAG 评测系统驾驶舱</title>
+  <title>RAG Repository Evaluation Platform</title>
   <style>
     :root {
       --bg: #050914;
-      --panel: rgba(15, 23, 42, 0.78);
-      --panel-2: rgba(15, 23, 42, 0.56);
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-2: rgba(15, 23, 42, 0.55);
+      --surface-3: rgba(2, 6, 23, 0.72);
       --ink: #f8fbff;
       --text: #c7d2e5;
       --muted: #8ea0b8;
@@ -19,7 +20,6 @@
       --cyan: #22d3ee;
       --amber: #fbbf24;
       --red: #fb7185;
-      --shadow: 0 22px 70px rgba(0,0,0,0.34);
       --radius: 8px;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -27,9 +27,7 @@
 
     * { box-sizing: border-box; }
 
-    html {
-      scroll-behavior: smooth;
-    }
+    html { scroll-behavior: smooth; }
 
     body {
       margin: 0;
@@ -38,9 +36,9 @@
       font-family: var(--font);
       letter-spacing: 0;
       background:
-        radial-gradient(circle at 18% 12%, rgba(23, 105, 224, 0.28), transparent 30%),
-        radial-gradient(circle at 88% 18%, rgba(34, 211, 238, 0.20), transparent 26%),
-        radial-gradient(circle at 76% 72%, rgba(52, 211, 153, 0.13), transparent 30%),
+        radial-gradient(circle at 18% 12%, rgba(23, 105, 224, 0.26), transparent 30%),
+        radial-gradient(circle at 88% 16%, rgba(34, 211, 238, 0.18), transparent 28%),
+        radial-gradient(circle at 75% 74%, rgba(52, 211, 153, 0.12), transparent 32%),
         linear-gradient(135deg, #050914 0%, #08111f 50%, #0e1119 100%);
       overflow-x: hidden;
     }
@@ -59,15 +57,21 @@
     }
 
     a,
-    button {
+    button,
+    input,
+    textarea,
+    select {
       font: inherit;
-      color: inherit;
     }
 
-    a { text-decoration: none; }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
     button {
       border: 0;
+      color: inherit;
       background: none;
       cursor: pointer;
     }
@@ -75,7 +79,7 @@
     .page {
       position: relative;
       z-index: 1;
-      width: min(100%, 1600px);
+      width: min(100%, 1720px);
       margin: 0 auto;
       padding: 18px;
       display: grid;
@@ -93,7 +97,7 @@
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(2, 6, 23, 0.78);
+      background: rgba(2, 6, 23, 0.82);
       backdrop-filter: blur(18px);
       box-shadow: 0 14px 34px rgba(0,0,0,0.26);
     }
@@ -124,7 +128,7 @@
       line-height: 1.2;
     }
 
-    .brand span {
+    .brand span span {
       display: block;
       margin-top: 3px;
       color: var(--muted);
@@ -149,26 +153,29 @@
     }
 
     .hero {
-      min-height: 650px;
       display: grid;
-      grid-template-columns: minmax(0, 0.82fr) minmax(520px, 1.18fr);
-      gap: 26px;
+      grid-template-columns: minmax(0, 0.88fr) minmax(520px, 1.12fr);
+      gap: 18px;
       align-items: stretch;
-      padding: clamp(28px, 4vw, 54px);
+      min-height: 610px;
+    }
+
+    .panel {
+      min-width: 0;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background:
-        linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.36)),
-        rgba(2,6,23,0.58);
-      box-shadow: var(--shadow);
-      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 18px 52px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     .hero-copy {
       display: grid;
       align-content: center;
-      gap: 18px;
-      min-width: 0;
+      gap: 20px;
+      padding: clamp(26px, 4vw, 54px);
+      background:
+        radial-gradient(circle at 12% 20%, rgba(96,165,250,0.12), transparent 28%),
+        rgba(15,23,42,0.76);
     }
 
     .system-label {
@@ -189,8 +196,8 @@
     }
 
     h1 {
-      max-width: 760px;
-      font-size: clamp(44px, 5.4vw, 88px);
+      max-width: 780px;
+      font-size: clamp(40px, 5vw, 82px);
       line-height: 0.98;
       font-weight: 880;
     }
@@ -198,15 +205,51 @@
     .lead {
       max-width: 760px;
       color: var(--text);
-      font-size: clamp(17px, 1.35vw, 24px);
+      font-size: clamp(16px, 1.25vw, 23px);
       line-height: 1.68;
     }
 
-    .hero-actions {
+    .repo-form {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2,6,23,0.45);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px minmax(190px, 0.45fr);
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      outline: none;
+      background: rgba(15, 23, 42, 0.74);
+      color: var(--ink);
+    }
+
+    .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 10px;
     }
 
     .btn {
@@ -223,27 +266,31 @@
       box-shadow: 0 14px 26px rgba(23,105,224,0.26);
     }
 
-    .btn.ghost {
+    .btn.secondary {
       color: var(--text);
       background: rgba(15,23,42,0.74);
       border: 1px solid var(--line);
       box-shadow: none;
     }
 
-    .eval-map {
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .platform-map {
       position: relative;
-      min-height: 560px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
+      min-height: 610px;
+      padding: 18px;
+      overflow: hidden;
       background:
         linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
         linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px),
         rgba(3, 7, 18, 0.68);
       background-size: 34px 34px;
-      overflow: hidden;
     }
 
-    .eval-map svg {
+    .platform-map svg {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -280,8 +327,8 @@
     .map-node {
       position: absolute;
       z-index: 2;
-      width: 152px;
-      min-height: 78px;
+      width: 160px;
+      min-height: 82px;
       padding: 12px;
       border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: var(--radius);
@@ -331,45 +378,33 @@
       line-height: 1.35;
     }
 
-    .n-dataset { left: 4%; top: 41%; }
-    .n-runners { left: 26%; top: 16%; border-color: rgba(96,165,250,0.42); }
-    .n-metrics { left: 50%; top: 10%; border-color: rgba(52,211,153,0.42); }
-    .n-failure { left: 50%; bottom: 13%; border-color: rgba(251,191,36,0.42); }
-    .n-action { right: 5%; top: 35%; border-color: rgba(34,211,238,0.42); }
+    .n-repo { left: 4%; top: 42%; }
+    .n-tree { left: 25%; top: 14%; }
+    .n-assets { left: 50%; top: 10%; }
+    .n-metrics { left: 50%; bottom: 13%; }
+    .n-score { right: 5%; top: 34%; }
 
     .live-panel {
       position: absolute;
       z-index: 3;
       left: 18px;
       bottom: 18px;
-      width: min(420px, calc(100% - 36px));
+      width: min(470px, calc(100% - 36px));
       padding: 14px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(2, 6, 23, 0.82);
+      background: rgba(2, 6, 23, 0.86);
       color: #c7d2fe;
       font-family: var(--mono);
       font-size: 12px;
       line-height: 1.65;
-    }
-
-    .live-panel span {
-      display: block;
-      animation: logPulse 4.8s linear infinite;
-    }
-
-    .live-panel span:nth-child(2) { animation-delay: 0.7s; color: #a7f3d0; }
-    .live-panel span:nth-child(3) { animation-delay: 1.4s; color: #fde68a; }
-
-    @keyframes logPulse {
-      0%, 100% { opacity: 0.46; }
-      40%, 70% { opacity: 1; text-shadow: 0 0 12px currentColor; }
+      min-height: 110px;
     }
 
     .section {
       display: grid;
       gap: 16px;
-      padding: clamp(24px, 3vw, 38px);
+      padding: clamp(22px, 3vw, 34px);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: rgba(2, 6, 23, 0.58);
@@ -385,290 +420,228 @@
     }
 
     h2 {
-      font-size: clamp(30px, 3vw, 48px);
+      font-size: clamp(28px, 3vw, 46px);
       line-height: 1.08;
       font-weight: 840;
     }
 
     .section-head p {
-      max-width: 560px;
+      max-width: 600px;
       min-width: 0;
       color: var(--muted);
       font-size: 14px;
       line-height: 1.6;
       text-align: right;
       overflow-wrap: anywhere;
-      word-break: break-word;
     }
 
-    .kpi-grid,
-    .method-grid,
-    .failure-grid,
-    .source-grid {
+    .results-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .score-card {
+      position: sticky;
+      top: 92px;
       display: grid;
       gap: 14px;
+      padding: 20px;
     }
 
-    .kpi-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .kpi,
-    .card {
-      min-width: 0;
-      padding: 18px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--panel);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-    }
-
-    .kpi {
-      border-left: 4px solid var(--blue);
-    }
-
-    .kpi:nth-child(2) { border-left-color: var(--green); }
-    .kpi:nth-child(3) { border-left-color: var(--amber); }
-    .kpi:nth-child(4) { border-left-color: var(--cyan); }
-
-    .kpi strong {
-      display: block;
-      font-family: var(--mono);
-      color: var(--ink);
-      font-size: clamp(34px, 3vw, 56px);
-      line-height: 1;
-    }
-
-    .kpi span {
-      display: block;
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.96fr);
-      gap: 16px;
-      align-items: stretch;
-    }
-
-    .chart-card h3,
-    .card h3 {
-      font-size: 18px;
-      margin-bottom: 12px;
-    }
-
-    .bar-chart {
-      display: grid;
-      gap: 13px;
-      margin-top: 14px;
-    }
-
-    .bar-row {
-      display: grid;
-      grid-template-columns: 120px minmax(0, 1fr) 72px;
-      gap: 12px;
-      align-items: center;
-      color: var(--text);
-      font-size: 13px;
-    }
-
-    .track {
-      position: relative;
-      height: 12px;
-      border-radius: 999px;
-      background: rgba(148, 163, 184, 0.15);
-      overflow: hidden;
-    }
-
-    .track span {
-      display: block;
-      height: 100%;
-      width: calc(var(--value) * 1%);
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--blue), var(--cyan));
-      animation: grow 900ms ease both;
-    }
-
-    .bar-row:nth-child(2) .track span { background: linear-gradient(90deg, var(--green), var(--cyan)); }
-    .bar-row:nth-child(3) .track span { background: linear-gradient(90deg, var(--amber), var(--green)); }
-
-    @keyframes grow {
-      from { width: 0; }
-    }
-
-    .method-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .method-card {
-      display: grid;
-      gap: 12px;
-    }
-
-    .method-score {
-      font-family: var(--mono);
-      color: var(--blue);
-      font-size: 34px;
-      line-height: 1;
-      font-weight: 900;
-    }
-
-    .method-card p,
-    .card p,
-    .failure-card p {
-      color: var(--text);
-      font-size: 13px;
-      line-height: 1.62;
-    }
-
-    .heatmap {
-      display: grid;
-      grid-template-columns: 120px repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    .heatmap div {
-      min-height: 42px;
+    .score-ring {
+      width: 220px;
+      height: 220px;
+      margin: 0 auto;
+      border-radius: 50%;
       display: grid;
       place-items: center;
+      background:
+        conic-gradient(var(--green) calc(var(--score) * 1%), rgba(148,163,184,0.16) 0),
+        radial-gradient(circle, #07111f 58%, transparent 59%);
+      box-shadow: inset 0 0 0 1px var(--line), 0 0 38px rgba(52,211,153,0.14);
+    }
+
+    .score-ring div {
+      width: 152px;
+      height: 152px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(2,6,23,0.92);
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: rgba(15, 23, 42, 0.66);
-      color: var(--text);
+    }
+
+    .score-value {
+      display: block;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 54px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .score-grade {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
       font-size: 12px;
       text-align: center;
-      padding: 8px;
     }
 
-    .heatmap .head {
-      color: var(--muted);
-      background: transparent;
-    }
-
-    .heatmap .hot { background: rgba(52, 211, 153, 0.22); color: #d1fae5; border-color: rgba(52,211,153,0.36); }
-    .heatmap .mid { background: rgba(251, 191, 36, 0.18); color: #fef3c7; border-color: rgba(251,191,36,0.32); }
-    .heatmap .cold { background: rgba(248, 113, 113, 0.16); color: #ffe4e6; border-color: rgba(248,113,113,0.28); }
-
-    .failure-grid {
+    .dimension-grid {
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .failure-card {
-      padding: 18px;
-      border-radius: var(--radius);
+    .dimension-card,
+    .card {
+      min-width: 0;
+      padding: 16px;
       border: 1px solid var(--line);
-      background: var(--panel);
+      border-radius: var(--radius);
+      background: var(--surface);
     }
 
-    .failure-card strong {
-      display: block;
-      color: var(--amber);
-      font-family: var(--mono);
-      font-size: 13px;
+    .dimension-card h3,
+    .card h3 {
+      font-size: 17px;
       margin-bottom: 10px;
     }
 
-    .case-layout {
+    .dimension-score {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .mini-bar {
+      height: 8px;
+      margin: 12px 0;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.14);
+      overflow: hidden;
+    }
+
+    .mini-bar span {
+      display: block;
+      height: 100%;
+      width: var(--value);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+    }
+
+    .dimension-card ul,
+    .card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .workflow {
       display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+    }
+
+    .step small {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-weight: 900;
+      font-size: 11px;
+    }
+
+    .step strong {
+      display: block;
+      margin: 8px 0 6px;
+      font-size: 16px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tables {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 16px;
     }
 
-    .case-tabs {
-      display: grid;
-      gap: 8px;
-      align-content: start;
-    }
-
-    .case-tabs button {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: rgba(15, 23, 42, 0.66);
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
       color: var(--text);
-      text-align: left;
       font-size: 13px;
-      font-weight: 700;
     }
 
-    .case-tabs button.active {
-      color: #fff;
-      background: var(--blue-strong);
-      border-color: transparent;
+    .table th,
+    .table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
-    .case-detail {
-      min-height: 310px;
-      padding: 22px;
+    .table th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status-ok { color: var(--green); }
+    .status-warn { color: var(--amber); }
+    .status-bad { color: var(--red); }
+
+    .report-box {
+      width: 100%;
+      min-height: 260px;
+      padding: 14px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(15, 23, 42, 0.74);
-    }
-
-    .case-detail h3 {
-      font-size: 22px;
-      margin-bottom: 12px;
-    }
-
-    .case-detail p {
-      color: var(--text);
-      font-size: 14px;
-      line-height: 1.68;
-    }
-
-    .case-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 16px 0;
-    }
-
-    .chip {
-      padding: 6px 9px;
-      border-radius: 6px;
-      border: 1px solid var(--line);
-      color: var(--text);
-      background: rgba(2,6,23,0.42);
-      font-size: 12px;
-      font-family: var(--mono);
-    }
-
-    .source-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .source-card {
-      display: grid;
-      gap: 8px;
-    }
-
-    .source-card code {
-      color: #bfdbfe;
+      resize: vertical;
+      color: #dbeafe;
+      background: rgba(2, 6, 23, 0.88);
       font-family: var(--mono);
       font-size: 12px;
-      line-height: 1.45;
-      overflow-wrap: anywhere;
+      line-height: 1.6;
+      outline: none;
     }
 
-    @media (max-width: 1120px) {
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1180px) {
       .hero,
-      .dashboard-grid,
-      .case-layout {
+      .results-grid,
+      .tables {
         grid-template-columns: 1fr;
       }
 
-      .eval-map {
-        min-height: 620px;
+      .score-card {
+        position: static;
       }
 
-      .kpi-grid,
-      .method-grid,
-      .failure-grid,
-      .source-grid {
+      .dimension-grid,
+      .workflow {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -679,54 +652,52 @@
       }
 
       .topbar,
-      .section-head {
-        align-items: flex-start;
+      .section-head,
+      .form-grid {
+        grid-template-columns: 1fr;
         flex-direction: column;
+        align-items: flex-start;
       }
 
       .section-head p {
         text-align: left;
       }
 
-      .hero {
+      .hero-copy {
         padding: 24px;
       }
 
-      .eval-map {
+      .platform-map {
         min-height: 880px;
       }
 
       .map-node {
-        width: min(158px, 44vw);
+        width: min(160px, 44vw);
       }
 
-      .n-dataset { left: 5%; top: 7%; }
-      .n-runners { left: 52%; top: 7%; }
-      .n-metrics { left: 5%; top: 28%; }
-      .n-failure { left: 52%; top: 28%; bottom: auto; }
-      .n-action { left: 5%; top: 50%; right: auto; }
+      .n-repo { left: 5%; top: 7%; }
+      .n-tree { left: 52%; top: 7%; }
+      .n-assets { left: 5%; top: 29%; }
+      .n-metrics { left: 52%; top: 29%; bottom: auto; }
+      .n-score { left: 5%; top: 51%; right: auto; }
 
       .live-panel {
         bottom: 18px;
       }
 
-      .kpi-grid,
-      .method-grid,
-      .failure-grid,
-      .source-grid {
+      .dimension-grid,
+      .workflow {
         grid-template-columns: 1fr;
       }
 
-      .heatmap {
-        grid-template-columns: 1fr;
+      .score-ring {
+        width: 190px;
+        height: 190px;
       }
 
-      .heatmap .head {
-        display: none;
-      }
-
-      .bar-row {
-        grid-template-columns: 92px minmax(0, 1fr) 58px;
+      .score-ring div {
+        width: 132px;
+        height: 132px;
       }
     }
   </style>
@@ -736,204 +707,597 @@
     <header class="topbar">
       <a class="brand" href="index.html">
         <span class="mark">E</span>
-        <span><strong>RAG Evaluation Cockpit</strong><span>60 题评测集 · Baseline 对比 · GraphRAG 子集</span></span>
+        <span><strong>RAG Evaluation Platform</strong><span>导入 GitHub 仓库 · 解析评测资产 · 自动给分</span></span>
       </a>
       <nav class="nav" aria-label="页面导航">
-        <a href="#leaderboard">Baseline</a>
-        <a href="#failure">Failure</a>
-        <a href="#cases">Cases</a>
+        <a href="#run">运行评测</a>
+        <a href="#results">评分结果</a>
+        <a href="#report">报告导出</a>
         <a href="index.html">返回控制台</a>
-        <a href="html_ppt/index.html">HTML PPT</a>
       </nav>
     </header>
 
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="system-label">Evaluation System</div>
-        <h1>把 RAG 从“能演示”变成“能被评测”。</h1>
-        <p class="lead">这个页面把 60 题评测集、三类 baseline、失败归因、GraphRAG 子集和下一轮优化动作独立展示。它的作用是证明项目不是一个问答壳子，而是一套可复现、可比较、可继续优化的实验系统。</p>
-        <div class="hero-actions">
-          <a class="btn" href="#leaderboard">查看 baseline 对比</a>
-          <a class="btn ghost" href="#sources">查看数据来源</a>
+    <section class="hero" id="run">
+      <div class="hero-copy panel">
+        <div class="system-label">Repository Evaluator</div>
+        <h1>导入一个 RAG 仓库，系统性评测并给分。</h1>
+        <p class="lead">平台会读取公开 GitHub 仓库文件树，识别数据管线、检索引擎、评测集、baseline 报告、失败分析和 GraphRAG 子集，然后输出 100 分制成熟度评分和下一步优化建议。</p>
+
+        <div class="repo-form" aria-label="GitHub 仓库导入">
+          <div class="form-grid">
+            <div class="field">
+              <label for="repoUrl">GitHub 仓库 URL</label>
+              <input id="repoUrl" type="url" value="https://github.com/JavonLoong/RAG" placeholder="https://github.com/owner/repo">
+            </div>
+            <div class="field">
+              <label for="branchName">分支</label>
+              <input id="branchName" type="text" value="main" placeholder="main">
+            </div>
+            <div class="field">
+              <label for="githubToken">GitHub Token 可选</label>
+              <input id="githubToken" type="password" autocomplete="off" placeholder="遇到 403 限流时填写，不会保存">
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn" id="analyzeBtn" type="button">导入并开始评测</button>
+            <button class="btn secondary" id="demoBtn" type="button">加载内置示例结果</button>
+            <button class="btn secondary" id="copyBtn" type="button" disabled>复制评分报告</button>
+          </div>
         </div>
       </div>
 
-      <div class="eval-map" aria-label="评测系统动态链路">
-        <svg viewBox="0 0 1100 560" preserveAspectRatio="none" aria-hidden="true">
+      <div class="platform-map panel" aria-label="评测平台运行链路">
+        <svg viewBox="0 0 1100 610" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <path id="evalA" d="M120 285 C250 150 330 130 432 135 C558 140 610 116 704 116 C850 116 920 214 998 260" />
-            <path id="evalB" d="M120 294 C260 388 360 430 508 430 C666 430 786 360 998 270" />
-            <path id="evalC" d="M430 136 C516 232 584 244 704 116 C814 20 938 142 998 260" />
-            <path id="evalD" d="M702 425 C768 388 872 360 998 270" />
+            <path id="pathA" d="M120 305 C260 160 330 130 438 142 C548 154 620 122 720 122 C856 122 930 220 1000 300" />
+            <path id="pathB" d="M120 315 C260 406 365 455 510 455 C684 455 805 366 1000 310" />
+            <path id="pathC" d="M438 142 C530 246 606 248 720 122 C820 32 944 160 1000 300" />
+            <path id="pathD" d="M710 455 C780 404 870 362 1000 310" />
           </defs>
-          <use href="#evalA" class="base-line"></use>
-          <use href="#evalB" class="base-line"></use>
-          <use href="#evalC" class="base-line"></use>
-          <use href="#evalD" class="base-line"></use>
-          <use href="#evalA" class="pulse-line blue"></use>
-          <use href="#evalB" class="pulse-line green"></use>
-          <use href="#evalC" class="pulse-line amber"></use>
-          <use href="#evalD" class="pulse-line cyan"></use>
-          <circle class="packet" r="7" fill="#60a5fa" style="color:#60a5fa"><animateMotion dur="7.6s" repeatCount="indefinite"><mpath href="#evalA"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#34d399" style="color:#34d399"><animateMotion dur="7.1s" begin="0.8s" repeatCount="indefinite"><mpath href="#evalB"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#fbbf24" style="color:#fbbf24"><animateMotion dur="6.7s" begin="1.4s" repeatCount="indefinite"><mpath href="#evalC"></mpath></animateMotion></circle>
-          <circle class="packet" r="6" fill="#22d3ee" style="color:#22d3ee"><animateMotion dur="5.5s" begin="1.8s" repeatCount="indefinite"><mpath href="#evalD"></mpath></animateMotion></circle>
+          <use href="#pathA" class="base-line"></use>
+          <use href="#pathB" class="base-line"></use>
+          <use href="#pathC" class="base-line"></use>
+          <use href="#pathD" class="base-line"></use>
+          <use href="#pathA" class="pulse-line blue"></use>
+          <use href="#pathB" class="pulse-line green"></use>
+          <use href="#pathC" class="pulse-line amber"></use>
+          <use href="#pathD" class="pulse-line cyan"></use>
+          <circle class="packet" r="7" fill="#60a5fa" style="color:#60a5fa"><animateMotion dur="7.6s" repeatCount="indefinite"><mpath href="#pathA"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#34d399" style="color:#34d399"><animateMotion dur="7.1s" begin="0.8s" repeatCount="indefinite"><mpath href="#pathB"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#fbbf24" style="color:#fbbf24"><animateMotion dur="6.7s" begin="1.4s" repeatCount="indefinite"><mpath href="#pathC"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#22d3ee" style="color:#22d3ee"><animateMotion dur="5.5s" begin="1.8s" repeatCount="indefinite"><mpath href="#pathD"></mpath></animateMotion></circle>
         </svg>
-        <div class="map-node n-dataset"><small>Dataset</small><strong>60 题评测集</strong><span>事实、流程、OCR 风险、GraphRAG、评测方法</span></div>
-        <div class="map-node n-runners"><small>Runner</small><strong>三类 baseline</strong><span>keyword / dense_hashing / hybrid_rrf</span></div>
-        <div class="map-node n-metrics"><small>Metrics</small><strong>Recall & Coverage</strong><span>question recall@K、keyword coverage、strong/weak/missed</span></div>
-        <div class="map-node n-failure"><small>Diagnosis</small><strong>失败归因</strong><span>hybrid dilution、ranking gap、concept gap</span></div>
-        <div class="map-node n-action"><small>Action</small><strong>下一轮优化</strong><span>正式 embedding、reranker、题型路由、GraphRAG 同题实测</span></div>
-        <div class="live-panel">
-          <span>[eval] dataset loaded: 60 questions / 5 capability groups</span>
-          <span>[baseline] keyword=0.833, hybrid_rrf=0.817, dense=0.583</span>
-          <span>[diagnosis] failures converted into optimization backlog</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="leaderboard">
-      <div class="section-head">
-        <h2>Baseline 排行与阶段结论</h2>
-        <p>数据来自 `day3_retrieval_baseline_comparison_20260605_210540.md`。这不是最终论文级 benchmark，而是课程阶段可复现评测集。</p>
-      </div>
-      <div class="kpi-grid">
-        <article class="kpi"><strong>60</strong><span>系统评测问题，覆盖普通 RAG、OCR 风险、GraphRAG、结构化数据和评测方法。</span></article>
-        <article class="kpi"><strong>0.833</strong><span>keyword question recall@K，当前专业术语场景下最强 baseline。</span></article>
-        <article class="kpi"><strong>0.817</strong><span>hybrid_rrf question recall@K，接近 keyword，但受 weak dense baseline 稀释。</span></article>
-        <article class="kpi"><strong>10</strong><span>GraphRAG 子集题目，用于下一轮 local/global 图谱实测。</span></article>
-      </div>
-
-      <div class="dashboard-grid">
-        <article class="card chart-card">
-          <h3>Question recall@K</h3>
-          <p>当前结论：在燃气轮机、维修报告、知识图谱 POC 这类强术语资料里，显式关键词暂时比离线 dense_hashing 更稳。</p>
-          <div class="bar-chart">
-            <div class="bar-row"><span>keyword</span><div class="track" style="--value:83.3"><span></span></div><strong>0.833</strong></div>
-            <div class="bar-row"><span>hybrid_rrf</span><div class="track" style="--value:81.7"><span></span></div><strong>0.817</strong></div>
-            <div class="bar-row"><span>dense_hashing</span><div class="track" style="--value:58.3"><span></span></div><strong>0.583</strong></div>
-          </div>
-        </article>
-        <article class="card">
-          <h3>方法解释</h3>
-          <div class="method-grid">
-            <div class="method-card"><div class="method-score">0.563</div><p>keyword 平均关键词覆盖率，当前最佳。</p></div>
-            <div class="method-card"><div class="method-score">0.520</div><p>hybrid_rrf 平均覆盖率，说明融合需要权重和 reranker。</p></div>
-            <div class="method-card"><div class="method-score">0.300</div><p>dense_hashing 仅作为离线可复现 baseline，不代表正式 embedding。</p></div>
-          </div>
-        </article>
-      </div>
-
-      <div class="card">
-        <h3>能力热力图</h3>
-        <div class="heatmap" aria-label="baseline 能力热力图">
-          <div class="head"></div><div class="head">keyword</div><div class="head">dense</div><div class="head">hybrid</div>
-          <div>专业术语事实</div><div class="hot">强</div><div class="mid">中</div><div class="hot">强</div>
-          <div>抽象评测概念</div><div class="mid">中</div><div class="cold">弱</div><div class="mid">中</div>
-          <div>GraphRAG context</div><div class="mid">中</div><div class="cold">弱</div><div class="mid">中</div>
-          <div>精确数字/结构化事实</div><div class="mid">中</div><div class="cold">弱</div><div class="cold">弱</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="failure">
-      <div class="section-head">
-        <h2>失败案例不是丢脸，是优化入口。</h2>
-        <p>页面把失败原因变成工程 backlog，这一点比只展示成功案例更像真正做系统。</p>
-      </div>
-      <div class="failure-grid">
-        <article class="failure-card"><strong>hybrid_dilution</strong><p>关键词 baseline 更强时，Hybrid RRF 被弱 dense_hashing 稀释，强词面证据排名下降。动作：当前阶段提高 keyword 权重，正式 embedding 后复测。</p></article>
-        <article class="failure-card"><strong>partial_ranking_gap</strong><p>Top-K 内证据不完整，主要是排序、chunk 粒度和 source scope 问题。动作：调小关键报告 chunk，引入 reranker 和 source_scope 加权。</p></article>
-        <article class="failure-card"><strong>evaluation_concept_gap</strong><p>抽象评测概念题的证据分散在 README、脚本和汇报口径中。动作：整理独立评测术语表，作为高质量检索源。</p></article>
-      </div>
-    </section>
-
-    <section class="section" id="cases">
-      <div class="section-head">
-        <h2>案例钻取</h2>
-        <p>现场可以切换成功、失败、GraphRAG 子集三类案例，说明系统知道自己哪里强、哪里弱。</p>
-      </div>
-      <div class="case-layout">
-        <div class="case-tabs" id="caseTabs"></div>
-        <article class="case-detail" id="caseDetail"></article>
-      </div>
-    </section>
-
-    <section class="section" id="sources">
-      <div class="section-head">
-        <h2>GraphRAG 子集与下一轮复测</h2>
-        <p>60 题中有 10 题显式需要 GraphRAG context/global。当前文本 baseline 最优覆盖率均值为 0.633333，下一步应做同题图谱实测。</p>
-      </div>
-      <div class="dashboard-grid">
-        <article class="card">
-          <h3>为什么单独列 GraphRAG 子集</h3>
-          <p>GraphRAG 不应该被泛泛地和普通 RAG 混在一起比较。它更适合跨文档综合、实体关系解释、社区摘要和证据结构化。单独子集能防止“平均分掩盖适用场景”。</p>
-        </article>
-        <article class="card">
-          <h3>下一轮动作</h3>
-          <p>为 10 题子集分别跑 local graph、global community summary 和 hybrid graph context，对比 keyword / hybrid_rrf，在同一评测集上记录召回、证据覆盖、延迟和失败原因。</p>
-        </article>
+        <div class="map-node n-repo"><small>Import</small><strong>仓库导入</strong><span>GitHub tree API / raw files</span></div>
+        <div class="map-node n-tree"><small>Scan</small><strong>结构扫描</strong><span>目录、测试、配置、服务入口</span></div>
+        <div class="map-node n-assets"><small>Assets</small><strong>评测资产</strong><span>问题集、baseline、报告、GraphRAG 子集</span></div>
+        <div class="map-node n-metrics"><small>Metrics</small><strong>指标解析</strong><span>recall@K、coverage、failure tags</span></div>
+        <div class="map-node n-score"><small>Score</small><strong>成熟度给分</strong><span>100 分制、分项解释、优化建议</span></div>
+        <div class="live-panel" id="logPanel">等待导入仓库。平台会在浏览器端完成公开仓库扫描，不上传你的代码。</div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2>原始证据文件</h2>
-        <p>页面里的数据不是虚构，是从仓库评测报告和汇报材料抽出来的。</p>
+        <h2>完整评测流程</h2>
+        <p>GitHub Pages 不能直接启动 Python、ChromaDB 或本地后端，所以这个页面做的是浏览器端仓库级评测。真实在线检索压测可以作为下一阶段接后端 API。</p>
       </div>
-      <div class="source-grid">
-        <article class="card source-card"><h3>Baseline 报告</h3><code>evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md</code></article>
-        <article class="card source-card"><h3>失败分析</h3><code>evaluation/reports/day4_failure_analysis_20260604_012258.md</code></article>
-        <article class="card source-card"><h3>GraphRAG 子集</h3><code>docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md</code></article>
-        <article class="card source-card"><h3>答辩口径</h3><code>docs/project_deliverables/06_汇报材料_发群和组会/第六天答辩口径与检查清单.md</code></article>
+      <div class="workflow">
+        <article class="step"><small>01</small><strong>导入仓库</strong><span>解析 GitHub URL，读取指定分支的完整文件树。</span></article>
+        <article class="step"><small>02</small><strong>识别能力模块</strong><span>扫描 data_pipeline、retrieval_engine、rag_orchestrator、kg_pipeline、evaluation、tests 等模块。</span></article>
+        <article class="step"><small>03</small><strong>解析评测资产</strong><span>读取问题集、baseline 对比、失败分析、GraphRAG 子集报告。</span></article>
+        <article class="step"><small>04</small><strong>评分与建议</strong><span>按结构、数据集、baseline、失败归因、GraphRAG、复现性给分。</span></article>
       </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section-head">
+        <h2>评分结果</h2>
+        <p id="resultSubtitle">还没有运行评测。导入仓库后这里会显示总分、分项分、缺失项和建议。</p>
+      </div>
+      <div class="results-grid">
+        <aside class="score-card panel">
+          <div class="score-ring" id="scoreRing" style="--score:0">
+            <div>
+              <span class="score-value" id="scoreValue">--</span>
+              <span class="score-grade" id="scoreGrade">未评分</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>仓库状态</h3>
+            <ul id="repoFacts">
+              <li>等待导入。</li>
+            </ul>
+          </div>
+        </aside>
+
+        <div class="dimension-grid" id="dimensionGrid"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>证据表</h2>
+        <p>平台不会只给一个分数，会列出命中的文件、缺失的文件和可解析出的 baseline 指标。</p>
+      </div>
+      <div class="tables">
+        <article class="card">
+          <h3>关键文件命中</h3>
+          <table class="table">
+            <thead><tr><th>检查项</th><th>状态</th><th>证据</th></tr></thead>
+            <tbody id="evidenceRows"><tr><td colspan="3">等待运行。</td></tr></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h3>Baseline 指标</h3>
+          <table class="table">
+            <thead><tr><th>方法</th><th>Question recall@K</th><th>Coverage</th></tr></thead>
+            <tbody id="metricRows"><tr><td colspan="3">等待解析。</td></tr></tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="report">
+      <div class="section-head">
+        <h2>自动报告</h2>
+        <p>导入仓库后自动生成 Markdown 评分报告，可以复制到 README、课程汇报或 issue 里。</p>
+      </div>
+      <textarea class="report-box" id="reportBox" readonly>等待运行评测。</textarea>
     </section>
   </main>
 
   <script>
-    const cases = [
-      {
-        id: "se004",
-        title: "成功案例：涡轮为什么能够输出机械功？",
-        meta: ["standard_rag_fact", "keyword coverage 1.000", "强证据命中"],
-        body: "这类问题有明确术语和事实证据，keyword baseline 可以稳定命中涡轮膨胀做功、驱动压气机或负载等关键证据。现场讲解时可以作为“系统能找回原文证据”的正例。"
-      },
-      {
-        id: "se010",
-        title: "失败案例：维修报告证据片段选择",
-        meta: ["standard_rag_process", "coverage 0.250", "hybrid_dilution"],
-        body: "应说明证据片段需要包含事实、原因和处理结果，而不是把全文都丢进模型。当前失败暴露出 chunk 粒度、source scope 和 reranker 的必要性。"
-      },
-      {
-        id: "cc033",
-        title: "GraphRAG 子集：跨文档综合问题",
-        meta: ["graphrag_global", "best baseline keyword", "coverage 0.666667"],
-        body: "问题关注 GraphRAG 适合解决哪类普通 RAG 不稳定的问题。下一轮应使用 community/global summaries 与 keyword/hybrid 同题比较，验证图谱摘要对跨文档综合的收益。"
+    const REQUIRED = {
+      structure: [
+        ["configs/", "统一配置中心"],
+        ["core_domain/", "领域模型"],
+        ["data_pipeline/", "数据管线"],
+        ["retrieval_engine/", "检索引擎"],
+        ["rag_orchestrator/", "RAG 编排"],
+        ["kg_pipeline/", "GraphRAG / 知识图谱"],
+        ["evaluation/", "评测模块"],
+        ["tests/", "测试目录"],
+        ["api_server/", "服务入口"],
+        ["frontend_app/", "前端入口"]
+      ],
+      files: [
+        ["README.md", "项目说明"],
+        ["TECH_STACK.md", "技术栈说明"],
+        ["pyproject.toml", "Python 工程配置"],
+        [".gitlab-ci.yml", "CI 配置"]
+      ],
+      evaluation: [
+        ["evaluation/system_eval_questions.jsonl", "系统评测问题集"],
+        ["evaluation/reports/day3_retrieval_baseline_comparison", "baseline 对比报告"],
+        ["evaluation/reports/day4_failure_analysis", "失败分析报告"],
+        ["GraphRAG同题子集报告", "GraphRAG 子集报告"]
+      ]
+    };
+
+    const DEMO = {
+      repo: "local://Power Equipment RAG",
+      branch: "demo",
+      paths: [
+        "configs/__init__.py", "core_domain/__init__.py", "data_pipeline/file_ingestion.py",
+        "retrieval_engine/hybrid.py", "rag_orchestrator/global_search.py", "kg_pipeline/community_detection.py",
+        "evaluation/system_eval_questions.jsonl", "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
+        "evaluation/reports/day4_failure_analysis_20260604_012258.md",
+        "tests/test_pipeline.py", "api_server/current_console/server.py", "frontend_app/current_console/index.html",
+        "README.md", "TECH_STACK.md", "pyproject.toml", ".gitlab-ci.yml",
+        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md"
+      ],
+      texts: {
+        "evaluation/system_eval_questions.jsonl": Array.from({ length: 60 }, (_, i) => JSON.stringify({ id: `q${i+1}`, type: i % 6 === 0 ? "kg_graph_rag" : "standard_rag_fact", expected_evidence_keywords: ["证据", "检索"] })).join("\\n"),
+        "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md": `
+| Method | Questions | Matched outputs | Question recall@K | Keyword recall@K | Avg keyword coverage | Strong | Weak | Missed | Zero-hit |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| keyword | 60 | 60 | 0.833333 | 0.540268 | 0.563056 | 25 | 25 | 10 | 0 |
+| dense_hashing | 60 | 60 | 0.583333 | 0.281879 | 0.299722 | 12 | 23 | 25 | 0 |
+| hybrid_rrf | 60 | 60 | 0.816667 | 0.500000 | 0.519722 | 24 | 25 | 11 | 0 |
+Best Day 3 baseline by average keyword coverage: keyword.
+`,
+        "evaluation/reports/day4_failure_analysis_20260604_012258.md": "hybrid_dilution\\npartial_ranking_gap\\nevaluation_concept_gap\\nAction: reranker, source_scope, formal embedding.",
+        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md": "GraphRAG 子集题数：10\\n当前文本 baseline 最优覆盖率均值：0.633333"
       }
-    ];
+    };
 
-    const tabs = document.getElementById("caseTabs");
-    const detail = document.getElementById("caseDetail");
+    const state = {
+      current: null,
+      busy: false
+    };
 
-    function renderCase(index) {
-      tabs.querySelectorAll("button").forEach((button, i) => button.classList.toggle("active", i === index));
-      const item = cases[index];
-      detail.innerHTML = `
-        <h3>${item.title}</h3>
-        <div class="case-meta">${item.meta.map(value => `<span class="chip">${value}</span>`).join("")}</div>
-        <p>${item.body}</p>
-      `;
+    const els = {
+      repoUrl: document.getElementById("repoUrl"),
+      branchName: document.getElementById("branchName"),
+      githubToken: document.getElementById("githubToken"),
+      analyzeBtn: document.getElementById("analyzeBtn"),
+      demoBtn: document.getElementById("demoBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      logPanel: document.getElementById("logPanel"),
+      scoreRing: document.getElementById("scoreRing"),
+      scoreValue: document.getElementById("scoreValue"),
+      scoreGrade: document.getElementById("scoreGrade"),
+      repoFacts: document.getElementById("repoFacts"),
+      resultSubtitle: document.getElementById("resultSubtitle"),
+      dimensionGrid: document.getElementById("dimensionGrid"),
+      evidenceRows: document.getElementById("evidenceRows"),
+      metricRows: document.getElementById("metricRows"),
+      reportBox: document.getElementById("reportBox")
+    };
+
+    function log(message) {
+      const now = new Date().toLocaleTimeString();
+      els.logPanel.innerHTML = `[${now}] ${escapeHtml(message)}<br>` + els.logPanel.innerHTML.split("<br>").slice(0, 5).join("<br>");
     }
 
-    cases.forEach((item, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = `${item.id} · ${item.title.replace(/^.*：/, "")}`;
-      button.addEventListener("click", () => renderCase(index));
-      tabs.appendChild(button);
-    });
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
 
-    renderCase(0);
+    function parseRepoUrl(input) {
+      const value = input.trim().replace(/\.git$/, "");
+      const match = value.match(/github\.com[/:]([^/]+)\/([^/#?]+)/i);
+      if (!match) throw new Error("请输入有效 GitHub 仓库 URL，例如 https://github.com/owner/repo");
+      return { owner: match[1], repo: match[2] };
+    }
+
+    async function fetchJson(url) {
+      const headers = { "Accept": "application/vnd.github+json" };
+      const token = els.githubToken.value.trim();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(url, { headers });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+      return response.json();
+    }
+
+    async function fetchText(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+      return response.text();
+    }
+
+    async function analyzeGitHubRepo() {
+      if (state.busy) return;
+      state.busy = true;
+      els.analyzeBtn.disabled = true;
+      els.analyzeBtn.textContent = "评测中...";
+      try {
+        const { owner, repo } = parseRepoUrl(els.repoUrl.value);
+        const branch = els.branchName.value.trim() || "main";
+        log(`读取 GitHub 文件树: ${owner}/${repo}@${branch}`);
+        const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+        const treeData = await fetchJson(treeUrl);
+        if (treeData.truncated) log("GitHub 返回的文件树被截断，评分可能偏低。");
+        const paths = (treeData.tree || []).filter(item => item.type === "blob").map(item => item.path);
+        const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/`;
+        const textMap = await fetchCandidateTexts(paths, rawBase);
+        const result = scoreRepository({ repo: `${owner}/${repo}`, branch, paths, texts: textMap });
+        renderResult(result);
+        log(`评测完成：${result.total}/100，等级 ${result.grade}`);
+      } catch (error) {
+        log(`评测失败：${error.message}`);
+        renderError(error);
+      } finally {
+        state.busy = false;
+        els.analyzeBtn.disabled = false;
+        els.analyzeBtn.textContent = "导入并开始评测";
+      }
+    }
+
+    async function fetchCandidateTexts(paths, rawBase) {
+      const candidates = findCandidates(paths);
+      const textMap = {};
+      for (const path of candidates) {
+        try {
+          log(`解析报告: ${path}`);
+          textMap[path] = await fetchText(rawBase + path.split("/").map(encodeURIComponent).join("/"));
+        } catch (error) {
+          textMap[path] = "";
+        }
+      }
+      return textMap;
+    }
+
+    function findCandidates(paths) {
+      const wanted = [];
+      const patterns = [
+        /^evaluation\/system_eval_questions\.jsonl$/i,
+        /day3_retrieval_baseline_comparison.*\.(md|json)$/i,
+        /day4_failure_analysis.*\.(md|json)$/i,
+        /GraphRAG.*子集.*\.md$/i,
+        /10_系统评测题集\.jsonl$/i,
+        /11_Day3_baseline_comparison\.md$/i,
+        /13_GraphRAG同题子集报告\.md$/i,
+        /^README\.md$/i,
+        /^TECH_STACK\.md$/i
+      ];
+      for (const path of paths) {
+        if (patterns.some(pattern => pattern.test(path))) wanted.push(path);
+      }
+      return wanted.slice(0, 16);
+    }
+
+    function scoreRepository(repoData) {
+      const pathSet = new Set(repoData.paths);
+      const hasPathPrefix = prefix => repoData.paths.some(path => path === prefix.replace(/\/$/, "") || path.startsWith(prefix));
+      const hasPathMatch = needle => repoData.paths.some(path => path.includes(needle));
+
+      const evidence = [];
+      const addEvidence = (label, ok, detail) => evidence.push({ label, ok, detail });
+
+      const structureHits = REQUIRED.structure.filter(([prefix, label]) => {
+        const ok = hasPathPrefix(prefix);
+        addEvidence(label, ok, ok ? prefix : "缺失");
+        return ok;
+      }).length;
+      const fileHits = REQUIRED.files.filter(([file, label]) => {
+        const ok = pathSet.has(file);
+        addEvidence(label, ok, ok ? file : "缺失");
+        return ok;
+      }).length;
+
+      const datasetPath = findFirst(repoData.paths, [/evaluation\/system_eval_questions\.jsonl$/i, /10_系统评测题集\.jsonl$/i]);
+      const datasetText = getText(repoData.texts, datasetPath);
+      const questionCount = countJsonl(datasetText);
+      addEvidence("评测问题集", Boolean(datasetPath), datasetPath || "缺失");
+
+      const baselinePath = findFirst(repoData.paths, [/day3_retrieval_baseline_comparison.*\.(md|json)$/i, /11_Day3_baseline_comparison\.md$/i]);
+      const baselineText = getText(repoData.texts, baselinePath);
+      const baselineMetrics = parseBaselineMetrics(baselineText);
+      addEvidence("baseline 对比报告", Boolean(baselinePath), baselinePath || "缺失");
+
+      const failurePath = findFirst(repoData.paths, [/day4_failure_analysis.*\.(md|json)$/i]);
+      const failureText = getText(repoData.texts, failurePath);
+      const failureTags = ["hybrid_dilution", "partial_ranking_gap", "evaluation_concept_gap"].filter(tag => failureText.includes(tag));
+      addEvidence("失败分析报告", Boolean(failurePath), failurePath || "缺失");
+
+      const graphSubsetPath = findFirst(repoData.paths, [/GraphRAG.*子集.*\.md$/i, /13_GraphRAG同题子集报告\.md$/i]);
+      const graphSubsetText = getText(repoData.texts, graphSubsetPath);
+      const graphSubsetCount = parseNumberAfter(graphSubsetText, /GraphRAG\s*子集题数[：:]\s*(\d+)/) || 0;
+      addEvidence("GraphRAG 子集报告", Boolean(graphSubsetPath), graphSubsetPath || "缺失");
+
+      const testsCount = repoData.paths.filter(path => /^tests\//.test(path) && /test_.*\.py$/.test(path)).length;
+      const ci = repoData.paths.some(path => path.includes(".github/workflows/") || path === ".gitlab-ci.yml");
+      const pyproject = pathSet.has("pyproject.toml");
+
+      const dimensions = [
+        {
+          key: "structure",
+          title: "工程结构",
+          max: 20,
+          score: Math.round(((structureHits / REQUIRED.structure.length) * 14) + ((fileHits / REQUIRED.files.length) * 6)),
+          notes: [`模块命中 ${structureHits}/${REQUIRED.structure.length}`, `关键文件命中 ${fileHits}/${REQUIRED.files.length}`]
+        },
+        {
+          key: "dataset",
+          title: "评测数据集",
+          max: 20,
+          score: datasetPath ? Math.min(20, 8 + Math.round(Math.min(questionCount, 60) / 60 * 12)) : 0,
+          notes: [datasetPath ? `识别到 ${datasetPath}` : "未识别到评测问题集", `题目数估计 ${questionCount || 0}`]
+        },
+        {
+          key: "baseline",
+          title: "Baseline 对比",
+          max: 25,
+          score: scoreBaseline(baselineMetrics, Boolean(baselinePath)),
+          notes: baselineMetrics.length ? baselineMetrics.map(item => `${item.method}: recall ${formatMetric(item.recall)}`) : ["未解析到 baseline 表格"]
+        },
+        {
+          key: "failure",
+          title: "失败归因",
+          max: 15,
+          score: failurePath ? Math.min(15, 6 + failureTags.length * 3) : 0,
+          notes: failureTags.length ? failureTags : ["未识别失败分类"]
+        },
+        {
+          key: "graphrag",
+          title: "GraphRAG 覆盖",
+          max: 10,
+          score: Math.min(10, (hasPathPrefix("kg_pipeline/") ? 4 : 0) + (graphSubsetPath ? 4 : 0) + (graphSubsetCount >= 10 ? 2 : 0)),
+          notes: [hasPathPrefix("kg_pipeline/") ? "存在 kg_pipeline" : "缺少 kg_pipeline", graphSubsetPath ? `子集报告 ${graphSubsetCount || "已识别"} 题` : "缺少 GraphRAG 子集报告"]
+        },
+        {
+          key: "repro",
+          title: "复现与质量",
+          max: 10,
+          score: Math.min(10, (testsCount > 0 ? 4 : 0) + (pyproject ? 3 : 0) + (ci ? 3 : 0)),
+          notes: [`测试文件 ${testsCount}`, pyproject ? "存在 pyproject.toml" : "缺少 pyproject.toml", ci ? "存在 CI 配置" : "缺少 CI 配置"]
+        }
+      ];
+
+      const total = Math.max(0, Math.min(100, dimensions.reduce((sum, item) => sum + item.score, 0)));
+      const grade = total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D";
+      const suggestions = buildSuggestions(dimensions, baselineMetrics, questionCount, graphSubsetCount);
+
+      return {
+        repo: repoData.repo,
+        branch: repoData.branch,
+        pathsCount: repoData.paths.length,
+        dimensions,
+        total,
+        grade,
+        evidence,
+        baselineMetrics,
+        questionCount,
+        graphSubsetCount,
+        suggestions
+      };
+    }
+
+    function findFirst(paths, patterns) {
+      return paths.find(path => patterns.some(pattern => pattern.test(path))) || "";
+    }
+
+    function getText(texts, path) {
+      if (!path) return "";
+      return texts[path] || "";
+    }
+
+    function countJsonl(text) {
+      if (!text) return 0;
+      return text.split(/\\r?\\n/).filter(line => line.trim().startsWith("{")).length;
+    }
+
+    function parseNumberAfter(text, regex) {
+      const match = text.match(regex);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function parseBaselineMetrics(text) {
+      if (!text) return [];
+      const methods = ["keyword", "dense_hashing", "hybrid_rrf"];
+      const rows = [];
+      for (const method of methods) {
+        const regex = new RegExp(`\\\\|\\\\s*${method}\\\\s*\\\\|([^\\\\n]+)`, "i");
+        const match = text.match(regex);
+        if (!match) continue;
+        const cells = match[1].split("|").map(cell => cell.trim());
+        rows.push({
+          method,
+          questions: Number(cells[0]) || 0,
+          matched: Number(cells[1]) || 0,
+          recall: Number(cells[2]) || 0,
+          keywordRecall: Number(cells[3]) || 0,
+          coverage: Number(cells[4]) || 0,
+          strong: Number(cells[5]) || 0,
+          weak: Number(cells[6]) || 0,
+          missed: Number(cells[7]) || 0,
+          zeroHit: Number(cells[8]) || 0
+        });
+      }
+      return rows;
+    }
+
+    function scoreBaseline(metrics, hasReport) {
+      if (!hasReport) return 0;
+      if (!metrics.length) return 8;
+      const methodScore = Math.min(8, metrics.length * 3);
+      const bestRecall = Math.max(...metrics.map(item => item.recall || 0));
+      const recallScore = Math.round(Math.min(bestRecall, 0.9) / 0.9 * 10);
+      const zeroHitPenalty = metrics.some(item => item.zeroHit > 0) ? -2 : 2;
+      const coverage = Math.max(...metrics.map(item => item.coverage || 0));
+      const coverageScore = Math.round(Math.min(coverage, 0.7) / 0.7 * 5);
+      return Math.max(0, Math.min(25, methodScore + recallScore + zeroHitPenalty + coverageScore));
+    }
+
+    function buildSuggestions(dimensions, metrics, questionCount, graphSubsetCount) {
+      const suggestions = [];
+      const byKey = Object.fromEntries(dimensions.map(item => [item.key, item]));
+      if (byKey.dataset.score < 16) suggestions.push("补齐 evaluation/system_eval_questions.jsonl，并保证题目覆盖事实、流程、OCR 风险、GraphRAG、评测方法等能力组。");
+      if (byKey.baseline.score < 18) suggestions.push("补充 keyword、dense、hybrid 三类 baseline 的同题对比报告，至少包含 question recall@K、coverage、strong/weak/missed。");
+      if (byKey.failure.score < 12) suggestions.push("增加失败归因报告，把失败案例分成 hybrid_dilution、ranking_gap、concept_gap 等可执行类别。");
+      if (byKey.graphrag.score < 8) suggestions.push("为 GraphRAG 单独建立同题子集，区分 local context 和 global community summary 的适用场景。");
+      if (metrics.length) {
+        const keyword = metrics.find(item => item.method === "keyword");
+        const hybrid = metrics.find(item => item.method === "hybrid_rrf");
+        if (keyword && hybrid && keyword.recall >= hybrid.recall) suggestions.push("当前 keyword 不弱于 hybrid，说明强术语资料需要权重路由或 reranker，不能简单融合。");
+      }
+      if (questionCount >= 60 && graphSubsetCount >= 10) suggestions.push("评测集规模和 GraphRAG 子集已具备课程阶段展示基础，下一步应接入真实检索 API 做在线复测。");
+      return suggestions.slice(0, 6);
+    }
+
+    function formatMetric(value) {
+      if (!Number.isFinite(value)) return "--";
+      return value.toFixed(3);
+    }
+
+    function renderResult(result) {
+      state.current = result;
+      els.copyBtn.disabled = false;
+      els.scoreRing.style.setProperty("--score", result.total);
+      els.scoreValue.textContent = String(result.total);
+      els.scoreGrade.textContent = `等级 ${result.grade}`;
+      els.resultSubtitle.textContent = `${result.repo}@${result.branch} · 扫描 ${result.pathsCount} 个文件 · 评分 ${result.total}/100`;
+      els.repoFacts.innerHTML = [
+        `仓库：${escapeHtml(result.repo)}`,
+        `分支：${escapeHtml(result.branch)}`,
+        `文件数：${result.pathsCount}`,
+        `评测题数：${result.questionCount || 0}`,
+        `GraphRAG 子集：${result.graphSubsetCount || 0}`
+      ].map(item => `<li>${item}</li>`).join("");
+
+      els.dimensionGrid.innerHTML = result.dimensions.map(item => `
+        <article class="dimension-card">
+          <h3>${escapeHtml(item.title)}</h3>
+          <div class="dimension-score">${item.score}/${item.max}</div>
+          <div class="mini-bar" aria-hidden="true"><span style="--value:${Math.round(item.score / item.max * 100)}%"></span></div>
+          <ul>${item.notes.map(note => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+        </article>
+      `).join("");
+
+      els.evidenceRows.innerHTML = result.evidence.map(item => `
+        <tr>
+          <td>${escapeHtml(item.label)}</td>
+          <td class="${item.ok ? "status-ok" : "status-bad"}">${item.ok ? "命中" : "缺失"}</td>
+          <td>${escapeHtml(item.detail)}</td>
+        </tr>
+      `).join("");
+
+      els.metricRows.innerHTML = result.baselineMetrics.length ? result.baselineMetrics.map(item => `
+        <tr>
+          <td>${escapeHtml(item.method)}</td>
+          <td>${formatMetric(item.recall)}</td>
+          <td>${formatMetric(item.coverage)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="3">未解析到 baseline 指标。</td></tr>`;
+
+      const report = buildMarkdownReport(result);
+      els.reportBox.value = report;
+    }
+
+    function renderError(error) {
+      els.resultSubtitle.textContent = "评测失败。请确认仓库为公开仓库、分支正确，或稍后重试 GitHub API。";
+      els.reportBox.value = `# RAG 仓库评测失败\\n\\n${error.message}\\n`;
+    }
+
+    function buildMarkdownReport(result) {
+      const lines = [];
+      lines.push(`# RAG Repository Evaluation Report`);
+      lines.push("");
+      lines.push(`- Repository: ${result.repo}`);
+      lines.push(`- Branch: ${result.branch}`);
+      lines.push(`- Files scanned: ${result.pathsCount}`);
+      lines.push(`- Score: ${result.total}/100 (${result.grade})`);
+      lines.push("");
+      lines.push(`## Dimension Scores`);
+      for (const item of result.dimensions) {
+        lines.push(`- ${item.title}: ${item.score}/${item.max}`);
+      }
+      lines.push("");
+      lines.push(`## Baseline Metrics`);
+      if (result.baselineMetrics.length) {
+        lines.push(`| Method | Question recall@K | Avg coverage | Strong | Weak | Missed |`);
+        lines.push(`|---|---:|---:|---:|---:|---:|`);
+        for (const item of result.baselineMetrics) {
+          lines.push(`| ${item.method} | ${formatMetric(item.recall)} | ${formatMetric(item.coverage)} | ${item.strong} | ${item.weak} | ${item.missed} |`);
+        }
+      } else {
+        lines.push(`No baseline metrics parsed.`);
+      }
+      lines.push("");
+      lines.push(`## Suggestions`);
+      for (const suggestion of result.suggestions) {
+        lines.push(`- ${suggestion}`);
+      }
+      return lines.join("\\n");
+    }
+
+    function loadDemo() {
+      log("加载内置示例评测结果。");
+      renderResult(scoreRepository(DEMO));
+    }
+
+    async function copyReport() {
+      if (!els.reportBox.value) return;
+      await navigator.clipboard.writeText(els.reportBox.value);
+      log("评分报告已复制到剪贴板。");
+    }
+
+    els.analyzeBtn.addEventListener("click", analyzeGitHubRepo);
+    els.demoBtn.addEventListener("click", loadDemo);
+    els.copyBtn.addEventListener("click", copyReport);
+
+    loadDemo();
   </script>
 </body>
 </html>
