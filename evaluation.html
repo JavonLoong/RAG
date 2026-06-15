@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG 评测系统驾驶舱</title>
+  <style>
+    :root {
+      --bg: #050914;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-2: rgba(15, 23, 42, 0.56);
+      --ink: #f8fbff;
+      --text: #c7d2e5;
+      --muted: #8ea0b8;
+      --line: rgba(148, 163, 184, 0.22);
+      --blue: #60a5fa;
+      --blue-strong: #1769e0;
+      --green: #34d399;
+      --cyan: #22d3ee;
+      --amber: #fbbf24;
+      --red: #fb7185;
+      --shadow: 0 22px 70px rgba(0,0,0,0.34);
+      --radius: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--font);
+      letter-spacing: 0;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(23, 105, 224, 0.28), transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(34, 211, 238, 0.20), transparent 26%),
+        radial-gradient(circle at 76% 72%, rgba(52, 211, 153, 0.13), transparent 30%),
+        linear-gradient(135deg, #050914 0%, #08111f 50%, #0e1119 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.12));
+      z-index: 0;
+    }
+
+    a,
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    a { text-decoration: none; }
+
+    button {
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 1600px);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.26);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue-strong), var(--cyan));
+      font-family: var(--mono);
+      font-weight: 900;
+      box-shadow: 0 0 28px rgba(96,165,250,0.32);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: rgba(15, 23, 42, 0.62);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero {
+      min-height: 650px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.82fr) minmax(520px, 1.18fr);
+      gap: 26px;
+      align-items: stretch;
+      padding: clamp(28px, 4vw, 54px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(15,23,42,0.72), rgba(15,23,42,0.36)),
+        rgba(2,6,23,0.58);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-copy {
+      display: grid;
+      align-content: center;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .system-label {
+      width: fit-content;
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(44px, 5.4vw, 88px);
+      line-height: 0.98;
+      font-weight: 880;
+    }
+
+    .lead {
+      max-width: 760px;
+      color: var(--text);
+      font-size: clamp(17px, 1.35vw, 24px);
+      line-height: 1.68;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: var(--blue-strong);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 14px 26px rgba(23,105,224,0.26);
+    }
+
+    .btn.ghost {
+      color: var(--text);
+      background: rgba(15,23,42,0.74);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .eval-map {
+      position: relative;
+      min-height: 560px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        rgba(3, 7, 18, 0.68);
+      background-size: 34px 34px;
+      overflow: hidden;
+    }
+
+    .eval-map svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .base-line {
+      fill: none;
+      stroke: rgba(148, 163, 184, 0.20);
+      stroke-width: 2;
+    }
+
+    .pulse-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 9 14;
+      animation: flow 1s linear infinite;
+      filter: drop-shadow(0 0 9px currentColor);
+    }
+
+    .pulse-line.blue { color: var(--blue); stroke: var(--blue); }
+    .pulse-line.green { color: var(--green); stroke: var(--green); }
+    .pulse-line.amber { color: var(--amber); stroke: var(--amber); }
+    .pulse-line.cyan { color: var(--cyan); stroke: var(--cyan); }
+
+    @keyframes flow { to { stroke-dashoffset: -46; } }
+
+    .packet {
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    .map-node {
+      position: absolute;
+      z-index: 2;
+      width: 152px;
+      min-height: 78px;
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: var(--radius);
+      background: rgba(15, 23, 42, 0.86);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .map-node::after {
+      content: "";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(52,211,153,0.10), 0 0 18px rgba(52,211,153,0.62);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.6; transform: scale(0.88); }
+      50% { opacity: 1; transform: scale(1.12); }
+    }
+
+    .map-node small {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .map-node strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.22;
+    }
+
+    .map-node span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .n-dataset { left: 4%; top: 41%; }
+    .n-runners { left: 26%; top: 16%; border-color: rgba(96,165,250,0.42); }
+    .n-metrics { left: 50%; top: 10%; border-color: rgba(52,211,153,0.42); }
+    .n-failure { left: 50%; bottom: 13%; border-color: rgba(251,191,36,0.42); }
+    .n-action { right: 5%; top: 35%; border-color: rgba(34,211,238,0.42); }
+
+    .live-panel {
+      position: absolute;
+      z-index: 3;
+      left: 18px;
+      bottom: 18px;
+      width: min(420px, calc(100% - 36px));
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.82);
+      color: #c7d2fe;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .live-panel span {
+      display: block;
+      animation: logPulse 4.8s linear infinite;
+    }
+
+    .live-panel span:nth-child(2) { animation-delay: 0.7s; color: #a7f3d0; }
+    .live-panel span:nth-child(3) { animation-delay: 1.4s; color: #fde68a; }
+
+    @keyframes logPulse {
+      0%, 100% { opacity: 0.46; }
+      40%, 70% { opacity: 1; text-shadow: 0 0 12px currentColor; }
+    }
+
+    .section {
+      display: grid;
+      gap: 16px;
+      padding: clamp(24px, 3vw, 38px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.58);
+      box-shadow: 0 16px 44px rgba(0,0,0,0.20);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    h2 {
+      font-size: clamp(30px, 3vw, 48px);
+      line-height: 1.08;
+      font-weight: 840;
+    }
+
+    .section-head p {
+      max-width: 560px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: right;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .kpi-grid,
+    .method-grid,
+    .failure-grid,
+    .source-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .kpi,
+    .card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .kpi {
+      border-left: 4px solid var(--blue);
+    }
+
+    .kpi:nth-child(2) { border-left-color: var(--green); }
+    .kpi:nth-child(3) { border-left-color: var(--amber); }
+    .kpi:nth-child(4) { border-left-color: var(--cyan); }
+
+    .kpi strong {
+      display: block;
+      font-family: var(--mono);
+      color: var(--ink);
+      font-size: clamp(34px, 3vw, 56px);
+      line-height: 1;
+    }
+
+    .kpi span {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.96fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .chart-card h3,
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .bar-chart {
+      display: grid;
+      gap: 13px;
+      margin-top: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) 72px;
+      gap: 12px;
+      align-items: center;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .track {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.15);
+      overflow: hidden;
+    }
+
+    .track span {
+      display: block;
+      height: 100%;
+      width: calc(var(--value) * 1%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      animation: grow 900ms ease both;
+    }
+
+    .bar-row:nth-child(2) .track span { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .bar-row:nth-child(3) .track span { background: linear-gradient(90deg, var(--amber), var(--green)); }
+
+    @keyframes grow {
+      from { width: 0; }
+    }
+
+    .method-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .method-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .method-score {
+      font-family: var(--mono);
+      color: var(--blue);
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .method-card p,
+    .card p,
+    .failure-card p {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.62;
+    }
+
+    .heatmap {
+      display: grid;
+      grid-template-columns: 120px repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .heatmap div {
+      min-height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.66);
+      color: var(--text);
+      font-size: 12px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .heatmap .head {
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .heatmap .hot { background: rgba(52, 211, 153, 0.22); color: #d1fae5; border-color: rgba(52,211,153,0.36); }
+    .heatmap .mid { background: rgba(251, 191, 36, 0.18); color: #fef3c7; border-color: rgba(251,191,36,0.32); }
+    .heatmap .cold { background: rgba(248, 113, 113, 0.16); color: #ffe4e6; border-color: rgba(248,113,113,0.28); }
+
+    .failure-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .failure-card {
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .failure-card strong {
+      display: block;
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .case-layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .case-tabs {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .case-tabs button {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.66);
+      color: var(--text);
+      text-align: left;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .case-tabs button.active {
+      color: #fff;
+      background: var(--blue-strong);
+      border-color: transparent;
+    }
+
+    .case-detail {
+      min-height: 310px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(15, 23, 42, 0.74);
+    }
+
+    .case-detail h3 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .case-detail p {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.68;
+    }
+
+    .case-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .chip {
+      padding: 6px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(2,6,23,0.42);
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+
+    .source-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .source-card {
+      display: grid;
+      gap: 8px;
+    }
+
+    .source-card code {
+      color: #bfdbfe;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .dashboard-grid,
+      .case-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .eval-map {
+        min-height: 620px;
+      }
+
+      .kpi-grid,
+      .method-grid,
+      .failure-grid,
+      .source-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 10px;
+      }
+
+      .topbar,
+      .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .section-head p {
+        text-align: left;
+      }
+
+      .hero {
+        padding: 24px;
+      }
+
+      .eval-map {
+        min-height: 880px;
+      }
+
+      .map-node {
+        width: min(158px, 44vw);
+      }
+
+      .n-dataset { left: 5%; top: 7%; }
+      .n-runners { left: 52%; top: 7%; }
+      .n-metrics { left: 5%; top: 28%; }
+      .n-failure { left: 52%; top: 28%; bottom: auto; }
+      .n-action { left: 5%; top: 50%; right: auto; }
+
+      .live-panel {
+        bottom: 18px;
+      }
+
+      .kpi-grid,
+      .method-grid,
+      .failure-grid,
+      .source-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .heatmap {
+        grid-template-columns: 1fr;
+      }
+
+      .heatmap .head {
+        display: none;
+      }
+
+      .bar-row {
+        grid-template-columns: 92px minmax(0, 1fr) 58px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="mark">E</span>
+        <span><strong>RAG Evaluation Cockpit</strong><span>60 题评测集 · Baseline 对比 · GraphRAG 子集</span></span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#leaderboard">Baseline</a>
+        <a href="#failure">Failure</a>
+        <a href="#cases">Cases</a>
+        <a href="index.html">返回控制台</a>
+        <a href="html_ppt/index.html">HTML PPT</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="system-label">Evaluation System</div>
+        <h1>把 RAG 从“能演示”变成“能被评测”。</h1>
+        <p class="lead">这个页面把 60 题评测集、三类 baseline、失败归因、GraphRAG 子集和下一轮优化动作独立展示。它的作用是证明项目不是一个问答壳子，而是一套可复现、可比较、可继续优化的实验系统。</p>
+        <div class="hero-actions">
+          <a class="btn" href="#leaderboard">查看 baseline 对比</a>
+          <a class="btn ghost" href="#sources">查看数据来源</a>
+        </div>
+      </div>
+
+      <div class="eval-map" aria-label="评测系统动态链路">
+        <svg viewBox="0 0 1100 560" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <path id="evalA" d="M120 285 C250 150 330 130 432 135 C558 140 610 116 704 116 C850 116 920 214 998 260" />
+            <path id="evalB" d="M120 294 C260 388 360 430 508 430 C666 430 786 360 998 270" />
+            <path id="evalC" d="M430 136 C516 232 584 244 704 116 C814 20 938 142 998 260" />
+            <path id="evalD" d="M702 425 C768 388 872 360 998 270" />
+          </defs>
+          <use href="#evalA" class="base-line"></use>
+          <use href="#evalB" class="base-line"></use>
+          <use href="#evalC" class="base-line"></use>
+          <use href="#evalD" class="base-line"></use>
+          <use href="#evalA" class="pulse-line blue"></use>
+          <use href="#evalB" class="pulse-line green"></use>
+          <use href="#evalC" class="pulse-line amber"></use>
+          <use href="#evalD" class="pulse-line cyan"></use>
+          <circle class="packet" r="7" fill="#60a5fa" style="color:#60a5fa"><animateMotion dur="7.6s" repeatCount="indefinite"><mpath href="#evalA"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#34d399" style="color:#34d399"><animateMotion dur="7.1s" begin="0.8s" repeatCount="indefinite"><mpath href="#evalB"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#fbbf24" style="color:#fbbf24"><animateMotion dur="6.7s" begin="1.4s" repeatCount="indefinite"><mpath href="#evalC"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#22d3ee" style="color:#22d3ee"><animateMotion dur="5.5s" begin="1.8s" repeatCount="indefinite"><mpath href="#evalD"></mpath></animateMotion></circle>
+        </svg>
+        <div class="map-node n-dataset"><small>Dataset</small><strong>60 题评测集</strong><span>事实、流程、OCR 风险、GraphRAG、评测方法</span></div>
+        <div class="map-node n-runners"><small>Runner</small><strong>三类 baseline</strong><span>keyword / dense_hashing / hybrid_rrf</span></div>
+        <div class="map-node n-metrics"><small>Metrics</small><strong>Recall & Coverage</strong><span>question recall@K、keyword coverage、strong/weak/missed</span></div>
+        <div class="map-node n-failure"><small>Diagnosis</small><strong>失败归因</strong><span>hybrid dilution、ranking gap、concept gap</span></div>
+        <div class="map-node n-action"><small>Action</small><strong>下一轮优化</strong><span>正式 embedding、reranker、题型路由、GraphRAG 同题实测</span></div>
+        <div class="live-panel">
+          <span>[eval] dataset loaded: 60 questions / 5 capability groups</span>
+          <span>[baseline] keyword=0.833, hybrid_rrf=0.817, dense=0.583</span>
+          <span>[diagnosis] failures converted into optimization backlog</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="leaderboard">
+      <div class="section-head">
+        <h2>Baseline 排行与阶段结论</h2>
+        <p>数据来自 `day3_retrieval_baseline_comparison_20260605_210540.md`。这不是最终论文级 benchmark，而是课程阶段可复现评测集。</p>
+      </div>
+      <div class="kpi-grid">
+        <article class="kpi"><strong>60</strong><span>系统评测问题，覆盖普通 RAG、OCR 风险、GraphRAG、结构化数据和评测方法。</span></article>
+        <article class="kpi"><strong>0.833</strong><span>keyword question recall@K，当前专业术语场景下最强 baseline。</span></article>
+        <article class="kpi"><strong>0.817</strong><span>hybrid_rrf question recall@K，接近 keyword，但受 weak dense baseline 稀释。</span></article>
+        <article class="kpi"><strong>10</strong><span>GraphRAG 子集题目，用于下一轮 local/global 图谱实测。</span></article>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="card chart-card">
+          <h3>Question recall@K</h3>
+          <p>当前结论：在燃气轮机、维修报告、知识图谱 POC 这类强术语资料里，显式关键词暂时比离线 dense_hashing 更稳。</p>
+          <div class="bar-chart">
+            <div class="bar-row"><span>keyword</span><div class="track" style="--value:83.3"><span></span></div><strong>0.833</strong></div>
+            <div class="bar-row"><span>hybrid_rrf</span><div class="track" style="--value:81.7"><span></span></div><strong>0.817</strong></div>
+            <div class="bar-row"><span>dense_hashing</span><div class="track" style="--value:58.3"><span></span></div><strong>0.583</strong></div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>方法解释</h3>
+          <div class="method-grid">
+            <div class="method-card"><div class="method-score">0.563</div><p>keyword 平均关键词覆盖率，当前最佳。</p></div>
+            <div class="method-card"><div class="method-score">0.520</div><p>hybrid_rrf 平均覆盖率，说明融合需要权重和 reranker。</p></div>
+            <div class="method-card"><div class="method-score">0.300</div><p>dense_hashing 仅作为离线可复现 baseline，不代表正式 embedding。</p></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="card">
+        <h3>能力热力图</h3>
+        <div class="heatmap" aria-label="baseline 能力热力图">
+          <div class="head"></div><div class="head">keyword</div><div class="head">dense</div><div class="head">hybrid</div>
+          <div>专业术语事实</div><div class="hot">强</div><div class="mid">中</div><div class="hot">强</div>
+          <div>抽象评测概念</div><div class="mid">中</div><div class="cold">弱</div><div class="mid">中</div>
+          <div>GraphRAG context</div><div class="mid">中</div><div class="cold">弱</div><div class="mid">中</div>
+          <div>精确数字/结构化事实</div><div class="mid">中</div><div class="cold">弱</div><div class="cold">弱</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="failure">
+      <div class="section-head">
+        <h2>失败案例不是丢脸，是优化入口。</h2>
+        <p>页面把失败原因变成工程 backlog，这一点比只展示成功案例更像真正做系统。</p>
+      </div>
+      <div class="failure-grid">
+        <article class="failure-card"><strong>hybrid_dilution</strong><p>关键词 baseline 更强时，Hybrid RRF 被弱 dense_hashing 稀释，强词面证据排名下降。动作：当前阶段提高 keyword 权重，正式 embedding 后复测。</p></article>
+        <article class="failure-card"><strong>partial_ranking_gap</strong><p>Top-K 内证据不完整，主要是排序、chunk 粒度和 source scope 问题。动作：调小关键报告 chunk，引入 reranker 和 source_scope 加权。</p></article>
+        <article class="failure-card"><strong>evaluation_concept_gap</strong><p>抽象评测概念题的证据分散在 README、脚本和汇报口径中。动作：整理独立评测术语表，作为高质量检索源。</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="cases">
+      <div class="section-head">
+        <h2>案例钻取</h2>
+        <p>现场可以切换成功、失败、GraphRAG 子集三类案例，说明系统知道自己哪里强、哪里弱。</p>
+      </div>
+      <div class="case-layout">
+        <div class="case-tabs" id="caseTabs"></div>
+        <article class="case-detail" id="caseDetail"></article>
+      </div>
+    </section>
+
+    <section class="section" id="sources">
+      <div class="section-head">
+        <h2>GraphRAG 子集与下一轮复测</h2>
+        <p>60 题中有 10 题显式需要 GraphRAG context/global。当前文本 baseline 最优覆盖率均值为 0.633333，下一步应做同题图谱实测。</p>
+      </div>
+      <div class="dashboard-grid">
+        <article class="card">
+          <h3>为什么单独列 GraphRAG 子集</h3>
+          <p>GraphRAG 不应该被泛泛地和普通 RAG 混在一起比较。它更适合跨文档综合、实体关系解释、社区摘要和证据结构化。单独子集能防止“平均分掩盖适用场景”。</p>
+        </article>
+        <article class="card">
+          <h3>下一轮动作</h3>
+          <p>为 10 题子集分别跑 local graph、global community summary 和 hybrid graph context，对比 keyword / hybrid_rrf，在同一评测集上记录召回、证据覆盖、延迟和失败原因。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>原始证据文件</h2>
+        <p>页面里的数据不是虚构，是从仓库评测报告和汇报材料抽出来的。</p>
+      </div>
+      <div class="source-grid">
+        <article class="card source-card"><h3>Baseline 报告</h3><code>evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md</code></article>
+        <article class="card source-card"><h3>失败分析</h3><code>evaluation/reports/day4_failure_analysis_20260604_012258.md</code></article>
+        <article class="card source-card"><h3>GraphRAG 子集</h3><code>docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md</code></article>
+        <article class="card source-card"><h3>答辩口径</h3><code>docs/project_deliverables/06_汇报材料_发群和组会/第六天答辩口径与检查清单.md</code></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const cases = [
+      {
+        id: "se004",
+        title: "成功案例：涡轮为什么能够输出机械功？",
+        meta: ["standard_rag_fact", "keyword coverage 1.000", "强证据命中"],
+        body: "这类问题有明确术语和事实证据，keyword baseline 可以稳定命中涡轮膨胀做功、驱动压气机或负载等关键证据。现场讲解时可以作为“系统能找回原文证据”的正例。"
+      },
+      {
+        id: "se010",
+        title: "失败案例：维修报告证据片段选择",
+        meta: ["standard_rag_process", "coverage 0.250", "hybrid_dilution"],
+        body: "应说明证据片段需要包含事实、原因和处理结果，而不是把全文都丢进模型。当前失败暴露出 chunk 粒度、source scope 和 reranker 的必要性。"
+      },
+      {
+        id: "cc033",
+        title: "GraphRAG 子集：跨文档综合问题",
+        meta: ["graphrag_global", "best baseline keyword", "coverage 0.666667"],
+        body: "问题关注 GraphRAG 适合解决哪类普通 RAG 不稳定的问题。下一轮应使用 community/global summaries 与 keyword/hybrid 同题比较，验证图谱摘要对跨文档综合的收益。"
+      }
+    ];
+
+    const tabs = document.getElementById("caseTabs");
+    const detail = document.getElementById("caseDetail");
+
+    function renderCase(index) {
+      tabs.querySelectorAll("button").forEach((button, i) => button.classList.toggle("active", i === index));
+      const item = cases[index];
+      detail.innerHTML = `
+        <h3>${item.title}</h3>
+        <div class="case-meta">${item.meta.map(value => `<span class="chip">${value}</span>`).join("")}</div>
+        <p>${item.body}</p>
+      `;
+    }
+
+    cases.forEach((item, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = `${item.id} · ${item.title.replace(/^.*：/, "")}`;
+      button.addEventListener("click", () => renderCase(index));
+      tabs.appendChild(button);
+    });
+
+    renderCase(0);
+  </script>
+</body>
+</html>
