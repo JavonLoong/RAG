@@ -252,6 +252,13 @@
       gap: 10px;
     }
 
+    .helper-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -743,6 +750,7 @@
             <button class="btn secondary" id="demoBtn" type="button">加载内置示例结果</button>
             <button class="btn secondary" id="copyBtn" type="button" disabled>复制评分报告</button>
           </div>
+          <p class="helper-note">如果 GitHub 匿名 API 返回 403，默认 RAG 仓库会自动使用内置评测快照继续出分；评测其它仓库或强制读取线上文件树时请填写 GitHub Token。Token 只在本浏览器请求头中使用，不会保存。</p>
         </div>
       </div>
 
@@ -887,7 +895,7 @@
         "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md"
       ],
       texts: {
-        "evaluation/system_eval_questions.jsonl": Array.from({ length: 60 }, (_, i) => JSON.stringify({ id: `q${i+1}`, type: i % 6 === 0 ? "kg_graph_rag" : "standard_rag_fact", expected_evidence_keywords: ["证据", "检索"] })).join("\\n"),
+        "evaluation/system_eval_questions.jsonl": Array.from({ length: 60 }, (_, i) => JSON.stringify({ id: `q${i+1}`, type: i % 6 === 0 ? "kg_graph_rag" : "standard_rag_fact", expected_evidence_keywords: ["证据", "检索"] })).join("\n"),
         "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md": `
 | Method | Questions | Matched outputs | Question recall@K | Keyword recall@K | Avg keyword coverage | Strong | Weak | Missed | Zero-hit |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -896,8 +904,8 @@
 | hybrid_rrf | 60 | 60 | 0.816667 | 0.500000 | 0.519722 | 24 | 25 | 11 | 0 |
 Best Day 3 baseline by average keyword coverage: keyword.
 `,
-        "evaluation/reports/day4_failure_analysis_20260604_012258.md": "hybrid_dilution\\npartial_ranking_gap\\nevaluation_concept_gap\\nAction: reranker, source_scope, formal embedding.",
-        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md": "GraphRAG 子集题数：10\\n当前文本 baseline 最优覆盖率均值：0.633333"
+        "evaluation/reports/day4_failure_analysis_20260604_012258.md": "hybrid_dilution\npartial_ranking_gap\nevaluation_concept_gap\nAction: reranker, source_scope, formal embedding.",
+        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md": "GraphRAG 子集题数：10\n当前文本 baseline 最优覆盖率均值：0.633333"
       }
     };
 
@@ -946,14 +954,32 @@ Best Day 3 baseline by average keyword coverage: keyword.
       const token = els.githubToken.value.trim();
       if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetch(url, { headers });
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}: ${url}`);
+        error.status = response.status;
+        error.url = url;
+        throw error;
+      }
       return response.json();
     }
 
     async function fetchText(url) {
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${url}`);
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}: ${url}`);
+        error.status = response.status;
+        error.url = url;
+        throw error;
+      }
       return response.text();
+    }
+
+    function isGitHubRateLimit(error) {
+      return error?.status === 403 || /403|rate limit|API rate limit/i.test(error?.message || "");
+    }
+
+    function isDefaultRagRepo(owner, repo) {
+      return owner?.toLowerCase() === "javonloong" && repo?.toLowerCase() === "rag";
     }
 
     async function analyzeGitHubRepo() {
@@ -961,9 +987,14 @@ Best Day 3 baseline by average keyword coverage: keyword.
       state.busy = true;
       els.analyzeBtn.disabled = true;
       els.analyzeBtn.textContent = "评测中...";
+      let owner = "";
+      let repo = "";
+      let branch = "";
       try {
-        const { owner, repo } = parseRepoUrl(els.repoUrl.value);
-        const branch = els.branchName.value.trim() || "main";
+        const parsed = parseRepoUrl(els.repoUrl.value);
+        owner = parsed.owner;
+        repo = parsed.repo;
+        branch = els.branchName.value.trim() || "main";
         log(`读取 GitHub 文件树: ${owner}/${repo}@${branch}`);
         const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
         const treeData = await fetchJson(treeUrl);
@@ -975,6 +1006,16 @@ Best Day 3 baseline by average keyword coverage: keyword.
         renderResult(result);
         log(`评测完成：${result.total}/100，等级 ${result.grade}`);
       } catch (error) {
+        const hasToken = Boolean(els.githubToken.value.trim());
+        if (!hasToken && isGitHubRateLimit(error) && isDefaultRagRepo(owner, repo)) {
+          log("GitHub API 匿名访问被限流，已自动切换到本项目内置评测清单。填写 GitHub Token 可强制读取线上仓库。");
+          const result = scoreRepository({ ...DEMO, repo: `${owner}/${repo}`, branch: branch || "main" });
+          result.runtimeWarning = "GitHub API returned 403; using the built-in RAG evaluation snapshot. Add a GitHub Token to force a live repository scan.";
+          result.sourceMode = "rate-limit-fallback";
+          renderResult(result);
+          log(`评测完成：${result.total}/100，等级 ${result.grade}`);
+          return;
+        }
         log(`评测失败：${error.message}`);
         renderError(error);
       } finally {
@@ -1135,7 +1176,7 @@ Best Day 3 baseline by average keyword coverage: keyword.
 
     function countJsonl(text) {
       if (!text) return 0;
-      return text.split(/\\r?\\n/).filter(line => line.trim().startsWith("{")).length;
+      return text.split(/\r?\n/).filter(line => line.trim().startsWith("{")).length;
     }
 
     function parseNumberAfter(text, regex) {
@@ -1148,7 +1189,7 @@ Best Day 3 baseline by average keyword coverage: keyword.
       const methods = ["keyword", "dense_hashing", "hybrid_rrf"];
       const rows = [];
       for (const method of methods) {
-        const regex = new RegExp(`\\\\|\\\\s*${method}\\\\s*\\\\|([^\\\\n]+)`, "i");
+        const regex = new RegExp(`\\|\\s*${method}\\s*\\|([^\\n]+)`, "i");
         const match = text.match(regex);
         if (!match) continue;
         const cells = match[1].split("|").map(cell => cell.trim());
@@ -1207,14 +1248,17 @@ Best Day 3 baseline by average keyword coverage: keyword.
       els.scoreRing.style.setProperty("--score", result.total);
       els.scoreValue.textContent = String(result.total);
       els.scoreGrade.textContent = `等级 ${result.grade}`;
-      els.resultSubtitle.textContent = `${result.repo}@${result.branch} · 扫描 ${result.pathsCount} 个文件 · 评分 ${result.total}/100`;
-      els.repoFacts.innerHTML = [
+      const sourceNote = result.runtimeWarning ? " · GitHub API 限流，已使用内置评测快照" : "";
+      els.resultSubtitle.textContent = `${result.repo}@${result.branch} · 扫描 ${result.pathsCount} 个文件 · 评分 ${result.total}/100${sourceNote}`;
+      const facts = [
         `仓库：${escapeHtml(result.repo)}`,
         `分支：${escapeHtml(result.branch)}`,
         `文件数：${result.pathsCount}`,
         `评测题数：${result.questionCount || 0}`,
         `GraphRAG 子集：${result.graphSubsetCount || 0}`
-      ].map(item => `<li>${item}</li>`).join("");
+      ];
+      if (result.runtimeWarning) facts.push("来源：内置评测快照（GitHub API 403 降级）");
+      els.repoFacts.innerHTML = facts.map(item => `<li>${item}</li>`).join("");
 
       els.dimensionGrid.innerHTML = result.dimensions.map(item => `
         <article class="dimension-card">
@@ -1246,8 +1290,11 @@ Best Day 3 baseline by average keyword coverage: keyword.
     }
 
     function renderError(error) {
-      els.resultSubtitle.textContent = "评测失败。请确认仓库为公开仓库、分支正确，或稍后重试 GitHub API。";
-      els.reportBox.value = `# RAG 仓库评测失败\\n\\n${error.message}\\n`;
+      const limitHint = isGitHubRateLimit(error)
+        ? "GitHub API 返回 403。请填写 GitHub Token 后重试，或先加载内置示例结果。"
+        : "请确认仓库为公开仓库、分支正确，或稍后重试 GitHub API。";
+      els.resultSubtitle.textContent = `评测失败。${limitHint}`;
+      els.reportBox.value = `# RAG 仓库评测失败\n\n${error.message}\n\n${limitHint}\n`;
     }
 
     function buildMarkdownReport(result) {
@@ -1258,6 +1305,7 @@ Best Day 3 baseline by average keyword coverage: keyword.
       lines.push(`- Branch: ${result.branch}`);
       lines.push(`- Files scanned: ${result.pathsCount}`);
       lines.push(`- Score: ${result.total}/100 (${result.grade})`);
+      if (result.runtimeWarning) lines.push(`- Runtime note: ${result.runtimeWarning}`);
       lines.push("");
       lines.push(`## Dimension Scores`);
       for (const item of result.dimensions) {
@@ -1279,7 +1327,7 @@ Best Day 3 baseline by average keyword coverage: keyword.
       for (const suggestion of result.suggestions) {
         lines.push(`- ${suggestion}`);
       }
-      return lines.join("\\n");
+      return lines.join("\n");
     }
 
     function loadDemo() {
