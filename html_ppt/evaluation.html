@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Repository Evaluation Platform</title>
+  <style>
+    :root {
+      --bg: #050914;
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-2: rgba(15, 23, 42, 0.55);
+      --surface-3: rgba(2, 6, 23, 0.72);
+      --ink: #f8fbff;
+      --text: #c7d2e5;
+      --muted: #8ea0b8;
+      --line: rgba(148, 163, 184, 0.22);
+      --blue: #60a5fa;
+      --blue-strong: #1769e0;
+      --green: #34d399;
+      --cyan: #22d3ee;
+      --amber: #fbbf24;
+      --red: #fb7185;
+      --radius: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--font);
+      letter-spacing: 0;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(23, 105, 224, 0.26), transparent 30%),
+        radial-gradient(circle at 88% 16%, rgba(34, 211, 238, 0.18), transparent 28%),
+        radial-gradient(circle at 75% 74%, rgba(52, 211, 153, 0.12), transparent 32%),
+        linear-gradient(135deg, #050914 0%, #08111f 50%, #0e1119 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.12));
+      z-index: 0;
+    }
+
+    a,
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      background: none;
+      cursor: pointer;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 1720px);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.82);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.26);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue-strong), var(--cyan));
+      font-family: var(--mono);
+      font-weight: 900;
+      box-shadow: 0 0 28px rgba(96,165,250,0.32);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+    }
+
+    .brand span span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: rgba(15, 23, 42, 0.62);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(520px, 1.12fr);
+      gap: 18px;
+      align-items: stretch;
+      min-height: 610px;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 18px 52px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .hero-copy {
+      display: grid;
+      align-content: center;
+      gap: 20px;
+      padding: clamp(26px, 4vw, 54px);
+      background:
+        radial-gradient(circle at 12% 20%, rgba(96,165,250,0.12), transparent 28%),
+        rgba(15,23,42,0.76);
+    }
+
+    .system-label {
+      width: fit-content;
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 780px;
+      font-size: clamp(40px, 5vw, 82px);
+      line-height: 0.98;
+      font-weight: 880;
+    }
+
+    .lead {
+      max-width: 760px;
+      color: var(--text);
+      font-size: clamp(16px, 1.25vw, 23px);
+      line-height: 1.68;
+    }
+
+    .repo-form {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2,6,23,0.45);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px minmax(190px, 0.45fr);
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      outline: none;
+      background: rgba(15, 23, 42, 0.74);
+      color: var(--ink);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .helper-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: var(--blue-strong);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 14px 26px rgba(23,105,224,0.26);
+    }
+
+    .btn.secondary {
+      color: var(--text);
+      background: rgba(15,23,42,0.74);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .platform-map {
+      position: relative;
+      min-height: 610px;
+      padding: 18px;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+        rgba(3, 7, 18, 0.68);
+      background-size: 34px 34px;
+    }
+
+    .platform-map svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .base-line {
+      fill: none;
+      stroke: rgba(148, 163, 184, 0.20);
+      stroke-width: 2;
+    }
+
+    .pulse-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 9 14;
+      animation: flow 1s linear infinite;
+      filter: drop-shadow(0 0 9px currentColor);
+    }
+
+    .pulse-line.blue { color: var(--blue); stroke: var(--blue); }
+    .pulse-line.green { color: var(--green); stroke: var(--green); }
+    .pulse-line.amber { color: var(--amber); stroke: var(--amber); }
+    .pulse-line.cyan { color: var(--cyan); stroke: var(--cyan); }
+
+    @keyframes flow { to { stroke-dashoffset: -46; } }
+
+    .packet {
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    .map-node {
+      position: absolute;
+      z-index: 2;
+      width: 160px;
+      min-height: 82px;
+      padding: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: var(--radius);
+      background: rgba(15, 23, 42, 0.86);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .map-node::after {
+      content: "";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(52,211,153,0.10), 0 0 18px rgba(52,211,153,0.62);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.6; transform: scale(0.88); }
+      50% { opacity: 1; transform: scale(1.12); }
+    }
+
+    .map-node small {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .map-node strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.22;
+    }
+
+    .map-node span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .n-repo { left: 4%; top: 42%; }
+    .n-tree { left: 25%; top: 14%; }
+    .n-assets { left: 50%; top: 10%; }
+    .n-metrics { left: 50%; bottom: 13%; }
+    .n-score { right: 5%; top: 34%; }
+
+    .live-panel {
+      position: absolute;
+      z-index: 3;
+      left: 18px;
+      bottom: 18px;
+      width: min(470px, calc(100% - 36px));
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.86);
+      color: #c7d2fe;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.65;
+      min-height: 110px;
+    }
+
+    .section {
+      display: grid;
+      gap: 16px;
+      padding: clamp(22px, 3vw, 34px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(2, 6, 23, 0.58);
+      box-shadow: 0 16px 44px rgba(0,0,0,0.20);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    h2 {
+      font-size: clamp(28px, 3vw, 46px);
+      line-height: 1.08;
+      font-weight: 840;
+    }
+
+    .section-head p {
+      max-width: 600px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .score-card {
+      position: sticky;
+      top: 92px;
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .score-ring {
+      width: 220px;
+      height: 220px;
+      margin: 0 auto;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        conic-gradient(var(--green) calc(var(--score) * 1%), rgba(148,163,184,0.16) 0),
+        radial-gradient(circle, #07111f 58%, transparent 59%);
+      box-shadow: inset 0 0 0 1px var(--line), 0 0 38px rgba(52,211,153,0.14);
+    }
+
+    .score-ring div {
+      width: 152px;
+      height: 152px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(2,6,23,0.92);
+      border: 1px solid var(--line);
+    }
+
+    .score-value {
+      display: block;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 54px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .score-grade {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .dimension-card,
+    .card {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .dimension-card h3,
+    .card h3 {
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    .dimension-score {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .mini-bar {
+      height: 8px;
+      margin: 12px 0;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.14);
+      overflow: hidden;
+    }
+
+    .mini-bar span {
+      display: block;
+      height: 100%;
+      width: var(--value);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+    }
+
+    .dimension-card ul,
+    .card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+    }
+
+    .step small {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-weight: 900;
+      font-size: 11px;
+    }
+
+    .step strong {
+      display: block;
+      margin: 8px 0 6px;
+      font-size: 16px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tables {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .table th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status-ok { color: var(--green); }
+    .status-warn { color: var(--amber); }
+    .status-bad { color: var(--red); }
+
+    .report-box {
+      width: 100%;
+      min-height: 260px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      resize: vertical;
+      color: #dbeafe;
+      background: rgba(2, 6, 23, 0.88);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      outline: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .results-grid,
+      .tables {
+        grid-template-columns: 1fr;
+      }
+
+      .score-card {
+        position: static;
+      }
+
+      .dimension-grid,
+      .workflow {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 10px;
+      }
+
+      .topbar,
+      .section-head,
+      .form-grid {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .section-head p {
+        text-align: left;
+      }
+
+      .hero-copy {
+        padding: 24px;
+      }
+
+      .platform-map {
+        min-height: 880px;
+      }
+
+      .map-node {
+        width: min(160px, 44vw);
+      }
+
+      .n-repo { left: 5%; top: 7%; }
+      .n-tree { left: 52%; top: 7%; }
+      .n-assets { left: 5%; top: 29%; }
+      .n-metrics { left: 52%; top: 29%; bottom: auto; }
+      .n-score { left: 5%; top: 51%; right: auto; }
+
+      .live-panel {
+        bottom: 18px;
+      }
+
+      .dimension-grid,
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+
+      .score-ring {
+        width: 190px;
+        height: 190px;
+      }
+
+      .score-ring div {
+        width: 132px;
+        height: 132px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <span class="mark">E</span>
+        <span><strong>RAG Evaluation Platform</strong><span>导入 GitHub 仓库 · 解析评测资产 · 自动给分</span></span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#run">运行评测</a>
+        <a href="#results">评分结果</a>
+        <a href="#report">报告导出</a>
+        <a href="index.html">返回控制台</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="run">
+      <div class="hero-copy panel">
+        <div class="system-label">Repository Evaluator</div>
+        <h1>导入一个 RAG 仓库，系统性评测并给分。</h1>
+        <p class="lead">平台会读取公开 GitHub 仓库文件树，识别数据管线、检索引擎、评测集、baseline 报告、失败分析和 GraphRAG 子集，然后输出 100 分制成熟度评分和下一步优化建议。</p>
+
+        <div class="repo-form" aria-label="GitHub 仓库导入">
+          <div class="form-grid">
+            <div class="field">
+              <label for="repoUrl">GitHub 仓库 URL</label>
+              <input id="repoUrl" type="url" value="https://github.com/JavonLoong/RAG" placeholder="https://github.com/owner/repo">
+            </div>
+            <div class="field">
+              <label for="branchName">分支</label>
+              <input id="branchName" type="text" value="main" placeholder="main">
+            </div>
+            <div class="field">
+              <label for="githubToken">GitHub Token 可选</label>
+              <input id="githubToken" type="password" autocomplete="off" placeholder="遇到 403 限流时填写，不会保存">
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn" id="analyzeBtn" type="button">导入并开始评测</button>
+            <button class="btn secondary" id="demoBtn" type="button">加载内置示例结果</button>
+            <button class="btn secondary" id="copyBtn" type="button" disabled>复制评分报告</button>
+          </div>
+          <p class="helper-note">如果 GitHub 匿名 API 返回 403，默认 RAG 仓库会自动使用内置评测快照继续出分；评测其它仓库或强制读取线上文件树时请填写 GitHub Token。Token 只在本浏览器请求头中使用，不会保存。</p>
+        </div>
+      </div>
+
+      <div class="platform-map panel" aria-label="评测平台运行链路">
+        <svg viewBox="0 0 1100 610" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <path id="pathA" d="M120 305 C260 160 330 130 438 142 C548 154 620 122 720 122 C856 122 930 220 1000 300" />
+            <path id="pathB" d="M120 315 C260 406 365 455 510 455 C684 455 805 366 1000 310" />
+            <path id="pathC" d="M438 142 C530 246 606 248 720 122 C820 32 944 160 1000 300" />
+            <path id="pathD" d="M710 455 C780 404 870 362 1000 310" />
+          </defs>
+          <use href="#pathA" class="base-line"></use>
+          <use href="#pathB" class="base-line"></use>
+          <use href="#pathC" class="base-line"></use>
+          <use href="#pathD" class="base-line"></use>
+          <use href="#pathA" class="pulse-line blue"></use>
+          <use href="#pathB" class="pulse-line green"></use>
+          <use href="#pathC" class="pulse-line amber"></use>
+          <use href="#pathD" class="pulse-line cyan"></use>
+          <circle class="packet" r="7" fill="#60a5fa" style="color:#60a5fa"><animateMotion dur="7.6s" repeatCount="indefinite"><mpath href="#pathA"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#34d399" style="color:#34d399"><animateMotion dur="7.1s" begin="0.8s" repeatCount="indefinite"><mpath href="#pathB"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#fbbf24" style="color:#fbbf24"><animateMotion dur="6.7s" begin="1.4s" repeatCount="indefinite"><mpath href="#pathC"></mpath></animateMotion></circle>
+          <circle class="packet" r="6" fill="#22d3ee" style="color:#22d3ee"><animateMotion dur="5.5s" begin="1.8s" repeatCount="indefinite"><mpath href="#pathD"></mpath></animateMotion></circle>
+        </svg>
+        <div class="map-node n-repo"><small>Import</small><strong>仓库导入</strong><span>GitHub tree API / raw files</span></div>
+        <div class="map-node n-tree"><small>Scan</small><strong>结构扫描</strong><span>目录、测试、配置、服务入口</span></div>
+        <div class="map-node n-assets"><small>Assets</small><strong>评测资产</strong><span>问题集、baseline、报告、GraphRAG 子集</span></div>
+        <div class="map-node n-metrics"><small>Metrics</small><strong>指标解析</strong><span>recall@K、coverage、failure tags</span></div>
+        <div class="map-node n-score"><small>Score</small><strong>成熟度给分</strong><span>100 分制、分项解释、优化建议</span></div>
+        <div class="live-panel" id="logPanel">等待导入仓库。平台会在浏览器端完成公开仓库扫描，不上传你的代码。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>完整评测流程</h2>
+        <p>GitHub Pages 不能直接启动 Python、ChromaDB 或本地后端，所以这个页面做的是浏览器端仓库级评测。真实在线检索压测可以作为下一阶段接后端 API。</p>
+      </div>
+      <div class="workflow">
+        <article class="step"><small>01</small><strong>导入仓库</strong><span>解析 GitHub URL，读取指定分支的完整文件树。</span></article>
+        <article class="step"><small>02</small><strong>识别能力模块</strong><span>扫描 data_pipeline、retrieval_engine、rag_orchestrator、kg_pipeline、evaluation、tests 等模块。</span></article>
+        <article class="step"><small>03</small><strong>解析评测资产</strong><span>读取问题集、baseline 对比、失败分析、GraphRAG 子集报告。</span></article>
+        <article class="step"><small>04</small><strong>评分与建议</strong><span>按结构、数据集、baseline、失败归因、GraphRAG、复现性给分。</span></article>
+      </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section-head">
+        <h2>评分结果</h2>
+        <p id="resultSubtitle">还没有运行评测。导入仓库后这里会显示总分、分项分、缺失项和建议。</p>
+      </div>
+      <div class="results-grid">
+        <aside class="score-card panel">
+          <div class="score-ring" id="scoreRing" style="--score:0">
+            <div>
+              <span class="score-value" id="scoreValue">--</span>
+              <span class="score-grade" id="scoreGrade">未评分</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>仓库状态</h3>
+            <ul id="repoFacts">
+              <li>等待导入。</li>
+            </ul>
+          </div>
+        </aside>
+
+        <div class="dimension-grid" id="dimensionGrid"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>证据表</h2>
+        <p>平台不会只给一个分数，会列出命中的文件、缺失的文件和可解析出的 baseline 指标。</p>
+      </div>
+      <div class="tables">
+        <article class="card">
+          <h3>关键文件命中</h3>
+          <table class="table">
+            <thead><tr><th>检查项</th><th>状态</th><th>证据</th></tr></thead>
+            <tbody id="evidenceRows"><tr><td colspan="3">等待运行。</td></tr></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h3>Baseline 指标</h3>
+          <table class="table">
+            <thead><tr><th>方法</th><th>Question recall@K</th><th>Coverage</th></tr></thead>
+            <tbody id="metricRows"><tr><td colspan="3">等待解析。</td></tr></tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="report">
+      <div class="section-head">
+        <h2>自动报告</h2>
+        <p>导入仓库后自动生成 Markdown 评分报告，可以复制到 README、课程汇报或 issue 里。</p>
+      </div>
+      <textarea class="report-box" id="reportBox" readonly>等待运行评测。</textarea>
+    </section>
+  </main>
+
+  <script>
+    const REQUIRED = {
+      structure: [
+        ["configs/", "统一配置中心"],
+        ["core_domain/", "领域模型"],
+        ["data_pipeline/", "数据管线"],
+        ["retrieval_engine/", "检索引擎"],
+        ["rag_orchestrator/", "RAG 编排"],
+        ["kg_pipeline/", "GraphRAG / 知识图谱"],
+        ["evaluation/", "评测模块"],
+        ["tests/", "测试目录"],
+        ["api_server/", "服务入口"],
+        ["frontend_app/", "前端入口"]
+      ],
+      files: [
+        ["README.md", "项目说明"],
+        ["TECH_STACK.md", "技术栈说明"],
+        ["pyproject.toml", "Python 工程配置"],
+        [".gitlab-ci.yml", "CI 配置"]
+      ],
+      evaluation: [
+        ["evaluation/system_eval_questions.jsonl", "系统评测问题集"],
+        ["evaluation/reports/day3_retrieval_baseline_comparison", "baseline 对比报告"],
+        ["evaluation/reports/day4_failure_analysis", "失败分析报告"],
+        ["GraphRAG同题子集报告", "GraphRAG 子集报告"]
+      ]
+    };
+
+    const DEMO = {
+      repo: "local://Power Equipment RAG",
+      branch: "demo",
+      paths: [
+        "configs/__init__.py", "core_domain/__init__.py", "data_pipeline/file_ingestion.py",
+        "retrieval_engine/hybrid.py", "rag_orchestrator/global_search.py", "kg_pipeline/community_detection.py",
+        "evaluation/system_eval_questions.jsonl", "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md",
+        "evaluation/reports/day4_failure_analysis_20260604_012258.md",
+        "tests/test_pipeline.py", "api_server/current_console/server.py", "frontend_app/current_console/index.html",
+        "README.md", "TECH_STACK.md", "pyproject.toml", ".gitlab-ci.yml",
+        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md"
+      ],
+      texts: {
+        "evaluation/system_eval_questions.jsonl": Array.from({ length: 60 }, (_, i) => JSON.stringify({ id: `q${i+1}`, type: i % 6 === 0 ? "kg_graph_rag" : "standard_rag_fact", expected_evidence_keywords: ["证据", "检索"] })).join("\n"),
+        "evaluation/reports/day3_retrieval_baseline_comparison_20260605_210540.md": `
+| Method | Questions | Matched outputs | Question recall@K | Keyword recall@K | Avg keyword coverage | Strong | Weak | Missed | Zero-hit |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| keyword | 60 | 60 | 0.833333 | 0.540268 | 0.563056 | 25 | 25 | 10 | 0 |
+| dense_hashing | 60 | 60 | 0.583333 | 0.281879 | 0.299722 | 12 | 23 | 25 | 0 |
+| hybrid_rrf | 60 | 60 | 0.816667 | 0.500000 | 0.519722 | 24 | 25 | 11 | 0 |
+Best Day 3 baseline by average keyword coverage: keyword.
+`,
+        "evaluation/reports/day4_failure_analysis_20260604_012258.md": "hybrid_dilution\npartial_ranking_gap\nevaluation_concept_gap\nAction: reranker, source_scope, formal embedding.",
+        "docs/project_deliverables/06_汇报材料_发群和组会/RAG课程汇报_最终交付包/13_GraphRAG同题子集报告.md": "GraphRAG 子集题数：10\n当前文本 baseline 最优覆盖率均值：0.633333"
+      }
+    };
+
+    const state = {
+      current: null,
+      busy: false
+    };
+
+    const els = {
+      repoUrl: document.getElementById("repoUrl"),
+      branchName: document.getElementById("branchName"),
+      githubToken: document.getElementById("githubToken"),
+      analyzeBtn: document.getElementById("analyzeBtn"),
+      demoBtn: document.getElementById("demoBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      logPanel: document.getElementById("logPanel"),
+      scoreRing: document.getElementById("scoreRing"),
+      scoreValue: document.getElementById("scoreValue"),
+      scoreGrade: document.getElementById("scoreGrade"),
+      repoFacts: document.getElementById("repoFacts"),
+      resultSubtitle: document.getElementById("resultSubtitle"),
+      dimensionGrid: document.getElementById("dimensionGrid"),
+      evidenceRows: document.getElementById("evidenceRows"),
+      metricRows: document.getElementById("metricRows"),
+      reportBox: document.getElementById("reportBox")
+    };
+
+    function log(message) {
+      const now = new Date().toLocaleTimeString();
+      els.logPanel.innerHTML = `[${now}] ${escapeHtml(message)}<br>` + els.logPanel.innerHTML.split("<br>").slice(0, 5).join("<br>");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+
+    function parseRepoUrl(input) {
+      const value = input.trim().replace(/\.git$/, "");
+      const match = value.match(/github\.com[/:]([^/]+)\/([^/#?]+)/i);
+      if (!match) throw new Error("请输入有效 GitHub 仓库 URL，例如 https://github.com/owner/repo");
+      return { owner: match[1], repo: match[2] };
+    }
+
+    async function fetchJson(url) {
+      const headers = { "Accept": "application/vnd.github+json" };
+      const token = els.githubToken.value.trim();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}: ${url}`);
+        error.status = response.status;
+        error.url = url;
+        throw error;
+      }
+      return response.json();
+    }
+
+    async function fetchText(url) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}: ${url}`);
+        error.status = response.status;
+        error.url = url;
+        throw error;
+      }
+      return response.text();
+    }
+
+    function isGitHubRateLimit(error) {
+      return error?.status === 403 || /403|rate limit|API rate limit/i.test(error?.message || "");
+    }
+
+    function isDefaultRagRepo(owner, repo) {
+      return owner?.toLowerCase() === "javonloong" && repo?.toLowerCase() === "rag";
+    }
+
+    async function analyzeGitHubRepo() {
+      if (state.busy) return;
+      state.busy = true;
+      els.analyzeBtn.disabled = true;
+      els.analyzeBtn.textContent = "评测中...";
+      let owner = "";
+      let repo = "";
+      let branch = "";
+      try {
+        const parsed = parseRepoUrl(els.repoUrl.value);
+        owner = parsed.owner;
+        repo = parsed.repo;
+        branch = els.branchName.value.trim() || "main";
+        log(`读取 GitHub 文件树: ${owner}/${repo}@${branch}`);
+        const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+        const treeData = await fetchJson(treeUrl);
+        if (treeData.truncated) log("GitHub 返回的文件树被截断，评分可能偏低。");
+        const paths = (treeData.tree || []).filter(item => item.type === "blob").map(item => item.path);
+        const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/`;
+        const textMap = await fetchCandidateTexts(paths, rawBase);
+        const result = scoreRepository({ repo: `${owner}/${repo}`, branch, paths, texts: textMap });
+        renderResult(result);
+        log(`评测完成：${result.total}/100，等级 ${result.grade}`);
+      } catch (error) {
+        const hasToken = Boolean(els.githubToken.value.trim());
+        if (!hasToken && isGitHubRateLimit(error) && isDefaultRagRepo(owner, repo)) {
+          log("GitHub API 匿名访问被限流，已自动切换到本项目内置评测清单。填写 GitHub Token 可强制读取线上仓库。");
+          const result = scoreRepository({ ...DEMO, repo: `${owner}/${repo}`, branch: branch || "main" });
+          result.runtimeWarning = "GitHub API returned 403; using the built-in RAG evaluation snapshot. Add a GitHub Token to force a live repository scan.";
+          result.sourceMode = "rate-limit-fallback";
+          renderResult(result);
+          log(`评测完成：${result.total}/100，等级 ${result.grade}`);
+          return;
+        }
+        log(`评测失败：${error.message}`);
+        renderError(error);
+      } finally {
+        state.busy = false;
+        els.analyzeBtn.disabled = false;
+        els.analyzeBtn.textContent = "导入并开始评测";
+      }
+    }
+
+    async function fetchCandidateTexts(paths, rawBase) {
+      const candidates = findCandidates(paths);
+      const textMap = {};
+      for (const path of candidates) {
+        try {
+          log(`解析报告: ${path}`);
+          textMap[path] = await fetchText(rawBase + path.split("/").map(encodeURIComponent).join("/"));
+        } catch (error) {
+          textMap[path] = "";
+        }
+      }
+      return textMap;
+    }
+
+    function findCandidates(paths) {
+      const wanted = [];
+      const patterns = [
+        /^evaluation\/system_eval_questions\.jsonl$/i,
+        /day3_retrieval_baseline_comparison.*\.(md|json)$/i,
+        /day4_failure_analysis.*\.(md|json)$/i,
+        /GraphRAG.*子集.*\.md$/i,
+        /10_系统评测题集\.jsonl$/i,
+        /11_Day3_baseline_comparison\.md$/i,
+        /13_GraphRAG同题子集报告\.md$/i,
+        /^README\.md$/i,
+        /^TECH_STACK\.md$/i
+      ];
+      for (const path of paths) {
+        if (patterns.some(pattern => pattern.test(path))) wanted.push(path);
+      }
+      return wanted.slice(0, 16);
+    }
+
+    function scoreRepository(repoData) {
+      const pathSet = new Set(repoData.paths);
+      const hasPathPrefix = prefix => repoData.paths.some(path => path === prefix.replace(/\/$/, "") || path.startsWith(prefix));
+      const hasPathMatch = needle => repoData.paths.some(path => path.includes(needle));
+
+      const evidence = [];
+      const addEvidence = (label, ok, detail) => evidence.push({ label, ok, detail });
+
+      const structureHits = REQUIRED.structure.filter(([prefix, label]) => {
+        const ok = hasPathPrefix(prefix);
+        addEvidence(label, ok, ok ? prefix : "缺失");
+        return ok;
+      }).length;
+      const fileHits = REQUIRED.files.filter(([file, label]) => {
+        const ok = pathSet.has(file);
+        addEvidence(label, ok, ok ? file : "缺失");
+        return ok;
+      }).length;
+
+      const datasetPath = findFirst(repoData.paths, [/evaluation\/system_eval_questions\.jsonl$/i, /10_系统评测题集\.jsonl$/i]);
+      const datasetText = getText(repoData.texts, datasetPath);
+      const questionCount = countJsonl(datasetText);
+      addEvidence("评测问题集", Boolean(datasetPath), datasetPath || "缺失");
+
+      const baselinePath = findFirst(repoData.paths, [/day3_retrieval_baseline_comparison.*\.(md|json)$/i, /11_Day3_baseline_comparison\.md$/i]);
+      const baselineText = getText(repoData.texts, baselinePath);
+      const baselineMetrics = parseBaselineMetrics(baselineText);
+      addEvidence("baseline 对比报告", Boolean(baselinePath), baselinePath || "缺失");
+
+      const failurePath = findFirst(repoData.paths, [/day4_failure_analysis.*\.(md|json)$/i]);
+      const failureText = getText(repoData.texts, failurePath);
+      const failureTags = ["hybrid_dilution", "partial_ranking_gap", "evaluation_concept_gap"].filter(tag => failureText.includes(tag));
+      addEvidence("失败分析报告", Boolean(failurePath), failurePath || "缺失");
+
+      const graphSubsetPath = findFirst(repoData.paths, [/GraphRAG.*子集.*\.md$/i, /13_GraphRAG同题子集报告\.md$/i]);
+      const graphSubsetText = getText(repoData.texts, graphSubsetPath);
+      const graphSubsetCount = parseNumberAfter(graphSubsetText, /GraphRAG\s*子集题数[：:]\s*(\d+)/) || 0;
+      addEvidence("GraphRAG 子集报告", Boolean(graphSubsetPath), graphSubsetPath || "缺失");
+
+      const testsCount = repoData.paths.filter(path => /^tests\//.test(path) && /test_.*\.py$/.test(path)).length;
+      const ci = repoData.paths.some(path => path.includes(".github/workflows/") || path === ".gitlab-ci.yml");
+      const pyproject = pathSet.has("pyproject.toml");
+
+      const dimensions = [
+        {
+          key: "structure",
+          title: "工程结构",
+          max: 20,
+          score: Math.round(((structureHits / REQUIRED.structure.length) * 14) + ((fileHits / REQUIRED.files.length) * 6)),
+          notes: [`模块命中 ${structureHits}/${REQUIRED.structure.length}`, `关键文件命中 ${fileHits}/${REQUIRED.files.length}`]
+        },
+        {
+          key: "dataset",
+          title: "评测数据集",
+          max: 20,
+          score: datasetPath ? Math.min(20, 8 + Math.round(Math.min(questionCount, 60) / 60 * 12)) : 0,
+          notes: [datasetPath ? `识别到 ${datasetPath}` : "未识别到评测问题集", `题目数估计 ${questionCount || 0}`]
+        },
+        {
+          key: "baseline",
+          title: "Baseline 对比",
+          max: 25,
+          score: scoreBaseline(baselineMetrics, Boolean(baselinePath)),
+          notes: baselineMetrics.length ? baselineMetrics.map(item => `${item.method}: recall ${formatMetric(item.recall)}`) : ["未解析到 baseline 表格"]
+        },
+        {
+          key: "failure",
+          title: "失败归因",
+          max: 15,
+          score: failurePath ? Math.min(15, 6 + failureTags.length * 3) : 0,
+          notes: failureTags.length ? failureTags : ["未识别失败分类"]
+        },
+        {
+          key: "graphrag",
+          title: "GraphRAG 覆盖",
+          max: 10,
+          score: Math.min(10, (hasPathPrefix("kg_pipeline/") ? 4 : 0) + (graphSubsetPath ? 4 : 0) + (graphSubsetCount >= 10 ? 2 : 0)),
+          notes: [hasPathPrefix("kg_pipeline/") ? "存在 kg_pipeline" : "缺少 kg_pipeline", graphSubsetPath ? `子集报告 ${graphSubsetCount || "已识别"} 题` : "缺少 GraphRAG 子集报告"]
+        },
+        {
+          key: "repro",
+          title: "复现与质量",
+          max: 10,
+          score: Math.min(10, (testsCount > 0 ? 4 : 0) + (pyproject ? 3 : 0) + (ci ? 3 : 0)),
+          notes: [`测试文件 ${testsCount}`, pyproject ? "存在 pyproject.toml" : "缺少 pyproject.toml", ci ? "存在 CI 配置" : "缺少 CI 配置"]
+        }
+      ];
+
+      const total = Math.max(0, Math.min(100, dimensions.reduce((sum, item) => sum + item.score, 0)));
+      const grade = total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D";
+      const suggestions = buildSuggestions(dimensions, baselineMetrics, questionCount, graphSubsetCount);
+
+      return {
+        repo: repoData.repo,
+        branch: repoData.branch,
+        pathsCount: repoData.paths.length,
+        dimensions,
+        total,
+        grade,
+        evidence,
+        baselineMetrics,
+        questionCount,
+        graphSubsetCount,
+        suggestions
+      };
+    }
+
+    function findFirst(paths, patterns) {
+      return paths.find(path => patterns.some(pattern => pattern.test(path))) || "";
+    }
+
+    function getText(texts, path) {
+      if (!path) return "";
+      return texts[path] || "";
+    }
+
+    function countJsonl(text) {
+      if (!text) return 0;
+      return text.split(/\r?\n/).filter(line => line.trim().startsWith("{")).length;
+    }
+
+    function parseNumberAfter(text, regex) {
+      const match = text.match(regex);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function parseBaselineMetrics(text) {
+      if (!text) return [];
+      const methods = ["keyword", "dense_hashing", "hybrid_rrf"];
+      const rows = [];
+      for (const method of methods) {
+        const regex = new RegExp(`\\|\\s*${method}\\s*\\|([^\\n]+)`, "i");
+        const match = text.match(regex);
+        if (!match) continue;
+        const cells = match[1].split("|").map(cell => cell.trim());
+        rows.push({
+          method,
+          questions: Number(cells[0]) || 0,
+          matched: Number(cells[1]) || 0,
+          recall: Number(cells[2]) || 0,
+          keywordRecall: Number(cells[3]) || 0,
+          coverage: Number(cells[4]) || 0,
+          strong: Number(cells[5]) || 0,
+          weak: Number(cells[6]) || 0,
+          missed: Number(cells[7]) || 0,
+          zeroHit: Number(cells[8]) || 0
+        });
+      }
+      return rows;
+    }
+
+    function scoreBaseline(metrics, hasReport) {
+      if (!hasReport) return 0;
+      if (!metrics.length) return 8;
+      const methodScore = Math.min(8, metrics.length * 3);
+      const bestRecall = Math.max(...metrics.map(item => item.recall || 0));
+      const recallScore = Math.round(Math.min(bestRecall, 0.9) / 0.9 * 10);
+      const zeroHitPenalty = metrics.some(item => item.zeroHit > 0) ? -2 : 2;
+      const coverage = Math.max(...metrics.map(item => item.coverage || 0));
+      const coverageScore = Math.round(Math.min(coverage, 0.7) / 0.7 * 5);
+      return Math.max(0, Math.min(25, methodScore + recallScore + zeroHitPenalty + coverageScore));
+    }
+
+    function buildSuggestions(dimensions, metrics, questionCount, graphSubsetCount) {
+      const suggestions = [];
+      const byKey = Object.fromEntries(dimensions.map(item => [item.key, item]));
+      if (byKey.dataset.score < 16) suggestions.push("补齐 evaluation/system_eval_questions.jsonl，并保证题目覆盖事实、流程、OCR 风险、GraphRAG、评测方法等能力组。");
+      if (byKey.baseline.score < 18) suggestions.push("补充 keyword、dense、hybrid 三类 baseline 的同题对比报告，至少包含 question recall@K、coverage、strong/weak/missed。");
+      if (byKey.failure.score < 12) suggestions.push("增加失败归因报告，把失败案例分成 hybrid_dilution、ranking_gap、concept_gap 等可执行类别。");
+      if (byKey.graphrag.score < 8) suggestions.push("为 GraphRAG 单独建立同题子集，区分 local context 和 global community summary 的适用场景。");
+      if (metrics.length) {
+        const keyword = metrics.find(item => item.method === "keyword");
+        const hybrid = metrics.find(item => item.method === "hybrid_rrf");
+        if (keyword && hybrid && keyword.recall >= hybrid.recall) suggestions.push("当前 keyword 不弱于 hybrid，说明强术语资料需要权重路由或 reranker，不能简单融合。");
+      }
+      if (questionCount >= 60 && graphSubsetCount >= 10) suggestions.push("评测集规模和 GraphRAG 子集已具备课程阶段展示基础，下一步应接入真实检索 API 做在线复测。");
+      return suggestions.slice(0, 6);
+    }
+
+    function formatMetric(value) {
+      if (!Number.isFinite(value)) return "--";
+      return value.toFixed(3);
+    }
+
+    function renderResult(result) {
+      state.current = result;
+      els.copyBtn.disabled = false;
+      els.scoreRing.style.setProperty("--score", result.total);
+      els.scoreValue.textContent = String(result.total);
+      els.scoreGrade.textContent = `等级 ${result.grade}`;
+      const sourceNote = result.runtimeWarning ? " · GitHub API 限流，已使用内置评测快照" : "";
+      els.resultSubtitle.textContent = `${result.repo}@${result.branch} · 扫描 ${result.pathsCount} 个文件 · 评分 ${result.total}/100${sourceNote}`;
+      const facts = [
+        `仓库：${escapeHtml(result.repo)}`,
+        `分支：${escapeHtml(result.branch)}`,
+        `文件数：${result.pathsCount}`,
+        `评测题数：${result.questionCount || 0}`,
+        `GraphRAG 子集：${result.graphSubsetCount || 0}`
+      ];
+      if (result.runtimeWarning) facts.push("来源：内置评测快照（GitHub API 403 降级）");
+      els.repoFacts.innerHTML = facts.map(item => `<li>${item}</li>`).join("");
+
+      els.dimensionGrid.innerHTML = result.dimensions.map(item => `
+        <article class="dimension-card">
+          <h3>${escapeHtml(item.title)}</h3>
+          <div class="dimension-score">${item.score}/${item.max}</div>
+          <div class="mini-bar" aria-hidden="true"><span style="--value:${Math.round(item.score / item.max * 100)}%"></span></div>
+          <ul>${item.notes.map(note => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+        </article>
+      `).join("");
+
+      els.evidenceRows.innerHTML = result.evidence.map(item => `
+        <tr>
+          <td>${escapeHtml(item.label)}</td>
+          <td class="${item.ok ? "status-ok" : "status-bad"}">${item.ok ? "命中" : "缺失"}</td>
+          <td>${escapeHtml(item.detail)}</td>
+        </tr>
+      `).join("");
+
+      els.metricRows.innerHTML = result.baselineMetrics.length ? result.baselineMetrics.map(item => `
+        <tr>
+          <td>${escapeHtml(item.method)}</td>
+          <td>${formatMetric(item.recall)}</td>
+          <td>${formatMetric(item.coverage)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="3">未解析到 baseline 指标。</td></tr>`;
+
+      const report = buildMarkdownReport(result);
+      els.reportBox.value = report;
+    }
+
+    function renderError(error) {
+      const limitHint = isGitHubRateLimit(error)
+        ? "GitHub API 返回 403。请填写 GitHub Token 后重试，或先加载内置示例结果。"
+        : "请确认仓库为公开仓库、分支正确，或稍后重试 GitHub API。";
+      els.resultSubtitle.textContent = `评测失败。${limitHint}`;
+      els.reportBox.value = `# RAG 仓库评测失败\n\n${error.message}\n\n${limitHint}\n`;
+    }
+
+    function buildMarkdownReport(result) {
+      const lines = [];
+      lines.push(`# RAG Repository Evaluation Report`);
+      lines.push("");
+      lines.push(`- Repository: ${result.repo}`);
+      lines.push(`- Branch: ${result.branch}`);
+      lines.push(`- Files scanned: ${result.pathsCount}`);
+      lines.push(`- Score: ${result.total}/100 (${result.grade})`);
+      if (result.runtimeWarning) lines.push(`- Runtime note: ${result.runtimeWarning}`);
+      lines.push("");
+      lines.push(`## Dimension Scores`);
+      for (const item of result.dimensions) {
+        lines.push(`- ${item.title}: ${item.score}/${item.max}`);
+      }
+      lines.push("");
+      lines.push(`## Baseline Metrics`);
+      if (result.baselineMetrics.length) {
+        lines.push(`| Method | Question recall@K | Avg coverage | Strong | Weak | Missed |`);
+        lines.push(`|---|---:|---:|---:|---:|---:|`);
+        for (const item of result.baselineMetrics) {
+          lines.push(`| ${item.method} | ${formatMetric(item.recall)} | ${formatMetric(item.coverage)} | ${item.strong} | ${item.weak} | ${item.missed} |`);
+        }
+      } else {
+        lines.push(`No baseline metrics parsed.`);
+      }
+      lines.push("");
+      lines.push(`## Suggestions`);
+      for (const suggestion of result.suggestions) {
+        lines.push(`- ${suggestion}`);
+      }
+      return lines.join("\n");
+    }
+
+    function loadDemo() {
+      log("加载内置示例评测结果。");
+      renderResult(scoreRepository(DEMO));
+    }
+
+    async function copyReport() {
+      if (!els.reportBox.value) return;
+      await navigator.clipboard.writeText(els.reportBox.value);
+      log("评分报告已复制到剪贴板。");
+    }
+
+    els.analyzeBtn.addEventListener("click", analyzeGitHubRepo);
+    els.demoBtn.addEventListener("click", loadDemo);
+    els.copyBtn.addEventListener("click", copyReport);
+
+    loadDemo();
+  </script>
+</body>
+</html>
