@@ -9,7 +9,7 @@
 ## 1. 系统架构图谱 (Architecture Diagram)
 
 ```mermaid
-graph TB
+flowchart TB
     %% 样式定义
     classDef ui fill:#E1F5FE,stroke:#0288D1,stroke-width:2px,color:#01579B;
     classDef server fill:#EDE7F6,stroke:#5E35B1,stroke-width:2px,color:#311B92;
@@ -17,7 +17,7 @@ graph TB
     classDef engine fill:#FFFDE7,stroke:#FBC02D,stroke-width:2px,color:#F57F17;
     classDef storage fill:#FFE0B2,stroke:#F57C00,stroke-width:2px,color:#E65100;
     classDef adapter fill:#FCE4EC,stroke:#C2185B,stroke-width:2px,color:#880E4F;
-    classDef eval fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40;
+    classDef eval_style fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40;
     
     subgraph UI_Layer ["用户界面与桌面外壳层 (UI & Shell)"]
         Electron["Electron 桌面外壳<br/>(electron/main.cjs)"]
@@ -63,7 +63,7 @@ graph TB
         GraphRetriever["图谱检索引擎<br/>(retrieval_engine/graph.py)"]
         LocalGraphSearch["局部图检索<br/>(实体一阶/二阶邻域展开)"]
         GlobalGraphSearch["全局图检索<br/>(Leiden 社区摘要相关性过滤)"]
-        BatchScanner["全量分区扫描器<br/>(针对联系人级全量会话归因 analysis)"]
+        BatchScanner["全量分区扫描器<br/>(针对联系人级全量会话归因分析)"]
         Orchestrator["RAG/GraphRAG 编排器<br/>(rag_orchestrator/)"]
     end
     
@@ -112,7 +112,7 @@ graph TB
     DocLoaders -->|正常文本/JSON| TextFilter
     TextFilter -->|降噪处理| SemanticChunker
     SemanticChunker -->|2. 生成 Chunk 向量| ChromaDB
-    SemanticChunker -->|3. 发起实体抽取| KG_Pipeline
+    SemanticChunker -->|3. 发起实体抽取| KGExtractor
     
     SchemaMgr --> KGExtractor
     KGExtractor -->|4. 三元组 schema 校验| EvidenceBinder
@@ -122,10 +122,10 @@ graph TB
     CommSummary -->|6. 保存社区索引与摘要| GraphStore
     
     FastAPI -->|7. 用户提问| QueryRouter
-    QueryRouter -->|Fact (事实题)| HybridRetriever
-    QueryRouter -->|Relation (关系题)| LocalGraphSearch
-    QueryRouter -->|Global (全局汇总)| GlobalGraphSearch
-    QueryRouter -->|Batch Scan (批量检测)| BatchScanner
+    QueryRouter -->|Fact 事实题| HybridRetriever
+    QueryRouter -->|Relation 关系题| LocalGraphSearch
+    QueryRouter -->|Global 全局汇总| GlobalGraphSearch
+    QueryRouter -->|Batch Scan 批量检测| BatchScanner
     
     HybridRetriever --> DenseRetriever
     HybridRetriever --> SparseRetriever
@@ -164,7 +164,7 @@ graph TB
     class QueryRouter,Orchestrator,HybridRetriever,GraphRetriever,DenseRetriever,SparseRetriever,RRF,LocalGraphSearch,GlobalGraphSearch,BatchScanner engine;
     class ChromaDB,GraphStore storage;
     class LLMClient,EmbedAdapter adapter;
-    class EvalHarness,QualityProfiles,TriageAnalytics eval;
+    class EvalHarness,QualityProfiles,TriageAnalytics eval_style;
 ```
 
 ---
@@ -209,7 +209,7 @@ graph TB
 * **实体关系抽取器 & 证据绑定器**：
   * 大模型解析文本段落，按 Schema 输出 JSON 三元组；证据绑定器自动在三元组中注入原文档来源、页码及原始文本片段（Evidence），确保每一条图关系在问答阶段都可以被人类审计追溯。
 * **Leiden 聚类与社区摘要合成器**：
-  * 将全量图存入 `GraphStore` 后，运行 Leiden 社团发现算法，划分子图网络层级；随后对每个子网（Community）由大模型生成高度概括的摘要，为全局检索提供"全局线索索引"。
+  * 将全量图存入 `GraphStore` 后，运行 Leiden 社团发现算法，划分子图网络层级；随后对每个子网（Community）由大模型生成高度概括的摘要，为全局检索提供“全局线索索引”。
 
 ### 2.5 多模态混合检索与编排引擎 (Retrieval & Orchestration)
 * **查询路由器 (`rag_orchestrator/router.py`)**：
@@ -221,7 +221,7 @@ graph TB
 * **混合检索引擎**：
   * **向量检索**：调用 `model_adapters/embedding.py` 计算 Query 的 Embedding，在 ChromaDB 中检索 Top-k 向量邻近片段。
   * **稀疏检索**：使用 `Jieba` 分词对 Query 精确切词，在 BM25 索引中检索精准命中词频的文档段落。
-  * **RRF 排序融合**：使用倒数排序融合公式，平衡双路排名的分布权重，返回质量最优的重排片段。
+  * **RRF 排序融合**：使用倒数排序融合公式，平衡双路排名的分布权重，返回质量最优 of 重排片段。
 * **图谱检索引擎**：
   * **局部图检索 (`LocalGraphSearch`)**：定位 Query 中的实体节点，在 `GraphStore` 中查找其一阶、二阶相邻节点与边关系，汇聚实体拓扑上下文。
   * **全局图检索 (`GlobalGraphSearch`)**：将 Query 语义与 Leiden 社区摘要做相似度比对，筛选最关联的若干社区摘要，作为生成全局回答的基础材料。
