@@ -209,14 +209,14 @@ graph TB
 * **实体关系抽取器 & 证据绑定器**：
   * 大模型解析文本段落，按 Schema 输出 JSON 三元组；证据绑定器自动在三元组中注入原文档来源、页码及原始文本片段（Evidence），确保每一条图关系在问答阶段都可以被人类审计追溯。
 * **Leiden 聚类与社区摘要合成器**：
-  * 将全量图存入 `GraphStore` 后，运行 Leiden 社团发现算法，划分子图网络层级；随后对每个子网（Community）由大模型生成高度概括的摘要，为全局检索提供“全局线索索引”。
+  * 将全量图存入 `GraphStore` 后，运行 Leiden 社团发现算法，划分子图网络层级；随后对每个子网（Community）由大模型生成高度概括的摘要，为全局检索提供"全局线索索引"。
 
 ### 2.5 多模态混合检索与编排引擎 (Retrieval & Orchestration)
 * **查询路由器 (`rag_orchestrator/router.py`)**：
   * 使用大模型进行意图识别，将 Question 归入四大类别：
-    1. **Fact（局部事实）**：例如“XX 装备的极限工作温度是多少”，路由至 `HybridRetriever`。
-    2. **Relation（实体关系）**：例如“XX 故障由哪些部件损坏引起”，路由至 `LocalGraphSearch`。
-    3. **Global（全局汇总）**：例如“这本手册主要讲述了哪几类维护方法”，路由至 `GlobalGraphSearch`。
+    1. **Fact（局部事实）**：例如"XX 装备的极限工作温度是多少"，路由至 `HybridRetriever`。
+    2. **Relation（实体关系）**：例如"XX 故障由哪些部件损坏引起"，路由至 `LocalGraphSearch`。
+    3. **Global（全局汇总）**：例如"这本手册主要讲述了哪几类维护方法"，路由至 `GlobalGraphSearch`。
     4. **Batch Scan（全量批量扫描）**：专门针对联系人、会话层级进行全局归纳扫描，路由至 `BatchScanner`。
 * **混合检索引擎**：
   * **向量检索**：调用 `model_adapters/embedding.py` 计算 Query 的 Embedding，在 ChromaDB 中检索 Top-k 向量邻近片段。
