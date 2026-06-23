@@ -80,6 +80,18 @@ data_pipeline/reports/*.jsonl
 storage_layer/runtime/
 observability/logs/
 observability/reports/
+
+# Generated benchmark/runtime outputs. Markdown summaries may be committed,
+# but transient logs and local Chroma/HNSW files should stay local.
+outputs/logs/*.log
+outputs/logs/*.pid
+outputs/**/*.sqlite
+outputs/**/*.sqlite3
+outputs/**/data_level0.bin
+outputs/**/header.bin
+outputs/**/length.bin
+outputs/**/link_lists.bin
+outputs/**/index_metadata.pickle
 00_项目成果总览_先看这里/01_资料输入_14本PDF和问答JSON/
 00_项目成果总览_先看这里/02_OCR结果_13本扫描PDF/
 00_项目成果总览_先看这里/03_普通RAG数据库_14本资料/
