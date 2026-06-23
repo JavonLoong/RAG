@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerRAG 期末汇报系统大盘与评测解析</title>
+    <!-- Outfit & Inter Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0a0f1d;
+            --bg-secondary: #0e1626;
+            --bg-card: rgba(18, 28, 48, 0.65);
+            --bg-card-hover: rgba(26, 38, 64, 0.85);
+            --border-color: rgba(56, 139, 253, 0.2);
+            --border-glow: rgba(99, 102, 241, 0.45);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --color-primary: #3b82f6; /* Blue */
+            --color-secondary: #6366f1; /* Indigo */
+            --color-accent: #f97316; /* Amber/Orange */
+            --color-success: #10b981; /* Emerald */
+            --color-danger: #ef4444; /* Rose */
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+
+        /* Header Layout */
+        header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(10, 15, 29, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-logo .icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            color: white;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .header-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Badges Bar */
+        .status-bar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-badge.primary .dot { background-color: var(--color-primary); box-shadow: 0 0 8px var(--color-primary); }
+        .status-badge.secondary .dot { background-color: var(--color-secondary); box-shadow: 0 0 8px var(--color-secondary); }
+        .status-badge.success .dot { background-color: var(--color-success); box-shadow: 0 0 8px var(--color-success); }
+        .status-badge.accent .dot { background-color: var(--color-accent); box-shadow: 0 0 8px var(--color-accent); }
+
+        /* Container Main */
+        main {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Tab Navigation */
+        .tabs-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2));
+            box-shadow: inset 0 0 0 1px var(--color-primary);
+        }
+
+        /* Tab Contents */
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards Grid Layout */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--color-primary), var(--color-secondary), transparent);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title .tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Banner Notification style */
+        .alert-banner {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(99, 102, 241, 0.05));
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .alert-banner-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(249, 115, 22, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--color-accent);
+            flex-shrink: 0;
+        }
+
+        .alert-banner-content h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-banner-content p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .alert-banner-content strong {
+            color: var(--color-accent);
+        }
+
+        /* Charts Layout */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+        }
+
+        /* Tag Cloud style */
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .tag-item:hover {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: var(--color-secondary);
+            transform: scale(1.05);
+        }
+
+        /* Future Planning Section */
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .roadmap-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .roadmap-item h4 {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .roadmap-item p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        /* Accordion style for Q&A */
+        .accordion-item {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            background: var(--bg-card);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .accordion-item:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .accordion-header {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .accordion-header .arrow {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .accordion-item.open .accordion-header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(99, 102, 241, 0.04);
+            color: var(--color-primary);
+        }
+
+        .accordion-item.open .accordion-header .arrow {
+            transform: rotate(180deg);
+            color: var(--color-primary);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            background: rgba(10, 15, 29, 0.3);
+        }
+
+        .accordion-item.open .accordion-content {
+            max-height: 1000px;
+            transition: max-height 0.5s cubic-bezier(1, 0, 1, 0);
+        }
+
+        .accordion-content-inner {
+            padding: 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .accordion-content-inner p {
+            margin-bottom: 0.75rem;
+        }
+
+        .accordion-content-inner blockquote {
+            border-left: 3px solid var(--color-accent);
+            padding-left: 0.75rem;
+            margin: 0.75rem 0;
+            color: var(--text-primary);
+            font-style: italic;
+        }
+
+        /* Interactive Question Browser */
+        .browser-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            width: 100%;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        .browser-select:focus {
+            border-color: var(--color-primary);
+        }
+
+        .question-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .question-list-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.88rem;
+            transition: var(--transition);
+        }
+
+        .question-list-item:hover {
+            border-color: var(--color-primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Mermaid Graph Pane */
+        .mermaid-container {
+            background: rgba(10, 15, 29, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow: auto;
+            max-height: 650px;
+            display: flex;
+            justify-content: center;
+            cursor: grab;
+            position: relative;
+        }
+
+        .mermaid-container:active {
+            cursor: grabbing;
+        }
+
+        /* Zoom controls for mermaid */
+        .graph-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        /* Stepped data flows */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .step-item {
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .step-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            z-index: 2;
+            color: var(--color-primary);
+        }
+
+        .step-content {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            flex-grow: 1;
+        }
+
+        .step-content h4 {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .step-content p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive styling */
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-logo">
+            <div class="icon">P</div>
+            <div class="header-title">
+                <h1>PowerRAG 期末汇报大盘与决策系统</h1>
+                <p>课程成果验收、核心技术架构与 47 题本地评测集深度解析</p>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-badge success">
+                <span class="dot"></span>
+                <span>评测库可复现口径: 47 题</span>
+            </div>
+            <div class="status-badge secondary">
+                <span class="dot"></span>
+                <span>外评得分: 93.47 / 100</span>
+            </div>
+            <div class="status-badge primary">
+                <span class="dot"></span>
+                <span>系统分层架构: V2.0</span>
+            </div>
+            <div class="status-badge accent">
+                <span class="dot"></span>
+                <span>验收规划: 4维度矩阵</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Tab Navigation Buttons -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('eval')">📊 评测题库深度解析</button>
+            <button class="tab-btn" onclick="switchTab('roadmap')">🗺️ 核心架构与技术路线图</button>
+            <button class="tab-btn" onclick="switchTab('qa')">💬 答辩追问备用回答助手</button>
+        </nav>
+
+        <!-- ==================== TAB 1: EVALUATION BENCHMARK ==================== -->
+        <section id="pane-eval" class="tab-pane active">
+            <!-- Correction Banner -->
+            <div class="alert-banner">
+                <div class="alert-banner-icon">⚠️</div>
+                <div class="alert-banner-content">
+                    <h3>评测题库口径校准提示</h3>
+                    <p>当前仓库中可复现的本地题库（<code>evaluation/system_eval_questions.jsonl</code>）实际包含 <strong>47 道题目</strong>，而非历史口径宣传的 60 题（60 题为前期设计目标）。答辩时若涉及具体题数，应口头说明：“<strong>当前第一阶段可复现本地专家题库共 47 题，后续计划通过自动化与专家盲评结合扩充至 60 到 100+ 题。</strong>”</p>
+                </div>
+            </div>
+
+            <!-- Two Column Row -->
+            <div class="grid-2">
+                <!-- Data Source Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>📂 题库资料来源分布 (source_scope)</span>
+                        <span class="tag">10 大来源类型</span>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.4;">
+                        本题库并非基于单一清洁文档，而是覆盖了动力装备工程场景中多样化的混乱原始资料，以验证复杂环境下的 RAG 鲁棒性：
+                    </p>
+                    <div class="tag-cloud">
+                        <span class="tag-item">燃气轮机基础教材</span>
+                        <span class="tag-item">联合循环运行手册</span>
+                        <span class="tag-item">电厂运行故障报告</span>
+                        <span class="tag-item">设备检修与维护文档</span>
+                        <span class="tag-item">OCR 质量审计报告</span>
+                        <span class="tag-item">JSON 结构审计报告</span>
+                        <span class="tag-item">KG POC 三元组产出</span>
+                        <span class="tag-item">GraphRAG 架构设计</span>
+                        <span class="tag-item">评测框架与指标说明</span>
+                        <span class="tag-item">项目交付说明与总结</span>
+                    </div>
+                </div>
+
+                <!-- Future Field Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>🎯 验收维度演进与补齐规划</span>
+                        <span class="tag">正式验收要求</span>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.4;">
+                        当前题库主要是按 <strong>RAG 系统能力链路</strong> 覆盖，设备类型隐含其中。为了向清华燃气轮机知识库做正式交接与标准验收，下一版计划硬性增加两个字段以建立严密的测评矩阵：
+                    </p>
+                    <div class="roadmap-grid">
+                        <div class="roadmap-item">
+                            <h4>📋 equipment_type (设备类型)</h4>
+                            <p>明确标识题目覆盖的设备边界：压气机、燃烧室、透平/涡轮、余热锅炉、发电机组等，确保没有盲区。</p>
+                        </div>
+                        <div class="roadmap-item">
+                            <h4>⚙️ scenario_type (场景类型)</h4>
+                            <p>划分故障排除、运行监测、结构原理、参数校准等任务场景，考核系统在不同决策场景下的可信度。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid (3 Column) -->
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-title">
+                        <span>💡 能力场景分布 (task_type)</span>
+                        <span class="tag">47 题覆盖</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="taskTypeChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">
+                        <span>🔍 检索模式需求分布 (expected_modes)</span>
+                        <span class="tag">多重标注</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="expectedModesChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">
+                        <span>⚡ 难度层级分布 (difficulty)</span>
+                        <span class="tag">待完善指标</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="difficultyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Question Browser -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-title">
+                    <span>🧪 评测集典型例题浏览</span>
+                    <span class="tag" style="background-color: var(--color-primary); color: white;">交互式</span>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    请在下方下拉菜单中选择一个 <strong>RAG 系统能力场景 (task_type)</strong>，查看其对应的评测重点和典型例题：
+                </p>
+                <select id="taskSelect" class="browser-select" onchange="updateQuestionBrowser()">
+                    <option value="standard_rag_fact">standard_rag_fact (燃气轮机基础事实 - 共 7 题)</option>
+                    <option value="standard_rag_process">standard_rag_process (流程监测与RAG流水线 - 共 6 题)</option>
+                    <option value="ocr_risk">ocr_risk (OCR识别错字、表格与顺序风险 - 共 6 题)</option>
+                    <option value="kg_graph_rag">kg_graph_rag (知识图谱与GraphRAG特性 - 共 11 题)</option>
+                    <option value="structured_data_fact">structured_data_fact (结构化数据解析保真 - 共 3 题)</option>
+                    <option value="fault_reasoning">fault_reasoning (故障根因推理与证据追踪 - 共 2 题)</option>
+                    <option value="evaluation_method">evaluation_method (召回评估与归因分析 - 共 7 题)</option>
+                    <option value="comparison">comparison (检索策略对比融合 - 共 2 题)</option>
+                    <option value="answer_quality">answer_quality (答案引用质量与幻觉评估 - 共 2 题)</option>
+                    <option value="demo_reliability">demo_reliability (演示可靠性与离线兜底 - 共 1 题)</option>
+                </select>
+                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--color-primary);" id="taskDesc"></h4>
+                    <ul class="question-list" id="questionList">
+                        <!-- Questions will load here dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SYSTEM ROADMAP & ARCHITECTURE ==================== -->
+        <section id="pane-roadmap" class="tab-pane">
+            <!-- Mermaid Diagram Card -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-title">
+                    <span>📡 PowerRAG 完整技术栈图谱 (Mermaid Flowchart)</span>
+                    <span class="tag" style="background-color: var(--color-secondary); color: white;">可交互缩放</span>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    利用右上角放大缩小按钮或鼠标滚轮进行视角操作，拖拽可平移以完整预览架构节点的数据流转：
+                </p>
+                <div class="mermaid-container" id="mermaidBox">
+                    <div class="graph-controls">
+                        <button class="control-btn" onclick="zoomMermaid(1.15)">+</button>
+                        <button class="control-btn" onclick="zoomMermaid(0.85)">-</button>
+                        <button class="control-btn" onclick="resetZoomMermaid()">↺</button>
+                    </div>
+                    <div id="mermaidRender" class="mermaid" style="transition: transform 0.2s; transform-origin: top center;">
+flowchart TB
+    %% 样式定义
+    classDef ui fill:#1E293B,stroke:#3b82f6,stroke-width:1.5px,color:#f8fafc;
+    classDef server fill:#1E293B,stroke:#6366f1,stroke-width:1.5px,color:#f8fafc;
+    classDef pipe fill:#1E293B,stroke:#10b981,stroke-width:1.5px,color:#f8fafc;
+    classDef engine fill:#1E293B,stroke:#f97316,stroke-width:1.5px,color:#f8fafc;
+    classDef storage fill:#1E293B,stroke:#e2e8f0,stroke-width:1.5px,color:#f8fafc;
+    classDef adapter fill:#1E293B,stroke:#ec4899,stroke-width:1.5px,color:#f8fafc;
+    classDef eval_style fill:#1E293B,stroke:#14b8a6,stroke-width:1.5px,color:#f8fafc;
+    
+    subgraph UI_Layer ["用户界面与桌面外壳 (UI & Shell)"]
+        Electron["Electron 外壳<br/>(electron/main.cjs)"]
+        Preload["IPC 桥接接口<br/>(electron/preload.cjs)"]
+        WebConsole["Web 控制台页面<br/>(frontend_app/)"]
+        UploadCtrl["文件拖拽上传区"]
+        CollectionCtrl["Collection 管理"]
+        OCRCtrl["OCR 引擎切换"]
+        GraphViz["D3 关系图谱渲染"]
+        BenchmarkUI["评估与 Triage 看板"]
+    end
+    
+    subgraph Gateway_Layer ["后端接口服务网关 (FastAPI Gateway)"]
+        FastAPI["FastAPI 核心应用<br/>(api_server/server.py)"]
+        RouterFiles["文件路由 /api/files"]
+        RouterQuery["检索路由 /api/query"]
+        RouterGraph["图谱路由 /api/graph"]
+        RouterEval["评估路由 /api/evaluation"]
+    end
+    
+    subgraph Data_Pipeline ["数据治理清洗管线 (Data Ingestion Pipeline)"]
+        DocLoaders["文档加载器<br/>(PDF, JSON, DOCX)"]
+        OCRSystem["多级 OCR 引擎<br/>(RapidOCR / 百度云)"]
+        TextFilter["文本噪音清洗器<br/>(text_filter_rules.yaml)"]
+        SemanticChunker["智能分块器<br/>(Title+语义段落断点)"]
+    end
+    
+    subgraph KG_Pipeline ["GraphRAG 知识图谱管线 (KG Ingestion)"]
+        SchemaMgr["Schema 定义管理器<br/>(10类实体/15类关系)"]
+        KGExtractor["LLM 实体关系抽取"]
+        EvidenceBinder["证据绑定器<br/>(绑定 Page/Snippet/Source)"]
+        LeidenClust["Leiden 社区聚类"]
+        CommSummary["社区摘要合成 (LLM)"]
+    end
+
+    subgraph Retrieval_Engine ["混合检索与编排引擎 (Retrieval & Orchestration)"]
+        QueryRouter["查询路由器<br/>(意图解析与路径分发)"]
+        HybridRetriever["混合检索引擎"]
+        DenseRetriever["向量检索 (ChromaDB)"]
+        SparseRetriever["稀疏检索 (BM25)"]
+        RRF["Reranker 排序融合 (RRF)"]
+        LocalGraphSearch["局部图检索<br/>(一/二阶拓扑展开)"]
+        GlobalGraphSearch["全局图检索<br/>(Leiden社区匹配)"]
+        Orchestrator["RAG/GraphRAG 编排器"]
+    end
+    
+    subgraph Storage_Layer ["持久化存储层 (Storage Layer)"]
+        ChromaDB["ChromaDB 向量库"]
+        GraphStore["NetworkX + JSON 图存储"]
+    end
+    
+    subgraph Model_Adapters ["模型适配器层 (Model Adapters)"]
+        LLMClient["统一 LLM 客户端"]
+        EmbedAdapter["BGE-M3 / OpenAI Embed"]
+    end
+
+    subgraph Eval_Layer ["系统评估回归层 (Evaluation & QA)"]
+        EvalHarness["回归评估系统<br/>(47题自动化回归)"]
+        TriageAnalytics["错误 Triage 归因分析器"]
+    end
+
+    %% 连接关系
+    Electron -->|拉起| WebConsole
+    Electron -->|IPC| Preload
+    WebConsole -->|上传文件| UploadCtrl
+    WebConsole -->|指标展示| BenchmarkUI
+    
+    UploadCtrl -->|POST| RouterFiles
+    BenchmarkUI -->|GET| RouterEval
+    RouterFiles --> FastAPI
+    RouterEval --> FastAPI
+    
+    FastAPI -->|1.导入| DocLoaders
+    DocLoaders -->|扫描件| OCRSystem
+    OCRSystem --> TextFilter
+    TextFilter --> SemanticChunker
+    SemanticChunker -->|2.写入| ChromaDB
+    SemanticChunker -->|3.抽取| KGExtractor
+    
+    SchemaMgr --> KGExtractor
+    KGExtractor --> EvidenceBinder
+    EvidenceBinder -->|4.存入| GraphStore
+    GraphStore --> LeidenClust
+    LeidenClust --> CommSummary
+    
+    FastAPI -->|5.查询| QueryRouter
+    QueryRouter -->|Fact 事实| HybridRetriever
+    QueryRouter -->|Relation 关系| LocalGraphSearch
+    QueryRouter -->|Global 全局| GlobalGraphSearch
+    
+    HybridRetriever --> DenseRetriever
+    HybridRetriever --> SparseRetriever
+    DenseRetriever --> ChromaDB
+    SparseRetriever --> ChromaDB
+    HybridRetriever --> RRF
+    RRF --> Orchestrator
+    
+    LocalGraphSearch --> GraphStore
+    GlobalGraphSearch --> GraphStore
+    
+    LocalGraphSearch --> Orchestrator
+    GlobalGraphSearch --> Orchestrator
+    
+    Orchestrator -->|6.组织Prompt| LLMClient
+    LLMClient -->|7.生成并归因| Orchestrator
+    Orchestrator -->|8.渲染回答与Evidence| WebConsole
+    
+    RouterEval --> EvalHarness
+    EvalHarness --> TriageAnalytics
+    TriageAnalytics -->|9.反馈错题归因| BenchmarkUI
+
+    %% 样式应用
+    class Electron,Preload,WebConsole,UploadCtrl,CollectionCtrl,OCRCtrl,GraphViz,BenchmarkUI ui;
+    class FastAPI,RouterFiles,RouterQuery,RouterGraph,RouterEval server;
+    class DocLoaders,OCRSystem,TextFilter,SemanticChunker pipe;
+    class SchemaMgr,KGExtractor,EvidenceBinder,LeidenClust,CommSummary pipe;
+    class QueryRouter,Orchestrator,HybridRetriever,DenseRetriever,SparseRetriever,RRF,LocalGraphSearch,GlobalGraphSearch engine;
+    class ChromaDB,GraphStore storage;
+    class LLMClient,EmbedAdapter adapter;
+    class EvalHarness,TriageAnalytics eval_style;
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Columns for module lists & data flows -->
+            <div class="grid-2">
+                <!-- 8 Core Modules list -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>🛠️ 系统核心子系统与职责定义</span>
+                        <span class="tag">8 大模块</span>
+                    </div>
+                    <div style="max-height: 480px; overflow-y: auto; padding-right: 0.5rem;">
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <li>
+                                <strong style="color: var(--color-primary);">1. 用户界面与外壳 (UI & Shell)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">基于 Electron 桥接本地 API。前端使用 D3.js 渲染拓扑图，提供多级 OCR 预览和评测看板。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">2. 后端服务网关 (FastAPI Gateway)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">提供 <code>/api/files</code>、<code>/api/query</code>、<code>/api/graph</code> 和 <code>/api/evaluation</code> 等高内聚接口路由。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">3. 数据治理清洗管线 (Data Ingestion)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">支持 PDF / JSON 多通道提取，清洗转换噪音，根据大纲与语义断点进行物理分块。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">4. GraphRAG 构建管线 (KG Ingestion)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">通过 LLM 进行强 Schema 约束提取，将实体三元组严格绑定原文证据，利用 Leiden 算法执行多级社群划分与摘要。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">5. 混合检索与编排引擎 (Orchestration)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">基于大模型判断 Query 类型，路由至不同底层链路（混合检索、Local/Global 检索、分区扫描）。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">6. 持久化数据层 (Storage Layer)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">ChromaDB 隔离保存分块向量，NetworkX 本地维护图扑结构，免去部署外部独立图库的开销。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">7. 模型适配器层 (Adapters)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">支持 OpenAI 兼容 API 以及本地部署 BGE-M3 双向向量模型，屏蔽供应商底层差异。</p>
+                            </li>
+                            <li>
+                                <strong style="color: var(--color-primary);">8. 评估回归层 (QA & Evaluation)</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">针对 47 题测试集自动化遍历打分，并将错误归入 <code>retrieval_empty</code>、<code>llm_hallucination</code> 等状态，驱动持续回归。</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 2 Core Data Flows -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>🔄 核心业务数据流</span>
+                        <span class="tag">流转路径</span>
+                    </div>
+                    <div style="max-height: 480px; overflow-y: auto; padding-right: 0.5rem;">
+                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-secondary);">路径 A：多路径图索引构建流</h4>
+                        <div class="steps" style="margin-bottom: 1.5rem;">
+                            <div class="step-item">
+                                <div class="step-badge">1</div>
+                                <div class="step-content">
+                                    <h4>文档输入与 OCR 提取</h4>
+                                    <p>扫描件流式加载，运行 RapidOCR 输出带位置信息的文本。</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-badge">2</div>
+                                <div class="step-content">
+                                    <h4>物理分块与双向处理</h4>
+                                    <p>向量方向入库 ChromaDB；图谱方向由大模型抽取三元组，利用<b>证据绑定器</b>反向挂载源段落页码。</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-badge">3</div>
+                                <div class="step-content">
+                                    <h4>Leiden 聚类与社群摘要</h4>
+                                    <p>生成具有拓扑结构的关系，将关系做多层 Leiden 划分并生成高层级文本摘要用于宏观语义索引。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-secondary);">路径 B：意图路由检索问答流</h4>
+                        <div class="steps">
+                            <div class="step-item">
+                                <div class="step-badge">1</div>
+                                <div class="step-content">
+                                    <h4>用户 Query 解析与路由</h4>
+                                    <p>大模型意图路由分类：局部事实、实体关系、全局宏观或会话批量扫描。</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-badge">2</div>
+                                <div class="step-content">
+                                    <h4>混合检索或图提取</h4>
+                                    <p>召回向量 Chunk、BM25 词频匹配或 Local / Global GraphRAG 关系链检索。</p>
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-badge">3</div>
+                                <div class="step-content">
+                                    <h4>RRF 融合与大模型生成</h4>
+                                    <p>排重去重，装填携带严格 Grounding 指令的 Prompt，输出带Evidence链接的可追溯答案。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: DEFENSE Q&A ASSISTANT ==================== -->
+        <section id="pane-qa" class="tab-pane">
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">
+                    <span>💡 答辩/验收现场追问备用回答助手</span>
+                    <span class="tag" style="background-color: var(--color-accent); color: white;">点击展开</span>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    以下内容整理自汇报演讲稿中的核心防守策略，点击展开后可直接查看推荐的回答口径和逻辑链，帮助您在面对老师提问时应对自如：
+                </p>
+
+                <!-- Accordion Q1 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题一：你们的 PowerRAG 架构与普通的问答 Demo (如网页直接接大模型) 有何本质区别？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p><strong>核心答辩策略：</strong>强调“数据工程”、“可信度”与“评测闭环”。普通的 Demo 属于“前端连上 LLM 就算通”，而 PowerRAG 是一套完整的可信工程系统：</p>
+                            <ul>
+                                <li><strong>资料入口治理</strong>：专门设计了 JSON 结构解析、文字 PDF 抽取以及扫描 PDF 降噪 OCR 管道，解决了真实资料不干净的问题。</li>
+                                <li><strong>证据链溯源 (Grounding)</strong>：每一个 Chunk 在入库时均利用证据绑定器挂载了 <code>[文件名, 页码, 标题]</code>，回答时会强制高亮输出 Evidence Links，防止大模型捏造事实。</li>
+                                <li><strong>评测即开发工具</strong>：拥有本地 47 题专家评测集和外部对标评测框架，通过失败原因分类（Triage）归纳错误，以数据分数指导检索策略的改进。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Q2 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题二：在目前的评测中，为什么 Keyword (Recall@K = 0.833) 表现优于 Dense (0.583) 向量检索？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p><strong>核心答辩策略：</strong>指出“专业领域术语特点”与“Embedding 表征局限”。</p>
+                            <blockquote>
+                                “这是由我们动力装备专业语料的特点决定的。动力系统资料里含有大量极度明确的强专有名词、设备名、部件型号和参数代码（如‘压气机’、‘联合循环’、‘Goldwind’等）。这些强术语是极其明确的物理锚点，在关键词检索（BM25）中能被 100% 召回。”
+                            </blockquote>
+                            <p>而普通的向量模型（Dense Hashing）由于没有在能源动力垂域语料上做精调（Fine-tuning），无法准确表征这些特定符号在高维空间中的语义关联，因此召回效果受到影响。这更说明了我们开发评测平台的必要性——只有评测能揭示真实表现，防止技术盲目堆叠。我们下一阶段的优化重点就是引入更好的 Embedding 模型和 Reranker。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Q3 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题三：你们引入了 GraphRAG，它到底解决了普通 RAG 无法解决的什么问题？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p><strong>核心答辩策略：</strong>强调“多步关系追踪”与“跨文档全局概括”。</p>
+                            <ul>
+                                <li><strong>Local GraphRAG (关系追踪)</strong>：针对例如“某故障可能关联哪些部件，以及会导致什么工况变化”的逻辑链条，普通 RAG 碎片检索很难拼出完整的因果图谱。GraphRAG 可以沿着实体节点和一/二阶关系边追踪拓扑关系，拼接出清晰的关系证据链。</li>
+                                <li><strong>Global GraphRAG (全局综合)</strong>：面对“比较几本手册中的维护规律”这种宏观问题，普通 RAG 的 Top-k 检索只会定位到相似段落，容易遗漏整体数据。GraphRAG 通过 Leiden 社群算法，将网络切分为局部社群并预先生成社区摘要（Community Summary），从而提供了宏观索引。</li>
+                            </ul>
+                            <p><strong>边界说明：</strong>GraphRAG 在系统里是作为“关系型与全局型问题的<b>增强路线</b>”，而不是替代普通事实检索的唯一路线。简单事实问题系统依然会路由走开销更小的标准 RAG。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Q4 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题四：在外部评测中得到了 93.47 分，这能代表你们的系统在清华燃机知识库上已经完全通过验收吗？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p><strong>核心答辩策略：</strong>明确区分“外部 Retrieval-first Benchmark”和“本地动力装备专家 Set”。</p>
+                            <blockquote>
+                                “不能混淆。93.47 分是通过接入下载至本地的公开评测集（包括 50 道 legal-rag-bench 题和 50 道 ragbench-hotpotqa 题）测出来的。它通过了我们设定的‘Open Source 90 外部质量门禁’。”
+                            </blockquote>
+                            <p>这个分数的意义在于：<strong>验证了我们这套数据解析、切分、召回和 Rerank 的工程管线在通用检索任务上已经达到了业界成熟系统的水平。</strong>但这不代表它就是动力装备垂域的最终专家验收。针对清华燃气轮机知识库的真实验收，我们需要依靠后续扩充的 100+ 题本地专家 Gold Set，配合 <code>equipment_type</code> 和 <code>scenario_type</code> 新增字段，来建立完全贴合设备故障场景的验收矩阵。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Q5 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题五：评测平台所说的“失败归因”和“回归测试”是如何在开发中发挥作用的？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p>评测如果不做原因分类，对开发就没有意义。因此我们设计了<b>归因分析器 (Triage)</b>，将测试案例分类为：</p>
+                            <ul>
+                                <li><code>retrieval_empty</code>：没有检索到有用段落（说明需要改分块或增强召回）。</li>
+                                <li><code>llm_hallucination</code>：检索到了证据但 LLM 回答时发生篡改（说明要修改 Prompt 限制条件）。</li>
+                                <li><code>router_error</code>：分类路由走错了路径（比如事实题走到了全局检索）。</li>
+                            </ul>
+                            <p>每次我们修改代码或配置，都会自动跑回归测试，确认这 47 道题目的打分和归因是否改善，用客观指标指导迭代方向，保证修改不引起旧问题的退化。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Q6 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <span>❓ 问题六：项目目前处于什么开发阶段？后续最重要的改进计划是什么？</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">
+                            <p>当前我们已经完成了<strong>第一阶段的完整工程闭环</strong>（实现了资料统一入口、带元数据证据构建、多模态检索对比、GraphRAG 局部/全局基础架构，以及本地 47 题评测闭环）。</p>
+                            <p>下一阶段（也是向正式验收推进的节点）的核心计划包括：</p>
+                            <ol>
+                                <li><strong>接入专用 Embedding 与重排模型</strong>：利用垂域语料精调或部署更强的多语言 BGE-M3 模型以提振语义检索性能。</li>
+                                <li><strong>GraphRAG 同题对比测试</strong>：在 47 题库中抽选关系型问题，对比 Local、Global 和 RAG 纯事实检索的效果，划清技术应用边界。</li>
+                                <li><strong>扩展验收集字段</strong>：补齐 <code>equipment_type</code> 和 <code>scenario_type</code> 两个维度，建立严密的专家评测 Gold Set，从课程交付迈向高可靠性的可复现实验平台。</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Tab switching logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById('pane-' + tabId).classList.add('active');
+
+            // If we switch to roadmap tab, render mermaid (if needed)
+            if (tabId === 'roadmap') {
+                setTimeout(() => {
+                    mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                }, 50);
+            }
+        }
+
+        // Accordion toggle
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const isOpen = item.classList.contains('open');
+            
+            // Close all items
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+            
+            if (!isOpen) {
+                item.classList.add('open');
+            }
+        }
+
+        // Mermaid zoom variables
+        let currentScale = 1;
+        function zoomMermaid(factor) {
+            currentScale *= factor;
+            // Cap zoom level
+            currentScale = Math.max(0.5, Math.min(2.5, currentScale));
+            const graph = document.getElementById('mermaidRender');
+            graph.style.transform = `scale(${currentScale})`;
+        }
+
+        function resetZoomMermaid() {
+            currentScale = 1;
+            const graph = document.getElementById('mermaidRender');
+            graph.style.transform = `scale(1)`;
+        }
+
+        // Interactive Question Browser Data
+        const questionData = {
+            standard_rag_fact: {
+                desc: "标准RAG事实问答：考核系统对于单一文件内明确物理性质、参数或设备结构的直接检索能力。",
+                questions: [
+                    "简述燃气轮机燃烧室的主要型式（圆筒形、环形、联管形）和结构特征？",
+                    "联合循环汽轮发电机组中，余热锅炉的给水泵工作原理与设定流量是多少？",
+                    "压气机动叶与静叶在气体压力和流速转化过程中的主要作用是什么？",
+                    "重型燃机在全负荷工况下，排气温度极限与超温保护跳闸值是多少？"
+                ]
+            },
+            standard_rag_process: {
+                desc: "标准RAG过程/流程问答：考核系统对多步骤流程手册、监测报告或系统构建指南的检索对齐。",
+                questions: [
+                    "描述联合循环发电机组从冷态启动到并网发电的核心步骤与排温控制点？",
+                    "系统内文档入库及向量转换的核心RAG数据流水线构建步骤如何？",
+                    "在机组发生润滑油系统故障时，运行监测控制室的标准排障通知程序是什么？"
+                ]
+            },
+            ocr_risk: {
+                desc: "OCR噪音审计：测试系统在应对带有扫描字符污损、手写批注、三线表格错乱和逆版面阅读顺序时的召回韧性。",
+                questions: [
+                    "若扫描文档因磨损导致'压气机'被OCR错识为'压气机'或乱码，系统如何利用分词修正检索错误？",
+                    "对于维修文档中的多级层级表格，OCR后发生纵向单元格串行，导致大模型关联错误字段的风险有哪些？",
+                    "由于扫描PDF多栏排版混淆阅读顺序，RAG直接分块提取导致内容段落语义断裂的防御措施是什么？"
+                ]
+            },
+            kg_graph_rag: {
+                desc: "知识图谱与GraphRAG专题：测试GraphRAG抽取、实体多跳关系链追踪、Leiden社区划分及摘要概括能力。",
+                questions: [
+                    "GraphRAG的本地检索(Local Search)和全局检索(Global Search)是如何协同应对不同意图问题的？",
+                    "社区摘要（Community Summary）在Leiden子网中是如何被LLM总结，并建立与原始Chunk的证据绑定的？",
+                    "系统中的10大核心实体（设备、故障、零部件、运行参数等）和15大关系Schema是如何保证抽取一致性的？"
+                ]
+            },
+            structured_data_fact: {
+                desc: "结构化数据事实：测试在面对具有严格字段约束（如风电解码报告）的数据流时，系统在召回阶段的无损对齐能力。",
+                questions: [
+                    "如何保障Goldwind解码日志中特定二进制故障字段在RAG召回时不丢失结构语义？",
+                    "电网调度命令表（包含时间、负荷、机组编号）等强结构化数据，应如何与半结构化文本混合建库？"
+                ]
+            },
+            fault_reasoning: {
+                desc: "故障因果推理：核心针对多因一果、部件链条劣化的故障定位，要求从图拓扑节点中追踪逻辑关系并给出处置措施。",
+                questions: [
+                    "根据知识图谱拓扑结构，润滑油压降低事件是如何与油泵故障、滤网堵塞及冷却水温度变化关联的？",
+                    "对于‘燃机排气温差变大’故障，系统如何通过图谱一步和二步边检索其对应零部件劣化源并溯源到维修手册原文？"
+                ]
+            },
+            evaluation_method: {
+                desc: "评测与归因分析：考核评测平台的计算稳定性、回归检测机制以及对Bad Case的分类Triage方法。",
+                questions: [
+                    "在动力装备评测集上，什么原因导致了标准向量检索Recall@5指标仅有0.583，而关键词Recall达到0.833？",
+                    "评测平台的Triage分析器是如何自动捕捉检索空(retrieval_empty)与大模型捏造证据(llm_hallucination)的？"
+                ]
+            },
+            comparison: {
+                desc: "混合检索机制对比：考核稀疏与稠密检索的优缺点，以及倒数融合算法（RRF）对召回分布的稳定贡献。",
+                questions: [
+                    "对于专业术语场景下的拼写容错，向量检索（Dense）与关键词检索（Sparse）的混合策略相比单一策略有何优势？",
+                    "在RRF倒数合并排序中，两个检索源的权重因子常数k如何设定，才能有效避免某一路召回的过强垄断？"
+                ]
+            },
+            answer_quality: {
+                desc: "答案引用质量：测试LLM输出的严肃性，包含Evidence段落的高亮标记、位置索引覆盖率以及避免安全幻想的防御机制。",
+                questions: [
+                    "如何对回答中输出的页码、文件名和段落的锚点链接做系统性回溯检查以保证可信度？",
+                    "针对燃机超温、喘振等高危排障场景，大模型输出的排障指导如何与安全生产强制规程强匹配？"
+                ]
+            },
+            demo_reliability: {
+                desc: "演示与兜底设计：测试系统在前后台连通、API网络中断、数据查询超时下的异常处理和交互状态稳定性。",
+                questions: [
+                    "答辩演示现场在离线/弱网状态下，FastAPI后端如何加载内置的本地评测日志进行流畅 of 离线交互演示？"
+                ]
+            }
+        };
+
+        function updateQuestionBrowser() {
+            const select = document.getElementById('taskSelect');
+            const key = select.value;
+            const data = questionData[key];
+            
+            document.getElementById('taskDesc').innerHTML = `🔍 <strong>能力解析</strong>: ${data.desc}`;
+            
+            const list = document.getElementById('questionList');
+            list.innerHTML = '';
+            
+            data.questions.forEach((q, index) => {
+                const li = document.createElement('li');
+                li.className = 'question-list-item';
+                li.innerHTML = `<strong>CASE-${index+1}</strong>: ${q}`;
+                list.appendChild(li);
+            });
+        }
+
+        // Initialize Charts on Load
+        window.addEventListener('load', () => {
+            // Initialize Mermaid
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                flowchart: { useMaxWidth: true, htmlLabels: true }
+            });
+
+            // Initialize browser select
+            updateQuestionBrowser();
+
+            // Setup Chart.js
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'Inter, sans-serif';
+
+            // 1. Task Type Chart (Doughnut)
+            new Chart(document.getElementById('taskTypeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['kg_graph_rag', 'standard_rag_fact', 'evaluation_method', 'standard_rag_process', 'ocr_risk', 'structured_data_fact', '其他'],
+                    datasets: [{
+                        data: [11, 7, 7, 6, 6, 3, 7],
+                        backgroundColor: [
+                            '#6366f1', // Indigo
+                            '#3b82f6', // Blue
+                            '#10b981', // Emerald
+                            '#84cc16', // Lime
+                            '#f59e0b', // Amber
+                            '#ec4899', // Pink
+                            '#475569'  // Slate
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#0e1626'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // 2. Expected Modes Chart (Horizontal Bar)
+            new Chart(document.getElementById('expectedModesChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['keyword', 'hybrid_rrf', 'graphrag_context', 'graphrag_global'],
+                    datasets: [{
+                        label: '题库中要求此检索模式的次数 (多重关联)',
+                        data: [42, 40, 7, 4],
+                        backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // 3. Difficulty Chart (Polar Area)
+            new Chart(document.getElementById('difficultyChart'), {
+                type: 'polarArea',
+                data: {
+                    labels: ['easy', 'medium', 'hard', '待分类'],
+                    datasets: [{
+                        data: [11, 17, 2, 17],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.65)',
+                            'rgba(249, 115, 22, 0.65)',
+                            'rgba(239, 68, 68, 0.65)',
+                            'rgba(71, 85, 105, 0.65)'
+                        ],
+                        borderColor: '#0e1626',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
