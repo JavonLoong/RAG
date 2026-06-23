@@ -1,0 +1,15 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  to think about problem solving. 
+
+And I think, you know, that’s maybe another way of talking about what you just said. So, like, a lot of the things that you’re doing, you’re shifting the complexity into the technology to benefit the human, rather than, like, forcing the human to, like, bear the burden of the complexity.
+
+STEVIE BATHICHE:  That’s right. That’s exactly right, yeah. And if you want to be even more abstract about it, it is a form of robotics. Or automation. It is, you know, trying to take high-level commands and essentially deconstruct them, and have them to work for you.
+
+KEVIN SCOTT:  Yeah it’s such a fascinating thing, and I think it’s important for us to… it’s really important for us to focus on, like, this idea that the human is always at the center of what it is that we’re doing and, like, our purpose is to build tools for humans to help them do more of what they want to do. 
+
+And it’s one of the things that makes me really excited about the work that you do, because, like, you’re just sort of constantly exploring that landscape of opportunities. And like, I’ve seen so many demos that you’ve created since I’ve been here over the past four years where, you know, you’re just constantly looking for those opportunities. How do you decide what to poke at next?
+
+STEVIE BATHICHE:  You know, one of the things that I’ve learned over the past 20 years is that ideas come from everywhere, and one of the important things that I have to do is leave room for serendipity, leave room for the creative process. I’ve learned so many times that if you’re overly prescriptive in the beginning, you’re probably going to stifle invention and you’re going to stifle ingenuity. But at the same time, if you let it go hog wild, you won’t get things that are essentially guided or directed or useful to the business. 
+
+And so, that’s kind of the beauty about the culture that we have in our group, the Applied Science Group, being so close to Windows and devices, understanding and getting signal about the problems that we’re having. And we have, I would say, a fair degree of ability to try to solve problems that are directly focused for the business and I would say, we try to do that by essentially creating a portfolio of projects that are from near term to slightly further term, and ensure that what we do actually has impact today, but potentially can give us room to change the direction of the future.
+
+KEVIN SCOTT:  Which is, I think, a beautiful way of looking at things, like, especially this idea that you really do need to leave room for serendipity, because some of the interactions between creative people, and the

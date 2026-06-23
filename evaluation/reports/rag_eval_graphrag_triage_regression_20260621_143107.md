@@ -1,0 +1,64 @@
+# RAG Evaluation Report
+
+- Run: `graphrag_triage_regression`
+- Gate status: `pass`
+- Total questions: 1
+
+## Metrics
+
+| Metric | Value |
+| --- | ---: |
+| retrieval.evaluated_questions | 1 |
+| retrieval.question_recall_at_k | 1.0 |
+| retrieval.keyword_recall_at_k | 1.0 |
+| retrieval.average_keyword_coverage | 1.0 |
+| retrieval.full_evidence_coverage_rate | 1.0 |
+| retrieval.no_result_rate | 0.0 |
+| retrieval.average_retrieved_count_at_k | 2.0 |
+| evidence.expected_keyword_total | 7 |
+| evidence.retrieved_keyword_hit_total | 7 |
+| evidence.evidence_keyword_hit_rate | 1.0 |
+| evidence.question_with_any_evidence_rate | 1.0 |
+| evidence.question_with_full_evidence_rate | 1.0 |
+| citation.evaluated_questions | 1 |
+| citation.citation_present_rate | 1.0 |
+| citation.missing_citation_rate | 0.0 |
+| citation.citation_keyword_hit_rate | 1.0 |
+| citation.average_citation_keyword_coverage | 1.0 |
+| answer.evaluated_questions | 1 |
+| answer.answer_contains_evidence_rate | 1.0 |
+| answer.answer_completeness_avg | 1.0 |
+| answer.complete_answer_rate | 1.0 |
+| hallucination_risk.low_count | 1 |
+| hallucination_risk.medium_count | 0 |
+| hallucination_risk.high_count | 0 |
+| hallucination_risk.not_applicable_count | 0 |
+| hallucination_risk.high_risk_rate | 0.0 |
+| hallucination_risk.medium_or_high_risk_rate | 0.0 |
+
+## Gate Failures
+
+No gate failures.
+
+## Retrieval Default Policy
+
+| Setting | Recommendation |
+| --- | --- |
+| hybrid_rrf | True |
+| metadata_filters | explicit_and_auto_source_filters |
+| graph_retriever | enable_when_graph_db_path_and_graph_quality_pass |
+| query_rewrite | keep_optional |
+| reranker | none |
+| no_answer_gate | keep_optional |
+
+Triggered by metrics: `none`.
+
+## Failure Cases
+
+No failure cases.
+
+## Results
+
+| ID | Question | Retrieval Coverage | Answer Coverage | Missing Citation | Risk |
+| --- | --- | ---: | ---: | --- | --- |
+| wechat_private_contact_affection_sweep_gold_001 | 请执行全量私聊联系人级暧昧关系分析，不要只基于 top-k chunk。请按每个一对一私聊联系人逐个分析所有聊天记录，输出较确定/疑似/不足证据，必须给出日期、发送方、chunk_id 或 message_id 的原文证据，并说明为什么其他联系人未计入。 | 1.0 | 1.0 | False | low |

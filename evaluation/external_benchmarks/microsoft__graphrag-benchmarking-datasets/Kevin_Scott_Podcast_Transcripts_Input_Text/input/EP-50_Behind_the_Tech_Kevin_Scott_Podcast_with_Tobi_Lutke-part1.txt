@@ -1,0 +1,28 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt ../Behind the Tech with Kevin Scott podcast
+Episode 50 – Tobi Lütke
+
+TOBI LÜTKE: I operate under the fundamental assumption that all companies are terrible, that – all of the ones ever created, which you know, like, some people don’t love me saying this, but like I think, to me, this is actually inspiring because, boy, building companies is worth it. Like, it’s like, I mean, all innovation around us is like – it comes from companies. It comes from journeys, it comes from – like entrepreneurships and builders getting together.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, welcome to Behind The Tech. I’m cohost Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And we are kicking off 2023 with an insightful conversation with Tobi Lütke, who is the CEO and founder of the Canadian e–commerce company, Shopify.
+
+KEVIN SCOTT: Yeah, I’ve been really looking forward to this conversation. Tobi and I have known each other for a few years. The company that he runs is sort of amazing. Like, I love anyone who is doing work, building platforms to help people run their businesses to you know, just empower them to do more of what they want. And I think Shopify is a really great company on that front. 
+
+But Tobi is a really unique CEO. He is a programmer and computer scientist by training, and, like, he just is deeply invested in his programmer roots. And I think you’re going to hear a bunch of that in our conversation. He’s a very unusual and impressive CEO.
+
+CHRISTINA WARREN: I’m super, super excited. All right, let’s dive into your conversation with Tobi.
+
+[MUSIC]
+
+KEVIN SCOTT: Tobi Lütke is the CEO and Founder of Shopify, the Canadian multinational ecommerce platform that helps companies set up and run online stores. Growing up in Germany, he spent his time as a teacher, tinkering with computers and writing code. Tobi began his career as an entrepreneur when he and a friend decided to design an ecommerce platform to sell snowboards which eventually evolved into the concept that built Shopify. 
+
+As a programmer, Tobi has served on the core team of the Ruby on Rails framework and has created many popular opensource libraries. I’ve been looking forward

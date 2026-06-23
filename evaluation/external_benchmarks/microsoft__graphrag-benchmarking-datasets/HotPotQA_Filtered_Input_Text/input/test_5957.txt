@@ -1,0 +1,36 @@
+Pulsed Pressure Cavitation Technique (PPCT) is a method to simulate cavitation damage using repetitive pressure pulses.
+ It is developed at Oak Ridge National Laboratory.
+Trade Adjustment Assistance (TAA) is a federal program of the United States government to act as a way to reduce the damaging impact of imports felt by certain sectors of the U.S. economy.
+ The current structure features four components of Trade Adjustment Assistance: for workers, firms, farmers, and communities.
+ Each cabinet-level department was tasked with a different sector of the overall Trade Adjustment Assistance program.
+ The program for workers is the largest, and administered by the U.S. Department of Labor.
+ The program for farmers is administered by the U.S. Department of Agriculture, and the firms and communities programs are administered by the U.S. Department of Commerce.
+The U.S. Department of Energy Joint Genome Institute (DOE JGI), located in Walnut Creek, California, was created in 1997 to unite the expertise and resources in genome mapping, DNA sequencing, technology development, and information sciences pioneered at the DOE genome centers at Lawrence Berkeley National Laboratory (Berkeley Lab), Lawrence Livermore National Laboratory (LLNL) and Los Alamos National Laboratory (LANL).
+ Today the DOE JGI staff is composed of employees from Berkeley Lab, LLNL and the HudsonAlpha Institute for Biotechnology.
+ The DOE JGI also collaborates with other national labs such as Oak Ridge National Laboratory (ORNL) and Pacific Northwest National Laboratory (PNNL).
+Oak Ridge National Laboratory (ORNL) is an American multiprogram science and technology national laboratory sponsored by the U.S. Department of Energy (DOE) and administered, managed, and operated by UT-Battelle as a federally funded research and development center (FFRDC) under a contract with the DOE.
+ ORNL is the largest science and
+The Radiation Safety Information Computational Center (RSICC) is a U.S. Department of Energy Specialized Information Analysis Center (SIAC) authorized to collect, analyze, maintain, and distribute computer software and data sets in the areas of radiation transport and safety.
+ The RSICC is operated by Oak Ridge National Laboratory in Oak Ridge, Tennessee.
+ The primary sponsors of the RSICC are the U.S. Department of Energy, the U.S. Department of Homeland Security, and the U.S. Nuclear Regulatory Commission.
+Pulsed energy projectile or PEP is a technology of non-lethal weaponry currently under development by the U.S. military.
+ It involves the emission of an invisible laser pulse which, upon contact with the target, ablates the surface and creates a small amount of exploding plasma.
+ This produces a pressure wave that stuns the target and knocks him off his feet, and electromagnetic radiation that affects nerve cells causing a painful sensation.
+ The technology can also be used as a lethal weapon, and indeed an early name was "pulsed impulsive kill laser".
+L-3 MPRI, was a global provider of private military contractor services.
+ It offered a wide range of professional services to both public and private customers, most notably the U.S. Department of Defense, the U.S. Department of State, the U.S. Department of Justice, U.S. Department of Homeland Security, Law Enforcement organizations, foreign governments, government agencies and commercial businesses.
+Electrostatic spray ionization (ESTASI) is an ambient ionization method for mass spectrometry (MS) analysis of samples located on a flat or porous surface, or inside a microchannel.
+ It was developed in 2011 by Professor Hubert H. Girault’s group at the École Polytechnique Fédérale de Lausanne (EPFL) in Switzerland.
+ In a typical ESTASI process, a droplet of a protic solvent containing analytes is deposited on a sample area of interest which itself is mounted to an insulating substrate.
+ Under this substrate and right below the droplet, an electrode is placed and connected with a pulsed high voltage (HV) to electrostatically charge the droplet during pulsing.
+ When the electrostatic pressure is larger than the surface tension, droplets and ions are sprayed.
+ ESTASI is a contactless process based on capacitive coupling.
+ One advantage of ESTASI is, that the electrode and sample droplet act contact-less avoiding thereby any oxidation or reduction of the sample compounds at the electrode surface, which often happens during standard electrospray ionization (ESI).
+ ESTASI is a powerful new ambient ionization technique that has already found many applications in the detection of different analytes, such as organic molecules, peptides and proteins with molecule weight up to 70 kDa.
+ Furthermore, it was used to couple MS with various separation techniques including capillary electrophoresis and gel isoelectric focusing, and it was successfully applied under atmospheric pressure to the direct analysis of samples with only few preparation steps.
+The Transition Assistance Program (TAP) is a U.S. Department of Defense-led program that provides service members with information and resources to prepare them for their civilian life.
+ TAP is an interagency program between the Department of Defense (DoD), U.S. Department of Labor, Department of Veterans Affairs, Small Business Administration, U.S. Department of Education, and Office of Personnel Management.
+ Service member participation in TAP is mandatory.
+The Arid Land Ecology Reserve is the largest tract of shrub-steppe ecosystem remaining in the U.S. state of Washington.
+ It is managed for the U.S. Department of Energy by the Pacific Northwest National Laboratory (which is operated for the U.S. Department of Energy by Battelle Memorial Institute).
+ The 320 km² area is a portion of the 1500 km² National Environmental Research Park located on the Hanford Site on the northwest boundary of Richland, Washington.

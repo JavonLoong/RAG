@@ -1,0 +1,44 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  worked for him, and so that was the start of a very long relationship with Marvin Minsky.
+
+KEVIN SCOTT:  That's great. And so, Marvin was your PhD advisor, right?
+
+DANNY HILLIS:  He was, yes.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  Well, I had a couple of PhD advisors. I had a team of Marvin Minsky, Claude Shannon, and Gerry Sussman. 
+
+KEVIN SCOTT:  Yeah, it's like the best PhD advisors ever for the dissertation you were writing.  I mean, it's incredible.  I mean, so, for the audience, like, Marvin Minsky is the father of AI.  Claude Shannon is, like, the father of information theory, like, basically the foundation of modern society.
+
+DANNY HILLIS:  He invented the Bit.
+
+KEVIN SCOTT:  Yes, he invited the Bit.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  And Gerry Sussman is, like, one of the, like, most incredible computer scientists who ever lived.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  Like I still, like, his intro techs for computer sciences, like this, this --
+
+DANNY HILLIS:  Oh, it's fantastic.
+
+KEVIN SCOTT:  -- it's like just a thing of beauty, structure and interpretation of computer programs, right?
+
+DANNY HILLIS:  Yeah, very good.
+
+KEVIN SCOTT:  Yeah. Just an incredible book, yeah, obviously, yeah, that was a great, great group of folks.  Well, so, and while you're at MIT studying, this is when you founded Thinking Machines, right?
+
+DANNY HILLIS:  Yeah, which in those days, that was not a normal thing for a student to found a company.
+
+KEVIN SCOTT:  Still not entirely a normal thing, I mean, especially a super computing company.
+
+DANNY HILLIS:  Well, yeah, well, it turned into a bigger prob I was trying to do it at MIT and I couldn't hire people because I was a student.  So, it --
+
+KEVIN SCOTT:  So, why do this at all?
+
+
+DANNY HILLIS:  Well, so, it was really for artificial intelligence.  It was kind of a sidetrack.  So, it was very clear that the brain worked much faster than computers did.  And it was very clear that if computers were going to be fast enough, they'd have to have an architecture that was more like the brain.
+
+But in those days, the doctrine of computer science was that if you use more than one processor on a problem, it gets less and less efficient as you get more of them. 

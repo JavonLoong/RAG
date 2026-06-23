@@ -1,0 +1,19 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  and he said, “Hey, you’re the first.” 
+
+So, I feel like my – I’ll go down in – 
+
+KEVIN SCOTT: Wow. 
+
+OREN ETZIONI: -in history as the first person to major in computer science at Harvard. 
+
+KEVIN SCOTT: That is so cool. That’s really, really neat. And so, what was that program like? Because I’m guessing, you know, given that it was early days, and this was true even when I was a freshman in 1990, and like even in 1990, we were still trying to figure out, like, what a computer science curriculum looked like and, you know, like the entire, you know, ferment of the field was just sort of being developed.  So, what was it like being that first student? 
+
+OREN ETZIONI: Well, so, again, they’d been teaching computer science courses for a while, it was just under applied math. And I would say that the Harvard curriculum was very mathematical, so it was influenced by people like the great Michael Rabin, Turing Award winner, inventor of some of the key theorems in theoretical computer science. Les Valiant was there, you know, teaching combinatorics. So, it was a very theoretical curriculum, which I actually really appreciated because, you know, you want to get that mathematical grounding right. 
+
+But at the same time, there was very little AI. So, I was fortunate that, you know, two T stops away was MIT and tech square, and so very quickly I started hanging out at MIT, where Minsky was there and actually Hofstadter, who was, you know, a god for me at the time, was visiting for a year or two. And so, I felt like I was very fortunate because I got my AI at the MIT AI lab and I got my computer science grounding and broader education at Harvard. So, that was really a wonderful time. 
+
+KEVIN SCOTT: Yeah, and then you fell in love, I’m asking, not asserting. You fell in love with, you know, with computer science – with the field, and decided to go to graduate school and get a PhD? 
+
+OREN ETZIONI: So, again, what I was really in love with is the fundamental questions. For me, computer science and computers was always a tool. And, actually, I was also studying cognitive science and philosophy of language science at the time, and I was debating whether I should go to grad school in philosophy or in computer science, because these were methodologies for me to get at these fundamental questions. 
+
+And then I talked to some people and I realized the people were graduating with a PhD in philosophy and working in moving, right, it was not a great career path. Whereas I could tackle these issues in a more empirical way and, frankly, just a more

@@ -1,0 +1,31 @@
+The Shuttle Radar Topography Mission (SRTM) is an international research effort that obtained digital elevation models on a near-global scale from 56° S to 60° N, to generate the most complete high-resolution digital topographic database of Earth prior to the release of the ASTER GDEM in 2009.
+ SRTM consisted of a specially modified radar system that flew on board the Space Shuttle Endeavour during the 11-day STS-99 mission in February 2000, based on the older "Spaceborne Imaging Radar-C/X-band Synthetic Aperture Radar" (SIR-C/X-SAR), previously used on the Shuttle in 1994.
+ To acquire topographic data, the SRTM payload was outfitted with two radar antennas.
+ One antenna was located in the Shuttle's payload bay, the other – a critical change from the SIR-C/X-SAR, allowing single-pass interferometry – on the end of a 60-meter (200-foot) mast that extended from the payload bay once the Shuttle was in space.
+ The technique employed is known as interferometric synthetic aperture radar.
+Robert Joseph "Bob" Cenker (born November 5, 1948) is an American aerospace and electrical engineer, aerospace systems consultant, and former astronaut.
+ In January 1986, Cenker was a crew member on the twenty-fourth mission of NASA's Space Shuttle program, the seventh flight of Space Shuttle "Columbia", designated as mission STS-61-C.
+ Cenker served as a Payload Specialist that represented RCA Astro-Electronics.
+STS-61-C was the twenty-fourth mission of NASA's Space Shuttle program, and the seventh mission of Space Shuttle "Columbia".
+ It was the first time that "Columbia", the first operational orbiter to be constructed, had flown since STS-9.
+ The mission launched from Florida's Kennedy Space Center on 12 January 1986, and landed six days later on 18 January.
+ STS-61-C's seven-person crew included the second African-American shuttle pilot, future NASA Administrator Charles Bolden, the first Costa Rican-born astronaut, Franklin Chang-Diaz, and the second sitting politician to fly in space, Representative Bill Nelson (D-FL).
+ It was the last shuttle mission before the Space Shuttle "Challenger" disaster, which occurred just ten days after STS-61-C's landing.
+A payload specialist (PS) is an individual selected and trained by commercial or research organizations for flights of a specific payload on a NASA Space Shuttle mission.
+ People assigned as payload specialists included individuals selected by the research community, a company or consortium flying a commercial payload aboard the spacecraft, and non-NASA astronauts designated by international partners.
+Martin Joseph Fettman (B.S., D.V.M., M.S., Ph.D., Diplomate, ACVP) is an American pathologist and researcher who flew on NASA Space Shuttle mission STS-58 aboard the Space Shuttle Columbia as a Payload Specialist.
+STS-51-G was the eighteenth flight of NASA's Space Shuttle program, and the fifth flight of Space Shuttle "Discovery".
+ The seven-day mission launched from Kennedy Space Center, Florida, on June 17, 1985, and landed at Edwards Air Force Base, California, on June 24.
+ Sultan Salman Al Saud of Saudi Arabia was on board as a payload specialist; Al Saud became the first Arab, the first Muslim, and the first member of a royal family to fly into space.
+ It was also the first Space Shuttle mission which flew without at least one astronaut from the pre-Shuttle era among its crew.
+Dirk Dries David Damiaan, Viscount Frimout (born 21 March 1941 in Poperinge, Belgium) is an astrophysicist for the European Space Agency.
+ He flew aboard NASA Space Shuttle mision STS-45 as a payload specialist , making him the first Belgian in space .
+Clarence William Nelson II (born September 29, 1942) is an American politician and a member of the Democratic Party who serves as the senior United States Senator from Florida, in office since 2001.
+ Nelson began his career in the Florida House of Representatives, where he served from 1972 to 1978.
+ He then served in the United States House of Representatives from 1979 to 1991.
+ In January 1986, Nelson became the first sitting member of the United States House of Representatives to fly in space.
+ He flew as a Payload Specialist on the Space Shuttle "Columbia".
+Byron Kurt Lichtenberg, Sc.
+ D. (born February 19, 1948) is an American engineer and fighter pilot who flew aboard two NASA Space Shuttle missions as a Payload Specialist.
+ In 1983, he and Ulf Merbold became the first Payload Specialists to fly on the shuttle.
+Albert Sacco Jr. (born May 3, 1949) is an American chemical engineer who flew as a Payload Specialist on the Space Shuttle Columbia on shuttle mission STS-73 in 1995.

@@ -1,0 +1,19 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt OTT:  Correct.   
+FEI-FEI LI:  To help, to assist, to connect people, to ensure safety.  Rather than this big robot, you know, sitting in the middle of the living room and replacing the human connectivity.  
+KEVIN SCOTT: Yeah, it's really funny that you're bringing all of this up. I'm writing a book right now on, why I think people should be hopeful about the potential of AI, like, particularly in rural and middle America.  And for the book, I went back to where I grew up in rural central Virginia in, like, this, you know, very, small town.  
+And I visited the nursing home where three of my grandparents spent the last chunk of their life. And I was just chatting with some of the people there.  
+And I asked them, you know, the nurses and the managers in this place, like, you know, what -- do you think AI -- and like, when I say AI, like, the vision that conjures is, like, oh, there's going to be some human equivalent android coming in.  And they'd be like, no, the residents would be terrified -- by this thing. Whereas like they've got a bunch of thing -- like, dispensing medicine, for instance. 
+FEI-FEI LI:  Exactly.   
+KEVIN SCOTT:  Like, you know, when you're elderly, like, you're taking this, like, complicated cocktail of medicines and, like, getting it dispensed in the right amounts at the right time through the day, making sure that you actually take the medicine.  
+Like, that's a problem that we could solve with AI-like technologies, like, you know, combination of robotics and computer vision.  But it wouldn't be like this talking, walking, you know, robot.  It would be, like, a set of things that sort of disappear into the background and just sort of become part of the operation of the place.  
+FEI-FEI LI:  Absolutely.  
+KEVIN SCOTT:  And, like, that I think we should have more ambition for that sort of thing rather than this -- 
+FEI-FEI LI:  Absolutely.  
+KEVIN SCOTT:  You know?  
+FEI-FEI LI:  That's why Stanford HAI wants to encourage that.  The best technology is you don't notice the technology. 
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  But your life is better.  
+KEVIN SCOTT:  Yes. 
+FEI-FEI LI:  That's the best technology. 
+KEVIN SCOTT:  I could not agree more.  
+FEI-FEI LI:  And also just talking about the rural America, this is something I feel passionate about, and I have a story to share with you.   So, you

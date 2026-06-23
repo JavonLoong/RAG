@@ -1,0 +1,15 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt , they did create context where you couldn’t use the calculator and they did – you know, we got through that without it being a huge problem. 
+
+So I think education is the most interesting application, and I think health is the second most interesting. You know, obviously there’s commercial opportunity in sales and service type things and that’ll happen. You don’t need any foundation type engagement on that. 
+
+We brainstormed a lot with Sal Khan, and it looks very promising because with a class size of 30 or 20, you can’t give a student individual attention. You can’t understand their motivation or what’s keeping them engaged. They might be ahead of the class; they might be behind. And it looks like in many subject areas, by having this and having dialogs and giving feedback, for the first time, we’ll succeed in helping education. 
+
+We have to admit, except for this sort of prosaic thing of looking up Wikipedia articles or helping you type things and print them out nice, the notion that computers were going to revolutionize education largely are still more in front of us than behind us. I mean, yes, some games draw kids in, but the average math score in the U.S. hasn’t gone up much over the last 30 years.
+
+And so, the people who do computers kept saying, hey, we want credit for that. Credit for what? It’s not a lot better than it was. Obviously the computers didn’t perform some miracle there. And I think over the next five to 10 years, we will think of learning and how you can be helped in your learning in a very different way than just looking up material. 
+
+KEVIN SCOTT: Yeah. And I know you think about this as a global problem. My wife and I, with our family foundation, think about it as a local problem for disadvantaged kids. Like, one of the common things that we see is that parent engagement makes a big difference in the educational outcomes for kids. And if you look at the children of immigrants in East San Jose or East Palo Alto here in the Silicon Valley, like often, the parents are working two, three jobs. Like, they’re so busy that they have a hard time being engaged with their kids. And sometimes they don’t speak English. And so, like, they don’t even have the linguistic ability. 
+
+And you can just imagine what a technology like this could do, where it really doesn’t care what language you speak. It can bridge that gap between the parents and the teacher, and it can be there to help the parent understand where the roadblocks are for the child and to even potentially get very personalized to the child’s needs and sort of help them on the things that they’re struggling with. I think it’s really, really very exciting. 
+
+BILL GATES: Yeah, just the language barriers, we often forget about that. And that comes up in the developing world. India has

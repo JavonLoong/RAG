@@ -1,0 +1,19 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  at a whole bunch of data, and you can have it sort of figure out a bunch of very complicated structure about, the data that you're then able to use to build very, very powerful systems, without having to bear the expense of this supervised, you know, labeling process.
+
+And that's the you know, the set of things that have really been driving progress in natural language processing over the past couple of years, where we've gotten some really sort of extraordinary results with question answering, with systems that can generate very plausible links of text that sound like they've been written by a human being.
+
+And so, like we're making really, really fast progress there, and the interesting thing about it is, you know, when you’re able to do unsupervised learning, the only thing that is bounding your progress, at least right now, and like we may run into, we may run into boundaries sometime over the next handful of years, is the amount of compute that you can throw at the problem, and the amount of data that you have to train.
+
+But, you know, the interesting thing is like we've got more compute now than we ever have, and you have the whole Internet full of data to train on.
+
+GREG SHAW:  Yeah, yeah.  Well, let's switch from the text to society.  You know, you dedicate the book to your father.  In the book, you write a letter to your grandfather, Shorty, explaining to him.  He was a – obviously, a craftsman and someone who would have been fascinated by AI.
+
+I mention this because, you know, the book is titled Reprogramming the American Dream, and you had your family and other families in mind.  What's involved in reprograming the American dream, and what do you mean by the American dream?
+
+KEVIN SCOTT:  So, I think that we have an opportunity with better investment in advance technology, and like making those investments in a way where they're accessible to as many people as humanly possible, to have people in rural and middle America have the opportunity to create really very interesting new businesses, that create jobs and economic opportunity, and that help them realize their creative vision.
+
+And that, you know, serves as a platform, in the same way that industrial technology serve as a platform for these communities to build their economies in the you know, in the early mid-20th century, that AI can have a similar sort of effect in these communities today.
+
+GREG SHAW:  Yeah, you offer a number of different suggestions related to education and skilling, and that sort of thing.  I'm curious, what would you say is your advice to young people who are might be growing up in rural central Virginia or Oklahoma, where I'm from? You know, how should they prepare for jobs of the future?
+
+KEVIN SCOTT:  Yeah.  I think, I've chatted

@@ -1,0 +1,19 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt . So, after I was -- after I worked in VR and AR and was really intent on defining the new interface for spatial computing, back then, it was a bit early -- I think too early for VR and AR, but I -- at that time, I got really interested in how AI can help us just redefine the way that we interact with the world and we absorb information and the things that we produce and how it affects creativity. 
+
+And so, just you know, this entire concept of amplifying our intelligence and what that means. And so, you know, I was really interested in learning more and seeing where this can go, this idea of pushing intelligence as a fundamental property that can have this very broad, universal impact. And, you know, at the time, I wasn’t sure whether -- what the chances of that are to go all the way to artificial general intelligence. 
+
+But I was just very interested in figuring out how far we could pursue it, and it really seemed like maybe the last thing that we’d ever work on, and it seemed like the most important thing that I could work on. And it was important to me to -- to work on it at a place that cared about making sure that it goes well for the world. 
+
+And so, I joined OpenAI when it was a nonprofit. And, you know, the mission of the company was then -- and still is -- to make sure that building AGI goes well for everyone in the world and people can benefit from what it will bring. Obviously, since then, for practical reasons, we’ve evolved the structure of the company to have it be a limited partnership with a capped profit, so it still maintains the same mission that the nonprofit oversees the mission of the company. 
+
+But you know, I just sort of pursued my curiosity and what felt like the most important thing to me at the time. 
+
+KEVIN SCOTT: Yeah, which I -- like, honestly, I think is super good career advice for anyone, being able to make choices about what you do, where you believe the thing that you’re working on is, like, the most important thing you can make a contribution to I think is -- you know, a thing people don’t think deliberately enough about. 
+
+MIRA MURATI: I think it’s so important because when you’re working on really hard things, it’s that -- that passion, that innate curiosity is the thing that can pull you through. 
+
+KEVIN SCOTT: Yeah, a hundred percent, I mean, like, just to -- I -- really glad you said that because I -- I say this to people all the time, it’s -- if you’re working on a really hard problem with a bunch of really smart, highly motivated people, it’s hard. Like, most days, you’re failing. 
+
+MIRA MURATI: Exactly. 
+
+KEVIN SCOTT: So, you go in and you’re trying

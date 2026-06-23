@@ -1,0 +1,27 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  just one little corner of the problem.
+
+I'm mostly just trying to -- honestly, I'm just trying to get the tech companies to see the light.  And here some of them are better than others. (Laughter)
+
+[MUSIC]
+
+KEVIN SCOTT:  So, let's switch gears.  I always ask guests what they're excited about in new trends, innovations, and future of tech.  
+
+CHRISTINA WARREN:  Yeah, and I love that because it's always so interesting to hear people from these various backgrounds who are so connected with what's kind of on the cutting edge to hear about what they're excited about.  
+
+And so next, we're going to revisit our show with danah boyd, and danah is a tech scholar and researcher and she looks at the intersection of people and social practices and technology. And she's a partner researcher at Microsoft and she's the founder and president in Data and Society, which is a nonprofit, New York City based think tank.  
+
+KEVIN SCOTT:  So, I asked danah about what she's seeing right now at the intersection of tech and society that's interesting and promising.  
+
+danah boyd: What I'm hopeful for is -- there's like small glimmers of it is the various folks who are really starting to grapple with climate with tech and those intersections.  Both in the ability to understand how to reduce the cost to climate for technology, but also the possibilities that we can model, understand, and innovate because we have a big, heavy challenge in front of us on that front. 
+
+But that's like -- those are the like glimmer stages as opposed to like here's where we have tools.  
+
+KEVIN SCOTT:  There's so much opportunity there.  I mean, it's unbelievable.  Like, if you just look at -- if you could co-optimize production and consumption of power, like there probably is on the order of like one or two magnitudes of efficiencies that we could drive, which would be unbelievable. 
+
+And then, you know, that's without sort of having the even bigger thoughts about like what could you do with some of these big machine learning models to like design better systems that are like fundamentally more efficient in and of themselves. 
+
+danah boyd:  Well, so here's an example of something that, you know, is a mixed sort -- mixed, you know, feelings on.  
+
+We also have the ability to model what land will be arable.  And we can really think about the future of agriculture, the future of water supply.  Who controls that information?  Who controls the decision-making that happens from that information?  So that's that moment where I'm like, okay, we're getting there.  We actually have a decent understanding.  
+
+But if we're at a point where that material gets coopted, it gets controlled, then I'm deeply concerned

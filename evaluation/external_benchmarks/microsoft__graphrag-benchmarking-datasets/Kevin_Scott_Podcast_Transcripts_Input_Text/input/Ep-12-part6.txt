@@ -1,0 +1,33 @@
+Ep-12.txt  
+BILL COUGHRAN: Well, so what happened to me, so I started life at Bell Labs very much in 
+the research mold. So, success was writing papers and giving talks and what was a very 
+academic style, success metric. 
+Over the years at Bell Labs, I felt like I was going to conferences and seeing the same subset of 
+3- to 500 people over and over again. And I got a little bit frustrated with my ability to impact 
+things. 
+And so, I guess somewhere along -- during my run at Bell Labs, I decided to get more 
+commercial. So, I took over as a general manager of a business that we started as well as the 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+5
+computing science research center, and I tried to start to think more about what's involved with 
+actually building products and doing sales and so forth. And so, we decided to try to put a Bell 
+Labs in Silicon Valley near Stanford. 
+And so I came out to do that in late 1998 or 1999 and what I ran into I think is a little bit of what 
+we see today in the Valley, which was it was just a very frothy time. It was before the dot-com 
+bubble burst and you know, people were funding stuff that probably didn't make a lot of sense, 
+but there was a lot of money chasing after ideas and eyeballs at that time. 
+And I was trying to establish this sort of more traditional research lab. And after trying to do it 
+for a year and a half or so, I threw in the towel and went off with a colleague to found a small 
+startup in the area that was doing a telecommunications system project. And I was the CEO, he 
+was the CTO. And we built that company up from the two of us to about 140 people and then I -
+- we brought in a CEO to do the go-to-market side. 
+I left and was going to start another company and then some old Bell Labs colleagues called me 
+and said we needed adult supervision at Google, and that's kind of how I ended up at Google. 
+KEVIN SCOTT: So, how did you get interested in technology in the first place? 
+BILL COUGHRAN: So, I'm old enough that I think we call ourselves "baby boomers" now, 
+but at least when I was a kid, we were part of the -- what was then known as the "Sputnik" 
+generation, which were people who -- you know, the U.S. was responding to the space race with 
+the then Soviet Union, and there was a lot of interest in science. And so, from a very early age, I 
+was interested in science and mathematics. 
+KEVIN SCOTT: Were your parents engineers or technical

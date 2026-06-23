@@ -1,0 +1,13 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt  a promising avenue. Like, let’s try applying this to a bunch of things, you know. And – and it was already, you know, the – the story behind that work is interesting. Like, it was already work that existed because people were so – were struggling to validate this hypothesis. 
+
+But, you know, it’s not – it’s not like the – the incentives there were more like, people thought they had promising leads, and they weren’t, you know – like, no one wants to – no one wants to have the whole basis of what they’re working on be wrong. But then, like, people did eventually go – like, the – the – the hypothesis, the amyloid hypothesis is – is – really has been taking a lot of hits. It was – you know, the theories based on this didn’t work. You know, the – the medicines that we’ve developed didn’t work. 
+
+And, you know, if you talk to people in like the pharmaceutical field, like they say, like, yeah, this is we’ve got a mess here. We’ve been working on this hypothesis for, you know, all this time and it’s – it’s not getting us anywhere. We don’t know what to do. You know, like, it’s not like they’re – they’re trying to cover that up. It’s just everyone’s trying to find an answer. Everyone wants to cure Alzheimer’s. 
+
+And so – so there is a place where I think that sort of mechanical like, you know, there isn’t an incentive to think, well, what if I’m not onto anything, after all? But if you can find an alternate hypothesis, then that’s a reason to like, go poke holes in the first one, you know. I think that’s – that’s – it’s kind of I think it’s like a – it’s a messy, collaborative process that isn’t – isn’t so much about spotting deceit as like trying to recognize whether you’re really getting closer to an answer or not with what you’re doing.
+
+KEVIN SCOTT: Yeah, and I think it does – in some cases, it’s hard when the experiments are very expensive and when the – the experiment durations are very long.
+
+RANDALL MUNROE: Yeah.
+
+KEVIN SCOTT: And like there’s a bunch of stuff in particle physics that are sort of that way where, I mean, like, we’re – we’re trying to figure out whether or not we can make a net energy producing tokamak now. And you know, Europe’s going to spend tens of billions of dollars building the Nth tokamak in the world, hoping that they can get a – you know, something that net produces energy. And it would be so valuable, you know, if we can. And like tokamaks, like the physics look like it ought to work if you can just solve all of these

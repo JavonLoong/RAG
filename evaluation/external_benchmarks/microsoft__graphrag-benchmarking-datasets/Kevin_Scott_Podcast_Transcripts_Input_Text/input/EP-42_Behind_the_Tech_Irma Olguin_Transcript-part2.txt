@@ -1,0 +1,25 @@
+EP-42_Behind_the_Tech_Irma Olguin_Transcript.txt  Olguin is the CEO and Cofounder of Bitwise Industries, a company that provides tech training with the goal of building tech economies in underserved cities. At Bitwise she oversees the operations team, the company’s tech-focused training program and software development. In 2019 Bitwise secured one of the largest Series A rounds of funding, ever, for a female- Latinx-led company. Bitwise has now expanded from Fresno to several additional cities, including Bakersfield, Oakland and Merced, California, and Toledo, Ohio, where she went to college.
+
+Olguin holds a BS in Computer Science and Engineering from the University of Toledo. The work that you’re doing at Bitwise is super near and dear to me, welcome to the show, Irma.
+
+IRMA OLGUIN: Yeah, thanks for having me, Kevin.
+
+KEVIN SCOTT: So, before we get into all of the super cool stuff that you’re doing at Bitwise, I’d love to hear about how you got started. Where did you grow up? How did you get interested in technology? Tell us a little bit about that.
+
+IRMA OLGUIN: That’s a good one, that’s a good place to start. It has a lot to do with the work that we’re doing today and why we do it. 
+
+So, I’m from a really small town called Caruthers, California. It’s right there in the heart of central California, an ag-based, miles and miles of vineyards and orchards, surrounding on all sides. Graduated in a class of, I think, 86 – 88 people, something like that. So it’s a town of about 2,000 folks. Not a lot of technology happening in that space. Lots and lots of ag – agriculture and that’s my background.
+
+Like, I come from a family of, I’m the descendent of Mexican immigrants who became farm laborers, immigrant farm laborers in central California, following the work, finding the food, and that’s my start, my sort of illustrious beginning was there in the fields.
+
+KEVIN SCOTT: So, yeah, you – it sounds like our starts were similar. Like, I grew up in a very small town in rural central Virginia. My – I think my graduating class in high school was 60.
+
+IRMA OLGUIN: Nice
+
+KEVIN SCOTT: and so I have an appreciation for how unusual it is, I guess, is the best way to say it of someone from a community like that where your parents weren’t in tech, I’m presuming.
+
+IRMA OLGUIN: Correct.
+
+KEVIN SCOTT: How did you find your way to tech?
+
+IRMA OLGUIN: So, it was sort of a – a zig and a zag, as many good life stories are, right? So, I was 15 years old. I

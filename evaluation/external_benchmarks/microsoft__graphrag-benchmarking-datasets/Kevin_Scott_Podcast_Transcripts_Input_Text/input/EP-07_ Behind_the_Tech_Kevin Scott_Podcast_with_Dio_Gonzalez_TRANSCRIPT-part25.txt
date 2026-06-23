@@ -1,0 +1,25 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt KEVIN SCOTT:  Awesome.  All right.  
+[MUSIC]
+
+
+CHRISTINA WARREN:  Well, thanks for joining us for Behind the Tech.  You just heard Microsoft CTO Kevin Scott speaking with Dio Gonzalez.  And I love how excited she is about everything with tech.  It makes me excited. 
+
+She's working on tools that let people build games or whole new worlds, you know, and when it comes to mixed reality, and she talked about how the potential of mixed reality is to kind of really kind of change things.  What do you see as the potential with mixed reality to really impact the world? 
+
+KEVIN SCOTT:  Well, I think there are a bunch of things that mixed reality is going to be super important at.  Like, the things that we're seeing already that are just sort of the obvious places where MR has great benefit is in this sort of whole area of line workers.  
+
+So, like, people who do jobs right now where they don't use a computer or even a smart phone at all to do their work, and where the mixed reality becomes the first piece of digital technology that they're using that helps empower them to do more and to like be able to do their job better, basically to unlock their creativity. 
+
+And so like an example of this is an elevator technician or someone doing hydraulic work on pipes or someone trying to do maintenance on a very complicated machine.  So, normally, when you're doing these sorts of things, like you've got your toolbox, you've got like a bunch of manuals, like you -- you're sort of trying to decipher all of this stuff that you're seeing and like constantly referring to your like paper documentation or like a document that's stored on some sort of computer to try to help guide you through this maintenance task that you're doing.  
+
+And with virtual reality, with mixed reality, you are able to sort of superimpose a lot of that information directly on the real world, on the thing that you're working on, which lets you both diagnose problems more quickly, that gets you the information that you need to fix the problem that you're finding, and like it even lets -- it lets you take this thing that you're doing that normally is like a fairly isolated task that just you were doing and like bring other people into the problem-solving environment because like they can also you know, sort of see the world from your point of view as well. 
+
+CHRISTINA WARREN:  Yeah, I love that, when Dio was talking about her ultimate goal of kind of being able to show everyone swipe and show everyone everything that you're thinking.  
+
+KEVIN SCOTT:  Yeah, that would -- 
+
+CHRISTINA WARREN:  That would be very cool. 
+
+KEVIN SCOTT:  That would be awesome slash terrifying.  (Laughter.)  
+
+CHRISTINA WARREN:  I would agree with

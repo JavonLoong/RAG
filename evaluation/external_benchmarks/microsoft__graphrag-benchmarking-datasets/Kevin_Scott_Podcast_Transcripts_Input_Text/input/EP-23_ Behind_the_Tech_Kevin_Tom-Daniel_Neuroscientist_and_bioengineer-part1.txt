@@ -1,0 +1,31 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt ../[MUSIC]
+
+Tom Daniel: Therein lies the massive fundamental difference between sort of synthetic systems and living systems. It's that ability to be plastic, and in part, we built systems that aren't going to change, on purpose. We don't want them to change. Heaven forbid should my car decide, you know, “Nah, I'm not going to do what you say, you know? I'm sorry, Hal, I can't do that.”
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+Hello, and welcome to Behind the Tech. I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT: And I'm Kevin Scott.
+
+CHRISTINA WARREN: And today our guest is neuroscientist, Tom Daniel.
+
+KEVIN SCOTT: I had the chance to meet Tom a couple of months ago in one of these conversations that I've been having with a bunch of biologists and bio-scientists about their work, and Tom was showing me some of the really mind-blowing stuff that he's been doing in his laboratory on bioengineering and biomechanics at the University of Washington, and I thought he would just be an amazing guest to have on the podcast.
+
+CHRISTINA WARREN: All right, well, I know that you two have a ton to talk about. So, let's just get into it.
+
+[MUSIC]
+
+KEVIN SCOTT: Our guest on the show today is Tom Daniel. Tom has worked at the intersection of biology and engineering for more than 35 years. His research and teaching meld neuroscience, engineering, computing and biomechanics to understand the control and dynamics of movement in biology. At the University of Washington, he's a member of the neuroscience faculty and a professor. Tom is a recipient of a MacArthur Genius Fellowship, and he received his PhD in Biology from Duke and did postdoctoral work at Cal Tech. Welcome to the show, Tom.
+
+TOM DANIEL: Great to be here Kevin.
+
+KEVIN SCOTT: I love to start these conversations by learning a little bit about how you first got interested in science, in general, and maybe in particular, like how you decided that this interesting melding of disciplines was the thing that you were passionate about.
+
+TOM DANIEL: Sure, I think it's to some extent genetic. So, I come from a family of refugees and Holocaust survivors. I'm first-generation US. So,

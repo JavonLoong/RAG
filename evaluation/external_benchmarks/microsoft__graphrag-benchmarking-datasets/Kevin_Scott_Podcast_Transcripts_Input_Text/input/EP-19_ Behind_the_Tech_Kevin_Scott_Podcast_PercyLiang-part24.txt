@@ -1,0 +1,22 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  to like put this power into your fingers.  It's awesome.  Well, thank you so much for taking the time to be with us today.  This was a fantastic conversation, and I feel like I've learned a lot.
+
+PERCY LIANG:  Yeah, thanks for having me.  My pleasure.
+
+KEVIN SCOTT:  That's awesome.  
+
+
+[MUSIC] 
+
+CHRISTINA WARREN:  So, that was Kevin's chat with Percy Liang, from Stanford University. And Kevin, you know what was really interesting was hearing both you and Percy reminisce about your experiences with HyperCard, and that was Percy's kind of introduction to computing, or I guess programming. That was actually my introduction to programing, too, in a weird way.
+
+KEVIN SCOTT:  Oh, that's awesome.
+
+CHRISTINA WARREN:  Yeah, and before I – I built webpages, I was building HyperCard things, and what kind of struck me was, as you were talking about how to teach the next generation, and talking about different tooling, the idea of a – or the concept of like a – a HyperCard for AI.  That's something that I think would be really, really beneficial.  What, what are your thoughts?
+
+KEVIN SCOTT:  Well, I think he was getting at that a little bit when he was talking about his ideas around program synthesis at the end of the interview.  So, and it's really interesting.  I find this to be the case with a lot of people that the inspiration, like the thing that first tugged you into computing and programming oftentimes sticks with you, your entire career.
+
+And so he started his computing experience thinking about HyperCard which is this very natural, easy way to express computations, and still, to this day, like the thing that he's most excited about is how you can use these very sophisticated AI machine learning technologies to help people express their needs for compute at a more natural way so that the computer can go help people out.  Like I think that's so awesome.
+
+CHRISTINA WARREN:  Yeah, I do too, and I thought the same thing when he was talking about the program synthesis.  That has some people, I think, understandably, maybe freaked out, right, like the idea that, oh, these things can write themselves. But when you put it in that context that it might make things more accessible, and less intimidating, and more available across a variety of different things, I think it becomes really exciting.  
+
+KEVIN SCOTT:  Yeah, I've been saying this a lot lately.  There's a way to look at a bunch of machine learning stuff, and get really freaked out about it. And then there's a way to look at machine learning, where you're like, oh, my goodness, this piece of technology is creating a bunch of abundance that

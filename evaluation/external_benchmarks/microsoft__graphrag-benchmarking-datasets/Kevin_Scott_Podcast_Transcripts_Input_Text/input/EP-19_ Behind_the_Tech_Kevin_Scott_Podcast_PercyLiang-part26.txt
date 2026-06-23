@@ -1,0 +1,24 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  job sharing our problems with one another, we could probably unlock a ton of creativity that we're not able to bring to bear, solving these problems right now, and that's something that's one of the reason I love doing these podcasts.
+
+So, I'm going to go back and do my job as CTO of Microsoft and see if I can try to make that happen more.
+
+CHRISTINA WARREN:  I love it. I appreciate you doing that, and I appreciate Percy's work, as well.
+
+Well, that's just about it for us today, but before we end, I just have to say that, Kevin, I have been excitedly anticipating the release of your book, which will be out on April 7th.  It's called “Reprogramming the American Dream,” and I've actually had a tiny sneak peek, and it's really, really well written.  It's really good.
+
+KEVIN SCOTT:  Oh, thank you.  You are too kind.  So, I am, I am looking forward to it being out, as well.  I got a box of books in the mail, the other day.  This is the first book that I've ever written.  So, I was – like I had this "pinch me" moment when I opened this box, and there were this stack of hard-cover books that had the words printed in them that I had written, so that's sort of amazing.
+
+CHRISTINA WARREN:  That's so cool.  I love that so much, and I'm definitely going to be recommending it to my friends and my fellow tech nerds out there. Because what I really like about the book is that it really does break down a lot of the things that we've been talking about, in this conversation, like AI, in an understandable way, and a way that is pragmatic, and not – you know, scary.
+
+KEVIN SCOTT:  Yeah, that was a goal. I was hoping to take a bunch of material that can be relatively complex and present it in a way that, hopefully, it's accessible to a broad audience.  So, I think it's actually critically important.  Like one of the most important things in AI is to have all of us have a better grounding of what it is, and what it isn't, so that we can make smart decisions about how we want to employ it and how we want to encourage other people to use these technologies on our behalf.
+
+CHRISTINA WARREN:  I love it.  I love it. All right, well, that does it for us.  As always, please reach out any time at behindthetech@microsoft.com, tell us what's on your mind, and be sure to tell everyone you know about the show.  Thanks for listening.
+
+KEVIN SCOTT:  See you next time.
+
+
+
+[MUSIC]
+
+
+

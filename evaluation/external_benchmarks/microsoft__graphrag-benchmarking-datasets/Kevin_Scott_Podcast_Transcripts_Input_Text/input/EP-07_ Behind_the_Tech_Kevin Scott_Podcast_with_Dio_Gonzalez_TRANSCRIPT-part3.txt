@@ -1,0 +1,27 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  GONZALEZ:  Ah-hah.  So that was the very first time.  I didn't have a computer at home, I had never seen one. 
+
+KEVIN SCOTT:  Oh, nice. 
+
+DIO GONZALEZ:  So, yes, yes.  And the thing is the very last class was about this concept of pixels.  And so they made us draw lines, not even curved lines, it was just straight lines.  And they explained us how to do it.  Like, you find the formula, then you program it, and then tah-dah, lines.  (Laughter.) 
+
+And that was like my -- like "ah-hah" moment and my mind exploded.  I was, like, yeah, like --it was like fascinating for me like you can like a formula translated into a picture?  That's like that's just like unbelievable, like, until then it was, like, yeah, computers are cool, you know, very fancy calculators, right? 
+
+But that part, when we were able to draw pictures, that's when I'm like, "That's it, I'm in."  And so ever since then, I was like, I'm going to be a programmer and I'm going to do something related to putting pictures on the screen.  
+
+KEVIN SCOTT:  That's awesome.  I've always wondered how many kids have that experience because for me, it was sort of similar.  Like, I grew up right when console arcade games had started to come out.  So, like the sort of Space Invaders and Asteroids like the -- like the Vector Graphics things.  
+
+And they were so engaging and I was so curious about how it was that you made something like that, that that was my attraction to computers.  
+
+DIO GONZALEZ:  Right?  
+
+KEVIN SCOTT:  It's like this gravitational field that sucked me in.  And so it was similar to yours.  And I just wonder -- I've always wondered how many kids get pulled in that way, because like they use some piece of software, like you know, they get their imagination sparked by this visual thing and then -- 
+
+DIO GONZALEZ:  Yes, exactly -- 
+
+KEVIN SCOTT:  -- and then all of a sudden like they're down in the guts of the computer.  (Laughter.)  
+
+DIO GONZALEZ:  Yes, exactly.  I think that's what like many of us have had is when it's like, my goodness, my imagination, my creativity, I can do so much with this.  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And also that part of like something that is just, yeah, numbers, bits, okay, whatever, you know?  You

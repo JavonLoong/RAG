@@ -1,0 +1,25 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt ../Behind the Tech with Kevin Scott
+Ep 58 William A. Adams
+
+ 
+ WILLIAM ADAMS: When you fail, you need someone to say, that’s all right, let’s do it again, right? And this is something that typically, black and women businesses don’t have, right? They struggled to do it once. They get burned. They’re working at McDonald’s, or they’re back to general population. They don’t try again, because they’ve got obligations.
+  
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m cohost Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today we have a really exciting guest, William Adams. He’s made some really, really important contributions to the field of computer science. And he is also a leader in diversity, equity and inclusion. And he’s won awards and recognition for his work within programming and in D&I stuff, and he just launched a new venture studio aimed to help every Black person interested in having a career in business or technology get into the field. 
+
+So I’m really excited to hear you two talk. I know you have a lot of history with William, Kevin. 
+
+KEVIN SCOTT: Yeah, William was one of the first people I recruited into the Office of the CTO when I joined Microsoft, almost seven years ago. And he was an unbelievably valuable member of my team. But maybe more important than that, like William just taught me a ton. Like he was a source of tremendous inspiration. He’s technically amazing, but his determination to go give back to people was absolutely extraordinary.
+
+So I – like I can’t wait to chat with him today. I miss him since he’s been gone from Microsoft, and so it’s always great to catch up. And like hopefully, we can hit on a few of these like inspirational topics, where everybody else can see what inspired me so much about William and the example that he sets for us all. 
+
+KEVIN SCOTT: William Adams is a software engineer, DEI innovator and philanthropist. He founded Adamation, where he developed customer enterprise apps and earned two patents. His contributions to the field there were later documented by the Computer History Museum. William was at Microsoft for more than 20 years and was recognized for rolling out critical XML code

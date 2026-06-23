@@ -1,0 +1,19 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt ANDREW NG: I think I came up with that. 
+
+KEVIN SCOTT: Yeah. I know this is your brilliant quote and it's spot on. The push to literacy in many ways is a byproduct of the second and third industrial revolution. We had this transformed society where you actually had to be literate in order to function in this quickly industrializing world. So, I wonder how many analogues you see between the last industrial revolution and what's happening with AI right now. 
+
+ANDREW NG: Yeah. The last industrial revolution changed so much human labor. I think one of the biggest differences between the last one and this one is that this one will happen faster, because the world is so much more connected today. So, wherever you are in the world, listening to this, there's a good chance that there's a AI algorithm that's not yet even been invented as of today, but that will probably affect your life five years from now.
+
+[MUSIC]
+
+KEVIN SCOTT:  I love this image that he evokes of a mom-and-pop store programming their own LCD sign.  If we really are going to get to this vision of powerful technology shaping the future, we really have to have as many people as humanly possible involved in the creation of the technology. 
+
+And, you know, I think one of the ironic things about AI is that it can be one of those democratizing influences.  Like, ironically, even though we sort of think about AI as this just very arcane art that only a few people can practice, the reality may be over the next handful of years is that AI itself may facilitate more people being able to participate in the creation of technology than ever before.  It might make programming actually easy.  
+
+CHRISTINA WARREN:  Yeah, it's really, really interesting to think about how, you know, instead of taking jobs away could actually maybe even create new careers and create new opportunities.  
+
+KEVIN SCOTT:  Yeah, I mean, one of the things that we chatted about in our conversation is that we have a whole bunch of costs of subsistence like healthcare, for instance, that are growing faster than the gross domestic product.  And, obviously, that's not sustainable over time.  The end state there is like we end up spending our entire national wealth on healthcare, which is probably not a great thing for society.  
+
+And one of the really interesting things, and we're seeing this across a range of diagnostic applications is that AI is allowing us to provide cheaper and more ubiquitous access to healthcare technologies.  Like, for instance, their AI apps right now that are able to read EKG charts, which is just a fraction of a cardiologist's job, but able to read charts with clinical levels of accuracy, which then doesn't take away cardiologists' jobs, but potentially frees up cardiologists to do higher-value things. 
+
+And, you know, the thing

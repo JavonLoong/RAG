@@ -1,0 +1,19 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt  who are connected, and also the number of people involved in computing.  
+
+I mean, nowadays, when Apple launches a new generation of iPhone, you can look at it and say, “Right, that's 50 million more sales within how many months?” Back in 1994, there weren't 50 million computers in the whole world, you know, probably less than five million.  Each time we've seen a generational improvement in microprocessor performance, the number of people using them seems to have doubled.  
+
+KEVIN SCOTT: Yeah, I was watching an interview with Brian Kernighan, who I got the chance to work with very briefly when I was at Google in New York. He did an interview with this guy, Lex Fridman, who does these very interesting interviews with tech people.
+
+Brian was talking about his early work with the PDP-8. And I just did a quick Web search and looked up the Wikipedia entry for this particular machine, and they sold 200 of them, which is just crazy when you think about what constitutes a good volume for computer sales or mobile phone sales or whatever these days. 
+
+CHARLIE STROSS: Absolutely. I mean, it was a tiny world. 
+
+KEVIN SCOTT: I wanted to shift a little bit into talking about how it is that you get inspiration for writing. Because, superficially, I would think that part of my job and part of your job are alike. We both, in a sense, have to be able to imagine what the future is going to look like, and then we have to be able to describe that future well enough to a group of people that they understand what we're saying. 
+
+In your case, I think you're trying to inform and entertain and provoke folks, although I would love to hear, you know, like, you know, whatever exactly it is your mission is, other than earning — earning a living from writing science fiction. Mine is, like, I have to sort of imagine the future and then persuade enough people to go do work to make part of what that description of the future is reality. 
+
+How do you start this process of trying to imagine what the future might be like so you can have a foundation for the stories that you're telling? 
+
+CHARLIE STROSS: Okay. I don't always start from a point — from the perspective of the world building itself. I usually start from the point of view of the characters, because fiction is essentially the study of the human condition under circumstances that don't currently apply. And, you know, if you're going to talk about the human condition, you have to start by talking about people. 
+
+Having said that, there are a couple of books I wrote in 2006 and 2009 which were very tightly focused on the world 10 years in the future. It was going to be a trilogy, but unfortunately the third book in the trilogy has been persist

@@ -1,0 +1,39 @@
+Vancouver Whitecaps FC U-23, formerly known as Whitecaps FC Reserves, was a Canadian soccer team based in Vancouver, British Columbia, Canada.
+ Although founded in 2005 as part of the development system for the Vancouver Whitecaps USL First Division franchise, beginning in 2011 they became part of the development system for Major League Soccer's Vancouver Whitecaps FC.
+ The team played in the Premier Development League (PDL), the fourth tier of the American Soccer Pyramid, in the Northwest Division of the Western Conference.
+The New York City Employment and Training Coalition is an organization of workforce development and training providers based in New York City.
+ Members include community-based organizations, community colleges, unions and government agencies.
+ Seeking to serve as the primary connection point for a fragmented workforce development system, it advocates for effective workforce development policies, adequate program funding and effective use of federal stimulus dollars.
+ NYCETC also works to sustain an environment that supports a high quality workforce development system to meet the changing needs of New Yorkers.
+ NYCETC connects its members to policy makers, employers, best practices, and more through its forums, conferences and other outreach efforts.
+ NYCETC is also a key resource for news, analysis, and information through its flagship publication, "NYC Workforce Weekly", read by nearly 4,000 people a week.
+Star Ship is a video game programmed by Bob Whitehead and published by Atari, Inc. for its Video Computer System (later known as the Atari 2600).
+ The game was one of the nine launch titles offered when the Atari 2600 launched on September 11,1977.
+ Based on the Atari arcade game "Starship 1", it was the first space-related game developed for the Atari VCS.
+ The re-branded Sears TeleGames version is titled Outer Space.
+Portland Timbers U23 is an American soccer team based in Salem, Oregon, United States.
+ Although founded in 2008 as part of the development system for the Portland Timbers USSF D2 organization, beginning in 2011 they are part of the development system for the Major League Soccer franchise of the same name.
+ The team plays in the USL Premier Development League (PDL), the fourth tier of the American Soccer Pyramid, in the Northwest Division of the Western Conference.
+The Manned Orbital Development System was created by the US Air Force Space System Division (SSD) in June 1962.
+ It was to begin working on plans to use Gemini hardware as the first step in a new US Air Force man-in-space program called MODS (Manned Orbital Development System), a type of military space station that used Gemini spacecraft as ferry vehicles.
+ The term Blue Gemini first showed up in August 1962 as part of a more specific proposal to fly six Gemini missions with Air Force pilots in a preliminary orientation and training phase of MODS.
+ MODS was effectively superseded when the Manned Orbital Laboratory was announced in December 1963.
+Shepardson Microsystems, Inc. (SMI) was a small company producing operating systems and programming languages for the Atari 8-bit and Apple II computer families.
+ SMI is most noted for authoring Atari's BASIC and Disk Operating System (DOS) products.
+Surround is a video game programmed by Alan Miller and published by Atari, Inc. for the Atari Video Computer System (later known as the Atari 2600).
+ It was one of the nine Atari VCS launch titles released in September 1977.
+ "Surround" is an unofficial port of the arcade game "Blockade", released the previous year by Gremlin.
+ As such, it is the first home console version of the game that would become widely known across many platforms as "Snake".
+ As with other early Atari games, it was licensed to Sears, which released it under the name "Chase".
+The HP 64000, introduced circa 1980, is a tool for developing hardware and software for products based on commercial microcomputers.
+ The earliest commercial 64000 development systems contain from one to six 64100A Development Stations sharing a hard drive and line printer.
+ This arrangement allowed up to six designers and engineers to use their workstations together, sharing the HPIB instrumentation bus and a hard drive and a line printer.
+ This was an innovative feature of the 64000 development system since other systems of the era used a timesharing system with a single system processor and memory, making for a more expensive and less flexible development system.
+The Atari Assembler Editor is a cartridge-based development system used to edit, assemble, and debug 6502 programs for the Atari 8-bit family of home computers.
+ It was programmed by Kathleen O'Brien of Shepardson Microsystems.
+ It was the first commercially available assembler for the Atari 8-bit computers.
+The Atari XE Video Game System (Atari XEGS) is a home video game console released by Atari Corporation in 1987.
+ Based on Atari's 8-bit 65XE computer, the XEGS is compatible with the existing Atari 8-bit computer software library.
+ Additionally, it is able to operate as either a stand-alone console or full computer with the addition of its specially designed keyboard.
+ In computer mode, it may utilize the majority of peripherals released for Atari's 8-bit computer line.
+ Atari packaged the XEGS as a basic set consisting of only the console and joystick, and as a deluxe set consisting of the console, keyboard, joystick and light gun.

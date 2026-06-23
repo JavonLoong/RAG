@@ -1,0 +1,21 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt . And so, what are the big things that are moving progress forward right now? Like, what is – I mean, and like, you can sort of take a long view, right? 
+
+DAVID BAKER:  Yeah. 
+
+KEVIN SCOTT:  Like, I think the landscape was very, very different when you started than it is now, like, what’s been the big thing– 
+
+DAVID BAKER:  It’s totally different. 
+
+KEVIN SCOTT:  What are the big things that have– 
+
+DAVID BAKER:  There are just – there are so many things that are coming together. And I think when you have technological revolutions, that’s generally what’s happened. There have just been a lot of things that come together and, you know, I think we just happened to be at the right place at the right time. 
+
+So, what are they? Well, our understanding of the basic principles of protein folding have been improving over the years. And we’ve been developing this computer program called Rosetta to model these for, you know, for 20 years now. So, there’s been – we’ve been doing a lot of work at sort of trying to get more and more of the details right. 
+
+Second is computing power. These things are – despite my ridiculing people when I was a graduate student, these calculations now are – these systems are really complicated, and the basic principle is that proteins fold to their lowest energy states. So, if you want to design a sequence that folds to a new structure, then you have to do – you have to search through this huge landscape and it’s very time consuming. So, the fact that computers have just gotten more and more powerful continuously has really opened up. And we could not have done what we did for coronavirus in that amount of time with computing even like 10 or 15 years ago. 
+
+And the third that’s really completely independent is the – because of the Genome Project, there’s been this huge advance in gene synthesis technology. So, we design – on the computer, we can compute, you know, millions of different possible proteins that are, you know, all, you know, possible creations, but to actually bring them into the lab, we need to encode them in synthetic pieces of DNA – synthetic genes. And after we do that, we can put them into microorganisms, who will then produce them. 
+
+But synthesizing DNA is still expensive, but it used to be hundreds of times more expensive. And so now we can routinely design 100,000 brand new proteins for all kinds of different applications. I mean, the range of things we’re doing now in the group – trying to degrade plastic, trying to capture solar energy, trying to do exotic chemical reactions, all sorts of things. This just would not have been possible, again, with the technology of 15 years ago. 
+
+So, being able to manufacture

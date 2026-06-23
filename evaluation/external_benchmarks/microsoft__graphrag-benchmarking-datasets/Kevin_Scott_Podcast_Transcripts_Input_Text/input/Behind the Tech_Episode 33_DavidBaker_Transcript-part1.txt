@@ -1,0 +1,33 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt ../[MUSIC] 
+
+
+DAVID BAKER:  
+Generally, in engineering and biology, if you want to solve a problem, you go look in nature for a protein that already does something similar, and then you modify it a bit. The relationship between sequence and structure has been really mysterious, but now we can actually design proteins with intent to do new things. So, I think it’s just getting to be very exciting. 
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  Our guest on the show today is Dr. David Baker. Dr. Baker is a professor of biochemistry and the director of the Institute for Protein Design at the University of Washington. His research group is focused on the design of macromolecular structures and functions. 
+
+KEVIN SCOTT:  Yeah, I really do think that Dr. Baker is doing some of the most interesting work in the world right now. I for sure – I mean, without question, I would be choosing to study computational biology if I were a graduate student again today. It’s just so fascinating what he’s doing. 
+
+CHRISTINA WARREN:  And I can’t wait to hear him talk about what he’s doing and to hear the two of you interact. So, let’s chat with Dr. Baker. 
+ 
+
+[MUSIC]
+
+
+KEVIN SCOTT:  Our guest today is Dr. David Baker. Dr. Baker is a biochemist and computational biologist who has pioneered methods to predict and design three-dimensional structures of proteins. He is the director of the Institute for Protein Design and professor of biochemistry at the University of Washington. Dr. Baker has received awards from the National Science Foundation, the Beckman Foundation, and the Packard Foundation. He’s published over 500 research papers, been granted over 100 patents, and cofounded 11 companies. Welcome to the show, David. 
+
+DAVID BAKER:  Thank you. Happy to be here. 
+
+KEVIN SCOTT:  So, for listeners who aren’t familiar with your work, can you tell us a bit about the University of Washington’s Institute for Protein Design and the work that you do there? 
+
+DAVID BAKER:  Yeah, sure. So, in nature

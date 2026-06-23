@@ -1,0 +1,17 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt , yeah, we went and I did a lot of research on physics simulation. Back then, this was very early, you know, SIGGRAPH type stuff, 2D, simulation, was able to put together this physics simulator and build this thing that was called Interactive Physics, and it was really exciting. All the physics textbooks correlated to it. A lot of teachers around the – got to be millions and millions of students. So it was a great launching. 
+
+KEVIN SCOTT: Yeah. And so, it – I just sort of wonder, like, you know, again, you’ve got two things here at least that you’re doing, that at least on the surface sound like they’d be relevant to the founding of Roblox. So like physics is an important thing for videogames and then just whatever lessons you learned, you know, of succeeding or failing at business is sort of a great workshop for starting your next business. 
+
+DAVID BASZUCKI: That’s right.
+
+KEVIN SCOTT: So was that actually the case? 
+
+DAVID BASZUCKI: Yeah, we with Interactive Physics and the company was called Knowledge Revolution, we made what I’d call a third mistake, which was rather than thinking about our end users, who we loved, and the market and consumer, we said, “Let’s take this physics engine and make it into something that mechanical engineers are going to use,” which was a little more logical. They’re a great market, too, but once again, not a huge market. And it takes a lot more technology and a lot less consumer polish for those types of products. 
+
+That, we finally were acquired by a company that makes mechanical engineering software and I worked there for a few years, but the notion was always come back to consumer and there was a notion that the best educational tools sometimes aren’t educational tools. They’re a really good word processor. They’re a really good movie editor. They’re a really good web browser. And that those types of things can go super high quality, super high volume, and be educational tools that tens of millions of people will use. 
+
+So the learning from Interactive Physics was, let’s think about going more consumer, let’s go 3D instead of 2D, let’s go multiplayer, let’s go cloud-based, let’s go avatar-based, so rather than a 2D experiment that you’re watching by yourself, you’re inside of a 3D experiment with your friends, you know, around the world on multiple devices.
+
+So that Interactive Physics thought was still there, but the hope was if there’s thousands of engineers working on super high quality, free consumer software, the byproduct of that may be an educational product that’s even better than Interactive Physics. 
+
+KEVIN SCOTT: And so you started Roblox in 2006, right? So what was it like at the beginning? So in 2006, just

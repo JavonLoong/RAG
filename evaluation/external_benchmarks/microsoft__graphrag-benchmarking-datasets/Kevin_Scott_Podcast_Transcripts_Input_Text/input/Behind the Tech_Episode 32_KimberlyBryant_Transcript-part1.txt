@@ -1,0 +1,36 @@
+Behind the Tech_Episode 32_KimberlyBryant_Transcript.txt ../
+[MUSIC]
+
+KIMBERLY BRYANT: I think we need more organizational support, not just at Black Girls Code, but any organization that’s doing this work as a nonprofit. We can’t do it alone. So for me, it’s always about how can we have this magnified effort of different organizations that are all working collectively to elevate girls in the STEM fields, and particularly in computer science? 
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And our guest today is Kimberly Bryant. And Kimberly is an electrical engineer with a 25-year career in the pharmaceutical and biotech industries. 
+
+And about 10 years ago, she founded one of my favorite organizations – Black Girls Code. And since then, has received national recognition as a social innovator for her work in technology inclusion. 
+
+KEVIN SCOTT: Yeah, I’m an enormous fan of Kimberly’s – 
+
+CHRISTINA WARREN: Me too. 
+
+KEVIN SCOTT: – and of Black Girls Code. You know, it’s one of those things that if you have ever been on the receiving end of an extended hand, like, someone who sees potential in you and takes a risk and believes in you, like, it can be one of the most transformational things that happens in your life. 
+
+And I think the great thing that Kimberly is doing is she is extending that hand to, like, as many young women of color as she possibly can to get them into computing. And it’s so needed and it’s so inspirational. 
+	
+CHRISTINA WARREN: I totally agree. I was actually having a conversation with someone earlier about that same thing. And I love that Kimberly is extending that hand, as you say, to so many young girls of color. 
+
+So, let’s go ahead and chat with Kimberly. 
+
+[MUSIC]
+
+KEVIN SCOTT:  Our guest today is Kimberly Bryant. Kimberly is founder and CEO of Black Girls Code – a nonprofit organization dedicated to introducing girls of color to the field of technology. She’s also an electrical engineer. 
+
+Kimberly has received numerous awards for her work in technology inclusion. She’s been on Business Insider’s list of the 25 most influential African Americans in technology,

@@ -1,0 +1,51 @@
+The following is a list of comets with a very high eccentricity (generally 0.99 or higher) and a period of over 1,000 years that don't quite have a high enough velocity to escape the Solar System.
+ Often, these comets, due to their extreme semimajor axes and eccentricity, will have small orbital interactions with planets and minor planets, most often ending up with the comets fluctuating significantly in their orbital path.
+ These comets probably come from the Oort cloud, a cloud of comets orbiting the Sun from ~10,000 to roughly 50,000 AU.
+ The actual orbit of these comets significantly differs from the provided coordinates, and a Solar System barycentric orbit is a more accurate measurement of its long-term orbit.
+The nebular hypothesis is the most widely accepted model in the field of cosmogony to explain the formation and evolution of the Solar System (as well as other planetary systems).
+ It suggests that the Solar System formed from nebulous material.
+ The theory was developed by Immanuel Kant and published in his "Allgemeine Naturgeschichte und Theorie des Himmels" ("Universal Natural History and Theory of the Heavens"), published in 1755.
+ Originally applied to the Solar System, the process of planetary system formation is now thought to be at work throughout the Universe.
+ The widely accepted modern variant of the nebular hypothesis is the solar nebular disk model (SNDM) or solar nebular model.
+ It offered explanations for a variety of properties of the Solar System, including the nearly circular and coplanar orbits of the planets, and their motion in the same direction as the Sun's rotation.
+ Some elements of the nebular hypothesis are echoed in modern theories of planetary formation, but most elements have been superseded.
+A heliocentric orbit (also called circumsolar orbit) is an orbit around the barycenter of the Solar System, which is usually located within or very near the surface of the Sun.
+ All planets, comets, and asteroids in the Solar System are in such orbits, as are many artificial probes and pieces of debris.
+ The moons of planets in the Solar System, by contrast, are not in heliocentric orbits as they orbit their respective planet.
+The five-planet Nice model is a recent variation of the Nice model that begins with five giant planets, the current four plus an additional ice giant, in a chain of mean-motion resonances.
+ After the resonance chain is broken, the five giant planets undergo a period of planetesimal-driven migration, followed by a gravitational instability similar to that in the original Nice model.
+ During the instability the additional giant planet is scattered inward onto a Jupiter-crossing orbit and is ejected from the Solar System following an encounter with Jupiter.
+ An early Solar System with five giant planets was proposed in 2011 after numerical models indicated that this is more likely to reproduce the current Solar System.
+The Solar System is the gravitationally bound system comprising the Sun and the objects that orbit it, either directly or indirectly.
+ Of those objects that orbit the Sun directly, the largest eight are the planets, with the remainder being significantly smaller objects, such as dwarf planets and small Solar System bodies.
+ Of the objects that orbit the Sun indirectly, the moons, two are larger than the smallest planet, Mercury.
+The following is a list of parabolic and hyperbolic comets in the Solar System.
+ Many of these comets may come from the Oort cloud, or perhaps even have interstellar origin.
+ The Oort Cloud is not gravitationally attracted enough to the Sun to form into a fairly thin disk, like the inner Solar System.
+ Thus comets originating from the Oort Cloud can come from roughly any orientation (inclination to the ecliptic), and many even have a retrograde orbit.
+ By definition, a hyperbolic orbit means that the comet will only travel through the Solar System once, with the Sun acting as a gravitational slingshot, sending the comet hurtling out of the Solar System entirely unless its eccentricity is otherwise changed.
+ Comets orbiting in this way still originate from the Solar System, however.
+ Typically comets in the Oort Cloud are thought to have roughly circular orbits around the Sun, but their orbital velocity is so slow that they may easily be perturbed by passing stars and the galactic tide.
+The jumping-Jupiter scenario specifies an evolution of giant-planet migration described by the Nice model, in which an ice giant (Uranus, Neptune, or an additional Neptune-mass planet) is scattered inward by Saturn and outward by Jupiter, causing the step-wise separation of their orbits.
+ The jumping-Jupiter scenario was proposed by Ramon Brasser, Alessandro Morbidelli, Rodney Gomes, Kleomenis Tsiganis, and Harold Levison after their studies revealed that the smooth divergent migration of Jupiter and Saturn resulted in an inner Solar System significantly different from the current Solar System.
+ The sweeping of secular resonances through the inner Solar System during the migration excited the eccentricities of the terrestrial planets beyond current values and left an asteroid belt with an excessive ratio of high- to low-inclination objects.
+ The step-wise separation of Jupiter and Saturn described in the jumping-Jupiter scenario can allow these resonances to quickly cross the inner Solar System without altering orbits excessively, although the terrestrial planets remain sensitive to its passage.
+ The jumping-Jupiter scenario also results in a number of other differences with the original Nice model.
+ The fraction of lunar impactors from the core of the asteroid belt during the Late Heavy Bombardment is significantly reduced, most of the Jupiter trojans are captured during Jupiter's encounters with the ice giant, as are Jupiter's irregular satellites.
+ In the jumping-Jupiter scenario, the likelihood of preserving four giant planets on orbits resembling their current ones appears to increase if the early Solar System originally contained an additional ice giant, which was later ejected by Jupiter into interstellar space.
+ However, this remains an atypical result, as is the preservation of the current orbits of the terrestrial planets.
+The Nice ( ) model is a scenario for the dynamical evolution of the Solar System.
+ It is named for the location of the Observatoire de la Côte d'Azur, where it was initially developed, in Nice, France.
+ It proposes the migration of the giant planets from an initial compact configuration into their present positions, long after the dissipation of the initial protoplanetary gas disk.
+ In this way, it differs from earlier models of the Solar System's formation.
+ This planetary migration is used in dynamical simulations of the Solar System to explain historical events including the Late Heavy Bombardment of the inner Solar System, the formation of the Oort cloud, and the existence of populations of small Solar System bodies including the Kuiper belt, the Neptune and Jupiter trojans, and the numerous resonant trans-Neptunian objects dominated by Neptune.
+ Its success at reproducing many of the observed features of the Solar System means that it is widely accepted as the current most realistic model of the Solar System's early evolution, although it is not universally favoured among planetary scientists.
+ Later research revealed a number of differences between the original Nice model's predictions and observations of the current Solar System, for example the orbits of the terrestrial planets and the asteroids, leading to its modification.
+The Kuiper belt ( or ] ), sometimes called the Edgeworth–Kuiper belt, is a circumstellar disc in the Solar System beyond the (known) planets, extending from the orbit of Neptune (at 30 AU) to approximately 50 AU from the Sun.
+ It is similar to the asteroid belt, but is far larger—20 times as wide and 20 to 200 times as massive.
+ Like the asteroid belt, it consists mainly of small bodies or remnants from when the Solar System formed.
+ While many asteroids are composed primarily of rock and metal, most Kuiper belt objects are composed largely of frozen volatiles (termed "ices"), such as methane, ammonia and water.
+ The Kuiper belt is home to three officially recognized dwarf planets: Pluto, Haumea and Makemake.
+ Some of the Solar System's moons, such as Neptune's Triton and Saturn's Phoebe, are thought to have originated in the region.
+The Solar System's planets and officially recognized dwarf planets are known to be orbited by 184 natural satellites, or moons.
+ 19 moons in the Solar System are large enough to be gravitationally rounded, and thus would be considered planets or dwarf planets if they were in direct orbit around the Sun.

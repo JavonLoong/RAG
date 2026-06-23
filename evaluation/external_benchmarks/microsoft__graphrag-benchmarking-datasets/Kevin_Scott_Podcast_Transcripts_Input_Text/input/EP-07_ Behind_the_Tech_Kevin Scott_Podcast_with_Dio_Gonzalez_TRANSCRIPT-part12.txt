@@ -1,0 +1,33 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  C++ and all -- moving the camera in Opengl and everything.  And, you know, typically you're like -- you create your scene and the scene graph, you have to create it by hand. 
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  There were scene libraries, but still, you have to create every node and program and connect them.  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And then move the camera.  And I remember the problem that everybody had, which is first you created your scene, and then you put the camera -- okay, run, and it's black.  Like, what?  It's because the camera is normally pointing like the wrong way.  So you have to like really do the math.  
+
+Okay, if the object is here, you have to do the math of where the camera is, how do I -- should I rotate it and all? 
+
+KEVIN SCOTT:  Yeah, it always struck me as like when I was trying to do that sort of stuff that it was a flavor of creativity that the tools were so low level, it struck me that it was probably the same as if you'd told a painter that, like, they had to make a, you know, like a five-foot-by-five-foot, you know, canvas painting, but they were only allowed to do it like one square inch at a time, without being able to see anything else.  
+ 
+DIO GONZALEZ:  Ah!  Exactly.  
+
+KEVIN SCOTT:  Like, it's just so hard.  And, like, it -- it's -- 
+
+DIO GONZALEZ:  Yeah. 
+
+KEVIN SCOTT:  -- so much easier now. 
+
+DIO GONZALEZ:  Uh-huh.  (Affirmative.)  Yeah.  That's -- that's what I'm -- these -- this tool's amazing.  Like, my thesis was a networking library and scene synchronization, which you don't need to write that today, right?  
+
+KEVIN SCOTT:  Yeah.  
+
+DIO GONZALEZ:  Because the software does it for you.  So, now people can think beyond that, right?  So, yes, that's amazing what these tools have done. 
+
+KEVIN SCOTT:  And so like maybe we should talk a little bit like we have people listening from all different parts of computer science and folks who aren't computer scientists.  So, like, what is virtual reality? 
+
+DIO GONZALEZ:  Oh, okay, yes.  So, because I come from the academic world, I normally give the academic kind of definition. 
+
+So the definition is a virtual environment is a 3D world, 3D, created by a computer.

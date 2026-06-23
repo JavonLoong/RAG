@@ -1,0 +1,15 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  interesting world where you’ve got ARM in a bunch of places, you know, that are RISC construction set machines, and then you’ve got these GPUs, which are like an increasingly large volume of compute, and so it’s sort of interesting. Like a lot of the things happening now feel to me like the things that were happening 30 years ago, 20 years ago, and like I don’t know if you’ve reflected any on that.
+
+LISA SU: Yeah, you know, it’s interesting, I hadn’t actually bridged the parallel between the two. I think what has been the case, and I’m actually curious to get your thoughts on this, is the instruction set, certainly back in those days, when there were so many different ones, and sort of the consolidation, I don’t think it’s been so much about the instruction set. 
+
+I mean, people ask me all the time about ARM versus X86, and I’m like, "Look… It’s not about ARM versus X86. They’re both, you know, great instruction sets. It’s really about sort of the – the applications and the ecosystem we’re trying to run on top of it,” and you know, some – you know, there’s a lot of reasons that you want to be at scale, so – you know, if I think about what happened, you know, 20 years ago. It’s just that you had too many instruction sets, and many of them were not at scale, and so it just wasn’t – you know, it didn’t scale, and now you look today and with what we’re doing going forward, the workloads are changing, right? 
+
+I mean, that’s what made the GPU so important now as we think through AI. As the workloads change, you need, you know, somewhat different compute, and you know, that’s where the choices get made.
+
+KEVIN SCOTT: Yeah, yeah, look, I think I’m like one of the weird people who cares about instruction sets because I started my career writing, like a lot of assembly language code, and in grad school I was a compiler and computer architecture person and – you know, so having written a software decoder for X86, you know, so I think you care if you’re implementing something at the lowest level of the stack, but like that’s such a tiny, little minority of the development activity. And like, everybody else, like what you want is, like lower power, like high performance and cheap.
+
+LISA SU: Yes!
+
+KEVIN SCOTT: And you know, it’s like those three things, and to your point, like I think scale drives that.
+
+LISA SU: And would you agree, Kevin, that – as you think about where things are right now, the relative benefit of programming at the lowest, lowest level is perhaps less, just because there is so much computing power and that’s why people

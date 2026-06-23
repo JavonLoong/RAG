@@ -1,0 +1,44 @@
+Bi-fuel vehicles or otherwise known as dual fuel are vehicles with multifuel engines capable of running on two fuels.
+ On internal combustion engines one fuel is gasoline or diesel, and the other is an alternate fuel such as natural gas (CNG), LPG, or hydrogen.
+ The two fuels are stored in separate tanks and the engine runs on one fuel at a time in some cases, in others both fuels are used in unison.
+ Bi-fuel vehicles have the capability to switch back and forth from gasoline or diesel to the other fuel, manually or automatically.
+The Mazda RX-8 Hydrogen RE is a 2003 bi-fuel version of the RX-8 sports car, in which the twin-rotor wankel rotary engine is configured to run on either hydrogen or gasoline.
+ This is the fifth Mazda vehicle to be fitted with a hydrogen wankel rotary engine.
+ The hydrogen tank, with a capacity of 110 liters at 350 bar stores up to 2.4 kilograms of hydrogen and is fitted in addition to the 61 liter gasoline tank.
+ In 2005, Mazda obtained street approval for this vehicle.
+ The following year, the first vehicles were leased to customers (Idemitsu and Iwatani).
+ In November 2007, Mazda announced the delivery of 30 RX-8 HRE to the Norwegian hydrogen project Hynor.
+A hydrogen-powered aircraft is an aeroplane that uses hydrogen fuel as a power source.
+ Hydrogen can either be burned in some kind of jet engine, or other kind of internal combustion engine, or can be used to power a fuel cell to generate electricity to power a propeller.
+The principle of a fuel cell was discovered by Christian Friedrich Schönbein in 1838, and the first fuel cell was constructed by Sir William Robert Grove in 1839.
+ The fuel cells made at this time were most similar to today's phosphoric acid fuel cells.
+ Most hydrogen fuel cells today are of the proton exchange membrane (PEM) type.
+ A PEM converts the chemical energy released during the electrochemical reaction of hydrogen and oxygen into electrical energy.
+ The Energy Policy Act of 1992 was the first national legislation that called for large-scale hydrogen research.
+ A five-year program was conducted that investigated the production of hydrogen from renewable energy sources and the feasibility of existing natural gas pipelines to carry hydrogen.
+ It also called for the research into hydrogen storage systems for electric vehicles and the development of fuel cells suitable to power an electric motor vehicle.
+Japan's hydrogen highway is a network of hydrogen filling stations placed along roadsides that provide fuel for hydrogen fuel cell vehicles (HFCV).
+ An HFCV is a vehicle that uses a fuel cell to convert hydrogen energy into electrical energy.
+ The hydrogen that is used in fuel cell vehicles can be made using fossil or renewable resources.
+ The hydrogen highway is necessary for HFCVs to be used.
+ HFCV reduce tailpipe emissions of greenhouse gases.
+ By May 2016, there were approximately 80 hydrogen fueling stations in Japan.
+A hydrogen vehicle is a vehicle that uses hydrogen as its onboard fuel for motive power.
+ Hydrogen vehicles include hydrogen fueled space rockets, as well as automobiles and other transportation vehicles.
+ The power plants of such vehicles convert the chemical energy of hydrogen to mechanical energy either by burning hydrogen in an internal combustion engine, or by reacting hydrogen with oxygen in a fuel cell to run electric motors.
+ Widespread use of hydrogen for fueling transportation is a key element of a proposed hydrogen economy.
+Flexible-fuel vehicles in the United States are the second largest flex-fuel fleet in the world after Brazil, and there were about 17.4 million flex-fuel cars and light trucks in operation by the end of 2014.
+ Despite the growing fleet of E85 flex-fuel vehicles, actual use of ethanol fuel is limited due to the lack of E85 refueling infrastructure and also because many American flex-fuel car owners were not aware they owned an E85 flex-fuel vehicle.
+ Flex-fuel vehicles are common in the Midwest, where corn is a major crop and is the primary feedstock for ethanol fuel production.
+ Also the U.S. government has been using flex-fuel vehicles for many years.
+A fuel cell vehicle (FCV) or fuel cell electric vehicle (FCEV) is a type of electric vehicle which uses a fuel cell, instead of a battery, or in combination with a battery or supercapacitor, to power its on-board electric motor.
+ Fuel cells in vehicles generate electricity to power the motor, generally using oxygen from the air and compressed hydrogen.
+ Most fuel cell vehicles are classified as zero-emissions vehicles that emit only water and heat.
+ As compared with internal combustion vehicles, hydrogen vehicles centralize pollutants at the site of the hydrogen production, where hydrogen is typically derived from reformed natural gas.
+ Transporting and storing hydrogen may also create pollutants.
+A flexible-fuel vehicle (FFV) or dual-fuel vehicle (colloquially called a flex-fuel vehicle) is an alternative fuel vehicle with an internal combustion engine designed to run on more than one fuel, usually gasoline blended with either ethanol or methanol fuel, and both fuels are stored in the same common tank.
+ Modern flex-fuel engines are capable of burning any proportion of the resulting blend in the combustion chamber as fuel injection and spark timing are adjusted automatically according to the actual blend detected by a fuel composition sensor.
+ Flex-fuel vehicles are distinguished from bi-fuel vehicles, where two fuels are stored in separate tanks and the engine runs on one fuel at a time, for example, compressed natural gas (CNG), liquefied petroleum gas (LPG), or hydrogen.
+In thermodynamics, motive power is a natural agent, such as water or steam, wind or electricity, used to impart motion to machinery such as an engine.
+ Motive power may also be a locomotive or a motor, which provides motive power to a system.
+ "Motive power" may be thought of as a synonym for either "work", i.e. force times distance, or "power".

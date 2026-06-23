@@ -1,0 +1,33 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt  Right.
+
+KEVIN SCOTT: And you’ll share them, and then you’ll find that there’s this huge audience of people who find the same arcane thing –
+
+CHRISTINA WARREN: Right.
+
+KEVIN SCOTT: – amusing, which is so awesome. 
+
+CHRISTINA WARREN: No, no, it really is. I mean, and I think this gets to the matter of why he’s such a good comic and a good writer is that he’s able to capture these things that we think are unique to us that only – only we really, you know, care about these – these small particular things and find it funny, but it’s more broad than you would think, and the internet makes that possible. 
+
+He’s also a great writer. I actually interviewed him, this is funny, like when the first What-If book came out about eight years ago. So – 
+
+KEVIN SCOTT: That’s so awesome.
+
+CHRISTINA WARREN: – you know, so he does great stuff. 
+
+So let’s go ahead and let’s just dive into your conversation with Randall. 
+
+KEVIN SCOTT: Randall Munroe started his career in physics working with robots at NASA’s Langley Research Center. He’s well known, however, for engineering a creation of a different sort, the iconic webcomic xkcd. He describes his work as a webcomic of romance, sarcasm, math and language. 
+
+Randall, thank you so much for joining us today. I’m a huge, huge fan of your work.
+
+RANDALL MUNROE: Oh, thank you. Thanks for having me.
+
+KEVIN SCOTT: So, and there’s so much stuff I want to ask you about. But like maybe we will start the same way that I start with most of our guests, which is talking a little bit about how you got interested in science and technology as a kid, or whenever that spark got lit.
+
+RANDALL MUNROE: I don’t know. It’s hard to – it’s – I feel like it covers such a broad area of stuff. Like I felt like as a kid, I was just interested in all kinds of different things, you know, why the creek in our backyard flowed the direction it did, and like, what atoms were made of, and cool Square One’s TV show Mathnet for kids was a big influence. 
+
+You know, and then – and then as I got older, it’s sort of like, oh, a lot of these things fit together under the umbrella of science or math. And that sort of gave me more – more direction. But – but I still felt like I was sort of jumping from exciting thing to exciting thing, and I didn’t think of them as really fitting into one coherent whole.
+
+KEVIN SCOTT: And – and did your parents do anything special to encourage that curiosity that you had when you were young?
+
+RANDALL M

@@ -1,0 +1,23 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  LI:  Whenever humanity creates a technology as powerful and potentially useful as AI, we owe it to ourselves and our future generation to make it right.  
+
+CHRISTINA WARREN:  So that was Fei-Fei Li, a pioneering researcher in AI. 
+
+KEVIN SCOTT:  Fei-Fei is an incredible computer science researcher, she helped create in large part the entire discipline of modern deep neural networks.  So, she created this thing called ImageNet in 2011, I think.  
+
+And ImageNet was the thing that allowed all of the breakthroughs in image classification that everybody's so excited about now to actually happen. So, she's a computer science professor at Stanford University, and right now perhaps she's best known as the co-director of the Human-Centered Institute for AI at Stanford.  I was actually lucky enough to be part of the advisory council that helped establish the institute.  So, I asked her to tell us about some of the work that's going on there.  
+
+[MUSIC]
+
+FEI-FEI LI:  So, first of all, I think the institute that both of us are involved in is really laying out a framework of thinking about this, and the framework is human centered.  It's that from the get-go, from the design and the basic science development of this technology all the way to the application and impact of this technology, we want to make it human benevolent. 
+And with this framework in mind, we have at Stanford, this institute works on three principles -- founding principles to cover different aspect of human-centered AI. 
+
+The first principle is actually what we've been talking about is to continue to develop AI technology, basic science technology, that is human inspired and betting on the combination of cognitive science, psychology, behavior science, neuroscience, to push AI forward so that the technology we will be using have better coherency or better capability to serve human society. 
+
+KEVIN SCOTT:  Right. 
+
+FEI-FEI LI:  So, that's the first principle.  Second principle is I would love to hear your thoughts. You know, you and I are trained as a generation of technologists that the technology is solidly considered a engineering field or computer science field. But I think AI really has turned a chapter.  AI is no longer a computer science field. 
+
+KEVIN SCOTT:  Correct.  
+
+FEI-FEI LI:  AI is so interdisciplinary today.  In fact, some of the most interesting fields that AI should really contribute and also welcome to join force are social sciences and humanities.  And at Stanford, we're already seeing the collaboration between AI researchers with economists, with ethicists, philosophers, education experts, legal scholars and all that. 
+To do this, our goal is to understand what this technology is really about, understand its impact, but also forecast, anticipate the perils, anticipate the pitfalls, anticipate unintended

@@ -1,0 +1,20 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt   Do you -- now that we’ve hit 2020, do you have any forecasts about what the next year in tech might bring, or even the next decade? 
+
+KEVIN SCOTT:  Well, I think one of the themes that we spent a bunch of time chatting about last year on the podcast was artificial intelligence and machine learning.  And I think we are certainly going to see the trends that had started in the prior years continue to accelerate.  That’s one of the reasons why I’m really interested in chatting with our guest today. 
+
+Autonomous vehicles, for instance, I believe are going to make a ton of progress over the next couple of years in particular.  And I’m just sort of really looking forward to seeing some of that stuff play out.  
+
+CHRISTINA WARREN:  Yeah, I couldn’t agree more.  It’s funny. I don’t have a driver’s license, but I’ve actually been on a few self-driving car panels over the years.  I think the technology behind it is so fascinating, which is why I’m really, really excited about your conversation with today’s guest, Chris Urmson.  And Chris is an engineer known for his work pioneering self-driving car technology.  
+
+KEVIN SCOTT:  Yeah and you know, one of the reasons that I’m especially interested in self-driving cars and looking forward to this conversation that we’re about to have with Chris is that there are so many ways that the world is going to change for the good once we are able to put this technology into the hands of lots of different companies. 
+
+One of the things that we’ll hear about Aurora is they are a company building the self-driving car technology as a platform for other companies to use to build autonomous applications.  And so, you know, like one of the things that I’m sort of hopeful that will come into the world in the not-too-distant future is some technologies that may help my grandmother.  
+
+So I’m lucky enough to have a grandma that’s still alive.  She’s 89 years old and lives in a very rural place in Virginia.  And she can still drive, which is awesome, but the day is coming where she’s not going to be able to drive her car in the same way that she is right now.  And then it begs the question of how she has access to all of the things that she needs in order to help her live an independent life. 
+
+So, how does she get her prescription medicines?  How does she get her groceries and just sort of the staple things that she needs to exist?  
+
+And one of the things that I think could be really incredibly beneficial with these self-driving technologies is the possibility that you’ll be able to have autonomous deliveries for people like my grandmother. 
+
+
+CHRISTINA WARREN:  I think you’re absolutely right.  I think the potential for this stuff is really fantastic.  Let’s hear

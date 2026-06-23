@@ -1,0 +1,15 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt LIE STROSS: Yes, but I'm afraid the real underlying problem in healthcare in the United States especially, but also in the U.K. and elsewhere is a regulatory framework one. 
+
+We have a problem with regulatory capture. We have a problem with drug development. We have a problem with commercialization of new medicines. Our development of new antibiotics has crashed to almost nil just as antibiotic resistance has become almost universal. 
+
+And this is killing tens of thousands of people a year in the U.K. alone. It's catastrophic. We went through a period from about 1940 — about 1939 to 1970, 1975, in medicine when we were innovating and developing new categories of pharmaceuticals and new treatments, and also understanding a lot of the underlying phenomena of human biology at a ridiculous rate. And then it sort of hit a brick wall. 
+
+We've seen similar brick walls before in other areas. For example, aerospace technology had its own version of Moore's Law with transportation speed doubling, which again, hit a brick wall in 1970 due to energy issues. 
+
+I think in biology, the real problem is complexity. And we're going to be seeing great gains from AI and deep learning in the next decade or two, but we have a regulatory environment that makes it difficult to bring new treatments to the public at an affordable price for whatever reason. And I'm not sure we can solve that just through technology, it's going to actually need political will to do it and a redesign of the patent system, for one thing. 
+
+KEVIN SCOTT: Yeah, I do not disagree with that at all. The thing that I've been trying to do is-- I talk with some of the people who are making some of this policy-- is that maybe their job as policymakers gets a little bit easier if they can figure out how to reframe this thing as, like, dividing up a fixed-size pie versus, you know, making some investments in things that can create — increase the size of the pie for everyone. 
+
+Because I think part of the issue that we have with our politics in general, I think this is sort of a global problem, is that issue of contention, where like most of the dialogue is about I have the thing that I care about and I want to get the resources directed toward that, and you have the thing that you care about and you want the resources directed to that, and those things under zero-sum constraints are in conflict with one another. 
+
+CHARLIE STROSS: You nailed it with zero-sum constraints. Part of the problem is fundamentally an education issue in that too many people are being — are growing up ignorant of how iterated game theory scenarios work and the fact that it's even possible to have an interaction with a rival where you both benefit. And this is part of the reason I'm so pessimistic. I mean, we're both in our 50s, we're old

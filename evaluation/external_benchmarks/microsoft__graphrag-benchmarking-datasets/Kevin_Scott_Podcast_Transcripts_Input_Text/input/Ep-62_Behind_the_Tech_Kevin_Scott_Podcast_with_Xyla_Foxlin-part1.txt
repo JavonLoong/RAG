@@ -1,0 +1,30 @@
+Ep-62_Behind_the_Tech_Kevin_Scott_Podcast_with_Xyla_Foxlin.txt ../Behind the Tech with Kevin Scott
+Episode 62 -- Xyla Foxlin
+
+
+XYLA FOXLIN: It’s like the only job in the world that I can think of where I can learn something new every single day, like every single month. And I get to follow whatever whimsy or creative exploration catches my eye. I don’t have to ask a boss about it. I don’t have to justify it, because it’s almost like being curious is my job. And that part is, like, the best.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m Kevin Scott, Chief Technology Officer and EVP of AI at Microsoft.  
+Today, tech is part of nearly every aspect of our lives. We’re in the early days of an AI revolution promising to transform our lived experiences as much as any technology ever has. On this podcast, we’ll talk with the folks behind that technology and explore the motivations, passion, and curiosity driving them to create the tech shaping our world. Let’s get started.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I’m cohost, Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And today, we’re bringing you a conversation with Xyla Foxlin, a super interesting person who’s only five years out of college but is already making a big impact as a maker, and an engineer, and a person helping build pathways into STEM for women and people of color. 
+
+KEVIN SCOTT: Yeah, I have been a devoted fan of Xyla’s YouTube content for years now. And I can’t even remember when I became aware of her channel, but, like, she’s just sort of in the mix of all of this maker content that is my favorite thing in the world to watch. 
+
+And I love her breadth of interest. She, you know, she’s interested in everything from making rockets, like, hilarious rockets, sometimes. Like, she I think has at least got a couple of videos where she launches a Christmas tree, like, hundreds of feet into the air, like, fully lit and like, just the technological challenge of doing that is super interesting. 
+
+But, you know, she does rockets, she does furniture. She does - you know, she’s made videos about making propellers for airplanes. She’s just a really talented maker and does an unbelievably fantastic job, I think, presenting how making is done. And, you know, I think she’s a, like, role model for all of us, honestly. 
+
+CHRISTINA WARREN: Yeah, I can’t wait to hear this interview. I can’t wait for this conversation.
+
+[MUSIC]
+
+KEVIN SCOTT: Xyla Foxlin graduated from Case Western Reserve University in 2019 with a BSE in General Engineering and a concentration

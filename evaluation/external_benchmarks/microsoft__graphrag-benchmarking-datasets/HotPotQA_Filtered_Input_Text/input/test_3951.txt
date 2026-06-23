@@ -1,0 +1,67 @@
+The IXP1200 is a network processor fabricated by Intel Corporation.
+ The processor was originally a Digital Equipment Corporation (DEC) project that had been in development since late 1996.
+ When parts of DEC's Digital Semiconductor business was acquired by Intel in 1998 as part of an out-of-court settlement to end lawsuits each company had launched at each other for patent infringement, the processor was transferred to Intel.
+ The DEC design team was retained and the design was completed by them under Intel.
+ Samples of the processor were available for Intel partners since 1999, with general sample availability in late 1999.
+ The processor was introduced in early 2000 at 166 and 200 MHz.
+ A 232 MHz version was introduced later.
+ The processor was later succeeded by the IXP2000, an XScale-based family developed entirely by Intel.
+Gordon Earle Moore ( ; born January 3, 1929) is an American businessman, co-founder and chairman emeritus of Intel Corporation, and the author of Moore's law.
+ As of January 2016, his net worth is $7.3 billion.
+This is the list of Pakistani politicians by net worth as per the media reports and asset declaration.
+ As of 2008, former president Asif Ali Zardari is the richest Pakistani politician with net worth of US$35 billion and former Prime Minister Nawaz Sharif from Sharif family is 2nd richest for having net worth of US$30 billion.
+ MNA Noor Alam Khan is also among the richest with assets worth US$800 million in 2013.
+The IEEE Robert N. Noyce Medal is a science award presented by the IEEE for outstanding contributions to the microelectronics industry.
+ It is given to individuals who have demonstrated contributions in multiple areas including technology development, business development, industry leadership, development of technology policy, and standards development.
+ The medal is named in honour of Robert N. Noyce, the founder of Intel Corporation.
+ He was also renowned for his 1959 invention of the integrated circuit.
+ The medal is funded by Intel Corporation and was first awarded in 2000.
+Guillermo "Bill" Gaede (born November 19, 1952) is an Argentine engineer and programmer who is best known for Cold War industrial spying conducted while he worked at Advanced Micro Devices (AMD) and Intel Corporation (Intel).
+ While at AMD, he provided the Cuban government with technical information from the semiconductor industry which the Cubans passed on to the Soviet bloc, primarily to the Soviet Union and East Germany.
+ In 1992, Gaede turned himself over to the Central Intelligence Agency (CIA), which placed him in contact with the Federal Bureau of Investigation (FBI).
+ The FBI began working with Gaede in a counter-espionage operation intended to penetrate Cuban intelligence using his contacts on the island.
+ During this time Gaede obtained work at Intel Corp. in Chandler, Arizona.
+ Intel Security discovered the nature of his activities at AMD and terminated him, but not before Gaede filmed Intel's state-of-the-art Pentium process from home.
+Intel Corporation (also known as Intel, stylized as intel) is an American multinational corporation and technology company headquartered in Santa Clara, California (colloquially referred to as "Silicon Valley") that was founded by Gordon Moore (of Moore's law fame) and Robert Noyce.
+ It is the world's second largest and second highest valued semiconductor chip makers based on revenue after being overtaken by Samsung, and is the inventor of the x86 series of microprocessors, the processors found in most personal computers (PCs).
+ Intel supplies processors for computer system manufacturers such as Apple, Lenovo, HP, and Dell.
+ Intel also manufactures motherboard chipsets, network interface controllers and integrated circuits, flash memory, graphics chips, embedded processors and other devices related to communications and computing.
+Asset poverty is an economic and social condition that is more persistent and prevalent than income poverty.
+ It can be defined as a household’s inability to access wealth resources that are sufficient to provide for basic needs for a period of three months.
+ Basic needs refer to the minimum standards for consumption and acceptable needs.
+ Wealth resources consist of home ownership, other real estate (second home, rented properties, etc.), net value of farm and business assets, stocks, checking and savings accounts, and other savings (money in savings bonds, life insurance policy cash values, etc.).
+ Wealth is measured in three forms: net worth, net worth minus home equity, and liquid assets.
+ Net worth consists of all the aspects mentioned above.
+ Net worth minus home equity is the same except it does not include home ownership in asset calculations.
+ Liquid assets are resources that are readily available such as cash, checking and savings accounts, stocks, and other sources of savings.
+ There are two types of assets: tangible and intangible.
+ Tangible assets most closely resemble liquid assets in that they include stocks, bonds, property, natural resources, and hard assets not in the form of real estate.
+ Intangible assets are simply the access to credit, social capital, cultural capital, political capital, and human capital.
+Enhanced Privacy ID (EPID) is Intel Corporation’s recommended algorithm for attestation of a trusted system while preserving privacy.
+ It has been incorporated in several Intel chipsets since 2008 and Intel processors since 2011.
+ At RSAC 2016 Intel disclosed that it has shipped over 2.4B EPID keys since 2008.
+ EPID complies with international standards ISO/IEC 20008 / 20009, and the Trusted Computing Group (TCG) TPM 2.0 for authentication.
+ Intel contributed EPID intellectual property to ISO/IEC under RAND-Z terms.
+ Intel is recommending that EPID become the standard across the industry for use in authentication of devices in the Internet of Things (IoT) and in December 2014 announced that it was licensing the technology to third-party chip makers to broadly enable its use.
+Intel Corp. v. Hamidi, 30 Cal.
+ 4th 1342 (2003), is a decision of the California Supreme Court, authored by Associate Justice Kathryn Werdegar.
+ In "Hamidi" the California Supreme Court held that a former Intel Corporation employee's e-mails to current Intel employees, despite requests by Intel to stop sending messages, did not constitute trespass of Intel's e-mail system.
+The Intel 4004 is a 4-bit central processing unit (CPU) released by Intel Corporation in 1971.
+ It was the first commercially available microprocessor by Intel.
+ The chip design started in April 1970, when Federico Faggin joined Intel, and it was completed under his leadership in January 1971.
+ The first commercial sale of the fully operational 4004 occurred in March 1971 to Busicom Corp. of Japan for which it was originally designed and built as a custom chip.
+ In mid-November of the same year, with the prophetic ad ""Announcing a new era in integrated electronics"", the 4004 was made commercially available to the general market.
+ The 4004 is history’s first monolithic CPU, fully integrated in one small chip.
+ Such a feat of integration was made possible by the use of the then-new silicon gate technology for integrated circuits, originally developed by Federico Faggin (with Tom Klein) at Fairchild Semiconductor in 1968, which allowed twice the number of random-logic transistors and an increase in speed by a factor of five compared to the incumbent MOS aluminum gate technology .
+ Faggin also invented the bootstrap load with silicon gate and the “buried contact”, improving speed and circuit density compared with aluminum gate .
+ The 4004 microprocessor is one of 4 chips constituting the MCS-4 chip-set, which includes the 4001 ROM, 4002 RAM, and 4003 Shift Register.
+ With these components, small computers with varying amounts of memory and I/O facilities can be built.
+ Three other CPU chip designs were done at about the same time: the Four-Phase System AL1, done in 1969; the MP944, completed in 1970 and used in the F-14 Tomcat fighter jet; and the Texas Instruments TMS-0100 chip, announced in September 17, 1971.
+ Both the AL1 and the MP944 use several chips for the implementation of the CPU function.
+ The TMS0100 chip was presented as a “calculator on a chip” with the original designation TMS1802NC.
+ This chip contains a very primitive CPU and can only be used to implement various simple 4-function calculators.
+ It is the precursor of the TMS1000, introduced in 1974, which is considered the first microcontroller i.e., a computer on a chip containing not only the CPU, but also ROM, RAM, and I/O functions.
+ The MCS-4 family of 4 chips developed by Intel, of which the 4004 is the CPU or microprocessor, is far more versatile and powerful than the single chip TMS1000, allowing the creation of a variety of small computers for various applications.
+ The MCS-4 was eventually superseded by powerful microcontrollers like the Intel 8048 and the Zilog Z8 in 1978-1979.
+ Zilog, the first company entirely dedicated to microprocessors and microcontrollers, was started by F. Faggin and Ralph Ungermann, at the end of 1974.
+ These devices formed the basis for later models of micro-controllers.

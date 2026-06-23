@@ -1,0 +1,13 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt  so is that, that’s kind of broken out into public discourse as a marketing term, as a sort of catch-all term to mean a lot of things, and so the – you know, I think kind of the most general thing I can say about it is just that we’re bumping up against the limits of what can really be done with flat displays. 
+ 
+So, when I look at the – I mean, just the displays that are around me here in my workspace, they’re spectacular, you know, they’re gigantic screens that are showing images in incredibly high resolution. They show movies at, you know, full resolution, full sound quality. I’ve got a TV, which is middle-of-the road, I mean, it’s not a super-special TV, but you know, it’s capable of showing movies that are as finely resolved as my eyes can detect. Like if we added more pixels to my TV set, it would be interesting technically, but I wouldn’t be able to see the difference. 
+ 
+So, beyond a certain point, that kind of technology can’t really get any better, and I think that people who are in the business of selling hardware and the associated software and operating systems to the general public need a place to go. They need a "next thing," you know, that they can use to drive their businesses forward, and so metaverse is kind of a catch-all term now for stuff that people want you to buy a few years from now, and you know, by process of elimination, it’s got to be something beyond screens. It’s got to be, you know, stereoscopic or better displays, AR, VR, and then with that hardware, there has to be huge jumps forward in the capabilities of the software and the operating systems that drive pixels and sound into that hardware.
+
+CHRISTINA WARREN: That was your conversation with your hero Neal Stephenson. And I loved the way he talked about how we have to imagine the future if we are going to invent the technology to get us there. Dr. Daniela Rus said something similar when you spoke to her.
+
+KEVIN SCOTT: Yeah, Daniela’s a roboticist who heads up the MIT Computer Science and AI Lab, which is a very impressive and inspiring job. And we had a fascinating conversation about how robots in the future might be inspired by the natural world.
+
+DANIELA RUS: Now, one of my passions is to bring machines, materials and people closer together. I want to have more intelligent materials, and at the same time, I want to have more flexible, safer, more dexterous machines. And one way to think about this is to consider what robots were like when they were introduced in 1961, or 60 years ago. The first industrial robot was Unimate. It was introduced in 1961 and it was invented to do industrial pick and place operations. 
+ 
+Now, since then, the number of industrial

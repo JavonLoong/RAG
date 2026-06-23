@@ -1,0 +1,17 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt  like not even face to face, but you know, what we’re doing right now, like in – in seconds, like all of the stuff that I was agitated about goes away.
+
+So I’m just super intrigued by what you’re doing. Like how do we actually get this rolled out more broadly because I think you’re absolutely right. Like we’ve focused so much on the text and text is so rife with opportunity to get us emotionally activated in the wrong way.
+
+RANA EL KALIOUBY: In the wrong way, right, because there’s a lot of confusion and ambiguity where you can clarify that when you see the face or hear the voice. I mean, I think what’s really cool about this, and what ended up being both the opportunity, but also the biggest challenge for Affectiva, you know, when we spun out of MIT, was that there are so many applications of this technology.
+
+And so we tried to focus, but it was always this challenge of like, "Oh, my God, like there are so many cool applications," and so some that I think are really powerful. One is the automotive industry where, you know, we ended up selling to Smart Eye, and they’re very focused on bringing driver monitoring solutions to the world, and so this idea of understanding driver distraction, and you know, if you’re texting while driving.
+
+Well, we can tell that, using computer vision, right? Look at your eyes, your head movements, and if you have a phone in your hand, drowsiness, intoxication, even. We can – we’ve started like doing a lot of research to detect that, using cameras, you know, optical sensors. So automotive is one area. 
+
+We can do advanced safety solutions. We can look at, like is there a child seat in the car, and an infant in it, and often – not often, but about 50 kids or so get forgotten in the car every year, and they die of heat, so that’s very fixable. We can fix that.
+
+Mental health is another space that I’m really fascinated by, that we know that there are facial and vocal biomarkers of mental health disease, depression, anxiety, stress, even Parkinson’s. So imagine if we – every time we hop in front of our computer, with people’s opt in, of course, we can kind of articulate your baseline, using machine learning.
+
+We know your baseline, and then if you start deviating from it, we can flag that to you, a loved one, or – you know, a psychiatrist. So I think there’s a lot of opportunity, but we’re missing the scale. I think this is where Microsoft comes in, right?
+
+KEVIN SCOTT: Yeah. Yeah, and we think about that all the time. I, one of the big things that we are attempting to do with AI is we want to make sure that it’s a platform

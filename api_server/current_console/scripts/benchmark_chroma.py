@@ -18,6 +18,8 @@ import argparse
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+DEFAULT_EMBEDDING_MODEL = os.environ.get("RAG_EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-0.6B")
+
 
 # ============================================================
 # 中文随机文本生成
@@ -84,9 +86,9 @@ class ChromaBenchmark:
         """懒加载嵌入模型"""
         if self._model is None:
             from sentence_transformers import SentenceTransformer
-            print("加载 BGE-m3 模型（首次加载较慢）...")
+            print(f"加载语义向量模型 {DEFAULT_EMBEDDING_MODEL}（首次加载较慢）...")
             t0 = time.time()
-            self._model = SentenceTransformer("BAAI/bge-m3")
+            self._model = SentenceTransformer(DEFAULT_EMBEDDING_MODEL)
             print(f"   模型加载耗时: {time.time() - t0:.1f}s")
         return self._model
 

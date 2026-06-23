@@ -1,0 +1,22 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  other now, and now we’re going to be able to get into the interview and hear you guys talk. 
+ 
+
+KEVIN SCOTT: Yeah, Oren is – he’s really an amazing teacher, leader, and scholar in the work that he’s doing with the Allen Institute for AI is really incredible. So, I’m super glad to have him on the show today. 
+
+CHRISTINA WARREN: Likewise. Likewise. Well, let’s get to the interview. 
+
+[MUSIC]
+
+KEVIN SCOTT: Our guest today is Dr. Oren Etzioni. Oren is chief executive officer at the Allen Institute for Artificial Intelligence. He’s been professor at the University of Washington’s Computer Science Department since 1991. His awards include Seattle’s Geek of the year in 2013 and he’s founded or co-founded several companies including Farecast and Decide.com.  
+
+Oren has helped pioneer metasearch, online comparison shopping, machine reading, and open information extraction. Welcome to the show.  
+
+OREN ETZIONI: Thank you, Kevin, it’s a real pleasure. 
+
+KEVIN SCOTT: So, I would love to get started by talking a little bit about how you got interested in science and engineering in the first place. Was it when you were a little kid or later on in life? 
+
+OREN ETZIONI: Well, both my parents are sociologists, actually, professors of sociology. And so, I think instinctively, subconsciously, I ran away from that as far as I could. Like some of your other guests, like Daphne Koller and I think yourself, I discovered that magical machine via the TRS-80 and started playing with it. It was just really fun and really new, and I kinda could sense something very powerful there.  
+
+But where I really got engaged was when I read the book Godel, Escher, Bach, which many of us did back in the day. I got kind of a whiff of the questions that we could be asking and that we could be studying using computers are really some of the most fundamental intellectual questions of all time. What is the origin of the universe? What is the nature of intelligence? How do we build an intelligent machine? 
+
+KEVIN SCOTT: Yeah. I mean, it’s really interesting that so many of us have such an interestingly similar experience. I can’t remember – I think I was in college when I read Hofstadter’s book the first time – or tried to read it – because it is intellectually dense. But it really had a remarkable impact on a bunch of people. And I’m guessing it still sort of informs some of the things that you’re doing today, because you know, in a sense, what all of us are doing a little bit with the pursuit of artificial intelligence is not just figuring out what the machines are capable of, but like what does that say about human intelligence

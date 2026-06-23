@@ -1,0 +1,32 @@
+Ep-12.txt  kinds without even realizing it. And it's tricky. There 
+have been a number of published results on this stuff, but it's kind of insidious. 
+KEVIN SCOTT: Yeah. So, let's go back. So, tell me a little bit more about this experience
+with starting a company because that is a very unique thing. It is not at all like managing 
+researchers, it's not like -- you know, even though Google hadn't gone public when you got there, 
+like it was already a reasonably big thing. 
+BILL COUGHRAN: Yeah, it was 4- or 500 people. 
+KEVIN SCOTT: But like zero to 140 is like -- I mean, that is a -- that's something else. 
+BILL COUGHRAN: Well, you learn to tell stories to venture capitalists. So, now that I'm
+doing that as a full-time job, you get to play the other side of that drama. But you have to think 
+about what's the product you want to build? What kind of team do you need? How much 
+funding do you need? You have to think about everything. And starting as you say from zero, 
+you've got the challenge of, you know, you're the janitor when day one starts, right? 
+And so, you have to think about everything -- you'll laugh. I did the payroll and the bookkeeping 
+for the first few, I think, first few months, not that I'm particularly good at that, but I can do a 
+little bit of accounting math. 
+KEVIN SCOTT: Well, and it must have been good preparation for what you ultimately had to 
+do at Google because at some point you weren't just an engineering director of like a group of 
+people, you were sort of like the CEO of like an army of engineering people. And so, like you 
+had HR issues, you had finance things, you had facilities things. I mean, like I remember 
+walking into your office at one point, you know, where you were, you know, sort of looking 
+particularly exhausted. 
+And I was, like, you know, what's going on? And like you had this spreadsheet in front of you 
+like where you were thing to like figure out where everybody was going to sit who was being 
+hired in the next unit of time, which is probably very far away from writing papers about, you 
+know, ground state simulations of quantum chemistry systems. (Laughter.) 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+12
+BILL COUGHRAN: No, it's true. I, well, so I think the role I fell into at Google was I was 
+willing to take on stuff that not everybody else was willing to take on. So, there was a small 
+exec

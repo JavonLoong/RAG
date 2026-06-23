@@ -1,0 +1,13 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  – I don’t know if that was the same in North America. They often had listings in the back, you know, just – often, like a little videogame or something, and I would type them into my BASIC interpreter. I had, at this point, this BASIC computer. It’s called an Amstrad CPC, which again is kind of a European thing.
+
+And you know, just like I very naturally started like – you know, to play the thing after it runs, and this is magic, and then you beat it, and you make it harder, and – and it – it was only like years and years later that someone told me this is called programming and has a name. This was just like using computers. And you ran out of things to do pretty quickly, so this is what I gravitated to.
+
+KEVIN SCOTT: Yeah, and it’s really interesting. In our generation, I think that is a fairly common experience. Like oftentimes, like games were the, you know, sort of provocative thing that captured your attention, and then it’s just sort of hacking around with these systems, not even realizing that what – well, none of us certainly realized that what we were doing then we’re going to inform, like all of the crazy stuff that we do now, right?
+
+TOBI LÜTKE: Definitely not, but like it did feel, especially going from the ‘90s, a little bit – which probably looked very different. Again, I’m from a small town, and – and really didn’t know anyone who was into computers in a similar way I was. And we were connected through, you know, dialup modems, BBSs and so on, very quick download messages and it – sort of there was a bridge to Usenet.
+
+So you were this outside observer to – you know more was going on, but you know, you were stepped out – like away from my bedroom, and the world wasn’t changing. And – and people were – I remember very early in my teenage years that I had this realization where, you know what? The adults are – they do not understand what’s coming. Because just it was just so obvious that everything would change, given this thing which was just simply not possible before.
+
+And you know, you could play the party tricks, where – especially with things like HyperCard, where, you know, some data entry job, you just made it like basically go away, and – but it was clear that there was more value there, and that this would have a much, much bigger impact in – like in the future.
+
+KEVIN SCOTT: And so I’m curious. So the German education system is a little bit different from the U.S. education system, so at some point, when you’re a kid you get selected, and it’s just always been unclear to me, like how much of a choice the student has, versus how much

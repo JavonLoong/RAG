@@ -1,0 +1,17 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  father that I ended up probably going into computer science. 
+KEVIN SCOTT: Well, let's talk about your mother a little bit more. So, your dad is Gerald Estrin. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: And I think I know less about your mother, but it sounds like her career path, in many ways, might be the most extraordinary one. Did she share any stories with you about what it was like to get that PhD in electrical engineering at that point in time? And, like, she must have had this beautiful vantage point to sort of see how the field unfolded over the past many decades. 
+JUDY ESTRIN: Yeah, both of them were pioneers in their own right and in different ways. But one of the interesting things is that I remember when I was younger, and people assume that my father probably got my mother into engineering. It actually was somewhat reversed. 
+I just grew up in an environment where my parents were so equal in terms of their balance of career and passion. My mom was a very strong personality, very outspoken. And so, yes, we heard a lot about how hard it was, every step of the way, being a pioneer as a woman in the field. 
+She was very involved in the IEEE. She was always running for office in different things. She often talked about being a woman in a man's world. She went on to also, though be very, very involved in organizations that would help other women. 
+And so whether it was the Society for Women Engineers or Grace Hopper, started out as the Anita Borg Institute, she was a very strong advocate for exposing girls and women to engineering and the sciences and providing opportunities for them. 
+KEVIN SCOTT: Yeah. So, it sounds like some of your first exposure to programming were these Fortran tapes and your dad's "if, then, else" instructions -- 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: -- about chores and whatnot. Do you remember the first program you wrote and what it did? 
+JUDY ESTRIN: Well, I don't know if I remember the first program. I vividly remember -- So, at UCLA -- now, let me back up a minute. For people who are exposed to the world today, most people who wrote their first program, you know, maybe it goes back to having an Apple or some kind of -- remember, there were no personal computers. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: So, in order to write a program, you needed access to a mainframe. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: So, there really wasn't an opportunity to write a program before being exposed to -- 
+KEVIN SCOTT: Yeah, and so you had to get to a terminal room -- 

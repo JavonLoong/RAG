@@ -1,0 +1,15 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  happening with technology right now, and she made a comment that I thought was really — really smart.  
+
+And she said that, you know, we're kind of in the middle of this reckoning right now where, as a society, we're having to come to terms with —with what control we've let our tech take, and what our tech is doing, but that innovation comes out of reckoning.  And she alluded to this, I guess especially when we get into areas of climate.  Do you have any kind of thoughts on that, because I thought that was really profound.  
+
+And I think that, especially —you know, she pointed out, like, you know, data science, the background is agriculture.  When we think about climate, and when we think about the good things we could do with technology, it does strike me that maybe this would be an opportunity for something to come out of this —this reckoning we're having right now with —with, you know, who controls things.
+
+KEVIN SCOTT:  Yeah.  Look, I—I think—and she pointed this out—the fact that we are now reckoning with the role that technology is playing in society is actually a good thing on multiple dimensions.  Like, it's a good thing because it means that, like, technology is no longer this sort of appendage that we've attached to society.  Like, it's just sort of a reflection that it's deeply integral to our day-to-day lives.
+
+And as a consequence, it is a reasonable and, like, thoroughly good thing that we're having a more robust debate about technology's role.  And I think she's 100 percent right.  Like, every time that you get a new set of eyeballs onto something that is powerful, like modern —modern software, modern digital technology, or AI, machine learning, like all of these things that we talk about on this show —that new perspective, and like, the scrutiny creates all sorts of fantastic things.
+
+Like, one of the things that I'm really hoping for is that the attention that we're placing on all of this stuff right now results in us, like, being very, very thoughtful, as both a tech industry and as a society, about what foundational pieces of technology that we need to build in order to enable people to do all of these amazing things, like go make our agriculture more productive so that we can feed more people, and so that, like, our food supply is more resilient in the face of climate change.
+
+CHRISTINA WARREN:  Right.
+
+KEVIN SCOTT:  So that we can go attack things, like climate change, so that we can go attack things like the cost and availability of high-quality healthcare.  Like, I think all of these things are — like, as soon as we're paying all of this attention to, like, both downsides, but like, at the same side

@@ -1,0 +1,23 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt ? Like you have to be able to deep dive –
+
+CHRISTINA WARREN: Yes.
+
+KEVIN SCOTT: – into like a bunch of different things and like understand them well enough that you can convey clearly and accurately like a complicated set of ideas.
+
+CHRISTINA WARREN: Yeah, no, totally. I mean, and ironically, it’s also something that I do now, you know, in developer advocacy when I’m teaching people how to do something. And I think that, probably similar to Randall, like my whole thing was – was curiosity, just – just like the two of you were talking about. Like, I would want to know, answers myself or want to figure something out. 
+
+And anytime I’m going to – not – not every journalist is like this, but for me, certainly, if I was going to write about something, I needed to understand it as much as I possibly could, to be able to convey what I could, you know, to – to a general audience. And that just came from many times, like, okay, well, what’s – what’s the most fascinating story, what’s the most fascinating thing to tell is something that you’re curious about, and you want to know more about. And I think that’s what Randall has done fantastically with – with his books and – and obviously with – with xkcd.
+
+KEVIN SCOTT: Yeah. And he – he described it a couple of different ways. Like he said, the – the two-year-old strategy or, you know, he like talked about Clifford Stoll’s, PhD oral exam, but like this notion of not being afraid to ask why –
+
+CHRISTINA WARREN: Yep.
+
+KEVIN SCOTT: – and not being afraid to continue to ask why –
+
+CHRISTINA WARREN: Yes.
+
+KEVIN SCOTT: – until, you know, you sort of bottom out on something. Like, more people need to do that.
+
+CHRISTINA WARREN: 100%. The other thing that struck me as part of that, too, is – was not being afraid, again not being afraid to ask why. But not being afraid to ask if you don’t know something, not being afraid to – to come up and say it. And it’s so difficult for us, I think, especially those of us who are more technical, and consider ourselves and maybe are seen by others as having a certain level of knowledge. It can be really difficult for us to ask and say, hey, I don’t – I don’t know what this is or – or I don’t understand this. And the fact that he had that resolution where he’s asking, wanting to say, if I don’t know what a word means, ask about it. I love that and – and I wish more people would do that.
+
+KEVIN SCOTT: Yeah. Well, you know, I know when I was early in my career

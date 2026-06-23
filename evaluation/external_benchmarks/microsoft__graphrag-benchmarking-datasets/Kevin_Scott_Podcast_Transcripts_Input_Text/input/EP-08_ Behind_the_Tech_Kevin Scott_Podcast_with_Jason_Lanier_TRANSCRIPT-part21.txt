@@ -1,0 +1,18 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  But how has this remained a thread in your life all these years?
+
+JARON LANIER:  After she died, I feel like music is my main connection to her.  And I still play the piano, but not so much straight classical playing anymore.  I have my own style and it's pretty unusual.  But I started just learning new instruments and I have this voracious, perhaps not always healthy need to always be learning a new instrument.  And so whether it's the largest instrument collection I'm a little doubtful of, because there are some pretty big instrument museums.  But, in terms of playable collection, I'm pretty sure it is.  And I don't know how many there are.  But there are a lot of instruments and I do -- I can play them.
+
+KEVIN SCOTT:  And we're talking like hundreds, if not thousands.
+
+JARON LANIER:  Certainly in the thousands, yeah.
+
+KEVIN SCOTT:  Which is sort of a mind-boggling, interesting thought in and of itself that there are like thousands of distinct instruments that one could collect.
+
+JARON LANIER:  Well, they're the best user interfaces that have ever been created.  They're the ones that support peak human performance like no other invention ever.  And they're profoundly beautiful.  And each one has a story.  And each one is kind of a form of time travel, because you learn to move and breathe like the people who originally played it wherever it's from.  So it's a kind of a cultural record that's unlike any other one.  It's a haptic record, if you like.
+
+KEVIN SCOTT:  I mean I've always been fascinated with piano and I think the reason is it's always struck me that a piano is not too dissimilar from a computer.  It's like this complicated machine that requires some non-trivial degree of mastery to get anything out of it.  And like sometimes that struggle to achieve mastery is like this sort of long, isolating activity.  Like I've read biographies of famous pianists and some describe it as you sort of sit alone in this room and struggle against this machine to get it to bend to your will.  And I'm like, holy crap, that's sort of what you do sometimes as a programmer.
+
+JARON LANIER:  Well, I've experienced feeling alone with a computer, but I've never experienced feeling alone with a piano.
+KEVIN SCOTT:  Which is interesting, even when you're practicing?
+
+JARON LANIER:  Yeah, pianos are a bit mysterious, because they're sort of the button box that transcends button boxness.  They have some kind of a life in them that they shouldn't have.  I think that's one of the reasons that they're so provocative to computer scientists.  Of course, the piano led to

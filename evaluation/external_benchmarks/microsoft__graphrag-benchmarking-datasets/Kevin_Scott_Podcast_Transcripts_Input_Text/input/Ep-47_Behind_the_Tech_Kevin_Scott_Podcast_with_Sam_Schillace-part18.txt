@@ -1,0 +1,19 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  you know, the right place to put yourself is the what if, not the why not right? Like, you have to ask the question of what if. Like, when you confront this thing and you see a bunch of problems with it, you don’t – why not is like, well, here’s all the why not? Here’s why it’s not going to work, right? Here’s the problems, all the problems I can see, the stories I can tell. 
+
+But the real thing to say is like, what if it works? What if, like, we transform software into being this zero install, on demand global thing where we can collaborate with people? What does that world look like? And if that world’s compelling, then it’s worth doing the effort to break through all the problems. And that’s the much better mentality. 
+
+But you have to recognize that in the moment, you won’t see the vision. Like, you won’t see the prize even if you ask the what if questions. You’ll maybe see some of it, but you just kind of have to, like, grind through these things and make them happen.
+
+KEVIN SCOTT: Yeah. Yeah, you know, and it’s sort of interesting. I mean, Bezos has said this a bunch of different times, and I suspect you and I have both experienced it over and over and over again, of people, other people telling you why it is the thing that you are – it isn’t going to work. 
+
+I mean, one of my favorite examples, and, you know, I won’t name names, is when I first joined LinkedIn, right before LinkedIn IPO’d, we had a whole bunch of work that we had to go do to make all of the company’s development infrastructure better. Like, we had just gotten ourselves into a state where it was getting progressively harder to, you know, do the sorts of rapid software development that a consumer Internet company needed to be able to do. 
+
+And I came in and, you know, there were a bunch of people inside of the company who knew what needed to be done before I got there, but there were also, like, a bunch of people who looked at what they were suggesting that we do. And they would be like, “Oh, this is impossible. Like, we’ll never be able to pull it off. These three people who tried to do this before failed, and it was a miserable, embarrassing failure.” 
+
+SAM SCHILLACE: Right. That’s my least favorite excuse. (Laughter.)
+
+KEVIN SCOTT: Oh, God, it’s the worst.
+
+SAM SCHILLACE: I’m just like, just because you couldn’t do it doesn’t mean I can’t do it, right?
+
+KEVIN SCOTT: Yeah. And so, the interesting thing, we did a whole bunch of things that I think are innovative and, like, some of them are

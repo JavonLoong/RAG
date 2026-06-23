@@ -1,0 +1,51 @@
+Peñabots is the name given to what analysts believe to be a network of automated accounts on social media used by Mexican government to spread pro-government propaganda and to marginalize dissenting opinions in social media.
+ The bots were first noticed in the 2012 elections when they were used to disseminate opinions in support of Enrique Peña Nieto in social networks such as Twitter and Facebook.
+ During Peña Nieto's subsequent presidency, analysts have noted that Peñabots are used to overpower trending topics that critique government, to flood trending government critical hashtags with spam, and to create fake trends by pushing alternative hashtags, and to push smear campaigns and threats against government critical activists and journalists.
+ Peñabots can be distinguished because their pattern of activity is distinct from that of normal interaction activity in social networks.
+In the field of sociolinguistics, social network describes the structure of a particular speech community.
+ Social networks are composed of a "web of ties" (Lesley Milroy) between individuals, and the structure of a network will vary depending on the types of connections it is composed of.
+ Social network theory (as used by sociolinguists) posits that social networks, and the interactions between members within the networks, are a driving force behind language change.
+Three Degrees of Influence is a theory in the realm of social networks, proposed by Nicholas A. Christakis and James H. Fowler in 2007.
+ Christakis and Fowler found that social networks have great influence on individuals' behavior.
+ But social influence does not end with the people to whom a person is directly tied.
+ We influence our friends, who in their turn influence their friends, and so our actions can influence people we have never met, to whom we are only indirectly tied.
+ They posit that diverse phenomena "ripple through our network, having an impact on our friends (one degree), our friends’ friends (two degrees), and even our friends’ friends’ friends (three degrees).
+ Our influence gradually dissipates and ceases to have a noticeable effect on people beyond the social frontier that lies at three degrees of separation".
+Dynamic network analysis (DNA) is an emergent scientific field that brings together traditional social network analysis (SNA), link analysis (LA), social simulation and multi-agent systems (MAS) within network science and network theory.
+ There are two aspects of this field.
+ The first is the statistical analysis of DNA data.
+ The second is the utilization of simulation to address issues of network dynamics.
+ DNA networks vary from traditional social networks in that they are larger, dynamic, multi-mode, multi-plex networks, and may contain varying levels of uncertainty.
+ The main difference of DNA to SNA is that DNA takes interactions of social features conditioning structure and behavior of networks into account.
+ DNA is tied to temporal analysis but temporal analysis is not necessarily tied to DNA, as changes in networks sometimes result from external factors which are independent of social features found in networks.
+ One of the most notable and earliest of cases in the use of DNA is in Sampson's monastery study, where he took snapshots of the same network from different intervals and observed and analyzed the evolution of the network.
+Evolving Networks are networks that change as a function of time.
+ They are a natural extension of network science since almost all real world networks evolve over time, either by adding or removing nodes or links over time.
+ Often all of these processes occur simultaneously, such as in social networks where people make and lose friends over time, thereby creating and destroying edges, and some people become part of new social networks or leave their networks, changing the nodes in the network.
+ Evolving network concepts build on established network theory and are now being introduced into studying networks in many diverse fields.
+Structural inequality has been identified as the bias that is built into the structure of organizations, institutions, governments, or social networks.
+ Structural inequality occurs when the fabric of organizations, institutions, governments or social networks contains an embedded bias which provides advantages for some members and marginalizes or produces disadvantages for other members.
+ This can involve property rights, status, or unequal access to health care, housing, education and other physical or financial resources or opportunities.
+ Structural inequality is believed to be an embedded part of the culture of the United States due to the history of slavery and the subsequent suppression of equal civil rights of minority races.
+ Structural inequality has been encouraged and maintained in the society of the United States through structured institutions such as the public school system with the goal of maintaining the existing structure of wealth, employment opportunities, and social standing of the races by keeping minority students from high academic achievement in high school and college as well as in the workforce of the country.
+ In the attempt to equalize allocation of state funding, policymakers evaluate the elements of disparity to determine an equalization of funding throughout school districts.p.
+(14) Policymakers have to determine a formula based of per-pupil revenue and the student need.p.
+(8) Critical race theory is part of the ongoing oppression of minorities in the public school system and the corporate workforce that limits academic and career success.
+ The public school system maintains structural inequality through such practices as tracking of students, standardized assessment tests, and a teaching force that does not represent the diversity of the student body.
+ Also see social inequality, racism, discrimination, and oppression.
+ Social inequality occurs when certain groups in a society do not have equal social status.
+ Aspects of social status involve property rights, voting rights, freedom of speech and freedom of assembly, access to health care, and education as well as many other social commodities.
+Opportunistic mobile social networks are a form of mobile ad hoc networks that exploit the human social characteristics, such as similarities, daily routines, mobility patterns, and interests to perform the message routing and data sharing.
+ In such networks, the users with mobile devices are able to form on-the-fly social networks to communicate with each other and share data objects.
+Networks in electoral behavior, as a part of political science, refers to the relevance of networks in forming citizens’ voting behavior at parliamentary, presidential or local elections.
+ There are several theories emphasizing different factors which may shape citizens' voting behavior.
+ Many influential theories ignore the possible influence of individuals' networks in forming vote choices and focus mainly on the effects of own political attitudes – such as party loyalties or party identification developed in childhood proposed by the Michigan model, or on the influence of rational calculations about the political parties’ ideological positions as proposed by spatial and valence theories.
+ These theories offer models of electoral behavior in which individuals are not analyzed within their social networks and environments.
+ In a more general context, some authors warn that the hypothesis testing done mainly based on sample surveys and focused on individuals’ attributes without looking at relational data (relations among individuals) seems to be a poor methodological instrument.
+ However, models emphasizing the influence of individuals’ social networks in shaping their electoral choices have been also present in the literature from the very beginning.
+Geosocial networking is a type of social networking in which geographic services and capabilities such as geocoding and geotagging are used to enable additional social dynamics.
+ User-submitted location data or geolocation techniques can allow social networks to connect and coordinate users with local people or events that match their interests.
+ Geolocation on web-based social network services can be IP-based or use hotspot trilateration.
+ For mobile social networks, texted location information or mobile phone tracking can enable location-based services to enrich social networking.
+The International Network for Social Network Analysis (INSNA) is a professional academic association of researchers and practitioners of social network analysis.
+ Members have interests in social networks as a new theoretical paradigm, in methodological developments, and in a variety of applications of different types of social networks approaches, social network software, and social networking.

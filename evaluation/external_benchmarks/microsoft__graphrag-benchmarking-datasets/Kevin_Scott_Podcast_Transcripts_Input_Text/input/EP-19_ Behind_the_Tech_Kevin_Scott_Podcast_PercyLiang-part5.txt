@@ -1,0 +1,19 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  MIT was about semi-supervised natural language processing.  So, in some ways, there are spiritual connections to a lot of the things like BERT and these things that you see today -- the idea that you can use a lot of unlabeled data, learn some sort of representations -- those were based on this idea called “brown clustering.”  And that was used to, then, improve the performance on a number of tasks. Of course, data sets and compute and all the regimes were different, but somehow the central ideas have been around for a while.  
+
+KEVIN SCOTT:  Yes.  And so what did you do your dissertation on? 
+
+PERCY LIANG:  Yeah, so during my PhD at Berkeley, I did a bunch of different things ranging from more theoretical machine learning to applied natural language processing.  But toward the end of the PhD, I really kind of converged on semantics or semantic parsing as a problem.  How do you map a natural language utterances into some sort of executable program or meaning representation?   
+
+An example is if you have a database of U.S. geography, you can ask, “What’s the tallest mountain in Colorado?”  It would translate into a little program that perform the database query and deliver you the answer.  Yeah.  
+
+KEVIN SCOTT:  Right.  And the challenge there is like you might have a database that’s got like a whole bunch of geographical objects in them and like you have a type which might be “mountain” and like the thing might have a height property and, like, and it’s all described in this very exact way.  And, like, the human utterances are very inexact sometimes. 
+
+PERCY LIANG:  Exactly.  Yeah.  So the main challenge behind all of natural language processing, no matter what task you take, is just the fluidity of human language.  You can say something -- the same thing in many different ways and there are nuances.  I could ask, “What’s the tallest mountain in Colorado?  In Colorado, what’s the highest mountain?”  And so on.  Having to deal with that ambiguity is, I think, the value proposition of natural language processing. 
+
+KEVIN SCOTT:  Interesting.  When you were finishing up your degree, did you know that you wanted to be a professor at that point?  
+
+PERCY LIANG:  Yeah.  Because the exact research area I think was still a little bit up in the air.  I was having a lot of fun with the semantic parsing problem.  Then I spent a year in Google actually working on a semantic parser for them that powers a lot of back then was Google Now.
+
+KEVIN SCOTT:  So, they have a semantic parser with the funniest name in existence, this thing called “Parsey McParseace.”  That wasn’t your thing, was it? 
+
+PERCY LIANG: 

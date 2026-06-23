@@ -1,0 +1,17 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  the browser because it seemed like a fun thing to play with, which is a lot of what we would do. But, you know, we had this idea of doing this word processor, and we kind of stood it on its feet and we cleaned up some of the early collaboration stuff so we could kind of work together without stepping on each other. 
+
+And, you know, we had this sense – first of all, we had this sense that, like, this was cool, and it was going to be really hard to pull off. And you kind of had that sinking feeling in your pit of your stomach, like, oh man, is this going to hurt? But also, like, my two founders said, you know, “This is a dumb idea. We’re not going to be able to build a word processor in a browser that’s satisfying.” 
+
+And the funny thing is that they were right as well as being wrong, right? In the moment, they were right. The browser of the day, IE4 and early Firefox and all that stuff, like, there’s no way, man. Like, they were really not ready. The JavaScript environments weren’t ready. The DOMs were flaky. There were no standards. Like, in a zillion ways, we were not ready. 
+
+But the interesting thing was, like, if we solved enough of the problem, we confronted that hard stuff at that early stage and solved enough of it to demonstrate value to ourselves and to some other people. And that started a flywheel, right? And that flywheel between, like, the browser got better, the app got better, the users adopted it more, the browser got better. You know, we had these three pieces of this triangle started to spin and that dragged us forward to where we are now, where the browsers are super capable, the apps are super capable. Billions of people use these things.
+
+Like, you know, that’s the – you know, 100% agree with you. Like, that is the thing you have to do is like you have to be able to see those vistas as they open up, and then you have to jump into them when they’re nasty and hard to deal with.
+
+KEVIN SCOTT: Yeah. I think it’s a good thing to just sort of pause and think about. So, in 2022, as we have this conversation, people take for granted that, like, obviously, you’re going to be able to have an interactive word processor with collaboration. And you can comment, and you can share it with anybody in the world, and, like, you’ve got all of this stuff. When were you first doing this? It was 2002?
+
+SAM SCHILLACE: Five, five, 2005.
+
+KEVIN SCOTT: Two-thousand five. So, like, in ‘05, like, nothing like it existed. 
+
+SAM SCHILLACE:

@@ -1,0 +1,20 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  of a computer screen and then you flash the photo quickly and you control the amount of time you flash the photo. 
+We literally went down to 27 milliseconds, all the way to 500 milliseconds to show the photo to the human.  And then we control how long the picture gets seen and then we ask the people to write down what they see.  
+KEVIN SCOTT:  Interesting.  
+FEI-FEI LI:  And we pay $10 for the undergrads who participate (laughter) in the experiment.  And then we collect a lot of data, of course there is scientific rigor had to kick in.  
+KEVIN SCOTT:  Right.  
+FEI-FEI LI:  And then we statistically analyzed this and understood it was one of the first studies that ever quantified how much people see within literally a glance of a thing. 
+KEVIN SCOTT:  That's really interesting.  So, like, 150 milliseconds, like, your brain can see this image and decode enough of it where you can sort of explain back -- 
+FEI-FEI LI:  Yeah.   
+KEVIN SCOTT:  --what's in it?  
+FEI-FEI LI:  Exactly.  Test it yourself, just open your eye and close it.  That will be longer than 150 milliseconds, but within that very short amount of time, the comprehension you have of the visual world is so rich. And that inspired my AI work because at that time, most of computer vision was still you know recognizing letters or -- 
+KEVIN SCOTT:  Oh, I remember.  
+FEI-FEI LI:  Right?  And -- or -- 
+KEVIN SCOTT:  And they were non-neural-network models and -- 
+FEI-FEI LI:  Right.  Well, neural network was invented, in fact, my first course at Caltech was called Neural Networks.  But it was working on very simple stimuli like digits and numbers.  And then computer vision was still trying to understand edges.  
+And then my advisor, Pietro Perona, was one of the pioneering scientists in computer vision who said, "Why don't we venture into real-world object recognition?'  And with my study on the neuroscience side, we also have evidence that this is what humans are capable of and are good at and we really have to move computer vision towards that human capability. 
+KEVIN SCOTT:  Yeah.  
+FEI-FEI LI:  So, I started my AI research in enabling computers to see and understand everyday objects.  
+KEVIN SCOTT:  But that's a big leap.  I mean, we sort of take for granted that image classifiers are reasonably good now, but -- 
+FEI-FEI LI:  Yeah.  
+KEVIN SCOTT:  -- like, when you're doing this back in 2000 to like have the idea that I want

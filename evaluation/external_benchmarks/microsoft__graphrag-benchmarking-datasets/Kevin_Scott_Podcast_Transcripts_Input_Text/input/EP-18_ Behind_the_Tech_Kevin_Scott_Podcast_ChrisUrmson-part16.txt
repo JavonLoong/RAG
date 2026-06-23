@@ -1,0 +1,29 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt   But if you can find that, if you can -- if you are able to seek it out, it seems like the way that you get a chance to shine and the way that you help build something awesome.  
+
+KEVIN SCOTT:  Yeah, so tell me about the early days of the self-driving car program at Google.  So it start -- it was like you and Sebastian.  
+
+CHRIS URMSON:  Yeah, well there was -- there was -- I want to say there was a half dozen of us who started at the beginning.  There was me and Dimitri Dolgov, who’s now the CTO there.  He and I started on the same day.  And Dirk -- and Mike Montemerlo who was actually an office mate of mine at Carnegie Mellon and, you know, is one of the -- brilliant minds in simultaneous localization and mapping.  
+
+And who else?  There was -- oh, Hendrik, so we were -- we were very much a black project.  So, you know, we were kind of sworn to secrecy.  We were kind of hanging out in the Google Maps building, but didn’t really -- you know, people didn’t really know what we were working on because it was kind of weird.  
+
+And it was how do we learn as quickly as possible?  How do we show, you know, how do we convince ourselves that we can actually build something meaningful with this technology?  And so we had two goals when we started, the first one was to drive 100,000 miles on public roads, and then the other was to drive ten, 100-mile, really interesting routes.  
+
+And the idea was kind of to get kind of statistically interesting coverage, and like focused ability to learn about particular places we could go, and so-- 
+
+KEVIN SCOTT:  And it was, like, drive safely for 100,000 miles on public roads, right?  
+
+CHRIS URMSON:  Yeah.  
+
+KEVIN SCOTT:  I mean, like -- 
+
+CHRIS URMSON:  Well -- 
+
+KEVIN SCOTT:  I know that it’s implicit in what you’re saying. 
+
+CHRIS URMSON:  Yeah, of course.  
+
+KEVIN SCOTT:  It bears saying, because one of the things that I think you all did extraordinarily well is like you were very thoughtful and even conservative in a way with the choices that you made, to make sure that safety was always the number-one thing. 
+
+CHRIS URMSON:  Yeah, that was one of the things that I helped instill in the organization early on, and we had a great group of people who would have done it without me.  But how do we think about training people to operate the vehicle?  How do we transfer the knowledge from the engineering team to the operations team so they understood what was going on?  
+
+What processes do

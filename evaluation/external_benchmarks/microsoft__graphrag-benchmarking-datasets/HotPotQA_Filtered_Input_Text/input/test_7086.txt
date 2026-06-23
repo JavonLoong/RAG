@@ -1,0 +1,44 @@
+In digital communications, symbol rate, also known as baud rate and modulation rate, is the number of symbol changes, waveform changes, or signaling events, across the transmission medium per time unit using a digitally modulated signal or a line code.
+ The symbol rate is measured in baud (Bd) or symbols per second.
+ In the case of a line code, the symbol rate is the pulse rate in pulses per second.
+ Each symbol can represent or convey one or several bits of data.
+ The symbol rate is related to the gross bitrate expressed in bits per second.
+In physics and engineering, in particular fluid dynamics and hydrometry, the volumetric flow rate, (also known as volume flow rate, rate of fluid flow or volume velocity) is the volume of fluid which passes per unit time; usually represented by the symbol Q (sometimes V̇ ).
+ The SI unit is m/s (cubic metres per second).
+ Another unit used is sccm (standard cubic centimeters per minute).
+Background extinction rate, also known as the normal extinction rate, refers to the standard rate of extinction in earth's geological and biological history before humans became a primary contributor to extinctions.
+ This is primarily the pre-human extinction rates during periods in between major extinction events.
+Production leveling, also known as production smoothing or – by its Japanese original term – heijunka (平準化 ) , is a technique for reducing the Mura (Unevenness) which in turn reduces muda (waste).
+ It was vital to the development of production efficiency in the Toyota Production System and lean manufacturing.
+ The goal is to produce intermediate goods at a constant rate so that further processing may also be carried out at a constant and predictable rate.
+In computer networking, wire speed or wirespeed refers to the hypothetical peak physical layer net bitrate (useful information rate) of a cable (consisting of fiber-optical wires or copper wires) combined with a certain digital communication device, interface, or port.
+ For example, the wire speed of Fast Ethernet is 100 Mbit/s also known as the "peak bitrate", "connection speed", "useful bit rate", "information rate", or digital bandwidth capacity.
+ The wire speed is the data transfer rate that a telecommunications standard provides at a reference point between the physical layer and the datalink layer.
+G.711 is an ITU-T standard for audio companding.
+ It is primarily used in telephony.
+ The standard was released for usage in 1972.
+ Its formal name is "Pulse code modulation (PCM) of voice frequencies".
+ It is a required standard in many technologies, for example in H.320 and H.323 specifications.
+ It can also be used for fax communication over IP networks (as defined in T.38 specification).
+ G.711, also known as Pulse Code Modulation (PCM), is a very commonly used waveform codec.
+ G.711 is a narrowband audio codec that provides toll-quality audio at 64 kbit/s.
+ G.711 passes audio signals in the range of 300–3400 Hz and samples them at the rate of 8,000 samples per second, with the tolerance on that rate of 50 parts per million (ppm).
+ Non-uniform (logarithmic) quantization with 8 bits is used to represent each sample, resulting in a 64 kbit/s bit rate.
+ There are two slightly different versions: μ-law, which is used primarily in North America, and A-law, which is in use in most other countries outside North America.
+The LIBOR market model, also known as the BGM Model (Brace Gatarek Musiela Model, in reference to the names of some of the inventors) is a financial model of interest rates.
+ It is used for pricing interest rate derivatives, especially exotic derivatives like Bermudan swaptions, ratchet caps and floors, target redemption notes, autocaps, zero coupon swaptions, constant maturity swaps and spread options, among many others.
+ The quantities that are modeled, rather than the short rate or instantaneous forward rates (like in the Heath-Jarrow-Morton framework) are a set of forward rates (also called forward LIBORs), which have the advantage of being directly observable in the market, and whose volatilities are naturally linked to traded contracts.
+ Each forward rate is modeled by a lognormal process under its forward measure, i.e. a Black model leading to a Black formula for interest rate caps.
+ This formula is the market standard to quote cap prices in terms of implied volatilities, hence the term "market model".
+ The LIBOR market model may be interpreted as a collection of forward LIBOR dynamics for different forward rates with spanning tenors and maturities, each forward rate being consistent with a Black interest rate caplet formula for its canonical maturity.
+ One can write the different rates dynamics under a common pricing measure, for example the forward measure for a preferred single maturity, and in this case forward rates will not be lognormal under the unique measure in general, leading to the need for numerical methods such as monte carlo simulation or approximations like the frozen drift assumption.
+Aircraft maneuvering is referenced to a standard rate turn, also known as a rate one turn (ROT).
+An aircraft is a machine that is able to fly by gaining support from the air.
+ It counters the force of gravity by using either static lift or by using the dynamic lift of an airfoil, or in a few cases the downward thrust from jet engines. Common examples of aircraft include airplanes, helicopters, airships (including blimps), gliders, and hot air balloons.
+Muhammad Ibrahim Khan (Urdu: محمد ابراہیم خان جھگڑا‎ ) was a leading politician of the Khyber-Pakhtunkhwa province of Pakistan.
+ Hailing from the outskirts of Peshawar area known as Khalisa, named after the Sikh invaders, he was well known for joining Muhammad Ali Jinnah in the Pakistan movement, and was known by many as "the king maker of the frontier".
+ He was popularly known for his resolve and aura and referred to informally by the name Jhagra Khan.
+ Jhagra Khan was a former Congressite and was largely responsible for gaining support for the Pakistan Muslim League (PML) in the Khyber Pakhtunkhwa province for Abdul Qayyum Khan, the first Chief Minister of the province after independence.
+ He was the General Secretary of the PML until he died of throat cancer.
+ He died in England where he was supposed to be treated; his family receiving condolences from many heads of nations including Queen Elizabeth II.
+ He was well known throughout British India, especially in his native province, and was one of the few leaders Jinnah had personally tried, successfully, to recruit in All India Muslim League.

@@ -1,0 +1,35 @@
+A plug-in hybrid electric vehicle (PHEV) is a hybrid electric vehicle that uses rechargeable batteries, or another energy storage device, that can be recharged by plugging it in to an external source of electric power.
+ A PHEV shares the characteristics both of a conventional hybrid electric vehicle, having an electric motor and an internal combustion engine (ICE), and of an all-electric vehicle, having a plug to connect to the electrical grid.
+ Most PHEVs are passenger cars but there are also PHEV versions of commercial vehicles and vans, utility trucks, buses, trains, motorcycles, scooters, and military vehicles.
+SAE J1772 (IEC Type 1) is a North American standard for electrical connectors for electric vehicles maintained by the SAE International and has the formal title "SAE Surface Vehicle Recommended Practice J1772, SAE Electric Vehicle Conductive Charge Coupler".
+ It covers the general physical, electrical, communication protocol, and performance requirements for the electric vehicle conductive charge system and coupler.
+ The intent is to define a common electric vehicle conductive charging system architecture including operational requirements and the functional and dimensional requirements for the vehicle inlet and mating connector.
+CODA Automotive Inc. is a privately held American company headquartered in Los Angeles, California, that designs, semi manufactures lithium-iron phosphate (LiFePO4) battery systems built for automotive and power storage utility applications.
+ The company initially sold electric cars. Miles Automotive partnered with Hafei and Qingyuan Electric Vehicle to establish Coda Automotive as an affiliate company.
+ The name CODA comes from the musical term for the concluding passage of a piece of music.
+ CODA Automotive has said that it chose the name because its electric vehicle technology represents an end for combustion engine vehicles, and the start of the electric vehicle era.
+The National Electric Drag Racing Association (NEDRA), a Special Chapter of the Electric Auto Association, and exists to increase public awareness of electric vehicle (EV) performance and to encourage through competition, advances in electric vehicle technology.
+ NEDRA achieves this by organizing and sanctioning safe, silent and exciting electric vehicle drag racing events.
+A plug-in electric vehicle (PEV) is any motor vehicle that can be recharged from an external source of electricity, such as wall sockets, and the electricity stored in the rechargeable battery packs drives or contributes to drive the wheels.
+ PEV is a subset of electric vehicles that includes all-electric or battery electric vehicles (BEVs), plug-in hybrid vehicles (PHEVs), and electric vehicle conversions of hybrid electric vehicles and conventional internal combustion engine vehicles.
+ In China, plug-in electric vehicles are called new energy vehicles (NEVs).
+A battery electric vehicle (BEV), battery-only electric vehicle (BOEV), Full Electric Vehicle (FEV) or all-electric vehicle is a type of electric vehicle (EV) that uses chemical energy stored in rechargeable battery packs.
+ BEVs use electric motors and motor controllers instead of internal combustion engines (ICEs) for propulsion.
+ They derive all power from battery packs and thus have no internal combustion engine, fuel cell, or fuel tank.
+ BEVs include motorcycles, bicycles, scooters, skateboards, rail cars, watercraft, forklifts, buses, trucks and cars.
+The first sequences of keratins revealed that keratins could be grouped into two categories based on their sequence homologies.
+ These two groups of keratins were named as type I and type II keratins.
+ These two categories also represent the first two categories of the superfamily of intermediate filament proteins.
+EVcort The EVcort was an experimental electric car produced from 1981 to 1994 by Electric Vehicle Associates of Cleveland OH and later by Soleq Corp. of Chicago IL.
+ It consisted of a stock body and transmission from the Ford Escort, refitted with an electric propulsion system, every component of which was engineered and manufactured specifically for the car.
+ It incorporated features such as regenerative braking and a multistep charging algorithm, that are common on modern electric vehicles but were quite innovative at the time.
+ The intent was to produce a practical alternative-fueled vehicle with performance comparable to gasoline-powered cars, but like many electric vehicles of that era, the EVcort proved far too expensive to be commercially viable.
+ Nevertheless, the it was used extensively by a variety of institutions for electric vehicle demonstration and testing programs.
+A Neighborhood Electric Vehicle (NEV) is a U.S. denomination for battery electric vehicles that are usually built to have a top speed of 25 mph , and have a maximum loaded weight of 3,000 lb .
+ Depending on the particular laws of the state, they are legally limited to roads with posted speed limits of 45 mph or less.
+ NEVs fall under the United States Department of Transportation classification for low-speed vehicles.
+ The non-electric version of the neighbourhood electric vehicle is the Motorised quadricycle.
+A hybrid electric vehicle (HEV) is a type of hybrid vehicle and electric vehicle that combines a conventional internal combustion engine (ICE) system with an electric propulsion system (hybrid vehicle drivetrain).
+ The presence of the electric powertrain is intended to achieve either better fuel economy than a conventional vehicle or better performance.
+ There is a variety of HEV types, and the degree to which each functions as an electric vehicle (EV) also varies.
+ The most common form of HEV is the hybrid electric car, although hybrid electric trucks (pickups and tractors) and buses also exist.

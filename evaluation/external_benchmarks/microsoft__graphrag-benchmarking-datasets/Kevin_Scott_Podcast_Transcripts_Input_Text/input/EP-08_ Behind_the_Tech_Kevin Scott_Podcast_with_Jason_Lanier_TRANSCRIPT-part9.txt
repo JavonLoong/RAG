@@ -1,0 +1,13 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  cube just painted by a computer, and when I was a kid, this was before we could get a computer graphics machine, that happened like a year or two after I arrived, I would run down and people, the strangest mysteries, look at this, you can make images with computers.  I’m like so excited.  I was like, because there was no Internet, you couldn't just reach.  You had to just attack strangers on the street with weird journal articles.
+
+So Ivan in something like '65 had proposed a head track computer graphics headset and he actually built one in '69.  And that really, really turned me on because ever since my mom had died, I've had the sort of feeling of incredible isolation from people.  I was super socially awkward and a very weird kid.  And I always had this sensation that people were like the stars.  You can see the stars, you know there must be interesting things in the stars, but they're too far away to reach.  And people felt that way to me.
+
+And I always imagined that if there was some kind of new medium, some way of sharing dreams maybe, it would be like a starship where you could reach those distant stars.  And to me when I read about Ivan's headset, I thought, okay, if you could network these things, maybe you could have that shared dream thing.  So that was how I got into this whole virtual reality whatever it is, this crazy adventure.
+
+KEVIN SCOTT:  So like you are I think rightfully so credited with being the father of virtual reality.  And I remember like the first time I was aware of you was in the '90s. I saw you on -- like I forget what the name of this -- there was a technology network that Leo LaPorte was at and I think Leo was interviewing you.  And I was like, oh my god, like this is the most unusual and incredible thing I've ever seen.  And it was you.
+
+So like when did this whole notion of virtual reality crystalize for you?  When did you coin the name?
+
+JARON LANIER:  Well, the name -- so the deal is, Ivan Sutherland called the thing you saw through the headset the virtual world.  And he got that from an art theorist named Susanne Langer who was writing about virtual worlds in the '40s and '50s.  And I thought, well, if there was a network or a social version of it, a shared virtual world, maybe that would be virtual reality.  And so I started like writing little things about it in magazines and all kinds of stuff.  And that probably started in like the late '70s or something.
+
+But I didn't actually have any way to do it.  And so what happened next -- and by the way, in those days it was almost impossible to explain to somebody what this was.

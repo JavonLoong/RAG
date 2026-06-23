@@ -1,0 +1,21 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt , computer science thrives on abstraction, right?  From the low-level machine code to C and we have Python and programming languages and at some level, graphical interfaces. So picking the right entry point into that for someone is -- I think there are multiple ways you can go. 
+
+I probably wouldn’t start with C if I were teaching an intro programming class, but more at a conceptual level of here are the kinds of computations that you want to perform.  And then separately, I think a different class would talk to you about how this is actually realized because I think there is some value for a computer scientist to understand how it goes all the way down to machine code, but not all at once. 
+
+KEVIN SCOTT:  Yeah, I’m still convinced that one of the most useful things that I had to learn as a programmer who learned to program in the ‘80s was fairly quickly I had to learn assembly language.  You had to know what the low-level details were of the machine. 
+
+Now, granted, the machines were vastly less complicated back then than they are now.  But just sort of at that atomic level, knowing how the actual machine works just made everything else that came after it less intimidating. 
+
+PERCY LIANG:  Yeah, it’s kind of satisfying.  You’re grounded.  It’s like playing with blocks almost.  
+
+KEVIN SCOTT:  So, you started with HyperCard.  Where did things go from there? 
+
+PERCY LIANG:  Yeah, for a while, I think I also learned BASIC, I was just kind of tinkering around.  There wasn’t like today, as many resources, as you can imagine, for just kids interested in programming.  So a lot of it was on my own. 
+
+I think maybe a turning point happened at the beginning of high school, where I started participating in this USA Computing Olympiad, which is a programming contest.  You can think about it as a programming contest, but I really think about it as a kind of algorithmic problem-solving contest. 
+
+The problems that they give you are-- it’s kind of like a puzzle and you have to write a program to solve it.  But much of the work is actually kind of coming up with the insight of what algorithm to do it kind of efficiently.  An example might be how many ways are there to make change for $2 using a certain set of coins?  
+
+And it would be this eureka moment when you found, “Ah-hah, that’s how I can do it.”  And then you have to code it up.  So I think that competition really got me to value this type of rigor and attention to detail, but also the creative aspect of computing, because you have to come up with new types of solutions. 
+
+KEVIN SCOTT:  That’s awesome.  What was the most interesting problem you had to solve in one of these

@@ -1,0 +1,13 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt  then if you start deviating from it, we can flag that to you, a loved one, or – you know, a psychiatrist. So I think there’s a lot of opportunity, but we’re missing the scale. I think this is where Microsoft comes in, right?
+
+KEVIN SCOTT: Yeah. Yeah, and we think about that all the time. I, one of the big things that we are attempting to do with AI is we want to make sure that it’s a platform that other people are using to build what they think is interesting and valuable, versus us sort of dictating to the entire universe what is interesting and valuable. And I mean, that is part of being a platform is – like the platform has to help you solve all of the problems that you have for building really great experiences for users.
+
+So, yeah, so it’s super interesting to think about what you are doing.
+
+RANA EL KALIOUBY: It’s, I mean, ultimately, too, I believe it’s going to be embedded in – it’s going to be like the natural human machine interface. We’re already seeing conversational interfaces, right? And then we’re going to see perceptual machines. And you bring all that together, and imagine if – you know, as you engage with your device, whether it’s a phone or in your car, your office or a home robot, it can kind of glean all of that information, and then nudge you to improve – you know, to improve your life, whether it’s to be happier or healthier, more productive, or – you know, whatever the KPI is, it can nudge you to do that better.
+
+KEVIN SCOTT: Do you think at all about influence? So I mean, like with technology and the limit, where you want the flows of influence to be is like, you want the human to influence the technology. So like, I have a thing I want to accomplish, like I want to like be able to convey my intention to the machine and have it help me do this thing. What you want is less of the influence coming in, the other way, that there’s some sort of intention embedded in the thing that the person is unaware of, that is getting you to do something that you might otherwise not do. And so do – do you think about that, much, with what you’re doing?
+
+RANA EL KALIOUBY: Definitely, because it’s a very blurry line between manipulation, right, and nudging towards positive behavior change, and who – where is that line, and who decides, right? And so in the case of social media, for example, it was optimized towards engagement, and I don’t know that that was good for each of us individually, right?
+
+It wasn’t optimized for us. So I think that goes back to like the ethics of all of this, and how do we develop and deploy this in an ethical way

@@ -1,0 +1,17 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt , as a toolkit AI is really interesting to be able to sort of automate things that maybe would previously take a lot of work or would take a lot of, you know, sort of drudgery, but I have yet to see an application where it’s going to come up with something, you know, necessarily truly new  or anything along the lines of, you know, like what Jacob would do, you know, where it’s actually iterating. 
+
+And, you know, of course, there’s these things like GPT3 and, you know, even like Sony CSL and Francois Pachet’s flow machines where people have gotten really far. And I think that has an application for like ads and cinema music, and things where we’re not sort of really zeroed in, dialed in on – on, you know, on what this is. 
+
+And then there’s a whole, you know, genre of output where it’s just completely surrealist and, you know, you look at like the half bird, half cow, you know, or all these faces that get generated. And that’s kind of its own thing. It’s, you know, different.
+
+But Jacob and I talk a lot about, like, “Well, could we create a harmonic intelligence that sort of like encodes Jacob’s sense of composition and sort of harmony into an AI?” And I think we could do that as a compositional tool for other people to use, but whether something is really going to actually be able to do what he does in the best way that we could do it, it would just be an imitation of what he had done up until that point and that would never be enough, I think.
+
+KEVIN SCOTT:  Have you guys seen – so Google did this really cool thing called Blob Opera right around Christmas, which is, I think exactly what you’re talking about. So it’s more instrument than, you know, like a thing that’s trying to create an entire performance or creative experience. 
+
+And, like, it’s sort of how we think about AI as well. Like, it’s – like, I’m not trying to – like, God knows, like, I would never try to replace someone like Jacob because, like, you know, the precious thing that we have in this world is our humanity. 
+
+Like, what I want is to create more tools and more instruments to help us be more human, to enhance that humanity, not, you know, diminish it or like take the dignity away from it by, you know, sort of substituting for it. 
+
+And, you know, I thought that Blob Opera, like in an artistic context, was like an interesting thing. You know, they trained it from a bunch of professional opera singers voices and, you know, like, they gave those voices an instrumentality for, you know, other people to play around with, which is interesting.
+
+JACOB COLL

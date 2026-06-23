@@ -1,0 +1,15 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  idea of doing an apprenticeship program, like I think, is great. It has been extremely successful for both LinkedIn and Microsoft. And I don’t understand why more people don’t do it. 
+
+Like in the worst case, what happens is you have an opportunity to work with amazing people who come in and get 16 weeks, or whatever the duration of the program is, of like real experience, and anybody who’s ever done an internship or – you know, has gone from like one context where they get a whole bunch of experience that they otherwise wouldn’t have gotten that’s professionally relevant, like, can tell you how valuable and informative those things are.
+
+And you get paid to do it. And at the end of it, like a super-high percentage of folks convert to full time jobs at the company, and those that don’t, like have this super-interesting experience and a thing that goes on their resume that helps them find jobs elsewhere.
+
+CHRISTINA WARREN: Yeah, no, and I think you hit on a really important thing there, even the people that don’t get jobs from these programs, they have the experience, and I would go on to even say further, I think they have confidence.
+
+KEVIN SCOTT: Yes. 
+
+CHRISTINA WARREN: Especially when we’re talking about getting people who might not have come through the "traditional way," people are plenty competent to do what they’re doing, but they don’t always have the confidence to do it. And if you can go through a program like this and have that experience, you have the confidence to go, "Oh, you know what? I can do this; I can apply for this job. And I can go into that interview, and I can feel confident to, you know, get it and to ask for it." And so I think these sorts of programs are so important that I’m so glad that – you know, William brought that to Microsoft, and that you embraced it in the Office of the CTO. 
+
+KEVIN SCOTT: Yeah, and just one more thing to say about that, I think the thing that we’ve seen on this podcast with all the people that we’ve chatted with, and it’s certainly true, in my experience, I think it’s true in yours, everybody has a very different path into the tech industry, with lots of twists and turns. And it’s so sensitive to – you know, who you met, or what you got exposed to when or – you know, who you saw as a role model or like what piqued your curiosity at a moment when you were most receptive. 
+
+And so we just can’t expect everyone to, like, write your first program at 13. And like, you know, get into – you know, Governor’s School for Science and Technology, and major in Computer Science at a top 10 school, and then go get a job at a top five –

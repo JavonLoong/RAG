@@ -1,0 +1,19 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt   I've played with George Clinton and P Funk.  I've done more than you'd imagine, but always kind of in the background as a performer.  I've done some solo stuff, too.  But, as a performer I can only do so much.
+
+I've had this career in computer science and another one as a writer at a certain point you can't really do everything always and then have a family.  So unfortunately, I haven't been doing as much lately, but still a little bit now and then.
+
+KEVIN SCOTT:  But, even though -- so the writer, philosopher, computer scientist, composer, performer, like you still have other interests, which I guess your mother really did like -- 
+
+JARON LANIER:  She did a number on me.
+
+KEVIN SCOTT:  She certainly convinced you that you had to sort of exhibit excellence in a bunch of different domains.  Maybe one of the most interesting things that you and I have chatted about is the Neural Information Processing Symposium is like the big, deep learning conference for the field.
+
+And the best paper at this year's symposium was this thing called Neural Ordinary Differential Equations, which is this -- the short idea is that neural networks are usually these sort of layers of connected artificial neurons and you're trying to sort of figure out like the activation weights between the connections of all of these layers and like which non-linear functions you're using to sort of accumulate the weights into a network node and whether or not you should use things like dropout to like impose some sort of memory loss as you're doing training and blah, blah, blah, right and like there's back propagation and all this other stuff.
+
+And so like this paper is sort of interesting in that it sort of models a bunch of the interior state of these deep neural networks as a system of ordinary differential equations.  And it was sort of a sensational result, because it has some really big performance implications for training deep neural networks and like the amount of computation that's required to train them is one of the sort of big things on people's minds.  So that's great.  But when you saw it the connection you made was to quantum field theory.
+
+JARON LANIER:  Yeah, so here it might be a bit premature to speak about this, but one of the dimensions in my life is I have a lot of physicist friends.  I've done sort of weird projects with theoretical physicists from time to time.  And this goes -- this all started, because my first serious girlfriend was a daughter of the head of the Physics Department at Caltech.  So when I was a teenager, I was sort of hanging out here and I got an informal chance to learn directly from Feynman and Gell-Mann and all these amazing people.  And ever since -- 
+
+KEVIN SCOTT:  Which is insane.
+
+JARON LANIER:  Yeah, ever since then

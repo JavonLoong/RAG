@@ -1,0 +1,19 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt URATI: Yeah. 
+
+KEVIN SCOTT: Let’s talk a little bit about -- I mean, you all have had an unbelievable -- like, total run, but like in particular, the past year or even the past six months have been I think shocking to a bunch of folks. 
+
+I’ve been following what you all have been doing for a while. 
+
+MIRA MURATI: Of course. 
+
+KEVIN SCOTT: And so, you know, like, you know, what happened in the past six months wasn’t so -- I mean, it was, like, surprising to me, but not quite as shocking to folks who, you know, sort of saw nothing, nothing, nothing and then all of a sudden like ChatGPT emerges and it, like, becomes the most interesting thing in the world. 
+
+Talk a little bit about that journey, because you know, I think ChatGPT is just one point on, like, a long set of efforts that you all have been working on. And, like, it’s not even the last thing, right? So, like, that’s the other thing that people probably aren’t internalizing that, you know, it is a point on a curve and, like, you know, more things are coming. So, like, how have you all thought about that, like, in the context of how the public is reacting? 
+
+MIRA MURATI: You know, the first time that we thought about deploying this models that were just in research territory was kind of this insane idea. It wasn’t normal back then to go deploy a large language model in the real world. And, you know, what is the business case? What is it actually going to do for people? What problems is it going to solve? Like, we didn’t really have those answers. 
+
+But we thought, you know, if we make it accessible in such a way that it’s easy to use and it is cheap to use, it is highly optimized, you don’t need a lot of -- you don’t need to know all the bells and whistles of machine learning and just accessible, then maybe people’s creativity would just bring to life, you know, new products and solutions and we’d see how this technology could help us in the real world. 
+
+And, of course, we had a hypothesis, but really it was just putting GPT-3 in the API the first time that we saw people interact with these large language models and the technology that we were building and that for so many years we’d just been building in the lab without, you know, this real-world contact and feedback from people out there. 
+
+So, that was the first time. It was sort of this leap of faith that it was going to teach us something, we were going to learn something from it. And, hopefully, we could feed it back into the technology. We could bring back

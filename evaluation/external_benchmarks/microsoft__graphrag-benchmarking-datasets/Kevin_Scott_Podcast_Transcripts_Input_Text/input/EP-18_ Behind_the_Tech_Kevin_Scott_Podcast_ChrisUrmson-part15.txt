@@ -1,0 +1,21 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt   
+
+CHRIS URMSON:  Yeah, no, and it is, right?  I think one of the things that people outside of Silicon Valley who haven’t been here don’t realize is that it’s not really.  
+
+That, like, you know, people talk about Silicon Valley engineers being risk-takers.  I think it’s actually the opposite.  It’s the realization that if you go and try one of these things and you’re actually good at what you do, if it fails, it fails.  You’ll have a job the next day at somewhere else, right?  And you’ll have this wealth of experience that people will value.  
+
+And I think that is something that it’s hard, you know, I’ll categorize this as you know east coast people but, you know, kind of more conventional business folks haven’t -- don’t kind of have that sense of the opportunities that are around.  And maybe we’ve just been here during a particularly fortuitous time.  
+
+KEVIN SCOTT:  Yeah, but I do think it’s a piece of advice that I give people all the time is that if you -- however you do it, like whether it’s be a software engineer in Silicon Valley where you’ve got a bunch of career opportunities, or whether it’s avoiding taking on like huge amounts of debt early on in your life.  If you can give yourself the opportunity to be able to have choice in what you work on and to like always choose the thing that’s interesting and looks like it’s going to give you a bunch of learning, like, you will probably do better than you would in other circumstances.  
+
+CHRIS URMSON:  Oh, for sure.  There’s this -- what is it?  If you do something that you love, you’ll never work a day in your life?  
+
+KEVIN SCOTT:  Yeah.  
+
+CHRIS URMSON:  Right?  Like, that -- it’s not just that, right?  It’s that you get the best out of yourself.  You get the best out of people when they’re invested in the thing that they’re doing, when they’re passionate about it.  
+
+You know, and it’s -- I guess it’s easy for me to say, having been in a position where I’ve had the opportunity to do this and I -- you know, understand that not everybody has the same opportunities that I’ve had.  But if you can find that, if you can -- if you are able to seek it out, it seems like the way that you get a chance to shine and the way that you help build something awesome.  
+
+KEVIN SCOTT:  Yeah, so tell me about the early days of the self-driving car program at Google.  So it start -- it was like you and Sebastian.  
+
+CHRIS URMSON:  Yeah, well there was -- there was -- I want to

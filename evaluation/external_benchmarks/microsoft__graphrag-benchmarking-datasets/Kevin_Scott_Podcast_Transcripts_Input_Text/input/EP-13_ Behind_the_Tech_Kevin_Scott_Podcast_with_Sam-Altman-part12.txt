@@ -1,0 +1,16 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  And this is before iPhone, right?
+SAM ALTMAN:  Way before.  
+KEVIN SCOTT:  Yeah.
+SAM ALTMAN:  Yeah, three years before.  I had a Palm Treo at the time, to date it, and -- 
+KEVIN SCOTT:  Which was a good device.
+SAM ALTMAN:  Yeah, and I was really cool for having one, let me tell you, because most people had flip phones.  (Laughter.)  I had a Treo 650 on Sprint.  It was like that -- that was, like, a big deal. 
+KEVIN SCOTT:  Yeah.  I had one, too.  (Laughter.)
+SAM ALTMAN:  It was a good phone.
+KEVIN SCOTT:  Yeah.  I wasn't cool, but like, I had one.  (Laughter.)
+SAM ALTMAN:  You know, I probably wasn't cool either, but I felt like -- in my heart, I felt cool.  Anyway, so I started, like, hacking on this with some friends. I had accepted this offer to go be an intern at a bank in New York, and I was -- I knew it was a mistake as soon as I had said yes.  
+And then, I had, like, followed Paul Graham online for some time, and he announced this thing called the Summer Founders Program, which is what became -- it was a -- it was going to be a program of YC, and then it became all of YC.  
+KEVIN SCOTT:  And this is when it was in Boston, right?
+SAM ALTMAN:  In Boston, yeah.  And so, I sort of applied with, like, an hour to go.  And still planned to go back to school at the end of the summer, but I was just like, well, I'll work on this.  They're going to give us $12,000.  And we got in, and did it, and then it just kept going. 
+KEVIN SCOTT:  Yup.  And so, what were some of the interesting things you learned through that experience, which is sort of a broad question because you were super early?
+SAM ALTMAN:  Yeah.  The -- so, I always think it's like -- it didn't -- that company did not go nearly as well as we were hoping.  It went fine, and I'm grateful for it and thankful it gave me enough sort of money to do everything else.  But it was not the outcome we were hoping for.  And I always think it's tempting to learn too much from failure and it's better to learn from success.
+But one of the things that we did learn -- one of the things that was fun at the time -- is we -- like the collective tech industry -- had not quite figured

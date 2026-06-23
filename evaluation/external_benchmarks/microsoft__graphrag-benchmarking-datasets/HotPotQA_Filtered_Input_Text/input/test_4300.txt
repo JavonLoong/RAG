@@ -1,0 +1,51 @@
+Nikolay Mitrofanovich Krylov (Russian: Никола́й Митрофа́нович Крыло́в , Ukrainian: Микола Митрофанович Крилов ) (29 November [O.S. 17 November] 1879 – May 11, 1955) was a Russian and Soviet mathematician known for works on interpolation, non-linear mechanics, and numerical methods for solving equations of mathematical physics.
+Georgian International Academy (Georgian: საქართველოს საერთაშორისო აკადემია ) is a research and academic institution located in Tbilisi, Georgia.
+ The academy is one of the few Georgian institutions which awards the degree “Doctor Academician” – the highest academic title in Europe.
+Doctor is an academic title that originates from the Latin word of the same spelling and meaning.
+ The word is originally an agentive noun of the Latin verb "docēre " ] 'to teach'.
+ It has been used as an academic title in Europe since the 13th century, when the first doctorates were awarded at the University of Bologna and the University of Paris.
+ Having become established in European universities, this usage spread around the world.
+ Contracted "Dr" or "Dr.", it is used as a designation for a person who has obtained a Doctorate (e.g. PhD).
+ In many parts of the world it is also used by medical practitioners, regardless of whether or not they hold a doctoral-level degree.
+The New Chronology is a pseudohistorical theory which argues that the conventional chronology of Middle Eastern and European history is fundamentally flawed, and that events attributed to the civilizations of the Roman Empire, Ancient Greece and Ancient Egypt actually occurred during the Middle Ages, more than a thousand years later.
+ The central concepts of the New Chronology are derived from the ideas of Russian scholar Nikolai Morozov (1854–1946), although work by French scholar Jean Hardouin (1646–1729) can be viewed as an earlier predecessor.
+ However, the New Chronology is most commonly associated with Russian mathematician Anatoly Fomenko (born 1945), although published works on the subject are actually a collaboration between Fomenko and several other mathematicians.
+ The concept is most fully explained in "History: Fiction or Science?"
+, originally published in Russian.
+Associate professor (frequently capitalized as Associate Professor) is an academic title that can have different meanings.
+ In North America and universities elsewhere using the North American system, it is a position between assistant professor and a full professorship.
+ In some Commonwealth countries, the title associate professor is often used in place of reader, which is used in the United Kingdom and a number of other Commonwealth universities; this usage is typical of universities in Australia and New Zealand, as well as in South Africa, India, parts of Southeast Asia, Ireland and other countries.
+ The title associate professor in those countries, like the title reader, corresponds to a full professorship in North America.
+In control systems theory, the describing function (DF) method, developed by Nikolay Mitrofanovich Krylov and Nikolay Bogoliubov in the 1930s, and extended by Ralph Kochenburger is an approximate procedure for analyzing certain nonlinear control problems.
+ It is based on quasi-linearization, which is the approximation of the non-linear system under investigation by a linear time-invariant (LTI) transfer function that depends on the amplitude of the input waveform.
+ By definition, a transfer function of a true LTI system cannot depend on the amplitude of the input function because an LTI system is linear.
+ Thus, this dependence on amplitude generates a family of linear systems that are combined in an attempt to capture salient features of the non-linear system behavior.
+ The describing function is one of the few widely applicable methods for designing nonlinear systems, and is very widely used as a standard mathematical tool for analyzing limit cycles in closed-loop controllers, such as industrial process controls, servomechanisms, and electronic oscillators.
+The Master of Music (M.M. or M.Mus.)
+ is, as an academic title, the first graduate degree in Music awarded by universities and conservatories.
+ The M.M. combines advanced studies in an applied area of specialization (usually performance in singing or instrument playing, composition, or conducting) with graduate-level academic study in subjects such as music history, music theory, or music pedagogy.
+ The degree, which takes one or two years of full-time study to complete, prepares students to be professional performers, conductors, and composers, according to their area of specialization.
+ The M.M. is often required as the minimum teaching credential for university, college, and conservatory instrumental or vocal teaching positions.
+A jubilee doctor (Swedish: "jubeldoktor" , Latin: "doctor jubilaris" ) or golden doctor (German: "Goldene Doktor" ) is in some countries a person who has held a doctorate for 50 years or more.
+ When 50 years have passed, the doctor is invited again by his or her university to the ceremony where the doctorates are conferred and is made "jubilee/golden doctor" and celebrated as a guest of honour.
+ This custom is common in Germany, Sweden and Finland.
+ In Germany, this ceremony is referred to as the "Golden Promotion" ("Goldene Promotion").
+ In Sweden, a person so honoured who holds, for instance, a doctorate of philosophy, may use the academic title "fil.jubeldr" instead of the regular "fil.dr".
+The Doctor of Business Administration (abbreviated DBA, D.B.A., DrBA, or Dr.B.A.)
+ is a research doctorate awarded on the basis of advanced study and research in the field of business administration.
+ Along with research skills the doctorate focuses on business intelligence and original theoretical study.
+ The D.B.A. is a terminal degree in business administration, and is equivalent to the Ph.D in Business Administration.
+ Along with the Ph.D, it represents the highest academic qualification in business administration.
+ Successful completion of a D.B.A. or Ph.D in Business Administration is required to gain employment as a full-time, tenure-track university professor or postdoctoral researcher in the field.
+ As with other earned research doctorates, individuals with the degree are awarded the academic title doctor, which is often represented via the English honorific "Dr." or the post-nominal letters "D.B.A.", "DBA", "Dr.B.A."
+, or "DrBA".
+Nicolai Vladimirovich Krylov (Russian: Никола́й Влади́мирович Крыло́в ; born 5 June 1941) is a Russian mathematician specializing in partial differential equations, particularly stochastic partial differential equations and diffusion processes.
+ Krylov studied at Lomonosov University, where he in 1966 under E. B. Dynkin attained a doctoral candidate title (similar to a PhD) and in 1973 a Russian doctoral degree (somewhat more prestigious than a PhD).
+ He taught from 1966 to 1990 at the Lomonosov University and is since 1990 a professor at the University of Minnesota.
+ At the beginning of his career (starting from 1963) he, in collaboration with Dynkin, worked on nonlinear stochastic control theory, making advances in the study of convex, nonlinear partial equations of 2nd order ("i.e." Bellman equations), which were examined with stochastic methods.
+ This led to the Evans-Krylov theory, for which he received with Lawrence C. Evans in 2004 the Leroy P. Steele Prize of the American Mathematical Society (for work done simultaneously and independently by both Krylov and Evans).
+ They proved the second order differentiability (Hölder continuity of the second derivative) of the solutions of convex, completely nonlinear, second order elliptical partial differential equations and thus the existence of "classical solutions" (Theorem of Evans-Krylov).
+ He was in 1978 at Helsinki and in 1986 at Berkeley an Invited Speaker for the ICM.
+ He received the Humboldt Research Award in 2001.
+ In 1993 he was elected a member of the American Academy of Arts and Sciences (1993).
+ He should not be confused with the mathematician Nikolay M. Krylov.

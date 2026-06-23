@@ -1,0 +1,21 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  like a phoenix. Either way, it’s going to be a fun ride. So, I jumped off to Microsoft.
+
+And it was also, I had a child. You know, these are my earning years. I’m 30-something. It’s like, well, this is my last chance to actually go get some dollars, you know, and not starve. So, I’d better go, you know, do that thing. So, I did. That’s how I came, because someone asked me to come. 
+ 
+KEVIN SCOTT: Yeah, and I think, again, that’s it – we, in a minute, are going to get to all of the DEI stuff and, like, inclusion and access. But, like, that is another thing: network matters. 
+
+WILLIAM ADAMS: Network matters, absolutely. Yeah. 
+
+KEVIN SCOTT: Network, like being connected to people who not necessarily are, like, passing you opportunities, but just making you aware of what some of the interesting things are that you might not otherwise see, and, like, we want to work with you. Like, it’s just an amazing thing to have. 
+ 
+WILLIAM ADAMS: Yeah. And this Chris Lovett, I had met actually at Taligent, another Silicon Valley also-ran. And he was impressed with the work that I brought there from Adamation. And it was just that, right? It’s, like, he’s thinking, oh, that guy, William, he’s kind of interesting. Why don’t I give him a call? And then the opportunity is up to me to take it or not, right? It’s to impress or not impress. But yeah, network is super important. 
+ 
+KEVIN SCOTT: So, tell us a little bit about the XML work that you did. So, it was, like, really central infrastructure, like, a thing that was – 
+
+WILLIAM ADAMS: At that time. 
+
+KEVIN SCOTT: At that time, that was very important to how the, you know, the sort of emerging network infrastructure was operating. 
+
+WILLIAM ADAMS: Yeah, I mean, XML, you know, the easiest way for – to put it in context is to say, well, HTML was important for the UI – the UI browser, right? XML was the equivalent for data transmission and sharing. Now, it went further and created things like SVG, which is the graphics format, and the Office – all their documents are actually XML formatted documents. They’re in a ZIP file, so you don’t realize it, you know, but they’re actually just XML. 
+
+So, at the time, we were trying to do a couple of things, but primarily just being able to wrangle data, right, add some amount of structure and schema to data that otherwise is just kind of out there

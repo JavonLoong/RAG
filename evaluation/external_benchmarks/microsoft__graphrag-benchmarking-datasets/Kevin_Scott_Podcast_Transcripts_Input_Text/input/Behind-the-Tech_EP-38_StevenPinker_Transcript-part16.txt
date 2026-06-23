@@ -1,0 +1,15 @@
+Behind-the-Tech_EP-38_StevenPinker_Transcript.txt  in game theory, as you – as you explained, is called the prisoner’s dilemma when it involves two players, or the public goods game when it involves more than two. 
+
+And the idea is that, well, I’ll just simplify it in the case of the public goods games and the way it’s actually studied in the laboratory. Imagine that everyone is given an endowment. The experimenter gives you, you know, 10 bucks. You can contribute as much as you want to a common pot or keep it for yourself. If you – whatever you put into the common pot gets doubled by the experimenter and distributed evenly among all the players. 
+
+Now, the best thing for everyone to do would be to contribute the max. You put in 10 bucks, you will walk away with 20. It seems like a no-brainer. Except that since it’s divided evenly among everyone, if you were to hang onto your ten and everyone else contributed their 10 and then it was doubled and then divided, you know, say nine ways, then you’d do even better because you’d selfishly keep your own endowment, you’d be a free rider, plus you’d get the investment returns from everyone else. 
+
+Now, everyone thinks that. Everyone thinks, well, I’m not going to be the sucker and give up all my money, if any of the other guys could just hang on to theirs and get paid anyway. So I’m going to do the logical thing and keep it for myself. 
+
+Well, what seems to be the logical thing turns out to be the illogical thing when you consider everyone together, because then no one contributes and no one gets anything, so you end up with the worst outcome. 
+
+So that’s a public goods game and that is what happens in the lab, that all things being equal, as people play multiple times and catch on to the benefits of free riding, everyone becomes a free rider and the contributions to the pot dwindle to zero. 
+
+Now, it’s kind of a model for a lot of social dilemmas, like should I consume fossil fuels? I get to be, you know, cozy in the winter and cool during the summer and go in a nice, air-conditioned car to work instead of sweating at a bus stop. It’s like public goods such as, you know, a lighthouse or security cameras or a pedestrian overpass, I would benefit if everyone else pays for it, and I shirk on my taxes. But then if everyone had that freedom, the overpass would never be built or the lighthouse would never be built. 
+
+So it occurs over and over again. The most famous example or at least most famous parable might be the tragedy of the Commons, where every shepherd brings his sheep to graze on the town commons because he – he ends up better off with a fatter sheep. But if everyone does it, they could denude the Commons

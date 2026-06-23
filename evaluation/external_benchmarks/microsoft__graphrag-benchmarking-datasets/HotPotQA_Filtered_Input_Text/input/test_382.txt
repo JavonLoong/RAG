@@ -1,0 +1,40 @@
+RGBA stands for red green blue alpha.
+ While it is sometimes described as a color space, it is actually simply a use of the RGB color model, with extra alpha channel information.
+ The color is RGB, and may belong to any RGB color space, but an integral alpha value as invented by Catmull and Smith between 1971 and 1972 enables alpha compositing.
+ The inventors named alpha after the Greek letter in the classic linear interpolation formula "α" "A" + (1 − "α") "B" .
+An RGB color space is any additive color space based on the RGB color model.
+ A particular RGB color space is defined by the three chromaticities of the red, green, and blue additive primaries, and can produce any chromaticity that is the triangle defined by those primary colors.
+ The complete specification of an RGB color space also requires a white point chromaticity and a gamma correction curve.
+ As of 2007, sRGB is by far the most commonly used RGB color space.
+The RGB color model is an additive color model in which red, green and blue light are added together in various ways to reproduce a broad array of colors.
+ The name of the model comes from the initials of the three additive primary colors, red, green, and blue.
+Brown is a composite color.
+ In the CMYK color model used in printing or painting, brown is made by combining red, black, and yellow, or red, yellow, and blue.
+ In the RGB color model used to project colors onto television screens and computer monitors, brown is made by combining red and green, in specific proportions.
+ The brown color is seen widely in nature, in wood, soil, human hair color, eye color and skin pigmentation.
+ Brown is the color of dark wood or rich soil.
+ According to public opinion surveys in Europe and the United States, brown is the least favorite color of the public; the color most often associated with plainness, the rustic, feces, and poverty.
+The ProPhoto RGB color space, also known as ROMM RGB (Reference Output Medium Metric), is an output referred RGB color space developed by Kodak.
+ It offers an especially large gamut designed for use with photographic output in mind.
+ The ProPhoto RGB color space encompasses over 90% of possible surface colors in the CIE L*a*b* color space, and 100% of likely occurring real-world surface colors documented by Pointer in 1980, making ProPhoto even larger than the Wide-gamut RGB color space.
+ The ProPhoto RGB primaries were also chosen in order to minimize hue rotations associated with non-linear tone scale operations.
+ One of the downsides to this color space is that approximately 13% of the representable colors are imaginary colors that do not exist and are not visible colors.
+HCL is designed to have characteristics of both cylindrical translations of RGB color space such as HSL and HSV and L*a*b* color space.
+ HSL and HSV color spaces have the benefit of being perceptually uniform translations of the RGB color space, but their luminance variation does not match the way humans perceive color.
+ Perceptually uniform translations of RGB colorspace do have the benefit of outperforming RGB in cases such as high noise environments.
+ L*a*b colorspace does correspond to the three channels of human perception, but have poor hue constancy, especially in the blue range.
+A color space is a specific organization of colors.
+ In combination with physical device profiling, it allows for reproducible representations of color, in both analog and digital representations.
+ A color space may be arbitrary, with particular colors assigned to a set of physical color swatches and corresponding assigned names or numbers such as with the Pantone collection, or structured mathematically, as with NCS System, Adobe RGB or sRGB.
+ A color model is an abstract mathematical model describing the way colors can be represented as tuples of numbers (e.g. triples in RGB or quadruples in CMYK); however, a color model with no associated mapping function to an absolute color space is a more or less arbitrary color system with no connection to any globally understood system of color interpretation.
+ Adding a specific mapping function between a color model and a reference color space establishes within the reference color space a definite "footprint", known as a gamut, and for a given color model this defines a color space.
+ For example, Adobe RGB and sRGB are two different absolute color spaces, both based on the RGB color model.
+ When defining a color space, the usual reference standard is the CIELAB or CIEXYZ color spaces, which were specifically designed to encompass all colors the average human can see.
+The YCoCg color model is the color space formed from a simple transformation of an associated RGB color space into a "luma" value (denoted as Y) and two "chroma" values called "chrominance green" (Cg) and "chrominance orange" (Co).
+ It is supported in video and image compression designs such as H.264/MPEG-4 AVC, HEVC, JPEG XR, and Dirac, since it is simple to compute, has good transform coding gain, and can be losslessly converted to and from RGB with fewer bits than are needed with other color models.
+This list of monochrome and RGB palettes includes generic repertoires of colors (color palettes) to produce black-and-white and RGB color pictures by a computer's display hardware, not necessarily the total number of such colors that can be simultaneously displayed in a given text or graphic mode of any machine.
+ RGB is the most common method to produce colors for displays; so these complete RGB color repertoires have every possible combination of R-G-B triplets within any given maximum number of levels per component.
+Aqua (from Latin: "aqua" for water) is a greenish-blue color, a variation of the color cyan.
+ The web color aqua is identical to the web color cyan, also sometimes called electric cyan, one of the three secondary colors of the RGB color model used on computer and television displays.
+ In the HSV color wheel aqua is precisely halfway between blue and green.
+ However, aqua is not the same as the primary subtractive color "process cyan" used in printing.

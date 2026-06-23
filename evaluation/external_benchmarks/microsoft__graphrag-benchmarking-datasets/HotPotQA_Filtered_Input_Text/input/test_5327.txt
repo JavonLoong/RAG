@@ -1,0 +1,51 @@
+FooDB (The Food Database) is a freely available, open-access database containing chemical (micronutrient and macronutrient) composition data on common, unprocessed foods.
+ It also contains extensive data on flavour and aroma constituents, food additives as well as positive and negative health effects associated with food constituents.
+ The database contains information on more than 28,000 chemicals found in more than 1000 raw or unprocessed food products.
+ The data in FooDB was collected from many sources including textbooks, scientific journals, on-line food composition or nutrient databases, flavour and aroma databases and various on-line metabolomic databases.
+ This literature-derived information has been combined with experimentally derived data measured on thousands of compounds from more than 40 very common food products through the Alberta Food Metabolome Project which is led by Dr. David Wishart of the University of Alberta.
+ Users are able to browse through the FooDB data by food source, name, descriptors or function.
+ Chemical structures and molecular weights for compounds in FooDB may be searched via a specialized chemical structure search utility.
+ Users are able to view the content of FooDB using two different “Viewing” options: FoodView, which lists foods by their chemical compounds, or ChemView, which lists chemicals by their food sources.
+ Knowledge about the precise chemical composition of foods can be used to guide public health policies, assist food companies with improved food labelling, help dieticians prepare better dietary plans, support nutraceutical companies with their submissions of health claims and guide consumer choices with regard to food purchases.
+Louis Milford Pate Jr. (born September 22, 1936) is a Republican member and Deputy President Pro Tempore of the North Carolina General Assembly.
+ He represented the state's eleventh House district from 1995 through 1996 and from 2003 through 2008.
+ His district included constituents in Wayne county.
+ Pate is now the State Senator representing the 7th district (including constituents in Lenoir, Pitt, and Wayne counties).
+The None of the Above Party of Ontario (NOTA; French: "Aucune de ces Réponses Parti de l’Ontario" ) is a minor political party in the province of Ontario, Canada named after the expression "none of the above".
+ It was founded in 2014 by Greg Vezina in response to his disillusionment with the current major political parties.
+ The party aims to "elect independent MPPs who are not bound by party control and who truly can represent their constituents first."
+ It supports the use of referenda, term limits and Recall elections.
+In syntactic analysis, a constituent is a word or a group of words that function(s) as a single unit within a hierarchical structure.
+ The analysis of constituent structure is associated mainly with phrase structure grammars, although dependency grammars also allow sentence structure to be broken down into constituent parts.
+ The constituent structure of sentences is identified using "constituency tests".
+ These tests manipulate some portion of a sentence and based on the result, clues are delivered about the immediate constituent structure of the sentence.
+ Many constituents are phrases.
+ A phrase is a sequence of one or more words (in some theories two or more) built around a head lexical item and working as a unit within a sentence.
+ A word sequence is shown to be a phrase/constituent if it exhibits one or more of the behaviors discussed below.
+Gregory Richard Gianforte (born April 17, 1961) is an American businessman, engineer, and politician who is the U.S. Representative for Montana's at-large congressional district.
+ On May 25, 2017, he won the special election following Rep. Ryan Zinke's resignation to become Secretary of the Interior.
+ Gianforte and his wife founded RightNow Technologies, a customer relationship management software company.
+Montana is represented in the US House of Representatives by one at-large congressional district, among the 435 in the U.S. Congress.
+ The district is the largest U.S. congressional district by population, with just over 1 million constituents.
+ It is also the second-largest by land area, after Alaska's at-large congressional district.
+Gerlach is a male forename of Germanic origin, variations of which exist in many Germanic and Romance languages.
+ Like many other early Germanic names, it is dithematic, consisting of two meaningful constituents put together.
+ In this case, those constituents are "ger" (meaning 'spear') and "/la:k /" (meaning 'motion').
+ The meaning of the name is thus 'spear thrower'.
+Drinking water quality standards describes the quality parameters set for drinking water.
+ Despite the truism that every human on this planet needs drinking water to survive and that water may contain many harmful constituents, there are no universally recognized and accepted international standards for drinking water.
+ Even where standards do exist, and are applied, the permitted concentration of individual constituents may vary by as much as ten times from one set of standards to another.
+Chemical waste is a waste that is made from harmful chemicals (mostly produced by large factories).
+ Chemical waste may fall under regulations such as COSHH in the United Kingdom, or the Clean Water Act and Resource Conservation and Recovery Act in the United States.
+ In the U.S., the Environmental Protection Agency (EPA) and the Occupational Safety and Health Administration (OSHA), as well as state and local regulations also regulate chemical use and disposal.
+ Chemical waste may or may not be classed as hazardous waste.
+ A chemical hazardous waste is a solid, liquid, or gaseous material that displays either a “Hazardous Characteristic” or is specifically “listed” by name as a hazardous waste.
+ There are four characteristics chemical wastes may have to be considered as hazardous.
+ These are Ignitability, Corrosivity, Reactivity, and Toxicity.
+ This type of hazardous waste must be categorized as to its identity, constituents, and hazards so that it may be safely handled and managed.
+ Chemical waste is a broad term and encompasses many types of materials.
+ Consult the Material Safety Data Sheet (MSDS), Product Data Sheet or Label for a list of constituents.
+ These sources should state whether this chemical waste is a waste that needs special disposal.
+Gerard ( or ; Old French: ] ) is a male forename of Proto-Germanic origin, variations of which exist in many Germanic and Romance languages.
+ Like many other early Germanic names, it is dithematic, consisting of two meaningful constituents put together.
+ In this case, those constituents are "gari" > "ger-" (meaning 'spear') and -"hard" (meaning 'hard/strong/brave').

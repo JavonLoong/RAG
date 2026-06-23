@@ -1,0 +1,25 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  Yeah, oh, very much so.  This was the -- you know, you spend five years working on your PhD and you make something 20% better by coming up with a new set of feature vectors and you earn your PhD, yeah.  
+
+KEVIN SCOTT:  And so your PhD was -- were you -- I’m guessing when you’re working on robots, there’s such broad systems.  So, like, there’s the software and the software is very complicated.  It’s all the way from control loops to perception to, you know, planning and it’s just a ton of complexity there. 
+
+And then there’s also all of this complexity on the electromechanical side of things, like how do you make it light enough, how do you like give it the sort of strength and durability to do the things that you want it to do?  How do you power it?  How do you like make it resistant to the environment?  So did you have one thing or the other that you specialized in or that you gravitated towards?  
+
+CHRIS URMSON:  So, I was definitely more on the software side.  And kind of the software and systems side of how do you think about the whole thing working together? 
+
+You know, I’m definitely not a mechanical engineer.  Right?  Now I kind of know enough to be dangerous and really frustrating, I’m sure, for the mechanical engineering folks that I work with. But on the software side, I kind of worked at this intersection of motion planning and perception.  
+
+KEVIN SCOTT:  And so say a little bit more.  What is motion planning?  
+
+CHRIS URMSON:  Yeah, so motion planning is figuring out how do you make the vehicle move through the world?  
+
+And there’s a bunch of different techniques you can use for it and there’s variations where you’re thinking about just kinematically what the limits are.  And then you think about kinodynamic motion planning where you’re actually counting for the fact that there are dynamics of motion and inertias. 
+
+And so the earliest robot, like this robot we took up to the Arctic, it moved at 15 centimeters a second.  And so, you know, put that in context, that’s like a slow person with a walker.  And -- 
+
+KEVIN SCOTT:  And it had to be that slow, why?  
+
+CHRIS URMSON:  Well, one, we actually probably couldn’t plan much faster than that. 
+
+KEVIN SCOTT:  Got you, so it was like the speed of the processing? 
+
+CHRIS URMSON:  Yes, it was complicated.  It was truly off-road.  It was also solar powered.  So we had -- you know, there’s a power budget limit, given we were driving this thing around, and so there was only so much power we could put

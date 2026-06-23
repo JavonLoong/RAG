@@ -1,0 +1,31 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt DIO GONZALEZ:  Yes, yes, that's one thing that not many people know, the TDs are quite technical people in the animation industry.  They're programmers with a lot of creativity because they know the -- they know about lighting and animation and all, but they're coders, pretty much. 
+
+KEVIN SCOTT:  Super, super interesting.  So, at some point, you started working for Unity and like you were explicitly working on virtual reality there?  
+
+DIO GONZALEZ:  Correct. 
+
+KEVIN SCOTT:  So, tell us a little bit about that.  
+
+DIO GONZALEZ:  Yes.  So, what I worked was -- it's called Unity Labs.  They are the branch of Unity that does experimentation.  So, this is not the team -- they have an R&D team that are the ones in charge of building and creating the editor and releasing it.  So, Unity Labs was about experimentation and seeing what new things we can do. 
+
+So, I started first in the VR team.  And so, of course, being Unity, our focus there was how do we enable creators to really, you know, just unleash their imagination?  Because I mean, that's why I admire Unity, it's amazing what they've done and that's their mission like democratized -- they were the ones that said at first "democratizing," right, development.  
+
+And they've done it like so of course and it's really true to their heart.  So, that's why we -- what we were doing first at Unity Labs. 
+
+KEVIN SCOTT:  Yeah, it's really amazing.  I -- a few years ago, I decided that I wanted to write a game. 
+
+And I hadn't done game programming in 20 years.  And so the entry point for me was Unity.  I downloaded the SDK and like read through the docs and like I wrote a little mobile game in no time flat. 
+
+DIO GONZALEZ:  Yeah, in a couple of hours, right?  
+
+KEVIN SCOTT:  Yeah.  And that, to me, was shocking because what I remember from 20 years ago, it was not that easy. 
+
+DIO GONZALEZ:  Yeah, like, when I was doing my master's, right, I was programming in C++ and all -- moving the camera in Opengl and everything.  And, you know, typically you're like -- you create your scene and the scene graph, you have to create it by hand. 
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  There were scene libraries, but still, you have to create every node and program and connect them.  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ: 

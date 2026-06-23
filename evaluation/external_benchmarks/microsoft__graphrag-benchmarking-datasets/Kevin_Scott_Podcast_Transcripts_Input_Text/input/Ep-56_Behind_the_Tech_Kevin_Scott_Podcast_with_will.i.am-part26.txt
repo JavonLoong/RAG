@@ -1,0 +1,17 @@
+Ep-56_Behind_the_Tech_Kevin_Scott_Podcast_with_will.i.am.txt  of new careers, that creatives might be able to get in this AI world was really, really compelling. His analogy, talking about how studio drummers then became producers, that is exactly right on. We've seen something similar in the tech space where people who were known as IT pros then become DevOps engineers or they become SREs. And you see how just because a new form of technology has come in, that doesn't mean that the people who had those old roles disappear entirely. 
+
+It's instead, I think, kind of an opportunity for them to take on a new role that couldn't in many ways be more lucrative. So I wanted to hear kind of your thoughts on that as somebody who, you know, I know you think a lot about AI, but you come at this a lot from the technology perspective. Talking to someone like him, who's obviously also very involved with creatives, did that have you thinking about anything differently or does that give you any hope for how we might work this out?
+ 
+KEVIN SCOTT: Well, I think it certainly gives me more hope. And I love the drummer analogy because when these technologies enter fields, they are very complicated things. It's sort of difficult, I think, to predict exactly how they're going to be used and how they're going to reshape things like labor markets,
+ 
+CHRISTINA WARREN: Yeah.
+ 
+KEVIN SCOTT: for instance. And like we've just seen even with the doomsayers about, who predicted that AI was gonna wreak economic havoc on the labor markets and have been making these predictions for the past decade or more, like they've almost all been wrong. And so like the predictions can be wrong in both directions, both pessimistic and optimistic. And like the reality is usually more complex and interesting than the prognostications. And so I love hearing these analogies like the drum machine one. I mean, the thing that I will say is like the, this notion that there's no such thing as stasis in jobs is a thing that gets impressed upon you very early in your journey as a computer scientist or software engineer or programmer because everything has just changed so much over the past few decades. So I've been, I'm 51 now. I've been, like, I think I earned my first dollar from writing a program 40 years ago now,
+ 
+CHRISTINA WARREN: Wow.
+ 
+KEVIN SCOTT: which is depressing to say out loud. But the difference between that first program and the program that, programs that people are writing right now are just like remarkable. Like it's
+ 
+CHRISTINA WARREN: Yeah.
+ 
+KEVIN SCOTT: almost unrecognizable, the activity. And so like the jobs have changed, the tools you use have changed. Um, you know, and even when I was a computer science, uh, teacher at university, um, you know, 20

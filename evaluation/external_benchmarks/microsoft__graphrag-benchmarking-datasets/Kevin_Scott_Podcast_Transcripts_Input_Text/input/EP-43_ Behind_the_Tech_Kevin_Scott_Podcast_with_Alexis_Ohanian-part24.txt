@@ -1,0 +1,17 @@
+EP-43_ Behind_the_Tech_Kevin_Scott_Podcast_with_Alexis_Ohanian.txt KEVIN SCOTT: Yeah, that is our goal. I think ‘30 we’ve got multiple milestones in there, so, and like, we’re thinking about our emissions comprehensively, like everything from the carbon emissions that come from datacenter energy consumption all the way out to the emissions that come from running your PC. 
+
+ALEXIS OHANIAN: Wow.
+
+KEVIN SCOTT: And so, we’ve got a complicated set of goals. And like, it’s going to require us going out and inventing a whole bunch of technology. And like, honestly, it’s going to require that a whole bunch of these kids that you’re funding right now create some innovative stuff, because there isn’t a way that we’re going to achieve our climate goals through energy abstinence. Like, that just isn’t going to work. So, like, we’ve got to make things way more efficient and we’ve got to figure out how to get carbon out of the atmosphere. And we’ve got to… I mean, like, there’s a whole bunch of technological push we’ve got to have.
+
+ALEXIS OHANIAN: Yeah. like, and this is where I know I’m high on this drug because I get to enjoy it every day, because all I do is talk to founders and CEOs, whether I’m hearing their pitch or whether we’re working because we funded them. Like, there really is not a day that goes by where I don’t leave a conversation feeling a little bit more motivated, a little bit more inspired, a little bit more curious. And I wish I could inject this in the veins of everyone – (laughter) – 
+
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: Because, gosh, like, we don’t have a choice. We have – to your point, we have to innovate our way out of this. And I love that. It’s not energy abstinence that’s going to do it, it’s technology that’s going to help us.
+
+KEVIN SCOTT: Yeah. Well, and look, this thing that you just described, I think you even mentioned it before, like, we – there’s a psychological result out there. I’m sort of forgetting the paper and the author. But yeah, we react some multiple, like three or four times more intensely to pessimism and negativity than we do to optimism and positivity, which means you’ve got to have a lot of optimism and positivity to overcome the pessimist. 
+
+And like, it’s not to say that the pessimism isn’t unwarranted. Like, there’s – you know, like I – I’m a short-term pessimist all the time. I’m an engineer. Like, you have to – you have to – (laughter) – to be an engineer, you have to be pessimistic.
+
+Because you just sort of look at all the broken crap that’s around you. And like, the

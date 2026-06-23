@@ -1,0 +1,21 @@
+EP-06_ Behind_the_Tech_Kevin Scott_Podcast_with_Wences_Casares_TRANSCRIPT.txt ../
+
+WENCES CASARES (VOICEOVER): I cannot change it nobody can change it -- not government, no company.  So, that's one thing.  And the other one is it's uncensorable.  Nobody can keep you from acquiring Bitcoin.  Nobody can keep you from sending Bitcoin to anyone, and nobody can keep you from holding Bitcoin.  
+
+KEVIN SCOTT:  Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, chief technology officer for Microsoft.  In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  (Music.)  Hello, and welcome to the show.  I'm Kevin Scott.  
+
+CHRISTINA WARREN:  And I'm Christina Warren senior cloud developer advocate at Microsoft.  And today, we're going to hear from the CEO of Xapo, Wences Casares.  
+
+KEVIN SCOTT:  Yeah, Wences is a true serial entrepreneur and one of the most influential investors in Bitcoin.  Some of the folks in Silicon Valley credit him as the person who brought Bitcoin as an entrepreneurial thing to Silicon Valley.  He's just done extraordinary things both with Xapo and with online finance over a bunch of different companies over the years.
+
+CHRISTINA WARREN:  And you had the chance to speak with Wences a few weeks back in front of a live audience.
+
+KEVIN SCOTT:  Yeah.  I mean, Wences really has a fascinating story he grew up in one of the most beautiful and most remote places in the world on a sheep ranch in Patagonia.  I think you'll hear in the interview that he's something like 100 miles from the nearest town or the nearest town is basically a post office.  And in the winter, they get completely snowed in.  So, he grew up in this environment where he was very isolated, but had the good fortune to have a tinkerer as a father.  His story is fascinating.  I'm super excited for everyone to get to hear this interview.
+
+CHRISTINA WARREN:  Definitely, because I know what I want to know is: How does a person who's growing up on a remote sheep ranch in Argentina wind up becoming the CEO of Xapo?  Which many people say is the most secure Bitcoin wallet in the world.
+
+KEVIN SCOTT:  Good question.  We're going to find out.  So, here's our conversation.  
+
+(Music.)
+
+KEVIN SCOTT:  So, I'm just so excited to have Wences Casares here with us today.  So, W

@@ -1,0 +1,17 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  absorb the world. 
+
+KEVIN SCOTT: That feels so true to me. I mean, I think one of the things that I really appreciate about the modern world that we live in right now is you have things like YouTube where if you are trying to understand a thing, there’s so many people trying to explain that thing in so many different ways that if you are determined enough, you can find someone explaining the thing in exactly the right way for your particular brain to understand it quickly. 
+
+MIRA MURATI: Exactly. 
+
+KEVIN SCOTT: And that was always my struggle. Like I could learn very quickly, but like, I don’t think I learn exactly the same way that other people learn. And if, like, I can get the right conceptual hook on something, then I’ve got it and, like, I can even understand, like, the things that, like, before I got the hook were too complicated. 
+
+It’s one of the things, actually, that really excites me about what it is that, you know, you all are doing at OpenAI with these agents, because you can -- the agent, if you are trying to get it to explain something to you, is infinitely patient and it’s sort of adaptable. 
+
+Like, it will explain things to you, like, in the way that you need it to explain things if you’re willing to, like, have a conversation and tell it, like, what it is that you need. That feels very powerful to me. 
+
+MIRA MURATI: I completely agree. Yeah, it’s one of the things that I’m most excited about with these large language models and just generally deploying the AI systems that we’re building in the real world.
+
+KEVIN SCOTT: Yeah, so let’s go back for a minute before we get onto all the exciting AI stuff, which I’m sure is what everyone wants to hear us talk about. Like, I want to hear a little bit about Tesla. So, like, what was it like working there? And, like, you had a pretty big responsibility there, like, at the end, where you were the head product manager for the Model X, which is, like, one of the most amazing, innovative vehicles that anyone’s ever created. So, for you not thinking of yourself as a car person, like, you helped make one of the most disruptive cars that the world has seen, like, maybe in the past 40-50 years. So, like, tell us a little bit about that. 
+
+MIRA MURATI: Tesla was an incredible place. And in some ways, actually, I find it quite similar to OpenAI now, where you have -- obviously, it was much bigger and working on something very different, but this high density of very talented smart people that are just so passionate about what they’re doing. It’s almost, you know, it’s

@@ -71,6 +71,50 @@ class KeywordRetrieverTests(unittest.TestCase):
 
         self.assertEqual(retriever.retrieve("   "), [])
 
+    def test_keyword_retriever_uses_passage_and_section_metadata_as_strong_signals(self) -> None:
+        exact_passage = DocumentChunk.from_text(
+            "The court may excuse a juror if impartiality is doubtful.",
+            metadata={
+                "source_file": "legal.txt",
+                "passage_id": "1.2-c2-s2",
+                "section_path": "1.2 > c2 > s2",
+                "passage_title": "Juror impartiality",
+                "chunk_id": "exact",
+            },
+        )
+        generic = DocumentChunk.from_text(
+            "A general paragraph about jurors and trials.",
+            metadata={"source_file": "legal.txt", "passage_id": "9.9-c9-s9", "chunk_id": "generic"},
+        )
+        retriever = KeywordRetriever([generic, exact_passage])
+
+        results = retriever.retrieve("1.2-c2-s2 juror", top_k=2)
+
+        self.assertEqual([result.chunk_id for result in results], ["exact", "generic"])
+        self.assertGreater(results[0].score, results[1].score)
+
+    def test_keyword_retriever_applies_metadata_filters_before_ranking(self) -> None:
+        retriever = KeywordRetriever(
+            [
+                DocumentChunk.from_text(
+                    "pump maintenance markdown source",
+                    metadata={"source_file": "pump.md", "chunk_id": "md"},
+                ),
+                DocumentChunk.from_text(
+                    "pump maintenance text source",
+                    metadata={"source_file": "pump.txt", "chunk_id": "txt"},
+                ),
+            ]
+        )
+
+        results = retriever.retrieve(
+            "pump maintenance",
+            top_k=5,
+            filters={"field": "meta.source_file", "operator": "==", "value": "pump.md"},
+        )
+
+        self.assertEqual([result.chunk_id for result in results], ["md"])
+
 
 class FakeRetriever:
     def __init__(self, name: str, results: list[RetrievalResult]) -> None:

@@ -1,0 +1,17 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  that stuff later? 
+
+DAVID BAKER:  Oh, yeah, well, so, I was a graduate student in the lab of Randy Schekman, who worked on sort of cell biology, how proteins get moved – sorted around in cells.
+
+At that time, well, I was famous and outspoken for ridiculing anyone who sat at a computer, because, you know, what people used computers for was pretty rudimentary. It was word processing, and you know, you could waste time on computers the same way you can waste time on them now. I did not do any computer programming and really my major – my major interactions with computers, like I said, was to ridicule anyone who touched one. 
+
+KEVIN SCOTT:  You know, in a little while, I really do want to get into what’s changed between then and now because you know, I think we’ll talk about soon, you know, how much of the work that you’re doing happens by influence of some sort of digital technology. It’s still, I mean, like, still, the biology is what’s driving, but computers play a big role, right? 
+
+DAVID BAKER:  Yeah, absolutely, I mean, yeah, we’re probably one of the biggest users of computers in all of academia. So – 
+
+KEVIN SCOTT:  Yeah, which is so cool. But, so, what did things look like after you graduated? Like, what did – what were you working on and, like, what did that stage of your career look like? 
+
+DAVID BAKER:  Well, let’s see. At the end of my PhD, I sort of discovered how to re-create in a test tube a very complicated biological processes, the ones that were involved in sorting these proteins to where they need to go in cells. And it seemed to me it was going to be a very long, complicated process to sort of purify all the proteins out and figure out their mechanisms. 
+
+And I had been getting interested in sort of more basic questions about the structures of proteins, which I really didn’t know much about. And so, then when I – for my post-doc, I went to David Agard’s lab at UCSF, and he studied structural biology and protein folding. And the first day when I went in, there was this computer terminal on my desk. And I asked, “What was that for?” And he said, “It’s for computing.” So, then I had to kind of learn what that was, so, that was one of the things I did. 
+
+But I do have another sort of funny story about that time which was that whole area of the building was really devoted to crystal structure determination – determining the atomic coordinates of proteins. So, one of the first days I was there, I went into the room where everyone was sitting at their workstations trying to trace a protein chain through an electron density map. And

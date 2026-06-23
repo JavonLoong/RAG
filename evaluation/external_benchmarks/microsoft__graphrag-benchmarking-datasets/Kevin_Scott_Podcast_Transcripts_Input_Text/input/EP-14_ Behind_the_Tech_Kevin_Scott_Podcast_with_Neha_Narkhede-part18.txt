@@ -1,0 +1,15 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt , I could actually make a mistake and actually go back and it would allow me to go back to a point in time and offset in the log and replay the source of truth of what happened, not my interpretation of what happened, but actually what happened.  
+KEVIN SCOTT:  So, you all built Kafka.  Its initial uses were inside of SNA, which is great because like that's where --  
+NEHA NARKHEDE:  Yeah, we had to prove it out.  (Laughter.) 
+KEVIN SCOTT:  Yeah.  That's where like you know some of the most complicated distributed systems were in the company, it worked brilliantly.  And so, at some point, like, we started using it for everything inside of the company, like the site reliability engineers, like, built all the monitoring.  
+NEHA NARKHEDE:  Monitoring.  
+KEVIN SCOTT:  And alerting stuff on top of it.  It's just basically everywhere. 
+NEHA NARKHEDE:  Everything. 
+KEVIN SCOTT:  And we decided to open source it.  So, like, talk about, like, why did you all want to open source it?  And like what did you get from open sourcing it?  
+NEHA NARKHEDE:  Wow.  So, we -- you know, why we wanted to open source it is this was an observation we made is, you know, this trend that you know technology companies are going to essentially be defined in software, you know, not just use more software, but literally all the actions and decisions in a company happen through software.  It's going to be a trend.  It likely is not limited to LinkedIn.  
+LinkedIn is not the only data driven company.  It's that every company in the world is going to become a data-driven company.  And so, we wanted to sort of get validation for that trend and decided to open source Kafka as a result of that. 
+And I think LinkedIn made it, you know, very easy to open source Kafka.  We were in the group that did that, but we did one more thing, which is we donated it to the Apache Software Foundation, and that was uncommon for LinkedIn is to give up the control of the software that was being built and give it to an independent entity. I think that really led to its broad adoption, so -- 
+KEVIN SCOTT:  Yeah.  Although, that wasn't a hard decision.  Like, Igor -- you all ask Igor, Igor said, "I think it's reasonable." Igor asked me, and I'm like, "It's fine." 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  And it was done.  (Laughter.) 
+NEHA NARKHEDE:  And it was done, right?  And in 

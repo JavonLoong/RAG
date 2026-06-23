@@ -1,0 +1,31 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  Right?  The professor actually creating it and then everybody -- all of the students seeing the volume, the surfaces in front of them. 
+
+KEVIN SCOTT:  Yeah.  One of the things that surprised me about mixed reality after I came to Microsoft and started seeing how our customers were using the HoloLens and mixed reality software was that there were these whole audiences of people who, in their work, didn't even use computers normally, but all of a sudden like you give them a HoloLens and like that becomes their first computing device in the workplace.  
+
+DIO GONZALEZ:  I know. 
+
+KEVIN SCOTT:  So, folks who do maintenance, for instance, like there are all of these applications where you can put on a HoloLens and it sort of superimposes this mixed reality view on top of the thing, like whether it's a pipe or an elevator or like a complicated piece of machinery that you're doing maintenance on.  
+
+And you can pull up the manuals, like you can superimpose sort of visual representations of the performance of the thing, like metrics -- 
+
+DIO GONZALEZ:  Yeah, or instructions of how to fix it and all.  
+
+KEVIN SCOTT:  Correct.  And you can even like use like your communication tools while you're looking at the thing to like call someone from you know like technical support or an engineer to help you debug the thing that you're trying to fix. 
+
+DIO GONZALEZ:  Yeah, right, and -- 
+
+(Crosstalk.) 
+
+KEVIN SCOTT:  And it becomes this incredibly powerful tool.  
+
+DIO GONZALEZ:  Yeah.  And then the expert actually doing annotations, 3D annotations to then help the person on site fix and everything.  That's they what brought me here to Microsoft, because that's brilliant. 
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  That's what I -- what I mean about mixed reality becoming part of our lives.  Games and entertainment are awesome and always needed, right?  
+
+And the storyteller in me, you know, from the animation industry will always be there.  But a huge impact is when it's that and when it's just become part of our lives.  And, yeah, that's amazing.  And in the enterprise sector it's like a perfect one right now to start.  
+
+KEVIN SCOTT:  Yeah, it's super cool.  It reminds me a little bit of the Hitchhiker's Guide to the Galaxy, like, I don't know if you've read those Douglas Adam books, but the book mostly wasn't about the actual Hitchhiker's Guide, you know, it was about the adventures that people had in

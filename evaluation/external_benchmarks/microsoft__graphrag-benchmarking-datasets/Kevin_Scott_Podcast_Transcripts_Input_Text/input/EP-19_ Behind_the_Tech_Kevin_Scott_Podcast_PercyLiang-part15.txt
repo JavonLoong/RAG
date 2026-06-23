@@ -1,0 +1,19 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  think about because, knee -- your knee-jerk reaction to solve a problem is just go directly solve a problem, but figuring out how to model the situation, which specifies kind of what you want to do, and then the algorithms are how you want to do it, is really I think a powerful way to, you know, think about the world.
+
+KEVIN SCOTT:  So, as an NLP person what do you think about all of this stuff happening with self-supervised learning, right now, and natural language processing?  So, this is the BERTs, the GBT-2s, the ExcelNet!s, like we've even, you know, just a little while back, like Microsoft disclosed this new, like Turing-NLG, which is a 17-billion parameter model that we're being -- that we've been working on, for a little bit.
+
+PERCY LIANG:  Yeah.  No, it's super impressive.  I mean, I would have said that, you know, four or five years ago I wouldn't have predicted kind of the extent to which these things have been successful, and it's certainly not the idea of doing so.  I mean, these are things that I've even explored in my Master's thesis, but that's clearly a big difference between having an idea and actually showing that it actually, you know, works.
+
+So, clearly, these methods are being deployed everywhere, and I think people are getting quite a bit of mileage out of them.  I think there's still problems that these methods are not -- you know, sufficient to solve by themselves.  I mean, I think they're going to be part of probably any NLP solution for -- until the end of time, but I think kind of deeper language understanding, beyond kind of these -- the benchmarks that we have, are going to possible demand some other ideas.
+
+KEVIN SCOTT:  Yeah, and that certainly seems true, even though I'm very bullish about like the fact that we seem to be able to get performance, like improving performance by making the models bigger on the things that the models are good at. It's still unclear to me that they're going to be good enough at everything. Like this, this is not going to solve AGI in and of itself, I don't think.
+
+PERCY LIANG:  Yeah, I mean, it's interesting to ponder how far you can push these, like if you train it on literally all the text in the world, you know, what do you get?
+
+KEVIN SCOTT:  And you gave it as many neurons as the human brain?
+
+PERCY LIANG:  Yeah, yeah.
+
+KEVIN SCOTT:  We're likely to find out at some point.  
+
+PERCY LIANG:  I think there is cases where -- you know, we've been doing it in our research group at Stanford where, even the most kind

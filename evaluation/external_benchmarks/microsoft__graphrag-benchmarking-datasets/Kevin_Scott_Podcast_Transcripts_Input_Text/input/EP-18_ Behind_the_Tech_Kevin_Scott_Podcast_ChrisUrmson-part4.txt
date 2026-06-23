@@ -1,0 +1,47 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  was exciting because it didn’t have a tape drive.  Right?  
+
+KEVIN SCOTT:  Right.  
+
+CHRIS URMSON:  Right?  Or -- 
+
+KEVIN SCOTT:  It didn’t have a floppy disk drive.  
+
+CHRIS URMSON:  Didn’t have a floppy, yeah.  
+
+KEVIN SCOTT:  And, like it -- 
+
+CHRIS URMSON:  It had 5.25-inch disks, that’s what it had, yeah.  
+
+KEVIN SCOTT:  Yeah. 
+
+CHRIS URMSON:  So, anyway, so was doing that.  And then there’s this language, C++, which seemed to be the hot new thing.  And so started actually the first programming language I really learned was C++. 
+
+KEVIN SCOTT:  Wow, that’s rough.  (Laughter.) 
+
+CHRIS URMSON:  Yeah, no, it was -- yeah, it was a little crazy.  And I--
+
+KEVIN SCOTT:  I mean, and I guess on some level, like C++ was a challenging first language, but the good thing is after you’ve mastered it -- 
+
+CHRIS URMSON:  It’s all downhill.  (Laughter.) 
+
+KEVIN SCOTT:  It’s all downhill.  And so did you know from all of this experience in high school that you wanted to get a computer science and engineering degree? 
+
+CHRIS URMSON:  You know, I was up in Canada, so applied to a variety of schools, got into a couple of them.  And then in my senior year, I met a girl.  Turns out, now she’s my wife.  
+
+And decided I wanted to stay at the University of Manitoba, which is right in central Canada, Manitoba.  And got into the computer engineering school. Computers seemed like, you know, they had a future.  
+
+KEVIN SCOTT:  Yeah, and how -- and so you got your undergraduate degree and you went straight to grad school, right? 
+
+CHRIS URMSON:  That’s right, yeah.  
+
+KEVIN SCOTT:  And you went to grad school at Carnegie Mellon?  
+
+CHRIS URMSON:  Yeah.  
+
+KEVIN SCOTT:  So, how did you know you wanted to go to CMU?  
+
+CHRIS URMSON:  One day, I was in the engineering building just outside the library, and there was this poster next to the elevator that showed this robot crawling out of a volcano. And I saw that, I thought, “That’s really cool.”  Right?  I like robots, I like space, this seems exciting.  
+
+KEVIN SCOTT:  Yeah. 
+
+CHRIS URMSON:  And my girlfriend said, you know, “You should really apply if you think that’s cool.” 

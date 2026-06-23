@@ -1,0 +1,23 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  using modern tools.
+
+And so, you know, I think that the thing that we really need to be doing is figuring out how to take these tools that are now very accessible, and like we shouldn't feel intimidated by them, in any shape, form or fashion, and figure out how to get those into high school curricula so that we are teaching kids in a project-oriented way, like how to use these tools to solve real world problems.
+
+I think getting kids those skills is super important.  Like the other thing that we need to think about is just how we're connecting people to the digital infrastructure that is going to increasingly be running our future.
+
+And so, you know, there are things like the availability of broadband that are a huge, huge deal.  You know, I think we write about in the book, my visit to our datacenter in Boydton, which is in Mecklenburg County, about an hour-and-a-half, two hours away from where I grew up.
+
+And this is one of the most sophisticated technology installations anywhere in the world.  Like there's an enormous amount of network bandwidth coming into this facility, and like the amount of compute power that is just in this sort of acres of datacenter infrastructure that we have there is just staggering.
+
+And we have a bunch of high-skilled technology workers who are building and operating this infrastructure, on behalf of all of Microsoft's cloud customers. And some of those people who are living in that community struggle to get access from their local telecommunication providers to the high-speed broadband that they expect. Like, they're information works, like they expect in their homes to like have good broadband connectivity.  
+
+For students, like it's even more critical.  Like if you don't have a good broadband connection that's available to you, somewhere, as a student, like you're never going to be able to go find these opensource tools to use these free or cheap cloud platforms to like go learn all of this like very accessible knowledge that is on YouTube.
+
+And so, sometimes, I think it's the, you know, the prosaic things that like we're making more complicated than the complicated things.   
+
+[MUSIC]
+
+CHRISTINA WARREN: That was Kevin speaking with his co-author, Greg Shaw, about their latest book, Reprogramming the American Dream.  Now, let’s switch gears a bit and meet one of Kevin’s favorite science fiction authors, Charlie Stross. Kevin, tell us a bit about Charlie and why you invited him on the show.
+
+KEVIN SCOTT:  Well, I obviously love Charlie’s fiction. He’s a phenomenal writer. And, you know, I feel like I have been really, really shaped by the books that I read from early in childhood. And I’ve been, I think, especially inspired and motivated by the science fiction that I’ve read. And Charlie’s is certainly really, really wonderful, wonderful fiction. 
+
+I first

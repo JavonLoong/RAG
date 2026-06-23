@@ -1,0 +1,32 @@
+In mathematics, the rational points on the unit circle are those points ("x", "y") such that both "x" and "y" are rational numbers ("fractions") and satisfy "x" + "y" = 1.
+ The set of such points turns out to be closely related to primitive Pythagorean triples. Consider a primitive right triangle, that is, with integral side lengths "a", "b", "c", with "c" the hypotenuse, such that the sides have no common factor larger than 1.
+ Then on the unit circle there exists the rational point ("a"/"c", "b"/"c"), which, in the complex plane, is just "a"/"c" + "ib"/"c", where "i" is the imaginary unit.
+ Conversely, if ("x", "y") is a rational point on the unit circle in the 1st quadrant of the coordinate system (i.e. "x" > 0, "y" > 0), then there exists a primitive right triangle with sides "xc", "yc", "c", with "c" being the least common multiple of "x" and "y" denominators.
+ There is a correspondence between points ("x","y") in the "x"-"y" plane and points "x" + "iy" in the complex plane which will be used below, with ("a", "b") taken as equal to "a" + "ib".
+In queueing theory, a discipline within the mathematical theory of probability, Little's result, theorem, lemma, law or formula is a theorem by John Little which states that the long-term average number "L" of customers in a stationary system is equal to the long-term average effective arrival rate "λ" multiplied by the average time "W" that a customer spends in the system.
+ Expressed algebraically the law is
+In mathematics, a quartan prime is a prime number of the form "x" + "y", where "x" > 0, "y" > 0 (and "x" and "y" are integers).
+ The odd quartan primes are of the form 16"n" + 1.
+In the mathematical theory of special functions, Schwarz's list or the Schwartz table is the list of 15 cases found by when hypergeometric functions can be expressed algebraically.
+ More precisely, it is a listing of parameters determining the cases in which the hypergeometric equation has a finite monodromy group, or equivalently has two independent solutions that are algebraic functions.
+ It lists 15 cases, divided up by the isomorphism class of the monodromy group (excluding the case of a cyclic group), and was first derived by Schwarz by methods of complex analytic geometry.
+ Correspondingly the statement is not directly in terms of the parameters specifying the hypergeometric equation, but in terms of quantities used to describe certain spherical triangles.
+In algebraic geometry, a branch of mathematics, a Zariski surface is a surface over a field of characteristic "p" > 0 such that there is a dominant inseparable map of degree "p" from the projective plane to the surface.
+ In particular, all Zariski surfaces are unirational.
+ They were named by Piotr Blass in 1977 after Oscar Zariski who used them in 1958 to give examples of unirational surfaces in characteristic "p" > 0 that are not rational.
+ (In characteristic 0 by contrast, Castelnuovo's theorem implies that all unirational surfaces are rational.)
+In algebraic geometry, the Kempf vanishing theorem, introduced by , states that the higher cohomology group "H"("G"/"B","L"(λ)) ("i" > 0) vanishes whenever λ is a dominant weight of "B".
+ Here "G" is a reductive algebraic group over an algebraically closed field, "B" a Borel subgroup, and "L"(λ) a line bundle associated to λ.
+ In characteristic 0 this is a special case of the Borel–Weil–Bott theorem, but unlike the Borel–Weil–Bott theorem, the Kempf vanishing theorem still holds in positive characteristic.
+In number theory, a Pillai prime is a prime number "p" for which there is an integer "n" > 0 such that the factorial of "n" is one less than a multiple of the prime, but the prime is not one more than a multiple of "n".
+ To put it algebraically, formula_1 but formula_2.
+ The first few Pillai primes are
+In mathematics, a nowhere continuous function, also called an everywhere discontinuous function, is a function that is not continuous at any point of its domain.
+ If "f" is a function from real numbers to real numbers, then "f" is nowhere continuous if for each point "x" there is an "ε" > 0 such that for each "δ" > 0 we can find a point "y" such that and .
+ Therefore, no matter how close we get to any fixed point, there are even closer points at which the function takes not-nearby values.
+In mathematics, two quantities are in the golden ratio if their ratio is the same as the ratio of their sum to the larger of the two quantities.
+ The figure on the right illustrates the geometric relationship.
+ Expressed algebraically, for quantities "a" and "b" with "a" > "b" > 0,
+In mathematics, a metric space "X" with metric "d" is said to be doubling if there is some constant "M" > 0 such that for any "x" in "X" and "r" > 0, it is possible to cover the ball "B"("x", "r") = {"y"|"d(x, y)" < "r"} with the union of at most "M" many balls of radius "r"/2.
+ The base-2 logarithm of "M" is often referred to as the doubling dimension of "X".
+ Euclidean spaces ℝ equipped with the usual Euclidean metric are examples of doubling spaces where the doubling constant "M" depends on the dimension "d".

@@ -1,0 +1,27 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt ’m -- I mean, it’s just -- 
+
+CHRIS URMSON:  Yeah. 
+
+KEVIN SCOTT:  What a great thing it is to be a human being.  
+
+CHRIS URMSON:  It is.  I don’t know if you’ve watched this, the YouTube video of people – “People are Awesome”?  And it’s that.  It’s like the -- all these crazy things, you know, people juggling while on a unicycle or doing -- you know?  And it’s just like -- yeah, like, the diversity that is humanity and the fact that people -- there’s so many things out there, and people can pick them up and -- yeah. 
+
+I wonder about my lack of imagination, that you know I see some of these things and I think, you know, you see it after the fact, you think that’s incredible, and then I think, I could -- it would never have occurred to me to do that.  (Laughter.)  And, you know, it’s -- it’s a bit of a shame some days.  (Laughter.) 
+
+KEVIN SCOTT:  Well, I’m sure that there are plenty of people who look at you and have the same reaction.  I think building a -- building autonomous robots and, like, trying to help self-driving cars come into the world seems like an inscrutable, almost impossible thing to some folks.  But, like, thank goodness we have people who are captivated by the idea of trying to do it and have the you know determination to try to make it happen.  
+
+CHRIS URMSON:  Yeah, thanks very much. 
+
+KEVIN SCOTT:  So, with that, thank you for being on the show today.  
+
+CHRIS URMSON:  Oh, my pleasure, thanks. 
+
+KEVIN SCOTT:  Awesome.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  All right, so that was Kevin Scott chatting with Chris Urmson.  And, you know, Kevin, as we were discussing before the interview, one of the things I think that is so interesting about Aurora and about Chris’s journey is the fact that he’s not -- Aurora’s not just building, you know, self-driving hardware, which a lot of different companies and startups are doing, but they’re really looking at building that entire platform around self-driving technologies. 
+
+KEVIN SCOTT:  Yes, and I think that’s a really -- I mean, one of the things that Chris said in the interview about this platform approach that really rings true to me is like he doesn’t believe that they have sufficient imagination inside of Aurora to conceive of all of the many things that you may want to do with a AI driver.  
+
+And, like, I totally agree with that.  So I think it’s really presumptuous to think that one company or even one industry

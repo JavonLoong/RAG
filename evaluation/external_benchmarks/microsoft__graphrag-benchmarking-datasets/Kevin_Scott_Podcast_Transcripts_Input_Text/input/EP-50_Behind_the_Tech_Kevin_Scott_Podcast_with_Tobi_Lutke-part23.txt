@@ -1,0 +1,25 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt , very good. TypeScript, I like, too, so.
+
+KEVIN SCOTT: Awesome. Well, I –
+
+TOBI LÜTKE: What about you? What is – what’s your favorite programming language? Like, can I ask this? 
+
+KEVIN SCOTT: Yeah, yeah, yeah. 
+
+TOBI LÜTKE: This is probably politically charged for you. (Laughter.)
+
+KEVIN SCOTT: No, no, no, it’s not politically charged at all. So, I – my default – 
+
+TOBI LÜTKE: I love all my children. 
+
+KEVIN SCOTT: Yeah. No, my default programming language for just a really long time now, since I was an engineer at Google, has been Python. Yeah, it’s very comfortable, like, the way that I think is harmonized with the with the language. And I’m sure, you know, sort of influenced in both directions. But yeah, and I’m intrigued by Rust. Like, it’s an interesting – interesting learning curve. I… 
+
+You know, I’ve been doing a bunch of, like, weird machining stuff, like, which we’ve talked about before. And so, like, there’s a bunch of procedural stuff that I’m doing with, with machining, where I’m sort of taking a tool where you are graphically laying in a bunch of tool paths for a thing that you’re trying to make. And then I will export the code from that, which is usually G code, or, like, there’s this programming language called Simple for the DATRON CNC machine that I have. And then I’m writing a bunch of code to transform that in a bunch of weird ways to get the machining effects that I want. 
+
+And, like, what I really want is to be able to have a coding assistant, like, an AI assistant help me with all of this stuff, because I think there’s no reason to think that you can’t, in natural language, describe most of what it is I’m doing and have an assistant help you out with it. 
+
+TOBI LÜTKE: Yeah, it’s – I mean, I am so ready – I started doing a lot more programming again, like, two, three years ago, because I just kind of – I was really missing it. 
+
+And luckily, friends at GitHub hooked me up with, like, early access to GitHub Copilot. And I am just like – I mean, I used to do all of Shopify’s programming, doing pair programming with my – with one of my co–founders. And we would play, like, a test driven development. And we would – we would basically do this bug ping pong kind of thing, where we were trying to be lazy, as lazy as possible to solve for unit tests that the other person wrote, and go back and forth. 
+
+And like, but this is really

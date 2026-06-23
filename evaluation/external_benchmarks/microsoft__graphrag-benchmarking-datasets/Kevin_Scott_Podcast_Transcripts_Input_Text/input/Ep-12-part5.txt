@@ -1,0 +1,33 @@
+Ep-12.txt  then 
+ended up I stepped up a few steps and ended up as the head of the computing science research 
+center. 
+KEVIN SCOTT: So how did that transition go for you? I mean, I've always been interested in 
+this because you know I think the people who have worked for you and with you admire both 
+your ability as a like a technical leader as well as your technical ability. And, like, those two 
+things don't always go hand in hand. 
+BILL COUGHRAN: Some people think they're inversely proportional. (Laughter.) The -- it's 
+interesting, I've always tried to read and explore different technology areas. My sense is, Kevin, 
+you're the same. And so I try to stay conversant. I also try to develop relationships with people 
+that I work with who I believe are experts in the areas that they understand more deeply than I 
+do. 
+And I just try to synthesize as much as I can, but over the years, I've also learned like it's silly of 
+me to descend into the code in a major project because I can't contribute that -- in that way 
+anymore, but I can think about how does it fit in end to end? What are the constraints it's 
+operating under? You know? There are often big choices about what to do in terms of the basic 
+algorithmic approach and so forth. And I try to stay current with that. 
+But over the years, it's funny, I shifted away from the numerical modeling stuff, even though it's 
+sort of come back in the form of machine learning and became much more deep on the 
+distributed systems side. But you can learn new things. 
+One of the things that always amused me when I ended up at Google was I had never worked on 
+a Web service before I joined Google in early 2003. And yet, somehow, over a fairly short 
+period of time, I became responsible for the engineering associated with Google.com. So, you 
+know, it appears old dogs can occasionally learn new tricks, so -- (Laughter.) 
+KEVIN SCOTT: I think you're being very modest. (Laughter.) But you -- you've done all this 
+work in distributed computing and like you had founded a network company. So, like you had 
+tons of very relevant experience at how to build, like, high-scale systems. 
+BILL COUGHRAN: Well, so what happened to me, so I started life at Bell Labs very much in 
+the research mold. So, success was writing papers and giving talks and what was a very 
+academic style, success metric. 
+Over the years at Bell Labs, I felt like I was going to conferences and seeing the same subset of 
+3- to 500 people over and over again. And I got a little bit frustrated with my ability to impact 
+things.

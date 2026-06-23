@@ -1,0 +1,41 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  founded the pioneering supercomputing company Thinking Machines, which built the world's fastest computers in the '80s and '90s, and paved the way for modern large-scale computing.
+
+After Thinking Machines, Danny ran Imagineering at Disney. He cofounded Applied Minds and Applied Invention, an interdisciplinary group of engineers, scientists and artists.  He is a visiting professor at the MIT Media Lab and a great friend.  
+
+[MUSIC]
+
+KEVIN SCOTT:  Hello, Danny.  Welcome to the show.
+
+DANNY HILLIS:  Great to be here.
+
+KEVIN SCOTT:  So, you perhaps more than any other person I know, like, have a curious and wide set of interests, which is awesome, and I would love to understand, like, how that got started.  Like, were you a curious kid?
+
+DANNY HILLIS:  So, I was really lucky in that I grew up all over the world.  My father studied hepatitis, so wherever there was a hepatitis epidemic, we went there and lived.
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  So, I got to live in countries in Africa that don't exist anymore.  But, you know, lots of places in Africa and India I got to live, in Kolkata, and Europe, and little towns in the southern United States, and so, I really, there was always something to be curious about.
+
+KEVIN SCOTT:  Right.  And, like, beyond the exposure to, like, all of these different cultures and people and ideas, like, your dad must have been a little bit fearless and adventurous.
+
+DANNY HILLIS:  You know, it's interesting, I think in retrospect, he was just naïve.
+
+KEVIN SCOTT:  Oh.
+
+DANNY HILLIS:  I asked him, because when I had kids of my own, I was like, why did, you brought us into war zones and stuff like that.  I would never do that with my kids.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And he's like, yeah, we didn't really understand what we were doing.
+
+KEVIN SCOTT:  But it seemed to have worked out.
+
+DANNY HILLIS:  It did.  And I got to try every possible kind of education system or non-education system along the way.
+
+KEVIN SCOTT:  So, was he an epidemiologist by training?
+
+DANNY HILLIS:  Yep, that's right.
+
+KEVIN SCOTT:  Okay, and what did your mom do?
+
+DANNY HILLIS:  Well, actually, my mom is a great story, because my mom quit school to put my father through medical school.  And I always knew she was super smart.  But because she wasn't educated, people did

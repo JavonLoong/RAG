@@ -1,0 +1,16 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt , I was also studying cognitive science and philosophy of language science at the time, and I was debating whether I should go to grad school in philosophy or in computer science, because these were methodologies for me to get at these fundamental questions. 
+
+And then I talked to some people and I realized the people were graduating with a PhD in philosophy and working in moving, right, it was not a great career path. Whereas I could tackle these issues in a more empirical way and, frankly, just a more satisfying from a career point of view way, as a computer scientist. So, I decided to go to grad school in computer science.  But it wasn’t obvious. I could have ended up being a philosopher. 
+
+KEVIN SCOTT: And what was your dissertation on? 
+
+
+OREN ETZIONI: So, I went on to study with Tom Mitchell, who’s really the father of machine learning or one of them in many ways. It was on machine learning, a subfield of machine learning that’s much more symbolic than the kind of neural network deep learning stuff that we do today. 
+
+KEVIN SCOTT: Yeah, but he must have even been thinking about statistical methods back then. I’ve got, like, one of Tom’s textbooks that I’ve had for a very long time. And I think it’s the first place that I ever read about Bayesian inference. So, I don’t know whether he was thinking about things like the statistical approach to machine learning back when you were his student or not, but he certainly has done some interesting work there. 
+
+OREN ETZIONI: Absolutely. He was and he did, and his classic textbook covered it. Geoff Hinton was visiting at the time, and there was very lively and intense discussion of his ideas. I think the thing that Tom and certainly I missed was the power, the potential power of neural networks to – when you have awesome amounts of data and tremendous amounts of computational power. So, at the time, they didn’t necessarily do better than other statistical mechanisms. So, it was very clear that we wanted statistical methods, but it was a lot less clear that we wanted neural networks. 
+
+KEVIN SCOTT: I think that’s one of the sort of classical timing problems in computer science and engineering, where it was a good idea, but because – we effectively didn’t have the data volume and the distributed computing infrastructure that came along with the internet revolution and like these big internet companies and their distributed computing and cloud infrastructure, which wasn’t called cloud infrastructure at the time. 
+
+And so, I just sort of wonder what are we missing right now? Like, the good ideas that happened 10 years ago that are, you know, left by the wayside that are now feasible and like we don’t even have someone – I mean, the good thing about Geoff is he was stubborn, like, he was convinced that it was a good idea and he kept pushing on it,

@@ -1,0 +1,40 @@
+The AG36 is a single-shot 40 mm grenade launcher that operates on the High-Low System and was designed primarily for installation on the G36 assault rifle, designed by the German weapons manufacturing company Heckler & Koch of Oberndorf am Neckar.
+ It originally appeared as Heckler & Koch's candidate for the US Army's Enhanced Grenade Launcher requirement, evaluated for use with the XM8 and FN SCAR rifles.
+ As is commonly mistaken, the "A" is not an addition to the name "G36", which is short for "Gewehr 36", but is in fact an abbreviation of the German "Anbaugranatwerfer", literally meaning "attached grenade launcher" and the 36 coming from the name of the primary weapon it was designed to enhance – the G36.
+ It can also be used dismounted, with a stock attached as a stand-alone model, or a LLM01 laser light module can be attached to it.
+The AN/PRC-148 Multiband Inter/Intra Team Radio (MBITR) is the most widely fielded handheld multiband, tactical software-defined radio, in use with NATO forces around the world.
+ The radio is built by Thales Communications, a subsidiary of the Thales Group.
+ The designation AN/PRC translates to Army/Navy Portable Radio used for two way Communications, according to Joint Electronics Type Designation System guidelines.
+The RL-83 Blindicide is primarily an antitank rocket launcher but other rounds could be fired.
+ It was produced by Mecar SA of Belgium and was an improved derivative of the M20A1 Bazooka.
+ Its name roughly means "tank killer", derived from the French "véhicule blindé" ("armoured car") and the suffix "-cide".
+The Saturn I (pronounced "Saturn one") was the United States' first heavy-lift dedicated space launcher, a rocket designed specifically to launch large payloads into low Earth orbit.
+ Most of the rocket's power came from a clustered lower stage consisting of tanks taken from older rocket designs strapped together to make a single large booster, leading critics to jokingly refer to it as "Cluster's Last Stand".
+ However, its design proved sound and very flexible.
+ Its major successes were launching the Pegasus satellites and flight verification of the Apollo Command and Service Module aerodynamics in the launch phase.
+ Originally intended as a near-universal military booster during the 1960s, it served only for a brief period and only with NASA; ten Saturn I rockets were flown before it was replaced by the derivative Saturn IB, which featured a more powerful upper stage and improved instrumentation.
+The Hawker Tempest is a British fighter aircraft primarily used by the Royal Air Force (RAF) in the Second World War.
+ The Tempest, originally known as the "Typhoon II", was an improved derivative of the Hawker Typhoon, intended to address the Typhoon's unexpected fall-off of performance at high altitude by replacing its wing with a thinner laminar flow design.
+ Having diverged considerably from the Typhoon, it was chosen to rename the aircraft "Tempest".
+ The Tempest emerged as one of the most powerful fighters of World War II and was the fastest single-engine propeller-driven aircraft of the war at low altitude.
+ The propeller-driven Dornier 335 was even faster, but it had two engines.
+The LRAC F1, officially called "Lance-Roquettes AntiChar de 89 mm modèle F1" (89 mm anti-tank rocket launcher model F1) is a French reusable rocket launcher developed by Luchaire Défense SA, and manufactured in cooperation with Manufacture Nationale d'Armes de Saint-Étienne and was in the 1970s marketed by Hotchkiss-Brandt.
+ It replaced the 89 mm M20A1 Super Bazooka in French Army service.
+ Through the use of fiberglass and plastic in the launcher it is over 2 kg lighter when loaded than the M20A1 while having a greater effective range.
+ The LRAC FI is sometimes referred to as the STRIM 89mm antitank rocket launcher from the abbreviations for the private firm "Société technique de recherches en industries mécaniques" that was contracted in 1964 by the French Ministry of Defence, to research a replacement for the M20A1 Super Bazooka.
+ In the early 1970s, two antitank weapons were placed in production for evaluation by the French Army to replace the M20A1: the 80mm ACL-APX, a recoilless cannon with a rocket assist projectile, and the 89mm LRAC F1 STRIM 89mm rocket launcher.
+ The STRIM design was chosen as the replacement for the M20A1 based on its higher penetration ability of its antitank ammunition and the much lower over all manufacturing costs compared to the 80mm ACL-APX system.
+The 40 mm Under Barrel Grenade Launcher, is a single shot grenade launcher developed by ARDE and Ordnance Factory Tiruchirappalli for use with the INSAS and AK-47 rifles used by the Indian Army.
+ Stand alone versions of the grenade launcher exist.
+Bazooka is the common name for a man-portable recoilless anti-tank rocket launcher weapon, widely fielded by the United States Army.
+ Also referred to as the "Stovepipe", the innovative bazooka was among the first generation of rocket-propelled anti-tank weapons used in infantry combat.
+ Featuring a solid-propellant rocket for propulsion, it allowed for high-explosive anti-tank (HEAT) warheads to be delivered against armored vehicles, machine gun nests, and fortified bunkers at ranges beyond that of a standard thrown grenade or mine.
+ The universally-applied nickname arose from the M1 variant's vague resemblance to the musical instrument called a "bazooka" invented and popularized by 1930s U.S. comedian Bob Burns.
+The Rocket Launcher T40/M17 (Whizbang) (sometimes spelled "WhizBang") was a tank-mounted multiple rocket launcher used by the United States Army during World War II.
+ The launcher was placed atop the Medium Tank M4, and fired a barrage of 7.2 in (180 mm) T37 HE or T21 Chemical rockets from 20 launch tubes.
+ It was developed and used in the late stages of World War II; it saw limited combat in 1944–45.
+ An experimental short variant of the T40 was also developed.
+The Rocket Launcher T34 (Calliope) was a tank-mounted multiple rocket launcher used by the United States Army during World War II.
+ The launcher was placed atop the M4 Sherman, with its prominent vertical side frames firmly anchored to the turret's sides, and fired a barrage of 4.5 in (114 mm) M8 rockets from 60 launch tubes.
+ It was developed in 1943; small numbers were produced and were used by various US armor units in 1944–45.
+ It adopts its name from the musical instrument "Calliope", also known as the steam organ, which had similar parallel pipes, and which had historically existed on steamboats of the Mississippi River in the United States.

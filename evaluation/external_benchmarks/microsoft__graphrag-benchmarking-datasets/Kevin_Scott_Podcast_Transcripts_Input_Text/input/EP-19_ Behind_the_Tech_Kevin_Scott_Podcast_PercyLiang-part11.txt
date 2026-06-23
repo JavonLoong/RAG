@@ -1,0 +1,19 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  and you don't find what you want.
+
+And it's like, okay, well, it's user error, let's try again, but that's -- allows you to get so much more data and signal, and a potential for improvement, which -- whereas if you have an assistant and it just doesn't work, then you just, you're just going to give up.
+
+KEVIN SCOTT:  Yes, there is this weird psychology thing, right, where -- with the interfaces, like you almost feel embarrassed when you ask the -- like the software question, verbally, and it doesn't give you the right answer, like you just sort of assume that you've done something wrong, whereas somehow or another, with search, like we've -- and like it's, it reminds me a little bit of my mother.
+
+Like my mother, whenever she can't get her computer to do what she wants it to do, she always assumes that it's her fault, which is a weird way to approach technology.  
+
+So, let's go back to the work that you do at Stanford.  So, you spend part of your time teaching students, like in particular, like you're teaching the -- some of the AI curriculum at Stanford, and then you're doing, you're doing research.  So, talk a little bit about the teaching, like how has teaching students machine learning changed over the past handful of years?
+
+PERCY LIANG:  Yeah, so I -- the main class that I teach at Stanford is CS221, the main AI class, and I've been teaching this since 2012.  When it started there were less than 200 students in the class, and last year there were 700 or so.  So, there's definitely-- the most salient thing that has happened is just the sheer number of students wanting to learn this subject matter.
+
+So, that has presented a number of challenges.  I think people are taking the class from a fairly heterogeneous population.  There's undergrads who are learning computer science and trying to -- you know, are excited about AI, and they want to learn about it.  There's Master’s students who have a little bit more research experience, maybe.  
+
+There's people from other departments, who have actually quite advanced mathematical abilities, and are trying to learn about, you know, AI.  There are people, professionals who are working full-time and trying to learn about AI.  So, one of the challenges has just been to how to accommodate all these -- this diverse population.
+
+KEVIN SCOTT:  And how do you do that?  
+
+PERCY LIANG:  It's, it's challenging, there are certain things that, you know, that we try to do, trying to have materials which are presented from kind of slightly different perspectives, and have, you know, review sessions on certain types of topics.  But, honestly, I don't have a, you

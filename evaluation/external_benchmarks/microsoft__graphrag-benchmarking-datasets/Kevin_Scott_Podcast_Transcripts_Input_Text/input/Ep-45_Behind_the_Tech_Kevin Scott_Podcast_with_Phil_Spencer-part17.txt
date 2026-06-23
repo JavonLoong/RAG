@@ -1,0 +1,13 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt , it’s out in the market, I don’t know, probably 10,000 people use the thing in the end. But, you know, there was something magical about that feedback loop of actually seeing customers use the product that you had built that just, again, reinforced the whole loop about if you can spend more time in the creation on the things that really matter to your customers, you get so much more value out of that. And just looking at your production pipeline through that lens, I just found, was really, really helpful for us. 
+
+KEVIN SCOTT: Well, and you know, which brings me to this, you know, this thing about you and what you have chosen to do, which is you get to make things that you put in people’s hands, and the objective of them using it is their enjoyment. And so, yeah, you can tell whether you’ve done a good job or not. Like, people either enjoy the thing that you made or they don’t. They either play it a lot or they don’t. They either, you know, like, talk about it positively or they don’t. And that is, you know, different than sometimes people who do infrastructure things.
+
+PHIL SPENCER: Yeah.
+
+KEVIN SCOTT: Like, I’ve been a systems person most of my career, and you have to figure out other ways to determine whether or not the things you’re working on are creating value or, like, serving a good purpose. So, how important is that to you as an engineer, like, being… having that feedback loop?
+
+PHIL SPENCER: For me kind of personally and professionally it is really my only way of operating, is both from, like, a personal fulfillment. And I’m not… it’s not at all a judge of any kind of engineering out there. It’s just kind of how I’m wired. The… you know this because you and I have been online before. You know, I’m P3 on Xbox Live. When I’m playing online, people see my gamertag. I don’t hide it. My Twitter handle is out there, like you said. 
+
+The feedback on the work that we do, good and bad, is out there front and center. And while there’s obviously good days and bad days for myself and the teams and the products that were building, for me, that complete loop of we have an idea, whether it’s iterative on something that we’ve already done or completely new. We’re going to work that over multiple years, in the case of these big games that we were talking about, to deliver something. And that end result in the feedback that you get is the thing that gives me momentum into the next thing. 
+
+But that’s, like, I said, that’s – that’s kind of how I’m wired. I like the completeness of that. I mean, I’m enthralled by

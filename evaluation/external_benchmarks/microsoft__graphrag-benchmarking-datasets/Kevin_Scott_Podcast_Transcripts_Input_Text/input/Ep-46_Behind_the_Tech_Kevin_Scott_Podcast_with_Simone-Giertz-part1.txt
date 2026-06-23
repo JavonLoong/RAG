@@ -1,0 +1,24 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt ../Behind the Tech with Kevin Scott Episode 46 
+Simone Giertz: Inventor & Product Designer
+
+SIMONE GIERTZ: in making and building things it’s like, when you start, you think that there’s, like, one right way of doing it and it’s like, no, there’s a hundred different ways of doing it. And maybe five of those are really good and 40 of those are really bad. But it’s like you can – there are so many different ways to – to skin a cat. But why would you want to skin a cat? (Laughter.)
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I’m cohost, Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today, we are talking to Simone Giertz, who is an incredible inventor, roboticist and maker of all kinds.
+
+KEVIN SCOTT: Yeah. Simone has been one of my favorite YouTubers for years. I was so incredibly excited when she agreed to be on the program today. I’ve just wanted to talk to her for a really long time. She is an inspiration to me, as someone who likes to make things. Like, I watch her videos and learn a bunch of things and get inspired about things that I then want to go do myself. 
+
+But the thing that I really admire about her is the example that she’s setting for other people, sort of teaching you that if you, you know, have a little bit of curiosity and determination and you’re, you know, you let yourself be a little bit fearless, like, you can really do anything.
+
+CHRISTINA WARREN: Now, I know you’ve been a – you’re a huge fan of hers, and I can’t wait to hear the two of you talk shop, no pun intended.
+
+KEVIN SCOTT: Yeah, awesome.
+
+KEVIN SCOTT: Simone Giertz is a Swedish inventor maker, robotics enthusiast, TV host, professional YouTuber, and most recently, entrepreneur. She briefly studied engineering physics at the Royal Institute of Technology in Stockholm and has since built a career creating amazing things and sharing the process of their creation with the world. Giertz builds robots that do all kinds of impractical and funny things, like an alarm clock that slaps the user, a lipstick applier, and famously, a toothbrush

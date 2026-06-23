@@ -1,0 +1,15 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  were coming up with abstractions like Bayesian networks and influence diagrams, which are higher-level constructs, representations. And I remember at the time we were joking about getting bumper stickers as grad students -- rebellious grad students -- driving around campus that were going to say “Numbers are symbols, too.”  It was that bad in those days. 
+
+KEVIN SCOTT: You know, it’s really interesting, though, because what you all were collectively doing, you know, sort of steering things away from this symbol manipulation, like systems of logic, you know, sorts of research and getting things into this more, you know, statistical framework has basically set the course for artificial intelligence over the past three decades. 
+
+Most of what we talk about now when we’re talking about artificial intelligence is statistical machine learning of some flavor or another. And like that’s really sort of a stunning thing to like have that foundational piece persist for as long as it has. I mean, so like I don’t know whether you all were cognizant of what you were doing, but like it’s a really big deal that the field pivoted that way. 
+
+ERIC HORVITZ: Rather than being cognizant, we felt like we were outsiders with some really important ideas to share. There was a panel at AAAI in 1984 I recall, where several people were almost booed off stage as we tried to bring up this idea of uncertainty in AI -- principles of uncertainty. 
+
+And that next year in 1985, we decided to take that panel and make it into a workshop we called Uncertainty in AI, (UAI) which was a separate growing community. 
+
+I remember the moment this outlandish thing happened in 2007, I was invited to be the president of AAAI. We joked – “we” being the former invisible college -- that the revolution was complete. And it really felt that way, like, all of a sudden, we said, “You know, look—I remember in like 2010 or so) you know, AAAI we said, it’s like UAI, it’s like a big UAI now, it’s everything.”
+
+KEVIN SCOTT: So let’s, you know, since I want to make sure we get to some of the like really interesting stuff that we’ve been doing recently, let’s fast forward all the way to some of the AI work that you’ve been doing over the past handful of years, which I think is of, like, again, really foundational importance, like, maybe even more important than this shift that you all agitated for and sort of realized when you were grad students. 
+
+And that is sort of thinking about AI in the human context. So, as these technologies have become unbelievably more powerful, like especially over the past 10 or 15 years and their applicability to problem solving in the real world has never been higher, we are now being faced with a whole

@@ -1,0 +1,34 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt ../JARON LANIER: (VOICEOVER) I'm worried about where we are right now.  I just feel like our present Internet is destroying societies and democracies and economies.  I think it's bringing down civilization.  It's bad.  We really screwed this thing up.
+
+[MUSIC]
+
+KEVIN SCOTT:  Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to the show.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.  
+
+KEVIN SCOTT:  And I'm Kevin Scott. 
+
+CHRISTINA WARREN:  And today we have an amazing guest.  
+
+KEVIN SCOTT:  Indeed, we do.  
+
+CHRISTINA WARREN:  Okay, but before we hear from him, I wanted to ask you a question first, Kevin.  All right, so you have a ton of interests, you're into cooking and photography and there's a long list of stuff.  
+
+Do you ever feel like there isn't enough time in the day to do all the stuff that you want to do, like, you know, to pursue your passions? 
+KEVIN SCOTT:  Yeah, this is sort of the curse of my life.  (Laughter.)  I wish there were more hours in the day. 
+
+CHRISTINA WARREN:  Same, but if you could stop and spend time during the day to do just the thing that you're most passionate about at this moment, what would that be? 
+
+KEVIN SCOTT:  Yeah, it's sort of weird -- it would definitely be making something and, you know, with me, what it is that I would make changes over time.  
+So, at one point in time, it might be a dish to share with someone together at the dinner table, at another point in time, it might be a piece of furniture.  Right now, interestingly enough, I'm sort of obsessed with machining.  So, I would go to my metal shop and fabricate something mechanical. 
+
+CHRISTINA WARREN:  I love it.  I love it.  That sounds really cool.  I think for me, I don't know, it would be boring, I'd probably just write, continue, just focus on writing -- 
+
+KEVIN SCOTT:  I think that sounds great.  
+
+CHRISTINA WARREN:  Yeah.  
+
+KEVIN SCOTT:

@@ -1,0 +1,33 @@
+The Rolls-Royce RB.53 Dart is a long-lived British turboprop engine designed, built and manufactured by Rolls-Royce Limited.
+ First run in 1946, it powered the first Vickers Viscount maiden flight in 1948, and in the Viscount was the first turboprop engine to enter airline service, with British European Airways (BEA), in 1950.
+ On 29 July 1948 a flight between Northolt and Paris–Le Bourget Airport with 14 paying passengers in a Dart-powered Viscount was the first scheduled airline flight by any turbine-powered aircraft.
+The Kuznetsov NK-12 is a Soviet turboprop engine of the 1950s, designed by the Kuznetsov design bureau.
+ It drives two large four-bladed (eight per engine) contra-rotating propellers, 5.6 m (18 ft 4.5 in) in diameter, and 6.2 m (20 ft 4.1 in) in the NK-12MA and NK-12MV.
+ It is the most powerful turboprop engine ever built.
+Aircraft equipped with contra-rotating propellers, also referred to as CRP, coaxial contra-rotating propellers, or high-speed propellers, apply the maximum power of usually a single piston or turboprop engine to drive two coaxial propellers in contra-rotation (rotation about the same axis in opposite directions).
+ Two propellers are arranged one behind the other, and power is transferred from the engine via a planetary gear or spur gear transmission.
+ Contra-rotating propellers should not be confused with counter-rotating propellers—airscrews on separate shafts turning in opposite directions.
+The PADC Defiant 300 is a prototype aircraft developed by the Philippines Aerospace Development Company (PADC) in cooperation with the Philippine Air Force (PAF) and the Philippine Aerospace and Sciences Foundation (PASF).
+ The project was made possible through Capt. Panfillo Villaruel, the man who designed the aircraft, and the one who also contributed to the creation of the first indigenous Filipino-made helicopter, the PADC Hummingbird.
+ The first prototype was completed in 1986 and had its maiden flight in 1987, which lasted a little more than an hour.
+ The Defiant 300's fuselage was of composite construction (wood and fiberglass) and was powered by a 300 hp Lycoming piston engine.
+ Landing gear was taken from the Beechcraft T-34 Mentor and provided by the PAF.
+ The intent of the program was to provide the PAF with a trainer and light strike aircraft similar in performance to the Embraer EMB 312 Tucano.
+ The Defiant 300 was to have been followed by a larger version equipped with a turboprop engine and designated the "Defiant 500".
+ The project languished soon after the development of the prototype because of lack of government support.
+ Currently, the sole remaining prototype now lies abandoned and displayed in a hangar at the Philippine State College of Aeronautics.
+The Allison T38 (company Model 501) was an early large turboprop engine developed by Allison Engine Company during the late 1940s.
+ The T38 became the basis for the very successful family of Allison T56 turboprop engine.
+The Vickers Viscount was a British medium-range turboprop airliner first flown in 1948 by Vickers-Armstrongs, the first such aircraft to enter service in the world.
+ A product of the Brabazon Committee, it used a new form of propulsion, the turboprop engine, replacing the conventional piston engine.
+The Rolls-Royce RB.39 Clyde was Rolls-Royce's first purpose-designed turboprop engine and the first turboprop engine to pass its civil and military type-tests.
+The Ryan XF2R Dark Shark was an experimental aircraft built for the United States Navy that combined turboprop and turbojet propulsion.
+ It was based on Ryan Aeronautical's earlier FR Fireball, but replaced the Fireball's piston engine with a General Electric T31 turboprop engine driving a 4-bladed Hamilton Standard propeller.
+The Orenda OE600 is a 600 hp-class liquid-cooled 8-cylinder V-block aircraft engine intended to re-introduce piston power to aircraft normally powered by the famous Pratt & Whitney Canada PT6 turboprop.
+ The piston engine offers much better fuel economy, which Orenda Aerospace felt would be attractive for older aircraft whose engines were reaching the end of their lifespan.
+ However, changes in Orenda's business in the post-9/11 time frame led to the project being canceled.
+Contra-rotating, also referred to as coaxial contra-rotating, is a technique whereby parts of a mechanism rotate in opposite directions about a common axis, usually to minimise the effect of torque.
+ Examples include some aircraft propellers, resulting in the maximum power of a single piston or turboprop engine to drive two propellers in opposite rotation.
+ Contra-rotating propellers are also common in some marine transmission systems, in particular for large speed boats with planing hulls.
+ Two propellers are arranged one behind the other, and power is transferred from the engine via planetary gear transmission.
+ The configuration can also be used in helicopter designs termed coaxial rotors, where similar issues and principles of torque apply.

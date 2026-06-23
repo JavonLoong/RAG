@@ -1,0 +1,51 @@
+In black hole theory, the black hole membrane paradigm is a simplified model, useful for visualising and calculating the effects predicted by quantum mechanics for the exterior physics of black holes, without using quantum-mechanical principles or calculations.
+ It models a black hole as a thin, classically radiating surface (or membrane) at or vanishingly close to the black hole's event horizon.
+ This approach to the theory of black holes was created by Kip S. Thorne, R. H. Price and D. A. Macdonald.
+In astrophysics, an extreme mass ratio inspiral (EMRI) is the orbit of a relatively light object around a much heavier (by a factor 10,000 or more) object, that gradually decays due the emission of gravitational waves.
+ Such systems are likely to be found in the centers of galaxies, where stellar mass compact objects, such as stellar black holes and neutron stars, may be found orbiting a supermassive black hole.
+ In the case of a black hole in orbit around another black hole this is an extreme mass ratio binary black hole.
+ The term EMRI is sometimes used as a shorthand to denote the emitted gravitational waveform as well as the orbit itself.
+In general relativity, the de Sitter–Schwarzschild solution describes a black hole in a causal patch of de Sitter space.
+ Unlike a flat-space black hole, there is a largest possible de Sitter black hole, which is the Nariai spacetime.
+ The Nariai limit has no singularities, the cosmological and black hole horizons have the same area, and they can be mapped to each other by a discrete reflection symmetry in any causal patch.
+The Penrose process (also called Penrose mechanism) is a process theorised by Roger Penrose wherein energy can be extracted from a rotating black hole.
+ That extraction is made possible because the rotational energy of the black hole is located not inside the event horizon of the black hole, but on the outside of it in a region of the Kerr spacetime called the ergosphere, a region in which a particle is necessarily propelled in locomotive concurrence with the rotating spacetime.
+ All objects in the ergosphere become dragged by a rotating spacetime.
+ In the process, a lump of matter enters into the ergosphere of the black hole, and once it enters the ergosphere, it is forcibly split into two parts.
+ For example, the matter might be made of two parts that separate by firing an explosive or rocket which pushes its halves apart.
+ The momentum of the two pieces of matter when they separate can be arranged so that one piece escapes from the black hole (it "escapes to infinity"), whilst the other falls past the event horizon into the black hole.
+ With careful arrangement, the escaping piece of matter can be made to have greater mass-energy than the original piece of matter, and the infalling piece has negative mass-energy.
+ Although momentum is conserved the effect is that more energy can be extracted than was originally provided, the difference being provided by the black hole itself.
+ In summary, the process results in a slight decrease in the angular momentum of the black hole, which corresponds to a transference of energy to the matter.
+ The momentum lost is converted to energy extracted.
+The Blandford–Znajek process is a mechanism for the extraction of energy from a rotating black hole, introduced by Roger Blandford and Roman Znajek in 1977.
+ It is one of the best explanations for the way quasars are powered.
+ As in the Penrose process, the ergosphere plays an important role in the Blandford–Znajek process.
+ In order to extract energy and angular momentum from the black hole, the electromagnetic field around the hole must be modified by magnetospheric currents.
+ In order to drive such currents, the electric field needs to not be screened, and consequently the vacuum field created within the ergosphere by distant sources must have an unscreened component.
+ The most favoured way to provide this is an e pair cascade in a strong electric and radiation field.
+ As the ergosphere causes the magnetosphere inside it to rotate, the outgoing flux of angular momentum results in extraction of energy from the black hole.
+V404 Cygni is a microquasar and a binary system consisting of a black hole with a mass of about and an early K companion star of mass slightly smaller than the Sun in the constellation of Cygnus.
+ The star and the black hole orbit each other every at fairly close range.
+ Due to their proximity and the intense gravity of the black hole, the companion star loses mass to an accretion disk around the black hole and ultimately to the black hole itself.
+M33 X-7 is a black hole binary system in the galaxy M33.
+ The system is made up of a stellar mass black hole and a companion star.
+ M33 X-7 is the largest known stellar black hole with an estimated mass of 15.65 times that of the Sun (M ).
+ The total mass of the system is estimated to be around 85.7 M , which would make it the most massive black hole binary system.
+The ergosphere is a region located outside a rotating black hole's outer event horizon.
+ Its name was proposed by Remo Ruffini and John Archibald Wheeler during the Les Houches lectures in 1971 and is derived from the Greek word "ergon", which means "work".
+ It received this name because it is theoretically possible to extract energy and mass from this region.
+ The ergosphere touches the event horizon at the poles of a rotating black hole and extends to a greater radius at the equator.
+ With a low spin of the central mass the shape of the ergosphere can be approximated by an oblated spheroid, while with higher spins it resembles a pumpkin-shape.
+ The equatorial (maximum) radius of an ergosphere corresponds to the Schwarzschild radius of a non-rotating black hole; the polar (minimum) radius can be as little as half the Schwarzschild radius (the radius of a non-rotating black hole) in the case that the black hole is rotating maximally (at higher rotation rates the black hole could not have formed).
+A black hole bomb is the name given to a physical effect utilizing how a bosonic field impinging on a rotating black hole can be amplified through superradiant scattering.
+ An additional condition which must be met is that the field must have a rest mass different from zero.
+ The scattered wave will then be reflected back and forth between the mass term and the black hole becoming amplified on each reflection.
+ The growth of the field is asserted to be exponential and unstable.
+ The mechanism by which the black hole bomb functions is called superradiant instability.
+A black hole firewall is a hypothetical phenomenon where an observer falling into a black hole encounters high-energy quanta at (or near) the event horizon.
+ The "firewall" phenomenon was proposed in 2012 by Ahmed Almheiri, Donald Marolf, Joseph Polchinski, and James Sully as a possible solution to an apparent inconsistency in black hole complementarity.
+ The proposal is sometimes referred to as the AMPS firewall, an acronym for the names of the authors of the 2012 paper.
+ The use of a firewall to resolve this inconsistency remains controversial, with high-energy physicists divided as to the solution to the paradox.
+<ref name="nature/Fire in the hole">Astrophysics: Fire in the hole!
+</ref> 2016 LIGO observations provided tentative evidence of a firewall, or of some other phenomenon violating general relativity theory.

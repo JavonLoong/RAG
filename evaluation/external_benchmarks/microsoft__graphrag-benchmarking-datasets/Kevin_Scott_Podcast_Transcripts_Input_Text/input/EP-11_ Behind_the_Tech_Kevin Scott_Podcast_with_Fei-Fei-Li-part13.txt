@@ -1,0 +1,15 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  lives of elderly people better.  And, like, we're certainly not thinking about the big demographic shifts that are about to come -- 
+(Crosstalk.) 
+FEI-FEI LI:  Oh, my god, it's going to come globally. 
+KEVIN SCOTT:  Yeah, globally.  I mean, so, you and I have chatted about this before, but you know, we sort of see in almost all of the industrialized economies, but also in Japan, Korea, and China -- 
+FEI-FEI LI:  Yeah, absolutely.  
+KEVIN SCOTT:  --you have this very large bubble of working-age population that's getting older and older.  And we just don't have high enough fertility rates in these younger generations to replace it.  
+So, at some point, like, we -- across the entire world, we're going to have far more old people than we will have working-age people.  And you have like a couple of big questions when that happens.  Like, who takes care of all the old people and like who's going to do all the work?  And, it's actually not far enough away that we can not think about it.  
+FEI-FEI LI:  2035 is -- 
+KEVIN SCOTT:  Yes.  
+FEI-FEI LI:  -- I think the -- we have to find the actual number, but the last Baby Boomers become the aging population, the youngest.  So, we -- we're very close to that. And also, to do this research in aging population, I spend a lot of time in senior homes and senior centers.  One thing I learned as a technologist is that we should really develop the kind of empathy and understanding of what we really are working on and working for.  For example, I cannot tell you how many Silicon Valley startups are there to create robots as senior companions. And when some of them feel robots can replace family, nurses, friends, I really worry.  And I really want to encourage these entrepreneurs to spend a lot of time with the seniors.  
+KEVIN SCOTT:  Yeah.   
+FEI-FEI LI:  One thing I learned a lot about wellbeing with aging population is dignity, social connection is part of the biggest part of aging.  And so my dream technology is something that you don't notice, but it's quietly there. 
+KEVIN SCOTT:  Correct.   
+FEI-FEI LI:  To help, to assist, to connect people, to ensure safety.  Rather than this big robot, you know, sitting in the middle of the living room and replacing the human connectivity.  
+KEVIN SCOTT: Yeah, it's really funny that you're bringing all of this up. I'm writing a book right now on, why I think people should be hopeful about the potential of AI, like, particularly in rural and

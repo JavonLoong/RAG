@@ -1,0 +1,27 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  because these models, like OpenAI’s GPT3, are incredibly difficult to train. So, having them behind an API, available on a cloud like Azure really helps democratize the power of those models, and gets it into the hands of people who can do the really interesting things with the models that the world needs them to do.
+
+CHRISTINA WARREN: Let’s listen to Kevin’s chat with Sam Altman.
+
+[MUSIC]
+
+KEVIN SCOTT: And like, one of the interesting things that’s happening right now with these, you know, computers that we’re building to train very big models is that we are – like, computer architecture’s all of a sudden interesting again, and it hasn’t been for, you know, 20 years, maybe, 15, like a while.
+
+SAM ALTMAN: Yeah. Yeah, that’s cool because there’s all these people that really want to work on that. They’ve had nothing to work on, which means we can get incredible talent focused on this.
+
+KEVIN SCOTT: Yeah. Yeah, we’ve got all of these people who did high performance computing in the ‘90s who, you know, and like I – I was not an important person working on high performance computing in the ‘90s, but like, I was a compiler person. And like, I thought that none of the stuff that I learned in graduate school was ever going to be directly useful again. And like, here it is.
+
+SAM ALTMAN: Here we are. 
+
+KEVIN SCOTT: It’s cool.
+
+SAM ALTMAN:  It’s really cool.
+
+KEVIN SCOTT: It is really cool, and just a reminder of, like, how cyclical not just technology is, but history. I mean, like I don’t – how much do you think about, like, the historical corollaries for the disruption that we’re going through, like Industrial Revolution? You know, like, I think the steam engine’s a really fascinating example.
+
+SAM ALTMAN: That’s a great one.
+
+KEVIN SCOTT: Like, do you have any others that – because I know you’ve thought a lot about this?
+
+SAM ALTMAN: Yeah. I mean, I think the analogs are the Agriculture Revolution, the Industrial Revolution, the Computer Revolution, and I think the AI revolution will be bigger than any of those three, bigger than all three of them together. 
+
+I love reading sort of firsthand accounts of people at the time as they were kind of going through those. There’s this great book called Pandemonium which is – it’s all primary source material of the Industrial Revolution as it was arriving. And many of the things that people say in that book could be said now about how people feel about AI. There’s no jobs; it’s going to take over; the machines are going to kill us; like, the future is going to be terrible; or

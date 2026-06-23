@@ -1,0 +1,17 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  And then you’ve got to have the stamina to just go do all of the chunks until you’re finished. 
+
+And, like, I know you basically are working on a hundred PhDs at once, given the complexity of all of the things that are in the pipeline. And it must be an interesting thing, helping all of those teams, like, maintain that focus and having the stamina to get everything done. 
+
+PHIL SPENCER: Yeah, and I think your point about decomposing the problem a bit and making it digestible in more meaningful kind of chunks of time than five, six, seven years is really, really useful. 
+
+The other thing I’d say, and this is different. Like, we’re kind of an anomaly inside of Microsoft and maybe even gaming in tech, though I think VCs, this probably resonates a little more, is we are a kind of portfolio business. We’re going to ship 10 things. All of them might have been kind of these very expensive, very long endeavors that we’ve talked about. And you might have two or three of them that you would earmark a success at the end of that. 
+
+That’s just kind of entertainment, right? Whether you’re writing a book, making a movie, making an album, your hit rate, 20, 30, maybe 40%, if you’re kind of crazy good, is what the hit rate is for most at-scale publishers. And you’re sitting inside of Microsoft with kind of tried and true franchises like Windows and Office and now growing in Azure. 
+
+And there is a little bit of an impedance mismatch when you’re walking in and you’re showing this portfolio of things. (Laughter.) And you might get the obvious question of, okay, which ones of these are going to work? And you can’t rank it by budget, you can’t rank it by time or by what’s hot today. And, you know, that’s, I’d say, another change or another difference. 
+
+You’ve got this longevity kind of opportunities you talk about and how you break down the problem, and then at the end of these things, making every team feel like they succeeded, knowing that most of your teams are likely going to be in a situation where they didn’t hit their own goals and expectations. And that stamina that you talk about has to not only live inside of the existing project, but you hope that, coming out of another project, regardless of the outcome, there is a slingshot into more stamina for the next thing that you want a team to go do. 
+
+KEVIN SCOTT: And so, related to that, like, how do you get people to continue to take creative risk when the risks that they may have taken last time didn’t pay off the way that they wanted it to? 
+
+PHIL SPENCER: Yeah. I mean, one thing is the industry will do it, right? It’s

@@ -1,0 +1,17 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt   
+KEVIN SCOTT:  Yeah.  And so, for the audience, who are not all engineers and not all necessarily Silicon Valley folks, like, what is Kafka?  
+NEHA NARKHEDE:  Kafka started off as a high-throughput distributed, super-scalable messaging system.  And has transformed into what's called an event streaming platform.  So I'm going to take some time to talk about what an event streaming platform is, but if you think about the database and you sort of unbundle it, you take the transaction log out and you take the thing that creates the tables and the query processing out, and if you apply it to the scope of an entire company and all its software, then that's basically what Kafka is today.  And we're calling that as an event streaming platform.   
+It has the logs, it has stream processing, which is the ability to create tables on that log, and it has the ability to connect to all the different systems because of that abstraction. 
+KEVIN SCOTT:  And so the -- you sort of described one of the first obvious things that Kafka got used for is so -- in a modern, large-scale software business, you have lots and lots of things that are producing lots and lots of data. 
+And some of the data is log data, and like log data basically is a record of like here's something that happens -- 
+NEHA NARKHEDE:  Happened.  
+KEVIN SCOTT:  -- that you may want to pay attention to at some point.  Or you may not. 
+NEHA NARKHEDE:  Yeah.  
+KEVIN SCOTT:  Or it could be, you know, sort of events -- you know, like some sort of transactional data that is being written into the system, so like this is the database log. 
+NEHA NARKHEDE:  Yeah.  
+KEVIN SCOTT:  For instance.  So like here's the thing, and like you know we -- it's a sale that we made or a click that happened or something, and like we need to update some other state based on this thing that happened, like, somewhere else. 
+And like the -- you know, what -- you described working on ETL, and so ETL is this process where you take a bunch of the stuff that is flowing out of all of these systems and you gather it all up and you sort of say, "Oh, I'm going to add up all of the clicks that happened on this particular ad."  
+And I'm going to like store that in a database somewhere that you know sort of counts all the clicks so that I can pay the -- you know, the advertiser -- or like charge the advertiser for -- 
+NEHA NARKHEDE:  Pretty much. 
+KEVIN SCOTT:  Yeah, and it's like a gazillion different things, right?  
+NE

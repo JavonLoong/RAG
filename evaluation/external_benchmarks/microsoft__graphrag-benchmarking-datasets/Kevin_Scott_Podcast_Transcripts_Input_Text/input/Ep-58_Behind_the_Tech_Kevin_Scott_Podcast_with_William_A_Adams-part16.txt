@@ -1,0 +1,19 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  was, like, really big. And so, I was, like, all right, I not only need a technical advisor, I need lots of them. 
+
+WILLIAM ADAMS: Yeah. (Laughter.) 
+
+KEVIN SCOTT: And you were one of my very first technical advisors. And, you know, I want to talk a little bit about what you did and what was appealing to you about that role. But I also want to focus on this amazing thing that you brought with you, which is a program called LEAP, which is a new way to do recruiting, which flips a whole bunch of things around on its head and, like, results in not only hiring amazing people, but just by the nature of how you’re doing the recruiting, you tend to get a more diverse and inclusive set of people coming in, because you are not relying on…
+ 
+WILLIAM ADAMS: Traditional paths, is the easiest way to say it. (Laughter.) 
+ 
+KEVIN SCOTT: Yeah, filters that have systemic biases, like not evil ones, but just they’re there. And so. 
+ 
+WILLIAM ADAMS: Yeah, so I’ll pick up the story from the… I got an e-mail. (Laughter.) I think it was from Fatima, who sad, “Oh, would you be interested in you know, working in the office of the CTO?” And to be honest, I was, like, oh, we have a CTO, you know?
+
+KEVIN SCOTT: Right. (Laughter.) 
+
+WILLIAM ADAMS: Because Microsoft doesn’t always have, you know, and it was, like, Ray – not Ray Kurzweil. Ray Ozzie was a previous one. So, I was, like, oh, okay. And honestly, I thought it was a prank mail until I actually called and talked to her. And it’s, like, oh, okay, you know. And I remember, we – you and I had this conversation. And I said, “Well, you know, I’m really interested. Can I bring this LEAP thing with me?” And probably, you were like, yeah, whatever. (Laughter.) Poor you. You know, I don’t know if you really realized what it really was. But that was the one condition. And you said yes.
+
+And now, LEAP and start in 2015. And I’ll come back to the CTOs office. And it was this… The challenge with LEAP was I went to a CVP, Girish Bablani, and said, “Hey, what’s one of our business challenges?” And he said, “Oh, there’s this, you know, diversity thing, right? Like, we need a little bit more diversity in our engineering talent.” I said, “Oh, okay.” 
+
+Now, I’m

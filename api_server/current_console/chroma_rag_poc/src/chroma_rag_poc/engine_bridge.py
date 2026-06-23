@@ -125,8 +125,8 @@ def get_llm_client(
 
 def get_embedding_adapter(
     *,
-    backend: str = "hashing",
-    model: str = "text-embedding-3-small",
+    backend: str = "sentence_transformer",
+    model: str = "Qwen/Qwen3-Embedding-0.6B",
     api_key: str = "",
 ) -> Any:
     """Create an embedding adapter from model_adapters/ for vector embedding."""

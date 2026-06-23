@@ -1,0 +1,27 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  --
+
+KEVIN SCOTT:  Yeah, and like, that's, look, that's one of the slightly nicer things now versus then.  The frameworks that you code in are, like, so much, so much more powerful, so like you end up, like, writing 1,000 lines of python code.
+
+DANNY HILLIS:  Oh yeah, that's amazing.  And that's the advantage of sort of starting with, you know, the advantage of all the work that's been done, compilers, for example, and things like that.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  I mean, you know, when we built that machine, it was literally, it would take a piece of graph paper and start drawing the shape of the transistors on the chip.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And then, you'd go all the way and then, you'd have to write an assembler.  I've, you know, every time I'd make a new processors and I'd have to write a new assembler for it.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And then you, you know, and then answer, build it out, that's right, yeah.
+
+KEVIN SCOTT:  And then build the compilers and the operating system.  And it was a Herculean effort.  And you had, like, really, really smart people working on this.
+
+DANNY HILLIS:  Well, actually, that's probably the biggest legacy of Thinking Machines is because the architectures, that style of massively parallel architectures didn't really become mainstream until, you know, really a couple of decades later when, you know, with the cloud and all.  Two things, one was the cloud, but it's the sort of multiple instruction root and the single instruction root was with the graphics processors and --
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  But the real legacy, I think was the people.  And it just, because you have the fastest machines in the world, it attracted really bright people, who had interesting problems.  So, actually, you know, one of my favorite examples was I went out to Cal Tech and asked Richard Feynman, the physicist, if he had any students that, you know, would be interest in, you know, coming to the company.  This was when I was very first starting.
+
+And to, you know, spend the summer there, summer interns basically.  And he said, "Oh, you know, I've heard about your cooky architecture.  You know, it's like, I don't have any, you know, people, Cal Tech students have a lot more sense than that, you know.  There's nobody I know that would be crazy enough to come out

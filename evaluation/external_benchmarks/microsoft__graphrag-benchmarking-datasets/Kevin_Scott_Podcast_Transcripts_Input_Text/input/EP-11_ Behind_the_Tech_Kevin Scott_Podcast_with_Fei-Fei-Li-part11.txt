@@ -1,0 +1,16 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  with the doctors, right?  It's very, very hard to collect an ImageNet of seniors falling, and you don't want to. 
+KEVIN SCOTT:  Right.   
+KEVIN SCOTT:  And, like, the seniors don't have cameras in their homes and -- yeah.  
+FEI-FEI LI:  Right.  And they fall in such different ways and the situation is complex.  So, when you want to work in these critical issues, you're immediately in a so-called few-shot learning situation.  And you probably have to consider transfer learning, consider, you know, simulated learning and all that.  
+So, it just shows that the field now -- I'm very glad to see is moving beyond just large data supervised learning.  
+KEVIN SCOTT: You mentioned healthcare, which is, I think like one of the most promising focus areas for AI right now.  And you know, I know that you're one of the co-directors of the Stanford Human-Centered AI Institute and -- 
+FEI-FEI LI:  And you're one of our advisors.  (Laughter.) 
+KEVIN SCOTT:  So, how are you thinking about what we need to do to get AI to better serve the interests of everyone?  
+FEI-FEI LI:  Well, Kevin, that's a big topic. And I think that's a really important topic, right?  Whenever humanity creates a technology as powerful and potentially useful as AI, we owe it to ourselves and our future generation to make it right.  
+So, first of all, I think the institute that both of us are involved in is really laying out a framework of thinking about this, and the framework is human centered.  It's that from the get-go, from the design and the basic science development of this technology all the way to the application and impact of this technology, we want to make it human benevolent. 
+And with this framework in mind, we have at Stanford, this institute works on three principles -- founding principles to cover different aspect of human-centered AI. 
+The first principle is actually what we've been talking about is to continue to develop AI technology, basic science technology, that is human inspired and betting on the combination of cognitive science, psychology, behavior science, neuroscience, to push AI forward so that the technology we will be using have better coherency or better capability to serve human society. 
+KEVIN SCOTT:  Right. 
+FEI-FEI LI:  So, that's the first principle.  Second principle is I would love to hear your thoughts. You know, you and I are trained as a generation of technologists that the technology is solidly considered a engineering field or computer science field. But I think AI really has turned a chapter.  AI is no longer a computer science field. 
+KEVIN SCOTT:  Correct.  
+FEI-FEI LI:

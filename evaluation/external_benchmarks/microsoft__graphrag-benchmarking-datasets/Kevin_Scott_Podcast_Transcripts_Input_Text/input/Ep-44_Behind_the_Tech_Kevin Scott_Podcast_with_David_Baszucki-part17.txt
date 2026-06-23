@@ -1,0 +1,19 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  Like they, you know, they let you purchase entitlements, you know, inside all of these games. 
+
+You know, my best friend used to run product and engineering at Linden Lab and so like they had their own currency. 
+
+So and it is complicated, right? Like having your own economy is an interesting thing. Especially you guys are, what, 50 million daily active users. Like that is bigger than some countries, right? 
+
+DAVID BASZUCKI: That’s right. Well, it’s complicated in many dimensions. It’s complicated in a reliability, anti-theft, anti-hack, SarBox compliant, SEC way, in that it just has to be run at a certain level of rigor and reliability and fraud detection and all of that. 
+
+It’s contemplated from a infra scaling standpoint, which, you know, many companies do really well, but that still we shouldn’t take that for granted. 
+
+It’s also, I think, complicated looking to the future where more and more, if we can see things happening in real life, we’re going to see them in digital life. And we’re still very early on this as far as advertising, as far as shopping, as far as collectibles, as far as a lot of other economic things that we’re used to, that have digital equivalents. So there’s a lot of complexity going forward in designing elegant systems that work well in the digital domain that we’re very used to in our real world life. 
+
+KEVIN SCOTT: Yeah. And you know, one of the interesting things about these metaverses is I – and you – you don’t have to offer an opinion here if you don’t want to, is like I don’t really understand or have an opinion about how things are going to net out, whether you’re going to have closed economies inside of each metaverse, or whether you’re going to have some kind of horizontal, like economic mechanism where you can sort of like have a thing that’s in Roblox and there’s a way to exchange for those things in other metaverses.
+
+DAVID BASZUCKI: Yeah, I think this dovetails into all kinds of open versus closed discussions, and the analogy I make sometimes is today, we’re not talking AOL or CompuServe. Today, we’re talking a dial-up bulletin board with a 300 baud modem. That’s how early we are in the tech for these things. 
+
+And there’s going to be multiple stages, including the AOL, CompuServe stage, Prodigy stage, till finally we do get open standards, and there will ultimately be metaverse LAMP stacks and there’ll be metaverse, you know, open standards and all of that.
+
+I think what the tension is, and this was tried with VRML 15 or 20 years ago is, you know, HTML with some JavaScript has gotten us very far for 2D and a lot of

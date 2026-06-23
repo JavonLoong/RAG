@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  able to do that. Humankind can solve these huge problems; we can solve this one too," and – but tried to figure out how to get to that path. 
+
+So I wanted – so then I got the bug of plasma physics, and learning about the sun and astronomy and cosmology and stellar physics, and plasmas, but in an applied way, and so even early, I was thinking about plasmas and plasma thrusters and fusion, and all of those types of things with the eventual goal of like, okay, I want to – I want to master this fusion thing, but I don’t even know how to get into it. 
+
+And so, interestingly, though, at the time, I actually couldn’t afford college, and so, to go to the schools that I knew we were the ones that could do this. And so, I actually spent two years at a smaller school in Texas, University of Texas, Dallas, smaller school, learning electrical engineering, learning some of the core engineering and physics around this with the goal of, like, I knew what I wanted to get to, but I knew these were the steps. 
+
+I spent two years there, and then spent two years finishing my bachelor’s degree at the University of Michigan, and went off and started – at that point was doing research in the plasma physics. This was in aerospace engineering with a focus on the plasma physics with plasma thrusters, and then working in the nuclear engineering department on fusion, in fact, antimatter-based fusion. So, we call that muon catalyzed fusion. And so, my first technical paper was there as an undergrad in antimatter based fusion. 
+
+KEVIN SCOTT: Nice. 
+
+DAVID KIRTLEY: And then I kind of reached a crisis in my career, where I looked at where I was looking at my career going. And I wrote this awesome paper and learned all this physics around fusion and saw all the paths at the time, and looked at this and said, man, we’re not going to materialize this in my lifetime, maybe. Like, when is the first electron on the grid coming from fusion? And it’s not clear that even the machines I would work on would be able to deliver that before I retired, maybe even in my lifetime. 
+
+And so, I said, great, well, I’ve learned what I need to learn. Like, fusion is not ready for me yet. I’m going to pivot away from that, take my pause of physics, and go build thrusters, go build spacecraft. So, I went and worked, left after my bachelor’s degree, worked for the Air Force Research Labs building spacecraft thrusters. In fact, some of the thrusters I worked on were the predecessors to what’s on Starlink now, those Hall-effect thrusters, and some big high power things and some fusion related technologies as well. 
+
+I went back to graduate school,

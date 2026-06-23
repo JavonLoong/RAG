@@ -1,0 +1,37 @@
+The homotopy analysis method (HAM) is a semi-analytical technique to solve nonlinear ordinary/partial differential equations.
+ The homotopy analysis method employs the concept of the homotopy from topology to generate a convergent series solution for nonlinear systems.
+ This is enabled by utilizing a homotopy-Maclaurin series to deal with the nonlinearities in the system.
+The Newmark's sliding block analysis method is an engineering method used to calculate the permanent displacements of soil slopes (also embankments and dams) during seismic loading.
+ It is also simply called Newmark's analysis or Sliding block method of slope stability analysis.
+Weighted correlation network analysis, also known as weighted gene co-expression network analysis (WGCNA), is a widely used data mining method especially for studying biological networks based on pairwise correlations between variables.
+ While it can be applied to most high-dimensional data sets, it has been most widely used in genomic applications.
+ It allows one to define modules (clusters), intramodular hubs, and network nodes with regard to module membership, to study the relationships between co-expression modules, and to compare the network topology of different networks (differential network analysis).
+ WGCNA can be used as data reduction technique (related to oblique factor analysis ), as clustering method (fuzzy clustering), as feature selection method (e.g. as gene screening method), as framework for integrating complementary (genomic) data (based on weighted correlations between quantitative variables), and as data exploratory technique.
+ Although WGCNA incorporates traditional data exploratory techniques, its intuitive network language and analysis framework transcend any standard analysis technique.
+ Since it uses network methodology and is well suited for integrating complementary genomic data sets, it can be interpreted as systems biologic or systems genetic data analysis method.
+ By selecting intramodular hubs in consensus modules, WGCNA also gives rise to network based meta analysis techniques
+The Wood–Armer method is a structural analysis method based on finite element analysis used to design the reinforcement for concrete slabs.
+ This method provides simple equations to design a concrete slab based on the output from a finite element analysis software.
+The moment distribution method is a structural analysis method for statically indeterminate beams and frames developed by Hardy Cross.
+ It was published in 1930 in an ASCE journal.
+ The method only accounts for flexural effects and ignores axial and shear effects.
+ From the 1930s until computers began to be widely used in the design and analysis of structures, the moment distribution method was the most widely practiced method.
+Optimal matching is a sequence analysis method used in social science, to assess the dissimilarity of ordered arrays of tokens that usually represent a time-ordered sequence of socio-economic states two individuals have experienced.
+ Once such distances have been calculated for a set of observations (e.g. individuals in a cohort) classical tools (such as cluster analysis) can be used.
+ The method was tailored to social sciences from a technique originally introduced to study molecular biology (protein or genetic) sequences (see sequence alignment).
+ Optimal matching uses the Needleman-Wunsch algorithm.
+Fault tree analysis (FTA) is a top down, deductive failure analysis in which an undesired state of a system is analyzed using Boolean logic to combine a series of lower-level events.
+ This analysis method is mainly used in the fields of safety engineering and reliability engineering to understand how systems can fail, to identify the best ways to reduce risk or to determine (or get a feeling for) event rates of a safety accident or a particular system level (functional) failure.
+ FTA is used in the aerospace, nuclear power, chemical and process, pharmaceutical, petrochemical and other high-hazard industries; but is also used in fields as diverse as risk factor identification relating to social service system failure.
+ FTA is also used in software engineering for debugging purposes and is closely related to cause-elimination technique used to detect bugs.
+In mathematics, specifically in homotopy theory, a classifying space "BG" of a topological group "G" is the quotient of a weakly contractible space "EG" (i.e. a topological space for which all its homotopy groups are trivial) by a proper free action of "G".
+ It has the property that any "G" principal bundle over a paracompact manifold is isomorphic to a pullback of the principal bundle "EG" → "BG".
+ As explained later, this means that classifying spaces represent a set-valued functor on the homotopy category of topological spaces.
+ The term classifying space can also be used for spaces that represent a set-valued functor on the category of topological spaces, such as Sierpiński space.
+ This notion is generalized by the notion of classifying topos.
+ However, the rest of this article discusses the more commonly used notion of classifying space up to homotopy.
+Software architecture analysis method (SAAM) is a method used in software architecture to evaluate a system architecture.
+ It was the first documented software architecture analysis method, and was developed in the mid 1990s to analyze a system for modifiability, but it is useful for testing any non-functional aspect.
+Liao Shijun (; born September 15, 1963) is a fluid mechanics and applied mathematics expert working in homotopy analysis method (HAM), nonlinear waves, nonlinear dynamics, and applied mathematics.
+ He was born in Wuhan, Hubei Province, China.
+ Professor Liao works at Shanghai Jiao Tong University.

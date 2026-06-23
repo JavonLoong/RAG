@@ -1,0 +1,29 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  go across all ethical systems, all value structures is we should prefer non-zero-sum games. 
+
+KEVIN SCOTT:  Correct.  
+
+REID HOFFMAN:  Right?  
+
+KEVIN SCOTT:  Yeah, and like that's one of the points that I make in this book that I'm writing right now is that like when you're thinking about how you apply AI, like you should pick important zero-sum societal problems and try to figure out like how to put a set of incentives and policies in place to convert those zero-sum social good things into non-zero-sum games through the use of AI. 
+
+REID HOFFMAN:  Yeah. 
+
+KEVIN SCOTT:  And, like, health care potentially is one of them where, you know, like we have this like very interesting system right now where like we have a finite amount of our gross domestic product we can spend on health care.  You can spend all of it -- I think you're the one who actually said this to me, you can spend 100 percent of GDP and still not solve the fundamental problem, which is we're mortal. 
+
+And so, like it's this terrible zero-sum game in a sense because you're always having to decide, you know, what the tradeoffs are. And like anything that we can do technologically to like create abundance in this system to like get better diagnostics cheaper for everyone to like be able to sort of influence things in a way where you're getting better healthcare outcomes for everyone, like, we should be doing. 
+
+And it's like hard to do without some flavor of technology, like whether that's AI or something else. 
+
+REID HOFFMAN:  Yeah, that's what progress looks like.  That's the universe we all want to be in because we'll all be better off.  
+
+[MUSIC]
+
+KEVIN SCOTT:  So, Reid is also a real thought leader in AI.  I asked him what he's thinking about right now in terms of how we should be influencing AI in academia and industry to produce positive outcomes for society.  
+
+REID HOFFMAN:  So, I think -- let's see, two things.  So, one is to realize that the -- that while our natural reflexes from evolution always go to fear and worry first, to realize that there's massive opportunity and that we're playing for that.  And that opportunity could be like what you were mentioning earlier, medicine.  It can be -- actually, in fact, if we transform a whole bunch of productivity, that can do anything from like what your book could be describing, which is that allow creativity and innovation in rural towns.  Like, there's enormous amount of great things that can happen.  
+
+KEVIN SCOTT:  Right.  
+
+REID HOFFMAN:  We should play for those, and we should not lose sight of that's what we're playing for.  
+
+KEVIN

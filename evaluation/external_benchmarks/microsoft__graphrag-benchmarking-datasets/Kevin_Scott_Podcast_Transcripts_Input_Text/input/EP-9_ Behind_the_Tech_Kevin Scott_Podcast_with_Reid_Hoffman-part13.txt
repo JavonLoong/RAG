@@ -1,0 +1,15 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt KEVIN SCOTT:  Yeah.  
+REID HOFFMAN:  Right?  And maybe we can create silicon substrate machines that can do a lot -- all, some particular shape, maybe we can't, but we know we have cognition, and I still want to understand it.  
+KEVIN SCOTT:  And then from there, you go to Oxford to get a master's degree in philosophy.  You were a Rhodes Scholar.  
+REID HOFFMAN:  Marshal.  
+KEVIN SCOTT:  Marshal scholar.  
+KEVIN SCOTT:  And that was like a pivotal point.  So, like, you know, you had this big transition right around this time where it's like my vision of becoming a public intellectual is going to maybe need to be something different than I imagined it.  So, what happened?  
+REID HOFFMAN:  So, I concluded that the -- one of the problems in the AI cognitive science field is no one had a real concept of what cognition was.  They were doing psychological models of like features like, how would memory degrade and so forth?  But, like, really, how are we doing cognition?  
+And similarly, like, we're building intelligent devices, but we don't really have a good theory, like, it's only until relatively recently we've really been thinking about this, that we've advanced the theory past like the Turing Test as, like, "Oh, this is the theory."  And you're, like -- that's a hard thing to measure. 
+REID HOFFMAN:  And so I was going to go do that.  And the what happened is -- and I thought philosophy might be it.  So, I went to go study philosophy at Oxford.  And what I realized was that the professional, scholarly you know kind of pursuit of philosophy was not these kinds of questions I was looking at.
+So, what I -- here's the essential insight I had.  Like, you said, okay, abstract, what a public intellectual is, at least in the theory then, which is a person who creates media objects to help us as individuals in society reflect on who we are and who we should be.  
+Those media objects may be books, they may be essays, obviously now we have podcasts and all that stuff.  
+KEVIN SCOTT:  Yeah, they could be TV shows like Carl Sagan, like, is one of my favorite -- 
+REID HOFFMAN:  Yes. 
+KEVIN SCOTT:  -- public intellectuals.  Like, his books and TV shows and documentaries were, like, hugely impactful.  
+REID HOFFMAN:  Exactly.  And so if you said, "Well, what if the media object was software?  What if the software was the medium that we're interacting in?"  Almost like Marshall McLuhan.  And what if you actually could power

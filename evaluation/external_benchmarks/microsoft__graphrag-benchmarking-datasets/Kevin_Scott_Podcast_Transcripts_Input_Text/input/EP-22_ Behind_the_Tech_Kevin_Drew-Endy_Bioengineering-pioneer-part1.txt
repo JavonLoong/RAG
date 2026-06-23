@@ -1,0 +1,26 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt ../[MUSIC]
+
+DREW ENDY: We've inherited this stuff, which is three plus billion years old, going on four billion years old. It's pretty sophisticated. You lift the lid on it and understand how it's working. It's unbelievable, right, the layers of sophistication and the architecture and how things appear to have been selected to perform. I mean, it's stunning.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+KEVIN SCOTT:  Hello. Welcome to Behind the Tech. I'm Kevin Scott.
+
+CHRISTINA WARREN:  And I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT:  I'm really looking forward to our show today. We've got Stanford professor Drew Endy here to talk about synthetic biology, which is one of those topics that I am spending a lot of time trying to get ramped up on over these past six months or so. 
+
+So, I had this really great opportunity to meet Drew and chat with him about his work a few months ago, actually before the COVID-19 pandemic. And we had this wonderful conversation about all of the things that he's been doing in synthetic biology, you know, from things that have applications to healthcare all the way to, you know, how you can think about using biology to produce the materials that we need to build the things that we build in society. 
+
+And so, I thought it would just be a wonderful, wonderful thing to have him on the podcast and to let everyone else hear how brilliant he is and how cool the work he's doing is. 
+
+CHRISTINA WARREN:  And it's super fascinating and I'm super excited that we have this opportunity. And it's actually kind of amazing that you were talking to him before all of this stuff happened with COVID, and now, it's even more timely and even more important to have this conversation. 
+
+ 
+But before we dive into the show, you know, I've actually seen a lot of articles lately about, you know, “what we should be learning from the COVID pandemic.” And those discussions can range from the pros and cons of, you know, off-site and remote working and online education to, you know, the need to create touchless technology. And so, Kevin, I'm curious, you know, now that some cities are starting to phase back in to incremental reopening, what are some of the learnings or discoveries that

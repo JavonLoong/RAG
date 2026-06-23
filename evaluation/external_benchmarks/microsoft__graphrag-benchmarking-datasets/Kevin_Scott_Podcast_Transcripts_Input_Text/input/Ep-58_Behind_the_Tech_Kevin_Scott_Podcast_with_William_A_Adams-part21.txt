@@ -1,0 +1,19 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  (Laughter.) 
+
+KEVIN SCOTT: Correct. (Laughter.) 
+
+WILLIAM ADAMS: Right? Yeah, I think that’s super important. And I – there’s two things that I wanted to observe while you were talking. It’s like, I remember from day one, not day one, but day two, your emphasis on AI, right? So, for seven years now, from the beginning, I think one of the first conversations we had was about AI. And it’s like, that’s this forward look that you’re saying. And now everything is AI, right? 
+
+And I think that’s super important, to be able to have a look forward, because like you said, the product teams, it’s harder for them to do that, right, because they’re – they’ve got quarterly obligations, and they can look maybe a year or two in advance. But they can’t look 10 years in advance. It’s too hard. 
+
+I forgot the other point, but it was really interesting. So, it’ll come back. (Laughter.) 
+
+KEVIN SCOTT: Yeah, and look, the other thing, too, is, you know, you have to think about a bunch of different time horizons. So, I run Microsoft Research, or, like, I don’t run Microsoft Research. Peter Lee runs Microsoft Research. And Peter, you know, has generously consented to report to me, which is, you know, how things work in the real world. 
+
+And so, yeah, the job of Microsoft Research is to take large intellectual risk, so to, like, really go have wild ambitious ideas. And when you’re trying to have wildly ambitious ideas, like, a whole bunch of them don’t work. And so, like, that’s one time horizon. So, like, the – you know, the big bold bets, you know, if you get a few of those right over the course of a decade, like, they really change the nature of how an organization works. 
+
+And then there’s sort of the medium time horizon stuff, which is, you have a technology like AI. And if you’re a platform company, like, Microsoft it’s easy to imagine if AI, you know, is on a particular trajectory, you’re going to want to have the technology be well represented in your platform, because it’s going to be very important in how people build software. 
+
+And, you know, there, you just have to be very – it’s not a thing where you’re like, okay, well, this is some wild bet, and, like, we can afford for it to fail. It is a thing where you have to be very disciplined year after year about how you’re going to go get after this thing, and make sure that you’re tracking everything that’s going on in the – 
+
+WILLIAM ADAMS: Oh, you’re

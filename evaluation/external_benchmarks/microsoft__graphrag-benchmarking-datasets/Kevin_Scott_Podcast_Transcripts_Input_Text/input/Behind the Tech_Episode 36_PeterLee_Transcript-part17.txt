@@ -1,0 +1,17 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  to help support people with pandemic response. 
+
+So like talk a little bit about that whole experience and how that’s informed, what it is you’re trying to do right now with societal resilience and research. 
+
+PETER LEE:  Well, I blame you, Kevin. (Laughter.) Because, you know, I was happily helping the company build a new health technology business. I was focused on that. And then you decided to hire me to you know, lead Microsoft Research. 
+
+And so I agreed and I took that job on March 1st, 2020. That’s the date. And I remember that very clearly because then less than a week later, you and a couple of others, like our CEO, asked me to put that aside temporarily and help coordinate Microsoft’s science and technology response to COVID-19.
+
+And you know, it was a heck of a way to start a new job, and it was total chaos because, you know, this pandemic, people were grokking just how serious this was. And we had within Microsoft Research and across the company, you know, hundreds of people stepping forward, wanting to help, looking for ways to help. Most of them had their own ideas, and they all had in their own personal networks connections to people outside the Microsoft that also had ideas, wanted help, or were parts of organizations that were in desperate need of our help. And so there was just this huge kind of cacophony of stuff going on. 
+
+And, you know, we had to very quickly get ourselves organized and mobilize a way to get focused attention on a manageable number of efforts so that we could actually help make a difference. And so, you know, you know all the work that happened. 
+
+But then this created another problem because in my mind, this all started in March of 2020, and I thought – and in fact, you and I both thought, well, the pandemic is going to be with us through the summer, but by the fall of 2020, we’ll be past it and we’ll be able to get back to our normal jobs. I’ll be able to get back to the job you hired me for. And so, August comes, September comes, and it’s clear, this thing is not over. 
+
+And then I had a management problem because I had a large number of researchers that were spending full time not doing their normal research jobs, but instead were working on projects in pandemic response. 
+
+And I looked around and I realized that it wasn’t just pandemic response, we had researchers working full time looking at the security of voting machines. We had researchers doing predictive analytics to understand where to put firefighting resources for major wildfires in Australia and California. We had researchers working on machine learning to accelerate new diagnostics for COVID-19. None of these were in anyone’s job description in Microsoft Research. And yet it would be wrong to say, you should stop doing

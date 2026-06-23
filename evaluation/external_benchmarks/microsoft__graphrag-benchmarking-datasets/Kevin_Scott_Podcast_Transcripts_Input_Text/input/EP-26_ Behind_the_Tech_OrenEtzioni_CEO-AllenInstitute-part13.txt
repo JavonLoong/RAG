@@ -1,0 +1,19 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  their own without, you know, opening Pandora’s box and creating more misery in the world. 
+ 
+OREN ETZIONI: Very important questions. The good news is, I do think that we’re making progress there. So, some of it is the old adage, garbage in, garbage out. So, you have to be careful what you feed. This model is kind of like an innocent child, right, who will read anything. So, you have to be careful what you feed it. 
+
+That’s typically not enough, because these things consume, right, you know, billions and billions of sentences and documents. I’m a great believer in auditing techniques. So, we also need to make models like this eternally auditable so other bodies can help discover if there’s, you know, problems hidden there or if it can be tuned in a negative direction. So, I do think that you and Microsoft are very smart to think carefully about these issues, but I do think that help is on the way.  
+
+KEVIN SCOTT: Yeah, well, and that I think is one of the foundational things I would like to be able to figure out sooner rather than later is just a way to allow the help to happen in an efficient and transparent and open manner, because at least that much needs to be happening. 
+
+It would have very ironic to have a situation where the very, very necessary public and open work that needs to happen on responsibility and safety and ethics and all of these other things can’t happen because the people who are doing that work outside of corporations don’t have access to the models.  
+
+OREN ETZIONI: Well, so then if I may ask you a question, right, with GPT-3 and Microsoft’s recent exclusive ability to license it, are you planning to make it available to academia, to places like AI2? 
+
+KEVIN SCOTT: Yeah, we’re trying to figure out exactly how to do that right now. Like, in a safe way and – I mean, the thing with GPT-3 is, like, it’s, you know, it’s ten times bigger even than the Turing NLG model that we built. 
+
+And so there, we probably will have to serve it on our infrastructure just because the task of figuring out how to – like, if I gave you a bag of weights or we gave you a bag of weights and then you had to go figure out how to serve it for doing your research, like, that would be its own research project that would be daunting. And so, like, we are working through those issues right now.  
+
+OREN ETZIONI: Well, I’m glad to hear it. And, of course, you’re absolutely right. With something that big or even the Turing NLG model, right, what people really want is an API, not a file that you download with lots of numbers in it.  
+
+KE

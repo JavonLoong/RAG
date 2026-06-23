@@ -1,0 +1,13 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  such a technical nerd that I would be completely overwhelmed by all of the sort of sterile technical bits. (Danielle chuckles) And there must be this tension that people fight against. Here's all of this technical complexity, and there has to be a human story somewhere in there. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: That must be interesting. 
+DANIELLE FEINBERG: Yeah. And I think everyone at Pixar is so nerded-out about making great movies, that anything you need to do to get to that point, and that you get the opportunity to contribute to that, everybody gets totally into it, you know. 
+And so, sometimes you have to wade through a lot of sort of technical stuff to get to the thing that's your contribution to the movie. But I think, in secret, most people love that part, too. (laughter) 
+KEVIN SCOTT: So, I want to go all the way back to when you were a little kid and try to understand how this started. When did you start to either develop your creative tendencies or your coding tendencies when you were little? 
+DANIELLE FEINBERG: Yeah. My parents are both super artistic. My sister's super artistic. We just grew up in this family where the after-school stuff or the classes or whatever were always art classes that my parents put us in. And so that was sort of a part of life. 
+KEVIN SCOTT: And what sort of stuff did you do? Did you draw? Was it painting? 
+DANIELLE FEINBERG: It was all kinds of stuff. I remember taking, when I was really little, a pottery class. And then I remember when I was maybe seven or eight years old going -- I grew up in Boulder, Colorado. 
+Going to the University of Colorado, and we made those paper mache masks, where you take a balloon and blow it up and do paper mache on it. And so I just sort of grew up with art all around. And then I went to this really cool, creative, unusual kind of private elementary school called Bixby School in Boulder. 
+And one day, one of the dads said, "Hey, I want to teach a programming class after school for the kids." And I was eight or nine. This is like mid to early '80s, I guess. And so it was like we had three of the first Apple computers. 
+KEVIN SCOTT: Oh, that's awesome. 
+DANIELLE FEINBERG: And it was, like, well, I don't know what programming is, but I love these computer things. And so it turned out to be in the language Logo. And so it just happened that my very first programming experience was writing code that made this little icon of a turtle drive around on the screen and everywhere it

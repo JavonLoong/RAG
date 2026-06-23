@@ -1,0 +1,16 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  taxing the robots, with my air quotes there, is not the answer.
+KEVIN SCOTT:  And if it is -- so the thing -- the thing that I've been trying to encourage people to do is, like, I would love more non-computer scientists, more non-engineers, like, thinking very, very deeply about the set of problems because the very broad solutions that we're painting for some of these things are probably not going to be the things that are needed.  And it -- like, and we should have lots of people talking about it right now, not just, like, a few of us dorks here in Silicon Valley.
+SAM ALTMAN:  For sure.  Like, if we don't get a very broad set of people thinking about these issues soon, I think we're very unlikely to get to the right answers in time.
+KEVIN SCOTT:  Yeah.  So, what is the most exciting thing that you think is going to happen in AI over the next few years that you can talk about?
+SAM ALTMAN:  Well, I'll give a few, because I think the interesting thing is the breadth of things that are going to happen.  I think we'll have language models where we can interact with computers with natural language in an amazing way that we just -- that feels unimaginable, and that's going to feel like intelligence.  I think we'll have robots that can do human dexterity levels of manipulation, and that's going to be a huge impact on the world. I think computer games are going to get really good and fun to play.  That's a sort of small sample.   
+KEVIN SCOTT:  Yeah.  So, it's exciting.
+SAM ALTMAN:  Totally.  It's amazing.
+KEVIN SCOTT:  And you know, none of those things -- so, this is -- this is sort of to my point, like, none of those things is like Commander Data from Star Trek:  The Next Generation walking around, and still, useful stuff will happen.  
+SAM ALTMAN:  Right.
+KEVIN SCOTT:  So, that's the thing that makes me, like, super, super excited.
+SAM ALTMAN:  Totally.  
+KEVIN SCOTT:  And if we get Commander Data, like, I'm excited about that, as well.
+SAM ALTMAN:  Might happen.  Probably not in the next couple years, but at some point.
+KEVIN SCOTT: (Laughter.)  Probably not.  So, we're sort of running out of time here.  But you do some, like, crazy interesting things in your spare time, like you personally fund some interesting physics things.  
+SAM ALTMAN:  Yeah.
+KEVIN SCOTT:  So, like, what's the most fun, like, non-work thing that you've done over the past

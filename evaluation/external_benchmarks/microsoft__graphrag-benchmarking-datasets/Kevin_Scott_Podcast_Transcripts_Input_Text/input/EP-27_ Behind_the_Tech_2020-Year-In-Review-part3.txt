@@ -1,0 +1,25 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt , which explores how we might ensure that AI better serve us all. 
+
+We also met science fiction writer Charlie Stross, who talked about what a real frustration it is to come up with an original idea in times like these when truth really is stranger than fiction.
+
+KEVIN SCOTT:  Yeah, so, so true. And I’m really grateful for the many extraordinary guests we’ve had on this show over the past year. I sometimes have to pinch myself because I get to talk to such great people and have such awesome conversations. 
+
+If I had to pick a common theme from all of these conversations. I’d say it centers around the very basic question of “How can we use technology to better the lives of everyone on the planet?” And you can see this across the board. 
+
+So, you know, the folks who are working in the biological sciences are using technology in these incredible ways, like, where “unprecedented” might actually be the appropriate adjective to describe some of the ways that they are accelerating progress in this field by taking this intersection of the biological sciences and automated experimentation, and high precision instruments, and artificial intelligence. It’s just this incredible mixture of things that really is helping us solve problems that we haven’t really been able to solve in quite these ways before. 
+
+And then, you know, you look at Oren Etzioni, who is at the Allen AI Institute, which is just doing really incredible work, trying to build more powerful artificial intelligence systems in service of solving some of the big problems that we have on the planet, will have for years to come. 
+
+And then, you know, obviously, I always love chatting with Eric Horvitz, our Chief Scientist. Eric has one of the most brilliant and interesting set of experiences of anyone I know. Yeah, I don’t know too many people have a PhD in computer science and are medical doctors, and have spent their entire career leading a research institution like Microsoft Research. And so, getting his perspective on things like looking at his career path was extraordinary and wonderful. 
+
+And then, Charlie is one of my science fiction heroes. It was, like, just an unbelievable pleasure to be able to talk to him and to just sort of see how someone like Charlie is so thoughtful about thinking about the human condition in the context of all of these sort of interesting technological phenomena and phenomena shaped by technology.
+
+CHRISTINA WARREN:  Yeah, I agree, I mean, I think that it’s been fantastic to hear from so many smart people that think about the work that they’re doing and to think about the potential that that work is going to have on all of us. 
+
+KEVIN SCOTT:  Yeah, indeed.
+
+CHRISTINA WARREN:  So with that, let’s get started. First, we’ll hear from digital biology and machine learning pioneer Daphne Koller.
+
+[MUSIC]
+
+DAPHNE KOLLER: I think one of the very, very

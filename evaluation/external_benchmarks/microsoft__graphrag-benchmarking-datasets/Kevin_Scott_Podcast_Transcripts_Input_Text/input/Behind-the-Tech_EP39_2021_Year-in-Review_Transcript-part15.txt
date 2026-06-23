@@ -1,0 +1,21 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  served as his first recording studio. And those early efforts led Ashley to a career in the music industry, touring through Europe and Japan. And one of his songs was featured in the Oscar-Nominated film, The Blind Side.
+ 
+KEVIN SCOTT: Yeah, and simultaneously, Ashley pursued his career as a scientist. He enjoyed a 20-year career in research and development of AI technologies at Johns Hopkins Applied Physics Laboratory and recently joined Microsoft as a vice president, distinguished scientist, and managing director for Microsoft Research.
+
+CHRISTINA WARREN: Here’s an excerpt of Kevin’s conversation with Ashley about the narratives surrounding artificial intelligence.
+
+[MUSIC]
+
+KEVIN SCOTT: The narrative is really important because it’s such an important technology, and – and it is having such a profound impact on what the future is looking like every day as it unfolds, that people need to be able to understand how to engage with it to sort of, like, what do I think about this technology? What do I think about policy about this technology? What do I think about, you know, like, my hopes and my fears for the future of this technology? So how – you know, have you thought much about, like, you know, the story of AI? 
+
+ASHLEY LLORENS: Yeah, absolutely. And maybe there’s a couple of sides – well, there’s many sides, but maybe two sides I’ll pick to explore there. One is absolutely the idea that AI is – is taking us in a bold new direction as a society. And I think it’s more important than ever that we can engage around these policy questions and really around the directions of AI, definitely outside of computer science and across disciplines. 
+
+And so, we do need to create narratives. Even more than that, I think we need to create directions that we agree on that we want to take this technology. 
+
+A lot of times, I think people are discussing AI as something separate from human beings and human intelligence, and I think we need to be thinking of these two things as complementary. 
+
+So, what are our goals for these things? You know, can we start to set some audacious goals around enabling as many people as possible on the planet to live a long, healthy life, creating an atmosphere of shared prosperity? And what is the role of AI in doing that? To me, these big societal narratives should be at the top level of abstraction in terms of what we’re talking about, and then everything else is derived from that. 
+
+I think when we – if we’re going to just let a thousand flowers bloom and see where we land on this thing, I think we could wind up with some really unintended consequences, you know, from that. 
+
+KEVIN SCOTT: Yeah, I really, really agree. And I think, you know, too, if you have the wrong narrative, you could have unintended consequences as well. Like, one of the things that I

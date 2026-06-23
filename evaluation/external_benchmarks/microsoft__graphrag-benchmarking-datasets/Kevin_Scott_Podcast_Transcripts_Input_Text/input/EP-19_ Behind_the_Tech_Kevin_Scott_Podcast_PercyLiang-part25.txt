@@ -1,0 +1,17 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  things more accessible, and less intimidating, and more available across a variety of different things, I think it becomes really exciting.  
+
+KEVIN SCOTT:  Yeah, I've been saying this a lot lately.  There's a way to look at a bunch of machine learning stuff, and get really freaked out about it. And then there's a way to look at machine learning, where you're like, oh, my goodness, this piece of technology is creating a bunch of abundance that didn't exist before, or it's creating opportunity and access that people didn't have before, to more actively participating in the creation of technology.  And that's the thing that really excites me about the – the state of machine learning in 2020.
+
+CHRISTINA WARREN:  Yeah, I agree, I think that there's massive potential for that. And kind of pivoting from that, one of the things that the two of you talked about, towards the end of your conversation was, I guess, the relationship between academia and industry, when it comes to AI and ML. And you were talking about, you know, the tremendous amount of compute that is often needed for these different projects, and for these different research things.  
+
+Being someone who's been on both sides, like you have, what do you see as the opportunity for academia and industry to work together, and what do you think are the – what's maybe one of the areas where there's friction, right now?
+
+KEVIN SCOTT:  Yeah, I think – I think that Percy nailed it in his assessment.  So, there's certainly an opportunity for industry to help academia out more with just compute resources. Although, like I think these compute resource constraints, in a sense, aren't the worst thing in the world, like the brutal reality is that, even though it may seem that industry has an abundance of compute relative to a university research lab, if you are inside of a big company, doing these things, the appetite for compute, for these big machine learning projects is so vast that you have scarcity, even inside of big companies.
+
+And so, I think that's a very interesting like constraint for both academia and industry to lean all the way into and to try to figure out clever ways for solving these problems, and I'm super excited about that.
+
+But like the point that he made, which I found particularly interesting is the fact that if we could do a little bit better job sharing our problems with one another, we could probably unlock a ton of creativity that we're not able to bring to bear, solving these problems right now, and that's something that's one of the reason I love doing these podcasts.
+
+So, I'm going to go back and do my job as CTO of Microsoft and see if I can try to make that happen more.
+
+CHRISTINA WARREN:  I love it. I appreciate you doing that, and I appreciate Percy's work

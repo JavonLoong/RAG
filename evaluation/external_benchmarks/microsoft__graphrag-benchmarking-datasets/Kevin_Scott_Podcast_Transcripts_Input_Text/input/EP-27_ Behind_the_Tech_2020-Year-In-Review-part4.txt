@@ -1,0 +1,25 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt ’s been fantastic to hear from so many smart people that think about the work that they’re doing and to think about the potential that that work is going to have on all of us. 
+
+KEVIN SCOTT:  Yeah, indeed.
+
+CHRISTINA WARREN:  So with that, let’s get started. First, we’ll hear from digital biology and machine learning pioneer Daphne Koller.
+
+[MUSIC]
+
+DAPHNE KOLLER: I think one of the very, very thin silver linings around this very dire situation that we find ourselves in is that there is, I hope, a growing appreciation among the general public for what science is able to do for us today and how much of that ability rests on decades of basic science work by many, many people that— much of which is publicly funded work at academic institutions—that without that level of progress that we’ve made, the concept of, say, creating a vaccine in 12 months would have been completely ludicrous a few years ago.
+
+[MUSIC]
+
+KEVIN SCOTT:  Yeah, so Daphne says it well. She is actually a computer scientist by training. As a Stanford faculty member, she began working in machine learning with traditional datasets and quickly realized that she wanted to pursue datasets that were more richly structured and more aspirational. So that’s the reason she got into biology and medicine.
+
+CHRISTINA WARREN:  And Daphne’s work is fascinating, in part because it relies on the collaboration of scientific fields that historically have spoken different languages. And Daphne describes her work at insitro, the company she founded, which applies machine learning to the research and development of pharmaceuticals. 
+
+[MUSIC]
+
+DAPHNE KOLLER: So, the premise for what we’re doing really emerges from what I said a moment ago, which is that this last decade has been transformative in parallel on two fields that very rarely talk to each other. 
+ 
+We’ve already talked about the advancement on the machine learning side and the ability to build incredibly high accuracy, predictive models in a slew of different problem domains if you have enough quality data. 
+
+On the other side, the biologists and bioengineers have developed a set of tools over the last decade or so, that each of which have been transformative in their own rights, but together, they create, I think, a perfect storm of large data creation — enabling large data creation on the biology side, which when you feed it into the machine learning piece, can all of a sudden give rise to unique insights. 
+
+And so, some of those tools are actually pretty special and incredible, honestly. So, one of those is what we call “induced pluripotent stem cells,” which is — “we” being the community, not “we” at insitro — which is the ability to take skin cells or blood cells from any one of us and then by some almost magic, revert them to the state

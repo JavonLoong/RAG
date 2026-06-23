@@ -1,0 +1,75 @@
+"Jupiter (Swallow the Moon)" is a song by Jewel that was released in 1999 as a single from the album "Spirit", following the second single "Down So Long".
+ The single release saw an entirely new version.
+ Jewel re-recorded vocals and the music for a more pop release to the public, even the title of the song was changed from "Jupiter" to "Jupiter (Swallow the Moon)".
+ A commercial single was issued within the U.S. for the song (and internationally).
+ The single is credited as the "radio version".
+Magnetometer (MAG) is the name of an instrument suite on the "Juno" orbiter for planet Jupiter.
+ The MAG instrument includes both the Fluxgate Magnetometer (FGM) and Advanced Stellar Compass (ASC) instruments.
+ There two sets of MAG instrument suites, and they are both positioned on the far end of on three solar panel array booms.
+ Each MAG instrument suite observes the same swath of Jupiter, and by having two sets of instruments, determining what signal is from the planet and what is from spacecraft is supported.
+ Avoiding signals from the spacecraft is another reason MAG is placed at the end of the solar panel boom, about 10 m (33 feet) and 12 m (39 feet) away from the central body of the Juno spacecraft.
+ The MAG instrument is designed to detect the magnetic field of Jupiter, which is one of the largest structures in the Solar System.
+ If one could see Jupiter's magnetic field from Earth, it would appear five times larger than the full moon in the sky despite being nearly 1700 times farther away.
+ Jupiter's internal magnetic field prevents the solar wind, a stream of ionized particles emitted by the Sun, from interacting directly with its atmosphere, and instead diverts it away from the planet, effectively creating a cavity in the solar wind flow, called a magnetosphere, composed of a plasma different from that of the solar wind.
+Callirrhoe ( ; Greek: "Καλλιρρόη"), also known as Jupiter XVII (17), is one of Jupiter's outermost "named" natural satellites.
+ It is an irregular moon that orbits in a retrograde direction.
+ Callirrhoe was imaged by Spacewatch at Kitt Peak National Observatory from October 6 through November 4, 1999, and originally designated as asteroid (1999 UX ).
+ It was discovered to be in orbit around Jupiter by Tim Spahr on July 18, 2000, and then given the designation S/1999 J 1 .
+ It was the 17th confirmed moon of Jupiter.
+Waves is an experiment on the Juno spacecraft to study radio and plasma waves.
+ It is part of collection of various types of instruments and experiments on the spacecraft;Waves is oriented towards understanding fields and particles in Jupiter's magnetosphere.
+ Waves is on board the unmanned Juno spacecraft, which was launched in 2011 and arrived at Jupiter in the summer of 2016.
+ The major focus of study for "Waves" is Jupiter's magnetosphere, which if could be seen from Earth would be about twice the size of a full moon.
+ It has a tear drop shape, and that tail extends away from the Sun by at least 5 AU (Earth-Sun distances).
+ The Waves instrument is designed to help understand the interaction between Jupiter's atmosphere, its magnetic field, its magnetosphere, and to understand Jupiter's auroras.
+ It is designed to detect radio frequencies from 50 Hz up to 40,000,0000 Hz (40 MHz), and magnetic fields from 50 Hz to 20,000 Hz (20 kHz).
+ It has two main sensors a dipole antenna and a magnetic search coil.
+ The dipole antenna has two whip antenna's that extend 2.8 meters (110 inches/ 9.1 feet) and they are attached to the main body of the spacecraft.
+ This sensor has been compared to a rabbit ears set-top TV antenna.
+ The search coil is overall a mu metal rod 15 cm (6 in) length with a fine copper wire wound 10,000 times around it.
+ There are also two frequency receivers that each cover certain bands.
+ Data handling is done by two radiation hardened systems on a chip.
+ The data handling units are located inside the Juno Radiation Vault.
+ Waves was allocated 410 Mbits of data per science orbit.
+Galileo was an American unmanned spacecraft that studied the planet Jupiter and its moons, as well as several other Solar System bodies.
+ Named after the astronomer Galileo Galilei, it consisted of an orbiter and entry probe.
+ It was launched on October 18, 1989, carried by "Atlantis" , on the STS-34 mission.
+ "Galileo" arrived at Jupiter on December 7, 1995, after gravitational assist flybys of Venus and Earth, and became the first spacecraft to orbit Jupiter.
+ It launched the first probe into Jupiter, directly measuring its atmosphere.
+ Despite suffering major antenna problems, "Galileo" achieved the first asteroid flyby, of 951 Gaspra, and discovered the first asteroid moon, Dactyl, around 243 Ida.
+ In 1994, "Galileo" observed Comet Shoemaker–Levy 9's collision with Jupiter.
+Ganymede (Jupiter III) is the largest and most massive moon of Jupiter and in the Solar System.
+ The ninth largest object in the Solar System, it is the largest without a substantial atmosphere.
+ It has a diameter of 5,268 km and is 8% larger than the planet Mercury, although only 45% as massive.
+ Possessing a metallic core, it has the lowest moment of inertia factor of any solid body in the Solar System and is the only moon known to have a magnetic field.
+ It is the third of the Galilean moons, the first group of objects discovered orbiting another planet, and the seventh satellite outward from Jupiter, Ganymede orbits Jupiter in roughly seven days and is in a 1:2:4 orbital resonance with the moons Europa and Io, respectively.
+Jupiter is the fifth planet from the Sun and the largest in the Solar System.
+ It is a giant planet with a mass one-thousandth that of the Sun, but two and a half times that of all the other planets in the Solar System combined.
+ Jupiter and Saturn are gas giants; the other two giant planets, Uranus and Neptune are ice giants. Jupiter has been known to astronomers since antiquity.
+ The Romans named it after their god Jupiter.
+ When viewed from Earth, Jupiter can reach an apparent magnitude of −2.94, bright enough for its reflected light to cast shadows, and making it on average the third-brightest object in the night sky after the Moon and Venus.
+Tidal heating (also known as tidal working) occurs through the tidal friction processes: orbital and rotational energy are dissipated as heat in the crust of the moons and planets involved.
+ Io has a similar mass and size as the Moon, but Io is the most geologically active body in the Solar System.
+ This is caused by the heating mechanism of Io.
+ The major heating source of Earth and its moon is radioactive heating, but the heating source on Io is tidal heating.
+ As Jupiter is very massive, the side of Io nearest to Jupiter has a slightly larger gravitational pull than the opposite side.
+ This difference in gravitational forces cause distortion of Io’s shape.
+ Differently from the Earth’s only moon, Jupiter has several moons (i.e. Io, Europa, Ganymede and Callisto).
+ As Io is the innermost moon of Jupiter, Jupiter pulls Io inward and other moons pull Io outward.
+ This causes Io’s orbit to be elliptical and eccentric.
+ The distance between Jupiter and Io changes all the time and the distortion of Io likewise changes all the time.
+ The constant change in the shape of Io results in a large amount of friction in the moon and the friction-induced heating drives strong volcanic activities on the surface of Io.
+Callisto (Jupiter IV) is the second-largest moon of Jupiter, after Ganymede.
+ It is the third-largest moon in the Solar System after Ganymede and Saturn's largest moon Titan, and the largest object in the Solar System not to be properly differentiated.
+ Callisto was discovered in 1610 by Galileo Galilei.
+ At in diameter, Callisto has about 99% the diameter of the planet Mercury but only about a third of its mass.
+ It is the fourth Galilean moon of Jupiter by distance, with an orbital radius of about .
+ It is not in an orbital resonance like the three other Galilean satellites—Io, Europa, and Ganymede—and is thus not appreciably tidally heated.
+ Callisto's rotation is tidally locked to its orbit around Jupiter, so that the same hemisphere always faces inward; Jupiter appears to stand nearly still in Callisto's sky.
+ It is less affected by Jupiter's magnetosphere than the other inner satellites because of its more remote orbit, located just outside Jupiter's main radiation belt.
+Jupiter LVI, originally known as S/2011 J 2 , is a natural satellite of Jupiter.
+ It was discovered by Scott Sheppard in 2011.
+ Images of the newly discovered moon were captured using the Magellan-Baade telescope at the Las Campanas Observatory in Chile.
+ It is an irregular moon with a retrograde orbit.
+ The discovery of Jupiter LVI brought the Jovian satellite count to 67.
+ It is one of the outer retrograde swarm of objects orbiting Jupiter and belongs to the Pasiphae group.

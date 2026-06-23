@@ -1,0 +1,19 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  have repercussions that span from, you know, environmental science, biofuel, bacteria or algae that do all sorts of funky things like suck carbon dioxide out of the environment, better crops, but also, importantly for what we do, better human health. 
+
+And so, I think we’re part of this wave that’s starting to emerge. And what we do is take this convergence and point it in the direction of making better drugs that can potentially actually be disease modifying, rather than as in many existing drugs, just often just make people feel better, but don’t really change the course of their disease.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  That was Stanford computer science professor and CEO Daphne Koller talking about her work at her company, insitro.
+
+KEVIN SCOTT:  Yeah, and we should also note that the recent awarding of this year’s Nobel Prize for Chemistry went to two women responsible for the development of CRISPR, which is, for folks unfamiliar, the first precision technology allowing human beings to alter the genome of humans or other organisms.
+
+CHRISTINA WARREN:  Yes, I was so glad to see that award.
+
+Next, we’ll hear from another Stanford PhD, Drew Endy. Drew is a member of the Stanford University bioengineering faculty, and his research teams have pioneered amplifying genetic logic, rewritable DNA data storage, reliably reusable standard biological parts and genome refactoring. Here’s Drew.
+
+[MUSIC]
+
+Drew: So, we're biology, right? Everybody listening to this is biology. We all have biology. So you know, like, biology is kind of important is a gross understatement. So how do we explain the fact that we tend to take biology for granted? And I think it's because, well, we just get biology. And so, there's a way of thinking about the living world, which is the living world exists before us, and we are a part of it and we inherit it. And we can't do anything about it. It's just-- it is what it is. And before the mid-19th century, not only is it is what it is, but it is what it is doesn't change. This is the pre-evolutionary view.
+
+Now, post-Darwin and colleagues, we have another cultural perspective on biology. It exists before us and it is what it is, but it changes over time through this evolutionary process. And we all know well that that's controversial, still, culturally, for some, right? Do I have the pre-evolutionary view of biology or the post? But from my point, as an engineer, it doesn't really matter. Everybody in either of those tribes is just the living world. We just take it for granted. It is what it is. And it's not that we don't care about it, but we don't really think about it as this substrate, as this type of material

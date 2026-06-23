@@ -1,0 +1,47 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  people literally have been killed because of, you know, runaway memes that have happened on social media and things like that.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  So, we'll learn how to use them, but I think you're right.  The general trend for technology is not that it makes everything better every time. But it's certainly more steps forward than it is steps backwards.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And that has been trend really probably since fire right?
+
+KEVIN SCOTT:  Right. That is exactly what I was thinking when I said 300,000 years.  So, we probably had fire longer than that.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  But, like, you know, it's fire.  It's agriculture.  It's, yeah.
+
+DANNY HILLIS:  But I'm sure a few people got burned on that one, right.
+
+KEVIN SCOTT:  Of course.
+
+DANNY HILLIS:  Early on.
+
+KEVIN SCOTT:  Yeah, indeed. And, yeah, so it's not that it is monotonically positive, like, not every step is positive, but, like --
+
+DANNY HILLIS:  Well, it's positive because we willfully and thoughtfully make it into the positive.
+
+KEVIN SCOTT:  Yes.
+
+DANNY HILLIS:  And I think that that's the process that you're talking about --
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  -- is you can't just say well, we'll make the technology and it will automatically be positive.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  It's positive because, you know, we discuss it, we think about it, we think about how to use it.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And fortunately, you know, there's more people that are trying to make the world better than trying to make the world worse.
+
+KEVIN SCOTT:  Yeah.  So, one of the more interesting multidisciplinary things that you've done, like, that I'm just sort of personally fascinated by is this 10,000-year clock.  Can you tell us a little bit about that project?
+
+DANNY HILLIS:  So, that actually has its genesis back when I was making the fastest machines in the world, and all my customers were coming to me and saying can't you make it faster, faster, you know, instead of nanoseconds, can you go to femtoseconds?
+
+And I was like, oh, I'm so tired of making everything faster, faster, faster.  You know, I really want to make something slower.  I mean, it's

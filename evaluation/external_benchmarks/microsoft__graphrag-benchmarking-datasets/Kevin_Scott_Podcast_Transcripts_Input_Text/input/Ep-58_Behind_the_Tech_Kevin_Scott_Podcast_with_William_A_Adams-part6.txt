@@ -1,0 +1,18 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  I know it’s something you think a lot about. 
+
+WILLIAM ADAMS: Yeah, I mean, I thought about – before thinking about this podcast, I was like what about my history? And early on – I mean, I had my uncle. Even before that, when I was like seven or eight, there was this guy in my life, who was named Jackie Robinson, who was a Black dude, who was at UC-Irvine studying computers, and he’d show me printouts of his Fortran programs, and he let me read his book, and it’s like, okay, that was an influence, right? 
+And then here’s my uncle, "Here’s your – here’s a computer," okay, that’s an influence. And local to us, we – we lived in the city called Placentia, which is like at that time, a farming community, really, but it was right next to Rockwell International. So all my classmates, at least the white kids, were – their parents were engineers. And Rockwell had a program where they actually brought high school students in for kind of – not an internship, but it was a training program. 
+
+So I learned Fortran, key punch, the rocket equation, you know, calculators, all this stuff. So I was fortunate. I had access. And there it was, right? My circumstance would be completely different if that series of things didn’t exist, right?
+
+KEVIN SCOTT: Yeah. Well, and I think kids also are so impressionable when they’re young. I mean, I remember my own journey. I got interested in computers, like a) because they were accessible, and b) because videogames seemed fascinating.
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: And I just, you know, the thing that I always had from the time I was a like a super-little kid is I just wanted to understand how everything worked. And the more fascinated I was by the thing, the more I wanted to understand how it got made and how it functioned. And like video games were the initial thing that got me into computers, but I remember I got into a science and technology high school when I was a senior, and I did an internship as part of the Computer Science class and I was taking there, where half-a-day a week for six weeks I went to this place and worked with real adult professional engineers. 
+
+And one of them had a copy of Allen Holub’s compiler book, sitting on their desk, and I saw that, and I was like, "This is the most mysterious thing that I’ve ever seen in my life, and I must understand how these programming tools work that I’m using and loving."
+
+WILLIAM ADAMS: Yeah.
+
+KEVIN SCOTT: And like, and that became – like, I was 17 years old, and that became the next 13 years of

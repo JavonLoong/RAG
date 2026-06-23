@@ -1,0 +1,31 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  started transitioning into machine learning or AI. 
+
+KEVIN SCOTT:  And when was this?  What year? 
+
+PERCY LIANG:  This was around 2004, yeah.  
+
+KEVIN SCOTT:  Still, machine learning was -- 
+
+PERCY LIANG:  Yeah, people didn’t use the word “AI” back then. 
+
+KEVIN SCOTT:  Yeah, I mean, I remember like right around that time was when I joined Google and I had been a compiler guy when I was an academic.  I had never done AI at all.  I didn’t know what machine learning was when I started and, yet, three months after I joined Google, I was tasked with doing a machine learning thing and reading this giant stack of papers and formidable textbooks trying to get myself grounded.  
+
+PERCY LIANG:  Yeah.  
+
+KEVIN SCOTT:  It’s a very interesting time, 2004, and you picked a great time to get interested in machine learning. 
+
+PERCY LIANG:  Yeah, I had no idea -- no idea that it would be the field that it is today. 
+
+KEVIN SCOTT:  And why was that interesting?  So, like I can sort of get why the theory was interesting, like you loved these problems and the challenge of them.  What was interesting about machine learning? 
+
+PERCY LIANG:  I mean, I think there’s definitely this background -- AI would be kind of mystical aspect of intelligence that I think I’m not unique in being drawn to.  When there was an opportunity to connect the things that I was actually doing with the theory with some element of that, I took the opportunity to kind of get into that.  
+
+And then I stayed at MIT for my Master’s, which was on machine learning and natural language processing.  Then, that kind of really cemented the direction that I really started pursuing. 
+
+KEVIN SCOTT:  What -- like I’m sort of interested because if you did your master’s degree there, this was right before the deep learning boom.  So, it wasn’t the same flavor of machine learning, natural language processing that folks are very excited about right now, so like -- 
+
+PERCY LIANG:  That came quite a bit later. 
+
+KEVIN SCOTT:  What was your thesis about in particular? 
+
+PERCY LIANG:  Yeah, my thesis was actually at MIT was about semi-supervised natural language processing.  So, in some ways, there are spiritual connections to a lot of the things like BERT and these things that you see today -- the idea that you can use a lot of unlabeled data, learn some sort of representations -- those were based on this idea called “brown clustering.”  And that was used to, then, improve the performance on a number of tasks. Of course, data sets and compute and all the regimes were different,

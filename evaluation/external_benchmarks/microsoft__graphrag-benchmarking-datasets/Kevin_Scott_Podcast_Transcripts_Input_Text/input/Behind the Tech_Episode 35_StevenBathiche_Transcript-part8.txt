@@ -1,0 +1,15 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  the whole game.
+
+KEVIN SCOTT:  Yeah. So, let’s talk a little bit more about some of the stuff that you’ve been doing with AI, which is a relatively new but extremely powerful tool that we’re increasingly use to do exactly what you’re talking about, like this taking something that’s very, very complex to solve any other way and making it possible using this new tool. So, talk a little bit about what you have been doing with edge AI.
+
+STEVIE BATHICHE:  Yeah. Let me digress a little bit. And so, one of the core axioms that I have is that, and one of the things I’ll – I have been doing almost my entire career is, like I said, transducing biological signal, interpreting them and then giving signal back. And I did that, like, with the moth mobile, but at Microsoft, you know, the person is the one generating the biological signal, right? And using hardware and software to understand and deduce intent to gather their information, I think, has been, so far, a lifelong career at it. 
+
+And it’s a lot of fun. You know, all the way from, like, simple things like mice to keyboards to, like, the Surface table that we developed to, you know, to these magic window displays where we put cameras behind them to try to make people feel like they’re in the same room, to now shifting that complexity to – to software and edge AI. 
+
+I’m a big believer in doing computation in the right place. And one of the right places right now that I’m really excited about is in computation in our computers, in our devices right there at the source, right in front of a person, and using computational capacity to do extraordinary things. And I think that’s the revolution that’s right in front of us. That is so exciting, especially in the PC world.
+
+KEVIN SCOTT:  Yeah. So, you know, there was this really interesting Scientific American article that got published, I think, in 1995 where the term “ubiquitous computing” or “ambient computing,” I forget which one he used, like, were coined. And I think, you know, this notion of trying to figure out how to use technology to serve human needs, where you adapt the technology to the human needs versus forcing humans to adapt themselves to the technology is, like, a really interesting way to think about problem solving. 
+
+And I think, you know, that’s maybe another way of talking about what you just said. So, like, a lot of the things that you’re doing, you’re shifting the complexity into the technology to benefit the human, rather than, like, forcing the human to, like, bear the burden of the complexity.
+
+STEVIE BATHICHE:  That’s right. That’s exactly right, yeah. And if you want to be even

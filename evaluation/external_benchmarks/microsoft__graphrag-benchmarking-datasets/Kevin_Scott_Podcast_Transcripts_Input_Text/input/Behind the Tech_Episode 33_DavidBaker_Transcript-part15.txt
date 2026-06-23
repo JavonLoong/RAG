@@ -1,0 +1,15 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  adenovirus to carry the, you know, the spike protein into the body to try to produce an immune response. But, like, one of the funky things about adenoviruses, right, is like if you already have antibodies for the adenovirus, itself, like, the antibodies may swarm in and kill the vaccine before it can produce, like, the new immune response. 
+
+So, I mean, I’m just sort of wondering, you know, one of the things that you said that’s really fascinating to me is, like, I think we very quickly you know especially by classical vaccine development standards went from the genetic sequence of this virus to, like, vaccines or therapeutics. Like, you – how long did it take you to design this 1,000X binding thing once you had a sequence? Like a month, two months? 
+
+DAVID BAKER:  It was probably – it was a few months, but that was because we hadn’t done it before, and we had to sort of learn by doing. And I think now we’re working on methods for really doing that. What we’d like to do is be able to do that within two weeks, so the sequence for a new pandemic threat comes out and then two weeks later we have a really high-affinity antidote. That’s aspirational, but I think it’s possible. 
+
+KEVIN SCOTT:  Yeah, and, like, you know, everything that I’ve seen – seems like you know far better than I do, but like, it sounds like a reasonable aspiration to me. Like, the thing that I don’t understand as well is then the hard part starts, which is trying to assess the safety of the thing that you just synthesized. And, like, that’s – you know, even with the MRNA vaccines that we made, like, you had a pretty good idea that they were going to work. Like, we just didn’t know whether or not they were going to be safe.  
+
+DAVID BAKER:  Yeah. Yeah. 
+
+KEVIN SCOTT:  And so how do – I mean, like, can we use the techniques that you are describing to, like, do some of that safety assessment to drive the, you know, the time to– 
+
+DAVID BAKER:  What we can do – yeah, it’s a really good question. And that is probably one of the biggest question marks currently. So, what we can do is on the computer, design in properties that we think will correlate with safety. But humans are very, very complicated, so it’s hard to predict exactly what will happen. And so, I think that evaluating safety is the thing that is slow, and that actually is what has been taking all this time, much longer than the design. So, it’s a good question. And there, we’ll just have to learn from experience, I think. 
+
+KEVIN

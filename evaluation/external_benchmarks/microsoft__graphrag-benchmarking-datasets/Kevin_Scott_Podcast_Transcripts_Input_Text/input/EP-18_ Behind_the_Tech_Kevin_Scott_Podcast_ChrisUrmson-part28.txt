@@ -1,0 +1,23 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt   And for this technology, so the way kind of classic LIDAR, so the LIDARs we used to use at Google and most of the LIDARs that are out there that you’ll see on cars, the way it works is you send out a pulse of light and you wait for it -- goes out in the world, bounces off something, comes back, and you measure how long it took for that little pulse to go out and come back.  
+
+Because the speed of light is constant, you can get distance from that.  Now, the trick is you have to make that pulse so bright that it is brighter than everything else out there, because otherwise you don’t see it when it comes back.  And so that means it’s got to be brighter than the sun. 
+
+KEVIN SCOTT:  Which is incredibly bright.  
+
+CHRIS URMSON:  Yes, now, the good news is you’re looking over a small period of time, so you can kind of do it and maybe you don’t -- you know, you don’t necessarily care, because not many cars come out of the sun, but it makes it -- you know, you basically have this really challenging signal to noise problem because you’re doing DC measurements.  
+
+With this FMCW technology, what’s happening is instead of sending a pulse out, you’re sending out a continuous wave.  And you watch that go out, hit the world, and come back.  And now you interfered the outbound wave with the inbound wave and look at the phase difference.  
+
+KEVIN SCOTT:  Oh, interesting.  
+
+CHRIS URMSON:  And now you measure the phase difference effectively and that tells you how far away the thing is that it’s reflecting off of. And what’s cool is that because of this new physical property of self-heterodyne you get you know 10 to 100 to one amplification, which is -- 
+
+KEVIN SCOTT:  That’s great.  
+
+CHRIS URMSON:  You know, and because you’re no longer DC, you know, you filter out stuff that isn’t at this frequency, so you don’t like -- turns out, the sun is roughly constant.  So, it doesn’t -- there’s no frequency to that.  
+
+So it makes it so you can be much more sensitive.  And then the other really cool thing that comes along with this is that you actually get to measure velocity instantaneously.  So, using Doppler.  So when you hear a siren go by and how it changes pitch, that’s the Doppler shift in that audio signal. 
+
+So with this, is we’re measuring vehicles at distance.  With each one of those measurements that come back through that pulse or through that wave, we’re actually -- 
+
+KEVIN SCOTT:  So you can tell whether you’re accelerating or decelerating relative

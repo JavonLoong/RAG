@@ -1,0 +1,22 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  we could go from, essentially from the sequence of a virus to these very, very tight, high-affinity binding proteins. 
+
+And the next thing we showed was that those proteins blocked the virus from getting into cells. And then we showed with collaborators that they protect animals from infection by the virus. And I think this was – this was kind of a real ah-ha moment for me, because we’d been developing these methods for designing proteins over the years, and here, in the midst of a pandemic, we were actually able to apply them to make therapeutic candidates. 
+
+And those are – those are now headed for clinical trials. It’s been slow, because this is a completely new modality, this whole idea of computational designed proteins. So, there’s been a little bit of a pushback because these are completely new things. No one knows exactly how they’ll behave. 
+
+But for the next pandemic, we’re – we’re going to be ready, so we have all the methods worked out and I think we’ve gotten over a lot of the sociological issues to actually using these as drugs. And there’s nothing really that can be as fast, if you can go from amino acid sequence to actually computing a protein which fits perfectly against the virus. So, that’s the first thing we did. 
+
+The second thing we did was to design, again, completely from scratch little molecular devices that emit light – luminesce – when they encounter the virus, and those are pretty neat. We’re – we’re developing those now for, not only for detecting the virus, but also for monitoring responses to vaccination, like, how good are my antibodies against the virus? And so, rather than that being just like a fixed key that fits into a lock, that’s actually a device that can undergo changes in its state when it encounters the virus. 
+
+And the third area, my colleague Neil King at the Institute has been developing sort of a next generation of coronavirus vaccines, using designed protein nanomaterials that we’ve created at the Institute, which self-assemble into big things that look like Death Stars. And we can put the parts of the coronavirus spike on the surface. And when Neil does that, he finds it gets very, very strong immune responses, stronger than with the current vaccines. These designed nanoparticle vaccines are now in clinical trials. 
+
+So, that sort of illustrates some of the key areas in protein design now, being able to design very precise shapes that can block, that can bind very tightly to targets, being able to design molecular devices that can undergo – that can basically do logic calculations, and being able to design nanomaterials like these protein Death Stars.
+
+[MUSIC]
+
+
+CHRISTINA WARREN: That was from Kevin’s conversation with Dr. David Baker from the spring of 2021. So unbelievably cool, the Death Star protein.
+
+KEVIN SCOTT: So awesome. (Laughter.)
+
+CHRISTINA WARREN

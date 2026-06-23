@@ -1,0 +1,16 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt  chat with Reid
+Coming up next, Reid Hoffman.  Reid is an investor, author, and entrepreneur.  He's a legendary angel investor, cofounder and executive chairman of LinkedIn, author of three books including his most recent, Blitzscaling, and now a partner at the venture firm Greylock. 
+[MUSIC]
+KEVIN SCOTT:  Super glad to have you here today, Reid.  Welcome to the show.  And we have tons of stuff to talk about. 
+So, I typically start these interviews by going all the way back to people's childhoods and, you know, it's sort of interesting how people find their way into their careers in technology.  So, like why don't you tell us a little bit about like your first contact with technology as a kid? 
+REID HOFFMAN:  So, like many young boys, this was when the TRS-80, so called "trash 80," and Commodore 64 and all the rest had come out. 
+ KEVIN SCOTT:  Yeah.  I think you and I are almost exactly the same age, so we have a mirror experience in some ways.  (Laughter.) 
+REID HOFFMAN:  And I literally was just begging my dad to get a Commodore 64, and -- 
+KEVIN SCOTT:  And your dad's a lawyer?  
+REID HOFFMAN:  Lawyer.  And he was, like, it's an indulgence, you know, it's like, you know, it's too much money.  You know, take three paper routes, right, you want to do this?  You know, go figure this out yourself. But then what happened is one of my friend's parents bought him a Commodore 64, so I just go over there all the time.  Right?  
+KEVIN SCOTT:  Yeah.  And what was it about the Commodore 64 in like these, sort of first-generation of real, like, commodity personal computers that sucked you in.  Was it gaming?  Was it the complexity of the device?  Was it something else? 
+REID HOFFMAN:  So, gaming was definitely interesting.  There was kind of this weird Star Fleet Battles game that was kind of, you know, picking out which quadrant you were in, and so -- and that was kind of fun and different.  But, I think I probably put most of my time, and some of the programs are literally on the cassettes in those Commodores. 
+KEVIN SCOTT:  Yeah. 
+REID HOFFMAN:  You're, like, whoa.  Like, like, it's well before floppy drives.  Which are now -- people are like, "What are you talking about?"  
+KEVIN SCOTT:  Yeah.  
+REID HOFFMAN:  And it was actually

@@ -1,0 +1,28 @@
+The perihelion is the point in the orbit of a celestial body where it is nearest to its orbital focus, generally a star.
+ It is the opposite of aphelion, which is the point in the orbit where the celestial body is farthest from its focus.
+Ballistic capture is a method of achieving orbit around a planet or moon - a spacecraft moving at a lower orbital velocity than the target celestial body is inserted into a similar orbit, allowing the planet or moon to move toward it and gravitationally snag it into orbit around the celestial body with no need for an insertion burn.
+In celestial mechanics, the Roche limit (pronounced /ʁɔʃ/) or Roche radius, is the distance within which a celestial body, held together only by its own gravity, will disintegrate due to a second celestial body's tidal forces exceeding the first body's gravitational self-attraction.
+ Inside the Roche limit, orbiting material disperses and forms rings whereas outside the limit material tends to coalesce.
+ The term is named after Édouard Roche, who is the French astronomer who first calculated this theoretical limit in 1848.
+Apollo 8, the second human spaceflight mission in the United States Apollo space program, was launched on December 21, 1968, and became the first crewed spacecraft to leave Earth orbit, reach the Earth's Moon, orbit it and return safely to Earth.
+ The three-astronaut crew — Commander Frank Borman, Command Module Pilot James Lovell, and Lunar Module Pilot William Anders — became the first humans to: travel beyond low Earth orbit; escape Earth's gravity; see Earth as a whole planet; enter the gravity well of another celestial body (Earth's moon); orbit another celestial body (Earth's moon); directly see the far side of the Moon with their own eyes; witness an Earthrise; escape the gravity of another celestial body (Earth's moon); and re-enter the gravitational well of Earth.
+ The 1968 mission, the third flight of the Saturn V rocket and that rocket's first crewed launch, was also the first human spaceflight launch from the Kennedy Space Center, Florida, located adjacent to Cape Canaveral Air Force Station.
+An astronomical object or celestial object is a naturally occurring physical entity, association, or structure that exists in the observable universe.
+ In astronomy, the terms "object" and "body" are often used interchangeably.
+ However, an astronomical body or celestial body is a single, tightly bound contiguous entity, while an astronomical or celestial "object" is a complex, less cohesively bound structure, that may consist of multiple bodies or even other objects with substructures.
+Longitude by chronometer is a method, in navigation, of determining longitude using a marine chronometer, which was developed by John Harrison during the first half of the eighteenth century.
+ It is an astronomical method of calculating the longitude at which a position line, drawn from a sight by sextant of any celestial body, crosses the observer's assumed latitude.
+ In order to calculate the position line, the time of the sight must be known so that the celestial position i.e. the Greenwich Hour Angle (Celestial Longitude - measured in a westerly direction from Greenwich) and Declination (Celestial Latitude - measured north or south of the equational or celestial equator), of the observed celestial body is known.
+ All that can be derived from a single sight is a single position line, which can be achieved at any time during daylight, when both the sea horizon and the sun are visible.
+ To achieve a fix, more than one celestial body and the sea horizon must be visible.
+ This is usually only possible at dawn and dusk.
+In astronomy, a transit or astronomical transit is the phenomenon of at least one celestial body appearing to move across the face of another celestial body, hiding a small part of it, as seen by an observer at some particular vantage point.
+Gary L. Bennett (born January 17, 1940) is an American scientist and engineer, specializing in aerospace and energy.
+ He has worked for NASA and the US Department of Energy (DOE) on advanced space power systems and advanced space propulsion systems.
+ His professional career has included work on the Voyager, Galileo, and Ulysses space missions, and is currently working as a consultant in aerospace power and propulsion systems.
+ He is also a science fiction author ("The Star Sailors").
+Planetary protection is a guiding principle in the design of an interplanetary mission, aiming to prevent biological contamination of both the target celestial body and the Earth in the case of sample-return missions.
+ Planetary protection reflects both the unknown nature of the space environment and the desire of the scientific community to preserve the pristine nature of celestial bodies until they can be studied in detail.
+In astrology, the acronical place is the position of a planet or other celestial body when it is directly opposite the Sun.
+ For instance, if a person's Sun is placed at 10 degrees Leo, the acronical place of the Sun would be 10 degrees Aquarius.
+ Therefore, any planet or celestial body crossing 10 degrees Aquarious by transition or progression would be crossing the Sun's acronical place.

@@ -1,0 +1,15 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  you were -- how good a programmer were you by the time you got to Stanford?  Like, were the programming assignments were easy, hard?
+SAM ALTMAN:  Easy.  The first -- freshmen year was easy, and then it got hard.
+KEVIN SCOTT:  Okay.  You know as you're thinking about how we educate our kids, like, that's a great luxury to, like, have.  By the time you get to college, you've already got a reasonably good skill, and then you can sort of do this exploration.  Like, that's a -- that's an incredibly beneficial thing.
+SAM ALTMAN:  Yeah.  Like, I -- I'm sure you do, too -- like, I think the education system in general is just not nearly ambitious enough.  But I think, like, I was incredibly lucky to go to an amazing high school, and I learned a lot of the sort of basic skills and knowledge.  Certainly, I had learned how to learn.  And so, by the time I got to college, I could just pursue stuff.  I didn't have to, like, think really hard about just making sure I got everything done for my major.  I'd already done a lot of that.
+KEVIN SCOTT:  So how did you get started in tech?  
+SAM ALTMAN:  There was this period of time that I was sort of born smack in the middle of, of like kids who hit the computer revolution exactly right where, like, the computer started easy enough to work with where we could, like, figure it out on our own.  And then, they like kind of got powerful at the right time for us.
+KEVIN SCOTT:  Yup.
+SAM ALTMAN:  But I was born at a very lucky time for that.
+KEVIN SCOTT:  Yeah.  
+SAM ALTMAN:  And a lot of -- a lot of people who have, like, gone on to sort of start important companies or be technology investors were born in this like relatively short window, it seems like.  
+KEVIN SCOTT:  Yeah.  I mean, I say this a lot.  Like, I feel the same thing.  So, I got lucky to be an 11-year-old like right when the personal computing boom was taking off, like right when the personal computer started showing up, hooked up to a little 13-inch --
+SAM ALTMAN:  Totally.
+KEVIN SCOTT:  TV's in department stores.  Like, that was -- that was when I was developing as a little human being. 
+SAM ALTMAN:  A very interesting question is what are the sort of seven to 12 year olds now, like what is that technological revolution going to be that they're going to grow up with?
+KEVIN SCOTT:  And it's super -- like, I've

@@ -1,0 +1,25 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  convinced we had kind of a perpetual motion machine, which is on its face a problem, because we’re at the gas station.  (Laughter.)  
+
+But, you know, like the laser that was spinning on the roof was clearly a wind turbine, and at the time, we had this encoder on the rear wheel.  And so that, you know, the model was we were gathering from the wind from the car driving, and then we were recuperating energy through the encoder on the wheel. 
+
+It’s one of these things where we couldn’t tell them what we were doing, so we kind of nod along.  
+
+KEVIN SCOTT:  I knew a lot of people who knew Google’s business who thought that they might have something to do with Street View. 
+
+CHRIS URMSON:  Oh, yeah, I remember, we had -- we were definitely that.  One time, we were driving back -- we were up in Sacramento or Tahoe testing driving back through that stretch of 80 just kind of where it’s really flat. 
+
+And it turns out, there’s a part of that where there’s like a parallel road.  And we’re driving along and this motorbike passes us, cuts over to the parallel road, and then pops a wheelie.  For like three quarters of a mile, is just doing a wheelie beside our car. 
+
+And I am sure that for the next two or three years, that guy was still checking for the street view footage of him doing his wheelie, yeah, so -- 
+
+KEVIN SCOTT:  That’s awesome. 
+
+CHRIS URMSON:  Good times.  
+
+KEVIN SCOTT:  So what had to change after you accomplished the initial goals?  So the initial goals were good ones, but like that is not like how you get to a commercial business for self-driving cars. 
+
+CHRIS URMSON:  No.  And it became, okay, we’ve started -- we’ve got this initial proof point that the technology at least can work some of the time on traffic, on public roads with real people.  So now how does this turn into a product?  What is the application we’re going to go after?  What is kind of the MVP. 
+
+The first thing we thought about was basically what looks like Auto Pilot today on Tesla, except we set a very, very high reliability goal so that you really could kind of take your eyes off the road for periods of time.  
+
+And so, we spent a couple of years working towards that.  And you know, I’ve talked in the past about some of the experience we had at that, the point -- we got to a point where it was extremely good, then we started to “dog food” it, and you know, despite warning people about the fact that, A, it was beta, and B, you know, effectively, we knew where they lived

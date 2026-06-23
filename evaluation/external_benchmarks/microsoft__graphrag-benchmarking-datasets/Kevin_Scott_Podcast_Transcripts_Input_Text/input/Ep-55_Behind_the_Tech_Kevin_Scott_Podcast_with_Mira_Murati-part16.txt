@@ -1,0 +1,19 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt , like, what that missing element is ‘cause, like, lots of labs out there with really smart people spending a lot of money and, you know, they’ve got an interesting intellectual mission and they still haven’t been able to make the sort of progress that you all have made. 
+
+MIRA MURATI: It’s incredibly hard. Like you said, you know, you can have these incredibly talented people and high density of them and they’re innately curious and they’re, you know, forever in pursuit of discovery and something new. But you need to -- that needs to compound. You need to have all the smart people working together on kind of similar same bets. 
+
+And, you know, it’s -- you want to motivate people. You don’t hire smart people, tell them what to do, and -- but you -- you want them to be motivated and aligned enough to kind of work on similar or the same things. 
+
+And at OpenAI, I think one of the most important things that we managed to do well was take a bet or take a couple of bets on the things that we believed the most and get alignment on those very early on. And even, you know at the stage of recruiting people, actually, and bringing them in that’s most important and making sure they’re really aligned on those things. 
+
+And it’s hard to say no, especially when there is so much opportunity.
+
+KEVIN SCOTT: Yes. 
+
+MIRA MURATI: It could be working on all these different ideas. It’s incredibly hard to say no. And so, and you doubt yourself. And you know, it might take a while for -- for these bets to pan out, you know, like the scaling laws and focusing on one large model, a ton of data, which now it’s obvious, but back then, not so much. And getting alignment on that is incredibly hard. 
+
+But I think it’s -- goes back to this idea of, like, figuring out how you work on the right problem at the right time and having faith on that. 
+
+KEVIN SCOTT: Yeah. I want to double-click on this notion of it’s hard to say no. It’s incredibly hard to say no, because like the thing that you’re faced with as CTO of OpenAI -- and, like, I’ve -- I’ve had a lot of this over the past two decades -- is you -- you will have the smartest people in the world coming to you with very good ideas -- ideas that you think are interesting and, like, you’re a curious person and you’re like, “Oh, that’s amazing. Like, I -- I love this.” 
+
+And then you know that that idea is not on the path that you’re pursuing and it might not be the next most important thing to go work on if you’re choosing the next most important thing. And just saying no -- and like you’re also

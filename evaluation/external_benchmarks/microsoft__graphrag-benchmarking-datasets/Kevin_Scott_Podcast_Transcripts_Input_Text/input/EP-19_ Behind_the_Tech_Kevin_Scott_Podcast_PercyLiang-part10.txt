@@ -1,0 +1,17 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  language understanding systems, and the domains, and you could ask all sorts of questions, and we'll do a good job.
+
+But, you know, once you go out and leave the confines of that domain, then all bets are off. And on the other hand, we have things like search which are unstructured, they're just broad.  They don't claim to understand, in any sense of the word, understand anything, but they're incredibly useful, just because they have that, you know, breadth.
+
+And I think while there's still a huge gap between -- and the open challenge on how do you kind of really marry the two, and a lot of these kind of conversational systems where you actually have to do things in the world, not just kind of answer questions, are -- do require some amount of structure, and how do you marry that with the kind of open-endedness of something like search, is --
+
+KEVIN SCOTT:  And just to like, just the way that I think about those two ends of the spectrum, right, is you have these like structured dialogue systems where you have to ask the question in exactly the way, or like pretty close to exactly the way the system expects you to ask the question, in order for it to be able to respond.
+
+And on search, you can get a broad range -- you can ask the question, like a bunch of different ways, and like expect to get a response because the question has been answered in like a gazillion possible ways, on the web, and like you're going to get, you know, maybe one of those answers returned to you.
+
+And like the hard part is like in-between, is of like something really understanding the question that you're asking, or the command that you're giving to the system, and like understanding it enough so it can then go like connect to whatever knowledge repository or set of APIs, or whatever else, that is going to do the thing that they want done.
+
+PERCY LIANG:  I mean, one -- the one thing that search, I think, did really well is the interface, right?  The interface promises nothing.  You, you -- it promises template links or maybe some summaries, and I think, as opposed to in a system, where it's just framed as an AI who is trying to do the right thing for you, and there's only disappointment when it doesn't, whereas as search, how many times you search and you don't find what you want.
+
+And it's like, okay, well, it's user error, let's try again, but that's -- allows you to get so much more data and signal, and a potential for improvement, which -- whereas if you have an assistant and it just doesn't work, then you just, you're just going to give up.
+
+KEVIN SCOTT:  Yes, there is this weird psychology thing, right, where -- with the interfaces, like

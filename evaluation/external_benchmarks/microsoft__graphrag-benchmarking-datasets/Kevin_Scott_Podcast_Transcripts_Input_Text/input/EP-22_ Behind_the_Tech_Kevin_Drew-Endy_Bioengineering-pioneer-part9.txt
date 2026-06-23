@@ -1,0 +1,17 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  what was going on in her mind, but if a student did that to me today, I go, “You idiot. It does what it does because of what it looks like, right? Structure, function, right? Its shape has to do with what it's -- what it does.” But she just looked at me and was like, all right, you know, okay. (Laughter.)
+
+But so, so I was learning -- with hindsight, I was wishing for functional abstraction. As an engineer, I wanted an abstraction stack that I could redeploy to -- anyway, but that's what was going on. Yeah. (Laughter.)
+
+KEVIN SCOTT:  I mean, it sounds like this was an amazing course. I mean, any course that's lights some sort of spark or ignites a spark of curiosity, like, I think it's a wonderful thing. But like this one must have really done a number on you because you sort of pivoted hard from engineering. You know, like, now, you're one of the preeminent bioengineering researchers and faculty in the world. 
+
+So, like, what -- how, what was the next step from this course? Did you feel like you were behind, because like, now you wanted to do biology, but like, you had accumulated all of the civil engineering stuff? Did you feel like that was actually a blessing because you had this different context to bring to this new thing that you were interested in?
+
+DREW ENDY:  Yes and, right, all of those things. So, it was just jump in, and I had the benefit of staying on to do a master's degree. So, it gave me--you know, I shouldn't have gone to college for the first two years of college. I was lucky to be able to stay in school, frankly. You know, took a lot of courses at Delaware County Community College and paid for that by roofing, and stuff like that. 
+ 
+But by junior year, I had lit up and I was lucky to have another two years. I did a master's thesis in environmental engineering. So, I took advantage of how the administrative structure is setup. So, if you're in a civil engineering department, oftentimes the environmental engineering department will be in the same department. And so, that let me lateral from reinforced concrete and steel into wastewater treatment. 
+
+So, I did a master's thesis on sewage treatment, picking up samples from Allentown and figuring out how to get the nitrogen out of the sewage in a collaboration led by some great, great folks, Irv Kugelman, and others. 
+
+In any case, this gave me cover to just mainline biochemistry and all the basic knowledge I needed in the life sciences. It also taught me that the way engineering was approaching biology was not at the same level of resolution that the biologists were approaching biology, that there was a disconnect. 
+
+And so

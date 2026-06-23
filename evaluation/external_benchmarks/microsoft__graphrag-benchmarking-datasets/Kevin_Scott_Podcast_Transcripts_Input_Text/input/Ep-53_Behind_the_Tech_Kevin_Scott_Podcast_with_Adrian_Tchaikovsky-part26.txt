@@ -1,0 +1,23 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  work that folks like me do. Like, it really does help us, like, think about how we’re shaping the things that we do.  
+ 
+And, like, the reason I’m a computer scientist and an engineer is because of science fiction authors who inspired me about, you know, like, an amazing future that we might all have, when I was a little kid. So, like, I really do appreciate the thing that you’re doing.  
+ 
+ADRIAN TCHAIKOVSKY: Thank you.  
+ 
+[MUSIC] 
+ 
+CHRISTINA WARREN: Wow, what an interesting conversation with Adrian Tchaikovsky. So, I wanted to talk to you a little bit more, Kevin, as we mentioned at the top, Adrian is really prolific writer. But when he started writing his most recent book, he mentioned, you know, like, things like ChatGPT weren’t even available yet.  
+ 
+And when I think about, like, the last six months of just what’s happened in generative AI in the consumer space, so just the stuff that we see, not even all the research and things that are happening, that – a lot of the stuff that we’re seeing now could have feasibly seemed like science fiction, a decade ago.  
+ 
+KEVIN SCOTT: Yeah. 
+ 
+CHRISTINA WARREN: So, as a sci-fi fan, and based on the conversation with Adrian, I kind of wanted to know, like, what are your thoughts about how this burgeoning wave of technology that we have upon us right now might be able to impact, I guess, maybe what future AI, you know, sci-fi novels look like? 
+ 
+KEVIN SCOTT: Yeah, I don’t know. I mean, he said, the – like, this really important thing that I think is true. So, sci-fi authors, good ones, at least, rarely are trying to exactly predict the future. And in fact –  
+ 
+CHRISTINA WARREN: Right. 
+ 
+KEVIN SCOTT: Arthur C. Clarke wrote this book in ‘68, ‘69, called Profiles of the Future where he was basically saying, you know, just sort of what a miserable job. Like, the more specific you are in your predictions about the future, the more likely you are to be wrong. But there are certainly themes and trends that you can spot, as a science fiction writer, as a futurist, that you can sort of make reliable extrapolations around, and then you can tell stories inside of those extrapolations that are interesting.  
+ 
+And AI has just been one of those things that we have, again, been imagining since antiquity and has played a very large part in the storytelling that we’ve done in science fiction for decades now, like everything from Commander Data in Star Trek to, you know, Terminator in the Terminator movies,

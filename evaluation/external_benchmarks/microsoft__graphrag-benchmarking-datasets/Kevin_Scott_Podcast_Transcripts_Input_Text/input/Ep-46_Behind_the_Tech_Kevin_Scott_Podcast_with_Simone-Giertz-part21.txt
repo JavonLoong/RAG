@@ -1,0 +1,19 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt But I was really happy to feel like I was able to move beyond that and expand beyond that, and have my audience kind of be down for the ride. I feel I’ve – they’re – they’re just the most kind, supportive people and they’re just like, oh, if you’re excited about it, we’re excited too, which is a very, very supportive community to have.
+
+KEVIN SCOTT: Yeah. And – and, like, the breadth of this stuff that you work on all the way from the whimsical to some hardcore engineering things, like the Truck-la that you built, the – turning a model 3 Tesla into an El Camino or like a truck. 
+
+SIMONE GIERTZ: Like a truck, yeah.
+
+KEVIN SCOTT: Yeah, crazy.
+
+SIMONE GIERTZ: Yeah, it’s – you know, it’s – I try to do things I’m genuinely excited about and that does throw some curveballs.
+
+KEVIN SCOTT: (Laughter.) Which I – I think it’s so – it’s so inspiring. So, maybe last couple of questions before – before we go. So, one is – 
+
+SIMONE GIERTZ: You’re so – can I just say you’re so sweet. I feel like I’m just getting to sit here and have you say a bunch of really sweet and kind and thoughtful things. (Laughter.)
+
+KEVIN SCOTT: (Laughter.) It’s very nice. I can’t even begin to tell you how big a fan I am of what you’re doing. And one, because I’m genuinely…. genuinely, like, entertained and inspired by what you do. But, like, the thing that I really admire is what you’re doing for other people.
+
+One of the tragic things to me is folks going around the world thinking that they don’t have agency over creativity and that, like, all of the stuff that they are consuming and that they use in their lives is – is magical and beyond their understanding or… And, like, you just inspire people to go past that, to say, like, hey, you know, we – all of these things were built by people. We can understand how they’re built. We can go hack on them, like change them, modify them, make our own things. Like, that’s a super powerful thing to be putting out into the world.
+
+SIMONE GIERTZ: I just think, for me, as well, it’s so, like… things seem so set in stone. And, you know, I’ve been thinking about, like, forks, for example, and I’ve never questioned what a fork looks like. But you – then you realize, like, this is just built upon decisions that people have made. Somebody came up with this design and within these parameters, and it’s just, like, generations of humans trying to improve on things, and then realizing I can

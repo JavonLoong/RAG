@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  KIRTLEY: Yeah, I think about this a lot, actually, and from two perspectives. One is just recently, we’re starting to use more electricity. It’s – we’re upticking, for the first time in a long time, where in the 1970s and ‘80s, we plateaued in a lot of ways, in terms of our energy use. I think that’s totally right. 
+
+But recently, electric transportation, probably computation and AI kicks into that, too, and then looking at ways to solve climate change by spending electricity then goes in, and it’s starting to increase our demand for electricity.
+
+And the other thing I tie to in this is standard of living directly ties with access to electricity, low-cost electricity. So, you look at different parts of the world and standard of living, and you can say, like, okay, great, they have more electricity access, they have more standard of living, however you want to define that. But I asked the same question, what happens if we had 10 times? Does that mean our standard of living would be 10 times? What does that mean? Would we have access to cleaner access to clean water. 
+
+Desalination is the classic. There’s a trigger at the one to two cent per kilowatt hour, where if you can have electricity at that cost, then now you can desalinate water through electrolysis and other methods directly. Clean water is now cheaper than it was to actually, like, pull it out of a river and purify it. And so, suddenly, you know, you enable some of those things, which are clear. 
+
+But I think through, you know, if you had, you know, the computational access, where you can have large scale servers at everybody’s house, you’ve got to get maybe the server price down. But now you can actually do really interesting things on the computation and the cooling around that.
+
+KEVIN SCOTT: Yeah. Look, I think the – one of the things that maybe people don’t appreciate or think about clearly enough, is maybe everything good that has ever happened in the history of humankind is humans discovering new sources of energy, and being able to put that energy to work solving problems that benefit humans. 
+
+And so, in a sense, like, you actually want to be able to consume more energy. You don’t want the consumption of energy to be a bad thing, because nominally consuming more energy means you’re doing more of those useful things for humanity, you know, like, electrolysis.
+
+Like, I mean, one of the things here in the state of California is, like, we have parts of the state where you have abundant water, and you have parts of the state where you have no water. And, like, one of the reasons that California is habitable is we spend an enormous amount of energy pumping water from places where it’s abundant to places

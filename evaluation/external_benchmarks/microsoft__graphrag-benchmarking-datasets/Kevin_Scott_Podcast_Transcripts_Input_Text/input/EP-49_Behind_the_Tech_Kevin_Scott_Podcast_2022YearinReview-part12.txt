@@ -1,0 +1,15 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt  say you’re trying to lift a heavy box and a machine comes to help you lift it up just like a friend would today.
+
+KEVIN SCOTT: That’s a great vision and I’m so glad you all are working on these things.
+
+CHRISTINA WARREN: I love that image of a robot seeing you struggling with a box and just walking over to you to help with it. And if someone was going to build that robot tomorrow it might be Simone Giertz.
+
+KEVIN SCOTT: I had so much fun talking to Simone. I’ve watched her videos so frequently over the years. She creates all of these wacky inventions, but she does it with the mindset and skillset of a serious technologist. And something that really stood out for me was the idea of how valuable mistakes and accidents and errors can be.
+
+SIMONE GIERTZ:  it’s like building is messy and it’s always, like, frustrating. And then when you do get it to work, it’s, like, exhilarating. And I think for me, it was always discouraging to watch videos where people just nailed it, because then I would feel like I was doing something wrong, because I’m like, my builds never feel like that. Like, they’re always – I mean, it’s, like, the difference between, like, the really beautiful Instagram vacation photo versus, like, what it actually was. And you’re like, I was kind of cold and hungry and, like, upset with my dad or whatever. 
+ 
+And I don’t know, I’m just trying to be transparent. Plus, like, the thing is, when bad things happen in builds, I’m always – I get so annoyed with it. But then when I’m editing the footage, I’m always kind of happy that it happened because I’m like, oh, that’s where the story is at. And it’s also like, it is nice to see, like, how I can overcome those adversities. Like, even for myself, I’m like, yeah, I did solve it and I was really upset and I felt like I wasn’t going to come around on top. And then I managed to finagle my way through it somehow.
+ 
+KEVIN SCOTT: Yeah, and I don’t know how you think about it philosophically, about just the whole struggle of making things. Like, being a creator, whether you’re writing software or making a company or building a project or whatnot, like, there’s a whole bunch of things that can make that go easier. It’s good if you’re curious. It’s good if you’re willing to explore. But, like, the thing that you show is that resilience is super important. Like, nothing ever goes perfectly. 
+ 
+And I felt this, you know, the same way when I was a young software engineer. Like, all you ever saw was the computer science paper that someone had written where

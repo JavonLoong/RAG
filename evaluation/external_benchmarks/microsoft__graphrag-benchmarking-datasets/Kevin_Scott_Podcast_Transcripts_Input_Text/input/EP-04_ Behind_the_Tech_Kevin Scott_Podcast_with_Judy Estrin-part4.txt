@@ -1,0 +1,18 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  Apple or some kind of -- remember, there were no personal computers. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: So, in order to write a program, you needed access to a mainframe. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: So, there really wasn't an opportunity to write a program before being exposed to -- 
+KEVIN SCOTT: Yeah, and so you had to get to a terminal room -- 
+JUDY ESTRIN: Well -- 
+KEVIN SCOTT: -- probably not even a terminal room. 
+JUDY ESTRIN: Right. Yes. 
+KEVIN SCOTT: You were doing punch cards. 
+JUDY ESTRIN: So, you were still doing punch cards and batch submitting. One of my favorite stories, and I ended up using this in the book, is that I can still remember that I was working on something. I kept submitting these cards and it kept coming back "abend" -- abnormal ending.\
+ So, you know, the equivalent of crashing your computer today. And I had been up all night doing it. I just came home in tears. I mean, I just was so frustrated. And my father sat me down and said, "Take a step back. When you have a problem that you just are overwhelmed by, try to figure out how to break it into pieces, and how can you solve the individual pieces? But keep in mind how all the pieces fit together." 
+That approach to problem solving stuck in my head through my whole life, and not just when it comes to writing a program. But how do you tackle really complex problems, not going to the extreme? And, frankly, we can talk about this if you want. One of my problems with Agile these days is the notion of break it into little pieces, but not keeping the architectural piece sometimes, of knowing how they fit together. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: That balance of addressing complex issues by being able to figure out pieces that you can solve and the interconnections, that system level of thinking was something that my dad, I think, it was so much about his approach to life and how he saw things. 
+KEVIN SCOTT: So, what you were just talking about, this amazing advice that your dad gave you about decomposing a problem is something that has come up somewhat frequently in the conversations I have with other computer scientists recently. 
+And there's this question of kids these days who are being trained as software engineers are dealing with such higher-level abstractions than the ones that we were dealing with when we were up and coming as programmers. 
+And the question that I hear people asking over and over again is whether or not they're missing something by not being exposed to just this wide differential between the top-level understanding of the problem and just these absolute nitty-gr

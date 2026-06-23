@@ -1,0 +1,19 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt . Just like places on the web, we’re leaning in really hard on a civilized place for people together. 
+
+And I think it’s still so fun and so early, that every company is still trying to figure out their own view of this. Like, it’s fun because it’s still emerging. 
+
+KEVIN SCOTT: Yeah. Well, so thinking about this stuff as an engineer for an instance, for an instant, there are a bunch of components that I think any metaverse is going to have to have. So there’s, you know, some way for you to richly express your identity. There’s some way to do commerce with other people in the metaverse. Like there’s some, you know, some value store that you’re going to have to have. There’s some way to, you know, like, here’s what property means in this metaverse. So have you all thought about what those things are? Because again, I think you have a whole bunch of them. 
+
+DAVID BASZUCKI: Yeah, this is really interesting. And it’s funny because, you know, if we were building cars 60 years ago, this would be some biz school make versus buy discussion and what do you have to make and what can you buy and all of that stuff. 
+
+Some of these components aren’t yet invented and that makes it really exciting. So the components that might allow us to go together to a 50,000 person, photorealistic concert, with great audio and hang out and dance and wave across the stadium at everyone else and have them wave back, that’s a long ways off. 
+
+So I like the notion that it’s still early and there’s a lot of deep tech that needs to be invented to support this, as well as a lot of proven tech, whether it’s the economy, is it running on blockchain or a database identity. What’s the graphics drivers and all the machines? How do we do a social graph, all of that? It’s an interesting mix of some technologies that are mature and some that are a long ways off and being actively invented.
+
+KEVIN SCOTT: So one of the interesting and like things that’s way more complicated than I think most people would recognize is like you having your own financial infrastructure. So you all have – have this currency called Robux. That’s a thing that players have. You can spend them across all of the games that are happening. Like they, you know, they let you purchase entitlements, you know, inside all of these games. 
+
+You know, my best friend used to run product and engineering at Linden Lab and so like they had their own currency. 
+
+So and it is complicated, right? Like having your own economy is an interesting thing. Especially you guys are, what, 50 million daily active users. Like that is bigger than some countries, right? 
+
+DAVID BASZUCKI: That’s

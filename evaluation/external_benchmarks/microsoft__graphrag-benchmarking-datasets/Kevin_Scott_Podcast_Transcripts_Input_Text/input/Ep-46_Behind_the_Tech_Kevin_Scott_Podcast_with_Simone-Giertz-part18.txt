@@ -1,0 +1,19 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt , it’s – the first thing I tend to grab for is my laser cutter because it’s always the fastest. Like, you can do something within a couple of minutes. But then 3D printing and then last is just C&C’ing. So, it’s nice to have like things in different tiers of prototyping. But yeah, this – this build is going to have some 3D printed elements, but most of it is going to be C&C’d. And I got a rotary kit for my C&C so I could make the barrel on the – on the C&C, which was a whole new learning experience, but very fun.
+
+KEVIN SCOTT: That sounds fun. And you’ve got an Avid C&C machine that you put together yourself?
+
+SIMONE GIERTZ: Yeah.
+
+KEVIN SCOTT: Yeah, those are super cool. 
+
+SIMONE GIERTZ: I love it. It was such a game changer for me. 
+
+KEVIN SCOTT: So, it’s really interesting. I’ve been a woodworker since I was a teenager, which is – (laughter) – I’m older than you, so that’s a very long time ago. And, like, one of the funny things that I’ve seen in woodworking over the years is you have people who try to define what real woodworking is. So, there are, like, some who are like, oh, if it’s anything but hand tools, it’s not real woodworking. And then, like, people now are saying, oh, well, if you use a C&C and not just hand power tools, it’s not real woodworking, which always struck me as… I mean, and no – no disrespect.
+
+SIMONE GIERTZ: If you didn’t – if you didn’t fell the tree yourself – 
+
+KEVIN SCOTT: I love – I love those handwork traditions.
+
+SIMONE GIERTZ: Did you not grow the tree and then fell it and dry it? Then no, it’s not – it’s not woodworking. (Laughter.) Yeah, I think it’s always like… I get it, but I mean, it’s the same with, like, when GPSs were starting to come out and people were like, oh, it’s not real driving if you have a device help you navigate around the city. Like, to me, it’s just it’s all parts of the same coin and you’re comfortable with different tools. 
+
+And it’s like, for me, as somebody who started in electronics and started in kind of computer design, it’s been such a – for me, the C&C kind of perfectly came into my build process because I’m always making drafts in the computer anyway. And I’m using Illustrator and Fusion to design it, and then being able to pop that onto a machine, like the first thing I grab for is never really, like, a knife and a piece of

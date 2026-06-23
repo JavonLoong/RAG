@@ -1,0 +1,17 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  interesting, but everyone said it was too hard to work on. 
+
+And so – but then when I as a post-doc, and then really when I came to the University of Washington, that I decided to focus on trying to solve that problem. 
+
+KEVIN SCOTT:  Yeah, I remember I think in 1993, I was a research intern at the NCSA at the Beckman Institute working in the computational biology group that Shankar Subramaniam was running there at the time. And he was working on protein folding and I remember how hard it was in 1993. So, it’s – I mean, you picked the challenging problem to get inspired by. 
+
+DAVID BAKER:  Yeah, well, I always tell my students, people in our group, you’ve got to pick – you have to pick hard problems that aren’t solved. That’s the only – those are the only ones really worth trying to work on. 
+
+KEVIN SCOTT:  And so, at that moment when you were a – you were thinking about being a philosophy major and you decided to switch to biology, was, you know, was that a magazine article you read, like, an inspiring teacher, a movie you watched, a book, like, or just plain curiosity? 
+
+DAVID BAKER:  It was – well, I think it was a little bit sort of getting fed up. I mean, I – it – you know, I started realizing that more and more of the questions were sort of, you know, issues about language and language games and that there wasn’t really – started seeming to me that there wasn’t really a way to make consistent forward progress like discovery. I’ve always liked trying to discover things. Then when I took the biology class, in contrast, there were just all these new discoveries right and left. People were just working out how, you know, the principles of developmental biology and it just seemed like this huge, unexplored territory that was much more ripe for exploration than philosophy would have been. 
+
+KEVIN SCOTT:  So, you made the switch, and you went to graduate school at Berkeley and UC San Francisco. And were – how important was the computational part of biology when you were in grad school? Like, did you have to learn not just biology, but, like, a little bit about computer science or you know while you were a student, or did you have to learn that stuff later? 
+
+DAVID BAKER:  Oh, yeah, well, so, I was a graduate student in the lab of Randy Schekman, who worked on sort of cell biology, how proteins get moved – sorted around in cells.
+
+At that time, well, I was famous and outspoken for ridiculing anyone who sat at a computer, because, you know, what people used computers for was pretty rudimentary. It was word processing, and you know, you could waste time

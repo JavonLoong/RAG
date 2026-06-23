@@ -1,0 +1,45 @@
+The Staunton chess set is composed of a particular style of chess pieces used to play the game of chess.
+ According to the rules of chess, this style is to be used for competitions.
+ Nathaniel Cook is credited with the design, and they are named after Howard Staunton.
+ The first 500 sets were hand signed and numbered by Staunton.
+ This style of set was first made available by Jaques of London in 1849, and they quickly became the standard.
+ They have been used around the world since.
+The United States Chess League (USCL) was the only nationwide chess league in the United States for eleven years.
+ In 2016 the League announced it would be opened to cities from around the world, moved to the website chess.com, and renamed the Professional Rapid Online Chess League.
+The International Braille Chess Association (IBCA) is organization for blind and visually impaired chess players.
+ The IBCA is a FIDE-affiliated chess organization as well as a part of the International Blind Sports Federation.
+ The International Braille Chess Association originated informally in 1951 with the organization of the first international correspondence chess tournament for blind players, by Reginald Walter Bonham; the tournament included 20 players representing 10 countries.
+ It first organized an over-the-board tournament in 1958, with representatives from seven countries.
+ Today, it has grown to encompass over 50 member nations around the world.
+ The IBCA hosts two major competitions: the Blind Chess Olympiad and the Blind World Chess Championship.
+Aeroplane Chess (, literally "Aviation Game" or "Flying Chess") is a Chinese cross-and-circle board game similar to the western game of Ludo and the Indian game of Pachisi.
+ Developed in the 20th century, Aeroplane Chess features airplanes as pieces instead of the more abstract pawns and beehive-shaped pieces found in the games from which it is derived.
+ Aeroplane Chess had been spread around the world, especially in Africa.
+Chess City (also referred to as City-Chess; Russian: Сити-Чесс "Siti-Chess" or Город Шахмат "Gorod Shakhmat") is a large complex devoted to chess and chess competitions located east of Elista, Kalmykia, in Russia.
+ The neighborhood-size development consists of a central, four-story domed City Chess Hall surrounded by an Olympic-style village of Californian-Mediterranean Revival Style architecture.
+ The site has a conference center, public swimming pool and a museum of Kalmyk Buddhist art.
+ The complex features sculptures and artwork devoted to chess, including a statue of Ostap Bender, a fictional character of popular books written by Ilya Ilf and Yevgeni Petrov, who proposed a creation of world chess capital.
+ The complex has been used to host visiting dignitaries like the Dalai Lama.
+Sergei Shipov (born April 17, 1966 in Murom) is a Russian chess grandmaster with a peak FIDE rating of 2662 (No. 23 in the world on the January 1999 list), chess journalist and author.
+ He is the man behind the popular chess website Crestbook, where, among other services, he provides online commentary to current chess events.
+The Professional Rapid Online Chess League (PRO Chess League) is an online rapid chess league operated by chess.com.
+ It was preceded by the United States Chess League, which announced in 2016 that it would be renamed, reformatted, and opened to cities from around the world, and moved to the website chess.com.
+Chess has been played in Armenia since the early Middle Ages; however, it was institutionalized during the early Soviet period.
+ Highly popular in Armenia today, chess gained widespread recognition during the 1960s, when Soviet Armenian grandmaster Tigran Petrosian became the World Chess Champion.
+ A country of about three million people, Armenia is considered one of the strongest chess nations today.
+ Among countries, Armenia has one of the most chess grandmasters per capita.
+The Belize National Youth Chess Foundation (B.N.Y.C.F.) was co-founded by Ian & Ella Anderson in the summer of 2007 as a not-for-profit organization and with a small army of volunteers it spread throughout the country.
+ The game of Chess has been around for a very long time but in Belize there were no formal organizations and no figures to indicate how many people were playing the game.
+ Building on the founding by Mr. Robert Landolfi and Mr. Glen Reneau of the first school chess club at Hummingird Elementary and the Belize Association of Chess Players in Belize City, due to the efforts of the B.N.Y.C.F. there are now teams ranging from the most southern villages in Toledo District to the most northern villages along the Belize-Mexico border in the Corozal District.
+ Since 2007, the organization has more than 50 active chess clubs and over 1400 players around the country and it functions all year round.
+ An interview with Ian Anderson, Co-Chair, reveals that chess is not only a pastime or hobby in Belize; it can and should be used “as an educational tool to help develop the minds of primary school students.”
+ The B.N.Y.C.F. has worked with primary schools to successfully integrate chess as a part of the curriculum of the primary schools in Belize.
+ Within one year the game of Chess became the fastest growing sport in the country.
+ As part of its efforts to promote this sport, the B.N.Y.C.F. assisted the Belize Chess Federation to become active again in 2008 by updating fees due to FIDE, the World Chess affiliate.
+The ChessMachine was a chess computer sold between 1991 and 1995 by TASC (The Advanced Software Company).
+ It was unique at the time for incorporating both an ARM2 coprocessor for the chess engine on an ISA card which plugged into an IBM PC and a software interface running on the PC to display a chess board and control the engine.
+ The ISA card was sold with a CPU running at either 16 MHz or 32 MHz, and 128 KB, 512 KB, or 1 MB of onboard memory for transposition tables.
+ This made economic sense at the time of introduction because mainstream PCs were only running from 10 MHz to 25 MHz.
+ Two engines were sold with the card: The King by Johann de Koning and Gideon by Ed Schröder.
+ Gideon was famed for winning two World Computer Chess Championships on this hardware.
+ The King later became the engine used in the popular Chessmaster series of chess programs.

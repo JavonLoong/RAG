@@ -1,0 +1,17 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt , there had been a lot of great work in this space before, there’d been No Hands Across America, which was at Carnegie Mellon program that had actually used neural networks to drive a car down the freeway -- or at least steer a car down the freeway.  It didn’t do gas and brake and there’d been some great work by Ernst Dickmanns in Europe and some interesting work in Japan. 
+
+But the idea you’d drive off-road for 150 miles was just -- like it was impossible, the state of the art was some guys had a Humvee driving at -- I want to say 10 meters per second through a field with giant hay bales.  And the idea was, don’t hit the hay bales.  And they mostly didn’t hit the hay bales.  
+
+KEVIN SCOTT:  Mostly. 
+
+CHRIS URMSON:  Mostly, right?  (Laughter.)  And so the idea we could go across the -- you know, across the Nevada desert for 150 miles, like, on command, you know, and again, a lot of the robotic research at the time and still today, rightfully so, is you work really hard at this thing, it’s such a brutal system that you get a video working the one time, and that’s your conference submission, right? 
+
+And that’s the right way it should be, right?  In an academic setting, you’re kind of trying to prove out ideas.  So the idea that we would show up one morning and a starting gun would shoot, and it had to go and it had to work that time was just -- it was exhilarating.  And the problems, you know, it was a classic under-defined problem to begin with, where you know, we notionally were worried, we just have to drive across tumbleweed and cactus for 150 miles and truly be off-road. 
+
+Now, it kind of morphed into “drive down the trails,” which made it more viable and, you know, more useful, honestly.  But even that, when you know -- a trail isn’t the smooth, perfect ground that we see on the road, right?  There’s ridges to it and rutting across it and it was a heck of a lot of fun. 
+
+KEVIN SCOTT: And so, when you were doing all of this, did you think that you were going to be a computer science professor for your entire career?  
+
+CHRIS URMSON:  When I -- yeah, that was kind of the mission.  So, when I was an undergraduate student, was -- I want to go to graduate school.  And then when I was a graduate student, I was pretty convinced I wanted to be a faculty member at Carnegie Mellon, because it seemed like a great place.   Yeah, and ultimately, got the opportunity to be that, so -- that was exciting. 
+
+KEVIN SC

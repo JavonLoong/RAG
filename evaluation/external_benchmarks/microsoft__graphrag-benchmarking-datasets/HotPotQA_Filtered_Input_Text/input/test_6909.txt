@@ -1,0 +1,40 @@
+Craig Pruess (born 1950) is an American composer, musician, arranger and gold & platinum record producer who has been living in Britain since 1973.
+ His career has covered diverse areas including: record production for international stars such as Anu Malik, Sir Cliff Richard, Sarah Brightman, Sheila Walsh (whose first album, "War of Love" was produced and arranged by Craig and was nominated for a Grammy Award in 1983); musical arrangements for Massive Attack, Def Leppard, Bond; feature film soundtrack music ("Bride & Prejudice", "Bend It Like Beckham", "It's a Wonderful Afterlife", "What's Cooking?
+", "Bhaji on the Beach"); world music producing, performing (sitar, keyboards and African percussion) and arranging for international acts such as Massive Attack, Katie Melua, Manic Street Preachers, Def Leppard and Pascal Obispo; television music ("Peak Practice", Sue Lawley Show, Rich Deceiver, ZigZag Kenya, Samson Superslug) and also arranging, sitar and sound design work (for such well known composers as Danny Elfman, Gabriel Yared, Patrick Doyle, Carl Davis, John Altman, Rachel Portman, and George Fenton); television and film advertising/corporate music (over 300 commercials to date); lecturing and teaching; concert performing (solo and with his own ensembles but also with Mike Oldfield for the world premiere of "Tubular Bells II", September 1992, at the Edinburgh Castle); sound engineering, synthesizer and computer music programming, sound design and music technology innovations.
+"Unfinished Sympathy" is a song by English trip hop group Massive Attack, released under the temporary group name of Massive.
+ It was written by the three band members Robert "3D" Del Naja, Andrew "Mushroom" Vowles and Grant "Daddy G" Marshall, the song's vocalist Shara Nelson and the group's co-producer Jonathan "Jonny Dollar" Sharp.
+ The song was released as the second single from the band's debut album "Blue Lines", on the band's Wild Bunch label distributed through Circa Records on 11 February 1991.
+ The choice of using the name "Massive" was done to avoid a radio ban as its release coincided with the Gulf War.
+ Produced by Massive Attack and Dollar, the song incorporates various musical elements into its arrangement, including vocal and percussion samples, drum programming, and string orchestration by arranger Wil Malone.
+The BlackNurse attack is a form of denial of service attack based on ICMP flooding.
+ The attack is special because a modest bandwidth of 20Mbit/s can be effective for disrupting a victim's network.
+"Four Walls / Paradise Circus" is a collaboration between Massive Attack and Burial, which was first released as a limited vinyl edition on 17 October 2011, with pre-orders from 10 October 2011.
+ The single consists of Burial mixes of Massive Attack's previously unreleased track "Four Walls", and of "Paradise Circus", which was featured in their 2010 album "Heligoland".
+ Both songs featured on the EP contain vocals, and lyrical contributions, by Hope Sandoval of Mazzy Star.
+The discography of British trip hop group Massive Attack consists of five studio albums, three compilation albums, five remix albums, one soundtrack album, five extended plays, eighteen singles and twenty-seven music videos.
+ The group were founded in 1988 by musicians Robert "3D" Del Naja, Grantley "Daddy G" Marshall, Andrew "Mushroom" Vowles and Adrian "Tricky" Thaws in Bristol, England.
+ Prior to the formation of Massive Attack, all three were members of British sound system The Wild Bunch.
+"Protection" is a collaboration between Massive Attack and Everything But the Girl singer Tracey Thorn, that appeared on Massive Attack's second album "Protection" on CD and 12" in 1994 as a second single.
+ It reached number 14 on the UK Singles Chart, staying there for four weeks.
+ The song was also included on Everything But the Girl's compilations "The Best of" and "Like the Deserts Miss the Rain".
+The Space Between Us is the debut solo album by Craig Armstrong, originally released in 1998 on Melankolic Records.
+ Elizabeth Fraser of Cocteau Twins contributes vocals to the track "This Love", and The Blue Nile's Paul Buchanan appears on "Let's Go Out Tonight", which is a rework of the song of the same name by Blue Nile.
+ The first track, "Weather Storm", is a reworking of a song by the same name which appears on Massive Attack's 1994 album, "Protection", to which Armstrong contributed.
+ Similarly, "Sly II" is a reworked version of Massive Attack's "Sly", also from "Protection".
+ "Balcony Scene" is a reworked version of "Time Stands Still," from the score of the 1996 film "Romeo + Juliet"; it contains elements of "Kissing You" by Des'ree, as well as a quote from the film.
+In cryptography, Davies' attack ["sic"] is a dedicated statistical cryptanalysis method for attacking the Data Encryption Standard (DES).
+ The attack was originally created in 1987 by Donald Davies.
+ In 1994, Eli Biham and Alex Biryukov made significant improvements to the technique.
+ It is a known-plaintext attack based on the non-uniform distribution of the outputs of pairs of adjacent S-boxes.
+ It works by collecting many known plaintext/ciphertext pairs and calculating the empirical distribution of certain characteristics.
+ Bits of the key can be deduced given sufficiently many known plaintexts, leaving the remaining bits to be found through brute force.
+ There are tradeoffs between the number of required plaintexts, the number of key bits found, and the probability of success; the attack can find 24 bits of the key with 2 known plaintexts and 53% success rate.
+Slo Light is the debut studio album by English musician, composer, and record producer Neil Davidge, under the name Davidge.
+ The album was released on 25 February 2014, and was produced by himself.
+ This album marks the first studio album of Neil Davidge, after several years working as a film score composer and record producer, best known as Massive Attack's producer.
+ The album was recorded in Christchurch Studios, which is known for the collaboration of Massive Attack and Davidge studios and the recording of the 90's one of the most anticipated album, "Mezzanine".
+"Massive Attack" is a song by Trinidadian rapper Nicki Minaj and American recording artist Sean Garrett.
+ Written by Minaj, co-written and produced by Garrett and Alex da Kid, "Massive Attack" was released on April 13, 2010.
+ It was initially intended to be the lead single from Minaj's debut studio album "Pink Friday", but the release was later scrapped in favor of "Your Love".
+ The song was a distinct change in Minaj's previous work on mixtapes and features, thus receiving mixed to positive reviews from critics, commending lyrical content and distinctiveness, and critiquing that it did not fit her "Barbie" persona well.
+ An accompanying music video which features a helicopter chase, and militaristic jungle and desert scenes, was positively received.

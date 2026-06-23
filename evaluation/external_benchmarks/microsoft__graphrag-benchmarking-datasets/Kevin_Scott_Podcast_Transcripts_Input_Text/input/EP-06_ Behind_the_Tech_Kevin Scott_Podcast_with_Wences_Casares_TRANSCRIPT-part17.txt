@@ -1,0 +1,13 @@
+EP-06_ Behind_the_Tech_Kevin Scott_Podcast_with_Wences_Casares_TRANSCRIPT.txt  those little airplanes driving $100 bills and boats, networks of people.  It's a whole sophisticated system that the government has dollar-sniffing dogs, right?  It's crazy and really it's rivers and rivers and rivers of $100 bills going to supply this demand for people who want that because they want to get rid of -- But they have to move physically, right?  So, people are using Bitcoin because they can avoid all of that.  And as an intermediate step, to then get something like a digital dollars or digital euros.
+
+KEVIN SCOTT:  Really?  Dollar-sniffing dogs?  That is really, really crazy.  So, let's talk about Xapo.  Why start this company?  
+
+WENCES CASARES:  I want to dedicate the rest of my career to help Bitcoin succeed.  And I think that right now, the biggest hurdles are with ease of use and security.  Perhaps in the reverse order.  Security, make it very easy for people to use and easy to access.  And the biggest hurdle in terms of security is that to put the problem of securing the private keys on a consumer's lap, it's too much to ask.  I think it would be very ill advised to tell my mom, "Here, get some Bitcoin,"  and you take care of this private key.  A lot of bad things can happen and they do happen.  
+
+So to just make that a black box for the consumer, saying, "Don't worry, you don't even know what a private key is.  We will take care of it."  I think there will always be a small part of the market that can do that by themselves, and they should.  And I think Bitcoin would not be interesting if it didn't offer the capability for people to have their own private keys, but I also think it's important that someone who doesn't want to have that burden can still have access to that.  So, that's our main value proposition is forget about this securing private keys problem.  We'll do that for you.  
+
+KEVIN SCOTT:  Is that your biggest technical challenge is how you keep these keys secure?  
+
+WENCES CASARES:  I would say at the philosophical level, keeping the keys secure is our biggest value proposition.  And, therefore, our biggest challenge.  We do that by keeping them offline and a lot of the security is not technological security but just physical security.  You have to break into places that are hard to break into.  More like Fort Knox.  
+
+At the technological level there are some parts that are, of course, technological, but I would say some of our biggest challenges are -- so, yes, I would say at the philosophical level, that's definitely the biggest challenge.  On the more practical level, like a lot of companies, we run -- of course we don't keep private keys in

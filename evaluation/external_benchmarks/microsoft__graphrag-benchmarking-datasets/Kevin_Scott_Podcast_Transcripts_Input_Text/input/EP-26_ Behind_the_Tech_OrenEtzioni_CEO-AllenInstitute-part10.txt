@@ -1,0 +1,23 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt , “Is this email spam or not,” or “Did I just say “B” or “P?” Speech - phoneme recognition. And you can train models that’ll do – they have super-human performance at that. 
+
+But the key thing in artificial general intelligence – in AGI – is the “G.” So, how do we build what was called, then, a unified cognitive architecture? How do we build something that can really move fluidly from one task to another, when you form a goal, automatically go and say, “Okay, here’s a subgoal, here’s something I need to do or learn in order to achieve my goal.” There’s just so much more to general intelligence than these savant-like tasks that AI is performing today. 
+
+
+The third topic in AI that I think we ought to be paying more attention to is the notion of a unified cognitive architecture. So, this is something we studied at CMU back in the day. And it’s the notion of not just being a savant, not just taking one narrow problem, but going from one problem to the next and being able to fluidly manage living, where right now we’re talking. Soon, I will be crossing the street, then I’ll be reading something. 
+
+
+Putting all those pieces together and doing it in a reasonable way is something that’s way beyond the capabilities of AI today. 
+
+KEVIN SCOTT: Yeah, and we’ve got a little bit of that starting – 
+
+OREN ETZIONI: I know, I – 
+
+KEVIN SCOTT: In transfer learning, like, but just beginning. 
+
+OREN ETZIONI: Right, but the thing about the transfer learning is that it’s still from one narrow task to another. Maybe it’s from one genre of text to another genre of text. We don’t really have transfer learning from, okay, I’m reading a book, to now I can take what I read in the book and apply it to my basketball game, right? We’re very far from anything like that. 
+
+KEVIN SCOTT: Yeah, the other thing that I’m also really curious about, we’ve – you know, we’ve chatted with some people on the podcast who are doing research on insect biomechanics, for instance. You know, which – and they’ve done very, very detailed studies of, like, what the neural architecture is for the control systems that manage insect flight and navigation, for instance. 
+
+And they are very, very highly specialized neural circuits. It’s not a, you know, sort of a general like deep network that you know – like maybe a deep network could learn that behavior, but like there’s certainly – there seems to be an efficiency opportunity. 
+
+And like I could not more strongly agree with that point. I forget what the numbers are, but if you look at like the world champion Go player, Lee Sedol, like, he probably got

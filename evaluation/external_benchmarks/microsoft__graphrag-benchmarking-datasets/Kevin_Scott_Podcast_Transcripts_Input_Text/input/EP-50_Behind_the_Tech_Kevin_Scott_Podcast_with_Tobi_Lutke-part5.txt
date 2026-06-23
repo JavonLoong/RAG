@@ -1,0 +1,15 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  kind of the exact things that I didn’t think would be super relevant in the future, and then the wisdom of a vocational system allows you to leave school after tenth grade and start as an apprentice.
+
+And so that’s what I did. I was actually – most, like the first year where computer programming was taught as a craft, in the vocation system, and I’m so glad that I hit that particular timing window because things would have gone very different otherwise. 
+
+KEVIN SCOTT: This whole idea of computer science and programming is just a huge category, and I’ve always wondered for – for myself, like I’m also practically inclined.
+
+Like I like to write code. You know, it’s why I studied compilers versus theoretical computer science. It was like this perfect mix of you’ve got a little bit of theory that was sort of intellectually satisfying, but at the end of the day, the thing that you wanted to do was like build a compiler and optimization pass, or like something, and in the very truest sense. Like you’re building a tool for other people to pick up and use to do their craft.
+
+And so like, I’ve always thought of it as craft, but some of it is art, and I do think some of it is like legitimately science, and there’s like this blurry boundary between all of them, but like treating it – treating it as if like all of it is this sort of wholly academic scientific thing, always. It just never appealed to me.
+
+TOBI LÜTKE: Yeah, I think it’s a side effect of a way academia sorted itself, right? Like, it – they had to put it in some building when computation came around, not realizing that it probably ought to have had its own building because there’s a lot of different things that it needed, and I think the people that don’t doggedly, like associate themselves with like this – we’re a scientist, we do science-y things, but rather follow the value – you know, like treat all these different disciplines as like sources of inspiration and energy and value, and – and pull it from all of them, just to get the task done. 
+
+Those are hugely the vocational people, right? And I think this is something we – like I think we see this, you know, in a lot of places. I mean, take a very recent example. I feel like machine learning is currently being like recaptured by the tinkerers, and with much more of a vocational bent, because being able to do cool things with their own GPUs, rather than calling APIs, and you know, many of the greatest things will not be used like this, this way, because they’re just too big for machines, but just the ability for people to start tinkering, just leads to all sorts of better tooling and better – like great writing.
+
+And like people from different backgrounds entering the machine learning area, which obviously is the kind

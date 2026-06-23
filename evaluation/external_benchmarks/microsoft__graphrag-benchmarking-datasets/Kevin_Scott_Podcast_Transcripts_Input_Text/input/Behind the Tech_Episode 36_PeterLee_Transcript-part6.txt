@@ -1,0 +1,19 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  an asteroid that has the power to destroy life on the planet were to come towards Earth, you’re going to call in researchers to try to figure out how to prevent that from happening. 
+
+That mode of what we do is just getting so, so important, and especially at a place like Microsoft Research, you know, where we have an obligation to situate our work in the real world. It’s gotten really important.
+
+And you’re right, how we explain what we do so that people have the trust in us, so that we can respond, I think ends up being everything. 
+
+KEVIN SCOTT:  I want to go back to this idea of doing things because they’re beautiful. I mean, it always struck me that you’ve got many different reasons that you do research. Part of the reason that you do research and you try to tackle really, really, really hard problems is because it’s almost like exercise, right? You just need to be in the habit of doing that so that when the moment comes, and you may not even realize when the moment has arrived, but, like, when it does arrive, that you will be prepared to, like, actually throw your full mind and energy at a thing and have a higher chance of being able to solve the problem. 
+
+I mean, and another reason I’ve always thought that working on these hard problems is important is just solving them gives us a catalog of things to draw upon, even if it’s not immediately obvious what they’re useful for.
+
+And what we do know from the world that we live in is everything that we have, like an mRNA vaccine or an AI-powered coding assistant or, like, you know, pick your thing that you think is like a really interesting achievement, we have it because it’s a layering of all of these discoveries and accomplishments and abstractions and tools. And no one when they were thinking about the part of the problem that they were solving, they were not imagining this thing that came out in the end. 
+
+PETER LEE:  Yeah. 
+
+KEVIN SCOTT:  And so like, I don’t know, like maybe there are other things as well, but I think working on beautiful problems, hard problems has a lot of value, even if it’s not immediately obvious to everyone else, like, why it’s important. 
+
+PETER LEE:  Yeah, I’ve always wondered if there’s a part of our brains that is like our muscles, that if we don’t work them out all the time, you know, they kind of atrophy. 
+
+But you know, one other thought that your comments triggered is actually 100 years ago this year, in 1921, a guy named Abraham Flexner wrote an essay. He was writing it to the board of the Rockefeller Foundation, trying to explain exactly your point, you know, that people work on really hard problems just to satisfy their curiosity. And lo and behold,

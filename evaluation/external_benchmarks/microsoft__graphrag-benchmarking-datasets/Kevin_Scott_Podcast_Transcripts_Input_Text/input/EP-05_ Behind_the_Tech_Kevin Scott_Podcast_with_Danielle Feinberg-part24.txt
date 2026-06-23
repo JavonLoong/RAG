@@ -1,0 +1,12 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt 's just this thing that you can do. Whether you have a creative bent or you're very analytic or whatever. If you master these skills, you don't necessarily have to be a computer scientist. But it's going to be this tool that you can use to -- 
+DANIELLE FEINBERG: You can use all over the place. Like, when people are saying, "Well, you have to know how to write. You have to know how to do math." And this is on par with how important those things are if not more. 
+KEVIN SCOTT: Yes. And, again, exclamation point. You know, given the work that I do, it almost seems nonsensical to have to emphasize that. But you still sort of have to. It hasn't sunk in yet. 
+DANIELLE FEINBERG: Talking about advice for kids that want to get out there and do this stuff is that as schools struggle to keep up with developing their computer science curriculum, finding teachers who know computer science who aren't like, "See you, I'm going to go industry." You know, different things like that. Sort of remembering that if you're one of those kids, that there's now all kinds of stuff online where you can teach yourself. 
+And, also, you might have a teacher, but it doesn't make every teacher a good teacher. And so you might go take a class, and it doesn't make any sense to you. And that isn't necessarily because you aren't any good at it, it might be there's a teacher struggling to figure out how to teach it to you. You know? 
+And so if the class doesn't go well, go find an online thing and work at it a little bit. Because we've all had the bad math teacher or the bad English teacher or whatever that made you feel really crummy at it. And it turned out, it was just like you needed a different person. 
+KEVIN SCOTT: Yeah. And if you can invest in a foundation early of sort of practicing learning. Of course, you want to learn something that's valuable, but just sort of the practice of quickly getting information in your head, and figuring out how to retain it is, like, such a valuable tool -- especially when you have all of these online assets. I'm just pathologically curious. (laugh) And so I'm just going around teaching myself all sorts of crap on Coursera or open courseware or YouTube. 
+DANIELLE FEINBERG: Awesome, yeah. 
+KEVIN SCOTT: It's like the Matrix, you can just download this crap into your head. 
+DANIELLE FEINBERG: So much stuff, yeah. 
+KEVIN SCOTT: I mean, it's just sort of shocking what you can teach yourself. 
+DANIELLE FEINBERG: Yeah,

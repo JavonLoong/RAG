@@ -1,0 +1,13 @@
+EP-10_ Behind_the_Tech_Kevin Scott_Podcast_with_Surya_Ganguli.txt  further, right?
+So, this business of building world models, using those world models to imagine the future and make decisions, looking at violations to modify the world model, actively doing experiments -- that's the next frontier in machine learning, not just passive training data.  
+KEVIN SCOTT:  Yeah.  Totally, totally agree.  I mean, like, we've gotten really, really good at prediction and classification, and we're not really great yet at,  higher order things, like you know, deduction reasoning.
+SURYA GANGULI:  Yeah.  And reinforcement learning is starting to get there in terms of at least formulating the problem because you have a sequential decision making problem where you have to exploit, and explore, and all that.  I think the methods for exploration are not that efficient.
+KEVIN SCOTT:  Yes.  Yes.
+SURYA GANGULI:  So, model based reinforcement learning is kind of the direction that people are trying to go where you use world models to, again, imagine a plan and, and learn.
+KEVIN SCOTT:  Now, so this has been a super fascinating conversation, but one of the things that I want to pick your brain on is -- everything that we've talked about so far is, like, incredibly technical, which I love.  Like, you know, I could spend hours, you know, just trying to learn from you and talking about some of the super technical stuff.
+But, like, one of the things -- and this sort of gets back to your involvement and my involvement in the Human-Centered AI Institute at Stanford -- that we are sort of grappling with right now is, like all of this AI stuff is increasingly having an impact on everybody's day-to-day life.
+And so, you know, for the majority of folks, you know, we probably lost them like half an hour ago in this, this conversation that we're having.  So how do you think about our role as scientists and engineers, and technologists in helping the public better understand this big bag of complicated stuff so that they can make good decisions about it?
+SURYA GANGULI:  Yeah, I think it's incredibly important. And more than that, even, it's, it's coming to terms with ourselves as a society, and how we can optimize the development of AI so the outcomes are good for society, as opposed to bad.  And so, there's incredibly thorny issues involved in that, that touch on labor economics, and political science, and regulation, on ethics, and so on, and so forth.
+So, it's an incredibly complicated set of problems, so we need to bring together, you know, in a real way, scientists from many different disciplines, like the ones I just mentioned.  
+
+And that's what HAI is actually trying to do, just to talk a little bit about the structure, we kind of have

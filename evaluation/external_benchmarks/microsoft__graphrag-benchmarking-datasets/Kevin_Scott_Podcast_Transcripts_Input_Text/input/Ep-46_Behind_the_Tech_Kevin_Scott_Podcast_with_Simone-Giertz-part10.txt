@@ -1,0 +1,15 @@
+Ep-46_Behind_the_Tech_Kevin_Scott_Podcast_with_Simone-Giertz.txt  So, I started working with an electrical engineer, and a mechanical engineer and just some other people. Like, we were really just a small team of friends and trying to put it together. We did a Kickstarter campaign, raised some money, shipped those out a couple of months late after a lot of headache. But, like, we managed to get them out. 
+
+And – and yeah. And now, we’re finally like the pandemic unfortunately came in between there with all the chip shortages and stuff like that. So, our BOM cost, so our bill of materials went up with, like, 40%, which just made it an unfeasible product for us. So, we kind of had to hold off on manufacturing more. And now, we’re looking at – we just had another batch come in and now, we’re looking at adding another batch. 
+
+But it is – there’s some reliability things we’re working on to think about, because we have 365 LEDs. The fault rate of an LED normally is, like, one in 10,000 over a couple of years, which sounds reasonable, but that means that, like, one in 30 calendars can get an issue down the line, like, a couple of years down the line. So, we’re replacing those.
+
+But there has been a lot of, like, trying to figure out how to increase the lifespan of the LEDs and doing a lot of stress testing, seeing if we can reduce the heat when we’re soldering them and, you know, a lot of different things. And that’s like, you know, you kind of think that you design a product, and you put it out there and you’re like, done. But there is a lot of iterating, and trying to figure out how to improve it and how to make it a better experience, both for the manufacturer, and for us and for the customers. 
+
+So, I’m learning so much and it’s really – it is, like… I can’t, even looking back like two years ago, I’m thinking of how much I’ve learned and that’s really nice. It’s like a lot of – because we’re learning by doing and there’s not – we’re a really, like, skilled, but young team and it’s… You know, I just feel really fortunate to be able to do it, and to be able to do it this way and to be able to do it on my own terms and kind of follow the whims of my creativity. It’s… Yeah, I’m just stoked.
+
+KEVIN SCOTT: It’s just awesome stuff. And it for a curious person, it seems like the way that you’re doing things, like, you’ve got a lot of surface area for your curiosity to explore – 
+
+SIMONE GIERTZ: (Laughter.) That’s the nice way of putting it.
+
+KEVIN SCOTT: Because it’s not like you’re

@@ -1,0 +1,19 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  there named Rodney Brooks, and I would just read their papers and, like, trying to understand. But I got into this technique that they had developed called subsumption architecture. And it was inspired by ants or, like, insects and how to basically develop a control system for a robot. And so, you know, I wanted to build something like that myself, and I did that. And – and so, I knew, like, computers and engineering was kind of my path. And Virginia Tech was a really good option here for me.
+
+KEVIN SCOTT:  Yeah. Virginia Tech is a great school. I’m also – I grew up in Virginia.
+
+STEVIE BATHICHE:  I know. You’re UVA, I heard. (Laughter.)
+
+KEVIN SCOTT:  I am UVA, but like, we don’t need to have any of the UVA-Virginia Tech tension. We’re all good.
+
+STEVIE BATHICHE:  (Laughter.) No, no. It’s – that’s right. That’s not necessary, even though we’re better at football, but that’s totally fine. 
+
+KEVIN SCOTT:  Yeah, you know. (Laughter.) Yeah, my – it’s sort of funny. My – my two best friends, who, you know, have been my best friends since I was a little kid, both of them went to Virginia Tech. Like, one got electrical engineering degree there, and the other got a chemistry degree there. And like, and I was computer science elsewhere. But, yeah, Tech’s a great school.
+
+STEVIE BATHICHE:  My mentor was a professor emeritus in the chemistry department. So, interesting. And I got my double E, so interesting sort of parallels there.
+
+KEVIN SCOTT:  Yeah. They – they had a fantastic, and probably still do have, a fantastic chemistry department, just some really, really interesting characters there. (Laughter.)
+
+So, you know, one of the things that is super interesting about you, and you already alluded to it, is you really have this curiosity in these boundaries between disciplines, so the subsumption robotic stuff that’s inspired by ants that you just mentioned is, I think, an example. And you’ve gone on to, like, build a bunch of, like, robotic systems while you were in college that were at this intersection. So, can you talk a little bit more about that?
+
+STEVIE BATHICHE:  Yeah so, first, I did three internships at Microsoft. And in one of the kind of in between rotations, I got really interested in trying to do biomimetics of ant behavior and colonies. I was really excited by the fact that while you might have a robot that had simple rules, a swarm of them would have kind of emergent behavior, and I wanted to

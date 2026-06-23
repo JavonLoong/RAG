@@ -1,0 +1,38 @@
+In abstract algebra, the length of a module is a measure of the module's "size".
+ It is defined to be the length of the longest chain of submodules and is a generalization of the concept of dimension for vector spaces. Modules with "finite" length share many important properties with finite-dimensional vector spaces.
+An "interrupt vector table" (IVT) is a data structure that associates a list of interrupt handlers with a list of interrupt requests in a table of interrupt vectors.
+ Each entry of the interrupt vector table, called an interrupt vector, is the address of an interrupt handler.
+ While the concept is common across processor architectures, IVTs may be implemented in architecture-specific fashions.
+ For example, a dispatch table is one method of implementing an interrupt vector table.
+New Valley LLC is an investment company owned by Vector Group.
+ Western Union was renamed New Valley in the early 1990s as the corporate parent of all Western Union related businesses.
+ In 1994, New Valley sold its Western Union businesses to First Financial Management (later acquired by First Data) for $1.2 Billion.
+ After more than 100 years of being a publicly traded entity, New Valley became a wholly owned subsidiary of Vector Group on December 13, 2005 when Vector Group acquired the remaining 42.3% of New Valley's common shares that it did not already own.
+ New Valley presently has a 70% stake in Douglas Elliman Realty, the largest residential real estate brokerage in the New York metropolitan area.
+ The company also has stakes in various hotels and golf courses in the United States.
+ In conjunction with the spin-off of its Ladenburg Thalmann subsidiary New Valley retained a 7.6% stake in Ladenburg Thalmann Financial Services, an investment bank and stock brokerage based in Miami.
+Word2vec is a group of related models that are used to produce word embeddings.
+ These models are shallow, two-layer neural networks that are trained to reconstruct linguistic contexts of words.
+ Word2vec takes as its input a large corpus of text and produces a vector space, typically of several hundred dimensions, with each unique word in the corpus being assigned a corresponding vector in the space.
+ Word vectors are positioned in the vector space such that words that share common contexts in the corpus are located in close proximity to one another in the space.
+The common brown leafhopper, "Orosius orientalis" (Matsumura) (Hemiptera: Cicadellidae) is one of the most common species of Australian leafhoppers with a very wide host range.
+ It is an important vector of several viruses and phytoplasmas worldwide.
+ In Australia, phytoplasmas vectored by "O. orientalis" cause a range of economically important diseases including legume little leaf, tomato big bud, lucerne witches broom, potato purple top wilt, Australian lucerne and is a possible vector of Australian grapevine yellows.
+ "O. orientalis" also transmits Tobacco yellow dwarf virus (TYDV genus Mastrevirus, family Geminiviridae) to beans, causing bean summer death disease and to tobacco, causing tobacco yellow dwarf disease.
+The SX-6 is a supercomputer built by NEC Corporation that debuted in 2001; the SX-6 was sold under license by Cray Inc. in the U.S. Each SX-6 single-node system contains up to eight vector processors, which share up to 64 GB of computer memory.
+ The SX-6 processor is a single chip implementation containing a vector processor unit and a scalar processor fabricated in a 0.15 μm CMOS process with copper interconnects, whereas the SX-5 was a multi-chip implementation.
+An oriented matroid is a mathematical structure that abstracts the properties of directed graphs and of arrangements of vectors in a vector space over an ordered field (particularly for partially ordered vector spaces).
+ In comparison, an ordinary (i.e., non-oriented) matroid abstracts the dependence properties that are common both to graphs, which are not necessarily "directed", and to arrangements of vectors over fields, which are not necessarily "ordered".
+Transstadial transmission occurs when a pathogen remains with the vector from one life stage ("stadium") to the next.
+ For example, the bacteria "Borrelia burgdorferi", the causative agent for Lyme disease, infects the tick vector as a larva, and the infection is maintained when it molts to a nymph and later develops as an adult.
+ This type of transmission is seen in other parasites like viruses or "Rickettsia".
+ In addition to ticks, mites are another common vector.
+ Some sources consider transstadial transmission a type of horizontal transmission, whereas other sources consider it vertical or partial vertical transmission.
+In mathematics, scalar multiplication is one of the basic operations defining a vector space in linear algebra (or more generally, a module in abstract algebra).
+ In common geometrical contexts, scalar multiplication of a real Euclidean vector by a positive real number multiplies the magnitude of the vector without changing its direction.
+ The term "scalar" itself derives from this usage: a scalar is that which scales vectors.
+ Scalar multiplication is the multiplication of a vector by a scalar (where the product is a vector), and must be distinguished from inner product of two vectors (where the product is a scalar).
+In probability, and statistics, a multivariate random variable or random vector is a list of mathematical variables each of whose value is unknown, either because the value has not yet occurred or because there is imperfect knowledge of its value.
+ The individual variables in a random vector are grouped together because they are all part of a single mathematical system — often they represent different properties of an individual statistical unit.
+ For example, while a given person has a specific age, height and weight, the representation of these features of "an unspecified person" from within a group would be a random vector.
+ Normally each element of a random vector is a real number.

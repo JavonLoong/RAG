@@ -1,0 +1,15 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  very useful for folks to have at least some high-level concepts in their head about how AI works.  You know, and I'm going to go super-fast, and this is one of the challenges with writing the book.
+
+Like that chapter might have been the most difficult thing to write because I was trying to make it accessible for folks like your dad and my mom, and still, you know, hue closely up to like the deep technical complexity and nuance of what actually is going on, on the front lines of the field, as these technologies are being developed.
+
+But, but, so like, roughly speaking, you can sort of think about the first epoch of AI as one where we thought we were going to be able to encode human intelligence as a set of like logical rules and sort of describing knowledge in these very structured ways, and that like we were going to be able to sort of build up intelligence by like this very sort of rational, logical, sort of – I think I called them systems of reasoning in the book, and progress was interesting, but relatively slow, like we were not moving as fast as some people would have liked in the field, and like we had these periods of, you know, very high excitement about AI that led to these booms of activity that were followed by a bust, where you know, the hype sort of exceeded what was realizable by the technology.
+
+And like there's even a term for this, called the AI winter, and like I've actually seen one AI winter in my lifetime, and there was that – that occurred before I even, you know, became a computer scientist.
+
+And so, the thing that's happened over the past, let's say 15-20 years is we have gone from these systems of reasoning to systems of learning, so things where instead of us trying to discover the logical rules of intelligence, and the structured way to map the knowledge of the world, what happens in systems of learning, with machine learning, you are able to train a system to recognize patterns in data.
+
+And so, if you have a large amount of data, and like enough compute, you can run a learning algorithm across all of this data to get – to build a model, and a this model, built from this data, is able to do a set of things called inferences, that lets you make judgments, and predictions and classifications about things in the real world.
+
+And like it's a really powerful pattern.  It's like the thing that we use to do a bunch of perceptual things that have seemed extraordinary over the past handful of years. So just since 2012, like we have really made super-fast progress using a set of techniques called supervised deep learning to be able to accurately transcribe spoken word, speech to text, so the speech recognition.
+
+We have made huge progresses in computer vision, like where computers can identify the objects in still images, and like even in video streams, with accuracy similar to

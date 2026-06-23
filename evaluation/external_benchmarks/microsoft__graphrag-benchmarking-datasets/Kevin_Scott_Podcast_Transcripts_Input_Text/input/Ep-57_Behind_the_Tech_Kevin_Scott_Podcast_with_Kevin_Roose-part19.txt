@@ -1,0 +1,23 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  has, like, helped a lot of people, like just make sure that they’re paying real attention to some very important things.  
+ 
+KEVIN SCOTT: And also you know, some of this stuff is fuzzy, right, like, you know, where the line is, and like, part of what you all are helping doing is making sure that the public is paying enough attention to it, so they can weigh in and have an opinion about where the line should be. 
+ 
+KEVIN ROOSE: Absolutely, I mean, it is an area where I think more public opinion is good. And right now, the number of people who are actually building this technology is like quite small, relative to the number of people who are using it, or who will soon be using it.  
+ 
+And so, I just think like, the more people know about what’s going on, the better, and I think it’ll ultimately be good for the tech industry to have that kind of feedback, even if it is annoying and blows up your inbox in the moment. 
+ 
+KEVIN SCOTT: Yeah, and for what it’s worth, it was like I was never annoyed about that. I was sometimes – 
+ 
+KEVIN ROOSE: You were remarkably chill. I was pleasantly surprised by like, the response that, you know, you and I talked after I had had this conversation, but before I sort of published my story, and, you know, you didn’t freak out, you didn’t accuse me of lying. You know, it was a remarkably civil conversation.  
+ 
+And I have appreciated that because that’s not – and I’m not just blowing smoke here, like that is not the reaction that I expected, you know, given how these things can go with other tech leaders.  
+ 
+So you know, I think, you know, I’m hopeful that the response to that article has not – the lesson from that has not been that we should build in secret and should never let anyone try our stuff.  
+ 
+KEVIN SCOTT: No, no, no, no, no, no, no. 
+ 
+KEVIN ROOSE: I hope that it has like been sort of salutary for the whole project of building good and safe and responsible AI to like, have some feedback along the way. 
+ 
+KEVIN SCOTT: One hundred percent. Like, I don’t think anybody was – like, I’m genuinely trying to think if anyone was irritated. Like everybody is sort of like, okay, this is good, lesson learned, and like, you know, we have a whole bunch of mechanism for, you know, preventing things like that from happening again. And, I mean, just – it’s all good.  
+ 
+Somebody said to me at some point that, like all feedback is a gift. Like, the fact that you spent two hours trying very hard to

@@ -1,0 +1,63 @@
+The Davey Tree Expert Company, also known as Davey Tree, is an American multinational employee-owned corporation that provides tree, utility, lawn care, and environmental consulting services in the green industry throughout the United States and Canada.
+ It is the largest residential tree care company in North America and was founded in 1880 making it the first national tree care company.
+ John Davey, its founder, is considered the father of the science of tree surgery and arboriculture.
+ The company's core services include tree, utility services, large tree moving, commercial grounds management and consulting services.
+ It has been employee owned since 1979 and is the largest employee-owned company in the state of Ohio and one of the top 20 largest in the United States.
+ Davey is organized in two segments, Residential and Commercial, and Utility.
+Nitrogen assimilation is the formation of organic nitrogen compounds like amino acids from inorganic nitrogen compounds present in the environment.
+ Organisms like plants, fungi and certain bacteria that cannot fix nitrogen gas (N) depend on the ability to assimilate nitrate or ammonia for their needs.
+ Other organisms, like animals, depend entirely on organic nitrogen from their food.
+The Bottle tree ("Pachypodium lealii" Welw.)
+ is a species of plant included in the "genus" "Pachypodium".
+ The scientific name derives from the 19th century Portuguese geologist Fernando da Costa Leal, who described the Bottle tree during an exploration in southern Angola.
+Parkia timoriana is a species of flowering plant in the legume family.
+ English common names include tree bean.
+ Common names in other languages and regions include petai hutan in Borneo, yongchak in Manipur, India, nitta tree and riang in Thailand, kedawung and peundung in Java, alai in Sumatra, petai kerayong and batai hutan in Malaysia, and kupang and amarang in the Philippines.
+ It is native to Thailand, Malaysia, Myanmar, Indonesia, and Assam in India.
+ It is widely cultivated for food and wood, and as an ornamental.
+In computer science, a Fractal Tree index is a tree data structure that keeps data sorted and allows searches and sequential access in the same time as a B-tree but with insertions and deletions that are asymptotically faster than a B-tree.
+ Like a B-tree, a Fractal Tree index is a generalization of a binary search tree in that a node can have more than two children.
+ Furthermore, unlike a B-tree, a Fractal Tree index has buffers at each node, which allow insertions, deletions and other changes to be stored in intermediate locations.
+ The goal of the buffers is to schedule disk writes so that each write performs a large amount of useful work, thereby avoiding the worst-case performance of B-trees, in which each disk write may change a small amount of data on disk.
+ Like a B-tree, Fractal Tree indexes are optimized for systems that read and write large blocks of data.
+ The Fractal Tree index has been commercialized in databases by Tokutek.
+ Originally, it was implemented as a cache-oblivious lookahead array, but the current implementation is an extension of the B tree.
+ The B is related to the Buffered Repository Tree.
+ The Buffered Repository Tree has degree 2, whereas the B tree has degree B.
+ The Fractal Tree index has also been used in a prototype filesystem.
+ An open source implementation of the Fractal Tree index is available, which demonstrates the implementation details outlined below.
+A weak heap is a combination of the binary heap and binomial heap data structures for implementing priority queues.
+ It can be stored in an array as an implicit binary tree like the former, and has the efficiency guarantees of the latter.
+Coprosma repens is a species of flowering shrub or small tree of the genus "Coprosma", in the family Rubiaceae, native to New Zealand.
+ Common names include tree bedstraw, taupata, mirror bush, looking-glass bush, New Zealand laurel and shiny leaf.
+Durvillaea willana is a kelp species.
+ It is similar to "D. antarctica" but is found in more sheltered coasts.
+ "D. willana" has smaller blades than "D. antarctica" and is usually found lower on the shoreline because its tolerance of wave action is not as great as "D. antarctica" (Bradstock, 1989).
+ "D. willana" has no common name in New Zealand, however is usually mistaken for bull kelp, "Durvillaea antarctica".
+ "D. willana" stipes are thick and long.
+ Off the stipe there are side branches of small fronds, this gives the algae a tree like form.
+ The fronds are not honeycombed like "D. antarctica".
+ The holdfast becomes large and spreads like a plate on rocky substrates (Bradstock, 1989).
+Duncan Brinsmead (born January 26, 1960 in Edmonton, Alberta) is a Canadian software programmer, best known for patents on the simulation of natural environments in 3D computer graphics (CGI).
+ He created the Maya "Paint Effects" for digitally painting instances like plants or hair in a virtual 3D environment.
+ In 2008, together with Jos Stam, Julia Pakalns and Martin Werner he received an Academy Award for Technical Achievement for the design and implementation of the Maya "Fluid Effects" system.
+ Fluid Effects are based on the simulation of fluid mechanics in software and used for simulating natural phenomena such as fog, steam or smoke.
+The poem begins with the description of the tree.
+ The poet says that the creeper has wound itself round the rugged trunk of the Casuarina Tree, like a huge Python.
+ The creeper has left deep marks on the trunk of the tree.
+ The tree is so strong that it bears the tight hold of the creeper.
+ The tree is described as being gallant, and possibly brave, as very few trees could survive in the strangle-hold of this creeper.
+ The poet then goes on to describe the life that thrives amidst every facet of the tree.
+ The tree is metaphorical said as a giant due to its huge size, strength and boldness.
+ The Casuarina Tree is covered with creeper which bears red crimson flowers which appear as though the tree is wearing a colorful scarf.
+ Often at night, the garden echoes and it seems to be jubilant and the song (of a nightingale) has no end; it continues till dawn.
+ At dawn when the poet opens her window she is delighted to see the Casuarina Tree.
+ Mostly in winters a gray baboon is seen sitting on the crest of the tree seeing the sunrise with her younger ones leaping and playing in the tree's boughs.
+ The shadow of the tree appears to fall on the huge water tank.
+ Toru Dutt says that it is not because of the majestic appearance of the Casuarina Tree that it is dear to her heart and soul, but also that she along with her siblings spent happy moments under it.
+ Toru Dutt has brought out the theme of nature as something that shares feeling with humans, that lightens the burden on the heart.
+ The poet continues with a description of how strong the image of the tree is, even when in lands far away.
+ Even in France and Italy (where the poet studied), she can hear the tree's lament.
+ The poet wishes to consecrate the tree's memory and importance for the sake of those who are now dead - and looks ahead to her own death, hoping that the tree be spared obscurity (or that no-one will remember it).
+ She immortalizes the tree through this poem like how Wordsworth sanctified the Yew trees of Borrowdale.
+ She says "May love defend thee from Oblivion's curse'"- by which she means that she is glad that her love for the Casuarina will protect it from the curse of being forgotten.

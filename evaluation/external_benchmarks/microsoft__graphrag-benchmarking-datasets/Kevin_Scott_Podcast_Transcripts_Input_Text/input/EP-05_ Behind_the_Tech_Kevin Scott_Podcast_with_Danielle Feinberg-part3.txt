@@ -1,0 +1,16 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  imagine your favorite film, lit as if it all took place at the DMV. With that horrible overhead, boring, fluorescent light. (Kevin laughs) That's a really different movie than if you put Coco all in DMV lighting, the feel of that movie is completely different. 
+KEVIN SCOTT: Yes. And Coco is a really good example for a great many reasons that would just be impossible to do with classic lighting. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: The number of light sources. Like when you go into the -- 
+DANIELLE FEINBERG: Yeah. The Land of the Dead. 
+KEVIN SCOTT: Oh, my god. It's unbelievable. I still don't know how you did it. 
+DANIELLE FEINBERG: Well, that first shot has 8.5 million lights in it. And it took so much time to figure out how to do it. We had to develop new technology. That's like eight million more than we ever had.
+KEVIN SCOTT: Yeah, you can't hand place eight million. 
+DANIELLE FEINBERG: You can't hand place all of them, right? And so we get the sets department to build all the street lamps named a certain way. And then we write the code to find all the streetlamps. And then it points a point at every streetlamp that, then, is a light. 
+But then you do this super-special light that does all this, essentially, fancy math and special sampling. So, the computer considers it one expansive light, even though you have a million streetlamps. And so I can change the color of all of them at once. I change how much the throw is all at once. 
+But let's say you end up in one little spot where you need a couple of those streetlamps. You don't want it controlled by the whole thing. We have a way to upgrade them into their own lights. And on and on and on. And so there's this massive complexity to it. 
+But put all that aside. We're trying to make this magical world. We want you to walk into The Land of the Dead and feel this enormous awe because we want you to feel what Miguel feels. 
+KEVIN SCOTT: Yeah. I know if I were trying to do your job, I am such am such a technical nerd that I would be completely overwhelmed by all of the sort of sterile technical bits. (Danielle chuckles) And there must be this tension that people fight against. Here's all of this technical complexity, and there has to be a human story somewhere in there. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: That must be interesting. 
+DANIELLE FEINBERG: Yeah. And I think everyone at Pixar is so

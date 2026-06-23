@@ -1,0 +1,56 @@
+Neutral beam injection (NBI) is one method used to heat plasma inside a fusion device consisting in a beam of high-energy neutral particles that can enter the confinement magnetic field.
+ When these neutral particles are ionized by collision with the plasma particles, they are kept in the plasma by the confining magnetic field, and can transfer most of their energy by further collisions with the plasma.
+ By tangential injection in the torus, neutral beams provide also momentum to the plasma and current drive, one essential feature for long pulses of burning plasmas.
+ Neutral beam injection is a ﬂexible and reliable technique, which has been the main heating system on a large variety of fusion devices.
+ To date, all NBI systems were based on positive precursor ion beams.
+ In the 90s there has been impressive progress in negative ion sources and accelerators with the construction of multi-megawatt negative ion based NBI systems at LHD (H, 180 keV) and JT-60U (D, 500 keV).
+ The NBI designed for ITER is a substantial challenge (D, 1MeV, 40A) and a prototype is being constructed to optimize its performance in view of the ITER future operations.
+ Other ways to heat plasma for nuclear fusion include RF heating, electron cyclotron resonance heating (ECRH), and ion cyclotron resonance heating (ICRH).
+A magnetic nozzle is a convergent-divergent magnetic field that guides, expands and accelerates a plasma jet into vacuum for the purpose of space propulsion.
+ The magnetic field in a magnetic nozzle plays a similar role to the convergent-divergent solid walls in a de Laval nozzle, wherein a hot neutral gas is expanded first subsonically and then supersonically to increase thrust.
+ Like a de Laval nozzle, a magnetic nozzle converts the internal energy of the plasma into directed kinetic energy, but the operation is based on the interaction of the applied magnetic field with the electric charges in the plasma, rather than on pressure forces acting on solid walls.
+ The main advantage of a magnetic nozzle over a solid one is that it can operate "contactlessly," i.e. avoiding the material contact with the hot plasma, which would lead to system inefficiencies and reduced lifetime of the nozzle.
+ Additional advantages include the capability of modifying the strength and geometry of the applied magnetic field in-flight, allowing the nozzle to adapt to different propulsive requirements and space missions. Magnetic nozzles are the fundamental acceleration stage of several next-generation plasma thrusters currently under development, such as the helicon plasma thruster, the electron-cyclotron resonance plasma thruster, the VASIMR, and the applied-field magnetoplasmadynamic thruster.
+ Magnetic nozzles also find another field of application in advanced plasma manufacturing processes, and their physics are related to those of several magnetic confinement plasma fusion devices.
+When discussing weapons in science fiction, a plasma weapon is a type of raygun that fires a stream, bolt(s), pulse or toroid of plasma (i.e. very hot, very energetic excited matter).
+ The primary damage mechanism of these fictional weapons is usually thermal transfer; it typically causes serious burns, and often immediate death of living creatures, and melts or evaporates other materials.
+ In certain fiction, plasma weapons may also have a significant kinetic energy component, that is to say the ionized material is projected with sufficient momentum to cause some secondary impact damage in addition to causing high thermal damage.
+ In some fictions, like Star Wars, plasma is highly effective against mechanical targets such as droids.
+ The ionized gas disrupts their systems.
+Vacuolar-type H+ -ATPase (V-ATPase) is a highly conserved evolutionarily ancient enzyme with remarkably diverse functions in eukaryotic organisms.
+ V-ATPases acidify a wide array of intracellular organelles and pump protons across the plasma membranes of numerous cell types.
+ V-ATPases couple the energy of ATP hydrolysis to proton transport across intracellular and plasma membranes of eukaryotic cells.
+ It is generally seen as the polar opposite of ATP synthase because ATP synthase is a proton channel that uses the energy from a proton gradient to produce ATP.
+ V-ATPase however, is a proton pump that uses the energy from ATP hydrolysis to produce a proton gradient.
+The Institute for Plasma Research (IPR) is an autonomous physics research institute located in India.
+ The institute is involved in research in aspects of plasma science including basic plasma physics, research on magnetically confined hot plasmas and plasma technologies for industrial applications.
+ It is a large and leading plasma physics organization in India.
+ The institute is mainly funded by Department of Atomic Energy.
+ IPR is playing major scientific and technical role in Indian partnership in the international fusion energy initiative ITER.
+ It is part of the IndiGO consortium for research on Gravitational Waves.
+A plasma railgun is a linear accelerator which, like a projectile railgun, uses two long parallel electrodes to accelerate a "sliding short" armature.
+ However, in a plasma railgun, the armature and ejected projectile consists of plasma, or hot, ionized, gas-like particles, instead of a solid slug of material.
+ Scientific plasma railguns are typically operated in vacuum and not at air pressure.
+ They are of value because they produce muzzle velocities of up to several hundreds of kilometers per second.
+ Because of this, these devices have applications in magnetic confinement fusion (MCF), magneto-inertial fusion (MIF), High Energy Density Physics research (HEDP), laboratory astrophysics, and as a plasma propulsion engine for spacecraft.
+Plasma cells, also called plasma B cells, plasmocytes, plasmacytes, or effector B cells, are white blood cells that secrete large volumes of antibodies.
+ They are transported by the blood plasma and the lymphatic system.
+ Plasma cells originate in the bone marrow; B cells differentiate into plasma cells that produce antibody molecules closely modelled after the receptors of the precursor B cell.
+ Once released into the blood and lymph, these antibody molecules bind to the target antigen (foreign substance) and initiate its neutralization or destruction.
+A slapper detonator, also called exploding foil initiator (EFI), is a relatively recent kind of a detonator developed by Lawrence Livermore National Laboratory, US Patent No. 4,788,913.
+ It is an improvement of the earlier exploding-bridgewire detonator; instead of directly coupling the shock wave from the exploding wire, the expanding plasma from an explosion of a metal foil drives another thin plastic or metal foil called a "flyer" or a "slapper" across a gap, and its high-velocity impact on the explosive (for example, PETN or hexanitrostilbene) then delivers the energy and shock needed to initiate a detonation.
+ Normally all the slapper's kinetic energy is supplied only by the heating (and hence expansion) of the plasma (the former foil) by the current passing through it, though constructions with a "back strap" to further drive the plasma forward by magnetic field exist too.
+ This assembly is quite efficient; up to 30% of the electrical energy can be converted to the slapper's kinetic energy.
+The Drexel Plasma Institute, in Camden, New Jersey, is the largest university-based plasma research facility in the United States of America.
+ Led by Drexel University, the members of the scientific team are from University of Illinois at Chicago, Argonne National Laboratory, Pacific Northwest National Laboratory and Kurchatov Institute of Atomic Energy.
+ The primary fields of research are applications in medicine, Environmental Control, energy, and agricultural industries.
+ DPI exists to research, educate, and design plasma systems.
+ More specifically, its mission is "to stimulate and coordinate research projects related to plasma and other modern high energy engineering techniques."
+Corona treatment (sometimes referred to as air plasma) is a surface modification technique that uses a low temperature corona discharge plasma to impart changes in the properties of a surface.
+ The corona plasma is generated by the application of high voltage to an electrode that has a sharp tip.
+ The plasma forms at the tip.
+ A linear array of electrodes is often used to create a curtain of corona plasma.
+ Materials such as plastics, cloth, or paper may be passed through the corona plasma curtain in order to change the surface energy of the material.
+ All materials have an inherent surface energy.
+ Surface treatment systems are available for virtually any surface format including dimensional objects, sheets and roll goods that are handled in a web format.
+ Corona treatment is a widely used surface treatment method in the plastic film, extrusion, and converting industries.

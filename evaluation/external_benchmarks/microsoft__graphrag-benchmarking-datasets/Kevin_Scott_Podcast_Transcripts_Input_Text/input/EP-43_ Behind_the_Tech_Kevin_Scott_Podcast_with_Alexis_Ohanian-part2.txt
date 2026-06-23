@@ -1,0 +1,17 @@
+EP-43_ Behind_the_Tech_Kevin_Scott_Podcast_with_Alexis_Ohanian.txt  interesting and has done so many things over the last, you know, life 15 – 16 years or so, so I – I can’t wait to hear what you talk about.
+
+KEVIN SCOTT: For sure.
+
+[MUSIC]
+
+KEVIN SCOTT: Alexis Ohanian was the cofounder and Executive Chairman of Reddit, which he launched as part of Y Combinator’s first class in 2005. In 2010, he cofounded Initialized Capital with Garry Tan with notable early-stage investments and Coinbase, Patreon, Ro and Instacart. He returned to Reddit full time in 2015 to help lead it as an independent company, eventually stepping down from the board in protest in 2020. Last year, he created 776, a firm that operates like a tech startup deploying venture capital. Alexis is married to tennis superstar Serena Williams, and they have a four-year old daughter. We are so glad to have you on the show today, Alexis. Thank you for being here.
+
+ALEXIS OHANIAN: Oh, thank you for having me, Kevin. This is going to be fun.
+
+KEVIN SCOTT: So, yeah, I’m really psyched to talk about so many things, but we love to start these conversations by going all the way back to the beginning. So, I know, like me, you are a UVA alumni, but how did you get interested in technology and programming, computer science as a kid.
+
+ALEXIS OHANIAN: Well, I guess I have you all to thank a little bit for this. I remember – gosh, I remember the day, I managed to successfully convince my parents to buy a computer, and it was a 486SX25 – 25? I mean, it was an early one of the DX.
+
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: Faster processing power, more processing power. It wouldn’t let me play a few games I wanted, but anyway, I wasn’t going to complain. This was a huge investment for my parents, huge. Neither of them had any idea what to do with a computer, and I’ll never forget – I mean, these were the – even just the most basic thing of getting, I guess it would have been Windows 3.1 started, made me feel like a hacker, because you’d be sitting there DOS, and you’d just be like, okay – and as a kid, I must have been, ah, let’s see – 8, 9, 10, someone can fact check how old I was, but like – you know, as a kid, you’re sitting in front of this screen that your parents have no idea what to do with – I mean, neither of my parents ever used it. They were confused by it, but you know, credit, they had the foresight, but you just I don’t know I couldn’t help but feel

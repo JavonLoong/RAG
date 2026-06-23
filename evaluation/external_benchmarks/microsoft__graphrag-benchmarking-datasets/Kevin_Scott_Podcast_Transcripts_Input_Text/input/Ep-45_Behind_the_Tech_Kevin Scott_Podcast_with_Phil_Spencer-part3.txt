@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  I ended up in high school working in a videogame store, Computer Mart in Vancouver, Washington, sitting behind the desk. And, you know, families would come in, whether they had like a Commodore or an Atari or a PC, and wanting to buy videogames or buy a system. 
+
+And it was a cool opportunity for me to just kind of be along with different people who had come in on their journey, what was interesting to them. I was playing most of the games in the store, so I was kind of a reference for what people wanted to play.
+
+And that kind of continued to when I joined University of Washington as a student my freshman year in the engineering department. And then luckily enough, my second year, my sophomore year, a kid who lived two doors down from me, Tai-Yi, his dad was a vice president at Microsoft in the CD-ROM group and he saw some of the videogame stuff I was doing on the Atari 20 –Atari ST it would have been, and said, “You should come over to Microsoft.” This was kind of pre-Windows 3. “And we’re doing some things on CD. We think pictures and animations and stuff will be one of the new media types.” They were just starting to create the multimedia division.
+
+And that was my internship in 1988 in the CD-ROM group/multimedia group, and it’s been a crazy, what now, 34 years since. 
+
+KEVIN SCOTT: That’s awesome. And like, it may be an unusual path, but I don’t think it’s unusual for folks of your generation and mine, we’ve got like all of those things that you said, Dungeons and Dragons playing, comic book reading, you know, videogame loving, like, you know, right here, too. And like so many of us had that mix of things that led us into the computing industry. 
+
+You know, just completely random, like when you got your 2600, what was your favorite set of games that you were playing? 
+
+PHIL SPENCER: Well, so now you’re going to get me in game geekdom, so I will apologize in advance. I think like a lot of people, when I first got the 2600, I was obviously attracted to the games I had played in the arcades. So you had Space Invaders, you had Missile Command.
+
+And then pretty quickly, you realize that people who were actually building dedicated games for the 2600, taking advantage of the input devices that that machine had, as opposed to the multiple sticks and buttons of like a Defender or something at the arcades, that people who were crafting unique games were the ones that were really doing more interesting things. And those are the ones I gravitated to, like your adventure type games. And because people knew that, okay, I’ve got this joystick, one button or one of the rotating with one

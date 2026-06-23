@@ -1,0 +1,16 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  work together and we make sure we have all the pieces, we’re going to get a feedback loop. There’s either going to be more user-generated content or we’re going to see an economy that’s self-sustaining or the platforms are going to get safer, like and can see how that’s going to feed upon itself. 
+
+There’s other things I sometimes see that are very hard, but they’re almost like they go off and they don’t close the loop. It’s just like, oh, like this is amazing and it’s hard and it’s really cool. But does it end up being part of a system where something good is going to happen? And I think thinking in advance of the closed loop where this thing is going to grow upon itself, that’s one of the signals we try to look for in these things. 
+
+KEVIN SCOTT: Yeah. Well, so, you know, as we’re talking about innovation now, I’d love to get your take on the metaverse. And like I have this definition of the metaverse, which is a metaverse is a fully immersive environment that lets you connect with other people to express the fullness of your identity and to accomplish your creative endeavors. 
+
+And so, if I say that definition and I look at Roblox, like Roblox feels to me like a metaverse. Like I – even though it’s a 2D screen, you don’t have to put anything on your head. You know, like I – there aren’t many things more immersive than Roblox for my 11 year old, for instance. 
+DAVID BASZUCKI: I think that’s very close with what socially the definition’s going to emerge to. I like to think of it as an inexorable category following along mail, telegraph, telephone, video call, simulated 3D immersive communication. Definitely about identity, definitely about friends and connection and a social graph. 
+
+Definitely about immersiveness and that that immersiveness isn’t just pure 3D fidelity. It’s functional fidelity. It’s social fidelity. It’s device by device, going from phone all the way to immersive VR. I think it’s typically, I think it will more and more be about an infinite array of places and content and objects as part of that. I think these are evolving to always get into economic aspects. 
+
+And then I think metaverses will have various levels of safety and civility. Just like places on the web, we’re leaning in really hard on a civilized place for people together. 
+
+And I think it’s still so fun and so early, that every company is still trying to figure out their own view of this. Like, it’s fun because it’s still emerging. 
+
+KEVIN SCOTT: Yeah. Well, so thinking about this stuff as an engineer for an instance, for an instant, there are a bunch of components that I think any metaverse is

@@ -1,0 +1,26 @@
+EP-51_Behind_the_Tech_Kevin Scott_Podcast_with_Rana_el_Kaliouby.txt ../Behind the Tech with Kevin Scott Podcast
+Episode 51 - Rana el Kaliouby
+
+RANA EL KALIOUBY: Empathy and emotions are at the center of how connect and communicate as humans, and our emotional experiences drive our decision making, whether it’s a big decision or a small decision. It drives our learning, our memory. It drives this human connection.  
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+CHRISTINA WARREN: Hello, and welcome to Behind The Tech. I’m cohost, Christina Warren, Senior Developer Advocate at GitHub. 
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And today, we have a super exciting guest with us, Rana el Kaliouby, who is the co-founder of Affectiva. She’s the Deputy CEO of Smart Eye and an Emotion AI pioneer, among so many other things.
+
+KEVIN SCOTT: I am just thrilled to be speaking with Rana today. You know, we’ve talked so much about AI on the show, but the convergence of AI and human emotion is an angle I don’t think we’ve ever really covered before, certainly not to the extent that I’m hoping to get into with Rana.
+
+CHRISTINA WARREN: I can’t wait to listen to your conversation with Rana. So, let’s dive in.
+
+KEVIN SCOTT: Rana el Kaliouby is an Egyptian-American scientist, entrepreneur, author and an AI thought leader who is on a mission to bring emotional intelligence to our digital world. She was the Co-founder and CEO of Affectiva, which was acquired by Smart Eye in 2021, where she now serves as the Deputy CEO. Rana is also general partner at AI Operators Fund, an early-stage AI-focused venture fund, as well as an Executive Fellow at the Harvard Business School. She’s the author of Girl Decoded, a memoir, following her personal journey as a woman in technology. Rana, thank you so much for being here with us today.
+
+RANA EL KALIOUBY: Thank you for having me. I look forward to it.
+
+KEVIN SCOTT: So we always kick these conversations off by talking about how you first got interested in science or technology. Like was it when you were a little kid? Tell us a little bit about that.
+
+RANA EL KALIOUBY: Yeah, so I am originally Egyptian. I was born in Cairo and

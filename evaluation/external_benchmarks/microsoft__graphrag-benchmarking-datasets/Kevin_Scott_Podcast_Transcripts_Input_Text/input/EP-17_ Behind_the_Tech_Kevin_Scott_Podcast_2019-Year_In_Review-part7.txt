@@ -1,0 +1,26 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  is so interdisciplinary today.  In fact, some of the most interesting fields that AI should really contribute and also welcome to join force are social sciences and humanities.  And at Stanford, we're already seeing the collaboration between AI researchers with economists, with ethicists, philosophers, education experts, legal scholars and all that. 
+To do this, our goal is to understand what this technology is really about, understand its impact, but also forecast, anticipate the perils, anticipate the pitfalls, anticipate unintended consequences, and really with the eventual goal of guided and recommend policies that are good for all of us. So, that's the second principle really understand, anticipate, and guide AI's human and societal impact. 
+
+The third and the last but not the least principle is something I know you and I feel passionate about is really to emphasize the word "enhance" instead of "replace." 
+
+KEVIN SCOTT:  Correct.  
+
+FEI-FEI LI:  Because AI technology is talked about as a technology to replace humans.  I think we should stay vigilant about job displacement and labor market, but the real potential is using this technology to enhance and augment human capability, to improve productivity, to increase safety, and to really eventually to improve wellbeing –
+
+KEVIN SCOTT: Right.
+
+FEI-FEI LI: --of humans. And that's what this technology is about.  And here, we're talking about healthcare. Another vertical that we put a lot of passion and resource in is education. Sustainability. Manufacturing and automation, these are really humanly and societally important areas of development. 
+
+KEVIN SCOTT:  Yeah. Well, just sort of sticking with healthcare and like your eldercare example, like, this is something that I don't think a whole lot of people spend time thinking about unless they're taking care of an elderly parent or relative.   
+
+Like, we're not thinking about, like, how systemically we can make the lives of elderly people better.  And, like, we're certainly not thinking about the big demographic shifts that are about to come -- (Crosstalk.) 
+
+FEI-FEI LI:  Oh, my god, it's going to come globally. 
+
+KEVIN SCOTT:  Yeah, globally.  I mean, so, you and I have chatted about this before, but you know, we sort of see in almost all of the industrialized economies, but also in Japan, Korea, and China – 
+
+FEI-FEI LI:  Yeah, absolutely.  
+
+KEVIN SCOTT:  --you have this very large bubble of working-age population that's getting older and older.  And we just don't have high enough fertility rates in these younger generations to replace it.  
+
+So, at some point, like, we -- across the entire world, we're going to have far more old people than we will have working-age people.  And you have like a couple of

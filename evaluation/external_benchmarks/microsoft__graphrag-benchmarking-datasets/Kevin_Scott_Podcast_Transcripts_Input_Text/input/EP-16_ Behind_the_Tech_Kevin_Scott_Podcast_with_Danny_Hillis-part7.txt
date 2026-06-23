@@ -1,0 +1,41 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  SCOTT:  Right.  Did they even have a computer science program at MIT when you started?
+
+DANNY HILLIS:  It was combined with electrical engineering.
+
+KEVIN SCOTT:  Okay.
+
+DANNY HILLIS:  But when I went there, I wanted to be a neurophysiologist.  I went to study the brain.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And the brain was obviously the most interesting mystery.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And it still is.
+
+KEVIN SCOTT:  Yeah, still is.
+
+DANNY HILLIS:  Still is, exactly.  Actually, I just came from the BrainMind conference.
+
+KEVIN SCOTT:  Nice.
+
+DANNY HILLIS:  And the, yeah, so it's still basically a mystery.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  That's how it works.  We understand little bits of it, but
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- and so, when I went to MIT, I had read this paper that I was very excited about, that they stuck probes inside a frog into the optic nerve, and they had worked out that the signal being sent from the eye to the brain was not just like a pixel.  It was actually a pattern.  It detected like a black dot against a moving across a light background.
+
+KEVIN SCOTT:  So, the nerve cells in the eye were encoding information basically.
+
+DANNY HILLIS:  Exactly.  The paper was called “What the Frog's Eye Tells the Frog's Brain” by Jerry Lettvin and a couple of co-authors.  And I had read this and I was just so excited, because this is what I want to do, because they're starting to felt like you were just starting to figure out all the neurocircuitry.
+
+And my first day at MIT, they sort of have a party for the incoming freshman.  And I go to this party and there was this guy sitting there holding forth with the freshman, so pointing them, what are you interested in?  And whatever they were interested in, he would explain to them why it was a crazy thing to study.  And so, he gets to me, and he say, you know, what about you?  I said, "I want to study neurobiology."  And he said, "Oh, that crock of bleep."
+
+KEVIN SCOTT:  Yep, yep.  Oh, and I think I know who this was.
+
+DANNY HILLIS:  Yep, I'll say, yeah, that's right.  So, he completely tore apart, he was like, tell me one good paper that's ever been written.

@@ -1,0 +1,35 @@
+Ep-12.txt istors for logic, but you haven't yet for memory cells.
+BILL COUGHRAN: Yeah, I think there's tradeoffs now that people are rethinking about --
+between you know actual logic-type processing versus memory, what kind of embedded memory 
+do you want, what kind of memory structures, you know, there's obviously new kinds of memory
+coming into the market that don't require DRAM refreshes, but are faster, that's another area that 
+may be interesting. 
+I think the other thing which strikes me as a big challenge as people think about processors 
+themselves is you know, there's been some fascinating work on the security side and very scary, 
+people did not think through all the risks with speculative execution. And on the other hand, if 
+you throw speculative execution out, you hurt performance a lot. 
+And so I think there are people trying to think about how do you think more from first principles 
+about what the security risks are in processor design so that -- because when you admit security 
+weaknesses at the very bottom layer of the hardware, it's pretty hard to defend against. 
+KEVIN SCOTT: Yeah. 
+BILL COUGHRAN: And it's scary in new ways, right? And so, I think there are a lot of
+interesting things happening in and around that area. 
+KEVIN SCOTT: Yeah. Are you seeing the stuff with the -- in the IoT space? Because 
+processors there like still have a couple of generations of, you know, real Moore's Law left in 
+them. 
+BILL COUGHRAN: So, we're seeing a bunch of companies around -- there are a lot of people 
+looking at processors for the edge where they can do some inference, maybe a little bit of 
+training I think, and very low-cost kind of microcontroller-level designs and so forth. 
+There's a number of interesting new ideas and companies in that area. I'm -- when I've looked at 
+IoT, I've mostly looked at things related to industrial IoT because I think consumer IoT has been 
+tricky for a variety of reasons. One is, it's often driven by brand and consumer reach, which I 
+think advantages companies like Apple and others. And I think the other thing is smart phones 
+are too good at doing a lot of different things, and so the killer apps for the consumer IoT I think 
+has been pretty limited so far. Personal opinion, but there you go. 
+KEVIN SCOTT: Yeah, I mean, we can certainly see that the industrial IoT stuff, like the 
+applications there are like rich and like there's an enormous amount of opportunity there. I think 
+we sort of see the world in similar ways. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+20
+BILL COUGHRAN: Yeah, no it's -- consumer

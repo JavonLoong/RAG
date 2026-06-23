@@ -1,0 +1,50 @@
+Time–frequency analysis for music signals is one of the applications of time–frequency analysis.
+ Musical sound can be more complicated than human vocal sound, occupying a wider band of frequency.
+ Music signals are time-varying signals; while the classic Fourier transform is not sufficient to analyze them, time–frequency analysis is an efficient tool for such use.
+ Time–frequency analysis is extended from the classic Fourier approach.
+ Short-time Fourier transform (STFT), Gabor transform (GT) and Wigner distribution function (WDF) are famous time–frequency methods, useful for analyzing music signals such as notes played on a piano, a flute or a guitar.
+Semantic Scholar is a project developed at the Allen Institute for Artificial Intelligence, released in November 2015.
+ It is designed to be a "smart" search service for journal articles.
+ The project uses a combination of machine learning, natural language processing, machine vision to add a layer of semantic analysis to the traditional methods of citation analysis.
+ In comparison to Google Scholar and PubMed, it is designed to quickly highlight the most important papers and identify the connections between them.
+Guy L. Beck is a scholar, author, musician, educator, historian of religions, and musicologist.
+ A Fulbright-Nehru Senior Research Fellow and Visiting Fellow at the Oxford Centre for Hindu Studies (Oxford University, UK), he is Lecturer in Philosophy, Religious Studies and Asian Studies at Tulane University, and Adjunct Professor of Religious Studies at Loyola University New Orleans.
+ As a scholar and historian of religion, Guy Beck is the first to publish a comprehensive study of the nature and function of sacred sound (Nada-Brahman) in the Hindu religion, which was developed by applying the category of 'sonic theology'.
+ In a sequel work, he has provided the first extensive analysis of ritual and music in Hinduism through the paradigm of 'sonic liturgy'.
+ As an educator, he has created the first college textbook on music in the major world religions with an accompanying CD of recordings.
+ As a musician, Beck is the first American performer of Hindustani vocal music, the first to earn a vocal music degree in India, and the first to perform vocal music in an all-India conference of Hindustani classical music.
+ As a musicologist, he has produced the first and most complete collection of field recordings, translations, and annotations of the hymns and religious songs of the Radhavallabha Sampradaya, a Vaishnava or Krishna sect based in Vrindaban in northern India.
+Musicology () is the scholarly analysis and research-based study of music.
+ Musicology is part of the humanities.
+ A scholar who participates in musical research is a musicologist.
+Ciril Cvetko (8 January 1920 – 18 January 1999) was a Slovene composer and conductor, brother of the musicologist Dragotin Cvetko.
+Gundabathula Venkateswara Rao (born 1944) is an Indian materials engineer, known for his studies in the field of Structural mechanics.
+ Focusing his researches on Finite element method, Structural analysis and Smart materials, he and his colleagues developed "FEAST", a medium-sized program for laboratory research and industrial applications including design and analysis of rocket systems.
+ An alumnus of the Indian Institute of Science from where he secured a PhD, his researches have been documented in several peer-reviewed articles and his work has been cited by several scientists.
+ Google Scholar, an online article repository of scientific articles, has listed a number of his articles.
+ The Indian Academy of Sciences elected him as a fellow in 2003.
+ The Council of Scientific and Industrial Research, the apex agency of the Government of India for scientific research, awarded him the Shanti Swarup Bhatnagar Prize for Science and Technology, one of the highest Indian science awards for his contributions to Engineering Sciences in 1989.
+Lawrence A. Gordon is the EY Alumni Professor of Managerial Accounting and Information Assurance at the University of Maryland’s Robert H. Smith School of Business.
+ He is also an Affiliate Professor in the University of Maryland Institute for Advanced Computer Studies.
+ Dr. Gordon earned his Ph.D. in Managerial Economics from Rensselaer Polytechnic Institute.
+ An internationally known scholar in the areas of managerial accounting (often called management accounting) and cybersecurity economics, Dr. Gordon's research focuses on such issues as economic aspects of information security (including cybersecurity or computer security), corporate performance measures, cost management systems, and capital investments.
+ He is the author of approximately 100 articles, published in such journals as The Accounting Review, ACM Transactions on Information and System Security, Communications of the ACM, Journal of Financial and Quantitative Analysis, Journal of Computer Security, MIS Quarterly, Accounting, Organizations and Society, and the Journal of Accounting and Public Policy.
+ Dr. Gordon's current research emphasizes the importance of applying concepts from economics and managerial accounting to an information-based economy.
+ Dr. Gordon is the co-creator (with Martin P. Loeb) of the Gordon-Loeb Model, which provides a mathematical economic model for deriving an organization's optimal investment level in cyber/information security.
+ The Gordon-Loeb Model has been featured in The Wall Street Journal and The Financial Times.
+ For a 3-minute video that provides a non-mathematical overview of the Model, go to: https://www.youtube.com/watch?v=cd8dT0FuqQ4.
+ Dr. Gordon also is the author of several books, including Managerial Accounting: Concepts and Empirical Evidence, Managing Cybersecurity Resources: A Cost-Benefit Analysis and Improving Capital Budgeting: A Decision Support System Approach.
+ In addition, he is the Editor-in-Chief of the Journal of Accounting and Public Policy and serves on the editorial boards of several other journals.
+ Dr. Gordon's research has over 6,400 citations in Google Scholar.
+Boris Mordukhovich is an American mathematician recognized for his research in the areas of nonlinear analysis, optimization, and control theory.
+ Mordukhovich is one of the founders of modern variational analysis and generalized differentiation.
+ Currently he is Distinguished University Professor and Lifetime Scholar of the Academy of Scholars at Wayne State University (Vice President, 2009-2010 and President, 2010-2011).
+Jesus, Interrupted: Revealing the Hidden Contradictions in the Bible (And Why We Don't Know About Them) is a book by Bart D. Ehrman, a New Testament scholar at University of North Carolina at Chapel Hill.
+ This work includes a narrative of Ehrman's own progression in Biblical studies and beliefs, an overview of the issues raised by scholarly analysis of the Bible, details of a selection of findings from such analysis, and an exhortation regarding the importance of coming to understand the Bible more fully.
+Ted Gayer (born May 8, 1970) is an American economist.
+ He is the vice president and director of the Economic Studies Program and the Joseph A. Pechman Senior Fellow at the Brookings Institution.
+ He was an associate professor at Georgetown Public Policy Institute from 2004-2009, previously served as deputy assistant secretary for Microeconomic Analysis at the Department of the Treasury from 2007-2008, and was a senior economist on the President’s Council of Economic Advisers from 2003-2004.
+ He is a former member of the EPA’s Science Advisory Board and has served on the EPA’s Superfund Benefits Analysis Advisory Committee and as an expert evaluator of the natural resources management indicator for the Millennium Challenge Corporation.
+ From 1999 to 2001, Gayer was a Robert Wood Johnson Scholar in Health Policy Research at the University of California, Berkeley.
+ In the summer of 2006 he was a Lone Mountain Fellow at the Property and Environment Research Center.
+ From 2006 to 2007 he was a visiting fellow at the Public Policy Institute of California, and from 2004to 2006 he was a visiting scholar at the American Enterprise Institute.

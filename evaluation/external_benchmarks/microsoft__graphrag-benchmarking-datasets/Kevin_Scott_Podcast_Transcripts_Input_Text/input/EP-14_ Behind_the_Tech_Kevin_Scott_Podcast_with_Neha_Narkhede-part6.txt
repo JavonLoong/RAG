@@ -1,0 +1,18 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  program for the first time.  
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And it was like complicated, it's the first place where you're really thinking about software architecture and like how all of this stuff fits together. 
+NEHA NARKHEDE:  Absolutely. 
+KEVIN SCOTT:  And like how you're, you know, sort of dealing with all of the modules and decomposition of things.  And so, was that like the first big code that you dealt with was in that OS class?  
+NEHA NARKHEDE:  Pretty much, that's why it was hard.  And that's what I had to pull like two-nighters.  But that was -- I think it was interesting and in some ways sort of built the foundation that helped me with Apache Kafka, because that -- it sort of teaches you forced principles thinking, you know, right from the primitives, right, how the kernel works and how memory works and how multithreading works, right? 
+It sort of lays that foundation, and that program, the reason it was really hard is because it was the first time I had to actually work in a group where what we decided to do was each write different components and then integrate it at the very end.  And that's when I learned that integration is where most of the trouble happens.  So, it took two all-nights, you know, to resolve that.  
+But I think the first principles, hands-on thinking and programming was really the magic.  
+KEVIN SCOTT:  Yeah, well, I mean, it's interesting that you had that experience and that it was so challenging.  
+NEHA NARKHEDE:  It was.  
+KEVIN SCOTT:  Like, everybody learns a lot when you go through sort of a gauntlet like that.  But the more interesting thing is like you -- the thing that sort of defines your career is like you really are a systems engineer. 
+NEHA NARKHEDE:  Yes. 
+KEVIN SCOTT:  And so like you sort of face this big, daunting challenge.  And then you decided at some point to lean into it. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  Like, this is what I'm going to spend all of my time doing is like building -- building distributed systems. 
+NEHA NARKHEDE:  Absolutely.  That's when I first started thinking about I want to be a systems, you know, and more importantly, distributed systems programmer.  
+KEVIN SCOTT:  So, what did you do after you graduated?  
+NEHA NARKHEDE:  You know, I sort of focused on databases more in my master's.  When I graduated, I actually -- before I graduated, I interned at Oracle in the database group.  And so,

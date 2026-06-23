@@ -1,0 +1,21 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  people to found a company with, we could really do something meaningful as an independent company.  And, you know, build technology that mattered and see it in a world in a way that we could do a lot of good. 
+
+You know, and ultimately build a sustainable, successful business.  
+
+KEVIN SCOTT:  Yep. And so what does Aurora do?  
+
+CHRIS URMSON:  So, Aurora’s mission is to deliver the benefits of self-driving technology safely, quickly, and broadly.  And what that means is we want to make a driver that will make it easier for people to get around, make it less expensive for them to get around, and easier for us to ship goods and perform logistics. 
+
+KEVIN SCOTT:  And you all think about yourself as a platform company.  So, anybody who wants to build an application that needs self-driving cars, like they could use your technology to like help realize it? 
+
+CHRIS URMSON:  That’s exactly right.  We think about the thing that we can do best in the world is build the driver.  And so let’s go do that.  People -- you know, it’s easy, you look at, say, Uber and what you see is an app that you figure, how hard can that be? 
+
+And what you miss is just how complicated that business is behind the scenes.  And you know, the operational aspects of it, the matching driver with vehicle or passenger with vehicle, if you look at -- again, if you look at a company like FedEx, right?  It’s incredibly complicated, the logistics that they do. 
+
+And so, we don’t want to go build that, right?  We think those people know what they’re doing, they’re really good at it.  Similarly, you know, it’s really easy to dismiss an automotive company.  Oh, they just bend metal.  Well, no, it turns out that they build these incredibly complicated products that operate for the next 15 years and have an immense amount of technology under the hood.  
+
+And so, you know, we don’t want to do that either.  We’re not going to be very good at that.  So let’s concentrate on this one thing, this driver, and let’s make it a platform that everyone can use that will make it for the end user, it’ll make it safer for them to get around, it’ll make it easier, and it will make it less expensive. 
+
+And then for our partners in the automotive community and in the transportation and logistics communities, you know, they’ll have an opportunity to help build better businesses themselves.  
+
+KEVIN SCOTT:  Right, and the idea is, like, there will be lots and lots of these businesses, like not a small number, but like you will have maybe hundreds or thousands of companies that are, like, instantiating some sort of AI

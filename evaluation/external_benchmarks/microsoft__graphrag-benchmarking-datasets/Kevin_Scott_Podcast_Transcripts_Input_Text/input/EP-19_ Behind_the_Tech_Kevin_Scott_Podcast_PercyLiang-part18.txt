@@ -1,0 +1,13 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt .
+
+KEVIN SCOTT:  Yeah, so a couple more questions before I ask you something, something fun.  So, how do you think academia and industry could be doing more together?  Like one of the things that I'm a little bit worried about, like less so this year, than last, is some of these machine learning workloads now just require exorbitant levels of resources to run.  So, like training one of these big self-supervised models, just like -- the dollar cost on the computations is getting to be just gigantic, and it's going to grow.
+
+Like it's been expanding at about, you know, 8-10x a year, and so I sort of worry about -- like with this cost escalating, like how can everybody participate in the development of these systems, like especially universities, like even well-resourced ones like Stanford?
+
+PERCY LIANG:  Yeah, I think it's like on a lot of people's mind, the compute required for being kind of relevant in the kind of modern ML.  I think there's a -- there's a couple of things.  What's certainly -- I know that companies have been providing, you know, cloud credits to academia, and certainly this has been helpful, probably more of it would be more helpful, and -- but, I think that's maybe not a -- you know, in some sense kind of a panacea because what -- however many cloud credits industry gives, industry is always going to have -- you know, more of that they can do in-house.
+
+But I think a lot of the way that I've been thinking about research at Stanford, without unlimited resources is, a lot of times, you can be kind of orthogonal to what's going on.  So, so some of our recent work focuses on methods for understanding what's going on in these BERT pretrained models, or how to think about interpretability or fairness.
+
+And I think some of these questions are fairly kind of conceptual, and the bottleneck there isn't just doing more compute, but to actually even define the question, and think about how to -- you know, frame it and solve it.  And I think that another thing which I alluded to earlier is that there are clearly a lot of real-world problems that, you know, industry is facing, not just in terms of scale, but the fact that there's real systems with real users.
+
+There's feedback loops, there's biases, and heterogenic -- heterogeneity, and I think there's a lot of potential for surfacing these kinds of questions that I think that the academic community would be -- would be helpful in kind of answering that, not at a -- kind of a conceptual level.  I think probably teams are probably too busy to be worried -- pondering about what is the right way to solve these problems, but they have the problems, and it these can be somehow, you know, brought out, I think we

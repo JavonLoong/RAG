@@ -1,0 +1,25 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  Apple II and as I was programing this Apple II and reading the manuals and it was the time when you had, you know, all these Apple II magazines were out and you’d enter this stuff, for some reason that Apple II had an assembler and a disassembler built into it. And there’s just something fun about, okay, my visual, my BASIC program’s running slow, but there’s this assembler thing. 
+
+And the Apple IIs also had this wonderful facility where you could hook up some potentiometers from RadioShack to the analog inputs and start getting those. So that combination, I think, got me interested in this and kind of that was the germination really. 
+
+KEVIN SCOTT: Yeah. And I mean, our technology that we have today is certainly amazing, but I do think this thing that you just mentioned, which is the fact that these early machines were so approachably programable, like when you – I just remember walking up to something like a Commodore 64 in a department store, for instance, and you would be sitting there at a BASIC command prompt. And so, like, the thing is inviting you to type code into it as your first interaction that you’re having, which is sort of amazing. 
+
+DAVID BASZUCKI: Yeah. It’s almost as if the user interface in the days was the command prompt and the user interface was entering code almost, which is it’s a lot harder to find a command prompt now on a modern day computer.
+
+KEVIN SCOTT: Yeah, it indeed it is. 
+
+So did you have anyone around you when you were a kid? So you had this computer lab at school, but did you – was it mostly learning from these magazines and sort of teaching yourself? 
+
+DAVID BASZUCKI: Yeah. 
+
+KEVIN SCOTT: Or did you have anyone around you? 
+
+DAVID BASZUCKI: It was very self-learned, for some reason. There was a very rich up-and-coming PC ecosystem, a lot of magazines to read, to follow. I was a little bit of a – I remember we had a computer lab and I would make programs to make all the computers in the computer lab do funny things or, you know, try to play around with the people who are running the computer lab. But no, I was pretty autonomous. When I went out to university, you know, there’s a little bit more of that, but a lot, definitely a lot of personal self-discovery back in those days. 
+
+KEVIN SCOTT: And – and was gaming or writing games one of the early things that captured your imagination with computers –
+
+DAVID BASZUCKI: Yeah.
+
+KEVIN SCOTT: – or did that come later? 
+
+DAVID BASZUCKI: No. I remember writing, you know, an assembler with the very primitive shape rotation graphics the Apple II had,

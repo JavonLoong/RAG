@@ -1,0 +1,15 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  world that you might not get otherwise.
+
+KEVIN SCOTT:  Yeah. I mean, one of the really fortuitous things about having Eric here at Microsoft and having him play such an important role at Microsoft over the years is that, when a moment like now arises where we really do have to think more comprehensively than ever before about what this intersection is between biology and artificial intelligence, it's pretty convenient to have one of your foremost AI experts actually be a medical doctor as well. It's sort of only at Microsoft, I guess. (Laughter.)
+
+CHRISTINA WARREN:  It really is. And I mean, you didn't really get into this too much in your conversation, but I just want to ask you, especially since you've written so much about AI and since you've been having these conversations with people like Eric who are experts in biology, what role do you think AI might be able to play, kind of going forward as we're looking at how to combat this and maybe even other potential viruses or health concerns?
+
+KEVIN SCOTT:  Yeah, I think we're seeing it have a really tremendous impact already. So, you know, as we have dug in with a bunch of the researchers and a bunch of the medical professionals and biotechnologists over the past handful of months, it's already the case that they're using the tools and machine learning and artificial intelligence in relatively sophisticated ways. 
+
+So, it may be, you know, on one end of the spectrum, using natural language technology to better extract critical information out of our unstructured health records that are -- you know, for many, many, many years now have been handwritten notes or notes that are taken and input into medical records system. But it's still, you know, it's sort of this unstructured data that we really do need to be able to establish more structure around so that we can do the types of deep analytics that we need to do to, you know, understand things, for instance, like the progression of symptoms of a pathogen like SARS coronavirus 2, and like really try to widely disseminate what effective therapies are that people are applying over time. 
+
+And so, you know, funny enough, natural language processing and natural language understanding, which are these classic techniques from artificial intelligence, have huge relevance there. You also see in the work that people have been doing, and we've talked about this some of the podcasts, in using deep neural networks to do medical diagnostics. 
+
+So, I'm wearing a ring from a company called Aura right now that measures your body temperature and your pulse, and a whole bunch of things about your movement. And I think this company originally intended to have these rings help you manage your all-in health, like whether you're sleeping well enough or whether you're getting enough exercise and activity. 
+
+But it may be the case that the data that's gathered by devices like this are going to be really useful

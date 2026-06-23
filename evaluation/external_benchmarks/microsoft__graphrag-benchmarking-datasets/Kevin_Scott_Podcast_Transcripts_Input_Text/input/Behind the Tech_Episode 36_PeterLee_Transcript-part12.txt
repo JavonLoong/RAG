@@ -1,0 +1,23 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt , you know, back in the late 1980s. And so my first thought was, wait a minute, people are still working on this stuff? 
+
+KEVIN SCOTT:  Yeah.
+
+PETER LEE:  On neural nets? And why on earth would anyone do this? You know, everyone knows Gaussian Mixture Models are the future of speech recognition. And of course, you know, three or four months later, when the engineering results came in, you know, we realized, wow, we have a real revolution here because it just works so well. 
+
+And then maybe six months after that, you know, Andrew Ng and Jeff Dean over at Google showed that the same things held up for computer vision.
+
+KEVIN SCOTT:  Yep.
+
+PETER LEE: Look at where we are 10 years later. It’s amazing. But I’ve reflected that if I had joined, if I had been hired to Microsoft Research a year earlier, none of this would have happened. 
+
+KEVIN SCOTT:  Yep.
+
+PETER LEE:  And it just makes you think, how many times have I inadvertently, like, held the whole world back by making a judgment like that? It’s one of those near misses that really makes you think. 
+
+KEVIN SCOTT:  Yeah, and it’s a hard thing, because even at a company like Microsoft that invests a lot in R&D, like, we still have finite resources and you have to have some way to focus. You know, because at the end of the day, the types of things that we’re building now, rarely are the work of a lone genius cranking away in their office, and, you know, like, they have their Archimedean epiphany, and all of a sudden, this big problem is solved. It’s usually the, you know, the work of layering and combining and collaborating. And so you do have to focus in some way, but like, I totally agree with you. 
+
+And, like, in a certain sense, you know, Geoff Hinton is almost heroic in the extent to which he stuck with that idea. Because people, I think now, you know, you’re just like, oh, deep neural networks, like this is, like, clearly the way. It’s the same way that the Hidden Markov Models and the Gaussian Mixture Models were, like, clearly the way that you did speech recognition 20 years ago or 10 years ago. 
+
+PETER LEE:  Yep.
+
+KEVIN SCOTT:  I think both 20 and 10 years ago. But you know, like, just as obvious as that was then, it’s as obvious now that like, oh, well, this is clearly the way that you do computer vision and speech recognition and natural language processing. In 1991, not obvious at all. In fact, quite to the contrary.

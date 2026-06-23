@@ -1,0 +1,15 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt  I've got different individuals, and they look different. You know, like the flowers might be different colors or whatnot. And there's something about that difference in how they look that is traceable to their hereditary material, to their DNA, as we understand it. 
+
+And this is genetics, as a science, of course, begins before DNA sequencing exists. So, you don't have the code. You just have these relationships, like, oh, there's a link between this trait and something in the DNA. 
+
+And so, what you do in this context is you use the likelihood that any two traits are linked to each other. And this depends on how close or far apart on the DNA the changes in the DNA are, because if they're close together, they're more likely to be linked. But if they're far apart, the DNA might break and recombine when it gets copied during reproduction. 
+
+Anyway, so you're presented with all this data and you've just got to figure out what's going on. And it turns out you just use logic to figure it out. So, that's what I learned. I learned I could understand life using logic, which was amazing. Like, I would get 100 percent on a test. I have no idea what the biology was, right, but I could solve the logic problem. That was the first thing. 
+
+The second thing, you know, and Professor Ware, she would show up with orange juice, fresh squeezed orange juice and donuts at 7:45 and put on these – and put on these view graphs the structures of molecules. So, these are -- by structures of molecules, I mean you know, cartoon diagrams of the three-dimensional structure of a protein or something like that. And I'd just be sitting in this classroom, like, mainlining fresh squeezed orange juice and looking at these images of these cartoon images of proteins and stuff. 
+
+And I remember blurting something out. I blurted out -- like, she's given this beautiful lecture on, like, the shape and what it means, and how it’s all working. And I just blurted out one day, “Why do we care what it looks like? Can't you just tell me what it does? Just tell me what it does. I just want to use it. Just tell me what it -- I don't care what it looks like.” (Laughter.)
+
+And I don't know what was going on in her mind, but if a student did that to me today, I go, “You idiot. It does what it does because of what it looks like, right? Structure, function, right? Its shape has to do with what it's -- what it does.” But she just looked at me and was like, all right, you know, okay. (Laughter.)
+
+But so, so I was learning -- with hindsight, I was wishing for functional abstraction. As

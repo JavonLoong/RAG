@@ -1,0 +1,35 @@
+Ep-12.txt  every elementary school, every high school, 
+every home. And so, there's just -- your exposure and availability to compute -- both learning 
+materials, but also just the mechanical machinery, the actual computing devices is much easier. 
+Although one thing I have noticed over the years, having been a leader in different groups over 
+the years, I think the knowledge of the actual computing devices has gotten weaker and weaker. 
+And it's been interesting in the last few years as people have become interested in machine 
+learning and high-performance computing again, people are rediscovering all the nitty-gritties of 
+limited memory cache lines -- a lot of the very low-level stuff that I think the early developers, 
+for instance, the people who created Unix thought about how do you fit lots of capability into a 
+very small footprint? 
+KEVIN SCOTT: Yeah. 
+BILL COUGHRAN: Both memory-wise and computing-wise, and we've lost a lot of that. And
+we're rediscovering it. 
+KEVIN SCOTT: Yeah, and like one of the things that I've always noticed is you know we 
+operate on all of these high-level abstractions to do our jobs. And the engineers that I've found 
+who are sometimes able to do the most extraordinary things are ones who sort of disrespect -- or 
+are able to disrespect the abstraction boundaries, where they can sort of say, okay, this is not 
+working, I don't understand what's going on, I'm not getting the performance I want out of this. 
+Like, there's some weird bug and they just sort of punch through to lower and lower layers. 
+So one -- like, one of my theories about Jeff Dean, like, he was a compiler guy, right, by his PhD 
+work. And compiler folks they're very good at just getting this end-to-end view of computer 
+systems and like being able to wring extraordinary performance out of things even though, like, 
+they're not actually writing the optimizer bits of the compiler anymore. 
+BILL COUGHRAN: No, I completely agree with that. Having worked with Jeff and his 
+colleague, Sanjay, they both I think were willing to go very deep into the technology and bypass 
+layers. And some of the people I've known for years, I've worked with before like Ken 
+Thompson were definitely of that ilk as well. 
+I think one of the things that modern software suffers from is I think people sometimes do not 
+spend enough time thinking about what the right abstractions are and how to make them very 
+simple. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+7
+I think one of the things I've admired about Unix, which you can see in Linux today, is a lot of 
+the very low-level system calls that were introduced in Unix have stood the test of now multiple

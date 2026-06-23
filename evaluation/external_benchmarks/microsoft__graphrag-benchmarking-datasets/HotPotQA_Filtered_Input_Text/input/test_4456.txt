@@ -1,0 +1,32 @@
+Each location area of a public land mobile network (PLMN) has its own unique identifier which is known as its location area identity (LAI).
+ This internationally unique identifier is used for location updating of mobile subscribers.
+ It is composed of a three decimal digit mobile country code (MCC), a two to three digit mobile network code (MNC) that identifies a Subscriber Module Public Land Mobile Network (SM PLMN) in that country, and a location area code (LAC) which is a 16 bit number with two special values, thereby allowing 65534 location areas within one GSM PLMN.as briefed to Mr Deepji on 25 Sep 17.
+Sprint Corporation, commonly referred to as Sprint, is an American telecommunications holding company that provides wireless services and is an internet service provider.
+ It is the fourth largest mobile network operator in the United States, and serves 59.7 million customers, as of April 2017.
+ The company also offers wireless voice, messaging, and broadband services through its various subsidiaries under the Boost Mobile, Virgin Mobile, and Assurance Wireless brands, and wholesale access to its wireless networks to mobile virtual network operators.
+ The company is headquartered in Overland Park, Kansas.
+ In July 2013, a majority of the company was purchased by Japanese telecommunications company SoftBank Group Corp., although the remaining shares of the company continue to trade on the New York Stock Exchange.
+Vodafone Malta Limited (formerly operating as Telecell), is a Maltese mobile network operator and a subsidiary of the British multinational telecommunications provider Vodafone.
+ As of 2014, Vodafone Malta is the largest mobile operator in Malta by number of customers.
+ The company offers a full range of Voice, SMS and mobile Data services over 2G, 3G, 4G and 4G+ networks.
+Vodafone Hungary, member of the Vodafone Group is a mobile telephone company in Hungary.
+ It started to operate in 1999 after securing the third GSM 900/1800 MHz license of the country and it was the first provider operating in the DCS-1800 band in Hungary.
+ Vodafone is the third largest mobile network operator of the country, and controlling 22,84% of the market as of June 2012.
+EE (formerly Everything Everywhere) is a British mobile network operator, Internet service provider and IPTV provider.
+ It is the largest mobile network operator in the UK, with around 30 million customers and the largest operator of 4G services in Europe.
+No issue, lelo tissue (Urdu: ‎ ) was a Pakistani television advertisement campaign started by Jazz Pakistan, following the victory of Pakistan's cricket team in the 2017 ICC Champions Trophy Final.
+ It was directed by Hassan Dawar.
+ The advertisement has been dubbed as Pakistan's response to India's famous "Mauka Mauka" commercials.
+T-Mobile UK was a mobile network operator in the United Kingdom, owned by Deutsche Telekom since 1999, and originally launched as One2One.
+ In 2009, Deutsche Telekom and Orange SA announced that the T-Mobile network was to be merged with Orange UK in a joint venture, EE Limited, to form the UK's largest mobile network.
+ EE withdrew the T-Mobile brand in February 2015.
+M-Pesa (M for mobile, pesa is Swahili for money) is a mobile phone-based money transfer, financing and microfinancing service, launched in 2007 by Vodafone for Safaricom and Vodacom, the largest mobile network operators in Kenya and Tanzania.
+ It has since expanded to Afghanistan, South Africa, India and in 2014 to Romania and in 2015 to Albania.
+ M-Pesa allows users to deposit, withdraw, transfer money and pay for goods and services (Lipa na M-Pesa) easily with a mobile device.
+Singapore Telecommunications Limited (commonly abbreviated as Singtel, and previously stylised as SingTel) is a Singaporean telecommunications company.
+ The company is the largest mobile network operators in Singapore with 4.1 million subscribers and through subsidiaries, has a combined mobile subscriber base of 640 million customers at the end of financial year 2017 The company was known as Telecommunications Equipment until 1995.
+ Singtel provides ISP (SingNet), IPTV (Singtel TV) and mobile phone networks (Singtel Mobile) and fixed line telephony services.
+Orange Slovensko, a.s. is a Slovak mobile network operator, also offering fibre connections, since 15 January 1997 (previously named Globtel), when it became the first mobile operator in Slovakia to operate the GSM digital mobile network at the 900 MHz frequency.
+ On 15 November 1999, the company launched the commercial operation of the mobile network in the 1800 MHz frequency band.
+ It is also the first company to cover more than 66% of the country with 3G HSDPA high-speed internet with the maximum speed of 42 Mbit/s, launched the HSPA+ upgrade to the maximum of 21.2-42.2 Mbit/s in 2011.
+ The operator plans to commercially operate LTE network by the end of 2012.

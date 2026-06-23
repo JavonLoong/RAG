@@ -1,0 +1,25 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt VIN SCOTT:  Right.
+
+DANNY HILLIS:  So, you have to put it in the middle of a mountain.
+
+KEVIN SCOTT:  And like not just any mountain. Like, you had to select the mountain to be, like, geologically stable.
+
+DANNY HILLIS:  That's right.  And so, there was years of exploring around searching for a mountain.  And, fortunately, I found one that was on property that was owned by Jeff Bezos, who was a big supporter of the foundation.  And so, he was, like, okay, we've got to do this, and so he's the primary funder of constructing the clock in the mountain.
+
+But even to make a 500-foot shaft is not as easy as you think.  What you have to do is you actually have to dig to the bottom of the shaft with dynamite, and then you drill a hole, a little, small hole with an oil well kind of hole, and then you put this giant reamer on it and pull it up through the mountain.
+
+KEVIN SCOTT:  Yeah, and none of this, like, virtually none of this is, like, off-the-shelf components.
+
+DANNY HILLIS:  Well, yeah, some of that is -- what's not off the shelf is if you want a spiral staircase cut into the rock around the shelf, then you have to build a custom robot to do that.  Fortunately --
+
+KEVIN SCOTT:  Which you did.
+
+DANNY HILLIS:  Yeah.  Fortunately, I did conveniently have this company around that was good at doing stuff like that.  So, but, so we built a robot that climbed up the shaft with a diamond saw cutting a spiral staircase into it.  And, I mean, if you look on the Long Now Foundation's website, you can see movies of this.  So, it's been a couple of years building the spiral staircase, and then we put into it years, including like, you know, giant bells and the chimes that will ring a different sequence of bells every day for 10,000 years.
+
+KEVIN SCOTT:  And just the mechanical engineering on this thing is absolutely incredible, because, I mean, you had to cycle test all of these things to make sure that they were going to be able to, like, do their job over 10,000 years, right.
+
+DANNY HILLIS:  Yeah, actually, that was a funny thing.  What we learned was that actually, most of the things that we tested worked fine the first time.  But we had to repair the machines that tested them about 10 times to make that. It's actually very hard to make a machine that tests 10,000 years' worth of cycles without the machine breaking.
+
+KEVIN SCOTT:  Right.
+
+DANN

@@ -1,0 +1,19 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt . It’s a cultural thing. 
+
+And, again, I could talk about how this informs some of the things we’re doing at Shopify, but, like, I don’t actually know how to get the most value out of these ideas, per se. I just know that eventually, we will figure out how to turn what I just said into the perfect fortune cookie. And once it is compressed this way in such a way that it “losslessly” uncompresses into the right set of ideas, after it’s communicated, whoever figures that one out will do better than everyone else. And then hopefully, in the sort of Darwinian process of ideas, it’ll be something that becomes better known and better communicated. 
+
+KEVIN SCOTT: Yeah, it really is a tough set of problems, because… and it’s tough on a bunch of different images. Like, one of them, for instance, is in a complicated company – and I’m sure Shopify is at the point where it’s a complicated company – you have people like you who probably have, like, this very wide horizontal view of what’s going on that not many other people have. And then you have people who have these, like, very narrow vertical views of some part of the company. And both of those things are sort of necessary, and they both occupy a huge amount of space in your head. 
+
+And so, it’s just sort of hard. I mean, like, it would be impossible for you, for instance, to, like, have the sum of all of those little detail vertical bits of knowledge in your head at one time. And it would probably be very hard for someone who’s, like, deep in the weeds of, you know, like, hey, I’ve got to solve this particular problem in this backend code to get the latency down. And there’s some weird bug, you know, whatever it might be, to have time to, like, see the whole horizontal view. 
+
+And so, like, you know, part of the hell of setting up a company is, like, how do you – you know, how do you balance those two things out? Like, how do you free the people who need to go do this detailed stuff to have enough context about what’s going on? And so, when they’re making their decisions every day, they choose to spend their time on the right things. 
+
+TOBI LÜTKE: Totally. I mean, this is the hardest challenge related to alignment. It’s the alignment challenge of companies.
+
+KEVIN SCOTT: Right.
+
+TOBI LÜTKE: We’re hearing a lot about alignment challenges in – in AI, and I feel, like, we should solve the people ones first.  It’s – I would love to have an RLHF for my HR, my company.
+
+KEVIN SCOTT: Yeah, and you might one day. (Laughter.)
+
+TOBI LÜ

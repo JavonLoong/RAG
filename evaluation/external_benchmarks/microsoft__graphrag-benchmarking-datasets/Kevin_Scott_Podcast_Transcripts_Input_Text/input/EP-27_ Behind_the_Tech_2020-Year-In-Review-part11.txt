@@ -1,0 +1,14 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  – these are what you would call a vibrating structural gyroscope, which is basically the same idea that you have in all these gyroscopic sensors in your cellphone, or anything else. They operate at a tiny, tiny fraction of the energy costs. I'm not going to stick a fly inside my cellphone. (Laughter) But bear with me, we do some odd things like that.
+
+[MUSIC]
+
+CHRISTINA WARREN:  It’s so wonderful and weird. (Laughter.) I really, really like it. And here’s another bit from later in Kevin’s conversation with neuroscientist Tom Daniel. 
+
+[MUSIC]
+
+KEVIN SCOTT: You have this beautiful point of view because you've been doing this for a while, so what are some of the interesting things that have changed in the field, other than like it being easier to do some of this interdisciplinary stuff?
+TOM DANIEL: Yeah, I would say there are probably three big transformations today that are going to propel the field much further forward than I will see in my career. Candidly, ML methods, machine learning is coming to bear on a vast number of problems in neuroscience, everything from imaging to you know, how do we handle the massive data flowing in from neural systems, how does a brain handle massive data, can ML give us some insight?
+So, as we said, not too long ago, there's lots and lots of channels coming in. That's a hard problem to do in traditional control theoretic approaches, right? It’s just hard, and by the way, they’re nonlinear. You know, ML methods, I think the advent of AI and ML, and our ability to grapple with massive data is transforming the field of neuroscience, period.
+It's transforming the field of movement control. We have the same problem in understanding how multiple actuators operate a dynamical system and how billions of motor molecules conspire to create movement in muscle. These are all problems that demand extreme advances in computation, not just the hardware of computation, but the ML methods that are coming about. So, even at my late stage of career, I'm finding myself having to learn more and more ML methods. This is great, this is exciting. So, DMNs, even simple just standard classification problems are becoming increasingly important. That's, that's revolution one that's been going on. 
+Revolution two is of course devices, the advances in device technologies. So, an example of that will be the microfabrication of electrodes that you can implant in neural systems that record from hundreds of simultaneous sites. I almost said thousand because it's at about 900-and-something. I think on the latest sharp electrode developed for mouse brain recordings, okay?
+Those are now device technology, and of course, the ubiquity of microfabrication is influencing even how we make electrodes interfacing with natural systems. Okay, so now you have these two things. You have ML methods, device

@@ -1,0 +1,31 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  deeply conscientious way about how AI technology and technology in general are developing.  
+
+CHRISTINA WARREN:  Now, I couldn't agree more.  I think it's really imperative that we don't just have, as you said, the technical minds, but people who are thoughtful and are thinking about the implications and how to, as we said kind of at the top, do these things the right way.  
+
+KEVIN SCOTT:  Yeah.  
+
+CHRISTINA WARREN:  So next up, we're going to revisit our conversation with Reid Hoffman.  And Reid is an angel investor.  He's the cofounder and executive chairman of LinkedIn, he's the author of three books, including his most recent one, which is called Blitzscaling, and he's now a partner at the venture firm Greylock, and I know he's also a good friend of years, Kevin.  
+
+KEVIN SCOTT:  Yeah, he's one of my -- one of my best friends.  And so, in my conversation with Reid, which are always delightful, we talked about a book by Robert Wright called Non-Zero:  The Logic of Human Destiny.  It was sort of funny, like I read this book a while ago when I was in grad school and it was one of the things that Reid and I bonded over because he, too, had read the book early on and was a big fan of it.  And so, I asked Reid to explain to us this notion of non-zero sum.  
+ 
+[MUSIC]
+
+REID HOFFMAN:  So, fundamentally, it's roughly does the pie grow or not?  Right?  And in a zero-sum game, it's whatever I win, you lose, right?  
+
+KEVIN SCOTT:  Right. 
+
+REID HOFFMAN:  So, if there's 100 -- you know, units, if I get 52, you get 48.  If I get 55, you get 45.  
+
+KEVIN SCOTT:  Right.  
+
+REID HOFFMAN:  A non-zero-sum game is we figure out a way that, well, actually, I may still get 55, but maybe you get 50.  Right?  And so, it’s the pie grows.  
+
+KEVIN SCOTT:  Right.  
+
+REID HOFFMAN:  And I actually think one fundamental part of ethics that should go across all ethical systems, all value structures is we should prefer non-zero-sum games. 
+
+KEVIN SCOTT:  Correct.  
+
+REID HOFFMAN:  Right?  
+
+KEVIN SCOTT:  Yeah, and like that's one of the points that I make in this book that I'm writing right now is that like when you're thinking about how you apply AI, like you should pick important zero-sum societal problems and try to figure out like how to put a set of

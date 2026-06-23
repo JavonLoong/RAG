@@ -1,0 +1,17 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  of the constraints of a problem or it doesn't. But in writing the code itself, there's a lot that can be fairly artistic. So, for folks who have never looked at code before, it can be almost literary. 
+The difference between elegantly written code and sort of poorly written code is almost the difference between Finnegans Wake and the scribblings of a five-year-old trying to learn language for the first time at all. There's just an incredible difference in like how programmers choose to express the solution to a particular problem. That's a great thing that can be, in some cases, the interesting part of the job is the care to craft and detail that you take with the thing that you're doing. 
+For me, I attribute a lot of that -- not that I will claim to write the world's most elegant code -- but my grandfather and my father were both in construction. And, you know, my grandfather was a great craftsman. He cared about every little detail of the things that he was building. And even though, on the surface, coding is very different from building a house, actually, when you look at it, many, many, many more similarities than there are differences. 
+CHRISTINA WARREN: Definitely, because things need to be done a certain way to work together, but you can also have a lot of freedom to build that house however you want. 
+KEVIN SCOTT: Yes. 
+CHRISTINA WARREN: And you were talking about some of the constraints that are in code before that something's going to work or it's not. I think that kind of opens up artistic possibilities, too. When you're forced into sometimes even certain constraints that can force people to become more creative and more artistic -- 
+KEVIN SCOTT: Yeah. 
+CHRISTINA WARREN: in what they decide to build. 
+KEVIN SCOTT: And, also, sometimes when you're coding, you're building a system, you can put little flourishes in there that are incredibly satisfying. And you may be the only person who knows that they're there. You know, the same way that a stonesmith might carve an extra little thing into something. And she may be the only person in the world who knows that that thing is there, but incredibly satisfying. 
+CHRISTINA WARREN: I love it. 
+KEVIN SCOTT: So, once again, it's been great chatting. See you next time. 
+CHRISTINA WARREN: See ya! 
+
+[MUSIC]
+
+
+KEVIN SCOTT: Be sure to join us next time on Behind the Tech. We'll be chatting with Reid Hoffman -- investor, author, and entrepreneur. Reid was co-founder and executive chairman of LinkedIn. And is now partner at the venture firm Greylock, host of the podcast Masters of Scale, and author of the upcoming book, Blitzscaling. Be sure to tell your friends about our new podcast --

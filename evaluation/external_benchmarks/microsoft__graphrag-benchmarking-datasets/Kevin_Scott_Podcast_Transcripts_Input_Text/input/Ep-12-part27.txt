@@ -1,0 +1,34 @@
+Ep-12.txt  far. Personal opinion, but there you go. 
+KEVIN SCOTT: Yeah, I mean, we can certainly see that the industrial IoT stuff, like the 
+applications there are like rich and like there's an enormous amount of opportunity there. I think 
+we sort of see the world in similar ways. 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+20
+BILL COUGHRAN: Yeah, no it's -- consumer IoT I think more and more devices are 
+connected and have some ability to respond to command and so forth. And we'll see a 
+proliferation of that, but special use cases I think are -- there aren't enough interesting use cases. 
+I talked to people that have Alexa devices or you know the Google Home devices and so forth 
+and they use them to set alarms and timers and play certain kinds of music and so forth, and then 
+they rapidly seem to run out of other things do with them. 
+KEVIN SCOTT: The thing that I think is a little bit interesting, though, is that the capability in 
+these devices already like in both the hardware and the software is much higher than what we're 
+using it for. 
+BILL COUGHRAN: Absolutely. (Laughter.) 
+KEVIN SCOTT: So, you know, like just as a proof of concept thing, I'm building an AI coffee 
+machine right now, which probably sounds weirder than it actually is. But like the idea is, can 
+you build a consumer appliance from scratch, like as an individual, although like you know, one 
+with slightly more resources than an average individual. 
+But, like, can you build a device that has like a modern AI-powered user experience in it? And 
+so, like this thing will have no buttons, no displays. And it will have a camera, a speaker, and a 
+microphone. And so like when you walk up to it and like it knows that you're paying attention to 
+it using very straightforward computer vision models, it will say to you, "Can I make you a cup 
+of coffee?" And it will be able to recognize who you are and remember your preferences and --
+BILL COUGHRAN: Yeah, no, that's true. 
+KEVIN SCOTT: And, like, that's an entirely -- you know, entirely doable mode of like 
+building a user interface on a consumer device right now and it's going to be not too terribly 
+expensive in the not-too-distant future. Like, I'm going to be able to do this with 30 bucks' worth 
+of electronics and like the price of that's going down to two over the next few years, I would 
+imagine. 
+BILL COUGHRAN: I think you'll see that in a lot of consumer devices, but they'll be very 
+limited and narrow

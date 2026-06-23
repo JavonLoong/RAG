@@ -1,0 +1,23 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  I try very hard to, you know, like I mean, we’ve sort of talked on your podcast about what my motivation and mission is in doing all of this stuff, which is, you know, to try to build tools that are empowering people, like the ones in my small community that I grew up in.  
+ 
+But you know, I’m also like, only one point of view on all of this, and like, we need lots of people to come to their own opinions about what’s going on and how things are being used and where they want it steered.  
+ 
+So I don’t – you know, I’m guessing part of what you’re doing is genuine curiosity and fascination with what’s going on. But the other part is like, you know, it does seem like there’s a mission here that’s important. 
+ 
+KEVIN ROOSE: Absolutely. I mean, I’d be lying if I said I was just reporting on this stuff out of pure enthusiasm and curiosity. Like, I do also think that the media performs a valuable role in holding institutions and individuals accountable.  
+ 
+We are building some of the most – we, I say we. I mean you essentially and your peers in the tech industry are building some of the most powerful technology ever created. And I think without the media, there just wouldn’t be a kind of countervailing sort of, I don’t know if it’s, you know, a force on the minds of the people building that technology or just a caution around the technology, but I’ll give you an example of what I mean.  
+ 
+So, you know, you and I had this now infamous encounter back in February – 
+ 
+KEVIN SCOTT: Yeah. 
+ 
+KEVIN ROOSE: where you guys had just released Bing with this, you know, what we now know as GPT-4 running inside of it, and I had this insane conversation with Bing Chat, aka Sydney. Please don’t hurt me, Sydney.  
+ 
+And, you know, it went on the front page, went totally viral, blew up, I’m sure, you know, your inbox, my inbox, everyone’s inbox for months.  
+ 
+KEVIN SCOTT: Everybody. Everybody’s inbox. 
+ 
+KEVIN ROOSE: And subsequent to that, like I started hearing from, you know, just in a nutshell, if people aren’t familiar, it was a conversation that sort of lasted two hours in which Bing/Sydney, you know, confessed all these sort of dark secrets and tried to break up my marriage, and it was insane.  
+ 
+And – and subsequent to that story running, I got notes from a lot of other people at tech companies saying, you know, how do we prevent our technology from doing that. Or even – I got a leaked document from another big tech company, which had a sort of roadmap for their

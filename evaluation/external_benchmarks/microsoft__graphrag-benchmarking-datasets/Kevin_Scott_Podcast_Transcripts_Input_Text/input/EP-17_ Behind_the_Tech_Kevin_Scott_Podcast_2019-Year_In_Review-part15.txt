@@ -1,0 +1,23 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt VIN SCOTT:  So yeah, one of the things -- and I'm just, for what it's worth, like, I am a -- I'm in the optimist column here.
+
+SAM ALTMAN:  Booms and busts are the way of the world.  Like, you know, we talked earlier about startups.  Like, we've got a lot of booms and busts there, but the curve, though it squiggles, if you zoom out enough, it goes up and to the right. 
+
+KEVIN SCOTT:  Yup.
+
+SAM ALTMAN:  And the curve of computers getting smarter does, too.  Now, how much further we have to go, when we're going to get there, very hard to say.  What I can say with confidence is maybe the current trends don't get us all the way to general intelligence, but they're going to get us surprisingly far.  They're going to change the world in very meaningful ways, and maybe they go all the way.
+
+KEVIN SCOTT:  Yup.  And so, like, I'm interested to go back to this whole creative writing thing because, like, I think the storytelling around AI is, like, one of the really, really interesting things right now, like getting -- because you guys -- so, OpenAI is a non-profit organization that is committed to, like, realizing artificial general intelligence, and for having the value that AGI creates sort of accrue to the public good.
+
+SAM ALTMAN:  To be clear, we have not figured out the storytelling yet.  I agree it's really important.  I think about this stuff all day.  I can barely, in my own head, think clearly about what the world really does look like if AGI happens.  You know, all of the stories I can tell are either like too mundane or too grandiose. 
+
+KEVIN SCOTT:  Yup.
+
+SAM ALTMAN:  It's like, either like, oh, medicine gets better, or it's like, sentient beings colonize the universe until the heat death.  And sort of neither of those quite feel right.
+
+KEVIN SCOTT:  Right.  And people get -- and people get really, really -- you know, I know one of the things that you have -- you've said is something about, you know, “the light cone of all” –
+
+SAM ALTMAN:  People don't like that.
+
+KEVIN SCOTT:  Yeah.  And like, people get really upset about the grandiose things, which sort of makes them miss all of the, like, really concretely useful things that this stuff is going to do with 100 percent predictability over the next few years.
+
+SAM ALTMAN:  Yeah.  If you're going to -- you're going to -- if you're doing anything interesting, you're

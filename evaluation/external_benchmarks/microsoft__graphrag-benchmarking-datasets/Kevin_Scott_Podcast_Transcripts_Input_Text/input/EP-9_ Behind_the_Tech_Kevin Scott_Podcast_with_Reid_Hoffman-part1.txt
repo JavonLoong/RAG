@@ -1,0 +1,13 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt ../REID HOFFMAN: (VOICEOVER) Prior to going to China, when I go other places from Silicon Valley, I would say, "Oh, you're in slow motion, like, you're moving slowly."  Because one of the things we've really learned here in Silicon Valley is that speed and speed to scale really, really matters. 
+You go to China and you go, "Oh, we're in slow motion."
+[MUSIC]
+KEVIN SCOTT:  Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+[MUSIC] 
+KEVIN SCOTT:  Hello everyone, welcome to Behind the Tech.  I'm Kevin Scott.  
+CHRISTINA WARREN:  And I'm Christina Warren, senior cloud advocate at Microsoft.  And today, we're going to hear from the author and entrepreneur Reid Hoffman.  
+KEVIN SCOTT:  Yeah, I first met Reid when I joined LinkedIn.  He was the co-founder and executive chair when I was there.  And I think people know Reid broadly as a member of the PayPal mafia.  He's sort of a legendary angel investor.  He's a partner at Greylock. 
+And over the past several years, he's written three really interesting books and has sort of gotten himself fairly deeply involved with all things AI.  So, I'm super happy that he's on the show today.  
+CHRISTINA WARREN:  And he's also host of the podcast, Masters of Scale.  
+KEVIN SCOTT:  Yeah, everyone should go listen to Masters of Scale.  It was more or less the entire inspiration for this podcast.  So, I saw how much fun he was having doing his own show, and one of the things that he does with Masters of Scale that's like really clever is these were conversations with people that he would have been having anyway, and he figured out a way to go have the conversations and to tape them, and then he does an amazing job sort of packaging up those conversations with a bunch of, like, really cool production.  But, like, he was totally my inspiration.  
+CHRISTINA WARREN:  That's awesome, I love -- I love knowing that.  And so we've had a big list of amazing guests already on the podcast, but I wanted to ask you, you always ask our guests about how they began their careers and what was the first technology they encountered, or the first program them learned, you know, their educational

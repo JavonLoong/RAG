@@ -1,0 +1,19 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  to apply our most powerful technology platforms, including modern machine learning to over the course of the next several decades. 
+
+And I think, you know, perhaps the most interesting area or sort of intersection is what’s happening right now in biology and how that intersects with the work that’s going on with AI and high-performance computing. 
+
+And, you know, it was sort of an interesting intersection and has been growing increasingly interesting over the past handful of years, and now it’s just sort of acutely interesting and urgent and necessary because of all of the work that we need to do to adapt ourselves to handling the COVID-19 pandemic. 
+
+So, you might not have realized how prescient you were when you were choosing to get a PhD in AI and a medical degree, but like you’re in this interesting position now where you have this background and point of view of visibility into like this intersection. I'd love to hear your thoughts about where you think things might be going over the next handful of years. 
+
+ERIC HORVITZ: Yes, it’s pretty impressive to see the connections between computer science and ideas of abstraction, modularity, the ability to simulate in computer science and where it’s touching on biology. 
+
+And even back to the early ideas that I studied with Howard Pattee on looking at biology as a physical system that had certain interesting properties that most of the world might look at as magic or in a different category, but in reality, is a very interesting set of mechanisms that even relies on, for example, higher-level abstraction, the way our programs do. 
+
+KEVIN SCOTT: Yeah, so the -- you know, one of the things that you and I saw recently, like we went to chat with Drew Endy at Stanford. And, you know, one of the things that he said in that conversation thought was so interesting to me is that now that we understand -- and like we’re still early days, but like we understand a little bit of how to program or reprogram biology to do different things than what the biological systems do on their own. 
+
+And like one of the things that he mentioned is that you know, you have yeast, which are basically little breweries, like they are biological organisms that transform, you know, things into, you know, like carbohydrates into carbon dioxide, you know, and alcohol, for instance. 
+
+But, like, you can -- you know, his assertion was, like, you’ve got these yeasts that we could reprogram to brew a whole wide range of compounds that we can use, for instance, as we pursue sustainability. So, like, things that might be alternatives to things that we would synthesize with petrochemicals, for instance. And that’s a really exciting idea. 
+
+ERIC HORVITZ: You know, we are in the early days of a major revolution in our ability to manipulate the physical world. Biology has figured this out in beautiful ways, has built beautiful

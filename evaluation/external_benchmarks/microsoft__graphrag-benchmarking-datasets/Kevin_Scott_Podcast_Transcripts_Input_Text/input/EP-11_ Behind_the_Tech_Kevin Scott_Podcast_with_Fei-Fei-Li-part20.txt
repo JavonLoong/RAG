@@ -1,0 +1,14 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  blends vision and language together, because that seems really quite exciting.  
+FEI-FEI LI:  Yeah.  So, it actually is a continuation or step forward from ImageNet.  If you look at what ImageNet is, for every picture, we give one label of an object.  
+Fine, that's cool.  You have 15 million of them, it becomes a large data set to drive object recognition.  But it's such an impoverished representation of the visual world.  
+KEVIN SCOTT:  Right.  Yes. 
+FEI-FEI LI:  So, the next step forward is, obviously, to look at multiple objects and you know, be able to recognize more.  But what's even more fascinating to me is not the list of 10 or 20 objects in a thing, it's really the story.  
+And so right after the bunch of work we have done with ImageNet around 2014 when deep learning was, you know, showing its power, my students and I started to work on what we call image storytelling or captioning.  And we show you a picture, you say that two people are sitting in a room having a conversation.  That's the storytelling.  And that is a sentence or two, right?  
+And, honestly, I'll tell you, Kevin, when I was in grad school in early 2000, I thought I wouldn't see that happen in my lifetime because it's such an unbelievable capability humans have to connect visual intelligence with language -- 
+KEVIN SCOTT:  Right. 
+FEI-FEI LI:  -- with that.  But in early 2015, my group and my students and I published the first work that shows computers having the capability of seeing a picture and generate a sentence that describe the thing. 
+And that's the storytelling work.  And we used obviously a lot of deep learning algorithm, especially on the language side, we used recurrent models like LSTM to train the language model, whereas on the image side, we used convolutional neural network representation. But stitching those together and seeing the effect was really quite a “wow-wee” moment. 
+KEVIN SCOTT:  Right.
+FEI-FEI LI:  I couldn't not believe that I saw that in my lifetime, that capability. 
+KEVIN SCOTT:  Yeah, I mean, I sort of wonder, like, whether or not these big, unsupervised language models right now, these transformer things that people are building, the models that come out of them, like, have such -- they're just very large and, like, there's not much, you sort of barely have, like, any signal in the parameters at all.
+It's, like, just diffuse across the entire model -- I just wonder, like, whether getting, like a vision model coordinated with training these things is going to be the way that, like, they

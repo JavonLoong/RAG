@@ -1,0 +1,28 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  in the building.  And I used to visit it and there were still a few pock marks but I think now it finally has a building on it.
+
+But I learned to make flavors and explosives and I was just fascinated by the geometry of molecules which was a little like the house that I worked on and all that.  So the summer came to an end and it just seemed somehow absurd to go to school.  So at my age I would have been going to high school.  So I never went to high school.  I just never -- I just skipped it.  And I sort of enrolled.
+
+So the question is, how did I get into the college?  And I'm not sure.  I just sort of signed up for courses and either it's possible I might have falsified a document or two or they might have forgotten to check.  I'm not sure.  They had me back to the campus and I think by now whatever happened would be forgiven.  But at any rate, I just started attending.
+
+KEVIN SCOTT:  And which school was this?
+
+JARON LANIER:  This is New Mexico State University.  And as it happened --
+
+KEVIN SCOTT:  How old were you?
+
+JARON LANIER:  Well, I was 14.  And it happened by wonderful coincidence that because New Mexico State was supporting the White Sands Missile Range it had one of the earliest good computer science departments, like actually way ahead of a lot of the fancy places, way ahead of some place like Caltech as I learned later.  So there were actually good computers, good computer scientists and an excellent math department.
+
+So I was like in heaven.  I remember I would like just haunt the basement of the math building programming.
+
+KEVIN SCOTT:  And what was the first substantial program that you remember writing?
+
+JARON LANIER:  A psychedelic graphics thing.  And in those days, so the way you programmed in those days was on decks of cards.  And so this is something that's hard to describe these days.  What would happen is you'd have these stacks of cards, and you'd have to take them to this window in a place where someone, a graduate student, would take them and then run your thing and they'd give you another stack of cards that came out.
+
+And one of the things about Southern New Mexico is can get quite windy, so as you approached this cinderblock building with your stack of precious --
+
+KEVIN SCOTT:  And order matters.
+
+JARON LANIER:  Well, listen, there would be like these clouds of these punch cards just flying everywhere.  So there was a certain degree of cross-pollination between people's programs I suppose, but it was actually -- I mean, I remember seeing actual code tornadoes made of punch cards in those days.
+
+KEVIN SCOTT:  Wow, that's incredible.
+

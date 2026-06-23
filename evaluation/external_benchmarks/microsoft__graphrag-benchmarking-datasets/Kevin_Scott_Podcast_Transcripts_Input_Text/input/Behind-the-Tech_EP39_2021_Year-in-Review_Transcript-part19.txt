@@ -1,0 +1,22 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  he’s recently earned a PhD from MIT. 
+
+KEVIN SCOTT: That is such an accomplishment. And Jacob Collier is a multi-Grammy Award-winning instrumentalist, songwriter, arranger and producer based in London. Since we last spoke with Jacob, he’s added more Grammy awards for a total of 7 nominations and 5 wins. 
+
+CHRISTINA WARREN: Incredible. And since then, he’s been doing live performances with the likes of Coldplay, recording in Nashville for Jesse Volume 4, and selling out in venues in Europe and North America for his D-Jesse Work Tour 2022.
+
+I just saw a post of Jacob with Joni Mitchell. So, he got to hang out with her for what he called a “raucous evening of magic and music.” He said it was like being in the presence of Shakespeare.
+
+KEVIN SCOTT: Yeah, me too. It’s just so awesome. And as for Ben, I had the opportunity to work with Ben Bloomberg on the Build Conference this year, Microsoft’s annual developers conference. He helped conference goers better understand how he’s using tech in his musical production work.
+
+CHRISTINA WARREN: Well, I’m excited to revisit your conversation with Ben and Jacob. It’s such a great conversation, and in fact, that we had to break it into two episodes. You talked about this technology that Ben designed and created called “the Harmoniser” which allows Jacob to do these one-man live shows. 
+
+Here’s Kevin, Jacob and Ben talking about the impact of technological reliability and fallibility as it relates to the creative and performative endeavors.
+
+[MUSIC]
+
+
+KEVIN SCOTT: You know, what I’ve done over the years with technology, like, you’re sort of building things, and you’ve got billions of people who use it. And so, like, you’re constantly worried about the fragility of things, and robustness, and fault tolerance and reliability, and whatnot, because, you know, the consequences of something failing are – like, you just impact a lot of people. 
+
+For you all, it seems to me that, you know, one of the special things about what you do with music is that, you know, done well, like, you are completely capturing someone in this immersive emotional state, and, like, mistakes, you know, like a cough, or, like, there are very easy ways to sort of pull you out of that immersion. And so, like in that sense, like, the stuff really has to be robust, right?
+
+JACOB COLLIER: I think it’s a mixture of things being robust, and then leaving space for being spontaneous, you know. And I think that this is – this is something that I’m kind of forever indebted to Ben doing, was on that first Skype conversation, and in those kind of initial dreaming phases of the one-man show and the Harmoniser, and

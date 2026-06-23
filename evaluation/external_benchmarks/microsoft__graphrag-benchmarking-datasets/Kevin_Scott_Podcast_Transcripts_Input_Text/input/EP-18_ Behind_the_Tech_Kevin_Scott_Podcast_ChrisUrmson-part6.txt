@@ -1,0 +1,23 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt .  You know, they’ve got incredibly deep, strong, fundamental and theoretical underpinnings, but it’s about “make it work” and see it out in the real world and learn about that part of the development and engineering process and actually touching real things.   
+
+And so it was fantastic, and I got to go up to the Arctic Circle and we had a robot up there driving around.  I got to go down to the Atacama Desert with a robot and, you know, explore that.  It was just -- it was an incredible experience. 
+
+KEVIN SCOTT:  What was the first useful robot that you worked on?   
+
+CHRIS URMSON:  Useful?  I don’t know that I’ve worked on a truly useful robot, yet.  (Laughter.) We’re getting closer.  No, so the robots we built for going to the Arctic, this was a robot called Hyperion, and we were exploring how can you make a robot think about -- how can you make it so a robot can operate perpetually? 
+
+So one of the challenges, you send a robot to Mars and you put solar panels on it, well, it can only operate when there’s enough sunlight.  And it can only operate when there’s a communication window back to earth.  So we were looking at both how you plan so that if you, say, launch it to the pole of a planet, that you have constant power by rotating and driving such that the solar panel’s always pointed at the sun.  
+
+And then how do we make science discovery automated?  So, instead of asking should I look at this rock, should I look at this rock, should I look at this rock?  Have the robot go and look at a bunch of rocks and then try and figure out, hey, this one was unique and interesting in some way, and send that back so that you get -- maximize the use of the narrow com bandwidth that was available.  
+
+So that was cool.  You know, didn’t go anywhere other than as a research experiment, but some of the technology ended up -- 
+
+KEVIN SCOTT:  And what year was that?  
+
+CHRIS URMSON:  Oh, that would have been 2001, I think. 
+
+KEVIN SCOTT:  So that was before that -- like the big deep neural network, computer vision revolution. 
+
+CHRIS URMSON:  Yeah, oh, very much so.  This was the -- you know, you spend five years working on your PhD and you make something 20% better by coming up with a new set of feature vectors and you earn your PhD, yeah.  
+
+KEVIN SCOTT:  And so your PhD was -- were you -- I’m guessing when you’re working on robots, there’s such broad systems.  So, like, there’s the software and the software is very complicated.  It

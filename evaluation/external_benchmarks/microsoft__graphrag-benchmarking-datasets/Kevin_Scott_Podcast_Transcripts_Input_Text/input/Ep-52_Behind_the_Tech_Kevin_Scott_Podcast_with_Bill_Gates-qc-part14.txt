@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  chips, some movement from silicon to optics to reduce the energy and the cost. Immense innovation where Nvidia’s the leader today, but others will try and challenge them as they keep getting better, and using even some radical approaches, because we want to get the cost of execution on these things and even the training dramatically less than it is today. Ideally, we’d like to move them so that often you can do them on a self-contained client device, not have to go up to the cloud to get these things. So lots to be done on the platform that this uses.
+
+Then we have an immense challenge in the software side of figuring out, okay, do you just have many specialized versions of this thing, or do you have one that just keeps getting better? And there will be immense competition of those two approaches. Even at Microsoft we’ll pursue both in parallel with each other. 
+
+And ideally within a contained domain we’ll get something that the accuracy is probably extremely high by limiting the areas that it works in and by having the training data and even perhaps some prechecking, post-checking type logic that applies to that. I definitely think areas like sales and service, that there is a lot that can be done there and that that’s super valuable. 
+
+The notion that there is this emergent capability means that the push to try and scale up even higher, that’ll be there. Now what corpuses exist once you get past every piece of text and video, are you synthetically generating things, and do you still see that improvement as you scale up, obviously that’ll get pursued. And the fact that it costs billions of dollars to do that won’t stand in the way of that going ahead in a very high speed way. 
+
+And then there’s a lot of societal things of, okay, where can we push it in education? It’s not that it will just immediately understand student motivation or student cognition. There will have to be a lot of training and embedding it in an environment where the adults are seeing the engagement of the student and seeing the motivation. 
+
+And so, even though you free up the teacher from a lot of things, that personal relationship piece, you’re still going to want all the context coming out from those tutoring sessions to be visible and help the dialog that’s there with the teacher or with the patient. 
+
+And so, Microsoft talks about making humans more productive. Some things will be automated, but many things will just be facilitated where the final engagement is very much a human, but a human who’s able to get a lot more done than ever before. 
+
+So the number of challenges and opportunities created by this is pretty incredible, and I can see how engaged the OpenAI team is by this. I’m sure there’s lots of teams I don’t get to see that are pushing on this.
+
+And the size of the industry, I mean, when the microprocessor is invented, the software industry was a tiny industry. We could put

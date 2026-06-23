@@ -1,0 +1,14 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  problem you’d get eventually is that everyone would assume that the other person was the one supplying that human agency, especially given how good these things are already at feigning being a human agency. I mean, you know, the Turing test is way behind us in the rearview mirror at this point.  
+ 
+KEVIN SCOTT: Yeah, that is certainly true. I mean, it’s one of the hard problems in the AI field right now, is the benchmarks that we’ve had for a very long time are no longer super useful in measuring or characterizing the performance of the systems. And everybody’s sort of racing for a new set of benchmarks right now.  
+ 
+I’m sort of interested in some of the non-Corvid characters in Children of Time, because, you know, one of the extraordinary things I think you did in that book is there were these two characters in the book – and again, I will try not to give too much away – one which is even less human than, you know, than the Corvids or the Portids, you know, this… you know, basically parasitical entity that, you know, that you introduced in Children of Ruin. And then there’s this simulated character that just never even existed outside of a simulation.  
+ 
+And you write these characters in such a way that, like, I was actually in tears twice at the end of the book, because you had somehow or another made me care so much about the emotional state of these characters. And so, I wonder, I mean, like, A, how you thought about doing that. Was that a deliberate thing that you were going for, is, you know, like, how do you sort of take these non-human things and invest them with qualities that humans would, like, just really care about in a deep way?  
+ 
+And, like, what does that mean for these systems that we’re building right now, which are, you know, also non-human and… you know, maybe not so much different from, you know, some of these alien things that you – you’ve been describing? (Laughter.) 
+ADRIAN TCHAIKOVSKY: I mean, certainly with Children of Memory, the whole point of the book is really where do you draw the line on intelligence, if you have a complex enough system that is simulating intelligence? If you have enough platform that you’re running an intelligence program on, at what point do you have to concede that actually, this is effectively intelligence, even though it’s entirely artificially generated or entirely sort of arising organically out of these small complex interactions?  
+ 
+And like I was saying before, there is definitely an argument that that is how our consciousness works. And it isn’t actually what we think it is. And that’s the deep dive the book is taking into these various different models of sentience.  
+ 
+How it

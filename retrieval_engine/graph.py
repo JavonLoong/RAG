@@ -47,8 +47,6 @@ class SQLiteGraphRetriever(BaseRetriever):
 
         # Extract entity candidates from the query
         entity_candidates = self._extract_entity_candidates(query)
-        if not entity_candidates:
-            return []
 
         # Personalized PageRank (PPR) Approximation via BFS
         results: list[RetrievalResult] = []
@@ -121,6 +119,12 @@ class SQLiteGraphRetriever(BaseRetriever):
             except Exception:
                 pass  # Gracefully skip if communities not available
 
+            if not results:
+                try:
+                    results.extend(self._top_community_summaries(top_k))
+                except Exception:
+                    pass
+
         # Sort by score and return top_k
         results.sort(key=lambda r: -r.score)
         return results[:top_k]
@@ -164,25 +168,43 @@ class SQLiteGraphRetriever(BaseRetriever):
     def _search_communities(self, query: str, top_k: int) -> list[RetrievalResult]:
         """Search community summaries for relevant context."""
         results: list[RetrievalResult] = []
+        seen: set[str] = set()
         try:
-            summaries = self.graph_store.search_community_summaries(query, limit=top_k)
-            for summary in summaries:
-                chunk = DocumentChunk(
-                    text=str(summary.get("summary", "")),
-                    source=f"community:{summary.get('community_id', '')}",
-                    chunk_id=f"community-{summary.get('community_id', '')}",
-                    metadata={
-                        "source_type": "community_summary",
-                        "community_id": summary.get("community_id"),
-                        "title": summary.get("title"),
-                        "entity_count": summary.get("entity_count"),
-                    },
-                )
-                # Weight community results slightly lower than direct entity matches
-                score = 0.6 * (summary.get("entity_count", 1) / 100)
-                results.append(
-                    RetrievalResult(chunk=chunk, score=min(score, 0.8), retriever_name=self.name)
-                )
+            search_terms = [query, *_TOKEN_RE.findall(query)]
+            for term in search_terms:
+                if len(term.strip()) < 2:
+                    continue
+                for summary in self.graph_store.search_community_summaries(term, limit=top_k):
+                    community_id = str(summary.get("community_id", ""))
+                    if community_id in seen:
+                        continue
+                    seen.add(community_id)
+                    results.append(self._community_summary_result(summary))
+                    if len(results) >= top_k:
+                        return results
         except Exception:
             pass
         return results
+
+    def _top_community_summaries(self, top_k: int) -> list[RetrievalResult]:
+        """Return largest community summaries when a broad query has no lexical hit."""
+        summaries = self.graph_store.get_community_summaries(level=0)[:top_k]
+        return [self._community_summary_result(summary, fallback=True) for summary in summaries]
+
+    def _community_summary_result(self, summary: Mapping[str, Any], *, fallback: bool = False) -> RetrievalResult:
+        chunk = DocumentChunk(
+            text=str(summary.get("summary", "")),
+            source=f"community:{summary.get('community_id', '')}",
+            chunk_id=f"community-{summary.get('community_id', '')}",
+            metadata={
+                "source_type": "community_summary",
+                "community_id": summary.get("community_id"),
+                "title": summary.get("title"),
+                "entity_count": summary.get("entity_count"),
+                "fallback": fallback,
+            },
+        )
+        score = 0.6 * (summary.get("entity_count", 1) / 100)
+        if fallback:
+            score = min(score, 0.55)
+        return RetrievalResult(chunk=chunk, score=min(score, 0.8), retriever_name=self.name)

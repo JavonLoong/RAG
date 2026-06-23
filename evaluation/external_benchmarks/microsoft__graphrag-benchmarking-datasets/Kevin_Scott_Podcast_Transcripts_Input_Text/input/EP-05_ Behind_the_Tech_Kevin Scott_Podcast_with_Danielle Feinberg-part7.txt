@@ -1,0 +1,14 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  
+KEVIN SCOTT: Gotcha. 
+DANIELLE FEINBERG: And in high school, I was dying to learn something with more depth to it than BASIC. Because, you know, that was a limited language that I loved, but I was like, "I want to be a real programmer." "I've got to learn --" And it turned out, like, okay, Pascal seemed to be the most accessible thing. 
+KEVIN SCOTT: Yeah. (laugh) 
+DANIELLE FEINBERG: And then I sign up for the Pascal class. And the first class, I look around and I'm like, "This is sort of a weird collection of people for a programming class." And the teacher comes in and she takes roll and she shows us how to turn the computers on. And she says, "I'm going to get coffee." And she never came back. (laugh) 
+And it turned out, it was like the classroom for derelicts. Where everybody sat there and played video games. And the teacher went left and never came back. (laugh) And so my friend and I were so bored after the first week that we broke into the cabinets to get the textbooks to teach ourselves. And so in the room full of derelicts, the little honors students were actually the people that were breaking and entering on school property. (laugh) 
+KEVIN SCOTT: That's outstanding. Outstanding. And were you able to teach yourself? 
+DANIELLE FEINBERG: We did a little bit. But I really learned freshman year in college. When Pascal was the language that they taught us first semester of freshman year. 
+KEVIN SCOTT: And so you, basically, just had this positive reinforcement the whole time. You show up at Harvard, and you know that you wanted to major in computer science? 
+DANIELLE FEINBERG: I thought I wanted to do mechanical engineering, because in my head, that was equivalent to inventing things. But it satisfied the math and science and the creation thing. But I kind of looked at the classes and I went, "These don't look that great anymore." "But I can take these computer science classes, because they count towards engineering, and that'll buy me some time, while I figure out what I actually want to do." 
+And then I think it was really two weeks into the first semester, I was like, "Wait, why am I not studying computer science?" "This is idiotic." So, it took me two weeks to figure it out, but then it was pretty obvious. 
+KEVIN SCOTT: And how mathematically prepared were you? Because you chose a specialty inside of computer science, where math is really important. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: It's not just the

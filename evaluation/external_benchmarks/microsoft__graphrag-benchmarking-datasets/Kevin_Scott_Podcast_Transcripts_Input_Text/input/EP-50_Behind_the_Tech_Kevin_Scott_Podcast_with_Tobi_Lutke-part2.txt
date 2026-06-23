@@ -1,0 +1,17 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  multinational ecommerce platform that helps companies set up and run online stores. Growing up in Germany, he spent his time as a teacher, tinkering with computers and writing code. Tobi began his career as an entrepreneur when he and a friend decided to design an ecommerce platform to sell snowboards which eventually evolved into the concept that built Shopify. 
+
+As a programmer, Tobi has served on the core team of the Ruby on Rails framework and has created many popular opensource libraries. I’ve been looking forward to this conversation for a really long while. Thank you for joining us, Tobi, and apologies in advance – we're doing this from my lab which can sometimes get a little bit noisy.
+
+TOBI LÜTKE: Thanks for having me.
+
+KEVIN SCOTT: So we always start these conversations by going all the way back to what inspired you or how you go the spark to, you know, get interested in science and technology. So tell us a little bit about that.
+
+TOBI LÜTKE: Yeah, I had – you’d have to go all the way back. I got really lucky. So my dad is a doctor and he had - and this is in Germany - we had Macintosh in the house. These were sort of LC1 variety, you know, (inaudible) in the – growing up in the ‘80s, and I just like – I mean, there was no other magical object that existed on planet Earth that had nearly – this draw on me, right? It’s like it just was – it was an interesting experience, going into the ‘80s and ‘90s.
+
+KEVIN SCOTT: Yeah, and so what – and so you were – you started out with Macintosh programming, so what was it, MPW Pascal, was it HyperCard, what was your –
+
+TOBI LÜTKE: Exactly, it’s – the usual suspects, but HyperCard was – like, you know, the whole concept of. I mean, I made HyperCard index cards for learning my Latin vocab – conjugations, and you know, shared them with the other kids that had a monitor, and a – but like, pretty quickly I found, like BASIC and Pascal, like eventually. I don’t think I was any good at it, and like I was pretty young during those days.
+
+But you know, just like the – the spark really happened then. You know, the German version of Byte magazine – I don’t know if that was the same in North America. They often had listings in the back, you know, just – often, like a little videogame or something, and I would type them into my BASIC interpreter. I had, at this point, this BASIC computer. It’s called an Amstrad CPC, which again is kind of a European thing.
+
+And you know, just like I very naturally started like – you know, to play the thing after it runs, and

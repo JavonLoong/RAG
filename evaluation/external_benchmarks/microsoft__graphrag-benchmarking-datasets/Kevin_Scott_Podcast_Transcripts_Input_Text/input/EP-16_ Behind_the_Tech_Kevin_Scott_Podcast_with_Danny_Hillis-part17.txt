@@ -1,0 +1,23 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  you know, coming to the company.  This was when I was very first starting.
+
+And to, you know, spend the summer there, summer interns basically.  And he said, "Oh, you know, I've heard about your cooky architecture.  You know, it's like, I don't have any, you know, people, Cal Tech students have a lot more sense than that, you know.  There's nobody I know that would be crazy enough to come out.  He says, he says, "Actually, there is one guy, but he doesn't know anything about computers.  Maybe he'd be dumb enough to do it.
+
+And he's hard worker, and actually, I think probably he's your best bet.”  And I said, "Okay, well, I'll hire him. What's his name?  And he said, Richard Feynman.  And so, Dick Feynman was like my first summer hire.
+
+KEVIN SCOTT:  Yeah, so, look.  You have to admit, you had an unusual start up.  So, you had, like, Marvin worked for you at some point.
+
+DANNY HILLIS:  Yes, Marvin and --
+
+KEVIN SCOTT:  So, you had, you know, father of AI, Turing Award winner.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  You got a Nobel Prize winner --
+
+DANNY HILLIS:  Well, actually, he wasn't a Nobel Prize winner, well, he was a Nobel Prize winner, but then, we also had Sydney Brenner, who later won a Nobel Prize.  We had people come.  Eric Lander, who is the, you know, the famous geneticist, and, you know, runs the Broad Institute, and he came, he didn't know anything about biology, but he was like, you know, we're starting a sequence of the Genome, and this is the only computer that's sort of big enough that it'll search for the patters in it, and so on.
+
+And so, he came and, you know, before really he was ever heard of in biology, so it was a really interesting set of people that came out of that, and, you know, went on to, you know, do really interesting things across the industry.
+
+KEVIN SCOTT:  So, at some point, like, you stopped doing Thinking Machines, and, like, moved on to something else.  Like, talk a little bit about, like, how, like, what happened there.
+
+DANNY HILLIS:  So, well, first of all, I didn't know anything about making a business.  So, I made a lot of mistakes in how I set up the business.  And at some point we started taking money away from Cray Computer, which had been the most

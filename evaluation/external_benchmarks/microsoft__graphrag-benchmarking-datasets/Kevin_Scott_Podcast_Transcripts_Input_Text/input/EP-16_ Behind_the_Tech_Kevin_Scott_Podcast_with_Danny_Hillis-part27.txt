@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt , by itself, the thing that was going to, you know, advance humanity, nor is it the thing that's going to destroy humanity is actually a tool that we're going to learn to use with time like we learn to use fire.
+
+KEVIN SCOTT:  Yep, yep.
+
+DANNY HILLIS:  And, and so, it's, you know, it takes us a while to work those things out.  And sometimes it takes longer to work out the societal response to something that it does to actually develop the technology.
+
+KEVIN SCOTT:  Yeah. I mean, the thing that I tell technology folks about AI all the time is AI is not a product. It is a, like it's a feature, it's a technique.  Like machine learning is, I mean, just exactly what you said. It's such a useful technique right now that every maker, like, whether you're a computer scientist or another flavor of engineer or scientist or, like, someone who's trying to create something with technology, like, it ought to be a thing that's in your bag of tricks --
+
+DANNY HILLIS:  Exactly.
+
+KEVIN SCOTT:  -- that you can use to help you solve your problem.
+
+DANNY HILLIS:  Yep.
+
+KEVIN SCOTT:  And it's a very, very powerful tool, but it's not magic.
+
+DANNY HILLIS:  Yeah, that's right.  And then -- 
+
+KEVIN SCOTT:  Anymore than hash table is magic.
+
+DANNY HILLIS:  Yep, yep, yep, that's right.  Well, and hash table actually is kind of magic, but --
+
+KEVIN SCOTT:  Yeah, it is, in a way.
+
+DANNY HILLIS:  But that's, but yeah, and, I think, you know, again, say so, we've seen waves of that.  This is the one we're going through now, and everybody should learn about it.  Everybody should learn how to use it.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And I'm not against worrying about the implications of things, you know, I mean, looking at things like, you know, what happens when you have the ability to recognize everybody's faces.  How does that affect, you know, how does that affect government's ability to control us citizens?
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  How does it affect, you know, those are things we really should be working about.  And those things will take longer than developing the face recognition.
+
+KEVIN SCOTT:  Correct.  Yeah.  I mean, the thing that I think we need to be doing more of is we need to be having more robust public debate about the pros and cons

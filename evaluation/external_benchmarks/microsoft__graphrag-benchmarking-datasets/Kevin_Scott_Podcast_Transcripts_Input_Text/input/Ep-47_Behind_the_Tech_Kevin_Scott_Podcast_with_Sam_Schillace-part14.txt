@@ -1,0 +1,19 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  challenges of doing what we do very well at scale. 
+
+KEVIN SCOTT: Yeah so going back to what, you know, we were talking about 10 minutes ago, just in terms of career advice, like, one of the other thing, nuggets that you had in there that is worth calling out is it is very important, I think, to choose to go work on things that are hard. Like, usually, the meaningful things, things that have impact, like, things that have lasting value were hard and, like, if they weren’t hard, somebody else would have done them and the problem would be solved. But, like, you know, the – we have this, you know, hypothetical frontier that we’re all, you know, as human beings trying to collectively push forward. And, like, getting the frontier pushed forward is just an inherently hard thing. 
+
+SAM SCHILLACE: Right. Yeah, absolutely. 
+
+KEVIN SCOTT: It pushes back against you. And so, the only way you make progress is just with the choices that you make. You have to choose to go work on hard things.
+
+SAM SCHILLACE: You have to sit in discomfort all the time with this stuff. 
+
+KEVIN SCOTT: Yeah.
+
+SAM SCHILLACE: Which is hard for engineers, right? Like, engineer, the engineering mentality, we like neatness. You know, people like things to – our job is to solve problems. And so, we don’t like things to be unsolvable or to confront stuff where you don’t know the solution or whatever. Like, one of the common mistakes people make is waiting for that moment where the thing seems obvious to do because it’s, as you said, it’s too late.
+
+Like, I always think the right time to work on a new problem is when you have this pit in your stomach where you just know that it’s going to happen. But it also, like, you just know it’s going to be hard and miserable to grind through it because it’s so early. Like, you know, we can talk about this in the context of G Docs. 
+
+Like, I always give this example in the early days of Writely, we’re like, you know, I had this – I didn’t really – I can’t claim I had the whole idea for G Docs early on. What I mostly had was just me messing around with JavaScript and content editable in the browser because it seemed like a fun thing to play with, which is a lot of what we would do. But, you know, we had this idea of doing this word processor, and we kind of stood it on its feet and we cleaned up some of the early collaboration stuff so we could kind of work together without stepping on each other. 
+
+And, you know, we had this sense – first of all, we had this sense that, like, this was cool, and it was

@@ -1,0 +1,20 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt , co-founder and co-CEO of Coursera, and is a MacArthur fellow. 
+
+She was also named one of Time Magazine’s 100 most influential people, and I’ve had a copy of her book — Probabilistic Graphical Models on my bookshelf for more years than I know. So, welcome to the show, Daphne. 
+ 
+
+DAPHNE KOLLER: Thank you, glad to be here. And I would be very impressed if you actually read the book. 
+
+KEVIN SCOTT: Well, I read the book many, many years ago when I was at Google, where your work was very influential in how we thought about doing some of our very early and what we thought at the time was very sophisticated machine learning work in the ad system. So, I was — I do have to admit, at the time that I picked the book up the first time, I was a compiler and programming language person, so it was not an easy read.  
+
+DAPHNE KOLLER: It is definitely a bit of a tome. At this point, it serves well as a doorstop if you need one. (Laughter.) It’s very, very big.  
+
+KEVIN SCOTT: So, in any case, I’m so delighted you could be with us here today. So, we typically start off these conversations with a bit about your background. So, I’m curious how it is that you got interested in science and technology in the first place. 
+
+DAPHNE KOLLER: So, I was interested in science ever since I was a kid. My family had this series of books that were the Time Life series on everything from asteroids to how plants grow, and I just used to sit and read them for fun. 
+
+I didn’t get interested in technology until my freshman year of high school, when my parents came here. My dad came on sabbatical to Stanford. And for the first time, I was in a school where there was a computer center. This was a long time ago so I’m going to date myself at this point, but these were TRS-80 computers that were time-shared across two people. And I got to learn to program. And I found it an amazing experience, where you could actually tell a computer what to do and it did it, which didn’t work for me in any other context. But here, it actually did.
+
+And so, I got interested in computing at that point. And that I think led to basically my college choices and so on. And ultimately, I think combining the two in the work that I do now, but that’s many years later.  
+
+KEVIN SCOTT: So, on those TRS-80s, it sounds like your experience is very similar to mine, actually. Like, I — in high school, I did a bunch of coding on TRS-80s. So, was your language of choice

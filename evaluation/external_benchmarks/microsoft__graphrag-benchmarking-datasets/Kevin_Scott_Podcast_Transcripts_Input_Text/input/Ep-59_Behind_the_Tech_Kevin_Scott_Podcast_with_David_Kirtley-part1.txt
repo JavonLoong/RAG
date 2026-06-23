@@ -1,0 +1,24 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt ../Behind the Tech with Kevin Scott
+Ep 59 David Kirtley
+
+DAVID KIRTLEY: I learned about some engineering ways that maybe can vastly speed up fusion. And that’s where I got the bug and said, like, whoa, not only can we do space propulsion, that’s great, with this physics and engineering, but maybe we actually have a chance to do fusion on timescales that are relevant for humanity, relevant for me, personally, right?
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Cohost, Christina Warren, Senior Developer Advocate at GitHub. 
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And today we are bringing you a conversation with someone who is at the forefront of the future of energy, David Kirtley, who is a Cofounder and CEO at Helion.
+
+KEVIN SCOTT: Yeah, I’ve gotten to know David, over the past few years, you know, first because, you know, just out of general interest for cool things like fusion generators, I got an opportunity to tour their facility and to see the machine that they were building. 
+
+And then Microsoft has been partnering with Helion to try to figure out how we can be the first consumer of the energy that their first reactor produces, which is enormously useful to us. Obviously, we use energy in our data centers. And we need that energy to be clean and sustainable and as cheap as possible in order for us to deliver all the cloud computing to all of the customers who need it.
+
+CHRISTINA WARREN: No, definitely. And I’m super-excited that, a) you know that we are working with companies like this, and also, frankly, that there are still companies that are doing this sort of research, because when we talk about the future of energy, I think that fusion sometimes gets the short end of the stick. And I personally think that it’s a really important area for us to be building towards. And so I think that I’m glad that people like David are out there and that we’re working towards this.
+
+KEVIN SCOTT: Yeah. And I think you it’s not just getting sustainable energy, which is super important, obviously. But the idea that we may be inventing a technology right now and like close to actually having fusion, after doing so much research and so much engineering over many

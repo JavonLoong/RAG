@@ -1,0 +1,23 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt 90 percent of the parameters and still get approximately the same performance. So, that’s already good. We are making good progress towards protecting our planet. 
+
+We also are looking at inspiration from the natural world to create more compact solutions from the beginning. And so, in particular, my group has been developing a mathematical structure we call neural circuit policies, and the structure is inspired by nature. It’s inspired by the neural systems of small creatures like worms that have been studied by biologists to the point where the entire neural structure is understood and characterized. 
+
+And so, for instance, C. elegans, a very small organism, has 300 or so neurons, and on 300 neurons, this worm lives a good life. Right? The worm finds food, moves in the world, reproduces, and that’s really extraordinary. That’s much less than what we have in our machine learning models. 
+
+But each neuron you employed by this creature is actually a pretty complex mathematical function. It turns out that the function of the neurons was characterized to be differential equations, not the typical step function that is used in deep neural networks. And so, the question is, can we, from the get go – 
+
+KEVIN SCOTT: That’s interesting.
+
+DANIELA RUS: Create models where the neurons are more capable, where the neurons can compute more than a step function? 
+
+And so, in our research with neural circuit policies, we have done exactly that. We have allowed our neurons to compute what we call liquid time differential equations. So, these are differential equations where time can be varying, so time is not constant. And we have also allowed that we have specialized neurons. And we observed really interesting effects. 
+
+And so, for instance, we have looked at what it takes to learn from a human how to drive a car, how to steer a car, and it means how to accelerate and how to steer. And we built a deep neural network model that required about a hundred neurons and a half a million parameters, and we had pretty good performance.
+
+But then we also built a neural circuit policy solution, and our solution has 19 neurons. And with these 19 neurons, we are so much more able to visualize what is happening in the engine, in the black box. We can create a decision tree that’s associated with that computation. And then we have kind of an understanding of how the engine does what it does, and this is important for safety-critical applications.
+
+KEVIN SCOTT: Yeah, that’s really, really fascinating. I’d love to learn more about that work. 
+
+So, just switching gears for just a second, you run the MIT Computer Science and AI lab, which is one of the iconic computer science research institutions. So, tell us a little bit about what it’s like to do your job.
+
+DANIELA RUS: Well, Kevin, I am honored and humbled to be able to work

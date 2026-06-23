@@ -1,0 +1,34 @@
+In geometry, a point group in three dimensions is an isometry group in three dimensions that leaves the origin fixed, or correspondingly, an isometry group of a sphere.
+ It is a subgroup of the orthogonal group O(3), the group of all isometries that leave the origin fixed, or correspondingly, the group of orthogonal matrices.
+ O(3) itself is a subgroup of the Euclidean group E(3) of all isometries.
+The Model 3107 chair is a chair designed by Arne Jacobsen in 1955 that uses the previously invented technique through which plywood can be bent in three dimensions (which was invented by Charles and Ray Eames).
+ Over 5 million units have been produced exclusively by Fritz Hansen.
+ It is one of the most copied chairs in the world.
+In mathematics, a 3-sphere is a higher-dimensional analogue of a sphere.
+ It consists of the set of points equidistant from a fixed central point in 4-dimensional Euclidean space.
+ Analogous to how an ordinary sphere (or 2-sphere) is a two-dimensional surface that forms the boundary of a ball in three dimensions, a 3-sphere is an object with three dimensions that forms the boundary of a ball in four dimensions.
+ A 3-sphere is an example of a 3-manifold.
+In mathematics, orientation is a geometric notion that in two dimensions allows one to say when a cycle goes around clockwise or counterclockwise, and in three dimensions when a figure is left-handed or right-handed.
+ In linear algebra, the notion of orientation makes sense in arbitrary finite dimension.
+ In this setting, the orientation of an ordered basis is a kind of asymmetry that makes a reflection impossible to replicate by means of a simple rotation.
+ Thus, in three dimensions, it is impossible to make the left hand of a human figure into the right hand of the figure by applying a rotation alone, but it is possible to do so by reflecting the figure in a mirror.
+ As a result, in the three-dimensional Euclidean space, the two possible basis orientations are called right-handed and left-handed (or right-chiral and left-chiral).
+In mathematics, physics and chemistry, a space group is the symmetry group of a configuration in space, usually in three dimensions.
+ In three dimensions, there are 219 distinct types, or 230 if chiral copies are considered distinct.
+ Space groups are also studied in dimensions other than 3 where they are sometimes called Bieberbach groups, and are discrete cocompact groups of isometries of an oriented Euclidean space.
+Flight dynamics is the science of air vehicle orientation and control in three dimensions.
+ The three critical flight dynamics parameters are the angles of rotation in three dimensions about the vehicle's center of mass, known as "pitch", "roll" and "yaw".
+In mathematics, the seven-dimensional cross product is a bilinear operation on vectors in seven-dimensional Euclidean space.
+ It assigns to any two vectors a, b in R a vector a × b also in R. Like the cross product in three dimensions, the seven-dimensional product is anticommutative and a × b is orthogonal both to a and to b. Unlike in three dimensions, it does not satisfy the Jacobi identity, and while the three-dimensional cross product is unique up to a sign, there are many seven-dimensional cross products.
+ The seven-dimensional cross product has the same relationship to the octonions as the three-dimensional product does to the quaternions.
+In geometry, dihedral symmetry in three dimensions is one of three infinite sequences of point groups in three dimensions which have a symmetry group that as abstract group is a dihedral group Dih ( "n" ≥ 2 ).
+Motion estimation is the process of determining motion vectors that describe the transformation from one 2D image to another; usually from adjacent frames in a video sequence.
+ It is an ill-posed problem as the motion is in three dimensions but the images are a projection of the 3D scene onto a 2D plane.
+ The motion vectors may relate to the whole image (global motion estimation) or specific parts, such as rectangular blocks, arbitrary shaped patches or even per pixel.
+ The motion vectors may be represented by a translational model or many other models that can approximate the motion of a real video camera, such as rotation and translation in all three dimensions and zoom.
+The Limited Capacity Model of Motivated Mediated Message Processing or LC4MP is an explanatory theory that assumes humans have a limited capacity for cognitive processing of information, as it associates with mediated message variables; moreover, they (viewers) are actively engaged in processing mediated information Like many mass communication theories, LC4MP is an amalgam that finds its origins in psychology.
+ Specifically, this theory has its origins in the Limited Capacity Model for understanding cognitive information processing.
+ The most fundamental assumptions of information processing are the three dimensions of cognitive processing.
+ The three dimensions: 1) encoding, 2) storage, and 3) retrieval.
+ This is how viewers get presented information into their heads.
+ Messages can be processed under controlled conditions or they can be automatically elicited.

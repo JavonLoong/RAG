@@ -1,0 +1,17 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  a therapy to, like, the very particular illness that you have. 
+
+And in order to, like, there’s sort of two axes that I think are interesting, like, one is you know upper respiratory viruses are probably a little bit better understood than cancers, but like, the trick with them is, like, you need to go very fast, so you need to go from new virus to you know therapeutic for it to drug that you can start delivering and, like, the amount of time that that takes dictates, like, how bad, you know, a public health crisis you’re going to have. 
+
+For custom tailoring a therapy to an individual, like, what you’re trying to drive down is cost. So, like, we have some of these therapies right now, but it may legitimately cost $1 million to synthesize the treatment just because it’s very complicated and, you know, you have five people who have the sickness a year. 
+
+So, like, do you see both of those things getting better? So, like, time to you know deliver a therapy or, like, the cost of delivering a therapy, are those both getting better? 
+
+DAVID BAKER:  Yeah. I think there’s also the precision of the therapy. So, you brought up a number of really good points, but one of the issues with current protein drugs, which is why they’re so expensive, is they’re antibodies – they’re very complicated proteins. Antibodies are what we make to defend ourselves against disease. So, naturally, in the sort of spirit of sort of emulating what’s in nature, when pharmaceutical companies want to solve a problem now, they try and make a new antibody and then that’s the drug. 
+
+The problem with that is antibodies are very expensive to manufacture. That contributes to the high cost of them. These proteins that we design, in contrast, can be manufactured for a hundredfold lower cost. They can be made in bacteria, not in complicated mammalian cells, which are much more sensitive and much more difficult to grow. 
+
+As far as precision goes, antibodies, the way they work is they’re kind of blunt instruments. They home in on a target. They’re basically – they’re like the coronavirus binder I described. They just bind. 
+
+We can, with designed protein, we can actually design logic systems that actually can go into the body and pick out cells that have combinations of proteins on their surfaces that are indicative of disease, because in some cancers, there isn’t really a single distinguishing mark. There’s a number of things. There are some things that are higher and some things that are lower in abundance than they would be in normal cells, and you need to be able to resolve those differences. So, you need more sophisticated types of – a more sophisticated drug, one that, like I said, can sort of do logic calculations in the body to really approach that. 
+
+And in terms of time

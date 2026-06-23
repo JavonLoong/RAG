@@ -1,0 +1,15 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  that really catalyzed my interest in working in AI. And then, of course, after working in VR and AR, I just thought, okay, intelligence is really the fundamental property of how the world is going to change. Then, I got more and more interested in just the application side of it, but really understanding what general intelligence meant and how we could build it and how we make things go well for the world, if we do build it. 
+
+KEVIN SCOTT: Before we move on to AI, like, what’s a -- if you can share, like, an interesting technical problem or, like, technical thing that you learned on the Model X, you know, like something that was tricky or interesting or different. 
+
+MIRA MURATI: So many things. So many things I could talk about the falcon doors, but I feel like that could be problematic. (Laughter.) That’s probably like the most interesting one. 
+
+KEVIN SCOTT: Well, maybe at a high level we can sort of talk about that. So, like, that is an interesting design choice to make. So, obviously, a brand-new thing and, like, you know, as an engineer, like, I don’t know the details of the implementation, but like, I can imagine how difficult it was to make that feature of the car work technically. Did you all have a sense for -- and I’m sure, like, there are just dozens of these things on a car where, like, you know, some designer has this idea that I want to do this thing, and then some engineer has to go decide or figure out, like, how to make the thing work. Like, in -- just in general, like, how do you balance those two things? 
+
+MIRA MURATI: Yeah. There are a lot of things about the Model X that felt, you know, just really pushing the envelope and just that had never been done before or especially in that kind of car. 
+
+And so, you know, like the doors were a feature like that or the HVAC system, the HEPA filter, and it always required kind of bringing together the whole team -- all the parts that would be working together -- so design, engineering, manufacturing, you know, the software side of the team to -- or maybe if it was relevant, you know, the electrical engineers and really bringing together all the pieces, so you could kind of design it together versus hand it off and then go back and forth. Or, like, you know, design something that could not be manufactured. 
+
+So, that was very powerful, working with teams that had different backgrounds, domain expertise, figuring out how to design something that has never been done before, adopting new ideas, very quickly kind of killing old ideas and moving on to the next one and just, like, figuring out the right problem to work on at the right time. 
+
+KE

@@ -1,0 +1,13 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt . And like you write them in with SQL, you read them out with SQL. But the problem with that is then you've got this sort of monolithic database thing and -- 
+NEHA NARKHEDE:  It's couple tightly.  
+KEVIN SCOTT:  It's super complicated, and like you just -- like all the different pieces of the database system scale differently.  And so like pulling the message and stream processing substrate out lets you sort of scale the system in a natural way.  It's almost like how you broke up search engines into like different components and it's like how we -- 
+NEHA NARKHEDE:  Absolutely.  It is the -- that materialized view is not just in the form of a relational table, it could be in the form of a search index, it could be in the form of a graph engine, it could be in the form of a simple log or Hadoop file or something.  
+It was that sort of, you know, decoupling to a point where you can actually just create these streaming, materialized views in whatever fashion and downstream system that you could conceivably think about.  
+KEVIN SCOTT:  Yeah.  And it also sort of separates out the failure domains of this thing, so it's easier to operate.  So, like, you have all of these independent systems and like when one fails, it doesn't necessarily mean that everything fails -- 
+NEHA NARKHEDE:  Cascade it to the other.  
+KEVIN SCOTT:  -- and it's like easier to debug when like the things that are failing independently of one another are like simpler themselves.  
+NEHA NARKHEDE:  Absolutely.  And it's this form -- you know, it's this idea of accounting applied to software systems where if only you could remember all the events that happened rather than just the right answer at a point in time, you could actually troubleshoot much better.  
+So, if you remember, the way we built Kafka and the way applications used it is you just sort of like -- you know, a log that keeps track of all the events.  So if you make a mistake in today's deployment and you realize it two days later, you can actually go back and rewind and replay.  
+And I think the rewind and replay was really the favorite feature, you know, that led to Kafka's broad adoption is, oh, wait, I could actually make a mistake and actually go back and it would allow me to go back to a point in time and offset in the log and replay the source of truth of what happened, not my interpretation of what happened, but actually what happened.  
+KEVIN SCOTT:  So, you all built Kafka.  Its initial uses were inside of SNA, which is great because like that's where --  
+NEHA NARKHEDE:  Yeah, we had to prove it

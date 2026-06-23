@@ -1,0 +1,24 @@
+EP-42_Behind_the_Tech_Irma Olguin_Transcript.txt ../March 15, 2022: Behind the Tech with Kevin Scott
+Guest: Irma Olguin, CEO & Co-Founder of Bitwise Industries
+
+IRMA OLGUIN: I know that technology generally has a bad rap for, like, gentrification and those types of things and the effect on neighborhoods. But when you literally skill the folks who are from those neighborhoods into these jobs, they get to turn around and give back to their neighborhoods.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[music]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And our guest today is Irma Olguin. In 2013, Irma started Bitwise Industries, a company that trains people in underserved communities for careers in tech. And she actually got started in her hometown of Fresno, California, where more than a quarter of the population is living below the poverty line. Bitwise has expanded its presence in several cities around the United States.
+
+KEVIN SCOTT: Yeah, I really love what Bitwise is doing, and I love that it’s being led by someone like Irma. You know, I’ve spent a bunch of my time thinking about how we democratize technology, democratize the opportunities that technology can provide. I grew up in a small town, as well, just like Irma. I went to a small high school that it was, you know, super unlikely that I was going to get out and have a career in technology, so I’m always stoked to talk with folks like Irma, like especially ones who are so community-minded and trying to do good for other people.
+
+CHRISTINA WARREN: Yeah, I think it’s a really important conversation, and I’m really excited to hear you two talk more, so let’s dive into your conversation with Irma.
+
+[music]
+
+KEVIN SCOTT: Irma Olguin is the CEO and Cofounder of Bitwise Industries, a company that provides tech training with the goal of building tech economies in underserved cities. At Bitwise she oversees the operations team, the company’s tech-focused training program and software development. In 2019 Bitwise secured one of the largest Series A rounds of funding, ever, for a female- Latinx-led company. Bitwise has now expanded from Fresno to several additional cities, including Bakersfield, Oakland and

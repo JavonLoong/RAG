@@ -1,0 +1,17 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  in front of me has hit the brakes, I’m having a bad day.  So I find that incredibly stressful. 
+
+KEVIN SCOTT:  Yeah, well, and that’s the thing already about a modern automobile.  Like, forget whether or not it has autonomous technology in it or is like on a path to autonomous technology.  From a sensing perspective, like, modern automobiles are already superhuman.  Like, they can see the world like -- just because they can see behind them at the same time they can see in front of them.  Like, they -- you know, like, you’re -- the cars that you all, you know, pioneered at Google have LIDARs in them and so, like, they can sort of see in dimensions that human beings can’t see.  
+
+CHRIS URMSON:  Yeah, it’s really cool.  And it’s one of these things where -- this is why I believe we should be using a combination of laser radar and camera, not just one modality.  Because you know, like, the people who believe that you should just use cameras, for example, they say, you know, the argument is effectively people just have two eyes, it’s like cameras, we should just use that. 
+
+And the obvious response to this is, look, people don’t have wheels for legs, but it turns out, when we made the car, a wheel is much better than trying to make legs work.  (Laughter.)  
+
+So let’s go use whatever engineering hacks we can to go make this safer.  And so when we can use lasers which allow direct 3D reconstruction of the geometry of the world, when we can use radars that allow us to see through certain obscurants and allow us to see velocity instantaneously, when we use cameras to see the state of traffic lights and get higher resolution data, like, we should use it all. 
+
+One of the things I’m really excited about at Aurora is we just bought this company that builds this brand new kind of LIDAR technology, it’s called frequency modulated continuous wave LIDAR. 
+
+KEVIN SCOTT:  And what’s LIDAR, for folks who don’t know? 
+
+CHRIS URMSON:  LIDAR is light detection and ranging.  So think of it like radar, but instead of using a radio wave, you’re using a beam of light.  And for this technology, so the way kind of classic LIDAR, so the LIDARs we used to use at Google and most of the LIDARs that are out there that you’ll see on cars, the way it works is you send out a pulse of light and you wait for it -- goes out in the world, bounces off something, comes back, and you measure how long it took for that little pulse to go out and come back.  
+
+Because the

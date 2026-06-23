@@ -1,0 +1,14 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt  our business plan, when we started, was going to be about interconnecting networks. And very quickly, we realized there are not enough networks to interconnect. And so we started off selling communications servers, which were connecting devices into networks, and then also interconnected those networks. 
+KEVIN SCOTT: That's awesome. So, presumably, you ran engineering and technology at the startup. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: So, you went from being a second-level manager to the buck stops with you. So, how was that transition? 
+JUDY ESTRIN: It was -- So, Bill was the CEO. I was the Executive Vice President in charge of engineering for the first couple of years. But, you know, early on, it felt very natural. And because Bill and I were partners, we kind of shared a lot of the responsibility. But the thing I really had to learn was how to make decisions. And not how to make decisions, but how to make decisions in that kind of environment. And as an engineer who loves solving problems, I wanted to get it right. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: And sometimes you have to make a decision with the data you have, and you can't know that it's right. 
+KEVIN SCOTT: Yeah. 
+JUDY ESTRIN: And it was a really interesting challenge for me. Bill had a very different style than me. He sometimes would say, "Go and fire that person," or "Go pound on the table." And there are people who are very effective with an intimidating style. That isn't me. And if I had tried to be that, I wouldn't have been, I don't think, as successful, because I wouldn't have been authentic to who I am. 
+KEVIN SCOTT: Yeah. I think that's really interesting. One of the things that I struggled with when I first became a manager, I struggled with different flavors of this for a very, very long time, until I was managing hundreds of people. I just didn't understand that in leadership, many, many, many times, maybe more often than not, there isn't a right and a wrong. There's the best you can do at any particular point in time. That's particularly true around people. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: For a super long time, this is maybe the last big management lesson that I learned is that I would keep people on the team who were toxic for the culture that I was trying to create just because by the numbers, they were doing their job well. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: And giving myself permission to say, "Okay, this is my team, there's no right and wrong of it. This is the group of people that I

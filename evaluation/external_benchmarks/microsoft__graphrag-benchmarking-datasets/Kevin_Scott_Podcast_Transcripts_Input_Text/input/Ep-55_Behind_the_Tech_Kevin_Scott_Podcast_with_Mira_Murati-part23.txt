@@ -1,0 +1,27 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  of taking research to production. 
+
+KEVIN SCOTT: It’s a complicated set of things to manage these trade-offs. But I agree with you, I don’t know if there is any other reasonable alternative. And, you know, the trick is like having lots and lots of inputs that are coming into you, like where you can sort of hear the -- you know, what’s working, what’s not working, like, what is the scrutiny, you know, like, which of the -- you know, which of the problems that, like, seem substantial or not? And, like, which of the, you know things that people are seeing, you know, in some weird permutation of how they’re trying to use the product that you never imagined or intended, like -- 
+
+MIRA MURATI: Exactly. 
+
+KEVIN SCOTT: -- it creates -- yeah. So, it is -- you know, on the one hand, like, you know, sort of very exciting, but it’s also, like, a huge responsibility, I think.
+
+MIRA MURATI: It is. We’re working on something that will hange everything. Will change the way that we work, the way that we interact with each other, and the way that we think and everything, really, all aspects of life. 
+
+KEVIN SCOTT: I have one last question for you that I ask everybody who’s on the podcast. I know you probably have no free time, given the intensity of the past, really, you know, year. But I ask everyone what they do outside of work for fun. 
+
+MIRA MURATI: I love reading and I love going for hikes. Hiking is one of my favorite things to do, being in nature. 
+
+KEVIN SCOTT: Yeah, and, like, we live in a good place for hiking. 
+
+MIRA MURATI: We do. 
+
+KEVIN SCOTT: Awesome, well, thank you so much, Mira, for taking time out of an incredibly busy schedule to have this conversation. I’ve learned a ton and you know, just enjoyed this conversation, enjoy being able to work with you on a regular basis. 
+
+MIRA MURATI: Awesome. I do, too. Thanks so much, Kevin. 
+
+[MUSIC]
+
+KEVIN SCOTT: So wow, that was a fascinating conversation with Mira Murati. As close partners, I get to work with Mira and her team all the time, helping to develop some of the big AI systems that they're building and then figuring out how to safely deploy those unbelievably sophisticated AI systems into the products that we're building. 
+
+But like I learned a ton about Mira today that I didn't know before. Like I knew she was from Albania, but I had known relatively little about how she first got interested in science and technology in the first place. And, you

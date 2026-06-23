@@ -1,0 +1,13 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  math teacher in high school, Dr. Jim Jenkins. He was a guy who had worked on the Manhattan Project, drove to school in a Rolls Royce every day, you know, because he was just giving back to the system, as you said.
+
+KEVIN SCOTT: Yeah.
+
+WILLIAM ADAMS: It was public school. He went to UC-Berkeley. So I was inspired. And I went to Berkeley, and he said, "Computer Science? There’s no such thing," you know? So this is 1982, right?
+
+KEVIN SCOTT: Yeah, and he right, there wasn’t –
+
+WILLIAM ADAMS: That’s right, there wasn’t Computer Science, but you know, they – they had some computers, and you’re programming, DEC PDP-10s, flipping switches, you know, and then eventually they got terminals, and that was the birth of UNIX and all that sort of stuff. But at that time, we were learning – I think I learned Pascal – yeah, I learned Pascal there, and there was this other language called C that you’re supposed to learn on your own, you know, and it was just a heyday of a lot of inventions in – not the internet, but ARPANET, all that stuff was happening then. 
+
+And as college students, we were surrounded. This was in the Bay Area, so we’re surrounded by all these companies popping up. I mean, certainly Apple, you know, and they weren’t as huge as they are today. Adobe, you know, Sun Microsystems, all these companies. So it was just natural for all of us to go, "Okay, I’m going to do startup," right? And it was different from what we think today, right? At that time, we’re like, "I’m going to change the world," and you know, we’re starry-eyed and all that sort of stuff. So my brother and I, you know, he said, "Well, you know how to program. He knows how to sell. Let’s go do that," right? So we just started our first company, Adamation, did some custom software development for the people that owned the building that our office was in, and it just kind of went on from there. 
+
+You know, it was like, "This is just what you do. Let’s go make some money," right? Now, of course, in the early years, we just starved. I mean, quite – we had four employees, and I quite literally, for at least a year or two in there, we had Chip-A-Roo cookies and popcorn for lunch. That’s all we could afford. You’d walk down to the store – Chip-A-Roo cookies, a bag was like a dollar-fifty. Popcorn was maybe a dollar. And I would ride my bike home at night, literally looking in the gutter

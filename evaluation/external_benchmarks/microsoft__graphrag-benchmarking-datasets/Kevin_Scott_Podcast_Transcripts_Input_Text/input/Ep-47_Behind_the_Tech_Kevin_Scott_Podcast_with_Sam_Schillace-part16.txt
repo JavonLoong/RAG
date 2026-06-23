@@ -1,0 +1,19 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  you’re going to be able to have an interactive word processor with collaboration. And you can comment, and you can share it with anybody in the world, and, like, you’ve got all of this stuff. When were you first doing this? It was 2002?
+
+SAM SCHILLACE: Five, five, 2005.
+
+KEVIN SCOTT: Two-thousand five. So, like, in ‘05, like, nothing like it existed. 
+
+SAM SCHILLACE: No.
+
+KEVIN SCOTT: And so, everything today that’s in your life, whether it’s a PC or a laptop that you’re able to buy for not that much money, relatively speaking, that you’ve got an Internet that’s got all of this information on it. You’ve got a device in your pocket that connects you to all of that. You have things, like the… Everything that we take for granted now was impossible at some point in the not-too-distant past.
+
+SAM SCHILLACE: Right. The iPhone didn’t exist when we started doing this. Like, we were right before it, right? Like, you know, I don’t know if AWS was a thing then, but I don’t think it really was. Like, I think, like, LoudCloud was a thing back then, right? Like, it was sort of like, yeah, like, all of it had to happen somewhere, right? 
+
+And I think Jobs had a quote about this, right? Like, he realized at some point, like, all the cool stuff in the world, like, somebody came up with it and that somebody could just be him. And so, that’s why he came up with a bunch of stuff. You know, like, you know, like, he’s Jobs, but, like, he’s right. Like, everything gets done by someone somewhere. So, you know, if you don’t confront these seemingly almost impossible things, then you don’t get to be one of those people. I guess it’s kind of the price of admission is you have to deal with it. 
+
+KEVIN SCOTT: Yeah.
+
+SAM SCHILLACE: I mean, the other lesson I take from that is, you know, and I tell people this all the time, like, I’m you know, I’m not that smart. Like, I didn’t, you know, foresee the cloud or anything like that. Like, we were we were messing around with stuff, and we were listening to signal from the market and from users, right? 
+
+And that’s really the important thing, is, you know, this stuff in retrospect, 16 years later, looks super obvious, like, oh yeah, of course, collaborative documents and mobile and all this other stuff is obvious. But, like, it wasn’t at the time. It was super controversial. And  there are a bunch of reasons why stuff like that is

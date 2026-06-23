@@ -1,0 +1,19 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  3D experiment with your friends, you know, around the world on multiple devices.
+
+So that Interactive Physics thought was still there, but the hope was if there’s thousands of engineers working on super high quality, free consumer software, the byproduct of that may be an educational product that’s even better than Interactive Physics. 
+
+KEVIN SCOTT: And so you started Roblox in 2006, right? So what was it like at the beginning? So in 2006, just to remind folks like it, you know, on the one hand, at 16 years ago, it seems like a long while. On the other, like maybe not long at all. But in ‘06, there was no iPhone, no iPad, you know, just for instance. 
+
+DAVID BASZUCKI: That’s right. We actually started writing code in 2003. 
+
+One thing that was there was Visual Studio, so cha-ching, really nice. And so, we started writing on Visual Studio on Windows. It was very early on. It was the days when Flash was big, when anything interactive has to be in Flash or no one’s going to ever install it. It was before the – you know, we took the controversial notion, no, we want an executable, we want the performance, all of that stuff. It was, you know, 3D graphics was somewhat standardized with DirectX and OpenGL. It was early on. 
+
+But at the same time, in the midst of all of this metaverse chat and discussion, even in 2005 and ‘06, we saw There.com and Second Life coming out. So, you know, it’s a little highlight that these ideas have been around for a long time. 
+
+Definitely no iPhone, definitely PC-based only, but a lot of the visions that we had, new category, immersive 3D co-experience, elements of gaming, social networking, toys, media, yes, yes, yes. Has to be cloud-based. Yes, yes, yes. Those core pieces were all there. 
+
+The early days were Erik and myself writing code in Menlo Park for about a year and a half or, you know, to get the first version of this thing going and doing a lot of the key stuff we have in Roblox now, some of that had that origin, you know, Roblox Studio, the cloud, all of that. We were one of the first S3 customers. So yeah, a lot of fun stories going back there. 
+
+KEVIN SCOTT: So what were some of the like big challenges just starting that business that you all faced?
+
+DAVID BASZUCKI: So one challenge was this was, you know, we didn’t know anything about the gaming or consumer space. We – and I think that was good in a way. We were thinking way out of the box and not taking anything for granted. We were

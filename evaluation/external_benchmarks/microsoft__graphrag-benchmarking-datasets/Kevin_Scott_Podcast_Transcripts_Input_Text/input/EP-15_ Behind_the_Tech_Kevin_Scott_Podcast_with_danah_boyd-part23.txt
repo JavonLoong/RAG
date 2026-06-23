@@ -1,0 +1,23 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt OTT:  Yeah. 
+
+danah boyd:  And that's where we have to realize that those technologies are only as powerful as the political and social processes surrounding them. 
+
+KEVIN SCOTT:  Yeah. 
+
+danah boyd:  You know, I can talk about how to make my, you know, building that I rent in more efficient, but if I can't convince developers, if I can't convince, you know, the city, who's, you know, setting out the regulations to set these things in motion, no amount of good technology can solve you know really viable problems.  
+
+And that's where I think that that coordination becomes so critical. 
+
+KEVIN SCOTT:  Yeah.  
+
+danah boyd:  Which is that technologies, in many way, we're at a point where they're moving faster than the political and social structures to make them function well.  And that is why I think we need — you know, even as we invest in having people build up technical skill, we need to invest in people building up the ability to think about the bridge, because without that, you can't actually deploy at the levels to make a difference. 
+
+And that's one of the reasons, like, I'm firmly a believer that we need societal kinds of regulation — and I'll use that abstractly, rather than government — so that we can actually advance the inter — the development of these things.  
+
+KEVIN SCOTT: I think we all have very concrete roles that we can play in it.  But like, the thing that I think we technology folks, like, have a special duty and obligation to— and you inherently get this; like, you've been doing this since the very beginning — is like, all of us every day should be asking, like, how is it that the thing that I'm doing right now is going to positively accrue to the overall social good.  Like, if you can't answer that question in an affirmative way, then maybe you're doing the wrong damn thing.
+
+danah boyd:  Right.  No, I agree, and I think this is also where I'm a big believer in putting yourself in networks where this is in conversation.  So like, one of the things that really struck me, especially when I was, you know, doing old dev days, you can imagine the positiveness, but you actually need people around you who are thinking about it, and how to implement, which is, like, everything from business to policy, et cetera.  
+
+You need people around you saying, "And what if this goes wrong?"  You need to be doing this in networks, in communities, and you need to be thinking with all of the different, affected communities, or the people that you're trying to really engage and create possibilities, because they need part of that conversation. 
+
+And I think, you know, one of

@@ -1,0 +1,15 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  So, what we can do is on the computer, design in properties that we think will correlate with safety. But humans are very, very complicated, so it’s hard to predict exactly what will happen. And so, I think that evaluating safety is the thing that is slow, and that actually is what has been taking all this time, much longer than the design. So, it’s a good question. And there, we’ll just have to learn from experience, I think. 
+
+KEVIN SCOTT:  So, what are you – what are you most excited about over the next handful of years? And, like, what do you think we as, you know, like, citizens, like, folks who are very encouraged by what you’re doing, who want to, like, help things go faster. Like, what can we do to, like, get some of this goodness that you’re building, like, moving faster? 
+
+DAVID BAKER:  Well, let’s see. So, we have – we’re – I’ve been very interested in involving the general public and scientists at large in what we’re doing. So, we have an online game called Foldit, where we post a lot of the current problems we’re working on. For example, now, we’re in the Fold It puzzles is that we’ve designed small proteins which bind to different parts of the coronavirus and now Fold It players are being challenged to connect them in just the period of time way. So, you get sort of the much stronger binding. 
+
+So, Fold It is one way. And then we have a project called Rosetta@home, where you – which is how we do a lot of our computing. If we send out jobs to people’s computers and they compute new design proteins and send them back and then we select from those which ones to make. So, those are two of the ways in which people can get involved in what we’re doing. 
+
+KEVIN SCOTT:  Yeah, like, in my opinion, like, that’s a much more beneficial thing for, like, our collective human wellbeing than, like, using your spare GPUs to do cryptocurrency mining, for instance. 
+
+DAVID BAKER:  Yeah, that’s right. (Laughter.) 
+
+KEVIN SCOTT:  So, you know, just in terms of, like, your work, like, what are you really excited about over the next handful of years? Like, what do you – you know, how do you prioritize your energy among, like, all of the many, many, many things you could go explore? 
+
+DAVID BAKER:  Well, one – there’s a magic ingredient to all of this, which I haven’t really talked about yet, but that’s part of the answer, which is that the most brilliant people in the world, graduate students and post-doctoral fellows are now coming to the Institute for Protein Design to

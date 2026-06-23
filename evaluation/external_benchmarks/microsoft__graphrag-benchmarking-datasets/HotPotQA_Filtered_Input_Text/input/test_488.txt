@@ -1,0 +1,42 @@
+In the kidney, the loop of Henle ( ) (or Henle's loop, Henle loop, nephron loop or its Latin counterpart ansa nephroni) is the portion of a nephron that leads from the proximal convoluted tubule to the distal convoluted tubule.
+ Named after its discoverer, the German anatomist Friedrich Gustav Jakob Henle, the loop of Henle's main function is to create a concentration gradient in the medulla of the kidney.
+The sodium-chloride symporter (also known as Na-Cl cotransporter, abbreviated as NCC or NCCT, or as the thiazide-sensitive Na-Cl cotransporter or TSC for short) is a cotransporter in the kidney which has the function of reabsorbing sodium and chloride ions from the tubular fluid into the cells of the distal convoluted tubule of the nephron.
+ It is a member of the SLC12 cotransporter family of electroneutral cation-coupled chloride cotransporters.
+ In humans, it is encoded by the gene "SLC12A3" (solute carrier family 12 member 3) located in 16q13.
+Angiotensin is a peptide hormone that causes vasoconstriction and a subsequent increase in blood pressure.
+ It is part of the renin-angiotensin system, which is a major target for drugs that raises blood pressure.
+ Angiotensin also stimulates the release of aldosterone, another hormone, from the adrenal cortex.
+ Aldosterone promotes sodium retention in the distal nephron, in the kidney, which also drives blood pressure up.
+Low pressure receptors are baroreceptors located in the venae cavae and the pulmonary arteries, and in the atria.
+ They are also called volume receptors.
+ These receptors respond to changes in the wall tension, which is proportional to the filling state of the low pressure side of circulation (below 60mmHg).
+ Their impulses regulate the secretion of antidiuretic hormone (ADH/Vasopressin), renin and aldosterone.
+ An elevated atrial pressure produces a decrease in ADH and aldosterone secretion.
+ The decrease in vasopressin secretion results in an increase in the volume of urine excreted, serving to lower blood pressure.
+ In addition, stretching of atrial receptors increases secretion of atrial natriuretic peptide (ANP), which promotes increased water and sodium excretion through the urine.
+Sylvia Agnes Sophia Tait (8 January 1917 – 28 February 2003) ("née" Wardropper, known as Sylvia Simpson from 1941 to 1956) was an English biochemist and endocrinologist.
+ She worked with her second husband, James Francis Tait, from 1948 until her death in 2003, a partnership described by the Oxford Dictionary of National Biography as "one of the most successful examples of husband-wife scientific collaboration".
+ Together, they discovered and identified the hormone aldosterone, the last of a series of naturally occurring biologically potent steroid hormones to be isolated and identified between the 1920s to the 1950s, after the androgens, oestrogens, and glucocorticoid hormones.
+ Aldosterone is part of the mechanism that regulates blood pressure, and causes conservation of sodium, secretion of potassium, increased water retention, and increased blood pressure.
+ It is thought to be responsible for 15 per cent of cases of high blood pressure.
+Within the nephron of the kidney, the ascending limb of the loop of Henle is a segment of the loop of Henle downstream of the descending limb, after the sharp bend of the loop.
+ This part of the renal tubule is divided into a thin and thick ascending limb; the thick portion is also known as the distal straight tubule, in contrast with the distal convoluted tubule downstream.
+Aldosterone, the main mineralocorticoid hormone, is a steroid hormone produced by the zona glomerulosa of the adrenal cortex in the adrenal gland.
+ It is essential for sodium conservation in the kidney, salivary glands, sweat glands and colon.
+ It plays a central role in the regulation of the plasma sodium (Na), the extracellular potassium (K) and arterial blood pressure.
+ It does so mainly by acting on the mineralocorticoid receptors in the distal tubules and collecting ducts of the nephron.
+ It influences the reabsorption of sodium and excretion of potassium (from and into the tubular fluids, respectively) of the kidney, thereby indirectly influencing water retention or loss, blood pressure and blood volume.
+ When dysregulated, aldosterone is pathogenic and contributes to the development and progression of cardiovascular and renal disease.
+ Aldosterone has exactly the opposite function of the atrial natriuretic hormone secreted by the heart.
+In the physiology of the kidney, tubuloglomerular feedback (TGF) is a feedback system inside the kidneys. Within each nephron, information from the renal tubules (a downstream area of the tubular fluid) is signaled to the glomerulus (an upstream area).
+ Tubuloglomerular feedback is one of several mechanisms the kidney uses to regulate glomerular filtration rate (GFR).
+ It involves the concept of purinergic signaling, in which an increased distal tubular sodium chloride concentration causes a basolateral release of adenosine from the macula densa cells.
+ This initiates a cascade of events that ultimately brings GFR to an appropriate level.
+Distal renal tubular acidosis (dRTA) or Type 1 renal tubular acidosis (RTA) is the classical form of RTA, being the first described.
+ Distal RTA is characterized by a failure of acid secretion by the alpha intercalated cells of the cortical collecting duct of the distal nephron.
+ This failure of acid secretion may be due to a number of causes, and it leads to an inability to acidify the urine to a pH of less than 5.3.
+Renal tubular acidosis (RTA) is a medical condition that involves an accumulation of acid in the body due to a failure of the kidneys to appropriately acidify the urine.
+ In renal physiology, when blood is filtered by the kidney, the filtrate passes through the tubules of the nephron, allowing for exchange of salts, acid equivalents, and other solutes before it drains into the bladder as urine.
+ The metabolic acidosis that results from RTA may be caused either by failure to reabsorb sufficient bicarbonate ions (which are alkaline) from the filtrate in the early portion of the nephron (the proximal tubule) or by insufficient secretion of hydrogen ions (which are acidic) into the latter portions of the nephron (the distal tubule).
+ Although a metabolic acidosis also occurs in those with renal insufficiency, the term RTA is reserved for individuals with poor urinary acidification in otherwise well-functioning kidneys.
+ Several different types of RTA exist, which all have different syndromes and different causes.

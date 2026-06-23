@@ -1,0 +1,17 @@
+EP-06_ Behind_the_Tech_Kevin Scott_Podcast_with_Wences_Casares_TRANSCRIPT.txt , for example, one is all of what is interfacing the Bitcoin network, it's a very clear example.  Handling transactions -- both outgoing and incoming transactions require handling.  It's very different in the case of Bitcoin, the way you handle each one.  And a lot of that, I would say, is very commodity work, but we have to do it from scratch because that infrastructure doesn't exist.  I mean, a lot of things that if you were a bank, you would never be doing from scratch.  Here, you're doing from zero.  
+
+KEVIN SCOTT:  Right.  So, what's the most interesting Bitcoin story that you can share in public?  I've heard some of the private stories, which are pretty interesting.  But you must have seen all sorts of crazy things over the past several years.
+
+WENCES CASARES:  I don't have one that comes to mind.  Every day there are sort of interesting -- we keep track in customer service sort of a top ten crazy things that show up usually through customer service.  It's a person -- a techie -- who believes that also bought them when they were maybe a few hundred thousand dollars.  And the private key is a mnemonic rule that lives in his brain only.  And I tried to convince this friend of mine that it would be good to have some sort of backup because if he dies, all that money basically disappears until you guys figure out quantum computing or something.
+
+KEVIN SCOTT:  I don't know that quantum computers can read dead brain cells.  
+
+(Laughter.) 
+
+WENCES CASARES:  No, but what will happen is that people will start using quantum computing to go after Bitcoins that haven't upgraded their cryptography.  And if this guy doesn't do this, that will be one of the addresses.  But this guy walks around with a couple hundred million dollars in his brain, basically.  It's crazy.
+
+KEVIN SCOTT:  So, speaking of quantum, are you all using quantum hard crypto to make sure that when the quantum computers come that everything is still reasonably secure?  
+
+WENCES CASARES:  I think that when quantum computer comes, first of all, when quantum computing comes, Bitcoin private key will be the least of our problems, right?  I think we're all counting with quantum computing happening not as a discrete jump from zero to anyone can use it to something more gradual where, first, only a couple of very large companies or governments have access to it and then more people.  
+
+And to the point where we time to upgrade not only Bitcoin, but HTTPS and a bunch of other things.  And that you will being to see most addresses upgrade and you will see some addresses that don't upgrade.  And they don't upgrade because they don't have the private key.  So, eventually, quantum computing will be used to figure out those private keys

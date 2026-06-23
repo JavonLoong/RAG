@@ -1,0 +1,44 @@
+Mac OS X version 10.0, code named Cheetah, is the first major release of Mac OS X (later named OS X and then macOS), Apple’s desktop and server operating system.
+ Mac OS X 10.0 was released on March 24, 2001 for a price of US$129.
+ It was the successor of the Mac OS X Public Beta and the predecessor of Mac OS X 10.1.
+Mac OS 8 is an operating system that was released by Apple Computer on July 26, 1997.
+ It represented the largest overhaul of the classic Mac OS since the release of System 7, some six years before.
+ It put more emphasis on color than prior operating systems.
+ Released over a series of updates, Mac OS 8 was an effort to integrate many of the technologies developed for Apple's overly-ambitious OS named Copland.
+ Mac OS 8 helped modernize the Mac OS while Apple developed its next generation operating system, Mac OS X.
+ Mac OS 8 is one of Apple's most successful software releases, selling over 1.2 million copies in the first two weeks.
+ Coming as it did at a difficult time in Apple's history, many pirate groups refused to traffic in the new OS, encouraging people to buy it instead.
+SystemStarter is a system program in Mac OS X, started by Mac OS X's BSD-style init prior to Mac OS X v10.4 and by launchd in Mac OS X v10.4 and later releases, that starts system processes specified by a set of property lists. SystemStarter was originally written by Wilfredo Sanchez for Mac OS X.
+ In Mac OS X v10.4, it was deprecated in favor of launchd, and kept in the system only to start system processes not yet converted to use launchd.
+System Information (previously known as System Profiler) is a software utility derived from field service diagnostics produced by Apple's Service Diagnostic Engineering team, at that time located in Apple satellite buildings in Campbell, California, that was bundled with the classic Mac OS since Mac OS 7.6 under the name Apple System Profiler.
+ In Mac OS X v10.0, the first release of macOS, it was renamed System Profiler; with the release of Mac OS X 10.7 "Lion" it was again was renamed to System Information.
+ Other new features in Lion are the ability to look up support information for the user's hardware model as well.
+ In OS X Mountain Lion and later versions of macOS users can also access System Information by holding down the option key and "System Information..." will replace "About This Mac" in the Apple Menu.
+CleanGenius (previously known as MacCleaning developed by EaseUS) is utility software for Apple Inc.’s Mac OS X.
+ It is used to clean the potentially unneeded files on Mac OS X startup disk, uninstall the application by removing its core files, preference files, cache files and proper support files.
+ This software includes the direct version on EaseUS official website and the App Store version in Apple Inc.'s Mac App Store
+Mac OS X Jaguar, version 10.2, is the third major release of Mac OS X (now named macOS), Apple's desktop and server operating system.
+ It superseded Mac OS X 10.1 and preceded Mac OS X Panther.
+ The operating system was released on August 23, 2002 either for single-computer installations, and in a “family pack,” which allowed five installations on separate computers in one household.
+ The operating system was generally well received by most Mac users as a large step forward in the areas of stability, general speed enhancements, compatibility with other flavors of Unix and the lineup of both graphical and terminal applications available; however, many critics, such as Amazon.com users, still claimed that significant user interface speed issues existed and that the operating system was still a big step down from Mac OS 9.
+QuickDraw is the 2D graphics library and associated Application Programming Interface (API) which is a core part of the classic Mac OS operating system.
+ It was initially written by Bill Atkinson and Andy Hertzfeld.
+ QuickDraw still existed as part of the libraries of Mac OS X, but had been largely superseded by the more modern Quartz graphics system.
+ In Mac OS X v10.4, QuickDraw has been officially deprecated.
+ In Mac OS X v10.5 applications using QuickDraw cannot make use of the added 64-bit support.
+ In Mac OS X v10.8, QuickDraw header support was removed from the operating system.
+ Applications using QuickDraw will still run under OS X 10.8 through macOS 10.12; however, the current versions of Xcode and the macOS SDK do not contain the header files to compile such programs.
+Mac OS X version 10.1, code named Puma, is the second major release of Mac OS X (now named macOS), Apple's desktop and server operating system.
+ It superseded Mac OS X 10.0 and preceded Mac OS X 10.2.
+ Version 10.1 was released on September 25, 2001 as a free update for Mac OS X 10.0 users.
+A Preference Pane (often abbreviated as prefpane) is a special dynamically loaded plugin in Mac OS X.
+ Introduced in Mac OS X v10.0, the purpose of a Preference Pane is to allow the user to set preferences for a specific application or the system by means of a graphical user interface.
+ Preference Panes are the OS X replacement to control panels. Prior to Mac OS X v10.4, collections of Preference Panes featured a "Show All" button to show all the panes in the collection and a customizable toolbar to which frequently-used preference panes could be dragged.
+ In Mac OS X v10.3, the currently-active pane would also be highlighted in the toolbar when it was selected.
+ With Mac OS X v10.4, this functionality was dropped in favor of a plain Show All button and back/forward history arrows.
+WWF is a modification of the open standard PDF format for document exchange endorsed by the World Wide Fund for Nature (also abbreviated WWF) Germany.
+ The WWF format is promoted as being more environmentally friendly than other comparable document exchange formats (e.g. PDF or DOC) since documents in this format are designed to be more difficult to print.
+ The motivation behind the use of the format is to prevent unnecessary printing of documents.
+ The website claims that the file format will be able to be read by most programs that can open ordinary PDF files.
+ At present, the software for creating WWF files is available for Mac OS X 10.4 and for Windows XP and later.
+ An Open Source equivalent is available for Linux and for Windows XP and later.

@@ -136,6 +136,7 @@ class GraphRagQAOrchestrator:
         # 2. Retrieve evidence selectively based on routing strategy
         text_evidence = []
         graph_evidence = []
+        global_source_evidence = []
         global_context = ""
 
         # Run text retriever for VECTOR_ONLY and LOCAL_SEARCH (and optionally GLOBAL)
@@ -146,8 +147,8 @@ class GraphRagQAOrchestrator:
                 for rank, item in enumerate(_as_items(text_raw), start=1)
             ]
 
-        # Run graph retriever for LOCAL_SEARCH
-        if route_strategy == "LOCAL_SEARCH":
+        # Run graph retriever for entity-local and corpus-global questions.
+        if route_strategy in ("LOCAL_SEARCH", "GLOBAL_SEARCH"):
             graph_raw = _call_retriever(self.graph_retriever, question, top_k)
             graph_evidence = [
                 _normalize_graph_evidence(item, rank=rank)
@@ -166,11 +167,13 @@ class GraphRagQAOrchestrator:
                     
                 if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
                     global_context = _format_global_context(gs_result)
+                    global_source_evidence = _global_source_evidence_items(gs_result)
             except Exception:  # noqa: BLE001
                 pass  # Gracefully skip if global search fails
 
-        context = build_context(question, text_evidence, graph_evidence, global_context)
-        citations = [item.to_dict() for item in [*text_evidence, *graph_evidence]]
+        graph_context_evidence = [*graph_evidence, *global_source_evidence]
+        context = build_context(question, text_evidence, graph_context_evidence, global_context)
+        citations = [item.to_dict() for item in [*text_evidence, *graph_context_evidence]]
 
         if context_only:
             return GraphRagQAResult(
@@ -250,6 +253,11 @@ def build_context(
     parts.append("## Graph retrieval evidence")
     if graph_evidence:
         for item in graph_evidence:
+            if item.source_type == "graph_community_source":
+                source = f" source={item.source}" if item.source else ""
+                community = item.metadata.get("community_id") or "unknown"
+                parts.append(f"[{item.citation_id}] community:{community}{source}\nEvidence: {item.text}")
+                continue
             triple = _format_graph_triple(item)
             score = f" confidence={item.score:.4g}" if item.score is not None else ""
             source = f" source={item.source}" if item.source else ""
@@ -273,6 +281,43 @@ def _format_global_context(gs_result: Any) -> str:
         answer = pa.get("answer", "")
         sections.append(f"### {title} ({entity_count} entities)\n{answer}")
     return "\n\n".join(sections)
+
+
+def _global_source_evidence_items(gs_result: Any) -> list[EvidenceItem]:
+    items: list[EvidenceItem] = []
+    for partial_answer in getattr(gs_result, "partial_answers", []) or []:
+        if not isinstance(partial_answer, Mapping):
+            continue
+        community_id = str(partial_answer.get("community_id") or "")
+        title = str(partial_answer.get("title") or "")
+        for source in partial_answer.get("source_evidence") or []:
+            if not isinstance(source, Mapping):
+                continue
+            text = str(source.get("text") or source.get("evidence") or "").strip()
+            if not text:
+                continue
+            triple_id = source.get("triple_id")
+            metadata = {
+                "community_id": community_id,
+                "community_title": title,
+            }
+            if source.get("sentence_index") is not None:
+                metadata["sentence_index"] = source.get("sentence_index")
+            if triple_id:
+                metadata["triple_id"] = triple_id
+            source_file = source.get("source_file") or source.get("source")
+            items.append(
+                EvidenceItem(
+                    citation_id=f"C{len(items) + 1}",
+                    source_type="graph_community_source",
+                    rank=len(items) + 1,
+                    text=text,
+                    source=str(source_file) if source_file else f"community:{community_id}",
+                    metadata=metadata,
+                    raw_id=str(triple_id) if triple_id else None,
+                )
+            )
+    return items
 
 
 def _format_graph_triple(item: EvidenceItem) -> str:

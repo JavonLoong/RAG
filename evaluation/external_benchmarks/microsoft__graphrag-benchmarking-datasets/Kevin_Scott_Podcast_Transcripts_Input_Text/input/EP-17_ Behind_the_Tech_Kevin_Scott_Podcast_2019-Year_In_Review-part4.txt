@@ -1,0 +1,21 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt 're seeing this across a range of diagnostic applications is that AI is allowing us to provide cheaper and more ubiquitous access to healthcare technologies.  Like, for instance, their AI apps right now that are able to read EKG charts, which is just a fraction of a cardiologist's job, but able to read charts with clinical levels of accuracy, which then doesn't take away cardiologists' jobs, but potentially frees up cardiologists to do higher-value things. 
+
+And, you know, the thing that I get really excited about with things like that is like whenever you go to your general practitioner and get a checkup every year, you don't have a cardiologist like giving you like a full diagnostic and examination of your cardiovascular health.  
+
+But with these technologies, you could potentially have some sensors and a box sitting in your general practitioner's office that could basically do a full cardiologic exam, which would be really awesome and something that you couldn't do without the technology.  Like it's just economically infeasible to have that many cardiologists like spending their time that way.  
+
+CHRISTINA WARREN:  And you actually talked with Andrew if he's seen those other trends in other domains.  Let's take a listen.  
+
+[MUSIC] 
+
+ANDREW NG: I think there'll be a lot of partnerships between AI teams and doctors that will be very valuable. You know, one thing that excites me these days with the theme of things like healthcare, agriculture, and manufacturing is helping great companies become great AI companies. 
+
+I was fortunate really, to have led the Google Brain team which became I would say probably the leading force in turning Google from what was already a great company into today great AI company. Then, at Baidu, I was responsible for the company's AI technology and strategy and team, and I think that helped transform Baidu from what was already a great company into a great AI company. 
+
+I think it really Satya did a great job also transforming Microsoft from a great company to a great AI company. But for AI to reach its full potential, we can't just transform tech companies, we need to pull other industries along for it to create this GDP growth, for it to help people in healthcare deliver a safer and more accessible food to people. 
+
+So, one thing I'm excited about, building on my experience, helping with really Google and Baidu's transformation is to look at other industries as well to see if either by providing AI solutions or by engaging deeply in AI transmission programs, whether my team at Landing.AI, whether Landing.AI can help other industries also become great at AI. 
+
+KEVIN SCOTT: Well, talk a little bit more about what Landing.AI's mission is. 
+
+ANDREW NG: We want to empower businesses with AI. There is so much need for AI to enter other industries than technology, everything ranging from manufacturing to agriculture to healthcare, and so many more. For example, in manufacturing,

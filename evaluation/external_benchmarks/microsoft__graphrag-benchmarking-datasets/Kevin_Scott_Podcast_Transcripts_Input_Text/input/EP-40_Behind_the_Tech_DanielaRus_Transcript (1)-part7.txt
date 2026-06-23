@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt , like, the thing that’s really changed since I left academia and, like, sort of defined my entire career in industry is, machine learning – where you just sort of have lots and lots of data, and you are trying to train models from those data that allow you to do things. And this has obviously changed how robotics works a little bit. 
+
+I’d love, though, to get your perspective on how you’ve seen this change impact your work and – and then there are lots of shortcomings to machine learning technologies as well. And so, I’d love to dig into that a little bit with you.
+
+DANIELA RUS: Well, this is a very big question, Kevin, and I would like to observe a few things. (Laughter.)
+
+First of all, AI, machine learning and robotics are really transforming the scope of problems that we can solve. And they’re pointing to so many opportunities for the future. So, with these technologies, we can imagine a world with no traffic accidents, and no wasted time in congestion. We can imagine a world where everybody has personalized and individualized healthcare, a world where we can better engineer medicines and better monitor, diagnose and treat disease. 
+
+We can imagine a world where we can have instantaneous communication between people, no matter what language we speak. We can imagine a world where machines take on the routine tasks, allowing people to focus on the more creative, cognitive and physical tasks. 
+
+So, that is the promise, but we are quite far from that promise. So, even though we have tremendous successes due to the advancements in AI, machine learning and robotics, there are also limitations. And I would like to remind us that the successes we see today are due to decades-old ideas that are augmented with tremendous power and data. So this is why they work. They didn’t work 20 years ago, but they work now because we have so much more computing power and so much more data. 
+
+And so, I think that it’s important to harness these ideas and deliver the maximum that we can from these ideas, but I also think that it’s super important to think about new ideas. New ideas are really critical to advancements, and without new ideas and also funding to back them, more and more people will be plowing the same field, and that means that the results will be increasingly incremental. 
+
+So, we really need major breakthroughs if we’re going to live up to the promise, but also if we’re going to manage the major technical challenges facing the field, the major technical challenges facing how we deploy this technology in a way that is responsible and that ensures the greater good. We also need a computational infrastructure in order to enable progress, and this is an infrastructure that could deliver data and computation to us, like we get utilities, like we get water and energy. 
+
+And so, one way to harness this challenge is to look towards the natural world and see if we can learn something

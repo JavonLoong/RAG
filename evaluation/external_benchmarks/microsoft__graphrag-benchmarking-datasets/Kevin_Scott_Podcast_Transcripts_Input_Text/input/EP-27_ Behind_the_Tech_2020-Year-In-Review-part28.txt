@@ -1,0 +1,28 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  I do say so myself. And, you know, in that clip we just heard, I really loved that Eric gave a shout out to the teachers who inspired him and helped him become who he is today. So, in the spirit of celebrating all of our invaluable educators out there, I would like to give a shout out to Ms. Cohen. Kevin, what about you?
+
+KEVIN SCOTT:  Oh, that is an extremely difficult question, just to name one. (Laughter.) I had so many teachers who had such a phenomenal impact on me. Maybe I’ll give a shout out to Dr. Tom Morgan, who taught me my first real bits of computer science when I was in high school at the Central Virginia Governor’s School.
+
+CHRISTINA WARREN:  Shout out to Tom, that’s awesome. Well, the show would not be complete if we did not hear from at least one of our guests about what they do in their spare time. So, to wrap things up, we’ll hear from Dr. Percy Liang. Percy is an associate professor of computer science at Stanford University and one of the great minds in AI, specifically in machine learning and natural language processing. 
+
+
+[MUSIC]
+
+KEVIN SCOTT:  So one last question. So, just curious what you like to do outside of work.  I understand that you are a classical pianist, which is very cool.
+
+PERCY LIANG:  Yeah, so, piano has been something that's always been with me, since I was -- as a young boy, and I think it's also been a -- kind of a counterbalance to all the other kind of tech-heavy activities that I have been doing.
+
+KEVIN SCOTT:  What's your favorite bit of repertoire?
+
+PERCY LIANG:  I like many things, but late Beethoven is something I really enjoy.  I think this is where he becomes kind of very reflective about -- and his music has a kind of an inner -- it's, it's very kind of deep, and so I kind of enjoy that.
+
+KEVIN SCOTT:  Like what, what particular piece is your favorite?
+
+PERCY LIANG:  So, so there has a -- Beethoven sonata.  So, I've played the last three Beethoven sonatas, so Opus 109, 110, 111 --
+
+KEVIN SCOTT:  Wonderful pieces.
+
+PERCY LIANG:  Yeah, and one of the things that, actually, you know-- one of the challenges has been it's incredibly hard to make time for kind of a serious habit. And actually in graduate school I was -- I was, very -- there was a period of time when I was really trying to enter this -- or enter this competition and see how well I could do.
+
+KEVIN SCOTT:  Which competition?
+
+PERCY LIANG:  It was called the, the International Russian Music and Piano Competition.

@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  brainstormed that, and he updated the document and printed it again, and it just blew my mind. 
+
+The agenda for Microsoft came out of – that’s like in – that’s 1979 that I’m with him, and computers are still completely character mode. So that’s when the commitment to do software for the – the Mac emerges from Steve Jobs having a similar experience with Bob Belville at Xerox PARC. 
+
+And you know, PARC built a very – Xerox built a very expensive machine called the Star that they only sold a few thousand of because people didn’t think of word processing as something you would pay for. You had to come in really at the low end. So PCs with first character mode, but later graphics word processing. 
+
+So I hired Charles. Charles helped do Word and Excel and many of our great things. And eventually, 15 years after Charles had shown me his thinking, and we’d brainstorm, we largely achieved through Windows and Office on both Windows and Mac, we’d largely achieved that piece of paper. 
+
+But so I told the group that that was the other demo that had kind of blown my mind and made me think, okay, what can be achieved in the next five to 10 years? We should be more ambitious taking advantage of this breakthrough, even with the imperfections that we’re going to reduce over time. 
+
+KEVIN SCOTT: Yeah, it was a really powerful and motivating anecdote that you shared. 
+
+Maybe one last thing here before we go, or maybe two more things. What do you think are like the big grand challenges that we ought to be thinking about over the next five to 10 year period? In a sense, like this, I actually have this piece of paper that Charles wrote. It’s like here by my desk framed because I think it was one of the more unbelievable predictions of a technology cycle that anybody’s ever written, and I don’t know why everybody doesn’t know about the existence of this thing. Like, it’s just unbelievable. 
+
+But as you sort of think about like what lies ahead of us over the next five to 10 years, what’s your challenge, not just to Microsoft, but to everybody in the world who’s going to be thinking about this? What do you think we ought to go push on really, really hard? 
+
+BILL GATES: Well, there will be a set of innovations on how you execute these algorithms, lots of chips, some movement from silicon to optics to reduce the energy and the cost. Immense innovation where Nvidia’s the leader today, but others will try and challenge them as they keep getting better, and using even some radical approaches, because we want to get the cost of execution on these things and even the training dramatically less than it is today. Ideally, we’d like to move them so that often you can do them on a self-contained client device, not have to go up to the cloud to

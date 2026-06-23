@@ -1,0 +1,23 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  And so you kind of need to be adaptable and also, you know, kind of believe and disbelieve things at the same time. 
+
+And that’s -- those are hard -- qualities and traits to sort of sit together. 
+
+KEVIN SCOTT: Yeah, and then there’s just something about big organizations, like, organizations should only be big if the nature of the problem that they’re solving for their stakeholders requires you to be big. Because bigness is almost like a flavor of entropy that forces some of this stuff to happen where, like, you know -- just because of the complexity of the whole, like, no one has all of the details in their head. And so, like, you can find yourself -- 
+
+MIRA MURATI: Of course. 
+
+KEVIN SCOTT: -- trapped in, like, you know, do -- just feverishly working as hard as you can on the details of something. And if you could pull all the way back, you would just find that the thing that you’re working so hard on is like completely unnecessary. You know, and so it’s one of the great things about, like, the size that OpenAI is at right now is, like, you sort of still institutionally, like, you know, and the complexity of things. You can -- you have less of that weird, you know, entropy that happens to big organizations. 
+
+And so, you know, the thing that I found is you just have to fight against it super hard, because if you -- if you’re not pushing back against this thing, you’re just letting people entirely optimize for the narrow thing, like it just metastasizes in confusion, basically, and like people optimizing for the wrong thing. 
+
+MIRA MURATI: Yeah, and certain momentum just carries on. 
+
+KEVIN SCOTT: Yeah. So, let’s -- let’s talk about AI. Like, how -- like, let’s sort of start with, like, how did you make the transition from Tesla to OpenAI? Because you were in very early. From the beginning, like, it wasn’t obvious at the start that -- like, not obvious at all -- 
+
+MIRA MURATI: Not at all. 
+
+KEVIN SCOTT: -- that you were going to get to where you’re at now. So, like, what made you take the leap? 
+
+MIRA MURATI: Yeah. So, after I was -- after I worked in VR and AR and was really intent on defining the new interface for spatial computing, back then, it was a bit early -- I think too early for VR and AR, but I -- at that time, I got really interested in how AI can help us just redefine the way that we interact with the world and we absorb information and the things that we produce and how it affects creativity. 
+
+And so, just you know, this entire concept of

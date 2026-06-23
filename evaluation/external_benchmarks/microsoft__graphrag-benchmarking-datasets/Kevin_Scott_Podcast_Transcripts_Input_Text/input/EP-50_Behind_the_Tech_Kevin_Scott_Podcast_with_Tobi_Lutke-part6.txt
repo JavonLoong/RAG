@@ -1,0 +1,15 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt ers, and with much more of a vocational bent, because being able to do cool things with their own GPUs, rather than calling APIs, and you know, many of the greatest things will not be used like this, this way, because they’re just too big for machines, but just the ability for people to start tinkering, just leads to all sorts of better tooling and better – like great writing.
+
+And like people from different backgrounds entering the machine learning area, which obviously is the kind of created melting points for – where suddenly focus accelerates.
+
+KEVIN SCOTT: Yeah, and I think, look, it leads to better applications as well. So one of the things that I really strongly believe about all of the stuff that’s happening in AI and machine learning right now is, if we can’t make what we’re doing into an accessible platform for people to do this tinkering – you know, whether it’s – you know, you’re downloading a copy of Stable Diffusion, and you know, getting it to run on your own machine, on your own GPU card, plugged into your PC, or it’s calling someone else’s API.
+
+Like the API calls have to be unrestricted enough and cheap enough where you can just tinker. You know, if we can’t do that, you’re not going to really get the full breadth of the interesting stuff that’s sitting in people’s imaginations that they don’t even know is there.
+
+TOBI LÜTKE: Absolutely. The core of a craft is like converting something into something, right? Like, like any craft that exists is sort of a – that particular process is like people who convert wood into furniture are carpenters.
+
+One thing which is really inspired about these things is that they really – it’s the identity of a carpenter, that they are a carpenter. Their identity is actually that they’re a craftsperson, and that the particular craft that they are – that they’ve pursued, and that they’ve done their – they become a master in, it’s usually just their aptitude, and it’s a very common type of person, which is also really useful, because therefore some crafts exist for a moment, and then they don’t exist anymore, they’re no longer needed.
+
+Like the blacksmith has finally figured out what to do next. And so I think that’s – like all of this is actually really worth sort of understanding, and because – you know, like I sometimes talk to, you know, junior engineers who describe themselves as, "I’m a React front-end developer," and like, "Wow, you just put two little bits into your identity, but you really don’t need to, because – like I think you’re actually much more than that because you can solve problems extremely well."
+
+The rallying cry is like, people who were able to make the things that they really want with what they’ve got, like that’s sort of at the core

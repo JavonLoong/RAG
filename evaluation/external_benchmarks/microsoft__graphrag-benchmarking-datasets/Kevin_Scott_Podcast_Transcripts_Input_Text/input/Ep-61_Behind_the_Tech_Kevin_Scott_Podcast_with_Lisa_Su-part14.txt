@@ -1,0 +1,15 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  fun was seeing teams get together and do things that, you know, frankly, we didn’t think were possible, and – you know, like the early memories of, hey, you’re on a project, you have to ship something to a customer at some given time, and like nothing works. That’s what I enjoyed the most. Like, I enjoyed thinking about: how do I pull this together? How do I pull teams together?
+
+So the answer to that question was, I don’t think I’m smart enough to be an IBM fellow, so I guess I’m going to try to be an IBM vice president, and I had the opportunity to lead small teams that became medium teams, that became larger teams, but that’s actually really what I enjoy the most, Kevin, the technology is super fun, but it is even more, you know, sort of rewarding to see teams come together and do something that, you know, truly is groundbreaking, and that’s what I’ve always enjoyed in my career.
+
+KEVIN SCOTT: And you know, like I want to dig into, like what the career progression was, or – like has been, at AMD, but – you know, I think the whole arc of your career is extraordinary.
+
+LISA SU: Well, thank you.
+
+KEVIN SCOTT: You’re the daughter of immigrants to the United States, and you go from, you know, like, first generation – you know, American, to Chair and CEO of one of the most important semiconductor companies in the world. And like, your path through that was just being technically excellent, like getting a STEM degree, and – you know, leveraging technical excellence to, like get into this, like fantastic leadership position, and like that’s an inspiration for a lot of people, and like, you know, probably particularly for both immigrants and young women who are thinking about their path, and so I wonder, how do you think about – you’re probably going to blush –
+
+LISA SU: You’re making me feel like uncomfortable, Kevin!
+
+KEVIN SCOTT: Yeah, but – whether you like it or not, you are a role model, and so I wonder, you know, how do you think about, like that job. So in addition to being CEO, like you are a role model for folks who aspire to be like you.
+
+LISA SU: Yeah, well, look, thank you for that, Kevin. I think a few things. I mean, first of all, I was – as good as one is, one also needs to be sort of in the right place at the right time, and I think I’ve been somewhat fortunate in the sense that I’ve found the right place at the right time. I mean, AMD, when I joined, you know, many people asked me, "Well, why would you join AMD," at that point in time? And actually, I never thought about why wouldn’t I join

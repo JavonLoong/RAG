@@ -1,0 +1,13 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt ait headlines desperately trying to get people to click on the link to read them. And it’s going to cost a fraction of the cost to just get your program to write them all, and not really care whether they are accurate or not.  
+ 
+And so, I think there’s going to be a… in the simple kind of field of meaningful information, which is kind of a field that has been under attack for a while now, anyway, that is going to get vastly more problematic, because it won’t even be the case that people are writing, say, lazy articles that haven’t been properly researched, it will be the fact that the thing that’s writing the – creating the articles aren’t really people at all, and don’t even understand the concept of truth in the way that we do. 
+ 
+KEVIN SCOTT: Well, and so, there, I have a slightly different worry along these lines. So, you know, there are these emerging techniques, and, like, the rate at which things are emerging is pretty crazy right now. So, there’s this new thing that didn’t exist six months ago called retrieval augmented generation, which is this idea that you think about these models more as reasoning engines. And so, and this is, you know, this is the way that Bing Chat works.  
+ 
+So, you ask it a question, and then you first send the question to the model and say, what queries would you issue to a search engine to gather data to process this question? And then you issue those queries to the search engine. You retrieve the documents, which are – and we’ve got a whole other thing about, like, how do you not pollute your indices with, you know, synthetic content and get into this, like, negative feedback loop there, but sort of presuming you can solve that problem, you take all of the documents that you’ve retrieved that are presumably relevant to the question, and the question itself, and then you send everything back to the model and ask it to, like, give you the real answer.  
+ 
+And, you know, what we see there is that, you know, hallucination rates just sort of fall dramatically away, because you’re sort of, to your point earlier, you’re actually supplying the model with the context that it needs to sort of guardrail it into being more accurate. And, you know, bigger models and better retrieval, like all of that should get sorted out.  
+ 
+The thing that I worry about is, you know, because you’ll be able to put these things in feedback loops, if the objective of clickbait journalism is to get people to click on things, you could have an optimization cycle where you sort of say, model, generate whatever it is that someone is going to click on, and it will be able to do that better than a human being.  
+ 
+ADRIAN TCHAIKOV

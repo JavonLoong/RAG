@@ -1,0 +1,13 @@
+Behind the Tech_Episode 33_DavidBaker_Transcript.txt  against it. 
+
+Generally, in engineering and biology, if you want to solve a problem, you go look in nature for a protein that already does something similar, and then you modify it a bit. The relationship between sequence and structure has been really mysterious, but now we can actually design proteins with intent to do new things. So, I think it’s just getting to be very exciting. 
+
+KEVIN SCOTT:  There’s so much that you just said that I find fascinating, and I want to follow up on. But, like, one of the things that as a computer scientist that wasn’t super obvious to me as I started diving deeper into biosciences is the extent to which – we’re now at this point where you can actually use biological machinery to go do work. So, what you just described a minute ago is you want to synthesize a protein, but you don’t synthesize the protein by, like, having some 3D printer that just lays out a bunch of amino acids. Like, you program a little piece of genetic material to use the cellular mechanisms that turn DNA into the protein that you want. 
+
+And, like, that’s sort of – like, that’s just fascinating to me that, like, we understand enough about some of the basic biological machinery that you can leverage that to do some of the work for you. 
+
+DAVID BAKER:  Yeah, and you know, I left out, there was a sixth thing I should have added to my list, which is exactly what you’re saying, the whole recombinant DNA protein expression thing. Our advance is understanding basic biology, which we play a lot – we use biology right and left when we’re making these proteins, and then we’re screening them for activity. So, you’re absolutely right, that’s another thing. It’s like all of these different technologies have come together. 
+
+KEVIN SCOTT:  Yeah, and so I’m – one of the things that you, you know, that you’ve described is the end state of this is de-novo drugs like being able to design therapies for diseases like COVID-19 and like in the limit, like, what you would be able to do – what you’d like to be able to do for cancer therapies, for instance, is you would like to be able to look at, like, the very specific cancer mutation that you have, like, making someone ill and be able to custom tailor a therapy to, like, the very particular illness that you have. 
+
+And in order to, like, there’s sort of two axes that I think are interesting, like, one is you know upper respiratory viruses are probably a little bit better understood than cancers, but like, the trick with them is, like, you need to go very fast, so you need to go from new virus to you know therapeutic for it to drug that you can start delivering and, like, the amount of time

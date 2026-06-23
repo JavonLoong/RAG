@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt ’m going to pivot away from that, take my pause of physics, and go build thrusters, go build spacecraft. So, I went and worked, left after my bachelor’s degree, worked for the Air Force Research Labs building spacecraft thrusters. In fact, some of the thrusters I worked on were the predecessors to what’s on Starlink now, those Hall-effect thrusters, and some big high power things and some fusion related technologies as well. 
+
+I went back to graduate school, got masters degrees in nuclear engineering, more plasma physics, more aerospace engineering. And that’s when I really got into fusion, or I kept expanding that plasma physics knowledge. But it wasn’t until later, after the PhD, after I was doing all this plasma physics work and, you know, the core around fusion, but applied towards thrusters, and some amount of maybe you could do fusion in space work, too, that I met the core team at Helion, where we – I learned about some engineering ways that maybe can vastly speed up fusion. 
+
+And that’s where I got the bug and said, like, whoa, not only can we do space propulsion, that’s great, with this physics and engineering, but maybe we actually have a chance to do fusion on timescales that are relevant for humanity, relevant for me, personally, right? Frankly, it’s relevant for me personally. And that’s – we were able to build those early machines, do fusion. And then I said, great, let’s go do this. And we focused all of our efforts on forming Helion and moving from there.
+
+KEVIN SCOTT: So, did your work on Hall-effect thrusters, like – so, for sure, one of the most important things about building a fusion reactor is being able to manipulate magnetic fields. And I’m guessing a Hall-effect thruster is manipulating magnetic fields to generate thrust. So, like, how much of, like, this pathway of learning that you had, like, are your early projects influencing things that you’re doing now?
+
+DAVID KIRTLEY: Yeah, absolutely critical. In fact, a lot of the earliest work, I worked on Hall-effect thrusters, but I also worked on very large scale, pulsed plasma thrusters, where you’re now taking a – 
+
+KEVIN SCOTT: Oh, yeah.
+
+DAVID KIRTLEY: Taking a fuel, you’re ionizing it into a high temperature plasma. You’re super heating it up to 100,000 degrees, or maybe even a million degrees, but then you accelerate, you push it out of the thruster into space. And that’s what gives you your Newton’s Laws, gives you your thrust, and then that pushes the spacecraft. And they can be very, very efficient, but here’s the catch, in terms of efficient, in terms of mass.
+
+So, you use a little bit of propellant to get a lot

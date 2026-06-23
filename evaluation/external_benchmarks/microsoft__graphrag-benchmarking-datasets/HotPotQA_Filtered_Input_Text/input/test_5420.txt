@@ -1,0 +1,37 @@
+Performance management work (PMW) describes all activities that are necessary to ensure that performance requirements of application systems (AS) can be met.
+ Therefore, PMW integrates software performance engineering (SPE) and application performance management (APM) activities.
+ SPE and APM are part of different lifecycle phases of an AS, namely systems development and IT operations.
+ PMW supports a comprehensive coordination of all SPE and APM activities, which is inevitable due to an increased complexity of AS architectures.
+Performance management is about achieving results in a manner that is consistent with organizational expectations.
+ Integrating competencies within the performance management process supports the provision of feedback to employees not only on "what" they have accomplished (i.e., performance goals), but also "how" the work was performed, using competencies for providing feedback.
+ Assessing competencies as a part of performance management is an important means of assisting employees in understanding performance expectations and enhancing competencies.
+ Multi-source feedback, while not an HR application per se, is a method that is often used in performance management to assess and provide employees with feedback on "how" they performed their work (i.e., their demonstration of the competencies).
+Verelo, originally based in Toronto, Canada and acquired by infrastructure as a service company Dyn in January 2013, was a website monitoring service that tracks a website's uptime, downtime, and performance.
+ Verelo monitored websites from multiple locations globally so that it could distinguish actual downtime from routing and access problems.
+ Verelo argued that downtime can be costly and even take lives, and is now based in Manchester, New Hampshire.
+IBM Application Performance Management is an offering that enables IT operations and DevOps and personnel to detect, isolate and diagnose problems in their hybrid cloud development and production environments.
+ The solution is part of the IBM IT Service Management portfolio, which is a key component of IBM Cloud solutions.
+ The offering provides capabilities such as End User Management (EUM), Application Discovery, Application Diagnostics, Transaction profiling and IT Operations Analytics.
+ IBM Application Performance Management solutions are available in both SaaS (software-as-a-service), hybrid and on-premises delivery models.
+ IBM Application Performance Management was a part of IBM Tivoli brand until 2013.
+Cognos (Cognos Incorporated) was an Ottawa, Ontario-based company making business intelligence (BI) and performance management (PM) software.
+ Founded in 1969, at its peak Cognos employed almost 3,500 people and served more than 23,000 customers in over 135 countries until being acquired by IBM on January 31, 2008.
+ While no longer an independent company, the Cognos name continues to be applied to IBM's line of business intelligence and performance management products.
+"This entry describes performance management in an Information Technology context.
+ See" Performance Management "for a description of performance management in a more general context."
+Kyle York (born November 26, 1982) is an Internet entrepreneur, startup advisor, angel investor, cloud and Infrastructure-as-a-Service expert and sought-after global public speaker on cloud migration, internet security and hybrid cloud strategy.
+ York is an executive at Dyn, currently serving as Chief Strategy Officer.
+ Dyn was acquired by Oracle on November 21, 2016.
+ York also sits on the boards of Datanyze, CloudApp and 3rd Generation family business, YORK Athletics MFG.
+ where he is a co-founder.
+ York is also an active angel investor and advisor in dozens of fast growth Internet companies.
+ He has been part of eight successful exits as an investor and employee.
+ Companies he has invested in and worked as a go-to-market (GTM) leader have been acquired by Cisco, Cognizant, New Relic, Oracle and Sophos.
+Business performance management is a set of performance management and analytic processes that enables the management of an organization's performance to achieve one or more pre-selected goals.
+ Synonyms for "business performance management" include "corporate performance management (CPM)" and "enterprise performance management".
+Dyn, Inc. ( ) is an Internet performance management company, offering products to monitor, control, and optimize online infrastructure, and also domain registration services and email products.
+ The company was acquired by Oracle Corporation in 2016.
+Dynatrace is an American application performance management (APM) software company with products aimed at the information technology departments and digital business owners of medium and large businesses.
+ The company's services include performance management software for programs running on-premises and in the cloud.
+ This software manages the availability and performance of software applications and the impact on user experience in the form of deep transaction tracing, synthetic monitoring, real user monitoring, and network monitoring.
+ The company separated from Compuware in December 2014 after being sold into private equity firm Thoma Bravo establishing it as a standalone company.

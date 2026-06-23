@@ -1,0 +1,19 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  last thing we want to do is carry them forward to the future. 
+
+And, again, that’s a very hot area of research, both at AI2 and more broadly we had a paper a few years ago won the best paper award called Men Also Like Shopping, that looked at the bias that’s actually in images, right? 
+
+You type in shopping, you’ll see more images of women than men. How does that affect our computer vision systems? Et cetera, et cetera. So, there’s a lot of work there. 
+
+I would say that the focus at AI2 has been on the beneficial use cases. So, there’s some work to do to fight against the negative ones, but why do we even go into this in the first place. We go into why do we build this advanced technology? Why do we do this basic research? We do it because we see opportunities for technology to make the world a better place. 
+
+And, of course, now when we’re all – the entire international society is questing for a vaccine to COVID-19, I think that’s a very important illustration of that, right? We are reliant on technology, and by the way, AI is heavily used there, but we’re looking for technology to solve some of humanity’s thorniest problems. And we’re working to build what I would call “beneficial AI” systems. 
+
+KEVIN SCOTT: So, what do you think we collectively can do? And, like, you can interpret “we” however you want – we the technology industry, we academia, we the governments of the world’s nations can be doing to leverage the power that we’re building with AI and to get people prepared?
+
+I mean, you mentioned numeracy, for instance, which is mathematical equivalent of literacy, which I think is at least as important as literacy in the modern world or, like, 21st century. 
+
+But, like, what are the other things, like, policy-wise, education-wise, investment-wise that we should be doing to, like, receive the benefit that AI is going to be able to create over the next handful of years? 
+
+OREN ETZIONI: Well, in terms of policy, I think we do actually have to be very careful not to use the kind of blunt and slow and easily distorted instrument of regulation to harm the field. So, I would be very hesitant, for example, to regulate basic research. And I would, instead, look at specific applications and ask, “Okay, if we’re putting AI into vehicles, how do we make sure that it’s safe for people? Or if we put AI into toys, how do we make sure that’s appropriate for our kids, for example? The AI doesn’t elicit confidential information from our kids or manipulate them in various ways.” 
+
+So, I’m a big believer in regulate the applications of AI, not the field on its own

@@ -1,0 +1,23 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  is something that’s way beyond the capabilities of AI today. 
+
+KEVIN SCOTT: Yeah, and we’ve got a little bit of that starting – 
+
+OREN ETZIONI: I know, I – 
+
+KEVIN SCOTT: In transfer learning, like, but just beginning. 
+
+OREN ETZIONI: Right, but the thing about the transfer learning is that it’s still from one narrow task to another. Maybe it’s from one genre of text to another genre of text. We don’t really have transfer learning from, okay, I’m reading a book, to now I can take what I read in the book and apply it to my basketball game, right? We’re very far from anything like that. 
+
+[MUSIC]
+
+KEVIN SCOTT:  Oren and I also talked about the use of AI as augmented intelligence. I asked Oren what he thought we should be thinking about to better be prepared for all the innovation coming in the near-term future.
+
+[MUSIC]
+
+OREN ETZIONI: Well, in terms of policy, I think we do actually have to be very careful not to use the kind of blunt and slow and easily distorted instrument of regulation to harm the field. So, I would be very hesitant, for example, to regulate basic research. And I would, instead, look at specific applications and ask, “Okay, if we’re putting AI into vehicles, how do we make sure that it’s safe for people? Or if we put AI into toys, how do we make sure that’s appropriate for our kids, for example? The AI doesn’t elicit confidential information from our kids or manipulate them in various ways.” 
+
+So, I’m a big believer in regulate the applications of AI, not the field on its own. I think some of the overarching regulatory ideas, for example, in the EU, there’s the right to an explanation. And it sounds good, right? AI is opaque, it’s confusing, these are called black box models. Surely, if an AI system gives us a conclusion, we have a right to an explanation, that sounds very appealing. 
+
+Actually, I think it’s a lot trickier than that because there are really two kinds of explanations of AI models. One is explanations that are simple and understandable but turn out not to be accurate. They’re not high-fidelity explanations, because the system is complex. And a great example of that is if you go to Netflix and it recommends a movie to you, they’ve realized that people want to know, why did you recommend this movie? And say, “Well, we recommended this movie because you liked that movie, right? We recommended Goodfellas because you liked The Godfather.”
+
+Well, if you look under the hood, right, the model that they use is actually a lot more complicated than that. So, they gave me a really simple explanation that’s just not true. So, that’s one

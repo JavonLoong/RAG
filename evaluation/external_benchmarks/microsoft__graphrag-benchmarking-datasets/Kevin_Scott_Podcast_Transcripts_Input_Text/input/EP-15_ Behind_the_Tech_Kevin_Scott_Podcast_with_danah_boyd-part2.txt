@@ -1,0 +1,25 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt 'm really looking forward to chatting with her today.  
+
+CHRISTINA WARREN:  Well, let's get to it.
+
+KEVIN SCOTT:  All right.  Let's chat with danah.
+
+ [MUSIC]
+
+KEVIN SCOTT:  So, our guest today is danah boyd.  Danah is a tech scholar and researcher who looks at the intersection of people, social practices and technology. She's a Partner Researcher at Microsoft, and Founder and President in Data & Society, a non-profit, NYC-based think tank.  She's also a Visiting Professor at New York University's Interactive Telecommunications Program.  She's one of my favorite people.  Welcome to the show, danah.
+
+danah boyd:  Thinks for having me.  
+
+KEVIN SCOTT:  I would love — you have such an interesting job and you've had such an interesting career.  I really would love to understand a little bit about how you got started.  Like, were you a techie kid?  
+
+danah boyd:  Well, so it's a sort of funny path on how I came into it, which is that I was a geeky kid, by which that meant I did a lot of math.  And I didn't really fit in because I was geeky.  I grew up in Pennsylvania outside of major cities, and I — single mom, you know, working multiple jobs, trying to make ends meet.  
+
+And my brother, who was born very early, had visual issues.  And so, one of the doctors at one point said, "You need to work on eye-hand coordination.  There's these things called video games."  And so, she bought him a video game player, and I know there were Nintendos, I don't know if that was the first one.  
+
+So, we would play all of these games, it was fun.  My brother really got into it and wanted to know how it worked, and so he became obsessed with reverse engineering all of these different systems.  He ended up building his own computer and I pretty much ignored him, as a big sister does.  And then he started using the phone line, which was just an unforgivable sin.  And it was making beepy sounds and I didn't understand the beepy sounds.  
+
+One day, I marched into what he was doing and was like, "What is this?" And he's like, "I'm talking to people."  I'm, like, "What?  That is crazy."  
+
+And so he showed me Usenet.  And it's always the rest is history.  So I spent my high school years on various fora, on Usenet, building my first website as an homage to Ani DiFranco and all of her lyrics, because it was definitely the days of lyrics sites. 
+
+And I went to college

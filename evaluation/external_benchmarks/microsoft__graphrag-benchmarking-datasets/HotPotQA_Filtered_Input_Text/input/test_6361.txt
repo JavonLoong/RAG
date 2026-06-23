@@ -1,0 +1,25 @@
+The Shuttleworth Foundation was established in January 2001 by South African entrepreneur Mark Shuttleworth as an experiment with the purpose of providing funding for people engaged in social change.
+ While there have been various iterations of the foundation, its structure and how it invests in social innovation, the current model employs a fellowship model where fellows are given funding commensurate with their experience to match a year's salary, allowing them to spend that year developing a particular idea.
+Canonical Ltd. is a UK-based privately held computer software company founded and funded by South African entrepreneur Mark Shuttleworth to market commercial support and related services for Ubuntu and related projects.
+ Canonical employs staff in more than 30 countries and maintains offices in London, Austin, Boston, Shanghai, Beijing, Taipei and the Isle of Man.
+Thawte Consulting (pronounced "thought") is a certificate authority (CA) for X.509 certificates.
+ Thawte was founded in 1995 by Mark Shuttleworth in South Africa.
+ As of December 30, 2016, its parent company, Symantec Group is collectively the third largest public CA on the Internet with 17.2% market share.
+STS-95 was a Space Shuttle mission launched from Kennedy Space Center, Florida on 29 October 1998, using the orbiter "Discovery".
+ It was the 25th flight of "Discovery" and the 92nd mission flown since the start of the Space Shuttle program in April 1981.
+ It was a highly publicized mission due to former Project Mercury astronaut and United States Senator John H. Glenn, Jr.'s return to space for his second space flight.
+ At age 77, Glenn became the oldest person, to date, to go into space.
+ This mission is also noted for inaugurating ATSC HDTV broadcasting in the U.S., with live coast-to-coast coverage of the launch.
+ In another first, Spain's Pedro Duque became the first Spaniard in space.
+The Beijing GNU/Linux User Group (BLUG) was founded in Beijing on November 19, 2002 and has since met at least monthly without exception.
+ Awarded Best SFD 2007 event (1 of 3), Golden Bull 2008 by CSDN as a technology driving group and Best LUG of the Month by Linux Format early 2008.
+ The Beijing GNU/Linux User Group has also been the host of many famous actors of our movement such as RMS, Ulrich Drepper, Mark Shuttleworth or Louis Suarez to name just a few.
+Pedro Duque y Cornejo (1677–1757) was a Spanish Baroque painter and sculptor of the Sevillian school of sculpture, a disciple of his grandfather Pedro Roldán.
+Inktank Storage is the lead development contributor and financial sponsor company behind the open source Ceph distributed file system.
+ Inktank was founded by Sage Weil and initially funded by DreamHost and Mark Shuttleworth.
+Ravi Naidoo is the recipient of the 2015 Sir Misha Black Medal for innovation in design education.
+ He is the founder of Interactive Africa, a Cape Town based media and project management company responsible for the First African in Space mission with Mark Shuttleworth, and the marketing bid to host the 2010 Fifa World Cup.
+Pedro Duque Duque (born 14 March 1963) is a Spanish astronaut and a veteran of two space missions.
+Impi Linux was a South African Linux distribution which focused on the enterprise and government sector.
+ The project name originally referred to Impi meaning group of warriors in the Zulu language.
+ In September 2005, Mark Shuttleworth invested R10 million in return for 65% of Impi Linux.

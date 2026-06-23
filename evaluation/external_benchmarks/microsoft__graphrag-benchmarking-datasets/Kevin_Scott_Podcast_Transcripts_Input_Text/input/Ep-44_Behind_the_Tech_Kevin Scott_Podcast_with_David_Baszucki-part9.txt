@@ -1,0 +1,21 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  the first S3 customers. So yeah, a lot of fun stories going back there. 
+
+KEVIN SCOTT: So what were some of the like big challenges just starting that business that you all faced?
+
+DAVID BASZUCKI: So one challenge was this was, you know, we didn’t know anything about the gaming or consumer space. We – and I think that was good in a way. We were thinking way out of the box and not taking anything for granted. We were comfortable having our product function well, even if it didn’t look well. We were big fans of Craigslist because it was very simple and minimalist and high performance. And so, we’re very function based.
+
+I think we picked up tidbits along the way. One was we learned to experiment from ground zero. We would buy very small amounts of AdWords traffic. We’d buy 100 users for $100, and we could kind of see them come on the platform and in – you know, it’s an interesting mathematical exercise, but you could probably prove that every Roblox player today has a word of mouth history going all the way back to some original thousand AdWords people that we bought that were like in some Darwinian evolutionary the chokepoint to the foundation of Roblox. 
+
+KEVIN SCOTT: That’s interesting.
+
+DAVID BASZUCKI: Yeah. So we would buy a few of these users. Then we started to see the virality. We would hang out with them. 
+
+The challenges I think were always around having to build a viral platform. We never – buying traffic was always way too expensive to scale a business like this. So it had to be socially viral. 
+
+I think some of the challenges we learned along the way, in those days, there were a lot of, quote, you know, “Web 1.0 viral techniques” of pushing links and doing this and, you know, getting people to check in and all of that. And we got distracted a bit by that because in the end, just true word of mouth, just come here to be with your friend was more powerful than a lot of those things.
+
+And then I’d say a lot of learning along the way, right off the bat on safety and civility. Because we were in there with everyone on the platform, we knew within probably the first three weeks of launching Roblox, oh my gosh, like, we got to get all over this. 
+
+And my partner, to his credence, Erik, said, “No, like we have to build the first moderation safety system right now” and that was a really good learning. We actually when there were four of us in the company, we were on a daily rotation where the four of us were running the moderation and safety queue and, you know, kind of getting a feel for this before we hired other people. So that learning came very early.
+
+And some other really good learnings we

@@ -1,0 +1,15 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt  with that, there’s been the ability to measure cells in many, many, many different ways, where you can collect hundreds of thousands of measurements from each of those cells so you can really get a broad perspective on what those cells look like, rather than coming in with, “I know I need to measure this one thing.” And you can do this all at an incredible scale. 
+
+So, on the one side, you have all of this capability for data production, and on the other side, you have all this capability for data interpretation. And I think those two threads are converging into a field that I’m calling “digital biology,” where we suddenly have the ability to measure biology quantitatively at an unprecedented scale, interpret what we see, and then take that back and write biology, whether it’s using CRISPR or some other intervention to make the biological system do something other than what it would normally have done.  
+
+So, that to me is a field that’s emerging and will have repercussions that span from, you know, environmental science, biofuel, bacterial or algae that do all sorts of funky things like suck carbon dioxide out of the environment, better crops, but also, importantly for what we do, better human health. 
+
+And so, I think we’re part of this wave that’s starting to emerge. And what we do is take this convergence and point it in the direction of making better drugs that can potentially actually be disease modifying, rather than as in many existing drugs, just often just make people feel better, but don’t really change the course of their disease.  
+
+KEVIN SCOTT: And so, this technology that you’re talking about, will it be used to make the drugs or to examine the effect of potential drugs or both? 
+
+DAPHNE KOLLER: Both. So, it actually starts with understanding where you even want to develop drugs for. So, a lot of the problems that we have with current-day drug failures, which are, depending on which statistic you believe, the success rate of the drug discovery effort from beginning to end is somewhere around 5%. So, think about that, it’s a 95% failure rate. 
+
+And a lot of this is because we just don’t understand the biology, we don’t know where to develop drugs towards. What is the right target and what is the right cell type and what is the right patient population? So, it starts with predicting, using machine learning, what viable targets are in the context of a given disease and a given target population. And then from there, okay, how do we design drugs more rapidly so that we don’t have to wait, you know, five years for — or sometimes much longer for a drug to emerge. And so really want to close that arc of going all the way from the biology to the actual drug. 
+
+KEVIN SCOTT: There’s so much obvious potential for this thing that you’re calling digital biology

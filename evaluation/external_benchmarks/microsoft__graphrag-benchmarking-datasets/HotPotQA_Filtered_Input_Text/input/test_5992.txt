@@ -1,0 +1,53 @@
+Eastern Enterprises v. Apfel, 524 U.S. 498 (1998), is a United States Supreme Court case in which the Court held that the Coal Industry Retiree Health Benefit Act (Coal Act) constituted an unconstitutional regulatory taking of property which required the Act to be invalidated.
+ The import of this decision is that it was made in the context of a purely economic regulation.
+ The plurality examines the statute and its resultant harm as an ad hoc factual inquiry based on factors delineated in Penn Central such as the economic impact of the regulation, its interference with reasonable investment backed expectations, and the character of the governmental action.
+("Penn Central Transportation Co. v. New York City"), The decision thereby moved beyond the traditional notions of equal protection which had been applied to economic regulation since the time of ("Lochner v. New York"), requiring extreme deference to Congress, and applied a regulatory takings analysis to the problem resulting in a much less deferential result.
+ While the plurality recognizes that this is not a traditional takings case where the government appropriates private property for public use, they also state this is the type of case where the "Armstrong Principle" of preventing the government from forcing some people alone to bear public burdens which, in all fairness and justice, should be borne by the public as a whole.
+ ("Armstrong v. United States", 364 U.S. 40, 49 (1960)) However, while the plurality seems to invalidate this particular law on takings grounds, the concurrences and the dissents warn of such an analysis as this should actually be examined under substantive due process or ex post facto theories.
+Westendorp v R, [1983] 1 S.C.R. 43 was a decision of the Supreme Court of Canada on the scope of the federal Parliament's criminal law power under section 91(27) of the Constitution Act, 1867.
+ A unanimous Court found that a municipal by-law that prohibited standing in the street for the purpose of prostitution was in the nature of a criminal law prohibition and therefore ultra vires of the provincial constitutional authority.
+ The decision surprised many legal scholars who considered it to be inconsistent with previous Supreme Court cases where provincial laws of a moral nature were upheld under the provincial power (see "Canada (AG) v Montreal (City of)", [1978] and "Nova Scotia (Board of Censors) v McNeil" [1978]).
+ This was also the first case where the "Canadian Charter of Rights and Freedoms" was cited in argument to the Supreme Court, although the Charter argument was ultimately abandoned during the hearing.
+Spaziano v. Florida, was two United States Supreme Court cases dealing with the imposition of the death penalty.
+ In the first case, 454 U.S. 1037 (1981), the Supreme Court, with two dissents, refused Spaziano's petition for certiorari.
+ However, the Florida Supreme Court would reverse Spaziano's death sentence based on the judge's receipt of a confidential report which was not received by either party.
+ On remand, the judge reimposed the death penalty and the Florida Supreme Court upheld the sentence.
+ In the second case, 468 U.S. 447 (1984) the Court heard Spaziano's appeal of his death sentence.
+Every year, each of the 50 United States state supreme courts decides hundreds of cases.
+ Of those cases dealing with state law, a few significantly shape or re-shape the law of their state or are so influential that they later become models for decisions of other states or the federal government, or are noted for being rejected by other jurisdictions.
+ The same is true of those cases involving a federal question, except that these may be appealed to the United States Supreme Court.
+ This list contains notable final decisions of these courts – those that were not subject to appeal, or from which no appeal was taken, or from which an appeal was taken but certiorari was denied.
+ Appealed decisions that are notable primarily because of later actions of the U.S. Supreme Court covered in the listings of U.S. Supreme Court cases.
+ The decisions are listed in chronological order.
+Commercial speech is a U.S. legal term relating to speech done on behalf of a company or individual for the intent of making a profit.
+ It is economic in nature and usually has the intent of convincing the audience to partake in a particular action, often purchasing a specific product.
+ Generally, the United States Supreme Court defines commercial speech as speech that "proposes a commercial transaction."
+ The Court developed a three factor inquiry in determining whether speech is commercial in the 1983 case "Bolger v. Youngs Drug Products" namely, (1) is the material meant to be an advertisement, (2) does the material reference a particular product, and (3) is there is an economic motivation for disseminating the material?
+ If all of these attributes are present, then it is commercial speech.
+ These factors have yet to be utilized in other Supreme Court cases dealing with commercial speech.
+Evans v. Jordan, 13 U.S. 199 (1815) , was a United States Supreme Court case in which the Court held that someone who had copied a patented invention after the patent had expired, and before the patent was restored by a private bill, would be liable for damages for patent infringement for any use continuing after the patent was restored.
+ It was the second published Supreme Court decision on patent law, and the first of four Supreme Court cases dealing with the Oliver Evans flour mill patent.
+ Like other Supreme Court patent cases prior to "Evans v. Eaton", however, this case did not deal with substantive patent law, but only with issues of statutory construction and infringement liability.
+Turner Broadcasting v. Federal Communications Commission, 512 U.S. 622 (1994), is the first of two United States Supreme Court cases dealing with the must carry rules imposed on cable television companies.
+ "Turner Broadcasting v. Federal Communications Commission (II)", 520 U.S. 180 (1997) was the second.
+ "Turner I" established that cable television companies were indeed First Amendment speakers but didn't decide whether the federal regulation of their speech infringed upon their speech rights.
+ In "Turner II" the court decided that the must carry provisions were constitutional.
+ Under the "Miami Herald v. Tornillo" case, it was unconstitutional to force a newspaper to run a story the editors would not have included absent a government statute because it was compelled speech which could not pass the strict scrutiny of a compelling state interest being achieved with the least restrictive means necessary to achieve the state interest.
+ However, under the rule of "Red Lion Broadcasting Co. v. FCC" the High Court held that a federal agency could regulate broadcast stations (TV and Radio) with far greater discretion.
+ In order for federal agency regulation of broadcast media to pass constitutional muster, it need only serve an important state interest and need not narrowly tailor its regulation to the least restrictive means.
+Cooley v. Board of Wardens, 53 U.S. 299 (1852), was a United States Supreme Court case in which the Court held that a Pennsylvania law requiring all ships entering or leaving Philadelphia to hire a local pilot did not violate the Commerce Clause of the Constitution.
+ Those who did not comply with the law had been required to pay a fee.
+ "It is the opinion of a majority of the court that the mere grant to Congress of the power to regulate commerce, did not deprive the States of power to regulate pilots, and that although Congress had legislated on this subject, its legislation manifests an intention, with a single exception, not to regulate this subject, but to leave its regulation to the several states," wrote Justice Curtis for the majority.
+The "Lochner" era is a period in American legal history from 1897 to 1937 in which the Supreme Court of the United States is said to have made it a common practice "to strike down economic regulations adopted by a State based on the Court’s own notions of the most appropriate means for the State to implement its considered policies," by using its interpretation of substantive due process to strike down laws held to be infringing on economic liberty or private contract rights.
+ The era takes its name from a 1905 case, "Lochner v. New York".
+ The beginning of the era is usually marked earlier, with the Court's decision in "Allgeyer v. Louisiana" (1897), and its end marked forty years later in the case of "West Coast Hotel Co. v. Parrish" (1937), which overturned an earlier "Lochner"-era decision.
+Stephen P. Halbrook is a Senior Fellow at the Independent Institute and an author and lawyer known for his litigation on behalf of the National Rifle Association.
+ He has written extensively about the original meanings of the Second Amendment and the Fourteenth Amendment (the latter as applied to Second Amendment rights).
+ He has argued and won three cases before the US Supreme Court: "Printz v. United States", "United States v. Thompson-Center Arms Company", and "Castillo v. United States".
+ He has also written briefs in many other cases, including the Supreme Court cases "Small v. United States" (pertaining to the Gun Control Act of 1968) and "McDonald v. Chicago".
+ In "District of Columbia v. Heller", he wrote a brief on behalf of the majority of both houses of Congress.
+ More broadly, his decades of research on the Second Amendment contributed to the intellectual foundation of the "Heller" decision.
+ He has written many books and articles on the topic of gun control, some of which have been cited in Supreme Court opinions ("Heller", "McDonald", "Printz v. United States").
+ He has testified before congress on multiple occasions.
+ Halbrook’s most important scholarly contribution, however, was the book "That Every Man Be Armed", originally published in 1986.
+ The book was the most thorough analysis of the legal history and original intent of the Second Amendment.

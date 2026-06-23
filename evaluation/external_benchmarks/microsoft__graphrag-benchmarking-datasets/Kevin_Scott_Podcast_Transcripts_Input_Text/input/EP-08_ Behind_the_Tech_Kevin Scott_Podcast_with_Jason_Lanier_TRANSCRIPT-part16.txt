@@ -1,0 +1,18 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  happens is we choose some bundle of algorithmic techniques and say this is AI, but it's kind of arbitrary.  Sometimes things go in, sometimes they're taken out.  And then we allow ourselves to believe in it like a monster or a god or something.  The AI will take your job.  AI will this and that, whereas, in fact, there's not any particular thing that's AI.  It's just another example of people coming up with ways of using computation to do things and this whole storytelling I think makes us a little nuts.
+
+KEVIN SCOTT:  Yeah, you should definitely write that book.  I'm writing a book right now and I say something to that effect in one chapter of my book.  But you are the far more eloquent writer and I think an entire book on that topic would be amazing, totally amazing.
+
+JARON LANIER:  Maybe it will happen.
+
+KEVIN SCOTT:  Yeah, in your copious free time.
+JARON LANIER:  Yeah, that's an issue.
+
+KEVIN SCOTT:  Yeah, it is an issue.  So after VPL you went on to do a whole bunch of other things.  And I don't want to like skim past anything super-important, but where I want to get to before we run out of time here is, you have become quite the sort of technical philosopher for modern digital life.  You've written these amazing books like you are promoting a bunch of super-interesting ideas like recently in some of the work that you're doing at Microsoft you've sort of coined the phrase "data dignity," which is like a really interesting concept.  So I'd love for you to talk about like why it is that you took on this responsibility for like being sort of the humane intellectual thinking about our digital world?
+
+JARON LANIER:  I'm not sure if I coined data dignity, by the way.  I think either Glen Weyl, or maybe even Satya Nadella did.  Digital dignity was a term -- was going to be the title of Who Owns the Future, but the editor didn't like it, so I turned it to Who Owns the Future.
+
+At any rate, so this is a whole long tale, as well.  In the '80s and '90s there were a couple of really vociferous, intense movements within hacker culture, within technical culture, about what networking should be like whenever it really comes about.
+
+One of them was this idea that everything should be open and free and that was started from a number of sources.  One of them was a guy who is a friend of mine, Richard Stallman, back in Boston.  And there were a few other source points for that, as well.  And then another was this kind of intense Libertarian philosophy that governments shouldn't be involved, we should leave everything to entrepreneurs.
+
+And in the last

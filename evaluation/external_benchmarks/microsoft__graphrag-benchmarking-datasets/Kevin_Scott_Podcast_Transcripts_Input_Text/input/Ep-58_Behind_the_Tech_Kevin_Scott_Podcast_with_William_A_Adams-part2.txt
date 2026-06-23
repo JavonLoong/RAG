@@ -1,0 +1,25 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  of these like inspirational topics, where everybody else can see what inspired me so much about William and the example that he sets for us all. 
+
+KEVIN SCOTT: William Adams is a software engineer, DEI innovator and philanthropist. He founded Adamation, where he developed customer enterprise apps and earned two patents. His contributions to the field there were later documented by the Computer History Museum. William was at Microsoft for more than 20 years and was recognized for rolling out critical XML code globally as well as for cofounding the Leap Apprenticeship Program which was named Microsoft’s D&I Program of the Year in 2020.
+
+About a year ago he left Microsoft to create a venture studio aimed to help every Black person interested in having a career or business in technology get into the field and prosper.
+
+Welcome to the show, William. I’m so glad to have you here today.
+
+WILLIAM ADAMS: Thank you. I’m happy to be here.
+
+KEVIN SCOTT: It feels like it’s been a super-long time. I miss you.
+
+WILLIAM ADAMS: Man! The love is mutual.
+
+KEVIN SCOTT: So we’ve got a ton of stuff to talk about, but I always start the show by asking folks how they got into STEM in the first place. So tell us a little bit about like what lit the spark for you and, you know, we can go from there. 
+
+WILLIAM ADAMS: Okay, well, I’m a child of the ‘60s. I was born in 1964, so before all the computer – you know, personal computer stuff and all that. So I started with like the chemistry set, the physics set. And mind you this is all when I was very young. So my mom, when I was probably eight, I said "Hey, let’s go to RadioShack I want to buy one of those electronic kits," right? So I was just kind of self-driven in that way, and it was probably because my dad was a typewriter repair man, so we had stuff in the house, but he passed away when I was seven. So from then on, I was just one of those precocious kids, you know? 
+
+KEVIN SCOTT: Yeah. What did your mom do?
+
+WILLIAM ADAMS: My mom was, she worked in Orange County, so she was a County Administrator. She started out as being a welfare – what do you call them? She would check on people who were on welfare. And eventually, she evolved into being, like, the office manager of Orange County. So very, very humble beginnings. You know, my mom was not into STEM. My dad was not into STEM. My dad was actually in World II, you know? He had joined the Navy when he was 16.
+
+KEVIN SCOTT: Wow. 
+
+WILLIAM ADAMS: So you know, there’s

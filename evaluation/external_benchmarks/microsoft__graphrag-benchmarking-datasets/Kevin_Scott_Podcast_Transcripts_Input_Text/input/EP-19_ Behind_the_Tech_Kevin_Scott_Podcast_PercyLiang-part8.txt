@@ -1,0 +1,21 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  And like the thing that attracted them to machine learning in the first place is they were interested in like the core research, like the challenging problem, like, how to make this very complicated thing, like, you know, one epsilon better than what preceded it, and who got frustrated very quickly with what production machine learning looks like, which is more like lab science than it is like theoretical computer science, for instance.  
+
+Sometimes I’ve had -- I’ve had people who, you know, like, on paper look super qualified because they have written a dissertation on machine learning to work on an ML team where, you know, someone who, like, has a degree in applied physics, for instance, is much more excited working on the machine learning problem because, like, they are more interested in this sort of iterative, like, approach to -- you’re wrangling the data and doing experiments and whatnot. 
+
+PERCY LIANG:  Yeah. 
+
+KEVIN SCOTT:  So, it’s great that you -- like, you never felt that tension, like, that’s almost a superpower.  (Laughter.) 
+
+PERCY LIANG:  Yeah, I mean, I think at some level, I’m interested in solving problems.  And I think there’s actually, in my head, there’s sometimes even a deliberate dichotomy between-- What am I trying to do?  Am I trying to build a system that works or am I trying to understand a fundamental question?  
+
+And sometimes research can get a little bit muddled, where it’s not clear what you’re trying to do.  I have some more theoretical work which has no direct implications on product, but it’s just so intellectually stimulating that you pose this question and you try to answer it. 
+
+KEVIN SCOTT:  And do you think that’s one of the, like, benefits of academic research, like, doing what you do in a university versus a company where you’ve got the freedom to have this mix of these multiple things that you’re pushing on? 
+
+PERCY LIANG:  Yeah, definitely, I feel like the benefits of academia are -- is the freedom.  I feel, you know, pretty much full freedom to think about what are the ideas that I think are interesting and pursue them. 
+
+I think also, students come into the picture quite heavily because they’re the ones also contributing and thinking about the ideas collectively with me.  Yeah, I think it’s really, you know, an exciting environment.  
+
+KEVIN SCOTT:  So, like, back to your story.  So, like, when did you decide to do semantic machines? 
+
+PERCY LIANG:  Yeah, so I started at Stanford in 2012.  And for the first three years or so, I was just trying to learn how to be a professor, teach classes, advise students.  So there’s plenty of stuff to do.  I

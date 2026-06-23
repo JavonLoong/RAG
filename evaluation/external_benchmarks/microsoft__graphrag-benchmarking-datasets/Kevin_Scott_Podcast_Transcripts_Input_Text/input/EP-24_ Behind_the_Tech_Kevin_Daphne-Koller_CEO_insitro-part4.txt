@@ -1,0 +1,13 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt , with my own kids, is trying to get them interested in programming. So, I’m not trying to force them to learn anything that they don’t want to. Like, we try to expose them to a bunch of things. And it took a while to figure out how to find an entry point into coding that was interesting for them. 
+
+And the thing for my son was Roblox. So, which is this game that he plays on his tablet obsessively. And as soon as he figured out that there was a way for him to create his own stages in Roblox, like, that was the thing that enticed him to want to program.  
+
+DAPHNE KOLLER: I think it’s become harder to get kids interested in programming because the programs that are already out there are really sophisticated and fancy. And what kids can create is always going to pale by comparison to what is already out there, which is not a problem that you and I had when we were starting with computers. You couldn’t — you didn’t have a tablet on which you could play amazing games. 
+
+And so, what we created seemed kind of cool. And now when kids create, it seems not quite as cool as the games they have on their phone. And so, the question is: Is there a way in which we can give kids that same sense of excitement about what they’re creating so that it does seem cool and interesting? And I don’t think we’ve paid enough attention to that.  
+
+KEVIN SCOTT: Yeah, and you know, it’s interesting that you bring that up, because we have talked with a bunch of other guests on this podcast where it’s also true that the programming tools that you have available to you now are vastly more powerful than the ones that we had when we were first learning to program. But it could very well be — and like 100% agree with what you’re saying, that the gap between the sophistication of the software has maybe grown even further apart from the power of the tools, you know, for entry level — for kids. 
+
+DAPHNE KOLLER: Yeah, no, that’s right. And my daughter, you know, she was kind of interested in machine learning for a while, but — so I said, “Well, why don’t you try your hand at one of those Kaggle competitions?” And the problem is that the Kaggle competitions, they’re full of really sophisticated, top-notch programmers looking to build a reputation so that they can go get jobs because of their machine learning street cred. And kids like my daughter have no chance of even getting into the top 100. 
+
+So, it was kind of a bit of a demoralizing experience in the sense of nothing she could do would ever rank up there. And so, I’m not sure it ended up serving a positive purpose. And so I wonder if it would make sense to have a Kaggle for kids or something

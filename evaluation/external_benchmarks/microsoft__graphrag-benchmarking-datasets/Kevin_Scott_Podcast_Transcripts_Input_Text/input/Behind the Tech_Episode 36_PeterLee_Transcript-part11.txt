@@ -1,0 +1,15 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  ago who was running a part of a business that was responsible for just enormous amounts of money. And so, whenever you made an engineering mistake in this part of the business, it wasn’t, you know, reputational loss or, you know, like your pride was wounded because something went down and then you had a tough time debugging it. No, like, failures in the things that he was responsible for, like, the meter started running on the dollars that were going out of the door. 
+
+And he invariably like, we made mistakes. It’s impossible not to make mistakes when you’re building complex systems. He would be very calm and collected, never made anyone feel bad about this colossal amount of money that was, you know, just – just being lost. And, you know, he would patiently guide everyone through the crisis and then at the end of it, ask us like, okay, what did we learn from this? It’s like the real tragedy here would be to have experienced this and not have learned anything at all. Like, we can’t let this crisis go to waste. 
+
+PETER LEE:  Yep. You know, you’re reminding me also, there’s another way to fail. You know, one way to fail is to make mistakes, but another way is to be wrong about an idea. 
+
+I think one of my most recent examples that really kind of stopped me dead in my tracks, I joined Microsoft Research in 2010. And, you know, I joined and I was doing a review of a bunch of projects. And there was one project that was in the Speech Recognition Group at Microsoft Research. 
+
+And, you know, in 2010, everybody knew that the way to do speech recognition was to use some form of Hidden Markov Models. Or Gaussian Mixture Models. But here, the speech team was describing the use of a layered cake of neural nets. And they even explained that, you know, the summer before, a guy named Geoff Hinton had spent the summer, along with a post-doc of his and maybe some students, and suggested the idea and the research team decided to give it a try to see how well it worked. 
+
+And I knew Geoff because Geoff and I were both professors at Carnegie Mellon. Geoff, after 1991 or so, left and went to Toronto, but you know, he was at CMU when I started there. And I remember Geoff was working on neural nets, you know, back in the late 1980s. And so my first thought was, wait a minute, people are still working on this stuff? 
+
+KEVIN SCOTT:  Yeah.
+
+PETER LEE:  On neural nets? And why on earth would anyone do this? You know, everyone knows Gaussian Mixture Models are the future of speech recognition. And of course, you know, three or four months later, when the engineering results came in, you know, we

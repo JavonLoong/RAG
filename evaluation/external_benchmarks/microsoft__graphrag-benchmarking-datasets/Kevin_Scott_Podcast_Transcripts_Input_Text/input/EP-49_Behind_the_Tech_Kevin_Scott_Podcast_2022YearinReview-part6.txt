@@ -1,0 +1,19 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt  Roblox is a huge driver of community and creativity, but we also got into another topic that was huge in 2022: the metaverse. 
+
+CHRISTINA WARREN: Let’s check out some of that conversation.
+
+KEVIN SCOTT:  we’re talking about innovation now, I’d love to get your take on the metaverse. And like I have this definition of the metaverse, which is a metaverse is a fully immersive environment that lets you connect with other people to express the fullness of your identity and to accomplish your creative endeavors. 
+
+And so, if I say that definition and I look at Roblox, like Roblox feels to me like a metaverse. Like I – even though it’s a 2D screen, you don’t have to put anything on your head. You know, like I – there aren’t many things more immersive than Roblox for my 11 year old, for instance. 
+
+DAVID BASZUCKI: I think that’s very close with what socially the definition’s going to emerge to. I like to think of it as an inexorable category following along mail, telegraph, telephone, video call, simulated 3D immersive communication. Definitely about identity, definitely about friends and connection and a social graph. 
+
+Definitely about immersiveness and that that immersiveness isn’t just pure 3D fidelity. It’s functional fidelity. It’s social fidelity. It’s device by device, going from phone all the way to immersive VR. I think it’s typically, I think it will more and more be about an infinite array of places and content and objects as part of that. I think these are evolving to always get into economic aspects. 
+
+And then I think metaverses will have various levels of safety and civility. Just like places on the web, we’re leaning in really hard on a civilized place for people together. 
+
+And I think it’s still so fun and so early, that every company is still trying to figure out their own view of this. Like, it’s fun because it’s still emerging. 
+
+KEVIN SCOTT: Yeah. Well, so thinking about this stuff as an engineer for an instance, for an instant, there are a bunch of components that I think any metaverse is going to have to have. So there’s, you know, some way for you to richly express your identity. There’s some way to do commerce with other people in the metaverse. Like there’s some, you know, some value store that you’re going to have to have. There’s some way to, you know, like, here’s what property means in this metaverse. So have you all thought about what those things are? Because again, I think you have a whole bunch of them. 
+
+DAVID BASZUCKI: Yeah, this is really interesting. And it’s funny because, you know, if we were building cars 

@@ -1,0 +1,19 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt  that generates music. And I curious if you had any thoughts about that project or projects like it and how those worlds could interact in the future with people who are doing and creating things like the work that Ben and Jacob are so good at.
+
+KEVIN SCOTT:  Yeah, I think it’s an incredibly interesting space. We got into it a little bit right at the very end of the episode, and, like, maybe that’s the, you know, the next episode if we can persuade them to be back on. 
+
+I think that these AI technologies have an enormous potential to help power the creativity of artists and entrepreneurs and makers of all ilks, and, you know, Jukebox is really interesting. 
+
+You know, one of the things that we talked about is to me, the application of that AI will be most interesting when it puts a tool into the hands of a creator that helps them to expand their creative possibilities and opens up their horizons to new things that they couldn’t do before. 
+
+CHRISTINA WARREN:  Yeah.
+
+KEVIN SCOTT:  The thing that’s not interesting to me is, like, things that you’re trying to do where you make the AI itself like the sole creative agent. 
+
+CHRISTINA WARREN:  Right. Right. Yeah, no, I totally agree with you, and  I think it would be great if we could have Ben and Jacob back to talk more about that, because I totally agree with you, it’s not that interesting for the AI to be the creator, but if the AI could be used to make the tools better, so that the output could be even more new and different, that could be really, really special.
+
+KEVIN SCOTT:  Yeah, and look, I think we’re at the point now where the tools are capable of a lot. Things like Jukebox and, like, there have been a few other experiments. Like, we’ve even done some things at Microsoft Research. And I know Huawei has done a few interesting things where you can have an AI now compose a piece of classical music in the style of your favorite composer. You can say, you know, write me a piano piece that’s in the style of Rachmaninoff or Chopin, and it can do something that is stylistically very much like Rachmaninoff or Chopin. And you just sort of listen to it the first time and you’re like, wow. 
+
+There’s this YouTube channel called TwoSet Violin that are these two professional violinists who, like, comedically have these conversations on YouTube about classical music, and on one of their episodes, they looked at, I think, that Huawei AI that was trying to write the third movement of Schubert’s Unfinished Symphony.
+
+And, like, it’s just sort of staggering, like what the AI did, like it, you know, it in that third movement, like really picked

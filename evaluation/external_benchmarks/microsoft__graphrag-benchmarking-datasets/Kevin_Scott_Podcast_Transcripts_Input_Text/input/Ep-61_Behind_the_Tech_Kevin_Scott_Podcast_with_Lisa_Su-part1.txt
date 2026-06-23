@@ -1,0 +1,20 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt ../Behind the Tech with Kevin Scott
+Ep 61 Dr. Lisa Su
+
+LISA SU: No offense. Software is very interesting, but at the time, hardware was much more sexy to me, and I had the opportunity to see how you could, you know, build chips, and build, you know, they weren’t the most advanced chips in the world, but to me, it was like amazing. It was amazing that you could build, you know, some transistors on something the size of a coin. You could look at it in the microscope. You could measure it on a test system, and you know, that’s how I got into hardware, and that’s how I got into semiconductors, actually.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m cohost, Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today, we are bringing you a conversation with someone who is such an important part of the actual materials that make up our technology and just an incredibly cool person.
+
+KEVIN SCOTT: Yeah. So Lisa is just sort of inspirational, I think, in general, you know, given her career arc, and like the position that she’s in now of, you know, leadership in the technology industry, but I always like talking to semiconductor people. Like, my bias as a computer scientist is low-level system stuff, so I am just a super-big fan of Lisa and her company, and everything that they’re doing. Yeah, like I even have an AMD, like custom-built machine, sitting under my desk, right now, that I’ve been very proud of owning for the past three years.
+
+CHRISTINA WARREN: Yeah, it’s funny,  during the pandemic, when everyone was – I was amongst them, and I built an AMD system, and it was my first AMD system that I’d built in a really long time, but I also helped build a threadripper system for a friend, who claims that they needed more compute than I think they actually did, but it was really fun for me, anyway, and so I’m right there with you. I don’t have the same, you know, passion for low-level languages and system calls like you do, but I’m a huge fan of Lisa Su and AMD, and I’m really looking forward

@@ -1,0 +1,17 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  go away, and – but it was clear that there was more value there, and that this would have a much, much bigger impact in – like in the future.
+
+KEVIN SCOTT: And so I’m curious. So the German education system is a little bit different from the U.S. education system, so at some point, when you’re a kid you get selected, and it’s just always been unclear to me, like how much of a choice the student has, versus how much the system is sort of deciding for you, whether you’re going to go do Fachhochschule, which is this vocational track, or you’re going to Gymnasium, which prepares you to go to university.
+
+So I presume you went on the Gymnasium track. Was there anything in Gymnasium when you went to, effectively, high school that was, you know, helps you learn programing, or you know, get you interested in computer science?
+
+TOBI LÜTKE: Yeah, not – not in my experience. I mean, I’m sure obviously, it’s changed now, but like I was initially eventually – this is a really interesting meta topic, which is that Europe has a – especially this Germanic region of Europe, this sort of heritage of the craft is very different, and it’s, North America does not understand it well. 
+
+I know this for a fact because I have to constantly re-explain this because I, inside of Shopify, it’s – it’s well established that you have to kind of understand what vocation is and what craft is, in the European sense, to really understand the way the company thinks about itself.
+
+So but anyway, I went into this more academic Gymnasium track initially, but I’m just sort of hands-on. I would tinker. I’m not, I don’t – it’s, academia for academia’s sake is not for me, and – so I wanted to go, like more into the practical side. I found out that if you switch, I think after like ninth grade or eighth grade, I switched into the more vocational track of school, and then we did practicals and then – like I actually worked at a Siemens subsidiary for like a couple of – like for a month or so, which was just the most magical thing to me.
+
+And it was clear that I wanted to leave school as soon as I could because it, just everyone was teaching things that were just kind of the exact things that I didn’t think would be super relevant in the future, and then the wisdom of a vocational system allows you to leave school after tenth grade and start as an apprentice.
+
+And so that’s what I did. I was actually – most, like the first year where computer programming was taught as a craft, in the vocation system, and I’m so glad that I hit that particular timing window because things would have gone very different otherwise. 
+
+KEVIN SCOTT:

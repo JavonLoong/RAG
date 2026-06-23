@@ -1,0 +1,19 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt  you know, in just a few days, it became super popular and people just loved interacting with this AI system. 
+
+KEVIN SCOTT: One of the reasons why just me personally, I’ve been excited about the work that you all are doing is like this notion that you want to really allow a lot of people -- a lot of non-expert people to be able to play around with the technology and to imagine how they can use it for things that they think are important is super important to me. 
+
+And, you know, maybe a little bit is -- of the same is true for you, but like, I grew up not in, like, one of the coastal innovation centers, where things like these AI systems get created. I, like you, did not have, like, computer scientist or engineer parents. 
+
+The problems that people have in rural central Virginia, and I’m guessing the problems that people have in Albania, like, you know, some of them are common across the board, but some of them are like very different. And, like, some of them, like, you can’t even imagine, like, if your entire world view is, like, you know, I went to Stanford, I you know, got a job at, like, one of the biggest technology companies in the world and, you know, like I’m building this technology and, like, I -- you know, I have to imagine all of its possible uses. Like, you just can’t even imagine what life is like for, you know someone.
+
+MIRA MURATI: Of course not. 
+
+KEVIN SCOTT: from Albania or rural Virginia. And so, I think it’s really unbelievably important to, like, have these things be platforms that aren’t, you know, aren’t just getting built in a lab where all the consequential decisions get made without any contact with the real world. 
+
+MIRA MURATI: Exactly. 
+
+KEVIN SCOTT: And that doesn’t mean that have to -- I mean, and this is the last thing I want to, you know, chat about before we run out of time, but like, it, you know, it creates this very, very hard problem of, like, how you do responsible AI, because like, you get this big benefit of lots of people participating, but then you get this big bucket of things that you have to go solve at the same time to make sure that you know, it’s not creating a whole bunch of harm. 
+
+So, like, you know, talk a little bit about how you all think about that. 
+
+MIRA MURATI: Yeah. That’s well put. It’s all about these trade-offs and minimizing. You can't have zero risk, for really minimizing those harms. And actually, really being able to respond quickly and iterate quickly on being able to maybe make changes to the models, themselves, or introduce tools

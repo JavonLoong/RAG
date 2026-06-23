@@ -1,0 +1,20 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  like if you train it on literally all the text in the world, you know, what do you get?
+
+KEVIN SCOTT:  And you gave it as many neurons as the human brain?
+
+PERCY LIANG:  Yeah, yeah.
+
+KEVIN SCOTT:  We're likely to find out at some point.  
+
+PERCY LIANG:  I think there is cases where -- you know, we've been doing it in our research group at Stanford where, even the most kind of advanced models make the -- kind of the most -- the dumbest mistakes, where you have a question answering system, you add an extra comma, or you replace a word with a synonym, and it goes from working to not working.
+
+So, even with BERT, and things like this.  So, it's kind of interesting to ponder the, you know, significance of that.  So, from a practical perspective, you know, it doesn't matter, actually, that much, because you -- through more data, you can kind of get things to work, and on average, things will be fine, but from kind of an intellectual perspective of do these models really understand language, the answer is kind of a clear -- at least, for me, a clear no because no human would make some of these mistakes.
+
+KEVIN SCOTT:  Yeah, although, that's an interesting thing that I've been thinking about, and I think that I actually agree with you, but like one of the things that I've been pondering, the past few months, is just because these models -- and it's not just the speech models, like vision models, also, you like stick a little bit of what looks like uncorrelated noise into them, and all of a sudden -- like, you know, you've recognized my face is like my boss' face, right?
+
+Like they make mistakes in ways that are very idiosyncratic to the models, and very, very much not like the mistakes that humans would make. But humans make mistakes, as well, and I just sort of wonder whether -- like for myself, that I am creating an unnecessary false equivalence between these AI systems and like biological intelligent systems, where just because it makes a -- the software makes a mistake that a human wouldn't, doesn't mean that it's not doing useful things.
+
+And like, just because -- you know, like I can solve problems easily that it can't, you know, doesn't invalidate the thing that -- you know, that the machine learning system can do.
+
+PERCY LIANG:  Yeah, definitely.  I think these examples merely illustrate the kind of the gap between these machine learn models and humans, and I think it's absolutely right to think of machine learning AI as not chasing human intelligence, but more -- they're a different thing. And I've always thought about these things as -- you know, tools that we build to help us.  
+

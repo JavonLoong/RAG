@@ -1,0 +1,20 @@
+Ep-55_Behind_the_Tech_Kevin_Scott_Podcast_with_Mira_Murati.txt ../Behind the Tech with Kevin Scott
+Mira Murati, CTO, OpenAI
+
+MIRA MURATI: We’re working on something that will change everything. Will change the way that we work, the way that we interact with each other, and the way that we think and everything, really, all aspects of life.
+  
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+KEVIN SCOTT: Today we have a super exciting guest with us, Mira Murati. I've had the pleasure of working very closely with Mira and her team at OpenAI for the last several years. And even though I've had all of these opportunities to interact with her, it was so interesting to hear more about her story, like how she grew up, how she first became interested in mathematics and then physics and science and where this intense curiosity that she had from childhood eventually led her. And I think there were just some amazing nuggets in our conversation. Can't wait to dive right in. So let's get at it.
+
+KEVIN SCOTT: Mira Murati is the CTO of OpenAI. She worked as an engineer and product manager, most notably helping to develop the Tesla Model X. She joined OpenAI in 2018 as the VP of applied AI and partnerships and has since been promoted to CTO. During that time, she’s helped bring AI products like ChatGPT, DALL-E, and GPT-4 public and has partnered closely with our team at Microsoft to integrate their technology into our products. It is so awesome to have you on the show today, Mira. Thank you so much for joining us. 
+
+MIRA MURATI: Thank you, Kevin. Excited to be here. 
+
+KEVIN SCOTT: Yes, so I actually -- I’m going to learn a lot about you today that I don’t know, which I’m super stoked about. I would love to understand how you got interested in science and technology in the first place. 
+
+MIRA MURATI: It started with math. When I was a kid, I just gravitated toward math. I would do problem sets all the time and then eventually did Olympiads and I loved doing that. It was such a passion. 
+
+I grew up in Albania. It’s a small country in Europe. This was during the transition from totalitarian communism to liberal capitalism. When I was two, the dictatorship regime fell. It was sort of anarchy overnight

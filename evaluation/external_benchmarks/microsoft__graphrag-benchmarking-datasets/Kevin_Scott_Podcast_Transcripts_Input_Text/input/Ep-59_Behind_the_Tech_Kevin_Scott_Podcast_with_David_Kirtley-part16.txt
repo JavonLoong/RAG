@@ -1,0 +1,15 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt , small research projects, but literally in a small system that was 10 feet long, and that I helped build and, like, actually turned the wrenches to assemble the thing. 
+
+We built a small system that did exactly this, made a plasma, super-heated it up to thermonuclear fusion conditions. Fusion happened, we saw it push back the magnetic field. We measured fusion reactions, we measured fusion particles. We measured a lot of it, and we did that on the program that was, like, a million and a half dollars, but was outperforming every – certainly every private fusion company that had come before, but then most of the National Labs, even up to the billion dollar scale lab.
+
+And we said, look, wow, okay, we’re seeing an approach that, like, can do fusion at scale, fusion at a really interesting scale, still not at commercial scale, but for three orders of magnitude less money. Maybe, this is something I learned at the Air Force, working on those spacecraft programs, is that if the research, you can directly tie the final cost of whatever the deliverable is to what the research cost is, and that it only goes up. (Laughter.) As you start to build more complex systems, and make them reliable and then make them deliverable, cost continues to go up. 
+
+So, if you can do the research at a million dollars, you can now deliver fusion systems at competitive rates, where if you’re doing the research at a billion dollars, the commercial system is in trouble already. 
+
+KEVIN SCOTT: Yeah.
+
+DAVID KIRTLEY: And so, it’s great, but that’s not scale yet. We’ve got to go figure out how to scale this. That’s not – we haven’t proven it in the engineering or the business case. We’ve got it. We’ll figure those things out, too. 
+
+So, we spent a couple more years doing the financial modeling, and the scaling modeling of, like, what does a generator look like? What does a power plant look like with this approach, assuming everything still works as we scale? And both the – have done, been demonstrated thermonuclear fusion, measured fusion reactions, scientifically validated and peer reviewed, and all of those things, plus a real clear commercial path, if all – if we could hit our milestones on the way, enable us to go and spin off Helion, raise venture capital. 
+
+And luckily enough, we’ve had some really good venture capitalists, Mithril Capital, and then Y Combinator to help grow that technology that were good believer in what we were doing, and then started hitting milestones. It took three more machines for us to build now the full-scale fusion system, like we did and published about a year and a half ago, our Trenta system that then got to full fusion conditions, over 100 million degrees is fusions at a commercial scale

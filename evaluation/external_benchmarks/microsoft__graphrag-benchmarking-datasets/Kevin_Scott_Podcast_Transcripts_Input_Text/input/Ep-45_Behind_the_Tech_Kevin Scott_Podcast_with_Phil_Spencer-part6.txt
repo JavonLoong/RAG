@@ -1,0 +1,15 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  to sit there for three hours in front of the machine. 
+
+And you’re absolutely right, this how does device influence creative, and their creative was amazing for the time, these fully animated videogames, and the business model, I mean it still it’s as relevant, as I said, today, that same discussion, what device am I playing on, what technical capabilities does it have, what device, what business models are prevalent? And then obviously, the creative capability of the creators is at the core. 
+
+KEVIN SCOTT: So do you remember the first program that you wrote? So you were interested in videogames. Yeah, there’s some period of time between when you get your first console and when you go off to you UW. So how much programing did you do between the two? 
+
+PHIL SPENCER: It was constant. I mean, my first program that I ever wrote was probably Lemonade Stand in the seventh grade as part of my before school, like computer club, where you’d go in at 7 a.m. before the classes would open. I think it was an Apple II. And, you know, the instructor, who’s actually pretty good, would write up, here’s what I want your program to do. You know, it’s all text based, but it’s at least running math models. 
+
+And then once I started working at Computer Mart, we’d actually have some of the game creators come by the store because we were kind of big enough in a local area around Portland, Oregon, that I would meet people that were actually working on games. So we’d get the opportunity to kind of help out with things like installers and little things. And that’s was kind of my production work for the longest time through high school.
+
+When I got to college, it was obviously all about writing compilers and, you know, kind of real CSS code as opposed to the stuff that I was kind of doing, and frankly, getting a real training on what is a pointer and like, you know, just real linear algebra math, doing 3D transformations for 3D games. I mean, that was my real learning. 
+
+But yeah, early on, it was kind of, here’s a problem, go write something that works. And I love that iterative process. I miss it many days. 
+
+KEVIN SCOTT: Yeah, for sure. Yeah. I mean, this is one of the things that I talk with people a lot about, like there was this beautiful thing about the simplicity of the machines that we had when we were growing up. I mean, they didn’t seem simple to me at the time, but in retrospect, yeah, they were not that difficult to approach and start doing stuff on, whereas it’s the tools are way more powerful now and the machines are way more powerful, but you also have a lot more stuff to get your head wrapped around if you want

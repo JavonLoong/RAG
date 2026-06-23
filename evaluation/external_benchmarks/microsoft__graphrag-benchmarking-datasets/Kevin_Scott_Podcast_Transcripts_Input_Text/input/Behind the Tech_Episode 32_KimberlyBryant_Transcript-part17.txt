@@ -1,0 +1,13 @@
+Behind the Tech_Episode 32_KimberlyBryant_Transcript.txt  meld those two things together and I think that’s what leads to really finding so much joy and fulfillment in your career path. 
+
+And then I would say something similar to parents is, find the things that your kids love and give them opportunities to do that. For me, it was my daughter loved gaming and she also loved – she was a creative. Now, I did not want her to do games, like, I did not even want to teach game development when we first started BGC. I was sick and tired of those games and I did not want to teach it. 
+
+I found out, however, very early on within BGC that teaching game development and game design is such a – sound really geeky now, but it’s such a beautiful pathway in tech because it’s creative, so there’s art there, there are the people behind the scenes that do the sound. There, of course, are developers who do the algorithms, but it’s such a diverse as well as really – I think it’s the perfect way to teach computer science because of the different modalities in terms of bringing all these different skill sets and techniques into creating a final product. 
+
+And it’s a place that, you know, certainly, we need more and more diverse creatives being a part of that industry. But I didn’t want to do that because I was, like, oh, gaming, she’s going to play games all the time. But it was what she loved. And I think for me, the learning as a parent through all this is, like, it – find the thing that your child loves and open up every opportunity possible for them to be able to do that thing, you know, whatever it is. You know, and if it’s technology, there’s a lot of resources out there now that we can get, you know, right offline. Find those opportunities and introduce them to it as much and as early as you possibly can. 
+
+KEVIN SCOTT: Yeah, I think that is such good advice. I mean, it’s really interesting. The first program that I ever wrote for myself, like, the thing that motivated me to, like, just go learn more about coding so I can make this thing that I wanted entirely for myself was a Dungeons and Dragons game, actually. 
+
+And once I had made that thing for myself, like, I learned a bunch and, like, I – the most important thing I learned is that I could make things and, you know, I was super interested for a long time and how do you build games and, like, how do – you know, how do you build awesome computer graphics systems? 
+
+And, like, I’ve never been a game designer or, like, a computer graphics person but, like, just having those is the motivation that drew me in, that taught me that I could figure out how to program, then let me sort of do exactly what you just said,

@@ -1,0 +1,23 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  Now, it went further and created things like SVG, which is the graphics format, and the Office – all their documents are actually XML formatted documents. They’re in a ZIP file, so you don’t realize it, you know, but they’re actually just XML. 
+
+So, at the time, we were trying to do a couple of things, but primarily just being able to wrangle data, right, add some amount of structure and schema to data that otherwise is just kind of out there. And by structuring things with XML, you make it easier for intercompany communications or intracompany communications, and on and on. 
+
+We went a bit too far. It got too cumbersome. Along came JSON, and now JSON’s that, right? But XML was super important at that time, right? 
+
+KEVIN SCOTT: Well, and also in a bunch of subtle ways. I mean, like, one of the things that Microsoft did in Internet Explorer, like, with XML, adjacent to XML is, like, this thing called the XML HTTP request, which is – 
+
+WILLIAM ADAMS: Oh yeah, that was the most important thing, because that allows you to program the Web, right?
+
+KEVIN SCOTT: Correct. 
+
+WILLIAM ADAMS: And now people, it’s like, well, you don’t even think about it. But at that time, yes, the HTML request was like, oh, this is different – (laughter) – because before that, there was no way to really, or at least, there wasn’t a real standardized way of saying, I’m going to call this function over there, right? So, yeah.
+ 
+KEVIN SCOTT: Correct. And you know, again, just to pull back, like, this was the way where you could write an application in JavaScript that ran in your browser, that could then interact with something running in the cloud. 
+ 
+WILLIAM ADAMS: So, we didn’t even have the cloud at that point, right? (Laughter.) 
+ 
+KEVIN SCOTT: Yeah, the cloud – yeah, nobody was calling it this silly name yet. 
+ 
+WILLIAM ADAMS: Yeah, so it was the birth of that. It’s kind of funny, what you’re telling me is, like, well, there was the XHTML, you know, requesting. I’m like, yeah, no, we did that. (Laughter.) There’s so much history in there that it’s like, yeah, we did that, too. And we did that, and we did that.
+
+Little known fact, I was granted a – after doing this XML stuff and some other stuff, my then-GM at the time, Dave Reid, said, “Hey, come up with something.” (Laughter.) So, he gave me free license. He said, “Pick your top six people, and go do

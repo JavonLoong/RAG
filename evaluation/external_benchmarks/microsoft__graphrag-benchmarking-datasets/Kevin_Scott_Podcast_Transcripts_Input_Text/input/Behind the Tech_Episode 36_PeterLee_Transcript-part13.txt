@@ -1,0 +1,21 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  speech recognition 20 years ago or 10 years ago. 
+
+PETER LEE:  Yep.
+
+KEVIN SCOTT:  I think both 20 and 10 years ago. But you know, like, just as obvious as that was then, it’s as obvious now that like, oh, well, this is clearly the way that you do computer vision and speech recognition and natural language processing. In 1991, not obvious at all. In fact, quite to the contrary. 
+
+I remember AI throughout my entire academic life, which was off and on from 1990 until 2003, when I joined Google. AI was not the hot thing to study.
+
+PETER LEE:  Right.
+
+KEVIN SCOTT:  And neural networks like particularly so were like this sort of weird – weirdly looked upon thing. And yet, like he was convinced that this was something that had merit and stuck with it and, like, had to listen to all of the people for years and years and years telling him he was wrong. And then all of a sudden, he wasn’t and you know, he helped catalyze this huge amount of progress, and like now has a Turing Award. 
+
+PETER LEE:  Well, this sort of relates back to what we were saying at the start of the conversation because there is a stick-to-itiveness in all of this in the face of a lot of doubts or even skepticism.
+
+And I think it actually even relates to the trust issue that you raised earlier because there’s something about that. You know, when you demonstrate that sort of commitment, it’s one path, one ingredient in earning people’s trust. 
+
+If I think about the speech group, you know, 10 years ago at Microsoft Research, they probably in the back of their minds, maybe it wasn’t conscious, but they had to think, well, maybe this is worth a try. After all, this guy, Geoff Hinton, has been at this, you know, for more than a decade. And, you know, earning trust in that way, I think ends up being maybe one ingredient in all of this. 
+
+And then, you know, it all does come around to more urgent priorities. You know, like, it looks now like some of the things that we need to be able to do to remove carbon from the atmosphere or you know, find drugs for global pandemics faster, these sorts of things, it looks like they’re really going to depend on things like deep neural nets in a really fundamental way. And thank god that people did stick to these ideas and were willing to experiment. 
+
+KEVIN SCOTT:  Yeah. You know, the really interesting things that wasn’t obvious to me, even when I started doing machine learning work in 2003 is – so I left graduate school where I was before I finished my dissertation, which was on dynamic binary translation. So I was doing a

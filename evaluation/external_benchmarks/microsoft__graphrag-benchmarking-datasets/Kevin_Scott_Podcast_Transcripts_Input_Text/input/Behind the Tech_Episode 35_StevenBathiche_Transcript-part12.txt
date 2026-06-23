@@ -1,0 +1,13 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  environment is the creation of interactive technologies – you know, basically, how do I digitize information and how do I communicate that information back to you. 
+
+So, display technology has been an amazing kind of transformation since the old CRT days, and that has really enabled us to build all sorts of computers. The sensing technology where, you know, in the old days, I was using– we were using computer vision to sense what you’re doing on top of a screen. And now, it’s all shifted to capacitive technology and pen, and trying to sense, essentially, there. But we treat it like an imager.
+
+And now, we’re at the place where we start infusing signal from all these different sensors of the camera, of the context of the environment, of all the information that you’ve generated in the world using AI to try to deduce and understand intent. And I think we just scratched that idea. We’ve just scratched that surface. That’s going to change the game for us. 
+
+I mean, this whole AI field is something that, to me, is going to blow our minds in – and we’re just beginning, Kev, right? It’s just, like, you know, I mean, to the point where it’s going to change how we deploy –how software is created, it’s going to change how software actually ends up being. 
+
+Like, right now, like, I was thinking about this, actually, this morning, you know, like we’re – when we write Word, Word is like, this static, fixed thing, like we send and we give it to the customer, and then we update it once in a while. But what if Word actually adapted to the customer in the environment because it actually understood what you wanted, and it wrote code itself that was custom to you. And we didn’t really deploy, like, specific versions of Word. We deployed things that essentially would help people do word processing.
+
+KEVIN SCOTT:  Yeah. Well, it’s one of the interesting things about machine learning. Like, I think the thing – people get, like, really caught up in the sensationalism around the idea of, like, AGI or like the vision of AI from 1955 when the founders of the field coined the term. And like, these science fictional AIs that are in movies. But, like, as a machine learning practitioner for the past almost 20 years, it’s hard to imagine AI in those terms, because to me it’s always felt like a tool and it’s, like, a tool to do this thing that you’ve been talking about in our conversation today. It’s like managing complexity. You use it to solve problems that are just too hard to solve any other way. 
+
+And I think, you know, the big paradigm shift for me has been that for 175 years or so, programming a computer or, like, leveraging a machine to

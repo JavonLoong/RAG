@@ -1,0 +1,19 @@
+Ep-41-Behind_The_Tech-Neal_Stephenson-FINAL_2.txt  send you this paper, like a group at Caltech, they invented a thing that they call a neural operator for solving the Navier-Stokes flow equations for computational fluid dynamics. And they didn’t get a 10 percent speed up or a factor of two speed up in performance without losing accuracy. Like, they got a thousand times speed up. 
+
+NEAL STEPHENSON: Wow. 
+
+KEVIN SCOTT: And so, I think, you know, when you see things where your improvements come by orders of magnitude, like huge new things become possible. And like, we’re seeing this generalize fairly well across a whole bunch of problems. And so like, you know, you think about carbon capture and, like, you need to design new catalysts and new materials and whatnot. It’s exactly the sort of thing where, you know, if you can get a million X speed up on classical methods, it’s great.
+
+NEAL STEPHENSON: Yeah. I mean, once you get on the inside of the inside of current research, it can be incredibly exciting. And but it’s kind of fragmented into a lot of different areas, right? So, you really have to be on top of things, on top of a particular area to understand and appreciate some of the advantages of what’s going on. 
+
+KEVIN SCOTT: Yeah. Well, you know, the thing that I did after 2016 is I stopped spending any time at all on social media – (laughter) And I renewed my subscriptions...
+
+NEAL STEPHENSON: Good for you.
+
+KEVIN SCOTT:  ...to Science and Nature. And I was like, yeah, I’m only going to consume information that is long form, preferably peer reviewed or produced with high editorial standards, because I was spending an inordinate amount of time consuming information that was sort of the, you know, the food equivalent of junk. Like, I wasn’t learning anything. I wasn’t, you know – it wasn’t helping me be better at anything. 
+
+And I think, you know, in that sense, you read Science and Nature every week and even through the course of the pandemic, it’s really inspiring. Like, we’re making a lot of progress. Like, the quality of the work is crazy good. That – that’s my hope. (Laughter.)
+
+NEAL STEPHENSON: Yeah, no, that’s one of the oddities of our time, right, is that that sort of thing is going on and we’re like creating mRNA vaccines in no time, you know, and saving millions of lives. So, and that is all co-existing with people who think that it’s a hoax or that the vaccines have microchips, you know, in them. (Laughter.) So, it’s an interesting picture, to be sure. 
+
+KEVIN SCOTT: Yeah. So, one final question before I let you

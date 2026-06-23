@@ -1,0 +1,21 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt  general bag of techniques to make sure that you are getting all of the benefits from machine learning and AI, without having to make the tradeoffs that you mentioned on making the data available to the model versus privacy quite as stark as they are right now, or they can be in some cases. 
+
+But, like, maybe the most inspiring thing that you just said is this example of a machine learning system and a doctor working together to get to a fundamentally better outcome than either of them could achieve on their own. I think this cooperative AI or collaborative AI is really an exciting thing to think about. 
+
+DANIELA RUS: I like to think of our machine learning solutions of today as sort of like interns. They’re running in the background. They’re – they’re doing tasks, but then they’re bringing the results to the human to make an informed decision on. And I think that that’s the best way to use AI and machine learning in – especially in safety-critical applications. 
+
+KEVIN SCOTT: Yeah, very, very, very strongly agree with that. 
+
+So,  we are running out of time here. But before we end, I would love to ask you a question I ask everyone, which is what do you do in your, quote/unquote, spare time? (Laughter.) I’m sure you’re one of the busier people on the planet, and you’ve got lots of fun stuff to occupy your time when you are working. But what do you do when you aren’t?
+
+DANIELA RUS: Well, I actually like to spend time with family and friends. (Laughter.) I also like to enjoy nature, and I love to ski in the winter. I love to scuba dive in the summer. I’m trying to get back into tennis. I used to play tennis. I used to be pretty decent, but I haven’t played in about 20 years. I love to cook. 
+
+KEVIN SCOTT: Awesome.
+
+DANIELA RUS: I love to host dinner parties, where we could have conversations like we had today, Kevin. But this has been kind of tough during the pandemic.
+
+KEVIN SCOTT: Yeah, it has been. What’s your favorite thing to cook?
+
+DANIELA RUS: Oh, that’s like asking, who’s your favorite child? (Laughter.) So, I actually have a wide range of things I like to make. So, for my girls, I like to make my very special meat sauce pasta that they enjoy every time. But I also like to get a little bit fancy and make higher skill recipes that mostly come from French cookbooks, or I really like the cookbooks of Annabel Langbein. She’s a New Zealander chef who has really, really wonderful cookbooks.
+
+In fact, sometimes after a long day at work, I might pick one of her books before I go to sleep.

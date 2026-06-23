@@ -1,0 +1,15 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  to find time to practice?
+
+KEVIN SCOTT:  Yeah, and I think, I think we are going to have a world where computers and like machine learning, in particular, like are going to like help with that human creativity, but like one of the things -- I find classic piano is like this very fascinating thing because, on -- it's one of those disciplines and like there's several of them where it's just blindingly obvious that -- the difference between expertise and non-expertise, like no matter how much I understand --
+
+And so, like I'm not a classical pianist, like I'm just an enormous fan.  Even though I understand the -- I understand harmony, I understand music theory, I can read sheet music, I can understand all of these things, and I can appreciate Martha Argerich playing, you know, Liszt Piano Concerto No. 2 at the Proms.  
+
+There's no way that I could sit down at the piano and like do what she does because she has put in an obscene amount of work, training her neuromuscular system to be able to play, and then to just have years and years and years of like thinking about how she turns notes on paper into something that communicates a feeling to her audience. And it's like really just to me, stunning, because there's just no -- there's no shortcutting it, like you can't cheat.
+
+PERCY LIANG:  Yeah, it's kind of interesting because, in computer science, there's oft -- sometimes an equivalence between the ability to generate and the ability to kind of discriminate and classify, right?  If you can recognize something, whether it's something's good or bad, you can use that as an objective function to -- to hill climb.  But it seems like in music, we're not at the stage where we have that equivalence.  
+
+You know, I can recognize when something is good or bad, but I don't have the means of, you know, producing it, and some of that is physical, but I don't know, maybe -- maybe there's a -- this is something that is in the back of my mind, in the back pocket, and I think it's something that -- you know, maybe in a decade or so I'll revisit.
+
+KEVIN SCOTT:  The other thing too that I really do, I wonder about, with performance, is there's just something about -- like, for me, it just happens to be classical music.  I know other people like have these sorts of emotional reactions to rock or jazz or country music, or whatever it is that they listen to. But I can listen to the right performance of like Chopin's G Minor Ballade, and like there are people who can play it, and like -- I 'm like this is, you know, very nice, and like I can appreciate this.
+
+And there's some people who can play

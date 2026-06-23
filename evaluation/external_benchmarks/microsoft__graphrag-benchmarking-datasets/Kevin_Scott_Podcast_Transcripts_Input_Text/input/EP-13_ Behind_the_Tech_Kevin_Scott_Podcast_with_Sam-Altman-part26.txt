@@ -1,0 +1,12 @@
+EP-13_ Behind_the_Tech_Kevin_Scott_Podcast_with_Sam-Altman.txt  to work on.  The rate of job turnover is something like 50 percent of the jobs every 75 years, and this held remarkably constant.  You know, it has like fits and spurts, but that's held constant for hundreds of years.  And like, we go -- like, technology changes.  Whole classes of jobs go away, and we find new ones.  And they're difficult to predict what they're going to be.  But like, I think the jobs this time will change a lot, but we're going to find things to do, I'm pretty sure.  
+KEVIN SCOTT:  Yeah.  Well, and the thing that I think one of the hardest things to do right now, and it's why I think we really need to get a lot of folks who aren't computer scientists thinking about these problems is, like, we're sort of thinking about a bunch of things sort of superficially, right now. 
+You know, so for instance, there's been some kneejerk things that people have said that, like, "Oh, well if robots are going to take all the jobs, then we should tax the robots."  And if you really look at the --
+SAM ALTMAN:  Bill Gates said that, I think.
+KEVIN SCOTT:  I think Bill Gates did say that, and it's -- and look, Bill Gates is not a superficial thinker in any shape, form or fashion.
+SAM ALTMAN:  No.  Not at all.  
+KEVIN SCOTT:  Bill is one of the deepest guys.  
+SAM ALTMAN:  True.  It's super impressive.
+KEVIN SCOTT:  It's intimidatingly impressive.  But you know, one of the things that -- one of the things if you look at the data, that you will see is that we are, in manufacturing, at this sort of efficiency equilibrium right now where a relatively fixed percentage of the population for many, many years has been responsible for producing all of the manufactured goods that the rest of us consume.  And it's a tiny little percentage.  
+And it had sort of -- it's, like, had fallen, like, this sort of percentage of the population working in manufacturing had gone sort of straight down since almost the very beginning of the Industrial Revolution.  So almost as soon as we invented the notion of manufacturing, like, we started to get more and more efficient.  
+SAM ALTMAN:  Yeah.
+KEVIN SCOTT:  And one of the things that happens when you get to these equilibria is that you have very few things that you can do to, like, create more opportunity and growth.  Like, one trick you can play is global labor market arbitrage.  So like, you can sort of, like, try to find people who are less expensive than the people that you've got in, like, your

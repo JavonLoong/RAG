@@ -1,0 +1,19 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt 's like the thing that we use to do a bunch of perceptual things that have seemed extraordinary over the past handful of years. So just since 2012, like we have really made super-fast progress using a set of techniques called supervised deep learning to be able to accurately transcribe spoken word, speech to text, so the speech recognition.
+
+We have made huge progresses in computer vision, like where computers can identify the objects in still images, and like even in video streams, with accuracy similar to a human being, like we're able to do machine translation where you can sort of take a snippet of text in one language and translate it into another.
+
+And so like there are just all of these extraordinary things that we've been able to accomplish with this set of techniques called supervised learning, and the reason that we call these techniques supervised learning is that you have to have human beings labeling the data.  
+
+So, like if you want to build a computer vision system that's able to recognize or discern the difference between buckets and kittens, you would have to go assemble like a huge collection of images of buckets and kittens, and you would have to have these images labeled.  
+
+So somebody would have to sit down and say, hey, this picture has as kitten in it, and this picture has a bucket in it, and you would have to have kittens of shapes, sizes, breeds, colors, fur texture, in different positions and poses, under different lighting conditions.
+
+And the same thing for buckets.  And so you would feed all of this, you know, sort of labelled data into your learning system, and it would produce a model that can accurately identify, you know, buckets and kittens. And so, it's fairly expensive in terms of the effort required to do all of this labeling, that –
+
+GREG SHAW:  Yeah, and then – and then you end up with a – maybe a picture of a bucket with a kitten in it, and really confuses –
+
+KEVIN SCOTT:  Yes, and yes, you can really confuse the system, but you know, one of the interesting things that's really happened over the past couple of years, and that's going to be like one of the driving forces for the next few years is we have really figured out, in a bunch of areas, how to do this thing called unsupervised learning, where you can bypass most or all of this labeling step.
+
+And you can just sort of point the learning system at a whole bunch of data, and you can have it sort of figure out a bunch of very complicated structure about, the data that you're then able to use to build very, very powerful systems, without having to bear the expense of this supervised, you know, labeling process.
+
+And that's the you know, the set of things that have really been driving progress in natural language processing over the past couple of years, where we've gotten some really sort of extraordinary results with question answering, with

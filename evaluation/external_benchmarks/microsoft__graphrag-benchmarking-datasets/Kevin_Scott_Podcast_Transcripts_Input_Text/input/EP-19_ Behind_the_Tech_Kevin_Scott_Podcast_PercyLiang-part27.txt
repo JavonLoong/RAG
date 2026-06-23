@@ -1,0 +1,31 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt ../[MUSIC]
+
+PERCY LIANG: At the end of the day, you know, we're computer scientists building, you know, systems for the world, and I think humans make mistakes.  They have fallacies, they have biases, they're not super transparent sometimes, and why inherit all these when, maybe, you can design, you know, a better system? And I think computers, already, clearly have many other advantages that humans don't have.  
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech.  I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT:  And I'm Kevin Scott.  Today our guest is Percy Liang.  Percy is an Associate Professor of Computer Science at Stanford University, and one of the great minds in AI, specifically in machine learning and natural language processing.
+
+CHRISTINA WARREN:  Yeah, and Percy talks about the need for AI to be “safely deployed,” and he says that “given society’s increasing reliance on machine learning, it's critical to build tools that make machine learning more reliable in the wild.”
+
+KEVIN SCOTT:  Yeah, I completely agree with Percy's point of view, and honestly with – like a bunch of his other very interesting ideas about how machine learning and natural language processing are unfolding over the next few years.  So, I'm super interested in having this conversation.  So, let's find out what Percy's up to.
+
+[MUSIC]
+
+KEVIN SCOTT:  Our guest today is Percy Liang.  Percy is an Associate Professor or Computer Science at Stanford University.  He's also one of the top technologists at Semantic Machines.  His two research goals are to make machine learning more robust, fair and interpretable, and to make it easier to communicate with computers through natural language.
+
+He's a graduate of MIT and received his PhD from UC Berkeley.  Hey, Percy, welcome to the show.
+
+PERCY LIANG:  Thanks for having me.  
+
+KEVIN SCOTT:  So, we always start these shows with me asking how you first got interested in technology.  Were you a little kid when you realized that you were interested in this stuff? 
+
+PERCY LIANG:  Yeah.  I think it was around maybe end of elementary school or middle school.  My dad always had a

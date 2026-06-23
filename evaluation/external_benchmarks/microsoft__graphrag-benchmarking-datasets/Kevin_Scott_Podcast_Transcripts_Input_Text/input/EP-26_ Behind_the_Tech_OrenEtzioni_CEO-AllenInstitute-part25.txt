@@ -1,0 +1,24 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  hands it to you. This is all mediated by the computer. And you place it on your board instead of making a move. So, it’s a crazy, crazy game, which is what the phrase Bug House alludes to. And it has communication, it has adrenaline, it has stopwatch, you know, split-second timing, and it’s a wonderful distraction from worrying about when we’re going to have a vaccine.  
+
+KEVIN SCOTT: That sounds like a lot of fun. 
+This has been an amazing conversation. I’m so happy to know that there are people like you – and institutions like AI2 that are not just advancing the state of the art, but like, thinking very, very carefully about how these technologies can have a positive benefit for society. So, like, thank you so much for the work you do and for being here with us for an hour today. 
+
+OREN ETZIONI: Well, thank you, Kevin. I really appreciated the opportunity to talk to you and to talk to your audience. It’s a real pleasure. 
+
+KEVIN SCOTT: Awesome. 
+
+[MUSIC]	
+
+CHRISTINA WARREN: Well, that was Kevin’s conversation with Oren Etzioni. Wow, you went through so many different paths and talked about so many different interesting things. 
+
+For you, Kevin, I’m curious, as someone who works on the industry side of artificial intelligence, what excites you or I guess is most interesting to you about some of the stuff that Oren is pursuing from more of the academic perspective?  
+
+KEVIN SCOTT: Well, look, I think AI2 is doing some of the most interesting work in the field right now, and you sort of heard in our conversation, this giant leap forward that we have had in natural language processing and natural language understanding over the past handful of years. 
+
+Started at AI2 with their work on this technology called ELMO, which then resulted in BURT and Roberta and Turing NLG and GPT and a whole bunch of these technologies that really are reshaping how natural language and AI is working right now. 
+
+One of the things that Oren was chatting about that’s really impressive both from a technical perspective as well as just beneficial use for society is the work that they’re doing on Semantic Scholar, which is applying some of these really advanced AI technologies to the task of trying to understand and make more accessible the huge amount of scientific literature that the researchers of the world are producing right now. 
+
+And things like that become even more important when you have a moment like we’re in now with COVID, where getting that research digested and to the right people as quickly as humanly possible so that you really are able to get those right people to understand the salient points can just mean the difference between literal life and death as we’re scrambling to develop therapies and vaccines for SARS coronavirus-2. 
+
+So, it’s just wonderful that you have

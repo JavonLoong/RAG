@@ -1,0 +1,16 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  so it was like we had three of the first Apple computers. 
+KEVIN SCOTT: Oh, that's awesome. 
+DANIELLE FEINBERG: And it was, like, well, I don't know what programming is, but I love these computer things. And so it turned out to be in the language Logo. And so it just happened that my very first programming experience was writing code that made this little icon of a turtle drive around on the screen and everywhere it went, it left a line. 
+And so, my first coding experience made pictures. And coming from this art background, but also really deeply already loving math and science, it was like this magical combo of the two that I had no idea at the time what it meant. I just was like, "This is really cool." "I like programming." (laugh) 
+KEVIN SCOTT: Yeah. I remember I had similar experiences. The thing that enticed me to want to understand programming more, part of it was just -- it's the mystery. Right? 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: And the more mysterious the thing, the more I wanted to understand how it worked. But the real hook for me were video games. When I grew up, the console video games had just started coming out. And I'm, like, "Oh, my god." "These are the most amazing things ever." And there were video games on the Apple IIe. And I'm like, "I've got to figure out how to make these games." 
+DANIELLE FEINBERG: Or the games were -- The kids would probably cringe at now, but it was all text, but you were writing things and investigating a world. And you had to figure out where the key was and the thing that the -- You know, and there were no pictures. It was all text. But it was this whole world, and it all existed inside the computer. 
+KEVIN SCOTT: And you were in charge of it. 
+DANIELLE FEINBERG: Yeah. Yeah. 
+KEVIN SCOTT: I just felt so empowered. It was this amazing thing. So, where did you go from there? You're eight years old, you're learning Logo. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: What's next? 
+DANIELLE FEINBERG: The school then brought in -- happened to be a woman from the University of Colorado who was studying programming. And she taught us the language BASIC. I always think it's so awesome that my second computer science teacher was a woman. And my third one was a woman. And my fourth one was a woman. 
+KEVIN SCOTT: Wow. 
+DANIELLE FEINBERG: Which had to have some impact in there somewhere.

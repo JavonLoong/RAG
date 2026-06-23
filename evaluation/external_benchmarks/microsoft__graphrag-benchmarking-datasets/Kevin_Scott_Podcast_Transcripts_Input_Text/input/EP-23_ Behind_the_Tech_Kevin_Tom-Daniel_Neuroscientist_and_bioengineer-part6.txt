@@ -1,0 +1,15 @@
+EP-23_ Behind_the_Tech_Kevin_Tom-Daniel_Neuroscientist_and_bioengineer.txt , it generates a Coriolis force, a gyroscopic sensor.
+
+And lo' and behold, these systems are exquisitely sensitive to rotational forces. So, they're basically measuring–I apologize for the math–the cross product of their flap (Laughter) with their body rotation, okay? And so we – we had this idea that they're able – or they're physically able to respond to Coriolis forces, but we really wanted to nail whether the neural system actually has the equipment to measure that. And so we were able to stick electrodes into the neurons that go into these tiny modified hindwings, and measure their encoding properties, and you can show that they encode information at astronomically high rates, and do so for Coriolis forces.
+
+But that sort of led to an interesting question is – these are what you would call a vibrating structural gyroscope, which is basically the same idea that you have in all these gyroscopic sensors in your cellphone, or anything else. They operate at a tiny, tiny fraction of the energy costs. I'm not going to stick a fly inside my cellphone. (Laughter) But bear with me, we do some odd things like that.
+
+KEVIN SCOTT: So what you just described, makes me want to ask a thousand questions, but you know maybe an interesting one is in recent years we have gotten better and better at being able to synthesize, to design and synthesize some of these biological structures. And so, I know in a bunch of your earlier work, when you were trying to sort of bridge this biological electromechanical gap you were, you know, in a variety of ways, like trying to graft existing biological structures, taken off of an organism, into an electromechanical system. But like do you think that there's a possibility now that we will be able to sort of engineer these structures, a priori, where you're not having to sort of borrow them in whole from an existing organism?
+
+TOM DANIEL: That’s  a super question. I think it's possible. I have to be a little careful. Kevin, the hybrid system you're referring to is this hybrid system where we took the chemical sensory structures from an insect, right, and removed it, what's called their antennae, put electrodes into the harvested structure, right, and then recorded its chemical responses, its responses to chemical signals, okay? And the reason we did that is getting close to the point you're making, which is that we, today, cannot synthesize chemical sensors with the efficiency of sensing that we see in biological systems, okay-- 
+
+KEVIN SCOTT: Right.
+
+TOM DANIEL: --today. And the reason is there's this beautiful and elegant protein amplification pathway in chemical sensing, in biology in humans, in dogs, and in insects, in everything, that senses chemicals, which is nearly every living creature.
+
+KEVIN SCOTT: It just seems

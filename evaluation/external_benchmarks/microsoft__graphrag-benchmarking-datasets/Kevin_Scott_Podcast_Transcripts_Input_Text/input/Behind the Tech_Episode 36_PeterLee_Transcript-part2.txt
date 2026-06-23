@@ -1,0 +1,32 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt And he has a really big job here at Microsoft. So he runs all of Microsoft Research, which as an institution turns 30 this year. 
+
+CHRISTINA WARREN:  Wow.
+
+KEVIN SCOTT:  And over its lifetime, it has been one of the most important research institutions for computer science and related areas for the past three decades.
+
+You know, and again, I’m a little bit biased. Microsoft Research is in my – in my group at Microsoft, and I was an intern at Microsoft Research 20 years ago. Oh god, this is a terrible thing to think. Yeah, but so anyway, Peter is awesome. 
+
+CHRISTINA WARREN:  That’s great. That’s great. I can’t wait to hear your conversation. All right. Let’s talk with Dr. Lee. 
+
+
+[MUSIC]
+
+KEVIN SCOTT:  Our guest today is Dr. Peter Lee. Peter is a computer scientist and Corporate Vice President of Research and Incubations at Microsoft. Before joining Microsoft in 2010, he was the head of the Transformational Convergence Technology Office at DARPA; and before that, chair of the Computer Science Department at Carnegie Mellon University. He’s a member of the National Academy of Medicine, serves on the board of directors of the Allen Institute for Artificial Intelligence, and was a commissioner on President Obama’s Commission on Enhancing National Cybersecurity. Welcome, Peter. 
+
+PETER LEE:  Thank you. Kevin. It’s great to be here. 
+
+KEVIN SCOTT:  Yeah, the thing that your intro doesn’t say is that when you were at Carnegie Mellon, you were a functional programing expert. And when I began my journey as a graduate student, that was the particular area of compilers and programing languages that I was studying. 
+
+My first Ph.D. advisor was a guy named Norman Ramsey, who went to Harvard and is, I think, at Tufts now.
+
+PETER LEE:  Right, right.
+
+KEVIN SCOTT:  And yeah, and it’s a very small community. So like I, you know, even before we ever met, I felt this weird sense of familiarity. You know, like, I knew who your PhD students were. I knew your writing. I’d read, you know, books you had written and contributed to. 
+
+So I’m sort of curious to just start at the beginning of your journey, like you as a kid. How did you get interested in a set of things that took you to functional programing? 
+
+PETER LEE:  You know, Norman Ramsey, I of course, know very well and was great. And I think I, in fact, pretty sure I had encountered you while you were a grad student. And so, it’s amazing how things, kind of how paths intersect. 
+
+KEVIN SCOTT:  It is. 
+
+PETER LEE:  Well, yeah.

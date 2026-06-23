@@ -1,0 +1,14 @@
+EP-04_ Behind_the_Tech_Kevin Scott_Podcast_with_Judy Estrin.txt : For a super long time, this is maybe the last big management lesson that I learned is that I would keep people on the team who were toxic for the culture that I was trying to create just because by the numbers, they were doing their job well. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: And giving myself permission to say, "Okay, this is my team, there's no right and wrong of it. This is the group of people that I want to surround myself with, and this is the culture that we want to have in order to go solve these problems." That's sort of okay. 
+JUDY ESTRIN: But you just used an interesting example, which is there is no right or wrong decision, often, but internally, you're guided by what is right or wrong. 
+KEVIN SCOTT: Yes. 
+JUDY ESTRIN: So, you used an example of not tolerating behavior because of performance based on you're driven by what -- your values in terms of what is right or wrong. I've seen leaders who use the excuse of, "There is no right or wrong decision," to actually go in the opposite direction. 
+And so I think that learning how to be able to make those decisions with a combination of your gut and your intellect, with a combination of data and compassion. It's the balance. It's why we're not machine learning algorithms. Right? You know, we bring something different to it because there's a lot of nuance. 
+KEVIN SCOTT: I love what you just said. This whole notion of data plus compassion, I think actually does lead to the best decisions. 
+JUDY ESTRIN: Right. 
+KEVIN SCOTT: And that's a hard thing to get pounded through the head of a computer scientist. 
+JUDY ESTRIN: Right. I like to say that you can have data-driven management, but you need human-driven leadership. Leadership is not data driven. Managing is data driven. And so, you somehow have to combine the two of those. 
+KEVIN SCOTT: So, at some point, like, your career -- you built this successful business. You're this hugely successful tech executive, and one of the things that you and I have chatted about you were CTO of Cisco for a while. There are very few people who have been CTOs of big tech companies. 
+And I've gotten a bunch of good advice from you about how to do my job. So, what was the transition like for you, going from entrepreneur, you got the mission of the company, you're building the team, you know everybody, to, "Holy crap, I'm CTO of Cisco." 
+JUDY ESTRIN: Yeah, fascinating. So, Cisco bought Precept, and I became Cisco's Chief Technology Officer. And that was in 199

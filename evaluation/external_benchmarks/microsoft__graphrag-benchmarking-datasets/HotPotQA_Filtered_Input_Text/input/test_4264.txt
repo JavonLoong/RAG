@@ -1,0 +1,48 @@
+Charge-depleting or EV mode refers to a mode of vehicle operation that is dependent on energy from the battery pack.
+ Battery electric vehicles operate solely in this mode.
+ Most plug-in hybrids operate in charge-depleting mode at startup, and switch to charge-sustaining mode after the battery has reached its minimum state of charge (SOC) threshold, exhausting the vehicle's all-electric range (AER).
+ Although there is no technically mandated minimum all-electric range, future state and/or federal legislation may address this for policy purposes.
+The Steerage Act of 1819, also called the Manifest of Immigrants Act, was an Act passed by the United States federal government on March 2, 1819, effective January 1, 1820.
+ Its full name is An Act regulating passenger ships and vessels.
+ It was the first law in the United States regulating the conditions of transportation used by people arriving and departing by sea.
+ In addition to regulating conditions in ships, the act also required ship captains to deliver and report a list of passengers with their demographic information to the district collector.
+ The Act was passed near the end of the term of the fifteenth United States Congress and signed into law by then United States President James Monroe.
+ The Act was augmented by many additional Acts starting 1847 and finally repealed and superseded by the Carriage of Passengers Act of 1855.
+ At the time of passage of the Act, the United States had no laws restricting immigration.
+ In fact, the first federal legislation regulating immigration, the Page Act of 1875, was over 50 years in the future.
+Server-Gated Cryptography (SGC), also known as International Step-Up by Netscape, is a defunct mechanism that was used to step up from 40-bit or 56-bit to 128-bit cipher suites with SSL.
+ It was created in response to United States federal legislation on the export of strong cryptography in the 1990s.
+ The legislation had limited encryption to weak algorithms and shorter key lengths in software exported outside of the United States of America.
+ When the legislation added an exception for financial transactions, SGC was created as an extension to SSL with the certificates being restricted to financial organisations.
+ In 1999, this list was expanded to include online merchants, healthcare organizations, and insurance companies .
+ This legislation changed in January 2000, resulting in vendors no longer shipping export-grade browsers and SGC certificates becoming available without restriction.
+The Commodity Futures Modernization Act of 2000 (CFMA) is United States federal legislation that officially ensured modernized regulation of financial products known as over-the-counter derivatives.
+ It was signed into law on December 21, 2000 by President Bill Clinton.
+ It clarified the law so that most over-the-counter (OTC) derivatives transactions between "sophisticated parties" would not be regulated as "futures" under the Commodity Exchange Act of 1936 (CEA) or as "securities" under the federal securities laws.
+ Instead, the major dealers of those products (banks and securities firms) would continue to have their dealings in OTC derivatives supervised by their federal regulators under general "safety and soundness" standards.
+ The Commodity Futures Trading Commission's (CFTC) desire to have "Functional regulation" of the market was also rejected.
+ Instead, the CFTC would continue to do "entity-based supervision of OTC derivatives dealers."
+ These derivatives, including the credit default swap, are a few of the many causes of the financial crisis of 2008 and the subsequent 2008–2012 global recession.
+The Federal Power Act is a law appearing in Chapter 12 of Title 16 of the United States Code, entitled "Federal Regulation and Development of Power".
+ Enacted as the Federal Water Power Act on June 10, 1920, and amended many times since, its original purpose was to more effectively coordinate the development of hydroelectric projects in the United States.
+ Representative John J. Esch (R-Wisconsin) was the sponsor.
+ Prior to this time and despite federal control of navigable waters and the necessary congressional approval to construct such facilities, Congress had left the regulation of hydroelectric power to the individual states.
+ The first federal legislation broadly dealing with hydroelectric development regarded its competition with navigation usage; with the passage of the Rivers and Harbors Act of 1899 Congress made it illegal to dam navigable streams without a license (or permit) from them.
+ Until 1903, these congressional permits were given away on a 'first come first served' perpetual basis and controlled by the individual states.
+ This would lead to a long debate between competing private and public development interests, and culminate in the act's passage in 1920.
+Augustus Jesse Bowie Jr. (December 10, 1872 – June 22, 1955, birth name Augustus Jesse Bowie III) was a pioneering American technology engineer, inventor and entrepreneur.
+ His crucial early innovations in large-capacity electrical switches, including the 1000lb.
+ 287Kv disconnecting switch, were important in the early spread of electrification on the West Coast of the United States during the 1910's-1920s, and became essential to the New Deal's mass-scale rural electrification efforts in the 1930s.
+ Bowie was an 1896 graduate of the engineering program at MIT in Boston, and this region of the United States was the locus of innovation in and promulgation of electrification at the time, which was primarily oriented towards centralized urban office/industrial use.
+ Bowie, however, was born and bred in the San Francisco bay area of California, and his mass electrification innovations were put into use in this bustling yet geographically-spread out region first, allowing for the building of an unprecedented electrical grid that would spawn a decentralized regional culture of technological innovation; a region eventually recognized as Silicon Valley.
+.
+The Post–Civil Rights era in African-American history is defined as the time period in the United States since Congressional passage of the 1964 Civil Rights Act, the 1965 Voting Rights Act, and the 1968 Fair Housing Act, major federal legislation that ended legal segregation, gained federal oversight and enforcement of voter registration and electoral practices in states or areas with a history of discriminatory practices, and ended discrimination in renting or buying housing.
+The Federal Interpleader Act of 1936 was United States federal legislation enacted by the 74th United States Congress approved January 20, 1936.
+The Math Science Teaching Corps Act of 2006 (or MSTC, pronounced "mystic") is legislation based on nonprofit Math for America's (MƒA's) Programs, the MƒA Fellowship and the MƒA Master Teacher Program.
+ The bill was introduced in the 109th Congress by Charles Schumer in the Senate as S. 2248 and by Jim Saxton in the House as H.R. 4705.
+ The MSTC legislation creates a National Science Foundation Fellowship Program to recruit, train, and retain outstanding math and science teachers.
+ MƒA is engaged in an advocacy campaign to move forward federal legislation based on MSTC principles.
+The General Revision Act (sometimes Land Revision Act) of 1891 was a Federal legislation initiative signed in 1891 under the Presidential Administration of Benjamin Harrison.
+ The General Revision Act of 1891 reversed previous policy initiatives, such as the Timber Culture Act of 1873, in which land fraud was readily accessible on the behalf of wealthy individuals and corporations.
+ The acquisition of vast mineral and timber resources in the western United States was often cited as a governing motive for such individuals and corporations to claim land rights for future settlement and resource depletion activities, The General Revision Act of 1891's legacy is frequently credited by its ability to catalyze a series of federal land reform initiatives, notably under the Presidential Administration of Theodore Roosevelt.
+ From the Reclamation Act of 1902 to the formation of the United States Forest Service in 1905, the General Revision Act of 1891 acted as a critical first piece of federal legislation granting increased plots of publicly allotted land and decreased extraction rights to privately held western land owners within the early stages of the 20th century.

@@ -1,0 +1,15 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt  with being a novelist, it's being a technical author. And I spent a few years as a technical author, working on the documentation team for SCO Unix back when SCO was an actual Unix OEM. And that sort of killed my productivity for a few years. 
+
+And then around 1993, the tech pubs team discovered the Worldwide Web and HTML pretty early on. It was beyond sort of our dream, which is one set of source code for all the publications. I mean, we've seen where that's gone since. And I ended up talking to a whole bunch of people outside the company and ended up with a job in a startup, which went the way of all startups, and then another, and then another. 
+
+And the startup death march is not really compatible with being a novelist either. What they were compatible with, again, a side quest, was writing articles for computer magazines. Now, you're familiar with the American magazine Computer Shopper. There's a British publisher, a guy who — a guy called Felix Dennis, who died a few years ago. 
+
+He set up Dennis Publishing, which is now a fairly major trade press publisher in London. And on a business trip to the United States in the mid '80s, he took a look at Computer Shopper and thought, “This is great.” And he ripped it off. He ripped off the title, the format, the structure, the whole lot. And he brought it back to the United Kingdom and set up a British magazine called Computer Shopper, which for many years was the second — number-two best-selling monthly computer newsstand magazine. 
+
+And he handed editorial over to a succession of impressively eccentric British computer journalists from the early 1980s microcomputer boom, and got them to commission editorial content on whatever the hell interested them, by people who were interested in the subject, not journalism graduates, but computer geeks. Which is why I ended up writing the Linux column there for five years.  
+
+KEVIN SCOTT: Were you a fan of Jerry Pournelle? 
+
+CHARLIE STROSS: He was a fun guy to have a pint of beer with. I will say, he was also a terrible troll on various internet discussion fora I knew him through, and I don't see eye to eye with him on — didn't see eye to with him on politics, not in the slightest. But, hey, that's — I read his column continuously in Byte for several years. 
+
+KEVIN SCOTT: Yeah, yeah, and that's the reason I ask, you know, it's —there do seem to be some interesting coincidences here, you know, you've got Ted Chang, who is, like, an excellent science fiction author who was a tech writer for a while. You've got, you know, Jerry Pournelle, who you know, despite his politics, wrote some very interesting science fiction books and had this column in Byte magazine

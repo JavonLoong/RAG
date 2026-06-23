@@ -1,0 +1,29 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  And so like maybe we should talk a little bit like we have people listening from all different parts of computer science and folks who aren't computer scientists.  So, like, what is virtual reality? 
+
+DIO GONZALEZ:  Oh, okay, yes.  So, because I come from the academic world, I normally give the academic kind of definition. 
+
+So the definition is a virtual environment is a 3D world, 3D, created by a computer.  And it has to meet the conditions of being in stereo, so that's one, like the user experience it in stereo visual or audio, right, and it has to be user perspective centric. 
+
+And that means tracking.  So, when you move, the perspective of the world moves accordingly updating to you, so every time you move and all that, you see it from that point of view.  So that's the other -- 
+
+KEVIN SCOTT:  Right.  And all of that is intended so that, like, when you're in this virtual environment, it is intended to be immersive. 
+
+DIO GONZALEZ:  Correct.  Exactly.  Exactly.  So, a friend of mine, I like using his metaphor, which is virtual reality is like reading a book.  You get lost in it.  You just open it and you're -- you're totally disconnected from your current reality, you get in it, right?  And that's what virtual reality is, it's something (inaudible) into something totally different.  
+
+Mixed reality, augmented reality, on the other side, is then when you're like still anchored in reality and then you bring additional elements.  
+
+KEVIN SCOTT:  Right.  And mixed reality is what you've been working on here for the past couple years, right?  
+
+DIO GONZALEZ:  Yes.  Yes.  Yes.  I started at Unity, actually -- 
+
+KEVIN SCOTT:  Oh, really? 
+
+DIO GONZALEZ:  I'm super proud that my second year at Unity, my designer and I, both of us were, like, okay, yes, we did virtual reality, but you know what?  We really need to do mixed reality, that's it.  That's it.  So the two of us were, like, okay, done.  We just created the mixed reality research group at Unity.  
+
+KEVIN SCOTT:  I -- (Laughter.) 
+
+DIO GONZALEZ:  So we just created it.  And then came here.  
+
+KEVIN SCOTT:  And so what sparked that excitement for you?  Like, why do you think mixed reality is interesting? 
+
+DIO GONZALEZ:  I believe that mixed reality is the one that has the potential to really affect our daily lives,

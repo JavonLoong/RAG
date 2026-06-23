@@ -1,0 +1,38 @@
+An electronic remittance advice (ERA) is an electronic data interchange (EDI) version of a medical insurance payment explanation.
+ It provides details about providers' claims payment, and if the claims are denied, it would then contain the required explanations.
+ The explanations include the denial codes and the descriptions, which present at the bottom of ERA.
+ ERA are provided by plans to Providers.
+ In the United States the industry standard ERA is HIPAA X12N 835 ("HIPAA" = Health Insurance Portability and Accountability Act; "X12N" = insurance subcommittees of ASC X12; 835 is the specific code number for ERA), which is sent from insurer to provider either directly or via a bank.
+A Place for Paedophiles is a British documentary that was televised on 21 April 2009.
+ Produced and presented by Louis Theroux, the documentary ran for 60 minutes, and took place at Coalinga State Hospital, a hospital for paedophiles.
+ Theroux was the first film-maker to be allowed to film and interview the patients at the hospital.
+ The documentary can not legally be shown inside the United States as the patients are under psychological medical care and the showing would violate their Health Insurance Portability and Accountability Act of 1996 rights.
+A National Provider Identifier or NPI is a unique 10-digit identification number issued to health care providers in the United States by the Centers for Medicare and Medicaid Services (CMS).
+ The NPI has replaced the unique physician identification number (UPIN) as the required identifier for Medicare services, and is used by other payers, including commercial healthcare insurers.
+ The transition to the NPI was mandated as part of the Administrative Simplifications portion of the Health Insurance Portability and Accountability Act of 1996 (HIPAA), and CMS began issuing NPIs in October 2006.
+Health Insurance Portability and Accountability Act
+The Centers for Medicare & Medicaid Services (CMS), previously known as the Health Care Financing Administration (HCFA), is a federal agency within the United States Department of Health and Human Services (HHS) that administers the Medicare program and works in partnership with state governments to administer Medicaid, the State Children's Health Insurance Program (SCHIP), and health insurance portability standards.
+ In addition to these programs, CMS has other responsibilities, including the administrative simplification standards from the Health Insurance Portability and Accountability Act of 1996 (HIPAA), quality standards in long-term care facilities (more commonly referred to as nursing homes) through its survey and certification process, clinical laboratory quality standards under the Clinical Laboratory Improvement Amendments, and oversight of HealthCare.gov.
+The Cancer Imaging Archive (TCIA) is an open-access database of medical images for Cancer research.
+ The site is funded by the National Cancer Institute's (NCI) Cancer Imaging Program and the contract is operated by The University of Arkansas for Medical Sciences.
+ Data within the archive is organized into "Collections" which typically share a common cancer type and/or anatomical site.
+ The majority of the data consists of CT, MRI, and nuclear medicine (e.g. PET) images stored in DICOM format but many other types of supporting data are also provided or linked to in order to enhance research utility.
+ All data are de-identified in order to comply with the Health Insurance Portability and Accountability Act and National Institutes of Health data sharing policies.
+CloudVisit Telemedicine is a software platform designed for physician use.
+ It allows healthcare providers the ability to schedule and conduct online appointments with patients using a webcam and microphone for live video chat sessions.
+ The telemedicine platform is available in two formats: CloudVisit Connect and CloudVisit Private Practice.
+ Both formats are HIPAA-compliant making them viable for physician-patient connectivity under guidelines as set for by the Health Insurance Portability and Accountability Act (HIPAA).
+ The software emphasizes patient and provider security.
+The Zone Program Integrity Contractor (ZPIC) is an entity established in the United States by the Centers for Medicare & Medicaid Services (CMS) to combat fraud, waste and abuse in the Medicare program.
+ As a result of the Medicare Prescription Drug, Improvement, and Modernization Act of 2003, which established seven zones throughout the United States for the purpose of processing Medicare claims, CMS created ZPICs to more effectively protect the Medicare program.
+ ZPICs replaced Program Safeguard Contractors (PSC), which had been established by the Health Insurance Portability and Accountability Act of 1996.
+Lawdex is a legal-support site specializing in the secure exchange of private documents within the participants of the legal, medical, and insurance industries.
+ First launched at the 2004 E-courts Conference in Las Vegas, Lawdex promotes itself as a replacement for unsecured email, and one of the first online service firms to enable attorneys to both initiate civil lawsuits and court filings from a single web-portal.
+ Their website also enables court document retrieval from all non-federal courts.
+ The firm services courts, law firms, and attorney service firms as a means to auditing document flow over secure networks.
+ The American Bar Association best practice standards, state court e-file initiatives, and the Health Insurance Portability and Accountability Act (HIPAA) all appear to be driving demand for greater levels of online accountability within the legal, medical, and insurance industries.
+ANSI 834 EDI Enrollment Implementation Format is a standard format for electronically exchanging health plan enrollment data between employers and health insurance carriers.
+ An 834 file contains a string of data elements and each data element represents a fact, such as a subscriber’s name, hire date, etc.
+ The entire string is called a data segment.
+ The Health Insurance Portability and Accountability Act (HIPAA) requires that all health plans or health insurance carriers accept a standard enrollment format, ANSI 834A Version 5010.
+ The ANSI 834A is the national standard for electronic enrollment and maintenance health plan.

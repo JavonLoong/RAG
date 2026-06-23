@@ -1,0 +1,16 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  you know, advise other people is, it is not job training. It is not – whatever project you do, you know, some are great projects, some are more esoteric projects, but it’s an opportunity to really – for me, it was how to learn to think about solving very difficult problems. 
+
+And if you think about – it’s a problem that, you know, nobody else has solved out there, so you can’t go to a book and say, "Hey, this is how to solve it." You actually have to think through, "How do I solve this? How do I contribute something to the industry or to academia, where the answer isn’t clear?” And the process of doing that, over, for me, it was four years, you know, three, four, five years, really gives you the confidence that, you know, you can contribute at the highest level in a certain field.
+
+And you know, that’s what I take away from it. I just think it teaches you how to think, and you know, what we do, what you do, what I do, you know, all day long is, you know, how do we solve very, you know, interesting tough problems, and you know, that time gave me the confidence that, you know, you could do that, and even at the time, it was also very much about a team. I loved working with the other grad students when we worked together on how to solve some of these problems.
+KEVIN SCOTT: Yeah, and I think the thing that you said about – like, they’re very tough problems, and they’re also ones that no one else has solved before, so – like, you can’t go consult someone to say, like, "Hey, how did you do exactly this," or skip ahead to the answer. Like, there’s no skipping ahead, like you’ve just got to sort it out.
+
+LISA SU: Yes.
+
+KEVIN SCOTT: So after MIT, what was your first job?
+
+LISA SU: You know, my first job actually was at Texas Instruments in Dallas, and I wasn’t there super-long. I was there about a little less than a year. I was kind of homesick. You know, I lived – by the way, I live in Texas now, but at the time, it was so far from home for me, so I ended up spending the majority of the early part of my career at IBM in New York, and I joined the – you know, what was TJ Watson Research Center, and then the IBM Microelectronics team.
+
+KEVIN SCOTT: And so were you working on the RISC processors that they were building there?
+
+LISA SU: I was. I was always – you know, I spent my time in their sort of process technology area as we were continuing to look at the next generation technologies, but yeah, the first processor – I’ve

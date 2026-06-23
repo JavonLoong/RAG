@@ -1,0 +1,15 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt , like, describe these systems with a set of partial differential equations, you’d be lost from the outset. 
+
+DAPHNE KOLLER: I completely agree. I mean, unfortunately, our ability to describe biological systems using rigid mathematical — deterministic mathematical tools — fails once you go beyond the atomic level, and even there — I mean, when you think about something that is relatively circumscribed, like a single protein folding, you can do some of the differential equation modeling, but even there, we’ve seen techniques that take a step back and say, “You know what? Let me not try and construct detailed, mechanistic models, but instead, let’s give the machine enough data to learn from and it’ll pick up patterns that might be useful.” That’s what made the deep fold success from DeepMind work is that they took a machine learning approach to that. 
+
+Now, the critical piece, of course, and that comes back to our conversation a moment ago is that they had enough data to train on folded proteins. And getting enough high-quality data is what it’s all about in this new world of bringing machine learning into this space. And that’s why we built insitro the way we did. 
+
+KEVIN SCOTT: Awesome. Well, we’re just about out of time, and I wanted to ask you before we wrapped up, what do you do for fun? So, you have, like, what sounds to me like an incredibly fun job, but like, there must be something outside of work. 
+
+DAPHNE KOLLER: Well, so, first of all, I am grateful to have a job that is as much fun as this in the sense that I get to read all of the coolest papers in biology and all the coolest papers in automation and in machine learning and figure out how to put them together in new ways and do it towards a goal that I think is just truly important, which is how do we make people healthier? Which, to me, is — and I’m going to go on a soapbox for just a moment and talk about the fact that I think part of our goal here as we you know — when we were put on this earth was to try and leave the world a little bit better than it was when we came into it. 
+
+And we should be doing that. And for those of us who had the privilege of being born to relatively affluent, well-educated families, where we didn’t need to struggle for where our next meal is coming from, that burden is actually even higher and we — we should be thinking about how we can give back. So, anyway, sorry, that was — 
+
+KEVIN SCOTT: No, that’s so important. 
+
+DAPHNE KOLLER: Yeah, so, but that being said, the thing that I most liked to do for fun pre-coronavirus was to travel and see parts of the world that are different from the little coc

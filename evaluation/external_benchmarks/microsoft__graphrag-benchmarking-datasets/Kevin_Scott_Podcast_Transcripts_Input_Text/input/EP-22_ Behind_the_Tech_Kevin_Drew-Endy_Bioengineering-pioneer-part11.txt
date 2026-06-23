@@ -1,0 +1,19 @@
+EP-22_ Behind_the_Tech_Kevin_Drew-Endy_Bioengineering-pioneer.txt . And so, John set me up. 
+
+At first, I tried to model HIV on a computer and the evolution of HIV, and I crashed and burned on that pretty hard at the beginning of my PhD, mostly because the literature was not consistent. I could read the papers, but I could read a hundred papers, but I couldn't relate them to each other, so I couldn't codify the knowledge and put it into a computer program. 
+
+So, John had this great advice. He pointed me towards bacteriophage, these viruses of bacteria, the phage. If you've read -- have you read Arrowsmith or heard --
+
+KEVIN SCOTT:  Yeah.
+
+DREW ENDY:  Yeah, and the cool thing about the phage literature, first off, it started in 19 -- late 19 -- well, 1917, but really started in the 1940s. It's the birth of molecular biology. And a lot of people working in that literature were trained in physics. And so, the description of the biology was just solid. And that gave me a great way of, of moving my engineering toolkit into the realm of biology and starting to create value, and also just to learn a lot. 
+
+That goes on for a while. What are the big lessons? One is no biologist will do an experiment for you, at least not any of the good ones. And that's because they're all bandwidth-limited. So I'm showing up as an engineer and I'm running fancy simulations of virus infections on my computer, and I'm coming up with all these hypotheses. And I can't get a single biologist to do an experiment. 
+
+And they all say the same thing. They say, “Well, you do the experiment, if you think it's a good idea, because I've got plenty of experiments.” And so, I had to learn how to do that. So, that was a good lesson. Like, teach me about the reality of doing physical experiments, and I had to go to Texas, in Ian Mullineaux's lab, learn how to mouth pipetting back when the safety officers didn't stop you from doing that, right? (Laughter.)
+
+Have you ever, like -- do you know what cesium chloride tastes like, or do you know a culture of E. coli -- (laughter)? A culture, so like, I still remember a culture of E. coli tastes like blue cheese, which you know, is like -- which kind of ruined blue cheese for me for a while. 
+
+KEVIN SCOTT:  Yeah, I bet.
+
+DREW ENDY:  I  just, I don't recommend mouth pipetting. But those were the days. It taught me that I had to do my own experiments. And then, eventually what it taught me was biology makes stories. You know, like the knowledge we get gets turned into a story. And ultimately, I

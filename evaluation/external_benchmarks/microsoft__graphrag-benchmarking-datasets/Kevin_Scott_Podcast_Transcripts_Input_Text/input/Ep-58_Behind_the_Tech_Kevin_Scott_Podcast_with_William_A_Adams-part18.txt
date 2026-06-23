@@ -1,0 +1,17 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  prep, you know, kind of sugarcoat. You’re not going to get the God’s truth. 
+
+But when you’re a TA, and you go in with a different approach, you know, and of course, you’re leveraging some relationships that you have with people, so you can get the insider’s story and all that sort of stuff, and then you can synthesize. And I often describe it to people as we’re like the Supreme Court’s Clerks, right? The Justice doesn’t have time to read all the case law. And they need their clerks to do a lot of the legwork, and then feed them something and say, well, here’s – you know, and then the Justice forms their opinion. That’s how I viewed the job. It’s, like, oh, we’re like the Supreme Court Justice’s clerks, right?
+
+And I think it was useful to you. I don’t know because I’m not you, but I thought we were doing a useful job. (Laughter.) 
+
+KEVIN SCOTT: Oh, it – like, it is the only way that I can do my job, is having – having all of the fantastic TAs who work in the office of the CTO. And it’s a hard job to do, I think, because you have to be technically excellent. You have to be able to, you know, go into a situation, and absorb a whole lot of new information very quickly and synthesize it into something. 
+
+And you have to, like, maybe even do the harder thing, which is, like, show up and do something valuable enough for the team that you’re showing up to, that they are willing to authentically share real information with you versus to being wary of you. It’s, like, oh, you’re the emissary of some bald headed exec, who’s seeking to make my life more difficult. 
+ 
+WILLIAM ADAMS: Right, how do we shut you out? (Laughter.)
+ 
+KEVIN SCOTT: Yeah. And, you know, like, I think it was one of the things that was sort of surprising to me. I’ve said this to a whole bunch of people over the years at Microsoft. The thing that I was actually counting on when I became CTO, because the surface area of technology at Microsoft is so vast that people would – that everybody would basically have the same reaction that you did. 
+
+It’s like, A, I didn’t know we had a CTO; and B, like, can we just please make this person leave us alone for as long as humanly possible, which would then let me select into, like, what I thought were the highest priority things to go figure out first. 
+
+And, like, the unusual thing about Microsoft is we had lots of people who wanted to engage with the office of the CTO, like, very quickly.

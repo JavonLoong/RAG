@@ -1,0 +1,17 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  engagement is very much a human, but a human who’s able to get a lot more done than ever before. 
+
+So the number of challenges and opportunities created by this is pretty incredible, and I can see how engaged the OpenAI team is by this. I’m sure there’s lots of teams I don’t get to see that are pushing on this.
+
+And the size of the industry, I mean, when the microprocessor is invented, the software industry was a tiny industry. We could put most of us on a panel and they could complain that I worked too hard, and it shouldn’t be allowed, and we could all laugh about that. Now, this is a global industry with – and so, it’s a little harder to get your hands around. 
+
+I get a weekly digest of all the different articles about AI that are being written. Oh, can we use it for moral questions? Which seems silly to even ask to me, but fine people can ask whatever they want to ask. And so, this thing has the ability to move faster because the amount of people and resources and companies is way beyond those other breakthroughs that I brought up and I was privileged to live through. 
+
+KEVIN SCOTT: Yeah. I mean, one of the things for me that has been really fascinating, and I think I’m going to say this just as a reminder to folks who are thinking about pursuing careers in computer science and becoming programmers, I spent most of my training as a computer scientist in my early part of my career as a systems person. I wrote compilers and like tons of Assembly Language and designed programing languages, which I know you did as well. 
+
+And I sort of feel like a lot of the things that I studied just in terms of parallel optimization and high performance computer architectures in grad school, I left grad school and went to Google and thought I would never use any of this stuff ever again. And then all of a sudden now, like we’re building supercomputers to train models and these things are relevant again. 
+
+I think it’s interesting. I wonder what Bill Gates, the young programmer, would be working on if you were in the mix right now, like writing code for these things because there’s so many interesting things to go work on. What do you think you as a 20-something-year-old young programmer would get really excited about in this stack of technologies? 
+
+BILL GATES: Well, there is an element of this that’s fairly mathematical. So I feel lucky that I did a lot of math and that was a gateway to programing for me, including all sorts of crazy stuff with numerical matrices and their properties. 
+
+And so, there are people who came to programing without that math background, who do need to go and get a little bit of the math. I’m not saying it’s super hard, but they should go and do it so that when you see those funny equations, you’re like,

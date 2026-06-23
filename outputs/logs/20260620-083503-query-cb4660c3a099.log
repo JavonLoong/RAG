@@ -1,0 +1,2 @@
+2026-06-20T00:35:03.969Z INFO    operation_start {"ts": "2026-06-20T00:35:03.969Z", "level": "INFO", "event": "operation_start", "run_id": "cb4660c3a099", "operation": "query", "pid": 49564, "mode": "global", "question": "How does combined cycle improve efficiency?", "requested_collection": "rag_smoke", "top_k": 3}
+2026-06-20T00:35:04.018Z INFO    operation_end {"ts": "2026-06-20T00:35:04.018Z", "level": "INFO", "event": "operation_end", "run_id": "cb4660c3a099", "status": "ok", "elapsed_s": 0.049, "cpu_s": 0.0, "route": "GLOBAL_SEARCH", "citation_count": 6}

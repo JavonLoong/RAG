@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 from typing import Iterable
 
-DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
-DEFAULT_RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
+DEFAULT_EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-0.6B"
+DEFAULT_RERANKER_MODEL = "BAAI/bge-reranker-base"
 _COMMON_MODEL_ROOT_ENVS = ("RAG_LOCAL_MODEL_DIR", "RAG_MODELS_DIR", "RAG_MODEL_DIR")
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 

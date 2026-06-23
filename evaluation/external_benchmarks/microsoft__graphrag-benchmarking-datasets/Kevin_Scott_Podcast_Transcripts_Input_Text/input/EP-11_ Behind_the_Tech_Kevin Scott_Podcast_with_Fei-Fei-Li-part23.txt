@@ -1,0 +1,17 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  got into, you know, sort of computer science because, like, you know, we have a certain sort of analytical way of seeing the world and, like, we really enjoy, like, all of the apparatus of that analytical world.  But, you know, there are these machine teaching systems where, like, you're going to be able to, you know, sort of rather than tell the computer what to do and these, like, minute, you know, step-by-step algorithmic ways, you're going to be able to teach a computer how to do something.  
+And, like, that is a really -- like, much broader -- mode of, you know, sort of building these bits of technology. 
+FEI-FEI LI:  I can't tell you how many artists have reached out to me and to Stanford HAI about AI helping the creative process.  They're so excited.  
+KEVIN SCOTT:  Yeah, it's super exciting.  One of my -- you know, I hope to be able to get him on the podcast at some point, but there's this fantastically talented young jazz musician named Jacob Collier, who, he's like a genius with harmonic theory. 
+And he does, like, all of these, like, super interesting, innovative arrangements.  And, like, he got famous by recording these layered things that he was making on YouTube.  But he, like, really enjoys performing these things live. And so he's been collaborating with this -- with this really talented engineer at MIT to build instruments where he can reproduce some of this self-harmonization stuff -- 
+FEI-FEI LI:  Oh, that's so cool. 
+KEVIN SCOTT:  -- and like AI is going to do nothing but help him, like, be able to, like, deliver these richer experiences to his audience. I mean, it's just -- 
+FEI-FEI LI:  Absolutely.  
+KEVIN SCOTT:  -- it's amazing.  Like, I'm -- this is the stuff that makes me really -- really super excited.  (Laughter.)  
+So, like, one last question before we wrap up.  So, I know you're a mom and you're -- you've got a nonprofit, you're institute director, you're a professor -- 
+FEI-FEI LI:  Researcher.  
+KEVIN SCOTT:  Yeah, researcher.  You know, like you were just telling me, you've got like this stack of submissions that are going into the neural -- 
+(Crosstalk.)  
+FEI-FEI LI:  -- in 24 hours.  
+KEVIN SCOTT:  Yeah, and so like, thank you, by the way, for doing the podcast when -- 
+FEI-FEI LI:  No problem. 
+KEVIN SCOTT:  -- you've got this big deadline.  So

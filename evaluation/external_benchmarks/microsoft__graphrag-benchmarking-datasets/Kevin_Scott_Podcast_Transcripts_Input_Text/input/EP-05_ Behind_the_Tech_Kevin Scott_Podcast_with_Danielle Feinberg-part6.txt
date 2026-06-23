@@ -1,0 +1,19 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  
+DANIELLE FEINBERG: The school then brought in -- happened to be a woman from the University of Colorado who was studying programming. And she taught us the language BASIC. I always think it's so awesome that my second computer science teacher was a woman. And my third one was a woman. And my fourth one was a woman. 
+KEVIN SCOTT: Wow. 
+DANIELLE FEINBERG: Which had to have some impact in there somewhere. But she came in and taught us BASIC. And then, of course, I could do things with BASIC at home on my Apple computer. And so it became just this hobby to program in my spare time. 
+KEVIN SCOTT: And so, what were some of the first programs that you wrote, that were like actually real programs? 
+DANIELLE FEINBERG: Like, I made a horse- racing program. (laugh) And it had little animations of these horses running across the screen. 
+KEVIN SCOTT: That's awesome. 
+DANIELLE FEINBERG: You might have been able to bet on the horses and whether they won or not. (laughter) 
+KEVIN SCOTT: So, you literally were just destined to do what you do. 
+DANIELLE FEINBERG: I think I was, yeah. And it's like of course, not anything you realize at the time. You're just messing around and having fun. 
+KEVIN SCOTT: Yeah. And did you share any of the programs that you wrote with your friends? Was there community there? Or were you just doing it mostly for yourself? 
+DANIELLE FEINBERG: You know, it was all for myself. I mean, maybe, like I did a programming class in junior high. And there were three of us in the class I think. And so I probably shared it with the other two people in the class, but it wasn't a big thing then, I don't think. 
+KEVIN SCOTT: Yeah. Super interesting. And, eventually, I read somewhere in some of your bio materials that you learned Pascal? 
+DANIELLE FEINBERG: Uh-huh. (affirmative) 
+KEVIN SCOTT: So, was this Turbo Pascal or was it MPW Pascal? 
+DANIELLE FEINBERG: MPW Pascal. 
+KEVIN SCOTT: Gotcha. 
+DANIELLE FEINBERG: And in high school, I was dying to learn something with more depth to it than BASIC. Because, you know, that was a limited language that I loved, but I was like, "I want to be a real programmer." "I've got to learn --" And it turned out, like, okay, Pascal seemed to be the most accessible thing. 
+KEVIN SCOTT: Yeah.

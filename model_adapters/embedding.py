@@ -16,7 +16,7 @@ from typing import Any
 
 import requests
 
-from .local_models import require_local_model_path
+from .local_models import DEFAULT_EMBEDDING_MODEL, require_local_model_path
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class SentenceTransformerAdapter(BaseEmbeddingAdapter):
 
     name = "sentence_transformer"
 
-    def __init__(self, model_name: str = "BAAI/bge-m3", device: str | None = None) -> None:
+    def __init__(self, model_name: str = DEFAULT_EMBEDDING_MODEL, device: str | None = None) -> None:
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:

@@ -1,0 +1,21 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  to make bets around finances than others. 
+
+So when people don't have those skills, we're going to leave them out to dry?  Like, why is that the logic?  Or if you don't know all the medical details about your cancer, you can't get a meaningful second opinion?  That's terrifying.  
+
+So, part of it is we need that generalized literacy so that we can have sophisticated conversations and we need expertise.  And that's the interesting dance that we're not — you know, in a moment where we're obsessed with individuals, we're putting a lot of burden on individuals to know all the things.  And that's, in my opinion, unfair.  
+
+KEVIN SCOTT:  Yeah, and I know even in the tech industry, like if you look at what you contend with on a daily basis as a technical person, like what I try to do in my job, like there is no such thing as being able to know everything.  Like, it's just — it's preposterous. 
+
+danah boyd:  Right. 
+
+KEVIN SCOTT:  Like even if you narrow it down to something and say, like, oh, AI/machine learning, like, it's just crazy the big deep learning conference, NeurIPS just had its program decided, and I think they had something — I’ll get the number wrong, but it's something on the order of 2,000 papers were submitted to this thing.  
+
+And, like, they're all, like, the submissions are all high-quality technical papers, 20 or 21 percent of them got accepted.  And like there's no even single machine learning practitioner who's going to read that entire program and understand all of those papers, and that's just a tiny fraction of one year worth of the collective research output out at the frontier of machine learning. 
+
+danah boyd:  Right. 
+
+KEVIN SCOTT:  So, yeah, I mean, like we all have to rely on each other to a certain extent for expertise and like the trick I think in modern civil society is like figuring out how we can really figure out how to depend on one another so that we can each rely on those expertise and like everything sort of adds up to something that at least is the sum of its parts.  (Laughter.)  
+
+danah boyd:  Well, it's also where I — you know, I'm a firm believer in augmentation.  So, take for example the parallel of what's happening in the medical industry.  Medical research is advancing far faster than any doctor could possibly read, especially if they're actually a practitioner. 
+
+So how do we give them the tools to be able to consume all of that information, augment their knowledge, search effectively, et cetera?  That's a power of technology.  So you want two things there:  You want the ability for

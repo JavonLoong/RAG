@@ -1,0 +1,13 @@
+Ep-52_Behind_the_Tech_Kevin_Scott_Podcast_with_Bill_Gates-qc.txt  had written a 1,000 word essay. And her objective was to use as many of these vocabulary words as she reasonably could in this 1,000 word essay, which is sort of a ridiculous assignment on the surface, right? 
+
+But she had written this essay and she was going through this list trying to manually figure out like what her tally was on this vocabulary list, and it was boring. And she was like, all right, like, I want the shortcut here. Like, Dad, can you get me a ChatGPT account, and can I just put this in there, and it will do it for me? And we did it and ChatGPT, which is not running the GPT-4 model, but I don’t think GPT-4 would have gotten this right either, didn’t quite get it right. Like it was not precise. 
+
+But the thing then that I got her to do with me is I was like, well, let’s let ChatGPT write a little Python program that can very precisely – I mean, like, this is a very simple intro CS problem here, and like, the fact that the Python code for solving that problem was perfect and I got my solution immediately, like is just amazing. And like, my 14-year-old daughter who doesn’t program understood everything that was going on. 
+
+And so I don’t know, like if you’ve reflected much over these past months about like – because essentially when we are trying to solve a complicated math problem, we’ve got a head full of cognitive tools that we pick up, like these abstractions that you’re talking about, to help us break down very complicated problems into smaller, less complicated problems that we can solve. And like, I think it’s a very interesting idea to think about how these systems will be able to do that with code. 
+
+BILL GATES: Yeah, it’s so good at writing. That’s just a mind-blowing thing. But when you can use natural language, like say, for a drawing program that you want various objects and you want to change them in certain ways, sure, you still want the menus there to touch up the colors, but the primary interface for creating a from-scratch drawing will be language. And if you want a document summarized, that’s something that it can do extremely well. 
+
+And so, when you have large bodies of texts, when you have text creation problems, there was a ChatGPT-3 where a doctor who has to write to insurance companies to explain why he thinks something should be covered, that’s very complicated. And it was super helpful. He was reading that letter over to make sure it was right.
+
+In ChatGPT-4, we took – the version 4 stuff, we took complex medical bills and we said, please explain this bill to me. What is this and how does it relate to my insurance policy? And it was so

@@ -1,0 +1,15 @@
+EP-43_ Behind_the_Tech_Kevin_Scott_Podcast_with_Alexis_Ohanian.txt  I want 45 minutes every day to be on the computer, and I’m just going to – this is all I can get here, so this is all I’m going to try to take."
+
+And it was through this concept of, "Hey, I can create stuff," and I think, probably like a lot of kids my age, I wanted to be a game developer because of that, but thankfully – thankfully, at least for my career trajectory, I got a book on HTML and was like, "Oh, cool, I can build websites," and there’s always a part of me that loved the design element, and frankly, I just loved the immediate gratification.
+
+And so, like – at the same time, I downloaded the Quake II source code and was like, "Oh, man, I can build my own Quake II mod." It was much easier for me to then, at the same time, just fire up the GeoCities website and build a Quake II fan page, and be like, "This is my fav – I love the railgun," and like, you know, animated GIFs, and marquee all this just obnoxious graphics, but it – that immediate satisfaction of like, "Oh, I can write code, have a thing in front of me, and anyone in the world can see it," was a drug.
+
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: Now, I didn’t realize that the page counter at the bottom was a pageview counter and not like a unique visitor counter. It took me a while, because I was like, "Oh, my god, there are thousands of people looking at my Quake II website." It was just me reloading, but this drug in a you know, probably at that point ninth-grader – tenth-grader was so powerful, and I just fell down this rabbit hole of – now, before long, I was building websites for total strangers that I met on the message boards who didn’t know that I was like a ninth-grader. 
+
+They just knew that I could do a thing that they couldn’t. I had a skill that they didn’t have, which is building websites, and I would do it for nonprofits, and I’d do it for companies that were paying me money. It was absurd, right? And that, you know, compared to all the schoolwork I was doing, seemed so much more important and so much more relevant, right –
+
+KEVIN SCOTT: Yeah.
+
+ALEXIS OHANIAN: Like why am I doing this random schoolwork? I get to go home and a thing that is a real skill that has real value, today, and no one judges me for being a kid. They just – they know I have a valuable skill they don’t have. And, and it just started this, this feedback loop that I just – I never broke free from. And even though I maj

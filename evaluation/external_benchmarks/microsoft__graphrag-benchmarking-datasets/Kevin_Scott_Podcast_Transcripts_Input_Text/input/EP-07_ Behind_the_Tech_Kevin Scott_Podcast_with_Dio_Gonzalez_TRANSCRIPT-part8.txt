@@ -1,0 +1,41 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  GONZALEZ:  And -- 
+
+KEVIN SCOTT:  And so what does that mean?  Like, what does a character animation engineer do? 
+
+DIO GONZALEZ:  Yeah, we write the software that -- you know the super-popular animation software packages in the industry, Maya, 3D Studio, Blender, which is open source? 
+
+KEVIN SCOTT:  Yes. 
+
+DIO GONZALEZ:  So, the studios write their proprietary one.  They don't buy that.  So, we were the engineers that write that software in there in the studio.  
+
+And then my clients, my users were the -- specifically, because I was doing character animation.  My clients were the character TDs as well that these are character technical directors that are the in between that then they set up all the tools that were, you know, for the animators.  
+
+KEVIN SCOTT:  Right. 
+
+DIO GONZALEZ:  So, we serve both, the animators for the interface, but the character to these -- (inaudible, crosstalk) 
+
+KEVIN SCOTT:  And so you would do special things for those technical directors? 
+
+DIO GONZALEZ:  Yes.  Yes. 
+
+KEVIN SCOTT:  If they say, like, "I need to model hair in this particular way for -- 
+
+DIO GONZALEZ:  Correct. 
+
+KEVIN SCOTT:  -- this panda.  
+
+DIO GONZALEZ:  Yes.  So, they would say, "I need this specific controls," so it's -- I loved it, by the way, I can talk about that forever.   
+
+So, you know what?  The way that a character works in animation, I'm going to simplify it.  It's with a rig.  So, a rig is a dependency graph, right?  
+
+KEVIN SCOTT:  Uh-huh.  (Affirmative.) 
+
+DIO GONZALEZ:  And so you have nodes and (inaudible) evaluate those nodes.  And so the character TDs are the ones that write those nodes and connect them the way the character you know the panda, the dragon, et cetera, can move or can have the freedom of movement that the animators want.  And so we, the engineers, had to provide that way for the character TDs to enable that.  
+
+KEVIN SCOTT:  Right. 
+
+DIO GONZALEZ:  So what we did a lot of this writing this library right of this dependency graph, evaluation -- evaluation library, which actually is called LibEE and it actually won an Academy Technology Award. 
+
+KEVIN SCOTT:  Wow. 
+
+DIO GONZALEZ:  Yeah.  Yeah

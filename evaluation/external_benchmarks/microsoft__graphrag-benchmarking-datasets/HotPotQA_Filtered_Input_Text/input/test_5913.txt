@@ -1,0 +1,48 @@
+A calendar date is a reference to a particular day represented within a calendar system.
+ The calendar date allows the specific day to be identified.
+ The number of days between two dates may be calculated.
+ For example, "24 2017" is ten days after "14 2017" in the Gregorian calendar.
+ The date of a particular event depends on the observed time zone.
+ For example, the air attack on Pearl Harbor that began at 7:48 a.m. Hawaiian time on December 7, 1941, took place at 3:18 a.m. December 8 in Japan (Japan Standard Time).
+The Japanese imperial year (皇紀 , kōki ) or "national calendar year" is a unique calendar system in Japan.
+ It is based on the legendary foundation of Japan by Emperor Jimmu in 660 BC.
+ "Kōki" emphasizes the long history of Japan and the Imperial dynasty.
+Common Era or Current Era (CE) is a year-numbering system (calendar era) for the Julian and Gregorian calendars that refers to the years since the start of this era, that is, the years beginning with AD 1.
+ The preceding era is referred to as before the Common or Current Era (BCE).
+ The Current Era notation system can be used as an alternative to the Dionysian era system, which distinguishes eras as AD ("anno Domini ", "[the] year of [the] Lord") and BC ("before Christ").
+ The two notation systems are numerically equivalent; thus "2017 CE" corresponds to "AD 2017 " and "400 BCE" corresponds to "400 BC".
+ The year-numbering system for the Gregorian calendar is the most widespread civil calendar system used in the world today.
+ For decades, it has been the global standard, recognized by international institutions such as the United Nations and the Universal Postal Union.
+A leap week calendar is a calendar system with a whole number of weeks every year, and with every year starting on the same weekday.
+ Most leap week calendars are proposed reforms to the civil calendar, in order to achieve a perennial calendar.
+ Some, however, such as the ISO week date calendar, are simply conveniences for specific purposes.
+The Borana calendar is a calendrical system once thought to have been used by the Borana Oromo based upon an earlier Cushitic calendar developed around 300 BC found at Namoratunga.
+ Reconsideration of the Namoratunga site led astronomer and archaeologist Clive Ruggles to conclude that there is no relationship.
+ The Borana calendar consist of 29.5 days and 12 months for a total 354 days in a year.The calendar has no weeks but name for each day of the month.
+ It is a lunar-stellar calendar system.
+Generally speaking, a calendar year begins on the New Year's Day of the given calendar system and ends on the day before the following New Year's Day, and thus consists of a whole number of days.
+ A year can be measured by also starting on any other named day of the calendar, and end on the day before this named day in the following year.
+ This may be termed as a "years time" but not in practice or an accepted means to term a Calendar year.
+ To reconcile the calendar year with the astronomical cycle (which has a fractional number of days) certain years contain extra days.
+A lunar calendar is a calendar based upon cycles of the Moon's phases (synodic months), in contrast to solar calendars whose annual cycles are based only directly upon the solar year.
+ The most commonly used calendar, the Gregorian calendar, is a solar calendar system which originally evolved out of a lunar calendar system.
+ A purely lunar calendar is also distinguished from lunisolar calendars whose lunar months are brought into alignment with the solar year through some process of intercalation.
+ The details of when months begin varies from calendar to calendar, with some using new, full, or crescent moons and others employing detailed calculations.
+Qin Shi Huang ( ; 18 February 25910 September 210) was the founder of the Qin dynasty (秦朝 ) and was the first emperor of a unified China.
+ He was born Ying Zheng (嬴政 ) or Zhao Zheng (趙政 ), a prince of the state of Qin.
+ He became the King Zheng of Qin (秦王政 ) when he was thirteen, then China's first emperor when he was 38 after the Qin had conquered all of the other Warring States and unified all of China in 221 BC.
+ Rather than maintain the title of "king" borne by the previous Shang and Zhou rulers, he ruled as the First Emperor (始皇帝 ) of the Qin dynasty from 220 to 210 BC.
+ His self-invented title "emperor" (皇帝 , "  "), as indicated by his use of the word "First", would continue to be borne by Chinese rulers for the next two millennia.
+Luoxia Hong (ca. 130-70 BCE) was a Chinese astronomer during the Han Dynasty.
+ A folk astronomer from southwest China, Hong was one of over twenty astronomers who traveled to Chang'an (now Xi'an) to propose a new calendar system for Emperor Wu.
+ It was not uncommon for emperors to introduce new calendars in order to place greater emphasis on heavenly bodies that were seen as particularly astrologically relevant to the particular ruler, but this reform was of such a scale that it was called the "Grand Inception" (太初) in contemporary documents.
+ The calendar made by Hong and his associate Deng Ping was accepted over that of other contestants, including several imperial astronomers.
+ It included 12 months of 29 or 30 days, with an additional month in seven out of 19 years.
+ It also included precise calculations for the movement of the sun, moon, planets, and the time of eclipses, which Hong was able to predict using an equatorial armillary sphere which he significantly improved, or possibly even invented.
+ The "Tai Chu" lunisolar calendar went into effect in 104 BCE, and remained substantially unchanged for nearly 2,000 years.
+ Emperor Wu offered Hong an official position at court, but Hong declined and returned to solitary life.
+Murong Xi (; 385–407), courtesy name Daowen (道文), formally Emperor Zhaowen of (Later) Yan ((後)燕昭文帝), was an emperor of the Xianbei state Later Yan.
+ He was one of the youngest sons of Murong Chui (Emperor Wucheng), and after the death of his nephew Murong Sheng (Emperor Zhaowu) became emperor due to his affair with Murong Sheng's mother, Empress Dowager Ding.
+ He was regarded as a cruel and capricious ruler, who acted at the whims of himself and his wife, Empress Fu Xunying, greatly damaging the Later Yan state.
+ After Empress Fu died in 407, he left the capital Longcheng (龍城, in modern Jinzhou, Liaoning) to bury her, and the soldiers in Longcheng took this chance to rebel and replace him with Murong Bao's adopted son Murong Yun (Emperor Huiyi), and Murong Xi himself was captured and killed.
+ (Because Murong Yun was an adopted son who later changed his name back to Gao Yun, some historians treat Murong Xi as the last emperor of Later Yan and Gao Yun as the first emperor of Northern Yan, while others treat Gao Yun as the last emperor of Later Yan and his successor Feng Ba as the first emperor of Northern Yan.)

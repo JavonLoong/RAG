@@ -1,0 +1,19 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt , well, if there was a network or a social version of it, a shared virtual world, maybe that would be virtual reality.  And so I started like writing little things about it in magazines and all kinds of stuff.  And that probably started in like the late '70s or something.
+
+But I didn't actually have any way to do it.  And so what happened next -- and by the way, in those days it was almost impossible to explain to somebody what this was.  If you tried to explain how quantum computing works today you get a feeling for what it was like trying to explain virtual reality in the late '70s or the early '80s.  It's really hard.
+
+KEVIN SCOTT:  My sense was, even like the first time that I saw you being interviewed in the '90s after the Internet had started to take off with these -- like the graphical web browser, that it was still difficult to explain virtual reality.  It's not the easiest thing in the world even now, but like there are far more examples and like there's a richer continuum I think of like different types of experiences that people are trying to build.
+
+JARON LANIER:  People can actually try it now.  It's not rarified.
+
+KEVIN SCOTT:  Right.  Like you don't have to go into a room full of a million dollars' worth of equipment.
+
+JARON LANIER:  Right, exactly.  So it seems kind of almost mundane these days, which is probably good, it's probably a stage it has to go through.
+
+KEVIN SCOTT:  But it's sort of -- I always find things like these sort of disruptive innovations -- so sometimes like when you look at startups you sort of see a company that's doing something and like they might be a few years early.  And just being a few years early is enough to like kill them.
+
+JARON LANIER:  Oh, yeah.
+
+KEVIN SCOTT:  And you were 30 years early maybe.  And it's almost incomprehensible to me like how you maintained the intellectual stamina for like all this time and you're still pushing on it today.  Like what made you sort of stick with it that long?  It was so hard.
+
+JARON LANIER:  Right.  It was really hard.  It was a very, very hard area to innovate in back then.  I had good fortune in the early '80s, I made some money in videogames.  So I had one of the top ten games in '83, '83, yeah.  And so I suddenly have some capital.  So a bunch of buddies and I just invested this money from videogames in the first VR company which we incorporated in '84 although we'd been sort of doing garage experiments for some years before that and that was called VPL Research.  If it had more

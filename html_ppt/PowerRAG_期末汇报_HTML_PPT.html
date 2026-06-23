@@ -1,0 +1,1581 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PowerRAG 期末汇报 HTML PPT</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --ink-2: #24324a;
+      --muted: #5f6d80;
+      --line: #d9e1eb;
+      --soft: #f5f8fc;
+      --blue: #1d64d8;
+      --cyan: #0891b2;
+      --green: #11875d;
+      --amber: #b7791f;
+      --red: #c2413a;
+      --shadow: 0 18px 48px rgba(31, 41, 55, 0.12);
+      --radius: 8px;
+      --slide-w: 1280px;
+      --slide-h: 720px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: #ffffff;
+    }
+
+    .slide.active {
+      display: grid;
+    }
+
+    .stage {
+      position: relative;
+      width: min(var(--slide-w), 100vw);
+      height: min(var(--slide-h), 100vh);
+      aspect-ratio: 16 / 9;
+      padding: 54px 64px 46px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .topline {
+      position: absolute;
+      top: 28px;
+      left: 64px;
+      right: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #77859a;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .topline::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -12px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--line), rgba(217,225,235,0));
+    }
+
+    .brand {
+      color: var(--ink-2);
+      font-weight: 800;
+    }
+
+    .slide-num {
+      font-variant-numeric: tabular-nums;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 920px;
+      font-size: 54px;
+      line-height: 1.08;
+      font-weight: 850;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    .hero-title {
+      font-size: 46px;
+      max-width: 640px;
+      line-height: 1.12;
+    }
+
+    h2 {
+      max-width: 960px;
+      font-size: 38px;
+      line-height: 1.18;
+      font-weight: 820;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 22px;
+      line-height: 1.22;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .lead {
+      margin-top: 18px;
+      max-width: 800px;
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1.55;
+      font-weight: 500;
+    }
+
+    .copy {
+      color: var(--ink-2);
+      font-size: 20px;
+      line-height: 1.55;
+      font-weight: 500;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .caption {
+      color: #78869a;
+      font-size: 14px;
+      line-height: 1.4;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .layout-two {
+      display: grid;
+      grid-template-columns: 1.03fr 0.97fr;
+      gap: 44px;
+      height: 100%;
+      align-items: center;
+      padding-top: 30px;
+    }
+
+    .layout-wide {
+      display: grid;
+      gap: 26px;
+      height: 100%;
+      padding-top: 36px;
+      align-content: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 10px 26px rgba(31, 41, 55, 0.06);
+    }
+
+    .panel.compact {
+      padding: 18px;
+    }
+
+    .panel h3 + p,
+    .panel h3 + ul,
+    .panel .caption + h3 {
+      margin-top: 10px;
+    }
+
+    ul.clean {
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 9px;
+    }
+
+    ul.clean li {
+      position: relative;
+      padding-left: 18px;
+      color: var(--ink-2);
+      font-size: 18px;
+      line-height: 1.45;
+      font-weight: 520;
+    }
+
+    ul.clean li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.7em;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--blue);
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .tagline::before {
+      content: "";
+      width: 30px;
+      height: 3px;
+      background: var(--blue);
+      border-radius: 99px;
+    }
+
+    .metric-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .metric {
+      min-width: 136px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 34px;
+      line-height: 1;
+      color: var(--blue);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    .pipeline {
+      position: relative;
+      min-height: 460px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      background:
+        linear-gradient(#ffffff, #ffffff),
+        linear-gradient(90deg, rgba(29,100,216,.08) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(29,100,216,.08) 1px, transparent 1px);
+      background-size: auto, 38px 38px, 38px 38px;
+      box-shadow: var(--shadow);
+    }
+
+    .pipe-path {
+      position: absolute;
+      left: 50px;
+      right: 50px;
+      top: 245px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan), var(--green));
+      border-radius: 99px;
+    }
+
+    .pipe-node {
+      position: absolute;
+      width: 120px;
+      min-height: 78px;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #ffffff;
+      box-shadow: 0 10px 26px rgba(31, 41, 55, 0.08);
+    }
+
+    .pipe-node small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .pipe-node strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px;
+      line-height: 1.22;
+      color: var(--ink);
+      font-weight: 850;
+    }
+
+    .pipe-node span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    .node-docs { left: 38px; top: 66px; }
+    .node-ocr { left: 118px; top: 320px; }
+    .node-index { left: 50%; top: 56px; transform: translateX(-50%); }
+    .node-graph { right: 118px; top: 320px; }
+    .node-eval { right: 38px; top: 66px; }
+
+    .score-block {
+      position: absolute;
+      left: 50%;
+      top: 245px;
+      transform: translate(-50%, -50%);
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: #ffffff;
+      border: 3px solid var(--blue);
+      box-shadow: 0 18px 38px rgba(29,100,216,0.18);
+    }
+
+    .score-block strong {
+      display: block;
+      color: var(--blue);
+      font-size: 32px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-block span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 17px;
+      line-height: 1.35;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .table th,
+    .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th {
+      color: var(--ink);
+      background: var(--soft);
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .table .num {
+      color: var(--blue);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      top: 27px;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .t-item {
+      position: relative;
+      padding-top: 62px;
+    }
+
+    .t-dot {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 5px solid var(--blue);
+      z-index: 2;
+    }
+
+    .t-item:nth-child(2) .t-dot { border-color: var(--cyan); }
+    .t-item:nth-child(3) .t-dot { border-color: var(--green); }
+    .t-item:nth-child(4) .t-dot { border-color: var(--amber); }
+
+    .document-mountain {
+      position: relative;
+      height: 462px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .doc {
+      position: absolute;
+      width: 150px;
+      height: 190px;
+      border: 1px solid #cfd9e6;
+      border-radius: 6px;
+      background: #ffffff;
+      box-shadow: 0 12px 26px rgba(31, 41, 55, 0.12);
+      padding: 16px;
+    }
+
+    .doc::before,
+    .doc::after {
+      content: "";
+      display: block;
+      height: 9px;
+      margin-bottom: 12px;
+      border-radius: 99px;
+      background: #cbd5e1;
+    }
+
+    .doc::after {
+      width: 70%;
+      margin-top: 60px;
+    }
+
+    .doc.d1 { left: 60px; top: 188px; transform: rotate(-10deg); }
+    .doc.d2 { left: 174px; top: 112px; transform: rotate(7deg); }
+    .doc.d3 { left: 284px; top: 210px; transform: rotate(-3deg); }
+    .doc.d4 { left: 206px; top: 280px; transform: rotate(13deg); }
+    .doc.d5 { left: 92px; top: 292px; transform: rotate(4deg); }
+
+    .question-bubble {
+      position: absolute;
+      right: 52px;
+      bottom: 48px;
+      max-width: 230px;
+      padding: 18px 20px;
+      border: 2px solid var(--blue);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: #ffffff;
+      font-size: 21px;
+      line-height: 1.35;
+      font-weight: 850;
+      box-shadow: 0 18px 40px rgba(29,100,216,0.14);
+    }
+
+    .answer-board {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .evidence-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 92px;
+      gap: 14px;
+      align-items: start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .evidence-row:last-child { border-bottom: 0; }
+
+    .evidence-row strong {
+      color: var(--blue);
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .evidence-row span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .lane-wrap {
+      display: grid;
+      gap: 16px;
+    }
+
+    .lane {
+      position: relative;
+      display: grid;
+      grid-template-columns: 116px 1fr 130px;
+      gap: 18px;
+      align-items: center;
+      min-height: 86px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .lane::after {
+      content: "";
+      position: absolute;
+      left: 132px;
+      right: 146px;
+      top: 50%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+    }
+
+    .lane strong {
+      font-size: 20px;
+      font-weight: 850;
+      color: var(--ink);
+    }
+
+    .lane span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .lane .out {
+      color: var(--green);
+      font-weight: 850;
+    }
+
+    .split-book {
+      position: relative;
+      height: 410px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .book {
+      position: absolute;
+      left: 40px;
+      top: 70px;
+      width: 210px;
+      height: 280px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #1d64d8 0 24px, #ffffff 24px);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 30px rgba(31, 41, 55, 0.12);
+    }
+
+    .book::after {
+      content: "厚资料";
+      position: absolute;
+      left: 52px;
+      top: 112px;
+      color: var(--ink);
+      font-size: 28px;
+      font-weight: 850;
+    }
+
+    .chunk {
+      position: absolute;
+      right: 56px;
+      width: 210px;
+      min-height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      padding: 12px 14px;
+      color: var(--ink-2);
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(31, 41, 55, 0.08);
+    }
+
+    .chunk.c1 { top: 60px; }
+    .chunk.c2 { top: 142px; }
+    .chunk.c3 { top: 224px; }
+    .chunk.c4 { top: 306px; }
+
+    .cut-line {
+      position: absolute;
+      left: 284px;
+      top: 205px;
+      width: 220px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--blue), transparent);
+      border-radius: 99px;
+    }
+
+    .spaces {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .space {
+      min-height: 250px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .space.keyword::before {
+      content: "BM25 keyword source page fault";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 20px;
+      color: rgba(29,100,216,0.18);
+      font-size: 32px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+
+    .space.vector::before,
+    .space.graph::before {
+      content: "";
+      position: absolute;
+      inset: 72px 30px 28px;
+      background-image: radial-gradient(circle, rgba(29,100,216,.35) 2px, transparent 3px);
+      background-size: 32px 32px;
+    }
+
+    .space.graph::after {
+      content: "";
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      bottom: 96px;
+      height: 2px;
+      background: var(--green);
+      transform: rotate(-18deg);
+    }
+
+    .routing {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .route-card {
+      border-left: 5px solid var(--blue);
+      min-height: 138px;
+    }
+
+    .route-card:nth-child(2) { border-left-color: var(--green); }
+    .route-card:nth-child(3) { border-left-color: var(--cyan); }
+    .route-card:nth-child(4) { border-left-color: var(--amber); }
+
+    .graph-map {
+      position: relative;
+      height: 450px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .edge {
+      position: absolute;
+      height: 2px;
+      background: #9db5d6;
+      transform-origin: left center;
+    }
+
+    .edge.e1 { left: 160px; top: 130px; width: 210px; transform: rotate(16deg); }
+    .edge.e2 { left: 400px; top: 182px; width: 210px; transform: rotate(-23deg); }
+    .edge.e3 { left: 184px; top: 292px; width: 214px; transform: rotate(-18deg); }
+    .edge.e4 { left: 438px; top: 260px; width: 180px; transform: rotate(18deg); }
+    .edge.e5 { left: 310px; top: 150px; width: 160px; transform: rotate(82deg); }
+
+    .g-node {
+      position: absolute;
+      width: 126px;
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--blue);
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.25;
+      font-weight: 850;
+      box-shadow: 0 12px 28px rgba(31, 41, 55, 0.12);
+    }
+
+    .g1 { left: 70px; top: 86px; }
+    .g2 { left: 350px; top: 150px; border-color: var(--green); }
+    .g3 { right: 80px; top: 86px; border-color: var(--cyan); }
+    .g4 { left: 120px; bottom: 84px; border-color: var(--amber); }
+    .g5 { right: 110px; bottom: 82px; border-color: var(--red); }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .layer strong {
+      color: var(--blue);
+      font-size: 18px;
+      font-weight: 850;
+    }
+
+    .loop {
+      position: relative;
+      height: 430px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .loop-step {
+      position: absolute;
+      width: 175px;
+      min-height: 78px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      padding: 14px;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(31,41,55,.08);
+    }
+
+    .loop-step strong {
+      display: block;
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .loop-step span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+
+    .ls1 { left: 65px; top: 72px; }
+    .ls2 { right: 65px; top: 72px; }
+    .ls3 { right: 65px; bottom: 72px; }
+    .ls4 { left: 65px; bottom: 72px; }
+
+    .loop-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 164px;
+      height: 164px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px;
+      background: #ffffff;
+      border: 3px solid var(--green);
+      color: var(--green);
+      font-size: 25px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+
+    .asset-shot {
+      width: 100%;
+      height: 265px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background: #ffffff;
+    }
+
+    .note-box {
+      padding: 16px 18px;
+      border-left: 5px solid var(--blue);
+      background: var(--soft);
+      color: var(--ink-2);
+      font-size: 18px;
+      line-height: 1.45;
+      font-weight: 650;
+    }
+
+    .controls {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .ctl {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(31,41,55,.12);
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .ctl:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .progress {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 5px;
+      background: #eef2f7;
+      z-index: 20;
+    }
+
+    .bar {
+      height: 100%;
+      width: 5%;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      transition: width 180ms ease;
+    }
+
+    .overview {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      background: rgba(255,255,255,.96);
+      padding: 42px;
+      overflow: auto;
+    }
+
+    .overview.open {
+      display: block;
+    }
+
+    .overview h2 {
+      font-size: 30px;
+      margin-bottom: 22px;
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .thumb {
+      min-height: 92px;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      padding: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(31,41,55,.08);
+    }
+
+    .thumb strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .thumb span {
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.35;
+      font-weight: 750;
+    }
+
+    .speaker-note {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .deck {
+        height: auto;
+      }
+      .slide,
+      .slide.active {
+        position: relative;
+        display: block;
+        min-height: auto;
+      }
+      .stage {
+        width: 100%;
+        height: auto;
+        aspect-ratio: auto;
+        min-height: 720px;
+        padding: 58px 24px 54px;
+      }
+      .topline {
+        left: 24px;
+        right: 24px;
+      }
+      h1 { font-size: 40px; }
+      h2 { font-size: 30px; }
+      .lead { font-size: 20px; }
+      .layout-two,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .spaces,
+      .routing {
+        grid-template-columns: 1fr;
+      }
+      .pipeline,
+      .document-mountain,
+      .graph-map,
+      .loop,
+      .split-book {
+        transform: scale(.82);
+        transform-origin: top left;
+        width: 122%;
+        margin-bottom: -70px;
+      }
+      .controls,
+      .progress {
+        display: none;
+      }
+    }
+
+    @media print {
+      body {
+        overflow: visible;
+      }
+      .deck {
+        height: auto;
+      }
+      .slide,
+      .slide.active {
+        display: block;
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        page-break-after: always;
+      }
+      .stage {
+        width: 1280px;
+        height: 720px;
+      }
+      .controls,
+      .progress,
+      .overview {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck">
+    <section class="slide active" data-title="PowerRAG">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">01 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <div class="tagline">动力装备知识库的可信问答与评测系统</div>
+            <h1 class="hero-title">把真实资料变成<br>可检索、可引用、可评测<br>的知识系统。</h1>
+            <p class="lead">项目起点来自“鸿雁计划”：基于知识图谱增强的工业故障诊断 RAG。课程阶段重点是把设想落到工程闭环。</p>
+            <div class="metric-row">
+              <div class="metric"><strong>100</strong><span>公开 benchmark case</span></div>
+              <div class="metric"><strong>93.47</strong><span>外部评测总分</span></div>
+              <div class="metric"><strong>60</strong><span>动力装备 baseline 题</span></div>
+            </div>
+          </div>
+          <div class="pipeline" aria-label="PowerRAG 系统链路">
+            <div class="pipe-path"></div>
+            <div class="pipe-node node-docs"><small>Input</small><strong>PDF / JSON / 扫描件</strong><span>真实动力装备资料</span></div>
+            <div class="pipe-node node-ocr"><small>Process</small><strong>解析与 OCR</strong><span>把资料转成文本证据</span></div>
+            <div class="pipe-node node-index"><small>Index</small><strong>关键词 / 向量</strong><span>让证据可以被找回</span></div>
+            <div class="pipe-node node-graph"><small>Graph</small><strong>实体关系</strong><span>支持关系追踪</span></div>
+            <div class="pipe-node node-eval"><small>Eval</small><strong>评测闭环</strong><span>用分数指导优化</span></div>
+            <div class="score-block"><div><strong>93.47</strong><span>Open Benchmark</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="汇报主线">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">02 / 20</span></div>
+        <div class="layout-wide">
+          <div>
+            <h2>这不是一个普通问答页面，而是一条从资料到可信答案的工程线。</h2>
+            <p class="lead">汇报围绕四类能力展开：资料问答、关系追踪、综合能力、评测能力。</p>
+          </div>
+          <div class="grid-4">
+            <article class="panel"><div class="caption">01</div><h3>资料问答</h3><p class="copy">PDF、扫描页、表格、JSON 标注和维修报告统一进入系统。</p></article>
+            <article class="panel"><div class="caption">02</div><h3>关系追踪</h3><p class="copy">部件、故障、工况、参数和维修动作通过实体关系连接。</p></article>
+            <article class="panel"><div class="caption">03</div><h3>综合能力</h3><p class="copy">跨文档、跨部件问题不只返回单段文本，而是汇总证据。</p></article>
+            <article class="panel"><div class="caption">04</div><h3>评测能力</h3><p class="copy">用 baseline、公开 benchmark 和失败归因判断系统路线。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="项目从设想到系统">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">03 / 20</span></div>
+        <div class="layout-wide">
+          <div>
+            <h2>项目不是一开始就完整，而是被真实资料一步步推出来。</h2>
+            <p class="lead">从 PowerKB-Agent 设想到最小工作台，再到 OCR、GraphRAG 和评测平台。</p>
+          </div>
+          <div class="timeline">
+            <article class="t-item panel compact"><span class="t-dot"></span><h3>鸿雁计划设想</h3><p class="small">知识层、检索层、Agent 层，目标是新框架、新指标和中文基准。</p></article>
+            <article class="t-item panel compact"><span class="t-dot"></span><h3>最小链路跑通</h3><p class="small">JSON 解析、ChromaDB 写入、查询、统计和导出。</p></article>
+            <article class="t-item panel compact"><span class="t-dot"></span><h3>真实资料倒逼</h3><p class="small">扫描 PDF、OCR、页码、来源和元数据成为系统前置条件。</p></article>
+            <article class="t-item panel compact"><span class="t-dot"></span><h3>评测闭环形成</h3><p class="small">60 题 baseline、GraphRAG 子集、公开 benchmark 和失败归因。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="不是一道问答题">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">04 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <div class="tagline">问题起点</div>
+            <h2>我们面对的不是一道干净问答题，而是一堆真实资料。</h2>
+            <p class="lead">动力装备领域资料散落在技术手册、检修规程、历史故障案例、行业标准和工程师经验中。</p>
+            <div class="note-box">如果直接把问题丢给大模型，难以确认答案来自哪份资料、哪一页、哪条故障链。</div>
+          </div>
+          <div class="document-mountain">
+            <div class="doc d1"></div><div class="doc d2"></div><div class="doc d3"></div><div class="doc d4"></div><div class="doc d5"></div>
+            <div class="question-bubble">这些资料里，哪一段能支撑答案？</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="可信答案">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">05 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <div class="tagline">初心</div>
+            <h2>可信答案不是一句话，而是问题、答案、证据的组合。</h2>
+            <p class="lead">PowerRAG 的价值不在“回答流畅”，而在答案能回到原始资料，被检查、被引用、被继续优化。</p>
+          </div>
+          <div class="answer-board">
+            <div class="panel compact">
+              <h3>示例问题</h3>
+              <p class="copy">燃气轮机某类故障可能和哪些部件或工况有关？</p>
+            </div>
+            <div>
+              <div class="evidence-row"><strong>答案</strong><span>可能关联压气机、燃烧室、负荷变化与参数异常。</span><span></span></div>
+              <div class="evidence-row"><strong>证据</strong><span>维修资料中的故障描述、检查步骤和处理措施。</span><span>原文</span></div>
+              <div class="evidence-row"><strong>来源</strong><span>文件名、页码、标题、段落和上下文。</span><span>可追溯</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="第一阶段工作台">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">06 / 20</span></div>
+        <div class="layout-wide">
+          <h2>第一阶段先让工作台跑起来：它不是终点，但证明资料可以进入系统。</h2>
+          <div class="grid-2">
+            <article class="panel">
+              <h3>早期可以完成</h3>
+              <ul class="clean">
+                <li>上传资料并解析 JSON</li>
+                <li>写入 ChromaDB 并做简单查询</li>
+                <li>查看入库状态、统计和导出</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>早期还不完整</h3>
+              <ul class="clean">
+                <li>缺少统一数据管线和元数据规范</li>
+                <li>缺少系统性 baseline 与失败归因</li>
+                <li>页面能操作，不等于系统可信</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="资料通道">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">07 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>不同资料必须走不同通道，最后进入同一套后续流程。</h2>
+            <p class="lead">JSON、文字型 PDF、扫描型 PDF 的处理方式不同；统一入口是后续检索、图谱和评测的前提。</p>
+          </div>
+          <div class="lane-wrap">
+            <div class="lane"><strong>JSON 标注</strong><span>文件名、页码、框选区域、类别</span><span class="out">结构化字段</span></div>
+            <div class="lane"><strong>文字 PDF</strong><span>直接抽取页面文字与标题</span><span class="out">文本证据</span></div>
+            <div class="lane"><strong>扫描 PDF</strong><span>先 OCR，再清洗、分块、入库</span><span class="out">可检索文本</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="OCR 倒逼">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">08 / 20</span></div>
+        <div class="layout-wide">
+          <h2>真实资料没有那么干净：OCR 是资料入口工程的一部分。</h2>
+          <div class="grid-3">
+            <article class="panel">
+              <h3>真实问题</h3>
+              <ul class="clean">
+                <li>扫描页、图片页、印章和页眉页脚</li>
+                <li>表格、图像、不规则排版</li>
+                <li>没有 OCR，系统看不到文字</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>方案试错</h3>
+              <ul class="clean">
+                <li>开源 OCR 路线</li>
+                <li>云 OCR 路线</li>
+                <li>对中文、表格、版面保持差异显著</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>形成判断</h3>
+              <p class="copy">RAG 的上限不只取决于模型，也取决于资料进入系统之前有没有被正确处理。</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="证据构建">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">09 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>把厚资料变成可检索证据，而不是简单按字数切片。</h2>
+            <p class="lead">每个 chunk 需要保留文件、页码、标题、上下文和原始位置，后续答案才能被引用回来。</p>
+          </div>
+          <div class="split-book">
+            <div class="book"></div>
+            <div class="cut-line"></div>
+            <div class="chunk c1">Chunk A<br><span class="small">来源文件 + 页码 + 标题</span></div>
+            <div class="chunk c2">Chunk B<br><span class="small">段落上下文 + 证据文本</span></div>
+            <div class="chunk c3">Chunk C<br><span class="small">部件名 + 故障描述</span></div>
+            <div class="chunk c4">Chunk D<br><span class="small">维修步骤 + 原文引用</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="检索空间">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">10 / 20</span></div>
+        <div class="layout-wide">
+          <h2>证据进入三个空间：关键词、向量、图谱，各自服务不同问题。</h2>
+          <div class="spaces">
+            <article class="space keyword"><h3>关键词空间</h3><p class="copy">BM25 / keyword 对型号、故障名、部件名等强术语敏感。</p></article>
+            <article class="space vector"><h3>向量空间</h3><p class="copy">把文本转成高维语义表示，寻找意思相近的证据。</p></article>
+            <article class="space graph"><h3>图谱空间</h3><p class="copy">保存部件、故障、工况、参数、维修动作之间的关系。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="检索实验">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">11 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>检索不是越复杂越好，必须让评测结果决定路线。</h2>
+            <p class="lead">60 题动力装备 baseline 显示：强术语语料下，keyword 当前更稳。</p>
+          </div>
+          <div class="panel">
+            <table class="table">
+              <thead><tr><th>方法</th><th>Question recall@K</th><th>结论</th></tr></thead>
+              <tbody>
+                <tr><td>keyword</td><td class="num">0.833</td><td>当前最强，说明强术语显著。</td></tr>
+                <tr><td>hybrid_rrf</td><td class="num">0.817</td><td>接近 keyword，但还需要路由和 reranker。</td></tr>
+                <tr><td>dense_hashing</td><td class="num">0.583</td><td>可复现语义基线，不代表最终 embedding 上限。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="问题路由">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">12 / 20</span></div>
+        <div class="layout-wide">
+          <h2>系统不应该只有一条链路，而应该根据问题类型做路由。</h2>
+          <div class="routing">
+            <article class="panel route-card"><h3>事实 / 定义 / 参数</h3><p class="copy">优先走标准 RAG 与关键词检索，命中直接证据。</p></article>
+            <article class="panel route-card"><h3>关系追踪</h3><p class="copy">进入 GraphRAG，沿实体和关系查故障链。</p></article>
+            <article class="panel route-card"><h3>综合问题</h3><p class="copy">聚合多个证据块，避免只返回单段最相似文本。</p></article>
+            <article class="panel route-card"><h3>全局问题</h3><p class="copy">使用社区摘要和全局检索，回答跨文档规律。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="GraphRAG 构建">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">13 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>GraphRAG 把文本连接成实体关系，但关系必须绑定原文证据。</h2>
+            <p class="lead">设备、部件、故障、工况、参数和维修动作抽取成节点与边，支持关系链追踪。</p>
+          </div>
+          <div class="graph-map">
+            <div class="edge e1"></div><div class="edge e2"></div><div class="edge e3"></div><div class="edge e4"></div><div class="edge e5"></div>
+            <div class="g-node g1">故障现象</div>
+            <div class="g-node g2">关联部件</div>
+            <div class="g-node g3">工况变化</div>
+            <div class="g-node g4">检查方法</div>
+            <div class="g-node g5">处理措施</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="GraphRAG 边界">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">14 / 20</span></div>
+        <div class="layout-wide">
+          <h2>GraphRAG 不是替代所有 RAG，而是增强关系型和全局综合问题。</h2>
+          <div class="grid-3">
+            <article class="panel"><h3>普通 RAG 更适合</h3><p class="copy">定义、说明、步骤、参数等有直接证据的问题。</p></article>
+            <article class="panel"><h3>GraphRAG 更适合</h3><p class="copy">故障、部件、工况、参数之间的多跳关系追踪。</p></article>
+            <article class="panel"><h3>后续评测重点</h3><p class="copy">同一批问题分别走 local、global 和标准 RAG，比较准确性和引用质量。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="工程分层">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">15 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>页面只是入口，真正重要的是后面的工程分层。</h2>
+            <p class="lead">课程阶段先把资料、检索、图谱和评测这条主链路做出来，而不是提前夸大完整 Agent。</p>
+          </div>
+          <div class="stack">
+            <div class="layer"><strong>评测层</strong><span class="copy">题集、baseline、评分、失败归因</span></div>
+            <div class="layer"><strong>编排层</strong><span class="copy">问题类型判断与路线选择</span></div>
+            <div class="layer"><strong>图谱层</strong><span class="copy">实体、关系、社区、证据绑定</span></div>
+            <div class="layer"><strong>检索层</strong><span class="copy">keyword、dense、hybrid、reranker</span></div>
+            <div class="layer"><strong>存储层</strong><span class="copy">ChromaDB、关键词索引、图谱数据</span></div>
+            <div class="layer"><strong>数据管线</strong><span class="copy">上传、解析、OCR、清洗、分块、元数据</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="评测平台">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">16 / 20</span></div>
+        <div class="layout-wide">
+          <div>
+            <h2>评测平台让项目从“能演示”变成“能评分”。</h2>
+            <p class="lead">这里要分清两类结果：动力装备 60 题 baseline 判断本项目路线；公开 benchmark 外部评测对标成熟 RAG 任务。</p>
+          </div>
+          <table class="table">
+            <thead><tr><th>证据项</th><th>阶段记录</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>动力装备 60 题 baseline</td><td class="num">0.833 / 0.817 / 0.583</td><td>keyword、hybrid_rrf、dense_hashing 同题对比。</td></tr>
+              <tr><td>开源 benchmark 外部评测</td><td class="num">93.47 / 100</td><td>100 个公开 benchmark case，retrieval-first score。</td></tr>
+              <tr><td>legal-rag-bench</td><td class="num">96.68 / 100</td><td>50 题，外部质量门禁通过。</td></tr>
+              <tr><td>ragbench-hotpotqa-validation</td><td class="num">90.25 / 100</td><td>50 题，多跳问答 benchmark，通过 90 分门槛。</td></tr>
+              <tr><td>Open Source 90 Gate</td><td class="num">pass</td><td>不等同于动力装备专家验收，但证明评测平台可接入公开 benchmark。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="失败归因">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">17 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>失败归因把问题变成下一轮优化路线图。</h2>
+            <p class="lead">失败不是一句“效果不好”，而是可以拆成资料、OCR、分块、召回、排序、图谱和证据绑定问题。</p>
+          </div>
+          <div class="loop">
+            <div class="loop-step ls1"><strong>资料入库</strong><span>PDF / OCR / JSON / 元数据</span></div>
+            <div class="loop-step ls2"><strong>系统回答</strong><span>检索、图谱、证据引用</span></div>
+            <div class="loop-step ls3"><strong>评测发现失败</strong><span>baseline、公开 benchmark、归因</span></div>
+            <div class="loop-step ls4"><strong>下一轮优化</strong><span>reranker、embedding、路由、GraphRAG</span></div>
+            <div class="loop-center">闭环<br>优化</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="现场演示">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">18 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <h2>现场演示只展示关键入口，避免被网络或接口拖住节奏。</h2>
+            <div class="grid-2" style="margin-top:22px">
+              <article class="panel"><h3>资料进入系统</h3><p class="copy">解析、OCR、分块、元数据保留和入库。</p></article>
+              <article class="panel"><h3>评测平台</h3><p class="copy">导入仓库或加载内置结果，输出分数和失败分析。</p></article>
+            </div>
+          </div>
+          <div>
+            <img class="asset-shot" src="evaluation-preview.png" alt="评测平台预览" />
+            <p class="small" style="margin-top:14px">GitHub API 限流时，页面可切换到内置评测快照继续演示。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="答辩边界">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">19 / 20</span></div>
+        <div class="layout-wide">
+          <h2>答辩时要稳住边界：不夸大，也不把项目讲成单页展示。</h2>
+          <div class="grid-3">
+            <article class="panel"><h3>不是替代大模型</h3><p class="copy">而是给大模型提供可检索、可引用、可评测的领域资料基础。</p></article>
+            <article class="panel"><h3>GraphRAG 不是万能</h3><p class="copy">适合关系追踪、社区摘要和全局综合；事实型问题仍可走标准 RAG。</p></article>
+            <article class="panel"><h3>当前是第一版闭环</h3><p class="copy">资料入口、证据构建、检索比较、GraphRAG 方向和评测平台已形成。</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="最后回到初心">
+      <div class="stage">
+        <div class="topline"><span class="brand">PowerRAG</span><span class="slide-num">20 / 20</span></div>
+        <div class="layout-two">
+          <div>
+            <div class="tagline">总结</div>
+            <h2>PowerRAG 的核心不是“做了一个网页”，而是把真实资料变成可信知识系统。</h2>
+            <p class="lead">资料进入系统，形成可引用证据；证据进入关键词、向量和图谱空间；评测平台再用题集、baseline 和失败归因验证效果。</p>
+          </div>
+          <div class="panel">
+            <h3>下一阶段</h3>
+            <ul class="clean">
+              <li>更换正式 embedding，提高语义召回能力。</li>
+              <li>引入 reranker，改善召回后的排序。</li>
+              <li>对 GraphRAG local / global 做同题实测。</li>
+              <li>扩展中文动力装备 benchmark 与专家评分。</li>
+            </ul>
+            <div class="note-box" style="margin-top:20px">我的汇报到这里，谢谢各位老师。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="controls" aria-label="演示控制">
+      <button class="ctl" id="prevBtn" type="button" aria-label="上一页">‹</button>
+      <button class="ctl" id="overviewBtn" type="button" aria-label="目录">☷</button>
+      <button class="ctl" id="nextBtn" type="button" aria-label="下一页">›</button>
+    </div>
+    <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  </main>
+
+  <div class="overview" id="overview" aria-label="幻灯片目录">
+    <h2>目录</h2>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const bar = document.getElementById("bar");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const overviewBtn = document.getElementById("overviewBtn");
+    const overview = document.getElementById("overview");
+    const thumbs = document.getElementById("thumbs");
+    function hashIndex() {
+      const raw = window.location.hash.replace("#", "");
+      const parsed = Number.parseInt(raw, 10);
+      if (Number.isFinite(parsed) && parsed >= 1 && parsed <= slides.length) {
+        return parsed - 1;
+      }
+      return 0;
+    }
+
+    let current = hashIndex();
+
+    function render() {
+      slides.forEach((slide, index) => {
+        slide.classList.toggle("active", index === current);
+      });
+      bar.style.width = `${((current + 1) / slides.length) * 100}%`;
+      document.title = `${String(current + 1).padStart(2, "0")} · ${slides[current].dataset.title} · PowerRAG`;
+      const nextHash = `#${current + 1}`;
+      if (window.location.hash !== nextHash) {
+        history.replaceState(null, "", nextHash);
+      }
+    }
+
+    function go(delta) {
+      current = Math.max(0, Math.min(slides.length - 1, current + delta));
+      render();
+    }
+
+    function goTo(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      overview.classList.remove("open");
+      render();
+    }
+
+    slides.forEach((slide, index) => {
+      const button = document.createElement("button");
+      button.className = "thumb";
+      button.type = "button";
+      button.innerHTML = `<strong>${String(index + 1).padStart(2, "0")}</strong><span>${slide.dataset.title}</span>`;
+      button.addEventListener("click", () => goTo(index));
+      thumbs.appendChild(button);
+    });
+
+    prevBtn.addEventListener("click", () => go(-1));
+    nextBtn.addEventListener("click", () => go(1));
+    overviewBtn.addEventListener("click", () => overview.classList.toggle("open"));
+    overview.addEventListener("click", (event) => {
+      if (event.target === overview) overview.classList.remove("open");
+    });
+
+    window.addEventListener("hashchange", () => {
+      current = hashIndex();
+      render();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        go(1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        go(-1);
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        goTo(0);
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        goTo(slides.length - 1);
+      }
+      if (event.key === "Escape") {
+        overview.classList.remove("open");
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

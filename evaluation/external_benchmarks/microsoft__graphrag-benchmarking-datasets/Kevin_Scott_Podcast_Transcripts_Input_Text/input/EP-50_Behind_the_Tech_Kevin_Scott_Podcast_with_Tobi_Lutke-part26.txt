@@ -1,0 +1,15 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  love that too. I’ve had a number of friends over the years who work at Shopify, or some of them who have worked at Shopify, and to a person, they’ve all really had great things to say about him. And I think that comes through because, you know, especially, you can see it in the product, and the employees definitely see it. And I think you’re right, I think it comes from taking that first principles approach and really thinking thoughtfully about the things that he’s doing.
+
+KEVIN SCOTT: Yeah, and, like, maybe my – selfishly, my favorite part of the conversation was right there at the end where, like, we’re sort of, you know, trading, like, what’s our favorite technical thing right now.
+
+CHRISTINA WARREN: Yes.
+
+KEVIN SCOTT: Like, I always feel like I learned something, talking with Tobi.
+
+CHRISTINA WARREN: No, honestly, I said this to you off–mic, but I’ll say it on the pod as well. I could listen to an entire hour of just that. And so, Tobi, if you ever want to do, like, a Behind The Tech behind the scenes episode, like bonus episode, like there’s maybe a Patreon out there for you guys, is all I’m saying. (Laughter.) Like, I would definitely listen to that. I’m just saying I would subscribe.
+
+All right, that is all the time that we have for this episode. A huge thank you to Tobi Lütke for joining us. And if you have anything that you’d like to share with us, like what is your favorite programming language right now, please e–mail us anytime at BehindTheTech@microsoft.com. And you can follow Behind The Tech on your favorite podcast platform, or you can check out our full video episodes on YouTube. 
+
+Thanks for tuning in.
+
+KEVIN SCOTT: And next month, we’ll be talking with entrepreneur and AI thought leader, Rana el Kaliouby. See you next time.

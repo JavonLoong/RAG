@@ -1,0 +1,14 @@
+EP-03_ Behind_the_Tech_Kevin Scott_Podcast_with_Andrew Ng.txt  managers to do. So we're still figure out these workflows and practices. 
+Beyond that, I think on a more pure technology side [inaudible] again as I do transform entertainment and art. It'll be interesting to see how it goes beyond that. I think the value of reinforcement learning in games is very overhyped, but I'm seeing some real attraction in using reinforced learning to control robots. So early signs from my friends working on projects that are not yet public for the most part, but there are signs of meaningful progress in the reinforced learning applied to robotics. Then, I think transfer learning is vastly underrated. 
+The ability to learn from- so there was a paper out of Facebook where they trained on an unprecedented 3.5 billion images which is very, very big 3.5 images is very large, even by today's standards, and found that it turns out training from 3.5 billion, in their case, Instagram images, is actually better than training on only one billion images. So this is a good sign for the microprocessor companies, I think, because it means that, "Hey, keep building these faster processes. We'll find a way to suck up their processing power." 
+But with the ability to train on really, really massive data sets to do transfer learning or pre-training or some set of ideas around there, I think that is very underrated today still. And then super long term- We used the term unsupervised learning to describe a really, really complicated set of ideas that we don't even fully understand. But I think that also will be very important in the longer term.  
+KEVIN SCOTT: So tell us something that people wouldn't know about you.  
+ANDREW NG: Sometimes, I just look at those bookstore and deliberately buy a magazine in some totally strange area that I would otherwise never have bought a magazine in. So whatever, five dollars, you end up with a magazine in some area that you just previously knew absolutely nothing about.  
+KEVIN SCOTT: I think that's awesome.  
+ANDREW NG: One thing that not many people know about me, is I actually really love stationery. So my wife knows, when we travel to foreign countries, sometimes I'll spend way too long looking at pens and pencils and paper. I think part of me feels like, "Boy, if only I had the perfect pen and the perfect paper, I could come up with better ideas." It has not worked out so far, but that dream lives on and on.  
+KEVIN SCOTT: That's awesome. All right. Well, thank you so much, Andrew, for coming in today.  
+ANDREW NG: Thanks a lot for having me here, Kevin.  
+
+[MUSIC]
+CHRISTINA WARREN: That was a really terrific conversation.  
+KEVIN SCOTT: Yes, it was a ton of fun. It was like all of my best conversations,

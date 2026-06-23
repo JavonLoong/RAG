@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人 RAG 助手</title>
+  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+  <style>
+    :root {
+      --bg: #18191c;
+      --bg-soft: #202226;
+      --panel: rgba(43, 45, 51, 0.82);
+      --panel-strong: #2c2f35;
+      --panel-subtle: rgba(255, 255, 255, 0.045);
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.16);
+      --text: #f4f6f8;
+      --text-soft: rgba(244, 246, 248, 0.72);
+      --muted: rgba(244, 246, 248, 0.48);
+      --blue: #2f8cff;
+      --cyan: #68d5ff;
+      --green: #38d978;
+      --amber: #ffb84d;
+      --rose: #ff687a;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 18px 54px rgba(0, 0, 0, 0.32);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        radial-gradient(circle at 14% 10%, rgba(47, 140, 255, 0.13), transparent 26%),
+        radial-gradient(circle at 86% 90%, rgba(56, 217, 120, 0.10), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+      border: 0;
+      cursor: pointer;
+    }
+
+    iconify-icon {
+      display: inline-flex;
+      width: 1em;
+      height: 1em;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 270px minmax(520px, 1fr) 360px;
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .sidebar,
+    .main,
+    .inspector {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(28px) saturate(150%);
+      -webkit-backdrop-filter: blur(28px) saturate(150%);
+    }
+
+    .sidebar {
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 14px;
+    }
+
+    .main {
+      border-radius: var(--radius);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    .inspector {
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 2px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), #1f55d8);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav,
+    .memory-list,
+    .upload-list,
+    .extract-list,
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button,
+    .memory-item,
+    .upload-item,
+    .extract-item,
+    .timeline-item {
+      border-radius: var(--radius-sm);
+      background: var(--panel-subtle);
+      border: 1px solid transparent;
+    }
+
+    .nav button {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      color: var(--text-soft);
+      background: transparent;
+      text-align: left;
+    }
+
+    .nav button.active,
+    .nav button:hover {
+      color: var(--text);
+      background: rgba(47, 140, 255, 0.14);
+      border-color: rgba(47, 140, 255, 0.28);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-soft);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pill.ok {
+      color: #d9ffe8;
+      background: rgba(56, 217, 120, 0.15);
+    }
+
+    .pill.warn {
+      color: #fff0c8;
+      background: rgba(255, 184, 77, 0.16);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--amber);
+      box-shadow: 0 0 0 3px rgba(255, 184, 77, 0.12);
+    }
+
+    .dot.ok {
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(56, 217, 120, 0.13);
+    }
+
+    .memory-item,
+    .timeline-item {
+      padding: 10px;
+    }
+
+    .memory-item strong,
+    .timeline-item strong,
+    .extract-item strong,
+    .upload-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .memory-item span,
+    .timeline-item span,
+    .extract-item span,
+    .upload-item span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .stat {
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
+    }
+
+    .stat b {
+      display: block;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .topbar,
+    .inspector-head {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar h1,
+    .inspector-head h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 720;
+    }
+
+    .topbar p,
+    .inspector-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions,
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn,
+    .icon-btn,
+    .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 34px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .btn {
+      padding: 7px 12px;
+      background: linear-gradient(180deg, #3997ff, #2379f5);
+      color: #fff;
+      font-weight: 650;
+      font-size: 13px;
+    }
+
+    .ghost-btn {
+      padding: 7px 11px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-soft);
+      border-color: var(--line);
+      font-size: 13px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-soft);
+      border-color: var(--line);
+    }
+
+    .btn:hover,
+    .ghost-btn:hover,
+    .icon-btn:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled,
+    .ghost-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+      transform: none;
+    }
+
+    .chat {
+      min-height: 0;
+      overflow: auto;
+      padding: 18px;
+    }
+
+    .message {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--line);
+      color: var(--cyan);
+    }
+
+    .bubble {
+      max-width: 840px;
+      padding: 13px 14px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid var(--line);
+    }
+
+    .message.user .bubble {
+      background: rgba(47, 140, 255, 0.16);
+      border-color: rgba(47, 140, 255, 0.30);
+    }
+
+    .bubble strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 13px;
+    }
+
+    .bubble p {
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.65;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .composer-wrap {
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+      background: rgba(24, 25, 28, 0.56);
+    }
+
+    .composer {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid var(--line-strong);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 104px;
+      max-height: 220px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+      color: rgba(244, 246, 248, 0.36);
+    }
+
+    .composer-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .inspector-body {
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .tool-block {
+      display: grid;
+      gap: 10px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tool-block:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    input,
+    select {
+      min-height: 34px;
+      width: 100%;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      outline: 0;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      box-shadow: 0 0 0 3px rgba(47, 140, 255, 0.22);
+      border-color: rgba(47, 140, 255, 0.55);
+    }
+
+    .extract-item {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 9px;
+      padding: 10px;
+      border-color: var(--line);
+    }
+
+    .extract-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: rgba(104, 213, 255, 0.13);
+      color: var(--cyan);
+    }
+
+    .extract-item.finance .extract-icon {
+      background: rgba(56, 217, 120, 0.13);
+      color: var(--green);
+    }
+
+    .extract-item.task .extract-icon {
+      background: rgba(255, 184, 77, 0.14);
+      color: var(--amber);
+    }
+
+    .extract-item.idea .extract-icon {
+      background: rgba(255, 104, 122, 0.13);
+      color: var(--rose);
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .drop {
+      min-height: 118px;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+      text-align: center;
+    }
+
+    .drop strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .drop span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .upload-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      padding: 9px;
+      border-color: var(--line);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 20;
+      transform: translateX(-50%);
+      max-width: min(620px, calc(100vw - 32px));
+      padding: 10px 13px;
+      border-radius: var(--radius-sm);
+      background: #101114;
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -4px);
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 250px minmax(0, 1fr);
+      }
+
+      .inspector {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+
+      .sidebar {
+        order: 2;
+      }
+
+      .main {
+        min-height: 720px;
+      }
+
+      .topbar,
+      .inspector-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .message {
+        grid-template-columns: 1fr;
+      }
+
+      .avatar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="本地资料库">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><iconify-icon icon="lucide:brain-circuit"></iconify-icon></div>
+        <div>
+          <strong>个人 RAG 助手</strong>
+          <span>Local memory console</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="工作区导航">
+        <button class="active" type="button"><iconify-icon icon="lucide:message-square-text"></iconify-icon><span>对话归档</span></button>
+        <button type="button"><iconify-icon icon="lucide:book-marked"></iconify-icon><span>复盘资料</span></button>
+        <button type="button"><iconify-icon icon="lucide:wallet-cards"></iconify-icon><span>财务记录</span></button>
+        <button type="button"><iconify-icon icon="lucide:list-checks"></iconify-icon><span>流程任务</span></button>
+        <button type="button"><iconify-icon icon="lucide:lightbulb"></iconify-icon><span>想法沉淀</span></button>
+      </nav>
+
+      <p class="section-title">最近归档 <span class="pill" id="memoryCount">0</span></p>
+      <div class="memory-list" id="memoryList"></div>
+
+      <div class="stats">
+        <div class="stat"><b id="statEntries">0</b><span>条记忆</span></div>
+        <div class="stat"><b id="statFinance">0</b><span>财务项</span></div>
+        <div class="stat"><b id="statTasks">0</b><span>任务项</span></div>
+        <div class="stat"><b id="statIdeas">0</b><span>想法项</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>今日输入</h1>
+          <p>把口语化复盘、支出、任务和想法整理成可检索的本地记忆。</p>
+        </div>
+        <div class="top-actions">
+          <span class="pill warn" id="backendPill"><span class="dot" id="backendDot"></span><span id="backendText">后端未连接</span></span>
+          <button class="ghost-btn" id="checkBackend" type="button" title="检测本地后端"><iconify-icon icon="lucide:activity"></iconify-icon><span>检测</span></button>
+          <button class="icon-btn" id="exportJson" type="button" title="导出 JSON"><iconify-icon icon="lucide:file-json"></iconify-icon></button>
+        </div>
+      </header>
+
+      <section class="chat" id="chat" aria-live="polite"></section>
+
+      <section class="composer-wrap">
+        <div class="composer">
+          <textarea id="draftInput" placeholder="例如：今天复盘了个人 RAG 助手的页面方案，上午花了 42 元买咖啡和午餐，晚上要整理 API 调用流程。我想到可以把每天的口语输入自动拆成复盘、财务、任务和想法四类。"></textarea>
+          <div class="composer-meta">
+            <div class="chips">
+              <span class="pill"><iconify-icon icon="lucide:shield-check"></iconify-icon>本地优先</span>
+              <span class="pill"><iconify-icon icon="lucide:database"></iconify-icon><span id="collectionLabel">personal_memory</span></span>
+              <span class="pill"><iconify-icon icon="lucide:clock-3"></iconify-icon><span id="clockLabel"></span></span>
+            </div>
+            <div class="button-row">
+              <button class="ghost-btn" id="clearDraft" type="button"><iconify-icon icon="lucide:eraser"></iconify-icon><span>清空</span></button>
+              <button class="ghost-btn" id="copyMarkdown" type="button"><iconify-icon icon="lucide:copy"></iconify-icon><span>复制 Markdown</span></button>
+              <button class="btn" id="archiveDraft" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>整理并归档</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector" aria-label="结构化结果">
+      <header class="inspector-head">
+        <div>
+          <h2>结构化归档</h2>
+          <p>Review / Finance / Task / Idea</p>
+        </div>
+        <button class="icon-btn" id="downloadMarkdown" type="button" title="下载 Markdown"><iconify-icon icon="lucide:download"></iconify-icon></button>
+      </header>
+
+      <div class="inspector-body">
+        <section class="tool-block">
+          <p class="section-title">本地后端</p>
+          <div class="field">
+            <label for="apiBase">API Base</label>
+            <input id="apiBase" type="url" value="http://127.0.0.1:8766">
+          </div>
+          <div class="field">
+            <label for="collectionName">集合名</label>
+            <input id="collectionName" type="text" value="personal_memory">
+          </div>
+          <div class="button-row">
+            <button class="ghost-btn" id="saveSettings" type="button"><iconify-icon icon="lucide:save"></iconify-icon><span>保存设置</span></button>
+            <button class="ghost-btn" id="searchLocal" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>检索本地记忆</span></button>
+          </div>
+        </section>
+
+        <section class="tool-block">
+          <p class="section-title">资料接入</p>
+          <div class="drop" id="dropZone">
+            <div>
+              <iconify-icon icon="lucide:folder-input" style="font-size:24px;color:var(--cyan)"></iconify-icon>
+              <strong>添加文件或文件夹</strong>
+              <span>沿用原数据接入逻辑，发送到本地上传目录。</span>
+              <div class="button-row" style="justify-content:center;margin-top:10px">
+                <button class="ghost-btn" id="pickFiles" type="button"><iconify-icon icon="lucide:file-plus"></iconify-icon><span>文件</span></button>
+                <button class="ghost-btn" id="pickFolder" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>文件夹</span></button>
+              </div>
+            </div>
+          </div>
+          <input class="hidden" id="fileInput" type="file" multiple>
+          <input class="hidden" id="folderInput" type="file" multiple webkitdirectory directory>
+          <div class="upload-list" id="uploadList"></div>
+          <div class="button-row">
+            <button class="ghost-btn" id="uploadFiles" type="button"><iconify-icon icon="lucide:upload"></iconify-icon><span>上传</span></button>
+            <button class="btn" id="processFiles" type="button"><iconify-icon icon="lucide:square-play"></iconify-icon><span>处理入库</span></button>
+          </div>
+        </section>
+
+        <section class="tool-block">
+          <p class="section-title">抽取结果</p>
+          <div class="extract-list" id="extractList"></div>
+        </section>
+
+        <section class="tool-block">
+          <p class="section-title">执行记录</p>
+          <div class="timeline" id="timeline"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "personal_rag_assistant_state_v1";
+
+    const $ = (id) => document.getElementById(id);
+    const fmt = new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    const state = {
+      entries: [],
+      messages: [],
+      selectedFiles: [],
+      uploadedFilenames: [],
+      backendOk: false,
+      latestAnalysis: null,
+      settings: {
+        apiBase: "http://127.0.0.1:8766",
+        collection: "personal_memory"
+      }
+    };
+
+    const els = {
+      apiBase: $("apiBase"),
+      archiveDraft: $("archiveDraft"),
+      backendDot: $("backendDot"),
+      backendPill: $("backendPill"),
+      backendText: $("backendText"),
+      chat: $("chat"),
+      checkBackend: $("checkBackend"),
+      clearDraft: $("clearDraft"),
+      clockLabel: $("clockLabel"),
+      collectionLabel: $("collectionLabel"),
+      collectionName: $("collectionName"),
+      copyMarkdown: $("copyMarkdown"),
+      downloadMarkdown: $("downloadMarkdown"),
+      draftInput: $("draftInput"),
+      dropZone: $("dropZone"),
+      exportJson: $("exportJson"),
+      extractList: $("extractList"),
+      fileInput: $("fileInput"),
+      folderInput: $("folderInput"),
+      memoryCount: $("memoryCount"),
+      memoryList: $("memoryList"),
+      pickFiles: $("pickFiles"),
+      pickFolder: $("pickFolder"),
+      processFiles: $("processFiles"),
+      saveSettings: $("saveSettings"),
+      searchLocal: $("searchLocal"),
+      statEntries: $("statEntries"),
+      statFinance: $("statFinance"),
+      statIdeas: $("statIdeas"),
+      statTasks: $("statTasks"),
+      timeline: $("timeline"),
+      toast: $("toast"),
+      uploadFiles: $("uploadFiles"),
+      uploadList: $("uploadList")
+    };
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        state.entries = Array.isArray(saved.entries) ? saved.entries : [];
+        state.messages = Array.isArray(saved.messages) ? saved.messages : [];
+        state.settings = { ...state.settings, ...(saved.settings || {}) };
+      } catch (error) {
+        console.warn("state load failed", error);
+      }
+
+      if (!state.messages.length) {
+        state.messages = [
+          {
+            role: "assistant",
+            title: "龙",
+            text: "我会把你的口语输入先整理成复盘、财务、任务和想法，再保存为 Markdown 记忆。检测到本地后端后，可以同步上传到本地向量库。"
+          }
+        ];
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        entries: state.entries,
+        messages: state.messages.slice(-20),
+        settings: state.settings
+      }));
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => els.toast.classList.remove("show"), 2600);
+    }
+
+    function sentenceParts(text) {
+      return text
+        .split(/[\n。！？!?；;]+/g)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    function unique(items) {
+      return [...new Set(items.map((item) => item.trim()).filter(Boolean))];
+    }
+
+    function analyzeText(text) {
+      const parts = sentenceParts(text);
+      const finance = unique(parts.filter((item) => /(\d+(\.\d+)?\s*(元|块|人民币|rmb|RMB|美元|刀)|支出|收入|报销|预算|记账|付款|转账|花了|买了)/.test(item)));
+      const tasks = unique(parts.filter((item) => /(要|需要|待办|todo|TODO|安排|跟进|明天|下周|下次|计划|预约|提交|整理)/.test(item)));
+      const ideas = unique(parts.filter((item) => /(想法|灵感|可以|也许|希望|觉得|尝试|方案|打算|如果|或许)/.test(item)));
+      const review = unique(parts.filter((item) => /(复盘|今天|完成|推进|问题|卡住|反思|收获|做了|学习|验证)/.test(item))).slice(0, 5);
+      const fallbackReview = review.length ? review : parts.slice(0, 3);
+
+      return {
+        review: fallbackReview,
+        finance,
+        tasks,
+        ideas,
+        tags: buildTags({ finance, tasks, ideas, review: fallbackReview }),
+        summary: buildSummary({ review: fallbackReview, finance, tasks, ideas })
+      };
+    }
+
+    function buildTags(analysis) {
+      const tags = ["daily-review"];
+      if (analysis.finance.length) tags.push("finance");
+      if (analysis.tasks.length) tags.push("task");
+      if (analysis.ideas.length) tags.push("idea");
+      if (analysis.review.length) tags.push("review");
+      return tags;
+    }
+
+    function buildSummary(analysis) {
+      const lines = [];
+      if (analysis.review.length) lines.push(`复盘：${analysis.review[0]}`);
+      if (analysis.finance.length) lines.push(`财务：识别到 ${analysis.finance.length} 条支出或收支线索。`);
+      if (analysis.tasks.length) lines.push(`任务：整理出 ${analysis.tasks.length} 个后续动作。`);
+      if (analysis.ideas.length) lines.push(`想法：沉淀 ${analysis.ideas.length} 条可继续展开的方向。`);
+      return lines.join("\n") || "已生成一条可归档的本地记忆。";
+    }
+
+    function createEntry(text) {
+      const analysis = analyzeText(text);
+      const createdAt = new Date().toISOString();
+      const id = createdAt.replace(/[-:.TZ]/g, "").slice(0, 14);
+      return {
+        id,
+        title: `${today()} 个人复盘`,
+        text,
+        analysis,
+        createdAt,
+        collection: state.settings.collection
+      };
+    }
+
+    function markdownFor(entry) {
+      const lines = [
+        "---",
+        `id: ${entry.id}`,
+        `title: ${entry.title}`,
+        `created_at: ${entry.createdAt}`,
+        `collection: ${entry.collection}`,
+        `tags: [${entry.analysis.tags.join(", ")}]`,
+        "---",
+        "",
+        `# ${entry.title}`,
+        "",
+        "## 原始输入",
+        entry.text.trim(),
+        "",
+        "## 整理摘要",
+        entry.analysis.summary,
+        "",
+        "## 今日复盘",
+        ...listLines(entry.analysis.review),
+        "",
+        "## 财务支出",
+        ...listLines(entry.analysis.finance),
+        "",
+        "## 流程任务",
+        ...listLines(entry.analysis.tasks),
+        "",
+        "## 想法沉淀",
+        ...listLines(entry.analysis.ideas)
+      ];
+      return lines.join("\n");
+    }
+
+    function listLines(items) {
+      return items.length ? items.map((item) => `- ${item}`) : ["- 暂无"];
+    }
+
+    function renderChat() {
+      els.chat.innerHTML = state.messages.map((msg) => `
+        <article class="message ${msg.role === "user" ? "user" : "assistant"}">
+          <div class="avatar" aria-hidden="true"><iconify-icon icon="${msg.role === "user" ? "lucide:user" : "lucide:sparkles"}"></iconify-icon></div>
+          <div class="bubble">
+            <strong>${escapeHtml(msg.title)}</strong>
+            <p>${escapeHtml(msg.text)}</p>
+          </div>
+        </article>
+      `).join("");
+      els.chat.scrollTop = els.chat.scrollHeight;
+    }
+
+    function renderExtract() {
+      const analysis = state.latestAnalysis || (state.entries[0] && state.entries[0].analysis) || analyzeText("");
+      const data = [
+        ["review", "lucide:book-open-check", "今日复盘", analysis.review],
+        ["finance", "lucide:wallet-cards", "财务支出", analysis.finance],
+        ["task", "lucide:list-checks", "流程任务", analysis.tasks],
+        ["idea", "lucide:lightbulb", "想法沉淀", analysis.ideas]
+      ];
+      els.extractList.innerHTML = data.map(([kind, icon, label, items]) => `
+        <article class="extract-item ${kind}">
+          <div class="extract-icon" aria-hidden="true"><iconify-icon icon="${icon}"></iconify-icon></div>
+          <div>
+            <strong>${label}</strong>
+            <span>${items.length ? escapeHtml(items.slice(0, 2).join(" / ")) : "等待输入"}</span>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderSidebar() {
+      els.memoryCount.textContent = String(state.entries.length);
+      els.memoryList.innerHTML = state.entries.slice(0, 7).map((entry) => `
+        <article class="memory-item">
+          <strong>${escapeHtml(entry.title)}</strong>
+          <span>${fmt.format(new Date(entry.createdAt))} - ${entry.analysis.tags.join(" / ")}</span>
+        </article>
+      `).join("") || `<article class="memory-item"><strong>暂无归档</strong><span>第一条整理后的记忆会出现在这里。</span></article>`;
+
+      const totals = state.entries.reduce((acc, entry) => {
+        acc.finance += entry.analysis.finance.length;
+        acc.tasks += entry.analysis.tasks.length;
+        acc.ideas += entry.analysis.ideas.length;
+        return acc;
+      }, { finance: 0, tasks: 0, ideas: 0 });
+
+      els.statEntries.textContent = String(state.entries.length);
+      els.statFinance.textContent = String(totals.finance);
+      els.statTasks.textContent = String(totals.tasks);
+      els.statIdeas.textContent = String(totals.ideas);
+    }
+
+    function renderTimeline() {
+      const items = state.entries.slice(0, 4).map((entry) => ({
+        title: "已保存记忆",
+        meta: `${fmt.format(new Date(entry.createdAt))} - ${entry.collection}`
+      }));
+      if (state.backendOk) items.unshift({ title: "本地后端可用", meta: state.settings.apiBase });
+      els.timeline.innerHTML = items.map((item) => `
+        <article class="timeline-item">
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.meta)}</span>
+        </article>
+      `).join("") || `<article class="timeline-item"><strong>等待动作</strong><span>检测、上传、处理和归档会记录在这里。</span></article>`;
+    }
+
+    function renderUploads() {
+      els.uploadList.innerHTML = state.selectedFiles.slice(0, 5).map((file) => `
+        <article class="upload-item">
+          <div>
+            <strong>${escapeHtml(file.webkitRelativePath || file.name)}</strong>
+            <span>${Math.max(1, Math.round(file.size / 1024))} KB</span>
+          </div>
+          <span class="pill">${escapeHtml(file.name.split(".").pop() || "file")}</span>
+        </article>
+      `).join("");
+    }
+
+    function renderSettings() {
+      els.apiBase.value = state.settings.apiBase;
+      els.collectionName.value = state.settings.collection;
+      els.collectionLabel.textContent = state.settings.collection;
+    }
+
+    function renderBackend() {
+      els.backendPill.classList.toggle("ok", state.backendOk);
+      els.backendPill.classList.toggle("warn", !state.backendOk);
+      els.backendDot.classList.toggle("ok", state.backendOk);
+      els.backendText.textContent = state.backendOk ? "后端已连接" : "后端未连接";
+    }
+
+    function renderAll() {
+      renderSettings();
+      renderBackend();
+      renderChat();
+      renderExtract();
+      renderSidebar();
+      renderTimeline();
+      renderUploads();
+    }
+
+    async function checkBackend() {
+      const base = state.settings.apiBase.replace(/\/$/, "");
+      try {
+        const response = await fetch(`${base}/api/health`, { cache: "no-store" });
+        state.backendOk = response.ok;
+        showToast(response.ok ? "本地后端连接正常。" : "本地后端返回异常。");
+      } catch (error) {
+        state.backendOk = false;
+        showToast("未连接到本地后端，页面仍可使用浏览器本地归档。");
+      }
+      renderAll();
+    }
+
+    async function archiveDraft() {
+      const text = els.draftInput.value.trim();
+      if (!text) {
+        showToast("先输入一段复盘或记录。");
+        return;
+      }
+      const entry = createEntry(text);
+      state.latestAnalysis = entry.analysis;
+      state.entries.unshift(entry);
+      state.messages.push({ role: "user", title: "我", text });
+      state.messages.push({ role: "assistant", title: "龙", text: entry.analysis.summary });
+      els.draftInput.value = "";
+      saveState();
+      renderAll();
+      showToast("已整理并保存到浏览器本地。");
+
+      if (state.backendOk) {
+        await uploadEntryMarkdown(entry);
+      }
+    }
+
+    async function uploadEntryMarkdown(entry) {
+      const base = state.settings.apiBase.replace(/\/$/, "");
+      const markdown = markdownFor(entry);
+      const filename = `personal-memory-${entry.id}.md`;
+      const form = new FormData();
+      form.append("file", new Blob([markdown], { type: "text/markdown;charset=utf-8" }), filename);
+      form.append("relative_path", `personal_memory/${filename}`);
+
+      try {
+        const uploadResponse = await fetch(`${base}/api/upload`, { method: "POST", body: form });
+        if (!uploadResponse.ok) throw new Error(`upload ${uploadResponse.status}`);
+        const uploaded = await uploadResponse.json();
+        const processResponse = await fetch(`${base}/api/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filenames: [uploaded.filename],
+            collection: state.settings.collection,
+            parser_backend: "auto"
+          })
+        });
+        if (!processResponse.ok) throw new Error(`process ${processResponse.status}`);
+        const result = await processResponse.json();
+        showToast(`已同步到本地向量库，写入 ${result.chunks_written || 0} 个片段。`);
+      } catch (error) {
+        showToast(`本地入库失败：${error.message}`);
+      }
+    }
+
+    async function uploadSelectedFiles() {
+      if (!state.selectedFiles.length) {
+        showToast("先选择文件或文件夹。");
+        return;
+      }
+      if (!state.backendOk) {
+        showToast("先连接本地后端。");
+        return;
+      }
+
+      const base = state.settings.apiBase.replace(/\/$/, "");
+      state.uploadedFilenames = [];
+      for (const file of state.selectedFiles) {
+        const form = new FormData();
+        form.append("file", file, file.name);
+        form.append("relative_path", file.webkitRelativePath || file.name);
+        const response = await fetch(`${base}/api/upload`, { method: "POST", body: form });
+        if (!response.ok) {
+          showToast(`上传失败：${file.name}`);
+          continue;
+        }
+        const uploaded = await response.json();
+        state.uploadedFilenames.push(uploaded.filename);
+      }
+      showToast(`已上传 ${state.uploadedFilenames.length} 个文件到本地目录。`);
+      renderTimeline();
+    }
+
+    async function processSelectedFiles() {
+      if (!state.backendOk) {
+        showToast("先连接本地后端。");
+        return;
+      }
+      const base = state.settings.apiBase.replace(/\/$/, "");
+      try {
+        const response = await fetch(`${base}/api/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filenames: state.uploadedFilenames,
+            collection: state.settings.collection,
+            parser_backend: "auto"
+          })
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        const result = await response.json();
+        showToast(`处理完成：成功 ${result.files_succeeded || 0} 个，片段 ${result.chunks_written || 0} 个。`);
+      } catch (error) {
+        showToast(`处理失败：${error.message}`);
+      }
+    }
+
+    async function searchLocalMemory() {
+      const query = els.draftInput.value.trim() || (state.entries[0] && state.entries[0].analysis.summary) || "";
+      if (!query) {
+        showToast("输入查询内容或先归档一条记忆。");
+        return;
+      }
+      if (!state.backendOk) {
+        showToast("先连接本地后端。");
+        return;
+      }
+
+      const base = state.settings.apiBase.replace(/\/$/, "");
+      const url = new URL(`${base}/api/search`);
+      url.searchParams.set("q", query);
+      url.searchParams.set("collection", state.settings.collection);
+      url.searchParams.set("top_k", "5");
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(String(response.status));
+        const result = await response.json();
+        const count = Array.isArray(result.results) ? result.results.length : 0;
+        state.messages.push({ role: "assistant", title: "龙", text: `本地检索完成，召回 ${count} 条相关片段。` });
+        saveState();
+        renderChat();
+      } catch (error) {
+        showToast(`检索失败：${error.message}`);
+      }
+    }
+
+    function saveSettings() {
+      state.settings.apiBase = els.apiBase.value.trim() || "http://127.0.0.1:8766";
+      state.settings.collection = els.collectionName.value.trim() || "personal_memory";
+      saveState();
+      renderAll();
+      showToast("设置已保存。");
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state.entries, null, 2)], { type: "application/json;charset=utf-8" });
+      downloadBlob(blob, `personal-rag-memory-${today()}.json`);
+    }
+
+    function latestMarkdown() {
+      const text = els.draftInput.value.trim();
+      const entry = state.entries[0] || (text ? createEntry(text) : null);
+      return entry ? markdownFor(entry) : "";
+    }
+
+    async function copyMarkdown() {
+      const markdown = latestMarkdown();
+      if (!markdown) {
+        showToast("暂无可复制内容。");
+        return;
+      }
+      await navigator.clipboard.writeText(markdown);
+      showToast("Markdown 已复制。");
+    }
+
+    function downloadMarkdown() {
+      const markdown = latestMarkdown();
+      if (!markdown) {
+        showToast("暂无可下载内容。");
+        return;
+      }
+      downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), `personal-memory-${today()}.md`);
+    }
+
+    function downloadBlob(blob, filename) {
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(href);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function wireEvents() {
+      els.archiveDraft.addEventListener("click", archiveDraft);
+      els.checkBackend.addEventListener("click", checkBackend);
+      els.clearDraft.addEventListener("click", () => {
+        els.draftInput.value = "";
+        state.latestAnalysis = null;
+        renderExtract();
+      });
+      els.copyMarkdown.addEventListener("click", copyMarkdown);
+      els.downloadMarkdown.addEventListener("click", downloadMarkdown);
+      els.exportJson.addEventListener("click", exportJson);
+      els.pickFiles.addEventListener("click", () => els.fileInput.click());
+      els.pickFolder.addEventListener("click", () => els.folderInput.click());
+      els.processFiles.addEventListener("click", processSelectedFiles);
+      els.saveSettings.addEventListener("click", saveSettings);
+      els.searchLocal.addEventListener("click", searchLocalMemory);
+      els.uploadFiles.addEventListener("click", uploadSelectedFiles);
+
+      els.fileInput.addEventListener("change", (event) => {
+        state.selectedFiles = Array.from(event.target.files || []);
+        renderUploads();
+      });
+      els.folderInput.addEventListener("change", (event) => {
+        state.selectedFiles = Array.from(event.target.files || []);
+        renderUploads();
+      });
+      els.draftInput.addEventListener("input", () => {
+        state.latestAnalysis = analyzeText(els.draftInput.value);
+        renderExtract();
+      });
+      els.dropZone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        els.dropZone.style.borderColor = "rgba(104, 213, 255, 0.6)";
+      });
+      els.dropZone.addEventListener("dragleave", () => {
+        els.dropZone.style.borderColor = "";
+      });
+      els.dropZone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        els.dropZone.style.borderColor = "";
+        state.selectedFiles = Array.from(event.dataTransfer.files || []);
+        renderUploads();
+      });
+    }
+
+    function tickClock() {
+      els.clockLabel.textContent = fmt.format(new Date());
+    }
+
+    loadState();
+    wireEvents();
+    renderAll();
+    tickClock();
+    window.setInterval(tickClock, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  an abstraction for long enough it becomes like a religion for you.  It becomes the framework within which your mind functions, right?
+
+There was a thing that's just been -- there's a controversy in the last week in AI where somebody is saying that we must not understand.  When I say somebody, there's a certain group of people who are arguing with another group of people.  And the debate is since there are mechanisms in our machine learning implementations, like back propagation, that don't seem to have direct analogues in biological neurology, maybe we don't understand biological neurology or something.
+
+And I'm like, what do you mean?  This is just this code we made.  What does it have to do with anything?  It doesn't even work that well if we're honest.  Like, why is this even -- how can this even be a controversy?  But there's this thing where you start to believe in your abstraction so much that they loom larger than they should.
+
+KEVIN SCOTT:  Yeah and I could not more strongly agree with that point.  And I think it's sort of especially interesting right now in all of these discussions about AI.  These machines, these machine learning systems are far less mysterious than some people think they are.  I mean it's like all the way at the bottom it's just a bunch of things doing linear algebra.
+
+JARON LANIER:  And there's nothing wrong with that.
+
+KEVIN SCOTT:  There's nothing wrong with that.
+
+JARON LANIER:  It's all great.
+
+KEVIN SCOTT:  It's trying to emulate some aspects of intelligent behavior, but that doesn't necessarily mean that -- like the connections I think are sort of arbitrary between biological intelligence and like a supervised machine learning algorithm.
+
+JARON LANIER:  I've always been bothered by not -- I don't have any -- I'm not opposed to the research program of the algorithms that are called AI, but I have a problem with the sort of concept and the culture of the term AI.  And a little later, when I was a teenager, my main mentor early on was Marvin Minsky, who kind of invented a lot of the mythology of AI, about this idea that we're building these little creatures in the computer, and I just find it --
+
+I'm actually thinking of writing a book that might be called something like AI Is Not A Thing, because what happens is we choose some bundle of algorithmic techniques and say this is AI, but it's kind of arbitrary.  Sometimes things go in, sometimes they're taken out.  And then we allow ourselves to believe in it like a monster or a god or something.  The AI will take your job.  AI will this and that, whereas, in fact, there's not any particular thing that's AI.  It's just another example of people coming up with ways of using computation to

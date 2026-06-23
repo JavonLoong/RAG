@@ -1,0 +1,17 @@
+EP-49_Behind_the_Tech_Kevin_Scott_Podcast_2022YearinReview.txt  we can consider a wider range of materials that we have available to us to make these extraordinary machines. The robots of the past 60 years have been made mostly by hard plastics and metal, but what about machines that are made out of all materials available to us? And so, we can consider plastic, and silicone, and wood and paper, even food, and we can also consider synthesized materials. I think there is so much opportunity to create a whole new type of machine that will be a good teammate for people, that will be a more capable tool for people who need help with physical and cognitive work.
+ 
+KEVIN SCOTT: Yeah, I’m really excited about the possibility. So, it feels like we’re at this point in time where we – we’re really ripe for new breakthroughs. 
+ 
+You know I’m a hobbyist machinist and one of the things that I’m seeing in a bunch of machine shops now, and one of the things that people are thinking more and more about, is how to integrate simple things, like six axis robotic arms, into their workflows. So, how you can have a thing that will pick a raw piece of metal up, you know, open a door on a milling machine, like, place it into a fixture in the machine, like cycle start. You know, the part gets made and then you sort of reverse the whole process. You pull the finished part out, put it on a pallet.
+ 
+And, like, that can be an amazing thing in some of these shops, where you can sort of run an extra shift and keep these really expensive machines running all the time, but they are sort of simple things. You know, you program them by basically having a human guide them through a bunch of waypoints in the process you want them to accomplish. And you usually are custom designing some sort of end effector so that it can pick up the things you want it to pick up. 
+ 
+But it’s really exciting to think about things that aren’t that simple that have, like, really complicated, dexterous end effectors and that can be programmed in more robust ways.
+ 
+DANIELA RUS: Well, and Kevin, let’s even go beyond that. Let’s even bring more cognition to these tools. And let’s say that these tools, these machines will be able to watch you, and understand what you want to do, and come and give you a hand. So, let’s say you’re trying to lift a heavy box and a machine comes to help you lift it up just like a friend would today.
+
+KEVIN SCOTT: That’s a great vision and I’m so glad you all are working on these things.
+
+CHRISTINA WARREN: I love that image of a robot seeing you struggling with a box and just walking over to you to help with it. And if someone was going to build that robot tomorrow it might be Simone Giertz.
+
+KEVIN SCOTT

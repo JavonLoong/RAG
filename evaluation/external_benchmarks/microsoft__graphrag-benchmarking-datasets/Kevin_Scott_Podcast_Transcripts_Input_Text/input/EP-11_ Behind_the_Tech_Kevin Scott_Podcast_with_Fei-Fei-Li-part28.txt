@@ -1,0 +1,14 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  it's about like the downsides or the potential challenges and maybe the scary aspects.
+In this case, really the idea of AI, you know, augmenting or enhancing and helping rather than replacing how things work in the world, how can we use this to make things better rather than how is this a threat.
+KEVIN SCOTT:  Yeah.  And this is the thing that I tell people all the time, AI is just another tool that we human beings have invented to do things, and like we get to choose what we have the tool do.
+And like when we make choices about say, for instance, applying AI to healthcare to make things less expensive and more accessible and higher quality for everyone, like it obviously creates this amazing positive human benefit.
+And so, like I think the trick to getting, you know, the balance of AI to be beneficial and good for everyone is us choosing to do that.  And so, it's like really, really amazing to have a computer scientists and one of the pioneers of the field like Fei-Fei spending so much of her energy thinking about what those beneficial applications of AI are.
+CHRISTINA WARREN:  No, I totally agree.  It definitely makes me feel better, I guess, about like the future both of like humanity and, you know, the world we live in with all of this stuff.
+KEVIN SCOTT:  Yeah.  I have faith in us.
+CHRISTINA WARREN:  Great.  Okay, so we are out of time for now, but if you haven't listened to all of our past podcasts, you might want to spend a few minutes catching up. Now, Kevin, do you have a favorite past episode?
+KEVIN SCOTT:  Oh, I love them all equally, like my children.
+CHRISTINA WARREN:  My children are like my -- it's like my media collection.  So, I know how you feel.
+Oh, okay, but our listeners will have to make the decision for themselves.  But you can also write to us anytime at BehindtheTech@microsoft.com, and tell us what's your favorite show and maybe what you'd like to hear more about.
+KEVIN SCOTT:  Yeah, absolutely, we'd love to hear from you.  And with that, we'll see you next time!
+
+[MUSIC]

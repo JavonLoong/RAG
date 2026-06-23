@@ -1,0 +1,53 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt , what you were doing was just sort of provocatively different.  Like, the fastest computers in the world at the time were probably the machines that Cray was building.
+
+KEVIN SCOTT:  And so, they were deeply pipelined, you know, liquid cooled.
+
+DANNY HILLIS:  Super-fast switches, yeah.
+
+KEVIN SCOTT:  Super-fast switching, you know, they were liquid cold, because they clocked them as fast as you could possibly clock the, you know, whatever the flavor logic they were using at the time.  And, like, they were --
+
+DANNY HILLIS:  And they were all about, like, making the wires short so that, you know --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- the single processor could operate very quickly.
+
+KEVIN SCOTT:  And like they weren't, like, I forget exactly what the chronology of things were, but, like, they didn't have, I mean, they never had many processors then.
+
+DANNY HILLIS:  Yeah, they've had maybe four or eight processors.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And so, yeah, that was what a super computer was.  And I was building this thing, which was actually you didn't do flooding point, first of all.  I mean, it was much more of, like, what actually is now, like, a NVIDIA chip or something like that, except it filled a room.
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  But, it was, and actually, we built two generations.  Well, the first generation was actually, literally, like an NVIDIA chip in terms of its architecture.
+
+KEVIN SCOTT:  Yeah, and that was the CM2?
+
+DANNY HILLIS:  That was the CM2.  The CM1 and CM2.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  That's right.  And those were very much, you know, single instruction operating on a lot of data and so on. 
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And then, later, we made things that are more like cloud.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  But that came later.  But when we did that, the first one had 64,000 processors.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  And that was just like a --
+
+KEVIN SCOTT:  Radical.
+
+DANNY HILLIS: -- I mean, people would think you were joking --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  when you said that. It was incredible.  And I wrote an

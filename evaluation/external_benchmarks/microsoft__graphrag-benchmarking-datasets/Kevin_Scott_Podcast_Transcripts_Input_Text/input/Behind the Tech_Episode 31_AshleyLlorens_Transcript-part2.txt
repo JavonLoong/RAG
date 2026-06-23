@@ -1,0 +1,25 @@
+Behind the Tech_Episode 31_AshleyLlorens_Transcript.txt  talk about his various areas of expertise and kind of these dueling careers. So, let’s chat with Ashley.
+
+
+[MUSIC]
+
+
+KEVIN SCOTT:  Our guest today is Ashley Llorens. Ashley is a scientist, engineer, and hip-hop artist. He worked for two decades at Johns Hopkins Applied Physics Laboratory developing novel AI technologies and served as founding chief of the lab’s intelligent systems center. 
+
+He was recently nominated by the White House Office of Science and Technology Policy to serve as an AI expert for the Global Partnership on AI. Besides his career in engineering, Ashley actually began his career as a hip-hop artist, and serves as a voting member of the Recording Academy for the Grammy Awards. 
+
+About a month ago, Ashley joined Microsoft as a vice president, distinguished scientist, and managing director for Microsoft Research. Welcome to the show, Ashley – and to Microsoft. 
+
+ASHLEY LLORENS:  Thanks so much, Kevin, great to be here. 
+
+KEVIN SCOTT:  It’s so, so awesome to have you here at Microsoft. So, we always start these podcasts by talking a little bit about where you got started. So, I know you grew up in Chicago. How did you get interested in – like, I guess either music or technology? 
+
+ASHLEY LLORENS:  Yeah, yeah, so, maybe we’ll go in order and I can just kind of create two contrasting scenes for you. 
+
+So, you know, my interest in music growing up in Chicago, south side of Chicago, south suburbs, just really immersed in music throughout my childhood. And hip-hop in particular was always fascinating to me. Just the degree of storytelling, you know, the beats, the sounds growing up in the kind of east coast vibes, listening to artists like Nas, west coast artists as well. 
+
+And it was, you know, it came – it grew to be something that, you know, I went from being a fan of to something I really wanted to contribute to – especially as I was sort of coming of age and wanting to express myself. 
+
+So, you know, the challenge with the – where we grew up and everything was, we didn’t really have many outlets for that energy at first, you know? And so, we did what we could. You know, just kind of put a visual in your head, we would go to, you know, like the – what was it? Circuit City at the time or what have you. We had, like, a boom box with two tape decks. And that was the recording studio. 
+
+And we were so proud of ourselves because we figured out how to do multi-layer vocals with a $20 mic and the two tape decks. You know, you record on the one tape and then you play it back and record over yourself and, you know, over some instrumental and you get the multi-track vocals. So that was, like, our, you

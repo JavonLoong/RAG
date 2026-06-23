@@ -1,0 +1,33 @@
+Ep-12.txt  away from writing papers about, you 
+know, ground state simulations of quantum chemistry systems. (Laughter.) 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+12
+BILL COUGHRAN: No, it's true. I, well, so I think the role I fell into at Google was I was 
+willing to take on stuff that not everybody else was willing to take on. So, there was a small 
+executive committee that ran Google, of which I was a part for a few years -- number of years. 
+And I -- for a while, worried about things like facilities and HR. And you have to do this in a 
+young company. You have to do what you need to do to make it successful. 
+And part of the challenge and you saw this at Google, I'm sure you also saw it in your experience 
+at LinkedIn, it sounds very hard to go from zero to 140, it's also very hard to go from a few 
+hundred to several thousand. The scaling, trying to figure out what works. You want to 
+introduce more process and structure, but if you introduce too much, it kind of kills all the 
+energy and excitement in the team and so forth. And so finding a path through a heavy growth 
+phase of a company is pretty tricky. And I did a lot of that for Google in the early years. 
+KEVIN SCOTT: What do you think was the most challenging thing that you -- or problem that 
+you had to solve in those early years? 
+BILL COUGHRAN: I didn't join Google until early 2003, but I think from when the dot-com 
+bubble burst to probably 2004 or '05, recruiting was hard, but it wasn't crazy like it is today 
+because there weren't enough kind of growing, powerful new companies forming because of the 
+sort of downdraft that happened because of the dot-com burst. 
+I think today, one of the challenges I see with the young companies I work with is just figuring 
+out where to recruit and what to do. One of the things you see from more and more companies is 
+looking at doing engineering away from Silicon Valley. 
+KEVIN SCOTT: Yeah. 
+BILL COUGHRAN: And then I think one of the biggest challenges I saw in the early days at 
+Google was it was still very much a startup, even though when I joined it had a few hundred 
+employees. And there were key areas inside the Search product, for example, where only one or 
+two people actually knew some of the key things to get things done. 
+And so one of the challenges that I found particularly hard was figuring out a way to not 
+disempower and take responsibility away from the people who had been standing in the breach, 
+so to speak, but building a team around them so

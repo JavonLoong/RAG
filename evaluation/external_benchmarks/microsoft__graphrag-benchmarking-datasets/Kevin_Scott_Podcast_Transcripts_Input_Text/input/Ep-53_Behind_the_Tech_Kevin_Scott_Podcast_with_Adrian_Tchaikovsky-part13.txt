@@ -1,0 +1,15 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  being done, but I think it’d be quite easy to do. 
+ 
+So, let’s say you had, for each of these robot-controlled Formula 1 cars, you added in one of these programs and gave it a particular personality. And this one was punchy, and this one was sort of trash talking its opponent. And this one was the, you know, the new program that had never ridden a race before and was very much the underdog. You – I mean, you could do a whole kind of WWF, or it would be – it would be WWF meets Cars, basically, wouldn’t it? You could have this, and people would get enormously invested in these completely artificial sort of fake personalities, because that’s what we do.  
+ 
+The whole thing that we’re doing with chatbots now is what people were doing with the – the Eliza program decades and decades ago, which is if a thing talks to you in any kind of human-like way, in the same way we see faces in the clouds, we will see a personality there. It’s the same reason I suspect that human history is so full of personifications of the weather or of places or of ideas, is because it is really easy for us to put a human personality on a thing that has nothing there.  
+ 
+KEVIN SCOTT: Yeah. 
+ 
+ADRIAN TCHAIKOVSKY: And so, I think – and, frankly, I would not be remotely surprised if within as short as five years, we were seeing things like that, whereby you had the clash – completely predetermined artificial clashes of things that were nonetheless personality filled and interesting enough to make a whole extra sport of their own. 
+ 
+KEVIN SCOTT: Yeah, you may be right. I mean, it’s one of the fascinating things about where we are with the technology, is I think it’s hard for those of us developing it to fully anticipate what exactly the uses are that people are going to put the technology to, because, I mean, one of – you know, as an engineer, the fascinating thing about the technology is it’s really a platform. So, you can use it to do medical diagnosis.  
+ 
+And, like, there are ways actually to sort of render, you know, specific things, like medical diagnosis, like, very accurate, where the – you know, hallucinations that the system makes, because you’re sort of grounding it in a database of medical facts, are actually more accurate than a human who also has, you know, faulty memory and, you know, weird recall mechanisms and whatnot.  
+ 
+But, you know, they’re just a whole bunch of things people are going to do with this technology that is hard for us to imagine. And it’s one of the reasons why I think it’s so interesting to have folks like you thinking about it, because, you know, your job

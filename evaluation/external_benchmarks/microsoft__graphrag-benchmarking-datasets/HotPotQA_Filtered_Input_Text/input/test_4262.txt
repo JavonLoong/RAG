@@ -1,0 +1,52 @@
+Richard Anthony Jefferson (born 1956) is an American-born molecular biologist and social entrepreneur who developed the widely used reporter gene system GUS, conducted the world's first biotech crop release, proposed the Hologenome theory of evolution, pioneered Biological Open Source and founded The Lens.
+ He is founder of the social enterprise Cambia and a Professor of Biological Innovation at the Queensland University of Technology.
+ In 2003 he was named by Scientific American as one of the world's 50 most influential technologists, and is renowned for his work on making science-enabled innovation more widely accessible.
+ He was profiled in 'Open & Shut: The Basement Interviews', and other major media, including in an Economist Feature 'Grassroots Innovator' in 2001.
+Eugene Rosenberg (Hebrew: יוג'ין רוזנברג‎ ‎ ) (October 16, 1935) is a microbiologist at the Faculty of Life Sciences at Tel Aviv University.
+, an expert in the field of applied environmental microbiology, in particular his work on Myxobacteria, microorganisms to combat pollution (bioremediation), and the Hologenome theory of evolution.
+Asobara is a genus of parasitoid wasps in the family Braconidae.
+ The genus is best known for the "Drosophila" parasitoid "Asobara tabida", which is notable as both a model for parasitoid wasp infection in insects, and also as a representative of the hologenome theory of evolution.
+ "Asobara tabida" is commensally infected with "Wolbachia", and cannot reproduce in the absence of "Wolbachia" infection.
+ As such, the genome of "Asobara" is directly tied to the genome of its commensal Wolbachia symbiont, and the two are considered to have a hologenome.
+Lloyd A. Demetrius is a mathematician and theoretical biologist at the Max Planck Institute for Molecular Genetics at Berlin, Germany, and the Department of Organismic and Evolutionary biology, Harvard University.
+ He is best known for the discovery of the concept, evolutionary entropy, a statistical parameter that characterizes Darwinian fitness in models of evolutionary processes at various levels of biological organization - molecular, organismic and cultural.
+ Evolutionary entropy, an analogue of the Gibbs entropy in statistical physics, is the cornerstone of directionality theory, an analytical study of evolution by variation and selection.
+ The theory has applications to: a) the development of aging and the evolution of longevity; b) the origin and progression of age related diseases such as cancer, and neurodegenerative disorders such as Alzheimer's disease and Parkinson's disease; c) the evolution of cooperation and the spread of inequality.
+Brian Skyrms (born 1938) is a Distinguished Professor of Logic and Philosophy of Science and Economics at the University of California, Irvine and a Professor of Philosophy at Stanford University.
+ He has worked on problems in the philosophy of science, causation, decision theory, game theory, and the foundations of probability.
+ Most recently, his work has focused on the evolution of social norms using evolutionary game theory.
+ His two recent books "Evolution of the Social Contract" and "The Stag Hunt" are both on this topic.
+ These books use arguments and examples from evolutionary game theory to cover topics of interest to political philosophy, philosophy of social science, philosophy of language, and the philosophy of biology.
+Michael Eugene Nicolas Majerus (13 February 1954 – 27 January 2009) was a British geneticist and Professor of Evolution at the University of Cambridge.
+ He was also a Teaching Fellow at Clare College, Cambridge.
+ He was an enthusiast in Darwin's theory of evolution by natural selection and became a world authority in his field of insect evolutionary biology.
+ He was widely noted for his work on moths and ladybirds and as an advocate of the science of evolution.
+ He was also an enthusiastic educator and the author of several books on insects, evolution and sexual reproduction.
+ He is best remembered as an ardent supporter and champion of experiments on peppered moth evolution.
+John H. Gillespie is an evolutionary biologist interested in theoretical population genetics and molecular evolution.
+ In molecular evolution, he emphasized the importance of advantageous mutations and balancing selection.
+ For that reason, Gillespie is well known for his selectionist stance in the neutralist-selectionist debate.
+ He is widely considered the main proponent of natural selection in molecular evolution.
+ He had a well-known feud with the father of the neutral theory of molecular evolution, Motoo Kimura, initiated by a review in Science of Kimura's book in which Gillespie criticized Kimura for "using the book as a vehicle to establish for himself a niche in the history of science."
+ Gillespie had only four PhD students during his career, Richard Hudson, James N. McNair, David Cutler, and Andrew Kern.
+ Gillespie was a professor in the College of Biological Sciences at the University of California, Davis until his retirement in 2005.
+The hologenome theory of evolution, also known as the hologenome concept of evolution, recasts the individual animal or plant (and other multicellular organisms) as a community or a "holobiont" – the host plus all of its symbiotic microbes.
+ Consequently, the collective genomes of the holobiont form a "hologenome".
+ Holobionts and hologenomes are structural entities that replace misnomers in the context of host-microbiota symbioses such as superorganism (i.e., an integrated social unit composed of conspecifics), organ, and metagenome.
+ Variation in the hologenome may encode phenotypic plasticity of the holobiont and can be subject to evolutionary changes caused by selection and drift, if portions of the hologenome are transmitted between generations with reasonable fidelity.
+ One of the important outcomes of recasting the individual as a holobiont subject to evolutionary forces is that genetic variation in the hologenome can be brought about by changes in the host genome and also by changes in the microbiome, including new acquisitions of microbes, horizontal gene transfers, and changes in microbial abundance within hosts.
+ Although there is a rich literature on binary host–microbe symbioses, the hologenome concept distinguishes itself by including the vast symbiotic complexity inherent in many multicellular hosts.
+ For recent literature on holobionts and hologenomes published in an open access platform, see the following reference.
+John Scales Avery (born in 1933 in Lebanon to American parents) is a theoretical chemist noted for his research publications in quantum chemistry, thermodynamics, evolution, and history of science.
+ Since the early 1990s, Avery has been an active World peace activist.
+ During these years, he was part of a group associated with the Pugwash Conferences on Science and World Affairs.
+ In 1995, this group received the Nobel Peace Prize for their efforts.
+ Presently, he is an Associate Professor in quantum chemistry at the University of Copenhagen.
+ His 2003 book "Information Theory and Evolution" set forth the view that the phenomenon of life, including its origin and evolution, that including human cultural evolution, has it background situated over thermodynamics, statistical mechanics, and information theory.
+Jerry Allen Coyne (born December 30, 1949) is an American biologist, known for his work on speciation and his commentary on intelligent design.
+ A prolific scientist and author, he has published dozens of papers elucidating the theory of evolution.
+ He is currently a professor emeritus at the University of Chicago in the Department of Ecology and Evolution.
+ His concentration is speciation and ecological and evolutionary genetics, particularly as they involve the fruit fly, "Drosophila".
+ He is the author of the text "Speciation" and the bestselling non-fiction book "Why Evolution Is True".
+ Coyne maintains a website also called "Why Evolution Is True".
+ He self-identifies as a determinist of the incompatibilistic variety.

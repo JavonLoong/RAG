@@ -1,0 +1,30 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt ../[MUSIC] 
+
+OREN ETZIONI: Whose responsibility is it? The responsibility and liability has to ultimately rest with a person. You can’t say, “Hey, you know, look, my car ran you over, it’s an AI car, I don’t know what it did, it’s not my fault, right?” You as the driver or maybe it’s the manufacturer if there’s some malfunction, but people have to be responsible for the behavior of the machines. 
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: Today on the show, our guest is Oren Etzioni. Oren is a professor, entrepreneur, and is the chief executive officer for the Allen Institute for AI. So, Kevin, I’m guessing that you guys have already crossed paths in your professional pursuits. 
+
+KEVIN SCOTT: Yeah, I’ve been lucky enough to know Oren for the past several years. We met after I became CTO at Microsoft, but I’ve been very, very well aware of Oren professionally for many, many years. 
+
+The thing he probably doesn’t know is the University of Washington, where he still is a professor, was one of the places that I wanted to go to graduate school. So, the entire time I was in undergrad, I had a copy of the UW computer science course catalog sitting on my desk as an aspirational thing. I was following his work pretty closely back then, which you know, may sound a little bit creepy, I guess. (Laughter.) 
+
+CHRISTINA WARREN: Well, you know, no, I don’t think it’s creepy. I mean, you’re a fan, and I think that’s awesome that you know each other now, and now we’re going to be able to get into the interview and hear you guys talk. 
+ 
+
+KEVIN SCOTT: Yeah, Oren is – he’s really an amazing teacher, leader, and scholar in the work that he’s doing with the Allen Institute for AI is really incredible. So, I’m super glad to have him on the show today. 
+
+CHRISTINA WARREN: Likewise. Likewise. Well, let’s get to the interview. 
+
+[MUSIC

@@ -1,0 +1,15 @@
+EP-48_Behind_the_Tech_Kevin_Scott_Podcast_with_Randall_Munroe.txt And like, so then people grab onto it, and they’re like, “Oh, great, this helps me solve a problem I have here,” you know, and – and – and – and there isn’t necessarily, you know, the incentive to like, you don’t – you don’t go back and double check, hey, was that right or not? 
+
+And it’s less like – it’s less like, you know, a question of deceit and those people doing bad science. Maybe they were doing perfectly good science or – or – or –or maybe, you know, they assigned it to a grad student who faked some data. But whichever it is, like, people are curious about another problem. Your science helps them, you know, gives them a piece of their solution that they’re trying to build. And then – and then it isn’t until years later that someone goes back, and is like, “Oh, no, this is wrong,” you know.
+
+And – and that’s where I think – that’s where I think it’s the most helpful to have people who are doing stuff like, you know, these replication projects, or – or just people who are kind of curious and – and – and saying, like, okay, all of this relies on this assumption. What – maybe we can get a different solution if we change this, you know. What if – what if – has anyone checked if this data is right? 
+
+It’s not a process of like, trying to examine who has made a mistake and grill them and find the liars. You know, it’s like, maybe we’re missing something here. Let’s go back and look at this, you know. 
+
+Like the – the example I’m thinking of right now is the recent papers on the amyloid hypothesis and Alzheimer’s. 
+
+KEVIN SCOTT: Yeah. 
+
+RANDALL MUNROE: Where it’s – it’s, you know, someone – someone fakes some data to make their, you know, research look publishable and exciting. But like, it wasn’t – the people who were then using that, it wasn’t that they were, you know, ideologically driven, or had blinders on, you know, or weren’t checking their work enough. It was like, they all were trying to figure out how to treat Alzheimer’s, and they couldn’t find a solution. And this was like, okay, here’s a promising avenue. Like, let’s try applying this to a bunch of things, you know. And – and it was already, you know, the – the story behind that work is interesting. Like, it was already work that existed because people were so – were struggling to validate this hypothesis. 
+
+But, you know, it’s not – it’s not like the – the incentives there were more like, people thought they had promising leads, and they weren’t, you know – like,

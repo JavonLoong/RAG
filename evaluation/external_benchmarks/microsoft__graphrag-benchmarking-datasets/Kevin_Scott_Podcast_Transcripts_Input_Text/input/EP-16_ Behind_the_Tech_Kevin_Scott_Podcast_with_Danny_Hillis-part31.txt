@@ -1,0 +1,21 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt DANNY HILLIS:  So, that actually has its genesis back when I was making the fastest machines in the world, and all my customers were coming to me and saying can't you make it faster, faster, you know, instead of nanoseconds, can you go to femtoseconds?
+
+And I was like, oh, I'm so tired of making everything faster, faster, faster.  You know, I really want to make something slower.  I mean, it's sort of a -- in my mind it was kind of a joke.  But then I heard this story about New College Oxford, which it's called New College because it's only 500 years old or something like that.
+
+They were replacing the oak beams in the New College common room, and you couldn't just go down to the lumberyard and buy a 50-foot oak beam in the, you know, by the time they did it, well, this is in the 1950s.
+
+KEVIN SCOTT:  Right, because there weren't trees big enough anymore.
+
+DANNY HILLIS:  Yeah.  That's right.  But Oxford had some forests, so they went to the Oxford forester and said, "Do you have any oak trees that we could harvest?"  And the forester said, "Yeah, we have the ones that were planted to replace the beams in New College." 
+
+KEVIN SCOTT:  Wow.
+
+DANNY HILLIS:  And when I heard that story -- 
+
+KEVIN SCOTT:  Wow.  That's planning.
+
+DANNY HILLIS:  Yeah. Well, it's also, I realized how small my life had become.  And then I started thinking about it, and this was, like, in the 1990s when I was thinking this.  And I realized, when I was a kid growing up in, you know, the '70s, we were thinking about the year 2000.  And here it was the 1990s and the future was still like the year 2000.  So, it was as if the future had been shrinking by one year per year for my whole life.
+
+And I wanted to do something that, you know, stretched out my imagination more.  I had always loved reading science fiction, things like that, and I wanted to be involved in a project that let me put my mind forward into the future more.  And so, I started thinking, because I'm an engineer, about, you know, building something.  And, so I started thinking of building a clock, because I wanted to be built out of technology that I knew would last and people could maintain over a long period of time and so on.
+
+And when I started talking to friends about it, I found that it was kind of almost like Rorschach test for them.  If I talked to a musician

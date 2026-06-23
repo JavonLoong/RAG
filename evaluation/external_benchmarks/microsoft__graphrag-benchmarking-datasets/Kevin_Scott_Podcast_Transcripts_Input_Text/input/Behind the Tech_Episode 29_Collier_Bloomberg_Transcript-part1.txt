@@ -1,0 +1,31 @@
+Behind the Tech_Episode 29_Collier_Bloomberg_Transcript.txt ../
+JACOB COLLIER:  Honestly, I think mastery is a myth. I don’t think it exists. I think that no ideas are ever finished or new. Everything is just recombined. And I love that. Because it means that we get to be artists rather than inventors. We can paint with what we know. And so I guess my job as a musician has been to learn as much as I possibly can. 
+
+[MUSIC]
+ 
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+
+CHRISTINA WARREN:  Hello and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft.
+
+KEVIN SCOTT:  And I’m Kevin Scott.
+
+CHRISTINA WARREN:  And on to day’s show we have two very special guests. Ben Bloomberg and Grammy-award winning musician Jacob Collier.
+
+And for those of you who tune into the show to geek out about tech and AI and you’re thinking, okay, so what does a Grammy-award winning musician have to do with tech. Well, hmm, kind of everything.
+
+Jacob Collier is a musical artist that has fully embraced tech as an integral part of the music that he creates and he partnered with MIT’s Ben Bloomberg and the two of them have collaborate to bring their genius into the creation of song and video.
+  
+And Kevin, I know that you’ve been so excited for this interview for quite some time.
+
+KEVIN SCOTT:  Yeah, I’ve been unbelievably excited. We’ve been trying to get Ben and Jacob on the podcast for a while now, and, you know, I have to say I am an enormous fan of the work that these two do. I think both of them are outrageously talented. 
+
+It’s probably the first podcast that we’re recording where my children are legitimately going to be interested in, you know, in listening to it, because everybody in the house has been bopping around all summer long listening to All I Need. 
+
+So I’m just super excited to chat with these guys about their approach to creativity and, like, how they have very cleverly merged art and technology into a set of creative endeavors that really have, I think, pushed the boundaries of how it is we think about music and live performance. 
+
+CHRISTINA WARREN:  Absolutely. Absolutely. And I think actually, you know, this might be the sort of thing where the conversation might be so great, that this

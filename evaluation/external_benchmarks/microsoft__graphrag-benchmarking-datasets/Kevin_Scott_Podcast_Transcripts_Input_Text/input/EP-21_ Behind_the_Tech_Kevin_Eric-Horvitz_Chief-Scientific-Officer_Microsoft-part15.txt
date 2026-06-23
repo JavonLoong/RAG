@@ -1,0 +1,17 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  which I think is of, like, again, really foundational importance, like, maybe even more important than this shift that you all agitated for and sort of realized when you were grad students. 
+
+And that is sort of thinking about AI in the human context. So, as these technologies have become unbelievably more powerful, like especially over the past 10 or 15 years and their applicability to problem solving in the real world has never been higher, we are now being faced with a whole bunch of questions about what’s the ethics of applying this particular algorithm or technique in this scenario? Like, how do we make sure that these systems are doing things in unbiased ways? 
+
+Like, what is fairness in these systems? Like, what are the things that we shouldn’t use AI for? Like, where are the places where AI should always have decision-making systems where there should always be a human in the loop? 
+
+And so you’ve done, I think, some of the really most important work in the field at Microsoft and in these organizations that you have helped to start and are sort of involved in the leadership of, like the Partnership for AI, on thinking about what the -- you know, the ethical and responsibility frameworks are for doing AI in a modern world. So, like, how did you decide that that was something that was going to be such an important focus for you? 
+
+ERIC HORVITZ: I’ve always been interested in high-stakes decision-making -- decisions that really make a difference in the world. This is why I went to probability and utility theory, to have formal foundations for these actions and recommendations -- applications in healthcare. 
+
+And, you know, back in the ‘80s and early ‘90s, our goal was just to get something to work. But even during those times, we saw interesting challenges with moving these systems into the actual world of usage, like doctors who wanted to understand, like, why the system made a recommendation, who would say things like, “No, that can’t be right. Can it explain itself to me?” and coming up with methods to do explanation even in the late ‘80s? 
+
+Seeing how important that would be, this human connection. I remember working on a project where NASA mission control in Houston—the last year in my dissertation work, looking at some high-stakes decisions, time-critical decisions with propulsion control people, and I realized that it wasn’t just making recommendations, it was figuring out what to display to people to help them make a decision. 
+
+So, there’s this open-world issue that became very important to me as part of understanding the bigger role of AI in larger human settings. To me, it was more or less obvious in high-stakes areas, you had to consider these things. 
+
+And then when I was becoming the AAAI president, it was a time where there were lots of initial discussions about “the Singularity coming” and there was both Utop

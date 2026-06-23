@@ -1,0 +1,36 @@
+The Human Protein Atlas (HPA) is a Swedish-based program started in 2003 with the aim to map of all the human proteins in cells, tissues and organs using integration of various omics technologies, including antibody-based imaging, mass spectrometry-based proteomics, transcriptomics and systems biology.
+ All the data in the knowledge resource is open access to allow scientists both in academia and industry to freely access the data for exploration of the human proteome.
+ The version 17 (launched August 17, 2017) consists of three separate parts, each focusing on a particular aspect of the genome-wide analysis of the human proteins; the Tissue Atlas showing the distribution of the proteins across all major tissues and organs in the human body, the Cell Atlas showing the subcellular localization of proteins in single cells, and finally the new Pathology Atlas showing the impact of protein levels for survival of patients with cancer.
+ The Human Protein Atlas program has already contributed to several thousands of publications in the field of human biology and disease and it was recently (July 25, 2017) selected by the organization ELIXIR as a European core resource due to its fundamental importance for a wider life science community.
+ The HPA consortium is funded by the Knut and Alice Wallenberg Foundation.
+Biocultural anthropology can be defined in numerous ways.
+ It is the scientific exploration of the relationships between human biology and culture.
+ "Instead of looking for the biology underlying biological roots of human behavior, biocultural anthropology attempts to understand how culture affects our biological capacities and limitations.
+ Biocultural anthropology attempts to understand challenges to human biology in an ever increasing and diversified cultural environment."
+Economics and Human Biology is a quarterly peer-reviewed academic journal published by Elsevier since 2003.
+ It is an interdisciplinary periodical covering research on biological economics — economics in the context of human biology and health.
+ Typical debates are on nutrition, obesity, height and beauty.
+Human Biology is a peer reviewed scientific journal, currently published by Wayne State University Press.
+ The journal was established in 1929 by Raymond Pearl and is the official publication of the American Association of Anthropological Genetics.
+ The focus of the journal is human genetics, covering topics from human population genetics, evolutionary and genetic demography and quantitative genetics.
+ It also covers ancient DNA studies, evolutionary biological anthropology, and research exploring biological diversity expressed in terms of adaptation.
+ The journal also publishes interdisciplinary research linking biological and cultural diversity from evidence such sources as archaeology, ethnography and cultural anthropology studies, and more.
+ As of July 1, 2016, the journal is on Volume 87, Issue 3.
+ The journal's current editors are Brian M. Kemp (Washington State University) and Ripan S. Malhi (University of Illinois Urbana-Champaign).
+Zoi Lygerou is a Greek associate professor of biology at the Medical School University of Patras whose works have been published in such journals as the European Journal of Biochemistry, Journal of Cell Science, the Molecular and Cellular Biology journal, Journal of Biological Chemistry, and both Science and Nature journals among others.
+ In 1991 she got her first degree at the University of Athens followed by a Ph.D. from the University of Heidelberg four years later.
+ She also used to be a postdoc at the Imperial Cancer Research Fund of London under guidance from Paul Nurse.
+ On April 12, 1996 she and her colleagues (along with David Tollervey) have discovered that the minimum amount of enzymes are required for the eukaryotes' ribosomal RNA.
+The American Journal of Human Biology is a peer-reviewed scientific journal covering human biology.
+ It is the official publication of the Human Biology Association (formerly known as the Human Biology Council).
+ The journal publishes original research, theoretical articles, reviews, and other communications connected to all aspects of human biology, health and disease.
+Biological economics is an interdisciplinary field in which the interaction of human biology and economics is studied.
+ For example, it has been found that chief executives tend to be taller and have wider faces than average.
+ The journal "Economics and Human Biology" covers the field and has an impact factor of 2.722.
+Annals of Human Biology is a bimonthly academic journal that publishes review articles on human population biology, nature, development and causes of human variation.
+ It is published by Taylor & Francis on behalf of the Society for the Study of Human Biology, of which it is the official journal.
+PLOS Computational Biology is a peer-reviewed computational biology journal established in 2005 and published by the nonprofit Public Library of Science in association with the International Society for Computational Biology.
+ The founding Editor in Chief was Philip Bourne, and the current Editor in Chief is Ruth Nussinov.
+BioEssays is a monthly peer-reviewed review journal covering molecular and cellular biology.
+ Areas covered include genetics, genomics, epigenetics, evolution, developmental biology, neuroscience, human biology, physiology, systems biology, and plant biology.
+ The journal also publishes commentaries on aspects of science communication, education, policy, and current affairs.

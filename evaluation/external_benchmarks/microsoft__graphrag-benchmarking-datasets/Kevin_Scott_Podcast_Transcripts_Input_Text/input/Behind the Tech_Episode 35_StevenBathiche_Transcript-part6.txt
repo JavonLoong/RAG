@@ -1,0 +1,13 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  every computer scientist or software engineer has that moment in their career where they just realize how much they have left to learn about getting better at the craft.
+
+STEVIE BATHICHE:  Totally. (Laughter.) That’s right.
+
+KEVIN SCOTT:  So, this is a funny story. Like, I did a podcast with Tom Daniel and Tom was telling me this story about you, and like, I’d known you pretty well for three and a half years, at that point. And I was like, wow, I didn’t realize Stevie done that sort of work before. It’s really – I mean, I think that, you know, the interesting thing is, like, you have taken that multidisciplinary approach and just continue to do it over and over again. I’d love to talk now a little bit about what you do here at Microsoft, which is extremely multidisciplinary.
+
+STEVIE BATHICHE:  Yeah, absolutely right. It’s kind of one of my core philosophies, and it’s helped me have this opportunity to build this team, this applied sciences group that mixes the disciplines. You know, I try not to organize around function. I organize around really people, and really encourage folks to look at the problem holistically and try to solve the problem holistically, and pull tools from the various disciplines to kind of solve problems. And the broader your approaches, I think, sometimes, the more surprised you could come at the solution, sometimes, the more optimal the solution is.
+
+So, I’ve been lucky. I have, I think, one of the best jobs. The most cherished thing is to do something every day that you love so much that you kind of feel lucky that you’re able to do. And you know I think maybe the internships helped me set up, but the people around me really encouraged me. 
+
+And I’ve been in the same job for Microsoft for 21 years. I haven’t really changed roles. It’s just kind of – just things have kind of just evolved. And this role, which is this boundary between doing research and product development, is just the same thing I’ve been doing for 21 years. I’ve just kind of grown it, and grown it organically into the various disciplines that we have today from, you know, physics, optics, AI, machine learning, software development, you know, sensing and display. And, you know, and we try to mix all these kind of technologies together to create optimal systems.
+
+KEVIN SCOTT:  Yeah. One of the things that I’ve always believed, and it may be a convenient belief, not a good one, is that you can be so much more creative when you have lots of different tools that you have at your disposal. And you don’t need to be a master even at all of the tools, but just knowing a little bit about a lot of things can let you discover

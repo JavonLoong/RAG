@@ -1,0 +1,17 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  having a factory that builds rockets, you have to make a factory each time you want to build a rocket. And it just radically changes the business model. And it changes the – your ability to learn and be reliable and low cost.
+
+And so, that – we think about that. Like, what’s the biggest machine I’ll ever make? It’s not – it’s not in power. It’s scaled by I have to fit one of these through a train tunnel. And that’s the biggest one we’ll ever make. And if we need more power, we’ll put two of them, you know. And that that’s – that’s the way we design these, and we think about it. 
+
+And then you build a factory, and people don’t have to move every time you want to build another generator. You don’t have to break ground every time you want to build a new generator. You just build the factory that ships those on site.
+
+KEVIN SCOTT: Yeah, so I want to jump up a level and talk about why fusion. So, and I think one of the things that most people miss is, like, obviously, you want fusion because it will give you a renewable source of energy. Like, we clearly have a problem with, like, our consumption of energy is releasing way too much carbon into the atmosphere. And, like, that’s highly problematic for a whole bunch of reasons. You still have the same geopolitical problems that you were – you were talking about before. They haven’t gone away. 
+
+DAVID KIRTLEY: Yeah.
+
+KEVIN SCOTT: But, like, I think the thing that people really miss, and, like, you probably have a better perspective on this than I do, is that starting somewhere in the 1970s, like, we just stopped using energy at the rate that we had been using it before. And, like, it’s actually a staggering thing to think about, you know, not just, like, what happens if we can take the energy that we’re consuming right now, and it’s like, more sustainable. 
+
+But, like, what happens if, like, energy becomes sustainable, and cheap and abundant enough where you could use 100 times more, 1,000 times more or 10,000 times more of it than you’re using right now? What’s then possible? So, talk a little bit about, like, why energy matters?
+
+DAVID KIRTLEY: Yeah, I think about this a lot, actually, and from two perspectives. One is just recently, we’re starting to use more electricity. It’s – we’re upticking, for the first time in a long time, where in the 1970s and ‘80s, we plateaued in a lot of ways, in terms of our energy use. I think that’s totally right. 
+
+But recently, electric transportation, probably computation and AI kicks into that,

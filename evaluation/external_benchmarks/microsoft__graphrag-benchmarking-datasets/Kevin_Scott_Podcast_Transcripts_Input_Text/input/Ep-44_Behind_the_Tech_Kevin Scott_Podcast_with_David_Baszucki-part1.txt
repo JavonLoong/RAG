@@ -1,0 +1,28 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt ../Behind the Tech with Kevin Scott Episode 44 
+David Baszucki: Co-founder and CEO of Roblox
+
+DAVID BASZUCKI: Time and time again, I think we try to solve things or figure them out ourselves rather than take a step back and think through, could the community do this better than us if we gave them the tools and the functionality?
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+CHRISTINA WARREN: Hello and welcome back to Behind the Tech. I’m your host, Christina Warren, senior developer advocate at GitHub.
+
+KEVIN SCOTT: And I’m Kevin Scott. 
+
+CHRISTINA WARREN: And this is actually like one of our first video episodes. So if – if you want to give us a watch, I guess, you can follow us on YouTube. 
+
+KEVIN SCOTT: Yeah. Excellent. 
+
+CHRISTINA WARREN: Yeah, it’s good stuff. 
+
+Okay. So we’re super excited today because our guest this week is David Baszucki, who is the co-founder and the CEO of Roblox, which is a game creation platform that allows users to build their own games. And it has over 50 million users, which is just stunning to think about. 
+
+KEVIN SCOTT: It is, it’s a stunning number of daily active users on that platform. And, you know, two of the daily active users are my kids, who at 11 and 13 have been Roblox enthusiasts for a while. And it was – you know, honestly it was through my kids that I really got to an understanding of how big a platform Roblox was and the sort of impact it was having in the world. So I feel really lucky to be able to chat with David today and I’m going to be a hero to my kids whenever this show airs. 
+
+CHRISTINA WARREN: Yeah, no, I was going to say I was like, you now get to go back to your kids and say, “I just talked to the head of Roblox,” and they’re gonna be like, “Oh my God.” Like that’s – like all the other very important and famous people that you talk to all the time, it’s like, nah, not a big deal, but you’re like, I know the Roblox guy. All of a sudden, hero. 
+
+KEVIN SCOTT: Yeah, 100%. 
+
+CHRISTINA WARREN: All right. Well,

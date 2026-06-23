@@ -1,0 +1,19 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  with him in the spring of 2021, and since then, his lab has partnered with the U.S. Agency for International Development on a $125M project to detect emerging viruses.
+
+KEVIN SCOTT: Here’s an excerpt from my conversation with David about the work at the Institute for Protein Design at the University of Washington.
+
+[MUSIC]
+
+KEVIN SCOTT: So, you know, maybe in terms of SARS coronavirus-2, like, can you describe– 
+
+DAVID BAKER: Yeah, that’s a great idea, really good suggestion. In fact, now, when I give talks, I explain protein design in the context of coronavirus. So, let me just spend a couple minutes describing what we’ve been doing at the Institute with regard to coronavirus. 
+
+So, the genome sequence was determined and made available last – at the beginning of last year. So, we took that amino acid sequence and used the methods we’ve been developing to predict the three-dimensional structure of the protein on the surface, the spike protein. Of course, you’re right, there’s higher literacy about this now than there ever was. And we knew that the spike protein bound the ACE-2 receptor on the target cells. 
+
+So, starting initially with that model, and then shifting over to the x-ray crystal structure when it was determined of the spike ACE-2 complex, the first thing that we did was to design small proteins that we predicted would fold up into such a way that they have a shape and chemical complementarity to the part of the spike protein called the receptor binding domain that binds the ACE-2. 
+
+So, these are like – I talked about sort of lock/key interactions. So, we – if you imagine the ACE-2 is the key and the RBD is the lock, so it’s sort of – the spike protein goes and binds to the ACE-2. We basically made things that would compete away that interaction, that is, bind more tightly to the virus than ACE-2. 
+
+And we were able to make compounds that bind to the virus about 1,000 times more tightly than ACE-2, and this was really cool. They were just completely made-up proteins, completely unrelated to anything that had been seen before. And with our collaborators, we were able to actually determine experimentally how these small proteins bind to the spike, and they bound basically exactly like in our computer model. So, we could then go – that meant we could go from, essentially from the sequence of a virus to these very, very tight, high-affinity binding proteins. 
+
+And the next thing we showed was that those proteins blocked the virus from getting into cells. And then we showed with collaborators that they protect animals from infection by the virus. And I think this was – this was kind of a real ah-ha moment for me, because we’d been developing these methods for designing proteins over the years, and here, in the midst of

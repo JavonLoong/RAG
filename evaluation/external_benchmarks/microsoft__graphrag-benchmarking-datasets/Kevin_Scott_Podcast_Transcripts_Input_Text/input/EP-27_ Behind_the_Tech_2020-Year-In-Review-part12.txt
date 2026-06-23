@@ -1,0 +1,15 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt  that will be the microfabrication of electrodes that you can implant in neural systems that record from hundreds of simultaneous sites. I almost said thousand because it's at about 900-and-something. I think on the latest sharp electrode developed for mouse brain recordings, okay?
+Those are now device technology, and of course, the ubiquity of microfabrication is influencing even how we make electrodes interfacing with natural systems. Okay, so now you have these two things. You have ML methods, device technologies, hand-in-hand, transforming our ability to understand the encoding and decoding processes of natural systems. 
+So, what's the third revolution? The third revolution of course is gene editing. Where is gene editing coming into all of this? Well, our ability to look at neural circuits depends on our ability to look at variants in these neural circuits to turn them on, to turn them off, to use optogenetic methods, to use CRISPR, to change the chemosensory pathway on the antenna of an insect with really awesome electrodes inserted into it, and ML methods listening in, right?
+So, those are the three technologies I think are transforming not just neuroscience, I think it's transforming – they're all mutually transforming each other. That is, as we need to grapple with ever more complex datasets, I think that's driving development of ML. I think it's driving how we manage and control and handle rapid information flow. Just like real brains, computers are fixed with this real-time challenge, even the brain the size of a sesame seed does astronomical amounts of computing at tiny levels of efficiency, so there's lessons to be learned both ways. You can tell I'm really excited because I see these synergies and the sort of triumvirate of sort of advances in gene editing, advances in device technology, and advances in ML.
+[MUSIC]
+
+CHRISTINA WARREN:  So, that was University of Washington professor Dr. Tom Daniel. Next, you’ll hear some highlights from a recent episode with Dr. Oren Etzioni. Oren is Chief Executive Officer at the Allen Institute for Artificial Intelligence.
+
+KEVIN SCOTT:  Yeah, I talked with Drew and Tom about the complexities of understanding biology. And with Oren, we got into the feasibility of creating AGI, artificial general intelligence. 
+
+[MUSIC]
+
+OREN ETZIONI: I think it’s a really interesting time to be a computer scientist, to be a computer professional. I do want to say, off the top of my head, here are three things that the current technology doesn’t yet touch. The first one is the current technology – maybe this is a good phrase – is kind of profligate in its use of compute and data. Yeah, I need millions of examples at least for pre-training and then thousands for tuning. Yeah, I need this massive amount of computation, millions of dollars of computation to build my model. 
+
+Whereas of course human intelligence

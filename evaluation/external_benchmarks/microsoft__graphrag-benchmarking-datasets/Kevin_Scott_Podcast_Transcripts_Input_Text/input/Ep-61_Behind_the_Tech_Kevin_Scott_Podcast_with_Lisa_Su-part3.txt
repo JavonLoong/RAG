@@ -1,0 +1,17 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt , I opened it up and saw there was a loose wire, and if I put the wire back in, it started working again, and that was just super-interesting, that that’s how things worked, so I think that’s –
+
+KEVIN SCOTT: How old were you?
+
+LISA SU: I don’t know, I was probably 10, or something like that, and my brother was younger, my younger brother, and yeah, I just kind of got curious about how things work.
+
+KEVIN SCOTT: Yeah, I think those are – it’s really interesting, those serendipitous moments when you are young, where you go from, like looking at something as like this inscrutable, almost magical thing that you don’t understand, to being able to, like have some kind of agency over it, like you peer into how the things work, and like you understand something. Like, I think they are just super-interesting moments.
+
+LISA SU: Yes, no, absolutely, because you’re just so proud of thinking, ‘Wow, like I learned something there,’ and that kind of carries with you.
+
+KEVIN SCOTT: Yeah, and so you were a EE, like how – you know, as you’re going through high school, did you know you wanted to be an electrical engineer before you went to college, or did you decide once you got into school?
+
+LISA SU: You know, I don’t think I could say I knew, Kevin. In high school, I was – I have to admit, I was kind of a nerd, so I did things like, you know, the math team, and you know, projects like that, but I happened to get into MIT, and that was my first choice, and so I went to undergrad at MIT, and at MIT, like the – everyone’s an engineer, and you know, much of the starting class is either electrical engineering or computer science, and so I think that helped me kind of go in that direction.
+
+You know, sort of the big, big decision was are you going to be a hardware person or a software person? In other words, are you going to be an electrical engineer or a computer scientist, and that perhaps was what at least all of the kids around me were thinking about, but there was no question I was going to be an engineer, so that was good.
+
+KEVIN SCOTT: And how did you gravitate towards being a hardware person, because – like, I sort of had the same thing where I did – you know, when I was young, like a little bit of electronics and electrical engineering stuff, and a little bit of software stuff, and I – like, clearly gravitated towards software. I used to tell myself that it’s because, like software is inherently better, and like, it’s faster, and yeah, I mean, like that’s the lie you tell yourself when you’re a –

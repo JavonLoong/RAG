@@ -1,0 +1,37 @@
+Behind the Tech_Episode 31_AshleyLlorens_Transcript.txt ../
+
+[MUSIC]
+
+ASHLEY LLORENS: Can we start to set some audacious goals around enabling as many people as possible on the planet to live a long, healthy life, creating an atmosphere of shared prosperity, and what is the role of AI in doing that? To me, these big societal narratives should be at the top level of abstraction in terms of what we’re talking about. And then everything else is derived from that. 
+
+[MUSIC]
+
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft.
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  Today on the show, we’re joined by Ashley Llorens. Ashley is a scientist and engineer with a 20-year career in research and development of AI technologies at Johns Hopkins Applied Physics Laboratory and he recently joined Microsoft Research. Ashley is also a hip-hop artist known as SoulStice, and one of his songs was actually featured in the Oscar-nominated film The Blind Side. 
+
+So, I know there are a lot of theories out there about why so many scientists are also musicians, and there’s this whole part about music being mathematical and scientists being good at recognizing the rules of music composition, but I’m curious what you think, Kevin. 
+
+
+KEVIN SCOTT:  Well, you know, I think it’s one of those mysterious things, because you are absolutely right, there are a lot of programmers and computer scientists who seem to have serious interest in music. 
+
+But I don’t know many of them who are so serious about their music that they have a real recording career, and, like, I think that is one of the things that makes – one of many things that makes Ashley special. 
+
+CHRISTINA WARREN:  No, without a doubt. And I can’t wait to hear you both talk about his various areas of expertise and kind of these dueling careers. So, let’s chat with Ashley.
+
+
+[MUSIC]
+
+
+KEVIN SCOTT:  Our guest today is Ashley Llorens. Ashley is a scientist, engineer, and hip-hop artist. He worked for two decades at Johns Hopkins Applied Physics Laboratory developing novel AI technologies and served as founding chief of the lab’s intelligent systems center. 
+
+He was recently nominated by the White House Office of Science and Technology Policy to serve as an

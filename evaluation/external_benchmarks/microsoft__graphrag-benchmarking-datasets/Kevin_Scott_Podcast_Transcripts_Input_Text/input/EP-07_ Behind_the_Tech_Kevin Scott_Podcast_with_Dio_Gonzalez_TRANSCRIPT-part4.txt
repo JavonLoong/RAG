@@ -1,0 +1,41 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt .  (Laughter.)  
+
+DIO GONZALEZ:  Yes, exactly.  I think that's what like many of us have had is when it's like, my goodness, my imagination, my creativity, I can do so much with this.  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  And also that part of like something that is just, yeah, numbers, bits, okay, whatever, you know?  You know?  Wires, then you see, like, whoa, look at what this created. 
+
+KEVIN SCOTT:  Yeah, but it's sort of like all of the bits and the wires and the numbers are a means to the creative end, right?  
+
+DIO GONZALEZ:  Uh-huh, a means to -- exactly.  
+
+KEVIN SCOTT:  Yeah, that's awesome.  
+
+DIO GONZALEZ:  Yes. So, ever since then, I'm like, okay, I'm going to be a computer programmer… 
+
+KEVIN SCOTT:  So, at some point, you had to make what must have been a huge decision to leave Venezuela and come to the United States to study computer science.  
+
+DIO GONZALEZ:  Yeah.  
+
+KEVIN SCOTT:  Like, how did you make that decision?  
+
+DIO GONZALEZ:  Yeah, well, again, I wanted to do computer graphics.  (Laughter.)  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  So, in Venezuela, undergrad is actually five years mandatory.  So, the last year, and you had to write a thesis and all.   
+
+Last year, they ask you -- you are required to select two areas of specialization.  And for me, of course, was computer graphics.  So, I'm like, yeah!   
+
+So, that was the years when Opengl had just started, it was like brand new.  And you would get those CDs, you know?  These are the Opengl drivers, install this, these are the good ones.  So that's -- that's -- (Laughter.) 
+
+And so -- 
+
+KEVIN SCOTT:  Good times.  
+
+DIO GONZALEZ:  I know.  (Laughter.)  Yeah.  So, I wanted to do computer graphics.  So, I had already done my one year in undergrad.  My thesis was about, you know, doing interactive storytelling and I had programmed some kids' you know stories.  
+
+So, unfortunately, in Venezuela, the computer graphics industry was minimum. And then there were no graduate programs.
+
+And so I worked several years saving money.  And then, yeah, I apply -- I apply for a school here, Purdue University, and so was super lucky

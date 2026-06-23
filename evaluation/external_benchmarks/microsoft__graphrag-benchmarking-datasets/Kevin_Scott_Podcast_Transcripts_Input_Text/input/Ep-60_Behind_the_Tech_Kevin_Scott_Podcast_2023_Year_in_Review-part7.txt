@@ -1,0 +1,14 @@
+Ep-60_Behind_the_Tech_Kevin_Scott_Podcast_2023_Year_in_Review.txt  just sharing scientific papers. So that was very important. And it took us, then, a couple of years to get to the point where we were not just releasing improvements to the model through the API, but in fact, the first interface that was more consumer facing that we played around with was DALL-E. DALL-E Labs, where people could just input a prompt in natural language and then you’d see these beautiful, original, amazing images come up. 
+And then, you know, really for research reasons, we were experimenting with this interface of dialogue where you go back and forth with the model and ChatGPT and dialogue is such a powerful tool, you know, the idea of Socratic dialogue and how -- how people learn, you can sort of correct one another and/or ask questions, get really to deeper truth. 
+And so, we thought, you know, if we put this out there, even with the existing models, we will learn a lot. We will get a lot of feedback and we can use this feedback to actually make our upcoming model that at the time was GPT-4 safer and more aligned. 
+So, that was kind of the motivation. And, of course, as we saw, you know, in just a few days, it became super popular and people just loved interacting with this AI system.
+
+CHRISTINA WARREN: So, when we talk about AI and we think about this stuff, it has been so powerful and so public, the way I think that the whole world has kind of been getting to learn about an experience, the challenges of this new wave of AI. You know, kind of feel like we are in this, you know, before ChatGPT, after ChatGPT world. And that’s really been evident this year. 
+
+KEVIN SCOTT: Yeah. And, you know, we had a really great opportunity on the podcast and, you know, me, personally, in my professional life, to have a bunch of really important conversations with Kevin Roose, from the New York Times. 
+
+So, you know, I think journalism has this really important role to play in helping frame what’s happening right now. So, like, we’re doing part of the job, which is develop the technology and, like, try to responsibly get it deployed out to the public. But that’s a tiny little part of the job of figuring out how to get AI into the hands of the public in a reasonable way. 
+
+And so, yeah, I’ve been super excited to have those conversations with journalists this year. 
+
+CHRISTINA WARREN: Yeah, this conversation that you had with Kevin is actually one of my favorites this year, A, because he’s a former colleague, and B, because I really do think, as you say, journalists play a really important role in, I think, helping kind of bridge the understanding gap between what it is that is being created, and all the

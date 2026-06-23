@@ -1,0 +1,19 @@
+Behind the Tech_Episode 30_Collier_Bloomberg_Transcript.txt . 
+
+And, you know, increasingly AI is, you know, becoming a systems problem almost at the largest scales. So, like, we're building supercomputers to train models on.
+
+But like, one of the things that’s happening from all of that investment is AI is getting used in more and more places. And, you know, I’m just really curious about how you all think about how AI plays a role in what it is that you’re trying to create, like whether it’s – you know, I’ve seen AI systems that can imagine performances, like whole, like, actual performances, like, in the style of Chopin or Rachmaninoff or, like, pick your thing. 
+
+Like, I’m not sure that’s super interesting, but like, there are other ways that, like, AI is being used and, like, you know, you guys is like some of the best users of technology to create these experiences. I’d just love to – love to hear how you’re thinking about it.
+
+BEN BLOOMBERG:  Yeah, I think that’s really interesting because there’s – yeah, like you say, there’s so many people trying to use AI to create sort of – sort of quote/unquote “creative performances” or outputs. And it’s really interesting because a lot of these systems, sort of the – the success metric for them is not being able to tell the original from, you know – or the output from the real thing, I guess we could say. So it’s sort of a copy.
+
+And I think the big question that a lot of people have is whether it will ever get to the point where we value the AI for its own creativity rather than just sort of as an imitation.
+
+And, you know, one thing that we always say is, you know, you know, whether it’s sort of style transcription or, you know, these models, Markov models and things that are combined to create these sort of very realistic, but not quite there representations of other things, all of that gets to what we would say is like maybe the 85th percentile of what we would call sort of good.
+
+And I feel like when you get to creativity, I think somebody like Jacob or – or anybody who’s really coming up with truly new and groundbreaking sort of material is that’s all in in the upper 5 percent of sort of what we can do. 
+
+And so, you know, as a toolkit AI is really interesting to be able to sort of automate things that maybe would previously take a lot of work or would take a lot of, you know, sort of drudgery, but I have yet to see an application where it’s going to come up with something, you know, necessarily truly new  or anything along the lines of, you know, like what Jacob would do, you know, where it’s actually iterating. 
+
+And, you know, of course

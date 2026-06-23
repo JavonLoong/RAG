@@ -1,0 +1,19 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  systems.
+
+KEVIN SCOTT: So let’s go back to your career progression. So you were at IBM, and then at some point – like, was the next step joining AMD? Like, you’ve been there for a while now.
+
+LISA SU: Yeah, yso I was at IBM for 12 – 13 years, you know, did a lot of stuff around our semiconductor R&D, and sort of the next generation processor technologies. And then, you know, I’m a semiconductor person, right? That’s,who I am, through and through, and from an opportunity standpoint, sort of getting to be an influence at a sort of larger scale. So I actually went to Freescale Semiconductor first.
+
+KEVIN SCOTT: Oh, interesting.
+
+LISA SU: Yeah. Yeah, I was at Freescale for five years. I was actually, I had your title. I was CTO at Freescale, as the company was thinking about how to reshape their portfolio and then I ran their networking and multimedia business for a couple of years, and you know, by that time I’d already moved to Austin, so now I’m officially, you know, a Texas person, and then I had the opportunity to come join AMD, and so I joined AMD about 12 years ago, something like that, and it’s been a great ride.
+
+You know, we’ve gone through, you know, a set of things as we reshaped the company, but like I said, I haven’t been far from processors anywhere near my career. Somehow, processors find me, or I find them, so –
+
+KEVIN SCOTT: So, when in your career did you decide that you wanted to lead teams of people, that leadership was a thing that you either enjoyed or believed was necessary to get done what needed to be done.
+
+LISA SU: Yeah, it was probably in my early years at IBM. You know, one of the things that I had to kind of decide is – and that someone asked me – I think my manager asked me, "Hey, do you want to be an IBM fellow, or do you want to be an IBM vice president?" And at the time, I was like, "Huh, that’s an interesting question."
+
+I actually thought that what was most interesting to me, yes, I liked working on my own research, and you know, I had some good ideas, but what was much more fun was seeing teams get together and do things that, you know, frankly, we didn’t think were possible, and – you know, like the early memories of, hey, you’re on a project, you have to ship something to a customer at some given time, and like nothing works. That’s what I enjoyed the most. Like, I enjoyed thinking about: how do I pull this together? How do I pull teams together?
+
+So the answer to that question was, I don’t

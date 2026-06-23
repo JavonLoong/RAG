@@ -1,0 +1,27 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt ../[MUSIC]
+
+KEVIN SCOTT: We're not on some sort of inexorable path where we're building these technologies and like things are going to unfold in this very particular way that it's not inclusive. Like we get to choose our future, and I think if we make careful choices that that future can be like very, very inclusive.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+KEVIN SCOTT:  Hello, and welcome to the show.  I'm Kevin Scott, and today we're going to turn the tables a bit.  As some of you may know, I've just written a book called Reprogramming the American Dream.  So, our guest on the show today is my co-author, Greg Shaw.  
+
+Greg was a journalist in his home state of Oklahoma, including editor of the Cherokee tribal newspaper.  He went to work with Bill Gates, both at Microsoft and the Bill and Melinda Gates Foundation.  
+
+He is co-author of Satya Nadella's Hit Refresh, and a fellow rural native.  Greg, I'm really glad that you joined us today to talk about the book, and I'm grateful that you've agreed to lend your word mastery and expertise to the creation of it.  
+
+GREG SHAW:  Well, thanks, Kevin, it's great to be here with you, and it's really been terrific being along for the journey.  You know, I got to go back to Gladys, Virginia, and I met your mother and brother.  So, before we jump into the book, I must ask how they are doing? 
+
+We're talking in the midst of the COVID-19 crisis, and so I'm curious how your family in northern Virginia, and your family in rural central Virginia are doing.
+
+KEVIN SCOTT:  Yeah.  So far, so good.  Yeah, I think – I think that just as with all of the communities in the country, and throughout the world, the virus is coming.  So, just because there aren't a lot cases at the particular point in time when we're recording this podcast doesn't mean that there won't be.
+
+So, they're taking all of the precautions that they should be.  You know, interestingly, the hardest person to get to abide by the shelter in place is my 90-year-old grandmother who has like a very active social calendar with all of her church ladies.
+
+And

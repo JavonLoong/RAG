@@ -1,0 +1,17 @@
+EP-25_ Behind_the_Tech_CharlieStross_Sci-fi_author.txt  sort of rated a severe loss to the English department when I headed for STEM instead. One particular exercise when I was about 12, we had a teacher who wanted everybody in the class to try and write a short story. When I say a short story, I mean fill an entire workbook, rather than just the odd page.  
+
+I learned to use a typewriter around the age of 12. That was about the time I was getting into Dungeons and Dragons, which was also a new thing back then. And it was just sort of a collision between interests and skills that ended up going sideways on me. I was trying to write from a very early age. I think I wrote my first novel-shaped object when I was about 15. 
+
+KEVIN SCOTT: Wow. 
+
+CHARLIE STROSS: Don't ask, if I find it, I will burn it. (Laughter.) 
+
+KEVIN SCOTT: I'm just always fascinated by this. Like, writing a novel at any age is a real serious undertaking in focus and commitment. And doing it well just requires I think some amalgamation of talents that most people may not have. Where do you think that came from at 15? 
+
+CHARLIE STROSS: I'm not really sure. I mean, actually, now you put it that way, it is kind of freaky. I was also trying to write short stories as well because the feedback loop for a short story is much, much tighter than for a novel. Indeed, my first professionally published stuff began showing up shortly after I turned 20. It was another decade before I was anywhere close to selling a novel, because you've really got to get a degree in the university of life before you've got enough to say about the human condition to write a book other people will want to read.  
+
+So — how to put it? Yeah, I focused on short fiction for a while in my early 20s, kept trying to figure out how to make a novel work. I didn't read books on how to write, I didn't take an MFA in creative writing, I just sort of taught myself. And I was a slow learner. 
+
+There were also a number of — again, I said my career was a drunkard's walk earlier. There are a number of side quests that led me down blind alleys and distracted me for a while. If there's one career that is in my view pretty incompatible with being a novelist, it's being a technical author. And I spent a few years as a technical author, working on the documentation team for SCO Unix back when SCO was an actual Unix OEM. And that sort of killed my productivity for a few years. 
+
+And then around 1993, the tech pubs team discovered the Worldwide Web and HTML pretty early on. It was beyond sort of our dream, which is one set of source code for all the publications. I mean, we've seen

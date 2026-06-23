@@ -35,7 +35,7 @@ class CrossEncoderReranker(BaseReranker):
 
     name = "cross_encoder"
 
-    def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3", device: str | None = None) -> None:
+    def __init__(self, model_name: str = DEFAULT_RERANKER_MODEL, device: str | None = None) -> None:
         try:
             from sentence_transformers import CrossEncoder
         except ImportError as exc:

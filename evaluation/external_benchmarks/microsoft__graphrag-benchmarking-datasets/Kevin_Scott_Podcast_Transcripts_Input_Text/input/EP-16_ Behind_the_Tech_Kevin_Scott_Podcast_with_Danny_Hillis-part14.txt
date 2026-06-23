@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  it back in those days, and pretty much the same algorithms that --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- are the ones that have come to work.
+
+KEVIN SCOTT:  Yeah.  And he was compute constrains, like, they were
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  -- just very computationally expensive, and, like, nowhere in the world was there enough compute to train a deep, neural network.
+
+DANNY HILLIS:  Yeah. So indeed, it turned out to be true that the hypothesis that AI wasn't going to make big in roads until it had much more computing, and it did need parallel computing.  I think, that's finally turned out to be true.
+
+And, of course, you know, just 64,000 processors in those days at the clock speeds they were at wasn't nearly fast enough.
+
+KEVIN SCOTT:  Right.  Well, and I remember, so I, when I was in graduate school, and this, actually, no, I was in undergraduate, so I was on a National Science Foundation research experiences for undergraduate assistantship at the University of Illinois at the NCSA, and when I got there, they had just installed the biggest CM-5 in the world, the biggest public --
+
+DANNY HILLIS:  Yep, yeah. And that was probably the fastest computer in the world at the moment it was installed, yeah.
+
+KEVIN SCOTT:  Oh, it was, it was absolutely the fastest computer in the world.
+
+DANNY HILLIS:  Yeah.
+
+KEVIN SCOTT:  And, like, I remember seeing this thing for the first time, and, like, not only was it the fastest computer, it was like this thing of beauty, like this giant, you know, like, sort of, you know, 2001 space odyssey, you know, like black, you know, monoliths with these red, or, you know, matrix of red blinking LED -- it was a fantastically beautiful machine.
+
+DANNY HILLIS:  It's, well, thank you.  It's funny, I just got a picture.  Somebody just sent me a picture, the Museum of Modern Art just opened up, and at the entrance way they have a connection machine with the lights flashing.
+
+KEVIN SCOTT:  That's awesome.
+
+DANNY HILLIS:  The Museum of Modern Art, yeah.
+
+KEVIN SCOTT:  And then, you know, like, the funny thing, I, like, I mean, obviously, it wasn't a real connection machine, but there was in Jurassic Park.  It was the computer that --
+
+DANNY HILLIS:  Oh yeah, yeah, that was a lot of fun for us.  That's right.  You

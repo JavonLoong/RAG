@@ -18,6 +18,7 @@ import uvicorn
 from .benchmark import run_synthetic_benchmark
 from .chunking import chunk_records
 from .cleaning import clean_records
+from .embeddings import DEFAULT_SENTENCE_TRANSFORMER_MODEL
 from .pipeline import (
     DEFAULT_PERSIST_DIR,
     get_collection_stats,
@@ -47,8 +48,8 @@ def main() -> None:
     ingest_parser.add_argument("--collection", default="power_equipment")
     ingest_parser.add_argument("--chunk-size", type=int, default=500)
     ingest_parser.add_argument("--overlap", type=int, default=50)
-    ingest_parser.add_argument("--backend", default="hashing")
-    ingest_parser.add_argument("--model-name", default="BAAI/bge-m3")
+    ingest_parser.add_argument("--backend", default="sentence-transformer")
+    ingest_parser.add_argument("--model-name", default=DEFAULT_SENTENCE_TRANSFORMER_MODEL)
     ingest_parser.add_argument("--persist-dir", default=str(DEFAULT_PERSIST_DIR))
     ingest_parser.add_argument("--no-clean", action="store_true", help="跳过短文本合并")
 
@@ -71,8 +72,8 @@ def main() -> None:
     bench_parser.add_argument("--batch-size", type=int, default=100)
     bench_parser.add_argument("--query-count", type=int, default=50)
     bench_parser.add_argument("--top-k", type=int, default=5)
-    bench_parser.add_argument("--backend", default="hashing")
-    bench_parser.add_argument("--model-name", default=None)
+    bench_parser.add_argument("--backend", default="sentence-transformer")
+    bench_parser.add_argument("--model-name", default=DEFAULT_SENTENCE_TRANSFORMER_MODEL)
     bench_parser.add_argument("--persist-dir", default=str(DEFAULT_PERSIST_DIR))
     bench_parser.add_argument("--keep", action="store_true")
 

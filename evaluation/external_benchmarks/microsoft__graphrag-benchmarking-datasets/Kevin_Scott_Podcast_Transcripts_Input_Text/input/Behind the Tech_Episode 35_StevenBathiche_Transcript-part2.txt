@@ -1,0 +1,17 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt  Microsoft. He leads our Applied Sciences Group, which is an interdisciplinary team of scientists and product engineers. His expertise lies in multidisciplinary approaches to inventing technologies and experiences for Windows and devices. He’s been shipping and inventing new devices, interfaces and experiences for 20 years, from the original Surface table to our present line of tablets and laptops. Welcome, Stevie.
+
+STEVIE BATHICHE:  Thanks, Kevin. It’s so cool you do this, man. I’m excited. I’m giddy. I appreciate the time you’re going to spend, spend together. And this is just so cool. I love that you do this for the company.
+
+KEVIN SCOTT:  Yeah. I’m – it’s exciting for me, too. Like, I always love opportunities to chat with you, so being able to do this on tape so that everybody can hear it, I think is neat.
+
+STEVIE BATHICHE:  (Laughter.) Yeah. No pressure that it’s recorded, but… (Laughter.)
+
+KEVIN SCOTT:  (Laughter.) So, I’d love to start with you as a kid and how you got interested in science and technology, because you have a really broad curiosity and set of interests. And, you know, I’d love to understand how that started.
+
+STEVIE BATHICHE:  That’s a great question. Yeah. I mean, as a kid, we – so, I was born in Lebanon right in the middle of the civil war. And that kind of set us off in moving every few years, different countries. And so, we moved around a lot as a kid. I lived in Libya, Pakistan. I lived in Stockholm for five years, Jeddah, Saudi Arabia, Queens, New York. And then finally, we landed in Texas, where I started going to junior high school. And then we finally moved to Virginia, where I went to high school, and eventually college. 
+
+But that moving around, like, it exposed me to a lot of different cultures, a lot of different environments. But it also gave me a fair bit of alone time, you know, which allowed me to kind of develop, you know, and kind of poke my curiosity, and, like, go in my room and build a whole bunch of stuff. And, you know, and I got really interested in, like, robotics. I built a lot of robots when I was younger, and that kind of set me off in college as well.
+
+KEVIN SCOTT:  And who was supporting you and that interest when you were a kid? Were your parents scientists or engineers, or did you have those folks around you or you were just figuring this out on your own?
+
+STEVIE BATHICHE:  My parents are not scientists or engineers, but they were just supportive and letting me do whatever I wanted. I was a good

@@ -1,0 +1,17 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  what you want is, like lower power, like high performance and cheap.
+
+LISA SU: Yes!
+
+KEVIN SCOTT: And you know, it’s like those three things, and to your point, like I think scale drives that.
+
+LISA SU: And would you agree, Kevin, that – as you think about where things are right now, the relative benefit of programming at the lowest, lowest level is perhaps less, just because there is so much computing power and that’s why people are moving up the stack, for speed and agility, and all that stuff, or what do you think about the relative tradeoffs of the  lowest-level programming versus
+
+KEVIN SCOTT: I think it’s going to be the same thing. I think there’s going to be this very small minority of folks, and I think it’s just going to get to be a smaller and smaller minority over time who need to deal with the lowest level details of the compute stack, because – you know, they are trying to do something that’s right on the edge of possible, or like, they have to wring every last bit of performance out of the lowest level things. And I think eventually most of that gets abstracted away for most developers.
+
+Like, that’s what you want, it’s what’s always happened.
+
+LISA SU: I completely agree. I mean, that’s certainly everything that we see is – and the technology is changing so fast that, you know, the basic foundation of the compute is getting so fast that – you know, you can sort of make up for whatever – let’s call it loss of abstraction, you know, pretty easily.
+
+KEVIN SCOTT: Yeah, the thing – you know, I do have this concern though, like I mentioned this a few minutes ago. Even though that’s true, you still need this population of engineers who are excited about those low-level details. Like you need to hire them, like – you know, we need to hire them for, like folks building low-level system software, and so – you know, I do worry when – you know, when I look at what some kids are learning in computer science curricula now. Like your abstraction level that you’re operating at is so high, like whether or not you, like, really deeply understand, like the full stack that you’re operating on top of, and then have the opportunity to even get interested in being one of those systems people who is poking around at the low levels, because that doesn’t go away at all.
+
+LISA SU: Yeah, actually, Kevin, I think you’re totally right. I think as we think about, you know, how do you have the best sort of engineers, or you know, sort of the brightest people, you want them to have that breadth of experience. I mean, it’s really important. I mean, you can still specialize, but the breadth of knowing, really, how computers work,

@@ -1,0 +1,13 @@
+Ep-61_Behind_the_Tech_Kevin_Scott_Podcast_with_Lisa_Su.txt  imagination. Like, when I was a little kid, and I was reading science fiction books and watching, you know, the first Star Trek series, and you know, all these optimistic science fiction movies and books that were around then, like the computers were incredibly powerful, like they - and this is before, you know, personal computers even existed, like these folks were imagining what a computer could be, and like, maybe some of the reality of, you know, what the computing revolution actually became, in a way, constrained people’s imagination, and like, I think – you know, what’s happened in the past, you know, handful of years has unconstrained people’s imagination again, and sometimes in like weird ways, but I think in mostly in incredibly optimistic ways, and like that’s exciting, because like I don’t know about you, like I’m of the firm belief that my imagination is not enough, like –
+
+LISA SU: Oh, completely.
+
+KEVIN SCOTT: we need everybody imagining.
+
+LISA SU: I completely agree, completely agree.
+
+KEVIN SCOTT: Yeah, so let’s talk a little about, like where you think AI compute is going. So you just announced this really, like what I would call a breakthrough in AMD’s AI compute roadmap with the MI300, which is a very powerful GPU tuned for AI workloads, like we’ve done a lot of work together to try to figure out how to get the most powerful AI workloads working on this system, but like, that’s just one point in time, so obviously, you all, you know, see the same future trajectory that we see, and like you must be thinking all sorts of, like awesome things about what that future looks like for the semiconductor world.
+
+LISA SU: You know, from my perspective, you know, AI is such an empowering technology, and it’s empowering in many dimensions. You know, we talk a lot about the data center from the standpoint of, you know, these large language models, the great work that, you know, Microsoft and OpenAI, and others are doing, and you know, in just training the largest, you know, models in the world. Like, you need lots of compute for that, and that’s where we come in, but I also look at it as – you know, it’s quite a continuum as to where AI is going to impact our lives, and so – you know, we look at it as, in the data center, you need the – it’s called the big iron so that you can train and infer the most complex models.
+
+You have the opportunities at the edge, when you think about all the data that’s at the edge, and then you have the opportunities at the client and kind of reshaping what PCs do, what mobile phones do, and all of that requires AI capability, although it may not necessarily be exactly the same technology, I think they all want

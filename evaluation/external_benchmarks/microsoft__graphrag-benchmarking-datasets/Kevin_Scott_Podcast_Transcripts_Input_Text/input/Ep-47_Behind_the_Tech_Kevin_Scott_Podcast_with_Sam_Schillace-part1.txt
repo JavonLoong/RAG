@@ -1,0 +1,24 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt ../Behind the Tech with Kevin Scott Episode 47
+Sam Schillace: Deputy CTO, Microsoft
+
+SAM SCHILLACE: Find the thing you feel kinda guilty about being paid for and do the hell out of it. Like if you feel kind of guilty that you’re getting paid to do something it probably means you’re really good at it, and it’s fun for you, and if people are willing to pay for it, just go do the heck out of it.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I'm Christina Warren, Senior Developer Advocate at GitHub.
+
+KEVIN SCOTT: And I'm Kevin Scott.
+
+CHRISTINA WARREN: And today we have Sam Schillace with us, and he's somebody who was a huge part of the creation of Google Docs. And now he's working with you at Microsoft. Right, Kevin?
+
+KEVIN SCOTT: Yes, Sam and I have known each other for a very long time. So Google, many, many, many years ago, bought the startup that Sam and his co-founders started that created the first interactive web word processor, like back at a point in time where people thought that doing that was impossible. Yeah. And that work became Google Docs. And Sam ran all of the Google Apps business at Googl, for a while he went on and ran engineering and operations at Box, another startup until he went public, and was back at Google. And now he works here for us. At Microsoft.
+
+CHRISTINA WARREN: that's awesome. And we're really lucky to have him especially like all of his experience, and also like, thank you for bringing the word processor to the web browser. That's amazing. All right. So let's go ahead and let's dive into your conversation with Sam. 
+
+[MUSIC]
+
+KEVIN SCOTT: Sam Schillace works at Microsoft in the office of CTO as Deputy CTO and Corporate Vice President, focusing on consumer product culture and next generation productivity. Prior to Microsoft, Sam spent three tours at Google, Gdocs, Google Ventures, and then Maps and Search. Sam originally worked at Google as a founder of the Writely acquisition and led the teams that built Google Docs. He has a long history in consumer software as the focus area lead for consumer apps at Google and in multiple startups he’s founded. He also worked at Box as head of engineering for four

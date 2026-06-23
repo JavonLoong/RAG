@@ -1,0 +1,22 @@
+Ep-54_Behind_the_Tech_Kevin_Scott_Podcast_with_Neil_deGrasse_Tyson_V2.txt ../Behind the Tech with Kevin Scott 
+Episode 54 - Neil deGrasse Tyson 
+ 
+NEIL DEGRASSE TYSON: At some point you have to say “my role model is someone I have never met, and I may never meet, but I know enough about them that I want to emulate what happened in their life.” 
+ 
+[MUSIC] 
+ 
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft.  
+ 
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.  
+ 
+[MUSIC] 
+ 
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I'm co-host Christina Warren, Senior Developer Advocate at GitHub. 
+  
+KEVIN SCOTT: And I'm Kevin Scott. 
+  
+CHRISTINA WARREN: And today we have a truly, truly exciting guest with us, Neil deGrasse Tyson, who is probably the best-known astrophysicist in the world. 
+  
+KEVIN SCOTT: for sure. I would challenge anyone to name an astrophysicist more famous than Neil. And maybe even more important than his role as an astrophysicist, like I think he's doing this unbelievably important thing that maybe has never been more important than it is right now, which is advocating for the sciences and for scientific... thinking. You know, and I would argue the reason that that is so important is the world has never been more complicated. It has never been more shaped by the forces of science and engineering. And so you know, just to be a human being in this world, like in 2023, like you really do need to like have some grasp of like what all of this complexity is about and what it means and, and, you know, having the scientific method and rationalism as a framework for helping you reason about all of this complexity, I think is one of the most like maybe the most useful tool that we have in our arsenal to just sort of move forward as a society and as individuals. 
+  
+CHRISTINA WARREN: No, I couldn't agree more. And I'm really looking forward to this conversation because as you say, I think what he does is so important, but also like he's a fun, personable guy. And I think that's why he's so successful and why it's so great that someone like him is kind of the face of a lot of these things. I think we're very lucky to have him. So I cannot wait to check out your conversation with Neil, let's

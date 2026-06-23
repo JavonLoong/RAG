@@ -1,0 +1,13 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  something today, like a huge amount of money. 
+
+You know, I don’t know why he did it, really, but he did, and he bought it and like, I remember it being down in our basement, and I would like, you know, write BASIC on it, you know, out of the back of Dr. Dobbs, and you know, the pixels were 3x2. They weren’t even square pixels. They were this chunky, little thing that you could do like really basic stuff on, and if you felt like, you know, not retyping your program, you’d tape it out to a cassette tape, and you know, read it back in later, and all that crazy stuff.
+
+And a friend of mine had an Apple 2 that we played on, you know, and wrote video games. I was really – I liked pixels a lot, like I liked making pixels on the screen, so that kind of drove a lot of it
+
+KEVIN SCOTT: Did your high school have computers? I mean, like this is in the ‘80s, right?
+
+SAM SCHILLACE: I graduated from high school in ‘84. My high school didn’t really have computers or really have a computer program. I didn’t really think of computers as anything other than a fun hobby, even most of the way through college. Like, it, college – the first exposure I really got to anything significant, other than just early things was like the nursing school, across the road from my dorm, had a basement full of Mac Classics that you could go write – you know, use, and I would go write my papers on them because they were awesome. Like I didn’t have to like – you know, I was a terrible typist, and I never learned to type-touch, so – you know, to actually type the right way, so like,  that was great because I didn’t have to like white out and backspace and retype all my papers. I’d just go do them there. 
+
+And I even remember, even then, like all of my – like friends and roommates and stuff, classmates, thought it was a weird thing to do, like why would you go type on a computer, like we’ve got all these perfectly good typewriters, and I was like, no, this is way better. And that’s where I sort of started getting into them, and then like they – I did a lot of like goofy, weird little side programming projects in college, like making, like sort of pseudo 3 – 2-1/2-D landscapes that were randomly generated that I liked to look at, and crazy stuff like that.
+
+And then, you know, I took one class in – one CS class in college. It was like the Knuth algorithm class, you know, the first book. It was cool, but at the time I was really into math

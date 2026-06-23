@@ -1,0 +1,25 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  industry's fault.  It's like, guys, we have a system here. 
+
+And so, like that other big challenge for me is how do you build a resilient system with unequal resources, right?  Because the news media has a very different amount of resources than the tech industry does.  At the same time, it has a different kind of power in this.  
+
+And that's what concerns me is that these challenges for me with progress, they have to happen in this collective fashion that's also — we're not really structured well to do.  And that — it concerns me because those transitions can be so costly. 
+
+KEVIN SCOTT:  Yeah, well, and we've sort of understood this for many, many years with security.  It's unusual to like have a — like an effective security attack be like a you know sort of a single monolithic target.  It's usually like a much more complicated thing that people do that's sort of — you know, they like, like you said, they push on the cracks between the systems or the interfaces between them. 
+
+And like they use one like slightly vulnerable thing to attack another slightly vulnerable thing and like that adds up to the — you know, to the security incident.  
+
+danah boyd:  And human imperfections are part of that equation the whole way through. 
+
+KEVIN SCOTT:  Oh, totally.  I mean, you know — 
+
+danah boyd:  And that's — 
+
+KEVIN SCOTT:  Usually, they're the — you know, the biggest part of the problem. 
+
+danah boyd:  And that's where when we deal with these large sociotechnical systems, we deal with you know, human imperfections at every stage, right?  Human imperfections in decision-making and logic, say for example the news media. 
+
+Human failures with regard to the public, might be consuming content.  Human failures even in the design and building of systems, right?  Like what code is bug free?  Right?  Like, all of these layers.  
+
+And that's where the interconnected nature of our society creates a form of fragility that you know, I think we're all sort of feeling and shaking about right now because so many of our institutions, so many of our systems are just barely working. It's like, you know, it's like "duct tape nation," right?  And what does it mean that we're all kind of hoping that the duct tape won't fall off before we get through this.  
+
+KEVIN SCOTT:  Well, and I think, too, the thing that I personally am trying to push for and sort of hope for both as a person who is in tech who I'm hopeful about the future of a world with even more tech than we have got right now, like I'm like very appreciative of what tech has done for me and my family

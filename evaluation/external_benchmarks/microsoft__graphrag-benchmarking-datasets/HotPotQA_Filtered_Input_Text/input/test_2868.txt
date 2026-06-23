@@ -1,0 +1,47 @@
+Nigel Searle was the managing director of Sinclair Research Ltd, and one of the company's longest-serving employees.
+ He joined Sinclair Radionics in 1973, and for most of the 1970s, Searle worked for Sinclair in the United States to promote the company's calculators and other products.
+ In 1977, with Sinclair in financial trouble, Searle left the company.
+ He rejoined in 1979 when Sir Clive Sinclair formed Science of Cambridge (later renamed Sinclair Research) and continued to work from the US, successfully promoting the ZX80 and ZX81 personal computers.
+ In spring 1982, he moved back to the United Kingdom as Sinclair's managing director, a post he retained until 1986 when Amstrad took over the company's computer business.
+Sinclair Programs was a magazine published in the United Kingdom, initially by ECC Publications of London and subsequently by EMAP.
+ It was dedicated entirely to listings for programs for the Sinclair Research ZX80, ZX81 and ZX Spectrum computers, contributed by readers.
+ The magazine was one of three launched in 1982 by ECC, the other two being "Sinclair User" and "Sinclair Projects", the latter dedicated to hardware projects for the Sinclair computers.
+ The magazine was published between May/June 1982 and September 1985.
+The ZX81 is a home computer produced by Sinclair Research and manufactured in Scotland by Timex Corporation.
+ It was launched in the United Kingdom in March 1981 as the successor to Sinclair's ZX80 and was designed to be a low-cost introduction to home computing for the general public.
+ It was hugely successful, and more than 1.5 million units were sold before it was discontinued.
+ The ZX81 found commercial success in many other countries, notably the United States, where it was initially sold as the ZX-81.
+ Timex manufactured and distributed it under licence and enjoyed a substantial but brief boom in sales.
+ Timex later produced its own versions of the ZX81 for the US market – the Timex Sinclair 1000 and Timex Sinclair 1500.
+ Unauthorised clones of the ZX81 were produced in several countries.
+Timex Sinclair was a joint venture between the British company Sinclair Research and Timex Corporation in an effort to gain an entry into the rapidly growing early-1980s home computer market in North America.
+ The choice of partnership was natural, as Timex was already the main contractor for manufacture of Sinclair's ZX81 and ZX Spectrum computers at its Scottish plant in Dundee.
+ It was Timex of Portugal, though, that took on the R&D and the local manufacturing of the models to be exported to the U.S. Although both Timex of Scotland and Timex of Portugal were full subsidiaries of Timex, internal rivalry, whether unintended or purported, meant there was little sharing between the two plants.
+ Timex of Portugal also sold the Timex Sinclair models in Portugal and Poland under the Timex Computer brand.
+Sinclair Research Ltd is a British consumer electronics company founded by Clive Sinclair in Cambridge.
+ It was originally incorporated in 1973 as Westminster Mail Order Ltd, renamed Sinclair Instrument Ltd, then Science of Cambridge Ltd, then Sinclair Computers Ltd, and finally Sinclair Research Ltd in 1975.
+ It remained dormant until 1976, when it was activated with the intention of continuing Sinclair's commercial work from his earlier company Sinclair Radionics, and adopted the name Sinclair Research in 1981.
+Sinclair BASIC is a dialect of the programming language BASIC used in the 8-bit home computers from Sinclair Research and Timex Sinclair.
+ The Sinclair BASIC interpreter was made by Nine Tiles Networks Ltd.
+The Timex Sinclair 1000 (TS1000) was the first computer produced by Timex Sinclair, a joint venture between Timex Corporation and Sinclair Research.
+ It was launched in July 1982, with a US sales price of US$99.95, making it the cheapest home computer to date; it was advertised as "the first computer under $100".
+ The computer was aimed at regular home users.
+ Unlike earlier computers aimed at home users, the TS1000 was not a kit which had to be soldered and assembled.
+ As purchased, the TS1000 was fully assembled and ready to be plugged into the users' home TV (which served as a video monitor).
+ The TS1000 was a slightly-modified version of the Sinclair ZX81 with an NTSC RF modulator, designed for use with North American TVs, instead of the UK PAL RF modulator which was used for units sold in Portugal.
+ The TS1000 doubled the onboard RAM from 1 KB to 2 KB.
+ The TS1000's casing had slightly more internal shielding but remained the same as Sinclair's, including the membrane keyboard.
+ It had black-and-white graphics and no sound.
+ It was followed by an improved version, the Timex Sinclair 1500 which had substantially more RAM (16 KB) and a lower price (US$80).
+ However, the TS1500 did not achieve market success, given that the marketplace was by this time dominated by Commodore, RadioShack, Atari and Apple.
+The Wave Mate Bullet was a Z80 single-board computer from the late 1970s and early 1980s which used the CP/M operating system.
+ This computer is rarely seen now but has historical value as an early microcomputer pioneer.
+ It was sold in Australia, the United States and Europe and was apparently popular in academic settings.
+Tony Tebby is probably most famous for designing Qdos, the computer operating system used in the Sinclair QL personal computer, whilst working as an engineer at Sinclair Research in the early 1980s.
+ He left Sinclair Research in 1984 in protest at the premature launch of the QL, and formed QJUMP Ltd., a software house specializing in system software and utilities for the QL, based in Rampton, Cambridgeshire, England.
+Jim Westwood was the chief engineer at Sinclair Research Ltd in the 1980s, starting at the company in 1963.
+ Westwood was the technical mastermind behind many of Sinclair's products and worked there for more than twenty years.
+ Sir Clive Sinclair and Westwood shared a connection even before they met when Westwood had previously worked at an electronics store in London which was owned by Bernard Babani, Sinclair's publisher.
+ This gave Westwood a good degree of familiarity with Sinclair's designs, which prompted him to join Sinclair's fledgling company, Sinclair Radionics.
+ Westwood subsequently had a hand in most of the company's products, including the calculators, audio equipment, ZX Spectrum computers and TV80.
+ He is still designing hardware for Amino Communications, and is a partner in Cambridge Electronics Consultancy.

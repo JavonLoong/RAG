@@ -1,0 +1,13 @@
+Ep-45_Behind_the_Tech_Kevin Scott_Podcast_with_Phil_Spencer.txt  new CD-ROM format and writing it. But, like, a thousand people for three years to, like, get to the thing where you start getting the feedback, like, how does – how does that work? 
+
+PHIL SPENCER: Yeah, it’s been real learning for me, just being transparent on this. Like, the biggest one of these things, as I moved into this job ahead of Xbox, which is now eight years ago, which is kind of crazy to think about, is hardware. Like, the hardware timelines as a software – as somebody who grew up in software, it’s not only is it that timeline on hardware, but when you find a bug, the kind of loop to go back and fix a problem until you get your next EV build of hardware, and as you said, longer term platform things that we’re obviously doing on Xbox has been a real learning. 
+
+I grew up at Microsoft. Prior to the head of Xbox, I was head of our Studios organization, so building games. And I think for me, when you had the portfolio of things going on, you kind of just daisy chained people, like your games in your head of, okay, every year, we’re going to have three or four or five releases and I’ll get my endorphin hit from those things, knowing that the things that will come the following year probably have been in development for three or four years. And that – that kind of just – that portfolio of things, different stages were very useful.
+
+When I came into this job and took on the hardware requirement, the platform work, having some ideas, like, Game Pass and xCloud, which we – xCloud being our cloud streaming, Game Pass being our gaming subscription that we had to invest in over time, it was learning for me, both as a leader and as a member of the team, on how to just structure my thinking differently, finding people on the team that had that capability beyond what I did, the listening and learning. And it’s just been part of my growth in this role over the years. 
+
+KEVIN SCOTT: Yeah, it’s the thing… the thing that I never really appreciated until I was working on my PhD is, like, the role that stamina plays in trying to do something complicated where, you know, you have to have some framework for how you’re going to break a big problem down into, like, a bunch of manageable chunks. And then you’ve got to have the stamina to just go do all of the chunks until you’re finished. 
+
+And, like, I know you basically are working on a hundred PhDs at once, given the complexity of all of the things that are in the pipeline. And it must be an interesting thing, helping all of those teams, like, maintain that focus and having the stamina to get everything done. 
+
+PHIL SPENCER: Yeah, and I think your point about decomposing

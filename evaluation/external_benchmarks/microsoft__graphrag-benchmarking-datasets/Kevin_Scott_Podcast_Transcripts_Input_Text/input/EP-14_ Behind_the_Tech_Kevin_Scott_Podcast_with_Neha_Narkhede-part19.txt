@@ -1,0 +1,17 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt KEVIN SCOTT:  Yeah.  Although, that wasn't a hard decision.  Like, Igor -- you all ask Igor, Igor said, "I think it's reasonable." Igor asked me, and I'm like, "It's fine." 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  And it was done.  (Laughter.) 
+NEHA NARKHEDE:  And it was done, right?  And in 2011 is when it was donated, I think -- 
+KEVIN SCOTT:  Yeah.   
+NEHA NARKHEDE:  -- to the Apache Software Foundation.  So, it was very, very simple to do that.  And I think that was the turning point for the community to get built around Kafka because they sort of saw Kafka as not just a LinkedIn thing as like an independent project that could develop a whole open source community around it. 
+I think that did wonders to Kafka's adoption in the world is it reached in, you know, beyond Silicon Valley in about two years since we open sourced it to a point where I was on a call with June, our other -- my other co-founder -- and helping this big Fortune 500 just for free about their Kafka problems.  
+And as I sat there, I realized that, wow, you know, Kafka has gone mainstream.  And in order to really fully realize the next level of Kafka's adoption and potential there will be a company around it.  And I just sort of thought that, hey, if there is a company around Kafka and it's not the three of us, that would be a shame.  (Laughter.) 
+So, I pushed that idea to both of my then teammate, now co-founders, and it turns out that they were also interested.  So that's when it -- you know, we sort of began this, you know, brainstorming sessions to start Confluent.  
+KEVIN SCOTT:  Yeah.   
+NEHA NARKHEDE:  This was five years ago. 
+KEVIN SCOTT:  Yeah.  So, even though you had this traction with Kafka, it's still a big decision to go start a company.  
+NEHA NARKHEDE:  Yes.  (Laughter.) 
+KEVIN SCOTT:  In fact, like, I was in three companies in a row that were, you know, sort of private and like ramping up and it's an intense, intense experience. 
+NEHA NARKHEDE:  Yes.   
+KEVIN SCOTT:  So how did you all get the courage to do this?  
+NEHA NARKHEDE:  You know, I don't know -- I can't speak about my co-founders, but for -- but what ran through my mind when I decided to take the leap, and I'm so thankful that they

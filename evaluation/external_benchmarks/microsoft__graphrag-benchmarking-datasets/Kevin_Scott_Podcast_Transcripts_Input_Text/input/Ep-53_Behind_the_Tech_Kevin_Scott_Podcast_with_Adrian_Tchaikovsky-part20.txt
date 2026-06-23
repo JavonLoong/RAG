@@ -1,0 +1,15 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  philosophers alike have been kicking about for the last certainly 30-40 years, which we’ve absolutely failed to answer. There’s the big idea, and suddenly it goes by – I mean, it’s a big thing in the early cyberpunk books by William Gibson, for example, of the idea of well, what do you… what behavioral limits do you put on your AI? If you have an AI which is of that kind of genuinely powerful intellect, you know, how do you – do you limit it in its own personal growth? Do you limit it in freedoms? Do you give it behavioral mandates?  
+ 
+And obviously, we have the Laws of Robotics from Asimov, which most people are fairly familiar with. And the problem may be – I mean, not only are Asimov stories about the Laws of Robotics very pointedly about the fact that the Laws of Robotics are utterly inadequate to govern robots.  
+ 
+If you have something that’s able to look at human interactions in a genuinely critical – excuse me, a genuinely critical fashion, then the first conclusion it’s going to come to is all of these rules you’ve given me by which I have to abide, you, yourselves, only pay lip service to because all of the systems I’ve seen people propose about what we should – how we should sort of shackle our potential AIs are enormously do-as-I-say, not-as-I-do. They are enormously hypocritical, really, in a way that anything that we are telling to be human, we are also trying to hamstring it from being human, because being human involves a lot of highly problematic behavior.  
+ 
+And one of the things, there was that fairly celebrated case not that long ago. The AI – no the AI, the chatbot, which ended up trying to convince someone to leave their wife and was telling him that he was in love with it, and all that sort of thing, which – 
+ 
+KEVIN SCOTT: That was Bing Chat. (Laughter.) 
+ 
+ADRIAN TCHAIKOVSKY: Yeah, and which was – and which basically put up an extremely spirited and quite aggressive defense of itself, when challenged, and grew more and more effectively aggressive in the way that it was interacting when its interlocutor was trying to pick apart its story. 
+ 
+And what really struck me there is – what you’ve got there is a system that’s basically being told, well, react like you’re a human, effectively. It’s being asked human level questions. It’s being asked to react like it’s human. The human it’s reacting like is, effectively, a certain type of online actor who, when challenged, becomes extremely aggressive and answers questions with abuse, and tries to shut down any lines of inquiry that it doesn’t like.  
+ 
+So, really, that’s just Bing Chat being a very good human. And the problem is people don’t like

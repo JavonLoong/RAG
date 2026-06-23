@@ -1,0 +1,17 @@
+EP-40_Behind_the_Tech_DanielaRus_Transcript (1).txt .
+
+CHRISTINA WARREN: Yeah, no, I totally agree with you. I think that is really interesting. And like you said, it can bring kind of a new lease on life, so to speak, to some of these communities. And I think that’s an interesting kind of turn on the head of kind of the typical, what has been one of the narratives of the last more than 50 years of, you know, the robots are going to take over the world and seeing it as a negative, and instead, no, actually, this automation could, as you said, help when we have a workforce that is in industrial parts of the world that are you know, more people are retired, less people are working, but we still need to get things done.
+
+KEVIN SCOTT: Yeah. I know as a young engineer earlier in my career, every time I was able to build a piece of automation to help me with a job that I was doing, it was because the job that I was doing was repetitive and annoying. (Laughter.)
+
+CHRISTINA WARREN: Yeah. I mean, look, I’m – I will be the first to admit I’ve been very, very guilty of spending three times as long to automate a solution than to actually go through the repetitive task over and over again, just on the off chance that I might need to use that script or automation again in the future.
+
+KEVIN SCOTT: It is a virtue of a good programmer. (Laughter.)
+
+CHRISTINA WARREN: (Laughter.) All right. Well, that was a fantastic conversation with Daniela. We are out of time for today. Thank you again, Daniela, for sharing her time, and her amazing insights and her great story with us. 
+
+Remember, we always love to hear your ideas for guests, so please e-mail us any time at behindthetech@microsoft.com. Thanks for listening.
+
+KEVIN SCOTT: See you next time.
+
+END

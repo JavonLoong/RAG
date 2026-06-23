@@ -1,0 +1,47 @@
+Counter-Strike (also known as Half-Life: Counter-Strike) is a first-person shooter video game developed by Valve Corporation.
+ It was initially developed and released as a "Half-Life" modification by Minh "Gooseman" Le and Jess Cliffe in 1999, before Le and Cliffe were hired and the game's intellectual property acquired.
+ "Counter-Strike" was released by Valve on the Microsoft Windows platform in 2000.
+ The game spawned a franchise, and is the first installment in the "Counter-Strike" series.
+ Several remakes and Ports of "Counter-Strike" have been released on the Xbox console, as well as OS X and Linux.
+ It is sometimes referred to as Counter-Strike 1.6 to distinguish it from other titles of the series, 1.6 being the final major software update the game received.
+Fez (stylized as FEZ) is an indie puzzle-platform video game developed by Polytron Corporation and published by Trapdoor.
+ The player-character Gomez receives a fez that reveals his two-dimensional (2D) world to be one of four sides of a three-dimensional (3D) world.
+ The player rotates between these four 2D views to realign platforms and solve the game's puzzles.
+ The object of the game is to collect cubes and cube fragments to restore order to the universe.
+Portal 2 is a 2011 first-person puzzle-platform video game developed and published by Valve Corporation.
+ It is the sequel to "Portal" (2007) and was released on April 19, 2011, for Microsoft Windows, OS X, Linux, PlayStation 3, and Xbox 360.
+ The retail versions of the game are distributed by Electronic Arts while online distribution of the Microsoft Windows, Mac OS X and Linux versions is handled by Valve's content delivery service Steam.
+ "Portal 2" was announced on March 5, 2010, following a week-long alternate reality game based on new patches to the original game.
+ Before the game's release on Steam, the company released the Potato Sack, a second multi-week alternate reality game, involving 13 independently developed titles which culminated in a distributed computing spoof to release "Portal 2" several hours early.
+Aperture Tag: The Paint Gun Testing Initiative is a 2014 first-person puzzle-platform video game developed by the Aperture Tag Team.
+ Originally made as a modification of the Valve Corporation's "Portal" series, it was officially approved for sale by Valve and released on the software distribution platform Steam on July 15, 2014.
+ The game lacks the iconic portal gun of the series and instead utilizes a newly created paint gun that fires two kinds of gel with different properties.
+ The game features new characters and voice acting, along with twenty-seven levels and a co-op mode that also includes a level editor.
+Half-Life 2: Lost Coast is an additional level for the 2004 first-person shooter video game "Half-Life 2".
+ Developed by Valve Corporation, it was released on October 27, 2005, through the Steam content delivery service as a free download to owners of the Microsoft Windows version of "Half-Life 2".
+ "Lost Coast" serves as a technology demonstration, specifically showcasing the high-dynamic-range rendering implemented in the Source engine.
+ The level was designed with a variety of appropriate environments to emphasize these effects.
+ In addition, "Lost Coast" was the first video game developed by Valve to allow developers to explain various elements of design as the player progresses through the level.
+Portal is a puzzle-platform video game developed and published by Valve Corporation.
+ It was released in a bundle package called "The Orange Box" for Microsoft Windows, Xbox 360 and PlayStation 3 in 2007.
+ The game has since been ported to other systems, including OS X, Linux, and Android.
+Team Fortress 2 (TF2) is a team-based multiplayer first-person shooter video game developed and published by Valve Corporation.
+ It is the sequel to the 1996 mod "Team Fortress" for "Quake" and its 1999 remake, "Team Fortress Classic".
+ It was released as part of the video game bundle "The Orange Box" in October 2007 for Microsoft Windows and the Xbox 360.
+ A PlayStation 3 version followed in December 2007.
+ The game was released for Windows as a standalone entry in April 2008, and was updated to support OS X in June 2010 and Linux in February 2013.
+ It is distributed online through Valve's digital retailer Steam, with retail distribution being handled by Electronic Arts.
+Portal is a series of first-person puzzle-platform video games developed by Valve Corporation.
+ Set in the "Half-Life" universe, the two main games in the series, "Portal" (2007) and "Portal 2" (2011), center on a woman, Chell, forced to undergo a series of tests within the Aperture Science Enrichment Center by a malicious artificial intelligence computer, GLaDOS, that controls the facility.
+ Each test involves using the "Aperture Science Handheld Portal Device" - the "portal gun" - that creates a human-sized wormhole-like connection between nearly any two flat surfaces.
+ The player-character or objects in the game world may move through portals, their momentum conserved.
+ This allows complex "flinging" maneuvers to be used to cross wide gaps or perform other feats to reach the exit for each test chamber.
+ A number of other mechanics, such as lasers, light bridges, tractor funnels, and turrets, exist to aid or hinder the player's goal to reach the exit.
+Prince of Persia: The Sands of Time is a third-person action-adventure puzzle-platform video game developed and published by Ubisoft.
+ First revealed in March 2003, it was released across Game Boy Advance, PlayStation 2, GameCube, Xbox and Microsoft Windows in November 2003.
+ "The Sands of Time" is a reboot of the "Prince of Persia" series, created by Jordan Mechner.
+ Mechner served as creative consultant, designer, and scenario writer for "The Sands of Time".
+The Lost Vikings is a puzzle-platform video game developed by Silicon & Synapse (now Blizzard Entertainment) and published by Interplay.
+ It was originally released for the Super NES in 1992, then subsequently released for the Amiga, Amiga CD32, MS-DOS, and Mega Drive/Genesis systems the next year; the Mega Drive/Genesis version contains five stages not present in any other version of the game.
+ Blizzard re-released the game for the Game Boy Advance in 2003.
+ In 2014, the game was added to Battle.net as a free download emulated through DOSBox.

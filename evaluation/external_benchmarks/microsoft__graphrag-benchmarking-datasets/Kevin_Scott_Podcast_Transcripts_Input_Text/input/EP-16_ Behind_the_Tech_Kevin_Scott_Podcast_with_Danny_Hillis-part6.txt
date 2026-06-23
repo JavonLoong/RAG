@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  up from the bottom of kind of a switching elements, and the very simple functions, and the machine language programming.
+
+KEVIN SCOTT:  Yep.
+
+DANNY HILLIS:  And then all the layers of software that gradually got put on top of that.  And now, I think it would be very tempting just to kind of skip straight to the real --
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  -- powerful functionality and --
+
+KEVIN SCOTT:  Yep.  Yeah, and, like, that's a recurring theme.  I mean, it's funny, like, I haven't to, like, we've never had this conversation before, but I've had this chat on this podcast with a bunch of other people, of, like, the same theme emerges over and over again.  
+
+And, like, there's, you know, on the one hand, like, all of that complexity and the abstractions that we built over the years to sort of package them up and, the complexity up in ways where you can very easily use it to build things is great.  And on the other hand, like, not having that deep fundamental understanding of what's really going on from top to bottom can hinder you sometimes.
+
+DANNY HILLIS:  Right.  both kinds are really useful, because if you, of course, if you try to work from that level, then you miss a lot of the power of building on what other people have done and so on.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  But, I mean, you mentioned, well, you said something about, like, I made some of the first parallel computers, and I was thinking if they really, the audience really knows what it meant to make a computer in those days.
+
+KEVIN SCOTT:  Well I mean let’s talk about this, like, we'll go back to, you know, sort of MIA let's just go straight there.  So, you, you know, you were traveling all over the world, you know, sort of a precociously, curious child, and then you go to college, and it's MIT, right?
+
+DANNY HILLIS:  Yeah, and actually, I went to college, I really, I mean, the computer thing was cool, but I never thought of it as a career.
+
+KEVIN SCOTT:  Right.  Did they even have a computer science program at MIT when you started?
+
+DANNY HILLIS:  It was combined with electrical engineering.
+
+KEVIN SCOTT:  Okay.
+
+DANNY HILLIS:  But when I went there, I wanted to be a neurophysiologist.  I went to study the brain.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  And the brain was obviously the most interesting

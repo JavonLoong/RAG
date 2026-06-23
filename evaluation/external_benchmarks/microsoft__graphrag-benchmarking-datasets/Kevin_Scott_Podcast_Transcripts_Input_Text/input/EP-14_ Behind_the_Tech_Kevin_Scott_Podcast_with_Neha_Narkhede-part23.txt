@@ -1,0 +1,19 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt VIN SCOTT:  Who work on Kafka because Kafka is a very important piece of infrastructure for LinkedIn.  I just wanted to make sure that like you guys and they were going to be able to -- 
+NEHA NARKHEDE:  Collaborate.  
+KEVIN SCOTT:  -- continue to collaborate with one another. 
+NEHA NARKHEDE:  Yes.  Yes.  
+KEVIN SCOTT:  And that's worked pretty well I think. 
+NEHA NARKHEDE:  That's worked pretty well.  
+KEVIN SCOTT:  I mean, it's not always perfect, but it's like worked -- 
+(Crosstalk.) 
+NEHA NARKHEDE:  Yes.  (Laughter.) 
+KEVIN SCOTT:  It's worked really well. 
+NEHA NARKHEDE:  It has.  It has. 
+KEVIN SCOTT:  So, how has it been? You co-founded a company, like, you're start -- there's nothing. Like, you've got to figure out the business model, you've got to figure out like how are we going to build software?  How am I going to hire engineers?  How do we, you know, like, where's the office going to be?  
+NEHA NARKHEDE:  Yes.  (Laughter.) 
+KEVIN SCOTT:  Like, so talk about this, like, what were the big challenges in the first days? 
+NEHA NARKHEDE:  I think the big challenges were the -- there was a time when we spent before even we started the company on what the business model was going to be.  And the big question is, you know, do you want to have a software business model?  We're going to sell subscription on software packages?  Or are you going to have a fully managed service? 
+And back then, five years ago, it actually was not that clear.  And it wasn't as simple of a decision as it is now for data systems.  You just start with a fully managed service, that's it.   
+And so we thought a lot about that and realized that Kafka is a data integration system, after all.  It needs to be where most of the data is, and we were told that most of the money is in the enterprise and enterprise's data is still on premises.  
+And so that one was -- it turned out to be a very important decision that we made is to start with a software package so we could address the -- you know, the needs of all these enterprises, and then in time -- and this is something we did I think well --  is in time also transition to the fully managed service part as they're moving to the cloud.  
+But in the early days, hiring engineers was the focus.  And I want to say that it was a tad bit

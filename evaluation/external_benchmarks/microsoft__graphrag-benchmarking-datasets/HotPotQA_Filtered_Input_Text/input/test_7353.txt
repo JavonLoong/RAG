@@ -1,0 +1,29 @@
+Football Live was the name given to the project and computer system created and utilised by PA Sport to collect Real Time Statistics from major English & Scottish Football Matches and distribute to most leading media organisations.
+ At the time of its operation, more than 99% of all football statistics displayed across Print, Internet, Radio & TV Media outlets would have been collected via Football Live.
+isyVmon was a computer system and network monitoring software application system created by iT-CUBE SYSTEMS.
+ It was designed to monitor and track the status of various applications, network services, servers, and other network hardware.
+Crucible is a geodemography computer system created by the United Kingdom-based grocery company Tesco.
+ The system is run by a subsidiary Dunnhumby.
+ The system collects information from the company's loyalty program, "Clubcard", as well as aggregating information from other geodemographic databases and other sources.
+ The system has been used to sell customer information to other companies in the UK, leading to accusations in 2005 that the company, with its large share of the UK shopping sector, has become too powerful.
+Watson is a question answering computer system capable of answering questions posed in natural language, developed in IBM's DeepQA project by a research team led by principal investigator David Ferrucci.
+ Watson was named after IBM's first CEO, industrialist Thomas J. Watson.
+ The computer system was specifically developed to answer questions on the quiz show "Jeopardy!" and, in 2011, the Watson computer system competed on "Jeopardy!" against former winners Brad Rutter and Ken Jennings winning the first place prize of $1 million.
+Computer user satisfaction (and closely related concepts such as "System Satisfaction", "User Satisfaction", "Computer System Satisfaction", "End User Computing Satisfaction") is the attitude of a user to the computer system (s)he employs in the context of his/her work environments.
+ Doll and Torkzadeh's (1988) definition of user satisfaction is, "the opinion of the user about a specific computer application, which they use".
+ In a broader sense, the definition of user satisfaction can be extended to user satisfaction with any computer-based electronic appliance.
+ However, scholars distinguish between user satisfaction and usability as part of Human-Computer Interaction.
+ Successful organisations have systems in place which they believe help maximise profits and minimise overheads.
+ It is therefore desirable that all their systems succeed and remain successful; and this includes their computer-based systems.
+ According to key scholars such as DeLone and McLean (2002), user satisfaction is a key measure of computer system success, if not synonymous with it.
+ However, the development of techniques for defining and measuring user satisfaction have been ad hoc and open to question.
+ The term "Computer User Satisfaction" is abbreviated to "user satisfaction" in this article.
+Convicted computer criminals are people who are caught and convicted of computer crimes such as breaking into computers or computer networks.
+ Computer crime can be broadly defined as criminal activity involving information technology infrastructure, including illegal access (unauthorized access), illegal interception (by technical means of non-public transmissions of computer data to, from or within a computer system), data interference (unauthorized damaging, deletion, deterioration, alteration or suppression of computer data), systems interference (interfering with the functioning of a computer system by inputting, transmitting, damaging, deleting, deteriorating, altering or suppressing computer data), misuse of devices, forgery (or identity theft) and electronic fraud.
+The IBM 1030 Data Collection System was a remote terminal system created by IBM in Endicott, New York in 1963, intended to transmit data from remote locations to a central computer system.
+An arcade system board is a dedicated computer system created for the purpose of running video arcade games. Arcade system boards typically consist of a main system board with any number of supporting boards.
+Minivac 601 Digital Computer Kit was an electromechanical digital computer system created by information theory pioneer Claude Shannon as an educational kit using digital circuits.
+The ClickStart (with the slogan "My First Computer") is an educational computer system created for children aged between 3 and 6 years (toddler to kindergarten) by Leapfrog Enterprises and was introduced in 2007.
+ The entire system consists of a console unit and a wireless keyboard and mouse set.
+ It also uses cartridges simply called "My First Computer Software".
+ The console also introduces Scout, a green-colored dog character who also appears in later LeapFrog products.

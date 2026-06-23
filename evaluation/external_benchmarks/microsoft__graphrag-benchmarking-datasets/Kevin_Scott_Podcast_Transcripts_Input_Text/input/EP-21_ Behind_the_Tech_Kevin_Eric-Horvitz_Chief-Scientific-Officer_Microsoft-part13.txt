@@ -1,0 +1,19 @@
+EP-21_ Behind_the_Tech_Kevin_Eric-Horvitz_Chief-Scientific-Officer_Microsoft.txt  optimization over decades. We discovered that the AI of the time and in the early ‘80s to mid ‘80s was defining itself as, “No, no, no, no, that’s Operations Research’” Or, “No, no, no, there are too many numbers there. Numbers aren’t symbols, we want to manipulate symbols.”
+
+There was lots of tension there, and at times, for me in particular, I specifically sought out new advisors at the time and moved over to working with George Dantzig, who was an Operations Research leader who, if people know his work, his fabulous personality, but his intellectual contributions include the Simplex Method for optimization. 
+
+KEVIN SCOTT: Yeah. 
+
+ERIC HORVITZ: And Ronald Howard, who had defined the phrase “decision analysis” and was really interested in thinking through, “How do you build systems that can help clarify thinking and bring together multiple factors under uncertainty?”
+
+And what I found in George Dantzig and Ron Howard, decision theorist and optimization probabilist, and folks like Brad Efron in stats, were they were looking across campus at the AI people and thinking, like, like, “What the hell are those people thinking?”  (Laughter.) 
+
+And so what I started doing, I felt like -- and I wasn’t just me -- there’s a few of us in -- I had a close colleague, David Heckerman, Michael Wellman at MIT, Oren Etzioni at CMU, and others. We started to think through, like, what were the big questions in AI? 
+
+Even going back to the 1950s documents and before, and how could we start to build on what we knew was kind of the science of optimization, decision-making, action under uncertainty, high stakes consideration of preferences, tradeoffs, and start pushing in a direction that at first was considered quite foreign and outside of AI—"Not AI.” 
+
+A very distinguished professor told me after listening to me talking about bounded rationality with using probability as the basic fabric and decision theory, he said, “You know what? You have something we call ‘physics envy’.”  (Laughter.) Referring to Freudian notions of another kind of envy. 
+
+And you know, you really need to look at symbols and high-level manipulation of predicates, go back to theorem proving, you’re really wasting your time with these numerical methods. They called them numerical. Even as we were coming up with abstractions like Bayesian networks and influence diagrams, which are higher-level constructs, representations. And I remember at the time we were joking about getting bumper stickers as grad students -- rebellious grad students -- driving around campus that were going to say “Numbers are symbols, too.”  It was that bad in those days. 
+
+KEVIN SCOTT: You know, it’s really interesting, though, because what you all were collectively doing, you know, sort of steering things away from

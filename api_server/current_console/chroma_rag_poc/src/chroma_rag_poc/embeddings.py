@@ -20,7 +20,7 @@ import numpy as np
 
 from .text_utils import TOKEN_PATTERN, normalize_text
 
-DEFAULT_SENTENCE_TRANSFORMER_MODEL = "BAAI/bge-m3"
+DEFAULT_SENTENCE_TRANSFORMER_MODEL = "Qwen/Qwen3-Embedding-0.6B"
 _MODEL_PATH_ENVS = ("RAG_EMBEDDING_MODEL_PATH", "RAG_SENTENCE_TRANSFORMER_MODEL_PATH")
 _MODEL_ROOT_ENVS = ("RAG_LOCAL_MODEL_DIR", "RAG_MODELS_DIR", "RAG_MODEL_DIR")
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -31,7 +31,7 @@ def resolve_sentence_transformer_model_path(
     *,
     local_roots: Iterable[str | os.PathLike[str]] | None = None,
 ) -> str:
-    """Resolve a model id such as BAAI/bge-m3 to a local offline directory."""
+    """Resolve a model id such as Qwen/Qwen3-Embedding-0.6B to a local offline directory."""
     requested = str(model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL).strip() or DEFAULT_SENTENCE_TRANSFORMER_MODEL
 
     for env_name in _MODEL_PATH_ENVS:
@@ -56,11 +56,27 @@ def _online_model_loading_allowed() -> bool:
     return os.environ.get("RAG_ALLOW_ONLINE_MODELS", "").strip().lower() in _TRUE_VALUES
 
 
+def _sentence_transformer_runtime_enabled() -> bool:
+    return os.environ.get("RAG_ENABLE_SENTENCE_TRANSFORMER_RUNTIME", "").strip().lower() in _TRUE_VALUES
+
+
 def _is_existing_model_path(value: str | None) -> bool:
     if not value:
         return False
     try:
-        return Path(value).expanduser().exists()
+        path = Path(value).expanduser()
+        if not path.exists():
+            return False
+        if path.is_file():
+            return True
+        markers = (
+            "config.json",
+            "modules.json",
+            "sentence_bert_config.json",
+            "model.safetensors",
+            "pytorch_model.bin",
+        )
+        return any((path / marker).exists() for marker in markers)
     except OSError:
         return False
 
@@ -194,6 +210,20 @@ def _normalize_backend_name(backend: str | None) -> str:
     return normalized
 
 
+def infer_sentence_transformer_dimension(model_name: str | None = None) -> int:
+    """Return the embedding dimension for known sentence-transformer families."""
+    key = str(model_name or DEFAULT_SENTENCE_TRANSFORMER_MODEL).lower()
+    if "qwen3-embedding-8b" in key:
+        return 4096
+    if "qwen3-embedding-4b" in key:
+        return 2560
+    if "qwen3-embedding-0.6b" in key:
+        return 1024
+    if "bge-m3" in key:
+        return 1024
+    return 384
+
+
 @lru_cache(maxsize=8)
 def _resolve_embedding_backend(
     backend: str | None = None,
@@ -211,11 +241,12 @@ def _resolve_embedding_backend(
 
     if requested_backend == "sentence-transformer":
         resolved_model = resolve_sentence_transformer_model_path(requested_model)
-        if not _is_existing_model_path(resolved_model) and not _online_model_loading_allowed():
+        if (not _is_existing_model_path(resolved_model) or not _sentence_transformer_runtime_enabled()) and not _online_model_loading_allowed():
             warning = (
                 f"Local sentence-transformer model not found for '{requested_model}', "
                 "falling back to hashing. Set RAG_EMBEDDING_MODEL_PATH or "
-                "RAG_LOCAL_MODEL_DIR, or set RAG_ALLOW_ONLINE_MODELS=1 to permit downloads."
+                "RAG_LOCAL_MODEL_DIR, or set RAG_ENABLE_SENTENCE_TRANSFORMER_RUNTIME=1 "
+                "after verifying the local sentence-transformer runtime."
             )
             print(warning)
             return ResolvedEmbeddingBackend(
@@ -229,9 +260,8 @@ def _resolve_embedding_backend(
             from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
             embedding_function = SentenceTransformerEmbeddingFunction(model_name=resolved_model)
-            # 推断维度
             dim_key = f"{requested_model} {resolved_model}".lower()
-            dim = 1024 if "bge-m3" in dim_key else 384
+            dim = infer_sentence_transformer_dimension(dim_key)
             return ResolvedEmbeddingBackend(
                 name="sentence-transformer",
                 model_name=resolved_model,

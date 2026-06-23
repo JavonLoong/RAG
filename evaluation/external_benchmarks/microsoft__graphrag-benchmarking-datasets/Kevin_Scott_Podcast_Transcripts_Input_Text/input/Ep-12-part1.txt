@@ -1,0 +1,35 @@
+Ep-12.txt Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+1
+BILL COUGHRAN: What I've always done in the last many years is give you my advice as a 
+leader inside a company, but then I will also give you my advice as an individual. And I think, 
+to me, that's been one of the things that I think has bonded people to me over the years.
+[MUSIC]
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I'm your host, Kevin Scott, 
+Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech. We'll talk with some of the people who have 
+made our modern tech world possible and understand what motivated them to create what they 
+did. So join me to maybe learn a little bit about the history of computing and get a few behindthe-scenes insights into what's happening today. Stick around. 
+[MUSIC]
+KEVIN SCOTT: Hello and welcome to Behind the Tech.
+CHRISTINA WARREN: I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+KEVIN SCOTT: And I'm Kevin Scott.
+KEVIN SCOTT: Today, we're going to be talking to a person that I have long admired, Bill 
+Coughran. I met Bill when I was a young engineer at Google, and he was one of the executives 
+running all of the very important bits there. Ultimately, Bill went on to run Search, 
+Infrastructure, Security, Maps, Local, so this huge swath of all of the big, complicated, important 
+things at Google.
+And like in a prior life, he'd been an entrepreneur, he helped run a networking company, and 
+before that he had been a computer science professor and was at Bell Labs running the 
+computing sciences research division during a period where they invented things like the C++ 
+programming language. So, I still to this day am slightly in awe of Bill, and he is the engineering 
+executive I would like to be when I grow up. (Laughter.) 
+CHRISTINA WARREN: I don't blame you. 
+KEVIN SCOTT: So, I'm curious, Christina. Just like everyone else that is on the show, 
+including me, you've had not necessarily a straightforward path into technology. I was just 
+wondering, like, you know, can you tell us a little bit about what that path has been and which 
+mentors you've had to help guide you as you sort of figured out your own journey?
+CHRISTINA WARREN: Yeah, definitely. So, before I joined Microsoft, I worked in media 
+for a decade, and I was a journalist and an analyst and reported mostly on technology and 
+business stuff. So, I did have tech and I've always had an interest in tech, but it was obviously a 
+different

@@ -1,0 +1,32 @@
+Ep-12.txt  very much a startup, even though when I joined it had a few hundred 
+employees. And there were key areas inside the Search product, for example, where only one or 
+two people actually knew some of the key things to get things done. 
+And so one of the challenges that I found particularly hard was figuring out a way to not 
+disempower and take responsibility away from the people who had been standing in the breach, 
+so to speak, but building a team around them so that you could actually have turnover and have 
+organizational stability, but you sort of transition from a few kind of superhero type people that 
+know all these key things to teams that actually own things. 
+And that's an enormous cultural change, which we went through. I think we managed to 
+preserve a lot of what was good about the original culture, but it was hard. 
+KEVIN SCOTT: Yeah, another, I mean, just sort of outside looking in, like one of the things 
+that you always seem to have a real talent for was managing the very senior, like, very most 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+13
+capable engineers and like figuring out how to you know let -- give them the space to do their 
+best work without like sort of having the crush of like all of the sort of outside world and you 
+know sort of friction that can sort of land on you as an engineer. 
+I mean, like, at one point, you had like almost all of or maybe all of the principal distinguished 
+engineers and fellows reporting into you. And like they're not an easy group of folks to manage. 
+I mean, I know many of them, I love them. Like, they're like fantastic human beings. But 
+they're smart, they're -- they have strong opinions, they're you know sometimes their interactions 
+you know with one another or like with other engineers are sort of like interesting. 
+But somehow or another, like, you built this environment where all of these folks could like 
+really flourish because at some point, like, they just don't -- they don't have to work for you, they 
+don't have to work at Google, they can do anything that they want to do. 
+BILL COUGHRAN: So, I think what I tried to do, and I think I was successful more often than 
+I wasn't, was find areas that were important to the company that different individuals were 
+interested in. That's how we -- you know, we spawned a project called Borg internally to do 
+cluster management. There were a group of people -- if you look at the work that was done 
+there, it was very good, it was very deep, it was ahead of its time. 
+But it also was rediscovering mainframe timesharing, but on a cluster. And so some of

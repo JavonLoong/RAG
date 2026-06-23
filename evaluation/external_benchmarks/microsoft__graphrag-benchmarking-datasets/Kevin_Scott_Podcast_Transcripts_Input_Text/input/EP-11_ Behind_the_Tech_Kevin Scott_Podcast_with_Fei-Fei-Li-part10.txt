@@ -1,0 +1,13 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt , but you know again, like just sort of absolutely necessary.  And like, curious what you think about -- we're sort of in this state right now where we're beginning to see people do really interesting things with reinforcement learning and unsupervised learning where you're getting a little bit away from requiring so much explicitly labeled data. 
+So, like, the data is still very important, but like you don't have to go through this exercise of annotating, like, oh, there's a cat in this image, there's a red ball in this image.  
+FEI-FEI LI:  Yes, right.  
+KEVIN SCOTT:  And like the results actually are in -- the interesting ones that have come out over the past couple of years have mostly been natural language things with these big, unsupervised models. Like, do you think that's sort of a trend that will continue across a bunch of different domains?  
+FEI-FEI LI:  Absolutely.  I think this is very exciting.  I think, you know, if you reflect on human intelligence, our way of learning is very multi-dimensional, right?  We do have training and supervision-based learning, especially when a teach a kid manner, it seems lots of supervision is needed.  (Laughter.)   But children and grown-ups learn from trial and error, learn from few-shots, learn in unsupervised setting, learn with rewards and punishments sometimes. 
+KEVIN SCOTT:  Yeah. 
+FEI-FEI LI:  So, that kind of flexibility is clearly critical, and evolution has built into human intelligence.  And for machine intelligence to become more robust to serve human world better in different settings, I think that kind of unsupervised learning or few-shot learning or reinforcement learning is absolutely needed. 
+I'll give you an example, that I work with healthcare industry a lot because part of my research these days deals with AI in healthcare.  And one of the settings that we work with is senior wellbeing and senior safety. And fall detection is a huge thing for seniors.  
+In fact, falling accounts for billions and billions of dollars of medical spending for American seniors and you know, it can be fatal and even if not fatal, can cause a lot of pain and issues for our aging population. 
+Well, when it comes to falling, it's a rare event.  We immediately run into a lack of data problem when we are working with the doctors, right?  It's very, very hard to collect an ImageNet of seniors falling, and you don't want to. 
+KEVIN SCOTT:  Right.   
+KEVIN SCOTT:  And, like, the seniors don't have cameras in their homes and -- yeah.  
+FEI-FEI LI:  Right.  And they fall in such different ways and the situation is complex.  So, when you want to work in these critical issues, you

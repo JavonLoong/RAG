@@ -1,0 +1,21 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  so you cannot implement yet."  Right?  Like, a classic example for me is, you know, criminal justice.  Our criminal justice system is rooted in the first sin of this country, it is racism and slavery through and through. 
+
+The data is so, so flawed that to think that we can do analytics on top of that data without contending with the problems of that data is painfully naive.  
+
+And so that moment of just, like, well, we're going to clean up the racism problem, you know, the longstanding inequities problem by using analytics.  I'm like, this whole system is corrupt.  And if we get into that business without contending with those power dynamics, we just become part of the problem.  
+
+And that's why, for me, like, I look at all of this and I say, "We have a lot of challenges in front of us.  How do we have the higher-order conversations?"  And then who needs to be involved in the technical details?  And then what kinds of accountability do those people have?  
+
+KEVIN SCOTT:  I do feel like we — and I've written a book largely because of this, that there is some baseline level of conceptual understanding of the technology that I think everybody has to understand.  You know, we decided at the beginning of the second industrial revolution at the beginning of the 20th century that everybody needed to be literate and everyone needed to be able to do arithmetic up to some particular level of proficiency. 
+
+And I think there's a new set of technical proficiencies that everyone needs to be comfortable with in order to just be a citizen of the modern world. 
+
+danah boyd:  Absolutely.  And I believe some forms of technical computational literacy are absolutely essential.  But to assume that everybody's going to get at the level of a bestselling author is also naive.  Right? 
+
+So the key for me is how do we give people the information and training and knowledge to be able to make informed citizens without then placing a burden on them to have to know everything?
+
+Like, one of the costs for me, you know, the flip side is, you know, we're at a point in the United States where we think that the key to retirement is everybody controlling their own financial futures.  You know, there are certain people who can actually have more information, more power, more knowledge, more skill to be able to make bets around finances than others. 
+
+So when people don't have those skills, we're going to leave them out to dry?  Like, why is that the logic?  Or if you don't know all the medical details about your cancer, you can't get a meaningful second opinion?  That's terrifying.  
+
+So, part of it is we need that generalized literacy so that we can have sophisticated conversations and we need expertise.  And that's the interesting dance that we're

@@ -1,0 +1,20 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt  the research might have applications to animal welfare where, for instance, they might be able to use AI to track the faces of sheep or cows in order to detect pain and illness, and then provide faster medical treatments.
+So, they've also done some really incredible studies with prairie dogs, who they believe have a very complex language system.
+And so, that would be really tempting, in my opinion, to kind of write a show with the typical trope of the talking family pet, you know, like Mr. Ed.  But, you know, Grumpy Cat, may she rest in peace, you know, maybe she wasn't grumpy at all, maybe she was like happy-go-lucky.
+But kind of back to the prairie dogs, you know, I do think that that -- there's -- that's one that hasn't been done yet.  You know, we could maybe do like a Little House on the Prairie remake but with AI.
+KEVIN SCOTT:  Yeah, you know, I we're trying to make a stab at comedy here, but funny enough, when Fei-Fei and I were chatting before the podcast, she was telling me about this Chinese company that does face recognition for cows.  So, like you may not be that far off.  But despite that, like maybe we should stick to our day jobs.
+CHRISTINA WARREN:  Maybe, I guess.  Okay, all right, so we should definitely meet Fei-Fei Li.
+KEVIN SCOTT:  Yeah, let's do it.
+
+[MUSIC]
+
+KEVIN SCOTT:  Next up, we'll meet with Fei-Fei Li. Fei-Fei is considered one of the pioneering researchers in the field of artificial intelligence.  She's a computer science professor at Stanford University and the co-director of the Human-Centered AI Institute there.  
+
+Fei-Fei has served as the director of Stanford's AI lab, and during a recent sabbatical, she was a VP at Google, serving as Chief Scientist of AI and Machine Learning at Google Cloud.  
+
+[MUSIC]
+
+KEVIN SCOTT:  So, thank you so much Fei-Fei for coming in today.  I've been wanting to chat with you for a really long time now. 
+FEI-FEI LI:  Likewise, Kevin.  Thank you for inviting me.  
+KEVIN SCOTT:  So, I usually start these things by trying to understand a little bit of the story of the folks that we're chatting with.  And I'd be really interested to understand like how you started to really get seriously interested in computer science. 
+FEI-FEI LI:  So, I came to computer science through a pretty convoluted detour.  So, I was always kind of a STEM kid, so to say.  So, I was interested in the nature, in the stars

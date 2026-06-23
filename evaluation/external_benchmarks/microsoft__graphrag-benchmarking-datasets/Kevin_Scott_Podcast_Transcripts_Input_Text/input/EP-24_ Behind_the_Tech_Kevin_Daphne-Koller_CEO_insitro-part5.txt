@@ -1,0 +1,19 @@
+EP-24_ Behind_the_Tech_Kevin_Daphne-Koller_CEO_insitro.txt  programmers looking to build a reputation so that they can go get jobs because of their machine learning street cred. And kids like my daughter have no chance of even getting into the top 100. 
+
+So, it was kind of a bit of a demoralizing experience in the sense of nothing she could do would ever rank up there. And so, I’m not sure it ended up serving a positive purpose. And so I wonder if it would make sense to have a Kaggle for kids or something that would let kids compete in a playing field that was more even and would get them excited about going on to the next level.  
+
+KEVIN SCOTT: Yeah, I think that’s a fantastic idea. I mean, and we understand how to do this with sports, right? So, like, there are all these sports leagues and sport opportunities for kids where you can get them into a team where they can learn the sport and get all of this physical activity, but they’re not, like, completely and utterly outmatched either with their teammates or the teams that they’re playing. So, like, it just seems perfectly reasonable to me that we could figure out how to do this with some of these coding competitions. 
+
+DAPHNE KOLLER: You would think. 
+
+KEVIN SCOTT: I mean, if you weren’t already, like, busy founding, you know, running a company, I’d say that sounds like a good thing to, you know, to go do. (Laughter.)  
+
+DAPHNE KOLLER: This will be my second or third alter ego if I were able to wrangle that, yeah. 
+
+KEVIN SCOTT: Yeah, indeed. So, you learned to program when you were in high school. And when you went to college, did you choose computer science? 
+
+DAPHNE KOLLER: So, I actually had an interesting early career in that regard because I actually was young when I was doing high school and I then started — when I came back from the United States after that sabbatical, I actually started college in parallel with high school because I’d always found high school to be not as inspiring as I would have hoped, and I found a lot more flexibility in college curriculum. 
+
+So, I started to study math and computer science while I was still finishing up high school. And yeah, I think it was the timeliness of that in that I had just come back from the United States, where I’d learned to program, probably influenced my career choice. And who knows if I’d waited three or four or five years, like most kids do, then maybe I would have picked something else. 
+
+But the nice thing that I found about computer science and even more so over time is that it’s actually an entry point into multiple other fields, because especially today, but even back then, most fields can benefit from computational methods and using computer science. Whether it’s algorithmic thinking

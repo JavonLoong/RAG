@@ -1,0 +1,19 @@
+Ep-47_Behind_the_Tech_Kevin_Scott_Podcast_with_Sam_Schillace.txt  is great, but it’s almost like the early days of the PC ecosystem where you just sort of buy a bunch of stuff, build your own PC. Like, you can buy a bunch of stuff, build your own electric car.
+
+SAM SCHILLACE: Yeah, you can totally see this coming. I also like to talk about one of our favorite subjects, too. I think this is going to happen right now with AI. I think this is, like – I have the same sense, you know, I’ll kind of pull all these threads together. Like, I have exactly the same sense of imminent disruption and that kind of uncomfortable pit in your stomach when you know something is going to happen and you have to do the heavy lifting engineering for it, about AI. 
+
+KEVIN SCOTT: Yeah. 
+
+SAM SCHILLACE: And I think, you know, we’re – I think we’re at the cusp of a fourth transformation, right? So, like, PC, the Internet and mobile were these three transformations where a lot of activity became suddenly accessible to computer programming, right? And I think that accessibility or legibility, however you want to describe it, is, like, the core thing, right? Once, like, an area of human activity becomes accessible to software in some way, you get these explosions of businesses and value. 
+
+You know, we got all the stuff that the Internet gave us and then the mobile let us take it out into the real world. And, like, every stage, like, the businesses got bigger, the value got bigger, got more ubiquitous. And I think AI is going to take this into the cognitive realm now. 
+
+All this stuff that’s cognitive, like natural language, and object recognition, and video and just reasoning about the world is now becoming very accessible, not to programming in, like, the large scale, like, oh, we’ve got these large models to do that. So, but programming in the sense of, like, I can give it to, like, a guy who’s, like, the guy building or gal who’s building the car, you know, and, like, they can snap pieces together and build interesting things out of it. And that, like, accessibility to folks and of these cognitive – like, I think that’s going to be hugely transformative. 
+
+And I suspect people listening to this, half of them are rejecting that out of hand. Like, it’s – you know, here’s the why not. Like, it’s happened before. It’s really hard. I don’t like that. People, I don’t want people to be out of jobs, like, all those reasons.
+
+KEVIN SCOTT: It’s too expensive. It’s dangerous in these ways.
+
+SAM SCHILLACE: But like, we’ll solve them. Like, we’ll solve those, and the what-if is amazing.
+
+KEVIN SCOTT: We will,

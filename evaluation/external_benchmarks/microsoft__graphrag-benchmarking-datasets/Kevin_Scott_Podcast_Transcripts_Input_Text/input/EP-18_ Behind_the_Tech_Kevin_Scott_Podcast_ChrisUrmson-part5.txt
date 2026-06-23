@@ -1,0 +1,23 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  day, I was in the engineering building just outside the library, and there was this poster next to the elevator that showed this robot crawling out of a volcano. And I saw that, I thought, “That’s really cool.”  Right?  I like robots, I like space, this seems exciting.  
+
+KEVIN SCOTT:  Yeah. 
+
+CHRIS URMSON:  And my girlfriend said, you know, “You should really apply if you think that’s cool.”  And I figured, you know, it’s Carnegie Mellon, it’s like -- there’s no way.  How might -- I’m at the University of Manitoba, how am I possibly going to get in there.  And, you know, they made a mistake.  (Laughter.)  But -- 
+
+KEVIN SCOTT:  Well, no, I think they did not make a mistake.  (Laughter.) 
+
+CHRIS URMSON:  We’ll see.  But, yeah, no, it was really -- I have been fortunate throughout my career to kind of look at, hey, this seems interesting, this seems cool and fun.  And you know, gone and tried it.  And it’s mostly seemed to work out so far.   
+
+KEVIN SCOTT:  Yeah, and so what was the -- what was the experience like at Carnegie Mellon?  Because I remember -- it still is to this day, like, just one of the most extraordinary places in the world, especially to do computer science and robotics.  And like the Robotics Institute is just fantastic. 
+
+CHRIS URMSON:  It’s fantastic, yeah.  
+
+KEVIN SCOTT:  So what was that like as a grad student?  
+
+CHRIS URMSON:  Oh, for me personally, it was eye opening, right?  That you would have people come and lecture who had written the textbooks I’d used in undergraduate.  So meeting these people, meeting people that worked at NASA, meeting people that worked at DARPA, meeting people from Microsoft or Intel at the time.  And just -- it opened up this whole other world of possibility.  
+
+And then the faculty were great.  There wasn’t really -- as a graduate student, you didn’t see politics, you saw people working together.  We got to work on cool things.  
+
+One of the things I love about Carnegie Mellon is that it’s very much a systems school.  You know, they’ve got incredibly deep, strong, fundamental and theoretical underpinnings, but it’s about “make it work” and see it out in the real world and learn about that part of the development and engineering process and actually touching real things.   
+
+And so it was fantastic, and I got to go up to the Arctic Circle and we had a robot up there driving around.  I got to go down to the Atacama Desert with a robot and, you

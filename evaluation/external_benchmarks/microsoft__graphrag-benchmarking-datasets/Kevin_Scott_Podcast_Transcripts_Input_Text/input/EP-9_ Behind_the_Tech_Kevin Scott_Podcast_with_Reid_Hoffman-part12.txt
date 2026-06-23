@@ -1,0 +1,19 @@
+EP-9_ Behind_the_Tech_Kevin Scott_Podcast_with_Reid_Hoffman.txt  Hoftstadter's book had come out, so yeah, that was -- yeah.  
+REID HOFFMAN:  And I'd been planning on re-reading it recently.
+KEVIN SCOTT:  I should do the same thing.  It's been a long while.  And, like, that was book was amazingly impactful.  
+So, in some ways, it was a little bit of a brave move I think at the time to choose an AI-ish discipline, because we were in AI winter in the '80s.  So, like there had been this sort of period where the hype around AI had gotten well past our ability to execute on it in the '70s and early '80s, and then this bubble popped.  And a bunch of companies went bankrupt and a bunch of academic careers got ruined. And when I was in grad school in the '90s, it wasn't the thing that you chose as your field of specialization. 
+So, I've always found it somewhat remarkable that so many people in your cohort chose symbolic systems at Stanford, because it was not anything remotely like the obvious decision that it is now, where everybody wants to get an AI degree or like some degree that's related to AI. 
+REID HOFFMAN:  I think it was the people who are like, look, we don't want to do -- now, a bunch of CS majors thought it was CS light -- 
+KEVIN SCOTT:  Yeah. 
+REID HOFFMAN:  -- so, they're like -- 
+KEVIN SCOTT:  -- of course.  (Laughter.) 
+REID HOFFMAN:  Yeah, so they're like, you're getting away without doing the hard stuff like compilers.  (Laughter.)  Like, you're doing -- like Jeffrey Allman for example, said that to me.  (Laughter.)  
+KEVIN SCOTT:  That's funny.  
+REID HOFFMAN:  Yes.  And look super good.  
+KEVIN SCOTT:  And I could easily have said the same thing.  
+REID HOFFMAN:  Yeah, of course.  (Laughter.)  But the attraction was -- some people were fascinated by AI, thought AI was nearer term, then, still had the belief that were -- where it was generally winter.  
+But for me, it was I want to understand cognition.  
+KEVIN SCOTT:  Yeah.  
+REID HOFFMAN:  Right?  And maybe we can create silicon substrate machines that can do a lot -- all, some particular shape, maybe we can't, but we know we have cognition, and I still want to understand it.  
+KEVIN SCOTT:  And then from there, you go to Oxford to get a master's degree in philosophy.  You were a Rhodes Scholar.  
+REID HOFFMAN:  Marshal

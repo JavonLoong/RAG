@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - deploy
 
 build-job:
@@ -10,6 +11,23 @@ build-job:
     - echo "Building Docker image for the workspace..."
     - sudo docker build -t power-equipment-rag-workspace:latest .
     - echo "Build complete."
+
+rag-smoke-job:
+  stage: test
+  tags:
+    - jn
+  script:
+    - echo "Running one-command RAG/GraphRAG smoke gate inside the built image..."
+    - sudo docker run --rm --entrypoint /bin/sh power-equipment-rag-workspace:latest -lc 'cd /app && python scripts/run_rag_smoke_evaluation.py --persist-dir /tmp/rag_smoke_chroma --report-dir /tmp/rag_smoke_reports --collection ci_rag_smoke' > rag_smoke_output.txt
+    - cat rag_smoke_output.txt
+    - grep "gate_status=pass" rag_smoke_output.txt
+    - grep "graphrag_query=pass" rag_smoke_output.txt
+    - grep "graphrag_global=pass" rag_smoke_output.txt
+    - echo "Running promoted GraphRAG triage regression gate..."
+    - sudo docker run --rm --entrypoint /bin/sh power-equipment-rag-workspace:latest -lc 'cd /app && python scripts/run_graphrag_triage_regression.py --dataset /tmp/rag_smoke_chroma/evaluation/graphrag_triage_regression.jsonl --report-dir /tmp/rag_smoke_reports --persist-dir /tmp/rag_smoke_chroma --collection ci_rag_smoke --backend hashing --allow-empty' > graphrag_triage_regression_output.txt
+    - cat graphrag_triage_regression_output.txt
+    - grep "triage_regression=pass" graphrag_triage_regression_output.txt
+    - echo "RAG/GraphRAG smoke gate passed."
 
 deploy-job:
   stage: deploy

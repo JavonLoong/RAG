@@ -1,0 +1,17 @@
+Ep-44_Behind_the_Tech_Kevin Scott_Podcast_with_David_Baszucki.txt  had this epiphany during the pandemic that Roblox was actually one of the places where our kids were able to get the socialization that they weren’t getting because of all of the lockdown stuff that was going on. So they would jump into Roblox and play with their friends. It was their digital playground, so to speak, and they’d be on, you know, Facetime on the side and like having a conversation. And like in a certain sense it was life-saving. I don’t know what they would have done to have maintained all of that social connectivity if they hadn’t had Roblox. 
+
+DAVID BASZUCKI: Hey, that’s cool to hear and that aligns a bit with our thinking about this type of technology as a utility that can host co-experience and connection, like the telephone system, like what we do in real life, even like the U.S. mail system at time. 
+
+And I think when we talk about social networking technology and social technology, I don’t think a lot of – you know, there’s – there’s a lot of nuance on it. Some social networking technology is more about sharing images or sharing video or consuming things statically. And then what’s cool about Roblox, I think is it’s much more of a real time communication connection type technology, and inherently real time connection technology I think feels different than, you know, solo consumption type technology. 
+
+KEVIN SCOTT: Yeah, for sure. 
+
+So you know, before we get into like all of the many interesting things that we can chat about, about Roblox, I’d love to just back up a little bit and ask you what I ask everyone who comes on the podcast, which is, you know, what was your life like growing up and how did you get interested in technology? 
+
+DAVID BASZUCKI: Yeah, I had a bit of a wonderful life growing up in the far out suburbs of Minneapolis, where we had sand pits and dirt bikes and, you know, things to build and go-karts and a lot of stuff to do. 
+
+But as part of that fun building thing, early on in my younger years, our school had a computer lab. The computer lab was a teletype with a paper tape. And we got to – I remember writing my first BASIC program, which was trying to sort five numbers and storing my work on paper tape. 
+
+Then my dad got us all an Apple II and as I was programing this Apple II and reading the manuals and it was the time when you had, you know, all these Apple II magazines were out and you’d enter this stuff, for some reason that Apple II had an assembler and a disassembler built into it. And there’s just something fun about, okay, my visual, my BASIC program’s running slow, but there’s this assembler thing. 
+
+And the Apple IIs also had this wonderful facility where you could

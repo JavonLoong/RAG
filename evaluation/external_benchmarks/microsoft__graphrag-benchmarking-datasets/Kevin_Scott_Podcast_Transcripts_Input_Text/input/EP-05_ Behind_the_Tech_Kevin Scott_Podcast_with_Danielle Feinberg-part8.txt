@@ -1,0 +1,14 @@
+EP-05_ Behind_the_Tech_Kevin Scott_Podcast_with_Danielle Feinberg.txt  weeks into the first semester, I was like, "Wait, why am I not studying computer science?" "This is idiotic." So, it took me two weeks to figure it out, but then it was pretty obvious. 
+KEVIN SCOTT: And how mathematically prepared were you? Because you chose a specialty inside of computer science, where math is really important. 
+DANIELLE FEINBERG: Yeah. 
+KEVIN SCOTT: It's not just the lie that we tell that's, like, "Oh, it's important for everything." 
+DANIELLE FEINBERG: Right. Right. Totally. 
+KEVIN SCOTT: It's really important for computer graphics. 
+DANIELLE FEINBERG: Yeah. You know, I loved math. And I would say -- I was always in honors math. And I was on the math team in junior high. But I went to public junior high and high school. And at my high school, at least then, you couldn't take calculus unless you were honors and a year ahead. And so I was honors, but not a year ahead. And so I never got to take calculus. 
+And so I got to Harvard, and like everybody had taken calculus. And so you do the testing, you know, when you first get there, to see what you test into. And I test into calculus. Seemingly, obviously, right? 
+KEVIN SCOTT: Right. 
+DANIELLE FEINBERG: But I realized pretty quickly that everyone else in there had already taken calculus. They just hadn't tested out of it. And so I was at a massive deficit going into it because I was trying to learn stuff that people had already spent a year learning. 
+KEVIN SCOTT: And that's one of the hard things. Like, I found when I was teaching computer sciences. I taught CS at the University of Virginia -- or I TA'd a section of it. And I had this huge diversity in my class. 
+I had some kids who had no business being there because everything was just trivially easy for them. We should have just tested them out and sent them on to something more challenging. And then we had kids who had no programming experience whatsoever and no talent for it. 
+And it was just sort of awful. It's just hard teaching a class like that. And it's really hard being a student. How did you figure out that it was sort of okay that you were where you were, and that the people who were doing better than you it was just because they got a chance to take the materials in high school? 
+DANIELLE FEINBERG: You know, I don't know that I did ever figure that out really until long afterwards. It was that thing of like you sit in there, and it's full-on imposter syndrome, because you're already

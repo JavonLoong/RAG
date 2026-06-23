@@ -1,0 +1,17 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt , I usually start these things by trying to understand a little bit of the story of the folks that we're chatting with.  And I'd be really interested to understand like how you started to really get seriously interested in computer science. 
+FEI-FEI LI:  So, I came to computer science through a pretty convoluted detour.  So, I was always kind of a STEM kid, so to say.  So, I was interested in the nature, in the stars, the animals and all that. But my first passion, first love was physics.  
+KEVIN SCOTT:  Awesome. 
+FEI-FEI LI:  So, starting in junior high and then high school, I was just passionate about physics, studying relativity, you know, reading -- 
+KEVIN SCOTT:  And what was it about -- was it that you -- like, it gave you a lens to understand the world? --  
+FEI-FEI LI:  Yeah.  
+KEVIN SCOTT:  --Was it that you just liked the mathematics of it?  What was the thing? 
+FEI-FEI LI:  I think it's the combination of the imagination and the mathematical rigor, but it's really about peeling off question after question to go after the very original questions.  
+KEVIN SCOTT:  Right.  
+FEI-FEI LI:  Right?  Like, where do I come from?  Where do humans come from?  What's human made of?  Where do atoms come from?  Where do the first atoms come from?  You go to Big Bang.
+KEVIN SCOTT:  So, basically, you're infinitely curious? 
+FEI-FEI LI:  Yeah, so I was.  So, physics was my love, and I majored in physics at Princeton when I went to college. 
+KEVIN SCOTT:  Awesome.  
+FEI-FEI LI:  And, you know, Princeton is the mecca for physics.  And first day in freshman year physics class, the professor said, "This is the very lecture hall that Einstein was sitting in."  (Laughter.) It was just like a dream, right?  
+So, but the -- around sophomore, junior year in college, I started reading books about these great, great physicists of 20th century like Schrödinger and Einstein.  And as I read, I noticed that towards the later half of their life, their interest turned from the physical atomic world to the more life science world.  
+They're starting to ask the questions of origin of life, intelligence.  And that really piqued my interest.  I started to get very interested in the question about intelligence.  So I joined neuroscience research.  And I was literally as a summer intern research student, literally recording from mammalian brain and listening to the neurons, seeing the world. 
+KE

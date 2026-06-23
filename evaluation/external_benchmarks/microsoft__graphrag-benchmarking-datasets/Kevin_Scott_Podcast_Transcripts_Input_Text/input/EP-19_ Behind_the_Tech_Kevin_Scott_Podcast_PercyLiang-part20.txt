@@ -1,0 +1,17 @@
+EP-19_ Behind_the_Tech_Kevin_Scott_Podcast_PercyLiang.txt  know, the use of machine learning and program synthesis could really open up the way towards maybe a different -- a completely different way of thinking about programming and code, and that's kind of -- as a computer scientist, that is very, you know, fascinating.
+
+KEVIN SCOTT: Yeah, and I'm, I'm really glad to hear you say that you're excited about the prospect of that because one of the things that I do worry about is we -- you know, we're now at the point where non-tech companies are hiring more software engineers than tech companies, like it really is the case that like every company, like has to deal with code and software, and like the value that they're going to create over the next several decades of their business is going to be in this sort of -- like IP, and like software artifacts that they're creating to run their businesses and solve their customers' problems.
+
+And like they're just aren't enough programmers on the planet to go do all of this work, and like a lot of our customers, like especially when you're talking about machine learning, like they, they just can't hire -- like we, we have a hard enough time hiring all the people in the tech industry in Silicon Valley, right, and so this idea that, like we could change the paradigm of computing to be -- like we all know how to teach our fellow human beings how to do things, like if you could figure out how to teach computers how to do things, on your behalf, like that then opens things up to like an unbelievable number of people to do an unbelievable number of things.
+
+PERCY LIANG:  Right, yeah, I want to blur the line between what a user and a programmer, and also, it's a really hard problem.  Like the best technologies that we have can maybe synthesize 20 lines of code, but if you think about the types of code bases that we're dealing with, it's millions, tens of millions of lines.
+
+So, I think, you now, as a researcher, I'm kind of drawn to these challenges that, where you might need a -- kind of a different insight to make progress.
+
+KEVIN SCOTT:  Super cool.  So one last question. So, just curious what you like to do outside of work.  I understand that you are a classical pianist, which is very cool.
+
+PERCY LIANG:  Yeah, so, piano has been something that's always been with me, since I was -- as a young boy, and I think it's also been a -- kind of a counterbalance to all the other kind of tech-heavy activities that I have been doing.
+
+KEVIN SCOTT:  What's your favorite bit of repertoire?
+
+PERCY LIANG:  I like many things, but late Beethoven is something I really enjoy.  I think this is where he becomes kind of very reflective about -- and his music has a kind

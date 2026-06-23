@@ -1,0 +1,25 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt izers and whatnot — are massively diluted with water. 
+
+So like the chemical concentration, like, the active compound is like a tiny part of like the thing that gets sprayed over the crop, which means that you're wasting all of this water that the — you know, chemicals are going into places where they're not needed.  It's just this hugely wasteful thing. 
+
+And there's all sorts of like interesting new technology where you can very precisely deliver the chemicals to the crop without diluting them in water at all, so you're not wasting any water, you don't have any of this like chemical runoff into the water supply, like, it's just fantastic. 
+
+And like simple things like using some of the cool new stuff that we are — that we're seeing with computer vision where you can fuse classical sensor data, like moisture meters, with vision models where you can sort of infer soil moisture from pictures that you're taking from above the crops with drones or in places where drones are too expensive, like the Farm Beats folks are literally tying like little cheap cameras to balloons and you have a human, like, walk like a balloon over the crop, you know, tethered to a rope because, you know, in some parts of the world, you can't afford a drone to fly over them.  
+
+And from that, like, you can — if you know what your soil moisture is, like, you know exactly how much to water so you don't have to worry about under or over watering a crop, which leads to like way more efficiency.  
+
+So, it's just so damn cool what's possible. 
+
+danah boyd:  And that also is like that's also the technology mind, which is like, you know, I live in New York City.  And one of the funny things about living in such a crazy urban environment is to wander around and be, like, I can see how this could become more efficient. 
+
+Oh, and if we did this and this and this — and that is that moment where you see the real hope and the real excitement, which is that like we can actually do things that would solve problems, especially like nothing to me, you know, is sort of more interesting than seeing all those infrastructure layers.  
+
+And I think the question for me is:  How do we get not just the technology, but all of the things that are surrounding the technology to make that happen?  
+
+KEVIN SCOTT:  Yeah. 
+
+danah boyd:  And that's where we have to realize that those technologies are only as powerful as the political and social processes surrounding them. 
+
+KEVIN SCOTT:  Yeah. 
+
+danah boyd:  You know, I can talk about how to make my, you know, building that I rent in more efficient, but if I can't convince developers, if I can't convince, you know, the city, who's, you know

@@ -1,0 +1,18 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  to serve it for doing your research, like, that would be its own research project that would be daunting. And so, like, we are working through those issues right now.  
+
+OREN ETZIONI: Well, I’m glad to hear it. And, of course, you’re absolutely right. With something that big or even the Turing NLG model, right, what people really want is an API, not a file that you download with lots of numbers in it.  
+
+KEVIN SCOTT: Yeah, and so the nice thing about an API is it lets you, through like the access control to the API, like, have some sort of, you know, guarantees around responsible use. And then it just – it really does become about cost. 
+
+[32:29]
+And, you know, cost is – we want to be able to get the cost down to the point where you can do reasonable amounts of inference and exploration with the model in a way that doesn’t break my personal budget at Microsoft. (Laughter.) 
+
+OREN ETZIONI: Sure, which I’m sure is quite sizable. But here’s a simple idea that we advocated in the Green AI paper. The reporting standards, when we report accuracy of models, you know, how often they get things right, are very clear and so on. But the reporting standards on how much did it cost you to produce that performance, aren’t. People often don’t report that, or if they do, they don’t report some of the dead ends that they went into. 
+
+If they reported that more rigorously, then as you said, the distillation efforts – basically, the efforts to build a cheaper model, maybe a far-cheaper one, would be a lot easier. Because I could say, okay, here’s your model, it costs, let’s say, $100,000 to train it. Here’s my model. It only performs 70% at the level of your model, but you know what? It costs 1/10th to produce. 
+
+Or here’s my model, maybe it’s only 40% of your model, but I can run it on a phone. So, the – but I can only publish that result if I have a baseline, right? And that baseline has to include the cost, because then I can make that. 
+
+So, a really simple step on the part of everybody – kind of the rich players in the ecosystem of simply being rigorous on reporting their costs would enable everybody else to start whole new – really sub areas of the field. 
+
+KEVIN SCOTT: Yeah, I think that’s an interesting idea and, certainly, something we will think about. I mean, one of the interesting things that I’ve seen in – so, my Microsoft Research reports to me at Microsoft. And, you know, one of the things that we’ve struggled with this same thing even internally, right? So

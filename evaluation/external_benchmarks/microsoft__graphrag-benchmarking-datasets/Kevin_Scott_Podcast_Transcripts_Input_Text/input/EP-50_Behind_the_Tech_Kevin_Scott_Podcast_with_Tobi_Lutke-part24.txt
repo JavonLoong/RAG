@@ -1,0 +1,19 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt . And I am just like – I mean, I used to do all of Shopify’s programming, doing pair programming with my – with one of my co–founders. And we would play, like, a test driven development. And we would – we would basically do this bug ping pong kind of thing, where we were trying to be lazy, as lazy as possible to solve for unit tests that the other person wrote, and go back and forth. 
+
+And like, but this is really fun for me, this kind of thing, but it’s hard to reproduce. Like, everyone’s scared of me now. Like, now, I can’t just go pair with someone random.
+
+Honestly, working with Copilot is actually very close to this. Like, it really reminds me of, like, of pair programming with someone who’s always available. And it’s just like, again, it’s such a cool time to be in this space and be able to get to solve problems, and tinker with technology. It’s – it’ll be seen as the golden age forever, basically, from this point forward.
+
+KEVIN SCOTT: Yeah. That, I very much agree with you. And so, on that note, thank you so much for being on the podcast today. And I could easily spend another couple hours chatting with you. So, hopefully, we’ll get a chance to chat again. 
+
+TOBI LÜTKE: Awesome. Yeah, really enjoyed this, too. Thanks so much for having me, Kevin.
+
+KEVIN SCOTT: Cool.
+
+[MUSIC]
+
+CHRISTINA WARREN: What a great conversation with Tobi Lütke. You know, as you mentioned, kind of at the top, he is such a pure engineer, through and through. And that was actually something that kind of struck me, as the two of you were talking, is he is obviously very entrepreneurial minded, and is a very good leader and thinks very thoughtfully about business. But he also approaches the way that he runs his business as an engineer in every aspect of everything that he does. It’s like he can’t turn it off. I love it.
+
+KEVIN SCOTT: Yeah. And you can sort of see it. I mean, he and I, even before this interview, had talked about him applying some of these computer science and programming techniques to unusual places in the company, like how you do some HR things, like allocating headcount to teams, and, you know, like, how you document how you’re making the important decisions that you make in the company. 
+
+And so, like, I just love that mindset in general. And at the core, I think he talked about it a couple of different ways. Like, he really thinks of himself more as a craftsperson than, like, a scientist, or even like a business executive, I would imagine, where he’s always thinking about, like, what can

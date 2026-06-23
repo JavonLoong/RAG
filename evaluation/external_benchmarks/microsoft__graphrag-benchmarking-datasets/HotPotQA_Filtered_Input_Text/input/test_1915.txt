@@ -1,0 +1,42 @@
+Randal Keith Quarles (born September 5, 1957 in San Francisco) is founder and head of The Cynosure Group, a private investment firm backed by a network of large family offices in the United States.
+ Before founding Cynosure, he was a partner of The Carlyle Group, one of the world's largest private equity firms.
+ From August 2001 until October 2006, he held several important financial policy posts in the George W. Bush administration, ultimately serving as Under Secretary of the Treasury for Domestic Finance.
+ As Under Secretary, he was the lead advocate for imposing greater regulation on Fannie Mae and Freddie Mac, arguing that they posed significant risk to the financial sector, and argued for fundamental reform of the entire financial regulatory system—extending broader and more uniform federal regulation to investment banks and insurance companies—because the current system restricted regulators' ability to observe and limit risk in the system.
+ In his earlier positions in the administration he had a key role in response to several international crises—the Argentine debt default, as well as near defaults in Brazil, Turkey and Uruguay—and chaired the international working group that led to changes in the terms of sovereign debt finance that now permit collective action by creditors in such crises.
+ He also argued strongly for improving international coordination of financial regulation, initiating a regular dialogue with the European Union on financial regulatory matters and representing the United States at the Financial Stability Forum.
+ He negotiated the historic debt relief agreement for the world's poorest countries reached at the G7 Meetings in London during 2005.
+ In prior government service, he was an important member of the team developing the government's response to the savings and loan crisis of the late 1980s and early 1990s.
+ At the time of his departure from government, Hank Paulson, the Treasury Secretary, noted that he had played a role in an unusually large range of matters in the history of the Treasury – "from the Argentine debt default to terrorism risk insurance, and from Chinese currency flexibility to GSE reform", and awarded him the Alexander Hamilton Medal, the Treasury Department's highest honor.
+ He is widely mentioned as a possible Treasury Secretary or senior White House adviser in any future Republican administration.
+Financial risk modeling refers to the use of formal econometric techniques to determine the aggregate risk in a financial portfolio.
+ Risk modeling is one of many subtasks within the broader area of financial modeling.
+Pedro Rivera is the current Pennsylvania Secretary of Education, having been nominated by Pennsylvania Governor Tom Wolf and confirmed in June 2015.
+ Previously, he served as superintendent of the School District of Lancaster.
+ A Philadelphia native, Rivera spent 13 years at the School District of Philadelphia before accepting the Lancaster position in 2008.
+ During his tenure, Lancaster saw improved graduation rates, better reading proficiency scores and a growth in financial reserve funds.
+ Rivera has been recognized by "The Washington Post" and the White House for his academic achievements.
+The economy of Norway is a developed mixed economy with state-ownership in strategic areas.
+ Although sensitive to global business cycles, the economy of Norway has shown robust growth since the start of the industrial era.
+ The country has a very high standard of living compared with other European countries, and a strongly integrated welfare system.
+ Norway's modern manufacturing and welfare system rely on a financial reserve produced by exploitation of natural resources particularly North Sea oil.
+Principal At Risk Notes (PARs) are a type of structured note that allows investors to increase the return on a financial instrument through leverage, by putting at risk some of the capital.
+ A typical PAR note is a derivative created by an investment banks and sold to investors that provides three times upside, up to a specified cap, while risking one times downside based on some underlying security or index.
+ The PAR note is structured to look like a bond from the investors perspective with a maturity date but with modifications to allow an increase in upside at the cost of additional risk of the principal, hence the name.
+In banking, the Allowance for Loan and Lease Losses (ALLL), formerly known as the reserve for bad debts, is a calculated reserve that financial institutions establish in relation to the estimated credit risk within the institution’s assets.
+ This credit risk represents the charge-offs that will most likely be realized against an institution’s operating income as of the financial statement end date.
+ This reserve reduces the book value of the institution’s loans and leases to the amount that the institution reasonably expects to collect.
+A bad bank is a corporate structure to isolate illiquid and high risk assets held by a bank or a financial organisation, or perhaps a group of banks or financial organisations.
+ A bank may accumulate a large portfolio of debts or other financial instruments which unexpectedly increase in risk, making it difficult for the bank to raise capital, for example through sales of bonds.
+ In these circumstances, the bank may wish to segregate its "good" assets from its "bad" assets through the creation of a bad bank.
+ The goal of the segregation is to allow investors to assess the bank's financial health with greater certainty.
+ A bad bank might be established by one bank or financial institution as part of a strategy to deal with a difficult financial situation, or by government or some other official institution as part of an official response to financial problems across a number of institutions in the financial sector.
+In finance, systemic risk is the risk of collapse of an entire financial system or entire market, as opposed to risk associated with any one individual entity, group or component of a system, that can be contained therein without harming the entire system.
+ It can be defined as "financial "system" instability, potentially catastrophic, caused or exacerbated by idiosyncratic events or conditions in financial intermediaries".
+ It refers to the risks imposed by "interlinkages" and "interdependencies" in a system or market, where the failure of a single entity or cluster of entities can cause a cascading failure, which could potentially bankrupt or bring down the entire system or market.
+ It is also sometimes erroneously referred to as "systematic risk".
+Reinvestment risk is one of the main genres of financial risk.
+ The term describes the risk that a particular investment might be canceled or stopped somehow, that one may have to find a new place to invest that money with the risk being that there might not be a similarly attractive investment available.
+ This primarily occurs if bonds (which are portions of loans to entities) are paid back earlier than expected.
+In financial mathematics, a risk measure is used to determine the amount of an asset or set of assets (traditionally currency) to be kept in reserve.
+ The purpose of this reserve is to make the risks taken by financial institutions, such as banks and insurance companies, acceptable to the regulator.
+ In recent years attention has turned towards convex and coherent risk measurement.

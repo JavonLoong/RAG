@@ -1,0 +1,28 @@
+Ep-56_Behind_the_Tech_Kevin_Scott_Podcast_with_will.i.am.txt ../Behind the Tech with Kevin Scott
+Episode 56 - will.i.am
+
+This episode contains strong language and may not be suitable for all audiences.
+
+[MUSIC]
+
+WILL.I.AM: Yeah, stay in your lane means that you’re in a car on a road. I’m in a freakin’ rocket ship, and the lane is the sky. There’s no lines up in that. Like, there’s no frickin’ lanes there it’s like I can go anywhere.
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello and welcome to Behind the Tech. I'm co-host Christina Warren, Senior Developer Advocate at GitHub.
+ 
+KEVIN SCOTT: And I'm Kevin Scott.
+ 
+CHRISTINA WARREN: And our guest today is will.i.am. He is, of course, the founder and lead member of Black Eyed Peas, but he's also an entrepreneur, philanthropist, and producer.
+ 
+KEVIN SCOTT: Yeah, I met Will relatively recently, even though he's been pretty involved in the tech community here in Silicon Valley for a while. And it was a really interesting first meeting because we met in the context of a gathering that was mostly about artificial intelligence, where the technology is and where it's headed. And my assumption was because he's an artist and he earns his living through writing songs, recording them, distributing them, like, you know, creating these performances that he would be, wary of where AI was going. And, you know, he was just super optimistic about where things were headed and like what, what AI could do for creatives, both in terms of like, their creativity and their economic opportunity if we make the right set of choices. And, you know, of course, he's, you know, also worried about some of the risks,
+ 
+CHRISTINA WARREN: Sure.
+ 
+KEVIN SCOTT: which, which I think are obvious, but like it was just really interesting to, you know, in that conversation and hopefully that will be reflected in the, you know, in the interview that we're about to have. Just that optimism was really inspiring and encouraging.
+
+CHRISTINA WARREN: No, totally. I'm really looking forward to this conversation because, you know, as you said, he's an artist and I think a lot of people still think of him in those terms because of all the work he's done, but he has been

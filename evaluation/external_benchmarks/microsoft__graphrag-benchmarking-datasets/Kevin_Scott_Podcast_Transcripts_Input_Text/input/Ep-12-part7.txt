@@ -1,0 +1,33 @@
+Ep-12.txt  boomers" now, 
+but at least when I was a kid, we were part of the -- what was then known as the "Sputnik" 
+generation, which were people who -- you know, the U.S. was responding to the space race with 
+the then Soviet Union, and there was a lot of interest in science. And so, from a very early age, I 
+was interested in science and mathematics. 
+KEVIN SCOTT: Were your parents engineers or technical folks? 
+BILL COUGHRAN: No one in my family were technologists. It was just something I was 
+attracted to and I was reasonably good at. And so, I went down that path. 
+KEVIN SCOTT: Where did you -- I'm just sort of curious, where did you even find knowledge 
+back then about how to program? Did you have mentors? Were there people helping you? 
+Were you able to find books in libraries? 
+BILL COUGHRAN: I mostly found books in libraries and then when I got access when I was 
+in high school, I got access to the local university's 1620 machine. I got to speak and spend 
+some time with some of the people actually doing programming. And so, they acted as mentors 
+to help me. 
+KEVIN SCOTT: Yeah, I'm, it's -- one of the things that I think is easy for all of us to take for 
+granted now is how not just sophisticated our programming systems are and how much power is 
+at the disposal of your average programmer, but how much of the information about how to learn 
+how to do software development, how much of computer science is all out on the Internet 
+publicly available. There are, like, all sorts of useful videos explaining it from sort of elementary 
+Behind the Tech Kevin Scott Podcast
+EP-12: Bill Coughran: Human-Centered AI
+6
+like super high-level, you know, sort of perspectives all the way down to, like, the deep nittygritty research. 
+BILL COUGHRAN: No, I agree. I think the other thing that's changed over the years is access 
+to computing equipment. When I first got access with the first two or three machines, they were 
+machines that, you know, today would have cost the equivalent of hundreds of thousands of 
+dollars. And they weren't machines that were in every elementary school, every high school, 
+every home. And so, there's just -- your exposure and availability to compute -- both learning 
+materials, but also just the mechanical machinery, the actual computing devices is much easier. 
+Although one thing I have noticed over the years, having been a leader in different groups over 
+the years, I think the knowledge of the actual computing devices has gotten weaker and weaker. 
+And it's been interesting in the last few years as people have become interested

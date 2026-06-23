@@ -1,0 +1,29 @@
+Behind the Tech_Episode 35_StevenBathiche_Transcript.txt ../[MUSIC] 
+
+
+STEVIE BATHICHE: A big part of invention, engineering, product development is managing complexity, and moving complexity around, in fact. Like, if you think about, high level, what we can do and if you understand the different systems and the different disciplines, you can effectively move complexity around where it’s hard in one area, but not so hard in another area.
+
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC] 
+
+CHRISTINA WARREN:  Hello, and welcome to Behind the Tech. I’m Christina Warren, senior cloud advocate at Microsoft. 
+
+KEVIN SCOTT:  And I’m Kevin Scott. 
+
+CHRISTINA WARREN:  Our guest today is Stevie Bathiche. Stevie leads the Applied Sciences Group here at Microsoft. This is a multi-disciplinary team that combines Physics and Optics and AI and Machine Learning, and it creates the devices in the UI experiences that we encounter in our day to day, and at work at home, us is same place, right?
+
+KEVIN SCOTT:  It certainly has been over the past year and change. Although changing. I'm just super excited to be having this conversation with Stevie. He has been and is one of my favorite colleagues and collaborators here at Microsoft. He's had this amazing, 20-plus year career, really leveraging what I think is a monumentally broad curiosity, like he's just interested in so many things at like pulling all of those different areas together to find new and innovative ways to harness the power of those disciplines together. It's just so interesting talking to him always and to actually see the work that he's able to produce with his unique approach to doing stuff.
+
+CHRISTINA WARREN:  I love it. Great. Let's see what Stevie is up to these days.
+
+
+[MUSIC]
+
+
+KEVIN SCOTT: Joining me today is Stevie Bathiche. Stevie is a technical fellow at Microsoft. He leads our Applied Sciences Group, which is an interdisciplinary team of scientists and product engineers. His expertise lies in multidisciplinary approaches to inventing technologies and experiences for Windows and devices. He’s been shipping and inventing new devices, interfaces and experiences for 20 years, from the original Surface table to our present line of tablets and laptops. Welcome, Stevie.
+
+STEVIE BATHICHE:  Thanks, Kevin. It’s so cool you do this, man. I

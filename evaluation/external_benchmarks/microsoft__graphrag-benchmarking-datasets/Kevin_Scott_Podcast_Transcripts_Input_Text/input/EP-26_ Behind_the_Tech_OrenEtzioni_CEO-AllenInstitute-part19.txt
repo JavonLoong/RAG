@@ -1,0 +1,17 @@
+EP-26_ Behind_the_Tech_OrenEtzioni_CEO-AllenInstitute.txt  test, even 12th-grade science tests. And that was a surprise. And it leads me to make a prediction. I think that we’re going to see – we’re already seeing, but we’re going to see even more in the next five years, tremendous applications of natural language all over the world. 
+
+There’s machine translation, which we’ve already seen. There’s – in the medical and the healthcare system, everywhere where there’s text, which is kind of everywhere, right, because we have text in our emails, we have text in physician records, we have text in scientific papers, we have text in insurance claims, you know, you name an arena of life, I’ll tell you the text that’s there. 
+
+Our ability to understand that has really had an inflection point. And that inflection point is going to result in both improved science, but also new startups, new capabilities out of companies like Microsoft and Google. It’s really an exciting time to work on what’s called NLP.  
+
+KEVIN SCOTT: Yeah, it is. I mean, we had a similar phenomenon, I guess, with convolutional neural networks, which like really were a step function improvement in image recognition and like some of these visual domain tasks. But you know, if anything, because so much of our world is about written human language, like, the impact that I’m seeing from these models like ELMO, I mean, it’s just unbelievable. 
+
+Like, I completely agree with you about the far-ranging impact and, like, probably we’re going to see an acceleration over the next five years of, you know, companies and applications and all sorts of interesting things. 
+
+I want to pick your brain, though, as we reach these inflection points on domains where AI starts to get really good it always comes with implications for what does it mean for you know individual humans and greater society. 
+
+Like, one of the things I’ve been really, really asserting to my kids’ teachers are that, you know, we have these systems that already are pretty good at taking standardized tests, and like, we – you know, we probably don’t want to be training our kids as test-takers, you know, unless there’s some much better understood cognitive benefit of the test-taking activity or you know like it really is a verification that they have you know ingested and learned, like, deeper knowledge than they need just to do the test-taking activity, because the machines are going to be able to take the tests with super-human performance very soon, I would guess. 
+
+You know, which means that – you know, I’m sure you’re glad that you went to Harvard and you had, like, a pretty diverse training, like, you were interested in cognitive science and mathematics and got a liberal education. And I think liberal education becomes more and more important as we get expert machines in these narrow domains.  
+
+Like, what are some of

@@ -1,0 +1,42 @@
+Plastic optical fiber (POF) (or Polymer optical fibre) is an optical fiber that is made out of polymer.
+ Similar to glass optical fiber, POF transmits light (for illumination or data) through the core of the fiber.
+ Its chief advantage over the glass product, other aspect being equal, is its robustness under bending and stretching.
+ Optical fiber used in telecommunications is governed by European Standards EN 60793-2-40-2011.
+Fiber optic filter is an optical fiber instrument used for wavelength selection, which can select desired wavelengths to pass and reject the others.
+ It is Widely used in DWDM systems dynamic wavelength selection, DWDM signal separation, optical performance monitoring, field tunable optical noise filtering and optical amplifier noise suppression, etc.
+ Optical multiplexers (couplers) makes different wavelength coupling into an optical fiber and different wavelength carries different information.
+ At the receiving end, if you want to separate desired wavelengths from optical fiber, it is necessary to use optical filter.
+A fiber optic splitter, also known as a beam splitter, is based on a quartz substrate of an integrated waveguide optical power distribution device, similar to a coaxial cable transmission system.
+ The optical network system uses an optical signal coupled to the branch distribution.
+ The fiber optic splitter is one of the most important passive devices in the optical fiber link.
+ It is an optical fiber tandem device with many input and output terminals, especially applicable to a passive optical network (EPON, GPON, BPON, FTTX, FTTH etc.) to connect the MDF and the terminal equipment and to branch the optical signal.
+A cleave in an optical fiber is a deliberate, controlled break, intended to create a perfectly flat endface, perpendicular to the longitudinal axis of the fiber.
+ The process of cleaving an optical fiber forms one of the steps in the preparation for a fiber splice operation regardless of the subsequent splice being a fusion splice or a mechanical splice; the other steps in the preparation being those of stripping and fiber alignment.
+ A good cleave is required for a successful low loss splice of an optical fiber, often it is the case that fibers spliced by identical methods tend to have different losses, this difference can often be attributed to the quality of their initial cleaves.
+S/PDIF (Sony/Philips Digital Interface Format) is a type of digital audio interconnect used in consumer audio equipment to output audio over reasonably short distances.
+ The signal is transmitted over either a coaxial cable with RCA connectors or a fibre optic cable with TOSLINK connectors.
+ S/PDIF interconnects components in home theatres and other digital high-fidelity systems.
+An optical fiber connector terminates the end of an optical fiber, and enables quicker connection and disconnection than splicing.
+ The connectors mechanically couple and align the cores of fibers so light can pass.
+ Better connectors lose very little light due to reflection or misalignment of the fibers.
+ In all, about 100 fiber optic connectors have been introduced to the market.
+The Telecommunications Industry Association's TIA-598-C Optical Fiber Cable Color Coding, is an American National Standard, that provides all necessary information for color-coding optical fiber cables in a uniform manner.
+ It defines identification schemes for fibers, buffered fibers, fiber units, and groups of fiber units within outside plant and premises optical fiber cables.
+ This standard allows for fiber units to be identified by means of a printed legend.
+ This method can be used for identification of fiber ribbons and fiber subunits.
+ The legend will contain a corresponding printed numerical position number and/or color for use in identification.
+The FC connector is a fiber-optic connector with a threaded body, which was designed for use in high-vibration environments.
+ It is commonly used with both single-mode optical fiber and polarization-maintaining optical fiber.
+ FC connectors are used in datacom, telecommunications, measurement equipment, and single-mode lasers.
+ They are becoming less common, displaced by SC and LC connectors.
+ The FC connector has been standardized in TIA fiber optic connector intermateability standard EIA/TIA-604-4.
+In fiber-optic communication, a single-mode optical fiber (SMF) is an optical fiber designed to carry light only directly down the fiber - the transverse mode.
+ Modes are the possible solutions of the Helmholtz equation for waves, which is obtained by combining Maxwell's equations and the boundary conditions.
+ These modes define the way the wave travels through space, i.e. how the wave is distributed in space.
+ Waves can have the same mode but have different frequencies.
+ This is the case in single-mode fibers, where we can have waves with different frequencies, but of the same mode, which means that they are distributed in space in the same way, and that gives us a single ray of light.
+ Although the ray travels parallel to the length of the fiber, it is often called transverse mode since its electromagnetic oscillations occur perpendicular (transverse) to the length of the fiber.
+ The 2009 Nobel Prize in Physics was awarded to Charles K. Kao for his theoretical work on the single-mode optical fiber.
+TOSLINK (from "Toshiba Link") is a standardized optical fiber connector system.
+ Also known generically as an "optical audio cable" or just "optical cable", its most common use is in consumer audio equipment (via a "digital optical" socket), where it carries a digital audio stream from components such as CD and DVD players, DAT recorders, computers, and modern video game consoles, to an AV receiver that can decode two channels of uncompressed lossless PCM audio or compressed 5.1/7.1 surround sound such as Dolby Digital Plus or DTS-HD High Resolution Audio.
+ Unlike HDMI, TOSLINK does not have the bandwidth to carry the lossless versions of Dolby TrueHD, DTS-HD Master Audio, or more than two channels of PCM audio.

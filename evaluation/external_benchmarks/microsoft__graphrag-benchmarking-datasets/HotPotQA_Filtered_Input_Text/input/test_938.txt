@@ -1,0 +1,62 @@
+Universal life insurance (often shortened to UL) is a type of cash value life insurance, sold primarily in the United States of America.
+ Under the terms of the policy, the excess of premium payments above the current cost of insurance is credited to the cash value of the policy.
+ The cash value is credited each month with interest, and the policy is debited each month by a cost of insurance (COI) charge, as well as any other policy charges and fees drawn from the cash value, even if no premium payment is made that month.
+ Interest credited to the account is determined by the insurer, but has a contractual minimum rate (often 2%).
+ When an earnings rate is pegged to a financial index such as a stock, bond or other interest rate index, the policy is an "Indexed Universal Life" contract.
+ These types of policies offer the advantage of guaranteed level premiums throughout the insured's lifetime at substantially lower premium cost than an equivalent whole life policy at first; the cost of insurance is always increasing as found on the cost index table (usually p. 3 of a contract).
+ This not only allows for easy comparison of costs between carriers, but also works well in irrevocable life insurance trusts (ILIT's) since cash is of no consequence.
+Tesco venture brands are an advanced form of private label brands launched by Tesco in 2011 that do not carry the retailer name.
+ These products fall under the category of Tesco venture brands and complement their current value, standard and finest ranges.
+ Tesco venture branded goods are available in a wide range of industries from food to children's toys to sanitary products.
+ Most of the brands are positioned as "premium goods" competing with existing premium branded goods.
+When the predecessor of international fast food restaurant chain Burger King (BK) first opened in 1955, its menu predominantly consisted of hamburgers, French fries, soft drinks, milkshakes, and desserts.
+ After being acquired by its Miami, Florida franchisees and renamed in 1954, BK began expanding its menu by adding the Whopper.
+ The company did not add another permanent hamburger to its menu until the introduction of the Big King sandwich in 1996 in response to McDonald's Big Mac sandwich.
+ The company began experimenting with premium hamburgers, made from higher quality ingredients, in 1978 with the introduction of its Specialty Sandwich product line.
+ The products were some of the first designed by a fast food restaurant chain that were intended to capture the adult market, members of which would be willing to spend more on a higher-quality product.
+ However, it wasn't until 2002 when the company began to work on a premium burger in earnest.
+ On the value side, Burger King first started offering sliders to its menu in the mid-1980s and offered them off and on for the next twenty years.
+Sunday is a sleep focussed start-up in India founded by Alphonse Reddy, – who is also the founder of Fabmart.com, a retail venture that sells premium sleep products – in September 2015.
+ Sunday mattresses are manufactured and retailed by MRPL (Madanapalle Retail Private Ltd).
+ Sunday sources its raw materials from four different countries, including Belgium.
+ The mattresses have been designed by Japanese designer Hiroko Shiratori, who is the founding member of London based design collective OKAY studio.
+ Apart from selling online through its website, the company also retails in Bangalore.
+ The company sells two mattress variants — Ortho plus and Latex Plus, and follows omni-channel sales strategy.
+ Its online sales are augmented by an experience centre in Bangalore.
+ Sunday like other sleep start-ups follows a 100 Nights Trial offer, where customers can return the product and get a full refund if they are not satisfied with the purchase.
+ The product range includes mattresses, pillows, toppers and protector pads.
+ Sunday offers value additions such as same day delivery & Try’N’Pay in Bangalore and Hyderabad.
+ Sunday mattress is one of the best options in the mid and premium range.
+ Sunday is funded by Anand Morzaria, entrepreneur in the ITES space, and his team.
+In investing, value premium refers to the greater risk-adjusted return of value stocks over growth stocks.
+ Eugene Fama and K. G. French first identified the premium in 1992, using a measure they called HML (high book-to-market ratio minus low book-to-market ratio) to measure equity returns based on valuation.
+ Other experts, such as John C. Bogle, have argued that no value premium exists, claiming that Fama and French's research is period dependent.
+In finance, the time value (TV) ("extrinsic" or "instrumental" value) of an option is the premium a rational investor would pay over its "current" exercise value (intrinsic value), based on the probability it will increase in value before expiry.
+ For an American option this value is always greater than zero in a fair market, thus an option is "always" worth more than its current exercise value.
+.
+ As an option can be thought of as 'price insurance' (e.g., an airline insuring against unexpected soaring fuel costs caused by a hurricane), TV can be thought of as the "risk premium" the option seller charges the buyer—the higher the expected risk (volatility formula_1 time), the higher the premium.
+ Conversely, TV can be thought of as the price an investor is willing to pay for potential upside.
+The forward premium anomaly in currency markets (also referred to as the forward premium puzzle or the Fama puzzle) refers to the well documented empirical finding that the domestic currency is expected to appreciate when domestic nominal interest rates exceed foreign interest rates.
+ This is puzzling because economic theory suggests that if all currencies are equally risky investors would demand higher interest rates on currencies expected to "fall" in value.
+ See: Forward exchange rate# Unbiasedness hypothesis.
+Variable universal life insurance (often shortened to VUL) is a type of life insurance that builds a cash value.
+ In a VUL, the cash value can be invested in a wide variety of separate accounts, similar to mutual funds, and the choice of which of the available separate accounts to use is entirely up to the contract owner.
+ The 'variable' component in the name refers to this ability to invest in separate accounts whose values vary—they vary because they are invested in stock and/or bond markets.
+ The 'universal' component in the name refers to the flexibility the owner has in making premium payments.
+ The premiums can vary from nothing in a given month up to maximums defined by the Internal Revenue Code for life insurance.
+ This flexibility is in contrast to whole life insurance that has fixed premium payments that typically cannot be missed without lapsing the policy (although one may exercise an Automatic Premium Loan feature, or surrender dividends to pay a Whole Life premium).
+Minority discount is an economic concept reflecting the notion that a partial ownership interest may be worth less than its proportional share of the total business.
+ The concept applies to equities with voting power because the size of voting position provides additional benefits or drawbacks.
+ For example, ownership of a 51% share in the business is usually worth more than 51% of its equity value—this phenomenon is called the premium for control.
+ Conversely, ownership of a 30% share in the business may be worth less than 30% of its equity value.
+ This is so because this minority ownership limits the scope of control over critical aspects of the business.
+ Share prices of public companies usually reflect the minority discount.
+ This is why take-private transactions involve a substantial premium over recently quoted prices.
+Caret notation is a notation for control characters in ASCII encoding.
+ The notation consists of a caret (^) followed by a capital letter; this digraph stands for the ASCII code that has the numerical value equivalent to the letter's numerical value.
+ For example, the EOT character with a value of 4 is represented as ^D because D is the 4th letter in the alphabet.
+ The NUL character with a value of 0 is represented as ^@ (@ is the ASCII character before A).
+ The DEL character with the value 127 is usually represented as ^?
+, because the ASCII '?'
+ is before '@' and the value -1 (encoded in 8-bit two's complement) is the same as 127 if masked to 7 bits.
+ An alternative formulation of the translation is that the printed character is found by inverting the 7th bit of the ASCII code.

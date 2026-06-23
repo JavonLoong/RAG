@@ -1,0 +1,25 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt   And it's just great to see happening. 
+
+danah boyd:  And the important thing about something like agriculture is it has to happen around the globe.  
+
+KEVIN SCOTT:  It has to happen. 
+
+danah boyd:  Right?  It just has to.  And same with water resources.  
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  We need to understand and model out water resources, because, I mean, just take the continent of Africa, right?  There are so many places across that continent where things are possibly fragile if we don't work out where that is or how to deal with it. 
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  And so it's both the technology of desalination, which is wonderful, but it's also the modeling to understand what the ripples are around that.  
+
+KEVIN SCOTT:  And there's so many ways you -- I mean, this is the thing where I really want people to get like super excited about jumping in because for all of these things, like making better use of your water resources, like there are hundreds and hundreds of ways.  Like so for instance, like one of the ways that you can make more efficient use of water in agriculture is like all of the agricultural chemicals that we use -- so pesticides and fertilizers and whatnot -- are massively diluted with water. 
+
+So like the chemical concentration, like, the active compound is like a tiny part of like the thing that gets sprayed over the crop, which means that you're wasting all of this water that the -- you know, chemicals are going into places where they're not needed.  It's just this hugely wasteful thing. 
+
+And there's all sorts of like interesting new technology where you can very precisely deliver the chemicals to the crop without diluting them in water at all, so you're not wasting any water, you don't have any of this like chemical runoff into the water supply, like, it's just fantastic. 
+
+And like simple things like using some of the cool new stuff that we are -- that we're seeing with computer vision where you can fuse classical sensor data, like moisture meters, with vision models where you can sort of infer soil moisture from pictures that you're taking from above the crops with drones or in places where drones are too expensive, like the Farm Beats folks are literally tying like little cheap cameras to balloons and you have a human, like, walk like a balloon over the crop, you know, tethered to a rope because, you know, in some parts of the world, you can't afford a drone to fly over them.  
+
+And from that, like, you can -- if you know what your soil moisture is, like, you know exactly how much to water so you don't have to worry about under or over watering a crop, which leads to like way more efficiency.

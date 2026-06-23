@@ -1,0 +1,19 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt SON:  Well, one, we actually probably couldn’t plan much faster than that. 
+
+KEVIN SCOTT:  Got you, so it was like the speed of the processing? 
+
+CHRIS URMSON:  Yes, it was complicated.  It was truly off-road.  It was also solar powered.  So we had -- you know, there’s a power budget limit, given we were driving this thing around, and so there was only so much power we could put through the gearboxes and the motors. 
+
+KEVIN SCOTT:  Fascinating.  But, so even though you were on the software side, like, if you are writing planning software and, like, the planning software -- I mean, like, we just are getting to the point where deep learning systems can learn a kinematic model from scratch.  But, so, like, these kinematic models are basically -- they’re sort of a model of the physics of the system.  And so you do have to understand mechanics in order to write the software.  
+
+CHRIS URMSON:  Yeah, you really -- you have to look at the kinematics of the vehicle and figure out, you know, in our case, this vehicle -- the Hyperion robot was four-wheel-drive, and it had this cool design.  Made it much more fun, where the front axle was just -- there was no active actuation on it.  So if you turned one wheel faster than the other, that would turn the axle.  
+
+KEVIN SCOTT:  Got ‘cha.  
+
+CHRIS URMSON:  And then if you want to change the trajectory of the overall vehicle, you’re actually driving all four wheels and you’re kind of slipping the back wheels and steering -- you know, steering the front wheels.  You know, it’s actually a really interesting -- as you say -- you know, you have to understand the mechanics of it.  You have to understand the forces that are interacting to make it work well.   
+
+KEVIN SCOTT:  Yeah, and then -- I mean, just sort of the perception part of navigating the real world is also complicated.  Some of the -- I mean, for a long time before the -- some of the more recent advances in perception that are being driven by deep neural networks and GPUs and whatnot, perception was one of those, like, real intelligence, artificial intelligence gaps that we really weren’t sure when we were going to be able to bridge.  
+
+And so you were doing all of this work where we were still in that, you know, universe of confusion about, like, will we ever be able to get the perception to be as good as a human? 
+
+CHRIS URMSON:  Oh, yeah, and again, it’s been fun to watch what we can actually bring into scope and start to solve.  So back then, you know, this robot was designed to

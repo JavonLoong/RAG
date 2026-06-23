@@ -1,0 +1,15 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  things that we’ve seen over and over again is you have these moments with complicated systems where you start off not being able to really understand and characterize the performance of the complex system, and so you don’t really trust them.  
+
+And in certain of these complex systems, they eventually evolve to the point where you both understand them and they have superior performance to like everything that proceeded them, and in some cases, you know, the thing that proceeded them was like a human brain and like the software system is better at that narrow thing than a human brain, like no -- like I think it bears saying that no piece of software is close to being better than a complete human brain at the complete set of things that human brains are good at.  But at narrow things, yes.  
+
+CHRIS URMSON:  Yeah.  
+
+KEVIN SCOTT:  And so like we may get to the point and like it would be a fantastic thing for the human race to, like, have -- have an autonomous driving system that is better than a human from a safety perspective. 
+
+CHRIS URMSON:  And that’s what our aspiration is. And the good news is that I don’t even know that we need to be strictly better than the best human driver at all times because a lot of times, when people are driving, they’re not paying that much attention.  They’re distracted one way or the other.  Their mind wanders.  They’re inebriated.  Right?  There’s an awful lot of error that happens not because we’re operating at our best and couldn’t handle it, it’s because our attention is somewhere else. 
+
+You know, and one of the things that we can do for these vehicles is we can make them superhuman.  And superhuman in kind of trivial ways.  Like, our vehicles see all the way around the vehicle all the time.  And now that I’m used to that in the technology, when I’m trying to make a lane change on the 101, it drives me nuts because, you know, to make a lane change, I’m watching traffic in front, and then I need to look and assess the state of the traffic behind me. 
+
+And, you know, what happens if -- you know, particularly when it’s kind of jerky flow of traffic, you know, if I’m taking a half-second or three-quarters of a second to look behind me and the guy in front of me has hit the brakes, I’m having a bad day.  So I find that incredibly stressful. 
+
+KEVIN SCOTT:  Yeah, well, and that’s the thing already about a modern automobile.  Like, forget whether or not it has autonomous technology in it or is like on a path to autonomous technology.  From a sensing perspective, like, modern automobiles are already superhuman.  Like, they can see the world like -- just because they can see behind

@@ -1,0 +1,17 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt 's an attempt to not allow that reconstruction.  So, in order to do that, it takes tabulated data and it inserts noise.  And that noise is not just arbitrary, that noise is very much mathematically dictated based on a set of priorities and values.  
+
+So how much confidentiality do you want to guarantee in there referred to as privacy?  How much accuracy is important within the system and how do you balance between these?  And, you know, where can you allocate that?  
+
+And so what differential privacy is, it's a mathematical definition of privacy that looks at those values and assesses whether or not an implementation of noise meets these standards so that you can't allow for reconstruction. 
+
+KEVIN SCOTT:  So how do we have — this is like one of the things that I'm sort of obsessed with right now is figuring out how we can have informed, transparent, public debate about these sorts of things when you have technical concepts like differential privacy that are very complicated, require high levels of expertise to implement, but not necessarily to talk about. 
+
+But, you know, as you mentioned, there are just a handful of people in the world who know what differential privacy is, how it can be applied, how to reason about it.  So how do we bridge that gap?  Because it's getting more and more important right now.  And we could probably pick a dozen different topics in the next 60 seconds that have that quality, DeepFix is one, it's just crazy like how this complicated technology — and is impacting our civic life and like how difficult it is at the moment to have informed public debate about these things. 
+
+danah boyd:  Yeah.  I think what it comes to is that whether the tech industry likes it or not, we have become in the business of governing.  We're governing information, we're governing communication, we're governing how and where people interact.  And that's terrifying because we didn't build these systems with that in mind.  We built these systems imagining we could connect people, imagining that we could use data for good. 
+
+We were quite naive.  And that dynamic of governance that we're facing is where this question of “How do you have public debate come in?”  So the difficulty with something like differential privacy is it's a governance mechanism.  It's trying to take two competing values, right, the value of confidentiality or privacy and the values of public access to data and trying to contend with that. 
+
+And who does make that decision?  Right?  And that is not clear-cut.  That is not clear-cut even if you want to just allocate it to the U.S. Government. 
+
+So, what happens is this moment of like how do we reckon with accountability here?  And I feel as though we're in this — I keep thinking of it as a great reckoning.  We're in this weird moment in time

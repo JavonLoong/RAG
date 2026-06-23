@@ -19,6 +19,7 @@ Thumbs.db
 desktop.ini
 
 # Data (large files)
+node_modules/
 *.bin
 *.pt
 *.onnx
@@ -26,6 +27,7 @@ desktop.ini
 *.zip
 *.json
 !package.json
+!package-lock.json
 *.sqlite3
 *.sqlite
 *.db

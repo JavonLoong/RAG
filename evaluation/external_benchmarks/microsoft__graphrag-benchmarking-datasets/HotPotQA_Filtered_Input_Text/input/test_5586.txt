@@ -1,0 +1,65 @@
+Monkeypox virus (MPV) is a double-stranded DNA, zoonotic virus and a species of the genus "Orthopoxvirus" in the family Poxviridae.
+ It is one of the human orthopoxviruses that includes variola (VARV), cowpox (CPX), and vaccinia (VACV) viruses.
+ But it is not a direct ancestor to, nor a direct descendent of, the variola virus which causes smallpox.
+ The monkeypox virus causes a disease that is similar to smallpox, but with a milder rash and lower death rate.
+ Variation in virulence of the virus has been observed in isolates from Central Africa where strains are more virulent than those from Western Africa.
+Monkeypox is an infectious disease caused by the monkeypox virus.
+ The disease was first identified in laboratory monkeys, hence its name, but in its natural state it seems to infect rodents more often than primates.
+ The disease is indigenous to Central and West Africa.
+ An outbreak that occurred in the United States in 2003 was traced to a pet store where imported Gambian pouched rats were sold.
+Impatiens necrotic spot virus (INSV) is a plant pathogenic virus of the family "Bunyaviridae".
+ It was originally believed to be another strain of "Tomato spotted wilt virus" but genetic investigations revealed them to be separate viruses.
+ It is a single stranded RNA It has a tripartate genome and is largely spread by the insect vector of the western flower thrips.
+ The virus infects more than 648 species of plant including important horticultural and agricultural species such as fuchsia, tomato, orchids, and lettuce (especially romaine).
+ As the name implies, the main symptom on plants is necrotic spots that appear on the leaves.
+ The INSV virus infects by injecting the RNA the virus contains into the cell which then starts using the cell resources to transcribe what the virus RNA states.
+ Viral infection can often result in the death of the plant.
+ The disease is mainly controlled by the elimination of the western flower thrip vector and by destroying any infected plant material.
+Bacilladnavirus is a genus of single stranded DNA viruses.
+ Species in this genus infect diatoms.
+ The name is derived from the phrase: ss"DNA virus" infecting "Bacilla"riophytes.
+ Although other single-stranded DNA viruses which infect diatoms have been discovered ("Chaetoceros debilis" DNA virus (CdebDNAV), "C. tenuissimus" DNA virus (CtenDNAV), "C. lorenzianus" DNA virus (ClorDNAV), "C." sp.
+ strain TG07-C28 DNA virus (Csp05DNAV), "C. setoensis" DNA virus (CsetDNAV), and "Thalassionema nitzschioides" DNA virus (TnitDNAV)), the only species officially classified in this genus is "Chaetoceros salsugineum DNA virus 01" (CsalDNAV01.)
+ In addition, 4 genomes of uncultured bacilladnaviruses have been sequenced directly from environmental samples.
+ It was suggested that the family "Bacilladnaviridae" be used to classify these viruses, but its official approval by the International Committee on Taxonomy of Viruses is pending.
+Quaranjavirus is a new genus of enveloped RNA viruses, one of seven genera in the virus family "Orthomyxoviridae".
+ The genome is single-stranded, negative-sense segmented RNA, generally with six segments. "
+Quaranfil virus" is the type species, and the genus also contains the species "Johnston Atoll virus"; it has been proposed to contain species or strains including Cygnet River virus, Lake Chad virus, Tyulek virus and Wellfleet Bay virus.
+ Quaranjaviruses predominantly infect arthropods and birds; as of March 2015, "Quaranfil virus" is the only member of the genus to have been shown to infect humans.
+ The "Quaranfil" and "Johnston Atoll" viruses are transmitted between vertebrates by ticks, resembling members of "Thogotovirus", another genus of "Orthomyxoviridae".
+"Prunus necrotic ringspot virus" (PNRSV) is a plant pathogenic virus causing ring spot diseases affecting species of the genus "Prunus", as well as other species such as rose ("Rosa" spp.)
+ and hops ("Humulus lupulus").
+ PNRSV is found worldwide due to easy transmission through plant propagation methods and infected seed.
+ The virus is in the family "Bromoviridae" and genus "Ilarvirus".
+ Synonyms of PNRSV include European plum line pattern virus, hop B virus, hop C virus, plum line pattern virus, sour cherry necrotic ringspot virus, and peach ringspot virus.
+Orthopoxvirus is a genus of viruses in the family Poxviridae and subfamily Chordopoxvirinae.
+ Vertebrates, including mammals and humans, and arthropods serve as natural hosts.
+ There are currently ten species in this genus including the type species vaccinia virus.
+ Diseases associated with this genus include smallpox, cowpox, horsepox, and monkeypox.
+ The most famous member of the genus is variola virus, which causes smallpox.
+ Variola was eradicated using vaccinia virus as a vaccine.
+The terms inoculation, "vaccination", and "immunization" are often used synonymously to refer to artificial induction of immunity against various infectious diseases.
+ This is supported by some dictionaries.
+ However, there are some important historical and current differences.
+ In English medicine, inoculation referred only to the practice of variolation until the very early 1800s.
+ When Edward Jenner introduced smallpox vaccine in 1798, this was initially called "cowpox inoculation" or "vaccine inoculation".
+ Soon, to avoid confusion, smallpox inoculation continued to be referred to as "variolation" (from variola = smallpox) and cowpox inoculation was referred to as "vaccination" (from Jenner's use of "variolae vaccinae" = smallpox of the cow).
+ Then, in 1891 Louis Pasteur proposed that the terms vaccine and vaccination should be extended to include the new protective procedures being developed.
+ "Immunization" refers to the use of all vaccines but also extends to the use of antitoxin, which contains preformed antibody to e.g. diphtheria or tetanus exotoxins. "Inoculation" is now more or less synonymous in nontechnical usage with "injection" etc., and the question e.g. 'Have you had your flu injection/vaccination/inoculation/immunization?'
+ should not cause confusion.
+ The focus is on what is being given and why, not the literal meaning of the technique used.
+Cowpox is an infectious disease caused by the cowpox virus.
+ The virus, part of the orthopoxvirus family, is closely related to the "vaccinia" virus.
+ The virus is zoonotic, meaning that it is transferable between species, such as from animal to human.
+ The transferral of the disease was first observed in dairymaids who touched the udders of infected cows and consequently developed the signature pustules on their hands.
+ Cowpox is more commonly found in animals other than bovines, such as rodents.
+ Cowpox is similar to, but much milder than, the highly contagious and often deadly smallpox disease.
+ Its close resemblance to the mild form of smallpox and the observation that dairymaids were immune from smallpox inspired the first smallpox vaccine, created and administered by English physician Edward Jenner.
+Individual fishing quotas (IFQs) also known as "individual transferable quotas" (ITQs) are one kind of "catch share", a means by which many governments regulate fishing.
+ The regulator sets a species-specific total allowable catch (TAC), typically by weight and for a given time period.
+ A dedicated portion of the TAC, called quota shares, is then allocated to individuals.
+ Quotas can typically be bought, sold and leased, a feature called transferability.
+ As of 2008, 148 major fisheries (generally, a single species in a single fishing ground) around the world had adopted some variant of this approach, along with approximately 100 smaller fisheries in individual countries.
+ Approximately 10% of the marine harvest was managed by ITQs as of 2008.
+ The ﬁrst countries to adopt individual fishing quotas were the Netherlands, Iceland and Canada in the late 1970s, and the most recent is the United States Scallop General Category IFQ Program in 2010.
+ The ﬁrst country to adopt individual transferable quotas as a national policy was New Zealand in 1986.

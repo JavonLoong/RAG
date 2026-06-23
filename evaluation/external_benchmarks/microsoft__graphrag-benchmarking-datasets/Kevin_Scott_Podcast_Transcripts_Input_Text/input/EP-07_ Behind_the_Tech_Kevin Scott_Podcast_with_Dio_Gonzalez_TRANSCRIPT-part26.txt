@@ -1,0 +1,23 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt  as well. 
+
+CHRISTINA WARREN:  Yeah, I love that, when Dio was talking about her ultimate goal of kind of being able to show everyone swipe and show everyone everything that you're thinking.  
+
+KEVIN SCOTT:  Yeah, that would -- 
+
+CHRISTINA WARREN:  That would be very cool. 
+
+KEVIN SCOTT:  That would be awesome slash terrifying.  (Laughter.)  
+
+CHRISTINA WARREN:  I would agree with that, awesome slash terrifying.  Definitely.  So, one of the interesting things she talked about is, you know, growing up in Venezuela and she's, you know, a minority in multiple ways.  But I was thinking about how having those perspectives is so great for someone who is building these tools and creating these things that let us build these worlds.  What do you think about that? 
+
+KEVIN SCOTT:  I think you're spot on.  I mean, I think it's interesting that as you listen to her as she thinks about her own experiences, like a lot of what she went through is sort of very formative and like gave her the determination and grit to get to this like fairly senior place that she's at right now. 
+
+And, you know, I think all of that sort of translates through as well to the problems that she's trying to solve technically because, you know, like, if you're a developer working on a frontier technology like mixed reality, like, you're constantly banging your head against the wall because the path forward's not always obvious, and it's certainly not usually easy. 
+
+But, you know, I think the -- the other thing about having all of that perspective is as you mentioned, mixed reality done right is a new way for human beings to interact with one another.  You know, and there are sort of the obvious things like, "Oh, how could this help with education?"  Like, how could this help with these, you know, sorts of empowering people with technology to do their work better and to unlock their creativity? 
+
+But like it's also going to be a tool that people use to interact with one another.  And, you know, I think having -- it's really, really important when you're building any of these flavors of tools to like have a variety of different perspectives in their development because we all have blind spots like no matter how carefully we're thinking about how we build something, like we, at the end of the day, are sort of coming through our own -- like our own personal lens that formed by our experiences and like hopefully you've got compassion and like maybe you even have empathy, like the ability to sort of like feel what other people are feeling.  
+
+But it's still not a substitute for actually having the people who have lived those experiences be able to like bring them directly to the things that they're building. 
+
+CHRISTINA WARREN:

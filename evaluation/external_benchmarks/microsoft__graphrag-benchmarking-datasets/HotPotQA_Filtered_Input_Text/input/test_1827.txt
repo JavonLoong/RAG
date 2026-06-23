@@ -1,0 +1,59 @@
+A "BRCA" mutation is a mutation in either of the "BRCA1" and "BRCA2" genes, which are tumour suppressor genes.
+ Hundreds of different types of mutations in these genes have been identified, some of which have been determined to be harmful, while others have no proven impact.
+ Harmful mutations in these genes may produce a hereditary breast-ovarian cancer syndrome in affected persons.
+ Only 5-10% of breast cancer cases in women are attributed to "BRCA1" and "BRCA2" mutations (with "BRCA1" mutations being slightly more common than "BRCA2" mutations), but the impact on women with the gene mutation is more profound.
+ Women with harmful mutations in either "BRCA1" or "BRCA2" have a risk of breast cancer that is about five times the normal risk, and a risk of ovarian cancer that is about ten to thirty times normal.
+ The risk of breast and ovarian cancer is higher for women with a high-risk "BRCA1" mutation than with a "BRCA2" mutation.
+ Having a high-risk mutation does not guarantee that the woman will develop any type of cancer, or imply that any cancer that appears was actually caused by the mutation, rather than some other factor.
+In accounting, a financial condition report (FCR) is a report on the solvency condition of an insurance company that takes into account both the current financial status, as reflected in the balance sheet, and an assessment of the ability of the company to survive future risk scenarios.
+ Risk assessment in a FCR involves "dynamic solvency testing", a type of dynamic financial analysis that simulates management response to risk scenarios, to test whether a company could remain solvent in the face of deteriorating economic conditions or major disasters.
+ Dynamic solvency testing may involve both "deterministic projections", based on known risks, and "stochastic projections" that include random risk events.
+The Revised Cardiac Risk Index (RCRI) is a tool used to estimate a patient's risk of perioperative cardiac complications.
+ The RCRI and similar clinical prediction tools are derived by looking for an association between preoperative variables (e.g., patient's age, type of surgery, comorbid diagnoses, or laboratory data) and the risk for cardiac complications in a cohort of surgical patients (the "derivation cohort").
+ Variables that have independent predictive value in a logistic regression analysis are incorporated into the risk index.
+ Ideally, the accuracy and validity of the risk index is then tested in a separate cohort (the "validation cohort").
+ In 1977 Goldman, et al., developed the first cardiac risk index, which included nine variables associated with an increased risk of perioperative cardiac complications.
+ This became known as the Original Cardiac Risk Index (or alternatively the Goldman Index).
+ In 1999, Lee et al. published a cardiac risk index derived from 2893 patients and validated in 1422 patients aged ≥ 50 undergoing major noncardiac surgery, which became known as the Revised Cardiac Risk Index (RCRI).
+ Lee identified six independent variables that predicted an increased risk for cardiac complications.
+ A patient's risk for perioperative cardiac complications increased with number of variables that were present.
+Risk assessment is the determination of quantitative or qualitative estimate of risk related to a well-defined situation and a recognized threat (also called hazard).
+ "Quantitative risk assessment" requires calculations of two components of risk "(R)": the magnitude of the potential loss "(L)", and the probability "(p)" that the loss will occur.
+ An acceptable risk is a risk that is understood and tolerated usually because the cost or difficulty of implementing an effective countermeasure for the associated vulnerability exceeds the expectation of loss.
+ "Health risk assessment" includes variations, such as the type and severity of response, with or without a probabilistic context.
+A mammary tumor is a neoplasm originating in the mammary gland.
+ It is a common finding in older female dogs and cats that are not spayed, but they are found in other animals as well.
+ The mammary glands in dogs and cats are associated with their nipples and extend from the underside of the chest to the groin on both sides of the midline.
+ There are many differences between mammary tumors in animals and breast cancer in humans, including tumor type, malignancy, and treatment options.
+ The prevalence in dogs is about three times that of women.
+ In dogs, mammary tumors are the second most common tumor (after skin tumors) over all and the most common tumor in female dogs with a reported incidence of 3.4%.
+ Multiple studies have documented that spaying female dogs when young greatly decreases their risk of developing mammary neoplasia when aged.
+ Compared with female dogs left intact, those spayed before puberty have 0.5% of the risk, those spayed after one estrous cycle have 8.0% of the risk, and dogs spayed after two estrous cycles have 26.0% of the risk of developing mammary neoplasia later in life.
+ Overall, unspayed female dogs have a seven times greater risk of developing mammary neoplasia than do those that are spayed.
+ While the benefit of spaying decreases with each estrous cycle, some benefit has been demonstrated in female dogs even up to 9 years of age.
+ There is a much lower risk (about 1 percent) in male dogs and a risk in cats about half that of dogs.
+DecisionDx-UM is a prognostic test that accurately determines the metastatic risk associated with ocular melanoma tumors of the eye.
+ Ocular melanoma is a term commonly used to describe tumors of the uveal tract such as uveal melanoma, choroidal melanoma, ciliary body melanoma, and iris melanoma.
+ The DecisionDx-UM test was clinically validated on these tumors of the uveal tract.
+ DecisionDx-UM assesses the gene expression profile (GEP) of a subset of genes which are differentially expressed in primary tumor cells compared to cells that have undergone transformation to a metastatic phenotype.
+ The test classifies tumors as Class 1A (low metastatic risk), Class 1B (long-term metastatic risk), or Class 2 (immediate, high metastatic risk).
+ Also referred to as the gene expression profile, the test has been directly compared to all other clinical and pathologic factors, such as chromosome 3 status (monosomy 3), cytopathology and tumor size and the DecisionDx-UM test was shown to be more accurate than these other factors.
+ The DecisionDx-UM test has become standard of care in the majority of ocular oncology centers in the U.S. and is recommended by the American Joint Committee on Cancer (AJCC).
+ The AJCC recommends this testing for all patients with a diagnosis of uveal melanoma as the results are ‘clinically significant’.
+ Accurate results are achieved using both fine needle aspirate biopsies (FNAB) or formalin fixed, paraffin embedded (FFPE) tumor tissue.
+ The prognostic information provided by DecisionDx-UM helps physicians and their patients make individualized decisions about the surveillance and therapeutic options that are most appropriate.
+ The DecisionDx-UM test was exclusively licensed from Washington University in St. Louis and is only available through Castle Biosciences, Incorporated.
+Shape risk in finance is a type of basis risk when hedging a load profile with standard hedging products having a lower granularity.
+ In other words a commodity supplier wants to pre-purchase supplies for expected demand, but can only buy in fixed amounts that are bigger than the demand forecasted.
+ This means it has to either over order or under order and make up the difference at the time of delivery at the spot price which might be much higher.
+ Shape risk is also related to commodity risk.
+Castle Risk is a version of the board game Risk that is played on a map of Europe.
+ It was first released as a stand-alone game by Parker Brothers in 1986 and later appeared on the reverse side of the board in an early 1990s version of the standard Risk game.
+Trade credit insurance, business credit insurance, export credit insurance, or credit insurance is an insurance policy and a risk management product offered by private insurance companies and governmental export credit agencies to business entities wishing to protect their accounts receivable from loss due to credit risks such as protracted default, insolvency or bankruptcy.
+ This insurance product is a type of property and casualty insurance, and should not be confused with such products as credit life or credit disability insurance, which individuals obtain to protect against the risk of loss of income needed to pay debts.
+ Trade credit insurance can include a component of political risk insurance which is offered by the same insurers to insure the risk of non-payment by foreign buyers due to currency issues, political unrest, expropriation etc.
+War risk insurance is a type of insurance which covers damage due to acts of war, including invasion, insurrection, rebellion and hijacking.
+ Some policies also cover damage due to weapons of mass destruction.
+ It is most commonly used in the shipping and aviation industries.
+ War risk insurance generally has two components: War Risk Liability, which covers people and items inside the craft and is calculated based on the indemnity amount; and War Risk Hull, which covers the craft itself and is calculated based on the value of the craft.
+ The premium varies based on the expected stability of the countries to which the vessel will travel.

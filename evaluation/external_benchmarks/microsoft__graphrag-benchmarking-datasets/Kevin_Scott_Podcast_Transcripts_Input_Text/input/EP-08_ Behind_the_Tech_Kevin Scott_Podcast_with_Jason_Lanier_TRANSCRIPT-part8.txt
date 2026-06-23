@@ -1,0 +1,29 @@
+EP-08_ Behind_the_Tech_Kevin Scott_Podcast_with_Jason_Lanier_TRANSCRIPT.txt  this cinderblock building with your stack of precious --
+
+KEVIN SCOTT:  And order matters.
+
+JARON LANIER:  Well, listen, there would be like these clouds of these punch cards just flying everywhere.  So there was a certain degree of cross-pollination between people's programs I suppose, but it was actually -- I mean, I remember seeing actual code tornadoes made of punch cards in those days.
+
+KEVIN SCOTT:  Wow, that's incredible.
+
+JARON LANIER:  Yeah.  So when we talk about cloud computing, we had fast cloud computing back then, low latency.  So as the '70s progressed there started to be a few options for real-time computer graphics and that really turned me on, and we started to be able to do some very simplistic, like even just a biplot or moving like a rectangle or stuff on the screen was still kind of challenging but we could start to do it.
+
+By the way, do you know how the biplot was invented?
+
+KEVIN SCOTT:  I think I do, but why don't you tell the audience.
+
+JARON LANIER:  Larry Tessler, one of the original Xerox PARC people invented the biplot, which is just moving a rectangle of pixels around on a screen, and he'd originally done it to control those little color cards that fans hold up at the Stanford stadium.  So it actually started as a stadium ritual before it was applied to --
+
+KEVIN SCOTT:  That I actually did not know.
+
+JARON LANIER:  Yeah.
+
+KEVIN SCOTT:  That's fascinating.
+
+JARON LANIER:  I’m the sort of like antiquities department here.  So there was a good library at NMSG which kind of became my comfort zone in a way, and you could just like get lost in these stacks of all different kinds of journals and crazy art books and everything.  And there I discovered Ivan Sutherland's work.
+
+And Ivan Sutherland was the founder of computer graphics and the founder of graphical interaction on computers and user interface design with graphics and many other things.  He's kind of the father of a lot of the experience of modernity, and he's still with us.  He's teaching at a little school in Oregon these days and I keep up with him once and a while.
+
+But he had described computer graphics and there was like this picture of a cube just painted by a computer, and when I was a kid, this was before we could get a computer graphics machine, that happened like a year or two after I arrived, I would run down and people, the strangest mysteries, look at this, you can make images with computers.  I’m like so excited.  I was like, because there was no Internet, you couldn't just reach.  You had to just attack strangers on the street with weird journal articles.
+
+So Ivan

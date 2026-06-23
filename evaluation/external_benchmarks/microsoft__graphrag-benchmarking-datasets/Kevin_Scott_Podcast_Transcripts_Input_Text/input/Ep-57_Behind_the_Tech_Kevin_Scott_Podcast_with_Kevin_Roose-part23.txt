@@ -1,0 +1,25 @@
+Ep-57_Behind_the_Tech_Kevin_Scott_Podcast_with_Kevin_Roose.txt  was, it had a whole bunch of stuff in it, where, you know, if the nature of the conversation was like, hey, you know, Bing Chat, I would like you to write me a science fiction story, or like a piece of fiction, like, if it was hallucinating inside of that context, it would be completely acceptable. But if someone were sitting in this chat agent, like having a sincere conversation with the system, where they thought all of this was real, you know, then like, it’s something different.  
+ 
+And so, like, it was a really useful conversation to be having, and like, I think, a framework for lots of conversations that we’re going to have like this in the future, where we’re going to have to collectively decide together like what is okay and what is not okay in these systems, because it’s kind of difficult for us to figure out what users’ expectations are of a brand new technology, if they’ve never interacted with it.  
+ 
+And so, that’s sort of the choices that we’re making right now. It’s like, we’re going to let you interact with it, and there’s some things that we’re doing where like, they’re just bright lines, and like, we’re not going to let you use it to do things that we like – and everybody else can clearly understand are, like, very serious – 
+ 
+CHRISTINA WARREN: Sure. 
+ 
+KEVIN SCOTT: – like, obvious harms.  
+ 
+CHRISTINA WARREN: Right. 
+ 
+KEVIN SCOTT: And then there are going to be a whole bunch of gray zone things where the only way that we’re going to figure out what people want is to like, let them use the product. And sometimes that means – 
+ 
+CHRISTINA WARREN: Totally. 
+ 
+KEVIN SCOTT: – like, it’s going to do something they don’t want, and they’re going to have to tell us about it. And I think that’s okay. 
+ 
+CHRISTINA WARREN: No, I totally agree, and I think everything you said is spot on. And I do want to actually applaud you just for having that, I think, foresight to say that, yes, these are conversations we need to have, and we should probably have them earlier rather than later.  
+ 
+You know, I continue to be floored by just how quickly everything has moved in the last, you know, nine, ten months, and the fact that you know, the article came out, what, February, and here we are in August as we’re recording this, and, you know, it feels like a lifetime ago just in terms of how much the tech has changed.  
+ 
+KEVIN SCOTT: Yeah. 
+ 
+CHRISTINA WARREN: So I applaud you, I think, for responding the

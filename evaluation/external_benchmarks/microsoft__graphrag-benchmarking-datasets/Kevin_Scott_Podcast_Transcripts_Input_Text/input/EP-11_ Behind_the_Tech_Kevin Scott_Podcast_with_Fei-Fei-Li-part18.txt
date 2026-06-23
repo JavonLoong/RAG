@@ -1,0 +1,17 @@
+EP-11_ Behind_the_Tech_Kevin Scott_Podcast_with_Fei-Fei-Li.txt FEI-FEI LI:  It uses reinforcement learning.  It uses, definitely, deep learning as the early representation of the world.  Deep learning is very useful.  It's a combination of deep learning and reinforcement learning.  It's curiosity driven, so -- 
+KEVIN SCOTT:  And how do you articulate the -- so, like, there must be some metric for it, right?  
+FEI-FEI LI:  Right.  Curiosity is expressed through your known model of the world and the difference you observe. 
+KEVIN SCOTT:  Oh, interesting. 
+FEI-FEI LI:  And for babies, it's the same, right?  If they keep seeing the same thing, they get bored.  So, they want to explore different aspects.  So, they want to create new things.  
+So, if you give a baby a ball, maybe he or she would first look at the ball and then get a -- he or she would drop the ball.  If you give him or her two balls, they will start banging the two balls.  So, these are the different aspect of -- 
+KEVIN SCOTT:  Oh, interesting. 
+FEI-FEI LI:  -- of interacting with the world.  So, we start seeing that.  And it's still early research, but what I would love to see is behavioral patterns emerge from the machine learning agent, and then we can do human experiment to contrast and compare and see if we can improve our machine learning algorithm, but also to see what emerges for machines that are different from humans.  
+KEVIN SCOTT:  And do you imagine in this research that the models will be very large, just because you want something that's sort of expansive and has the room to learn different sorts of representations in this space?  Or -- 
+FEI-FEI LI:  So, this is where it's very different from the brain.  We start small.  The models, because they simulated environments, they're pretty simple, so a couple of objects with simple shape and color and material. 
+But we want to grow the world -- the machine agent world and I'm not going to be surprised if this model becomes larger and larger. 
+KEVIN SCOTT:  Right.  Yeah, I mean, the reason I ask is like one of the things that really has started to intrigue me over the past few years is -- and like I think this has sort of been true for like, the past decade or so. 
+The things that have been making the fastest progress in AI are things that have some sort of connection to one or more things that are growing exponentially fast.
+FEI-FEI LI:  Chips. 
+KEVIN SCOTT:  So, like compute -- 
+FEI-FEI LI:  Data.  
+KEVIN SCOTT: Compute and data have been the two big things that are,

@@ -1,0 +1,41 @@
+In physics and engineering, the Fourier number (Fo) or Fourier modulus, named after Joseph Fourier, is a dimensionless number that characterizes transient heat conduction.
+ Conceptually, it is the ratio of diffusive or conductive transport rate to the quantity storage rate, where the quantity may be either heat (thermal energy) or matter (particles).
+ The number derives from non-dimensionalization of the heat equation (also known as Fourier's Law) or Fick's second law and is used along with the Biot number to analyze time dependent transport phenomena.
+The Weissenberg number (Wi) is a dimensionless number used in the study of viscoelastic flows.
+ It is named after Karl Weissenberg.
+ The dimensionless number compares the viscous forces to the elastic forces.
+ It can be variously defined, but it is usually given by the relation of stress relaxation time of the fluid and a specific process time.
+ For instance, in simple steady shear, the Weissenberg number, often abbreviated as Wi or We, is defined as the shear rate formula_1 times the relaxation time formula_2.
+ Using the Maxwell Model and the Oldroyd Model, the elastic forces can be written as the first Normal force (N).
+In the study of liquid crystals, the Ericksen number ("Er") is a dimensionless number used to describe the deformation of the director field under flow.
+ It is defined as the ratio of the viscous to elastic forces.
+ In the limit of low Ericksen number the elastic forces will exceed the viscous forces and so the director field will not be strongly affected by the flow field.
+ The Ericksen number is named after American mathematics professor Jerald Ericksen of the University of Minnesota.
+ The number is defined:
+In electrical engineering, the power factor of an AC electrical power system is defined as the ratio of the real power flowing to the load to the apparent power in the circuit, and is a dimensionless number in the closed interval of −1 to 1.
+ A power factor of less than one means that the voltage and current waveforms are not in phase, reducing the instantaneous product of the two waveforms (V × I).
+ Real power is the capacity of the circuit for performing work in a particular time.
+ Apparent power is the product of the current and voltage of the circuit.
+ Due to energy stored in the load and returned to the source, or due to a non-linear load that distorts the wave shape of the current drawn from the source, the apparent power will be greater than the real power.
+ A negative power factor occurs when the device (which is normally the load) generates power, which then flows back towards the source, which is normally considered the generator.
+A Qualified Person Responsible for Pharmacovigilance, or QPPV, is an individual named by a pharmaceutical company as the main person responsible for ensuring that the company (the product's Marketing Authorisation Holder or MAH) meets its legal obligations for the monitoring of the safety of a medicinal product on the market.
+The f-number of an optical system such as a camera lens is the ratio of the system's focal length to the diameter of the entrance pupil.
+ It is a dimensionless number that is a quantitative measure of lens speed, and an important concept in photography.
+ It is also known as the focal ratio, f-ratio, or f-stop.
+ It is the reciprocal of the relative aperture.
+ The f-number is commonly indicated using a hooked f with the format f/ N, where N is the f-number.
+In fluid dynamics, the Morton number (Mo) is a dimensionless number used together with the Eötvös number or Bond number to characterize the shape of bubbles or drops moving in a surrounding fluid or continuous phase, "c".
+ The Morton number is defined as
+The Womersley number (α) is a dimensionless number in biofluid mechanics.
+ It is a dimensionless expression of the pulsatile flow frequency in relation to viscous effects.
+ It is named after John R. Womersley (1907–1958) for his work with blood flow in arteries.
+ The Womersley number is important in keeping dynamic similarity when scaling an experiment.
+ An example of this is scaling up the vascular system for experimental study.
+ The Womersley number is also important in determining the thickness of the boundary layer to see if entrance effects can be ignored.
+The Kapitza number (Ka) is a dimensionless number named after the prominent Russian physicist Pyotr Kapitsa (Peter Kapitza).
+ He provided the first extensive study of the ways in which a thin film of liquid flows down inclined surfaces.
+ Expressed as the ratio of surface tension forces to inertial forces, the Kapitza number acts as an indicator of the hydrodynamic wave regime in falling liquid films.
+ Liquid film behavior represents a subset of the more general class of free boundary problems. and is important in a wide range of engineering and technological applications such as evaporators, heat exchangers, absorbers, microreactors, small-scale electronics/microprocessor cooling schemes, air conditioning and gas turbine blade cooling.
+The Euler number (Eu) is a dimensionless number used in fluid flow calculations.
+ It expresses the relationship between a local pressure drop caused by a restriction and the kinetic energy per volume of the flow, and is used to characterize energy losses in the flow, where a perfect frictionless flow corresponds to an Euler number of 0.
+ The inverse of the Euler number is referred to as the Ruark Number with the symbol Ru.

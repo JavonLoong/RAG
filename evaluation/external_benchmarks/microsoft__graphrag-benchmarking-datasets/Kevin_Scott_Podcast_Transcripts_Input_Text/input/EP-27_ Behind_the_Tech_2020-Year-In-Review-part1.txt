@@ -1,0 +1,23 @@
+EP-27_ Behind_the_Tech_2020-Year-In-Review.txt ../[MUSIC]
+
+KEVIN SCOTT: I think it’s really important for all of us to sort of share our stories because, you know, there are interesting lessons in there. But maybe most importantly, understanding each other a little bit better shows us how I do honestly believe that we are vastly, vastly more similar than we are different, and that sometimes, these stereotypes that we have of each other are just obstacles that stand in the way of each of us achieving our full potential.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech.  We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello and welcome to a special episode of Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft. 
+
+KEVIN SCOTT:  And I’m Kevin Scott.
+
+CHRISTINA WARREN:  And today we’re doing our Year in Review episode, and this means that we’re going to revisit a few fascinating conversations with our guests from 2020 with topics ranging from artificial intelligence to synthetic biology. 
+
+I mean, 2020 – (laughter) – wow. It’s been, I think I can say, an unprecedented year full of challenge, but also opportunity. Kevin, if you had to come up with a tagline for 2020, what would it be?
+
+KEVIN SCOTT:  You know, every time somebody says that 2020 is an unprecedented year, I always go back to the scenes in The Princess Bride with the Sicilian where he keeps saying, “Inconceivable.” And at some point, Mandy Patinkin’s character says, “I don’t think that means what you think it means.” (Laughter.)
+
+Yeah, I don’t know what my tagline – I mean, like my children have declared 2020 “The worst year ever.” But, you know, I think even though it has certainly been perhaps the most challenging year that I have experienced in my adult life because of the pandemic, because of this reckoning that we’ve been having in public with, you know, a bunch of social issues that, like, we should have contended with, addressed and resolved a long, long while ago, I do think that it has also been a year of unbelievable progress on several different scientific fronts, and where we’re getting an opportunity unlike any we’re likely to ever have again in our lifetimes to think very, very carefully about our lives, how we show up in society, and for

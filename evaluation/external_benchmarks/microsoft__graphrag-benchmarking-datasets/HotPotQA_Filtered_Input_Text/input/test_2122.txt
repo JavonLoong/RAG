@@ -1,0 +1,54 @@
+Libertarianism (Latin: "libertas" , "freedom") is a collection of political philosophies and movements that uphold liberty as a core principle.
+ Libertarians seek to maximize political freedom and autonomy, emphasizing freedom of choice, voluntary association, individual judgment, and self-ownership.
+Focal cortical dysplasia (FCD) is a congenital abnormality of brain development where the neurons in an area of the brain failed to migrate in the proper formation in utero.
+ Focal cortical dysplasia is a common cause of intractable epilepsy in children and is a frequent cause of epilepsy in adults.
+ There are several subtypes of FCD including type 1a, 1b, 2a, 2b, 3a, 3b, and 3c, each with distinct histopathological features.
+ All forms of focal cortical dysplasia lead to disorganization of the normal structure of the cerebral cortex.
+ Type 1 FCD exhibits subtle alterations in cortical lamination.
+ Type 2a FCD exhibits neurons that are larger than normal that are called cytomegalic dysmorphic neurons (CDN).
+ FCD type 2b exhibits complete loss of laminar structure, and the presence of CDN and enlarged cells are called balloon cells (BC) for their large elliptical cell body shape, laterally displaced nucleus, and lack of dendrites or axons.
+ The developmental origin of balloon cells is currently believed to be derived from neuronal or glial progenitor cells.
+ Balloon cells are similar in structure to giant cells in the disorder tuberous sclerosis complex.
+Liberty Place is a skyscraper complex in Philadelphia, Pennsylvania, United States.
+ The complex is composed of a 61-story, 945 ft skyscraper called One Liberty Place, a 58-story, 848 ft skyscraper called Two Liberty Place, a two-story shopping mall called the Shops at Liberty Place, and the 14-story Westin Philadelphia Hotel.
+ Prior to the construction of Liberty Place, there was a "gentlemen's agreement" not to build any structure in Center City higher than the statue of William Penn on top of Philadelphia City Hall.
+ The tradition lasted until 1984 when developer Willard G. Rouse III of Rouse & Associates announced plans to build an office building complex that included two towers taller than City Hall.
+ There was a great amount of opposition to the construction of the towers with critics believing breaking the height limit would lead to construction of many more tall skyscrapers, ruining the livability and charm of Center City.
+ Despite the opposition, construction of One Liberty Place was approved and the first phase of the project began in 1985 and was completed in 1987.
+ When One Liberty Place was completed, it was the tallest skyscraper in Philadelphia.
+The classification is based on similarities at the tertiary and primary structural levels.
+ Comparisons are restricted to that part of the sequence directly involved in the reaction, which in the case of a peptidase must include the active site, and for a protein inhibitor the reactive site.
+ The classification is hierarchical: sequences are assembled into families, and families are assembled into clans.
+ A family is assembled around a "type example", the sequence of a well-characterized peptidase or inhibitor.
+ All other sequences in the family must be related to the family type example, either directly or through a transitive relationship involving one or more sequences already shown to be family members.
+ Typically, FastA or BlastP are used to establish sequence relationships, with an expect value of 0.001 or lower taken to be statistically significant.
+ A clan is also assembled around a type example, this being the structure of a well-characterized peptidase or inhibitor.
+ A family is included in a clan if the tertiary structure of a family member can be shown to be related to that of the clan type example.
+ Typically, DALI is used to establish clan membership, with a z score of 6.00 standard deviation units or above considered to be statistically significant.
+ For peptidases, other evidence to indicate that families are related when a tertiary structure is absent includes the same order of catalytic residues in the sequences.
+In programming languages and type theory, a product of "types" is another, compounded, type in a structure.
+ The "operands" of the product are types, and the structure of a product type is determined by the fixed order of the operands in the product.
+ An instance of a product type retains the fixed order, but otherwise may contain all possible instances of its primitive data types.
+ The expression of an instance of a product type will be a tuple, and is called a "tuple type" of expression.
+ A product of types is a direct product of two or more types.
+Libertarianism (sometimes called "social libertarianism") is the set of related political philosophies that uphold liberty as the highest political end.
+Liberty Hill Historic District is a national historic district located at Liberty Hill, Kershaw County, South Carolina.
+ The district encompasses 34 contributing buildings and 2 contributing structure in the small rural community of Liberty Hill.
+ The district includes several imposing Greek Revival structures, Greek Revival cottages, and an 1880s vernacular Gothic Revival church.
+ The later, turn of the 20th century residences are primarily one-story, simple clapboard cottages.
+ The town’s history begins as early as ca. 1813 when Peter Garlick’s store (location unknown) was a gathering place for surrounding farmers.
+ Soon, impressive structures were built by planters in the area.
+ Remaining from the 1830s are Cool Spring and the Joseph Cunningham House.
+ The majority of the town’s antebellum buildings, however, were built ca. 1840-1850.
+ During this period Liberty Hill was a very wealthy community.
+ However, the final days of the American Civil War ended that prosperity.
+ Nevertheless, the town did eventually reassert itself and appears to have changed very little since the beginning of the 20th century.
+A structural type system (or "property-based" type system) is a major class of type system, in which type compatibility and equivalence are determined by the type's actual structure or definition, and not by other characteristics such as its name or place of declaration.
+ Structural systems are used to determine if types are equivalent and whether a type is a subtype of another.
+ It contrasts with nominative systems, where comparisons are based on the names of the types or explicit declarations, and duck typing, in which only the part of the structure accessed at runtime is checked for compatibility.
+Libertarianism is variously defined by sources.
+ There is no general consensus among scholars on the definition nor on how one should use the term as a historical category.
+ Scholars generally agree that libertarianism refers to the group of political philosophies which emphasize freedom, individual liberty, and voluntary association.
+ Libertarians generally advocate a society with little or no government power.
+Urban Planning in China (中国) or The People's Republic of China (中华人民共和国) is currently characterized by a top down approach, high density urban development and extensive urbanization.
+ China's urban planning philosophies and practices have undergone multiple transitions due to governance and economic structure changes throughout the nation's extensive history.The founding of the People's Republic of China in 1949 marks the beginning of three recent historical stages of urban planning philosophies and practice that represent a divergence from traditional Chinese urban planning morphologies are broadly categorized as socialist, hybrid and global cities.

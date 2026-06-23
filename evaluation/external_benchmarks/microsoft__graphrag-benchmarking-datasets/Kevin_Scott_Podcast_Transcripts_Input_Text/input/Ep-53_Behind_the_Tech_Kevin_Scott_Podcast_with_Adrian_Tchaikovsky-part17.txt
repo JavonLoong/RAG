@@ -1,0 +1,17 @@
+Ep-53_Behind_the_Tech_Kevin_Scott_Podcast_with_Adrian_Tchaikovsky.txt  like, you also have search engine optimization where, you know, people who have some kind of economic interest in you clicking through to a particular search result do all sorts of crazy things to get their content featured highly for particular queries. 
+ 
+ADRIAN TCHAIKOVSKY: I mean, it’ll – whatever, whether it’ll be easier or harder, it will be the evolution cycle of what’s going on will be vastly faster. 
+ 
+KEVIN SCOTT: Correct. Yes. Oh, yeah, yeah, for sure.  
+ 
+ADRIAN TCHAIKOVSKY: I mean, honestly, the weird thing, it… I’m always fascinated by the concept of genuine artificial intelligence in the sense of actually strong, sort of, fully sort of meaning-aware artificial intelligence arising emergently. And that kind of battlefield might almost be the sort of place where it would, because all of these things that – you know, it wouldn’t just be the case of, oh, well, our thing isn’t working, let’s build another one. The thing will be designed to refine its own abilities as the arms race went on.  
+e 
+So, every single person’s search engine or content production engine would be constantly evolving itself. And that is kind of – you’re then getting into the genuine, full-on science fiction, AI sort of scenario. 
+ 
+KEVIN SCOTT: Yeah. I mean, it’s one of the reasons why we think a lot about encouraging forms of AI use where you think about it as a tool, and it’s always augmenting humans. You always have humans in the loop. You know, like the thing that we just described, the only reason that it would happen right now is because there would be some human agency somewhere that decided that this feedback loop that we just described was profitable, or interesting or valuable in some way or the other. And like, you know, there’s some human agency somewhere that is, you know, setting the system up to run this way. 
+ 
+Now, it could be a highly leveraged human agency where, you know, very few people get to make the substantive decisions that, you know, then have a big impact. But, like, I think making sure that you’ve always got some kind of human agency somewhere in the loop is pretty important. (Laughter.) 
+ 
+ADRIAN TCHAIKOVSKY: I think the problem you’d get eventually is that everyone would assume that the other person was the one supplying that human agency, especially given how good these things are already at feigning being a human agency. I mean, you know, the Turing test is way behind us in the rearview mirror at this point.  
+ 
+KEVIN SCOTT: Yeah, that is certainly true. I mean, it’s one of the hard problems in the AI field right now, is the benchmarks that we’ve had

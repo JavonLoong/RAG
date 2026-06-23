@@ -1,0 +1,13 @@
+Ep-59_Behind_the_Tech_Kevin_Scott_Podcast_with_David_Kirtley.txt  of destructive testing to find limits. And so, that has been really important and baked into the company. 
+
+And I think part of that comes from that coupling early of people that also worked in the space field, where it’s similar. You’re building a rocket. That engine has to lift everything that’s on the rocket. And if there’s one part of it, if a toilet seat on the rocket is really heavy, now the engine has to be bigger, which means you need more propellant to power that engine, which means you need bigger tanks, which are heavier. And, you know, you have this exponential increase in complexity and scale.
+
+And so, by minimizing that, you can, you know, shrink the scale, shrink the costs, shrink, in theory, the complexity, too. And then it turns out that bootstraps, which I didn’t really appreciate early in my career, is that big giant machines are actually harder to make than smaller machines. And you say, like, okay, great. Yeah, it’s 10 times bigger, it should be 10 times harder, but it’s not. It’s 100 times harder. It’s massive amounts harder.
+
+And if your capital, and as a business person now, where I’ve taken on all those business rules, if you have to raise capital from different sources, or worse, international sources, and, like, a lot of what we’re doing in fusion includes politics now, where there’s politicians and other kinds of big things involved, like that, that have long timescales and the complexity, that you get so big that it just slows down. It gets too hard and too complex. 
+
+And by going smaller, testing the small rocket early, getting good at it, proving those small systems, and then learning to build the big systems, you just move faster. And the systems end up being more reliable. And I wouldn’t have predicted that early in my career.
+
+KEVIN SCOTT: Yeah. And I think funny enough, like, that principle is true for most things. Like, everything that you just said is also true of building distributed systems, and, like, any kind of complex software system, or even organizations. Like, big is only a thing you should do if it’s absolutely necessary, because there’s a cost for big. Usually, it makes you slow and less focused and everything, you know, more, like, harder to lift, like the rocket. And, you know, so small is good if you can accomplish what you want to accomplish inside of the envelope of small. 
+
+And so, I think it’s actually one of the genius things about what you all are doing. Like, if you look at these efficient plants that we, you know, are attempting to build, like, they’re just gigantic projects. They cost tens of billions of dollars to make one. And, like, they’re at such a huge scale that,

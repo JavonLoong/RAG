@@ -1,0 +1,25 @@
+EP-20_ Behind_the_Tech_Kevin_Scott_Podcast_ReprogrammingTheDream.txt  I'd like to ask you to read a passage from the introduction in which you address that question.
+
+KEVIN SCOTT:  Okay, yeah, I'd be happy to.  
+
+“Even though I have neither the expertise nor the crystal ball to predict exactly when AGI might arrive, I’ve been involved with modern technology long enough, and read enough history, to know that we’ve often underestimated the speed with which  futuristic technology suddenly arrives. 
+
+AI has historically been limited in what it has been able to accomplish by the amount of compute power we can throw at AI problems, and how much time it takes for humans to encode logic and knowledge into AI algorithms. 
+
+We now have enormous amounts of compute power in the cloud, and we have enormous database of digitized human knowledge, and we have enormous databases of digitized human knowledge, like YouTube and the Kindle Bookstore, that can be used to train AI systems.
+
+As our modern AI algorithms absorb that human intelligence to accomplish new tasks we imagine for AI-powered systems, we may achieve what Thomas Kuhn defined as a paradigm shift, one in which humans will either be in the loop or out. 
+
+Which one of these options we reach depends on our actions today, the story we craft, and the principles we assert about what kind of world we want our children to live in tomorrow.
+
+I feel this profound sense of cognitive dissonance: the same thing that can advance humanity can also cause people distress and even harm. This book arises out of a powerful urge I feel to reconcile the two. It is an engineer’s tale, not the musings of a philosopher, economist, or screenwriter. 
+
+As Microsoft’s chief technologist, do I have skin in the game? Of course I do. But I’m also the product of rural America, one of the places most vulnerable to the dystopic story of AI. My values and many of my earliest experiences as a budding engineer occurred in a part of America, rural America, that is most at risk. 
+
+I left the rural South over two decades ago, first for academia and then for Silicon Valley and the tech industry. But at my core I am those people—rural people—and I care about creating a future that values them and their resourcefulness.”
+
+GREG SHAW:  That's great. Thank you, Kevin. I want to ask you to talk a little bit about AI and how you define it.  You have a very savvy tech audience for this podcast, but you also wrote the book for people in your community, back in Virginia, and for others.  
+
+My father read an early proof of the book.  He's an oil and gas guy from Oklahoma, and he said he felt like, for the first time, he had a grasp of AI and what it might mean.  How should we define for ourselves; how should we think of what AI is?
+
+KEVIN SCOTT:  So, AI, on the one hand,

@@ -1,0 +1,19 @@
+EP-06_ Behind_the_Tech_Kevin Scott_Podcast_with_Wences_Casares_TRANSCRIPT.txt  secure the Bitcoin blockchain this year.  And without that, I would not be saying all of what I'm saying here.  
+
+I am confident that Bitcoin can succeed because of the $6 billion of electricity.  Not because of electricity, per se, but because of what it means in terms of hashing power and what that hashing power means to trust the integrity of the blockchain.  So, at the very core, we owe the integrity of that blockchain to the miners, I would not want to be a miner, but thank God they exist.
+
+KEVIN SCOTT:  Awesome.  So, I want to thank Wences very much.  Thank you for being with us today, this is a fascinating conversation, and I really appreciate hearing from you and this very unique perspective you have on one of the most interesting things happening in tech.
+
+WENCES CASARES:  Thank you for having me, Kevin.
+
+KEVIN SCOTT:  Awesome.  (Applause, music.)
+
+CHRISTINA WARREN:  Well, thanks for joining us for Behind the Tech.  You just listened to Microsoft CTO Kevin Scott speaking with Wences Casares.  And, Kevin, I really loved that conversation that you had with Wences.  And I thought it was really interesting, his point about how you really have to have a need to get into blockchain and Bitcoin, and not just to do it because it's the next new thing, because you might as well just use a database in a lot of cases, right?  
+
+KEVIN SCOTT:  Yeah, I think that's one of the things that confuses a lot of people.  Blockchain is really a fantastically cool technology.  It solves a whole bunch of problems simultaneously.  But it solves them in a bunch of different ways with non-trivial cost: securing the blockchain, for instance, just requires a ridiculous amount of compute power.  
+
+And the net of that is that you really do need a very good reason to use blockchain.  And the reason shouldn't be, "Oh, this is just some cool new thing."  Because a lot of things that people want to use a blockchain for, you can do just as easily with a conventional cloud database.  So, the thing that cryptocurrencies really need from the blockchain is this whole notion of sovereignty.  And I think Wences talks about it very eloquently having the ledger of all of these Bitcoin transactions stored in this sort of sovereign database of transactions is really, really powerful.  It means folks can't tamper with it.  
+
+You can't have governments doing what governments sometimes do and creating runaway inflation by just sort of arbitrarily issuing more currency.  The system has a set of rules that everyone has agreed upon and this sovereignty mechanism is like this binding contract.  And the mechanism that makes it this independent thing that whether you or I want to, we can't change the way that the system is structured.
+
+CHR

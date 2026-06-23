@@ -1,0 +1,13 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt  our muscles, that if we don’t work them out all the time, you know, they kind of atrophy. 
+
+But you know, one other thought that your comments triggered is actually 100 years ago this year, in 1921, a guy named Abraham Flexner wrote an essay. He was writing it to the board of the Rockefeller Foundation, trying to explain exactly your point, you know, that people work on really hard problems just to satisfy their curiosity. And lo and behold, you know, more often, way more often than you would expect, that new knowledge ends up being really important. And he wrote that in 1921, to try to explain to the Rockefeller Foundation why they should support research.
+
+And then– more than 10 years, 15 years later, when there was the desire to rescue people from Europe, bad things happening in the late 1930s in Europe, really important people like Albert Einstein or von Neumann and others, to justify the cost and expense and political risks of immigrating them and forming the Institute for Advanced Study at Princeton, he published that memo publicly. And it’s an essay called “The Usefulness of Useless Knowledge.” And he just ticks through, like, even in this world where really bad things are happening, you know, World War II was brewing and all these other things. You know, there are things that we need to do. There are problems we need to think about and work on. There’s new knowledge to discover, and it really matters and maybe matters even more than ever in the context of a world that’s struggling. 
+
+And I reread that essay, and it’s available free online, just search for “The Usefulness of Useless Knowledge.” I read it about once a year because it’s important. You know, look, you and I are consumed with helping Microsoft become a more successful company. It’s all grounded in the real world and so on. But it’s important to not lose a grip on those sorts of enduring values. And so it’s sort of a pilgrimage for me. And I swear, you read the first page of that essay and it could have been written yesterday.
+
+KEVIN SCOTT:  Yeah.
+
+PETER LEE:  It’s that timeless. And you know, it’s a little flowery and dramatic to call it the search for truth and beauty, but it is spiritual in that way. 
+
+You know, at the same time, I think Microsoft Research has a special obligation to put its brainpower into the real world. You know, we – you know, that real world might be far in the future. Like, you know, I know, Kevin, you’re thinking so hard about the inevitability that general artificial intelligence will become real. And maybe that’s a few years into the future, but it’s inevitably going to happen. And so that’s situating research in the real world because it’s a

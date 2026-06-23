@@ -1,0 +1,25 @@
+EP-17_ Behind_the_Tech_Kevin_Scott_Podcast_2019-Year_In_Review.txt  also have the ability to model what land will be arable.  And we can really think about the future of agriculture, the future of water supply.  Who controls that information?  Who controls the decision-making that happens from that information?  So that's that moment where I'm like, okay, we're getting there.  We actually have a decent understanding.  
+
+But if we're at a point where that material gets coopted, it gets controlled, then I'm deeply concerned.  So, like these are the contradictions I think we're sitting in the middle of because if we can really understand -- I mean, where did data analytics begin?  Farming, right?  
+
+If with can really understand what this will do to ag, we're going to be able to better build resilience.  And that's those moments where I'm like, okay, you know, this is not about just NOAA -- the National Oceanographic Atmospheric Administration.  It's not just about NOAA being able to model, but it's also being able to give that information publicly in a way where it doesn't get perverted for political purposes.  
+
+And that's a tricky thing right now.  
+
+KEVIN SCOTT:  Yeah, and you know on the hopeful side of things, you know, what we've even seen at Microsoft with some of the stuff that's happening with this Farm Beats program that's happening at Microsoft Research, is that you can take some of this data, so like the weather data, weather forecasts, like all of the sort of historical information, like stuff that like you used to get embedded into a farmer's almanac, which was almost you know like a little bit like astrology. But like there was real, you know, data and trending that people built into these almanacs that helped people decide, like, very prosaic things like when to put the seeds in the ground.  And like we know that if you apply technology to that process to very simple things like when to plant in a particular location given historical and predicted weather trends, that we can make huge improvements in crop productivity.  
+
+We see it in India where, you know, some of these very poor parts of India like when you put a little bit of technology in, like you can get double-digit percentage improvements, and like that is the difference between people starving and people getting fed.  
+
+danah boyd:  Oh, absolutely.  
+
+KEVIN SCOTT:  And it's just great to see happening. 
+
+danah boyd:  And the important thing about something like agriculture is it has to happen around the globe.  
+
+KEVIN SCOTT:  It has to happen. 
+
+danah boyd:  Right?  It just has to.  And same with water resources.  
+
+KEVIN SCOTT:  Yep.  
+
+danah boyd:  We need to understand and model out water resources, because, I mean, just

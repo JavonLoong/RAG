@@ -1,0 +1,34 @@
+Spunge (often typeset as [spunge] - lead singer Alex Copeland has joked that the brackets are in the name so that the letters do not fall out) are a ska punk band from Tewkesbury, England.
+ Through many years of touring, Spunge have toured with or played alongside a number UK bands; and several more American bands such as Green Day and Dropkick Murphys; and been supported on a UK tour by Bowling for Soup; the latter of whom contributed backing vocals to the song "Centerfold" on the "That Should Cover It!
+" album.
+Stéphane Houdet and Shingo Kunieda were the defending champions, but they decided not to play together.
+ Stéphane Houdet played alongside Joachim Gérard and won the title by defeating Gustavo Fernández and Nicolas Peifer in the final, 4–6, 6–3, [11–9].
+ Shingo Kunieda played alongside Takuya Miki and lost in the semifinals to Joachim Gérard and Stéphane Houdet.
+Lauren Lane is an American television and stage actress.
+ She is best known for her role as C. C. Babcock on "The Nanny".
+GNU Multiple Precision Arithmetic Library (GMP) is a free library for arbitrary-precision arithmetic, operating on signed integers, rational numbers, and floating point numbers.
+ There are no practical limits to the precision except the ones implied by the available memory in the machine GMP runs on (operand dimension limit is 2-1 bits on 32-bit machines and 2 bits on 64-bit machines).
+ GMP has a rich set of functions, and the functions have a regular interface.
+ The basic interface is for C but wrappers exist for other languages including Ada, C++, C#, Julia, OCaml, Perl, PHP, Python, R, Ruby and the Wolfram Language.
+ In the past, the Kaffe Java virtual machine used GMP to support Java built-in arbitrary precision arithmetic.
+ This feature has been removed from recent releases, causing protests from people who claim that they used Kaffe solely for the speed benefits afforded by GMP.
+ As a result, GMP support has been added to GNU Classpath.
+Marcelo Demoliner and João Souza were the defending champions, but they decided not to play together.
+ Demoliner played alongside Elias and Souza played alongside Sá.
+Josef Preishuber-Pflügl is an Austrian RFID, NFC and IoT expert who is and was project editor of various international RFID standards as ISO/IEC 18000-4 "2.45 GHz air interface", ISO/IEC 18000-6" General UHF RFID air interface", ISO/IEC 18000-63 "Type C: UHF RFID air interface", ISO/IEC 18000-7 "433 MHz Active RFID air interface", ISO/IEC 29143 "Air interface for Mobile Item Identification Methods", and ISO/IEC 29167-1 "RFID Security".
+Chasing Morgan is an American pop punk band from Harford County, Maryland that began early in 2010.
+ They have played alongside many national touring acts and were a catering band for the Vans Warped Tour in 2013 and 2014.
+Joe Baiza (born January 11, 1952) is a punk rock and jazz guitarist whom Eugene Chadbourne cites as one of the most noteworthy guitarists to emerge from the Southern California punk rock milieu.
+ Baiza is a founding member of the bands Saccharine Trust, Universal Congress Of, and The Mecolodiacs.
+ He also performed guest guitar spots on several Minutemen tracks and played alongside Black Flag's Greg Ginn and Chuck Dukowski in the SST all-star jam band October Faction, recording two albums with them.
+ Baiza was also part of the musical side project Nastassya Filippovna which featured Bob Lee (drums), Devin Sarno (bass) and Mike Watt (bass).
+ He substituted for Nels Cline during Mike Watt's European and American tours behind his second solo album, "Contemplating the Engine Room", in 1997 and 1998.
+ Also in 1997, he and Cline played (sometimes together) in the band Solo Career with Lee (drums), Richard Derrick (bass), Walter Zooi (trumpet) and Gustavo Aguilar (percussion); other guitarists in that rotating ensemble included Mario Lalli, Woody Aplanalp and Ken Rosser.
+ Currently, he is in the reunited Saccharine Trust as well as the improvisational unit Unknown Instructors with former Minutemen Mike Watt and George Hurley.
+Chester Drescher (1981–2000) was a performing dog and Fran Drescher's Pomeranian.
+ He played C.C. Babcock's dog on "The Nanny", who seemed to like nanny Fran Fine better than he did C.C.
+ He was also in the 1990 film "Cadillac Man".
+He grew up playing for the Otahuhu Leopards before moving to the Te Atatu Roosters where he won a Fox Memorial premiership.
+ He later played for the Mangere East Hawks before moving to England.
+ During the 1991 season Iva was able to twice line up alongside four of his brothers for Mangere East in the Auckland Rugby League competition.
+ Iva played alongside Joe, John, Peter, and Tea.

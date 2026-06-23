@@ -1,0 +1,32 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt . So, we’ll revisit some bits of conversation from your interviews with them, and we’ll also share some news about what they’ve been up to recently.
+
+KEVIN SCOTT: Great. So, who’s up first? 
+
+CHRISTINA WARREN: Okay, so, first, we thought it was fitting to check in with Anders Hejlsberg because Anders was our first-ever guest on the podcast.
+
+KEVIN SCOTT: Anders is one of my legitimate coding heroes. He built Turbo Pascal when he was at Borland, which is this tool that inspired me as a teenager to take computer science seriously. He eventually moved over to Microsoft, where he helped the create C# programming language. And just a few months ago, he and the team released TypeScript 4.4 which offers smarter control analysis, stricter checks and speed improvements, and a bunch of other cool programming language awesomeness. 
+
+Here’s a snip from our conversation where we’re reminiscing about the fact that Anders and his team came up with one of the first integrated development environments written in Z-80 Assembly language.
+
+[MUSIC]
+
+KEVIN SCOTT: I just want to double-click on this point again. Coming up with one of the first integrated development environments that you have written in Z-80 Assembly language at that point, that’s an unbelievable breakthrough.
+
+ANDERS HEJLSBERG: I suppose, in retrospect, yes. I’ve never really thought of it that way. But, you know, it’s-
+
+KEVIN SCOTT: It’s just incredible. It’s the first. What the- 
+
+ANDERS HEJLSBERG: It just seemed like, heck, this is going to be so much better
+than having to have, first, load an editor and then load (inaudible). Why not just put it all to there? I mean, I don’t know. I never really- 
+
+KEVIN SCOTT: And especially at the time, because, I mean, again, like more framing, these are not windowed systems, can’t have multiple things opened at the same time. It’s super tedious to switch from one program to another. So, like, having everything in one place is just a huge productivity win.
+
+ANDERS HEJLSBERG: Oh, it was, totally. The added compile, run, debug, cycle just shrunk by many orders of magnitude.
+
+KEVIN SCOTT: Yeah, and I’m embarrassed to say I’ve forgotten, what was it, F9 to compile and run, or was it F5?
+
+ANDERS HEJLSBERG: You know, I don’t even remember what it was. I think it was F5, yeah, but- 
+
+KEVIN SCOTT: It was, like, miraculous.
+
+ANDERS HEJLSBERG: Or maybe it was F3, but yeah, no, it was great. There were all sorts of tricks in

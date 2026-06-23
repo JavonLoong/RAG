@@ -1,0 +1,33 @@
+EP-07_ Behind_the_Tech_Kevin Scott_Podcast_with_Dio_Gonzalez_TRANSCRIPT.txt , I wanted to do computer graphics.  So, I had already done my one year in undergrad.  My thesis was about, you know, doing interactive storytelling and I had programmed some kids' you know stories.  
+
+So, unfortunately, in Venezuela, the computer graphics industry was minimum. And then there were no graduate programs.
+
+And so I worked several years saving money.  And then, yeah, I apply -- I apply for a school here, Purdue University, and so was super lucky that, yeah, I got accepted and all. 
+
+KEVIN SCOTT:  And so you -- after Purdue, you wound up teaching games programming in Singapore? 
+
+DIO GONZALEZ:  Yes. 
+
+KEVIN SCOTT:  How did that happen? 
+
+DIO GONZALEZ:  Yeah, yeah, because you know, my master's degree was in virtual reality.  So, that was my whole job -- my whole work, research, and my thesis.  At that time, there was no Oculus, right, no Vive, no Windows Mixed Reality, no Unity, so there was not really industry in virtual reality, just a very few startups. 
+
+So, you had to stay in academia to do that.  And so that was the years after 9/11 where it was still very tough to be an international student in the U.S.  
+
+KEVIN SCOTT:  Yeah. 
+
+DIO GONZALEZ:  So, even with a legal visa and all authorized to work, it was really difficult.  Companies would not hire international students.  So, I just send my -- I put a website and sent my resume pretty much everywhere.  I saw it like everywhere.  
+
+And they called me from Singapore.  And I'm like, "Sure."  (Laughter.)  
+
+KEVIN SCOTT:  Oh, what an adventure.  (Laughter.) 
+
+DIO GONZALEZ:  They flew me for the interview and they interviewed me.  Then I came back to the U.S. and then they offered me the job.  And so, yeah, I went.  So that -- what I loved about that is, again, I wanted, again, to perhaps do a PhD or continue again in virtual reality, right?  That's what the whole idea. 
+
+So I was there, yeah, and the digital media school teaching games programming and I specialized myself there in 3D worlds because that was the time with Second Life, you know, and this thing about 3D worlds and virtual worlds was starting.  
+
+So, I became that person over there.  
+
+KEVIN SCOTT:  And did you enjoy teaching? 
+ 
+DIO GONZALEZ:  Yes.  However, after two years, I realized -- because I met colleagues that are really teachers at heart.  They're like amazing teachers and I admire

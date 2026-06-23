@@ -1,0 +1,24 @@
+EP-28_Behind_the_Tech_Mae-Jemison.txt ../
+MAE JEMISON: 100 Year Starship is about making sure the capabilities for human interstellar flight exists within the next 100 years. Capabilities, not building a starship or launching a starship, but having the capabilities. And the reason for that was the challenge that it requires, right? The radical leaps in knowledge that are required. We can’t ease up on this.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech.  We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today on the show we talked to Dr. Mae Jemison. Mae is a doctor, an engineer, an educator, a philanthropist, a entrepreneur, a writer, a dancer, and a NASA astronaut. Her list of accomplishments is long, diverse and incredibly inspiring. Kevin, how did you first learn about Dr. Jemison and her work?
+
+KEVIN SCOTT: I have always been a huge space nerd. And I just watched all of the space shuttle launches, you know, since the very first one. And like it was, I believe her first space mission was in ‘92 or ‘93, and like I can just distinctly remember learning about her, and like not just that she was a passenger on the shuttle flight, but like all about her biography and background, like back then. So, I’ve known about her for, you know, 27 years. I’m an enormous fan of her and what she’s done in the world.
+
+CHRISTINA WARREN: I’m actually an enormous fan too. A – a couple of years ago, Lego came out with the Women NASA Lego kit, and she’s one of the featured women in that kit, and that’s actually, when you walk into my house, that’s on display when you first walk in. You, it’s with some of my other toys, so I’m really excited about this conversation with the two of you too. So, let’s get into the interview.
+
+[MUSIC]
+
+KEVIN SCOTT: Our guest today is Dr. Mae Jemison. Dr. Jemison is an astronaut, engineer, entrepreneur, physician and educator. She served six years as a NASA astronaut and was the first woman of color to go into space aboard a joint space shuttle mission with the

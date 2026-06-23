@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt ../[MUSIC]
+
+DANNY HILLIS:  Social media is, you know, was never by itself, the thing that was going to, you know, advance humanity, nor is it the thing that's going to destroy humanity it’s actually a tool that we're going to learn to use with time like we learn to use fire.
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+In this podcast, we're going to get behind the tech. We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today. Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello and welcome to Behind the Tech. I'm Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT:  And I'm Kevin Scott. Today, our guest is Danny Hillis.
+
+CHRISTINA WARREN:  And Danny Hillis, I'm so excited about today's guest.  He is an incredible pioneer.
+
+KEVIN SCOTT:  Yeah, he is. So, Danny is perhaps most well-known, although it's like a difficult thing to say, you know, given how much he's accomplished, like what the single best known thing was, but like when he was a student at MIT, he started this pioneering company called Thinking Machines that built the world's fastest supercomputers and really pioneered a new type of computer architecture that was revolutionary at the time, and that has informed how we build computers even today.
+
+And like he's also been the head of Disney Imagineering and he's got this crazy invention factory company that he runs now.  So, like Danny really is like one of the most interesting people I know and like so creative and like such an amazing entrepreneur. I'm super excited to be able to chat with him today.
+
+CHRISTINA WARREN:  I'm so excited, too.  We should get to the interview.
+
+KEVIN SCOTT:  Yeah, let's chat with Danny.
+
+[MUSIC]
+
+
+KEVIN SCOTT:  Today, we'll chat with Danny Hillis.  Danny is an inventor, engineer, entrepreneur, and author.  As a student at MIT, he founded the pioneering supercomputing company Thinking Machines, which built the world's fastest computers in the '80s and '90s, and paved the way for modern large-scale computing.
+
+After Thinking Machines, Danny ran Imagineering at Disney. He cofounded Applied Minds and Applied Invention, an interdisciplinary group of engineers, scientists and artists.  He is a visiting professor at the MIT Media Lab and a great friend.  
+
+[MUSIC]
+
+KEVIN SCOTT:  Hello, Danny.  Welcome

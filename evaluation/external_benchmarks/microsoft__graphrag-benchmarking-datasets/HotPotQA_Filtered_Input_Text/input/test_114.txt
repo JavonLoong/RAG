@@ -1,0 +1,38 @@
+In a mixture between a dielectric and a metallic component, the conductivity formula_1 and the dielectric constant formula_2 of this mixture show a critical behavior if the fraction of the metallic component reaches the percolation threshold.
+ The behavior of the conductivity near this percolation threshold will show a smooth change over from the conductivity of the dielectric component to the conductivity of the metallic component and can be described using two critical exponents s and t, whereas the dielectric constant will diverge if the threshold is approached from either side.
+ To include the frequency dependent behavior, a resistor-capacitor model (R-C model) is used.
+1-Pentanol, (or n-pentanol, pentan-1-ol), is an alcohol with five carbon atoms and the molecular formula CHOH.
+ 1-Pentanol is a colorless liquid with an unpleasant aroma.
+ It is the straight-chain form of amyl alcohol, one of 8 isomers with that formula.
+An aldonic acid is any of a family of sugar acids obtained by oxidation of the aldehyde functional group of an aldose to form a carboxylic acid functional group.
+ Thus, their general chemical formula is HOOC-(CHOH)-CHOH.
+ Oxidation of the terminal hydroxyl group instead of the terminal aldehyde yields a uronic acid, while oxidation of both terminal ends yields an aldaric acid.
+Isopropyl alcohol (IUPAC name propan-2-ol), also called dimethyl carbinol or, incorrectly, isopropanol, is a compound with the chemical formula CHO or CHOH or CHCHOHCH (sometimes represented as "i"-PrOH).
+ It is a colorless, flammable chemical compound with a strong odor.
+ As a propyl group linked to a hydroxyl group, it is the simplest example of a secondary alcohol, where the alcohol carbon atom is attached to two other carbon atoms, sometimes shown as (CH)CHOH.
+ It is a structural isomer of 1-propanol.
+ It has a wide variety of industrial and household uses, and is a common ingredient in chemicals such as antiseptics, disinfectants and detergents.
+1-Hexanol is an organic alcohol with a six-carbon chain and a condensed structural formula of CH(CH)OH.
+ This colorless liquid is slightly soluble in water, but miscible with diethyl ether and ethanol.
+ Two additional straight chain isomers of 1-hexanol, 2-hexanol and 3-hexanol, exist, both of which differing by the location of the hydroxyl group.
+ Many isomeric alcohols have the formula CHOH.
+ It is used in the perfume industry.
+Tetrakis(hydroxymethyl)phosphonium chloride (THPC) is an organophosphorus compound with the chemical formula [P(CHOH)]Cl.
+ The cation P(CHOH) is four-coordinate, as is typical for phosphonium salts. THPC has applications as a precursor to fire-retardant materials.
+Seidel's algorithm is an algorithm designed by Raimund Seidel in 1992 for the all-pairs-shortest-path problem for undirected, unweighted, connected graphs.
+ It solves the problem in formula_1 expected time for a graph with formula_2 vertices, where formula_3 is the exponent in the complexity formula_4 of formula_5 matrix multiplication.
+ If only the distances between each pair of vertices are sought, the same time bound can be achieved in the worst case.
+ Note that even though the algorithm is designed for connected graphs, it can be applied individually to each connected component of a graph with the same running time overall.
+ Note also that there is an exception to the expected running time given above for computing the paths: if formula_6 the expected running time becomes formula_7.
+Alcohol is any organic compound in which a hydroxyl functional group (-OH) is bound to a carbon atom, usually connected to other carbon or hydrogen atoms.
+ An important class are the simple acyclic alcohols, the general formula for which is CHOH.
+ Of those, ethanol (CHOH) is the type of alcohol found in alcoholic beverages, and in common speech the word alcohol refers specifically to ethanol.
+ Articles related to alcohol include:
+Xylitol is a sugar alcohol used as a sweetener.
+ The name derives from Greek: ξύλον , "xyl[on]", "wood" + suffix -"itol", used to denote sugar alcohols.
+ Xylitol is categorized as a polyalcohol or sugar alcohol (alditol).
+ It has the formula CHOH(CHOH)CHOH and is an achiral isomer of pentane-1,2,3,4,5-pentol.
+ Multiple studies using electron microscopy have indicated that xylitol is effective in inducing remineralization of deeper layers of demineralized enamel.
+ Fair evidence was found that xylitol (as chewing gum, lozenges, nasal spray, etc.) reduced the incidence of acute middle ear infection in healthy children.
+Gluconic acid is an organic compound with molecular formula CHO and condensed structural formula HOCH(CHOH)COOH.
+ It is one of the 16 stereoisomers of 2,3,4,5,6-pentahydroxyhexanoic acid.

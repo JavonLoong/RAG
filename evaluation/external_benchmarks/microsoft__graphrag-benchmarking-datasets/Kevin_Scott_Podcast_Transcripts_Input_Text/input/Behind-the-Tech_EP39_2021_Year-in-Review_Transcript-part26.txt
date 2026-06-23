@@ -1,0 +1,13 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt  even allow yourself to fail. 
+
+Like, a thing that we have in operations is this thing called MTTR, mean time to recovery. So, with software, I mean, like, both of you know this, like, there’s no way to produce bug-free software. Like, it is literally, from a theory of computation perspective it is – these are undecidable problems. Like, you can’t – you can’t compute a solution to them, no matter how powerful a machine you have. And so, you have to reconcile yourself to the fact that you’re going to produce things that will have errors in them. 
+
+And so, the – the question then becomes how do you catch as many errors as humanly possible before you throw something out into the world. And then, like, how, once, you know, knowing full well that things are going to get through, like how do you build your systems so that you can recover from failures quickly. And that is, for software, for products, like that’s a very useful way to think about the world. Like, it just lets you move faster than you otherwise would if you are constantly being crippled by the fear that you’re going to fail.
+
+BEN BLOOMBERG: (Laughter.) I think that’s really important, and what’s so special about Jacob is – is, you know, for all that the technology does, we really do have a lot of – we really do have a lot of wiggle room, because Jacob on stage can – can make just about anything, you know, feel amazing. And – and so, you know, there have been some pretty ridiculous sort of – I won’t call them failures, but moments where things didn’t quite go as expected. And if it were anybody else, it would – you know, it would have been sort of a train wreck. 
+
+And – and Jacob is able to take, you know, even the craziest things. I think, like one time in Germany, all the loopers started speeding up and going up in pitch because one of the video operators pushed – pushed the wrong button at the wrong time. And, like, nobody else can handle that stuff, but – but Jacob can make that sound musical and, you know, keep the audience having a good time. So, I think – I think, in that respect, we were sort of really uniquely positioned to try out some pretty risk stuff. You know, he kind of makes it possible. (Laughter.)
+
+JACOB COLLIER: I guess from my – just one thing from my perspective on that would be that I think Ben and I have different kind of values, different – different experiential values of control, and when control is necessary. 
+
+And, you know, so I know, for example, that when it comes to precision of musical information, I’m quite – I’m quite controlled because I – I kind of

@@ -1,0 +1,29 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt  that you made, to make sure that safety was always the number-one thing. 
+
+CHRIS URMSON:  Yeah, that was one of the things that I helped instill in the organization early on, and we had a great group of people who would have done it without me.  But how do we think about training people to operate the vehicle?  How do we transfer the knowledge from the engineering team to the operations team so they understood what was going on?  
+
+What processes do we put in place so that we have people checking one another?  How do we make sure that we trust the release software going out to them?  So, yeah, that was a really important part of it.  
+
+That’s one of the fundamental bits of culture that I helped instill there that I’m very proud of and one of the cores of the way we operate at Aurora as well. 
+
+KEVIN SCOTT:  Yeah, so you had these two goals. 
+
+CHRIS URMSON:  Yeah. 
+
+KEVIN SCOTT:  And nascent technology.  So, and this is 2008. 
+
+CHRIS URMSON:  2009.  I started February 2009.  
+
+KEVIN SCOTT:  Okay.  
+
+CHRIS URMSON:  So, yeah, and so we did exactly what engineers do.  We optimized to the constraints.  And so for the 100,000 miles, the vast majority of that was driving on 280 between 85 and Sneath.  
+
+And so, we had a fleet of Toyota Priuses.  And if you lived here in 2010, you would have seen a bunch of them going up and down on the freeway there, gathering 100,000 miles. 
+
+KEVIN SCOTT:  Yeah, you guys were on my commute.  My startup was in San Mateo and I lived in San Jose, so I was on the 280 every day.  
+
+CHRIS URMSON:  Yeah, and, you know, they got incrementally better over time and, you know, we burned through the 100,000 miles.  It was really kind of a fun time because you know people didn’t know what they were, right? 
+
+We had people think they were weather trackers.  They thought we were storm chasers.  They thought -- this was my -- one of my favorite at a gas station and somebody was convinced we had kind of a perpetual motion machine, which is on its face a problem, because we’re at the gas station.  (Laughter.)  
+
+But, you know, like the laser that was spinning on the roof was clearly a wind turbine, and at the time, we had this encoder on the rear wheel.  And so that, you know, the model was we were gathering from the wind from the car driving, and then we were recuperating energy through the encoder on the

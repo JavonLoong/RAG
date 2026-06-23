@@ -1,0 +1,35 @@
+EP-16_ Behind_the_Tech_Kevin_Scott_Podcast_with_Danny_Hillis.txt  work, is that network of people out there who have deep knowledge in particular things, like, you know, we needed a fish psychologist.  We didn't have a fish psychologist on staff, but we knew one.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  Right.
+
+KEVIN SCOTT:  Which is, yeah, I didn't even know, I didn't know such a thing existed before I knew you, fish psychologist.
+
+DANNY HILLIS:  But there is a kind of expertise that's the systems building.  And at the core of it, of course, everything is computers too.
+
+KEVIN SCOTT:  Right.   
+
+DANNY HILLIS:  And so, at the core of everything we do, there's some sort of big data.  So, the parallel processing theme is still kind of there.
+
+KEVIN SCOTT:  Right.
+
+DANNY HILLIS:  Of course, machine learning is now a tool they use in almost everything.  So, AI, you know, it's still a part of the thread in it.
+
+KEVIN SCOTT:  Yeah.
+
+DANNY HILLIS:  Although we usually don't call it AI.  We just can, you know, you use, you use machine learning and things like that as a double plot.
+
+KEVIN SCOTT:  Yeah.  I mean, I'm sort of interested in that.  I mean, like, machine learning is obviously the more technically accurate label for, like, what most people doing AI are doing right now, like, it's very particular thing.  It's like you have large volumes of data, and, like, you're building some sort of, you know, quayside statistical model to, like, extract patterns from the data that let you do classification and inference and whatnot.
+
+DANNY HILLIS:  Right.  And they're doing it because it's working really well in my work --
+
+KEVIN SCOTT:  And it works really well.
+
+DANNY HILLIS:  -- with the powerful machines that we have.
+
+KEVIN SCOTT:  Yeah. But, so, you also have been doing this long enough where you actually know what an AI winter is, and, you know, so, like, we've been through a few hype cycles.  Like, what's your perspective on that right now?
+
+DANNY HILLIS:  So, I think intelligence is a many splendored thing. There's lots of components to it.  There's lots of aspects to it.  And I think it's happened before that we find some aspect of it that's a building block of it, and it's important and useful, and that becomes AI, because we suddenly make progress in it.
+
+So, right now, it is machine learning, pattern recognition, and it's an

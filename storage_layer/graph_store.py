@@ -4,6 +4,8 @@ import json
 import re
 import sqlite3
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -184,6 +186,17 @@ class GraphStore:
                             _json_dumps(edge.metadata),
                         ),
                     )
+            connection.commit()
+        return self.summary()
+
+    def upsert_nodes(self, nodes: list[dict[str, Any]]) -> dict[str, Any]:
+        self.initialize(reset=False)
+        with self._connect() as connection:
+            for node in nodes:
+                name = _coerce_text(node.get("label") or node.get("name") or node.get("id"))
+                if not name:
+                    continue
+                self._upsert_node(connection, name, _coerce_text(node.get("type")))
             connection.commit()
         return self.summary()
 
@@ -496,10 +509,15 @@ class GraphStore:
                     s.name AS subject,
                     o.name AS object,
                     e.predicate,
-                    e.confidence
+                    e.confidence,
+                    ev.text AS evidence,
+                    COALESCE(ev.source_file, e.source_file) AS source_file,
+                    COALESCE(ev.source_page, e.source_page) AS source_page,
+                    COALESCE(ev.source_chunk_id, e.source_chunk_id) AS source_chunk_id
                 FROM edges e
                 JOIN nodes s ON s.id = e.subject_node_id
                 JOIN nodes o ON o.id = e.object_node_id
+                LEFT JOIN evidence ev ON ev.edge_id = e.id
                 WHERE e.subject_node_id IN (
                     SELECT node_id FROM communities WHERE community_id = ? AND level = ?
                 ) AND e.object_node_id IN (
@@ -516,14 +534,14 @@ class GraphStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT community_id, level, title, summary, entity_count, edge_count
+                SELECT community_id, level, title, summary, entity_count, edge_count, metadata_json
                 FROM community_summaries
                 WHERE level = ?
                 ORDER BY entity_count DESC
                 """,
                 (level,),
             ).fetchall()
-        return [_row_to_dict(row) for row in rows]
+        return [_row_to_export_dict(row) for row in rows]
 
     def search_community_summaries(self, keyword: str, *, level: int = 0, limit: int = 10) -> list[dict[str, Any]]:
         """Search community summaries by keyword."""
@@ -531,7 +549,7 @@ class GraphStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT community_id, level, title, summary, entity_count, edge_count
+                SELECT community_id, level, title, summary, entity_count, edge_count, metadata_json
                 FROM community_summaries
                 WHERE level = ? AND (lower(summary) LIKE ? OR lower(title) LIKE ?)
                 ORDER BY entity_count DESC
@@ -539,7 +557,7 @@ class GraphStore:
                 """,
                 (level, pattern, pattern, limit),
             ).fetchall()
-        return [_row_to_dict(row) for row in rows]
+        return [_row_to_export_dict(row) for row in rows]
 
     def get_all_edges_as_tuples(self) -> list[tuple[str, str, dict[str, Any]]]:
         """Return all edges as (subject_name, object_name, attrs) tuples for networkx graph construction."""
@@ -583,11 +601,19 @@ class GraphStore:
             ).fetchall()
         return [_row_to_dict(row) for row in rows]
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
-        return connection
+        try:
+            yield connection
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
     @staticmethod
     def _upsert_node(connection: sqlite3.Connection, name: str, entity_type: str | None) -> int:

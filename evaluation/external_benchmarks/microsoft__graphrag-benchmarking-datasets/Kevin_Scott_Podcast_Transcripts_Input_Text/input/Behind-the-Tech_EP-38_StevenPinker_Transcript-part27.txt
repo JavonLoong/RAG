@@ -1,0 +1,30 @@
+Behind-the-Tech_EP-38_StevenPinker_Transcript.txt ﻿Ep 38
+Behind the Tech with Kevin Scott
+Guest: Steven Pinker 
+
+
+[MUSIC] 
+
+STEVEN PINKER: It isn’t as if this universe contains some force called progress. That’s kind of mystical. In fact, if anything, the universe tries to grind us down. It’s constantly throwing pandemics at us, and – and natural disasters and entropy, things wearing down, and falling apart and rotting. To the extent that life gets better, it’s only because people have applied their ingenuity to try to make it better.
+We’ve invented antibiotics and vaccines, and intergovernmental organizations, and liberal democracies. Brain children that fight back against a pitiless cosmos, and allow us to increments of well-being. So, ultimately, rationality matters for ascertaining the good things in life.
+
+[MUSIC] 
+
+
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+
+[MUSIC] 
+ 
+CHRISTINA WARREN: Hello, and welcome to Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft.
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: Our guest on the show today is Steven Pinker. Steve is a cognitive psychologist. He’s a psycholinguist and popular science writer, and he’s authored 12 books, including his 2018 publication, Enlightenment Now: The Case for Reason, Science, Humanism, and Progress, and I’m  sure that you’re super, super excited to talk about this, Kevin, his 2021 book, Rationality: What It Is, Why It Seems Scarce, Why It Matters.
+
+So, given the world that we’re living in today, these are very relevant topics to explore.
+
+KEVIN SCOTT: They are, indeed, extremely relevant topics, and so I’m super-excited to be chatting with Steven in general. I’ve been an enormous fan of his work for the longest time. I remember reading his first book, The Language Instinct, when I was in graduate school, and I – I think I’ve read every book that he’s ever written. They’ve had enormous influences on me because – you know, hopefully what we’ll see in this conversation is he writes books that explain really complicated things to very wide audiences of people, but also in a way that gives them a toolkit for dealing with thinking about navigating the complicated things themselves, so it isn’t just, say, like hey, let me explain this

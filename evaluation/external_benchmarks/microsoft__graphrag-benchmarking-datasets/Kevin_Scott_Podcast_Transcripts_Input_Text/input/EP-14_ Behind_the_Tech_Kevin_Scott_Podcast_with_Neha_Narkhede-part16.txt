@@ -1,0 +1,17 @@
+EP-14_ Behind_the_Tech_Kevin_Scott_Podcast_with_Neha_Narkhede.txt  is really this brilliant piece of design because it's very, very easy to just take something that makes data and like write it into Kafka and then it's there for -- the producer doesn't have to think anything at all about the -- 
+(Crosstalk.) 
+KEVIN SCOTT:  -- about the consumers. 
+NEHA NARKHEDE:  Yes.  
+KEVIN SCOTT:  So, anybody can consume the data.  I mean, at LinkedIn now, like, there are thousands of unique things that produce data -- write it into Kafka, and there are thousands of unique things that consume data. 
+NEHA NARKHEDE:  Consume.  Yeah. 
+KEVIN SCOTT:  And like they don't have to know anything -- 
+(Crosstalk.) 
+KEVIN SCOTT:  -- about each other. 
+NEHA NARKHEDE:  Yeah.  And that was the heart of the, you know, design thinking that went in is, A, it needed to be, you know, it needed to serve decoupling, right?  So, decoupling of the schemas from the producers and consumers, decoupling of producers from consumers, and the third thing, which is why we really created and made it a log is this realization that if we wanted to serve this use case where the whole company is going to need to publish and the whole companies need to subscribe to it, is it needed to be a multi-subscriber retentive model for messaging. 
+KEVIN SCOTT:  Right.  
+NEHA NARKHEDE:  And that was really the heart of that change is simple APIs, retention, leave it to the user to decide, you know, how to configure that system appropriately, and then made it super simple and scalable.   
+KEVIN SCOTT:  Yeah, I mean, I think another one of the genius design things about Kafka and like one of the things that you all at Confluent are talking a lot about right now is that thinking about systems as like data producers and data consumers with like a messaging and like stream processing mechanism connecting them, really is like a way to sort of disaggregate data systems.  
+NEHA NARKHEDE:  Pretty much. 
+KEVIN SCOTT:  So, like, you know, intellectually, you could solve a whole bunch of these data transport problems by just writing all the data to a database. And like you write them in with SQL, you read them out with SQL. But the problem with that is then you've got this sort of monolithic database thing and -- 
+NEHA NARKHEDE:  It's couple tightly.  
+KEVIN SCOTT:  It's super complicated, and like you just -- like all the different pieces of the database system scale differently.  And so like pulling the message and stream processing substrate out lets you sort of scale the system in a

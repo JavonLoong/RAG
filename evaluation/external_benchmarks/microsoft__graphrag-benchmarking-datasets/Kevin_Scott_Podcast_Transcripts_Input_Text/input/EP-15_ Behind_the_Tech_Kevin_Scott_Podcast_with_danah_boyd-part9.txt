@@ -1,0 +1,23 @@
+EP-15_ Behind_the_Tech_Kevin_Scott_Podcast_with_danah_boyd.txt  public access to data and trying to contend with that. 
+
+And who does make that decision?  Right?  And that is not clear-cut.  That is not clear-cut even if you want to just allocate it to the U.S. Government. 
+
+So, what happens is this moment of like how do we reckon with accountability here?  And I feel as though we're in this — I keep thinking of it as a great reckoning.  We're in this weird moment in time where we're waking up to the power that we've built through these technologies, and we're mostly in the, like, "oh shit" stage, we haven't really gotten beyond that. 
+
+But we're trying to now say, okay, what does governance look like?  Does it mean reverting to nation-state structures?  Those are modern inventions, they're not longstanding, and they were designed with very specific ideas of spatiality and economics at play.  
+
+Does it mean building a whole new framework that is built on a different set of values?  Probably.  But defined by whom?  Right?  And what we're seeing, of course, is a scramble for power to do that.  
+
+And that's unsurprising.  That always occurs.  But then, of course, what's the relationship between a governance structure of something like technology and nation-state governance?  Because if it's built separately, we have a whole different set of challenges that we're going to face.  So this is the mess I think that we're in, and that's where, for me, when I go back to thinking about how do you have the public debate, the question is:  To what end?  Right?  
+
+And so, I don't think that the public needs to debate differential privacy to debate differential privacy.  That doesn't really matter.  What they need to be in conversation with is, you know, what does confidentiality or privacy mean today?  Who decides?  Under what conditions?  What protects people?  
+
+I think they need to be in conversation about what does it mean to have data for decision-making?  Who should have the power to have access to that data, how is — 
+
+KEVIN SCOTT:  And what decision should you be making? 
+
+danah boyd:  And what decision should be making, right?  And where can we stop and say, "We do not have enough information, so you cannot implement yet."  Right?  Like, a classic example for me is, you know, criminal justice.  Our criminal justice system is rooted in the first sin of this country, it is racism and slavery through and through. 
+
+The data is so, so flawed that to think that we can do analytics on top of that data without contending with the problems of that data is painfully naive.  
+
+And so that moment of just, like, well, we're going to clean

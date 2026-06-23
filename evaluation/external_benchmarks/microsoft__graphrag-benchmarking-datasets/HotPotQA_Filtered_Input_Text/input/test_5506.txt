@@ -1,0 +1,51 @@
+Diplomacy is a strategic board game created by Allan B. Calhamer in 1954 and released commercially in 1959.
+ Its main distinctions from most board wargames are its negotiation phases (players spend much of their time forming and betraying alliances with other players and forming beneficial strategies) and the absence of dice and other game elements that produce random effects.
+ Set in Europe before the beginning of World War I, "Diplomacy" is played by two to seven players, each controlling the armed forces of a major European power (or, with fewer players, multiple powers).
+ Each player aims to move his or her few starting units and defeat those of others to win possession of a majority of strategic cities and provinces marked as "supply centers" on the map; these supply centers allow players who control them to produce more units.
+Lansing Campbell (1882-1937) was an American illustrator best known for his illustrations in the "Uncle Wiggily" series of books by Howard R. Garis.
+ He also used the signature Lang Campbell.
+ Lansing Campbell was an American illustrator of popular children’s books.
+ Campbell was born on March 3, 1882 in Carbondale, Jackson County, Illinois to John Gaines Campbell (1839 – 1913) and Alice Beman (1847 – 1920).
+ He died on May 26, 1937 in Raleigh, Wake County, North Carolina.
+ He is laid to rest in Oak Woods Cemetery, Chicago, Cook County, Illinois, USA.
+"Uncle Wiggily in Connecticut" is a short story by J. D. Salinger, which appears in his collection "Nine Stories".
+ It was originally published in the March 20, 1948 issue of "The New Yorker".
+Roger (Carroll) Garis, ((1901--) 10, 1901 – (1967--) 30, 1967 ) was an American author known as a writer for magazines and the author of "The Outboard Boys" series of books.
+ Roger also wrote several books under pseudonyms for the Stratemeyer Syndicate, as his parents did (see My Father Was Uncle Wiggily for further details).
+Pasang is a two-player abstract strategy board game from Brunei.
+ The game is often referred to as Pasang Emas which is actually a software implementation of the traditional board game.
+ The object of this game is to acquire the most points by capturing black and white tokens on the board.
+ Black tokens are worth 1 point, and white tokens are worth 2 points.
+ The board is initially laid out with all 120 black and white tokens in one of over 30 traditional patterns.
+ Players choose a piece called a "ka" which is used to capture the tokens on the board.
+ Each player's "ka" moves around the board capturing as many tokens as possible.
+ As a note, the "kas" are the only mobile pieces in the game.
+ The other pieces are stationary, and are captured by the "kas".
+ Players must capture token(s) during their turn, or lose the game.
+ When all tokens have been captured from the board, the player with the most points is the winner.
+ However, if there are any tokens left on the board, and none can be captured on a player's turn, then that player loses the game, and the other player is the winner.
+Howard Roger Garis ((1873--) 25, 1873 – (1962--) 6, 1962 ) was an American author, best known for a series of books, published under his own name, that featured the character of Uncle Wiggily Longears, an engaging elderly rabbit.
+ Garis and his wife were possibly the most prolific children's authors of the early 20th century.
+ Many of his books were illustrated by Lansing Campbell.
+Uncle Wiggily Game is a track board game based on a character in a series of children's books by American writer Howard Roger Garis.
+ The game is of the "racing" variety in the style of the European "Goose Game".
+ Players advance along the track from Uncle Wiggily's Bungalow to Dr. Possum's House.
+ There is no optimal strategy involved as play entirely rests upon a random drawing of the cards.
+ The game was first published by Milton Bradley in 1916 and has seen several editions with minor modifications over the years.
+ "Uncle Wiggily" remains one of the first and favorite games of childhood, and, with "Candy Land", is considered a classic juvenile American board game.
+The Motor Boys were the heroes of a popular series of adventure books for boys at the turn of the 20th century issued by the Stratemeyer Syndicate under the pseudonym of Clarence Young.
+ This series was published by Cupples & Leon and was issued with dustjackets and glossy frontispiece.
+ Howard Garis (author of the Uncle Wiggily stories) wrote many, if not all, of these stories.
+Simultaneous action selection, or SAS, is a game mechanic that occurs when players of a game take action (such as moving their pieces) at the same time.
+ An example of a game that uses this type of movement is the game Diplomacy.
+ Typically, a "secret yet binding" method of committing to one's move is necessary, so that as players' moves are revealed and implemented, others do not change their moves in light of the new information.
+ Thus, in Diplomacy, players write down their moves and then reveal them simultaneously.
+ Because no player gets the first move, this potentially arbitrary source of advantage is not present.
+ It is also possible for simultaneous movement games to proceed relatively quickly, because players are acting at the same time, rather than waiting for their turn.
+ Simultaneous action selection is easily implemented in card games such as Apples to Apples in which players simply select cards and throw them face-down into the center.
+Uncle Wiggily Longears is the main character of a series of children's stories by American author Howard R. Garis.
+ He began writing the stories for the "Newark News" in 1910.
+ Garis penned an Uncle Wiggily story every day (except Sundays) for more than 30 years, and published 79 books within the author's lifetime.
+ According to his obituary in the "Chicago Tribune", a walk in the woods in Verona, New Jersey was his inspiration.
+ The books featured work by several illustrators, notably Lansing Campbell.
+ Other illustrators of the series included George L. Carlson, Louis Wisa, Elmer Rache, Edward Bloomfield, Lang Campbell and Mary and Wallace Stover.

@@ -1,0 +1,28 @@
+Behind-the-Tech_EP39_2021_Year-in-Review_Transcript.txt ﻿Behind the Tech with Kevin Scott - Year in Review 2021
+KEVIN SCOTT: Hi, everyone. Welcome to Behind the Tech. I’m your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we’re going to get behind the tech. We’ll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did. So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what’s happening today. Stick around.
+
+[MUSIC]
+
+CHRISTINA WARREN: Hello and welcome to a special episode of Behind the Tech. I’m Christina Warren, Senior Cloud Advocate at Microsoft. 
+
+KEVIN SCOTT: And I’m Kevin Scott.
+
+CHRISTINA WARREN: And today, we’re doing our Year in Review episode, and this means that we’re going to revisit a few fascinating conversations with our guests from 2021 and beyond, with topics ranging from protein design to robotics to the importance of getting more girls in STEM.
+
+You know, Kevin, we called 2020 an “unprecedented year.” My words fail me when I think about summing up the events of 2021. It makes me think of our previous guest science fiction writer, Charlie Stross, who said (and I quote): “This is just trying to front-run the insanity in my fiction, and I’m having great difficulty making elder gods more horrifying than what’s happening from around the world today.”
+
+KEVIN SCOTT: Indeed, the world today is stranger than fiction.
+
+CHRISTINA WARREN: It really is. But for today’s show, we’re focusing on Behind The Tech, which produced a fantastic year of conversations. As always, we were enlightened, humbled and inspired by the incredible guests we had the honor of speaking with.
+
+KEVIN SCOTT: Yeah, we had a line-up of awesome guests this last year, including AI experts, bioengineers, entrepreneurs and digital influencers. We met Mae Jemison, the first African-American woman in space. We chatted with scientist Ashley Llorens about the future of AI and robotics. And we spent time with the Grammy-award winning Jacob Collier and his collaborator, Ben Bloomberg.
+
+CHRISTINA WARREN: Yeah, and the exciting thing about this episode is that we’re also going to check in with some folks from earlier years of the podcast. So, we’ll revisit some bits of conversation from your interviews with them, and we’ll also share some news about what they’ve been up to recently.
+
+KEVIN SCOTT: Great. So, who’s up first? 
+
+CHRISTINA WARREN: Okay, so, first, we thought it was fitting to check in with Anders Hejlsberg because Anders was our first-ever guest on the podcast.
+
+KEVIN SCOTT: Anders is one of my legitimate coding heroes. He built

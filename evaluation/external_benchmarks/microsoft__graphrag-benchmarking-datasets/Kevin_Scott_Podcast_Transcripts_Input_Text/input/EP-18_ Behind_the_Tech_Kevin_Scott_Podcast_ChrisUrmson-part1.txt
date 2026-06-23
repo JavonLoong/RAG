@@ -1,0 +1,25 @@
+EP-18_ Behind_the_Tech_Kevin_Scott_Podcast_ChrisUrmson.txt ../[MUSIC]
+
+SCOTT URMSON: People talk about Silicon Valley engineers being risk-takers.  I think it’s actually the opposite.  It’s the realization that if you go and try one of these things and you’re actually good at what you do, if it fails, it fails.  You’ll have a job the next day at somewhere else, right?  And you’ll have this wealth of experience that people will value.  
+
+[MUSIC]
+
+KEVIN SCOTT: Hi, everyone.  Welcome to Behind the Tech.  I'm your host, Kevin Scott, Chief Technology Officer for Microsoft. 
+
+In this podcast, we're going to get behind the tech.  We'll talk with some of the people who have made our modern tech world possible and understand what motivated them to create what they did.  So, join me to maybe learn a little bit about the history of computing and get a few behind-the-scenes insights into what's happening today.  Stick around.  
+
+[MUSIC]
+
+CHRISTINA WARREN:  Hello, and welcome to our first episode of Behind the Tech in 2020.  I’m Christina Warren, Senior Cloud Advocate at Microsoft.  
+
+KEVIN SCOTT:  And I’m Kevin Scott.  
+
+CHRISTINA WARREN:  All right, so, Kevin, it is 2020, which is both the new year and I guess a new decade, although people will get weird about the technicalities.  It’s always a great chance to kind of look back at what’s happened over the last 10 years and reflect on new opportunities.  
+
+KEVIN SCOTT:  Yeah, I mean, it is I think in our industry, and for human beings in general, really easy to get completely used to new innovations that enter our lives.  But when you think back 10 years ago, the world looked like a very different place than it looks right now.
+
+So, smart phones were just catching on.  They were nowhere near as ubiquitous as they are right now.  And the things that you could do on them were far, far more constrained than they are right now.  I mean, for god’s sake, people were renting movies from Blockbuster in 2010. 
+
+CHRISTINA WARREN:  Right.  Right.  Blockbuster was actually still a thing.  And Instagram hadn’t even been invented yet. Totally different world. Like, you know?  Do you -- now that we’ve hit 2020, do you have any forecasts about what the next year in tech might bring, or even the next decade? 
+
+KEVIN SCOTT:  Well, I think one of the themes that we spent a bunch of time chatting about last year on the podcast was artificial intelligence and machine learning.  And I think we are certainly going to see the trends that had started in the prior years continue to accelerate.  That’s one of the reasons

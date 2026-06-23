@@ -1,0 +1,18 @@
+EP-50_Behind_the_Tech_Kevin_Scott_Podcast_with_Tobi_Lutke.txt  mean, this is the hardest challenge related to alignment. It’s the alignment challenge of companies.
+
+KEVIN SCOTT: Right.
+
+TOBI LÜTKE: We’re hearing a lot about alignment challenges in – in AI, and I feel, like, we should solve the people ones first.  It’s – I would love to have an RLHF for my HR, my company.
+
+KEVIN SCOTT: Yeah, and you might one day. (Laughter.)
+
+TOBI LÜTKE: Yeah, I might one day. So, this is actually… look, your listeners are, like, this is a lot of highly technical people. A lot of them are in key roles in the businesses they are in. 
+
+I think, a thing we talked about earlier, which is sort of academia sort of decided it’s computer science. And therefore, it’s going to STEM. And it’s sort of, like, that’s its swim lane. It’s – we’re still a little bit, like, there’s a hangover from that idea, which means that I don’t think the technical – the sort of technically minded people, especially the ones who make it high up in an organization structure tend to be people who can reason very well across very complicated systems, because that’s what we built, right? Like, you know, the architects and the people will find the novel solutions, which means that…
+
+There’s a – there’s a wonderful story. I don’t know if it’s a true story. Sorry for the aside. That I read… Man, yeah, let me go back. And if I don’t get this, right, don’t – this was a long time ago, that I heard about this, where I think Charles Petzold from Microsoft actually talked about it, who writes amazing books – shout out – which I read, and now read to my children.
+
+Anyway, he retold the story. There was an event of where I think Bill Gates was introducing Basic, and there was a programming contest, like, Storm The Gates, I think was it called. This is, like, weird memories coming back to me. And you were supposed to, like, write code, which was, like, quicker than Bill using Basic, presumably in Pascal or Sembla or something like this. 
+
+And some – someone ended up winning by realizing that the spec was draw a circle on the screen at different alternating differences of circumference, and realized you could do this with an uppercase and lowercase O – (laughter) – so, which, of course, like, somehow, somewhere in this story, again, is this incredible pragmatic-ness of, like, being able to spot, like, the sort of Pareto Principle. Here’s how we can solve this issue without having to do all the hard work. Like, we don’t actually have to build an entire GUI stack. We can actually just solve the spec this way. 
+

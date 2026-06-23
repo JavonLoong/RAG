@@ -1,0 +1,22 @@
+Behind the Tech_Episode 36_PeterLee_Transcript.txt OTT:  Yeah.
+
+PETER LEE:  It’s not just the goal of artificial intelligence, but it’s the fact that it kind of covers all of these different things to think about in such a wide span. It just attracts a certain type of brilliant mind.
+
+KEVIN SCOTT:  Well, and I think it also points to how important it is to have a computer science education for either undergraduates or graduates where you really are getting people exposed to a very wide range of ideas, like everything from like classic ethics, all the way to pretty serious, you know, statistic linear algebra and differential and integral calculus, to, you know, just sort of the core ideas of computation. 
+
+PETER LEE:  Yep.
+
+KEVIN SCOTT:  And like, I think it’s less important that you graduate with a four-year degree and like you know the particulars of a programing language and all of its, you know, accordant APIs and whatnot, you know. Because the thing that you and I have learned is all of that’s going to change over and over and over and over again. 
+
+So the important thing is that you get the core concept so that you can adapt as new things come along and so that you can integrate things across all of these things that should not be silos of knowledge or expertise. 
+
+PETER LEE:  Yeah. And I think one thing that we’ve both become is we’ve both become students again. You know, we spend a lot of time just reading papers and it’s fun in a way. It’s also humbling because you just realize how hard and deep some of the technical ideas are. But I feel like my own personal growth has really accelerated just from having a student mindset and taking the time to try to read what people do.
+
+KEVIN SCOTT:  Yes. I want to spend a few minutes before we run out of time on societal resilience and like, one of the things that you have certainly had a student mindset on is all of the things related to health care and the biosciences. 
+
+So it was really a bit of good fortune that you had already immersed yourself in this area and you were running, you know, Microsoft Health prior to the pandemic. And when the pandemic started, you know, I had just asked you to take over Microsoft Research and then the pandemic starts, and then the company asked you to help coordinate the work that we were trying to do to help support people with pandemic response. 
+
+So like talk a little bit about that whole experience and how that’s informed, what it is you’re trying to do right now with societal resilience and research. 
+
+PETER LEE:  Well, I blame you, Kevin. (Laughter.) Because, you know, I was happily helping the company build a new health technology business. I was focused on that. And then you decided to hire me to you know, lead Microsoft Research. 
+

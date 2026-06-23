@@ -1,0 +1,17 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  that’s super important. 
+ 
+KEVIN SCOTT: Yeah. I think, you know, we can talk a bit about this. Companies need a mix of different things in order to be successful. So, obviously, you have to have product teams who make product, and you have to have people who sell them. And you have to have, you know, human resources teams that, like, help hire the people and retain them, and make sure that they are, you know, happy and content, or, like, wherever they need to be on that spectrum, and, you know, have what they need in order to continue doing the job. 
+
+And so, like, there are all of these different roles. And the question I think we’ve always asked ourselves in the office of the CTO is, like, is the thing that we’re doing, the role that we’re serving for the company, is it important? And if it’s important, then it’s pretty clear that you don’t evolve it into something else, because if you did, then you’d have to go find someone else, or, like, some other group to go do the thing that you were doing that five seconds ago was important.
+
+And so, the important thing that the office of the CTO does is it sort of thinks about technology strategy across the full breadth of the company. It thinks about time horizons that are a little bit longer than maybe product teams are more accustomed to thinking about, because they have a set of urgencies around business deliverables. 
+
+And, you know, like, the thing that I’ve always said for Satya is, like, just I will go do things that need to be done that aren’t getting done otherwise. It’s like why I’m doing a bunch of AI stuff right now. It’s why I ran the Search group for a little while, like, but I’ve always thought that – you know, and it’s sort of true for TAs as well. 
+
+So, when you’re a TA, you’re not running a thing. And there are lots of super senior people, like you, who became TAs. And so, if you get to the point where you want to run something, again, like, the thing that we’re not going to do is build a group inside of the office of the CTO. 
+ 
+WILLIAM ADAMS: Right. You go back into general population. (Laughter.) 
+
+KEVIN SCOTT: Correct. (Laughter.) 
+
+WILLIAM ADAMS: Right? Yeah, I think that’s super important. And I – there’s two things that I wanted to observe while you were talking. It’s like, I remember from day one, not day one, but day two, your emphasis on AI, right? So, for seven years now, from the beginning, I think one of the first conversations we had was about AI.

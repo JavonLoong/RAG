@@ -1,0 +1,21 @@
+Ep-58_Behind_the_Tech_Kevin_Scott_Podcast_with_William_A_Adams.txt  back up and go at it again." Like, I – honestly, that – that, it’s unbelievably valuable, that thing that he’s doing.
+
+CHRISTINA WARREN: I totally agree. I’m really glad that we have people like him who have given us so much, not just, you know, technologically, and I will forgive him for some of the XML horror that I’ve dealt with. I will forgive him for that because of all the good work you’ve done. And I’m kidding, I also thank him for XML, even if the XML era made me want to, you know, rip my skin off, but I’m super, super, super grateful for that.
+
+KEVIN SCOTT: I’m most grateful for XML HTTP requests.
+
+CHRISTINA WARREN: Yes.
+
+KEVIN SCOTT: Like, they gave us the modern web. 
+
+CHRISTINA WARREN: You’re absolutely right, and it was funny because when he mentioned XML, I was like, "Oh, I went on a rant the other week about how much I hate XML." And he said that, and I was like, "You know what? Yes. Yes."
+
+KEVIN SCOTT: You’ve got to give him that.
+
+CHRISTINA WARREN: I was like, "Okay, you know what?" Correct, correct, I will bow down.
+
+KEVIN SCOTT: Awesome.
+
+CHRISTINA WARREN: All right, well, that is going to do it for us today. A big thank you to William Adams for joining us, and if you have anything that you’d like to share with us, you can send us an email anytime at behindthetech@microsoft.com, and you can follow Behind the Tech on your favorite podcast platform, or you can check out our full video experiences on YouTube. Like and Subscribe. Thanks for listening. 
+
+KEVIN SCOTT: See you next time.
