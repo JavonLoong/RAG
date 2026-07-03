@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PowerRAG 技术路线图与答辩问答整合版</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --paper: #ffffff;
+      --ink: #17202a;
+      --muted: #5f6c7b;
+      --line: #d9dee7;
+      --blue: #2364aa;
+      --green: #20866f;
+      --orange: #b76321;
+      --red: #a33d3d;
+      --slate: #2e3b4e;
+      --soft-blue: #e9f1fb;
+      --soft-green: #e8f5f0;
+      --soft-orange: #fff1e4;
+      --soft-red: #fbeaea;
+      --shadow: 0 18px 45px rgba(23, 32, 42, 0.08);
+      --radius: 8px;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+      line-height: 1.72;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .side {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 22px;
+      background: #111827;
+      color: #f7f9fc;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #2364aa, #20866f);
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.3;
+      font-weight: 750;
+    }
+
+    .brand p {
+      margin: 0;
+      color: #c6ced9;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav a {
+      color: #d8dee9;
+      font-size: 14px;
+      padding: 9px 10px;
+      border-radius: 6px;
+    }
+
+    .nav a:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .hero {
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 58px 42px 42px;
+    }
+
+    .hero h2 {
+      margin: 0 0 16px;
+      max-width: 850px;
+      font-size: 42px;
+      line-height: 1.12;
+      letter-spacing: 0;
+      font-weight: 800;
+    }
+
+    .hero .lead {
+      margin: 0;
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .metric {
+      min-height: 104px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfe;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 22px;
+      line-height: 1.1;
+      color: var(--slate);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 34px 42px 80px;
+    }
+
+    section {
+      margin-top: 34px;
+      scroll-margin-top: 22px;
+    }
+
+    .section-head {
+      margin-bottom: 18px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+
+    .section-head p {
+      margin: 0;
+      max-width: 540px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .answer-box {
+      padding: 24px;
+      border-left: 5px solid var(--green);
+    }
+
+    .answer-box h4,
+    .panel h4 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .answer-box p,
+    .panel p {
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+
+    .answer-box p:last-child,
+    .panel p:last-child {
+      margin-bottom: 0;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mini {
+      padding: 18px;
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--slate);
+      font-size: 16px;
+    }
+
+    .mini p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fbfcfe;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .tag.blue {
+      color: var(--blue);
+      background: var(--soft-blue);
+      border-color: #c7daef;
+    }
+
+    .tag.green {
+      color: var(--green);
+      background: var(--soft-green);
+      border-color: #c6e4d8;
+    }
+
+    .tag.orange {
+      color: var(--orange);
+      background: var(--soft-orange);
+      border-color: #f0d4b8;
+    }
+
+    .tag.red {
+      color: var(--red);
+      background: var(--soft-red);
+      border-color: #efc7c7;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(118px, 1fr));
+      gap: 10px;
+      padding: 18px;
+      overflow-x: auto;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 126px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfe;
+    }
+
+    .flow-step::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -10px;
+      width: 10px;
+      border-top: 2px solid #a9b4c2;
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-step small {
+      color: var(--blue);
+      font-weight: 750;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin: 6px 0;
+      font-size: 15px;
+      line-height: 1.3;
+    }
+
+    .flow-step span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr);
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .time-row:last-child {
+      border-bottom: 0;
+    }
+
+    .time-row time {
+      color: var(--blue);
+      font-weight: 750;
+    }
+
+    .time-row strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .time-row p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f3f8;
+      color: var(--slate);
+      font-weight: 750;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .qa-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    details.qa {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 28px rgba(23, 32, 42, 0.055);
+      overflow: hidden;
+    }
+
+    details.qa summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 18px 22px;
+      font-size: 17px;
+      line-height: 1.45;
+      font-weight: 750;
+      color: var(--slate);
+      background: #fbfcfe;
+    }
+
+    details.qa summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.qa summary::after {
+      content: "+";
+      float: right;
+      color: var(--blue);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    details.qa[open] summary::after {
+      content: "-";
+    }
+
+    .qa-body {
+      padding: 0 22px 20px;
+      color: var(--ink);
+    }
+
+    .qa-body p {
+      margin: 12px 0;
+    }
+
+    .speak {
+      margin: 14px 0;
+      padding: 14px 16px;
+      background: var(--soft-green);
+      border: 1px solid #c6e4d8;
+      border-radius: var(--radius);
+    }
+
+    .speak strong {
+      color: var(--green);
+    }
+
+    .warning {
+      background: var(--soft-orange);
+      border-color: #f0d4b8;
+    }
+
+    .warning strong {
+      color: var(--orange);
+    }
+
+    .risk {
+      background: var(--soft-red);
+      border-color: #efc7c7;
+    }
+
+    .risk strong {
+      color: var(--red);
+    }
+
+    .code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      color: #0f172a;
+      background: #eef2f7;
+      border: 1px solid #d7dde7;
+      padding: 2px 5px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .roadmap-item {
+      padding: 18px;
+      border-left: 5px solid var(--blue);
+    }
+
+    .roadmap-item:nth-child(2) {
+      border-left-color: var(--green);
+    }
+
+    .roadmap-item:nth-child(3) {
+      border-left-color: var(--orange);
+    }
+
+    .roadmap-item:nth-child(4) {
+      border-left-color: var(--red);
+    }
+
+    .footnote {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        display: block;
+      }
+
+      .side {
+        position: static;
+        height: auto;
+        padding: 20px;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-inner,
+      main {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      .hero h2 {
+        font-size: 32px;
+      }
+
+      .hero-grid,
+      .three-col,
+      .two-col,
+      .roadmap-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head p {
+        margin-top: 8px;
+        text-align: left;
+      }
+
+      .flow {
+        grid-template-columns: repeat(7, 160px);
+      }
+    }
+
+    @media (max-width: 620px) {
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-inner {
+        padding-top: 36px;
+      }
+
+      .hero h2 {
+        font-size: 27px;
+      }
+
+      .time-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="side">
+      <div class="brand">
+        <div class="brand-mark">PR</div>
+        <h1>PowerRAG 答辩总稿</h1>
+        <p>技术路线图、系统边界、评测口径和高频追问整合在一个 HTML 页面。</p>
+      </div>
+      <nav class="nav" aria-label="页面目录">
+        <a href="#one-sentence">一句话定位</a>
+        <a href="#route">技术路线图</a>
+        <a href="#status">当前状态</a>
+        <a href="#borrowed">对标与借鉴</a>
+        <a href="#evaluation">评测口径</a>
+        <a href="#qa">答辩问答</a>
+        <a href="#roadmap">后续路线</a>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <header class="hero">
+        <div class="hero-inner">
+          <h2>面向动力装备资料的可信 RAG / GraphRAG 知识库系统</h2>
+          <p class="lead">这份文档不是讲“做了一个网页”，而是把项目解释成一条完整工程链路：真实资料进入系统，变成可检索证据，再通过混合检索、GraphRAG 和评测闭环支撑可追溯问答。</p>
+          <div class="hero-grid" aria-label="项目关键数字">
+            <div class="metric">
+              <strong>14 本资料</strong>
+              <span>PDF、扫描件、OCR 结果、JSON 标注和教材资料进入统一入口。</span>
+            </div>
+            <div class="metric">
+              <strong>47 题</strong>
+              <span>当前本地仓库可见的系统评测题数量，早期材料中的 60 题口径需要谨慎区分。</span>
+            </div>
+            <div class="metric">
+              <strong>0.833</strong>
+              <span>Day3 keyword 检索 question recall@K，说明强术语场景下关键词仍然很强。</span>
+            </div>
+            <div class="metric">
+              <strong>GraphRAG</strong>
+              <span>定位为关系追踪和全局综合增强路线，不替代所有普通 RAG 问题。</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section id="one-sentence">
+          <div class="section-head">
+            <h3>一句话定位</h3>
+            <p>先把项目说清楚，再展开技术细节。</p>
+          </div>
+          <div class="panel answer-box">
+            <h4>最稳的答辩开场</h4>
+            <p>PowerRAG 是一个面向动力装备资料的可信问答系统。它不是把问题直接丢给大模型，而是先把 PDF、扫描件、JSON 标注、OCR 文本和维修资料处理成带来源、页码、章节、metadata 的证据块，再用关键词、向量、混合检索和 GraphRAG 找证据，最后让回答能够回到原文依据，并通过评测持续改进。</p>
+            <div class="tag-row">
+              <span class="tag blue">资料接入</span>
+              <span class="tag green">证据构建</span>
+              <span class="tag orange">混合检索</span>
+              <span class="tag blue">GraphRAG</span>
+              <span class="tag green">评测闭环</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="route">
+          <div class="section-head">
+            <h3>技术路线图</h3>
+            <p>这是主讲结构：从资料到答案，不从页面开始讲。</p>
+          </div>
+          <div class="panel flow" aria-label="PowerRAG 技术路线">
+            <div class="flow-step">
+              <small>Step 1</small>
+              <strong>资料入口</strong>
+              <span>PDF、扫描件、JSON、TXT、DOCX、CSV 进入上传区或批量目录。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 2</small>
+              <strong>文档解析</strong>
+              <span>按 source kind 选择 native、DeepDoc、MinerU、Docling、Unstructured 或 OCR 路线。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 3</small>
+              <strong>分块与 metadata</strong>
+              <span>保留 source_file、页码、章节、chunk id、block 类型、解析诊断和 preview。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 4</small>
+              <strong>Chroma 入库</strong>
+              <span>按批次 upsert 到集合，默认追加或覆盖同 ID，不是上传瞬间自动入库。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 5</small>
+              <strong>Hybrid 检索</strong>
+              <span>Chroma vector、keyword、metadata filter、RRF 融合，可选 query rewrite 和 reranker。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 6</small>
+              <strong>GraphRAG</strong>
+              <span>实体、关系、evidence、community summary 支撑 local / global 问题。</span>
+            </div>
+            <div class="flow-step">
+              <small>Step 7</small>
+              <strong>回答与评测</strong>
+              <span>答案绑定证据，评测召回、覆盖、引用、失败归因和下一轮优化。</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="status">
+          <div class="section-head">
+            <h3>当前状态</h3>
+            <p>答辩时最怕过度承诺，这里把已完成和未完成分开。</p>
+          </div>
+          <div class="two-col">
+            <div class="panel mini">
+              <strong>已经具备的能力</strong>
+              <p>上传、批量处理、文档解析、分块、Chroma 持久化、统计、搜索、hybrid/RRF、GraphRAG 路由、会话记忆 API、评测报告和日志进度都已经有工程入口。</p>
+            </div>
+            <div class="panel mini">
+              <strong>不能夸大的地方</strong>
+              <p>多轮上下文还没有完全自动接入核心 query；GraphRAG 不是所有问题都优于普通 RAG；评测仍需要从本地 47 题扩展到更真实的专家 gold set。</p>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin-top: 16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>模块</th>
+                  <th>当前真实状态</th>
+                  <th>答辩表达</th>
+                  <th>边界</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>文档解析</td>
+                  <td>支持多格式 intake，保存解析路线、page diagnostics、chunk preview。</td>
+                  <td>已从简单 JSON 入库升级为多格式资料入口。</td>
+                  <td>还不是完整 RAGFlow 级别的版面、表格、图片全自动理解。</td>
+                </tr>
+                <tr>
+                  <td>检索</td>
+                  <td>已接入 vector + keyword + RRF，支持 query rewrite、reranker、filter 和 diagnostics。</td>
+                  <td>不是只靠向量库，而是混合检索和诊断闭环。</td>
+                  <td>正式 embedding 和 reranker 仍需继续校准。</td>
+                </tr>
+                <tr>
+                  <td>GraphRAG</td>
+                  <td>已有 GraphRAG router、图导入、local/global 基础能力和 community summary。</td>
+                  <td>用于关系追踪、社区摘要、跨文档综合。</td>
+                  <td>不能说已经全面替代普通 RAG。</td>
+                </tr>
+                <tr>
+                  <td>多轮记忆</td>
+                  <td>有 session、messages、summary、memory vector store API。</td>
+                  <td>支持多轮会话管理的基础设施。</td>
+                  <td>复杂省略追问还要接入 query rewriting。</td>
+                </tr>
+                <tr>
+                  <td>评测</td>
+                  <td>本地可见 47 题；Day3 报告有 30 题检索基线；有 smoke 和 regression 报告。</td>
+                  <td>已有评测闭环，不是只演示结果。</td>
+                  <td>清华场景需要专家题库和人工标准答案继续扩展。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="borrowed">
+          <div class="section-head">
+            <h3>对标与借鉴</h3>
+            <p>用“借鉴”和“对标”表达，不要在正式材料里说抄袭。</p>
+          </div>
+          <div class="three-col">
+            <div class="panel mini">
+              <strong>RAGFlow</strong>
+              <p>重点借鉴文档解析、chunk preview、metadata、解析诊断和知识库产品化思路。我们已搬入入口和流程思想，但没有完整复刻它的深度版面解析底座。</p>
+            </div>
+            <div class="panel mini">
+              <strong>Haystack / LlamaIndex</strong>
+              <p>重点借鉴 pipeline 化、hybrid retrieval、metadata filter、query rewrite、property graph 和可组合检索器的工程边界。</p>
+            </div>
+            <div class="panel mini">
+              <strong>Microsoft GraphRAG / LightRAG</strong>
+              <p>重点借鉴 local / global 分工、community summary、轻量图检索和“图谱增强而不是替代”的定位。</p>
+            </div>
+          </div>
+          <div class="panel answer-box warning" style="margin-top: 16px;">
+            <h4>行业头部的说法要谨慎</h4>
+            <p>RAGFlow、Haystack、LlamaIndex、Microsoft GraphRAG、LightRAG 可以算开源头部或重要开源参考，但开源头部不等于整个行业绝对顶尖。真正生产级还要对标云厂商托管 RAG、企业搜索、权限审计、任务队列、可观测性和专家评测。面向清华燃气轮机所时，正确说法是：我们正在按开源头部和企业级系统的共同标准补齐能力，而不是宣称已经达到闭源工业系统的最终水平。</p>
+          </div>
+        </section>
+
+        <section id="evaluation">
+          <div class="section-head">
+            <h3>评测口径</h3>
+            <p>指标来自公开 RAG 评测常见维度，内部打分只能作为诊断。</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>检索方式</th>
+                  <th>Day3 question recall@K</th>
+                  <th>keyword recall@K</th>
+                  <th>average keyword coverage</th>
+                  <th>结论</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>keyword</td>
+                  <td>0.833333</td>
+                  <td>0.675</td>
+                  <td>0.675</td>
+                  <td>当前最稳，说明动力装备资料强术语很重要。</td>
+                </tr>
+                <tr>
+                  <td>hybrid_rrf</td>
+                  <td>0.800000</td>
+                  <td>0.625</td>
+                  <td>0.625</td>
+                  <td>接近 keyword，但没有稳定超过，需要调权重和 reranker。</td>
+                </tr>
+                <tr>
+                  <td>dense_hashing</td>
+                  <td>0.600000</td>
+                  <td>0.425</td>
+                  <td>0.425</td>
+                  <td>只是离线 fallback，不代表正式 embedding 上限。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="panel answer-box" style="margin-top: 16px;">
+            <h4>评测题覆盖怎么讲</h4>
+            <p>当前本地评测不是按单一设备类型划分，而是按问题任务和资料来源划分。字段上有 <span class="code">task_type</span>、<span class="code">source_scope</span> 和 <span class="code">expected_modes</span>，覆盖事实问答、流程问答、结构化数据、对比问题、OCR 风险、GraphRAG、回答质量和评测方法。后续更专业的版本应该再补 <span class="code">equipment_type</span>、<span class="code">fault_type</span>、<span class="code">complexity</span> 和专家标准答案。</p>
+          </div>
+        </section>
+
+        <section id="qa">
+          <div class="section-head">
+            <h3>答辩问答库</h3>
+            <p>这里放刚才连续追问的可直接回答版本。</p>
+          </div>
+          <div class="qa-list">
+            <details class="qa" open>
+              <summary>Q1：系统现在的向量库更新机制是怎样的？新资料入库是实时更新还是批量处理？会不会影响正在问答？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  目前系统的向量库更新机制更准确地说是批量触发式更新，不是严格意义上的实时流式更新。
+                </div>
+                <p>新资料进入系统后，不是上传完立刻就能被问答检索到，而是要经过一套入库流程：先保存上传文件，再解析文本、清洗、分块、生成 metadata，然后对每个 chunk 做向量化，最后写入 ChromaDB 向量库。这个过程完成以后，新资料才会进入检索范围。</p>
+                <p>对于普通新增资料，系统主要是用 <span class="code">upsert</span> 的方式把新的 chunk 写入已有集合，所以不会把整个服务停掉。正在进行的问答一般还能继续查旧数据，只是如果同时在跑大批量入库，可能会占用 CPU、磁盘 I/O 或 embedding 模型资源，导致问答响应变慢。</p>
+                <div class="speak warning">
+                  <strong>边界说明：</strong>
+                  如果是整批资料重建，或者某些数据集采用“删除旧集合再重建”的方式，那在重建期间就可能出现短时间检索不完整的问题。所以目前系统还不是企业级的“无感热更新”。更稳妥的答辩说法是：当前系统采用批量入库、增量 upsert 为主的向量库更新机制。新增资料需要经过解析、分块、向量化和写库后才会被检索到。一般新增不会中断正在进行的问答服务，但大批量入库会带来资源竞争，可能影响响应速度。后续如果要支撑正式在线服务，需要引入后台任务队列、索引版本管理和蓝绿切换机制，保证新索引构建完成后再原子切换，避免检索结果在更新过程中不稳定。
+                </div>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q2：60 道评测题是按什么维度覆盖动力装备核心场景的？</summary>
+              <div class="qa-body">
+                <p>这里要先纠正口径：当前仓库里实际可见的 <span class="code">evaluation/system_eval_questions.jsonl</span> 是 47 题，不是完整 60 题；Day3 baseline 报告里跑的是 30 题检索子集。旧 HTML 或早期材料里出现过 60 题口径，答辩时不要把两个版本混在一起。</p>
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  评测题不是简单按设备类型划分，而是按问题能力来覆盖：事实参数查询、流程机制解释、结构化数据查询、跨文档对比、OCR 风险、GraphRAG 关系型问题、回答质量和评测方法。资料来源上再通过 <span class="code">source_scope</span> 区分燃气轮机原理、联合循环、维护可靠性、课程资料和 GraphRAG 子集。
+                </div>
+                <p>如果要做到清华燃气轮机所级别，下一版应该补设备维度，比如压气机、燃烧室、涡轮、余热锅炉、控制系统；再补复杂度维度，比如单段事实、多段综合、跨设备对比、故障归因和 no-answer。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q3：失败归因后，针对片段不精准，除了引入 reranker，还做过什么优化？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  做过一些针对性优化，但还没有完成严格的 chunk-size 消融实验。已经做的包括：用标题和段落断点触发 chunk 边界，保留页码、来源、章节、block 类型等 metadata；给 chunk 加 overlap，避免关键句被切断；在文档解析结果里提供 chunk preview，方便人工检查切分是否合理；搜索时也加入 source file、年份、作者等 metadata filter，减少召回范围过宽。
+                </div>
+                <p>还需要继续补的是系统化实验：对不同资料类型分别测试 500/50、900/120、1200/150 等 chunk_size 和 overlap，比较 recall、coverage、citation 命中和人工可读性。也就是说，当前有工程优化，但还不能说已经完成最优分块参数搜索。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q4：系统落地后，用户问得最多的是哪类问题？参数查询、故障分析还是跨文档对比？</summary>
+              <div class="qa-body">
+                <p>这里不能假装已经有大量真实用户日志。更稳妥的说法是：目前主要依据评测题和动力装备资料使用场景来判断，而不是依据大规模线上用户统计。</p>
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  从目前测试和场景推断，最常见的是三类：第一类是参数和定义查询，比如某个部件的作用、某个循环为什么效率高；第二类是机制和流程解释，比如压气机、燃烧室、涡轮之间的能量转换关系；第三类是故障、维护和跨文档对比，比如某个故障可能关联哪些部件，或者不同资料对同一设备边界条件的说法是否一致。
+                </div>
+                <p>其中普通 RAG 更适合前两类直接证据问题，GraphRAG 更适合第三类关系追踪和跨文档综合问题。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q5：为什么把 GraphRAG 定位成增强路线，而不是替代传统 RAG？依据是什么？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  这个判断来自前期 baseline 和失败归因。Day3 检索结果里，keyword 的 question recall@K 是 0.833333，hybrid_rrf 是 0.8，dense_hashing 是 0.6。这说明在动力装备资料里，强术语和明确部件名非常重要，简单事实题不一定需要走复杂图谱，直接关键词或混合检索反而更稳。
+                </div>
+                <p>GraphRAG 的价值不在于替代所有检索，而在于处理普通 top-k chunk 不擅长的问题：实体关系、多跳因果、跨文档综合和全局社区摘要。所以技术路线是先判断问题类型，事实类走标准 RAG，关系类和全局综合类再走 GraphRAG。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q6：动力装备领域有行业黑话和缩写，问题预处理怎么解决术语理解？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  当前主要靠四层机制：第一是关键词检索保底，保证 M701F、HRSG、压气机、燃烧室这类强术语不会被语义模型稀释；第二是可选 query rewrite，把用户口语问题改写成更完整的检索表达；第三是 metadata filter，按文件、来源、年份、作者、设备对象缩小范围；第四是 GraphRAG 实体层，把同义实体、部件关系和 evidence 绑定起来。
+                </div>
+                <p>但要诚实说，现在还没有完整的专家术语词典和缩写表。下一步应该建设燃气轮机领域 glossary，包括中英文缩写、设备别名、型号别名、故障别名和单位表达，再接入 query rewrite 与实体归一化。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q7：系统现在支持多轮对话吗？追问“这个参数在另一台设备是否适用”能不能关联上下文？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  系统支持基础的多轮会话记忆，但复杂追问还不能说完全成熟。现在后端有 session、message、summary 和 memory vector store，可以按会话保存历史问答、读取最近几轮上下文、把长历史压缩成摘要，也可以对摘要做记忆检索。
+                </div>
+                <p>限制在于核心 RAG 查询链路还没有完全自动把 memory context 接入 query rewriting。比如上一轮问“M701F 排气温度上限是多少”，下一轮问“这个参数在另一台同类型设备上是否适用”，系统必须先把“这个参数”改写成“M701F 排气温度上限”，再把“另一台设备”解析成具体设备型号，然后再检索。这个上下文改写链路还需要继续补齐。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q8：RAGFlow 的文档解析底座搬过来了吗？复刻程度大概多少？</summary>
+              <div class="qa-body">
+                <p>不能说完全搬过来了。更准确的说法是：我们把 RAGFlow 的产品思路和关键工程接口搬进来了，但没有完全复刻它的全套底座。</p>
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  目前复刻的是 60% 到 70% 的思路层和工程接口：多格式资料入口、解析路线记录、chunk preview、metadata、入库摘要、解析失败诊断、知识库统计。这些已经能支撑课程项目和初步演示。但 RAGFlow 更强的地方在复杂版面解析、表格图片理解、多模型解析编排、任务队列和知识库产品化管理，这些还没有完全搬完。
+                </div>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q9：如果现在只有 40 分，常见 RAG 系统一般能跑多少？我们该怎么系统优化？</summary>
+              <div class="qa-body">
+                <p>40 分不能简单理解成系统彻底不行，它通常说明评测链路里有多个短板叠加：解析质量、chunk、embedding、召回、排序、引用和 GraphRAG 都会影响总分。</p>
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  常见开源 demo 在自己熟悉的小数据上可以看起来很高，但一到真实扫描件、中文教材、专业术语和跨文档问题，分数会明显下降。我们的优化顺序应该是：先稳文档解析和 metadata，再换轻量但正式的 embedding，再调 hybrid 权重和 reranker，再补 GraphRAG local/global 同题评测，最后把 no-answer、citation 和专家题库做起来。
+                </div>
+                <p>不要一上来大换血。先在本地框架里把 embedding、chunk、hybrid、reranker 和评测闭环调稳，确认收益后再考虑更大的架构调整。</p>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q10：资料解析入库时，面对动力装备里的大量图表和公式，系统怎么让后续检索也能关联到这些非文本内容？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  我们处理图表和公式的思路，不是把它们当成普通图片丢掉，而是尽量把它们转成可检索的文本证据，加上可回溯的位置 metadata。
+                </div>
+                <p>动力装备资料里很多内容不是纯文字，比如结构图、性能曲线、参数表、公式推导。系统入库时会先做版面解析，把页面里的正文、标题、表格、公式、页码等内容拆出来，并给每个内容块打上类型标记。比如一个 chunk 里面会记录它来自哪本资料、哪一页、哪个章节，以及它包含的是 text、table、equation 还是混合内容。</p>
+                <p>对于表格，我们尽量保留表头、单位、行列关系，把它转成 HTML 或类 Markdown 文本。这样用户问“某型号压气机参数是多少”“某个温度范围是多少”时，检索系统不是只搜正文，也能搜到表格里的字段、单位和数值。</p>
+                <p>对于公式，我们会把公式转成 LaTeX 或文本形式，并且尽量和公式前后的解释放在同一个上下文块里。因为单独一个公式往往不好检索，真正有价值的是“这个公式描述什么、变量代表什么、适用条件是什么”。所以我们在分块时会尽量保留公式编号、变量说明和上下文解释。</p>
+                <p>对于图片和结构图，目前更准确地说，我们主要依赖图题、图注、OCR/VLM 提取出来的文字，以及图前图后的说明文字来建立检索关联。也就是说，系统现在不是直接对图片本身做强多模态理解，而是先把图片周围的语义信息转成可检索文本，再通过页码和来源 metadata 回到原始资料。</p>
+                <div class="speak warning">
+                  <strong>边界说明：</strong>
+                  当前系统对图表公式采用的是“版面解析 + 文本化表达 + 来源绑定”的方式。表格会保留表头、单位和数值，公式会保留 LaTeX 表达和变量说明，图片主要通过图题、图注和相邻段落建立语义索引。但目前还没有完全做到对所有图片内容进行端到端多模态检索。如果图里没有图注、没有可 OCR 的文字，系统理解能力仍然有限。下一步可以加入图像区域裁剪、图表 caption 生成、表格结构化抽取和多模态 embedding，让图表公式的检索能力更完整。
+                </div>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q11：最终生成答案时，怎么平衡检索资料准确性和大模型语言流畅度？会不会出现模型为了通顺修改专业数据？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  这是我们特别需要控制的点。我们的原则是：专业事实和参数必须服从检索证据，大模型只负责组织表达，不能自由改写数据。
+                </div>
+                <p>在最终生成答案时，系统会先检索出相关 chunk，把原文证据、来源文件、页码、章节和相似度一起传给生成模块。大模型回答时不是凭自己的知识直接发挥，而是要围绕这些证据生成答案。对于参数、公式、设备型号、故障原因、操作条件这类专业信息，优先使用原文里的表达和数值。</p>
+                <p>比如资料里写的是某个温度范围、压力范围、间隙值或者公式变量定义，模型不能为了句子更顺把数值四舍五入、换单位或者扩大适用范围。它最多能做的是把原文解释得更清楚，比如把长句拆开、把结论放前面、把依据列出来。</p>
+                <p>答案要求可以概括成三层：第一，结论要有证据，没有检索到依据就不能硬答；第二，参数要忠实原文，型号、数值、单位、公式、适用条件不能被模型润色变形；第三，语言可以整理，大模型可以把多个证据组织成更容易读的回答，但不能牺牲专业准确性。</p>
+                <div class="speak warning">
+                  <strong>边界说明：</strong>
+                  当前系统还不能百分百保证模型永远不改动专业数据，所以工程上还需要继续加强约束，比如答案里强制引用来源、对数值和单位做后处理校验、对无证据问题返回“不足以判断”，以及把生成结果和检索证据做一致性检查。答辩时可以说：我们把大模型定位为“证据组织器”，不是“知识来源”。检索结果决定事实边界，大模型负责把证据组织成自然语言。
+                </div>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q12：实际操作中，系统怎么自动把答案证据和来源页码精准绑定？扫描版 PDF 怎么定位到具体段落位置？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  我们做证据绑定的核心思路是：不是等答案生成完再去找来源，而是在资料入库时就把来源信息绑定到每个 chunk 上。
+                </div>
+                <p>资料解析入库时，每个文本块都会带 metadata，比如来源文件名、页码、chunk 编号、章节标题、内容类型、OCR 来源和处理版本。如果有版面解析结果，还会保留页面块的位置关系。后续检索时，系统返回的不是一段裸文本，而是文本内容、来源文件、页码、chunk_id 和 metadata 一起返回。</p>
+                <p>所以最终生成答案时，引用不是模型自己编的，而是从检索结果里带出来的。模型负责组织语言，证据来源由系统结构化 metadata 提供。</p>
+                <p>对于扫描版 PDF，难点是它本身没有可复制文本，也没有天然段落结构。我们的做法是先经过 OCR 和版面解析，把每一页拆成多个文本块，并尽量保留标题、段落、表格、公式和页码信息。这样系统至少可以把答案定位到“哪本资料、哪一页、哪个 chunk”。如果 OCR 结果里有坐标信息，还可以进一步定位到页面上的具体区域，比如某个段落块或表格块。</p>
+                <div class="speak warning">
+                  <strong>边界说明：</strong>
+                  目前系统最稳定的是页码级 + chunk 级定位，还不能保证所有扫描 PDF 都做到像网页锚点一样精准定位到每一个自然段。扫描件质量、版面复杂度、两栏排版、表格跨页都会影响段落定位精度。复杂扫描件下，段落级精准定位仍然是后续需要继续优化的部分。
+                </div>
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Q13：OCR 识别会不会出现文字错乱或段落拆分错误？有没有校验或修正机制，避免错误 metadata 影响检索和溯源？</summary>
+              <div class="qa-body">
+                <div class="speak">
+                  <strong>可直接回答：</strong>
+                  会有，而且这个问题必须正面承认。扫描版 PDF 的 OCR 不可能完全干净，常见问题包括文字识别错、两栏顺序错乱、表格被拆碎、公式和正文混在一起、页眉页脚被当正文、段落被错误切开。这些都会影响后续检索，尤其会影响 metadata 和页码溯源的可信度。
+                </div>
+                <p>我们现在的处理思路分几层。第一层是版面感知解析，不是简单按整页文字从上到下拼接，而是尽量识别标题、正文、表格、公式、页码、图题这些块类型，减少两栏排版和表格造成的顺序混乱。</p>
+                <p>第二层是清洗和过滤。系统会处理明显的噪声，比如页眉页脚、孤立页码、过短碎片、重复文本、乱码比例高的片段，避免很多低质量 OCR 文本直接进入向量库。</p>
+                <p>第三层是保留 OCR 质量信息和来源版本。chunk 的 metadata 里会保留来源文件、页码、解析方式、OCR 版本、内容类型等信息。这样后面如果某条证据明显有问题，可以追溯到是哪本书、哪一页、哪个 OCR 版本产生的，而不是只看到一段孤立文本。</p>
+                <p>第四层是人工抽检和质量审计。之前我们对 OCR 结果做过质量审计、低置信度页重识别、夜间总检矫正这类流程。它的作用就是把明显不可靠的页找出来，重新识别或标记风险。</p>
+                <div class="speak warning">
+                  <strong>边界说明：</strong>
+                  目前还没有完全做到所有 OCR 错误自动修正。更准确地说，系统现在能做的是：减少明显噪声、保留溯源、发现低质量页、支持重新处理；不是保证每一页 OCR 都绝对正确。后续会继续加强 OCR 置信度评分、版面坐标校验和人工复核闭环。
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="roadmap">
+          <div class="section-head">
+            <h3>后续路线</h3>
+            <p>按最能涨质量的顺序排，不按炫技程度排。</p>
+          </div>
+          <div class="roadmap-grid">
+            <div class="panel roadmap-item">
+              <h4>1. 文档解析继续补强</h4>
+              <p>把表格、图注、标题层级、页眉页脚、跨页段落和 OCR 低置信度诊断做成可检查报告。目标是降低垃圾 chunk 和错页引用。</p>
+            </div>
+            <div class="panel roadmap-item">
+              <h4>2. 轻量正式 embedding + reranker</h4>
+              <p>优先使用小巧中文/多语种 embedding 和本地 reranker，不下载超大模型。用同一评测集比较 keyword、vector、hybrid、rerank 的收益。</p>
+            </div>
+            <div class="panel roadmap-item">
+              <h4>3. GraphRAG 同题实测</h4>
+              <p>把关系型、跨设备、跨文档、全局总结问题单独成组，对比 standard RAG、local GraphRAG、global GraphRAG 和 hybrid graph。</p>
+            </div>
+            <div class="panel roadmap-item">
+              <h4>4. 生产级更新机制</h4>
+              <p>把当前同步批处理升级为后台任务队列、staging collection、索引版本、评测通过后切换和失败回滚，避免大批量入库影响在线问答。</p>
+            </div>
+          </div>
+          <p class="footnote">最后更新：2026-06-23。当前内容按本地仓库真实代码和已经确认过的答辩口径整理，不按旧 HTML 的视觉和乱码文本复用。</p>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -10,13 +10,13 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>动力装备知识库控制台</title>
+  <title>清华大学燃气轮机所知识库控制台</title>
 
   <script>
 
-  // 自动跳转: file:// �?http://localhost:8766
+  // Auto redirect: file:// -> http://localhost:8766.
 
-  // 解决 file:// 协议下浏览器安全策略阻止 OCR 服务器通信的问�?
+  // Auto redirect: file:// -> http://localhost:8766.
 
   (function() {
 
@@ -30,13 +30,13 @@
 
       img.onerror = function() {
 
-        // Web 服务器未运行, 使用 fetch 再试一�?
+        // Web server is not running; try fetch once.
 
         fetch(httpUrl, { mode: "no-cors", signal: AbortSignal.timeout(1500) })
 
           .then(function() { window.location.replace(httpUrl); })
 
-          .catch(function() { /* 服务器未启动, 继续�?file:// */ });
+          .catch(function() { /* Server is not running; keep file:// fallback. */ });
 
       };
 
@@ -592,7 +592,7 @@ iconify-icon {
 
   letter-spacing: 0.04em;
 
-  text-transform: uppercase;
+  text-transform: none;
 
   border-color: transparent;
 
@@ -2832,7 +2832,7 @@ svg { width: 100%; height: auto; display: block; }
 
 .ask-answer:empty::before {
 
-  content: "尚未生成回答。提问后会先检索证据，再调�?LLM�?;
+  content: "尚未生成回答。提问后会先检索证据，再调用 LLM。";
 
   color: var(--muted);
 
@@ -2998,7 +2998,7 @@ svg { width: 100%; height: auto; display: block; }
 
 .ask-answer.is-streaming.has-content > *:last-child::after {
 
-  content: "�?;
+  content: "|";
 
   display: inline-block;
 
@@ -4427,30 +4427,20 @@ body::before {
 }
 
 .hero-card {
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(237,246,255,0.94)),
-    linear-gradient(90deg, transparent, rgba(23,105,224,0.10));
-  border: 1px solid rgba(23,105,224,0.16);
+  background: #ffffff;
+  border: 1px solid rgba(16,24,40,0.10);
 }
 
 .hero-card--product {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.78fr);
-  gap: 30px;
-  min-height: 340px;
-  padding: 32px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+  gap: 22px;
+  min-height: 0;
+  padding: 22px;
 }
 
 .hero-card--product::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-image:
-    linear-gradient(120deg, transparent 0%, rgba(23,105,224,0.08) 58%, transparent 58%),
-    linear-gradient(rgba(17,24,39,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17,24,39,0.035) 1px, transparent 1px);
-  background-size: auto, 32px 32px, 32px 32px;
+  display: none;
 }
 
 .hero-card--product > * {
@@ -4460,24 +4450,24 @@ body::before {
 
 .hero-copy {
   display: grid;
-  align-content: center;
-  gap: 16px;
+  align-content: start;
+  gap: 12px;
   min-width: 0;
 }
 
 .hero-card--product h3 {
-  max-width: 760px;
-  font-size: clamp(34px, 4vw, 58px);
-  line-height: 1.04;
+  max-width: 640px;
+  font-size: clamp(26px, 2.4vw, 34px);
+  line-height: 1.16;
   font-weight: 800;
   color: #0b1220;
 }
 
 .hero-card--product p {
-  max-width: 720px;
+  max-width: 660px;
   margin: 0;
-  font-size: 15px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.65;
   color: #526173;
 }
 
@@ -4507,7 +4497,7 @@ body::before {
 }
 
 .hero-actions {
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .btn,
@@ -4542,13 +4532,13 @@ body::before {
 
 .hero-showcase {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   align-self: stretch;
-  padding: 16px;
+  padding: 14px;
   border-radius: 8px;
   border: 1px solid rgba(16, 24, 40, 0.12);
-  background: rgba(255, 255, 255, 0.80);
-  box-shadow: 0 18px 36px rgba(16,24,40,0.10);
+  background: #f8fafc;
+  box-shadow: none;
 }
 
 .showcase-header,
@@ -4576,6 +4566,87 @@ body::before {
   color: #0f7b55;
   font-size: 12px;
   font-weight: 650;
+}
+
+.hero-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hero-status-cell {
+  display: grid;
+  gap: 5px;
+  min-height: 66px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.08);
+  background: #ffffff;
+}
+
+.hero-status-cell span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.hero-status-cell strong {
+  min-width: 0;
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.hero-status-cell em {
+  color: #526173;
+  font-size: 11px;
+  line-height: 1.35;
+  font-style: normal;
+}
+
+.hero-flow-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hero-flow-item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(16,24,40,0.08);
+  background: #ffffff;
+}
+
+.hero-flow-index {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #eef4ff;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hero-flow-item strong {
+  display: block;
+  color: #111827;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.hero-flow-item span:last-child {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .hero-pipeline {
@@ -4832,6 +4903,14 @@ body::before {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .hero-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-flow-list {
+    grid-template-columns: 1fr;
+  }
+
   .page,
   .page-stack > *,
   .app-main,
@@ -4868,23 +4947,186 @@ body::before {
 
 @media (max-width: 720px) {
   .app-shell {
-    padding: 10px;
+    padding: 8px 10px 78px;
   }
 
   .appbar {
     top: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 12px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .appbar-brand {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .appbar-brand strong {
+    display: block;
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+  }
+
+  .appbar-brand .segment-group {
+    margin-left: 0 !important;
+  }
+
+  .segment-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .appbar-actions {
+    margin-left: 0;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .appbar-actions .status-pill {
+    display: none;
+  }
+
+  .user-chip {
+    display: none;
+  }
+
+  .appbar-nav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: 10px;
+    z-index: 90;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+    gap: 4px;
+    width: auto;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+    backdrop-filter: var(--vibrancy);
+    -webkit-backdrop-filter: var(--vibrancy);
+  }
+
+  .appbar-nav .nav-item {
+    min-width: 0;
+    height: 50px;
+    padding: 6px 4px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .appbar-nav .nav-item span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.1;
+    font-size: 10px;
+  }
+
+  .appbar-nav .nav-item iconify-icon {
+    font-size: 16px;
+  }
+
+  .appbar-nav .nav-item.is-hidden {
+    display: none !important;
+  }
+
+  .app-main {
+    margin-top: 0;
   }
 
   .hero-card--product {
-    padding: 22px;
+    padding: 14px;
+    gap: 14px;
   }
 
   .hero-card--product h3 {
-    font-size: clamp(30px, 9vw, 42px);
+    font-size: 24px;
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-card--product p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .hero-card--product .hero-proof-row {
+    display: none;
+  }
+
+  .hero-card--product .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hero-card--product .hero-actions > * {
+    flex: initial;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .hero-card--product .hero-actions > .btn {
+    grid-column: 1 / -1;
+  }
+
+  .hero-showcase {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .hero-status-cell {
+    min-height: auto;
+    padding: 9px;
+  }
+
+  .hero-card--product .hero-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-status-cell strong {
+    font-size: 13px;
+  }
+
+  .hero-status-cell em {
+    display: none;
+  }
+
+  .hero-card--product .hero-flow-list {
+    display: none;
+  }
+
+  .hero-flow-item {
+    padding: 9px;
+  }
+
+  .hero-flow-item span:last-child {
+    display: none;
   }
 
   .hero-pipeline,
   .hero-evidence,
+  .hero-status-grid,
+  .hero-flow-list,
   .project-snapshot {
     grid-template-columns: 1fr;
   }
@@ -4903,6 +5145,107 @@ body::before {
   .queue-actions > * {
     flex: 1 1 100%;
   }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .panel-head {
+    gap: 10px;
+  }
+
+  .panel-head h2,
+  .panel-head h3 {
+    font-size: 16px;
+  }
+
+  .search-input,
+  .search-select,
+  .form-control,
+  textarea.form-control,
+  .btn,
+  .ghost-btn {
+    width: 100%;
+  }
+
+  .results-list,
+  .queue-list,
+  .activity-feed {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 640px;
+  }
+
+  .kg-question-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .kg-flow-arrow {
+    min-height: 18px;
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+
+  #kgGraphContainer {
+    height: 320px !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-placeholder {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-note-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-note {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.admin-note strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.admin-note p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.hidden-off-domain {
+  display: none !important;
+}
+
+.kg-triage-panel > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.kg-triage-panel > summary::-webkit-details-marker {
+  display: none;
 }
 
 </style>
@@ -4933,13 +5276,13 @@ body::before {
 
     { local: "libs/sql-wasm.js",              cdn: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js" },
 
-    // Tesseract.js removed �?ppu-paddle-ocr is now the primary browser OCR engine
+    // Tesseract.js removed; ppu-paddle-ocr is now the primary browser OCR engine.
 
     // Tesseract.js has been fully removed (Chinese accuracy <5%, produces garbage)
 
   ];
 
-  // Synchronously write script tags �?local first, onerror falls back to CDN
+  // Synchronously write script tags: local first, onerror falls back to CDN.
 
   _LIBS.forEach(function(lib) {
 
@@ -4955,7 +5298,7 @@ body::before {
 
   <script>
 
-// Configure pdf.js worker �?prefer local, fallback to CDN
+// Configure pdf.js worker: prefer local, fallback to CDN.
 
 if (globalThis.pdfjsLib?.GlobalWorkerOptions) {
 
@@ -5007,7 +5350,7 @@ setTimeout(async () => {
 
     if (!hasLocal) {
 
-      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引�?..");
+      console.log("[OCR] 本地 OCR 服务器不可用，开始预加载 ppu-paddle-ocr 浏览器引擎...");
 
       _preloadPaddleOcr();
 
@@ -5017,7 +5360,7 @@ setTimeout(async () => {
 
     } else {
 
-      console.log(`[OCR] 本地 OCR 服务器可�?(${_localOcrEngines.join('+')}), 跳过浏览器引擎预加载`);
+      console.log(`[OCR] 本地 OCR 服务器可用 (${_localOcrEngines.join('+')}), 跳过浏览器引擎预加载`);
 
       _showOcrServerBanner(true);
 
@@ -5045,11 +5388,11 @@ function _showOcrServerBanner(available) {
 
     const engines = (typeof _localOcrEngines !== 'undefined' ? _localOcrEngines : []).join(' + ') || 'RapidOCR';
 
-    banner.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:99998;padding:6px 16px;background:linear-gradient(90deg,#1b5e20,#2e7d32);color:#c8e6c9;font-size:12px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    banner.innerHTML = `<div style="position:fixed;right:18px;bottom:18px;z-index:99998;max-width:min(520px,calc(100vw - 36px));padding:10px 14px;border-radius:8px;background:rgba(20,83,45,0.96);color:#c8e6c9;font-size:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,0.32);">
 
-      <span>�?OCR 服务器已就绪 �?引擎: <b>${engines}</b> | 并发: ${typeof _localOcrConcurrency !== 'undefined' ? _localOcrConcurrency : '?'}x</span>
+      <span>OCR 服务器已就绪 · 引擎: <b>${engines}</b> · 并发: ${typeof _localOcrConcurrency !== 'undefined' ? _localOcrConcurrency : '?'}x</span>
 
-      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#a5d6a7;cursor:pointer;font-size:16px;padding:0 4px;"></button>
+      <button type="button" aria-label="隐藏 OCR 状态提示" title="隐藏 OCR 状态提示" onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#a5d6a7;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
 
     </div>`;
 
@@ -5059,11 +5402,11 @@ function _showOcrServerBanner(available) {
 
     const hint = isFile
 
-      ? `OCR service is not reachable from file://. Open <a href="http://127.0.0.1:8766" style="color:#fff;text-decoration:underline;font-weight:bold;">http://127.0.0.1:8766</a> after starting the local server.`
+      ? `file:// 页面无法连接 OCR 服务。请启动本地服务后打开 <a href="http://127.0.0.1:8766" style="color:#fff;text-decoration:underline;font-weight:bold;">http://127.0.0.1:8766</a>。`
 
-      : `OCR service is not running. Start the local server or run <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>.`;
+      : `OCR 服务未运行。请启动本地 OCR 服务，或运行 <code style="background:rgba(255,255,255,0.15);padding:1px 5px;border-radius:3px;">python app.py</code>。`;
 
-    banner.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:99998;padding:6px 16px;background:linear-gradient(90deg,#b71c1c,#c62828);color:#ffcdd2;font-size:12px;display:flex;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+    banner.innerHTML = `<div style="position:fixed;right:18px;bottom:18px;z-index:99998;max-width:min(560px,calc(100vw - 36px));padding:10px 14px;border-radius:8px;background:rgba(127,29,29,0.96);color:#ffcdd2;font-size:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-family:system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,0.32);">
 
       <span>${hint}</span>
 
@@ -5071,7 +5414,7 @@ function _showOcrServerBanner(available) {
 
         <button onclick="_retryOcrServerCheck()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;cursor:pointer;font-size:11px;padding:2px 10px;border-radius:4px;">🔄 重试检</button>
 
-        <button onclick="this.closest('#ocr-server-banner').remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;"></button>
+        <button type="button" aria-label="关闭 OCR 服务提示" title="关闭 OCR 服务提示" onclick="this.closest('#ocr-server-banner').remove()" style="background:none;border:none;color:#ef9a9a;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
 
       </span>
 
@@ -5117,13 +5460,13 @@ async function _retryOcrServerCheck() {
 
     _showOcrServerBanner(true);
 
-    showToast("�?OCR 服务器已连接!", "success");
+    showToast("OCR 服务器已连接。", "success");
 
     // If on file://, redirect to HTTP version
 
     if (window.location.protocol === "file:") {
 
-      showToast("🔄 正在跳转�?HTTP 版本...", "success");
+      showToast("正在跳转到 HTTP 版本...", "success");
 
       setTimeout(() => { window.location.replace("http://127.0.0.1:8766/index.html"); }, 1000);
 
@@ -5199,7 +5542,7 @@ const BENCHMARK_CARDS = [
 
   { key: "query_seconds", label: "查询耗时", icon: "lucide:timer-reset", formatter: (value) => `${formatDecimal(value, 3)} s` },
 
-  { key: "query_qps", label: "检�?QPS", icon: "lucide:bar-chart-3", formatter: (value) => `${formatDecimal(value, 2)} qps` },
+  { key: "query_qps", label: "检索 QPS", icon: "lucide:bar-chart-3", formatter: (value) => `${formatDecimal(value, 2)} qps` },
 
   { key: "avg_query_latency_ms", label: "平均延迟", icon: "lucide:activity", formatter: (value) => `${formatDecimal(value, 3)} ms` },
 
@@ -5513,6 +5856,19 @@ const SUPPORTED_EXTENSIONS = new Set(["json", "jsonl", "ndjson", "ipynb", "pdf",
 
 const DEFAULT_STATS = { status: "idle", collections: [], total_documents: 0, total_tokens_estimate: 0, storage_size_mb: 0, embedding_dim: ENGINE_DEFAULTS.dimension, source_type_breakdown: {} };
 const ACTIVE_COLLECTION_STORAGE_KEY = "powerrag.active_collection";
+const POWER_EQUIPMENT_DEMO_COLLECTION = "power_equipment_demo";
+const OFF_DOMAIN_COLLECTION_PATTERNS = [
+  "we" + "chat",
+  "\\u5fae\\u4fe1",
+  "\\u79c1\\u804a",
+  "\\u66a7\\u6627",
+  "\\u79df\\u623f",
+  "\\u5f3a\\u57fa",
+  "affec" + "tion",
+  "priv" + "ate_chat",
+  "priv" + "ate_chunks"
+];
+const OFF_DOMAIN_COLLECTION_RE = new RegExp(OFF_DOMAIN_COLLECTION_PATTERNS.join("|"), "i");
 
 const state = {
 
@@ -5622,8 +5978,17 @@ function collectionExistsInList(collection, collections = state.stats?.collectio
 
   const name = cleanCollectionName(collection);
 
-  return Boolean(name && Array.isArray(collections) && collections.some((item) => cleanCollectionName(item?.name) === name));
+  return Boolean(name && Array.isArray(collections) && visibleConsoleCollections(collections).some((item) => cleanCollectionName(item?.name) === name));
 
+}
+
+function shouldHideCollectionFromConsole(collection) {
+  return OFF_DOMAIN_COLLECTION_RE.test(cleanCollectionName(collection));
+}
+
+function visibleConsoleCollections(collections = []) {
+  return (Array.isArray(collections) ? collections : [])
+    .filter((item) => !shouldHideCollectionFromConsole(item?.name));
 }
 
 function syncActiveCollectionInputs(collection) {
@@ -6270,7 +6635,7 @@ function splitTextWithOverlap(text, chunkSize = ENGINE_DEFAULTS.chunkSize, overl
 
   if (cleaned.length <= chunkSize) return [cleaned];
 
-  const markers = ["\n\n", "\n", "��", "��", "��", "��", ";", ".", ",", " "];
+  const markers = ["\n\n", "\n", "。", "；", "，", "、", ";", ".", ",", " "];
 
   const output = [];
 
@@ -6330,7 +6695,7 @@ function parseTabularText(text, delimiter) {
 
     const pairs = row.map((cell, index) => `${header[index] || `字段 ${index + 1}`}: ${normalizeText(cell)}`).join(" | ");
 
-    return `�?${rowIndex + 1} �? ${pairs}`;
+    return `第 ${rowIndex + 1} 行 · ${pairs}`;
 
   });
 
@@ -6424,7 +6789,7 @@ async function _checkLocalOcr() {
 
 
 
-// ── 一键式本地 OCR: 上传 PDF �?服务器并发处理全部页�?�?轮询进度 �?返回结果 ──
+// OCR processing flow.
 
 async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
@@ -6434,7 +6799,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
 
 
-  // 1) 上传 PDF，服务器立刻开始后台并�?OCR
+  // OCR processing flow.
 
   const startResp = await fetch(`${LOCAL_OCR_URL}/ocr/pdf/start${engineParam}`, {
 
@@ -6458,7 +6823,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
   const serverEngine = startData.engine || engineName || 'RapidOCR';
 
-  console.log(`[OCR] 开�? session=${session_id}, ${total_pages} �? 引擎=${serverEngine}, ${concurrency}x 并发`);
+  console.log(`[OCR] 开始 session=${session_id}, ${total_pages} 页, 引擎=${serverEngine}, ${concurrency}x 并发`);
 
   if (progressCallback) progressCallback({ phase: "started", done: 0, total: total_pages, concurrency, engine: serverEngine });
 
@@ -6488,7 +6853,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
       console.warn(`[OCR] 轮询异常 (尝试 ${retries}/5):`, e.message);
 
-      if (retries > 5) throw new Error(`�?OCR 服务器断开连接: ${e.message}`);
+      if (retries > 5) throw new Error(`OCR 服务器断开连接: ${e.message}`);
 
       continue;
 
@@ -6510,7 +6875,7 @@ async function _ocrPdfViaServer(file, progressCallback, engineName) {
 
     if (prog.complete) {
 
-      console.log(`[OCR] 完成: ${total_pages} �? 引擎=${serverEngine}, ${prog.elapsed_s}s, 置信�?${(prog.avg_confidence*100).toFixed(0)}%`);
+      console.log(`[OCR] 完成: ${total_pages} 页, 引擎=${serverEngine}, ${prog.elapsed_s}s, 置信度 ${(prog.avg_confidence*100).toFixed(0)}%`);
 
       return prog;  // { full_text, pages, avg_confidence, elapsed_s, ... }
 
@@ -6560,7 +6925,7 @@ async function _loadPaddleOcr() {
 
     console.log("[OCR] 正在加载 PaddleOCR 中文识别引擎 (PP-OCRv5)...");
 
-    showToast("�?加载 PaddleOCR 中文引擎（首次约 30-60 秒下载模型）...", "success");
+    showToast("正在加载 PaddleOCR 中文引擎（首次约 30-60 秒下载模型）...", "success");
 
 
 
@@ -6582,7 +6947,7 @@ async function _loadPaddleOcr() {
 
     // 2. Load paddleocr library
 
-    console.log("[OCR] 加载 paddleocr �?..");
+    console.log("[OCR] 加载 paddleocr...");
 
     const { PaddleOcrService } = await import("https://esm.sh/paddleocr@1.1.1");
 
@@ -6590,7 +6955,7 @@ async function _loadPaddleOcr() {
 
     // 3. Download Chinese models and dictionary in parallel
 
-    console.log("[OCR] 下载中文 PP-OCRv5 模型和字�?..");
+    console.log("[OCR] 下载中文 PP-OCRv5 模型和字典...");
 
     const [detBuf, recBuf, dictText] = await Promise.all([
 
@@ -6648,9 +7013,9 @@ async function _loadPaddleOcr() {
 
     _paddleOcrInstance = ocr;
 
-    console.log("[OCR] �?PaddleOCR 中文引擎就绪 (PP-OCRv5 mobile, " + dictArray.length + " 字符字典)");
+    console.log("[OCR] PaddleOCR 中文引擎就绪 (PP-OCRv5 mobile, " + dictArray.length + " 字符字典)");
 
-    showToast("�?PaddleOCR 中文引擎就绪", "success");
+    showToast("PaddleOCR 中文引擎就绪", "success");
 
     return _paddleOcrInstance;
 
@@ -6668,7 +7033,7 @@ function _preloadPaddleOcr() {
 
   _loadPaddleOcr().catch(e => {
 
-    console.warn("[OCR] PaddleOCR 预加载失�?", e.message);
+    console.warn("[OCR] PaddleOCR 预加载失败", e.message);
 
     _paddleOcrPromise = null; // Allow retry
 
@@ -6762,7 +7127,7 @@ async function _ocrViaPaddleJs(canvas) {
 
 
 
-// ── Baidu Cloud OCR (百度云文字识�?API, 99%+ Chinese accuracy) ──
+// Baidu Cloud OCR configuration.
 
 // Uses Baidu's accurate_basic endpoint for high-precision Chinese OCR
 
@@ -6830,7 +7195,7 @@ async function _getBaiduAccessToken() {
 
   cfg._tokenExpiry = Date.now() + (data.expires_in - 3600) * 1000; // refresh 1hr early
 
-  console.log("[OCR] 百度�?access_token 获取成功, 有效�?", Math.round(data.expires_in/3600), "小时");
+  console.log("[OCR] 百度 access_token 获取成功, 有效期", Math.round(data.expires_in/3600), "小时");
 
   return cfg._cachedToken;
 
@@ -6980,7 +7345,7 @@ function _escLiveText(t) {
 
 
 
-// ── PDF parse cache �?avoid re-OCR on repeated calls ──
+// PDF parse cache: avoid repeated OCR.
 
 const _pdfParseCache = new Map();
 
@@ -7046,7 +7411,7 @@ async function parsePdfFile(file) {
 
       if (pageText && pageText.length > 20) {
 
-        // Native text found �?good
+        // Native text found.
 
         totalChars += pageText.length;
 
@@ -7068,7 +7433,7 @@ async function parsePdfFile(file) {
 
       } else {
 
-        // No text �?scanned page, needs OCR
+        // No native text found; OCR is needed.
 
         ocrPages.push({ pageIndex, page });
 
@@ -7094,7 +7459,7 @@ async function parsePdfFile(file) {
 
     if (useLocalOcr) {
 
-      engineName = "RapidOCR (本地高精�?";
+      engineName = "RapidOCR (本地高精度)";
 
       engineMode = "local";
 
@@ -7238,7 +7603,7 @@ async function parsePdfFile(file) {
 
         </style>
 
-        <div class="ocr-title"><span class="ocr-spinner"></span><span id="ocr-p-title">OCR 处理�?..</span></div>
+        <div class="ocr-title"><span class="ocr-spinner"></span><span id="ocr-p-title">OCR 处理中...</span></div>
 
         <div class="ocr-engine" id="ocr-p-engine"></div>
 
@@ -7250,7 +7615,7 @@ async function parsePdfFile(file) {
 
           <span id="ocr-p-chars">0 字符</span>
 
-          <span>置信�? <span class="conf" id="ocr-p-conf">-</span></span>
+          <span>置信度 <span class="conf" id="ocr-p-conf">-</span></span>
 
         </div>
 
@@ -7290,13 +7655,13 @@ async function parsePdfFile(file) {
 
     if (engineMode === "local") {
 
-      // ══════════════════════════════════════════════════�?
+      // Cleaned comment.
 
       // LOCAL MODE: 一键式全量并发 OCR
 
-      // 上传 PDF �?服务器分页到 12 个线�?�?轮询进度 �?返回合并文本
+      // OCR processing flow.
 
-      // ══════════════════════════════════════════════════�?
+      // Cleaned comment.
 
       pEngine.textContent = `engine: ${engineName} - uploading PDF...`;
 
@@ -7304,7 +7669,7 @@ async function parsePdfFile(file) {
 
       const result = await _ocrPdfViaServer(file, (prog) => {
 
-        // 实时更新进度�?
+        // Cleaned comment.
 
         if (prog.phase === "started") {
 
@@ -7320,9 +7685,9 @@ async function parsePdfFile(file) {
 
         pBar.style.width = `${pct}%`;
 
-        pPages.textContent = `${done}/${total} �?(${pct}%)`;
+        pPages.textContent = `${done}/${total} 页 (${pct}%)`;
 
-        // 实时更新服务器端处理状�?
+        // Cleaned comment.
 
         const liveEl = document.getElementById("ocr-p-live");
 
@@ -7330,13 +7695,13 @@ async function parsePdfFile(file) {
 
           if (prog.latest_text) {
 
-            // 显示服务器返回的最新识别文�?
+            // Cleaned comment.
 
             liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label">P${prog.latest_page || '?'}</span>${_escLiveText(prog.latest_text)}</div>`;
 
           } else {
 
-            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label"></span>服务器并发处理中... 已完�?${done}/${total} </div>`;
+            liveEl.innerHTML = `<div class="ocr-live-line"><span class="ocr-live-label"></span>服务器并发处理中... 已完成 ${done}/${total}</div>`;
 
           }
 
@@ -7354,7 +7719,7 @@ async function parsePdfFile(file) {
 
           pConf.style.color = c >= 80 ? "#81c784" : c >= 60 ? "#ffb74d" : "#ef5350";
 
-          // 完成后显示最终文本预�?
+          // Cleaned comment.
 
           if (liveEl && prog.full_text) {
 
@@ -7374,7 +7739,7 @@ async function parsePdfFile(file) {
 
 
 
-      // 处理结果 �?按页创建 records
+      // Cleaned comment.
 
       const fullText = result.full_text || "";
 
@@ -7382,7 +7747,7 @@ async function parsePdfFile(file) {
 
 
 
-      // 从服务器�?per-page 结果创建 records
+      // Cleaned comment.
 
       if (result.pages) {
 
@@ -7402,7 +7767,7 @@ async function parsePdfFile(file) {
 
 
 
-      // 整个 PDF 作为一条记录（全量文本�?
+      // OCR processing flow.
 
       if (fullText.length > 10) {
 
@@ -7434,11 +7799,11 @@ async function parsePdfFile(file) {
 
     } else {
 
-      // ══════════════════════════════════════════════════�?
+      // Cleaned comment.
 
       // BROWSER MODE: 逐页 OCR (ppu-paddle-ocr)
 
-      // ══════════════════════════════════════════════════�?
+      // Cleaned comment.
 
       let doneCount = 0;
 
@@ -7468,7 +7833,7 @@ async function parsePdfFile(file) {
 
             // 不降级到 Tesseract.js（中文识别率 <5%，产生乱码）
 
-            // 提示用户启动本地 RapidOCR 服务�?
+            // OCR processing flow.
 
             showToast("Browser OCR failed. Start the local RapidOCR service for better recognition.", "warning");
 
@@ -7548,7 +7913,7 @@ async function parsePdfFile(file) {
 
         pBar.style.width = `${pct}%`;
 
-        pPages.textContent = `${doneCount}/${ocrPages.length} �?(${pct}%)`;
+        pPages.textContent = `${doneCount}/${ocrPages.length} 页 (${pct}%)`;
 
         pChars.textContent = `${runningChars.toLocaleString()} 字符`;
 
@@ -7588,7 +7953,7 @@ async function parsePdfFile(file) {
 
 
 
-    // 完成状�?
+    // Cleaned comment.
 
     pTitle.innerHTML = `${qualityEmoji} OCR complete`;
 
@@ -7688,7 +8053,7 @@ async function parsePdfFile(file) {
 
   _pdfParseCache.set(cacheKey, records);
 
-  console.log(`[PDF] 缓存已保�? ${file.name} �?${records.length} records`);
+  console.log(`[PDF] 缓存已保存 ${file.name} · ${records.length} records`);
 
 
 
@@ -8052,7 +8417,7 @@ function buildQualityReport(records, chunks) {
 
   });
 
-  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少�?5 个字符）`);
+  const issues = docs.filter((item) => item.short_blocks > 0).map((item) => `文档 ${item.doc_id}: ${item.short_blocks} 个极短文本块（少于 5 个字符）`);
 
   return {
 
@@ -8325,7 +8690,7 @@ async function deleteLocalProcessedUploads(filenames) {
 
   if (!selected.length) {
 
-    showToast("Select processed files first.", "warning");
+    showToast("请先选择已处理文件。", "warning");
 
     return;
 
@@ -8473,7 +8838,7 @@ async function runLocalProcess() {
 
   try {
 
-    addActivity("warning", "Local processing started", `Processing ${selectedItems.length} selected files �?${collectionName}.`);
+    addActivity("warning", "本地处理开始", `正在处理 ${selectedItems.length} 个已选文件 -> ${collectionName}。`);
 
     for (let index = 0; index < selectedItems.length; index += 1) {
 
@@ -8623,7 +8988,7 @@ async function runLocalSearch() {
 
   if (els.searchMeta) els.searchMeta.textContent = "Searching locally...";
 
-  const topK = Number(els.searchTopK?.value || 100);
+  const topK = Number(els.searchTopK?.value || 20);
 
   const started = performance.now();
 
@@ -9329,7 +9694,7 @@ function renderIngestProgress(target, options = {}) {
 
         ${options.records != null ? `<span class="pill">${formatNumber(options.records)} 条记</span>` : ""}
 
-        ${options.chunks != null ? `<span class="pill">${formatNumber(options.chunks)} �?chunk</span>` : ""}
+        ${options.chunks != null ? `<span class="pill">${formatNumber(options.chunks)} 个 chunk</span>` : ""}
 
       </div>
 
@@ -9688,7 +10053,7 @@ function averageScore(results) {
 
 function choosePrimaryCollection(collections) {
 
-  const list = Array.isArray(collections) ? collections.slice() : [];
+  const list = visibleConsoleCollections(collections);
 
   if (!list.length) return "";
 
@@ -9705,6 +10070,9 @@ function choosePrimaryCollection(collections) {
     return remembered;
 
   }
+
+  const demo = list.find((item) => item.name === POWER_EQUIPMENT_DEMO_COLLECTION);
+  if (demo) return demo.name;
 
   const nonBenchmark = list
 
@@ -10070,7 +10438,7 @@ function normalizePageName(page) {
 
   const name = String(page || "").replace(/^#/, "");
 
-  return ["overview", "data", "search", "kg", "kg_data", "kg_search", "kg_benchmark", "benchmark"].includes(name) ? name : "overview";
+  return ["overview", "data", "search", "benchmark", "admin", "kg", "kg_data", "kg_search", "kg_benchmark"].includes(name) ? name : "overview";
 
 }
 
@@ -10097,6 +10465,7 @@ function setPage(page, options = {}) {
     const isActive = element.id === `page-${nextPage}`;
 
     element.classList.toggle("active", isActive);
+    element.hidden = !isActive;
 
     if (isActive) {
 
@@ -10112,7 +10481,10 @@ function setPage(page, options = {}) {
 
   els.navList?.querySelectorAll(".nav-item").forEach((button) => {
 
-    button.classList.toggle("active", button.dataset.page === nextPage);
+    const isActive = button.dataset.page === nextPage;
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
 
   });
 
@@ -10132,7 +10504,10 @@ function setWorkspaceMode(mode, options = {}) {
 
   els.navList?.querySelectorAll(".nav-item").forEach((button) => {
 
-    button.classList.toggle("is-hidden", button.dataset.modeTag !== nextMode);
+    const isHidden = button.dataset.modeTag !== nextMode;
+    button.classList.toggle("is-hidden", isHidden);
+    button.hidden = isHidden;
+    button.setAttribute("aria-hidden", String(isHidden));
 
   });
 
@@ -10144,7 +10519,7 @@ function setWorkspaceMode(mode, options = {}) {
 
       if (["kg", "kg_data", "kg_search", "kg_benchmark"].includes(state.page)) setPage(options.page || "overview");
 
-    } else if (["overview", "data", "search", "benchmark"].includes(state.page)) {
+    } else if (["overview", "data", "search", "benchmark", "admin"].includes(state.page)) {
 
       setPage(options.page || "kg");
 
@@ -10154,6 +10529,14 @@ function setWorkspaceMode(mode, options = {}) {
 
   return nextMode;
 
+}
+
+function moveAdminPanelsToSystemPage() {
+  const policyPanel = $("retrievalPolicyPanel");
+  const mount = $("adminPolicyMount");
+  if (policyPanel && mount && policyPanel.parentElement !== mount) {
+    mount.appendChild(policyPanel);
+  }
 }
 
 
@@ -10280,13 +10663,13 @@ function renderCollectionSpectrum() {
 
   if (!els.collectionSpectrum || !els.collectionSummaryPill) return;
 
-  const collections = state.stats?.collections || [];
+  const collections = visibleConsoleCollections(state.stats?.collections || []);
 
   if (!collections.length) {
 
-    els.collectionSummaryPill.textContent = "No collections";
+    els.collectionSummaryPill.textContent = "暂无动力装备集合";
 
-    renderEmpty(els.collectionSpectrum, "No vector collections yet. Upload and process files first.");
+    renderEmpty(els.collectionSpectrum, "暂无可展示的动力装备向量集合。请在“资料接入”中载入演示数据或上传资料后入库。");
 
     return;
 
@@ -10296,7 +10679,7 @@ function renderCollectionSpectrum() {
 
   const total = collections.reduce((sum, item) => sum + Number(item.count || 0), 0) || 1;
 
-  els.collectionSummaryPill.textContent = `${collections.length} collections`;
+  els.collectionSummaryPill.textContent = `${collections.length} 个集合`;
 
 
 
@@ -10330,7 +10713,7 @@ function renderCollectionSpectrum() {
 
       ${escapeHtml(item.name)}
 
-      ${item.name === state.primaryCollection ? " - default" : ""}
+      ${item.name === state.primaryCollection ? " - 当前" : ""}
 
     </span>
 
@@ -10354,11 +10737,11 @@ function renderCollectionList() {
 
   if (!els.collList) return;
 
-  const collections = state.stats?.collections || [];
+  const collections = visibleConsoleCollections(state.stats?.collections || []);
 
   if (!collections.length) {
 
-    renderEmpty(els.collList, "No collections to manage yet.");
+    renderEmpty(els.collList, "暂无可管理的动力装备集合。演示时建议先载入 power_equipment_demo。");
 
     return;
 
@@ -10390,19 +10773,19 @@ function renderCollectionList() {
 
             <div class="queue-name">${escapeHtml(item.name)}</div>
 
-            <p>${formatNumber(item.count || 0)} vector chunks - about ${formatNumber(item.estimated_tokens || 0)} tokens</p>
+            <p>${formatNumber(item.count || 0)} 个向量片段 · 约 ${formatNumber(item.estimated_tokens || 0)} tokens</p>
 
           </div>
 
-          <span class="pill">${item.name === state.primaryCollection ? "default collection" : `${formatNumber((item.sources || []).length)} sources`}</span>
+          <span class="pill">${item.name === state.primaryCollection ? "当前集合" : `${formatNumber((item.sources || []).length)} 个来源`}</span>
 
         </div>
 
         <div class="queue-meta">
 
-          <span>estimated characters ${formatNumber(item.estimated_chars || 0)}</span>
+          <span>估算字符 ${formatNumber(item.estimated_chars || 0)}</span>
 
-          <span>${meta || "source metadata pending"}</span>
+          <span>${meta || "来源 metadata 待生成"}</span>
 
         </div>
 
@@ -10412,7 +10795,7 @@ function renderCollectionList() {
 
           <button class="ghost-btn" type="button" data-set-collection="${escapeHtml(item.name)}">设为默认</button>
 
-          <button class="ghost-btn" type="button" data-delete-collection="${escapeHtml(item.name)}">删除集合</button>
+          <button class="ghost-btn" type="button" data-delete-collection="${escapeHtml(item.name)}" aria-label="删除集合 ${escapeHtml(item.name)}">删除集合</button>
 
         </div>
 
@@ -10759,11 +11142,11 @@ function renderUploads() {
 
     const stamp = isProcessed ? (item.processed_at || item.modified) : (item.uploaded_at || item.modified);
 
-    const recordMeta = isProcessed
+  const recordMeta = isProcessed
 
-      ? `${formatNumber(item.last_records || 0)} 条记�?· ${formatNumber(item.last_chunks || 0)} 个片段`
+      ? `${formatNumber(item.last_records || 0)} 条记录 · ${formatNumber(item.last_chunks || 0)} 个片段`
 
-      : "勾选后可加入本次处�?;
+      : "勾选后可加入本次处理";
 
 
 
@@ -10777,7 +11160,7 @@ function renderUploads() {
 
             <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
 
-              <input type="checkbox" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+              <input type="checkbox" aria-label="选择待入库文件 ${escapeHtml(pathInfo.file)}" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
 
               <span></span>
 
@@ -10805,7 +11188,7 @@ function renderUploads() {
 
         <div class="queue-meta">
 
-          <span>存储�?${escapeHtml(item.filename)}</span>
+          <span>存储为 ${escapeHtml(item.filename)}</span>
 
           <span>${recordMeta}</span>
 
@@ -10857,7 +11240,7 @@ function renderProcessedUploads() {
 
     ? `这里展示已经完成入库的文件。${state.processedEditMode ? ` 已勾选 ${formatNumber(selectedCount)} 个文件准备删除。` : " 删除时会同步清理对应向量。"}`
 
-    : "处理完成的文件会自动进入这里�?;
+    : "处理完成的文件会自动进入这里。";
 
 
 
@@ -10881,7 +11264,7 @@ function renderProcessedUploads() {
 
   if (!processed.length) {
 
-    renderEmpty(els.processedList, "处理完成的文件会显示在这里，和上传目录分开展示�?);
+    renderEmpty(els.processedList, "处理完成的文件会显示在这里，和上传目录分开展示。");
 
     return;
 
@@ -10911,7 +11294,7 @@ function renderProcessedUploads() {
 
               <label class="check-chip">
 
-                <input type="checkbox" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+                <input type="checkbox" aria-label="选择已入库文件 ${escapeHtml(pathInfo.file)}" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
 
                 <span></span>
 
@@ -10987,7 +11370,7 @@ function renderProcessSummary() {
 
   if (!result) {
 
-    renderEmpty(els.processLog, "勾选待处理文件并完成入库后，这里会显示本次处理摘要�?);
+    renderEmpty(els.processLog, "勾选待处理文件并完成入库后，这里会显示本次处理摘要。");
 
     return;
 
@@ -11105,7 +11488,7 @@ function renderProcessSummary() {
 
         <div class="queue-meta">
 
-          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "�?)}</span>
+          <span>${escapeHtml(skipped.map((name) => splitUploadPath(uploadDisplayName(name)).file).slice(0, 6).join(" / ") || "-")}</span>
 
         </div>
 
@@ -11131,7 +11514,7 @@ function renderPublicBooksJsonSummary() {
 
   if (!result) {
 
-    renderEmpty(els.publicBooksJsonSummary, "还没有运行公开书籍 JSON 入库。选择目录后会自动检测最新快照�?);
+    renderEmpty(els.publicBooksJsonSummary, "还没有运行动力装备 JSON 入库。选择文件或载入演示数据后，可以执行检测并入库。");
 
     return;
 
@@ -11139,7 +11522,7 @@ function renderPublicBooksJsonSummary() {
 
   if (result.status === "running") {
 
-    renderEmpty(els.publicBooksJsonSummary, "正在读取最�?JSON 快照、筛选正文并写入 ChromaDB...");
+    renderEmpty(els.publicBooksJsonSummary, "正在读取 JSON 文件、筛选正文并写入 ChromaDB...");
 
     return;
 
@@ -11173,7 +11556,7 @@ function renderPublicBooksJsonSummary() {
 
         <span>任务 ${formatNumber(result.tasks || 0)}</span>
 
-        <span>文本�?${formatNumber(result.blocks_total || 0)}</span>
+        <span>文本块 ${formatNumber(result.blocks_total || 0)}</span>
 
         <span>记录 ${formatNumber(result.records_written || 0)}</span>
 
@@ -11187,9 +11570,9 @@ function renderPublicBooksJsonSummary() {
 
         <span>正文 ${formatNumber(decisions.accept || 0)}</span>
 
-        <span>待复�?${formatNumber(decisions.review || 0)}</span>
+        <span>待复核 ${formatNumber(decisions.review || 0)}</span>
 
-        <span>元数�?${formatNumber(decisions.metadata || 0)}</span>
+        <span>元数据 ${formatNumber(decisions.metadata || 0)}</span>
 
         <span>剔除 ${formatNumber(decisions.reject || 0)}</span>
 
@@ -11215,7 +11598,7 @@ function renderQualityReport() {
 
   if (!report) {
 
-    renderEmpty(els.qualityReport, "处理完成后，会显示分块统计和质量问题摘要�?);
+    renderEmpty(els.qualityReport, "处理完成后，会显示分块统计和质量问题摘要。");
 
     return;
 
@@ -11239,7 +11622,7 @@ function renderQualityReport() {
 
           <div class="queue-name">${escapeHtml((item.filenames || []).map(summarizeName).join(" / ") || `doc${item.doc_id}`)}</div>
 
-          <p>${formatNumber(item.block_count || 0)} �?block</p>
+          <p>${formatNumber(item.block_count || 0)} 个 block</p>
 
         </div>
 
@@ -11249,7 +11632,7 @@ function renderQualityReport() {
 
       <div class="queue-meta">
 
-        <span>${Object.entries(item.label_distribution || {}).map(([key, value]) => `${key}:${value}`).join(" · ") || "无标签统�?}</span>
+        <span>${Object.entries(item.label_distribution || {}).map(([key, value]) => `${key}:${value}`).join(" · ") || "无标签统计"}</span>
 
       </div>
 
@@ -11271,7 +11654,7 @@ function renderQualityReport() {
 
           <div class="queue-name">分块统计</div>
 
-          <p>平均长度 ${formatNumber(chunks.avg_length || 0)}，最�?${formatNumber(chunks.min_length || 0)}，最�?${formatNumber(chunks.max_length || 0)}</p>
+          <p>平均长度 ${formatNumber(chunks.avg_length || 0)}，最小 ${formatNumber(chunks.min_length || 0)}，最大 ${formatNumber(chunks.max_length || 0)}</p>
 
         </div>
 
@@ -11281,7 +11664,7 @@ function renderQualityReport() {
 
       <div class="queue-meta">
 
-        <span>问题�?${formatNumber(report.issue_count || 0)}</span>
+        <span>问题 ${formatNumber(report.issue_count || 0)}</span>
 
         <span>${issueItems || "未检测到明显质量问题"}</span>
 
@@ -11332,7 +11715,7 @@ function renderUploads() {
         <div class="queue-head">
           <div class="queue-title-row">
             <label class="check-chip ${isProcessed ? "is-disabled" : ""}">
-              <input type="checkbox" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
+              <input type="checkbox" aria-label="选择待入库文件 ${escapeHtml(pathInfo.file)}" data-upload-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""} ${isProcessed ? "disabled" : ""}>
               <span></span>
             </label>
             <div>
@@ -11399,7 +11782,7 @@ function renderProcessedUploads() {
           <div class="queue-title-row">
             ${state.processedEditMode ? `
               <label class="check-chip">
-                <input type="checkbox" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
+                <input type="checkbox" aria-label="选择已入库文件 ${escapeHtml(pathInfo.file)}" data-processed-select="${escapeHtml(item.filename)}" ${isSelected ? "checked" : ""}>
                 <span></span>
               </label>
             ` : ""}
@@ -11509,11 +11892,11 @@ function renderPublicBooksJsonSummary() {
   if (!els.publicBooksJsonSummary) return;
   const result = state.publicBooksJson;
   if (!result) {
-    renderEmpty(els.publicBooksJsonSummary, "No JSON ingestion has been run yet.");
+    renderEmpty(els.publicBooksJsonSummary, "尚未执行资料入库。请选择文件、文件夹或载入演示数据。");
     return;
   }
   if (result.status === "running") {
-    renderEmpty(els.publicBooksJsonSummary, "Reading the latest JSON snapshot and writing selected text into ChromaDB...");
+    renderEmpty(els.publicBooksJsonSummary, "正在读取最新资料快照，并写入本地向量索引...");
     return;
   }
 
@@ -11656,13 +12039,13 @@ function renderSearchResults() {
 
   els.searchMeta.textContent = [
 
-    `collection ${payload.collection || state.primaryCollection || "-"}`,
+    `集合 ${payload.collection || state.primaryCollection || "-"}`,
 
-    `latency ${formatDecimal(payload.latency_ms || 0, 2)} ms`,
+    `耗时 ${formatDecimal(payload.latency_ms || 0, 2)} ms`,
 
-    `results ${formatNumber(results.length)}`,
+    `结果 ${formatNumber(results.length)}`,
 
-    payload.embedding_backend ? `backend ${payload.embedding_backend}` : ""
+    payload.embedding_backend ? `后端 ${payload.embedding_backend}` : ""
 
   ].filter(Boolean).join(" · ");
 
@@ -11672,7 +12055,7 @@ function renderSearchResults() {
 
   if (!results.length) {
 
-    els.searchResults.innerHTML = `${diagnosticsHtml}<div class="empty-state">${escapeHtml(payload.message || "No retrieval results.")}</div>`;
+    els.searchResults.innerHTML = `${diagnosticsHtml}<div class="empty-state">${escapeHtml(payload.message || "未检索到结果。")}<br>建议：换一个更具体的设备/部件/故障关键词；检查当前集合是否为 power_equipment_demo；降低过滤条件；或重新执行资料入库。</div>`;
 
     if (els.statPrecision) els.statPrecision.textContent = score ? `精度: ${formatPercent(score, 1)}` : "精度: --";
 
@@ -11704,9 +12087,9 @@ function renderSearchResults() {
 
               <span>${escapeHtml(kindLabel(metadata.source_kind))}</span>
 
-              <span>score ${formatPercent(item.score || 0, 1)}</span>
+              <span>相似度 ${formatPercent(item.score || 0, 1)}</span>
 
-              <span>distance ${formatDecimal(item.distance || 0, 4)}</span>
+              <span>距离 ${formatDecimal(item.distance || 0, 4)}</span>
 
               <span>chunk ${formatNumber(metadata.chunk_index || 0)}</span>
 
@@ -11722,11 +12105,11 @@ function renderSearchResults() {
 
         <div class="queue-meta">
 
-          <span>record ${escapeHtml(metadata.record_id || "-")}</span>
+          <span>记录 ${escapeHtml(metadata.record_id || "-")}</span>
 
           <span>tokens ${formatNumber(metadata.estimated_tokens || 0)}</span>
 
-          <span>pages ${escapeHtml(String(metadata.page_nums || "-"))}</span>
+          <span>页码/位置 ${escapeHtml(String(metadata.page_nums || metadata.page_num || metadata.source_page || "-"))}</span>
 
         </div>
 
@@ -12254,7 +12637,7 @@ async function deleteProcessedUploads(filenames) {
 
   }
 
-  if (!window.confirm(`Delete ${selected.length} processed files and clear their vectors?`)) return;
+  if (!window.confirm(`确认删除 ${selected.length} 个已处理文件，并同步清理对应向量记录？操作不可撤销。`)) return;
 
 
 
@@ -12270,7 +12653,7 @@ async function deleteProcessedUploads(filenames) {
 
 
 
-  addActivity("success", "Processed files removed", `Deleted ${selected.length} files and cleared ${formatNumber(result.chunks_deleted || 0)} chunks.`);
+  addActivity("success", "已删除处理文件", `删除 ${selected.length} 个文件，清理 ${formatNumber(result.chunks_deleted || 0)} 个 chunks。`);
 
   state.selectedProcessedUploads.clear();
 
@@ -12284,7 +12667,7 @@ async function deleteProcessedUploads(filenames) {
 
   renderSummaryMetrics();
 
-  showToast(`Deleted ${selected.length} processed files.`, "success");
+  showToast(`已删除 ${selected.length} 个已处理文件。`, "success");
 
 }
 
@@ -12436,6 +12819,44 @@ async function runProcess() {
 
 const _pendingJsonFiles = { standard: [], kgCorpus: [] };
 
+async function loadPowerEquipmentDemoFile() {
+  const response = await fetch("demo_data/power_equipment_demo.json", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`演示数据加载失败: HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  return new File([blob], "power_equipment_demo.json", {
+    type: "application/json",
+    lastModified: Date.now()
+  });
+}
+
+async function loadDemoDatasetInto(listKey = "standard") {
+  const file = await loadPowerEquipmentDemoFile();
+  if (listKey === "kgCorpus") {
+    addKgCorpusFiles([file], { replace: true });
+    applyPowerRagGraphPreset();
+  } else {
+    _pendingJsonFiles.standard = [file];
+    renderPendingListByKey("standard");
+    syncActiveCollectionInputs(POWER_EQUIPMENT_DEMO_COLLECTION);
+  }
+  activateRagCollection(POWER_EQUIPMENT_DEMO_COLLECTION, { reason: "demo-dataset", persist: true });
+  addActivity("success", "已载入演示数据", "power_equipment_demo.json -> power_equipment_demo");
+  showToast("已载入动力装备演示数据，请点击“检测并入库”。", "success");
+}
+
+function updateJsonIngestButtonState(listKey = "standard") {
+  const files = _pendingJsonFiles[listKey] || [];
+  const ids = listKey === "kgCorpus" ? ["btnKgPublicBooksJsonIngest"] : ["btnPublicBooksJsonIngest"];
+  ids.forEach((id) => {
+    const button = $(id);
+    if (!button || button.dataset.busy === "true") return;
+    button.disabled = !files.length;
+    button.title = files.length ? "开始解析、OCR/分块并写入向量库" : "请先选择文件、文件夹或载入演示数据";
+  });
+}
+
 
 
 function renderPendingFileList(files, containerEl) {
@@ -12496,7 +12917,7 @@ function renderPendingFileList(files, containerEl) {
 
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
 
-          ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">�?已识</span>' : ''}
+          ${isCached ? '<span style="color:#81c784;font-size:11px;" title="OCR 已完成并缓存">已识别</span>' : ''}
 
           ${isPdf ? `<button class="btn btn--xs" onclick="openOcrPanel(${i}, '${listKey}')" title="OCR 识别"
 
@@ -12532,11 +12953,11 @@ function renderPendingFileList(files, containerEl) {
 
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
 
-          <label style="font-size:11px;color:var(--ink-soft);">引擎:</label>
+          <label for="ocrEngine_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);">引擎:</label>
 
           <select id="ocrEngine_${listKey}_${i}" style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
 
-            <option value="local">🖥�?RapidOCR (本地高精�? 12x并发) ⭐推</option>
+            <option value="local">RapidOCR (本地高精度, 12x 并发, 推荐)</option>
 
             <option value="tesseract">🔤 Tesseract (本地, chi_sim+eng)</option>
 
@@ -12546,7 +12967,7 @@ function renderPendingFileList(files, containerEl) {
 
           </select>
 
-          <label style="font-size:11px;color:var(--ink-soft);">并发:</label>
+          <label for="ocrConc_${listKey}_${i}" style="font-size:11px;color:var(--ink-soft);">并发:</label>
 
           <input type="number" id="ocrConc_${listKey}_${i}" value="12" min="1" max="24" style="width:50px;font-size:11px;padding:2px 4px;border-radius:4px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);">
 
@@ -12554,7 +12975,7 @@ function renderPendingFileList(files, containerEl) {
 
             style="font-size:11px;padding:3px 12px;border-radius:4px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;cursor:pointer;">
 
-            �?开�?OCR
+            开始 OCR
 
           </button>
 
@@ -12601,6 +13022,7 @@ function renderPendingListByKey(listKey) {
     if (containerEl) renderPendingFileList(_pendingJsonFiles[listKey] || [], containerEl);
 
   });
+  updateJsonIngestButtonState(listKey);
 
 }
 
@@ -12660,7 +13082,7 @@ function pendingFileIdentity(file) {
 
 }
 
-const POWER_RAG_DEFAULT_COLLECTION = "power_rag_corpus";
+const POWER_RAG_DEFAULT_COLLECTION = POWER_EQUIPMENT_DEMO_COLLECTION;
 
 const POWER_RAG_DEFAULT_QUESTION = `Please run a comprehensive PowerRAG analysis over the current knowledge base. Do not rely only on top-k chunks.
 Tasks:
@@ -12670,34 +13092,13 @@ Tasks:
 4. Every conclusion must cite original evidence with source, chunk_id or record_id when available.
 5. If evidence is insufficient, say so explicitly; do not replace source evidence with graph-only relations.`;
 
-const WECHAT_DEFAULT_COLLECTION = "wechat_private_chunks_rag";
-
-const WECHAT_AFFECTION_QUESTION = `请执行“全量私聊联系人级暧昧关系分析”，不要只基于 top-k chunk。
-
-定义：
-1. 号主 = 聊天记录中的本人 / 我 / 当前微信账号主人。
-2. 对方 = 每个一对一私聊联系人。
-3. 排除群聊、公众号、系统通知、文件传输助手。
-4. “暧昧证据”包括但不限于：宝宝、宝贝、亲爱的、想你、喜欢你、抱抱、亲亲、晚安、撒娇、约见面、情绪依赖、恋爱暗示、情侣式称呼、明显双向亲密互动。
-5. 不要把普通朋友、同学、工作沟通误判为暧昧。
-6. 如果无法确认对方性别，单独标为“性别不确定”。
-
-任务：
-请按联系人逐个分析所有私聊记录，输出：
-- 较确定暧昧对象人数
-- 疑似暧昧对象人数
-- 性别不确定但有暧昧证据的人数
-- 每个联系人姓名 / 备注 / username
-- 判断等级：较确定 / 疑似 / 不足证据
-- 关键证据原文，必须带日期、消息发送方、chunk_id 或 message_id
-- 为什么这些证据支持这个判断
-- 为什么没有把其他联系人计入
-
+const WECHAT_AFFECTION_QUESTION = `请基于当前微信聊天记录知识库做一次证据约束的关系强度分析。
 要求：
-如果没有原文证据，不允许判断为暧昧。
-如果证据不足，必须说证据不足。
-优先召回完整，不要为了简洁漏掉联系人。
-Route hint: CONTACT_FULL_SCAN。`;
+1. 不要只依赖 top-k 片段，需要尽量扫描联系人、会话、时间和原文证据。
+2. 按联系人输出：较确定、疑似、不确定、证据不足。
+3. 每个判断都必须引用原文证据、日期、发送方和 chunk_id / record_id。
+4. 如果证据不足，必须明确说明，不要用图谱关系替代原文证据。
+5. 最后给出可复核的后续补充数据建议。`;
 
 const POWER_RAG_GENERIC_SCHEMA = {
   entityTypes: [
@@ -12726,38 +13127,6 @@ const POWER_RAG_GENERIC_SCHEMA = {
     "HAS_EVIDENCE",
     "MENTIONED_IN",
     "RELATES_TO"
-  ]
-};
-
-const WECHAT_AFFECTION_SCHEMA = {
-  entityTypes: [
-    "AccountOwner",
-    "Contact",
-    "Message",
-    "AffectionEvidence",
-    "RelationshipSignal",
-    "Date",
-    "Sender",
-    "Conversation",
-    "Username",
-    "Chunk",
-    "MessageId"
-  ],
-  relationTypes: [
-    "SENT_MESSAGE",
-    "RECEIVED_MESSAGE",
-    "HAS_CONTACT",
-    "HAS_USERNAME",
-    "HAS_DATE",
-    "HAS_SENDER",
-    "HAS_CHUNK_ID",
-    "HAS_MESSAGE_ID",
-    "HAS_AFFECTION_EVIDENCE",
-    "HAS_RELATIONSHIP_SIGNAL",
-    "MENTIONS",
-    "EVIDENCED_BY",
-    "BELONGS_TO_CONVERSATION",
-    "CONTACT_FULL_SCAN"
   ]
 };
 
@@ -12799,7 +13168,7 @@ function applyPowerRagGraphPreset() {
 
   setFormValue("kgCommunityAlgo", "leiden");
 
-  setFormValue("kgSearchTopK", "100");
+  setFormValue("kgSearchTopK", "20");
 
   setFormValue("kgSearchMode", "global");
 
@@ -12809,9 +13178,9 @@ function applyPowerRagGraphPreset() {
 
 function applyWechatAffectionGraphPreset() {
 
-  setFormValue("kgPublicBooksJsonCollection", WECHAT_DEFAULT_COLLECTION);
+  setFormValue("kgPublicBooksJsonCollection", "wechat_affection_graph");
 
-  activateRagCollection(WECHAT_DEFAULT_COLLECTION, { reason: "wechat-affection-preset", persist: true });
+  activateRagCollection("wechat_affection_graph", { reason: "wechat-affection-preset", persist: true });
 
   setFormValue("kgPublicBooksJsonMode", "create");
 
@@ -12819,13 +13188,13 @@ function applyWechatAffectionGraphPreset() {
 
   setFormValue("kgPublicBooksJsonOverlap", "120");
 
-  setFormValue("kgSchemaDataType", "wechat_private_chat");
+  setFormValue("kgSchemaDataType", "general_docs");
 
-  setFormValue("kgSchemaGoal", "CONTACT_FULL_SCAN for WeChat private chats. Preserve contact_name, remark, username, date, sender, message_id, chunk_id, source_file, private/group boundary, and verbatim evidence. Extract every one-to-one contact partition and affection evidence without relying only on top-k chunks.");
+  setFormValue("kgSchemaGoal", "Wechat relationship and affection evidence analysis. Preserve contact, sender, date, message_id/chunk_id, and verbatim source evidence. Avoid inferring relationship strength without original messages.");
 
-  setFormValue("kgEntityTypes", WECHAT_AFFECTION_SCHEMA.entityTypes.join(", "));
+  setFormValue("kgEntityTypes", "Contact, Sender, Message, Date, Topic, EmotionSignal, Interaction, Evidence");
 
-  setFormValue("kgRelationTypes", WECHAT_AFFECTION_SCHEMA.relationTypes.join(", "));
+  setFormValue("kgRelationTypes", "SENT_MESSAGE, REPLIED_TO, MENTIONED, EXPRESSED, HAS_EVIDENCE, OCCURRED_AT, INTERACTED_WITH, RELATED_TO");
 
   setFormValue("kgExtractEngine", "generative");
 
@@ -12835,7 +13204,7 @@ function applyWechatAffectionGraphPreset() {
 
   setFormValue("kgSearchMode", "global");
 
-  setFormValue("kgMaxHops", "3");
+  setFormValue("kgMaxHops", "2");
 
 }
 
@@ -12861,7 +13230,7 @@ function fileFromDesktopDescriptor(descriptor) {
 
   const bytes = desktopBytesToUint8Array(descriptor.bytes);
 
-  const file = new File([bytes], descriptor.name || "power_rag_corpus.json", {
+  const file = new File([bytes], descriptor.name || "power_equipment_demo.json", {
 
     type: "application/json;charset=utf-8",
 
@@ -12888,26 +13257,6 @@ async function pickPowerRagCorpusFile(options = {}) {
     $("kgFileInput")?.click();
 
     throw new Error("This is not the Electron desktop runtime. The file picker has been opened; select a RAG JSON file before running one-click detection.");
-
-  }
-
-  const descriptor = await pickCorpus(options);
-
-  return fileFromDesktopDescriptor(descriptor);
-
-}
-
-async function pickWechatRagCorpusFile(options = {}) {
-
-  const desktopApi = window.powerRagDesktop;
-
-  const pickCorpus = desktopApi?.pickWechatRagCorpus || desktopApi?.pickPowerRagCorpus;
-
-  if (!pickCorpus) {
-
-    $("kgFileInput")?.click();
-
-    throw new Error("This is not the Electron desktop runtime. The file picker has been opened; select a WeChat RAG JSON file before running one-click analysis.");
 
   }
 
@@ -13195,7 +13544,7 @@ async function exportKgPdfTexts() {
 
 
 
-    // 从缓存的 records 中提取所有文�?
+    // Cleaned comment.
 
     const fullText = cached.map(r => r.text || '').join('\n\n').trim();
 
@@ -13209,7 +13558,7 @@ async function exportKgPdfTexts() {
 
 
 
-    // 触发浏览器下�?
+    // Cleaned comment.
 
     const txtName = pdfFile.name.replace(/\.pdf$/i, '') + '_OCR_result.txt';
 
@@ -13582,7 +13931,7 @@ async function startFileOcr(fileIndex, listKey) {
 
       });
 
-      // OCR完成后立即自动下载结果，不需要额外步�?
+      // OCR processing flow.
 
       _autoDownloadOcrText(fullText, file.name);
 
@@ -13718,7 +14067,7 @@ async function startFileOcr(fileIndex, listKey) {
 
       });
 
-      // OCR完成后立即自动下载结�?
+      // OCR processing flow.
 
       _autoDownloadOcrText(fullText, file.name);
 
@@ -13874,593 +14223,12 @@ async function syncFilesToBackendRagIndex(files, options = {}) {
 
 
 
-/*
-async function runBrowserJsonIngest(pendingKey, panelEls) {
 
-  const files = [...(_pendingJsonFiles[pendingKey] || [])];
-
-  if (!files.length) {
-
-    showToast("Drag or select files first.", "warning");
-
-    return;
-
-  }
-
-  const collectionEl = panelEls.collection;
-
-  const modeEl = panelEls.mode;
-
-  const chunkSizeEl = panelEls.chunkSize;
-
-  const overlapEl = panelEls.overlap;
-
-  const btnEl = panelEls.btn;
-
-  const summaryEl = panelEls.summary;
-
-
-
-  const collection = String(collectionEl?.value || "public_books_labelstudio").trim() || "public_books_labelstudio";
-
-  const mode = String(modeEl?.value || "append");
-
-  const chunkSize = Number(chunkSizeEl?.value || 900);
-
-  const overlap = Number(overlapEl?.value || 120);
-
-
-
-  if (btnEl) { btnEl.disabled = true; btnEl.dataset.busy = "true"; }
-
-  if (summaryEl) renderEmpty(summaryEl, "正在解析 JSON 文件并写入浏览器内存向量�?..");
-
-  addActivity("warning", "JSON 入库开�?, `${mode === "create" ? "新建/重建" : "追加"} �?${collection}�?{files.length} 个文件）`);
-
-
-
-  const started = performance.now();
-
-  const progress = createIngestProgressReporter(summaryEl, {
-
-    phase: "准备入库",
-
-    fileName: files[0]?.name || "",
-
-    detail: `�?${formatNumber(files.length)} 个文�?· ${mode === "create" ? "新建/重建集合" : "追加到已有集�?} ${collection}`,
-
-    current: 0,
-
-    total: files.length,
-
-    percent: 2,
-
-    startedAt: started
-
-  });
-
-  try {
-
-    // If "create" mode, clear existing chunks
-
-    if (mode === "create") {
-
-      progress.log("清理旧集�?, "正在清空浏览器本地记录与 chunk", {
-
-        fileName: collection,
-
-        detail: "正在清空浏览器本地记录与 chunk",
-
-        current: 0,
-
-        total: files.length,
-
-        percent: 5,
-
-        startedAt: started
-
-      });
-
-      state.chunks = [];
-
-      state.records = [];
-
-      await yieldToUi();
-
-    }
-
-
-
-    const allRecords = [];
-
-    const allChunks = [];
-
-    let succeeded = 0;
-
-    let failed = 0;
-
-    const fileSummaries = [];
-
-
-
-    for (let fi = 0; fi < files.length; fi++) {
-
-      const file = files[fi];
-
-      progress.log("读取并解析文�?, `开始处�?${fi + 1}/${files.length}: ${file.name}`, {
-
-        fileName: file.name,
-
-        detail: `正在处理 ${fi + 1}/${files.length}`,
-
-        current: fi,
-
-        total: files.length,
-
-        percent: 8 + Math.round((fi / files.length) * 68),
-
-        startedAt: started,
-
-        records: allRecords.length,
-
-        chunks: allChunks.length
-
-      });
-
-      await yieldToUi();
-
-      try {
-
-        const records = await parseFileRecords(file);
-
-        progress.log("生成 chunk", `解析完成�?{formatNumber(records.length)} 条记录，开始生成向�?chunk`, {
-
-          fileName: file.name,
-
-          detail: `已解�?${formatNumber(records.length)} 条记录`,
-
-          current: fi + 0.55,
-
-          total: files.length,
-
-          percent: 8 + Math.round(((fi + 0.55) / files.length) * 68),
-
-          startedAt: started,
-
-          records: allRecords.length + records.length,
-
-          chunks: allChunks.length
-
-        });
-
-        let lastChunkLogAt = 0;
-
-        const chunks = await makeChunksProgressive(records, {
-
-          reportEveryMs: 100,
-
-          onProgress(info) {
-
-            const ratio = Math.min(0.98, info.chunksCreated / Math.max(info.estimatedChunks, info.chunksCreated, 1));
-
-            const percent = 8 + Math.round(((fi + 0.25 + ratio * 0.70) / files.length) * 68);
-
-            const detail = `已生�?${formatNumber(info.chunksCreated)} / �?${formatNumber(info.estimatedChunks)} �?chunk`;
-
-            const now = performance.now();
-
-            const shouldLog = now - lastChunkLogAt >= 600 || info.chunksCreated >= info.estimatedChunks;
-
-            if (shouldLog) {
-
-              lastChunkLogAt = now;
-
-              progress.log("生成 chunk", detail, {
-
-                fileName: file.name,
-
-                detail,
-
-                current: fi + Math.min(0.98, 0.25 + ratio * 0.70),
-
-                total: files.length,
-
-                percent,
-
-                startedAt: started,
-
-                records: allRecords.length + info.recordsProcessed,
-
-                chunks: allChunks.length + info.chunksCreated
-
-              });
-
-            } else {
-
-              progress.update({
-
-                phase: "生成 chunk",
-
-                fileName: file.name,
-
-                detail,
-
-                current: fi + Math.min(0.98, 0.25 + ratio * 0.70),
-
-                total: files.length,
-
-                percent,
-
-                startedAt: started,
-
-                records: allRecords.length + info.recordsProcessed,
-
-                chunks: allChunks.length + info.chunksCreated
-
-              });
-
-            }
-
-          }
-
-        });
-
-        allRecords.push(...records);
-
-        allChunks.push(...chunks);
-
-        progress.log("文件处理完成", `完成 ${fi + 1}/${files.length}: ${file.name}`, {
-
-          fileName: file.name,
-
-          detail: `完成 ${fi + 1}/${files.length}`,
-
-          current: fi + 1,
-
-          total: files.length,
-
-          percent: 8 + Math.round(((fi + 1) / files.length) * 68),
-
-          startedAt: started,
-
-          records: allRecords.length,
-
-          chunks: allChunks.length
-
-        });
-
-        succeeded++;
-
-        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "ok", records_extracted: records.length });
-
-
-
-        // Keep extracted/OCR text as a downloadable .txt item beside the source PDF.
-
-        const ext = (file.name.split('.').pop() || '').toLowerCase();
-
-        if (ext === 'pdf' && records.length > 0) {
-
-          const fullText = records.map(r => r.text || '').join('\n\n').trim();
-
-          if (fullText.length > 10) {
-
-            addOcrTextFileToPendingList(pendingKey, file, fullText, {
-
-              engine: records.find((r) => r.ocr_engine)?.ocr_engine || "PDF.js",
-
-              confidence: records.find((r) => r.ocr_confidence != null)?.ocr_confidence ?? null
-
-            });
-
-          }
-
-        }
-
-      } catch (err) {
-
-        failed++;
-
-        fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "error", records_extracted: 0, error: err.message || String(err) });
-
-        progress.log("文件处理失败", `${file.name}: ${err.message || String(err)}`, {
-
-          fileName: file.name,
-
-          detail: err.message || String(err),
-
-          current: fi + 1,
-
-          total: files.length,
-
-          percent: 8 + Math.round(((fi + 1) / files.length) * 68),
-
-          startedAt: started,
-
-          records: allRecords.length,
-
-          chunks: allChunks.length
-
-        });
-
-      }
-
-    }
-
-
-
-    if (!allChunks.length && !allRecords.length) {
-
-      throw new Error("所有文件解析失败，未生成任何向量�?);
-
-    }
-
-    progress.log("写入本地索引", "正在更新 records / chunks", {
-
-      fileName: collection,
-
-      detail: "正在更新 records / chunks",
-
-      current: files.length,
-
-      total: files.length,
-
-      percent: 84,
-
-      startedAt: started,
-
-      records: allRecords.length,
-
-      chunks: allChunks.length
-
-    });
-
-    await yieldToUi();
-
-
-
-    state.records = [...state.records, ...allRecords];
-
-    state.chunks = [...state.chunks, ...allChunks];
-
-    const elapsed = Number(((performance.now() - started) / 1000).toFixed(2));
-
-    progress.log("生成质量报告", "正在统计文档长度�?chunk 质量", {
-
-      fileName: collection,
-
-      detail: "正在统计文档长度�?chunk 质量",
-
-      current: files.length,
-
-      total: files.length,
-
-      percent: 88,
-
-      startedAt: started,
-
-      records: allRecords.length,
-
-      chunks: allChunks.length
-
-    });
-
-    await yieldToUi();
-
-    const qualityReport = buildQualityReport(allRecords, allChunks);
-
-
-
-    state.publicBooksJson = {
-
-      status: "ok",
-
-      latest_snapshot_name: files.map(f => f.name).join(", "),
-
-      collection,
-
-      mode,
-
-      chunks_written: allChunks.length,
-
-      records_written: allRecords.length,
-
-      tasks: files.length,
-
-      blocks_total: allRecords.length,
-
-      elapsed_s: elapsed,
-
-      decision_counts: { accept: allRecords.length, review: 0, metadata: 0, reject: 0 }
-
-    };
-
-    state.primaryCollection = collection;
-
-    state.lastProcess = {
-
-      collection,
-
-      requested_filenames: files.map(f => f.name),
-
-      skipped_already_processed: [],
-
-      files_succeeded: succeeded,
-
-      files_failed: failed,
-
-      records_processed: allRecords.length,
-
-      chunks_written: allChunks.length,
-
-      elapsed_s: elapsed,
-
-      file_summaries: fileSummaries,
-
-      quality_report: qualityReport,
-
-      embedding_backend: "browser-local"
-
-    };
-
-
-
-    progress.log("刷新统计", "正在刷新检索集合与摘要", {
-
-      fileName: collection,
-
-      detail: "正在刷新检索集合与摘要",
-
-      current: files.length,
-
-      total: files.length,
-
-      percent: 92,
-
-      startedAt: started,
-
-      records: allRecords.length,
-
-      chunks: allChunks.length
-
-    });
-
-    await yieldToUi();
-
-    if (state.publicDemo) await refreshPublicDemoStats();
-
-    else await refreshLocalStats();
-
-    progress.log("渲染结果", "正在刷新入库摘要、处理日志和检索结�?, {
-
-      fileName: collection,
-
-      detail: "正在刷新页面结果",
-
-      current: files.length,
-
-      total: files.length,
-
-      percent: 97,
-
-      startedAt: started,
-
-      records: allRecords.length,
-
-      chunks: allChunks.length
-
-    });
-
-    await yieldToUi();
-
-    progress.stop({
-
-      phase: "入库完成",
-
-      fileName: collection,
-
-      detail: `完成�?{formatNumber(allRecords.length)} 条记�?/ ${formatNumber(allChunks.length)} �?chunk`,
-
-      percent: 100,
-
-      records: allRecords.length,
-
-      chunks: allChunks.length
-
-    });
-
-    await yieldToUi();
-
-    renderPublicBooksJsonSummary();
-
-    renderProcessSummary();
-
-    renderSummaryMetrics();
-
-    renderSearchResults();
-
-    addActivity("success", "JSON 入库完成", `成功处理 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} �?chunk。`);
-
-    showToast(`JSON 入库完成，写�?${formatNumber(allChunks.length)} �?chunk。`, "success");
-
-
-
-    setTimeout(() => { void saveLocalWorkspaceSnapshot("json-ingest"); }, 250);
-
-    // Re-render file list to show OCR status and auto-generate .txt for OCR'd PDFs
-
-    const fileListContainerId = pendingKey === 'kgCorpus' ? 'kgFileList' : 'jsonIngestFileList';
-
-    const fileListEl = $(fileListContainerId);
-
-    if (fileListEl) renderPendingFileList(_pendingJsonFiles[pendingKey], fileListEl);
-
-  } catch (error) {
-
-    const errorMessage = error.message || String(error);
-
-    state.publicBooksJson = {
-
-      status: "error",
-
-      latest_snapshot_name: "入库失败",
-
-      collection,
-
-      mode,
-
-      chunks_written: 0,
-
-      records_written: 0,
-
-      elapsed_s: 0,
-
-      decision_counts: {},
-
-      error: errorMessage
-
-    };
-
-    progress.stop({
-
-      phase: "入库失败",
-
-      fileName: collection,
-
-      detail: errorMessage,
-
-      percent: 0,
-
-      records: 0,
-
-      chunks: 0
-
-    });
-
-    await yieldToUi();
-
-    renderPublicBooksJsonSummary();
-
-    addActivity("danger", "JSON 入库失败", errorMessage);
-
-    showToast(errorMessage || "JSON 入库失败", "danger");
-
-  } finally {
-
-    if (btnEl) { delete btnEl.dataset.busy; btnEl.disabled = false; }
-
-  }
-
-}
-
-
-
-*/
 
 async function runBrowserJsonIngest(pendingKey, panelEls) {
   const files = [...(_pendingJsonFiles[pendingKey] || [])];
   if (!files.length) {
-    showToast("Drag or select files first.", "warning");
+    showToast("请先选择文件、文件夹或载入演示数据。", "warning");
     return;
   }
 
@@ -14471,7 +14239,7 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
   const btnEl = panelEls.btn;
   const summaryEl = panelEls.summary;
 
-  const collection = String(collectionEl?.value || "power_rag_corpus").trim() || "power_rag_corpus";
+  const collection = String(collectionEl?.value || POWER_EQUIPMENT_DEMO_COLLECTION).trim() || POWER_EQUIPMENT_DEMO_COLLECTION;
   const mode = String(modeEl?.value || "append");
   const chunkSize = Number(chunkSizeEl?.value || 900);
   const overlap = Number(overlapEl?.value || 120);
@@ -14480,13 +14248,13 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
   activateRagCollection(collection, { reason: `${pendingKey}-ingest-start`, render: false, persist: true });
 
   if (btnEl) { btnEl.disabled = true; btnEl.dataset.busy = "true"; }
-  if (summaryEl) renderEmpty(summaryEl, "Parsing files and writing local chunks...");
-  addActivity("warning", "JSON ingestion started", `${mode === "create" ? "create/rebuild" : "append"} -> ${collection}; ${files.length} files`);
+  if (summaryEl) renderEmpty(summaryEl, "正在解析文件、生成 chunk 并写入本地向量索引...");
+  addActivity("warning", "入库开始", `${mode === "create" ? "新建/重建" : "追加"} -> ${collection}; ${files.length} 个文件`);
 
   const progress = createIngestProgressReporter(summaryEl, {
-    phase: "Preparing ingestion",
+    phase: "准备入库",
     fileName: files[0]?.name || "",
-    detail: `${formatNumber(files.length)} files -> ${collection}`,
+    detail: `${formatNumber(files.length)} 个文件 -> ${collection}`,
     current: 0,
     total: files.length,
     percent: 2,
@@ -14495,9 +14263,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
 
   try {
     if (mode === "create") {
-      progress.log("Clearing collection", "Clearing local records and chunks", {
+      progress.log("清理集合", "正在清空本地记录与 chunk", {
         fileName: collection,
-        detail: "Clearing local records and chunks",
+        detail: "正在清空本地记录与 chunk",
         current: 0,
         total: files.length,
         percent: 5,
@@ -14516,9 +14284,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
 
     for (let fi = 0; fi < files.length; fi++) {
       const file = files[fi];
-      progress.log("Parsing file", `Processing ${fi + 1}/${files.length}: ${file.name}`, {
+      progress.log("读取并解析文件", `正在处理 ${fi + 1}/${files.length}: ${file.name}`, {
         fileName: file.name,
-        detail: `Processing ${fi + 1}/${files.length}`,
+        detail: `正在处理 ${fi + 1}/${files.length}`,
         current: fi,
         total: files.length,
         percent: 8 + Math.round((fi / files.length) * 68),
@@ -14530,9 +14298,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
 
       try {
         const records = await parseFileRecords(file);
-        progress.log("Generating chunks", `Parsed ${formatNumber(records.length)} records; generating chunks`, {
+        progress.log("生成 chunk", `解析完成 ${formatNumber(records.length)} 条记录，开始生成 chunk`, {
           fileName: file.name,
-          detail: `Parsed ${formatNumber(records.length)} records`,
+          detail: `已解析 ${formatNumber(records.length)} 条记录`,
           current: fi + 0.55,
           total: files.length,
           percent: 8 + Math.round(((fi + 0.55) / files.length) * 68),
@@ -14547,7 +14315,7 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
           onProgress(info) {
             const ratio = Math.min(0.98, info.chunksCreated / Math.max(info.estimatedChunks, info.chunksCreated, 1));
             const percent = 8 + Math.round(((fi + 0.25 + ratio * 0.70) / files.length) * 68);
-            const detail = `Generated ${formatNumber(info.chunksCreated)} / about ${formatNumber(info.estimatedChunks)} chunks`;
+            const detail = `已生成 ${formatNumber(info.chunksCreated)} / 约 ${formatNumber(info.estimatedChunks)} 个 chunk`;
             const now = performance.now();
             const payload = {
               fileName: file.name,
@@ -14561,18 +14329,18 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
             };
             if (now - lastChunkLogAt >= 600 || info.chunksCreated >= info.estimatedChunks) {
               lastChunkLogAt = now;
-              progress.log("Generating chunks", detail, payload);
+              progress.log("生成 chunk", detail, payload);
             } else {
-              progress.update({ phase: "Generating chunks", ...payload });
+              progress.update({ phase: "生成 chunk", ...payload });
             }
           }
         });
 
         allRecords.push(...records);
         allChunks.push(...chunks);
-        progress.log("File processed", `Finished ${fi + 1}/${files.length}: ${file.name}`, {
+        progress.log("文件处理完成", `完成 ${fi + 1}/${files.length}: ${file.name}`, {
           fileName: file.name,
-          detail: `Finished ${fi + 1}/${files.length}`,
+          detail: `完成 ${fi + 1}/${files.length}`,
           current: fi + 1,
           total: files.length,
           percent: 8 + Math.round(((fi + 1) / files.length) * 68),
@@ -14596,7 +14364,7 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
       } catch (err) {
         failed++;
         fileSummaries.push({ source_file: file.name, source_kind: "JSON", status: "error", records_extracted: 0, error: err.message || String(err) });
-        progress.log("File failed", `${file.name}: ${err.message || String(err)}`, {
+        progress.log("文件处理失败", `${file.name}: ${err.message || String(err)}`, {
           fileName: file.name,
           detail: err.message || String(err),
           current: fi + 1,
@@ -14610,12 +14378,12 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     }
 
     if (!allChunks.length && !allRecords.length) {
-      throw new Error("All files failed to parse; no records or chunks were generated.");
+      throw new Error("所有文件解析失败，未生成记录或 chunk。");
     }
 
-    progress.log("Writing local index", "Updating records and chunks", {
+    progress.log("写入本地索引", "正在更新 records / chunks", {
       fileName: collection,
-      detail: "Updating records and chunks",
+      detail: "正在更新 records / chunks",
       current: files.length,
       total: files.length,
       percent: 84,
@@ -14629,9 +14397,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     state.chunks = [...state.chunks, ...allChunks];
     const elapsed = Number(((performance.now() - started) / 1000).toFixed(2));
 
-    progress.log("Building quality report", "Computing document and chunk quality", {
+    progress.log("生成质量报告", "正在统计文档与 chunk 质量", {
       fileName: collection,
-      detail: "Computing document and chunk quality",
+      detail: "正在统计文档与 chunk 质量",
       current: files.length,
       total: files.length,
       percent: 88,
@@ -14691,9 +14459,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
       }
     }
 
-    progress.log("Refreshing stats", "Refreshing collection and summaries", {
+    progress.log("刷新统计", "正在刷新集合状态与处理摘要", {
       fileName: collection,
-      detail: "Refreshing collection and summaries",
+      detail: "正在刷新集合状态与处理摘要",
       current: files.length,
       total: files.length,
       percent: 92,
@@ -14707,9 +14475,9 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     else await Promise.all([refreshStats(), refreshUploads()]);
 
     progress.stop({
-      phase: "Ingestion complete",
+      phase: "入库完成",
       fileName: collection,
-      detail: `Finished: ${formatNumber(allRecords.length)} records / ${formatNumber(allChunks.length)} chunks`,
+      detail: `完成：${formatNumber(allRecords.length)} 条记录 / ${formatNumber(allChunks.length)} 个 chunk`,
       percent: 100,
       records: allRecords.length,
       chunks: allChunks.length
@@ -14720,8 +14488,8 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     renderProcessSummary();
     renderSummaryMetrics();
     renderSearchResults();
-    addActivity("success", "JSON ingestion finished", `Processed ${succeeded} files; generated ${formatNumber(allChunks.length)} chunks.`);
-    showToast(`JSON ingestion finished; wrote ${formatNumber(allChunks.length)} chunks.`, "success");
+    addActivity("success", "JSON 入库完成", `成功处理 ${succeeded} 个文件，生成 ${formatNumber(allChunks.length)} 个 chunk。`);
+    showToast(`JSON 入库完成，写入 ${formatNumber(allChunks.length)} 个 chunk。`, "success");
     setTimeout(() => { void saveLocalWorkspaceSnapshot("json-ingest"); }, 250);
 
     const fileListContainerId = pendingKey === "kgCorpus" ? "kgFileList" : "jsonIngestFileList";
@@ -14731,7 +14499,7 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     const errorMessage = error.message || String(error);
     state.publicBooksJson = {
       status: "error",
-      latest_snapshot_name: "Ingestion failed",
+      latest_snapshot_name: "入库失败",
       collection,
       mode,
       chunks_written: 0,
@@ -14741,7 +14509,7 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
       error: errorMessage
     };
     progress.stop({
-      phase: "Ingestion failed",
+      phase: "入库失败",
       fileName: collection,
       detail: errorMessage,
       percent: 0,
@@ -14750,8 +14518,8 @@ async function runBrowserJsonIngest(pendingKey, panelEls) {
     });
     await yieldToUi();
     renderPublicBooksJsonSummary();
-    addActivity("danger", "JSON ingestion failed", errorMessage);
-    showToast(errorMessage || "JSON ingestion failed", "danger");
+    addActivity("danger", "JSON 入库失败", errorMessage);
+    showToast(errorMessage || "JSON 入库失败", "danger");
   } finally {
     if (btnEl) { delete btnEl.dataset.busy; btnEl.disabled = false; }
   }
@@ -16654,7 +16422,7 @@ async function runSearch() {
 
 
 
-  if (els.searchMeta) els.searchMeta.textContent = "Searching...";
+  if (els.searchMeta) els.searchMeta.textContent = "正在检索...";
 
   try {
 
@@ -16662,7 +16430,7 @@ async function runSearch() {
 
       q: query,
 
-      top_k: String(Number(els.searchTopK?.value || 100))
+      top_k: String(Number(els.searchTopK?.value || 20))
 
     });
 
@@ -18591,7 +18359,9 @@ function activateGroupButton(group, matcher) {
 
   group?.querySelectorAll(".segment-btn").forEach((button) => {
 
-    button.classList.toggle("active", matcher(button));
+    const isActive = Boolean(matcher(button));
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
 
   });
 
@@ -18971,7 +18741,7 @@ function parseSchemaList(value, options = {}) {
 
   return Array.from(new Set(String(value || "")
 
-    .split(/[,�?\n]+/)
+    .split(/[,\n，、;；]+/)
 
     .map((item) => item.trim())
 
@@ -19027,7 +18797,7 @@ function normalizeSchemaStringArray(value, options = {}) {
 
   const upper = Boolean(options.upper);
 
-  const source = Array.isArray(value) ? value : String(value || "").split(/[,�?\n]+/);
+  const source = Array.isArray(value) ? value : String(value || "").split(/[,\n，、;；]+/);
 
   return Array.from(new Set(source
 
@@ -19872,7 +19642,7 @@ async function requestUnifiedQuery(question, options = {}) {
 
   const baseUrl = options.baseUrl || resolveLLMEndpoint(cfg) || cfg.baseUrl || "";
 
-  const topK = Number(options.topK ?? els.searchTopK?.value ?? 100);
+  const topK = Number(options.topK ?? els.searchTopK?.value ?? 20);
 
   const payload = {
 
@@ -20370,7 +20140,7 @@ function formatGraphRagTriageItem(item) {
       <div class="result-meta">${escapeHtml(route)} / source_evidence ${sourceCount} / review ${escapeHtml(review)} / ${escapeHtml(created)}</div>
       ${failure ? `<pre style="white-space:pre-wrap;font-size:12px;color:#aaa;margin:8px 0 0">${escapeHtml(failure)}</pre>` : ""}
       ${note}
-      <input class="form-control" data-triage-note="${escapeHtml(id)}" type="text" value="${escapeHtml(item?.review_note || "")}" placeholder="review note" style="margin-top:10px">
+      <input class="form-control" aria-label="图谱质量审核备注" data-triage-note="${escapeHtml(id)}" type="text" value="${escapeHtml(item?.review_note || "")}" placeholder="审核备注" style="margin-top:10px">
       <div class="panel-tools" style="margin-top:10px">
         <button class="ghost-btn" type="button" data-triage-review="accepted" data-triage-id="${escapeHtml(id)}"><iconify-icon icon="lucide:check"></iconify-icon><span>accept</span></button>
         <button class="ghost-btn" type="button" data-triage-review="rejected" data-triage-id="${escapeHtml(id)}"><iconify-icon icon="lucide:x"></iconify-icon><span>reject</span></button>
@@ -20805,7 +20575,7 @@ async function runAsk() {
 
         maxTokens: cfg.maxTokens,
 
-        topK: Number(els.searchTopK?.value || 100)
+        topK: Number(els.searchTopK?.value || 20)
 
       });
 
@@ -21077,7 +20847,7 @@ function renderAnswerMarkdown(markdown, container = els.askAnswer) {
 
 
 
-// ── Built-in Markdown �?HTML renderer ──
+// Built-in Markdown -> HTML renderer.
 
 function _renderMarkdownBuiltin(md) {
 
@@ -21367,7 +21137,7 @@ async function _renderKatexElements(container) {
 
   } catch {
 
-    // KaTeX failed to load �?show raw TeX
+    // KaTeX failed to load; show raw TeX.
 
     for (const el of mathEls) { el.textContent = el.getAttribute("data-tex") || ""; }
 
@@ -21469,7 +21239,7 @@ function openCollectionDialog() {
 
         <div class="coll-new-wrap">
 
-          <div class="coll-existing-label">或输入新集合名称</div>
+          <label class="coll-existing-label" for="collNewName">或输入新集合名称</label>
 
           <div class="coll-new-row">
 
@@ -22299,7 +22069,7 @@ function bindEvents() {
 
     const picked = collectJsonFiles(files);
 
-    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList")); }
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
 
     event.target.value = "";
 
@@ -22315,7 +22085,7 @@ function bindEvents() {
 
     const picked = collectJsonFiles(files);
 
-    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList")); }
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
 
     event.target.value = "";
 
@@ -22379,7 +22149,7 @@ function bindEvents() {
 
       _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked];
 
-      renderPendingFileList(_pendingJsonFiles.standard, $("jsonIngestFileList"));
+      renderPendingListByKey("standard");
 
     }
 
@@ -22392,6 +22162,14 @@ function bindEvents() {
   els.btnPublicBooksJsonIngest?.addEventListener("click", runPublicBooksJsonIngest);
 
   els.btnPublicBooksExportChroma?.addEventListener("click", exportChromaFromPublicBooksPanel);
+
+  $("btnLoadDemoDataset")?.addEventListener("click", async () => {
+    try {
+      await loadDemoDatasetInto("standard");
+    } catch (err) {
+      showToast(err?.message || String(err), "danger");
+    }
+  });
 
 
 
@@ -22417,7 +22195,7 @@ function bindEvents() {
 
     const picked = collectJsonFiles(e.target.files);
 
-    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
 
     e.target.value = "";
 
@@ -22427,7 +22205,7 @@ function bindEvents() {
 
     const picked = collectJsonFiles(e.target.files);
 
-    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
 
     e.target.value = "";
 
@@ -22445,7 +22223,7 @@ function bindEvents() {
 
     const picked = collectJsonFiles(dropped);
 
-    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingFileList(_pendingJsonFiles.standard, jsonIngestFileList); }
+    if (picked.length) { _pendingJsonFiles.standard = [..._pendingJsonFiles.standard, ...picked]; renderPendingListByKey("standard"); }
 
   });
 
@@ -22477,13 +22255,13 @@ function bindEvents() {
 
       _pendingJsonFiles.kgCorpus = [..._pendingJsonFiles.kgCorpus, ...picked];
 
-      renderPendingFileList(_pendingJsonFiles.kgCorpus, kgFileList);
+      renderPendingListByKey("kgCorpus");
 
       // Also render in the ingest summary area if present
 
       const kgIngestList = $("kgJsonIngestFileList");
 
-      if (kgIngestList) renderPendingFileList(_pendingJsonFiles.kgCorpus, kgIngestList);
+      if (kgIngestList) renderPendingListByKey("kgCorpus");
 
       // Summarise file types
 
@@ -22532,7 +22310,7 @@ function bindEvents() {
 $("btnKgBuild")?.addEventListener("click", async () => {
     const corpusFiles = _pendingJsonFiles.kgCorpus;
     if (!corpusFiles.length) {
-      showToast("Drag or select corpus files first.", "warning");
+      showToast("请先选择图谱语料文件，或载入演示语料。", "warning");
       return;
     }
 
@@ -22544,12 +22322,12 @@ $("btnKgBuild")?.addEventListener("click", async () => {
     if (logEl) logEl.innerHTML = "";
     if (progressEl) progressEl.style.width = "0%";
     const progress = createIngestProgressReporter(logEl, {
-      phase: "Preparing graph build",
-      fileName: "GraphRAG corpus",
+      phase: "准备构建图谱",
+      fileName: "GraphRAG 语料",
       percent: 0,
       total: corpusFiles.length,
       current: 0,
-      detail: `Waiting to process ${corpusFiles.length} file(s).`
+      detail: `等待处理 ${corpusFiles.length} 个文件。`
     });
 
     function logEntry(icon, text) {
@@ -22567,10 +22345,10 @@ $("btnKgBuild")?.addEventListener("click", async () => {
     }
 
     try {
-      addActivity("warning", "Graph build started", `Processing ${corpusFiles.length} corpus files.`);
-      logEntry("lucide:loader", `Processing ${corpusFiles.length} corpus files.`);
+      addActivity("warning", "图谱构建开始", `正在处理 ${corpusFiles.length} 个语料文件。`);
+      logEntry("lucide:loader", `正在处理 ${corpusFiles.length} 个语料文件。`);
       await clearKgRuntimeState("kg-build-start", { backend: true });
-      logEntry("lucide:trash-2", "Cleared previous graph runtime state.");
+      logEntry("lucide:trash-2", "已清理上一次图谱运行状态。");
 
       const allRecords = [];
       const allTexts = [];
@@ -22582,11 +22360,11 @@ $("btnKgBuild")?.addEventListener("click", async () => {
         progress.update({
           current: fi + 1,
           percent: Math.round(((fi + 1) / corpusFiles.length) * 35),
-          phase: "Parsing files",
+          phase: "解析文件",
           fileName: file.name,
-          detail: `Parsing ${fi + 1}/${corpusFiles.length}`
+          detail: `正在解析 ${fi + 1}/${corpusFiles.length}`
         });
-        logEntry("lucide:file-text", `Parsing ${fi + 1}/${corpusFiles.length}: ${file.name}`);
+        logEntry("lucide:file-text", `正在解析 ${fi + 1}/${corpusFiles.length}: ${file.name}`);
         await new Promise((resolve) => setTimeout(resolve, 0));
         try {
           const records = await parseFileRecords(file);
@@ -23112,7 +22890,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
 
 
-  // ── KG JSON ingest �?unified: reuse kgCorpus files ──
+  // KG JSON ingest path.
 
   // (Merged into the single kgDropZone above; no separate dropzone needed.)
 
@@ -23160,7 +22938,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
     if (!pdfFiles.length) {
 
-      showToast("文件列表中没�?PDF 文件", "warning");
+      showToast("文件列表中没有 PDF 文件", "warning");
 
       return;
 
@@ -23392,7 +23170,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       }
 
-      // Max tokens: "tokens:8192", "上下�?131072", or large integer
+      // Cleaned comment.
 
       else if (!maxTok && /^(?:max_?tokens?|tokens?|上下文|context)[:=]?(\d+)$/i.test(tok)) {
 
@@ -23406,7 +23184,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       }
 
-      // Long alphanumeric string �?likely API key
+      // Long alphanumeric string: likely API key.
 
       else if (!key && tok.length >= 20 && /^[A-Za-z0-9_\-]+$/.test(tok)) {
 
@@ -23414,7 +23192,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       }
 
-      // Short identifier not yet matched �?try as model
+      // Short identifier not yet matched: try as model.
 
       else if (!model && tok.length >= 3 && tok.length <= 60 && !tok.includes("://")) {
 
@@ -23608,7 +23386,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
         maxTokens: kgMaxTok,
 
-        topK: Number($("kgSearchTopK")?.value || 100),
+        topK: Number($("kgSearchTopK")?.value || 20),
 
         timeoutMs: 240000
 
@@ -23622,7 +23400,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
         const citations = Array.isArray(result.citations) ? result.citations : [];
 
-        resultsDiv.innerHTML = citations.slice(0, Number($("kgSearchTopK")?.value || 100)).map((item) => {
+        resultsDiv.innerHTML = citations.slice(0, Number($("kgSearchTopK")?.value || 20)).map((item) => {
 
           const source = item.source || item.metadata?.source_file || item.id || "unknown";
 
@@ -23917,9 +23695,13 @@ $("btnKgBuild")?.addEventListener("click", async () => {
   }
 
 
-  async function runPowerRagOneClick() {
+  async function runPowerRagOneClick(options = {}) {
 
-    const btn = $("btnKgPowerRagOneClick");
+    const btn = $(options.buttonId || "btnKgPowerRagOneClick");
+
+    const applyPreset = options.applyPreset || applyPowerRagGraphPreset;
+
+    const analysisQuestion = options.question || POWER_RAG_DEFAULT_QUESTION;
 
     try {
 
@@ -23935,7 +23717,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       setPage("kg_data");
 
-      applyPowerRagGraphPreset();
+      applyPreset();
 
       appendKgOneClickLog("Applied generic PowerRAG preset", "collection=create, top_k=100, generic schema extraction", "lucide:sliders-horizontal");
 
@@ -23983,7 +23765,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       setPage("kg_search");
 
-      setFormValue("kgAskInput", POWER_RAG_DEFAULT_QUESTION);
+      setFormValue("kgAskInput", analysisQuestion);
 
       appendKgOneClickLog("Filled generic analysis question", "Comprehensive PowerRAG analysis with evidence requirements.", "lucide:message-square-text");
 
@@ -24013,95 +23795,11 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
   async function runWechatAffectionOneClick() {
 
-    const btn = $("btnKgWechatOneClick");
-
-    try {
-
-      if (btn) { btn.disabled = true; btn.dataset.busy = "true"; }
-
-      clearKgOneClickLog();
-
-      setKgOneClickStatus("Running", "running");
-
-      appendKgOneClickLog("Switch to GraphRAG / graph build", "WeChat private-chat full contact scan.", "lucide:panel-top");
-
-      setWorkspaceMode("graphrag", { keepPage: true });
-
-      setPage("kg_data");
-
-      applyWechatAffectionGraphPreset();
-
-      appendKgOneClickLog("Applied WeChat affection preset", "collection=create, top_k=100, CONTACT_FULL_SCAN", "lucide:sliders-horizontal");
-
-      if (!_pendingJsonFiles.kgCorpus.length) {
-
-        appendKgOneClickLog("Loading default WeChat RAG JSON corpus", "Prefer the latest exported private chat corpus file.", "lucide:file-json");
-
-        const file = await pickWechatRagCorpusFile({ preferDefault: true });
-
-        if (!file) throw new Error("No WeChat RAG JSON corpus file was selected.");
-
-        addKgCorpusFiles([file], { replace: true, silent: true });
-
-        appendKgOneClickLog("WeChat corpus loaded", `${relativePathOf(file)} (${(file.size / 1048576).toFixed(1)} MB)`, "lucide:check-circle");
-
-      } else {
-
-        appendKgOneClickLog("Using current pending corpus", `${_pendingJsonFiles.kgCorpus.length} files`, "lucide:files");
-
-      }
-
-      setKgOneClickStatus("Ingesting", "running");
-
-      appendKgOneClickLog("Start detection and ingestion", "Rebuild the WeChat collection to avoid stale residue.", "lucide:database-zap");
-
-      await runKgCorpusIngestForCurrentFiles();
-
-      appendKgOneClickLog("Ingestion finished", "Chunks and contact partitions refreshed.", "lucide:check-circle");
-
-      setKgOneClickStatus("Building graph", "running");
-
-      appendKgOneClickLog("Start graph construction", "Waiting for the graph build task to finish.", "lucide:cpu");
-
-      await clickButtonAndWaitForIdle("btnKgBuild", 1200000);
-
-      const nodeCount = window._kgGraph?.nodes?.length || 0;
-
-      const edgeCount = window._kgGraph?.links?.length || 0;
-
-      if (!nodeCount) throw new Error("Graph build finished but generated no nodes. Check corpus parsing and WeChat schema configuration.");
-
-      appendKgOneClickLog("Graph build finished", `${nodeCount.toLocaleString()} nodes, ${edgeCount.toLocaleString()} edges`, "lucide:network");
-
-      setKgOneClickStatus("Answering", "running");
-
-      setPage("kg_search");
-
-      setFormValue("kgAskInput", WECHAT_AFFECTION_QUESTION);
-
-      appendKgOneClickLog("Filled WeChat full-contact question", "Requires date, sender, chunk_id or message_id for every affection judgment.", "lucide:message-square-text");
-
-      await runKgAsk();
-
-      setKgOneClickStatus("Finished", "success");
-
-      appendKgOneClickLog("WeChat one-click flow finished", "Check the result in the GraphRAG answer area.", "lucide:check-circle");
-
-    } catch (err) {
-
-      const message = err?.message || String(err);
-
-      setKgOneClickStatus("Failed", "danger");
-
-      appendKgOneClickLog("Flow failed", message, "lucide:alert-triangle");
-
-      showToast(message, "danger");
-
-    } finally {
-
-      if (btn) { btn.disabled = false; delete btn.dataset.busy; }
-
-    }
+    return runPowerRagOneClick({
+      buttonId: "btnKgWechatOneClick",
+      applyPreset: applyWechatAffectionGraphPreset,
+      question: WECHAT_AFFECTION_QUESTION,
+    });
 
   }
 
@@ -24127,33 +23825,19 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
   });
 
-  $("btnKgWechatPickCorpus")?.addEventListener("click", async () => {
-
+  $("btnKgLoadDemoCorpus")?.addEventListener("click", async () => {
     try {
-
-      const file = await pickWechatRagCorpusFile({ preferDefault: false });
-
-      if (file) {
-
-        addKgCorpusFiles([file], { replace: true });
-
-        applyWechatAffectionGraphPreset();
-
-        appendKgOneClickLog("Selected WeChat RAG corpus", relativePathOf(file), "lucide:file-json");
-
-      }
-
+      await loadDemoDatasetInto("kgCorpus");
+      appendKgOneClickLog("已载入演示语料", "power_equipment_demo.json -> power_equipment_demo", "lucide:database");
     } catch (err) {
-
-      showToast(err?.message || String(err), "warning");
-
+      showToast(err?.message || String(err), "danger");
     }
-
   });
 
   $("btnKgPowerRagOneClick")?.addEventListener("click", runPowerRagOneClick);
 
   $("btnKgWechatOneClick")?.addEventListener("click", runWechatAffectionOneClick);
+
 
 
 
@@ -24437,7 +24121,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
     const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
 
-    if (meta) meta.textContent = `Graph search finished · ${elapsed}s · matched ${matchedEntities.length} entities · ${maxHops}-hop reached ${visited.size} nodes · ${relevantTriples.length} triples`;
+    if (meta) meta.textContent = `图谱检索完成 · ${elapsed}s · 命中 ${matchedEntities.length} 个实体 · ${maxHops} 跳到达 ${visited.size} 个节点 · ${relevantTriples.length} 条关系`;
 
 
 
@@ -24445,7 +24129,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
     if (resultsDiv) {
 
-      const matchedCards = matchedEntities.slice(0, Number($("kgSearchTopK")?.value || 100)).map(e => {
+      const matchedCards = matchedEntities.slice(0, Number($("kgSearchTopK")?.value || 20)).map(e => {
 
         const neighbors = (adj.get(e.name) || []).slice(0, 5);
 
@@ -24693,7 +24377,7 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
       const name = deleteButton.dataset.deleteCollection;
 
-      if (!window.confirm(`Delete collection ${name}?`)) return;
+      if (!window.confirm(`确认删除集合 ${name}？这会删除该集合下的向量记录，操作不可撤销。`)) return;
 
       await deleteCollection(name);
 
@@ -24829,7 +24513,9 @@ $("btnKgBuild")?.addEventListener("click", async () => {
 
     if (!button) return;
 
-    await deleteUpload(button.dataset.deleteUpload);
+    const filename = button.dataset.deleteUpload;
+    if (!window.confirm(`确认从上传目录移除 ${splitUploadPath(uploadDisplayName(filename)).file}？如果该文件已入库，请在“已处理文件”中删除以同步清理向量记录。`)) return;
+    await deleteUpload(filename);
 
   });
 
@@ -24919,7 +24605,12 @@ async function init() {
 
   state.primaryStats = null;
 
+  moveAdminPanelsToSystemPage();
+
   bindEvents();
+
+  updateJsonIngestButtonState("standard");
+  updateJsonIngestButtonState("kgCorpus");
 
   populateLLMProviderSelect();
 
@@ -24929,7 +24620,13 @@ async function init() {
 
   bindInputHistoryEvents();
 
-  setPage(initialPageName(), { updateHash: false });
+  const firstPage = initialPageName();
+
+  const firstMode = ["kg", "kg_data", "kg_search", "kg_benchmark"].includes(firstPage) ? "graphrag" : "rag";
+
+  setWorkspaceMode(firstMode, { keepPage: true });
+
+  setPage(firstPage, { updateHash: false });
 
   await restoreLocalWorkspaceSnapshot();
 
@@ -24969,7 +24666,7 @@ window.addEventListener("DOMContentLoaded", init);
 
         </div>
 
-        <strong>动力装备知识库</strong>
+        <strong>清华大学燃气轮机所知识库</strong>
 
         <div class="segment-group" id="globalModeToggle" style="margin-left: 16px;">
 
@@ -24992,6 +24689,8 @@ window.addEventListener("DOMContentLoaded", init);
         <button class="nav-item" data-page="search" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:search"></iconify-icon><span>语义检索</span></button>
 
         <button class="nav-item" data-page="benchmark" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:gauge"></iconify-icon><span>性能基准</span></button>
+
+        <button class="nav-item" data-page="admin" type="button" data-mode-tag="rag"><iconify-icon icon="lucide:settings-2"></iconify-icon><span>系统管理</span></button>
 
 
 
@@ -25043,11 +24742,11 @@ window.addEventListener("DOMContentLoaded", init);
 
               <div class="hero-copy">
 
-                <div class="hero-chip"><iconify-icon icon="lucide:zap"></iconify-icon><span>RAG Knowledge Engine</span></div>
+                <div class="hero-chip"><iconify-icon icon="lucide:school"></iconify-icon><span>清华大学燃气轮机所</span></div>
 
-                <h3>动力装备 RAG 智能知识平台</h3>
+                <h3>清华大学燃气轮机所 RAG 知识库控制台</h3>
 
-                <p>面向燃气轮机、汽轮机、锅炉和辅机资料的工程知识库工作台，覆盖资料接入、OCR 清洗、向量入库、语义检索、GraphRAG 图谱扩展和性能基准评估</p>
+                <p>为清华大学燃气轮机所建设的工程资料知识库工作台，面向燃气轮机、汽轮机、锅炉和辅机资料，支撑资料接入、语义检索、GraphRAG 和评测演示。</p>
 
                 <div class="hero-proof-row" aria-label="项目能力摘要">
 
@@ -25075,53 +24774,35 @@ window.addEventListener("DOMContentLoaded", init);
 
               </div>
 
-              <div class="hero-showcase" aria-label="系统流程概览">
+              <div class="hero-showcase" aria-label="系统运行概览">
 
                 <div class="showcase-header">
 
-                  <p class="showcase-title">从工程资料到可追溯答案</p>
+                  <p class="showcase-title">清华燃机所演示工作区</p>
 
-                  <span class="showcase-status"><span class="status-dot"></span>Local Ready</span>
-
-                </div>
-
-                <div class="hero-pipeline">
-
-                  <div class="pipeline-step"><iconify-icon icon="lucide:folder-input"></iconify-icon><div><strong>资料接入</strong><span>PDF / DOCX / JSON / CSV / Markdown</span></div></div>
-
-                  <div class="pipeline-step"><iconify-icon icon="lucide:scissors-line-dashed"></iconify-icon><div><strong>清洗分块</strong><span>OCR 文本、元数据、Chunk 参数可控</span></div></div>
-
-                  <div class="pipeline-step"><iconify-icon icon="lucide:database"></iconify-icon><div><strong>向量索引</strong><span>集合管理、导出备份、增量入库</span></div></div>
-
-                  <div class="pipeline-step"><iconify-icon icon="lucide:message-square-search"></iconify-icon><div><strong>证据检索</strong><span>TopK 召回、片段溯源、延迟统计</span></div></div>
+                  <span class="showcase-status"><span class="status-dot"></span>本地就绪</span>
 
                 </div>
 
-                <div class="hero-evidence">
+                <div class="hero-status-grid">
 
-                  <div class="evidence-card">
+                  <div class="hero-status-cell"><span>服务对象</span><strong>清华大学燃气轮机所</strong><em>面向科研资料查询与答辩演示</em></div>
 
-                    <h4>工程问答样例</h4>
+                  <div class="hero-status-cell"><span>演示集合</span><strong>燃机所演示集</strong><em>power_equipment_demo</em></div>
 
-                    <div class="evidence-row"><span>问题</span><strong>振动异常诊断</strong></div>
+                  <div class="hero-status-cell"><span>检索链路</span><strong>RAG + GraphRAG</strong><em>先证据召回，再图谱增强</em></div>
 
-                    <div class="evidence-row"><span>召回</span><strong>20 docs</strong></div>
+                  <div class="hero-status-cell"><span>默认召回</span><strong>TopK 20</strong><em>片段、页码、来源一起返回</em></div>
 
-                    <div class="evidence-row"><span>链路</span><strong>RAG + KG</strong></div>
+                </div>
 
-                  </div>
+                <div class="hero-flow-list" aria-label="核心操作流程">
 
-                  <div class="graph-preview" aria-hidden="true">
+                  <div class="hero-flow-item"><span class="hero-flow-index">01</span><div><strong>资料接入</strong><span>选择文件或文件夹，完成 OCR / 解析 / 分块 / 入库。</span></div></div>
 
-                    <span class="graph-node n1"></span>
+                  <div class="hero-flow-item"><span class="hero-flow-index">02</span><div><strong>语义检索</strong><span>输入工程问题，查看证据片段、来源、相似度和可选回答。</span></div></div>
 
-                    <span class="graph-node n2"></span>
-
-                    <span class="graph-node n3"></span>
-
-                    <span class="graph-node n4"></span>
-
-                  </div>
+                  <div class="hero-flow-item"><span class="hero-flow-index">03</span><div><strong>GraphRAG</strong><span>构建实体关系，查看图谱概览，再做图谱问答和质量评估。</span></div></div>
 
                 </div>
 
@@ -25131,13 +24812,13 @@ window.addEventListener("DOMContentLoaded", init);
 
             <div class="project-snapshot" aria-label="项目模块摘要">
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:files"></iconify-icon><h4>资料工程化接入</h4><p>支持批量文件和文件夹导入，统一展示待处理、已处理、失败和导出状态。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="lucide:files"></iconify-icon><h4>燃机所资料接入</h4><p>支持批量文件和文件夹导入，统一展示待处理、已处理、失败和导出状态。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:search-check"></iconify-icon><h4>可信语义检索</h4><p>用向量召回连接工程问题和原始资料片段，适合论文演示与现场答辩。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="lucide:search-check"></iconify-icon><h4>可信语义检索</h4><p>用向量召回连接燃气轮机领域问题和原始资料片段，适合现场答辩。</p></article>
 
               <article class="snapshot-card"><iconify-icon icon="lucide:share-2"></iconify-icon><h4>GraphRAG 扩展</h4><p>保留实体关系抽取、图谱问答和图谱基准入口，便于展示后续增强路线。</p></article>
 
-              <article class="snapshot-card"><iconify-icon icon="lucide:bar-chart-3"></iconify-icon><h4>性能与质量指标</h4><p>集中呈现集合规模、Token、延迟、吞吐和处理质量，方便按 BOSS 项目经历总结。</p></article>
+              <article class="snapshot-card"><iconify-icon icon="lucide:bar-chart-3"></iconify-icon><h4>性能与质量指标</h4><p>集中呈现集合规模、Token、延迟、吞吐和处理质量，方便汇报系统能力。</p></article>
 
             </div>
 
@@ -25449,19 +25130,21 @@ window.addEventListener("DOMContentLoaded", init);
 
                         <button class="ghost-btn" id="pickFolderButton" type="button"><iconify-icon icon="lucide:folder-plus"></iconify-icon><span>选择文件夹</span></button>
 
+                        <button class="ghost-btn" id="btnLoadDemoDataset" type="button"><iconify-icon icon="lucide:database"></iconify-icon><span>载入演示数据</span></button>
+
                       </div>
 
                     </div>
 
                   </div>
 
-                  <input class="hidden-input" id="fileInput" type="file" multiple>
+                  <input class="hidden-input" id="fileInput" type="file" multiple aria-label="选择待入库文件">
 
-                  <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory>
+                  <input class="hidden-input" id="folderInput" type="file" multiple webkitdirectory directory aria-label="选择待入库文件夹">
 
-                  <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple>
+                  <input class="hidden-input" id="jsonIngestFileInput" type="file" multiple aria-label="选择 JSON 入库文件">
 
-                  <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory>
+                  <input class="hidden-input" id="jsonIngestFolderInput" type="file" multiple webkitdirectory directory aria-label="选择 JSON 入库文件夹">
 
                   <div id="jsonIngestFileList" class="queue-list"></div>
 
@@ -25471,7 +25154,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label for="publicBooksJsonCollection">向量库集合名称</label>
 
-                      <input class="form-control" id="publicBooksJsonCollection" type="text" value="public_books_labelstudio">
+                      <input class="form-control" id="publicBooksJsonCollection" type="text" value="power_equipment_demo">
 
                     </div>
 
@@ -25693,9 +25376,11 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <div class="search-row">
 
-                    <input class="search-input" id="searchInput" type="search" placeholder="例如：燃气轮机异常振动诊断流程">
+                    <label class="sr-only" for="searchInput">检索问题</label>
+                    <input class="search-input" id="searchInput" type="search" aria-label="检索问题" placeholder="例如：燃气轮机异常振动诊断流程">
 
-                    <input class="search-select" id="searchTopK" type="number" min="1" max="100" value="100">
+                    <label class="sr-only" for="searchTopK">返回片段数 TopK</label>
+                    <input class="search-select" id="searchTopK" type="number" min="1" max="100" value="20" aria-label="返回片段数 TopK">
 
                     <button class="btn" id="btnSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
 
@@ -25707,15 +25392,15 @@ window.addEventListener("DOMContentLoaded", init);
 
 
 
-                <article class="panel">
+                <article class="panel" id="retrievalPolicyPanel">
 
                   <div class="panel-head">
 
                     <div>
 
-                      <h3>Retrieval Policy Review</h3>
+                      <h3>检索策略审批</h3>
 
-                      <p>Promote reviewed retrieval_default_policy settings or roll back the last collection policy.</p>
+                      <p>审批 retrieval_default_policy 检索策略，支持通知、回滚、OIDC 会话和角色映射管理。</p>
 
                     </div>
 
@@ -26427,7 +26112,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <div class="input-with-action">
 
-                        <input class="form-control" id="llmSmartPaste" type="text" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o，或任意顺序组合" autocomplete="off" style="font-size:12px">
+                        <input class="form-control" id="llmSmartPaste" type="text" aria-label="一键配置 LLM" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o，或任意顺序组合" autocomplete="off" style="font-size:12px">
 
                         <button class="btn" id="btnSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
 
@@ -26463,7 +26148,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                         </div>
 
-                        <button class="ghost-btn" id="btnClearLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                        <button class="ghost-btn" id="btnClearLlm" type="button" aria-label="清空 LLM 配置" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
 
                       </div>
 
@@ -26553,7 +26238,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <div class="ask-row">
 
-                    <textarea class="form-control" id="askInput" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+                    <textarea class="form-control" id="askInput" rows="2" aria-label="LLM 问答问题" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
 
                     <button class="btn" id="btnAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
 
@@ -26584,6 +26269,48 @@ window.addEventListener("DOMContentLoaded", init);
               </div>
 
             </div>
+
+          </div>
+
+        </section>
+
+
+
+        <section class="page" id="page-admin">
+
+          <div class="page-stack">
+
+            <article class="panel">
+
+              <div class="panel-head">
+
+                <div>
+
+                  <p class="card-kicker">系统管理</p>
+
+                  <h3>管理员配置与审计</h3>
+
+                  <p>这里集中放置低频管理能力，避免干扰资料接入、语义检索和 GraphRAG 问答三条主流程。</p>
+
+                </div>
+
+                <span class="pill">模型 / 策略 / 权限 / 通知 / 审计</span>
+
+              </div>
+
+              <div class="admin-note-grid">
+
+                <div class="admin-note"><strong>模型配置</strong><p>维护 OpenAI 兼容端点、Model、Temperature 和本地 API Key 保存状态。</p></div>
+
+                <div class="admin-note"><strong>检索策略</strong><p>审批 query rewrite、rerank、TopK、回滚和策略变更记录。</p></div>
+
+                <div class="admin-note"><strong>权限与通知</strong><p>OIDC、角色映射、Webhook、SMTP 和策略通知统一在这里操作。</p></div>
+
+              </div>
+
+            </article>
+
+            <div class="admin-placeholder" id="adminPolicyMount"></div>
 
           </div>
 
@@ -26643,11 +26370,12 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <button class="ghost-btn" id="btnKgPowerRagPickCorpus" type="button"><iconify-icon icon="lucide:file-json"></iconify-icon><span>选择语料</span></button>
 
-                  <button class="ghost-btn" id="btnKgWechatPickCorpus" type="button"><iconify-icon icon="lucide:message-circle"></iconify-icon><span>选择微信语料</span></button>
+                  <button class="ghost-btn" id="btnKgLoadDemoCorpus" type="button"><iconify-icon icon="lucide:database"></iconify-icon><span>载入演示语料</span></button>
 
-                  <button class="ghost-btn" id="btnKgPowerRagOneClick" type="button"><iconify-icon icon="lucide:play"></iconify-icon><span>通用检测</span></button>
+                  <button class="ghost-btn" id="btnKgWechatOneClick" type="button"><iconify-icon icon="lucide:messages-square"></iconify-icon><span>微信关系图谱</span></button>
 
-                  <button class="btn" id="btnKgWechatOneClick" type="button"><iconify-icon icon="lucide:heart"></iconify-icon><span>微信暧昧分析</span></button>
+                  <button class="btn" id="btnKgPowerRagOneClick" type="button"><iconify-icon icon="lucide:play"></iconify-icon><span>构建并问答</span></button>
+
 
                 </div>
 
@@ -26697,9 +26425,9 @@ window.addEventListener("DOMContentLoaded", init);
 
                       </div>
 
-                      <input class="hidden-input" id="kgFileInput" type="file" multiple>
+                      <input class="hidden-input" id="kgFileInput" type="file" multiple aria-label="选择图谱语料文件">
 
-                      <input class="hidden-input" id="kgFolderInput" type="file" multiple webkitdirectory directory>
+                      <input class="hidden-input" id="kgFolderInput" type="file" multiple webkitdirectory directory aria-label="选择图谱语料文件夹">
 
                     </div>
 
@@ -26713,7 +26441,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label for="kgPublicBooksJsonCollection">混合检索集</label>
 
-                      <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="power_rag_corpus">
+                      <input class="form-control" id="kgPublicBooksJsonCollection" type="text" value="power_equipment_demo">
 
                     </div>
 
@@ -26789,13 +26517,15 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>数据类型</label>
 
-                      <select class="form-control" id="kgSchemaDataType">
+                      <select class="form-control" id="kgSchemaDataType" aria-label="图谱资料类型">
 
                         <option value="auto" selected>自动判断</option>
 
-                        <option value="chat_logs">微信/聊天记录</option>
-
                         <option value="technical_equipment_docs">工程技术文档</option>
+
+                        <option value="power_equipment_manuals">动力装备手册/规程</option>
+
+                        <option value="fault_diagnosis_reports">故障诊断与检修记录</option>
 
                         <option value="academic_docs">论文/学术资料</option>
 
@@ -26811,7 +26541,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>分析目标</label>
 
-                      <input class="form-control" id="kgSchemaGoal" type="text" value="问答、关系检索、证据可追溯" placeholder="例如：全量私聊联系人关系分析">
+                      <input class="form-control" id="kgSchemaGoal" type="text" value="问答、关系检索、证据可追溯" aria-label="图谱抽取目标" placeholder="例如：跨文档故障归因分析">
 
                     </div>
 
@@ -26819,7 +26549,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>实体类型 (Entity Types)</label>
 
-                      <input class="form-control" id="kgEntityTypes" type="text" value="Equipment, Component, Parameter, Problem, Method" placeholder="用逗号分隔多个类型">
+                      <input class="form-control" id="kgEntityTypes" type="text" value="Equipment, Component, Parameter, Problem, Method" aria-label="图谱实体类型" placeholder="用逗号分隔多个类型">
 
                     </div>
 
@@ -26827,7 +26557,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>关系类型 (Relation Types)</label>
 
-                      <input class="form-control" id="kgRelationTypes" type="text" value="HAS_COMPONENT, USES_FUEL, HAS_PARAMETER, HAS_PROBLEM" placeholder="用逗号分隔多个关系">
+                      <input class="form-control" id="kgRelationTypes" type="text" value="HAS_COMPONENT, USES_FUEL, HAS_PARAMETER, HAS_PROBLEM" aria-label="图谱关系类型" placeholder="用逗号分隔多个关系">
 
                     </div>
 
@@ -26835,7 +26565,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>图谱抽取引擎</label>
 
-                      <select class="form-control" id="kgExtractEngine">
+                      <select class="form-control" id="kgExtractEngine" aria-label="实体关系抽取方式">
 
                         <option value="generative">纯大模型泛化抽取 (慢, 发散)</option>
 
@@ -26851,7 +26581,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <label>社区聚类算法 (Community Detection)</label>
 
-                      <select class="form-control" id="kgCommunityAlgo">
+                      <select class="form-control" id="kgCommunityAlgo" aria-label="社区聚类算法">
 
                         <option value="leiden">Leiden 层次聚类算法</option>
 
@@ -26996,9 +26726,11 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <div class="search-row">
 
-                    <input class="search-input" id="kgSearchInput" type="search" placeholder="例如：燃气轮机压气机出口温度偏高的所有常见原因">
+                    <label class="sr-only" for="kgSearchInput">GraphRAG 检索问题</label>
+                    <input class="search-input" id="kgSearchInput" type="search" aria-label="GraphRAG 检索问题" placeholder="例如：燃气轮机压气机出口温度偏高的所有常见原因">
 
-                    <input class="search-select" id="kgSearchTopK" type="number" min="1" max="100" value="100">
+                    <label class="sr-only" for="kgSearchTopK">GraphRAG 返回片段数 TopK</label>
+                    <input class="search-select" id="kgSearchTopK" type="number" min="1" max="100" value="20" aria-label="GraphRAG 返回片段数 TopK">
 
                     <button class="btn" id="btnKgSearch" type="button"><iconify-icon icon="lucide:search"></iconify-icon><span>开始检索</span></button>
 
@@ -27064,7 +26796,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                       <div class="input-with-action">
 
-                        <input class="form-control" id="kgLlmSmartPaste" type="text" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o 0.7 131072" autocomplete="off" style="font-size:12px">
+                        <input class="form-control" id="kgLlmSmartPaste" type="text" aria-label="GraphRAG 一键配置 LLM" placeholder="粘贴如：https://api.openai.com/v1 sk-xxx gpt-4o 0.7 131072" autocomplete="off" style="font-size:12px">
 
                         <button class="btn" id="btnKgSmartPaste" type="button" style="white-space:nowrap"><iconify-icon icon="lucide:scan-text"></iconify-icon><span>识别</span></button>
 
@@ -27092,7 +26824,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                         <input class="form-control" id="kgLlmBaseUrl" type="text" placeholder="不填则自动使用对应服务商地址" autocomplete="off">
 
-                        <button class="ghost-btn" id="btnClearKgLlm" type="button" title="清空 LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
+                        <button class="ghost-btn" id="btnClearKgLlm" type="button" aria-label="清空 GraphRAG LLM 配置" title="清空 GraphRAG LLM 配置"><iconify-icon icon="lucide:eraser"></iconify-icon></button>
 
                       </div>
 
@@ -27172,7 +26904,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <div class="ask-row">
 
-                    <textarea class="form-control" id="kgAskInput" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+                    <textarea class="form-control" id="kgAskInput" rows="2" aria-label="GraphRAG 问答问题" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
 
                     <button class="btn" id="btnKgAsk" type="button"><iconify-icon icon="lucide:sparkles"></iconify-icon><span>询问</span></button>
 
@@ -27200,23 +26932,23 @@ window.addEventListener("DOMContentLoaded", init);
 
                 </article>
 
-                <article class="panel">
+                <details class="panel kg-triage-panel">
 
-                  <div class="panel-head">
+                  <summary class="panel-head">
 
                     <div>
 
-                      <h3>GraphRAG Triage History</h3>
+                      <h3>图谱质量审核历史</h3>
 
-                      <p>Recent graph quality gate, source_evidence, and human review status.</p>
+                      <p>默认折叠。用于查看 graph quality gate、source evidence 和人工审核状态。</p>
 
                     </div>
 
                     <div class="panel-tools">
 
-                      <select class="search-select" id="kgTriageStatusFilter" style="width:auto">
+                      <select class="search-select" id="kgTriageStatusFilter" aria-label="图谱质量筛选" style="width:auto">
 
-                        <option value="">All quality</option>
+                        <option value="">全部质量</option>
 
                         <option value="pass">pass</option>
 
@@ -27224,9 +26956,9 @@ window.addEventListener("DOMContentLoaded", init);
 
                       </select>
 
-                      <select class="search-select" id="kgTriageReviewFilter" style="width:auto">
+                      <select class="search-select" id="kgTriageReviewFilter" aria-label="审核状态筛选" style="width:auto">
 
-                        <option value="">All review</option>
+                        <option value="">全部审核</option>
 
                         <option value="unreviewed">unreviewed</option>
 
@@ -27236,9 +26968,9 @@ window.addEventListener("DOMContentLoaded", init);
 
                       </select>
 
-                      <select class="search-select" id="kgTriageRouteFilter" style="width:auto">
+                      <select class="search-select" id="kgTriageRouteFilter" aria-label="路线策略筛选" style="width:auto">
 
-                        <option value="">All routes</option>
+                        <option value="">全部路线</option>
 
                         <option value="LOCAL_SEARCH">LOCAL_SEARCH</option>
 
@@ -27248,19 +26980,19 @@ window.addEventListener("DOMContentLoaded", init);
 
                       </select>
 
-                      <button class="ghost-btn" id="btnExportKgTriage" type="button"><iconify-icon icon="lucide:download"></iconify-icon><span>Export</span></button>
+                      <button class="ghost-btn" id="btnExportKgTriage" type="button"><iconify-icon icon="lucide:download"></iconify-icon><span>导出</span></button>
 
-                      <button class="ghost-btn" id="btnRefreshKgTriage" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>Refresh</span></button>
+                      <button class="ghost-btn" id="btnRefreshKgTriage" type="button"><iconify-icon icon="lucide:refresh-cw"></iconify-icon><span>刷新</span></button>
 
                     </div>
 
-                  </div>
+                  </summary>
 
                   <div id="kgTriageAnalytics"></div>
 
                   <div class="results-list" id="kgTriageList"></div>
 
-                </article>
+                </details>
 
               </div>
 
@@ -27272,9 +27004,9 @@ window.addEventListener("DOMContentLoaded", init);
 
                 <div>
 
-                  <h3>Question Execution Flow</h3>
+                  <h3>问题执行链路</h3>
 
-                  <p>Auditable route from question intake to answer: semantic analysis, routing, evidence retrieval, graph/community context, validation, and final response.</p>
+                  <p>从问题进入到最终回答的可审计链路：语义分析、路线分流、证据检索、图谱/社区上下文、证据校验和答案生成。</p>
 
                 </div>
 
@@ -27302,7 +27034,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <strong>Query Router / 问题分流</strong>
 
-                  <p class="kg-step-note">判断是向量问答、局部实体追问、全局汇总，还是需要全量逐联系人分析。</p>
+                  <p class="kg-step-note">判断是向量问答、局部实体追问、全局汇总，还是跨资料多跳故障归因。</p>
 
                 </div>
 
@@ -27314,19 +27046,19 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <strong>证据源选择</strong>
 
-                  <p class="kg-step-note">读取微信文本集合、GraphStore、社区摘要；普通 top-k 只作补充，不作为全量结论依据。</p>
+                  <p class="kg-step-note">读取动力装备文本集合、GraphStore、社区摘要；普通 top-k 只作补充，不作为全局结论依据。</p>
 
                 </div>
 
                 <div class="kg-flow-arrow" aria-hidden="true"></div>
 
-                <div class="kg-flow-node" data-flow-node="full-contact-scan">
+                <div class="kg-flow-node" data-flow-node="cross-doc-scan">
 
                   <span>04 FULL SCAN</span>
 
-                  <strong>全量逐联系人扫描</strong>
+                  <strong>跨文档全量扫描</strong>
 
-                  <p class="kg-step-note">枚举每个一对一联系人，排除群聊、公众号、系统通知、文件传输助手后扫描全部消息。</p>
+                  <p class="kg-step-note">枚举燃机、汽轮机、锅炉、辅机等设备相关资料，按设备、部件、故障、参数和处置措施建立证据链。</p>
 
                 </div>
 
@@ -27338,7 +27070,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <strong>原文证据审计</strong>
 
-                  <p class="kg-step-note">只保留带日期、发送方、chunk_id 或 message_id 的原文证据；无原文则只能标为证据不足。</p>
+                  <p class="kg-step-note">只保留带来源文件、页码/章节、chunk_id 或 record_id 的原文证据；无原文则只能标为证据不足。</p>
 
                 </div>
 
@@ -27350,7 +27082,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <strong>LLM 判级与汇总</strong>
 
-                  <p class="kg-step-note">按联系人输出较确定、疑似、性别不确定或不足证据，并说明为什么其他联系人未计入。</p>
+                  <p class="kg-step-note">按设备、部件、故障原因、影响范围和建议措施输出结论，并说明每条结论对应的证据来源。</p>
 
                 </div>
 
@@ -27366,7 +27098,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <span class="pill">GLOBAL_SEARCH: 跨社区/全局总结</span>
 
-                  <span class="pill">CONTACT_FULL_SCAN: 全量私聊联系人级分析</span>
+                  <span class="pill">CROSS_DOC_SCAN: 跨资料全量证据扫描</span>
 
                 </div>
 
@@ -27400,13 +27132,13 @@ window.addEventListener("DOMContentLoaded", init);
 
                 <div class="form-grid">
 
-                  <div class="field"><label>评测基准数据集</label><select class="form-control"><option>动力装备复杂推理 QA-100</option></select></div>
+                  <div class="field"><label for="kgBenchDataset">评测基准数据集</label><select class="form-control" id="kgBenchDataset"><option>动力装备复杂推理 QA-100</option></select></div>
 
-                  <div class="field"><label>并发评估线程</label><input class="form-control" type="number" value="5"></div>
+                  <div class="field"><label for="kgBenchWorkers">并发评估线程</label><input class="form-control" id="kgBenchWorkers" type="number" value="5"></div>
 
-                  <div class="field"><label>最大关联节点召回数</label><input class="form-control" type="number" value="250"></div>
+                  <div class="field"><label for="kgBenchMaxNodes">最大关联节点召回数</label><input class="form-control" id="kgBenchMaxNodes" type="number" value="250"></div>
 
-                  <div class="field"><label>图 + 向量混合策略</label><select class="form-control"><option>Hybrid (Vector Retrieval + Graph PageRank)</option></select></div>
+                  <div class="field"><label for="kgBenchHybridPolicy">图 + 向量混合策略</label><select class="form-control" id="kgBenchHybridPolicy"><option>Hybrid (Vector Retrieval + Graph PageRank)</option></select></div>
 
                 </div>
 
@@ -27506,7 +27238,7 @@ window.addEventListener("DOMContentLoaded", init);
 
               </div>
 
-              <button class="icon-btn" data-modal-close type="button" aria-label="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
+              <button class="icon-btn" data-modal-close type="button" aria-label="关闭" title="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
 
             </div>
 
@@ -27540,7 +27272,7 @@ window.addEventListener("DOMContentLoaded", init);
 
                   <div class="field"><label for="benchDocs">文档</label><input class="form-control" id="benchDocs" type="number" min="50" max="5000" value="500"></div>
 
-                  <div class="field"><label for="benchBatch">批大</label><input class="form-control" id="benchBatch" type="number" min="10" max="1000" value="100"></div>
+                  <div class="field"><label for="benchBatch">批量</label><input class="form-control" id="benchBatch" type="number" min="10" max="1000" value="100"></div>
 
                   <div class="field"><label for="benchQueries">查询</label><input class="form-control" id="benchQueries" type="number" min="10" max="1000" value="50"></div>
 
@@ -27612,7 +27344,7 @@ window.addEventListener("DOMContentLoaded", init);
 
         </div>
 
-        <button class="icon-btn" type="button" data-modal-close aria-label="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
+        <button class="icon-btn" type="button" data-modal-close aria-label="关闭" title="关闭"><iconify-icon icon="lucide:x"></iconify-icon></button>
 
       </div>
 

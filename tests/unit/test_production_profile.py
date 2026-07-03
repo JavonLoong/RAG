@@ -107,7 +107,7 @@ def test_retrieval_quality_stage_points_to_pipeline_upgrades() -> None:
     assert any("sessionStorage" in step and "Authorization: Bearer" in step for step in stage.direct_use_steps)
     assert any("Authorization: Bearer" in step and "approve" in step for step in stage.direct_use_steps)
     assert any("/api/retrieval/policies/rollback" in step and "previous audited" in step.lower() for step in stage.direct_use_steps)
-    assert any("Retrieval Policy Review" in step for step in stage.direct_use_steps)
+    assert any("检索策略审批" in step for step in stage.direct_use_steps)
     assert any("notification outbox" in gap.lower() for gap in stage.gaps)
     assert not any("API layer still needs to expose retrieval diagnostics" in gap for gap in stage.gaps)
     assert not any("Chroma-only adapter" in gap for gap in stage.gaps)
@@ -144,7 +144,7 @@ def test_graphrag_stage_points_to_lightrag_mode_engine() -> None:
     assert any("/api/graphrag/triage/{triage_id}/promote" in step for step in stage.direct_use_steps)
     assert any("LightRagDiagnostics" in step and "/api/query" in step for step in stage.direct_use_steps)
     assert any("console answer panel" in step and "LightRAG Diagnostics" in step for step in stage.direct_use_steps)
-    assert any("GraphRAG Triage History" in step for step in stage.direct_use_steps)
+    assert any("图谱质量审核历史" in step for step in stage.direct_use_steps)
     assert any("reviewer dashboard" in step for step in stage.direct_use_steps)
     assert any("source evidence coverage" in step for step in stage.direct_use_steps)
     assert any("promoted_case_count" in step for step in stage.direct_use_steps)
@@ -218,7 +218,7 @@ def test_adoption_guide_exists_and_mentions_source_projects() -> None:
     assert "LocalChromaRegressionRag" in text
     assert "--persist-dir" in text
     assert "run_graphrag_triage_regression.py" in text
-    assert "GraphRAG Triage History" in text
+    assert "图谱质量审核历史" in text
     assert "reviewer dashboard" in text
     assert "source evidence coverage" in text
     assert "promoted_case_count" in text

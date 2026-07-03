@@ -8,10 +8,15 @@ const { fileURLToPath } = require("node:url");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const SERVER_DIR = path.join(REPO_ROOT, "api_server", "current_console");
 const SERVER_SCRIPT = path.join(SERVER_DIR, "server.py");
+const OCR_DIR = path.join(REPO_ROOT, "frontend_app", "current_console");
+const OCR_SCRIPT = path.join(OCR_DIR, "ocr_server.py");
 const SERVER_HOST = process.env.POWER_RAG_HOST || "127.0.0.1";
 const SERVER_PORT = Number(process.env.POWER_RAG_PORT || 8000);
+const OCR_HOST = process.env.POWER_RAG_OCR_HOST || "127.0.0.1";
+const OCR_PORT = Number(process.env.POWER_RAG_OCR_PORT || 8765);
 const APP_URL = `http://${SERVER_HOST}:${SERVER_PORT}`;
 const HEALTH_URL = `${APP_URL}/api/health`;
+const OCR_HEALTH_URL = `http://${OCR_HOST}:${OCR_PORT}/health`;
 const LOG_DIR = path.join(REPO_ROOT, "storage_layer", "runtime", "current_console", "logs");
 const ELECTRON_LOG = path.join(LOG_DIR, "electron-backend.log");
 const SMOKE_TEST = process.env.POWER_RAG_DESKTOP_SMOKE === "1";
@@ -42,6 +47,7 @@ const RENDERER_OLD_SPACE_MB = numericEnv("POWER_RAG_RENDERER_OLD_SPACE_MB", 8192
 const DISK_CACHE_MB = numericEnv("POWER_RAG_DISK_CACHE_MB", 2048, { min: 256, max: 32768 });
 const DISABLE_BACKGROUND_THROTTLING = envFlag("POWER_RAG_DISABLE_BACKGROUND_THROTTLING", true);
 const ENABLE_GPU_TUNING = envFlag("POWER_RAG_ENABLE_GPU_TUNING", false);
+const START_OCR_SERVER = envFlag("POWER_RAG_START_OCR", true);
 const POWER_RAG_CORPUS_FILE_NAMES = (process.env.POWER_RAG_CORPUS_FILE_NAMES || "power_rag_corpus.json,rag_corpus.json,chunks_rag.json")
   .split(",")
   .map((item) => item.trim())
@@ -86,6 +92,8 @@ configureChromiumForLargeLocalWorkloads();
 let mainWindow = null;
 let backendProcess = null;
 let ownsBackendProcess = false;
+let ocrProcess = null;
+let ownsOcrProcess = false;
 const backendOutput = [];
 
 function appendBackendOutput(chunk) {
@@ -260,6 +268,11 @@ async function isBackendHealthy() {
   return status >= 200 && status < 300;
 }
 
+async function isOcrHealthy() {
+  const status = await requestStatus(OCR_HEALTH_URL, 2000);
+  return status >= 200 && status < 300;
+}
+
 function commandExists(command, args = ["--version"]) {
   const result = spawnSync(command, args, {
     cwd: REPO_ROOT,
@@ -355,6 +368,57 @@ async function startBackendIfNeeded() {
   }
 
   throw new Error(`Backend startup timed out. Log: ${ELECTRON_LOG}`);
+}
+
+async function startOcrServerIfNeeded() {
+  if (!START_OCR_SERVER) {
+    appendBackendOutput(`[${new Date().toISOString()}] OCR server startup disabled by POWER_RAG_START_OCR\n`);
+    return { disabled: true };
+  }
+
+  if (await isOcrHealthy()) {
+    appendBackendOutput(`[${new Date().toISOString()}] Reusing existing OCR server at ${OCR_HEALTH_URL}\n`);
+    return { reusedExisting: true };
+  }
+
+  const python = resolvePythonCommand();
+  if (!python) {
+    appendBackendOutput(`[${new Date().toISOString()}] OCR server skipped: no usable Python executable found\n`);
+    return { skipped: true };
+  }
+
+  if (!fs.existsSync(OCR_SCRIPT)) {
+    appendBackendOutput(`[${new Date().toISOString()}] OCR server skipped: missing ${OCR_SCRIPT}\n`);
+    return { skipped: true };
+  }
+
+  appendBackendOutput(`[${new Date().toISOString()}] Starting OCR server with ${python.command}\n`);
+  ocrProcess = spawn(python.command, [...python.argsPrefix, OCR_SCRIPT], {
+    cwd: OCR_DIR,
+    env: backendEnvironment(),
+    windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  ownsOcrProcess = true;
+
+  ocrProcess.stdout.on("data", appendBackendOutput);
+  ocrProcess.stderr.on("data", appendBackendOutput);
+  ocrProcess.on("exit", (code, signal) => {
+    appendBackendOutput(`\n[${new Date().toISOString()}] OCR server exited code=${code} signal=${signal}\n`);
+  });
+
+  const startedAt = Date.now();
+  const timeoutMs = Number(process.env.POWER_RAG_OCR_TIMEOUT_MS || 30000);
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await isOcrHealthy()) {
+      appendBackendOutput(`[${new Date().toISOString()}] OCR server healthy at ${OCR_HEALTH_URL}\n`);
+      return { reusedExisting: false };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 700));
+  }
+
+  appendBackendOutput(`[${new Date().toISOString()}] OCR server startup timed out. Frontend OCR may be unavailable. Log: ${ELECTRON_LOG}\n`);
+  return { timedOut: true };
 }
 
 function escapeHtml(value) {
@@ -501,6 +565,7 @@ async function boot() {
   );
 
   try {
+    await startOcrServerIfNeeded();
     const result = await startBackendIfNeeded();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setTitle(result.reusedExisting ? "PowerRAG - connected" : "PowerRAG");
@@ -537,18 +602,33 @@ function stopBackend() {
   backendProcess = null;
 }
 
+function stopOcrServer() {
+  if (!ocrProcess || !ownsOcrProcess) {
+    return;
+  }
+
+  try {
+    ocrProcess.kill();
+  } catch {
+    // Process may already be gone.
+  }
+  ocrProcess = null;
+}
+
 Menu.setApplicationMenu(null);
 registerDesktopIpcHandlers();
 
 app.whenReady().then(boot);
 
 app.on("window-all-closed", () => {
+  stopOcrServer();
   stopBackend();
   if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
+app.on("before-quit", stopOcrServer);
 app.on("before-quit", stopBackend);
 
 app.on("activate", () => {

@@ -1,4 +1,5 @@
 from pathlib import Path
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,6 +40,22 @@ def test_electron_local_file_picker_contract_is_present():
     assert "power-rag:pick-wechat-rag-corpus" in main
     assert "findDefaultWechatRagCorpus" in main
     assert "pickWechatRagCorpus" in preload
+
+
+def test_electron_desktop_starts_ocr_service_contract():
+    main = (ROOT / "electron/main.cjs").read_text(encoding="utf-8")
+    assert 'path.join(REPO_ROOT, "frontend_app", "current_console")' in main
+    assert '"ocr_server.py"' in main
+    assert "OCR_HEALTH_URL" in main
+    assert "startOcrServerIfNeeded" in main
+    assert "stopOcrServer" in main
+
+
+def test_ocr_server_runtime_dependencies_are_declared():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    dependencies = "\n".join(pyproject["project"]["dependencies"]).lower()
+    assert "pymupdf" in dependencies
+    assert "pillow" in dependencies
 
 
 def test_github_pages_index_uses_same_graph_renderer_contract():

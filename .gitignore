@@ -28,6 +28,7 @@ node_modules/
 *.json
 !package.json
 !package-lock.json
+!frontend_app/current_console/demo_data/power_equipment_demo.json
 *.sqlite3
 *.sqlite
 *.db
