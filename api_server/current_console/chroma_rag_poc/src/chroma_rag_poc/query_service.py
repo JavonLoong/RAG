@@ -79,6 +79,30 @@ class NormalizedQueryResult:
     raw_mode_result: dict[str, Any] | None
 
 
+@dataclass(frozen=True, slots=True)
+class _ScoredResult:
+    original: Any
+    score: float
+
+
+class _LazyComponent:
+    """Construct one runtime dependency only when its selected path needs it."""
+
+    def __init__(self, builder: Callable[[], Any]) -> None:
+        self._builder = builder
+        self._value: Any = None
+        self._built = False
+
+    def get(self) -> Any:
+        if not self._built:
+            self._value = self._builder()
+            self._built = True
+        return self._value
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get(), name)
+
+
 class QueryExecutionError(RuntimeError):
     """Stable internal error for the HTTP and CLI adapters to map."""
 
@@ -139,6 +163,11 @@ class EngineQueryRuntimeFactory:
             workspace.chroma_collection,
             embedding_function=self.embedding_function,
         )
+        if self.reranker is not None:
+            text_retriever = engine_bridge.get_hybrid_retriever(
+                [text_retriever],
+                reranker=self.reranker,
+            )
 
         llm = self.llm
         api_key = (self.api_key or os.environ.get("OPENAI_API_KEY", "")).strip()
@@ -150,16 +179,24 @@ class EngineQueryRuntimeFactory:
             )
 
         graph_retriever = None
-        graph_store = None
+        graph_bundle: _LazyComponent | None = None
         if workspace.graph_db_path is not None:
-            graph_store = engine_bridge.get_graph_store(workspace.graph_db_path)
-            graph_retriever = SQLiteGraphRetriever(graph_store)
+            graph_bundle = _LazyComponent(
+                lambda: _build_graph_bundle(
+                    engine_bridge,
+                    SQLiteGraphRetriever,
+                    workspace.graph_db_path,
+                )
+            )
+            graph_retriever = _LazyComponent(lambda: graph_bundle.get()[1])
 
         global_searcher = self.global_searcher
-        if global_searcher is None and graph_store is not None and llm is not None:
-            global_searcher = engine_bridge.get_global_search(
-                graph_store=graph_store,
-                llm_client=llm,
+        if global_searcher is None and graph_bundle is not None and llm is not None:
+            global_searcher = _LazyComponent(
+                lambda: engine_bridge.get_global_search(
+                    graph_store=graph_bundle.get()[0],
+                    llm_client=llm,
+                )
             )
 
         query_router = self.query_router
@@ -265,10 +302,25 @@ class QueryService:
         graph_raw: list[Any] = []
         global_raw: Any | None = None
         warnings: list[WarningItem] = []
+        text_reranked = False
 
         if mode_used in (QueryMode.VECTOR, QueryMode.LOCAL, QueryMode.HYBRID):
             try:
                 text_raw = _retrieve(runtime.text_retriever, request.query, request.top_k)
+                text_raw, text_reranked, rerank_error = _apply_reranker(
+                    runtime.text_retriever,
+                    runtime.reranker,
+                    request.query,
+                    text_raw,
+                    request.top_k,
+                )
+                if rerank_error is not None:
+                    warnings.append(
+                        WarningItem(
+                            code="RERANKING_DEGRADED",
+                            message=f"Reranking failed: {rerank_error}",
+                        )
+                    )
             except Exception as exc:
                 if mode_used is QueryMode.VECTOR:
                     raise _query_failed("Text retrieval failed.", exc, stage="text_retrieval") from exc  # noqa: TRY003
@@ -333,6 +385,7 @@ class QueryService:
         prompt_tokens: int | None = None
         completion_tokens: int | None = None
         llm_raw: Any | None = None
+        execution_context: str | None = None
 
         if mode_used is QueryMode.VECTOR:
             answer_text = "\n\n".join(citation.quote for citation in text_citations)
@@ -341,8 +394,8 @@ class QueryService:
             if not answer_text:
                 answer_text = "\n\n".join(citation.quote for citation in community_citations)
         else:
-            rendered_context = _render_context(citations, request.query)
-            prompt = _build_prompt(request.query, rendered_context, citations)
+            execution_context = _render_context(citations, request.query)
+            prompt = _build_prompt(request.query, execution_context, citations)
             try:
                 if runtime.llm is None:
                     raise RuntimeError(LLM_NOT_CONFIGURED_ERROR)  # noqa: TRY301
@@ -362,6 +415,16 @@ class QueryService:
                         message=f"Answer generation failed: {exc}",
                     )
                 )
+
+        if mode_used in (QueryMode.LOCAL, QueryMode.HYBRID) and answer_text and runtime.hallucination_guard is not None:
+            guard_warning, guard_suffix = _verify_answer(
+                runtime.hallucination_guard,
+                answer_text,
+                execution_context or _render_context(citations, request.query),
+            )
+            if guard_warning is not None:
+                warnings.append(guard_warning)
+                answer_text += guard_suffix
 
         if not answer_text and not citations and warnings:
             raise _query_failed(  # noqa: TRY003
@@ -384,7 +447,7 @@ class QueryService:
             graph_hits=len(graph_citations),
             community_hits=len(community_citations),
             communities_searched=_as_int(_lookup(global_raw, "communities_searched")) or 0,
-            reranked=runtime.reranker is not None and bool(text_citations),
+            reranked=text_reranked,
         )
         raw_mode_result = {
             "mode": mode_used.value,
@@ -462,6 +525,15 @@ def _default_mode(workspace: Any) -> QueryMode:
     return configured if configured is not QueryMode.AUTO else QueryMode.LOCAL
 
 
+def _build_graph_bundle(
+    bridge: Any,
+    graph_retriever_type: Callable[[Any], Any],
+    db_path: Path,
+) -> tuple[Any, Any]:
+    graph_store = bridge.get_graph_store(db_path)
+    return graph_store, graph_retriever_type(graph_store)
+
+
 def _call_router(router: Any, question: str) -> Any:
     method = getattr(router, "route_query", None)
     if callable(method):
@@ -480,6 +552,76 @@ def _retrieve(retriever: Any, query: str, top_k: int) -> list[Any]:
     if callable(retriever):
         return list(retriever(query, top_k=top_k) or [])
     raise TypeError(INVALID_RETRIEVER_ERROR)
+
+
+def _apply_reranker(
+    retriever: Any,
+    reranker: Any | None,
+    query: str,
+    items: list[Any],
+    top_k: int,
+) -> tuple[list[Any], bool, Exception | None]:
+    if reranker is None or not items:
+        return items, False, None
+    if getattr(retriever, "reranker", None) is reranker:
+        return items, True, None
+    method = getattr(reranker, "rerank", None)
+    if not callable(method):
+        return items, False, TypeError("Reranker must expose rerank.")
+    try:
+        documents = [_result_text(item) for item in items]
+        ranked = list(method(query, documents, top_k=top_k))
+        scored_items: list[_ScoredResult] = []
+        for pair in ranked:
+            index, score = pair
+            if not isinstance(index, int) or not 0 <= index < len(items):
+                continue
+            parsed_score = _as_float(score)
+            if parsed_score is not None:
+                scored_items.append(_ScoredResult(original=items[index], score=parsed_score))
+        return (scored_items, bool(scored_items), None) if scored_items else (items, False, None)
+    except Exception as exc:
+        return items, False, exc
+
+
+def _result_text(item: Any) -> str:
+    chunk = _lookup(item, "chunk") or item
+    return str(_lookup(item, "text", "content", "document") or _lookup(chunk, "text", "content", "document") or item)
+
+
+def _verify_answer(
+    guard: Any,
+    answer: str,
+    context: str,
+) -> tuple[WarningItem | None, str]:
+    verify = getattr(guard, "verify", None)
+    if not callable(verify):
+        return (
+            WarningItem(
+                code="HALLUCINATION_GUARD_DEGRADED",
+                message="Hallucination guard does not expose verify.",
+            ),
+            "",
+        )
+    try:
+        result = verify(answer, context)
+    except Exception as exc:
+        return (
+            WarningItem(
+                code="HALLUCINATION_GUARD_DEGRADED",
+                message=f"Hallucination guard failed: {exc}",
+            ),
+            "",
+        )
+    if bool(_lookup(result, "is_safe")):
+        return None, ""
+    claims = _lookup(result, "hallucinated_claims") or []
+    claim_text = ", ".join(str(claim) for claim in claims) or "unsupported claims detected"
+    warning = WarningItem(
+        code="HALLUCINATION_GUARD_FLAGGED",
+        message=f"Hallucination guard flagged the answer: {claim_text}",
+    )
+    return warning, "\n\n[System Warning]: " + claim_text
 
 
 def _global_search(searcher: Any, query: str, *, context_only: bool) -> Any:
@@ -519,6 +661,7 @@ def _call_llm(llm: Any, prompt: str) -> tuple[str, str, int | None, int | None, 
 
 
 def _text_citation(item: Any, *, rank: int) -> Citation:
+    item, reranked_score = _unwrap_scored(item)
     chunk = _lookup(item, "chunk") or item
     metadata = _mapping(_lookup(item, "metadata")) or _mapping(_lookup(chunk, "metadata"))
     text = _lookup(item, "text", "content", "document") or _lookup(chunk, "text", "content", "document") or ""
@@ -531,7 +674,7 @@ def _text_citation(item: Any, *, rank: int) -> Citation:
     chunk_id = (
         _lookup(item, "chunk_id", "id") or _lookup(chunk, "chunk_id", "id") or _lookup(metadata, "chunk_id", "id")
     )
-    score = _as_float(_lookup(item, "score", "confidence"))
+    score = reranked_score if reranked_score is not None else _as_float(_lookup(item, "score", "confidence"))
     if score is None:
         score = _as_float(_lookup(metadata, "score", "confidence"))
     raw_id = _lookup(item, "id", "citation_id") or _lookup(metadata, "citation_id")
@@ -548,6 +691,13 @@ def _text_citation(item: Any, *, rank: int) -> Citation:
         score=score,
         metadata=_json_safe(metadata),
     )
+
+
+def _unwrap_scored(item: Any) -> tuple[Any, float | None]:
+    original = _lookup(item, "original")
+    if original is None:
+        return item, None
+    return original, _as_float(_lookup(item, "score"))
 
 
 def _graph_citation(item: Any, *, rank: int) -> Citation:
@@ -630,10 +780,12 @@ def _render_context(citations: Sequence[Citation], query: str) -> str:
 
 
 def _build_prompt(query: str, context: str, citations: Sequence[Citation]) -> str:
-    ids = ", ".join(citation.id for citation in citations) or "none"
-    return (
-        "Answer the question using only the supplied evidence. Cite evidence IDs in brackets.\n\n"
-        f"Available citation IDs: {ids}\n\n{context}\n\nQuestion: {query}\nAnswer:"
+    from rag_orchestrator.graphrag_qa import build_default_prompt
+
+    return build_default_prompt(
+        query,
+        context,
+        [citation.model_dump(mode="python") for citation in citations],
     )
 
 
@@ -707,7 +859,12 @@ _SECRET_KEY_MARKERS = {
     "access_key",
 }
 _KEY_SEPARATOR_RE = re.compile(r"[^a-z0-9]+")
-_ABSOLUTE_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])(?:[A-Za-z]:[\\/]|/)[^\s\"'<>]+")
+_ABSOLUTE_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:(?:[A-Za-z]:[\\/])|(?:\\\\)|/)[^\"'<>;\r\n]*?"
+    r"\.(?:db|sqlite3?|json|duckdb)(?=$|[\s,;\"'<>])",
+    re.IGNORECASE,
+)
+_SECRET_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9_-]{8,}(?![A-Za-z0-9_-])")
 
 
 def _is_secret_key(key: str) -> bool:
@@ -716,13 +873,14 @@ def _is_secret_key(key: str) -> bool:
 
 
 def _is_absolute_path(value: str) -> bool:
-    return bool(re.match(r"^(?:[a-zA-Z]:[\\/]|/)", value))
+    return bool(re.match(r"^(?:[a-zA-Z]:[\\/]|\\\\|/)", value))
 
 
 def _redact_string(value: str) -> str:
     if _is_absolute_path(value):
         return "[REDACTED_PATH]"
-    return _ABSOLUTE_PATH_RE.sub("[REDACTED_PATH]", value)
+    redacted = _ABSOLUTE_PATH_RE.sub("[REDACTED_PATH]", value)
+    return _SECRET_TOKEN_RE.sub("[REDACTED_SECRET]", redacted)
 
 
 def _json_safe(value: Any, *, key: str | None = None) -> Any:  # noqa: C901

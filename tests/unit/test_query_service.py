@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -15,11 +16,13 @@ for import_path in (REPO_ROOT, PACKAGE_SRC):
     if str(import_path) not in sys.path:
         sys.path.insert(0, str(import_path))
 
+from chroma_rag_poc import engine_bridge  # noqa: E402
 from chroma_rag_poc.engine_bridge import (  # noqa: E402
     get_graphrag_orchestrator,
     get_hybrid_retriever,
 )
 from chroma_rag_poc.query_service import (  # noqa: E402
+    EngineQueryRuntimeFactory,
     QueryExecutionError,
     QueryRuntime,
     QueryService,
@@ -85,12 +88,34 @@ class RecordingLLM:
         return self.answer
 
 
+class RecordingReranker:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, list[str], int | None]] = []
+
+    def rerank(self, query: str, documents: list[str], *, top_k: int | None = None) -> list[tuple[int, float]]:
+        self.calls.append((query, documents, top_k))
+        return [(index, 0.99 - index * 0.01) for index in range(len(documents))]
+
+
+class RecordingGuard:
+    def __init__(self, *, is_safe: bool = True) -> None:
+        self.is_safe = is_safe
+        self.calls: list[tuple[str, str]] = []
+
+    def verify(self, answer: str, context: str) -> Any:
+        self.calls.append((answer, context))
+        return SimpleNamespace(
+            is_safe=self.is_safe,
+            hallucinated_claims=["unsupported claim"] if not self.is_safe else [],
+        )
+
+
 class FakeRegistry:
-    def __init__(self, workspace: FakeWorkspace | None = None) -> None:
+    def __init__(self, workspace: Any | None = None) -> None:
         self.workspace = workspace or FakeWorkspace()
         self.calls: list[str] = []
 
-    def get(self, workspace_id: str) -> FakeWorkspace:
+    def get(self, workspace_id: str) -> Any:
         self.calls.append(workspace_id)
         return self.workspace
 
@@ -158,6 +183,8 @@ def _service(
     global_searcher: RecordingGlobalSearcher | None = None,
     router: RecordingRouter | None = None,
     llm: RecordingLLM | None = None,
+    reranker: RecordingReranker | None = None,
+    guard: RecordingGuard | None = None,
     include_context: bool = False,
     include_debug: bool = False,
 ) -> tuple[QueryService, FakeRegistry, FakeRuntimeFactory, dict[str, Any]]:
@@ -167,14 +194,16 @@ def _service(
         "global": global_searcher or RecordingGlobalSearcher(_global_result()),
         "router": router,
         "llm": llm or RecordingLLM(),
+        "reranker": reranker,
+        "guard": guard,
     }
     runtime = QueryRuntime(
         text_retriever=components["text"],
         graph_retriever=components["graph"],
         global_searcher=components["global"],
         query_router=components["router"],
-        reranker=None,
-        hallucination_guard=None,
+        reranker=components["reranker"],
+        hallucination_guard=components["guard"],
         llm=components["llm"],
     )
     registry = FakeRegistry()
@@ -323,6 +352,22 @@ def test_graph_failure_returns_partial_when_text_and_answer_are_available() -> N
     assert response.answer.text == "generated answer [T1]"
 
 
+def test_supplied_reranker_and_guard_are_executed_and_guard_changes_response() -> None:
+    reranker = RecordingReranker()
+    guard = RecordingGuard(is_safe=False)
+    service, _, _, components = _service(reranker=reranker, guard=guard)
+    request = components["request"].model_copy(update={"mode": QueryMode.LOCAL})
+
+    response = service.query(request)
+
+    assert reranker.calls == [(request.query, ["text evidence"], request.top_k)]
+    assert guard.calls and guard.calls[0][0] == "generated answer [T1]"
+    assert response.retrieval.reranked is True
+    assert response.status is QueryStatus.PARTIAL
+    assert response.warnings[-1].code == "HALLUCINATION_GUARD_FLAGGED"
+    assert "unsupported claim" in response.answer.text
+
+
 def test_all_selected_paths_failing_raise_stable_query_execution_error() -> None:
     text = RecordingRetriever(error=RuntimeError("text unavailable"))
     graph = RecordingRetriever(error=RuntimeError("graph unavailable"))
@@ -368,6 +413,77 @@ def test_context_and_debug_are_omitted_when_not_requested() -> None:
 
     assert response.context is None
     assert response.debug is None
+
+
+def test_debug_redacts_unkeyed_sk_values_but_preserves_ordinary_text() -> None:
+    text = RecordingRetriever([_text_result()])
+    text.results[0].chunk.metadata.update({
+        "ordinary_note": "ordinary debug context",
+        "note": "unkeyed sk-live-secret-value-123456",
+    })
+    service, _, _, components = _service(text=text, include_debug=True)
+
+    response = service.query(components["request"])
+
+    assert response.debug is not None
+    debug_text = str(response.debug.model_dump(mode="json"))
+    assert "sk-live-secret-value-123456" not in debug_text
+    assert "ordinary debug context" in debug_text
+
+
+def test_debug_redacts_spaced_windows_and_unc_database_paths() -> None:
+    text = RecordingRetriever([_text_result()])
+    text.results[0].chunk.metadata.update({
+        "ordinary_note": "ordinary debug context",
+        "windows_path": r"database at C:\Program Files\RAG Data\graph database.sqlite3",
+        "unc_path": r"database at \\server\Shared Folder\graph database.sqlite3",
+    })
+    service, _, _, components = _service(text=text, include_debug=True)
+
+    response = service.query(components["request"])
+
+    assert response.debug is not None
+    debug_text = str(response.debug.model_dump(mode="json"))
+    assert r"C:\Program Files\RAG Data\graph database.sqlite3" not in debug_text
+    assert r"\\server\Shared Folder\graph database.sqlite3" not in debug_text
+    assert "Program Files" not in debug_text
+    assert "RAG Data\\graph database.sqlite3" not in debug_text
+    assert "server\\Shared Folder" not in debug_text
+    assert "graph database.sqlite3" not in debug_text
+    assert "ordinary debug context" in debug_text
+
+
+def test_vector_query_does_not_initialize_graph_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
+    text_retriever = RecordingRetriever([_text_result()])
+    monkeypatch.setattr(engine_bridge, "get_chroma_retriever", lambda *_args, **_kwargs: text_retriever)
+    monkeypatch.setattr(
+        engine_bridge,
+        "get_graph_store",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("graph store must stay lazy")),
+    )
+    from chroma_rag_poc.workspace_registry import WorkspaceConfig
+
+    workspace = WorkspaceConfig(
+        workspace_id="power-equipment",
+        chroma_persist_dir=Path(r"C:\runtime\chroma"),
+        chroma_collection="power_equipment",
+        graph_db_path=Path(r"C:\runtime\graph\graph.sqlite3"),
+        supported_modes=frozenset({QueryMode.VECTOR}),
+        default_mode=QueryMode.VECTOR,
+    )
+    service = QueryService(
+        FakeRegistry(workspace),
+        EngineQueryRuntimeFactory(),
+        id_factory=iter(("request-1", "trace-1")).__next__,
+        clock=iter((10.0, 10.025)).__next__,
+    )
+
+    response = service.query(
+        QueryRequest(query="vector question", workspace_id="power-equipment", mode=QueryMode.VECTOR)
+    )
+
+    assert response.mode.used is QueryMode.VECTOR
+    assert response.answer.text == "text evidence"
 
 
 def test_engine_bridge_forwards_reranker_and_orchestrator_dependencies() -> None:
