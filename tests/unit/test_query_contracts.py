@@ -134,6 +134,23 @@ def test_query_response_serializes_stable_v1_shape() -> None:
     assert "evidence" not in payload
 
 
+def test_query_response_top_level_fields_are_stable_for_v1() -> None:
+    assert set(QueryResponse.model_fields) == {
+        "schema_version",
+        "request_id",
+        "trace_id",
+        "status",
+        "mode",
+        "answer",
+        "citations",
+        "context",
+        "retrieval",
+        "usage",
+        "warnings",
+        "debug",
+    }
+
+
 def test_query_error_response_serializes_fixed_error_shape() -> None:
     response = QueryErrorResponse.model_validate(_error_payload())
 

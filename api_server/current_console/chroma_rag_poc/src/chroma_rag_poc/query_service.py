@@ -331,9 +331,9 @@ class QueryService:
                     "HYBRID": QueryMode.HYBRID,
                 }.get(strategy)
                 if selected is not None:
-                    return selected, str(_lookup(route, "reason") or "query router selected mode")
-            except Exception as exc:
-                return _default_mode(workspace), f"query router failed: {exc}"
+                    return selected, "query router selected mode"
+            except Exception:
+                return _default_mode(workspace), "query router failed; workspace default mode used"
 
         selected = _default_mode(workspace)
         return selected, "workspace default mode"
@@ -371,7 +371,7 @@ class QueryService:
                     warnings.append(
                         WarningItem(
                             code="RERANKING_DEGRADED",
-                            message=f"Reranking failed: {rerank_error}",
+                            message="Reranking degraded.",
                         )
                     )
             except Exception as exc:
@@ -380,7 +380,7 @@ class QueryService:
                 warnings.append(
                     WarningItem(
                         code="TEXT_RETRIEVAL_DEGRADED",
-                        message=f"Text retrieval failed: {exc}",
+                        message="Text retrieval degraded.",
                     )
                 )
 
@@ -395,11 +395,11 @@ class QueryService:
             else:
                 try:
                     graph_raw = _retrieve(runtime.graph_retriever, request.query, request.top_k)
-                except Exception as exc:
+                except Exception:
                     warnings.append(
                         WarningItem(
                             code="GRAPH_RETRIEVAL_DEGRADED",
-                            message=f"Graph retrieval failed: {exc}",
+                            message="Graph retrieval degraded.",
                         )
                     )
 
@@ -418,11 +418,11 @@ class QueryService:
                         request.query,
                         context_only=mode_used is QueryMode.HYBRID,
                     )
-                except Exception as exc:
+                except Exception:
                     warnings.append(
                         WarningItem(
                             code="GLOBAL_SEARCH_DEGRADED",
-                            message=f"Global search failed: {exc}",
+                            message="Global search degraded.",
                         )
                     )
 
@@ -467,7 +467,7 @@ class QueryService:
                 warnings.append(
                     WarningItem(
                         code="ANSWER_GENERATION_DEGRADED",
-                        message=f"Answer generation failed: {exc}",
+                        message="Answer generation degraded.",
                     )
                 )
 
@@ -712,23 +712,21 @@ def _verify_answer(
         )
     try:
         result = verify(answer, context)
-    except Exception as exc:
+    except Exception:
         return (
             WarningItem(
                 code="HALLUCINATION_GUARD_DEGRADED",
-                message=f"Hallucination guard failed: {exc}",
+                message="Hallucination guard degraded.",
             ),
             "",
         )
     if bool(_lookup(result, "is_safe")):
         return None, ""
-    claims = _lookup(result, "hallucinated_claims") or []
-    claim_text = ", ".join(str(claim) for claim in claims) or "unsupported claims detected"
     warning = WarningItem(
         code="HALLUCINATION_GUARD_FLAGGED",
-        message=f"Hallucination guard flagged the answer: {claim_text}",
+        message="Hallucination guard flagged unsupported claims.",
     )
-    return warning, "\n\n[System Warning]: " + claim_text
+    return warning, "\n\n[System Warning]: unsupported claims detected"
 
 
 def _global_search(searcher: Any, query: str, *, context_only: bool) -> Any:

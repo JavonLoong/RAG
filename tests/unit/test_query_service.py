@@ -438,6 +438,25 @@ def test_context_and_debug_are_omitted_when_not_requested() -> None:
     assert response.debug is None
 
 
+def test_partial_warning_does_not_expose_runtime_details() -> None:
+    sensitive_error = RuntimeError(
+        "api_key=sk-secret-value; path=C:\\private\\rag\\index; "
+        "Traceback (most recent call last)"
+    )
+    service, _, _, components = _service(
+        text=RecordingRetriever(error=sensitive_error),
+        include_debug=True,
+    )
+
+    response = service.query(components["request"])
+
+    assert response.status is QueryStatus.PARTIAL
+    assert response.warnings[0].code == "TEXT_RETRIEVAL_DEGRADED"
+    response_text = response.model_dump_json()
+    for marker in ("sk-", "api_key", "Authorization", "C:\\", "/home/", "Traceback (most recent call last)"):
+        assert marker not in response_text
+
+
 def test_debug_redacts_unkeyed_sk_values_but_preserves_ordinary_text() -> None:
     text = RecordingRetriever([_text_result()])
     text.results[0].chunk.metadata.update({

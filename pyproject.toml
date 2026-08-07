@@ -67,7 +67,14 @@ build-backend = "hatchling.build"
 packages = ["data_pipeline/prototype/power_rag_pipeline"]
 
 [tool.mypy]
-files = ["data_pipeline/prototype", "tests"]
+files = [
+  "data_pipeline/prototype",
+  "core_domain/query_contracts.py",
+  "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/query_service.py",
+  "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_query_v1.py",
+  "scripts/query_skill.py",
+  "tests",
+]
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
