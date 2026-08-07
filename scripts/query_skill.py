@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import sys
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +24,6 @@ import orjson  # noqa: E402
 from chroma_rag_poc.query_service import (  # noqa: E402
     EngineQueryRuntimeFactory,
     QueryExecutionError,
-    QueryRuntime,
     QueryService,
 )
 from chroma_rag_poc.workspace_registry import (  # noqa: E402
@@ -46,14 +43,19 @@ from core_domain.query_contracts import (  # noqa: E402
 )
 
 LOGGER = logging.getLogger("graphrag.query_skill")
-TEST_OUTCOME_ENV = "RAG_QUERY_SKILL_TEST_OUTCOME"
-TEST_OUTCOMES = frozenset({"success", "WORKSPACE_NOT_FOUND", "INDEX_NOT_READY", "LLM_UNAVAILABLE", "QUERY_FAILED"})
 EXIT_CODES = {
     "INVALID_REQUEST": 2,
     "WORKSPACE_NOT_FOUND": 3,
     "INDEX_NOT_READY": 4,
     "LLM_UNAVAILABLE": 5,
     "QUERY_FAILED": 10,
+}
+PUBLIC_ERRORS = {
+    "INVALID_REQUEST": ("Invalid query request.", False),
+    "WORKSPACE_NOT_FOUND": ("The requested workspace was not found.", False),
+    "INDEX_NOT_READY": ("The workspace index is not ready.", True),
+    "LLM_UNAVAILABLE": ("The language model is unavailable.", True),
+    "QUERY_FAILED": ("Query failed.", True),
 }
 
 
@@ -65,7 +67,7 @@ class V1ArgumentParser(argparse.ArgumentParser):
     """Argparse parser that never writes usage text for invalid input."""
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(add_help=False, **kwargs)
+        super().__init__(add_help=False, allow_abbrev=False, **kwargs)
 
     def error(self, message: str) -> None:
         raise ArgumentError(message)
@@ -112,38 +114,30 @@ def _serialize(response: QueryResponse | QueryErrorResponse, *, pretty: bool) ->
 
 def _error_response(
     code: str,
-    message: str,
-    *,
-    retryable: bool,
-    details: dict[str, Any] | None = None,
 ) -> QueryErrorResponse:
+    public_code = code if code in PUBLIC_ERRORS else "QUERY_FAILED"
+    message, retryable = PUBLIC_ERRORS[public_code]
     request_id = str(uuid.uuid4())
     return QueryErrorResponse(
         request_id=request_id,
         trace_id=str(uuid.uuid4()),
         error=ErrorDetail(
-            code=code,
+            code=public_code,
             message=message,
             retryable=retryable,
-            details=details or {},
+            details={},
         ),
     )
 
 
 def _emit_error(
     code: str,
-    message: str,
-    *,
-    retryable: bool,
-    details: dict[str, Any] | None = None,
     pretty: bool = False,
 ) -> int:
-    LOGGER.error("query failed with code=%s", code)
-    _serialize(
-        _error_response(code, message, retryable=retryable, details=details),
-        pretty=pretty,
-    )
-    return EXIT_CODES.get(code, EXIT_CODES["QUERY_FAILED"])
+    public_code = code if code in PUBLIC_ERRORS else "QUERY_FAILED"
+    LOGGER.error("query failed with code=%s", public_code)
+    _serialize(_error_response(public_code), pretty=pretty)
+    return EXIT_CODES[public_code]
 
 
 def _request_from_args(args: argparse.Namespace) -> QueryRequest:
@@ -160,124 +154,35 @@ def _request_from_args(args: argparse.Namespace) -> QueryRequest:
 def build_query_service() -> QueryService:
     """Build the same registry-backed service used by the HTTP adapter."""
 
-    test_outcome = os.environ.get(TEST_OUTCOME_ENV)
-    if test_outcome is not None:
-        return _build_test_service(test_outcome)
     registry = WorkspaceRegistry.from_env()
     return QueryService(registry, EngineQueryRuntimeFactory())
 
 
-def _build_test_service(outcome: str) -> QueryService:
-    """Provide a narrow subprocess seam for deterministic adapter integration tests."""
-
-    if outcome not in TEST_OUTCOMES:
-        raise ValueError(f"Unsupported {TEST_OUTCOME_ENV} value.")  # noqa: TRY003
-    return QueryService(
-        _TestRegistry(outcome),
-        _TestRuntimeFactory(outcome),
-    )
-
-
-@dataclass(frozen=True)
-class _TestWorkspace:
-    default_mode: QueryMode = QueryMode.LOCAL
-
-
-class _TestRegistry:
-    def __init__(self, outcome: str) -> None:
-        self.outcome = outcome
-
-    def get(self, workspace_id: str) -> _TestWorkspace:
-        if self.outcome == "WORKSPACE_NOT_FOUND":
-            raise WorkspaceNotFoundError(workspace_id)
-        return _TestWorkspace()
-
-
-class _TestRetriever:
-    def __init__(self, results: list[dict[str, str]]) -> None:
-        self.results = results
-
-    def retrieve(self, query: str, *, top_k: int) -> list[dict[str, str]]:
-        del query, top_k
-        return self.results
-
-
-class _TestLLM:
-    def generate(self, prompt: str) -> str:
-        del prompt
-        return "test answer"
-
-
-class _TestRuntimeFactory:
-    def __init__(self, outcome: str) -> None:
-        self.outcome = outcome
-
-    def create(self, workspace: _TestWorkspace) -> QueryRuntime:
-        del workspace
-        if self.outcome != "success":
-            raise QueryExecutionError(
-                self.outcome,
-                f"Controlled test outcome: {self.outcome}.",
-                retryable=self.outcome in {"LLM_UNAVAILABLE", "QUERY_FAILED"},
-            )
-        return QueryRuntime(
-            text_retriever=_TestRetriever([{"id": "T1", "text": "test evidence"}]),
-            graph_retriever=_TestRetriever([]),
-            global_searcher=None,
-            query_router=None,
-            reranker=None,
-            hallucination_guard=None,
-            llm=_TestLLM(),
-        )
+def _pretty_requested(argv: list[str] | None) -> bool:
+    values = sys.argv[1:] if argv is None else argv
+    return "--pretty" in values
 
 
 def main(argv: list[str] | None = None) -> int:
     _configure_logging()
     parser = build_parser()
+    pretty = _pretty_requested(argv)
     try:
         args = parser.parse_args(argv)
         request = _request_from_args(args)
-    except (ArgumentError, ValidationError) as exc:
-        return _emit_error(
-            "INVALID_REQUEST",
-            "Invalid query request.",
-            retryable=False,
-            details={"reason": str(exc)},
-            pretty=False,
-        )
+    except (ArgumentError, ValidationError):
+        return _emit_error("INVALID_REQUEST", pretty=pretty)
 
     try:
         response = build_query_service().query(request)
-    except WorkspaceNotFoundError as exc:
-        return _emit_error(
-            "WORKSPACE_NOT_FOUND",
-            str(exc),
-            retryable=False,
-            details={"workspace_id": exc.workspace_id},
-            pretty=args.pretty,
-        )
+    except WorkspaceNotFoundError:
+        return _emit_error("WORKSPACE_NOT_FOUND", pretty=args.pretty)
     except QueryExecutionError as exc:
-        return _emit_error(
-            exc.code,
-            exc.message,
-            retryable=exc.retryable,
-            details=exc.details,
-            pretty=args.pretty,
-        )
+        return _emit_error(exc.code, pretty=args.pretty)
     except WorkspaceConfigError:
-        return _emit_error(
-            "QUERY_FAILED",
-            "Unable to load the workspace registry.",
-            retryable=False,
-            pretty=args.pretty,
-        )
+        return _emit_error("QUERY_FAILED", pretty=args.pretty)
     except Exception:
-        return _emit_error(
-            "QUERY_FAILED",
-            "Query execution failed.",
-            retryable=True,
-            pretty=args.pretty,
-        )
+        return _emit_error("QUERY_FAILED", pretty=args.pretty)
 
     _serialize(response, pretty=args.pretty)
     return 0 if response.status in {QueryStatus.OK, QueryStatus.PARTIAL} else EXIT_CODES["QUERY_FAILED"]
