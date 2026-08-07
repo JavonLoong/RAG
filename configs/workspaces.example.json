@@ -1,0 +1,12 @@
+{
+  "allowed_root": "../storage_layer/runtime/current_console",
+  "workspaces": {
+    "power-equipment": {
+      "chroma_persist_dir": "../storage_layer/runtime/current_console/chroma",
+      "chroma_collection": "power_equipment",
+      "graph_db_path": "../storage_layer/runtime/current_console/graph/graph.sqlite3",
+      "supported_modes": ["vector", "local", "global", "hybrid"],
+      "default_mode": "auto"
+    }
+  }
+}
