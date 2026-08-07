@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -110,7 +111,7 @@ def run_cli(
 
 def response_payload(result: subprocess.CompletedProcess[str]) -> dict[str, object]:
     assert result.stdout.endswith("\n")
-    return json.loads(result.stdout)
+    return cast(dict[str, object], json.loads(result.stdout))
 
 
 def test_success_emits_one_v1_response_and_keeps_logs_on_stderr() -> None:

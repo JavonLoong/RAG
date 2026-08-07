@@ -10,8 +10,9 @@ import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, fields, is_dataclass
 from enum import Enum
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Generic, Literal, Protocol, TypeVar, cast
 
 from core_domain.query_contracts import (
     AnswerPayload,
@@ -36,13 +37,19 @@ from core_domain.query_contracts import (
     WarningItem,
 )
 
-from .workspace_registry import WorkspaceConfig, WorkspaceRegistry
+from .workspace_registry import WorkspaceConfig
 
 LLM_NOT_CONFIGURED_ERROR = "LLM is not configured."
 INVALID_ROUTER_ERROR = "Query router must expose route_query or be callable."
 INVALID_RETRIEVER_ERROR = "Retriever must expose retrieve, search, query, or be callable."
 INVALID_GLOBAL_SEARCH_ERROR = "Global searcher must expose search or be callable."
 INVALID_LLM_ERROR = "LLM must expose generate, complete, invoke, or be callable."
+
+FinishReason = Literal["stop", "length", "content_filter", "error"]
+_FINISH_REASONS: tuple[FinishReason, ...] = ("stop", "length", "content_filter", "error")
+WorkspaceT = TypeVar("WorkspaceT")
+WorkspaceT_co = TypeVar("WorkspaceT_co", covariant=True)
+WorkspaceT_contra = TypeVar("WorkspaceT_contra", contravariant=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,11 +65,38 @@ class QueryRuntime:
     llm: Any | None
 
 
-class QueryRuntimeFactory(Protocol):
+class QueryWorkspaceRegistry(Protocol[WorkspaceT_co]):
+    """Registry boundary used by the query service."""
+
+    def get(self, workspace_id: str) -> WorkspaceT_co:
+        """Resolve one logical workspace."""
+
+
+class QueryRuntimeFactory(Protocol[WorkspaceT_contra]):
     """Factory boundary that keeps workspace construction out of QueryService."""
 
-    def create(self, workspace: WorkspaceConfig) -> QueryRuntime:
+    def create(self, workspace: WorkspaceT_contra) -> QueryRuntime:
         """Build the runtime dependencies for a resolved workspace."""
+
+
+class _EngineBridge(Protocol):
+    """Typed boundary for the dynamically loaded production bridge."""
+
+    def get_chroma_retriever(
+        self,
+        persist_path: str | Path,
+        collection_name: str,
+        *,
+        embedding_function: Any | None = None,
+    ) -> Any: ...
+
+    def get_hybrid_retriever(self, retrievers: list[Any], *, reranker: Any | None = None) -> Any: ...
+
+    def get_llm_client(self, *, api_key: str, base_url: str, model: str) -> Any: ...
+
+    def get_graph_store(self, db_path: str | Path) -> Any: ...
+
+    def get_global_search(self, *, graph_store: Any, llm_client: Any) -> Any: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +104,7 @@ class NormalizedQueryResult:
     mode_used: QueryMode
     mode_reason: str
     answer_text: str
-    finish_reason: str
+    finish_reason: FinishReason
     citations: list[Citation]
     context_items: list[ContextItem]
     rendered_context: str | None
@@ -165,9 +199,10 @@ class EngineQueryRuntimeFactory:
     def create(self, workspace: WorkspaceConfig) -> QueryRuntime:
         from rag_orchestrator.hallucination_guard import HallucinationGuard
         from rag_orchestrator.router import AdaptiveQueryRouter
-        from retrieval_engine.graph import SQLiteGraphRetriever
 
-        from . import engine_bridge
+        engine_bridge = cast(_EngineBridge, import_module(f"{__package__}.engine_bridge"))
+        graph_module = import_module("retrieval_engine.graph")
+        sqlite_graph_retriever = cast(Callable[[Any], Any], graph_module.SQLiteGraphRetriever)
 
         text_retriever = engine_bridge.get_chroma_retriever(
             workspace.chroma_persist_dir,
@@ -192,11 +227,12 @@ class EngineQueryRuntimeFactory:
         graph_retriever = None
         graph_bundle: _LazyComponent | None = None
         if workspace.graph_db_path is not None:
+            graph_db_path = workspace.graph_db_path
             graph_bundle = _LazyComponent(
                 lambda: _build_graph_bundle(
                     engine_bridge,
-                    SQLiteGraphRetriever,
-                    workspace.graph_db_path,
+                    sqlite_graph_retriever,
+                    graph_db_path,
                 )
             )
             graph_retriever = _LazyComponent(lambda: graph_bundle.get()[1])
@@ -229,13 +265,13 @@ class EngineQueryRuntimeFactory:
         )
 
 
-class QueryService:
+class QueryService(Generic[WorkspaceT]):
     """Execute one query and map runtime output to the v1 response contract."""
 
     def __init__(
         self,
-        registry: WorkspaceRegistry,
-        runtime_factory: QueryRuntimeFactory,
+        registry: QueryWorkspaceRegistry[WorkspaceT],
+        runtime_factory: QueryRuntimeFactory[WorkspaceT],
         *,
         id_factory: Callable[[], str] = uuid4_string,
         clock: Callable[[], float] = time.perf_counter,
@@ -515,7 +551,7 @@ class QueryService:
             mode_used=mode_used,
             mode_reason=mode_reason,
             answer_text=answer_text,
-            finish_reason=finish_reason if finish_reason in {"stop", "length", "content_filter", "error"} else "stop",
+            finish_reason=_normalize_finish_reason(finish_reason),
             citations=citations,
             context_items=context_items,
             rendered_context=rendered_context,
@@ -630,6 +666,12 @@ def _default_mode(workspace: Any) -> QueryMode:
     if isinstance(configured, str):
         configured = QueryMode(configured)
     return configured if configured is not QueryMode.AUTO else QueryMode.LOCAL
+
+
+def _normalize_finish_reason(value: str) -> FinishReason:
+    if value in _FINISH_REASONS:
+        return cast(FinishReason, value)
+    return "stop"
 
 
 def _build_graph_bundle(
@@ -1031,6 +1073,7 @@ __all__ = [
     "QueryRuntime",
     "QueryRuntimeFactory",
     "QueryService",
+    "QueryWorkspaceRegistry",
     "encode_sse",
     "uuid4_string",
 ]

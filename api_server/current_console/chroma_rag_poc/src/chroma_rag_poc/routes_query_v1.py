@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import cast
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
@@ -52,7 +53,7 @@ _ERROR_RETRYABLE: dict[str, bool] = {
 def get_query_service(request: Request) -> QueryService:
     """Resolve the production service while remaining dependency-override friendly."""
 
-    return request.app.state.query_service
+    return cast(QueryService, request.app.state.query_service)
 
 
 def _error_response(

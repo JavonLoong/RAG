@@ -102,12 +102,13 @@ guards this set. The nested fields are:
   warning.
 - `context` and `debug`: `null` unless their request gates are enabled.
 
-The status is `ok` when no warning is produced. It is `partial` whenever at
-least one recoverable warning is present, including retrieval, reranking,
-answer-generation, or hallucination-guard degradation. A partial response
-can still contain an answer, citations, context, and debug data.
-Warning messages are stable public summaries; internal exception text is not
-part of the v1 contract and is not exposed.
+The status is `ok` when no warning is produced. It is `partial` only when a
+recoverable degradation leaves usable output: an answer and/or at least one
+citation. A partial response can also contain context and debug data. If all
+selected paths fail and no usable answer or citation remains, `QueryService`
+raises `QUERY_FAILED`; the HTTP and CLI adapters return the v1 error envelope
+instead of a `partial` response. Warning messages are stable public summaries;
+internal exception text is not part of the v1 contract and is not exposed.
 
 ### Error envelope
 

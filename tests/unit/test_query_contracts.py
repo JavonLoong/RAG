@@ -79,7 +79,7 @@ def test_query_request_rejects_empty_query_and_unknown_mode() -> None:
     with pytest.raises(ValidationError):
         QueryRequest(query="", workspace_id="power-equipment")
     with pytest.raises(ValidationError):
-        QueryRequest(query="ok", workspace_id="power-equipment", mode="drift")
+        QueryRequest.model_validate({"query": "ok", "workspace_id": "power-equipment", "mode": "drift"})
 
 
 @pytest.mark.parametrize(
@@ -286,7 +286,7 @@ def test_query_stream_event_dispatches_by_event(
     expected_type: type[Any],
     payload: dict[str, Any],
 ) -> None:
-    parsed = TypeAdapter(QueryStreamEvent).validate_python(payload)
+    parsed: QueryStreamEvent = TypeAdapter(QueryStreamEvent).validate_python(payload)
 
     assert isinstance(parsed, expected_type)
     assert parsed.event == event

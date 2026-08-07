@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -34,7 +35,10 @@ from core_domain.query_contracts import (  # noqa: E402
     QueryRequest,
     QueryStatus,
 )
-from retrieval_engine.core import DocumentChunk, RetrievalResult  # noqa: E402
+
+_retrieval_core = import_module("retrieval_engine.core")
+DocumentChunk: Any = _retrieval_core.DocumentChunk
+RetrievalResult: Any = _retrieval_core.RetrievalResult
 
 
 @dataclass
@@ -145,10 +149,10 @@ def _text_result(
     page: int | str | None = 12,
     chunk_id: str | None = "chunk-1",
     score: float | None = 0.91,
-) -> RetrievalResult:
+) -> Any:
     return RetrievalResult(
         chunk=DocumentChunk(text=text, source=source, page=page, chunk_id=chunk_id),
-        score=score,  # type: ignore[arg-type]
+        score=score,
         retriever_name="fake-text",
     )
 

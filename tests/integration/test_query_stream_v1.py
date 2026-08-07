@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
 
@@ -32,6 +33,7 @@ from core_domain.query_contracts import (  # noqa: E402
     AnswerPayload,
     Citation,
     CitationEvent,
+    CitationType,
     ErrorDetail,
     ErrorEvent,
     FinalEvent,
@@ -102,7 +104,7 @@ def _response() -> QueryResponse:
         status=QueryStatus.OK,
         mode=_mode(),
         answer=AnswerPayload(text="Compressor fouling is caused by deposits.", finish_reason="stop"),
-        citations=[Citation(id="T1", type="text", quote="Deposits cause fouling.")],
+        citations=[Citation(id="T1", type=CitationType.TEXT, quote="Deposits cause fouling.")],
         retrieval=RetrievalSummary(text_hits=1),
         usage=UsageMetrics(latency_ms=1.0),
     )
@@ -114,14 +116,14 @@ def _parse_sse(body: str) -> list[QueryStreamEvent]:
         lines = frame.splitlines()
         event_name = lines[0].removeprefix("event: ")
         payload = json.loads(lines[1].removeprefix("data: "))
-        event = TypeAdapter(QueryStreamEvent).validate_python(payload)
+        event: QueryStreamEvent = TypeAdapter(QueryStreamEvent).validate_python(payload)
         assert event.event == event_name
         parsed.append(event)
     return parsed
 
 
 @pytest.fixture
-def app(tmp_path: Path):
+def app(tmp_path: Path) -> Iterator[FastAPI]:
     application = create_app(
         persist_dir=tmp_path / "persist",
         upload_dir=tmp_path / "uploads",

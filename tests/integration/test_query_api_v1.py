@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -113,7 +115,7 @@ def _real_service(
 
 
 @pytest.fixture
-def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[FastAPI]:
     monkeypatch.delenv("RAG_WORKSPACE_CONFIG", raising=False)
     application = create_app(
         persist_dir=tmp_path / "persist",

@@ -7,7 +7,7 @@ import logging
 import sys
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -69,7 +69,7 @@ class V1ArgumentParser(argparse.ArgumentParser):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(add_help=False, allow_abbrev=False, **kwargs)
 
-    def error(self, message: str) -> None:
+    def error(self, message: str) -> NoReturn:
         raise ArgumentError(message)
 
 
