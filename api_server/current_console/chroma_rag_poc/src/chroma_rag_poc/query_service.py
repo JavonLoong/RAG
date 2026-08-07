@@ -7,7 +7,7 @@ import os
 import re
 import time
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, fields, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -16,16 +16,20 @@ from typing import Any, Protocol
 from core_domain.query_contracts import (
     AnswerPayload,
     Citation,
+    CitationEvent,
     CitationType,
     ContextItem,
     ContextPayload,
     DebugPayload,
+    FinalEvent,
     GraphTriple,
+    MetaEvent,
     ModeDecision,
     QueryMode,
     QueryRequest,
     QueryResponse,
     QueryStatus,
+    QueryStreamEvent,
     RetrievalSummary,
     SourceRef,
     UsageMetrics,
@@ -119,6 +123,13 @@ class QueryExecutionError(RuntimeError):
         self.retryable = retryable
         self.details = dict(details or {})
         super().__init__(message)
+
+
+def encode_sse(event: QueryStreamEvent) -> bytes:
+    """Serialize one typed query stream event as a complete SSE frame."""
+
+    payload = event.model_dump_json(exclude_none=True)
+    return f"event: {event.event}\ndata: {payload}\n\n".encode()
 
 
 def uuid4_string() -> str:
@@ -267,6 +278,35 @@ class QueryService:
             trace_id=trace_id,
             latency_ms=(self.clock() - started) * 1000,
         )
+
+    def stream(self, request: QueryRequest) -> Iterator[QueryStreamEvent]:
+        """Return deterministic typed events for the synchronous query adapters."""
+
+        response = self.query(request)
+        events: list[QueryStreamEvent] = [
+            MetaEvent(
+                request_id=response.request_id,
+                sequence=1,
+                mode=response.mode,
+                token_streaming=False,
+            )
+        ]
+        events.extend(
+            CitationEvent(
+                request_id=response.request_id,
+                sequence=sequence,
+                citation=citation,
+            )
+            for sequence, citation in enumerate(response.citations, start=2)
+        )
+        events.append(
+            FinalEvent(
+                request_id=response.request_id,
+                sequence=len(events) + 1,
+                response=response,
+            )
+        )
+        return iter(events)
 
     def _select_mode(
         self,
@@ -993,5 +1033,6 @@ __all__ = [
     "QueryRuntime",
     "QueryRuntimeFactory",
     "QueryService",
+    "encode_sse",
     "uuid4_string",
 ]

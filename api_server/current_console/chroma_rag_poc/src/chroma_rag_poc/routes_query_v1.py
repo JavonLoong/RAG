@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
-from core_domain.query_contracts import ErrorDetail, QueryErrorResponse, QueryRequest, QueryResponse
+from core_domain.query_contracts import (
+    ErrorDetail,
+    ErrorEvent,
+    QueryErrorResponse,
+    QueryRequest,
+    QueryResponse,
+    QueryStreamEvent,
+)
 
-from .query_service import QueryExecutionError, QueryService
+from .query_service import QueryExecutionError, QueryService, encode_sse
 from .workspace_registry import WorkspaceNotFoundError
 
 router = APIRouter(prefix="/api/v1", tags=["query-v1"])
@@ -80,6 +88,31 @@ def validation_error_response(_request: Request, _error: RequestValidationError)
     return _error_response(code="INVALID_REQUEST", status_code=422, retryable=False)
 
 
+def _stream_failure_event(*, request_id: str, sequence: int) -> ErrorEvent:
+    return ErrorEvent(
+        request_id=request_id,
+        sequence=sequence,
+        error=ErrorDetail(
+            code="STREAM_FAILED",
+            message="stream generation failed",
+            retryable=True,
+        ),
+    )
+
+
+def _encode_stream(first_event: QueryStreamEvent, events: Iterator[QueryStreamEvent]) -> Iterator[bytes]:
+    sequence = first_event.sequence
+    yield encode_sse(first_event)
+    try:
+        for event in events:
+            sequence = event.sequence
+            yield encode_sse(event)
+            if event.event in {"error", "final"}:
+                return
+    except Exception:
+        yield encode_sse(_stream_failure_event(request_id=first_event.request_id, sequence=sequence + 1))
+
+
 @router.post(
     "/query",
     response_model=QueryResponse,
@@ -113,4 +146,53 @@ def query_v1(
         )  # type: ignore[return-value]
 
 
-__all__ = ["get_query_service", "query_v1", "router", "validation_error_response"]
+@router.post(
+    "/query/stream",
+    response_model=None,
+    responses={
+        404: {"model": QueryErrorResponse},
+        409: {"model": QueryErrorResponse},
+        422: {"model": QueryErrorResponse},
+        500: {"model": QueryErrorResponse},
+        503: {"model": QueryErrorResponse},
+    },
+)
+def query_stream_v1(
+    payload: QueryRequest,
+    service: QueryService = Depends(get_query_service),  # noqa: B008
+) -> StreamingResponse | JSONResponse:
+    try:
+        events = iter(service.stream(payload))
+        first_event = next(events)
+        if first_event.event != "meta":
+            return _error_response(
+                code="QUERY_FAILED",
+                status_code=500,
+                retryable=True,
+            )
+    except WorkspaceNotFoundError:
+        return _error_response(
+            code="WORKSPACE_NOT_FOUND",
+            status_code=404,
+            retryable=False,
+        )
+    except QueryExecutionError as error:
+        return _known_error_response(error)
+    except Exception:
+        return _error_response(
+            code="QUERY_FAILED",
+            status_code=500,
+            retryable=True,
+        )
+
+    return StreamingResponse(
+        _encode_stream(first_event, events),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+__all__ = ["get_query_service", "query_stream_v1", "query_v1", "router", "validation_error_response"]
