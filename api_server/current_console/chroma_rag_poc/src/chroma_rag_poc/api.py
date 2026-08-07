@@ -9,6 +9,7 @@ FastAPI 后端 — 合并两版
 from __future__ import annotations
 
 import io
+import os
 import re
 import shutil
 import tempfile
@@ -20,10 +21,14 @@ from urllib.parse import urlparse
 
 import orjson
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+
+from core_domain.query_contracts import QueryMode
 
 from .benchmark import run_synthetic_benchmark
 from .observability import OperationLogger
@@ -37,6 +42,8 @@ from .pipeline import (
     query_collection,
 )
 from .public_books_json import ingest_latest_snapshot_to_chroma, write_ingest_summary
+from .query_service import EngineQueryRuntimeFactory, QueryService
+from .workspace_registry import WorkspaceConfig, WorkspaceNotFoundError, WorkspaceRegistry
 
 PACKAGE_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 CONSOLE_FRONTEND_DIR = Path(__file__).resolve().parents[3] / "frontend"
@@ -351,6 +358,31 @@ class DeleteUploadsRequest(BaseModel):
     purge_vectors: bool = False
 
 
+class _DefaultWorkspaceRegistry:
+    """Use the legacy console paths when no logical registry is configured."""
+
+    def __init__(self, persist_dir: Path) -> None:
+        self._workspace = WorkspaceConfig(
+            workspace_id="power-equipment",
+            chroma_persist_dir=Path(persist_dir),
+            chroma_collection="power_equipment",
+            graph_db_path=Path(persist_dir).parent / "graph" / "graph.sqlite3",
+            supported_modes=frozenset({QueryMode.VECTOR, QueryMode.LOCAL, QueryMode.GLOBAL, QueryMode.HYBRID}),
+            default_mode=QueryMode.AUTO,
+        )
+
+    def get(self, workspace_id: str) -> WorkspaceConfig:
+        if workspace_id != self._workspace.workspace_id:
+            raise WorkspaceNotFoundError(workspace_id)
+        return self._workspace
+
+
+def _build_query_registry(persist_dir: Path) -> WorkspaceRegistry | _DefaultWorkspaceRegistry:
+    if os.environ.get("RAG_WORKSPACE_CONFIG"):
+        return WorkspaceRegistry.from_env()
+    return _DefaultWorkspaceRegistry(persist_dir)
+
+
 def create_app(
     persist_dir: Path = DEFAULT_PERSIST_DIR,
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
@@ -378,6 +410,22 @@ def create_app(
     app.state.persist_dir.mkdir(parents=True, exist_ok=True)
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
     app.state.log_dir.mkdir(parents=True, exist_ok=True)
+
+    app.state.query_service = QueryService(
+        _build_query_registry(app.state.persist_dir),
+        EngineQueryRuntimeFactory(),
+    )
+
+    from .routes_query_v1 import router as query_v1_router
+    from .routes_query_v1 import validation_error_response
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        if request.url.path.startswith("/api/v1/"):
+            return validation_error_response(request, exc)
+        return await request_validation_exception_handler(request, exc)
+
+    app.include_router(query_v1_router)
 
     # Register modular GraphRAG routes (community detection, global search, etc.)
     try:
