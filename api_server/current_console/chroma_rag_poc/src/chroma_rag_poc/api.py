@@ -4147,6 +4147,12 @@ def create_app(
         app.include_router(memory_router)
     except ImportError:
         pass
+    # Governed M2-M5 document, graph, review, and FMEA delivery workflow.
+    try:
+        from .routes_delivery import router as delivery_router
+        app.include_router(delivery_router)
+    except ImportError:
+        pass
 
     @app.get("/")
     async def index():

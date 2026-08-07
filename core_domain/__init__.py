@@ -2,15 +2,35 @@
 
 Defines the shared vocabulary and data structures used across all modules.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
+from .delivery import (
+    FMEA_FIELDS,
+    CanonicalDocumentVersion,
+    ContentStatus,
+    EvidenceLocator,
+    FMEAItem,
+    FMEATaskRequest,
+    FMEATaskResult,
+    GraphDomainSchema,
+    GraphStatement,
+    GraphVersion,
+    IssueSeverity,
+    QualityIssue,
+    ReviewDecision,
+    ReviewRecord,
+    TaskStatus,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Document:
     """A source document in the knowledge base."""
+
     id: str
     title: str
     source_path: str
@@ -22,6 +42,7 @@ class Document:
 @dataclass(frozen=True, slots=True)
 class Entity:
     """A named entity extracted from a document."""
+
     name: str
     entity_type: str = "Unknown"
     description: str = ""
@@ -32,6 +53,7 @@ class Entity:
 @dataclass(frozen=True, slots=True)
 class Relationship:
     """A relationship between two entities."""
+
     subject: str
     predicate: str
     object_name: str
@@ -44,6 +66,7 @@ class Relationship:
 @dataclass(frozen=True, slots=True)
 class Community:
     """A group of related entities detected by community algorithms."""
+
     community_id: str
     level: int = 0
     title: str = ""
@@ -56,6 +79,7 @@ class Community:
 @dataclass(frozen=True, slots=True)
 class EvidenceChain:
     """A chain of evidence linking a question to an answer."""
+
     citation_id: str
     source_type: str  # "text" | "graph" | "community"
     text: str
@@ -67,6 +91,7 @@ class EvidenceChain:
 @dataclass(slots=True)
 class QAResult:
     """A question-answering result with evidence."""
+
     question: str
     answer: str | None
     evidence: list[EvidenceChain] = field(default_factory=list)
@@ -82,3 +107,28 @@ class QAResult:
             "search_mode": self.search_mode,
             "metadata": self.metadata,
         }
+
+
+__all__ = [
+    "FMEA_FIELDS",
+    "CanonicalDocumentVersion",
+    "Community",
+    "ContentStatus",
+    "Document",
+    "Entity",
+    "EvidenceChain",
+    "EvidenceLocator",
+    "FMEAItem",
+    "FMEATaskRequest",
+    "FMEATaskResult",
+    "GraphDomainSchema",
+    "GraphStatement",
+    "GraphVersion",
+    "IssueSeverity",
+    "QAResult",
+    "QualityIssue",
+    "Relationship",
+    "ReviewDecision",
+    "ReviewRecord",
+    "TaskStatus",
+]

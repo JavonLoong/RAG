@@ -2219,7 +2219,9 @@ def _default_search_reranker() -> str | None:
         if configured not in {"none", "noop", "cross_encoder"}:
             raise ValueError("RAG_DEFAULT_RERANKER must be one of: none, noop, cross_encoder")
         return None if configured == "none" else configured
-    return "cross_encoder" if _cross_encoder_reranker_available() else None
+    # Construction is fail-soft when a local model is unavailable, while the
+    # hashing/offline retrieval path opts out explicitly in query_collection.
+    return "cross_encoder"
 
 
 def _cross_encoder_reranker_available() -> bool:

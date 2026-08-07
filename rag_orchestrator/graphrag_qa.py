@@ -159,12 +159,19 @@ class GraphRagQAOrchestrator:
         # unless a router explicitly chose vector-only retrieval.
         if route_strategy in ("LOCAL_SEARCH", "GLOBAL_SEARCH") and self.global_searcher is not None:
             try:
+                # A real global answer must run community map/reduce. Local and
+                # context-only requests can use stored summaries directly.
+                global_context_only = context_only or route_strategy != "GLOBAL_SEARCH"
                 # Use duck-typing for the search method call since stream_callback was just added
                 if "stream_callback" in inspect.signature(self.global_searcher.search).parameters:
-                    gs_result = self.global_searcher.search(question, context_only=True, stream_callback=stream_callback)
+                    gs_result = self.global_searcher.search(
+                        question,
+                        context_only=global_context_only,
+                        stream_callback=stream_callback,
+                    )
                 else:
-                    gs_result = self.global_searcher.search(question, context_only=True)
-                    
+                    gs_result = self.global_searcher.search(question, context_only=global_context_only)
+
                 if hasattr(gs_result, "partial_answers") and gs_result.partial_answers:
                     global_context = _format_global_context(gs_result)
                     global_source_evidence = _global_source_evidence_items(gs_result)

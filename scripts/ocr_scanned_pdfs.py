@@ -11,8 +11,7 @@ import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-
+from typing import TYPE_CHECKING, Any
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -25,7 +24,14 @@ if str(SITE_PACKAGES) not in sys.path:
     sys.path.insert(0, str(SITE_PACKAGES))
 
 import fitz  # noqa: E402
-from rapidocr_onnxruntime import RapidOCR  # noqa: E402
+
+if TYPE_CHECKING:
+    from rapidocr_onnxruntime import RapidOCR
+else:
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+    except ImportError:
+        RapidOCR = None  # type: ignore[assignment,misc]
 
 
 RAW_DIR = REPO_ROOT / "data_pipeline" / "raw" / "tsinghua_gas_turbine_books"
@@ -690,6 +696,10 @@ def main() -> None:
     )
     ocr: RapidOCR | None = None
     if args.engine == "rapidocr":
+        if RapidOCR is None:
+            raise RuntimeError(
+                "RapidOCR is not installed. Install rapidocr-onnxruntime or run with --engine tesseract."
+            )
         thread_count = max(1, args.onnx_threads)
         ocr = RapidOCR(
             use_cls=args.use_cls,
