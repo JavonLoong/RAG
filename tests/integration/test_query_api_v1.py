@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,8 +17,9 @@ for import_path in (REPO_ROOT, PACKAGE_SRC):
         sys.path.insert(0, str(import_path))
 
 from chroma_rag_poc.api import create_app  # noqa: E402
-from chroma_rag_poc.query_service import QueryExecutionError, QueryService  # noqa: E402
+from chroma_rag_poc.query_service import QueryExecutionError, QueryRuntime, QueryService  # noqa: E402
 from chroma_rag_poc.routes_query_v1 import get_query_service  # noqa: E402
+from chroma_rag_poc.workspace_registry import WorkspaceRegistry  # noqa: E402
 
 from core_domain.query_contracts import QueryMode  # noqa: E402
 
@@ -48,6 +50,68 @@ class FakeQueryService:
         return self.result
 
 
+class ControlledRuntimeFactory:
+    def __init__(self, runtime: QueryRuntime, error: Exception | None = None) -> None:
+        self.runtime = runtime
+        self.error = error
+        self.calls: list[Any] = []
+
+    def create(self, workspace: Any) -> QueryRuntime:
+        self.calls.append(workspace)
+        if self.error is not None:
+            raise self.error
+        return self.runtime
+
+
+def _real_service(
+    tmp_path: Path,
+    *,
+    supported_modes: list[QueryMode],
+    mode: QueryMode,
+    create_chroma: bool = True,
+    llm: Any | None = None,
+    factory_error: Exception | None = None,
+) -> tuple[QueryService, ControlledRuntimeFactory, Path]:
+    runtime_root = tmp_path / "runtime"
+    chroma_path = runtime_root / "chroma"
+    if create_chroma:
+        chroma_path.mkdir(parents=True)
+    registry_path = tmp_path / "workspaces.json"
+    registry_path.write_text(
+        json.dumps({
+            "allowed_root": str(runtime_root),
+            "workspaces": {
+                "power-equipment": {
+                    "chroma_persist_dir": str(chroma_path),
+                    "chroma_collection": "power_equipment",
+                    "graph_db_path": None,
+                    "supported_modes": [item.value for item in supported_modes],
+                    "default_mode": mode.value,
+                }
+            },
+        }),
+        encoding="utf-8",
+    )
+    registry = WorkspaceRegistry.from_file(registry_path)
+    runtime = QueryRuntime(
+        text_retriever=object(),
+        graph_retriever=None,
+        global_searcher=None,
+        query_router=None,
+        reranker=None,
+        hallucination_guard=None,
+        llm=llm,
+    )
+    factory = ControlledRuntimeFactory(runtime, error=factory_error)
+    service = QueryService(
+        registry,
+        factory,
+        id_factory=iter(("request-1", "trace-1")).__next__,
+        clock=iter((10.0, 10.025)).__next__,
+    )
+    return service, factory, chroma_path
+
+
 @pytest.fixture
 def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("RAG_WORKSPACE_CONFIG", raising=False)
@@ -62,6 +126,11 @@ def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 
 def _client(application: Any, service: FakeQueryService) -> TestClient:
+    application.dependency_overrides[get_query_service] = lambda: service
+    return TestClient(application)
+
+
+def _real_client(application: Any, service: QueryService) -> TestClient:
     application.dependency_overrides[get_query_service] = lambda: service
     return TestClient(application)
 
@@ -134,6 +203,7 @@ def test_query_execution_errors_use_stable_status_mapping(app: Any, code: str, s
     assert body["schema_version"] == "graphrag.query.v1"
     assert body["status"] == "error"
     assert body["error"]["code"] == code
+    assert body["error"]["retryable"] is (code in {"INDEX_NOT_READY", "LLM_UNAVAILABLE", "QUERY_FAILED"})
     assert "detail" not in body
 
 
@@ -191,3 +261,96 @@ def test_legacy_health_route_remains_available(app: Any) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_real_query_service_rejects_unsupported_mode_before_runtime_execution(app: Any, tmp_path: Path) -> None:
+    service, factory, _ = _real_service(
+        tmp_path,
+        supported_modes=[QueryMode.VECTOR],
+        mode=QueryMode.LOCAL,
+    )
+    with _real_client(app, service) as client:
+        response = client.post(
+            "/api/v1/query",
+            json={"query": "question", "workspace_id": "power-equipment", "mode": "local"},
+        )
+
+    body = response.json()
+    assert response.status_code == 409
+    assert body["error"]["code"] == "MODE_UNAVAILABLE"
+    assert body["error"]["retryable"] is False
+    assert factory.calls == []
+
+
+def test_real_query_service_maps_missing_index_path_to_conflict(app: Any, tmp_path: Path) -> None:
+    service, factory, _ = _real_service(
+        tmp_path,
+        supported_modes=[QueryMode.VECTOR],
+        mode=QueryMode.VECTOR,
+        create_chroma=False,
+    )
+    with _real_client(app, service) as client:
+        response = client.post(
+            "/api/v1/query",
+            json={"query": "question", "workspace_id": "power-equipment", "mode": "vector"},
+        )
+
+    body = response.json()
+    assert response.status_code == 409
+    assert body["error"]["code"] == "INDEX_NOT_READY"
+    assert body["error"]["retryable"] is True
+    assert factory.calls == []
+
+
+def test_real_query_service_maps_missing_llm_to_service_unavailable(app: Any, tmp_path: Path) -> None:
+    service, factory, _ = _real_service(
+        tmp_path,
+        supported_modes=[QueryMode.LOCAL],
+        mode=QueryMode.LOCAL,
+        llm=None,
+    )
+    with _real_client(app, service) as client:
+        response = client.post(
+            "/api/v1/query",
+            json={"query": "question", "workspace_id": "power-equipment", "mode": "local"},
+        )
+
+    body = response.json()
+    assert response.status_code == 503
+    assert body["error"]["code"] == "LLM_UNAVAILABLE"
+    assert body["error"]["retryable"] is True
+    assert len(factory.calls) == 1
+
+
+def test_real_query_service_keeps_unknown_runtime_failure_as_query_failed(app: Any, tmp_path: Path) -> None:
+    service, factory, _ = _real_service(
+        tmp_path,
+        supported_modes=[QueryMode.VECTOR],
+        mode=QueryMode.VECTOR,
+        factory_error=RuntimeError("unexpected runtime failure"),
+    )
+    with _real_client(app, service) as client:
+        response = client.post(
+            "/api/v1/query",
+            json={"query": "question", "workspace_id": "power-equipment", "mode": "vector"},
+        )
+
+    body = response.json()
+    assert response.status_code == 500
+    assert body["error"]["code"] == "QUERY_FAILED"
+    assert body["error"]["retryable"] is True
+    assert "unexpected runtime failure" not in response.text
+    assert len(factory.calls) == 1
+
+
+def test_non_v1_validation_keeps_fastapi_detail_array(app: Any) -> None:
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/search",
+            json={"query": "", "collection": "power_equipment", "top_k": 5},
+        )
+
+    body = response.json()
+    assert response.status_code == 422
+    assert isinstance(body["detail"], list)
+    assert "error" not in body

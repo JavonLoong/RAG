@@ -70,7 +70,7 @@ def _known_error_response(error: QueryExecutionError) -> JSONResponse:
     return _error_response(
         code=code,
         status_code=_ERROR_STATUS[code],
-        retryable=_ERROR_RETRYABLE[code] if code != error.code else error.retryable,
+        retryable=_ERROR_RETRYABLE[code],
     )
 
 

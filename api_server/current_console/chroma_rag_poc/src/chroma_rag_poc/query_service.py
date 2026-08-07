@@ -239,8 +239,21 @@ class QueryService:
         request_id = self.id_factory()
         trace_id = self.id_factory()
         workspace = self.registry.get(request.workspace_id)
-        runtime = self.runtime_factory.create(workspace)
+        if request.mode is not QueryMode.AUTO:
+            _ensure_mode_supported(workspace, request.mode)
+            _ensure_index_ready(workspace, request.mode)
+        try:
+            runtime = self.runtime_factory.create(workspace)
+        except QueryExecutionError:
+            raise
+        except (FileNotFoundError, NotADirectoryError, PermissionError) as exc:
+            raise _index_not_ready(exc, stage="runtime_factory") from exc
+        except Exception as exc:
+            raise _query_failed("Query runtime construction failed.", exc, stage="runtime_factory") from exc  # noqa: TRY003
         mode, mode_reason = self._select_mode(runtime, workspace, request)
+        _ensure_mode_supported(workspace, mode)
+        _ensure_index_ready(workspace, mode)
+        _ensure_generation_available(runtime, mode)
         normalized = self._execute_mode(
             runtime,
             request,
@@ -398,7 +411,7 @@ class QueryService:
             prompt = _build_prompt(request.query, execution_context, citations)
             try:
                 if runtime.llm is None:
-                    raise RuntimeError(LLM_NOT_CONFIGURED_ERROR)  # noqa: TRY301
+                    raise _llm_unavailable(stage="answer_generation")  # noqa: TRY301
                 llm_value = _call_llm(runtime.llm, prompt)
                 answer_text = llm_value[0]
                 finish_reason = llm_value[1]
@@ -406,6 +419,8 @@ class QueryService:
                 prompt_tokens = llm_value[2]
                 completion_tokens = llm_value[3]
                 llm_raw = llm_value[4]
+            except QueryExecutionError:
+                raise
             except Exception as exc:
                 if not citations:
                     raise _query_failed("Answer generation failed.", exc, stage="answer_generation") from exc  # noqa: TRY003
@@ -516,6 +531,58 @@ class QueryService:
             warnings=normalized.warnings,
             debug=debug,
         )
+
+
+def _ensure_mode_supported(workspace: Any, mode: QueryMode) -> None:
+    supported_modes = getattr(workspace, "supported_modes", None)
+    if supported_modes is None or mode is QueryMode.AUTO:
+        return
+    normalized_modes = {QueryMode(item) if isinstance(item, str) else item for item in supported_modes}
+    if mode not in normalized_modes:
+        raise QueryExecutionError(
+            "MODE_UNAVAILABLE",
+            f"Query mode '{mode.value}' is not available for this workspace.",
+            retryable=False,
+            details={"mode": mode.value},
+        )
+
+
+def _ensure_index_ready(workspace: Any, mode: QueryMode) -> None:
+    required_paths: list[tuple[str, Path, bool]] = []
+    chroma_path = getattr(workspace, "chroma_persist_dir", None)
+    if mode in (QueryMode.VECTOR, QueryMode.LOCAL, QueryMode.HYBRID) and chroma_path is not None:
+        required_paths.append(("chroma", Path(chroma_path), True))
+
+    graph_path = getattr(workspace, "graph_db_path", None)
+    if mode in (QueryMode.LOCAL, QueryMode.GLOBAL, QueryMode.HYBRID) and graph_path is not None:
+        required_paths.append(("graph", Path(graph_path), False))
+
+    for resource, path, require_directory in required_paths:
+        if not path.exists() or (require_directory and not path.is_dir()):
+            raise _index_not_ready(RuntimeError(f"{resource} query data is not ready."), stage=resource)
+
+
+def _ensure_generation_available(runtime: QueryRuntime, mode: QueryMode) -> None:
+    if mode in (QueryMode.LOCAL, QueryMode.HYBRID) and runtime.llm is None:
+        raise _llm_unavailable(stage="answer_generation")
+
+
+def _index_not_ready(cause: Exception, *, stage: str) -> QueryExecutionError:
+    return QueryExecutionError(
+        "INDEX_NOT_READY",
+        "Required query data is not ready.",
+        retryable=True,
+        details={"stage": stage, "cause": str(cause)},
+    )
+
+
+def _llm_unavailable(*, stage: str) -> QueryExecutionError:
+    return QueryExecutionError(
+        "LLM_UNAVAILABLE",
+        LLM_NOT_CONFIGURED_ERROR,
+        retryable=True,
+        details={"stage": stage},
+    )
 
 
 def _default_mode(workspace: Any) -> QueryMode:

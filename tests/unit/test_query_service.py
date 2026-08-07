@@ -130,6 +130,14 @@ class FakeRuntimeFactory:
         return self.runtime
 
 
+class FailingRuntimeFactory:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    def create(self, workspace: FakeWorkspace) -> QueryRuntime:
+        raise self.error
+
+
 def _text_result(
     text: str = "text evidence",
     *,
@@ -383,6 +391,21 @@ def test_all_selected_paths_failing_raise_stable_query_execution_error() -> None
     assert error.value.retryable is True
 
 
+def test_unknown_runtime_factory_failure_is_wrapped_as_query_failed() -> None:
+    service = QueryService(
+        FakeRegistry(),
+        FailingRuntimeFactory(RuntimeError("runtime construction failed")),
+        id_factory=iter(("request-1", "trace-1")).__next__,
+        clock=iter((10.0, 10.025)).__next__,
+    )
+
+    with pytest.raises(QueryExecutionError) as error:
+        service.query(QueryRequest(query="question", workspace_id="power-equipment", mode=QueryMode.VECTOR))
+
+    assert error.value.code == "QUERY_FAILED"
+    assert error.value.retryable is True
+
+
 def test_context_and_debug_are_gated_and_debug_is_json_safe_and_redacted() -> None:
     text = RecordingRetriever([_text_result(source=r"C:\absolute\runtime\graph.sqlite3")])
     text.results[0].chunk.metadata.update({
@@ -453,8 +476,13 @@ def test_debug_redacts_spaced_windows_and_unc_database_paths() -> None:
     assert "ordinary debug context" in debug_text
 
 
-def test_vector_query_does_not_initialize_graph_dependencies(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_vector_query_does_not_initialize_graph_dependencies(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     text_retriever = RecordingRetriever([_text_result()])
+    chroma_path = tmp_path / "chroma"
+    chroma_path.mkdir()
     monkeypatch.setattr(engine_bridge, "get_chroma_retriever", lambda *_args, **_kwargs: text_retriever)
     monkeypatch.setattr(
         engine_bridge,
@@ -465,9 +493,9 @@ def test_vector_query_does_not_initialize_graph_dependencies(monkeypatch: pytest
 
     workspace = WorkspaceConfig(
         workspace_id="power-equipment",
-        chroma_persist_dir=Path(r"C:\runtime\chroma"),
+        chroma_persist_dir=chroma_path,
         chroma_collection="power_equipment",
-        graph_db_path=Path(r"C:\runtime\graph\graph.sqlite3"),
+        graph_db_path=tmp_path / "graph" / "graph.sqlite3",
         supported_modes=frozenset({QueryMode.VECTOR}),
         default_mode=QueryMode.VECTOR,
     )
