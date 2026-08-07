@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rag_orchestrator.graphrag_qa import GraphRagQAOrchestrator
 
 # Ensure the repo root is on the Python path for imports
 _REPO_ROOT = Path(__file__).resolve().parents[5]
@@ -56,12 +59,13 @@ def get_hybrid_retriever(
     retrievers: list[Any],
     *,
     weights: list[float] | None = None,
+    reranker: Any | None = None,
     name: str = "hybrid",
 ) -> Any:
     """Create a HybridRetriever from retrieval_engine/ for merged results."""
     from retrieval_engine.hybrid import HybridRetriever
 
-    return HybridRetriever(retrievers, weights=weights, name=name)
+    return HybridRetriever(retrievers, weights=weights, reranker=reranker, name=name)
 
 
 def get_graphrag_orchestrator(
@@ -69,8 +73,10 @@ def get_graphrag_orchestrator(
     text_retriever: Any,
     graph_retriever: Any,
     global_searcher: Any | None = None,
+    query_router: Any | None = None,
+    hallucination_guard: Any | None = None,
     llm: Any | None = None,
-) -> Any:
+) -> GraphRagQAOrchestrator:
     """Create a GraphRagQAOrchestrator from rag_orchestrator/ for QA."""
     from rag_orchestrator.graphrag_qa import GraphRagQAOrchestrator
 
@@ -78,6 +84,8 @@ def get_graphrag_orchestrator(
         text_retriever=text_retriever,
         graph_retriever=graph_retriever,
         global_searcher=global_searcher,
+        query_router=query_router,
+        hallucination_guard=hallucination_guard,
         llm=llm,
     )
 
