@@ -123,6 +123,58 @@ class FMEAService:
             writer.writerow(row)
         return output.getvalue()
 
+    def verify_export_consistency(self, task_id: str) -> dict[str, Any]:
+        """Round-trip JSON and CSV exports and compare their governed fields."""
+
+        task = self._published(task_id)
+        json_payload = json.loads(self.export_json(task_id))
+        csv_rows = list(csv.DictReader(io.StringIO(self.export_csv(task_id))))
+        mismatches: list[dict[str, Any]] = []
+        json_items = list(json_payload.get("items") or [])
+        if len(json_items) != len(csv_rows):
+            mismatches.append({
+                "code": "row_count_mismatch",
+                "json_rows": len(json_items),
+                "csv_rows": len(csv_rows),
+            })
+        for index, item in enumerate(json_items):
+            if index >= len(csv_rows):
+                break
+            row = csv_rows[index]
+            if str(item.get("item_id") or "") != str(row.get("item_id") or ""):
+                mismatches.append({"code": "item_id_mismatch", "row": index + 1})
+            fields = dict(item.get("fields") or {})
+            field_evidence = dict(item.get("field_evidence") or {})
+            for field_name in FMEA_FIELDS:
+                json_value = str(fields.get(field_name) or "")
+                csv_value = str(row.get(field_name) or "")
+                if json_value != csv_value:
+                    mismatches.append({
+                        "code": "field_mismatch",
+                        "row": index + 1,
+                        "field": field_name,
+                        "json": json_value,
+                        "csv": csv_value,
+                    })
+                json_evidence = "|".join(str(value) for value in field_evidence.get(field_name) or ())
+                csv_evidence = str(row.get(f"{field_name}_evidence") or "")
+                if json_evidence != csv_evidence:
+                    mismatches.append({
+                        "code": "evidence_mismatch",
+                        "row": index + 1,
+                        "field": field_name,
+                        "json": json_evidence,
+                        "csv": csv_evidence,
+                    })
+        return {
+            "task_id": task.task_id,
+            "status": task.status.value,
+            "consistent": not mismatches,
+            "json_rows": len(json_items),
+            "csv_rows": len(csv_rows),
+            "mismatches": mismatches,
+        }
+
     def _published(self, task_id: str) -> FMEATaskResult:
         task = self.store.get_fmea_task(task_id)
         if task.status is not TaskStatus.PUBLISHED:

@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from collections import deque
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import replace
@@ -142,11 +143,23 @@ class GovernanceStore:
                     status TEXT NOT NULL DEFAULT 'open'
                 );
 
+                CREATE TABLE IF NOT EXISTS feedback_runs (
+                    run_id TEXT PRIMARY KEY,
+                    feedback_id TEXT NOT NULL REFERENCES feedback(feedback_id),
+                    actor TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    result_json TEXT NOT NULL DEFAULT '{}',
+                    created_at TEXT NOT NULL,
+                    completed_at TEXT
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_doc_versions_document ON document_versions(document_id, version);
                 CREATE INDEX IF NOT EXISTS idx_evidence_version ON evidence_locators(document_version_id);
                 CREATE INDEX IF NOT EXISTS idx_graph_statements_version ON graph_statements(graph_version_id);
                 CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_type, target_id, review_id);
                 CREATE INDEX IF NOT EXISTS idx_feedback_task ON feedback(task_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_feedback_runs_feedback ON feedback_runs(feedback_id, created_at);
                 """
             )
 
@@ -283,12 +296,130 @@ class GovernanceStore:
             ).fetchall()
         return _document_from_rows(row, evidence_rows)
 
+    def create_document_revision(
+        self,
+        source_version_id: str,
+        *,
+        reviewer: str,
+        corrections: Mapping[str, Any],
+        comment: str = "",
+    ) -> CanonicalDocumentVersion:
+        """Create a new candidate whose corrected content is part of version lineage.
+
+        Corrections may be keyed by either ``chunk_id`` or ``evidence_id``.  A
+        value can be the replacement text directly or a mapping containing a
+        required ``text`` value plus optional locator/metadata overrides.  The
+        source version is never mutated; the human change is persisted both in
+        the new content and as an auditable ``modify`` review.
+        """
+
+        source = self.get_document_version(source_version_id)
+        raw_corrections = corrections.get("chunks", corrections)
+        if not isinstance(raw_corrections, Mapping) or not raw_corrections:
+            raise GovernanceError("Document revision requires non-empty chunk corrections")
+
+        known_keys = {
+            key
+            for item in source.evidence
+            for key in (item.chunk_id, item.evidence_id)
+        }
+        unknown_keys = sorted(str(key) for key in raw_corrections if str(key) not in known_keys)
+        if unknown_keys:
+            raise GovernanceError(f"Unknown revision chunk/evidence identifiers: {unknown_keys}")
+
+        revised_chunks: list[dict[str, Any]] = []
+        modified_chunk_ids: list[str] = []
+        for item in source.evidence:
+            patch = raw_corrections.get(item.chunk_id, raw_corrections.get(item.evidence_id))
+            if patch is None:
+                revised_chunks.append({
+                    "chunk_id": item.chunk_id,
+                    "text": item.text,
+                    "source_file": item.source_file,
+                    "page": item.page,
+                    "block_id": item.block_id,
+                    "table_id": item.table_id,
+                    "image_id": item.image_id,
+                    "metadata": item.metadata,
+                })
+                continue
+
+            if isinstance(patch, Mapping):
+                replacement = str(patch.get("text") or "").strip()
+                metadata = {**item.metadata, **dict(patch.get("metadata") or {})}
+                page = patch.get("page", item.page)
+                block_id = patch.get("block_id", item.block_id)
+                table_id = patch.get("table_id", item.table_id)
+                image_id = patch.get("image_id", item.image_id)
+            else:
+                replacement = str(patch).strip()
+                metadata = dict(item.metadata)
+                page = item.page
+                block_id = item.block_id
+                table_id = item.table_id
+                image_id = item.image_id
+            if not replacement:
+                raise GovernanceError(f"Revision for {item.chunk_id} must contain non-empty text")
+            metadata.update({
+                "human_revised": True,
+                "revised_from_evidence_id": item.evidence_id,
+                "revised_by": _required(reviewer, "reviewer"),
+            })
+            revised_chunks.append({
+                "chunk_id": item.chunk_id,
+                "text": replacement,
+                "source_file": item.source_file,
+                "page": page,
+                "block_id": block_id,
+                "table_id": table_id,
+                "image_id": image_id,
+                "metadata": metadata,
+            })
+            if replacement != item.text or metadata != item.metadata:
+                modified_chunk_ids.append(item.chunk_id)
+
+        if not modified_chunk_ids:
+            raise GovernanceError("Document revision did not change any content or metadata")
+
+        candidate = self.create_document_candidate(
+            document_id=source.document_id,
+            source_name=source.source_name,
+            chunks=revised_chunks,
+            warnings=("Human-revised content requires explicit approval before publication.",),
+            metadata={
+                **source.metadata,
+                "revision_source_version_id": source.version_id,
+                "human_modified_chunk_ids": modified_chunk_ids,
+                "source_quality_issues": [issue.to_dict() for issue in source.quality_issues],
+            },
+        )
+        self.record_review(
+            target_type="document",
+            target_id=candidate.version_id,
+            reviewer=reviewer,
+            decision=ReviewDecision.MODIFY,
+            comment=comment or f"Human revision created from {source.version_id}",
+            corrections={"modified_chunk_ids": modified_chunk_ids},
+        )
+        return self.get_document_version(candidate.version_id)
+
     def list_document_versions(self, document_id: str) -> list[CanonicalDocumentVersion]:
         with self._connect() as connection:
             ids = [
                 str(row["version_id"])
                 for row in connection.execute(
                     "SELECT version_id FROM document_versions WHERE document_id = ? ORDER BY version", (document_id,)
+                ).fetchall()
+            ]
+        return [self.get_document_version(version_id) for version_id in ids]
+
+    def list_published_document_versions(self) -> list[CanonicalDocumentVersion]:
+        with self._connect() as connection:
+            ids = [
+                str(row["version_id"])
+                for row in connection.execute(
+                    "SELECT version_id FROM document_versions WHERE status = ? ORDER BY document_id, version",
+                    (ContentStatus.PUBLISHED.value,),
                 ).fetchall()
             ]
         return [self.get_document_version(version_id) for version_id in ids]
@@ -505,8 +636,11 @@ class GovernanceStore:
     def graph_as_edge_payload(self, graph_version_id: str) -> list[dict[str, Any]]:
         """Export a governed graph in the shape accepted by GraphStore.normalize_kg_payload."""
         graph = self.get_graph_version(graph_version_id)
-        return [
-            {
+        output: list[dict[str, Any]] = []
+        for item in graph.statements:
+            evidence = [self.get_evidence(evidence_id) for evidence_id in item.evidence_ids]
+            first = evidence[0] if evidence else None
+            output.append({
                 "triple_id": item.statement_id,
                 "subject": item.subject,
                 "subject_type": item.subject_type,
@@ -514,16 +648,83 @@ class GovernanceStore:
                 "object": item.object_name,
                 "object_type": item.object_type,
                 "confidence": item.confidence,
-                "evidence": "\n".join(self.get_evidence(evidence_id).text for evidence_id in item.evidence_ids),
+                "evidence": "\n".join(locator.text for locator in evidence),
+                "source_file": first.source_file if first else None,
+                "source_page": first.page if first else None,
                 "source_chunk_id": ",".join(item.evidence_ids),
                 "metadata": {
                     **item.metadata,
                     "graph_version_id": graph_version_id,
                     "evidence_ids": list(item.evidence_ids),
                 },
+            })
+        return output
+
+    def find_graph_path(
+        self,
+        graph_version_id: str,
+        source: str,
+        target: str,
+        *,
+        max_hops: int = 4,
+    ) -> dict[str, Any]:
+        """Return a shortest undirected evidence path within one graph version."""
+
+        graph = self.get_graph_version(graph_version_id)
+        clean_source = _required(source, "source")
+        clean_target = _required(target, "target")
+        adjacency: dict[str, list[tuple[str, GraphStatement, str]]] = {}
+        for statement in graph.statements:
+            adjacency.setdefault(statement.subject, []).append((statement.object_name, statement, "outgoing"))
+            adjacency.setdefault(statement.object_name, []).append((statement.subject, statement, "incoming"))
+        if clean_source not in adjacency or clean_target not in adjacency:
+            return {
+                "graph_version_id": graph_version_id,
+                "source": clean_source,
+                "target": clean_target,
+                "found": False,
+                "nodes": [],
+                "edges": [],
+                "reason": "source_or_target_not_in_graph",
             }
-            for item in graph.statements
-        ]
+
+        queue = deque([(clean_source, [clean_source], [])])
+        visited = {clean_source}
+        while queue:
+            node, nodes, edges = queue.popleft()
+            if node == clean_target:
+                return {
+                    "graph_version_id": graph_version_id,
+                    "source": clean_source,
+                    "target": clean_target,
+                    "found": True,
+                    "nodes": nodes,
+                    "edges": edges,
+                    "hop_count": len(edges),
+                }
+            if len(edges) >= max_hops:
+                continue
+            for neighbor, statement, direction in adjacency.get(node, []):
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                evidence = [self.get_evidence(item) for item in statement.evidence_ids]
+                edge = {
+                    **statement.to_dict(),
+                    "direction_from_path_node": direction,
+                    "evidence": [item.to_dict() for item in evidence],
+                }
+                queue.append((neighbor, [*nodes, neighbor], [*edges, edge]))
+        return {
+            "graph_version_id": graph_version_id,
+            "source": clean_source,
+            "target": clean_target,
+            "found": False,
+            "nodes": [],
+            "edges": [],
+            "reason": "no_path_within_max_hops",
+            "max_hops": max_hops,
+        }
 
     # ------------------------------------------------------------------
     # M5: task lifecycle, human review, publication, and feedback
@@ -632,6 +833,89 @@ class GovernanceStore:
                 tuple(payload[key] for key in payload),
             )
         return payload
+
+    def get_feedback(self, feedback_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM feedback WHERE feedback_id = ?", (feedback_id,)
+            ).fetchone()
+        if row is None:
+            raise GovernanceError(f"Unknown feedback: {feedback_id}")
+        return {key: row[key] for key in row.keys()}  # noqa: SIM118
+
+    def list_feedback(self, task_id: str) -> list[dict[str, Any]]:
+        self.get_fmea_task(task_id)
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM feedback WHERE task_id = ? ORDER BY created_at, feedback_id", (task_id,)
+            ).fetchall()
+        return [{key: row[key] for key in row.keys()} for row in rows]  # noqa: SIM118
+
+    def record_feedback_run(
+        self,
+        *,
+        feedback_id: str,
+        actor: str,
+        action: str,
+        status: str,
+        result: Mapping[str, Any],
+        resolve_feedback: bool = False,
+    ) -> dict[str, Any]:
+        feedback = self.get_feedback(feedback_id)
+        run_id = f"FR-{uuid4().hex[:12]}"
+        now = _utc_now()
+        payload = {
+            "run_id": run_id,
+            "feedback_id": feedback_id,
+            "task_id": feedback["task_id"],
+            "routed_module": feedback["routed_module"],
+            "actor": _required(actor, "actor"),
+            "action": _required(action, "action"),
+            "status": _required(status, "status"),
+            "result": dict(result),
+            "created_at": now,
+            "completed_at": now if status in {"completed", "needs_review", "needs_human_input"} else None,
+        }
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO feedback_runs (
+                    run_id, feedback_id, actor, action, status, result_json, created_at, completed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    feedback_id,
+                    payload["actor"],
+                    payload["action"],
+                    payload["status"],
+                    _json_dump(payload["result"]),
+                    now,
+                    payload["completed_at"],
+                ),
+            )
+            if resolve_feedback:
+                connection.execute(
+                    "UPDATE feedback SET status = ? WHERE feedback_id = ?",
+                    ("resolved", feedback_id),
+                )
+        payload["feedback_status"] = "resolved" if resolve_feedback else str(feedback["status"])
+        return payload
+
+    def list_feedback_runs(self, feedback_id: str) -> list[dict[str, Any]]:
+        self.get_feedback(feedback_id)
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM feedback_runs WHERE feedback_id = ? ORDER BY created_at, run_id",
+                (feedback_id,),
+            ).fetchall()
+        return [
+            {
+                **{key: row[key] for key in row.keys() if key != "result_json"},  # noqa: SIM118
+                "result": _json_load(row["result_json"], {}),
+            }
+            for row in rows
+        ]
 
     # ------------------------------------------------------------------
     # Shared review/evidence operations
@@ -1059,6 +1343,8 @@ def _fmea_item_from_dict(payload: Mapping[str, Any]) -> FMEAItem:
 
 def _feedback_module(code: str) -> str:
     normalized = str(code).strip().lower()
+    if any(token in normalized for token in ("source", "permission", "license", "acquisition", "import_file")):
+        return "M1"
     if any(token in normalized for token in ("ocr", "parse", "page", "layout", "table")):
         return "M2"
     if any(token in normalized for token in ("document", "chunk", "index", "version", "retrieval")):

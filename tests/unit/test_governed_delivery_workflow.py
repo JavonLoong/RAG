@@ -181,6 +181,46 @@ def test_document_version_compare_and_audited_rollback(tmp_path: Path) -> None:
     assert decisions == [ReviewDecision.ROLLBACK, ReviewDecision.APPROVE]
 
 
+def test_document_human_revision_creates_new_content_version(tmp_path: Path) -> None:
+    store = GovernanceStore(tmp_path / "governance.db")
+    original = _published_document(store, document_id="revision-manual")
+    source_evidence = original.evidence[0]
+
+    revised = store.create_document_revision(
+        original.version_id,
+        reviewer="ocr-reviewer",
+        comment="Corrected OCR term and retained the source locator",
+        corrections={
+            source_evidence.evidence_id: {
+                "text": source_evidence.text.replace("过滤器堵塞", "润滑油过滤器堵塞"),
+                "metadata": {"correction_reason": "OCR terminology review"},
+            }
+        },
+    )
+
+    assert revised.version == 2
+    assert revised.supersedes_version_id == original.version_id
+    assert "润滑油过滤器堵塞" in revised.evidence[0].text
+    assert revised.evidence[0].page == source_evidence.page
+    assert revised.evidence[0].metadata["revised_from_evidence_id"] == source_evidence.evidence_id
+    assert store.get_document_version(original.version_id).evidence[0].text == source_evidence.text
+    assert [item.decision for item in store.list_reviews("document", revised.version_id)] == [
+        ReviewDecision.MODIFY
+    ]
+
+    with pytest.raises(GovernanceError, match="latest human approval"):
+        store.publish_document(revised.version_id)
+    store.record_review(
+        target_type="document",
+        target_id=revised.version_id,
+        reviewer="domain-reviewer",
+        decision=ReviewDecision.APPROVE,
+    )
+    published = store.publish_document(revised.version_id)
+    assert published.status is ContentStatus.PUBLISHED
+    assert store.get_document_version(original.version_id).status is ContentStatus.RETIRED
+
+
 def test_graph_blocks_unknown_or_unbound_facts_even_after_review(tmp_path: Path) -> None:
     store = GovernanceStore(tmp_path / "governance.db")
     document = _published_document(store)

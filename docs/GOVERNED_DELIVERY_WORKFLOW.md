@@ -34,13 +34,17 @@
 | 能力 | 接口 |
 |---|---|
 | 解析并创建资料候选 | `POST /documents/intake` |
+| 接收逐页 OCR 结果并标出漏页/空页/低置信度 | `POST /documents/intake/ocr-result` |
+| 人工纠错生成不可变新版本 | `POST /documents/{id}/revise` |
 | 查看/审核/发布资料版本 | `GET /documents/{id}`、`POST /documents/{id}/review`、`POST /documents/{id}/publish` |
 | 资料版本比较/回滚 | `GET /documents/compare/{left}/{right}`、`POST /documents/{document_id}/rollback` |
-| 创建/查看/审核/发布图谱版本 | `POST /graphs/candidates`、`GET /graphs/{id}`、`POST /graphs/{id}/review`、`POST /graphs/{id}/publish` |
-| 导出图谱三元组 | `GET /graphs/{id}/export` |
+| 检索正式资料/查看或重建索引 | `GET /documents-search`、`GET /documents-index/status`、`POST /documents-index/rebuild` |
+| 自动抽取/创建图谱候选 | `POST /graphs/extract`、`POST /graphs/candidates` |
+| 查看/审核/发布图谱版本 | `GET /graphs/{id}`、`POST /graphs/{id}/review`、`POST /graphs/{id}/publish` |
+| 导出三元组/查询证据路径/查看活动图 | `GET /graphs/{id}/export`、`GET /graphs/{id}/path`、`GET /graphs-active/status` |
 | 创建/查看/审核/发布 FMEA | `POST /fmea/tasks`、`GET /fmea/tasks/{id}`、`POST /fmea/tasks/{id}/review`、`POST /fmea/tasks/{id}/publish` |
-| 导出 FMEA | `GET /fmea/tasks/{id}/export?format=json|csv` |
-| 问题回流 | `POST /fmea/tasks/{id}/feedback` |
+| 导出并核对 FMEA | `GET /fmea/tasks/{id}/export?format=json|csv`、`GET /fmea/tasks/{id}/export-verify` |
+| 问题回流及执行审计 | `POST/GET /fmea/tasks/{id}/feedback`、`POST /fmea/feedback/{feedback_id}/remediate`、`GET /fmea/feedback/{feedback_id}/runs` |
 
 文件内容在 `documents/intake` 中使用 Base64 传输；解析仍由 `data_pipeline.document_intake` 选择原生解析、OCR 或外部解析路线。
 
@@ -68,7 +72,10 @@ task = service.run(
 ## 验证
 
 ```powershell
-python -m pytest tests/unit/test_governed_delivery_workflow.py tests/unit/test_delivery_api.py -q
+python -m pytest tests/unit/test_governed_delivery_workflow.py tests/unit/test_delivery_api.py tests/unit/test_delivery_representative_inputs.py -q
+python scripts/run_governed_delivery_demo.py
 ```
 
-端到端测试覆盖：解析、证据定位、资料审核发布、图谱 Schema/证据门禁、FMEA 逐字段引用、人工修订、成果导出、版本比较、回滚和问题回流。
+端到端测试覆盖：原生 PDF、扫描 PDF、DOCX、中英文文本、OCR 漏页、证据定位、资料纠错/审核/发布、版本化 Chroma 索引、自动关系抽取、图谱 Schema/证据门禁、活动图同步和路径、FMEA 逐字段引用、双格式导出一致性、版本比较、回滚和可执行问题回流。
+
+演示脚本会在 `build/governed_delivery_demo/<运行时间>/` 生成自包含验收包。详细汇报口径见 `docs/GOVERNED_DELIVERY_TWO_WEEK_PROGRESS.md`。
