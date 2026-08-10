@@ -118,6 +118,69 @@ def test_benchmark_reports_cloud_improvement_and_estimated_cost(tmp_path: Path) 
     assert (output_dir / "ocr_benchmark.md").is_file()
 
 
+def test_cloud_table_structure_satisfies_table_structure_review_gate(tmp_path: Path) -> None:
+    manifest = _write_sample_files(
+        tmp_path,
+        external_allowed=True,
+        gold="部件故障模式",
+        local="部件故障模式",
+    )
+    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+    manifest_payload["samples"][0]["category"] = "table"
+    manifest.write_text(json.dumps(manifest_payload, ensure_ascii=False), encoding="utf-8")
+
+    def cloud_provider(_image: bytes, page: int, source: str) -> dict[str, Any]:
+        return {
+            "page": page,
+            "source_name": source,
+            "text": "部件故障模式",
+            "tables": [{"body": [{"row_start": 0, "col_start": 0, "words": "部件"}]}],
+            "provider": "baidu",
+        }
+
+    report = run_ocr_benchmark(
+        manifest,
+        tmp_path / "output",
+        include_cloud=True,
+        cloud_provider=cloud_provider,
+    )
+    assert report["samples"][0]["metrics"]["cloud_table_count"] == 1
+    assert report["samples"][0]["needs_human_review"] is False
+
+
+def test_cloud_layout_candidate_is_scored_against_gold(tmp_path: Path) -> None:
+    manifest = _write_sample_files(
+        tmp_path,
+        external_allowed=True,
+        gold="标题左一左二右一右二",
+        local="标题左一右一左二右二",
+    )
+    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+    manifest_payload["samples"][0]["category"] = "two_column"
+    manifest.write_text(json.dumps(manifest_payload, ensure_ascii=False), encoding="utf-8")
+
+    def cloud_provider(_image: bytes, page: int, source: str) -> dict[str, Any]:
+        return {
+            "page": page,
+            "source_name": source,
+            "text": "标题左一右一左二右二",
+            "layout_reordered_text": "标题左一左二右一右二",
+            "layout": {"reading_order_risk": "high"},
+            "provider": "baidu",
+        }
+
+    report = run_ocr_benchmark(
+        manifest,
+        tmp_path / "output",
+        include_cloud=True,
+        cloud_provider=cloud_provider,
+    )
+    metrics = report["samples"][0]["metrics"]
+    assert metrics["cloud_layout_cer"] == 0.0
+    assert metrics["cloud_layout_cer_improvement"] > 0
+    assert report["samples"][0]["needs_human_review"] is True
+
+
 def test_baidu_adapter_normalizes_positions_without_persisting_credentials() -> None:
     class FakeResponse:
         def __init__(self, payload: dict[str, Any]) -> None:
@@ -159,6 +222,135 @@ def test_baidu_adapter_normalizes_positions_without_persisting_credentials() -> 
     assert payload["confidence"] == 0.97
     assert "access_token" not in payload
     assert len(session.calls) == 2
+
+
+def test_baidu_office_adapter_preserves_layout_sections_and_tables() -> None:
+    class FakeResponse:
+        def __init__(self, payload: dict[str, Any]) -> None:
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            return self.payload
+
+    class FakeSession:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def post(self, url: str, **kwargs: Any) -> FakeResponse:
+            self.calls.append({"url": url, **kwargs})
+            if "oauth" in url:
+                return FakeResponse({"access_token": "temporary-token", "expires_in": 3600})
+            return FakeResponse({
+                "results_num": 2,
+                "results": [
+                    {
+                        "words_type": "print",
+                        "words": {
+                            "word": "左栏内容",
+                            "line_probability": {"average": 0.98},
+                            "words_location": {"left": 10, "top": 20, "width": 80, "height": 20},
+                        },
+                    },
+                    {
+                        "words_type": "print",
+                        "words": {
+                            "word": "右栏内容",
+                            "line_probability": {"average": 0.96},
+                            "words_location": {"left": 210, "top": 20, "width": 80, "height": 20},
+                        },
+                    },
+                ],
+                "sec_rows": 1,
+                "sec_cols": 2,
+                "sections": [
+                    {"attribute": "section", "sec_idx": {"row_idx": [0], "col_idx": [1], "idx": [1]}},
+                    {"attribute": "section", "sec_idx": {"row_idx": [0], "col_idx": [0], "idx": [0]}},
+                ],
+                "layouts": [{"layout": "text", "layout_idx": [0, 1]}],
+                "table_num": 1,
+                "tables_result": [{"body": [{"row_start": 0, "col_start": 0, "words": "单元格"}]}],
+            })
+
+    session = FakeSession()
+    client = BaiduOCRClient(
+        BaiduOCRConfig(api_key="test-ak", secret_key="test-sk", model="office"),
+        session=session,
+    )
+    payload = client(_png_bytes(), 1, "office.png")
+    assert payload["text"] == "左栏内容\n右栏内容"
+    assert payload["confidence"] == pytest.approx(0.97)
+    assert payload["layout"]["sec_cols"] == 2
+    assert payload["reading_order_risk"] == "high"
+    assert len(payload["tables"]) == 1
+    assert session.calls[1]["data"]["layout_analysis"] == "true"
+    assert session.calls[1]["data"]["recg_tables"] == "true"
+
+
+def test_baidu_table_adapter_preserves_cell_coordinates() -> None:
+    class FakeResponse:
+        def __init__(self, payload: dict[str, Any]) -> None:
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            return self.payload
+
+    class FakeSession:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def post(self, url: str, **kwargs: Any) -> FakeResponse:
+            self.calls.append({"url": url, **kwargs})
+            if "oauth" in url:
+                return FakeResponse({"access_token": "temporary-token", "expires_in": 3600})
+            return FakeResponse({
+                "table_num": 1,
+                "tables_result": [{
+                    "header": [],
+                    "body": [
+                        {
+                            "row_start": 0,
+                            "row_end": 1,
+                            "col_start": 1,
+                            "col_end": 2,
+                            "words": "故障模式",
+                            "cell_location": [
+                                {"x": 100, "y": 20},
+                                {"x": 200, "y": 20},
+                                {"x": 200, "y": 60},
+                                {"x": 100, "y": 60},
+                            ],
+                        },
+                        {
+                            "row_start": 0,
+                            "row_end": 1,
+                            "col_start": 0,
+                            "col_end": 1,
+                            "words": "部件",
+                            "cell_location": [],
+                        },
+                    ],
+                    "footer": [],
+                }],
+            })
+
+    session = FakeSession()
+    client = BaiduOCRClient(
+        BaiduOCRConfig(api_key="test-ak", secret_key="test-sk", model="table"),
+        session=session,
+    )
+    payload = client(_png_bytes(), 1, "table.png")
+    assert payload["text"] == "部件\n故障模式"
+    assert payload["blocks"][1]["row"] == 0
+    assert payload["blocks"][1]["column"] == 1
+    assert payload["blocks"][1]["bbox"] == [[100, 20], [200, 20], [200, 60], [100, 60]]
+    assert payload["table_num"] == 1
+    assert session.calls[1]["data"]["cell_contents"] == "true"
 
 
 def test_baidu_preprocessing_resizes_oversized_pages() -> None:

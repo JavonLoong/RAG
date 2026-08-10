@@ -244,19 +244,9 @@ def _run_sample(
         "cloud_table_count": len(cloud_payload.get("tables") or []),
     })
     category = str(sample.get("category") or "body_text")
-    if category == "two_column" and local_payload.get("layout_reordered_text"):
-        optimized = _single_provider_metrics(
-            str(local_payload["layout_reordered_text"]),
-            gold_text,
-            provider="local_layout",
-        )
-        metrics.update(optimized)
-        if metrics.get("local_cer") is not None and metrics.get("local_layout_cer") is not None:
-            metrics["local_layout_cer_improvement"] = round(
-                float(metrics["local_cer"]) - float(metrics["local_layout_cer"]),
-                4,
-            )
+    _add_layout_metrics(metrics, category, gold_text, local_payload, cloud_payload)
     layout_risk = str((local_payload.get("layout") or {}).get("reading_order_risk") or "")
+    cloud_layout_risk = str((cloud_payload.get("layout") or {}).get("reading_order_risk") or "")
     return {
         "sample_id": sample_id,
         "source_file": source_path.name,
@@ -283,10 +273,38 @@ def _run_sample(
             or float(metrics.get("pair_disagreement_rate") or 0.0) >= 0.08
             or float(metrics.get("local_cer") or 0.0) >= 0.05
             or float(metrics.get("cloud_cer") or 0.0) >= 0.05
-            or (category == "table" and int(metrics.get("local_table_count") or 0) == 0)
-            or (category == "two_column" and layout_risk in {"medium", "high"})
+            or (
+                category == "table"
+                and int(metrics.get("local_table_count") or 0) == 0
+                and int(metrics.get("cloud_table_count") or 0) == 0
+            )
+            or (
+                category == "two_column"
+                and (layout_risk in {"medium", "high"} or cloud_layout_risk in {"medium", "high"})
+            )
         ),
     }
+
+
+def _add_layout_metrics(
+    metrics: dict[str, Any],
+    category: str,
+    gold_text: str,
+    local_payload: dict[str, Any],
+    cloud_payload: dict[str, Any],
+) -> None:
+    if category != "two_column":
+        return
+    for metric_prefix, payload in (("local", local_payload), ("cloud", cloud_payload)):
+        reordered = payload.get("layout_reordered_text")
+        if not reordered:
+            continue
+        provider = f"{metric_prefix}_layout"
+        metrics.update(_single_provider_metrics(str(reordered), gold_text, provider=provider))
+        raw_cer = metrics.get(f"{metric_prefix}_cer")
+        layout_cer = metrics.get(f"{provider}_cer")
+        if raw_cer is not None and layout_cer is not None:
+            metrics[f"{provider}_cer_improvement"] = round(float(raw_cer) - float(layout_cer), 4)
 
 
 def _single_provider_metrics(text: str, gold_text: str, *, provider: str) -> dict[str, Any]:
@@ -347,7 +365,11 @@ def _recommendations(records: list[dict[str, Any]]) -> list[str]:
         recommendations.append("表格、公式和双栏页面必须分层统计，不能只看全体平均字符错误率。")
     if any(float(item["metrics"].get("local_layout_cer_improvement") or 0.0) > 0 for item in records):
         recommendations.append("分栏重排候选明显降低 CER：保留原始框顺序，同时把重排结果送人工审核后再进入图谱抽取。")
-    if any(item["category"] == "table" and int(item["metrics"].get("local_table_count") or 0) == 0 for item in records):
+    if any(float(item["metrics"].get("cloud_layout_cer_improvement") or 0.0) > 0 for item in records):
+        recommendations.append("百度办公文档版面顺序明显降低 CER：仅将获准外发的复杂分栏页路由到该接口并保留原始响应。")
+    if any(item["category"] == "table" and int(item["metrics"].get("cloud_table_count") or 0) > 0 for item in records):
+        recommendations.append("百度表格/办公文档接口已返回行列结构：可作为表格页专用路由，正文页仍保留本地路径。")
+    elif any(item["category"] == "table" and int(item["metrics"].get("local_table_count") or 0) == 0 for item in records):
         recommendations.append(
             "表格文字已识别但没有行列结构：应路由到表格/办公文档识别，不能把换行文本当成结构化表格。"
         )
@@ -367,6 +389,7 @@ def _summarize_categories(records: list[dict[str, Any]]) -> list[dict[str, Any]]
             "mean_local_cer": _mean_metric(items, "local_cer"),
             "mean_local_layout_cer": _mean_metric(items, "local_layout_cer"),
             "mean_cloud_cer": _mean_metric(items, "cloud_cer"),
+            "mean_cloud_layout_cer": _mean_metric(items, "cloud_layout_cer"),
             "mean_local_elapsed_seconds": _mean_metric(items, "local_elapsed_seconds"),
             "mean_cloud_elapsed_seconds": _mean_metric(items, "cloud_elapsed_seconds"),
         }
@@ -400,15 +423,15 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "",
         "## 分层结果",
         "",
-        "| 类别 | 样本 | 金标 | 差异率 | 本地 CER | 本地分栏 CER | 百度 CER | 本地耗时 | 百度耗时 |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| 类别 | 样本 | 金标 | 差异率 | 本地 CER | 本地分栏 CER | 百度 CER | 百度分栏 CER | 本地耗时 | 百度耗时 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for item in report["category_summary"]:
         lines.append(
             f"| {item['category']} | {item['sample_count']} | {item['gold_sample_count']} | "
             f"{_display_metric(item['mean_pair_disagreement_rate'])} | "
             f"{_display_metric(item['mean_local_cer'])} | {_display_metric(item['mean_local_layout_cer'])} | "
-            f"{_display_metric(item['mean_cloud_cer'])} | "
+            f"{_display_metric(item['mean_cloud_cer'])} | {_display_metric(item['mean_cloud_layout_cer'])} | "
             f"{_display_metric(item['mean_local_elapsed_seconds'])} | "
             f"{_display_metric(item['mean_cloud_elapsed_seconds'])} |"
         )

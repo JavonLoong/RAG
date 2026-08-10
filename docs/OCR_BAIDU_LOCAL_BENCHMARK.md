@@ -80,6 +80,17 @@ $env:BAIDU_OCR_MODEL = "general"
 
 `general` 是含位置的通用识别接口，适合比较文字和坐标。还可以在小样本上分别测试 `general_basic`、`accurate_basic` 和 `accurate`，但每次调用都要计入配额。
 
+复杂版面不要继续堆叠通用模型，应按页面类型选择专用接口：
+
+- `office`：办公文档识别，代码会请求版面分析、分栏和表格结构；
+- `table`：表格文字识别 V2，代码会保留单元格文字及行列坐标。
+
+例如：
+
+```powershell
+$env:BAIDU_OCR_MODEL = "office" # 或 table
+```
+
 如果已确认账号的实际单价，可额外传入：
 
 ```powershell
@@ -97,6 +108,8 @@ $env:BAIDU_OCR_MODEL = "general"
 
 - `local_cer`：本地结果相对人工金标的字符错误率；
 - `cloud_cer`：百度结果相对人工金标的字符错误率；
+- `local_layout_cer`：本地分栏重排候选相对金标的字符错误率；
+- `cloud_layout_cer`：百度办公文档分栏重排候选相对金标的字符错误率；
 - `pair_disagreement_rate`：两套 OCR 互相有多大差异，不能替代准确率；
 - `numeric_token_overlap`：数字保留一致程度；
 - `latin_token_overlap`：英文缩写和变量保留一致程度。

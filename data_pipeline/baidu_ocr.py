@@ -24,6 +24,8 @@ OCR_ENDPOINTS = {
     "general": "https://aip.baidubce.com/rest/2.0/ocr/v1/general",
     "accurate_basic": "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic",
     "accurate": "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate",
+    "office": "https://aip.baidubce.com/rest/2.0/ocr/v1/doc_analysis_office",
+    "table": "https://aip.baidubce.com/rest/2.0/ocr/v1/table",
 }
 MAX_ENCODED_BYTES = 4 * 1024 * 1024
 MAX_IMAGE_SIDE = 4096
@@ -72,18 +74,13 @@ class BaiduOCRClient:
     def __call__(self, image_bytes: bytes, page: int, source_name: str) -> dict[str, Any]:
         prepared, preprocessing = prepare_image_for_baidu(image_bytes)
         started = time.perf_counter()
+        request_data = _request_data(self.config, prepared)
         response = _safe_post(
             self.session,
             OCR_ENDPOINTS[self.config.model],
             context="OCR request",
             params={"access_token": self._token()},
-            data={
-                "image": base64.b64encode(prepared).decode("ascii"),
-                "language_type": self.config.language_type,
-                "detect_direction": "true",
-                "paragraph": "true",
-                "probability": "true",
-            },
+            data=request_data,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=self.config.timeout_seconds,
         )
@@ -92,7 +89,14 @@ class BaiduOCRClient:
             raise BaiduOCRResponseError(
                 f"Baidu OCR error {payload.get('error_code')}: {payload.get('error_msg', 'unknown error')}"
             )
-        return normalize_baidu_response(
+        normalizer = (
+            normalize_baidu_office_response
+            if self.config.model == "office"
+            else normalize_baidu_table_response
+            if self.config.model == "table"
+            else normalize_baidu_response
+        )
+        return normalizer(
             payload,
             page=page,
             source_name=source_name,
@@ -211,6 +215,215 @@ def normalize_baidu_response(
     }
 
 
+def normalize_baidu_office_response(
+    payload: dict[str, Any],
+    *,
+    page: int,
+    source_name: str,
+    model: str,
+    elapsed_seconds: float,
+    preprocessing: dict[str, Any],
+) -> dict[str, Any]:
+    """Normalize office-document OCR while preserving layout and table evidence."""
+
+    blocks: list[dict[str, Any]] = []
+    confidences: list[float] = []
+    for item in payload.get("results") or []:
+        if not isinstance(item, dict):
+            continue
+        word_items = item.get("words")
+        if isinstance(word_items, dict):
+            word_items = [word_items]
+        if not isinstance(word_items, list):
+            continue
+        for word_item in word_items:
+            if not isinstance(word_item, dict):
+                continue
+            text = str(word_item.get("word") or word_item.get("words") or "").strip()
+            probability = word_item.get("line_probability") or item.get("line_probability") or {}
+            confidence = _optional_probability(probability.get("average")) if isinstance(probability, dict) else None
+            if confidence is not None:
+                confidences.append(confidence)
+            location = word_item.get("words_location") or word_item.get("location") or {}
+            index = len(blocks)
+            blocks.append({
+                "block_id": f"p{page}-b{index + 1}",
+                "type": "Para",
+                "order": index,
+                "text": text,
+                "confidence": confidence,
+                "bbox": _location_to_bbox(location),
+                "location": dict(location) if isinstance(location, dict) else {},
+                "words_type": item.get("words_type"),
+            })
+
+    layouts = payload.get("layouts") if isinstance(payload.get("layouts"), list) else []
+    sections = payload.get("sections") if isinstance(payload.get("sections"), list) else []
+    sec_cols = int(payload.get("sec_cols") or 0)
+    reordered_ids = _office_reading_order(sections, len(blocks))
+    reordered_blocks = [blocks[index] for index in reordered_ids]
+    result = {
+        "page": page,
+        "source_name": source_name,
+        "text": "\n".join(item["text"] for item in blocks if item["text"]),
+        "confidence": sum(confidences) / len(confidences) if confidences else None,
+        "status": "ok",
+        "blocks": blocks,
+        "tables": payload.get("tables_result") if isinstance(payload.get("tables_result"), list) else [],
+        "reading_order_risk": "high" if sec_cols > 1 else "low" if blocks else "unknown",
+        "layout": {
+            "mode": "baidu_office",
+            "reading_order_risk": "high" if sec_cols > 1 else "low" if blocks else "unknown",
+            "sec_rows": int(payload.get("sec_rows") or 0),
+            "sec_cols": sec_cols,
+            "layouts": layouts,
+            "sections": sections,
+        },
+        "provider": "baidu",
+        "model": model,
+        "elapsed_seconds": round(elapsed_seconds, 4),
+        "words_result_num": len(blocks),
+        "direction": payload.get("img_direction"),
+        "preprocessing": preprocessing,
+    }
+    if reordered_blocks and reordered_ids != list(range(len(blocks))):
+        result["layout_reordered_text"] = "\n".join(item["text"] for item in reordered_blocks if item["text"])
+        result["layout_reordered_block_ids"] = [item["block_id"] for item in reordered_blocks]
+    return result
+
+
+def normalize_baidu_table_response(
+    payload: dict[str, Any],
+    *,
+    page: int,
+    source_name: str,
+    model: str,
+    elapsed_seconds: float,
+    preprocessing: dict[str, Any],
+) -> dict[str, Any]:
+    """Normalize Table OCR V2 without discarding row/column coordinates."""
+
+    tables = payload.get("tables_result") if isinstance(payload.get("tables_result"), list) else []
+    blocks: list[dict[str, Any]] = []
+    for table_index, table in enumerate(tables):
+        if not isinstance(table, dict):
+            continue
+        ordered_items: list[tuple[int, int, str, Any, str]] = []
+        for item in table.get("header") or []:
+            if isinstance(item, dict):
+                ordered_items.append((
+                    -1,
+                    len(ordered_items),
+                    str(item.get("words") or "").strip(),
+                    item.get("location"),
+                    "TableHeader",
+                ))
+        for item in table.get("body") or []:
+            if isinstance(item, dict):
+                ordered_items.append((
+                    int(item.get("row_start") or 0),
+                    int(item.get("col_start") or 0),
+                    str(item.get("words") or "").strip(),
+                    item.get("cell_location"),
+                    "TableCell",
+                ))
+        for item in table.get("footer") or []:
+            if isinstance(item, dict):
+                ordered_items.append((
+                    10**9,
+                    len(ordered_items),
+                    str(item.get("words") or "").strip(),
+                    item.get("location"),
+                    "TableFooter",
+                ))
+        for row, column, text, location, block_type in sorted(ordered_items, key=lambda value: (value[0], value[1])):
+            index = len(blocks)
+            blocks.append({
+                "block_id": f"p{page}-t{table_index + 1}-b{index + 1}",
+                "type": block_type,
+                "order": index,
+                "text": text,
+                "confidence": None,
+                "bbox": _points_to_bbox(location),
+                "row": None if row in {-1, 10**9} else row,
+                "column": None if row in {-1, 10**9} else column,
+            })
+    return {
+        "page": page,
+        "source_name": source_name,
+        "text": "\n".join(item["text"] for item in blocks if item["text"]),
+        "confidence": None,
+        "status": "ok",
+        "blocks": blocks,
+        "tables": tables,
+        "reading_order_risk": "low" if tables else "unknown",
+        "provider": "baidu",
+        "model": model,
+        "elapsed_seconds": round(elapsed_seconds, 4),
+        "words_result_num": len(blocks),
+        "table_num": int(payload.get("table_num") or len(tables)),
+        "preprocessing": preprocessing,
+    }
+
+
+def _request_data(config: BaiduOCRConfig, prepared: bytes) -> dict[str, str]:
+    image = base64.b64encode(prepared).decode("ascii")
+    if config.model == "table":
+        return {"image": image, "cell_contents": "true", "return_excel": "false"}
+    if config.model == "office":
+        return {
+            "image": image,
+            "language_type": config.language_type,
+            "detect_direction": "true",
+            "result_type": "big",
+            "line_probability": "true",
+            "disp_line_poly": "true",
+            "layout_analysis": "true",
+            "recg_tables": "true",
+        }
+    return {
+        "image": image,
+        "language_type": config.language_type,
+        "detect_direction": "true",
+        "paragraph": "true",
+        "probability": "true",
+    }
+
+
+def _office_reading_order(sections: list[Any], block_count: int) -> list[int]:
+    ordered: list[tuple[int, int, int]] = []
+    for section in sections:
+        if not isinstance(section, dict) or section.get("attribute") != "section":
+            continue
+        raw_indices = section.get("sec_idx")
+        index_items = raw_indices if isinstance(raw_indices, list) else [raw_indices]
+        for item in index_items:
+            if not isinstance(item, dict):
+                continue
+            row_values = _int_values(item.get("row_idx"))
+            column_values = _int_values(item.get("col_idx"))
+            row = row_values[0] if row_values else 0
+            column = column_values[0] if column_values else 0
+            for index in _int_values(item.get("idx")):
+                if 0 <= index < block_count:
+                    ordered.append((row, column, index))
+    result = [index for _row, _column, index in sorted(ordered)]
+    seen = set(result)
+    result.extend(index for index in range(block_count) if index not in seen)
+    return result
+
+
+def _int_values(value: Any) -> list[int]:
+    values = value if isinstance(value, list) else [value]
+    result: list[int] = []
+    for item in values:
+        try:
+            result.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
 def _encode_jpeg(image: Image.Image, quality: int) -> bytes:
     output = io.BytesIO()
     image.save(output, format="JPEG", quality=quality, optimize=True)
@@ -256,3 +469,14 @@ def _location_to_bbox(location: Any) -> list[list[int]]:
         [left + width, top + height],
         [left, top + height],
     ]
+
+
+def _points_to_bbox(points: Any) -> list[list[int]]:
+    if not isinstance(points, list):
+        return []
+    result: list[list[int]] = []
+    for point in points:
+        if not isinstance(point, dict):
+            continue
+        result.append([int(point.get("x") or 0), int(point.get("y") or 0)])
+    return result
