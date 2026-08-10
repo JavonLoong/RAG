@@ -38,6 +38,23 @@
 
 ## 本地预检
 
+可先生成一套不含项目资料、明确允许云端调用的合成中文技术页：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\generate_ocr_benchmark_demo.py
+```
+
+安装并运行本地 RapidOCR 基线：
+
+```powershell
+uv pip install --python .\.venv\Scripts\python.exe rapidocr==3.8.4 onnxruntime==1.24.4
+
+.\.venv\Scripts\python.exe scripts\run_ocr_benchmark.py `
+  --manifest build\ocr_benchmark_demo\input\benchmark_manifest.json `
+  --output-dir build\ocr_benchmark_demo\local `
+  --run-local
+```
+
 不调用百度，只验证清单、源文件、本地 OCR 和金标：
 
 ```powershell

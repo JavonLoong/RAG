@@ -19,6 +19,11 @@ def main() -> int:
     parser.add_argument("--manifest", required=True, help="Benchmark manifest JSON path")
     parser.add_argument("--output-dir", required=True, help="Directory for JSON and Markdown reports")
     parser.add_argument(
+        "--run-local",
+        action="store_true",
+        help="Run RapidOCR for samples that do not provide local_result_path",
+    )
+    parser.add_argument(
         "--include-cloud",
         action="store_true",
         help="Call Baidu OCR for samples explicitly marked external_allowed=true",
@@ -30,10 +35,16 @@ def main() -> int:
         help="Optional actual account price used only for an estimated cost",
     )
     args = parser.parse_args()
+    local_provider = None
+    if args.run_local:
+        from data_pipeline.rapidocr_provider import RapidOCRProvider
+
+        local_provider = RapidOCRProvider()
     report = run_ocr_benchmark(
         args.manifest,
         args.output_dir,
         include_cloud=args.include_cloud,
+        local_provider=local_provider,
         price_per_cloud_call=args.price_per_cloud_call,
     )
     print(

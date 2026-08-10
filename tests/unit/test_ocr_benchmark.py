@@ -15,7 +15,9 @@ from data_pipeline.baidu_ocr import (
     BaiduOCRResponseError,
     prepare_image_for_baidu,
 )
+from data_pipeline.rapidocr_provider import RapidOCRProvider, reorder_two_column_blocks
 from evaluation.ocr_benchmark import compare_ocr_texts, run_ocr_benchmark
+from scripts.generate_ocr_benchmark_demo import generate_demo
 
 
 def _png_bytes(width: int = 400, height: int = 120) -> bytes:
@@ -178,3 +180,57 @@ def test_baidu_transport_errors_do_not_echo_credentials() -> None:
     with pytest.raises(BaiduOCRResponseError) as captured:
         client(_png_bytes(), 1, "allowed.png")
     assert "test-sk" not in str(captured.value)
+
+
+def test_rapidocr_provider_normalizes_local_output() -> None:
+    class FakeOutput:
+        txts = ("燃气轮机", "过滤器堵塞")
+        scores = (0.96, 0.91)
+        boxes = (
+            ((10, 10), (210, 10), (210, 50), (10, 50)),
+            ((10, 70), (260, 70), (260, 110), (10, 110)),
+        )
+        elapse = 0.25
+
+    provider = RapidOCRProvider(engine=lambda _image: FakeOutput())
+    payload = provider(_png_bytes(), 2, "synthetic.png")
+    assert payload["text"] == "燃气轮机\n过滤器堵塞"
+    assert payload["confidence"] == pytest.approx(0.935)
+    assert payload["blocks"][1]["block_id"] == "p2-b2"
+    assert payload["reading_order_risk"] == "low"
+
+
+def test_synthetic_benchmark_generator_creates_cloud_safe_manifest(tmp_path: Path) -> None:
+    manifest_path = generate_demo(tmp_path / "synthetic")
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert len(payload["samples"]) == 4
+    assert all(item["external_allowed"] is True for item in payload["samples"])
+    assert {item["category"] for item in payload["samples"]} == {
+        "body_text",
+        "low_quality",
+        "table",
+        "two_column",
+    }
+    assert all((manifest_path.parent / item["source_path"]).is_file() for item in payload["samples"])
+
+
+def test_two_column_reordering_preserves_blocks_and_groups_columns() -> None:
+    blocks = [
+        {"block_id": "left-1", "order": 0, "text": "左一", "bbox": [[10, 10], [100, 10], [100, 30], [10, 30]]},
+        {
+            "block_id": "right-1",
+            "order": 1,
+            "text": "右一",
+            "bbox": [[600, 10], [700, 10], [700, 30], [600, 30]],
+        },
+        {"block_id": "left-2", "order": 2, "text": "左二", "bbox": [[10, 50], [100, 50], [100, 70], [10, 70]]},
+        {
+            "block_id": "right-2",
+            "order": 3,
+            "text": "右二",
+            "bbox": [[600, 50], [700, 50], [700, 70], [600, 70]],
+        },
+    ]
+    ordered = reorder_two_column_blocks(blocks, width=1000)
+    assert [item["block_id"] for item in ordered] == ["left-1", "left-2", "right-1", "right-2"]
+    assert {item["block_id"] for item in ordered} == {item["block_id"] for item in blocks}

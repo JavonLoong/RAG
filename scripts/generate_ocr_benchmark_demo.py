@@ -1,0 +1,160 @@
+"""Generate synthetic, cloud-safe Chinese technical pages for OCR comparison."""
+
+# ruff: noqa: RUF001, TRY003
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FONT_CANDIDATES = (
+    Path("C:/Windows/Fonts/msyh.ttc"),
+    Path("C:/Windows/Fonts/msjh.ttc"),
+    Path("C:/Windows/Fonts/simhei.ttf"),
+)
+
+
+def generate_demo(output_dir: str | Path) -> Path:
+    destination = Path(output_dir).resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+    fonts = {
+        "title": _font(48),
+        "heading": _font(34),
+        "body": _font(30),
+        "small": _font(25),
+    }
+
+    body_lines = [
+        "燃气轮机润滑油系统 OCR 基准页",
+        "设备：润滑油过滤器",
+        "故障模式：过滤器堵塞",
+        "可能原因：油液污染、滤芯寿命到期",
+        "影响：润滑油压下降，轴承温度升高",
+        "检测方法：压差监测和油液颗粒度分析",
+        "维护措施：更换滤芯并清洁油路",
+        "编号：GT-LUBE-2026-08，压力 0.35 MPa",
+    ]
+    body = Image.new("RGB", (1600, 1300), "white")
+    draw = ImageDraw.Draw(body)
+    for index, line in enumerate(body_lines):
+        font = fonts["title"] if index == 0 else fonts["body"]
+        draw.text((100, 80 + index * 135), line, fill="#111827", font=font)
+    body_path = destination / "synthetic_body_clear.png"
+    body.save(body_path)
+
+    degraded = body.resize((800, 650), Image.Resampling.BILINEAR).resize(body.size, Image.Resampling.BILINEAR)
+    degraded = degraded.filter(ImageFilter.GaussianBlur(radius=1.15))
+    degraded = ImageEnhance.Contrast(degraded).enhance(0.72)
+    degraded_path = destination / "synthetic_body_degraded.png"
+    degraded.save(degraded_path)
+
+    table_rows = [
+        ["部件", "故障模式", "检测方法", "维护措施"],
+        ["过滤器", "堵塞", "压差监测", "更换滤芯"],
+        ["轴承", "温度升高", "温度趋势", "检查润滑"],
+        ["油泵", "压力不足", "压力传感器", "检查泵体"],
+    ]
+    table = Image.new("RGB", (1800, 900), "white")
+    table_draw = ImageDraw.Draw(table)
+    table_draw.text((80, 45), "燃气轮机 FMEA 表格 OCR 基准页", fill="#111827", font=fonts["heading"])
+    x_positions = [80, 430, 850, 1260, 1720]
+    y_positions = [150, 310, 470, 630, 790]
+    for x in x_positions:
+        table_draw.line((x, y_positions[0], x, y_positions[-1]), fill="#1f2937", width=3)
+    for y in y_positions:
+        table_draw.line((x_positions[0], y, x_positions[-1], y), fill="#1f2937", width=3)
+    for row_index, row in enumerate(table_rows):
+        for column_index, value in enumerate(row):
+            table_draw.text(
+                (x_positions[column_index] + 20, y_positions[row_index] + 50),
+                value,
+                fill="#111827",
+                font=fonts["small"],
+            )
+    table_path = destination / "synthetic_table.png"
+    table.save(table_path)
+
+    two_column_left = [
+        "左栏：过滤器堵塞会造成油压下降。",
+        "原因包括油液污染和滤芯超期。",
+        "检测采用压差传感器持续监测。",
+        "发现异常后应先确认仪表状态。",
+    ]
+    two_column_right = [
+        "右栏：轴承温度升高需要复核。",
+        "检查供油压力、流量和颗粒度。",
+        "必要时更换滤芯并清洁油路。",
+        "全部结论必须绑定原文和页码。",
+    ]
+    columns = Image.new("RGB", (1800, 1000), "white")
+    column_draw = ImageDraw.Draw(columns)
+    column_draw.text((80, 45), "双栏阅读顺序 OCR 基准页", fill="#111827", font=fonts["heading"])
+    column_draw.line((900, 150, 900, 880), fill="#d1d5db", width=2)
+    for index, line in enumerate(two_column_left):
+        column_draw.text((80, 180 + index * 155), line, fill="#111827", font=fonts["small"])
+    for index, line in enumerate(two_column_right):
+        column_draw.text((950, 180 + index * 155), line, fill="#111827", font=fonts["small"])
+    columns_path = destination / "synthetic_two_column.png"
+    columns.save(columns_path)
+
+    manifest = {
+        "dataset_name": "synthetic-cloud-safe-ocr-benchmark",
+        "description": "程序生成，不包含内部或个人资料，可用于百度云连通性和格式对比。",
+        "samples": [
+            _sample("body-clear", body_path, "body_text", "\n".join(body_lines)),
+            _sample("body-degraded", degraded_path, "low_quality", "\n".join(body_lines)),
+            _sample(
+                "table",
+                table_path,
+                "table",
+                "\n".join(["燃气轮机 FMEA 表格 OCR 基准页", *(cell for row in table_rows for cell in row)]),
+            ),
+            _sample(
+                "two-column",
+                columns_path,
+                "two_column",
+                "\n".join(["双栏阅读顺序 OCR 基准页", *two_column_left, *two_column_right]),
+            ),
+        ],
+    }
+    manifest_path = destination / "benchmark_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return manifest_path
+
+
+def _sample(sample_id: str, source: Path, category: str, gold_text: str) -> dict[str, object]:
+    return {
+        "sample_id": sample_id,
+        "source_path": source.name,
+        "page": 1,
+        "category": category,
+        "external_allowed": True,
+        "gold_text": gold_text,
+        "notes": "Synthetic test page generated by scripts/generate_ocr_benchmark_demo.py",
+    }
+
+
+def _font(size: int) -> ImageFont.FreeTypeFont:
+    path = next((candidate for candidate in FONT_CANDIDATES if candidate.is_file()), None)
+    if path is None:
+        raise RuntimeError("No supported Chinese font was found under C:/Windows/Fonts")
+    return ImageFont.truetype(str(path), size=size)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output-dir",
+        default=str(REPO_ROOT / "build" / "ocr_benchmark_demo" / "input"),
+    )
+    args = parser.parse_args()
+    print(generate_demo(args.output_dir))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

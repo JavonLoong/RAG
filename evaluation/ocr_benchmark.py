@@ -240,18 +240,42 @@ def _run_sample(
         "cloud_elapsed_seconds": _payload_float(cloud_payload, "elapsed_seconds", "elapsed_s"),
         "local_line_count": _payload_line_count(local_payload),
         "cloud_line_count": _payload_line_count(cloud_payload),
+        "local_table_count": len(local_payload.get("tables") or []),
+        "cloud_table_count": len(cloud_payload.get("tables") or []),
     })
+    category = str(sample.get("category") or "body_text")
+    if category == "two_column" and local_payload.get("layout_reordered_text"):
+        optimized = _single_provider_metrics(
+            str(local_payload["layout_reordered_text"]),
+            gold_text,
+            provider="local_layout",
+        )
+        metrics.update(optimized)
+        if metrics.get("local_cer") is not None and metrics.get("local_layout_cer") is not None:
+            metrics["local_layout_cer_improvement"] = round(
+                float(metrics["local_cer"]) - float(metrics["local_layout_cer"]),
+                4,
+            )
+    layout_risk = str((local_payload.get("layout") or {}).get("reading_order_risk") or "")
     return {
         "sample_id": sample_id,
         "source_file": source_path.name,
         "source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
         "page": page,
-        "category": str(sample.get("category") or "body_text"),
+        "category": category,
         "external_allowed": external_allowed,
         "notes": str(sample.get("notes") or ""),
         "gold_text": gold_text,
-        "local": {"status": local_status, **_safe_payload(local_payload)},
-        "cloud": {"status": cloud_status, **_safe_payload(cloud_payload)},
+        "local": {
+            **_safe_payload(local_payload),
+            "provider_status": local_payload.get("status"),
+            "status": local_status,
+        },
+        "cloud": {
+            **_safe_payload(cloud_payload),
+            "provider_status": cloud_payload.get("status"),
+            "status": cloud_status,
+        },
         "metrics": metrics,
         "needs_human_review": (
             not gold_text
@@ -259,6 +283,8 @@ def _run_sample(
             or float(metrics.get("pair_disagreement_rate") or 0.0) >= 0.08
             or float(metrics.get("local_cer") or 0.0) >= 0.05
             or float(metrics.get("cloud_cer") or 0.0) >= 0.05
+            or (category == "table" and int(metrics.get("local_table_count") or 0) == 0)
+            or (category == "two_column" and layout_risk in {"medium", "high"})
         ),
     }
 
@@ -319,6 +345,12 @@ def _recommendations(records: list[dict[str, Any]]) -> list[str]:
         recommendations.append("当前金标不足或两者接近：先扩充按正文、表格、公式、双栏分层的人工金标。")
     if any(item["category"] in {"table", "formula", "two_column"} for item in records):
         recommendations.append("表格、公式和双栏页面必须分层统计，不能只看全体平均字符错误率。")
+    if any(float(item["metrics"].get("local_layout_cer_improvement") or 0.0) > 0 for item in records):
+        recommendations.append("分栏重排候选明显降低 CER：保留原始框顺序，同时把重排结果送人工审核后再进入图谱抽取。")
+    if any(item["category"] == "table" and int(item["metrics"].get("local_table_count") or 0) == 0 for item in records):
+        recommendations.append(
+            "表格文字已识别但没有行列结构：应路由到表格/办公文档识别，不能把换行文本当成结构化表格。"
+        )
     return recommendations
 
 
@@ -333,6 +365,7 @@ def _summarize_categories(records: list[dict[str, Any]]) -> list[dict[str, Any]]
             "gold_sample_count": sum(1 for item in items if item["metrics"].get("gold_available")),
             "mean_pair_disagreement_rate": _mean_metric(items, "pair_disagreement_rate"),
             "mean_local_cer": _mean_metric(items, "local_cer"),
+            "mean_local_layout_cer": _mean_metric(items, "local_layout_cer"),
             "mean_cloud_cer": _mean_metric(items, "cloud_cer"),
             "mean_local_elapsed_seconds": _mean_metric(items, "local_elapsed_seconds"),
             "mean_cloud_elapsed_seconds": _mean_metric(items, "cloud_elapsed_seconds"),
@@ -367,14 +400,15 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "",
         "## 分层结果",
         "",
-        "| 类别 | 样本 | 金标 | 差异率 | 本地 CER | 百度 CER | 本地耗时 | 百度耗时 |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| 类别 | 样本 | 金标 | 差异率 | 本地 CER | 本地分栏 CER | 百度 CER | 本地耗时 | 百度耗时 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for item in report["category_summary"]:
         lines.append(
             f"| {item['category']} | {item['sample_count']} | {item['gold_sample_count']} | "
             f"{_display_metric(item['mean_pair_disagreement_rate'])} | "
-            f"{_display_metric(item['mean_local_cer'])} | {_display_metric(item['mean_cloud_cer'])} | "
+            f"{_display_metric(item['mean_local_cer'])} | {_display_metric(item['mean_local_layout_cer'])} | "
+            f"{_display_metric(item['mean_cloud_cer'])} | "
             f"{_display_metric(item['mean_local_elapsed_seconds'])} | "
             f"{_display_metric(item['mean_cloud_elapsed_seconds'])} |"
         )
