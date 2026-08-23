@@ -68,6 +68,10 @@ def calculate_risk(
             raise FmeaDomainError(  # noqa: TRY003
                 f"score must be between {rule_pack.score_min} and {rule_pack.score_max}"
             )
+    if target_residual_risk is not None and (
+        not isinstance(target_residual_risk, int) or isinstance(target_residual_risk, bool)
+    ):
+        raise FmeaDomainError("target_residual_risk must be an integer")  # noqa: TRY003
 
     rpn = (
         decision_severity * occurrence * detection

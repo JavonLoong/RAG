@@ -24,6 +24,49 @@ def rules() -> ScoringRulePack:
     )
 
 
+@pytest.mark.parametrize("invalid_target", (8.5, "8", True))
+def test_non_integer_target_residual_risk_is_rejected(invalid_target) -> None:
+    with pytest.raises(FmeaDomainError, match="target_residual_risk must be an integer"):
+        calculate_risk(
+            rule_pack=rules(),
+            severity_by_consequence_class=(("safety", 5),),
+            occurrence=1,
+            detection=1,
+            inherent_risk=None,
+            current_risk=None,
+            target_residual_risk=invalid_target,
+            verified_residual_risk=8,
+            uncertainty=None,
+            reason="invalid target residual risk",
+            evidence_ids=("ev-1",),
+        )
+
+
+@pytest.mark.parametrize(
+    ("target_residual_risk", "evidence_ids"),
+    (
+        (8, ()),
+        (None, ("ev-1",)),
+    ),
+)
+def test_verified_residual_risk_requires_target_and_evidence(target_residual_risk, evidence_ids) -> None:
+    result = calculate_risk(
+        rule_pack=rules(),
+        severity_by_consequence_class=(("safety", 5),),
+        occurrence=1,
+        detection=1,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=target_residual_risk,
+        verified_residual_risk=99,
+        uncertainty=None,
+        reason="missing verification gate input",
+        evidence_ids=evidence_ids,
+    )
+
+    assert result.verified_residual_risk is None
+
+
 @pytest.mark.parametrize(
     (
         "severity_by_consequence_class",
@@ -92,6 +135,36 @@ def test_missing_score_does_not_become_zero_or_rpn() -> None:
     assert result.rpn is None
     assert result.decision_priority == "critical"
     assert result.verified_residual_risk is None
+
+
+@pytest.mark.parametrize(
+    ("severity_by_consequence_class", "occurrence", "detection"),
+    (
+        ((), 2, 3),
+        ((("safety", 5),), None, 3),
+        ((("safety", 5),), 2, None),
+    ),
+)
+def test_any_missing_severity_occurrence_or_detection_leaves_rpn_none(
+    severity_by_consequence_class,
+    occurrence,
+    detection,
+) -> None:
+    result = calculate_risk(
+        rule_pack=rules(),
+        severity_by_consequence_class=severity_by_consequence_class,
+        occurrence=occurrence,
+        detection=detection,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=None,
+        verified_residual_risk=None,
+        uncertainty=None,
+        reason="missing S/O/D input",
+        evidence_ids=(),
+    )
+
+    assert result.rpn is None
 
 
 def test_scores_outside_rule_pack_range_fail() -> None:
