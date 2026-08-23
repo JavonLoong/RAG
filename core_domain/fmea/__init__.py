@@ -1,3 +1,4 @@
+from .entities import FmeaAnalysis, FmeaRow
 from .states import (
     FMEA_SCHEMA_ID,
     ActorType,
@@ -16,6 +17,8 @@ __all__ = [
     "EvidencePack",
     "EvidenceRef",
     "EvidenceSupportStatus",
+    "FmeaAnalysis",
+    "FmeaRow",
     "PublicationStatus",
     "ReviewStatus",
     "RunStatus",
