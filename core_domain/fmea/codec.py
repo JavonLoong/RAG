@@ -7,6 +7,8 @@ from typing import cast
 
 from .entities import FmeaAnalysis, FmeaRow
 from .errors import FmeaDomainError
+from .policies import validate_propagation_edge
+from .propagation import PropagationEdge
 from .scoring import RiskAssessment
 from .states import ClaimStatus, EvidenceSupportStatus, PublicationStatus, ReviewStatus
 from .value_objects import EvidencePack, EvidenceRef, VersionSet
@@ -124,6 +126,19 @@ def _decode_row_payload(payload: object) -> FmeaRow:
     return FmeaRow(**data)
 
 
+def _decode_propagation_edge_payload(payload: object) -> PropagationEdge:
+    data = _object_payload(payload, "PropagationEdge")
+    for field_name in ("operating_modes", "barrier_ids", "evidence_ids"):
+        data[field_name] = _tuple_strings(data[field_name], field_name)
+    data["evidence_support"] = EvidenceSupportStatus(cast(str, data["evidence_support"]))
+    data["claim_status"] = ClaimStatus(cast(str, data["claim_status"]))
+    data["review_status"] = ReviewStatus(cast(str, data["review_status"]))
+    data["publication_status"] = PublicationStatus(cast(str, data["publication_status"]))
+    result = PropagationEdge(**data)
+    validate_propagation_edge(result, None)
+    return result
+
+
 def decode_analysis(payload: str) -> FmeaAnalysis:
     return _decode_analysis_payload(json.loads(payload))
 
@@ -134,3 +149,7 @@ def decode_row(payload: str) -> FmeaRow:
 
 def decode_evidence_pack(payload: str) -> EvidencePack:
     return _decode_evidence_pack_payload(json.loads(payload))
+
+
+def decode_propagation_edge(payload: str) -> PropagationEdge:
+    return _decode_propagation_edge_payload(json.loads(payload))

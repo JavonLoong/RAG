@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
+from core_domain.fmea.propagation import PropagationEdge
 from core_domain.fmea.states import (
     FMEA_SCHEMA_ID,
     ClaimStatus,
@@ -108,4 +109,36 @@ def fixture_row(fixture_pack: EvidencePack) -> FmeaRow:
         claim_status=ClaimStatus.KNOWN,
         review_status=ReviewStatus.DRAFT,
         publication_status=PublicationStatus.UNPUBLISHED,
+    )
+
+
+@pytest.fixture
+def fixture_edge(fixture_pack: EvidencePack) -> PropagationEdge:
+    return PropagationEdge(
+        edge_id="edge-1",
+        analysis_id="analysis-1",
+        source_entity_id="filter-1",
+        target_entity_id="combustor-1",
+        relation_type="propagation",
+        interface_variable="fuel_pressure",
+        unit="kPa",
+        direction="fuel_to_combustion",
+        threshold="<250",
+        operating_modes=("startup",),
+        delay_ms=100,
+        response_time_ms=200,
+        fault_tolerance_time_ms=500,
+        barrier_ids=("trip-1",),
+        evidence_pack_id=fixture_pack.pack_id,
+        evidence_ids=("ev-1",),
+        evidence_support=EvidenceSupportStatus.SUPPORTED,
+        claim_status=ClaimStatus.KNOWN,
+        review_status=ReviewStatus.DRAFT,
+        publication_status=PublicationStatus.UNPUBLISHED,
+        path_length=2,
+        is_cyclic=False,
+        is_unprocessed=False,
+        is_external=False,
+        is_terminal=False,
+        risk_priority="normal",
     )

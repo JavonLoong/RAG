@@ -1,4 +1,5 @@
 from .entities import FmeaAnalysis, FmeaRow
+from .propagation import PropagationEdge, PropagationRelation, validate_propagation_edge
 from .scoring import RiskAssessment, ScoringRulePack, calculate_risk
 from .states import (
     FMEA_SCHEMA_ID,
@@ -20,6 +21,8 @@ __all__ = [
     "EvidenceSupportStatus",
     "FmeaAnalysis",
     "FmeaRow",
+    "PropagationEdge",
+    "PropagationRelation",
     "PublicationStatus",
     "ReviewStatus",
     "RiskAssessment",
@@ -27,4 +30,5 @@ __all__ = [
     "ScoringRulePack",
     "VersionSet",
     "calculate_risk",
+    "validate_propagation_edge",
 ]

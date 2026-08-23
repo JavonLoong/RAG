@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .entities import FmeaRow
 from .errors import FmeaDomainError
+from .propagation import PropagationRelation
 from .states import (
     ActorType,
     ClaimStatus,
@@ -10,6 +13,9 @@ from .states import (
     ReviewStatus,
 )
 from .value_objects import EvidencePack
+
+if TYPE_CHECKING:
+    from .propagation import PropagationEdge
 
 _EVIDENCE_FIELDS = frozenset(
     {
@@ -32,6 +38,27 @@ _REVIEW_EDGES = {
     ReviewStatus.REJECTED: {ReviewStatus.DRAFT, ReviewStatus.SUPERSEDED},
     ReviewStatus.SUPERSEDED: set(),
 }
+
+_PROPAGATION_RELATION_TYPES = frozenset(item.value for item in PropagationRelation)
+
+
+def validate_propagation_relation(relation_type: str) -> None:
+    if relation_type not in _PROPAGATION_RELATION_TYPES:
+        raise FmeaDomainError(f"unknown propagation relation_type: {relation_type}")  # noqa: TRY003
+
+
+def validate_propagation_edge(edge: PropagationEdge, pack: EvidencePack | None) -> None:
+    validate_propagation_relation(edge.relation_type)
+    if pack is None:
+        return
+
+    if edge.evidence_pack_id != pack.pack_id:
+        raise FmeaDomainError("edge evidence_pack_id does not match supplied EvidencePack")  # noqa: TRY003
+
+    pack_evidence_ids = {ref.evidence_id for ref in pack.refs}
+    for evidence_id in edge.evidence_ids:
+        if evidence_id not in pack_evidence_ids:
+            raise FmeaDomainError(f"evidence ID {evidence_id} is absent from EvidencePack")  # noqa: TRY003
 
 
 def _validate_field_names(bindings: tuple[tuple[str, object], ...]) -> set[str]:
