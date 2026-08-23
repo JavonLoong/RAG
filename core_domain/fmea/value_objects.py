@@ -87,6 +87,8 @@ class EvidencePack:
         for ref in refs:
             if ref.workspace_id != workspace_id:
                 raise FmeaDomainError("evidence workspace_id does not match pack workspace_id")  # noqa: TRY003
+            if not set(ref.acl_scope).issubset(acl_scope):
+                raise FmeaDomainError("evidence acl_scope is not compatible with pack acl_scope")  # noqa: TRY003
         payload = json.dumps(
             [
                 {"evidence_id": ref.evidence_id, "evidence_hash": ref.evidence_hash, "locator": ref.locator}

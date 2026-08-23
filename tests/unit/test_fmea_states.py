@@ -92,6 +92,47 @@ def test_evidence_pack_hash_is_deterministic_and_immutable() -> None:
     )
 
     assert first.pack_hash == second.pack_hash
+
+    ordered = EvidencePack.build(
+        pack_id="pack-1",
+        workspace_id="ws-1",
+        acl_scope=("engineering",),
+        versions=_versions(),
+        refs=(_ref("ev-1"), _ref("ev-2")),
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+    reversed_order = EvidencePack.build(
+        pack_id="pack-1",
+        workspace_id="ws-1",
+        acl_scope=("engineering",),
+        versions=_versions(),
+        refs=(_ref("ev-2"), _ref("ev-1")),
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+    changed_hash = EvidencePack.build(
+        pack_id="pack-1",
+        workspace_id="ws-1",
+        acl_scope=("engineering",),
+        versions=_versions(),
+        refs=(replace(_ref(), evidence_hash="c" * 64),),
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+    changed_locator = EvidencePack.build(
+        pack_id="pack-1",
+        workspace_id="ws-1",
+        acl_scope=("engineering",),
+        versions=_versions(),
+        refs=(replace(_ref(), locator="page:9#span:1"),),
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+
+    assert ordered.pack_hash == reversed_order.pack_hash
+    assert changed_hash.pack_hash != first.pack_hash
+    assert changed_locator.pack_hash != first.pack_hash
     assert first.ref_by_id("ev-1") == first.refs[0]
     assert first.ref_by_id("missing") is None
     with pytest.raises(FrozenInstanceError):
@@ -151,6 +192,19 @@ def test_evidence_pack_rejects_cross_workspace_refs() -> None:
             acl_scope=("engineering",),
             versions=_versions(),
             refs=(replace(_ref(), workspace_id="ws-2"),),
+            created_at="2026-08-23T00:00:00Z",
+            expires_at=None,
+        )
+
+
+def test_evidence_pack_rejects_acl_scope_outside_pack_scope() -> None:
+    with pytest.raises(FmeaDomainError, match="acl_scope"):
+        EvidencePack.build(
+            pack_id="pack-1",
+            workspace_id="ws-1",
+            acl_scope=("engineering",),
+            versions=_versions(),
+            refs=(replace(_ref(), acl_scope=("engineering", "restricted")),),
             created_at="2026-08-23T00:00:00Z",
             expires_at=None,
         )
