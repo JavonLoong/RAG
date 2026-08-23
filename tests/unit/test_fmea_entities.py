@@ -12,6 +12,7 @@ from core_domain.fmea.policies import (
     validate_review_transition,
     validate_row_evidence,
 )
+from core_domain.fmea.scoring import RiskAssessment
 from core_domain.fmea.states import (
     ActorType,
     ClaimStatus,
@@ -48,6 +49,19 @@ def test_model_cannot_accept_or_publish() -> None:
             requested=PublicationStatus.PUBLISHED,
             actor_type=ActorType.MODEL,
         )
+
+
+def test_human_can_accept_and_publish() -> None:
+    validate_review_transition(
+        current=ReviewStatus.IN_REVIEW,
+        requested=ReviewStatus.ACCEPTED,
+        actor_type=ActorType.HUMAN,
+    )
+    validate_publication_transition(
+        current=PublicationStatus.UNPUBLISHED,
+        requested=PublicationStatus.PUBLISHED,
+        actor_type=ActorType.HUMAN,
+    )
 
 
 def test_invalid_evidence_id_is_rejected(fixture_pack, fixture_row) -> None:
@@ -124,6 +138,29 @@ def test_codec_round_trips_analysis_row_and_evidence_pack(fixture_analysis, fixt
     assert decode_analysis(analysis_payload) == fixture_analysis
     assert decode_row(row_payload) == fixture_row
     assert decode_evidence_pack(pack_payload) == fixture_pack
+
+
+def test_codec_round_trips_non_null_risk_assessment(fixture_row) -> None:
+    assessment = RiskAssessment(
+        severity_by_consequence_class=(("safety", 7), ("asset", 5)),
+        decision_severity=7,
+        occurrence=4,
+        detection=3,
+        rpn=84,
+        decision_priority="normal",
+        inherent_risk=100,
+        current_risk=84,
+        target_residual_risk=20,
+        verified_residual_risk=20,
+        uncertainty=None,
+        reason="reviewed operating data",
+        scoring_rule_pack_id="gas-turbine-risk",
+        scoring_rule_pack_version="1.0.0",
+        evidence_ids=("ev-1",),
+    )
+    row = replace(fixture_row, risk_assessment=assessment)
+
+    assert decode_row(encode_json(row)) == row
 
 
 def test_codec_is_canonical_and_rejects_nan() -> None:

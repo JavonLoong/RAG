@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .scoring import RiskAssessment
-
+from .scoring import RiskAssessment
 from .states import ClaimStatus, EvidenceSupportStatus, PublicationStatus, ReviewStatus
 from .value_objects import VersionSet
 

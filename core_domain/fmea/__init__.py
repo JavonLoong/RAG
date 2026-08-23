@@ -1,4 +1,5 @@
 from .entities import FmeaAnalysis, FmeaRow
+from .scoring import RiskAssessment, ScoringRulePack, calculate_risk
 from .states import (
     FMEA_SCHEMA_ID,
     ActorType,
@@ -21,6 +22,9 @@ __all__ = [
     "FmeaRow",
     "PublicationStatus",
     "ReviewStatus",
+    "RiskAssessment",
     "RunStatus",
+    "ScoringRulePack",
     "VersionSet",
+    "calculate_risk",
 ]

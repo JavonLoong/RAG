@@ -7,6 +7,7 @@ from typing import cast
 
 from .entities import FmeaAnalysis, FmeaRow
 from .errors import FmeaDomainError
+from .scoring import RiskAssessment
 from .states import ClaimStatus, EvidenceSupportStatus, PublicationStatus, ReviewStatus
 from .value_objects import EvidencePack, EvidenceRef, VersionSet
 
@@ -87,15 +88,9 @@ def _decode_analysis_payload(payload: object) -> FmeaAnalysis:
     return FmeaAnalysis(**data)
 
 
-def _decode_risk_assessment(payload: object) -> object:
+def _decode_risk_assessment(payload: object) -> RiskAssessment | None:
     if payload is None:
         return None
-    try:
-        from .scoring import RiskAssessment
-    except ModuleNotFoundError as exc:
-        if exc.name == "core_domain.fmea.scoring":
-            raise FmeaDomainError("RiskAssessment requires Task 3 scoring.py") from exc  # noqa: TRY003
-        raise
 
     data = _object_payload(payload, "RiskAssessment")
     severity_pairs = _array_payload(data["severity_by_consequence_class"], "severity_by_consequence_class")
