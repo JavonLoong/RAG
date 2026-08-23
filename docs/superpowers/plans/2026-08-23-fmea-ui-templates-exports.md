@@ -33,7 +33,7 @@
 
 前三计划必须先提供以下可验证合同；这些是 `DEPEND` 前置，不是本计划任务，也不要求本阶段建设上游模块。
 
-1. `core_domain.fmea.contracts` 可导入全部共享类型，`fmea_application/ports.py` 已有前三计划的 `ActorContext`、`FmeaRepository`、`EvidenceProvider` 和 `CandidateGenerator`；本计划新增的 export/template 端口必须继续放在该文件。
+1. `core_domain.fmea.contracts` 可导入全部共享类型，`fmea_application/ports.py` 已有前三计划的 `ActorContext`、`FmeaRepository` 和 `EvidenceProvider`，`fmea_application.candidate_pipeline` 已有唯一的 `FmeaCandidatePipeline`；本计划新增的 export/template 端口必须继续放在 `ports.py`。
 2. `SqliteFmeaRepository.get_revision(revision_id)` 能返回不可变的 `RevisionSnapshot`，其中包含 `FmeaAnalysis`、`FmeaRow`、`RiskAssessment`、`PropagationEdge`、`EvidencePack` 和 `VersionSet`；published revision 的修改返回 `FMEA_REVISION_IMMUTABLE`。
 3. `FmeaService` 已提供前三计划的 actor、权限、revision、review、approve、publish、withdraw 和 audit 行为；本计划 Task 2 在其上增加 `read_export_snapshot(revision_id, actor: ActorContext, draft_preview: bool) -> NormalizedFmeaSnapshot` 和 `export_revision(...)` 委托，服务缺少 EvidencePack 时返回 `insufficient_evidence`，不返回 `known`。
 4. `FmeaCandidatePipeline` 能用固定 EvidencePack、固定模型 mock 和固定 budget 产生可审核 candidate；本计划不实现候选生成、LLM provider、GraphStore、OCR、Chroma、M1-M4 资料流程或 M6 编排器。
@@ -42,7 +42,7 @@
 若依赖 gate 失败，执行：
 
 ```powershell
-uv run python -c "from core_domain.fmea.contracts import EvidencePack, EvidenceRef, FmeaAnalysis, FmeaRow, PropagationEdge, RiskAssessment, ScoringRulePack, VersionSet; from fmea_application.ports import ActorContext, CandidateGenerator, EvidenceProvider, FmeaRepository; from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository; from fmea_application.services import FmeaService; from fmea_application.candidate_pipeline import FmeaCandidatePipeline; print('FMEA_DEPENDENCIES_READY')"
+& '.venv\Scripts\python.exe' -c "from core_domain.fmea.contracts import EvidencePack, EvidenceRef, FmeaAnalysis, FmeaRow, PropagationEdge, RiskAssessment, ScoringRulePack, VersionSet; from fmea_application.ports import ActorContext, EvidenceProvider, FmeaRepository; from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository; from fmea_application.services import FmeaService; from fmea_application.candidate_pipeline import FmeaCandidatePipeline; print('FMEA_DEPENDENCIES_READY')"
 ```
 
 Expected failure contract: `DEPENDENCY_NOT_READY`；停止本计划实现，记录缺少的模块名和 import error，不新增替代 repository、替代 service 或替代 candidate pipeline。
@@ -125,7 +125,7 @@ The fixture factory must construct real shared types, not dictionaries that bypa
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_export_dto.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_export_dto.py -q
 ```
 
 Expected: FAIL with `ModuleNotFoundError: No module named 'fmea_application.export_dto'`.
@@ -244,7 +244,7 @@ Add these `.gitignore` exceptions after the existing broad `*.json` rule so comm
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_export_dto.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_export_dto.py -q
 ```
 
 Expected: PASS with all three tests passing and no mutable snapshot assignment accepted.
@@ -307,7 +307,7 @@ Add `tests/integration/test_fmea_export_service.py` with a `SqliteFmeaRepository
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_json_export.py tests/integration/test_fmea_export_service.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_json_export.py tests/integration/test_fmea_export_service.py -q
 ```
 
 Expected: FAIL because `ExportService` and `json_exporter` do not exist.
@@ -359,7 +359,7 @@ def export_revision(self, revision_id: str, *, format: str, actor: ActorContext,
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_json_export.py tests/integration/test_fmea_export_service.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_json_export.py tests/integration/test_fmea_export_service.py -q
 ```
 
 Expected: PASS; the output directory contains only the server-generated JSON file and no runtime database artifact.
@@ -439,7 +439,7 @@ assert json_payload["manifest"]["evidence_manifest"]
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_xlsx_export.py tests/unit/test_fmea_word_export.py tests/integration/test_fmea_export_consistency.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_xlsx_export.py tests/unit/test_fmea_word_export.py tests/integration/test_fmea_export_consistency.py -q
 ```
 
 Expected: FAIL because the two exporters and explicit XLSX dependency are absent.
@@ -449,7 +449,11 @@ Expected: FAIL because the two exporters and explicit XLSX dependency are absent
 Run:
 
 ```powershell
-uv add "openpyxl>=3.1.5"
+# Add this exact entry to [project].dependencies in pyproject.toml:
+#     "openpyxl>=3.1.5",
+& '.venv\Scripts\python.exe' -m pip install "openpyxl>=3.1.5"
+if (-not (Test-Path '.venv\Scripts\uv.exe')) { & '.venv\Scripts\python.exe' -m pip install "uv==0.12.5" }
+& '.venv\Scripts\uv.exe' lock
 ```
 
 In `xlsx_exporter.py`, use `Workbook()` with no macros, no formulas, no hyperlinks and `keep_links=False`; write the first row as fixed semantic headers and the second row from `FmeaRow`. Every text cell must pass:
@@ -469,7 +473,7 @@ In `word_exporter.py`, use `Document()`, `add_heading`, `add_table`, `cell.text 
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_xlsx_export.py tests/unit/test_fmea_word_export.py tests/integration/test_fmea_export_consistency.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_xlsx_export.py tests/unit/test_fmea_word_export.py tests/integration/test_fmea_export_consistency.py -q
 ```
 
 Expected: PASS with identical revision/snapshot identity and zero macro/external-link findings.
@@ -486,6 +490,8 @@ git commit -m "feat: add safe FMEA XLSX and Word exports"
 **Responsibility:** `OWN` —声明式 JSON Schema、受限规则、版本生命周期；不建设低代码画布、插件平台或任意执行器。
 
 **Files:**
+- Modify: `pyproject.toml`
+- Modify: `uv.lock`
 - Create: `fmea_infrastructure/templates/schemas/template-v1.schema.json`
 - Create: `fmea_infrastructure/templates/schema_loader.py`
 - Create: `fmea_application/template_service.py`
@@ -545,12 +551,22 @@ def test_published_template_is_immutable_and_only_human_can_publish(template_ser
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py -q
 ```
 
 Expected: FAIL because the schema loader and template service do not exist.
 
 - [ ] **Step 3: Add the JSON Schema and whitelist-only validator**
+
+Declare and lock the validator dependency before writing the loader:
+
+```powershell
+# Add this exact entry to [project].dependencies in pyproject.toml:
+#     "jsonschema>=4.25.1",
+& '.venv\Scripts\python.exe' -m pip install "jsonschema>=4.25.1"
+if (-not (Test-Path '.venv\Scripts\uv.exe')) { & '.venv\Scripts\python.exe' -m pip install "uv==0.12.5" }
+& '.venv\Scripts\uv.exe' lock
+```
 
 Create `template-v1.schema.json` with `$schema` `https://json-schema.org/draft/2020-12/schema`, `additionalProperties: false`, and these exact top-level properties: `schema_version`, `template_id`, `version`, `fields`, `rules`, `scoring_rule_pack_id`, `export_mappings`. `fields[].name` must match `^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$` for custom namespaces; `fields[].type` is one of `string`, `integer`, `number`, `boolean`, `enum`, `evidence_ref`; `rules[].kind` is one of `required_if`, `visible_if`, `enum`, `min_length`, `max_length`; `export_mappings` values are fixed semantic field names or namespaced extension names.
 
@@ -580,8 +596,8 @@ Use the exact enum member spelling already defined by前三计划; if that enum 
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py -q
-uv run python -c "from pathlib import Path; from fmea_infrastructure.templates.schema_loader import schema_hash; print(schema_hash(Path('fmea_infrastructure/templates/schemas/template-v1.schema.json')))"
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py -q
+& '.venv\Scripts\python.exe' -c "from pathlib import Path; from fmea_infrastructure.templates.schema_loader import schema_hash; print(schema_hash(Path('fmea_infrastructure/templates/schemas/template-v1.schema.json')))"
 ```
 
 Expected: PASS; the second command prints one 64-character lowercase SHA-256 hash.
@@ -589,7 +605,7 @@ Expected: PASS; the second command prints one 64-character lowercase SHA-256 has
 - [ ] **Step 5: Commit the declarative template lifecycle**
 
 ```powershell
-git add fmea_infrastructure/templates/schemas/template-v1.schema.json fmea_infrastructure/templates/schema_loader.py fmea_application/template_service.py tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py
+git add pyproject.toml uv.lock fmea_infrastructure/templates/schemas/template-v1.schema.json fmea_infrastructure/templates/schema_loader.py fmea_application/template_service.py tests/unit/test_fmea_template_schema.py tests/integration/test_fmea_template_lifecycle.py
 git commit -m "feat: add declarative FMEA template lifecycle"
 ```
 
@@ -671,7 +687,7 @@ def test_model_patch_is_suggestion_and_human_decision_is_audit_event(template_im
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_excel_import.py tests/unit/test_fmea_template_patch.py tests/integration/test_fmea_excel_import_persistence.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_excel_import.py tests/unit/test_fmea_template_patch.py tests/integration/test_fmea_excel_import_persistence.py -q
 ```
 
 Expected: FAIL because the importer, patch service and repository methods do not exist.
@@ -702,7 +718,7 @@ class TemplateDraftStore(Protocol):
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_excel_import.py tests/unit/test_fmea_template_patch.py tests/integration/test_fmea_excel_import_persistence.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_excel_import.py tests/unit/test_fmea_template_patch.py tests/integration/test_fmea_excel_import_persistence.py -q
 ```
 
 Expected: PASS; unknown and ambiguous columns remain visible, imported content is draft-only, and model actors cannot accept a patch.
@@ -770,7 +786,7 @@ def test_fmea_modules_use_text_content_and_schema_version_guard():
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_ui_structure.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_ui_structure.py -q
 ```
 
 Expected: FAIL because `fmea.html` and its modules do not exist.
@@ -806,7 +822,7 @@ Create `ui-state.schema.json` with `additionalProperties: false` for the client 
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_ui_structure.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_ui_structure.py -q
 node --check frontend_app/current_console/fmea/bootstrap.js
 node --check frontend_app/current_console/fmea/api/client.js
 node --check frontend_app/current_console/fmea/api/sse.js
@@ -877,14 +893,19 @@ def test_publication_is_disabled_for_model_and_shows_non_certification_disclaime
 Install the browser test dependencies before the first Playwright run:
 
 ```powershell
-uv add --dev "playwright>=1.50.0" "pytest-playwright>=0.7.0"
-uv run playwright install chromium
+# Add these exact entries to [dependency-groups].dev in pyproject.toml:
+#     "playwright>=1.50.0",
+#     "pytest-playwright>=0.7.0",
+& '.venv\Scripts\python.exe' -m pip install "playwright>=1.50.0" "pytest-playwright>=0.7.0"
+if (-not (Test-Path '.venv\Scripts\uv.exe')) { & '.venv\Scripts\python.exe' -m pip install "uv==0.12.5" }
+& '.venv\Scripts\uv.exe' lock
+& '.venv\Scripts\python.exe' -m playwright install chromium
 ```
 
 Run:
 
 ```powershell
-uv run pytest tests/e2e/test_fmea_views.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/e2e/test_fmea_views.py -q
 ```
 
 Expected: FAIL because the view modules and test fixture route do not exist.
@@ -935,7 +956,7 @@ Create `tests/e2e/conftest.py` in this task with a loopback `http.server` fixtur
 Run:
 
 ```powershell
-uv run pytest tests/e2e/test_fmea_views.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/e2e/test_fmea_views.py -q
 rg -n "innerHTML|eval\(|new Function|fetch\(.*https?://|indexedDB|sqlite|approve|publish|withdraw" frontend_app/current_console/fmea
 ```
 
@@ -1016,7 +1037,7 @@ def test_security_and_fault_case_fails_closed(case, fmea_fixture_runner):
 Run:
 
 ```powershell
-uv run pytest tests/acceptance/test_fmea_fixture_matrix.py tests/regression/test_fmea_security_faults.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/acceptance/test_fmea_fixture_matrix.py tests/regression/test_fmea_security_faults.py -q
 ```
 
 Expected: FAIL because the fixture files, loader and runner do not exist.
@@ -1075,7 +1096,7 @@ def load_cases(path: str) -> tuple[dict[str, object], ...]:
 Run:
 
 ```powershell
-uv run pytest tests/acceptance/test_fmea_fixture_matrix.py tests/regression/test_fmea_security_faults.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/acceptance/test_fmea_fixture_matrix.py tests/regression/test_fmea_security_faults.py -q
 ```
 
 Expected: PASS with 20 domain fixtures, 30 security/fault cases, and all P0 counters equal to zero. Report content metrics separately: state-aware F1 `>= 0.85`, evidence-support precision `>= 0.95`, non-unknown evidence coverage `>= 0.90`, unknown/conflict recall `>= 0.90`, propagation precision `>= 0.90`, high-risk unsupported propagation `== 0`, RPN arithmetic `== 1.0`; these are internal regression metrics and not certification evidence.
@@ -1161,7 +1182,7 @@ Add `tests/acceptance/test_fmea_cli_replay_contract.py` as an integration-only c
 Run:
 
 ```powershell
-uv run pytest tests/e2e/test_fmea_main_chain.py tests/acceptance/test_fmea_final_acceptance.py tests/acceptance/test_fmea_cli_replay_contract.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/e2e/test_fmea_main_chain.py tests/acceptance/test_fmea_final_acceptance.py tests/acceptance/test_fmea_cli_replay_contract.py -q
 ```
 
 Expected: FAIL because the real FastAPI harness, server-backed route and full main-chain selectors are not yet connected.
@@ -1196,10 +1217,10 @@ The final acceptance fixture must parse JSON with `orjson`, read XLSX with `open
 Run:
 
 ```powershell
-uv run pytest tests/e2e/test_fmea_main_chain.py tests/acceptance/test_fmea_final_acceptance.py tests/acceptance/test_fmea_cli_replay_contract.py -q
-uv run pytest tests/unit tests/integration tests/regression tests/acceptance -q
-uv run ruff check fmea_application fmea_infrastructure tests frontend_app/current_console/fmea
-uv run mypy fmea_application/export_dto.py fmea_application/export_service.py fmea_application/template_service.py fmea_application/template_import_service.py fmea_infrastructure/exporters fmea_infrastructure/templates
+& '.venv\Scripts\python.exe' -m pytest tests/e2e/test_fmea_main_chain.py tests/acceptance/test_fmea_final_acceptance.py tests/acceptance/test_fmea_cli_replay_contract.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit tests/integration tests/regression tests/acceptance -q
+& '.venv\Scripts\python.exe' -m ruff check fmea_application fmea_infrastructure tests frontend_app/current_console/fmea
+& '.venv\Scripts\python.exe' -m mypy fmea_application/export_dto.py fmea_application/export_service.py fmea_application/template_service.py fmea_application/template_import_service.py fmea_infrastructure/exporters fmea_infrastructure/templates
 ```
 
 Expected: Playwright main chain PASS; JSON/XLSX/Word identity is one revision/hash; full pytest has zero failures; ruff has zero errors; targeted mypy has zero errors. Record any pre-existing unrelated failures separately and do not label the phase complete while a required command fails.

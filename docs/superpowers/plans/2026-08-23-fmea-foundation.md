@@ -4,9 +4,9 @@
 
 **Goal:** Build an independently runnable Phase A/B FMEA domain-and-storage closure with versioned risk rules, immutable EvidencePack snapshots, PropagationEdge objects, a dedicated SQLite repository, and a safe WorkspaceRegistry storage binding.
 
-**Architecture:** Keep the canonical FMEA model in `core_domain/fmea` as frozen, model-free Python value objects and entities. Expose persistence and candidate orchestration through `fmea_application/ports.py`, put the application entry in `FmeaService`, and keep the candidate entry in `FmeaCandidatePipeline` as a deterministic fixture-backed boundary with no LLM call. Persist only to a separate migration-managed SQLite database through `SqliteFmeaRepository`; do not import or initialize `GraphStore`.
+**Architecture:** Keep the canonical FMEA model in `core_domain/fmea` as frozen, model-free Python value objects and entities. Expose persistence through `fmea_application/ports.py` and put the Phase 1 application entry in `FmeaService`; candidate generation and the unique `FmeaCandidatePipeline` begin only in Phase 2. Persist only to a separate migration-managed SQLite database through `SqliteFmeaRepository`; do not import or initialize `GraphStore`.
 
-**Tech Stack:** Python 3.11+, frozen dataclasses and enums, `sqlite3`, SQL migration files, Pydantic `WorkspaceRegistry`, pytest, uv, Ruff.
+**Tech Stack:** Python 3.11+, frozen dataclasses and enums, `sqlite3`, SQL migration files, Pydantic `WorkspaceRegistry`, pytest, Ruff, and the existing project `.venv`.
 
 **Spec:** `docs/superpowers/specs/2026-08-23-graphrag-fmea-system-design.md`
 
@@ -28,14 +28,14 @@
 - Workspace paths are resolved by the existing `WorkspaceRegistry` and remain under `allowed_root`; missing FMEA storage produces a stable configuration error at the composition boundary.
 - Phase 1 implements only the domain kernel, deterministic risk rules, EvidencePack, PropagationEdge, application ports/service, deterministic fixture-backed candidate persistence, dedicated SQLite/migrations/repository, and FMEA storage binding. LLM, external model adapters, REST/SSE, CLI, UI, templates, export, authentication, and upstream M1-M4 work are not tasks in this plan.
 - GraphRAG integration is read-only and represented only by a later `EvidenceProvider` port/fixture boundary; no task changes `QueryService`, `GraphStore`, retrieval, chunking, OCR, or graph construction.
-- Run all commands from `C:\Users\35551\Desktop\RAG\.worktrees\interface-output-v1` with `uv run`; do not rely on system Python.
+- Run all commands from `C:\Users\35551\Desktop\RAG\.worktrees\interface-output-v1` with the explicit `.venv\Scripts\python.exe`; do not rely on system Python or an implicit environment sync.
 - Preserve unrelated worktree changes. Every implementation commit stages only paths listed by its task.
 
 ## Responsibility Matrix Application
 
 | Plan task | Matrix mark | Executable boundary |
 | --- | --- | --- |
-| Tasks 1-5 | `OWN` | Implement and test the semantic model, rules, propagation policy, ports, service, and deterministic candidate boundary. |
+| Tasks 1-5 | `OWN` | Implement and test the semantic model, rules, propagation policy, ports, service, and deterministic candidate-bundle persistence boundary. |
 | Tasks 6-7 | `OWN` | Implement the dedicated SQLite schema, migrations, transaction runner, backup protection, and repository. |
 | Task 8 | `INTEGRATE` | Adapt the existing WorkspaceRegistry with one contained FMEA database path and tests; do not refactor the registry or query system. |
 | Task 9 | `OWN` | Prove the pure-domain-to-SQLite closure with a local fixture and focused quality gate. |
@@ -53,9 +53,8 @@ M1-M4 are dependencies only: they eventually provide stable document/version/has
 - Create `core_domain/fmea/policies.py` for evidence, status-transition, actor, and publication preconditions.
 - Create `core_domain/fmea/codec.py` for canonical JSON encoding/decoding used by the SQLite repository.
 - Create `core_domain/fmea/__init__.py` to export shared names without exposing infrastructure.
-- Create `fmea_application/ports.py` for repository, candidate, and read-only evidence interfaces plus stable application errors.
+- Create `fmea_application/ports.py` for repository and read-only evidence interfaces plus stable application errors; Phase 2 adds generation ports to this same file.
 - Create `fmea_application/services.py` for `FmeaService`.
-- Create `fmea_application/candidate_pipeline.py` for deterministic `FmeaCandidatePipeline`; it accepts fixture-provided candidate objects and never calls a model.
 - Create `fmea_application/__init__.py` for application exports.
 - Create `fmea_infrastructure/migrations/001_initial.sql` for the complete FMEA schema and `002_indexes.sql` for indexes/triggers.
 - Create `fmea_infrastructure/migration_runner.py` for ordered, transactional migration application and pre-migration backup.
@@ -308,7 +307,7 @@ def test_evidence_pack_rejects_duplicate_ids_and_bad_schema() -> None:
 Run:
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_states.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_states.py -q
 ~~~~
 
 Expected: collection fails with `ModuleNotFoundError` for `core_domain.fmea` because the package has not been created.
@@ -375,8 +374,8 @@ class EvidenceSupportStatus(str, Enum):
 Run:
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_states.py -q
-uv run ruff check core_domain/fmea tests/unit/test_fmea_states.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_states.py -q
+& '.venv\Scripts\python.exe' -m ruff check core_domain/fmea tests/unit/test_fmea_states.py
 ~~~~
 
 Expected: all tests pass and Ruff exits `0`.
@@ -647,7 +646,7 @@ def test_invalid_evidence_id_is_rejected(fixture_pack, fixture_row) -> None:
 - [ ] **Step 2: Run the test to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_entities.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_entities.py -q
 ~~~~
 
 Expected: collection fails because `entities.py` and `policies.py` do not yet exist.
@@ -710,8 +709,8 @@ Step 3 implements these codec functions with explicit typed reconstruction; no g
 - [ ] **Step 4: Run entity tests, codec round-trip tests, and lint**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_entities.py -q
-uv run ruff check core_domain/fmea tests/unit/test_fmea_entities.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_entities.py -q
+& '.venv\Scripts\python.exe' -m ruff check core_domain/fmea tests/unit/test_fmea_entities.py
 ~~~~
 
 Expected: all entity/policy tests pass and Ruff exits `0`.
@@ -922,7 +921,7 @@ def test_scores_outside_rule_pack_range_fail() -> None:
 - [ ] **Step 2: Run the risk test to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_scoring.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_scoring.py -q
 ~~~~
 
 Expected: collection fails because `core_domain.fmea.scoring` is not present.
@@ -962,8 +961,8 @@ Add `RiskAssessment` to `FmeaRow.risk_assessment` and add nested encode/decode c
 - [ ] **Step 4: Run risk tests and lint**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_scoring.py tests/unit/test_fmea_entities.py -q
-uv run ruff check core_domain/fmea tests/unit/test_fmea_scoring.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_scoring.py tests/unit/test_fmea_entities.py -q
+& '.venv\Scripts\python.exe' -m ruff check core_domain/fmea tests/unit/test_fmea_scoring.py
 ~~~~
 
 Expected: all selected tests pass and Ruff exits `0`.
@@ -1133,7 +1132,7 @@ def test_edge_rejects_unknown_relation_type() -> None:
 - [ ] **Step 2: Run the propagation test to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_propagation.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_propagation.py -q
 ~~~~
 
 Expected: collection fails because `propagation.py` is not present.
@@ -1165,7 +1164,7 @@ def auto_accept_allowed(self) -> bool:
     )
 ~~~~
 
-If `path_length > 2`, validation keeps the object and changes no source facts; the candidate pipeline records it with `ReviewStatus.IN_REVIEW` before persistence.
+If `path_length > 2`, validation keeps the object and changes no source facts; `FmeaService.persist_candidate_bundle()` records it with `ReviewStatus.IN_REVIEW` before persistence.
 
 After `PropagationEdge` exists, append this fixture to `tests/fmea_fixtures.py`:
 
@@ -1208,8 +1207,8 @@ def fixture_edge(fixture_pack: EvidencePack) -> PropagationEdge:
 - [ ] **Step 4: Run propagation tests and lint**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_propagation.py tests/unit/test_fmea_entities.py -q
-uv run ruff check core_domain/fmea tests/unit/test_fmea_propagation.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_propagation.py tests/unit/test_fmea_entities.py -q
+& '.venv\Scripts\python.exe' -m ruff check core_domain/fmea tests/unit/test_fmea_propagation.py
 ~~~~
 
 Expected: all selected tests pass and Ruff exits `0`.
@@ -1223,7 +1222,7 @@ git commit -m "feat(fmea): add propagation edge review policy"
 
 ---
 
-### Task 5: Add Application Ports, FmeaService, and Deterministic FmeaCandidatePipeline
+### Task 5: Add Application Ports and the Deterministic FmeaService Persistence Boundary
 
 **Responsibility:** `OWN`; this task does not call an LLM and does not implement an external provider.
 
@@ -1231,12 +1230,12 @@ git commit -m "feat(fmea): add propagation edge review policy"
 - Create: `fmea_application/__init__.py`
 - Create: `fmea_application/ports.py`
 - Create: `fmea_application/services.py`
-- Create: `fmea_application/candidate_pipeline.py`
+- Create: `core_domain/fmea/contracts.py`
 - Test: `tests/unit/test_fmea_application.py`
 
 **Interfaces:**
 - Consumes: all shared domain types from Tasks 1–4.
-- Produces: the application boundary named `FmeaService`, candidate boundary named `FmeaCandidatePipeline`, and repository port in `fmea_application/ports.py`.
+- Produces: the application boundary named `FmeaService`, stable downstream domain re-exports, and repository port in `fmea_application/ports.py`; it deliberately does not create `FmeaCandidatePipeline`.
 
 Put every port in `fmea_application/ports.py`. Define `FmeaRepository(Protocol)` with these exact methods:
 
@@ -1251,9 +1250,20 @@ Put every port in `fmea_application/ports.py`. Define `FmeaRepository(Protocol)`
 - `get_propagation_edge(self, edge_id: str) -> PropagationEdge | None`
 - `append_audit_event(self, *, actor_id: str, actor_type: ActorType, command: str, aggregate_type: str, aggregate_id: str, before_hash: str | None, after_hash: str | None, reason: str, versions: VersionSet) -> str`
 
-Define `EvidenceProvider.load_pack(workspace_id, pack_id) -> EvidencePack` as read-only for the next phase; this plan uses only local fixture data. Define `FmeaCandidatePipeline.persist_candidates(analysis, evidence_pack, rows, edges, actor_id, actor_type)` to return `tuple[tuple[FmeaRow, ...], tuple[PropagationEdge, ...]]`. It validates current-pack IDs and analysis IDs, changes row candidates to `suggested`, changes longer-path edge candidates to `in_review`, and forces all candidate publication states to `unpublished`.
+Define `EvidenceProvider.load_pack(workspace_id, pack_id) -> EvidencePack` as read-only for the next phase; this plan uses only local fixture data. Define `FmeaService.persist_candidate_bundle(analysis, evidence_pack, rows, edges, actor_id, actor_type)` to return `tuple[tuple[FmeaRow, ...], tuple[PropagationEdge, ...]]`. It validates current-pack IDs and analysis IDs, changes row candidates to `suggested`, changes longer-path edge candidates to `in_review`, and forces all candidate publication states to `unpublished`.
 
-`FmeaService` exposes `create_analysis`, `register_evidence_pack`, `save_row`, `save_propagation_edge`, and `generate_candidates` with the same parameter names and return types as the repository methods. The service delegates persistence and does not know SQLite.
+`FmeaService` exposes `create_analysis`, `register_evidence_pack`, `save_row`, `save_propagation_edge`, and `persist_candidate_bundle`. Phase 1 does not use the name `generate_candidates`; Phase 2 reserves that name for the EvidenceProvider/LLM orchestration entry. The service delegates persistence and does not know SQLite.
+
+Create `core_domain/fmea/contracts.py` as the stable downstream import seam. It re-exports the exact shared names from `states.py`, `value_objects.py`, `entities.py`, `scoring.py`, and `propagation.py`; it contains no second model definitions. Its `__all__` is:
+
+~~~~python
+__all__ = [
+    "ActorType", "ClaimStatus", "EvidencePack", "EvidenceRef",
+    "EvidenceSupportStatus", "FmeaAnalysis", "FmeaRow", "PropagationEdge",
+    "PublicationStatus", "ReviewStatus", "RiskAssessment", "RunStatus",
+    "ScoringRulePack", "VersionSet",
+]
+~~~~
 
 - [ ] **Step 1: Write failing port and service tests with an in-memory fake**
 
@@ -1311,13 +1321,13 @@ class MemoryRepository:
         return "audit-1"
 
 
-def test_candidate_pipeline_marks_rows_suggested_and_unpublished(
+def test_candidate_bundle_persistence_marks_rows_suggested_and_unpublished(
     fixture_analysis, fixture_pack, fixture_row, fixture_edge
 ) -> None:
     repository = MemoryRepository()
     service = FmeaService(repository)
 
-    result_rows, result_edges = service.generate_candidates(
+    result_rows, result_edges = service.persist_candidate_bundle(
         analysis=fixture_analysis,
         evidence_pack=fixture_pack,
         rows=(
@@ -1338,13 +1348,13 @@ def test_candidate_pipeline_marks_rows_suggested_and_unpublished(
     assert repository.rows[result_rows[0].row_id] == result_rows[0]
 
 
-def test_candidate_pipeline_rejects_wrong_analysis_id(
+def test_candidate_bundle_persistence_rejects_wrong_analysis_id(
     fixture_analysis, fixture_pack, fixture_row, fixture_edge
 ) -> None:
     service = FmeaService(MemoryRepository())
     wrong_row = replace(fixture_row, analysis_id="other-analysis")
     with pytest.raises(FmeaDomainError, match="analysis_id"):
-        service.generate_candidates(
+        service.persist_candidate_bundle(
             analysis=fixture_analysis,
             evidence_pack=fixture_pack,
             rows=(wrong_row,),
@@ -1359,14 +1369,14 @@ The test file must define `MemoryRepository`; concrete local fixtures come from 
 - [ ] **Step 2: Run the service test to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_application.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_application.py -q
 ~~~~
 
 Expected: collection fails because `fmea_application` does not exist.
 
-- [ ] **Step 3: Write ports, pipeline, and FmeaService**
+- [ ] **Step 3: Write ports and FmeaService**
 
-The pipeline calls `validate_row_evidence` and `validate_propagation_edge` before repository writes, saves the EvidencePack first, and uses `dataclasses.replace` for state changes:
+`FmeaService.persist_candidate_bundle()` calls `validate_row_evidence` and `validate_propagation_edge` before repository writes, saves the EvidencePack first, and uses `dataclasses.replace` for state changes:
 
 ~~~~python
 saved_rows: list[FmeaRow] = []
@@ -1408,8 +1418,8 @@ for edge in edges:
 - [ ] **Step 4: Run application tests and lint**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_application.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_propagation.py -q
-uv run ruff check fmea_application tests/unit/test_fmea_application.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_application.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_propagation.py -q
+& '.venv\Scripts\python.exe' -m ruff check fmea_application tests/unit/test_fmea_application.py
 ~~~~
 
 Expected: all selected tests pass and Ruff exits `0`.
@@ -1417,7 +1427,7 @@ Expected: all selected tests pass and Ruff exits `0`.
 - [ ] **Step 5: Commit the application boundary**
 
 ~~~~powershell
-git add fmea_application/__init__.py fmea_application/ports.py fmea_application/services.py fmea_application/candidate_pipeline.py tests/unit/test_fmea_application.py
+git add core_domain/fmea/contracts.py fmea_application/__init__.py fmea_application/ports.py fmea_application/services.py tests/unit/test_fmea_application.py
 git commit -m "feat(fmea): add application ports and candidate service"
 ~~~~
 
@@ -1662,7 +1672,7 @@ def test_invalid_migration_rolls_back_and_does_not_mark_version(tmp_path: Path) 
 - [ ] **Step 2: Run migration tests to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_migrations.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_migrations.py -q
 ~~~~
 
 Expected: collection fails because the migration runner and SQL directory do not exist.
@@ -1713,8 +1723,8 @@ Use parameter-free SQL only for the regex-validated migration file name/version;
 - [ ] **Step 4: Run migration tests and SQL checks**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_migrations.py -q
-uv run python -c "import sqlite3; from pathlib import Path; from fmea_infrastructure.migration_runner import apply_migrations; c=sqlite3.connect(':memory:'); print(apply_migrations(c, Path('fmea_infrastructure/migrations')))"
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_migrations.py -q
+& '.venv\Scripts\python.exe' -c "import sqlite3; from pathlib import Path; from fmea_infrastructure.migration_runner import apply_migrations; c=sqlite3.connect(':memory:'); print(apply_migrations(c, Path('fmea_infrastructure/migrations')))"
 ~~~~
 
 Expected: pytest passes and the Python command prints `(1, 2)`.
@@ -1858,7 +1868,7 @@ def test_model_cannot_persist_accepted_or_published_state(
 - [ ] **Step 2: Run repository tests to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/integration/test_fmea_repository_sqlite.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/integration/test_fmea_repository_sqlite.py -q
 ~~~~
 
 Expected: collection fails because `SqliteFmeaRepository` is not present.
@@ -1894,8 +1904,8 @@ Table and identity values passed to this helper come from fixed internal constan
 - [ ] **Step 4: Run repository tests, focused domain tests, and lint**
 
 ~~~~powershell
-uv run pytest tests/integration/test_fmea_repository_sqlite.py tests/unit/test_fmea_migrations.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py -q
-uv run ruff check fmea_infrastructure tests/integration/test_fmea_repository_sqlite.py
+& '.venv\Scripts\python.exe' -m pytest tests/integration/test_fmea_repository_sqlite.py tests/unit/test_fmea_migrations.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py -q
+& '.venv\Scripts\python.exe' -m ruff check fmea_infrastructure tests/integration/test_fmea_repository_sqlite.py
 ~~~~
 
 Expected: all selected tests pass and Ruff exits `0`.
@@ -1986,7 +1996,7 @@ def test_registry_keeps_missing_fmea_binding_explicit(
 - [ ] **Step 2: Run the registry tests to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/unit/test_workspace_registry.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_workspace_registry.py -q
 ~~~~
 
 Expected: the new tests fail because `WorkspaceConfig` has no `fmea_db_path` field and the loader does not resolve it.
@@ -2009,8 +2019,8 @@ The guard derives no path and creates no database. Existing tests that intention
 - [ ] **Step 4: Run the full registry test file and lint**
 
 ~~~~powershell
-uv run pytest tests/unit/test_workspace_registry.py -q
-uv run ruff check api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/workspace_registry.py tests/unit/test_workspace_registry.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_workspace_registry.py -q
+& '.venv\Scripts\python.exe' -m ruff check api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/workspace_registry.py tests/unit/test_workspace_registry.py
 ~~~~
 
 Expected: all registry tests pass and Ruff exits `0`.
@@ -2032,7 +2042,7 @@ git commit -m "feat(fmea): bind workspace fmea database path"
 - Create: `tests/integration/test_fmea_foundation_closure.py`
 
 **Interfaces:**
-- Consumes: `WorkspaceRegistry.fmea_db_path`, `FmeaService`, `FmeaCandidatePipeline`, and `SqliteFmeaRepository`.
+- Consumes: `WorkspaceRegistry.fmea_db_path`, `FmeaService`, and `SqliteFmeaRepository`.
 - Produces: one reproducible test proving an analysis, EvidencePack, row, and PropagationEdge can be created locally, persisted to the dedicated workspace database, reopened, and read back with exact versions, hashes, states, and audit events.
 
 - [ ] **Step 1: Write the red closure test**
@@ -2083,7 +2093,7 @@ def test_fmea_foundation_closes_over_workspace_sqlite(
     service.create_analysis(fixture_analysis, actor_id="system", actor_type=ActorType.SYSTEM)
     service.register_evidence_pack(fixture_pack, actor_id="system", actor_type=ActorType.SYSTEM)
     long_edge = replace(fixture_edge, edge_id="edge-long", path_length=3)
-    rows, edges = service.generate_candidates(
+    rows, edges = service.persist_candidate_bundle(
         analysis=fixture_analysis,
         evidence_pack=fixture_pack,
         rows=(fixture_row,),
@@ -2111,20 +2121,20 @@ The test also asserts that an evidence ID from another pack fails before databas
 - [ ] **Step 2: Run the closure test to verify the red state**
 
 ~~~~powershell
-uv run pytest tests/integration/test_fmea_foundation_closure.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/integration/test_fmea_foundation_closure.py -q
 ~~~~
 
 Expected: the test fails until the repository, application, and WorkspaceRegistry bindings are connected.
 
 - [ ] **Step 3: Keep the closure fixture local and bounded**
 
-Use `workspace_id="ws-1"`, one reviewed primary document, one `fuel_pressure` edge, one two-hop propagation edge, and one three-hop edge. Do not add real documents, LLM calls, network access, REST routes, UI files, or export files. The closure runs with `uv run pytest` on an empty temporary directory.
+Use `workspace_id="ws-1"`, one reviewed primary document, one `fuel_pressure` edge, one two-hop propagation edge, and one three-hop edge. Do not add real documents, LLM calls, network access, REST routes, UI files, or export files. The closure runs with `& '.venv\Scripts\python.exe' -m pytest` on an empty temporary directory.
 
 - [ ] **Step 4: Run the complete Phase 1 quality gate**
 
 ~~~~powershell
-uv run pytest tests/unit/test_fmea_states.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py tests/unit/test_fmea_application.py tests/unit/test_fmea_migrations.py tests/unit/test_workspace_registry.py tests/integration/test_fmea_repository_sqlite.py tests/integration/test_fmea_foundation_closure.py -q
-uv run ruff check core_domain/fmea fmea_application fmea_infrastructure api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/workspace_registry.py tests/unit/test_fmea_states.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py tests/unit/test_fmea_application.py tests/unit/test_fmea_migrations.py tests/unit/test_workspace_registry.py tests/integration/test_fmea_repository_sqlite.py tests/integration/test_fmea_foundation_closure.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_states.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py tests/unit/test_fmea_application.py tests/unit/test_fmea_migrations.py tests/unit/test_workspace_registry.py tests/integration/test_fmea_repository_sqlite.py tests/integration/test_fmea_foundation_closure.py -q
+& '.venv\Scripts\python.exe' -m ruff check core_domain/fmea fmea_application fmea_infrastructure api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/workspace_registry.py tests/unit/test_fmea_states.py tests/unit/test_fmea_entities.py tests/unit/test_fmea_scoring.py tests/unit/test_fmea_propagation.py tests/unit/test_fmea_application.py tests/unit/test_fmea_migrations.py tests/unit/test_workspace_registry.py tests/integration/test_fmea_repository_sqlite.py tests/integration/test_fmea_foundation_closure.py
 git diff --check
 ~~~~
 
@@ -2157,5 +2167,5 @@ The expected Phase 1 result is a model-free, local, replayable FMEA closure: dom
 - [ ] Integration coverage: Task 8 covers only the `WorkspaceRegistry` FMEA storage binding and contained-path failure behavior; it does not assign upstream GraphRAG work.
 - [ ] Closure coverage: Task 9 proves the requested independently runnable pure-domain/storage loop and in-scope evidence/state hard-zero invariants.
 - [ ] Responsibility check: implementation work maps to `OWN`; the only integration task is adapter/configuration/test work; dependencies are written as inputs and failures; excluded capabilities are not tasks.
-- [ ] Type check: every task uses the exact shared names, `fmea_application/ports.py`, `SqliteFmeaRepository`, `FmeaService`, `FmeaCandidatePipeline`, and `graphrag.fmea.v1`.
+- [ ] Type check: every task uses the exact shared names, `fmea_application/ports.py`, `SqliteFmeaRepository`, `FmeaService`, and `graphrag.fmea.v1`; only Phase 2 creates `FmeaCandidatePipeline`.
 - [ ] Placeholder check: every task has named files, interfaces, executable test code, minimal implementation code, exact commands, expected outcomes, and a commit command.

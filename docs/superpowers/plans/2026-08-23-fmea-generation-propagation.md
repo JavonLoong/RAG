@@ -6,7 +6,7 @@
 
 **Architecture:** `QueryServiceEvidenceProvider` 只调用现有 `QueryService` 的 `vector/local/global` 模式和 `GraphStore` 的只读查询，先生成不可变 `EvidencePack`，再由确定性校验器决定字段支持状态。`FmeaCandidatePipeline` 对完整 FMEA 行批量结构化生成、确定性验证、独立 critic 和一次有界修复；`PropagationAnalyzer` 使用同一快照做最多两跳的前向/后向路径分析，所有风险高、冲突、循环、无证据或超过两跳的结果保留为待人工处理状态。
 
-**Tech Stack:** Python 3.11+, dataclasses/Protocol, Pydantic foundation contracts, `orjson`, `hashlib`, `requests`/现有 `OpenAICompatibleLLMClient`, SQLite foundation repository, pytest, pytest fixtures, ruff, mypy, uv。
+**Tech Stack:** Python 3.11+, frozen dataclasses/Protocol foundation contracts, `orjson`, `hashlib`, `requests`/现有 `OpenAICompatibleLLMClient`, SQLite foundation repository, pytest, pytest fixtures, Ruff, mypy, and the existing project `.venv`。
 
 **Spec:** `docs/superpowers/specs/2026-08-23-graphrag-fmea-system-design.md`
 
@@ -136,7 +136,7 @@ foundation 缺失、迁移未完成、共享类型无法导入或 repository 缺
 | `fmea_application/ports.py` | Typed application, evidence, gateway, cache and run-event ports | Modify foundation-created file; no parallel port module |
 | `fmea_application/validators.py` | Evidence binding, conflict preservation, row and risk validation | Create |
 | `fmea_application/budgeting.py` | Risk route, fixed budgets, retry classes and cache-key canonicalization | Create |
-| `fmea_application/candidate_pipeline.py` | Batch generation, critic, one repair, fallback and candidate row construction | Modify foundation-created shell |
+| `fmea_application/candidate_pipeline.py` | Batch generation, critic, one repair, fallback and candidate row construction | Create the single candidate pipeline in Phase 2 |
 | `fmea_application/services.py` | `FmeaService` delegation into the Phase 2 pipeline | Modify foundation-created shell |
 | `fmea_application/propagation_service.py` | Bounded two-hop forward/backward propagation | Create |
 | `fmea_infrastructure/evidence_provider.py` | Read-only QueryService/GraphStore adapter and EvidencePack snapshot | Modify existing infrastructure package |
@@ -162,6 +162,7 @@ FmeaService.generate_candidates
 `fmea_application/ports.py` 暴露的最小端口如下；后续任务只能消费这些签名，不得另造同义端口：
 
 ```python
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Mapping
 from typing import Any, Literal, Protocol
@@ -223,6 +224,11 @@ class FmeaGatewayResponse:
     finish_reason: str
 
 
+@dataclass(frozen=True, slots=True)
+class CancellationToken:
+    is_cancelled: Callable[[], bool]
+
+
 class EvidenceProvider(Protocol):
     def create_snapshot(self, request: EvidenceRequest) -> EvidencePack:
         raise NotImplementedError
@@ -242,7 +248,7 @@ class FmeaLlmGateway(Protocol):
         raise NotImplementedError
 
 
-class FmeaRepositoryPort(Protocol):
+class FmeaRepository(Protocol):
     def initialize(self) -> None:
         raise NotImplementedError
 
@@ -308,7 +314,7 @@ class RunEventPort(Protocol):
 
 **Interfaces:**
 - Consumes: `core_domain.fmea` exact shared types and `SqliteFmeaRepository` method names from the Foundation Dependency Contract。
-- Produces: `EvidenceRequest`, `PropagationRequest`, `FmeaGatewayRequest`, `FmeaGatewayResponse`, `EvidenceProvider`, `FmeaLlmGateway`, `FmeaRepositoryPort`, `SuggestionCachePort` and `RunEventPort` from `fmea_application.ports`；the existing `tests/fmea_fixtures.py` gains deterministic `make_version_set()`, `make_analysis()`, `make_ref()` and `make_pack()` helpers。
+- Produces: `EvidenceRequest`, `PropagationRequest`, `FmeaGatewayRequest`, `FmeaGatewayResponse`, `CancellationToken`, `EvidenceProvider`, `FmeaLlmGateway`, the existing extended `FmeaRepository`, `SuggestionCachePort` and `RunEventPort` from `fmea_application.ports`；the existing `tests/fmea_fixtures.py` gains deterministic `make_version_set()`, `make_analysis()`, `make_ref()` and `make_pack()` helpers。
 
 - [ ] **Step 1: Write the failing port and schema-identity tests**
 
@@ -338,7 +344,7 @@ def test_ports_use_exact_shared_status_names_and_schema() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_ports.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_ports.py -q
 ```
 
 Expected: FAIL with a missing `fmea_application` module or missing foundation export；do not add fallback type aliases。
@@ -446,7 +452,7 @@ def make_empty_pack() -> EvidencePack:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_ports.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_ports.py -q
 ```
 
 Expected: PASS；the test proves no `QueryMode.FMEA` exists and all imports use the exact shared names。
@@ -477,7 +483,7 @@ git commit -m "feat(fmea): extend phase two application ports"
 from types import SimpleNamespace
 
 from core_domain.query_contracts import Citation, CitationType, QueryMode, SourceRef
-from fmea_application.ports import EvidenceRequest
+from fmea_application.ports import CancellationToken, EvidenceRequest
 from fmea_infrastructure.evidence_provider import QueryServiceEvidenceProvider
 from tests.fmea_fixtures import make_version_set
 
@@ -536,7 +542,7 @@ def test_adapter_calls_only_read_modes_and_saves_one_snapshot() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_evidence_provider.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_evidence_provider.py -q
 ```
 
 Expected: FAIL because `QueryServiceEvidenceProvider` and the adapter package do not exist。
@@ -595,7 +601,7 @@ def read_refs(self, pack: EvidencePack, evidence_ids: tuple[str, ...]) -> tuple[
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_evidence_provider.py tests/integration/test_fmea_evidence_provider_integration.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_evidence_provider.py tests/integration/test_fmea_evidence_provider_integration.py -q
 ```
 
 Expected: PASS；integration uses an in-memory fake QueryService/GraphStore and asserts no call to `GraphStore.import_edges`, `initialize(reset=True)` or any SQL write path occurs。
@@ -686,7 +692,7 @@ def test_conflicting_source_support_is_preserved_as_conflict() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_validators.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_validators.py -q
 ```
 
 Expected: FAIL because `fmea_application.validators` does not exist。
@@ -816,7 +822,7 @@ def validate_risk_assessment(
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_validators.py tests/unit/test_query_contracts.py tests/unit/test_graph_store.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_validators.py tests/unit/test_query_contracts.py tests/unit/test_graph_store.py -q
 ```
 
 Expected: all selected tests PASS；generic query and GraphStore behavior remains unchanged。
@@ -898,7 +904,7 @@ def test_malformed_json_is_non_retryable() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_llm_gateway.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_llm_gateway.py -q
 ```
 
 Expected: FAIL because the FMEA gateway module and decoder do not exist。
@@ -928,7 +934,7 @@ def decode_batch_response(content: str) -> dict[str, object]:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_llm_gateway.py tests/unit/test_model_adapters_llm.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_llm_gateway.py tests/unit/test_model_adapters_llm.py -q
 ```
 
 Expected: PASS；the existing OpenAI-compatible adapter tests remain green and no network request is made by the FMEA unit tests。
@@ -1022,7 +1028,7 @@ def test_retry_only_retries_timeout_and_429_then_stops() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_budgeting.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_budgeting.py -q
 ```
 
 Expected: FAIL because the policy module does not exist。
@@ -1120,8 +1126,8 @@ def call_with_retry(operation, retry_policy: RetryPolicy, *, sleep) -> object:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_budgeting.py -q
-uv run ruff check fmea_application/budgeting.py tests/unit/test_fmea_budgeting.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_budgeting.py -q
+& '.venv\Scripts\python.exe' -m ruff check fmea_application/budgeting.py tests/unit/test_fmea_budgeting.py
 ```
 
 Expected: both commands PASS；the cache test must show a changed key for workspace, ACL, task, input snapshot, pack hash, every `VersionSet` version, stage, model/provider, prompt hash and tool schema hash。
@@ -1138,13 +1144,13 @@ git commit -m "feat(fmea): add adaptive budget retry and cache policy"
 **Responsibility:** `OWN` for candidate orchestration；gateway and repository are `INTEGRATE` ports only。
 
 **Files:**
-- Modify: `fmea_application/candidate_pipeline.py`
+- Create: `fmea_application/candidate_pipeline.py`
 - Modify: `fmea_application/services.py`
 - Test: `tests/unit/test_fmea_candidate_pipeline.py`
 
 **Interfaces:**
-- Consumes: `EvidenceProvider`, `FmeaLlmGateway`, `FmeaRepositoryPort`, `SuggestionCachePort`, `RunEventPort`, `BudgetPolicy`, validators, `FmeaAnalysis`, `VersionSet`, `ScoringRulePack`。
-- Produces: `CandidateGenerationRequest`, `CandidateRunResult`, `FmeaCandidatePipeline.run()` and `FmeaService.generate_candidates()`；result fields are `run_id`, `run_status`, `error_code`, `evidence_pack`, `rows: tuple[FmeaRow, ...]`, `repair_count`, `critic_used`, `cache_hit`, `warnings` and `ledger_hash`。
+- Consumes: `EvidenceProvider`, `FmeaLlmGateway`, `FmeaRepository`, `SuggestionCachePort`, `RunEventPort`, `BudgetPolicy`, validators, `FmeaAnalysis`, `VersionSet`, `ScoringRulePack`。
+- Produces: `CandidateGenerationRequest`, `CandidateRunResult`, `FmeaCandidatePipeline.run()` and `FmeaService.generate_candidates()`；result fields are `run_id`, `run_status`, `error_code`, `evidence_pack: EvidencePack | None`, `rows: tuple[FmeaRow, ...]`, `repair_count`, `critic_used`, `cache_hit`, `warnings` and `ledger_hash`。
 
 ```python
 from dataclasses import dataclass
@@ -1164,6 +1170,7 @@ class CandidateGenerationRequest:
     scoring_rule_pack: ScoringRulePack
     budget: BudgetPolicy
     input_snapshot_hash: str
+    cancellation: CancellationToken
 
 
 @dataclass(frozen=True, slots=True)
@@ -1171,7 +1178,7 @@ class CandidateRunResult:
     run_id: str
     run_status: RunStatus
     error_code: str | None
-    evidence_pack: EvidencePack
+    evidence_pack: EvidencePack | None
     rows: tuple[FmeaRow, ...]
     repair_count: int
     critic_used: bool
@@ -1185,13 +1192,15 @@ class CandidateRunResult:
 - [ ] **Step 1: Write failing tests for batch generation, evidence downgrade, critic, repair and fallback**
 
 ```python
+from dataclasses import replace
+
 import orjson
 
 from core_domain.fmea import ClaimStatus, RunStatus
 
 from fmea_application.budgeting import BudgetPolicy
 from fmea_application.candidate_pipeline import CandidateGenerationRequest, FmeaCandidatePipeline
-from fmea_application.ports import EvidenceRequest, FmeaGatewayResponse
+from fmea_application.ports import CancellationToken, EvidenceRequest, FmeaGatewayResponse
 from fmea_infrastructure.llm_gateway import GatewayUnavailable
 from tests.fmea_fixtures import make_analysis, make_pack, make_scoring_rule_pack, make_version_set
 
@@ -1287,6 +1296,7 @@ def make_generation_request(analysis, versions):
         scoring_rule_pack=make_scoring_rule_pack(),
         budget=BudgetPolicy(),
         input_snapshot_hash="input-1",
+        cancellation=CancellationToken(is_cancelled=lambda: False),
     )
 
 
@@ -1329,6 +1339,19 @@ def test_missing_foundation_fails_before_first_gateway_call() -> None:
     assert result.run_status is RunStatus.FAILED
     assert result.error_code == "FMEA_FOUNDATION_UNAVAILABLE"
     assert gateway.calls == []
+
+
+def test_cancelled_request_stops_before_evidence_or_gateway_call() -> None:
+    evidence = FakeEvidenceProvider(make_pack())
+    gateway = FakeGateway([structured_response(["row-1"])])
+    repository = FakeRepository()
+    request = make_generation_request(make_analysis(), make_version_set())
+    request = replace(request, cancellation=CancellationToken(is_cancelled=lambda: True))
+    result = FmeaCandidatePipeline(evidence, gateway, repository, repository, repository).run(request)
+    assert result.run_status is RunStatus.CANCELLED
+    assert result.evidence_pack is None
+    assert evidence.calls == 0
+    assert gateway.calls == []
 ```
 
 - [ ] **Step 2: Run the pipeline tests to verify they fail**
@@ -1336,7 +1359,7 @@ def test_missing_foundation_fails_before_first_gateway_call() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_candidate_pipeline.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_candidate_pipeline.py -q
 ```
 
 Expected: FAIL because `FmeaCandidatePipeline` and the generation service entry do not exist。
@@ -1348,21 +1371,31 @@ The pipeline must execute this exact sequence: validate foundation/actor/version
 ```python
 def run(self, request: CandidateGenerationRequest) -> CandidateRunResult:
     self._check_foundation(request)
+    if request.cancellation.is_cancelled():
+        return self._cancelled_result(request.run_id)
     pack = self.evidence_provider.create_snapshot(request.evidence_request)
+    if request.cancellation.is_cancelled():
+        return self._cancelled_result(request.run_id, pack)
     cache_key = build_generation_cache_key(request, pack)
     cached = self.cache.get_suggestion(cache_key)
     if cached is not None:
         rows = self._validate_cached_rows(cached["payload"], pack, request)
         return self._result(request.run_id, pack, rows, cache_hit=True, repair_count=0, critic_used=False)
     generated = self._complete_batch(request, pack, stage="generate")
+    if request.cancellation.is_cancelled():
+        return self._cancelled_result(request.run_id, pack)
     rows, issues = self._validate_batch(generated, pack, request)
     critic_used = self._critic_required(rows, pack, request)
     if critic_used:
         critique = self._complete_batch(request, pack, stage="critic", input_payload={"rows": generated, "issues": issues})
+        if request.cancellation.is_cancelled():
+            return self._cancelled_result(request.run_id, pack)
         rows, issues = self._apply_critic(rows, critique, pack, request)
     repair_count = 0
     if issues and request.budget.max_repairs == 1:
         repaired = self._complete_batch(request, pack, stage="repair", input_payload={"rows": generated, "issues": issues})
+        if request.cancellation.is_cancelled():
+            return self._cancelled_result(request.run_id, pack)
         rows, issues = self._validate_batch(repaired, pack, request)
         repair_count = 1
     rows = self._finalize_rows(rows, issues, pack, request)
@@ -1373,6 +1406,21 @@ def run(self, request: CandidateGenerationRequest) -> CandidateRunResult:
     )
     self.run_events.append_run_event(request.run_id, {"stage": "generate", "pack_hash": pack.pack_hash, "row_count": len(rows)})
     return self._result(request.run_id, pack, rows, cache_hit=False, repair_count=repair_count, critic_used=critic_used)
+
+
+def _cancelled_result(self, run_id: str, pack: EvidencePack | None = None) -> CandidateRunResult:
+    return CandidateRunResult(
+        run_id=run_id,
+        run_status=RunStatus.CANCELLED,
+        error_code="FMEA_RUN_CANCELLED",
+        evidence_pack=pack,
+        rows=(),
+        repair_count=0,
+        critic_used=False,
+        cache_hit=False,
+        warnings=("cancelled",),
+        ledger_hash="",
+    )
 ```
 
 The row builder used by `_validate_batch()` must call the foundation constructor directly; it may not depend on an undeclared `from_candidate_payload()` or `to_dict()` helper. Cache reads decode each stored row with foundation `decode_row()` and then rerun `validate_row_evidence()` against the newly loaded pack before reuse:
@@ -1424,12 +1472,32 @@ def build_candidate_row(analysis: FmeaAnalysis, pack: EvidencePack, payload: dic
     )
 ```
 
+Extend the existing service constructor and add the single delegation entry in `fmea_application/services.py`:
+
+```python
+class FmeaService:
+    def __init__(
+        self,
+        repository: FmeaRepository,
+        candidate_pipeline: FmeaCandidatePipeline | None = None,
+    ) -> None:
+        self.repository = repository
+        self.candidate_pipeline = candidate_pipeline
+
+    def generate_candidates(self, request: CandidateGenerationRequest) -> CandidateRunResult:
+        if self.candidate_pipeline is None:
+            raise FmeaApplicationError("candidate pipeline is not configured")
+        return self.candidate_pipeline.run(request)
+```
+
+Keep every Phase 1 method on this class unchanged; this is a constructor extension and one delegation method, not a replacement service.
+
 - [ ] **Step 4: Run pipeline, foundation and query regression tests**
 
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_validators.py tests/unit/test_query_service.py tests/unit/test_query_contracts.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_validators.py tests/unit/test_query_service.py tests/unit/test_query_contracts.py -q
 ```
 
 Expected: PASS；the FMEA service does not add a query mode, and existing QueryService tests retain their original result shapes。
@@ -1523,7 +1591,7 @@ def test_two_hop_path_is_emitted_and_longer_cycle_is_reviewable() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_propagation.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_propagation.py -q
 ```
 
 Expected: FAIL because `PropagationAnalyzer` does not exist。
@@ -1561,7 +1629,7 @@ def analyze(self, request: PropagationRequest) -> tuple[PropagationEdge, ...]:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_propagation.py tests/unit/test_graph_store.py tests/unit/test_graph_retriever.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_propagation.py tests/unit/test_graph_store.py tests/unit/test_graph_retriever.py -q
 ```
 
 Expected: PASS；existing GraphStore schema and retriever behavior are unchanged, and the provider mock records zero writes。
@@ -1620,7 +1688,7 @@ def test_counterfactual_pack_hash_and_cache_key_cannot_reuse_baseline_suggestion
 Run:
 
 ```powershell
-uv run pytest tests/regression/test_fmea_counterfactual_evidence.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/regression/test_fmea_counterfactual_evidence.py -q
 ```
 
 Expected: FAIL because the counterfactual fixtures and regression module do not exist。
@@ -1688,7 +1756,7 @@ def cases() -> tuple[CounterfactualCase, CounterfactualCase, CounterfactualCase,
 Run:
 
 ```powershell
-uv run pytest tests/regression/test_fmea_counterfactual_evidence.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/regression/test_fmea_counterfactual_evidence.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py -q
 ```
 
 Expected: PASS；the baseline is the only `known` case, and no counterfactual is accepted from cache。
@@ -1765,7 +1833,7 @@ def test_replay_and_cache_cases_revalidate_before_reuse(case) -> None:
 Run:
 
 ```powershell
-uv run pytest tests/regression/test_fmea_injection_and_faults.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/regression/test_fmea_injection_and_faults.py -q
 ```
 
 Expected: FAIL because the matrix fixtures and regression runner do not exist。
@@ -1927,7 +1995,7 @@ def replay_cases() -> tuple[FaultCase, ...]:
 Run:
 
 ```powershell
-uv run pytest tests/regression/test_fmea_injection_and_faults.py tests/regression/test_fmea_counterfactual_evidence.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/regression/test_fmea_injection_and_faults.py tests/regression/test_fmea_counterfactual_evidence.py -q
 ```
 
 Expected: PASS；the report shows zero Evidence ID violations, zero unauthorized path/URL/tenant reads, zero model-triggered state transitions, zero duplicate transitions and zero uncapped retries。
@@ -1988,7 +2056,7 @@ def test_phase_two_generates_two_domains_and_two_hop_edges_from_one_snapshot() -
 Run:
 
 ```powershell
-uv run pytest tests/integration/test_fmea_generation_propagation.py -q
+& '.venv\Scripts\python.exe' -m pytest tests/integration/test_fmea_generation_propagation.py -q
 ```
 
 Expected: FAIL until the complete provider, pipeline and propagation wiring exists。
@@ -2094,9 +2162,9 @@ def test_phase_two_quality_gate_has_zero_hard_failures() -> None:
 Run:
 
 ```powershell
-uv run pytest tests/unit/test_fmea_ports.py tests/unit/test_fmea_evidence_provider.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_llm_gateway.py tests/unit/test_fmea_budgeting.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py tests/regression/test_fmea_counterfactual_evidence.py tests/regression/test_fmea_injection_and_faults.py tests/integration/test_fmea_generation_propagation.py -q
-uv run ruff check fmea_application fmea_infrastructure tests/fixtures/fmea tests/unit/test_fmea_*.py tests/regression/test_fmea_*.py tests/integration/test_fmea_generation_propagation.py
-uv run mypy fmea_application fmea_infrastructure tests/unit/test_fmea_ports.py tests/unit/test_fmea_evidence_provider.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_llm_gateway.py tests/unit/test_fmea_budgeting.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py
+& '.venv\Scripts\python.exe' -m pytest tests/unit/test_fmea_ports.py tests/unit/test_fmea_evidence_provider.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_llm_gateway.py tests/unit/test_fmea_budgeting.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py tests/regression/test_fmea_counterfactual_evidence.py tests/regression/test_fmea_injection_and_faults.py tests/integration/test_fmea_generation_propagation.py -q
+& '.venv\Scripts\python.exe' -m ruff check fmea_application fmea_infrastructure tests/fixtures/fmea tests/unit/test_fmea_*.py tests/regression/test_fmea_*.py tests/integration/test_fmea_generation_propagation.py
+& '.venv\Scripts\python.exe' -m mypy fmea_application fmea_infrastructure tests/unit/test_fmea_ports.py tests/unit/test_fmea_evidence_provider.py tests/unit/test_fmea_validators.py tests/unit/test_fmea_llm_gateway.py tests/unit/test_fmea_budgeting.py tests/unit/test_fmea_candidate_pipeline.py tests/unit/test_fmea_propagation.py
 git diff --check
 ```
 
