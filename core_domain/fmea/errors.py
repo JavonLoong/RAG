@@ -1,0 +1,2 @@
+class FmeaDomainError(ValueError):
+    pass
