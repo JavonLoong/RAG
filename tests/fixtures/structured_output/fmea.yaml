@@ -1,0 +1,33 @@
+template:
+  id: fuel-combustion-fmea
+  version: 1.0.0
+  title: Fuel and combustion FMEA
+  description: Evidence-bound failure analysis for a fuel and combustion system.
+  domain_tags: [fmea, combustion, fuel]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [item, failure_mode, effects]
+  properties:
+    item:
+      type: string
+      minLength: 1
+    failure_mode:
+      type: string
+      minLength: 1
+    effects:
+      type: array
+      minItems: 1
+      items:
+        type: string
+evidence_bindings:
+  - target: /item
+    requirement: required
+    min_refs: 1
+  - target: /failure_mode
+    requirement: required
+    min_refs: 1
+  - target: /effects/*
+    requirement: required
+    min_refs: 1

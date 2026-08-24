@@ -1,0 +1,36 @@
+template:
+  id: research-claims
+  version: 1.0.0
+  title: Research claim extraction
+  description: Evidence-bound claims and limitations from research material.
+  domain_tags: [research, literature]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [paper_id, claims]
+  properties:
+    paper_id:
+      type: string
+      minLength: 1
+    claims:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [statement, limitations]
+        properties:
+          statement:
+            type: string
+          limitations:
+            type: string
+evidence_bindings:
+  - target: /paper_id
+    requirement: required
+    min_refs: 1
+  - target: /claims/*/statement
+    requirement: required
+    min_refs: 1
+  - target: /claims/*/limitations
+    requirement: optional
+    min_refs: 0

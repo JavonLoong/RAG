@@ -1,0 +1,35 @@
+{
+  "template": {
+    "id": "maintenance-checklist",
+    "version": "1.0.0",
+    "title": "Maintenance checklist",
+    "description": "Evidence-bound equipment inspection results.",
+    "domain_tags": ["maintenance", "equipment"],
+    "schema_dialect": "https://json-schema.org/draft/2020-12/schema"
+  },
+  "output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["asset_id", "checks"],
+    "properties": {
+      "asset_id": {"type": "string", "minLength": 1},
+      "checks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["result", "note"],
+          "properties": {
+            "result": {"type": "string"},
+            "note": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "evidence_bindings": [
+    {"target": "/asset_id", "requirement": "required", "min_refs": 1},
+    {"target": "/checks/*/result", "requirement": "required", "min_refs": 1},
+    {"target": "/checks/*/note", "requirement": "optional", "min_refs": 0}
+  ]
+}
