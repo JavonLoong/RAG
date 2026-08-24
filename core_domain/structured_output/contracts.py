@@ -32,7 +32,15 @@ class ClaimState(str, Enum):
 
 
 def _as_unique_tuple(values: object, *, field_name: str) -> tuple[str, ...]:
-    result = tuple(values)  # type: ignore[arg-type]
+    if isinstance(values, str | bytes):
+        raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", f"{field_name} must be a sequence")
+    try:
+        result = tuple(values)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise StructuredOutputError(
+            "STRUCTURED_OUTPUT_CONTRACT_INVALID",
+            f"{field_name} must be a sequence",
+        ) from exc
     if not all(isinstance(item, str) and item for item in result):
         raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", f"{field_name} must contain strings")
     if len(result) != len(set(result)):
@@ -77,7 +85,7 @@ class EvidenceBinding:
 
     def __post_init__(self) -> None:
         _require_text(self.target, "target")
-        if self.requirement not in _REQUIREMENTS:
+        if not isinstance(self.requirement, str) or self.requirement not in _REQUIREMENTS:
             raise StructuredOutputError("TEMPLATE_BINDING_INVALID", "requirement is invalid")
         if not isinstance(self.min_refs, int) or isinstance(self.min_refs, bool) or self.min_refs < 0:
             raise StructuredOutputError("TEMPLATE_BINDING_INVALID", "min_refs must be a non-negative integer")

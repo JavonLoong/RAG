@@ -168,3 +168,27 @@ def test_structured_output_error_exposes_stable_safe_fields() -> None:
     assert error.code == "TEMPLATE_SOURCE_INVALID"
     assert error.pointer == "/template"
     assert str(error) == "Template source is invalid."
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda: TemplateMetadata(
+            template_id="template",
+            version="1.0.0",
+            title="Template",
+            description="",
+            domain_tags="not-a-sequence",
+            schema_dialect="dialect",
+        ),
+        lambda: EvidenceBinding(target="/field", requirement=[]),
+        lambda: EvidenceBinding(
+            target="/field",
+            requirement="optional",
+            allowed_source_types=1,
+        ),
+    ],
+)
+def test_malformed_sequence_and_requirement_types_fail_with_domain_error(factory: object) -> None:
+    with pytest.raises(StructuredOutputError):
+        factory()
