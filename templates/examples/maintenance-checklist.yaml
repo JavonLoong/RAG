@@ -1,0 +1,48 @@
+template:
+  id: maintenance-checklist
+  version: 1.0.0
+  title: 设备维护检查结果
+  description: 面向通用设备维护的检查清单输出，证明模板核心不依赖 FMEA 字段。
+  domain_tags: [equipment, maintenance, operations]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [asset_id, checks]
+  properties:
+    asset_id:
+      type: string
+      minLength: 1
+      description: 受检资产的稳定标识。
+    checks:
+      type: array
+      minItems: 1
+      description: 按输入资料生成的检查结果列表。
+      items:
+        type: object
+        additionalProperties: false
+        required: [result, note]
+        properties:
+          result:
+            type: string
+            minLength: 1
+            description: 检查结论。
+          note:
+            type: string
+            description: 补充观察；允许无字段级证据。
+evidence_bindings:
+  # 资产标识必须能回溯到当前资料或图谱。
+  - target: /asset_id
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # 每一条检查结论必须分别声明证据状态。
+  - target: /checks/*/result
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # note 可引用证据，但不是结构完整性的强制条件。
+  - target: /checks/*/note
+    requirement: optional
+    min_refs: 0
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]

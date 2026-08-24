@@ -1,0 +1,43 @@
+template:
+  id: fuel-combustion-fmea
+  version: 1.0.0
+  title: 燃料与燃烧系统 FMEA 结构化候选
+  description: 演示如何为设备、故障模式和影响绑定 RAG 或 GraphRAG 证据；不包含评分与传播逻辑。
+  domain_tags: [combustion, fmea, fuel]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [item, failure_mode, effects]
+  properties:
+    item:
+      type: string
+      minLength: 1
+      description: 被分析的设备、部件或功能单元。
+    failure_mode:
+      type: string
+      minLength: 1
+      description: 可由资料证据支持的故障模式表述。
+    effects:
+      type: array
+      minItems: 1
+      description: 一个或多个直接影响；本模板不推导跨系统传播。
+      items:
+        type: string
+        minLength: 1
+evidence_bindings:
+  # item 必须引用当前 EvidencePack 中至少一条证据。
+  - target: /item
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # failure_mode 使用同一套来源类型，因此可切换 RAG-only、GraphRAG-only 或 combined。
+  - target: /failure_mode
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # effects 数组中的每一个实际元素都必须有独立 claim。
+  - target: /effects/*
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]

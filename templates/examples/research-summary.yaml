@@ -1,0 +1,48 @@
+template:
+  id: research-summary
+  version: 1.0.0
+  title: 科研资料主张与局限摘要
+  description: 从论文或研究资料中提取可审计主张，展示模板引擎在科研领域的迁移能力。
+  domain_tags: [literature, research, summary]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [paper_id, claims]
+  properties:
+    paper_id:
+      type: string
+      minLength: 1
+      description: 论文或资料的稳定标识。
+    claims:
+      type: array
+      minItems: 1
+      description: 研究主张及其已知局限。
+      items:
+        type: object
+        additionalProperties: false
+        required: [statement, limitations]
+        properties:
+          statement:
+            type: string
+            minLength: 1
+            description: 有资料依据的研究主张。
+          limitations:
+            type: string
+            description: 样本、方法或适用范围局限，可在证据不足时明确标记。
+evidence_bindings:
+  # paper_id 必须由当前资料包确认。
+  - target: /paper_id
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # 每条研究主张必须有独立 claim 和证据状态。
+  - target: /claims/*/statement
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  # limitations 可引用证据，也可以由 insufficient_evidence 状态表达资料不足。
+  - target: /claims/*/limitations
+    requirement: optional
+    min_refs: 0
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
