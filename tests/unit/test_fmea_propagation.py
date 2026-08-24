@@ -16,6 +16,36 @@ from core_domain.fmea.states import (
     ReviewStatus,
 )
 
+EXPECTED_PROPAGATION_FIELDS = (
+    "edge_id",
+    "analysis_id",
+    "source_entity_id",
+    "target_entity_id",
+    "relation_type",
+    "interface_variable",
+    "unit",
+    "direction",
+    "threshold",
+    "operating_modes",
+    "delay_ms",
+    "response_time_ms",
+    "fault_tolerance_time_ms",
+    "barrier_ids",
+    "evidence_pack_id",
+    "evidence_ids",
+    "evidence_support",
+    "claim_status",
+    "review_status",
+    "publication_status",
+    "path_length",
+    "is_cyclic",
+    "is_unprocessed",
+    "is_external",
+    "is_terminal",
+    "risk_priority",
+    "record_version",
+)
+
 
 def edge(**changes: object) -> PropagationEdge:
     values: dict[str, object] = {
@@ -59,11 +89,40 @@ def test_propagation_relation_values_are_closed() -> None:
     ]
 
 
-@pytest.mark.parametrize("path_length", (0, 1, 2))
+@pytest.mark.parametrize("path_length", (1, 2))
 def test_at_most_two_hops_can_be_auto_accepted(path_length: int) -> None:
     current = edge(path_length=path_length)
     assert current.inferred is False
     assert current.auto_accept_allowed is True
+
+
+@pytest.mark.parametrize("path_length", (0, -1))
+def test_non_positive_path_length_is_rejected(path_length: int) -> None:
+    with pytest.raises(FmeaDomainError, match="path_length"):
+        validate_propagation_edge(edge(path_length=path_length), None)
+
+
+@pytest.mark.parametrize(
+    "claim_status",
+    (
+        ClaimStatus.UNKNOWN,
+        ClaimStatus.INSUFFICIENT_EVIDENCE,
+        ClaimStatus.CONFLICT,
+        ClaimStatus.NOT_APPLICABLE,
+    ),
+)
+def test_only_known_claims_can_be_auto_accepted(claim_status: ClaimStatus) -> None:
+    assert edge(claim_status=claim_status).auto_accept_allowed is False
+
+
+@pytest.mark.parametrize("risk_priority", (None, "high", "critical", "urgent"))
+def test_missing_high_or_unknown_risk_requires_review(risk_priority: str | None) -> None:
+    assert edge(risk_priority=risk_priority).auto_accept_allowed is False
+
+
+def test_unknown_risk_priority_is_rejected_by_validation() -> None:
+    with pytest.raises(FmeaDomainError, match="risk_priority"):
+        validate_propagation_edge(edge(risk_priority="urgent"), None)
 
 
 def test_more_than_two_hops_is_inferred_and_requires_review() -> None:
@@ -104,7 +163,7 @@ def test_uncertain_or_high_risk_edges_require_human_review(changes: dict[str, ob
 
 def test_propagation_edge_is_frozen_slotted_and_keeps_field_order() -> None:
     assert hasattr(PropagationEdge, "__slots__")
-    assert tuple(field.name for field in fields(PropagationEdge))[-1] == "record_version"
+    assert tuple(field.name for field in fields(PropagationEdge)) == EXPECTED_PROPAGATION_FIELDS
     current = edge()
     with pytest.raises(FrozenInstanceError):
         current.edge_id = "changed"
@@ -149,3 +208,6 @@ def test_codec_round_trips_propagation_edge_canonically() -> None:
     assert payload == encode_json(decoded)
     assert json.loads(payload)["evidence_support"] == "supported"
     assert json.loads(payload)["operating_modes"] == ["startup"]
+    assert decoded.claim_status is ClaimStatus.KNOWN
+    assert decoded.evidence_support is EvidenceSupportStatus.SUPPORTED
+    assert tuple(field.name for field in fields(PropagationEdge)) == EXPECTED_PROPAGATION_FIELDS

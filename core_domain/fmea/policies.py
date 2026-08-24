@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from .entities import FmeaRow
 from .errors import FmeaDomainError
-from .propagation import PropagationRelation
+from .propagation import RISK_PRIORITIES, PropagationRelation
 from .states import (
     ActorType,
     ClaimStatus,
@@ -49,6 +49,10 @@ def validate_propagation_relation(relation_type: str) -> None:
 
 def validate_propagation_edge(edge: PropagationEdge, pack: EvidencePack | None) -> None:
     validate_propagation_relation(edge.relation_type)
+    if edge.path_length < 1:
+        raise FmeaDomainError("path_length must be at least 1")  # noqa: TRY003
+    if edge.risk_priority is not None and edge.risk_priority not in RISK_PRIORITIES:
+        raise FmeaDomainError(f"unknown risk_priority: {edge.risk_priority}")  # noqa: TRY003
     if pack is None:
         return
 

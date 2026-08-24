@@ -14,6 +14,10 @@ class PropagationRelation(str, Enum):
     FEEDBACK = "feedback"
 
 
+RISK_PRIORITIES = frozenset({"normal", "medium", "high", "critical"})
+AUTO_ACCEPT_RISK_PRIORITIES = frozenset({"normal", "medium"})
+
+
 @dataclass(frozen=True, slots=True)
 class PropagationEdge:
     edge_id: str
@@ -51,7 +55,7 @@ class PropagationEdge:
     @property
     def auto_accept_allowed(self) -> bool:
         return (
-            self.path_length <= 2
+            self.path_length in {1, 2}
             and not self.is_cyclic
             and not self.is_unprocessed
             and not self.is_external
@@ -60,8 +64,8 @@ class PropagationEdge:
                 EvidenceSupportStatus.SUPPORTED,
                 EvidenceSupportStatus.PARTIALLY_SUPPORTED,
             }
-            and self.claim_status is not ClaimStatus.CONFLICT
-            and self.risk_priority not in {"high", "critical"}
+            and self.claim_status is ClaimStatus.KNOWN
+            and self.risk_priority in AUTO_ACCEPT_RISK_PRIORITIES
         )
 
 
