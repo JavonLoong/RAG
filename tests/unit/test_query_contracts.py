@@ -19,6 +19,7 @@ from core_domain.query_contracts import (
     DeltaEvent,
     ErrorDetail,
     ErrorEvent,
+    EvidenceSelectionProfile,
     FinalEvent,
     GraphTriple,
     MetaEvent,
@@ -33,6 +34,7 @@ from core_domain.query_contracts import (
     SourceRef,
     UsageMetrics,
     WarningItem,
+    selected_citation_types,
 )
 
 
@@ -73,6 +75,79 @@ def test_query_request_strips_query_and_applies_v1_defaults() -> None:
     assert request.top_k == 5
     assert request.include_context is False
     assert request.include_debug is False
+
+
+def test_query_request_keeps_legacy_evidence_defaults() -> None:
+    request = QueryRequest(query="pressure", workspace_id="ws-1")
+
+    assert request.evidence_only is False
+    assert request.evidence_profile is EvidenceSelectionProfile.AUTO
+    assert request.evidence_types == ()
+    assert selected_citation_types(request) is None
+
+
+def test_evidence_profile_values_are_stable() -> None:
+    assert tuple(item.value for item in EvidenceSelectionProfile) == (
+        "auto",
+        "rag_only",
+        "graphrag_local_only",
+        "graphrag_global_only",
+        "graphrag_only",
+        "combined",
+        "custom",
+    )
+
+
+@pytest.mark.parametrize(
+    ("profile", "expected"),
+    [
+        ("rag_only", (CitationType.TEXT,)),
+        ("graphrag_local_only", (CitationType.GRAPH,)),
+        ("graphrag_global_only", (CitationType.COMMUNITY,)),
+        ("graphrag_only", (CitationType.GRAPH, CitationType.COMMUNITY)),
+        ("combined", (CitationType.TEXT, CitationType.GRAPH, CitationType.COMMUNITY)),
+    ],
+)
+def test_evidence_profiles_resolve_to_exact_citation_types(profile: str, expected) -> None:
+    request = QueryRequest(
+        query="pressure",
+        workspace_id="ws-1",
+        evidence_only=True,
+        evidence_profile=profile,
+    )
+    assert selected_citation_types(request) == expected
+
+
+def test_custom_evidence_profile_preserves_requested_order() -> None:
+    request = QueryRequest(
+        query="pressure",
+        workspace_id="ws-1",
+        evidence_only=True,
+        evidence_profile="custom",
+        evidence_types=(CitationType.COMMUNITY, CitationType.TEXT),
+    )
+    assert selected_citation_types(request) == (CitationType.COMMUNITY, CitationType.TEXT)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"evidence_profile": "rag_only"},
+        {"evidence_types": ("text",)},
+        {"evidence_only": True, "mode": "local", "evidence_profile": "rag_only"},
+        {"evidence_only": True, "evidence_profile": "custom"},
+        {"evidence_only": True, "evidence_profile": "rag_only", "evidence_types": ("text",)},
+        {
+            "evidence_only": True,
+            "evidence_profile": "custom",
+            "evidence_types": ("text", "text"),
+        },
+    ],
+)
+def test_invalid_evidence_selection_combinations_fail_before_execution(changes) -> None:
+    payload = {"query": "pressure", "workspace_id": "ws-1", **changes}
+    with pytest.raises(ValidationError):
+        QueryRequest.model_validate(payload)
 
 
 def test_query_request_rejects_empty_query_and_unknown_mode() -> None:

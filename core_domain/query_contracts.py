@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class QueryMode(str, Enum):
@@ -16,6 +16,16 @@ class QueryMode(str, Enum):
     LOCAL = "local"
     GLOBAL = "global"
     HYBRID = "hybrid"
+
+
+class EvidenceSelectionProfile(str, Enum):
+    AUTO = "auto"
+    RAG_ONLY = "rag_only"
+    GRAPHRAG_LOCAL_ONLY = "graphrag_local_only"
+    GRAPHRAG_GLOBAL_ONLY = "graphrag_global_only"
+    GRAPHRAG_ONLY = "graphrag_only"
+    COMBINED = "combined"
+    CUSTOM = "custom"
 
 
 class QueryStatus(str, Enum):
@@ -34,6 +44,19 @@ class CitationType(str, Enum):
     COMMUNITY = "community"
 
 
+_PROFILE_TYPES: dict[EvidenceSelectionProfile, tuple[CitationType, ...]] = {
+    EvidenceSelectionProfile.RAG_ONLY: (CitationType.TEXT,),
+    EvidenceSelectionProfile.GRAPHRAG_LOCAL_ONLY: (CitationType.GRAPH,),
+    EvidenceSelectionProfile.GRAPHRAG_GLOBAL_ONLY: (CitationType.COMMUNITY,),
+    EvidenceSelectionProfile.GRAPHRAG_ONLY: (CitationType.GRAPH, CitationType.COMMUNITY),
+    EvidenceSelectionProfile.COMBINED: (
+        CitationType.TEXT,
+        CitationType.GRAPH,
+        CitationType.COMMUNITY,
+    ),
+}
+
+
 class _ContractModel(BaseModel):
     """Shared validation policy for every v1 contract model."""
 
@@ -47,6 +70,9 @@ class QueryRequest(_ContractModel):
     top_k: int = Field(default=5, ge=1, le=100)
     include_context: bool = False
     include_debug: bool = False
+    evidence_only: bool = False
+    evidence_profile: EvidenceSelectionProfile = EvidenceSelectionProfile.AUTO
+    evidence_types: tuple[CitationType, ...] = ()
 
     @field_validator("query", mode="before")
     @classmethod
@@ -54,6 +80,31 @@ class QueryRequest(_ContractModel):
         if isinstance(value, str):
             return value.strip()
         return value
+
+    @model_validator(mode="after")
+    def validate_evidence_selection(self) -> QueryRequest:
+        if not self.evidence_only:
+            if self.evidence_profile is not EvidenceSelectionProfile.AUTO or self.evidence_types:
+                raise ValueError("evidence selection requires evidence_only=true")  # noqa: TRY003
+            return self
+        if self.mode is not QueryMode.AUTO:
+            raise ValueError("evidence_only requires mode=auto")  # noqa: TRY003
+        if len(self.evidence_types) != len(set(self.evidence_types)):
+            raise ValueError("evidence_types must not contain duplicates")  # noqa: TRY003
+        if self.evidence_profile is EvidenceSelectionProfile.CUSTOM:
+            if not self.evidence_types:
+                raise ValueError("custom evidence profile requires evidence_types")  # noqa: TRY003
+        elif self.evidence_types:
+            raise ValueError("evidence_types are only valid for the custom profile")  # noqa: TRY003
+        return self
+
+
+def selected_citation_types(request: QueryRequest) -> tuple[CitationType, ...] | None:
+    if not request.evidence_only or request.evidence_profile is EvidenceSelectionProfile.AUTO:
+        return None
+    if request.evidence_profile is EvidenceSelectionProfile.CUSTOM:
+        return request.evidence_types
+    return _PROFILE_TYPES[request.evidence_profile]
 
 
 class SourceRef(_ContractModel):
@@ -211,6 +262,7 @@ __all__ = [
     "DeltaEvent",
     "ErrorDetail",
     "ErrorEvent",
+    "EvidenceSelectionProfile",
     "FinalEvent",
     "GraphTriple",
     "MetaEvent",
@@ -225,4 +277,5 @@ __all__ = [
     "SourceRef",
     "UsageMetrics",
     "WarningItem",
+    "selected_citation_types",
 ]
