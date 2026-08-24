@@ -60,11 +60,6 @@ class RecordingRetriever:
         return self.results
 
 
-class FailingRetriever(RecordingRetriever):
-    def __init__(self, error: Exception) -> None:
-        super().__init__(error=error)
-
-
 class RecordingGlobalSearcher:
     def __init__(self, result: Any, *, error: Exception | None = None) -> None:
         self.result = result
@@ -329,6 +324,8 @@ def test_evidence_profile_calls_only_selected_components(profile, selected) -> N
     assert response.answer.text == ""
     assert response.answer.finish_reason == "stop"
     assert response.context is not None
+    if "global" in selected:
+        assert components["global"].calls == [(request.query, True)]
 
 
 def test_custom_evidence_types_call_only_requested_sources() -> None:
@@ -367,7 +364,7 @@ def test_auto_evidence_profile_uses_every_configured_source_without_final_llm() 
 
 
 def test_explicit_rag_only_failure_does_not_fall_back_to_graph() -> None:
-    text = FailingRetriever(RuntimeError("text unavailable"))
+    text = RecordingRetriever(error=RuntimeError("text unavailable"))
     service, _, _, components = _service(text=text)
     request = components["request"].model_copy(
         update={
@@ -381,6 +378,67 @@ def test_explicit_rag_only_failure_does_not_fall_back_to_graph() -> None:
     assert not components["global"].calls
     assert response.citations == []
     assert any(item.code == "TEXT_RETRIEVAL_DEGRADED" for item in response.warnings)
+
+
+def test_evidence_only_bypasses_router_and_identifies_profile_reason() -> None:
+    router = RecordingRouter("LOCAL_SEARCH")
+    service, _, _, components = _service(router=router)
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": EvidenceSelectionProfile.RAG_ONLY,
+        }
+    )
+
+    response = service.query(request)
+
+    assert router.calls == []
+    assert response.mode.reason == "evidence profile rag_only selected sources"
+
+
+def test_graph_evidence_failure_is_partial_without_unselected_sources_or_llm() -> None:
+    graph = RecordingRetriever(error=RuntimeError("graph unavailable"))
+    service, _, _, components = _service(graph=graph)
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": EvidenceSelectionProfile.GRAPHRAG_LOCAL_ONLY,
+        }
+    )
+
+    response = service.query(request)
+
+    assert response.status is QueryStatus.PARTIAL
+    assert any(item.code == "GRAPH_RETRIEVAL_DEGRADED" for item in response.warnings)
+    assert not components["text"].calls
+    assert not components["global"].calls
+    assert components["llm"].prompts == []
+
+
+def test_global_evidence_failure_is_partial_without_unselected_sources_or_llm() -> None:
+    global_searcher = RecordingGlobalSearcher(
+        _global_result(),
+        error=RuntimeError("global search unavailable"),
+    )
+    service, _, _, components = _service(global_searcher=global_searcher)
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": EvidenceSelectionProfile.GRAPHRAG_GLOBAL_ONLY,
+        }
+    )
+
+    response = service.query(request)
+
+    assert response.status is QueryStatus.PARTIAL
+    assert any(item.code == "GLOBAL_SEARCH_DEGRADED" for item in response.warnings)
+    assert global_searcher.calls == [(request.query, True)]
+    assert not components["text"].calls
+    assert not components["graph"].calls
+    assert components["llm"].prompts == []
 
 
 def test_normalizes_text_graph_and_global_evidence_to_v1_citations() -> None:
