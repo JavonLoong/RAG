@@ -5,7 +5,16 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 
 class QueryMode(str, Enum):
@@ -56,6 +65,8 @@ _PROFILE_TYPES: dict[EvidenceSelectionProfile, tuple[CitationType, ...]] = {
     ),
 }
 
+_EVIDENCE_SELECTION_FIELDS = ("evidence_only", "evidence_profile", "evidence_types")
+
 
 class _ContractModel(BaseModel):
     """Shared validation policy for every v1 contract model."""
@@ -97,6 +108,20 @@ class QueryRequest(_ContractModel):
         elif self.evidence_types:
             raise ValueError("evidence_types are only valid for the custom profile")  # noqa: TRY003
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize_request(
+        self,
+        handler: SerializerFunctionWrapHandler,
+        info: SerializationInfo,
+    ) -> dict[str, Any]:
+        serialized = handler(self)
+        if not self.evidence_only and self.evidence_profile is EvidenceSelectionProfile.AUTO and not self.evidence_types:
+            included = info.include
+            for field_name in _EVIDENCE_SELECTION_FIELDS:
+                if included is None or field_name not in included:
+                    serialized.pop(field_name, None)
+        return serialized
 
 
 def selected_citation_types(request: QueryRequest) -> tuple[CitationType, ...] | None:

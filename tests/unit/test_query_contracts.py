@@ -86,6 +86,71 @@ def test_query_request_keeps_legacy_evidence_defaults() -> None:
     assert selected_citation_types(request) is None
 
 
+def test_legacy_query_request_serialization_preserves_pre_task_json_payload() -> None:
+    request = QueryRequest(query="pressure", workspace_id="ws-1")
+
+    assert request.model_dump(mode="json") == {
+        "query": "pressure",
+        "workspace_id": "ws-1",
+        "mode": "auto",
+        "top_k": 5,
+        "include_context": False,
+        "include_debug": False,
+    }
+
+
+def test_evidence_requests_serialize_selection_fields_for_reconstruction() -> None:
+    requests_and_expected = [
+        (
+            QueryRequest(query="pressure", workspace_id="ws-1", evidence_only=True),
+            {"evidence_only": True, "evidence_profile": "auto", "evidence_types": []},
+        ),
+        (
+            QueryRequest(
+                query="pressure",
+                workspace_id="ws-1",
+                evidence_only=True,
+                evidence_profile="graphrag_only",
+            ),
+            {"evidence_only": True, "evidence_profile": "graphrag_only", "evidence_types": []},
+        ),
+        (
+            QueryRequest(
+                query="pressure",
+                workspace_id="ws-1",
+                evidence_only=True,
+                evidence_profile="custom",
+                evidence_types=(CitationType.COMMUNITY, CitationType.TEXT),
+            ),
+            {
+                "evidence_only": True,
+                "evidence_profile": "custom",
+                "evidence_types": ["community", "text"],
+            },
+        ),
+    ]
+
+    for request, expected in requests_and_expected:
+        payload = request.model_dump(mode="json")
+        assert {field: payload[field] for field in expected} == expected
+
+
+def test_legacy_serialization_preserves_pydantic_field_selection() -> None:
+    request = QueryRequest(query="pressure", workspace_id="ws-1")
+
+    assert request.model_dump(mode="json", include={"query", "evidence_only"}) == {
+        "query": "pressure",
+        "evidence_only": False,
+    }
+    assert request.model_dump(mode="json", exclude={"workspace_id"}) == {
+        "query": "pressure",
+        "mode": "auto",
+        "top_k": 5,
+        "include_context": False,
+        "include_debug": False,
+    }
+
+
 def test_evidence_profile_values_are_stable() -> None:
     assert tuple(item.value for item in EvidenceSelectionProfile) == (
         "auto",
