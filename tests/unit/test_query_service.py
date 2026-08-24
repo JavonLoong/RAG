@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
@@ -361,6 +361,49 @@ def test_auto_evidence_profile_uses_every_configured_source_without_final_llm() 
         CitationType.COMMUNITY,
     }
     assert components["router"] is None
+
+
+def test_auto_evidence_profile_warns_for_missing_graph_and_global_sources() -> None:
+    router = RecordingRouter()
+    service, _, factory, components = _service(router=router)
+    factory.runtime = replace(factory.runtime, graph_retriever=None, global_searcher=None)
+    request = components["request"].model_copy(
+        update={"mode": QueryMode.AUTO, "evidence_only": True}
+    )
+
+    response = service.query(request)
+
+    assert components["text"].calls
+    assert components["llm"].prompts == []
+    assert router.calls == []
+    assert [item.type for item in response.citations] == [CitationType.TEXT]
+    assert response.status is QueryStatus.PARTIAL
+    assert response.mode.used is QueryMode.AUTO
+    assert response.mode.reason == "evidence profile auto selected sources"
+    assert {item.code for item in response.warnings} == {
+        "GRAPH_RETRIEVAL_DEGRADED",
+        "GLOBAL_SEARCH_DEGRADED",
+    }
+
+
+def test_stream_auto_evidence_profile_preserves_partial_missing_source_response() -> None:
+    service, _, factory, components = _service()
+    factory.runtime = replace(factory.runtime, graph_retriever=None, global_searcher=None)
+    request = components["request"].model_copy(
+        update={"mode": QueryMode.AUTO, "evidence_only": True}
+    )
+
+    events = list(service.stream(request))
+
+    assert [event.event for event in events] == ["meta", "citation", "final"]
+    assert not any(event.event == "delta" for event in events)
+    final_response = events[-1].response
+    assert final_response.mode.used is QueryMode.AUTO
+    assert final_response.status is QueryStatus.PARTIAL
+    assert {item.code for item in final_response.warnings} == {
+        "GRAPH_RETRIEVAL_DEGRADED",
+        "GLOBAL_SEARCH_DEGRADED",
+    }
 
 
 def test_explicit_rag_only_failure_does_not_fall_back_to_graph() -> None:

@@ -649,12 +649,7 @@ def _ensure_mode_supported(workspace: Any, mode: QueryMode) -> None:
 
 
 def _available_evidence_types(runtime: QueryRuntime) -> tuple[CitationType, ...]:
-    result = [CitationType.TEXT]
-    if runtime.graph_retriever is not None:
-        result.append(CitationType.GRAPH)
-    if runtime.global_searcher is not None:
-        result.append(CitationType.COMMUNITY)
-    return tuple(result)
+    return tuple(CitationType)
 
 
 def _evidence_execution_types(
