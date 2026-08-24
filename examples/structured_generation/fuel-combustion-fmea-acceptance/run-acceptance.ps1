@@ -107,7 +107,7 @@ $null = Invoke-CapturedPython `
     -StepName "Template registration"
 
 $null = Invoke-CapturedPython `
-    -Arguments @($generationSkill, "smoke") `
+    -Arguments @($generationSkill, "smoke", "--timeout-seconds", "60") `
     -Destination (Join-Path $OutputDirectory "smoke.json") `
     -AllowedExitCodes @(0) `
     -StepName "DeepSeek smoke"

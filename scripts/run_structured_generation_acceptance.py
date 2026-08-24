@@ -24,7 +24,9 @@ from scripts.verify_structured_generation_acceptance import (  # noqa: E402
 _GENERATION_SCRIPT = _ROOT / "scripts" / "structured_generation_skill.py"
 _PROFILE = _ROOT / "templates" / "fmea_profiles" / "fuel-combustion-fmea-full.json"
 _TEMPLATE_REF = "fuel-combustion-fmea-full@1.0.0"
-_PROCESS_TIMEOUT_SECONDS = 150.0
+_REQUEST_TIMEOUT_SECONDS = 90.0
+_TOTAL_TIMEOUT_SECONDS = 300.0
+_PROCESS_TIMEOUT_SECONDS = 360.0
 
 
 class _AcceptanceSummaryView(Protocol):
@@ -99,6 +101,10 @@ def _generation_command(
         str(registry),
         "--request",
         str(request),
+        "--request-timeout-seconds",
+        str(_REQUEST_TIMEOUT_SECONDS),
+        "--total-timeout-seconds",
+        str(_TOTAL_TIMEOUT_SECONDS),
     ]
 
 

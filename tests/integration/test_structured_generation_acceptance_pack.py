@@ -486,8 +486,15 @@ def test_python_acceptance_runner_preserves_raw_bytes_until_verification(tmp_pat
 
     def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
         assert "DEEPSEEK_API_KEY" not in command
+        assert command[-4:] == [
+            "--request-timeout-seconds",
+            "90.0",
+            "--total-timeout-seconds",
+            "300.0",
+        ]
         assert kwargs["stdout"] is subprocess.PIPE
         assert kwargs["stderr"] is subprocess.DEVNULL
+        assert kwargs["timeout"] == 360.0
         return subprocess.CompletedProcess(command, 4, stdout=raw_output, stderr=b"")
 
     exit_code, payload = run_acceptance(

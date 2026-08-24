@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.value_objects import EvidencePack
 from core_domain.structured_generation import (
+    GenerationBudget,
     GenerationIssue,
     GenerationRunResult,
     GenerationRunStatus,
@@ -87,6 +89,19 @@ class _CliValidationError(ValueError):
 class _SafeArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         raise _CliValidationError from None
+
+
+def _bounded_seconds(maximum: float) -> Callable[[str], float]:
+    def parse(value: str) -> float:
+        try:
+            seconds = float(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError from None
+        if not math.isfinite(seconds) or seconds <= 0 or seconds > maximum:
+            raise argparse.ArgumentTypeError
+        return seconds
+
+    return parse
 
 
 class _Gateway(Protocol):
@@ -350,7 +365,11 @@ def _compose(registry_root: Path) -> StructuredGenerationService:
     )
 
 
-def run_live_smoke(*, gateway: _Gateway | None = None) -> SmokeResult:
+def run_live_smoke(
+    *,
+    gateway: _Gateway | None = None,
+    timeout_seconds: float = 30.0,
+) -> SmokeResult:
     active_gateway = gateway if gateway is not None else build_deepseek_gateway_from_env()
     request = StructuredModelRequest(
         stage=GenerationStage.GENERATE,
@@ -368,7 +387,7 @@ def run_live_smoke(*, gateway: _Gateway | None = None) -> SmokeResult:
         thinking_enabled=False,
         reasoning_effort=None,
     )
-    response = active_gateway.complete(request, max_attempts=2, timeout_seconds=30.0)
+    response = active_gateway.complete(request, max_attempts=2, timeout_seconds=timeout_seconds)
     batch = StrictCandidateBatchCodec().decode_batch(response.content)
     expected = (
         batch.template_id == "deepseek-connectivity-smoke"
@@ -412,8 +431,23 @@ def build_parser() -> argparse.ArgumentParser:
         if command == "run-fmea":
             active.add_argument("--analysis", required=True)
             active.add_argument("--profile", required=True)
+            active.add_argument(
+                "--request-timeout-seconds",
+                type=_bounded_seconds(90.0),
+                default=30.0,
+            )
+            active.add_argument(
+                "--total-timeout-seconds",
+                type=_bounded_seconds(300.0),
+                default=90.0,
+            )
     smoke_parser = subparsers.add_parser("smoke", allow_abbrev=False, add_help=False)
     smoke_parser.add_argument("--pretty", action="store_true")
+    smoke_parser.add_argument(
+        "--timeout-seconds",
+        type=_bounded_seconds(60.0),
+        default=30.0,
+    )
     return parser
 
 
@@ -442,14 +476,14 @@ def main(
     argv: list[str] | None = None,
     *,
     compose: Callable[[Path], StructuredGenerationService] = _compose,
-    smoke: Callable[[], SmokeResult] = run_live_smoke,
+    smoke: Callable[..., SmokeResult] = run_live_smoke,
 ) -> int:
     pretty = _pretty_requested(argv)
     try:
         args = build_parser().parse_args(argv)
         pretty = args.pretty
         if args.command == "smoke":
-            smoke_result = smoke()
+            smoke_result = smoke(timeout_seconds=args.timeout_seconds)
             _emit(
                 {
                     "schema_version": SCHEMA_VERSION,
@@ -471,14 +505,18 @@ def main(
         template_id, template_version = _template_ref(args.template)
         run_id, task = _request_payload(args.request)
         evidence_pack = _decode_pack(args.pack)
-        service = compose(Path(args.registry))
         if args.command == "run-fmea":
+            budget = GenerationBudget(
+                request_timeout_seconds=args.request_timeout_seconds,
+                total_timeout_seconds=args.total_timeout_seconds,
+            )
             analysis = _decode_fmea_analysis(args.analysis)
             try:
                 profile = load_fmea_template_profile(args.profile)
             except FmeaDomainError:
                 _emit(_error_envelope("FMEA_PROFILE_INVALID", "configuration"), pretty=pretty)
                 return 3
+            service = compose(Path(args.registry))
             result, adaptation = service.run_fmea(
                 run_id=run_id,
                 task=task,
@@ -487,8 +525,10 @@ def main(
                 evidence_pack=evidence_pack,
                 analysis=analysis,
                 profile=profile,
+                budget=budget,
             )
         else:
+            service = compose(Path(args.registry))
             result = service.run(
                 run_id=run_id,
                 task=task,

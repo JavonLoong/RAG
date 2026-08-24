@@ -177,6 +177,19 @@ def test_generation_budget_defaults_and_bounds_are_server_owned() -> None:
     with pytest.raises(StructuredGenerationError):
         GenerationBudget(max_candidates=1.5)  # type: ignore[arg-type]
 
+    slow_network_budget = GenerationBudget(
+        request_timeout_seconds=90.0,
+        total_timeout_seconds=300.0,
+    )
+    assert (
+        slow_network_budget.request_timeout_seconds,
+        slow_network_budget.total_timeout_seconds,
+    ) == (90.0, 300.0)
+    with pytest.raises(StructuredGenerationError, match="configured limit"):
+        GenerationBudget(request_timeout_seconds=90.1, total_timeout_seconds=300.0)
+    with pytest.raises(StructuredGenerationError, match="configured limit"):
+        GenerationBudget(request_timeout_seconds=90.0, total_timeout_seconds=300.1)
+
 
 def test_model_response_rejects_secret_or_invalid_audit_values() -> None:
     response = StructuredModelResponse(

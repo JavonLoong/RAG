@@ -28,7 +28,7 @@ from core_domain.structured_output import (
     StructuredOutputError,
 )
 from fmea_application import FmeaAdaptationResult
-from scripts.structured_generation_skill import main
+from scripts.structured_generation_skill import SmokeResult, main
 
 ROOT = Path(__file__).parents[2]
 PROFILE = ROOT / "templates" / "fmea_profiles" / "fuel-combustion-fmea-full.json"
@@ -46,6 +46,7 @@ class FakeService:
         self.adaptation = adaptation
         self.error = error
         self.calls: list[str] = []
+        self.run_fmea_kwargs: dict[str, object] | None = None
 
     def run(self, **_: object) -> GenerationRunResult:
         self.calls.append("run")
@@ -53,8 +54,9 @@ class FakeService:
             raise self.error
         return self.result
 
-    def run_fmea(self, **_: object) -> tuple[GenerationRunResult, FmeaAdaptationResult]:
+    def run_fmea(self, **kwargs: object) -> tuple[GenerationRunResult, FmeaAdaptationResult]:
         self.calls.append("run_fmea")
+        self.run_fmea_kwargs = kwargs
         if self.error is not None:
             raise self.error
         assert self.adaptation is not None
@@ -217,6 +219,116 @@ def test_run_fmea_outputs_unpersisted_suggestion(
     assert body["result"]["fmea"]["persisted"] is False
     assert body["result"]["fmea"]["rows"][0]["review_status"] == "suggested"
     assert body["result"]["fmea"]["rows"][0]["publication_status"] == "unpublished"
+
+
+def test_run_fmea_passes_explicit_slow_network_budget(
+    tmp_path: Path,
+    fixture_pack,
+    fixture_analysis,
+    fixture_row,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
+    service = FakeService(
+        _result(fixture_pack.pack_id),
+        adaptation=FmeaAdaptationResult(rows=(fixture_row,), issues=(), needs_review=True),
+    )
+    args = [
+        "run-fmea",
+        "--template",
+        "demo@1.0.0",
+        "--pack",
+        str(pack_path),
+        "--analysis",
+        str(analysis_path),
+        "--profile",
+        str(PROFILE),
+        "--registry",
+        str(tmp_path / "registry"),
+        "--request",
+        str(request_path),
+        "--request-timeout-seconds",
+        "90",
+        "--total-timeout-seconds",
+        "300",
+    ]
+
+    exit_code = main(args, compose=lambda _: service)
+    capsys.readouterr()
+
+    assert exit_code == 4
+    assert service.run_fmea_kwargs is not None
+    budget = service.run_fmea_kwargs["budget"]
+    assert budget.request_timeout_seconds == 90.0
+    assert budget.total_timeout_seconds == 300.0
+
+
+def test_timeout_options_reject_values_above_caps_before_composition(
+    tmp_path: Path,
+    fixture_pack,
+    fixture_analysis,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
+    args = [
+        "run-fmea",
+        "--template",
+        "demo@1.0.0",
+        "--pack",
+        str(pack_path),
+        "--analysis",
+        str(analysis_path),
+        "--profile",
+        str(PROFILE),
+        "--registry",
+        str(tmp_path / "registry"),
+        "--request",
+        str(request_path),
+        "--request-timeout-seconds",
+        "90.1",
+        "--total-timeout-seconds",
+        "300",
+    ]
+
+    exit_code = main(args, compose=lambda _: pytest.fail("invalid timeouts must fail before composition"))
+    body = orjson.loads(capsys.readouterr().out)
+
+    assert exit_code == 2
+    assert body["error"]["code"] == "REQUEST_VALIDATION_FAILED"
+
+
+def test_smoke_passes_explicit_timeout_to_gateway_boundary(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    received: list[float] = []
+
+    def fake_smoke(*, timeout_seconds: float) -> SmokeResult:
+        received.append(timeout_seconds)
+        return SmokeResult(
+            status=GenerationRunStatus.SUCCEEDED,
+            model_id="deepseek-v4-flash",
+            response_hash="a" * 64,
+            http_attempts=1,
+        )
+
+    exit_code = main(["smoke", "--timeout-seconds", "60"], smoke=fake_smoke)
+    capsys.readouterr()
+
+    assert exit_code == 0
+    assert received == [60.0]
+
+
+def test_smoke_rejects_timeout_above_cap_before_gateway(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exit_code = main(
+        ["smoke", "--timeout-seconds", "60.1"],
+        smoke=lambda **_: pytest.fail("invalid smoke timeout must not call the gateway"),
+    )
+    body = orjson.loads(capsys.readouterr().out)
+
+    assert exit_code == 2
+    assert body["error"]["code"] == "REQUEST_VALIDATION_FAILED"
 
 
 def test_run_fmea_adaptation_review_flag_controls_process_status(

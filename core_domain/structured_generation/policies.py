@@ -17,8 +17,8 @@ _CAPS: dict[str, int | float] = {
     "max_logical_calls": 3,
     "max_http_attempts": 6,
     "max_repairs": 1,
-    "request_timeout_seconds": 30.0,
-    "total_timeout_seconds": 90.0,
+    "request_timeout_seconds": 90.0,
+    "total_timeout_seconds": 300.0,
 }
 _INTEGER_FIELDS = frozenset(
     {

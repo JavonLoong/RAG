@@ -5,6 +5,7 @@ from __future__ import annotations
 from core_domain.fmea.entities import FmeaAnalysis
 from core_domain.fmea.value_objects import EvidencePack
 from core_domain.structured_generation import (
+    GenerationBudget,
     GenerationIssue,
     GenerationRunResult,
     StructuredGenerationError,
@@ -42,6 +43,7 @@ class StructuredGenerationService:
         template_id: str,
         version: str,
         evidence_pack: EvidencePack,
+        budget: GenerationBudget | None = None,
     ) -> GenerationRunRequest:
         template = self._registry.get(template_id, version)
         return GenerationRunRequest(
@@ -49,6 +51,7 @@ class StructuredGenerationService:
             task=task,
             template=template,
             evidence_pack=evidence_pack,
+            budget=budget or GenerationBudget(),
         )
 
     def run(
@@ -59,6 +62,7 @@ class StructuredGenerationService:
         template_id: str,
         version: str,
         evidence_pack: EvidencePack,
+        budget: GenerationBudget | None = None,
     ) -> GenerationRunResult:
         request = self._request(
             run_id=run_id,
@@ -66,6 +70,7 @@ class StructuredGenerationService:
             template_id=template_id,
             version=version,
             evidence_pack=evidence_pack,
+            budget=budget,
         )
         return self._pipeline.run(request)
 
@@ -79,6 +84,7 @@ class StructuredGenerationService:
         evidence_pack: EvidencePack,
         analysis: FmeaAnalysis,
         profile: FmeaTemplateProfile,
+        budget: GenerationBudget | None = None,
     ) -> tuple[GenerationRunResult, FmeaAdaptationResult]:
         if self._fmea_adapter is None:
             raise StructuredGenerationError(
@@ -91,6 +97,7 @@ class StructuredGenerationService:
             template_id=template_id,
             version=version,
             evidence_pack=evidence_pack,
+            budget=budget,
         )
         result = self._pipeline.run(request)
         if result.batch is None:
