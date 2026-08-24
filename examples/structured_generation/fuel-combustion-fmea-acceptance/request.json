@@ -1,0 +1,4 @@
+{
+  "run_id": "fuel-combustion-live-acceptance-v1",
+  "task": "根据合成验收证据生成燃料与燃烧系统 FMEA 候选。只陈述证据支持的内容，证据不足时使用未知或证据不足状态；不要复制 REQUEST_PRIVATE_MARKER。"
+}

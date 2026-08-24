@@ -1,0 +1,54 @@
+{
+  "analysis_id": "fuel-combustion-acceptance-analysis-v1",
+  "analysis_type": "system_fmea",
+  "approved_at": null,
+  "approver_actor_id": null,
+  "assumptions": [
+    "Pressure instruments are available",
+    "All evidence is synthetic and test-only"
+  ],
+  "control_software_version": "synthetic-control-v1",
+  "current_revision_id": "synthetic-acceptance-revision-v1",
+  "equipment_configuration": "Synthetic single-train natural-gas acceptance configuration",
+  "exclusions": [
+    "Real plant risk scoring",
+    "Electrical distribution",
+    "Automatic publication"
+  ],
+  "fuel_type": "natural_gas",
+  "lifecycle_stage": "acceptance_test",
+  "limitations": [
+    "No real plant data",
+    "No S/O/D or RPN assessment"
+  ],
+  "operating_modes": [
+    "startup",
+    "high_load",
+    "steady_state"
+  ],
+  "owner_actor_id": "acceptance-runner",
+  "parent_revision_id": null,
+  "project_id": "synthetic-fuel-combustion-live-acceptance",
+  "record_version": 1,
+  "reviewer_actor_ids": [
+    "human-reviewer"
+  ],
+  "scope": "Synthetic fuel gas filter, pressure regulation, burner manifold, and combustion stability handoff",
+  "system_boundary": "Fuel gas filter inlet to burner manifold and combustion response signals",
+  "unanalysed_parts": [
+    "Upstream gas supply network",
+    "Downstream emissions system"
+  ],
+  "versions": {
+    "data_version": "synthetic-acceptance-data-v1",
+    "evidence_pack_version": "1.0.0",
+    "graph_version": "synthetic-acceptance-graph-v1",
+    "input_snapshot_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "model_version": "deepseek-v4-flash+deepseek-v4-pro",
+    "profile_version": "1.0.0",
+    "prompt_version": "structured-generation-v1",
+    "schema_id": "graphrag.fmea.v1",
+    "scoring_version": "not-used",
+    "template_version": "1.0.0"
+  }
+}

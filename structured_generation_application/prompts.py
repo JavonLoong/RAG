@@ -81,6 +81,84 @@ def _run_context(request: GenerationRunRequest) -> str:
     )
 
 
+def _candidate_batch_contract(request: GenerationRunRequest) -> str:
+    return _json(
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "required": [
+                "template_id",
+                "template_version",
+                "template_hash",
+                "evidence_pack_id",
+                "candidates",
+            ],
+            "properties": {
+                "template_id": {"const": request.template.metadata.template_id},
+                "template_version": {"const": request.template.metadata.version},
+                "template_hash": {"const": request.template.template_hash},
+                "evidence_pack_id": {"const": request.evidence_pack.pack_id},
+                "candidates": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": request.budget.max_candidates,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["candidate_id", "payload", "claims"],
+                        "properties": {
+                            "candidate_id": {"type": "string", "minLength": 1, "maxLength": 256},
+                            "payload": {
+                                "type": "object",
+                                "description": (
+                                    "The business object that conforms exactly to TEMPLATE_JSON.output_schema."
+                                ),
+                            },
+                            "claims": {
+                                "type": "array",
+                                "description": (
+                                    "Use concrete JSON Pointer targets into payload. Cover every expanded required "
+                                    "TEMPLATE_JSON evidence binding and cite only listed evidence IDs."
+                                ),
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["target", "state", "evidence_ids"],
+                                    "properties": {
+                                        "target": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "description": (
+                                                "A concrete RFC 6901 pointer into payload. Wildcards are forbidden. "
+                                                "For array bindings emit one claim per actual element, for example "
+                                                "/causes/0 and /causes/1, never /causes/*."
+                                            ),
+                                        },
+                                        "state": {
+                                            "enum": [
+                                                "known",
+                                                "unknown",
+                                                "insufficient_evidence",
+                                                "conflict",
+                                                "not_applicable",
+                                            ]
+                                        },
+                                        "evidence_ids": {
+                                            "type": "array",
+                                            "uniqueItems": True,
+                                            "items": {"type": "string", "minLength": 1},
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    )
+
+
 def _candidate_object(batch: StructuredCandidateBatch) -> dict[str, object]:
     return {
         "template_id": batch.template_id,
@@ -103,6 +181,63 @@ def _candidate_object(batch: StructuredCandidateBatch) -> dict[str, object]:
             for candidate in batch.candidates
         ],
     }
+
+
+def _critic_report_contract() -> str:
+    return _json(
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["verdict", "findings", "summary"],
+            "properties": {
+                "verdict": {"enum": ["accept", "repair", "needs_review"]},
+                "findings": {
+                    "type": "array",
+                    "description": (
+                        "Return exactly one finding for every evidence-bearing claim in "
+                        "UNTRUSTED_CANDIDATE_JSON. Reuse its candidate_id, concrete target, and a non-empty subset "
+                        "of that claim's evidence_ids."
+                    ),
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": [
+                            "candidate_id",
+                            "target",
+                            "support",
+                            "code",
+                            "evidence_ids",
+                            "explanation",
+                        ],
+                        "properties": {
+                            "candidate_id": {"type": "string", "minLength": 1},
+                            "target": {"type": "string", "minLength": 1},
+                            "support": {
+                                "enum": [
+                                    "supported",
+                                    "partially_supported",
+                                    "contradicted",
+                                    "not_supported",
+                                ]
+                            },
+                            "code": {
+                                "type": "string",
+                                "pattern": "^[A-Z][A-Z0-9_]{0,127}$",
+                            },
+                            "evidence_ids": {
+                                "type": "array",
+                                "minItems": 1,
+                                "uniqueItems": True,
+                                "items": {"type": "string", "minLength": 1},
+                            },
+                            "explanation": {"type": "string", "minLength": 1, "maxLength": 500},
+                        },
+                    },
+                },
+                "summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+            },
+        }
+    )
 
 
 def _validation_objects(issues: tuple[ValidationIssue, ...]) -> list[dict[str, object]]:
@@ -163,6 +298,7 @@ def _common_blocks(request: GenerationRunRequest) -> tuple[str, ...]:
     evidence, manifest = _project_evidence(request)
     return (
         _block("RUN_CONTEXT_JSON", _run_context(request)),
+        _block("CANDIDATE_BATCH_CONTRACT_JSON", _candidate_batch_contract(request)),
         _block("TEMPLATE_JSON", request.template.canonical_json),
         _block("UNTRUSTED_EVIDENCE_JSON", evidence),
         _block("EVIDENCE_MANIFEST_JSON", manifest),
@@ -173,7 +309,10 @@ def build_generation_prompt(request: GenerationRunRequest) -> PromptBundle:
     return _finish(
         request,
         _common_blocks(request),
-        "Generate one complete candidate-batch JSON object that conforms to the template and cites evidence.",
+        (
+            "Return the complete top-level candidate-batch envelope defined by "
+            "CANDIDATE_BATCH_CONTRACT_JSON; do not return the template payload alone."
+        ),
     )
 
 
@@ -185,13 +324,17 @@ def build_critic_prompt(
 ) -> PromptBundle:
     blocks = (
         *_common_blocks(request),
+        _block("CRITIC_REPORT_CONTRACT_JSON", _critic_report_contract()),
         _block("UNTRUSTED_CANDIDATE_JSON", _json(_candidate_object(batch))),
         _block("DETERMINISTIC_ISSUES_JSON", _json(_validation_objects(deterministic_issues))),
     )
     return _finish(
         request,
         blocks,
-        "Independently audit every evidence-bearing claim and return one complete critic-report JSON object.",
+        (
+            "Independently audit every evidence-bearing claim and return the complete top-level critic-report "
+            "envelope defined by CRITIC_REPORT_CONTRACT_JSON; do not return a candidate batch or prose."
+        ),
     )
 
 
@@ -218,7 +361,10 @@ def build_repair_prompt(
     return _finish(
         request,
         blocks,
-        "Return one complete replacement candidate-batch JSON object. Do not return JSON Patch or partial edits.",
+        (
+            "Return the complete replacement top-level candidate-batch envelope defined by "
+            "CANDIDATE_BATCH_CONTRACT_JSON; do not return the template payload alone, JSON Patch, or partial edits."
+        ),
     )
 
 

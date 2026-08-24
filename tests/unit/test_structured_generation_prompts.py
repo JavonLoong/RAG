@@ -8,9 +8,17 @@ import pytest
 
 from core_domain.fmea.value_objects import EvidencePack
 from core_domain.structured_generation import GenerationBudget, StructuredGenerationError
-from core_domain.structured_output import CompiledTemplate, TemplateMetadata
+from core_domain.structured_output import (
+    CandidateClaim,
+    ClaimState,
+    CompiledTemplate,
+    StructuredCandidate,
+    StructuredCandidateBatch,
+    TemplateMetadata,
+)
 from structured_generation_application import GenerationRunRequest
 from structured_generation_application.prompts import (
+    build_critic_prompt,
     build_generation_prompt,
     build_repair_prompt,
 )
@@ -165,3 +173,84 @@ def test_repair_prompt_rejects_oversized_model_output(fixture_pack: EvidencePack
         build_repair_prompt(request, original_output="x" * 17)
 
     assert caught.value.code == "MODEL_OUTPUT_LIMIT_EXCEEDED"
+
+
+def test_generation_and_repair_prompts_require_candidate_batch_envelope(
+    fixture_pack: EvidencePack,
+) -> None:
+    request = _request(fixture_pack)
+    bundles = (
+        build_generation_prompt(request),
+        build_repair_prompt(request, original_output='{"payload_only":true}'),
+    )
+
+    for bundle in bundles:
+        contract = _extract_json_block(bundle.user_prompt, "CANDIDATE_BATCH_CONTRACT_JSON")
+        assert contract["required"] == [  # type: ignore[index]
+            "template_id",
+            "template_version",
+            "template_hash",
+            "evidence_pack_id",
+            "candidates",
+        ]
+        properties = contract["properties"]  # type: ignore[index]
+        assert properties["template_id"] == {"const": "maintenance-checklist"}
+        assert properties["template_version"] == {"const": "1.0.0"}
+        assert properties["template_hash"] == {"const": "a" * 64}
+        assert properties["evidence_pack_id"] == {"const": fixture_pack.pack_id}
+        candidate = properties["candidates"]["items"]
+        assert candidate["required"] == ["candidate_id", "payload", "claims"]
+        assert candidate["properties"]["claims"]["items"]["required"] == [
+            "target",
+            "state",
+            "evidence_ids",
+        ]
+        target_description = candidate["properties"]["claims"]["items"]["properties"]["target"][
+            "description"
+        ]
+        assert "wildcard" in target_description.lower()
+        assert "/causes/0" in target_description
+        assert "do not return the template payload alone" in bundle.user_prompt.lower()
+
+
+def test_critic_prompt_requires_complete_critic_report_envelope(
+    fixture_pack: EvidencePack,
+) -> None:
+    request = _request(fixture_pack)
+    batch = StructuredCandidateBatch(
+        template_id=request.template.metadata.template_id,
+        template_version=request.template.metadata.version,
+        template_hash=request.template.template_hash,
+        evidence_pack_id=fixture_pack.pack_id,
+        candidates=(
+            StructuredCandidate(
+                candidate_id="candidate-1",
+                payload={"failure_mode": "pressure loss"},
+                claims=(
+                    CandidateClaim(
+                        target="/failure_mode",
+                        state=ClaimState.KNOWN,
+                        evidence_ids=("ev-1",),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    bundle = build_critic_prompt(request, batch)
+    contract = _extract_json_block(bundle.user_prompt, "CRITIC_REPORT_CONTRACT_JSON")
+
+    assert contract["required"] == ["verdict", "findings", "summary"]  # type: ignore[index]
+    finding = contract["properties"]["findings"]["items"]  # type: ignore[index]
+    assert finding["required"] == [
+        "candidate_id",
+        "target",
+        "support",
+        "code",
+        "evidence_ids",
+        "explanation",
+    ]
+    assert "every evidence-bearing claim" in contract["properties"]["findings"][  # type: ignore[index]
+        "description"
+    ].lower()
+    assert "critic-report envelope" in bundle.user_prompt.lower()

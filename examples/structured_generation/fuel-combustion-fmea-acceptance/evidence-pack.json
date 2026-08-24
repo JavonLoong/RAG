@@ -1,0 +1,100 @@
+{
+  "acl_scope": [
+    "acceptance-test"
+  ],
+  "created_at": "2026-08-25T00:00:00Z",
+  "expires_at": null,
+  "pack_hash": "2fd3506d9ba017d43ae79bf97ee0b2ba38c30e06b665e329a06632988bca5ed0",
+  "pack_id": "fuel-combustion-acceptance-pack-v1",
+  "refs": [
+    {
+      "acl_scope": [
+        "acceptance-test"
+      ],
+      "content_hash": "5abf718347ad0eb25a7e9302ad786580d44aba5aadb2eb7cb680c60868894c5e",
+      "created_at": "2026-08-25T00:00:00Z",
+      "document_id": "synthetic-acceptance-fuel-spec",
+      "document_version": "synthetic-v1",
+      "evidence_hash": "fcba22ee2768717d9e8a5145faae062af40a5811451eea13838aeb957d95399f",
+      "evidence_id": "ev-fuel-spec",
+      "expires_at": null,
+      "is_primary": true,
+      "locator": "section:2.1-2.4",
+      "normalized_quote": "Synthetic acceptance specification: The fuel gas filter and regulating train shall deliver filtered natural gas at stable pressure to the burner manifold. A low fuel pressure trip shall isolate the fuel train. EVIDENCE_PRIVATE_MARKER",
+      "quote": "Synthetic acceptance specification: The fuel gas filter and regulating train shall deliver filtered natural gas at stable pressure to the burner manifold. A low fuel pressure trip shall isolate the fuel train. EVIDENCE_PRIVATE_MARKER",
+      "source_trust": "reviewed",
+      "source_type": "primary_document",
+      "workspace_id": "synthetic-fuel-combustion-acceptance"
+    },
+    {
+      "acl_scope": [
+        "acceptance-test"
+      ],
+      "content_hash": "b7a1c6647d7035ab95dd2bf6cf41f763fd1fcc8f6fb202bd4e305c4338d33586",
+      "created_at": "2026-08-25T00:00:00Z",
+      "document_id": "synthetic-acceptance-maintenance-note",
+      "document_version": "synthetic-v1",
+      "evidence_hash": "0a646febf237aede58fafddaba38c904cdcd0b34b2676b065c2aca371cde4d4a",
+      "evidence_id": "ev-pressure-control",
+      "expires_at": null,
+      "is_primary": false,
+      "locator": "section:3.2",
+      "normalized_quote": "Synthetic maintenance note: Particulate accumulation can increase filter differential pressure. The resulting flow restriction reduces downstream pressure during high demand. Differential-pressure and downstream-pressure transmitters provide alarms and inspection triggers.",
+      "quote": "Synthetic maintenance note: Particulate accumulation can increase filter differential pressure. The resulting flow restriction reduces downstream pressure during high demand. Differential-pressure and downstream-pressure transmitters provide alarms and inspection triggers.",
+      "source_trust": "reviewed",
+      "source_type": "rag_text",
+      "workspace_id": "synthetic-fuel-combustion-acceptance"
+    },
+    {
+      "acl_scope": [
+        "acceptance-test"
+      ],
+      "content_hash": "02888c7df16181904813e24a244a1b7c408ff8213545027b12fb314c0df66aaf",
+      "created_at": "2026-08-25T00:00:00Z",
+      "document_id": "synthetic-acceptance-knowledge-graph",
+      "document_version": "synthetic-v1",
+      "evidence_hash": "41a32f76959fce6046145258a7aba04e7db3830ed10cf18907fa334ba1a01ebd",
+      "evidence_id": "ev-combustion-graph",
+      "expires_at": null,
+      "is_primary": false,
+      "locator": "relation:path-17",
+      "normalized_quote": "Synthetic GraphRAG relation path: filter restriction causes low burner-manifold fuel pressure; low fuel pressure can produce a lean fuel-air condition; the lean condition reduces combustion stability margin and increases flame fluctuation.",
+      "quote": "Synthetic GraphRAG relation path: filter restriction causes low burner-manifold fuel pressure; low fuel pressure can produce a lean fuel-air condition; the lean condition reduces combustion stability margin and increases flame fluctuation.",
+      "source_trust": "derived",
+      "source_type": "graphrag_relation",
+      "workspace_id": "synthetic-fuel-combustion-acceptance"
+    },
+    {
+      "acl_scope": [
+        "acceptance-test"
+      ],
+      "content_hash": "95e8eae39c8fdb068902e5f84d6f7aee41299268dc388cbdb011cbe63430a51f",
+      "created_at": "2026-08-25T00:00:00Z",
+      "document_id": "synthetic-acceptance-community-summary",
+      "document_version": "synthetic-v1",
+      "evidence_hash": "6a5142ad32764f5d03e8dd6ab918442218b792f31d46a3c5297f7486dd24aee2",
+      "evidence_id": "ev-community-action",
+      "expires_at": null,
+      "is_primary": false,
+      "locator": "community:fuel-train-maintenance",
+      "normalized_quote": "Synthetic GraphRAG community summary: When low downstream fuel pressure coincides with high filter differential pressure, inspect or replace the filter element, verify pressure instruments, and confirm trip readiness before restart.",
+      "quote": "Synthetic GraphRAG community summary: When low downstream fuel pressure coincides with high filter differential pressure, inspect or replace the filter element, verify pressure instruments, and confirm trip readiness before restart.",
+      "source_trust": "derived",
+      "source_type": "graphrag_community",
+      "workspace_id": "synthetic-fuel-combustion-acceptance"
+    }
+  ],
+  "versions": {
+    "data_version": "synthetic-acceptance-data-v1",
+    "evidence_pack_version": "1.0.0",
+    "graph_version": "synthetic-acceptance-graph-v1",
+    "input_snapshot_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "model_version": "deepseek-v4-flash+deepseek-v4-pro",
+    "profile_version": "1.0.0",
+    "prompt_version": "structured-generation-v1",
+    "schema_id": "graphrag.fmea.v1",
+    "scoring_version": "not-used",
+    "template_version": "1.0.0"
+  },
+  "workspace_id": "synthetic-fuel-combustion-acceptance"
+}

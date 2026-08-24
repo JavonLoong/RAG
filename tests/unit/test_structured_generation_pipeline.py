@@ -235,6 +235,47 @@ def test_critic_unavailable_preserves_valid_batch_for_review(fixture_pack: Evide
     assert result.traces[-1].response_hash is None
 
 
+def test_http_attempt_budget_reserves_one_attempt_for_each_future_stage(
+    fixture_pack: EvidencePack,
+) -> None:
+    class ExhaustingCriticGateway:
+        def __init__(self) -> None:
+            self.calls: list[tuple[GenerationStage, int]] = []
+
+        def complete(
+            self,
+            request: StructuredModelRequest,
+            *,
+            max_attempts: int,
+            timeout_seconds: float,
+        ) -> StructuredModelResponse:
+            del timeout_seconds
+            self.calls.append((request.stage, max_attempts))
+            if request.stage is GenerationStage.GENERATE:
+                return _response(_batch_json(fixture_pack, valid=False), "deepseek-v4-flash")
+            if request.stage is GenerationStage.CRITIC:
+                raise StructuredGenerationError(
+                    "MODEL_UPSTREAM_UNAVAILABLE",
+                    "The model is temporarily unavailable.",
+                    stage=GenerationStage.CRITIC,
+                    retryable=True,
+                    attempts=max_attempts,
+                )
+            return _response(_batch_json(fixture_pack), "deepseek-v4-pro")
+
+    gateway = ExhaustingCriticGateway()
+
+    result = _pipeline(gateway).run(_request(fixture_pack))
+
+    assert result.status is GenerationRunStatus.NEEDS_REVIEW
+    assert result.repair_count == 1
+    assert gateway.calls == [
+        (GenerationStage.GENERATE, 4),
+        (GenerationStage.CRITIC, 4),
+        (GenerationStage.REPAIR, 1),
+    ]
+
+
 def test_invalid_critic_preserves_valid_batch_for_review(fixture_pack: EvidencePack) -> None:
     gateway = QueueGateway(
         [
@@ -253,7 +294,7 @@ def test_invalid_critic_preserves_valid_batch_for_review(fixture_pack: EvidenceP
 def test_attempt_and_logical_call_budgets_are_shared_across_stages(fixture_pack: EvidencePack) -> None:
     gateway = QueueGateway(
         [
-            _response(_batch_json(fixture_pack), "deepseek-v4-flash", attempts=5),
+            _response(_batch_json(fixture_pack), "deepseek-v4-flash", attempts=4),
             StructuredGenerationError(
                 "MODEL_TIMEOUT",
                 "The model request timed out.",
@@ -267,8 +308,8 @@ def test_attempt_and_logical_call_budgets_are_shared_across_stages(fixture_pack:
     result = _pipeline(gateway).run(_request(fixture_pack))
 
     assert result.status is GenerationRunStatus.NEEDS_REVIEW
-    assert [call[1] for call in gateway.calls] == [6, 1]
-    assert sum(trace.http_attempts for trace in result.traces) == 6
+    assert [call[1] for call in gateway.calls] == [4, 1]
+    assert sum(trace.http_attempts for trace in result.traces) == 5
 
     one_call = QueueGateway([_response(_batch_json(fixture_pack), "deepseek-v4-flash")])
     limited = _pipeline(one_call).run(

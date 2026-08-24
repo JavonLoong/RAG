@@ -158,6 +158,8 @@ class StructuredGenerationPipeline:
     ) -> tuple[int, float] | None:
         remaining_calls = request.budget.max_logical_calls - state.logical_calls
         remaining_attempts = request.budget.max_http_attempts - state.http_attempts
+        reserved_attempts = max(0, remaining_calls - 1)
+        active_attempts = remaining_attempts - reserved_attempts
         remaining_time = request.budget.total_timeout_seconds - (self._monotonic() - state.started_at)
         if remaining_calls <= 0:
             boundary_error = StructuredGenerationError(
@@ -165,7 +167,7 @@ class StructuredGenerationPipeline:
                 "The structured-generation logical-call limit is exhausted.",
                 stage=stage,
             )
-        elif remaining_attempts <= 0:
+        elif active_attempts <= 0:
             boundary_error = StructuredGenerationError(
                 "MODEL_ATTEMPT_LIMIT_EXCEEDED",
                 "The structured-generation HTTP-attempt limit is exhausted.",
@@ -178,7 +180,7 @@ class StructuredGenerationPipeline:
                 stage=stage,
             )
         else:
-            return remaining_attempts, min(request.budget.request_timeout_seconds, remaining_time)
+            return active_attempts, min(request.budget.request_timeout_seconds, remaining_time)
         state.generation_issues.append(self._generation_issue(boundary_error, stage))
         return None
 

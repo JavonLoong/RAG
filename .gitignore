@@ -54,6 +54,7 @@ storage_layer/runtime/chroma_rag_poc_package/chroma/*
 local_chroma_db/
 
 # Local runtime/data artifacts generated during OCR, Chroma and browser checks
+.local/
 .codex_temp_*/
 .pytest_cache/
 .ruff_cache/

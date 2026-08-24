@@ -1,3 +1,4 @@
+# ruff: noqa: E402 - direct script execution bootstraps the repository import root.
 """Safe one-object CLI for generic and FMEA structured-generation suggestions."""
 
 from __future__ import annotations
@@ -11,6 +12,10 @@ from pathlib import Path
 from typing import NoReturn, Protocol, cast
 
 import orjson
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
 from core_domain.fmea.errors import FmeaDomainError
