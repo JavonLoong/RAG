@@ -464,6 +464,8 @@ git add fmea_application/ports.py tests/fmea_fixtures.py tests/unit/test_fmea_po
 git commit -m "feat(fmea): extend phase two application ports"
 ```
 
+> **证据获取方案已废止并由新方案取代：** Superseded for evidence acquisition by the approved 2026-08-24 query evidence selection spec and plans. Implement one evidence-only QueryService request returning EvidenceSnapshot; do not implement the older VECTOR+LOCAL+GLOBAL multi-call design. PropagationEvidenceProvider remains a separate later dependency.
+
 ### Task 2: Adapt QueryService and GraphStore to Immutable EvidencePack Snapshots
 
 **Responsibility:** `INTEGRATE` for existing GraphRAG boundaries and `OWN` for snapshot normalization; no upstream algorithm changes。
