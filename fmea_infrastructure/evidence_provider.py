@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from dataclasses import replace
 from hashlib import sha256
 from typing import Any, Protocol
 
@@ -126,7 +127,8 @@ class QueryServiceEvidenceProvider:
         refs: list[EvidenceRef] = []
         warnings: list[str] = []
         identity_variants: dict[tuple[Any, ...], set[tuple[str, str]]] = {}
-        seen_hashes: set[str] = set()
+        refs_by_hash: dict[str, int] = {}
+        metadata_conflicts: set[str] = set()
         conflict_reported = False
 
         for source_type in _SOURCE_ORDER:
@@ -151,7 +153,23 @@ class QueryServiceEvidenceProvider:
                     }
                 )
                 evidence_hash = sha256(identity_json.encode("utf-8")).hexdigest()
-                if evidence_hash in seen_hashes:
+                existing_index = refs_by_hash.get(evidence_hash)
+                if existing_index is not None:
+                    existing_ref = refs[existing_index]
+                    trust_conflict = existing_ref.source_trust != source_trust
+                    primary_conflict = existing_ref.is_primary != is_primary
+                    if trust_conflict or primary_conflict:
+                        refs[existing_index] = replace(
+                            existing_ref,
+                            source_trust="conflict" if trust_conflict else existing_ref.source_trust,
+                            is_primary=False if primary_conflict else existing_ref.is_primary,
+                        )
+                        if evidence_hash not in metadata_conflicts:
+                            warnings.append(
+                                "EVIDENCE_METADATA_CONFLICT: identical evidence identity has conflicting "
+                                "allowlisted metadata."
+                            )
+                            metadata_conflicts.add(evidence_hash)
                     continue
 
                 conflict_key = (citation.type.value, citation.id, document_id, document_version)
@@ -183,7 +201,7 @@ class QueryServiceEvidenceProvider:
                         expires_at=None,
                     )
                 )
-                seen_hashes.add(evidence_hash)
+                refs_by_hash[evidence_hash] = len(refs) - 1
         return tuple(refs), tuple(warnings)
 
 

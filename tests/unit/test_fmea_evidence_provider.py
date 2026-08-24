@@ -401,6 +401,30 @@ def test_only_allowlisted_fields_affect_hashes_not_score_or_arbitrary_metadata(
     assert first_ref.is_primary is True
 
 
+def test_identical_identity_conflicting_metadata_merges_order_independently(
+    fixture_versions: VersionSet,
+) -> None:
+    reviewed_primary = _text_citation(metadata={"source_trust": "reviewed", "is_primary": True})
+    unreviewed_non_primary = _text_citation(metadata={"source_trust": "unreviewed", "is_primary": False})
+    forward_provider, _, _ = _provider(_response([reviewed_primary, unreviewed_non_primary]))
+    reverse_provider, _, _ = _provider(_response([unreviewed_non_primary, reviewed_primary]))
+
+    forward_snapshot = forward_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+    reverse_snapshot = reverse_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+
+    assert forward_snapshot.pack.refs == reverse_snapshot.pack.refs
+    assert forward_snapshot.warnings == reverse_snapshot.warnings == (
+        "EVIDENCE_METADATA_CONFLICT: identical evidence identity has conflicting allowlisted metadata.",
+    )
+    ref = forward_snapshot.pack.refs[0]
+    assert ref.source_trust == "conflict"
+    assert ref.is_primary is False
+
+
 def test_fallback_ids_versions_acl_and_literal_provenance_mapping(
     fixture_versions: VersionSet,
 ) -> None:
