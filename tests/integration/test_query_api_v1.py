@@ -23,7 +23,7 @@ from chroma_rag_poc.query_service import QueryExecutionError, QueryRuntime, Quer
 from chroma_rag_poc.routes_query_v1 import get_query_service  # noqa: E402
 from chroma_rag_poc.workspace_registry import WorkspaceRegistry  # noqa: E402
 
-from core_domain.query_contracts import QueryMode  # noqa: E402
+from core_domain.query_contracts import EvidenceSelectionProfile, QueryMode  # noqa: E402
 
 
 def _query_response(*, mode: QueryMode = QueryMode.LOCAL) -> dict[str, Any]:
@@ -154,6 +154,26 @@ def test_query_endpoint_returns_versioned_response_and_uses_dependency_override(
     assert response.json()["schema_version"] == "graphrag.query.v1"
     assert response.json()["mode"]["used"] == "local"
     assert service.requests[0].query == "What causes compressor fouling?"
+
+
+def test_query_endpoint_accepts_evidence_selection_through_injected_service(app: Any) -> None:
+    service = FakeQueryService()
+    with _client(app, service) as client:
+        response = client.post(
+            "/api/v1/query",
+            json={
+                "query": "fuel pressure",
+                "workspace_id": "power-equipment",
+                "mode": "auto",
+                "evidence_only": True,
+                "evidence_profile": "graphrag_only",
+            },
+        )
+
+    assert response.status_code == 200
+    captured_request = service.requests[0]
+    assert captured_request.evidence_only is True
+    assert captured_request.evidence_profile is EvidenceSelectionProfile.GRAPHRAG_ONLY
 
 
 def test_empty_query_returns_v1_invalid_request_envelope(app: Any) -> None:

@@ -83,8 +83,10 @@ class FakeRuntimeFactory:
 class FakeStreamService:
     def __init__(self, stream_factory: Callable[[Any], Iterator[QueryStreamEvent]]) -> None:
         self.stream_factory = stream_factory
+        self.requests: list[Any] = []
 
     def stream(self, payload: Any) -> Iterator[QueryStreamEvent]:
+        self.requests.append(payload)
         return self.stream_factory(payload)
 
 
@@ -199,6 +201,49 @@ def test_stream_endpoint_returns_typed_events_in_contract_order(app: Any) -> Non
     assert result.headers["cache-control"] == "no-cache"
     assert result.headers["x-accel-buffering"] == "no"
     assert [event.event for event in events] == ["meta", "citation", "final"]
+
+
+def test_evidence_only_stream_orders_citations_before_final_without_delta(app: Any) -> None:
+    response = QueryResponse(
+        request_id="req-1",
+        trace_id="trace-1",
+        status=QueryStatus.OK,
+        mode=_mode(),
+        answer=AnswerPayload(text="", finish_reason="stop"),
+        citations=[
+            Citation(id="T1", type=CitationType.TEXT, quote="Fuel pressure is monitored."),
+            Citation(id="G1", type=CitationType.GRAPH, quote="Fuel pressure relates to combustion stability."),
+        ],
+        retrieval=RetrievalSummary(text_hits=1),
+        usage=UsageMetrics(latency_ms=1.0),
+    )
+
+    def stream(_payload: Any) -> Iterator[QueryStreamEvent]:
+        yield MetaEvent(request_id="req-1", sequence=1, mode=response.mode, token_streaming=False)
+        yield CitationEvent(request_id="req-1", sequence=2, citation=response.citations[0])
+        yield CitationEvent(request_id="req-1", sequence=3, citation=response.citations[1])
+        yield FinalEvent(request_id="req-1", sequence=4, response=response)
+
+    service = FakeStreamService(stream)
+    with _client(app, service) as client:
+        result = client.post(
+            "/api/v1/query/stream",
+            json={
+                "query": "fuel pressure",
+                "workspace_id": "power-equipment",
+                "mode": "auto",
+                "evidence_only": True,
+                "evidence_profile": "combined",
+            },
+        )
+
+    events = _parse_sse(result.text)
+    assert result.status_code == 200
+    assert service.requests[0].evidence_only is True
+    assert [event.event for event in events] == ["meta", "citation", "citation", "final"]
+    assert not any(event.event == "delta" for event in events)
+    assert isinstance(events[-1], FinalEvent)
+    assert events[-1].response.answer.text == ""
 
 
 def test_stream_error_before_meta_uses_v1_http_error_envelope(app: Any) -> None:

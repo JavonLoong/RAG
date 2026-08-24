@@ -291,6 +291,31 @@ def test_query_response_top_level_fields_are_stable_for_v1() -> None:
     }
 
 
+def test_evidence_request_extension_does_not_change_response_schema() -> None:
+    request = QueryRequest(
+        query="pressure",
+        workspace_id="ws-1",
+        evidence_only=True,
+        evidence_profile="combined",
+    )
+
+    assert request.model_dump(mode="json")["evidence_profile"] == "combined"
+    assert set(QueryResponse.model_fields) == {
+        "schema_version",
+        "request_id",
+        "trace_id",
+        "status",
+        "mode",
+        "answer",
+        "citations",
+        "context",
+        "retrieval",
+        "usage",
+        "warnings",
+        "debug",
+    }
+
+
 def test_query_error_response_serializes_fixed_error_shape() -> None:
     response = QueryErrorResponse.model_validate(_error_payload())
 
