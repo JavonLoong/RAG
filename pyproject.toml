@@ -78,7 +78,13 @@ files = [
   "core_domain/structured_output",
   "structured_output_application",
   "structured_output_infrastructure",
+  "core_domain/structured_generation",
+  "structured_generation_application",
+  "structured_generation_infrastructure",
+  "fmea_application/structured_candidate_adapter.py",
+  "fmea_infrastructure/profile_loader.py",
   "scripts/output_template_skill.py",
+  "scripts/structured_generation_skill.py",
   "tests",
 ]
 disallow_untyped_defs = true
@@ -92,6 +98,10 @@ show_error_codes = true
 [tool.pytest.ini_options]
 testpaths = ["tests/unit", "tests/integration", "tests/regression", "tests/performance"]
 python_files = ["test_*.py"]
+addopts = "-m 'not live_deepseek'"
+markers = [
+  "live_deepseek: explicit paid DeepSeek API smoke test",
+]
 
 [tool.ruff]
 target-version = "py310"

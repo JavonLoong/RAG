@@ -5,6 +5,7 @@ from .critic_validation import validate_critic_report
 from .pipeline import StructuredGenerationPipeline
 from .ports import CandidateBatchCodec, CriticReportCodec, StructuredModelGateway
 from .prompts import PromptBundle, build_critic_prompt, build_generation_prompt, build_repair_prompt
+from .services import StructuredGenerationService
 
 __all__ = [
     "CandidateBatchCodec",
@@ -12,6 +13,7 @@ __all__ = [
     "GenerationRunRequest",
     "PromptBundle",
     "StructuredGenerationPipeline",
+    "StructuredGenerationService",
     "StructuredModelGateway",
     "build_critic_prompt",
     "build_generation_prompt",
