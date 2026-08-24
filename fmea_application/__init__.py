@@ -8,12 +8,20 @@ from .ports import (
     PropagationEvidenceProvider,
     PropagationRequest,
 )
+from .structured_candidate_adapter import (
+    FmeaAdaptationResult,
+    FmeaTemplateProfile,
+    StructuredCandidateFmeaAdapter,
+)
 
 __all__ = [
     "EvidenceProvider",
     "EvidenceRequest",
     "EvidenceSnapshot",
+    "FmeaAdaptationResult",
     "FmeaRepository",
+    "FmeaTemplateProfile",
     "PropagationEvidenceProvider",
     "PropagationRequest",
+    "StructuredCandidateFmeaAdapter",
 ]

@@ -1,0 +1,53 @@
+template:
+  id: fuel-combustion-fmea-full
+  version: 1.0.0
+  title: 燃料与燃烧系统完整 FMEA 候选
+  description: 从当前证据包生成十个专业字段的可审计候选，由人工后续复核。
+  domain_tags: [combustion, fmea, fuel]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [item, function, failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]
+  properties:
+    item:
+      type: string
+      minLength: 1
+    function:
+      type: string
+      minLength: 1
+    failure_mode:
+      type: string
+      minLength: 1
+    causes:
+      type: array
+      items: {type: string, minLength: 1}
+    mechanisms:
+      type: array
+      items: {type: string, minLength: 1}
+    effects:
+      type: array
+      items: {type: string, minLength: 1}
+    symptoms:
+      type: array
+      items: {type: string, minLength: 1}
+    controls:
+      type: array
+      items: {type: string, minLength: 1}
+    barriers:
+      type: array
+      items: {type: string, minLength: 1}
+    actions:
+      type: array
+      items: {type: string, minLength: 1}
+evidence_bindings:
+  - {target: /item, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /function, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /failure_mode, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /causes/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /mechanisms/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /effects/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /symptoms/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /controls/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /barriers/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /actions/*, requirement: required, min_refs: 1, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}

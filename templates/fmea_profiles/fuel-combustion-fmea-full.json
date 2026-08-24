@@ -1,0 +1,18 @@
+{
+  "profile_id": "fuel-combustion-fmea-row",
+  "version": "1.0.0",
+  "template_id": "fuel-combustion-fmea-full",
+  "template_version": "1.0.0",
+  "fields": {
+    "item_id": "/item",
+    "function_id": "/function",
+    "failure_mode": "/failure_mode",
+    "causes": "/causes",
+    "mechanisms": "/mechanisms",
+    "effects": "/effects",
+    "symptoms": "/symptoms",
+    "controls": "/controls",
+    "barriers": "/barriers",
+    "actions": "/actions"
+  }
+}

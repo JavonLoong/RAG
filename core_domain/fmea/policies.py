@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 _EVIDENCE_FIELDS = frozenset(
     {
+        "item_id",
+        "function_id",
         "failure_mode",
         "causes",
         "mechanisms",
