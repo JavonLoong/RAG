@@ -280,7 +280,11 @@ def _metadata_string(metadata: dict[str, Any], key: str) -> str | None:
 
 
 def _source_value(source: Any, field_name: str) -> Any:
-    return getattr(source, field_name, None) if source is not None else None
+    value = getattr(source, field_name, None) if source is not None else None
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    return value
 
 
 def _source_string(source: Any, field_name: str) -> str | None:

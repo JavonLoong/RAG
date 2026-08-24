@@ -50,6 +50,9 @@ class MemoryRepository:
     pack_save_calls: list[str] = field(default_factory=list)
 
     def save_evidence_pack(self, pack, *, actor_id, actor_type):
+        existing = self.packs.get(pack.pack_id)
+        if existing is not None:
+            assert existing == pack
         self.pack_save_calls.append(pack.pack_id)
         self.packs[pack.pack_id] = pack
         return pack
@@ -219,6 +222,7 @@ def test_query_evidence_snapshot_hands_one_pack_to_fmea_candidates(
     assert tuple(ref.source_type for ref in snapshot.pack.refs) == expected_sources
     assert snapshot.incomplete is incomplete
     assert len(repository.packs) == 1
+    assert repository.pack_save_calls == [snapshot.pack.pack_id, snapshot.pack.pack_id]
     candidate_ids = {item for _, ids in saved_rows[0].field_evidence for item in ids}
     assert candidate_ids == set(evidence_ids)
     for evidence_id in candidate_ids:

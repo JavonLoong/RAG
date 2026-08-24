@@ -513,6 +513,30 @@ def test_fallback_ids_versions_acl_and_literal_provenance_mapping(
     assert community_ref.locator == '{"community_id":"C-fallback"}'
 
 
+def test_text_locator_strips_strings_and_omits_blank_source_fields(
+    fixture_versions: VersionSet,
+) -> None:
+    citation = Citation(
+        id="T-whitespace",
+        type=CitationType.TEXT,
+        source=SourceRef(
+            document_id="  doc-1  ",
+            file="   ",
+            page="  12  ",
+            chunk_id="  chunk-1  ",
+        ),
+        quote="text evidence",
+    )
+    provider, _, _ = _provider(_response([citation]))
+
+    ref = provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    ).pack.refs[0]
+
+    assert ref.document_id == "doc-1"
+    assert ref.locator == '{"chunk_id":"chunk-1","document_id":"doc-1","page":"12"}'
+
+
 def test_read_refs_preserves_requested_order_and_does_not_query(
     fixture_versions: VersionSet,
 ) -> None:

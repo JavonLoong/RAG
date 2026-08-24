@@ -648,7 +648,7 @@ def _ensure_mode_supported(workspace: Any, mode: QueryMode) -> None:
         )
 
 
-def _available_evidence_types(runtime: QueryRuntime) -> tuple[CitationType, ...]:
+def _auto_evidence_types() -> tuple[CitationType, ...]:
     return tuple(CitationType)
 
 
@@ -657,7 +657,7 @@ def _evidence_execution_types(
     runtime: QueryRuntime,
 ) -> tuple[CitationType, ...]:
     selected = selected_citation_types(request)
-    return _available_evidence_types(runtime) if selected is None else selected
+    return _auto_evidence_types() if selected is None else selected
 
 
 def _ensure_index_ready(workspace: Any, mode: QueryMode) -> None:

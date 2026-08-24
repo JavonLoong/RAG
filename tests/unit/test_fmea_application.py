@@ -126,6 +126,7 @@ def test_candidate_bundle_marks_rows_suggested_and_unpublished(
 
     assert result_rows[0].review_status is ReviewStatus.SUGGESTED
     assert result_rows[0].publication_status is PublicationStatus.UNPUBLISHED
+    assert result_edges[0].review_status is ReviewStatus.SUGGESTED
     assert result_edges[0].publication_status is PublicationStatus.UNPUBLISHED
     assert source_row.review_status is ReviewStatus.DRAFT
     assert source_row.publication_status is PublicationStatus.PUBLISHED

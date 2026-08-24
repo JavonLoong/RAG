@@ -179,7 +179,7 @@ def test_edge_validation_binds_current_pack_and_evidence_ids(fixture_pack) -> No
         validate_propagation_edge(edge(evidence_ids=("missing-id",)), fixture_pack)
 
 
-def test_edge_validation_without_pack_only_checks_relation_type() -> None:
+def test_edge_validation_without_pack_still_checks_intrinsic_fields() -> None:
     validate_propagation_edge(edge(), None)
 
 
