@@ -160,6 +160,7 @@ class GenerationBudget:
     max_quote_chars_per_ref: int = 2000
     max_evidence_chars: int = 24000
     max_prompt_chars: int = 48000
+    max_response_chars: int = 128000
     max_output_tokens: int = 8000
     max_logical_calls: int = 3
     max_http_attempts: int = 6

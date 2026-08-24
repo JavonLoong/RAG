@@ -17,7 +17,7 @@
 - Application code may import only the stable `core_domain.fmea.value_objects.EvidencePack`; the generic pipeline must not import `FmeaRow` or FMEA services.
 - Default model aliases are exactly `deepseek-v4-flash` for generation and `deepseek-v4-pro` for critic/repair; the only live base URL is `https://api.deepseek.com`.
 - `DEEPSEEK_API_KEY` is the only required secret and must never enter repr, stdout, stderr, prompts, traces, errors, fixtures, commits, or exception messages.
-- Hard defaults are 20 candidates, 20 evidence refs, 2,000 chars per quote, 24,000 total evidence chars, 48,000 prompt chars, 8,000 output tokens, 3 logical calls, 6 HTTP attempts, one repair, 30 seconds per request, and 90 seconds per run.
+- Hard defaults are 20 candidates, 20 evidence refs, 2,000 chars per quote, 24,000 total evidence chars, 48,000 prompt chars, 128,000 response chars, 8,000 output tokens, 3 logical calls, 6 HTTP attempts, one repair, 30 seconds per request, and 90 seconds per run.
 - Repair returns a complete replacement batch, occurs at most once, is never followed by another critic, and can produce at most `needs_review`, never automatic success.
 - Only connection errors, timeout, 429, and 500/502/503/504 retry. Authentication, other 4xx, empty content, malformed JSON, schema/claim/critic defects, model mismatch, and limits do not retry.
 - Evidence projection sends only `evidence_id`, `source_type`, `source_trust`, `is_primary`, bounded `quote`, and a truncation marker. It never sends workspace, ACL, document identity, locator/path/URL, hidden metadata, or a full document.
@@ -57,13 +57,14 @@ def test_generation_budget_defaults_and_bounds_are_server_owned() -> None:
         budget.max_quote_chars_per_ref,
         budget.max_evidence_chars,
         budget.max_prompt_chars,
+        budget.max_response_chars,
         budget.max_output_tokens,
         budget.max_logical_calls,
         budget.max_http_attempts,
         budget.max_repairs,
         budget.request_timeout_seconds,
         budget.total_timeout_seconds,
-    ) == (20, 20, 2000, 24000, 48000, 8000, 3, 6, 1, 30.0, 90.0)
+    ) == (20, 20, 2000, 24000, 48000, 128000, 8000, 3, 6, 1, 30.0, 90.0)
     with pytest.raises(StructuredGenerationError, match="configured limit"):
         GenerationBudget(max_repairs=2)
 
@@ -115,6 +116,7 @@ class GenerationBudget:
     max_quote_chars_per_ref: int = 2000
     max_evidence_chars: int = 24000
     max_prompt_chars: int = 48000
+    max_response_chars: int = 128000
     max_output_tokens: int = 8000
     max_logical_calls: int = 3
     max_http_attempts: int = 6
