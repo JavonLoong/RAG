@@ -158,11 +158,12 @@ class QueryServiceEvidenceProvider:
                     existing_ref = refs[existing_index]
                     trust_conflict = existing_ref.source_trust != source_trust
                     primary_conflict = existing_ref.is_primary != is_primary
-                    if trust_conflict or primary_conflict:
+                    metadata_conflict = trust_conflict or primary_conflict
+                    if metadata_conflict:
                         refs[existing_index] = replace(
                             existing_ref,
-                            source_trust="conflict" if trust_conflict else existing_ref.source_trust,
-                            is_primary=False if primary_conflict else existing_ref.is_primary,
+                            source_trust="conflict",
+                            is_primary=False,
                         )
                         if evidence_hash not in metadata_conflicts:
                             warnings.append(

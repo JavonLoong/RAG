@@ -425,6 +425,52 @@ def test_identical_identity_conflicting_metadata_merges_order_independently(
     assert ref.is_primary is False
 
 
+def test_trust_only_conflict_downgrades_primary_even_when_primary_agrees(
+    fixture_versions: VersionSet,
+) -> None:
+    reviewed_primary = _text_citation(metadata={"source_trust": "reviewed", "is_primary": True})
+    unreviewed_primary = _text_citation(metadata={"source_trust": "unreviewed", "is_primary": True})
+    forward_provider, _, _ = _provider(_response([reviewed_primary, unreviewed_primary]))
+    reverse_provider, _, _ = _provider(_response([unreviewed_primary, reviewed_primary]))
+
+    forward_snapshot = forward_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+    reverse_snapshot = reverse_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+
+    assert forward_snapshot.pack.refs == reverse_snapshot.pack.refs
+    assert forward_snapshot.warnings == reverse_snapshot.warnings == (
+        "EVIDENCE_METADATA_CONFLICT: identical evidence identity has conflicting allowlisted metadata.",
+    )
+    assert forward_snapshot.pack.refs[0].source_trust == "conflict"
+    assert forward_snapshot.pack.refs[0].is_primary is False
+
+
+def test_primary_only_conflict_downgrades_trust_even_when_trust_agrees(
+    fixture_versions: VersionSet,
+) -> None:
+    reviewed_primary = _text_citation(metadata={"source_trust": "reviewed", "is_primary": True})
+    reviewed_non_primary = _text_citation(metadata={"source_trust": "reviewed", "is_primary": False})
+    forward_provider, _, _ = _provider(_response([reviewed_primary, reviewed_non_primary]))
+    reverse_provider, _, _ = _provider(_response([reviewed_non_primary, reviewed_primary]))
+
+    forward_snapshot = forward_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+    reverse_snapshot = reverse_provider.create_snapshot(
+        _request(fixture_versions, profile=EvidenceSelectionProfile.RAG_ONLY)
+    )
+
+    assert forward_snapshot.pack.refs == reverse_snapshot.pack.refs
+    assert forward_snapshot.warnings == reverse_snapshot.warnings == (
+        "EVIDENCE_METADATA_CONFLICT: identical evidence identity has conflicting allowlisted metadata.",
+    )
+    assert forward_snapshot.pack.refs[0].source_trust == "conflict"
+    assert forward_snapshot.pack.refs[0].is_primary is False
+
+
 def test_fallback_ids_versions_acl_and_literal_provenance_mapping(
     fixture_versions: VersionSet,
 ) -> None:
