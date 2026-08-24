@@ -35,6 +35,7 @@ from core_domain.query_contracts import (
     SourceRef,
     UsageMetrics,
     WarningItem,
+    selected_citation_types,
 )
 
 from .workspace_registry import WorkspaceConfig
@@ -297,10 +298,14 @@ class QueryService(Generic[WorkspaceT]):
             raise _index_not_ready(exc, stage="runtime_factory") from exc
         except Exception as exc:
             raise _query_failed("Query runtime construction failed.", exc, stage="runtime_factory") from exc  # noqa: TRY003
-        mode, mode_reason = self._select_mode(runtime, workspace, request)
-        _ensure_mode_supported(workspace, mode)
-        _ensure_index_ready(workspace, mode)
-        _ensure_generation_available(runtime, mode)
+        if request.evidence_only:
+            mode = QueryMode.AUTO
+            mode_reason = f"evidence profile {request.evidence_profile.value} selected sources"
+        else:
+            mode, mode_reason = self._select_mode(runtime, workspace, request)
+            _ensure_mode_supported(workspace, mode)
+            _ensure_index_ready(workspace, mode)
+            _ensure_generation_available(runtime, mode)
         normalized = self._execute_mode(
             runtime,
             request,
@@ -383,9 +388,26 @@ class QueryService(Generic[WorkspaceT]):
         mode_reason: str | None = None,
     ) -> NormalizedQueryResult:
         mode_used = mode_used or request.mode
-        if mode_used is QueryMode.AUTO:
+        if mode_used is QueryMode.AUTO and not request.evidence_only:
             mode_used = QueryMode.LOCAL
         mode_reason = mode_reason or f"{mode_used.value} mode"
+
+        evidence_types = _evidence_execution_types(request, runtime) if request.evidence_only else ()
+        use_text = (
+            CitationType.TEXT in evidence_types
+            if request.evidence_only
+            else mode_used in (QueryMode.VECTOR, QueryMode.LOCAL, QueryMode.HYBRID)
+        )
+        use_graph = (
+            CitationType.GRAPH in evidence_types
+            if request.evidence_only
+            else mode_used in (QueryMode.LOCAL, QueryMode.HYBRID)
+        )
+        use_community = (
+            CitationType.COMMUNITY in evidence_types
+            if request.evidence_only
+            else mode_used in (QueryMode.GLOBAL, QueryMode.HYBRID)
+        )
 
         text_raw: list[Any] = []
         graph_raw: list[Any] = []
@@ -393,7 +415,7 @@ class QueryService(Generic[WorkspaceT]):
         warnings: list[WarningItem] = []
         text_reranked = False
 
-        if mode_used in (QueryMode.VECTOR, QueryMode.LOCAL, QueryMode.HYBRID):
+        if use_text:
             try:
                 text_raw = _retrieve(runtime.text_retriever, request.query, request.top_k)
                 text_raw, text_reranked, rerank_error = _apply_reranker(
@@ -411,7 +433,7 @@ class QueryService(Generic[WorkspaceT]):
                         )
                     )
             except Exception as exc:
-                if mode_used is QueryMode.VECTOR:
+                if mode_used is QueryMode.VECTOR and not request.evidence_only:
                     raise _query_failed("Text retrieval failed.", exc, stage="text_retrieval") from exc  # noqa: TRY003
                 warnings.append(
                     WarningItem(
@@ -420,7 +442,7 @@ class QueryService(Generic[WorkspaceT]):
                     )
                 )
 
-        if mode_used in (QueryMode.LOCAL, QueryMode.HYBRID):
+        if use_graph:
             if runtime.graph_retriever is None:
                 warnings.append(
                     WarningItem(
@@ -439,7 +461,7 @@ class QueryService(Generic[WorkspaceT]):
                         )
                     )
 
-        if mode_used in (QueryMode.GLOBAL, QueryMode.HYBRID):
+        if use_community:
             if runtime.global_searcher is None:
                 warnings.append(
                     WarningItem(
@@ -452,7 +474,7 @@ class QueryService(Generic[WorkspaceT]):
                     global_raw = _global_search(
                         runtime.global_searcher,
                         request.query,
-                        context_only=mode_used is QueryMode.HYBRID,
+                        context_only=request.evidence_only or mode_used is QueryMode.HYBRID,
                     )
                 except Exception:
                     warnings.append(
@@ -476,7 +498,10 @@ class QueryService(Generic[WorkspaceT]):
         llm_raw: Any | None = None
         execution_context: str | None = None
 
-        if mode_used is QueryMode.VECTOR:
+        if request.evidence_only:
+            answer_text = ""
+            finish_reason = "stop"
+        elif mode_used is QueryMode.VECTOR:
             answer_text = "\n\n".join(citation.quote for citation in text_citations)
         elif mode_used is QueryMode.GLOBAL:
             answer_text = str(_lookup(global_raw, "answer") or "")
@@ -517,7 +542,7 @@ class QueryService(Generic[WorkspaceT]):
                 warnings.append(guard_warning)
                 answer_text += guard_suffix
 
-        if not answer_text and not citations and warnings:
+        if not request.evidence_only and not answer_text and not citations and warnings:
             raise _query_failed(  # noqa: TRY003
                 "All query paths failed.", RuntimeError("no usable query output"), stage="query"
             )
@@ -621,6 +646,23 @@ def _ensure_mode_supported(workspace: Any, mode: QueryMode) -> None:
             retryable=False,
             details={"mode": mode.value},
         )
+
+
+def _available_evidence_types(runtime: QueryRuntime) -> tuple[CitationType, ...]:
+    result = [CitationType.TEXT]
+    if runtime.graph_retriever is not None:
+        result.append(CitationType.GRAPH)
+    if runtime.global_searcher is not None:
+        result.append(CitationType.COMMUNITY)
+    return tuple(result)
+
+
+def _evidence_execution_types(
+    request: QueryRequest,
+    runtime: QueryRuntime,
+) -> tuple[CitationType, ...]:
+    selected = selected_citation_types(request)
+    return _available_evidence_types(runtime) if selected is None else selected
 
 
 def _ensure_index_ready(workspace: Any, mode: QueryMode) -> None:
@@ -1033,7 +1075,7 @@ def _redact_string(value: str) -> str:
 def _json_safe(value: Any, *, key: str | None = None) -> Any:  # noqa: C901
     if key is not None and _is_secret_key(key):
         return "[REDACTED]"
-    if value is None or isinstance(value, (str, int, bool)):
+    if value is None or isinstance(value, str | int | bool):
         if isinstance(value, str):
             return _redact_string(value)
         return value
@@ -1045,7 +1087,7 @@ def _json_safe(value: Any, *, key: str | None = None) -> Any:  # noqa: C901
         return _json_safe(value.value, key=key)
     if isinstance(value, Mapping):
         return {str(map_key): _json_safe(child, key=str(map_key)) for map_key, child in value.items()}
-    if isinstance(value, (list, tuple, set, frozenset)):
+    if isinstance(value, list | tuple | set | frozenset):
         return [_json_safe(child) for child in value]
     if is_dataclass(value):
         return {field.name: _json_safe(getattr(value, field.name), key=field.name) for field in fields(value)}

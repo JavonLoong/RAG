@@ -31,6 +31,7 @@ from chroma_rag_poc.query_service import (  # noqa: E402
 
 from core_domain.query_contracts import (  # noqa: E402
     CitationType,
+    EvidenceSelectionProfile,
     QueryMode,
     QueryRequest,
     QueryStatus,
@@ -57,6 +58,11 @@ class RecordingRetriever:
         if self.error:
             raise self.error
         return self.results
+
+
+class FailingRetriever(RecordingRetriever):
+    def __init__(self, error: Exception) -> None:
+        super().__init__(error=error)
 
 
 class RecordingGlobalSearcher:
@@ -289,6 +295,92 @@ def test_auto_routes_then_calls_only_selected_path(
     assert bool(components["graph"].calls) is ("graph" in selected)
     assert bool(components["global"].calls) is ("global" in selected)
     assert bool(components["llm"].prompts) is ("llm" in selected)
+
+
+@pytest.mark.parametrize(
+    ("profile", "selected"),
+    [
+        (EvidenceSelectionProfile.RAG_ONLY, {"text"}),
+        (EvidenceSelectionProfile.GRAPHRAG_LOCAL_ONLY, {"graph"}),
+        (EvidenceSelectionProfile.GRAPHRAG_GLOBAL_ONLY, {"global"}),
+        (EvidenceSelectionProfile.GRAPHRAG_ONLY, {"graph", "global"}),
+        (EvidenceSelectionProfile.COMBINED, {"text", "graph", "global"}),
+    ],
+)
+def test_evidence_profile_calls_only_selected_components(profile, selected) -> None:
+    service, _, _, components = _service()
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": profile,
+            "include_context": True,
+        }
+    )
+
+    response = service.query(request)
+
+    assert response.mode.requested is QueryMode.AUTO
+    assert response.mode.used is QueryMode.AUTO
+    assert bool(components["text"].calls) is ("text" in selected)
+    assert bool(components["graph"].calls) is ("graph" in selected)
+    assert bool(components["global"].calls) is ("global" in selected)
+    assert components["llm"].prompts == []
+    assert response.answer.text == ""
+    assert response.answer.finish_reason == "stop"
+    assert response.context is not None
+
+
+def test_custom_evidence_types_call_only_requested_sources() -> None:
+    service, _, _, components = _service()
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": EvidenceSelectionProfile.CUSTOM,
+            "evidence_types": (CitationType.COMMUNITY, CitationType.TEXT),
+        }
+    )
+    response = service.query(request)
+    assert components["text"].calls
+    assert not components["graph"].calls
+    assert components["global"].calls
+    assert [item.type for item in response.citations] == [CitationType.TEXT, CitationType.COMMUNITY]
+
+
+def test_auto_evidence_profile_uses_every_configured_source_without_final_llm() -> None:
+    service, _, _, components = _service()
+    request = components["request"].model_copy(
+        update={"mode": QueryMode.AUTO, "evidence_only": True}
+    )
+    response = service.query(request)
+    assert components["text"].calls
+    assert components["graph"].calls
+    assert components["global"].calls
+    assert components["llm"].prompts == []
+    assert {item.type for item in response.citations} == {
+        CitationType.TEXT,
+        CitationType.GRAPH,
+        CitationType.COMMUNITY,
+    }
+    assert components["router"] is None
+
+
+def test_explicit_rag_only_failure_does_not_fall_back_to_graph() -> None:
+    text = FailingRetriever(RuntimeError("text unavailable"))
+    service, _, _, components = _service(text=text)
+    request = components["request"].model_copy(
+        update={
+            "mode": QueryMode.AUTO,
+            "evidence_only": True,
+            "evidence_profile": EvidenceSelectionProfile.RAG_ONLY,
+        }
+    )
+    response = service.query(request)
+    assert not components["graph"].calls
+    assert not components["global"].calls
+    assert response.citations == []
+    assert any(item.code == "TEXT_RETRIEVAL_DEGRADED" for item in response.warnings)
 
 
 def test_normalizes_text_graph_and_global_evidence_to_v1_citations() -> None:
