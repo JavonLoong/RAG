@@ -67,6 +67,7 @@ core_domain/structured_generation/
   policies.py        # fixed budgets, stage/state invariants and result aggregation
 
 structured_generation_application/
+  contracts.py       # run request that binds stable EvidencePack to generic domain contracts
   ports.py           # gateway and strict decoder Protocols
   prompts.py         # fixed prompts, bounded EvidencePack projection, hashes
   critic_validation.py
@@ -81,6 +82,9 @@ structured_generation_infrastructure/
 fmea_application/
   structured_candidate_adapter.py
 
+fmea_infrastructure/
+  profile_loader.py
+
 scripts/
   structured_generation_skill.py
 
@@ -94,7 +98,7 @@ templates/fmea_profiles/
 约束：
 
 - `core_domain.structured_generation` 不导入 requests、DeepSeek、FMEA、registry、QueryService 或模型 SDK；
-- `structured_generation_application` 只通过 Protocol 调用模型与 decoder；
+- `structured_generation_application` 只通过 Protocol 调用模型与 decoder；除现有稳定 `core_domain.fmea.value_objects.EvidencePack` 外不导入 FMEA entity、service 或 infrastructure；
 - `structured_generation_infrastructure` 可依赖 `requests` 和 `orjson`；
 - FMEA 适配器位于 `fmea_application`，通用流水线不得导入 `FmeaRow`；
 - Plan A 的 `core_domain/structured_output`、编译器、registry 和候选 validator 公共行为保持兼容。
@@ -125,6 +129,26 @@ class SemanticSupport(str, Enum):
     CONTRADICTED = "contradicted"
     NOT_SUPPORTED = "not_supported"
 ```
+
+错误合同：
+
+```python
+class StructuredGenerationError(ValueError):
+    code: str
+    stage: GenerationStage | None
+    retryable: bool
+    attempts: int
+
+@dataclass(frozen=True, slots=True)
+class GenerationIssue:
+    code: str
+    message: str
+    stage: GenerationStage | None = None
+    retryable: bool = False
+    pointer: str = ""
+```
+
+异常和 issue 的 message 是固定公共文本，不能接收 requests 异常、provider body、prompt、quote、API key 或原始模型输出。
 
 ### 5.2 预算
 
@@ -167,6 +191,7 @@ class StructuredModelResponse:
     input_tokens: int | None
     output_tokens: int | None
     response_hash: str
+    http_attempts: int
 ```
 
 `StructuredModelResponse` 不保存 provider raw response、reasoning content、API key、完整 prompt 或 HTTP headers。
@@ -201,6 +226,8 @@ critic 输出必须满足：
 
 ### 5.5 Run 输入与结果
 
+`GenerationRunRequest` 位于 application contract，因为当前项目的稳定 EvidencePack 公共类型仍位于 `core_domain.fmea.value_objects`；通用 core 不反向依赖 FMEA package。`GenerationRunResult` 仍属于通用 core contract。
+
 ```python
 @dataclass(frozen=True, slots=True)
 class GenerationRunRequest:
@@ -218,11 +245,12 @@ class ModelCallTrace:
     stage: GenerationStage
     model_id: str
     prompt_hash: str
-    response_hash: str
+    response_hash: str | None
     http_attempts: int
     input_tokens: int | None
     output_tokens: int | None
-    finish_reason: str
+    finish_reason: str | None
+    error_code: str | None
 
 @dataclass(frozen=True, slots=True)
 class GenerationRunResult:
@@ -366,6 +394,8 @@ generator 额外发送 `thinking:{"type":"disabled"}`；critic/repair 发送 `th
 
 只重试：连接错误、timeout、HTTP 429、HTTP 500/502/503/504。单阶段和全 run 共用预算；总 HTTP attempt 不超过 6，总耗时不超过 90 秒。退避等待由注入的 sleeper 实现，测试不真实 sleep。
 
+provider-neutral gateway 接收本次逻辑调用可使用的 `max_attempts` 与 timeout；成功响应返回实际 `http_attempts`。失败异常也携带已消耗 attempt 数，pipeline 因而能在不同 stage 之间执行同一个全 run 上限，并为失败调用写入不含响应正文的 trace。
+
 不重试：
 
 - 其他 4xx；
@@ -472,6 +502,14 @@ python scripts/structured_generation_skill.py run `
   --registry .local/template-registry `
   --request generation-request.json
 
+python scripts/structured_generation_skill.py run-fmea `
+  --template fuel-combustion-fmea-full@1.0.0 `
+  --pack evidence-pack.json `
+  --analysis analysis.json `
+  --profile templates/fmea_profiles/fuel-combustion-fmea-full.json `
+  --registry .local/template-registry `
+  --request generation-request.json
+
 python scripts/structured_generation_skill.py smoke
 ```
 
@@ -484,7 +522,7 @@ python scripts/structured_generation_skill.py smoke
 }
 ```
 
-模型、base URL、预算和权限不能由 request 文件决定。`run` stdout 只输出一个 `rag.structured-generation.v1` JSON object；status、candidate、critic、issues、trace 和 usage 均使用安全编码。stderr 不输出 prompt/quote/API key。
+模型、base URL、预算和权限不能由 request 文件决定。`run` stdout 只输出一个 `rag.structured-generation.v1` JSON object；status、candidate、critic、issues、trace 和 usage 均使用安全编码。`run-fmea` 在同一安全 envelope 中增加未持久化的 FmeaRow suggestion 和 adaptation issue；它不能接受 actor、审核或发布参数。stderr 不输出 prompt/quote/API key。
 
 `smoke` 是显式的一次低输出 live API 调用：验证 Key、模型别名、JSON Output 和基本响应解码，不运行 FMEA，不写 registry，不保存响应。没有 `DEEPSEEK_API_KEY` 时返回稳定配置错误，不自动联网重试。
 
@@ -538,6 +576,7 @@ python scripts/structured_generation_skill.py smoke
 - 单 JSON stdout、稳定 exit code、compact/pretty；
 - 参数、环境密钥、私有路径、quote 和 provider 异常不回显；
 - run 在 fake composition 下覆盖 success/needs_review/failed；
+- run-fmea 在 fake composition 下输出确定性完整非评分 FmeaRow suggestion；
 - smoke 缺 Key 安全失败；
 - 可选 live smoke 不进入默认 pytest。
 
