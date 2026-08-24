@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, cast
 
 JsonScalar: TypeAlias = None | bool | int | float | str
 JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
@@ -35,7 +35,7 @@ def _as_unique_tuple(values: object, *, field_name: str) -> tuple[str, ...]:
     if isinstance(values, str | bytes):
         raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", f"{field_name} must be a sequence")
     try:
-        result = tuple(values)  # type: ignore[arg-type]
+        result: tuple[object, ...] = tuple(values)  # type: ignore[arg-type]
     except TypeError as exc:
         raise StructuredOutputError(
             "STRUCTURED_OUTPUT_CONTRACT_INVALID",
@@ -45,7 +45,7 @@ def _as_unique_tuple(values: object, *, field_name: str) -> tuple[str, ...]:
         raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", f"{field_name} must contain strings")
     if len(result) != len(set(result)):
         raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", f"duplicate {field_name}")
-    return result
+    return cast("tuple[str, ...]", result)
 
 
 def _require_text(value: str, field_name: str) -> None:

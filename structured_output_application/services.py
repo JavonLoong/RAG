@@ -120,8 +120,10 @@ class StructuredOutputService:
         if isinstance(reference, str) and reference.startswith("#/$defs/"):
             name = reference.removeprefix("#/$defs/").replace("~1", "/").replace("~0", "~")
             definitions = root_schema.get("$defs", {})
-            if isinstance(definitions, dict) and isinstance(definitions.get(name), dict | bool):
-                return self._build_value(definitions[name], root_schema)
+            if isinstance(definitions, dict):
+                referenced_schema = definitions.get(name)
+                if isinstance(referenced_schema, dict | bool):
+                    return self._build_value(referenced_schema, root_schema)
         raw_type = schema.get("type")
         schema_type = raw_type[0] if isinstance(raw_type, list) and raw_type else raw_type
         if schema_type == "object":

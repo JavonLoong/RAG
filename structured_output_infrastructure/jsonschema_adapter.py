@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import cast
 
-from jsonschema import Draft202012Validator
-from jsonschema.exceptions import SchemaError
+from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
+from jsonschema.exceptions import SchemaError  # type: ignore[import-untyped]
 
 from core_domain.structured_output import JsonValue, ValidationIssue, parse_pointer
 

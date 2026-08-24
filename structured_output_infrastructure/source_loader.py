@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import cast
 
 import orjson
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from core_domain.structured_output import (
     JsonValue,

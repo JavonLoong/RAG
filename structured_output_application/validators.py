@@ -243,12 +243,12 @@ class StructuredCandidateValidator:
                         )
 
             for claim in candidate.claims:
-                binding = claim_bindings.get(claim.target)
-                if binding is None:
+                matched_binding = claim_bindings.get(claim.target)
+                if matched_binding is None:
                     continue
                 self._validate_claim(
                     claim,
-                    binding,
+                    matched_binding,
                     refs_by_id,
                     candidate_index,
                     candidate_id,

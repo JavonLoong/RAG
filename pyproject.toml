@@ -75,6 +75,10 @@ files = [
   "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/query_service.py",
   "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_query_v1.py",
   "scripts/query_skill.py",
+  "core_domain/structured_output",
+  "structured_output_application",
+  "structured_output_infrastructure",
+  "scripts/output_template_skill.py",
   "tests",
 ]
 disallow_untyped_defs = true
