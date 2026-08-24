@@ -1,6 +1,6 @@
 # RAG + GraphRAG 多来源证据选择与 FMEA 交接设计
 
-> 状态：待用户复审。本文是接口与责任边界规格，不是实施完成声明。
+> 状态：用户已于 2026-08-24 确认。本文是接口与责任边界规格，不是实施完成声明。
 >
 > 上位规格：`docs/superpowers/specs/2026-08-23-graphrag-fmea-system-design.md`
 
@@ -149,6 +149,7 @@ class QueryRequest(_ContractModel):
 - `warnings` 记录指定来源的缺失或执行失败；
 - 不执行最终回答 LLM；
 - global searcher 为生成已有社区级结果所需的内部调用不算“最终回答 LLM”，可以执行。
+- `ModeDecision.requested/used` 均为 `AUTO`，reason 明确记录 evidence profile；证据调用不经过旧 answer router，也不借用工作区默认 answer mode 决定来源。
 
 本次不增加新的 response schema 字段，避免旧严格客户端因额外字段拒绝 `graphrag.query.v1`。证据 profile 由请求、运行审计和 FMEA manifest 保存。
 
@@ -186,9 +187,23 @@ evidence_types: tuple[CitationType, ...] = ()
 
 默认 profile 为 `combined`，因为项目目标明确是普通 RAG + GraphRAG；测试或用户可显式选择其他 profile。
 
+EvidenceProvider 返回轻量包装对象，而不是丢弃查询运行信息：
+
+```python
+@dataclass(frozen=True, slots=True)
+class EvidenceSnapshot:
+    pack: EvidencePack
+    profile: EvidenceSelectionProfile
+    source_counts: tuple[tuple[CitationType, int], ...]
+    warnings: tuple[str, ...]
+    incomplete: bool
+```
+
+`EvidencePack` 只保存工程证据；profile、命中计数和降级 warning 由 `EvidenceSnapshot` 交给 run audit/suggestion ledger。后续候选流水线使用 `snapshot.pack`，不得把 warning 文本混入 EvidenceRef。
+
 ### 7.2 单次查询
 
-`QueryServiceEvidenceProvider.create_snapshot()` 对一个 EvidenceRequest 只构造一个 `QueryRequest`：
+`QueryServiceEvidenceProvider.create_snapshot()` 对一个 EvidenceRequest 只构造一个 `QueryRequest`，并返回 `EvidenceSnapshot`：
 
 ```python
 QueryRequest(
@@ -210,9 +225,11 @@ QueryRequest(
 
 | Citation | EvidenceRef.source_type | 必须保留 |
 | --- | --- | --- |
-| `TEXT` | `rag_text` | document_id、file、page、chunk_id、quote、score metadata |
+| `TEXT` | `rag_text` | document_id、file、page、chunk_id、quote |
 | `GRAPH` | `graphrag_relation` | triple、edge/triple ID、source document、quote、graph version |
 | `COMMUNITY` | `graphrag_community` | community ID、title、quote、community metadata、graph version |
+
+检索 score、rank 和未经过允许列表筛选的原始 metadata 是查询运行信息，不是工程证据真值，不写入 `EvidenceRef`。它们保存在 run audit/suggestion ledger。GRAPH 只将 subject、predicate、object、edge/triple ID 纳入稳定 locator；COMMUNITY 只将 community ID 和 title 纳入稳定 locator。这样无需扩大当前 EvidenceRef schema，也避免上游任意 metadata 进入 FMEA 数据库。
 
 如果上游没有 document_id，使用带命名空间的稳定回退 ID：
 
@@ -234,7 +251,7 @@ source_type
 + graph/document version
 ```
 
-相同文字出现在不同页、不同版本或不同来源类型时保留为不同 EvidenceRef。完全相同身份的重复 Citation 合并，保留最高检索分数和所有非冲突 metadata；metadata 冲突则保留两条证据并标记冲突，不静默覆盖。
+相同文字出现在不同页、不同版本或不同来源类型时保留为不同 EvidenceRef。完全相同身份的重复 Citation 合并；score、rank 和原始 metadata 仅在 run audit 中按命中次序保存。稳定 locator 所需的允许列表字段发生冲突时保留两条证据并标记冲突，不静默覆盖。
 
 ### 7.5 快照
 
@@ -312,7 +329,7 @@ M3/M4 只需交付 `QueryService` 可调用的 retriever/searcher，并输出现
 向 FMEA 候选流水线、UI、导出和 M6 交付：
 
 - `EvidenceSelectionProfile` 和请求校验规则；
-- 一个不可变 EvidencePack；
+- 一个包含不可变 EvidencePack、profile、source counts、warnings 和 incomplete 的 EvidenceSnapshot；
 - 每条 EvidenceRef 的 source_type、locator、版本和 hash；
 - 实际命中的来源计数；
 - 降级 warning 和不完整快照标识；
@@ -366,7 +383,7 @@ M3/M4 只需交付 `QueryService` 可调用的 retriever/searcher，并输出现
 ### 10.3 交接
 
 - M3/M4 fake/recording 实现不依赖 FMEA 包即可通过查询合同测试；
-- FMEA fake QueryService 不依赖具体向量库或图数据库即可建立 pack；
+- FMEA fake QueryService 不依赖具体向量库或图数据库即可建立 EvidenceSnapshot；
 - 交接 fixture 可由另一名开发者独立运行；
 - 文档明确区分已实现、依赖、降级和未支持项。
 
@@ -386,8 +403,8 @@ M3/M4 只需交付 `QueryService` 可调用的 retriever/searcher，并输出现
 
 1. 查询合同：profile、custom types、evidence-only 和 recording tests；
 2. QueryService：独立来源执行计划、无最终回答生成和降级语义；
-3. FMEA EvidenceRequest/Provider：单次查询、规范映射、身份去重和 EvidencePack；
-4. Task 4.1：PropagationEdge 自动接受策略加固；
-5. Task 5：FmeaService 与持久化候选边界；
+3. Task 4.1：PropagationEdge 自动接受策略加固；
+4. Task 5：FmeaService、EvidenceRequest、EvidenceSnapshot 与持久化候选边界；
+5. FMEA EvidenceProvider：单次查询、规范映射、身份去重和 EvidencePack；
 6. 交接 fixtures、合同测试和中文说明；
 7. 再进入候选生成、两跳传播、UI、模板和导出阶段。
