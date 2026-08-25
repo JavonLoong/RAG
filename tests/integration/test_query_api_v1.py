@@ -21,7 +21,7 @@ for import_path in (REPO_ROOT, PACKAGE_SRC):
 from chroma_rag_poc.api import create_app  # noqa: E402
 from chroma_rag_poc.query_service import QueryExecutionError, QueryRuntime, QueryService  # noqa: E402
 from chroma_rag_poc.routes_query_v1 import get_query_service  # noqa: E402
-from chroma_rag_poc.workspace_registry import WorkspaceRegistry  # noqa: E402
+from chroma_rag_poc.workspace_registry import WorkspaceConfigError, WorkspaceRegistry  # noqa: E402
 
 from core_domain.query_contracts import EvidenceSelectionProfile, QueryMode  # noqa: E402
 
@@ -73,24 +73,26 @@ def _real_service(
     create_chroma: bool = True,
     llm: Any | None = None,
     factory_error: Exception | None = None,
+    fmea_paths: dict[str, str] | None = None,
 ) -> tuple[QueryService, ControlledRuntimeFactory, Path]:
     runtime_root = tmp_path / "runtime"
     chroma_path = runtime_root / "chroma"
     if create_chroma:
         chroma_path.mkdir(parents=True)
     registry_path = tmp_path / "workspaces.json"
+    workspace_payload: dict[str, Any] = {
+        "chroma_persist_dir": str(chroma_path),
+        "chroma_collection": "power_equipment",
+        "graph_db_path": None,
+        "supported_modes": [item.value for item in supported_modes],
+        "default_mode": mode.value,
+    }
+    if fmea_paths is not None:
+        workspace_payload.update(fmea_paths)
     registry_path.write_text(
         json.dumps({
             "allowed_root": str(runtime_root),
-            "workspaces": {
-                "power-equipment": {
-                    "chroma_persist_dir": str(chroma_path),
-                    "chroma_collection": "power_equipment",
-                    "graph_db_path": None,
-                    "supported_modes": [item.value for item in supported_modes],
-                    "default_mode": mode.value,
-                }
-            },
+            "workspaces": {"power-equipment": workspace_payload},
         }),
         encoding="utf-8",
     )
@@ -115,6 +117,20 @@ def _real_service(
         clock=iter((10.0, 10.025)).__next__,
     )
     return service, factory, chroma_path
+
+
+@pytest.mark.parametrize("fmea_field", ["fmea_db_path", "fmea_template_registry_path"])
+def test_real_query_service_rejects_explicit_fmea_paths_outside_allowed_root(
+    tmp_path: Path,
+    fmea_field: str,
+) -> None:
+    with pytest.raises(WorkspaceConfigError, match="allowed_root"):
+        _real_service(
+            tmp_path,
+            supported_modes=[QueryMode.VECTOR],
+            mode=QueryMode.VECTOR,
+            fmea_paths={fmea_field: str(tmp_path / "outside" / fmea_field)},
+        )
 
 
 @pytest.fixture

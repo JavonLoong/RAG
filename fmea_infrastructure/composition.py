@@ -63,6 +63,19 @@ def _reject_parent_collisions(path: Path, *, expected: str) -> None:
             raise ValueError("FMEA review path has a file/directory collision")
 
 
+def _is_contained(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+def _paths_overlap(first: Path, second: Path) -> bool:
+    return _is_contained(first, second) or _is_contained(second, first)
+
+
 def _workspace_review_paths(workspace: WorkspaceConfig) -> tuple[Path, Path]:
     default_root = _resolved_path(workspace.chroma_persist_dir).parent
     database_path = _resolved_path(workspace.fmea_db_path or default_root / "fmea" / "fmea.sqlite3")
@@ -72,7 +85,7 @@ def _workspace_review_paths(workspace: WorkspaceConfig) -> tuple[Path, Path]:
     graph_db_path = None if workspace.graph_db_path is None else _resolved_path(workspace.graph_db_path)
     if graph_db_path is not None and database_path == graph_db_path:
         raise ValueError("FMEA review database must be separate from the graph database")
-    if database_path == template_registry_root:
+    if _paths_overlap(database_path, template_registry_root):
         raise ValueError("FMEA review database and template registry must be separate paths")
     _reject_parent_collisions(database_path, expected="file")
     _reject_parent_collisions(template_registry_root, expected="directory")

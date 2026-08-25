@@ -82,8 +82,16 @@ class LocalReviewAuthProvider:
         if not _is_loopback_host(remote_host):
             raise ReviewError("FMEA_REVIEW_FORBIDDEN", "review authentication is restricted to loopback")
 
-        candidate = bearer_token if isinstance(bearer_token, str) else ""
-        if self._token is None or not hmac.compare_digest(candidate, self._token):
+        expected_token = b""
+        if self._token is not None:
+            expected_token = self._token.encode("utf-8")
+        candidate_token = b""
+        if isinstance(bearer_token, str):
+            try:
+                candidate_token = bearer_token.encode("utf-8")
+            except UnicodeEncodeError:
+                candidate_token = b""
+        if self._token is None or not hmac.compare_digest(candidate_token, expected_token):
             raise ReviewError("FMEA_AUTH_REQUIRED", "review authentication is required")
         if self._actor_id is None or self._workspace_id is None:
             raise _configuration_error()
