@@ -182,6 +182,11 @@ def fixture_system_actor() -> ActorContext:
 
 
 @pytest.fixture
+def fixture_analyst() -> ActorContext:
+    return ActorContext("analyst-1", ActorType.HUMAN, frozenset({"analyst"}), "ws-1")
+
+
+@pytest.fixture
 def fixture_model_actor() -> ActorContext:
     return ActorContext("review-model", ActorType.MODEL, frozenset(), "ws-1")
 
@@ -214,6 +219,94 @@ def fixture_review_row(fixture_pack: EvidencePack) -> FmeaRow:
 @pytest.fixture
 def fixture_review_source() -> ReviewSourceSnapshot:
     return make_review_source()
+
+
+@pytest.fixture
+def fixture_decision_record() -> ReviewDecisionRecord:
+    return make_review_decision_record()
+
+
+class MemoryReviewRepository:
+    def __init__(self) -> None:
+        self.row: FmeaRow | None = None
+        self.pack: EvidencePack | None = None
+        self.source: ReviewSourceSnapshot | None = None
+        self.suggestions: tuple[ReviewSuggestion, ...] = ()
+        self.decisions: tuple[ReviewDecisionRecord, ...] = ()
+        self.saved_bundle: ReviewCandidateBundle | None = None
+        self.calls: list[str] = []
+
+    def seed(
+        self,
+        *,
+        row: FmeaRow,
+        pack: EvidencePack,
+        source: ReviewSourceSnapshot | None,
+        suggestions: tuple[ReviewSuggestion, ...] = (),
+        decisions: tuple[ReviewDecisionRecord, ...] = (),
+    ) -> None:
+        self.row = row
+        self.pack = pack
+        self.source = source
+        self.suggestions = tuple(suggestions)
+        self.decisions = tuple(decisions)
+        self.saved_bundle = None
+        self.calls.clear()
+
+    def _visible(self, workspace_id: str) -> bool:
+        return self.pack is not None and self.pack.workspace_id == workspace_id
+
+    def get_row(self, row_id: str, workspace_id: str) -> FmeaRow | None:
+        self.calls.append("get_row")
+        if not self._visible(workspace_id) or self.row is None or self.row.row_id != row_id:
+            return None
+        return self.row
+
+    def get_review_source(self, row_id: str, workspace_id: str) -> ReviewSourceSnapshot | None:
+        self.calls.append("get_review_source")
+        if not self._visible(workspace_id) or self.source is None or self.source.row_id != row_id:
+            return None
+        return self.source
+
+    def get_evidence_pack(self, pack_id: str, workspace_id: str) -> EvidencePack | None:
+        self.calls.append("get_evidence_pack")
+        if not self._visible(workspace_id) or self.pack is None or self.pack.pack_id != pack_id:
+            return None
+        return self.pack
+
+    def list_suggestions(self, row_id: str, workspace_id: str) -> tuple[ReviewSuggestion, ...]:
+        self.calls.append("list_suggestions")
+        if not self._visible(workspace_id) or self.row is None or self.row.row_id != row_id:
+            return ()
+        return self.suggestions
+
+    def list_decisions(self, row_id: str, workspace_id: str) -> tuple[ReviewDecisionRecord, ...]:
+        self.calls.append("list_decisions")
+        if not self._visible(workspace_id) or self.row is None or self.row.row_id != row_id:
+            return ()
+        return self.decisions
+
+    def save_review_candidate_bundle(
+        self, bundle: ReviewCandidateBundle, actor: ActorContext
+    ) -> tuple[FmeaRow, ...]:
+        self.calls.append("save_review_candidate_bundle")
+        self.saved_bundle = bundle
+        return tuple(
+            replace(
+                row,
+                review_status=ReviewStatus.SUGGESTED,
+                publication_status=PublicationStatus.UNPUBLISHED,
+            )
+            for row in bundle.rows
+        )
+
+    def __getattr__(self, method_name: str) -> Any:
+        raise AssertionError(method_name)
+
+
+@pytest.fixture
+def memory_review_repository() -> MemoryReviewRepository:
+    return MemoryReviewRepository()
 
 
 @pytest.fixture
