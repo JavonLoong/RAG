@@ -232,6 +232,16 @@ def fixture_review_bundle(
 
 
 @pytest.fixture
+def seeded_review_repository(tmp_path, fixture_review_bundle: ReviewCandidateBundle, fixture_system_actor: ActorContext):
+    from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+
+    repository = SqliteFmeaRepository(tmp_path / "seeded.sqlite3")
+    repository.initialize()
+    repository.save_review_candidate_bundle(fixture_review_bundle, fixture_system_actor)
+    return repository
+
+
+@pytest.fixture
 def fixture_review_edit() -> FieldReviewEdit:
     return FieldReviewEdit(
         target_field="controls",

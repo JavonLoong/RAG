@@ -2,5 +2,6 @@
 
 from .evidence_provider import QueryPort, QueryServiceEvidenceProvider
 from .profile_loader import load_fmea_template_profile
+from .repository_sqlite import SqliteFmeaRepository
 
-__all__ = ["QueryPort", "QueryServiceEvidenceProvider", "load_fmea_template_profile"]
+__all__ = ["QueryPort", "QueryServiceEvidenceProvider", "SqliteFmeaRepository", "load_fmea_template_profile"]
