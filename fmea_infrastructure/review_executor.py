@@ -68,5 +68,14 @@ class ThreadPoolReviewRunExecutor:
             self._closed = True
             self._executor.shutdown(wait=True, cancel_futures=False)
 
+    def close_nonblocking(self) -> None:
+        """Cancel pending work and return without waiting for running work."""
+
+        with self._state_lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._executor.shutdown(wait=False, cancel_futures=True)
+
 
 __all__ = ["ThreadPoolReviewRunExecutor"]

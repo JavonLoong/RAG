@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -176,6 +176,34 @@ def test_context_emits_one_v1_json_object(
     assert fake_review_service.calls == ["get_context"]
 
 
+def test_successful_suggestion_output_omits_private_model_and_reasoning_markers(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    fake_review_service: FakeReviewService,
+    fake_actor: ActorContext,
+    fixture_review_suggestion: Any,
+) -> None:
+    fake_review_service.context = replace(
+        fake_review_service.context,
+        latest_suggestion=fixture_review_suggestion,
+    )
+    monkeypatch.setattr(
+        fmea_skill,
+        "build_cli_runtime",
+        lambda: fake_cli_runtime(fake_review_service, fake_actor),
+    )
+
+    exit_code = fmea_skill.main(["review", "context", "--row-id", "row-1"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "test-provider" not in captured.out
+    assert "test-model" not in captured.out
+    assert "The current control is supported." not in captured.out
+    assert "The candidate is supported by the current evidence." not in captured.out
+    assert "prompt_hash" not in captured.out
+
+
 def test_decide_requires_explicit_human_confirmation(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -281,6 +309,57 @@ def test_suggest_deadline_returns_latest_run_and_closes_runtime(
     assert exit_code == 6
     assert payload["data"]["run_id"] == "run-1"
     assert payload["error"]["code"] == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+    assert close_calls == [1]
+
+
+@pytest.mark.parametrize("review_command", ["suggest", "suggestion-status"])
+def test_failed_suggestion_emits_error_envelope_and_closes_once(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    fake_review_service: FakeReviewService,
+    fake_actor: ActorContext,
+    review_command: str,
+) -> None:
+    failed_run = replace(
+        fake_review_service.terminal_run,
+        status=RunStatus.FAILED,
+        suggestion_id=None,
+        error_code="FMEA_MODEL_SUGGESTION_UNAVAILABLE",
+        retryable=True,
+    )
+    fake_review_service.terminal_run = failed_run
+    if review_command == "suggest":
+        fake_review_service.status_values = [failed_run]
+    close_calls: list[int] = []
+    monkeypatch.setattr(
+        fmea_skill,
+        "build_cli_runtime",
+        lambda: fake_cli_runtime(fake_review_service, fake_actor, close_calls),
+    )
+
+    argv = ["review", review_command]
+    if review_command == "suggest":
+        argv += [
+            "--row-id",
+            "row-1",
+            "--record-version",
+            "1",
+            "--idempotency-key",
+            "00000000-0000-4000-8000-000000000011",
+        ]
+    else:
+        argv += ["--run-id", "run-1"]
+
+    exit_code = fmea_skill.main(argv)
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 6
+    assert payload["status"] == "error"
+    assert payload["resource_type"] == "review_suggestion_run"
+    assert payload["error"]["code"] == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+    assert payload["data"]["run_id"] == "run-1"
+    assert payload["data"]["status"] == "failed"
     assert close_calls == [1]
 
 
