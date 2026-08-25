@@ -11,12 +11,14 @@ from __future__ import annotations
 import io
 import os
 import re
-import shutil
-import tempfile
+import secrets
 import time
 import zipfile
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from threading import Lock
+from typing import cast
 from urllib.parse import urlparse
 
 import orjson
@@ -29,6 +31,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from core_domain.query_contracts import QueryMode
+from fmea_application.review_errors import ReviewError
+from fmea_infrastructure.composition import ReviewRuntime, build_workspace_review_runtime
+from fmea_infrastructure.local_auth import LocalReviewAuthProvider
 
 from .benchmark import run_synthetic_benchmark
 from .observability import OperationLogger
@@ -387,6 +392,9 @@ def create_app(
     persist_dir: Path = DEFAULT_PERSIST_DIR,
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
     log_dir: Path | None = None,
+    *,
+    review_runtime_factory: Callable[[WorkspaceConfig], ReviewRuntime] = build_workspace_review_runtime,
+    review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
     app = FastAPI(
@@ -402,6 +410,10 @@ def create_app(
         allow_headers=["*"],
     )
 
+    from .routes_fmea_review_v1 import FmeaRequestBodyLimitMiddleware
+
+    app.add_middleware(FmeaRequestBodyLimitMiddleware)
+
     app.state.persist_dir = Path(persist_dir)
     app.state.upload_dir = Path(upload_dir)
     app.state.log_dir = Path(log_dir) if log_dir else (
@@ -411,21 +423,56 @@ def create_app(
     app.state.upload_dir.mkdir(parents=True, exist_ok=True)
     app.state.log_dir.mkdir(parents=True, exist_ok=True)
 
-    app.state.query_service = QueryService(
-        _build_query_registry(app.state.persist_dir),
-        EngineQueryRuntimeFactory(),
-    )
+    workspace_registry = _build_query_registry(app.state.persist_dir)
+    app.state.workspace_registry = workspace_registry
+    app.state.query_service = QueryService(workspace_registry, EngineQueryRuntimeFactory())
+    app.state.review_runtime_factory = review_runtime_factory
+    app.state.review_runtimes = {}
+    app.state.review_runtime_lock = Lock()
+    app.state.review_cursor_secret = secrets.token_bytes(32)
+    app.state.review_auth_error = None
+    if review_auth_provider is not None:
+        app.state.review_auth_provider = review_auth_provider
+    else:
+        try:
+            app.state.review_auth_provider = LocalReviewAuthProvider.from_env()
+        except ReviewError as exc:
+            app.state.review_auth_provider = None
+            app.state.review_auth_error = exc
 
+    from .routes_fmea_review_v1 import (
+        fmea_validation_error_response,
+        review_error_response,
+    )
+    from .routes_fmea_review_v1 import (
+        router as fmea_review_v1_router,
+    )
     from .routes_query_v1 import router as query_v1_router
     from .routes_query_v1 import validation_error_response
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        if request.url.path.startswith("/api/v1/fmea/"):
+            return fmea_validation_error_response(request, exc)
         if request.url.path.startswith("/api/v1/"):
             return validation_error_response(request, exc)
         return await request_validation_exception_handler(request, exc)
 
+    app.add_exception_handler(ReviewError, review_error_response)
+
     app.include_router(query_v1_router)
+    app.include_router(fmea_review_v1_router)
+
+    async def close_review_runtimes() -> None:
+        runtimes = tuple(cast(dict[str, ReviewRuntime], app.state.review_runtimes).values())
+        closed: set[int] = set()
+        for runtime in runtimes:
+            if id(runtime) in closed:
+                continue
+            closed.add(id(runtime))
+            runtime.executor.close()
+
+    app.router.add_event_handler("shutdown", close_review_runtimes)
 
     # Register modular GraphRAG routes (community detection, global search, etc.)
     try:

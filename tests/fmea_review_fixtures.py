@@ -60,6 +60,20 @@ _PROMPT_HASH = "sha256:" + "a" * 64
 _ROOT = Path(__file__).parents[1]
 
 
+def valid_accept_body() -> dict[str, object]:
+    """Return the side-effect-free HTTP decision body used by API tests."""
+
+    return {
+        "action": "accept",
+        "suggestion_id": None,
+        "reason_code": "ACCEPT_AS_IS",
+        "reason": "Human reviewer accepts the supported row.",
+        "edits": [],
+        "evidence_requests": [],
+        "unresolved_acknowledgements": [],
+    }
+
+
 def _field_bindings() -> tuple[tuple[str, tuple[str, ...]], ...]:
     return tuple((field_name, ("ev-1",)) for field_name in sorted(EDITABLE_REVIEW_FIELDS))
 
