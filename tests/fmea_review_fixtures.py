@@ -43,7 +43,6 @@ from fmea_application.review_contracts import (
     StartReviewSuggestionCommand,
 )
 from fmea_application.review_projection import build_review_context
-from fmea_application.review_template_adapter import ReviewTemplateAdapter
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
 
@@ -109,8 +108,8 @@ def _review_claims(payload: dict[str, object]) -> tuple[CandidateClaim, ...]:
             assert isinstance(item, dict)
             evidence_ids = item["evidence_ids"]
             assert isinstance(evidence_ids, list)
-            if evidence_ids:
-                state = ClaimState.CONFLICT if collection_name == "conflicts" else ClaimState.KNOWN
+            if collection_name == "conflicts":
+                state = ClaimState.CONFLICT
             else:
                 status_name = item.get("recommended_claim_status", item.get("claim_status"))
                 state = ClaimState(str(status_name))
@@ -338,11 +337,6 @@ def fixture_review_context(
 @pytest.fixture
 def valid_review_generation_result() -> GenerationRunResult:
     return make_review_generation_result(_valid_review_payload())
-
-
-@pytest.fixture
-def valid_review_suggestion_draft(valid_review_generation_result, fixture_review_context):
-    return ReviewTemplateAdapter().decode_draft(valid_review_generation_result, fixture_review_context)
 
 
 @pytest.fixture

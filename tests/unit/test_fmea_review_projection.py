@@ -28,6 +28,7 @@ def test_context_exposes_labels_profile_and_acl_safe_evidence(
     assert context.reviewability is True
     assert context.item_label == "Fuel filter"
     assert context.retrieval.resolved_profile is EvidenceSelectionProfile.COMBINED
+    assert context.evidence.workspace_id == fixture_pack.workspace_id
     assert context.evidence.pack_hash == "sha256:" + fixture_pack.pack_hash
     assert context.evidence.refs[0].locator == '{"chunk_id":"c-1","page":42}'
     assert context.evidence.refs[0].quote == "启动前应检查燃油供给压力。"

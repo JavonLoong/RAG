@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal, cast
 
@@ -74,6 +75,7 @@ def _safe_value(value: str | tuple[str, ...]) -> str | list[str]:
     return [_safe_text(item) for item in value]
 
 
+@lru_cache(maxsize=1)
 def _compiled_template() -> CompiledTemplate:
     root = Path(__file__).resolve().parents[1]
     compiler = TemplateCompiler(
@@ -108,11 +110,9 @@ def _json_evidence_ids(value: object) -> tuple[str, ...]:
     return tuple(cast(str, item) for item in items)
 
 
-def _claim_state(collection: str, item: dict[str, object], evidence_ids: tuple[str, ...]) -> ClaimState:
+def _claim_state(collection: str, item: dict[str, object]) -> ClaimState:
     if collection == "conflicts":
         return ClaimState.CONFLICT
-    if evidence_ids:
-        return ClaimState.KNOWN
     field_name = "recommended_claim_status" if collection == "field_findings" else "claim_status"
     try:
         return ClaimState(_json_string(item[field_name], "Claim status is invalid."))
@@ -148,7 +148,7 @@ def _claim_evidence_is_exact(
             raise _invalid_suggestion("Candidate claim evidence must exactly match the payload.")
         item_index = int(target.rsplit("/", 1)[1])
         item = _json_object(_json_array(payload[collection], "Review collection must be an array.")[item_index], "Review item must be an object.")
-        if claim.state is not _claim_state(collection, item, evidence_ids):
+        if claim.state is not _claim_state(collection, item):
             raise _invalid_suggestion("Candidate claim state does not match the payload.")
 
 
@@ -173,9 +173,7 @@ class ReviewTemplateAdapter:
             or context.row.evidence_pack_id != evidence_pack.pack_id
             or context.evidence.pack_hash != normalized_hash
             or not expected_ids.issubset({ref.evidence_id for ref in evidence_pack.refs})
-            or (
-                getattr(context, "workspace_id", evidence_pack.workspace_id) != evidence_pack.workspace_id
-            )
+            or context.evidence.workspace_id != evidence_pack.workspace_id
         ):
             raise _invalid_request("Evidence pack does not match the review context.")
         try:
@@ -329,8 +327,10 @@ class ReviewTemplateAdapter:
                 raise _invalid_suggestion("modify_and_accept requires a proposed edit.")
             if action is ReviewAction.REQUEST_EVIDENCE and not evidence_requests:
                 raise _invalid_suggestion("request_evidence requires an evidence request.")
-            if action in {ReviewAction.ACCEPT, ReviewAction.REJECT, ReviewAction.DEFER} and edits:
-                raise _invalid_suggestion("accept, reject, and defer cannot contain proposed edits.")
+            if action is not ReviewAction.MODIFY_AND_ACCEPT and edits:
+                raise _invalid_suggestion("Only modify_and_accept may contain proposed edits.")
+            if action is not ReviewAction.REQUEST_EVIDENCE and evidence_requests:
+                raise _invalid_suggestion("Only request_evidence may contain evidence requests.")
             return ReviewSuggestionDraft(
                 recommended_action=action,
                 field_findings=findings,

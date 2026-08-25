@@ -90,7 +90,13 @@ def test_source_snapshot_rejects_auto_as_resolved_profile() -> None:
 @pytest.mark.parametrize("invalid_hash", ("f" * 64, "sha256:" + "F" * 64))
 def test_pack_and_audit_hashes_require_prefixed_sha256(invalid_hash, fixture_versions) -> None:
     with pytest.raises(ValueError, match="SHA-256"):
-        ReviewEvidenceProjection("pack-1", invalid_hash, None, ())
+        ReviewEvidenceProjection(
+            pack_id="pack-1",
+            workspace_id="ws-1",
+            pack_hash=invalid_hash,
+            expires_at=None,
+            refs=(),
+        )
 
     with pytest.raises(ValueError, match="SHA-256"):
         AuditEvent(
@@ -168,7 +174,13 @@ def test_custom_legacy_projection_requires_warning_and_can_be_empty() -> None:
 def test_timestamp_validation_rejects_naive_and_non_utc_values() -> None:
     for timestamp in ("2026-08-23T00:00:00", "2026-08-23T08:00:00+08:00"):
         with pytest.raises(ValueError, match="timezone-aware UTC"):
-            ReviewEvidenceProjection("pack-1", "sha256:" + "f" * 64, timestamp, ())
+            ReviewEvidenceProjection(
+                pack_id="pack-1",
+                workspace_id="ws-1",
+                pack_hash="sha256:" + "f" * 64,
+                expires_at=timestamp,
+                refs=(),
+            )
 
 
 def test_canonical_payload_and_scope_hashes_are_deterministic() -> None:

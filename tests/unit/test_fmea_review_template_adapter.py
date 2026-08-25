@@ -4,6 +4,8 @@ from dataclasses import replace
 
 import pytest
 
+from core_domain.fmea.states import ClaimStatus
+from core_domain.fmea.value_objects import EvidencePack
 from core_domain.structured_output import CandidateClaim, ClaimState
 from fmea_application.review_contracts import ReviewAction
 from fmea_application.review_errors import ReviewError
@@ -29,6 +31,36 @@ def test_adapter_builds_bounded_canonical_model_input(
     assert len(rendered.encode("utf-8")) <= 4_000
     assert "C:/" not in rendered
     assert "acl_scope" not in rendered
+
+
+def test_adapter_rejects_same_pack_identity_from_other_workspace(
+    fixture_review_context, fixture_pack
+) -> None:
+    other_refs = tuple(replace(ref, workspace_id="ws-2") for ref in fixture_pack.refs)
+    other_pack = EvidencePack.build(
+        pack_id=fixture_pack.pack_id,
+        workspace_id="ws-2",
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=other_refs,
+        created_at=fixture_pack.created_at,
+        expires_at=fixture_pack.expires_at,
+    )
+    assert other_pack.pack_hash == fixture_pack.pack_hash
+    assert tuple(ref.evidence_id for ref in other_pack.refs) == tuple(
+        ref.evidence_id for ref in fixture_pack.refs
+    )
+
+    with pytest.raises(ReviewError) as captured:
+        ReviewTemplateAdapter().build_request(
+            fixture_review_context,
+            other_pack,
+            "review-run-1",
+            review_policy="default",
+            focus_fields=("controls",),
+        )
+
+    assert captured.value.code == "FMEA_REVIEW_REQUEST_INVALID"
 
 
 def test_modify_suggestion_requires_one_valid_edit_and_exact_claim_evidence(
@@ -68,27 +100,28 @@ def test_adapter_rejects_server_owned_fields_and_pack_external_evidence(
 
 
 @pytest.mark.parametrize(
-    ("action", "collection", "should_raise"),
+    ("action", "collections", "should_raise"),
     [
-        pytest.param("accept", "proposed_edits", True, id="accept-with-edit"),
-        pytest.param("modify_and_accept", "proposed_edits", False, id="modify-with-edit"),
-        pytest.param("request_evidence", "evidence_requests", False, id="request-with-request"),
-        pytest.param("request_evidence", "proposed_edits", True, id="request-with-edit"),
+        pytest.param("accept", "edit", True, id="accept-with-edit"),
+        pytest.param("accept", "request", True, id="accept-with-request"),
+        pytest.param("modify_and_accept", "edit", False, id="modify-with-edit"),
+        pytest.param("request_evidence", "request", False, id="request-with-request"),
+        pytest.param("request_evidence", "both", True, id="request-with-request-and-edit"),
     ],
 )
 def test_adapter_enforces_action_linkage(
     fixture_review_context,
     action: str,
-    collection: str,
+    collections: str,
     should_raise: bool,
 ) -> None:
     payload = _valid_review_payload()
     payload["recommended_action"] = action
     payload["proposed_edits"] = []
     payload["evidence_requests"] = []
-    if collection == "proposed_edits":
+    if collections in {"edit", "both"}:
         payload["proposed_edits"] = _valid_review_payload()["proposed_edits"]
-    if collection == "evidence_requests":
+    if collections in {"request", "both"}:
         payload["evidence_requests"] = [
             {
                 "target_field": "controls",
@@ -106,6 +139,18 @@ def test_adapter_enforces_action_linkage(
     else:
         draft = ReviewTemplateAdapter().decode_draft(result, fixture_review_context)
         assert draft.recommended_action.value == action
+
+
+def test_adapter_preserves_insufficient_evidence_claim_with_bound_evidence(
+    fixture_review_context,
+) -> None:
+    payload = _valid_review_payload()
+    payload["field_findings"][0]["recommended_claim_status"] = "insufficient_evidence"
+    result = make_review_generation_result(payload)
+
+    draft = ReviewTemplateAdapter().decode_draft(result, fixture_review_context)
+
+    assert draft.field_findings[0].recommended_claim_status is ClaimStatus.INSUFFICIENT_EVIDENCE
 
 
 def test_adapter_rejects_claim_evidence_that_is_not_exactly_the_payload_evidence(

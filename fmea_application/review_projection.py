@@ -189,6 +189,7 @@ def _project_evidence(
     refs = tuple(_project_evidence_ref(ref) for ref in pack.refs if ref.evidence_id in evidence_ids)
     return ReviewEvidenceProjection(
         pack_id=pack.pack_id,
+        workspace_id=pack.workspace_id,
         pack_hash=_normalize_pack_hash(pack.pack_hash),
         expires_at=pack.expires_at,
         refs=refs,

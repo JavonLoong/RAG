@@ -1132,12 +1132,14 @@ class ReviewEvidenceRef:
 @dataclass(frozen=True, slots=True)
 class ReviewEvidenceProjection:
     pack_id: str
+    workspace_id: str
     pack_hash: str
     expires_at: str | None
     refs: tuple[ReviewEvidenceRef, ...]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "pack_id", _label(self.pack_id, "pack_id"))
+        object.__setattr__(self, "workspace_id", _label(self.workspace_id, "workspace_id"))
         object.__setattr__(self, "pack_hash", _pack_hash(self.pack_hash, "pack_hash"))
         object.__setattr__(self, "expires_at", _optional_timestamp(self.expires_at, "expires_at"))
         refs = _validate_contract_tuple(self.refs, ReviewEvidenceRef, "refs")
