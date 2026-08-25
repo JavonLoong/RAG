@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from core_domain.fmea.codec import encode_json
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
 from core_domain.fmea.states import (
     ActorType,
@@ -29,6 +30,7 @@ from core_domain.structured_output import CandidateClaim, ClaimState, Structured
 from fmea_application.review_contracts import (
     EDITABLE_REVIEW_FIELDS,
     ActorContext,
+    EvidenceRequestItem,
     FieldFinding,
     FieldReviewEdit,
     ReviewAction,
@@ -37,6 +39,7 @@ from fmea_application.review_contracts import (
     ReviewDecisionRecord,
     ReviewJudgement,
     ReviewModelManifest,
+    ReviewPriority,
     ReviewReasonCode,
     ReviewSourceSnapshot,
     ReviewSuggestion,
@@ -44,6 +47,7 @@ from fmea_application.review_contracts import (
     ReviewSuggestionRun,
     StartReviewSuggestionCommand,
     SuggestionRunReservation,
+    encode_review_json,
 )
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_projection import build_review_context
@@ -301,6 +305,16 @@ def make_decision_command(**overrides: Any) -> ReviewDecisionCommand:
         unresolved_acknowledgements=(),
     )
     return replace(command, **overrides) if overrides else command
+
+
+def make_evidence_request(**overrides: Any) -> EvidenceRequestItem:
+    request = EvidenceRequestItem(
+        target_field="causes",
+        question="Which source confirms the cause?",
+        preferred_source_types=("primary_document",),
+        priority=ReviewPriority.NORMAL,
+    )
+    return replace(request, **overrides) if overrides else request
 
 
 @pytest.fixture
@@ -753,6 +767,275 @@ def fixture_review_edit() -> FieldReviewEdit:
 @pytest.fixture
 def fixture_decision_command() -> ReviewDecisionCommand:
     return make_decision_command()
+
+
+@pytest.fixture
+def valid_review_decision_commands(fixture_review_edit: FieldReviewEdit) -> dict[ReviewAction, ReviewDecisionCommand]:
+    return {
+        ReviewAction.ACCEPT: make_decision_command(
+            idempotency_key="00000000-0000-4000-8000-000000000011",
+            action=ReviewAction.ACCEPT,
+            reason_code=ReviewReasonCode.ACCEPT_AS_IS,
+            reason="Human reviewer accepts the supported row.",
+            edits=(),
+            evidence_requests=(),
+        ),
+        ReviewAction.MODIFY_AND_ACCEPT: make_decision_command(
+            idempotency_key="00000000-0000-4000-8000-000000000012",
+            action=ReviewAction.MODIFY_AND_ACCEPT,
+            reason_code=ReviewReasonCode.FIELD_CORRECTION,
+            reason="Human reviewer corrects the controls field.",
+            edits=(fixture_review_edit,),
+            evidence_requests=(),
+        ),
+        ReviewAction.REJECT: make_decision_command(
+            idempotency_key="00000000-0000-4000-8000-000000000013",
+            action=ReviewAction.REJECT,
+            reason_code=ReviewReasonCode.UNSUPPORTED_CLAIM,
+            reason="Human reviewer rejects the unsupported row.",
+            edits=(),
+            evidence_requests=(),
+        ),
+        ReviewAction.REQUEST_EVIDENCE: make_decision_command(
+            idempotency_key="00000000-0000-4000-8000-000000000014",
+            action=ReviewAction.REQUEST_EVIDENCE,
+            reason_code=ReviewReasonCode.EVIDENCE_REQUIRED,
+            reason="Human reviewer requests supporting evidence.",
+            edits=(),
+            evidence_requests=(make_evidence_request(),),
+        ),
+        ReviewAction.DEFER: make_decision_command(
+            idempotency_key="00000000-0000-4000-8000-000000000015",
+            action=ReviewAction.DEFER,
+            reason_code=ReviewReasonCode.DEFERRED_FOR_EXPERT,
+            reason="Human reviewer defers this row for an expert.",
+            edits=(),
+            evidence_requests=(),
+        ),
+    }
+
+
+@pytest.fixture
+def unresolved_accept_command() -> ReviewDecisionCommand:
+    return make_decision_command(
+        idempotency_key="00000000-0000-4000-8000-000000000021",
+        action=ReviewAction.ACCEPT,
+        reason_code=ReviewReasonCode.ACCEPT_AS_IS,
+        reason="Human reviewer acknowledges the unresolved cause.",
+        edits=(),
+        evidence_requests=(),
+        unresolved_acknowledgements=(),
+    )
+
+
+@pytest.fixture
+def decision_referencing_stale_suggestion(
+    seeded_review_repository,
+    fixture_review_suggestion: ReviewSuggestion,
+    fixture_decision_command: ReviewDecisionCommand,
+) -> ReviewDecisionCommand:
+    suggestion = replace(fixture_review_suggestion, stale=True)
+    suggestion_json = encode_review_json(suggestion)
+    connection = seeded_review_repository._connect()
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "INSERT INTO review_suggestion_runs "
+            "(run_id, row_id, workspace_id, actor_id, source_record_version, status, request_hash, "
+            "idempotency_scope, suggestion_id, request_id, trace_id, created_at, finished_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                suggestion.run_id,
+                suggestion.row_id,
+                "ws-1",
+                "reviewer-1",
+                suggestion.source_record_version,
+                "succeeded",
+                "sha256:" + "b" * 64,
+                "scope-stale-suggestion",
+                suggestion.suggestion_id,
+                "request-stale",
+                "trace-stale",
+                suggestion.created_at,
+                suggestion.created_at,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO review_suggestions "
+            "(suggestion_id, run_id, row_id, workspace_id, source_record_version, stale, suggestion_json, suggestion_hash, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                suggestion.suggestion_id,
+                suggestion.run_id,
+                suggestion.row_id,
+                "ws-1",
+                suggestion.source_record_version,
+                1,
+                suggestion_json,
+                "sha256:" + sha256(suggestion_json.encode("utf-8")).hexdigest(),
+                suggestion.created_at,
+            ),
+        )
+        connection.execute("COMMIT")
+    except Exception:
+        if connection.in_transaction:
+            connection.execute("ROLLBACK")
+        raise
+    finally:
+        connection.close()
+    return replace(fixture_decision_command, suggestion_id=suggestion.suggestion_id)
+
+
+def _seed_legacy_row_without_source(
+    repository: Any,
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+    fixture_review_row: FmeaRow,
+) -> None:
+    analysis_json, analysis_hash = repository._analysis_json(fixture_analysis)
+    pack_json = encode_json(fixture_pack)
+    row = replace(
+        fixture_review_row,
+        review_status=ReviewStatus.SUGGESTED,
+        publication_status=PublicationStatus.UNPUBLISHED,
+    )
+    row_json, row_hash = repository._row_json(row)
+    connection = repository._connect()
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "INSERT INTO fmea_analyses(analysis_id, analysis_hash, analysis_json, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (fixture_analysis.analysis_id, analysis_hash, analysis_json, _UTC, _UTC),
+        )
+        connection.execute(
+            "INSERT INTO evidence_packs(pack_id, workspace_id, pack_hash, pack_json, created_at, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (fixture_pack.pack_id, fixture_pack.workspace_id, fixture_pack.pack_hash, pack_json, fixture_pack.created_at, fixture_pack.expires_at),
+        )
+        connection.execute(
+            "INSERT INTO fmea_rows "
+            "(row_id, workspace_id, analysis_id, evidence_pack_id, review_status, publication_status, "
+            "record_version, row_hash, row_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                row.row_id,
+                fixture_pack.workspace_id,
+                row.analysis_id,
+                row.evidence_pack_id,
+                row.review_status.value,
+                row.publication_status.value,
+                row.record_version,
+                row_hash,
+                row_json,
+                _UTC,
+                _UTC,
+            ),
+        )
+        connection.execute("COMMIT")
+    except Exception:
+        if connection.in_transaction:
+            connection.execute("ROLLBACK")
+        raise
+    finally:
+        connection.close()
+
+
+@pytest.fixture
+def sqlite_review_service(
+    seeded_review_repository,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+):
+    from fmea_application.review_service import ReviewService
+
+    return ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        RecordingReviewExecutor(),
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+
+
+@pytest.fixture
+def unresolved_accept_service(
+    tmp_path,
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+    fixture_review_row: FmeaRow,
+    fixture_review_bundle: ReviewCandidateBundle,
+    fixture_system_actor: ActorContext,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+):
+    from fmea_application.review_service import ReviewService
+    from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+
+    unresolved_source = make_review_source(
+        field_claim_statuses=tuple(
+            (field_name, ClaimStatus.INSUFFICIENT_EVIDENCE if field_name == "causes" else ClaimStatus.KNOWN)
+            for field_name in sorted(EDITABLE_REVIEW_FIELDS)
+        )
+    )
+    bundle = replace(fixture_review_bundle, source_snapshots=(unresolved_source,))
+    repository = SqliteFmeaRepository(tmp_path / "unresolved.sqlite3")
+    repository.initialize()
+    repository.save_review_candidate_bundle(bundle, fixture_system_actor)
+    return ReviewService(
+        repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        RecordingReviewExecutor(),
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+
+
+@pytest.fixture
+def legacy_missing_source_service(
+    tmp_path,
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+    fixture_review_row: FmeaRow,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+):
+    from fmea_application.review_service import ReviewService
+    from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+
+    repository = SqliteFmeaRepository(tmp_path / "legacy-missing-source.sqlite3")
+    repository.initialize()
+    _seed_legacy_row_without_source(repository, fixture_analysis, fixture_pack, fixture_review_row)
+    return ReviewService(
+        repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        RecordingReviewExecutor(),
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+
+
+@pytest.fixture
+def missing_source_accept_command() -> ReviewDecisionCommand:
+    return make_decision_command(
+        idempotency_key="00000000-0000-4000-8000-000000000031",
+        action=ReviewAction.ACCEPT,
+        reason_code=ReviewReasonCode.ACCEPT_AS_IS,
+        reason="Human reviewer accepts the legacy row.",
+        edits=(),
+        evidence_requests=(),
+    )
+
+
+@pytest.fixture
+def missing_source_request_command() -> ReviewDecisionCommand:
+    return make_decision_command(
+        idempotency_key="00000000-0000-4000-8000-000000000032",
+        action=ReviewAction.REQUEST_EVIDENCE,
+        reason_code=ReviewReasonCode.EVIDENCE_REQUIRED,
+        reason="Human reviewer requests evidence for the legacy row.",
+        edits=(),
+        evidence_requests=(make_evidence_request(),),
+    )
 
 
 @pytest.fixture

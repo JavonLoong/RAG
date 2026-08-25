@@ -28,10 +28,15 @@ from core_domain.fmea.value_objects import EvidencePack
 from fmea_application.review_contracts import (
     ActorContext,
     AuditEvent,
+    EvidenceRequestItem,
     IdempotencyScope,
+    PreparedReviewDecision,
     PreparedSuggestionRun,
+    ReviewAction,
     ReviewCandidateBundle,
     ReviewDecisionRecord,
+    ReviewDecisionResult,
+    ReviewPriority,
     ReviewSourceSnapshot,
     ReviewSuggestion,
     ReviewSuggestionRun,
@@ -51,6 +56,7 @@ _SUGGESTION_START_COMMAND = "review.suggestion.start"
 _SUGGESTION_CREATE_COMMAND = "review.suggestion.create"
 _SUGGESTION_COMPLETE_COMMAND = "review.suggestion.complete"
 _SUGGESTION_FAIL_COMMAND = "review.suggestion.fail"
+_DECISION_COMMAND = "review.decision"
 _FMEA_CODEC = import_module("core_domain.fmea.codec")
 encode_json = cast(Callable[[object], str], _FMEA_CODEC.encode_json)
 decode_analysis = cast(Callable[[str], object], _FMEA_CODEC.decode_analysis)
@@ -93,6 +99,74 @@ def _load_strict_json(payload: object, kind: str) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ValueError(f"persisted {kind} JSON must be an object")
     return value
+
+
+def _decision_result_json(result: ReviewDecisionResult) -> str:
+    return encode_review_json(result)
+
+
+def _decode_decision_result(payload: object) -> ReviewDecisionResult:
+    data = _load_strict_json(payload, "review decision response")
+    expected = {
+        "decision_id",
+        "row",
+        "previous_record_version",
+        "record_version",
+        "review_status",
+        "publication_status",
+        "audit_event_id",
+        "suggestion_id",
+        "evidence_requests",
+        "persisted",
+        "request_id",
+        "trace_id",
+    }
+    if set(data) != expected:
+        raise ValueError("persisted review decision response fields are invalid")
+    row_data = data["row"]
+    if not isinstance(row_data, dict):
+        raise ValueError("persisted review decision response row is invalid")
+    row_payload = encode_review_json(row_data)
+    row = cast(FmeaRow, _decode_fmea_json(row_payload, decode_row, "row"))
+    raw_requests = data["evidence_requests"]
+    if not isinstance(raw_requests, list):
+        raise ValueError("persisted review decision response requests are invalid")
+    evidence_requests_list: list[EvidenceRequestItem] = []
+    for item in raw_requests:
+        if not isinstance(item, dict):
+            raise ValueError("persisted review decision response requests are invalid")
+        raw_types = item.get("preferred_source_types")
+        if not isinstance(raw_types, list) or not all(isinstance(value, str) for value in raw_types):
+            raise ValueError("persisted review decision response requests are invalid")
+        evidence_requests_list.append(
+            EvidenceRequestItem(
+                target_field=cast(str, item["target_field"]),
+                question=cast(str, item["question"]),
+                preferred_source_types=tuple(raw_types),
+                priority=ReviewPriority(cast(str, item["priority"])),
+            )
+        )
+    evidence_requests = tuple(evidence_requests_list)
+    try:
+        result = ReviewDecisionResult(
+            decision_id=cast(str, data["decision_id"]),
+            row=row,
+            previous_record_version=cast(int, data["previous_record_version"]),
+            record_version=cast(int, data["record_version"]),
+            review_status=ReviewStatus(cast(str, data["review_status"])),
+            publication_status=PublicationStatus(cast(str, data["publication_status"])),
+            audit_event_id=cast(str, data["audit_event_id"]),
+            suggestion_id=None if data["suggestion_id"] is None else cast(str, data["suggestion_id"]),
+            evidence_requests=evidence_requests,
+            persisted=cast(bool, data["persisted"]),
+            request_id=cast(str, data["request_id"]),
+            trace_id=cast(str, data["trace_id"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("persisted review decision response values are invalid") from exc
+    if not result.persisted:
+        raise ValueError("persisted review decision response must be persisted")
+    return result
 
 
 def _decode_fmea_json(payload: object, decoder: Callable[[str], object], kind: str) -> object:
@@ -804,6 +878,223 @@ class SqliteFmeaRepository:
         if row is None:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review run could not be loaded", retryable=True)
         return SqliteFmeaRepository._decode_suggestion_run(row)
+
+    def _validate_prepared_decision(self, prepared: PreparedReviewDecision) -> None:
+        decision = prepared.decision
+        previous = prepared.previous_row
+        next_row = prepared.next_row
+        audit = prepared.audit
+        scope = prepared.scope
+        expected_status = {
+            ReviewAction.ACCEPT: ReviewStatus.ACCEPTED,
+            ReviewAction.MODIFY_AND_ACCEPT: ReviewStatus.ACCEPTED,
+            ReviewAction.REJECT: ReviewStatus.REJECTED,
+            ReviewAction.REQUEST_EVIDENCE: ReviewStatus.IN_REVIEW,
+            ReviewAction.DEFER: ReviewStatus.IN_REVIEW,
+        }[decision.action]
+        if (
+            scope.workspace_id != audit.workspace_id
+            or scope.actor_id != decision.actor_id
+            or scope.command != _DECISION_COMMAND
+            or scope.resource_path != f"/rows/{decision.row_id}"
+            or scope.key_hash != audit.idempotency_key_hash
+            or prepared.payload_hash != audit.canonical_payload_hash
+            or prepared.expected_record_version != previous.record_version
+            or decision.row_id != previous.row_id
+            or decision.row_id != next_row.row_id
+            or decision.previous_record_version != previous.record_version
+            or decision.record_version != next_row.record_version
+            or next_row.record_version != previous.record_version + 1
+            or next_row.review_status is not expected_status
+            or next_row.publication_status is not previous.publication_status
+            or audit.workspace_id != scope.workspace_id
+            or audit.row_id != decision.row_id
+            or audit.actor_id != decision.actor_id
+            or audit.actor_type is not ActorType.HUMAN
+            or audit.command != _DECISION_COMMAND
+            or audit.action is not decision.action
+            or audit.reason_code is not decision.reason_code
+            or audit.suggestion_id != decision.suggestion_id
+            or audit.decision_id != decision.decision_id
+            or audit.expected_record_version != previous.record_version
+            or audit.applied_record_version != next_row.record_version
+            or audit.analysis_id != previous.analysis_id
+            or audit.request_id == ""
+            or audit.trace_id == ""
+            or audit.retrieval_trace_id != audit.trace_id
+        ):
+            self._binding_error("review decision binding is invalid")
+        if audit.before_hash != self._row_json(previous)[1] or audit.after_hash != self._row_json(next_row)[1]:
+            self._binding_error("review decision row hash binding is invalid")
+        expected_changed_fields = tuple(sorted(edit.target_field for edit in decision.edits))
+        expected_evidence_ids = tuple(sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids}))
+        expected_request_targets = tuple(sorted(item.target_field for item in decision.evidence_requests))
+        if (
+            audit.changed_fields != expected_changed_fields
+            or audit.evidence_ids != expected_evidence_ids
+            or audit.evidence_request_targets != expected_request_targets
+        ):
+            self._binding_error("review decision audit binding is invalid")
+        if decision.action is ReviewAction.MODIFY_AND_ACCEPT and not decision.edits:
+            self._binding_error("modify_and_accept decision binding is invalid")
+        if decision.action is not ReviewAction.MODIFY_AND_ACCEPT and decision.edits:
+            self._binding_error("review decision action binding is invalid")
+        if decision.action is ReviewAction.REQUEST_EVIDENCE and not decision.evidence_requests:
+            self._binding_error("request_evidence decision binding is invalid")
+        if decision.action is not ReviewAction.REQUEST_EVIDENCE and decision.evidence_requests:
+            self._binding_error("review decision action binding is invalid")
+
+    @classmethod
+    def _decision_replay(
+        cls,
+        connection: sqlite3.Connection,
+        scope: IdempotencyScope,
+        payload_hash: str,
+    ) -> ReviewDecisionResult | None:
+        existing = cls._reservation_row(connection, scope)
+        if existing is None:
+            return None
+        if existing["payload_hash"] != payload_hash:
+            cls._conflict("idempotency key already has a different payload")
+        if existing["state"] != "completed" or not isinstance(existing["response_json"], str):
+            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True)
+        try:
+            result = _decode_decision_result(existing["response_json"])
+        except (TypeError, ValueError) as exc:
+            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True) from exc
+        if existing["resource_id"] != result.decision_id:
+            cls._binding_error("persisted review decision replay binding is invalid")
+        return result
+
+    def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> ReviewDecisionResult | None:
+        if scope.command != _DECISION_COMMAND:
+            self._binding_error("review decision scope is invalid")
+        connection = self._connect()
+        try:
+            return self._decision_replay(connection, scope, payload_hash)
+        finally:
+            connection.close()
+
+    def commit_review_decision(self, prepared: PreparedReviewDecision) -> ReviewDecisionResult:  # noqa: C901
+        self._validate_prepared_decision(prepared)
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._decision_replay(connection, prepared.scope, prepared.payload_hash)
+            if replay is not None:
+                connection.execute("COMMIT")
+                return replay
+
+            created_at = prepared.audit.occurred_at_server
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(scope_key, payload_hash, state, status_code, resource_id, response_json, created_at, completed_at) "
+                "VALUES (?, ?, 'reserved', ?, ?, NULL, ?, NULL)",
+                (
+                    prepared.scope.scope_key,
+                    prepared.payload_hash,
+                    prepared.response_status,
+                    prepared.decision.decision_id,
+                    created_at,
+                ),
+            )
+            current = connection.execute(
+                "SELECT r.* FROM fmea_rows AS r "
+                "JOIN evidence_packs AS p ON p.pack_id = r.evidence_pack_id AND p.workspace_id = r.workspace_id "
+                "WHERE r.row_id = ? AND r.workspace_id = ? AND p.workspace_id = ?",
+                (prepared.previous_row.row_id, prepared.scope.workspace_id, prepared.scope.workspace_id),
+            ).fetchone()
+            if current is None:
+                raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+            current_row = self._decode_row_record(current)
+            if current_row.record_version != prepared.expected_record_version:
+                raise ReviewError("FMEA_VERSION_CONFLICT", "review row version does not match the request")
+            if current_row != prepared.previous_row:
+                raise ReviewError("FMEA_VERSION_CONFLICT", "review row changed before the decision was committed")
+            if current_row.review_status in {ReviewStatus.ACCEPTED, ReviewStatus.REJECTED, ReviewStatus.SUPERSEDED}:
+                raise ReviewError("FMEA_REVIEW_TERMINAL", "review row is already terminal")
+            if current_row.review_status not in {ReviewStatus.SUGGESTED, ReviewStatus.IN_REVIEW}:
+                raise ReviewError("FMEA_PRECONDITION_REQUIRED", "review row is not available for human review")
+            if current_row.publication_status is not PublicationStatus.UNPUBLISHED:
+                raise ReviewError("FMEA_PRECONDITION_REQUIRED", "published rows cannot receive review decisions")
+
+            decision_json = encode_review_json(prepared.decision)
+            if decode_review_decision_record(decision_json) != prepared.decision:
+                self._binding_error("review decision JSON is not canonical")
+            connection.execute(
+                "INSERT INTO review_decisions "
+                "(decision_id, row_id, workspace_id, previous_record_version, record_version, actor_id, action, "
+                "reason_code, decision_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    prepared.decision.decision_id,
+                    prepared.decision.row_id,
+                    prepared.scope.workspace_id,
+                    prepared.decision.previous_record_version,
+                    prepared.decision.record_version,
+                    prepared.decision.actor_id,
+                    prepared.decision.action.value,
+                    prepared.decision.reason_code.value,
+                    decision_json,
+                    prepared.decision.created_at,
+                ),
+            )
+            row_json, row_hash = self._row_json(prepared.next_row)
+            updated = connection.execute(
+                "UPDATE fmea_rows SET review_status=?, publication_status=?, record_version=?, row_hash=?, row_json=?, updated_at=? "
+                "WHERE row_id=? AND workspace_id=? AND record_version=?",
+                (
+                    prepared.next_row.review_status.value,
+                    prepared.next_row.publication_status.value,
+                    prepared.next_row.record_version,
+                    row_hash,
+                    row_json,
+                    _utc_now(),
+                    prepared.next_row.row_id,
+                    prepared.scope.workspace_id,
+                    prepared.expected_record_version,
+                ),
+            )
+            if updated.rowcount != 1:
+                raise ReviewError("FMEA_VERSION_CONFLICT", "review row changed before the decision was committed")
+            authoritative_audit = replace(prepared.audit, analysis_id=current_row.analysis_id)
+            self._insert_audit(connection, authoritative_audit)
+            result = ReviewDecisionResult(
+                decision_id=prepared.decision.decision_id,
+                row=prepared.next_row,
+                previous_record_version=prepared.previous_row.record_version,
+                record_version=prepared.next_row.record_version,
+                review_status=prepared.next_row.review_status,
+                publication_status=prepared.next_row.publication_status,
+                audit_event_id=authoritative_audit.event_id,
+                suggestion_id=prepared.decision.suggestion_id,
+                evidence_requests=prepared.decision.evidence_requests,
+                persisted=True,
+                request_id=authoritative_audit.request_id,
+                trace_id=authoritative_audit.trace_id,
+            )
+            response_json = _decision_result_json(result)
+            completed = connection.execute(
+                "UPDATE idempotency_records SET state='completed', status_code=?, resource_id=?, response_json=?, completed_at=? "
+                "WHERE scope_key=? AND payload_hash=? AND state='reserved'",
+                (
+                    prepared.response_status,
+                    result.decision_id,
+                    response_json,
+                    _utc_now(),
+                    prepared.scope.scope_key,
+                    prepared.payload_hash,
+                ),
+            )
+            if completed.rowcount != 1:
+                raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision idempotency could not be completed", retryable=True)
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
 
     def reserve_suggestion_run(self, prepared: PreparedSuggestionRun) -> SuggestionRunReservation:  # noqa: C901
         self._validate_prepared_binding(prepared)
