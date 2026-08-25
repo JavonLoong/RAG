@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import fields, replace
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -16,6 +17,13 @@ from core_domain.fmea.states import (
 )
 from core_domain.fmea.value_objects import EvidencePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
+from core_domain.structured_generation import (
+    CriticReport,
+    CriticVerdict,
+    GenerationRunResult,
+    GenerationRunStatus,
+)
+from core_domain.structured_output import CandidateClaim, ClaimState, StructuredCandidate, StructuredCandidateBatch
 from fmea_application.review_contracts import (
     EDITABLE_REVIEW_FIELDS,
     ActorContext,
@@ -34,10 +42,15 @@ from fmea_application.review_contracts import (
     ReviewSuggestionRun,
     StartReviewSuggestionCommand,
 )
+from fmea_application.review_projection import build_review_context
+from fmea_application.review_template_adapter import ReviewTemplateAdapter
+from structured_output_application import TemplateCompiler
+from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
 
 _UTC = "2026-08-23T00:00:00Z"
 _IDEMPOTENCY_KEY = "00000000-0000-4000-8000-000000000001"
 _PROMPT_HASH = "sha256:" + "a" * 64
+_ROOT = Path(__file__).parents[1]
 
 
 def _field_bindings() -> tuple[tuple[str, tuple[str, ...]], ...]:
@@ -78,6 +91,97 @@ def make_review_source(**overrides: Any) -> ReviewSourceSnapshot:
             if field.name != "source_hash"
         },
     )
+
+
+def _review_generation_template():
+    return TemplateCompiler(
+        schema_validator=Draft202012SchemaAdapter(),
+        source_loader=load_template_source,
+    ).compile_path(_ROOT / "templates" / "examples" / "fmea-row-review.yaml")
+
+
+def _review_claims(payload: dict[str, object]) -> tuple[CandidateClaim, ...]:
+    claims: list[CandidateClaim] = []
+    for collection_name in ("field_findings", "proposed_edits", "conflicts"):
+        items = payload[collection_name]
+        assert isinstance(items, list)
+        for index, item in enumerate(items):
+            assert isinstance(item, dict)
+            evidence_ids = item["evidence_ids"]
+            assert isinstance(evidence_ids, list)
+            if evidence_ids:
+                state = ClaimState.CONFLICT if collection_name == "conflicts" else ClaimState.KNOWN
+            else:
+                status_name = item.get("recommended_claim_status", item.get("claim_status"))
+                state = ClaimState(str(status_name))
+            claims.append(
+                CandidateClaim(
+                    target=f"/{collection_name}/{index}",
+                    state=state,
+                    evidence_ids=tuple(evidence_ids),
+                )
+            )
+    return tuple(claims)
+
+
+def make_review_generation_result(payload: dict[str, object]) -> GenerationRunResult:
+    template = _review_generation_template()
+    candidate = StructuredCandidate(
+        candidate_id="candidate-1",
+        payload=payload,
+        claims=_review_claims(payload),
+    )
+    batch = StructuredCandidateBatch(
+        template_id=template.metadata.template_id,
+        template_version=template.metadata.version,
+        template_hash=template.template_hash,
+        evidence_pack_id="pack-1",
+        candidates=(candidate,),
+    )
+    return GenerationRunResult(
+        run_id="review-run-1",
+        status=GenerationRunStatus.SUCCEEDED,
+        batch=batch,
+        critic_report=CriticReport(
+            verdict=CriticVerdict.ACCEPT,
+            findings=(),
+            summary="candidate accepted",
+        ),
+        deterministic_issues=(),
+        generation_issues=(),
+        traces=(),
+        repair_count=0,
+    )
+
+
+def _valid_review_payload() -> dict[str, object]:
+    return {
+        "recommended_action": "modify_and_accept",
+        "field_findings": [
+            {
+                "target_field": "controls",
+                "judgement": "partially_supported",
+                "recommended_claim_status": "known",
+                "evidence_ids": ["ev-1"],
+                "rationale": "The current evidence supports a control update.",
+            },
+        ],
+        "proposed_edits": [
+            {
+                "target_field": "controls",
+                "operation": "replace",
+                "value": ["pressure transmitter inspection"],
+                "claim_status": "known",
+                "support_status": "supported",
+                "evidence_ids": ["ev-1"],
+                "reason": "The evidence supports this replacement.",
+            },
+        ],
+        "evidence_requests": [],
+        "missing_evidence": [],
+        "conflicts": [],
+        "rationale": "Modify the controls field using the bound evidence.",
+    }
 
 
 def make_review_suggestion(**overrides: Any) -> ReviewSuggestion:
@@ -214,6 +318,40 @@ def fixture_review_row(fixture_pack: EvidencePack) -> FmeaRow:
         review_status=ReviewStatus.SUGGESTED,
         publication_status=PublicationStatus.UNPUBLISHED,
     )
+
+
+@pytest.fixture
+def fixture_review_context(
+    fixture_review_row: FmeaRow,
+    fixture_pack: EvidencePack,
+    fixture_review_source: ReviewSourceSnapshot,
+):
+    return build_review_context(
+        row=fixture_review_row,
+        source=fixture_review_source,
+        pack=fixture_pack,
+        suggestions=(),
+        decisions=(),
+    )
+
+
+@pytest.fixture
+def valid_review_generation_result() -> GenerationRunResult:
+    return make_review_generation_result(_valid_review_payload())
+
+
+@pytest.fixture
+def valid_review_suggestion_draft(valid_review_generation_result, fixture_review_context):
+    return ReviewTemplateAdapter().decode_draft(valid_review_generation_result, fixture_review_context)
+
+
+@pytest.fixture
+def review_result_with_extra_actor_and_external_evidence() -> GenerationRunResult:
+    payload = _valid_review_payload()
+    payload["actor_type"] = "model"
+    payload["field_findings"][0]["evidence_ids"] = ["external-ev"]
+    payload["proposed_edits"][0]["evidence_ids"] = ["external-ev"]
+    return make_review_generation_result(payload)
 
 
 @pytest.fixture

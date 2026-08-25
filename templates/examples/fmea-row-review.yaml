@@ -1,0 +1,79 @@
+template:
+  id: fmea-row-review
+  version: 1.0.0
+  title: FMEA row review suggestion
+  description: Produce a bounded advisory review; a human reviewer must apply any decision.
+  domain_tags: [fmea, review]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [recommended_action, field_findings, proposed_edits, evidence_requests, missing_evidence, conflicts, rationale]
+  properties:
+    recommended_action: {type: string, enum: [accept, modify_and_accept, reject, request_evidence, defer]}
+    field_findings:
+      type: array
+      maxItems: 64
+      items:
+        type: object
+        additionalProperties: false
+        required: [target_field, judgement, recommended_claim_status, evidence_ids, rationale]
+        properties:
+          target_field: {type: string, enum: [failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]}
+          judgement: {type: string, enum: [supported, partially_supported, contradicted, insufficient_evidence, unknown, conflict, not_applicable]}
+          recommended_claim_status: {type: string, enum: [known, unknown, insufficient_evidence, conflict, not_applicable]}
+          evidence_ids: {type: array, uniqueItems: true, maxItems: 32, items: {type: string, minLength: 1, maxLength: 128}}
+          rationale: {type: string, minLength: 1, maxLength: 500}
+    proposed_edits:
+      type: array
+      maxItems: 8
+      items:
+        type: object
+        additionalProperties: false
+        required: [target_field, operation, value, claim_status, support_status, evidence_ids, reason]
+        properties:
+          target_field: {type: string, enum: [failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]}
+          operation: {const: replace}
+          value: {type: [string, array], minLength: 1, maxLength: 4000, uniqueItems: true, maxItems: 64, items: {type: string, minLength: 1, maxLength: 1000}}
+          claim_status: {type: string, enum: [known, unknown, insufficient_evidence, conflict, not_applicable]}
+          support_status: {type: string, enum: [supported, partially_supported, contradicted, not_supported]}
+          evidence_ids: {type: array, uniqueItems: true, maxItems: 32, items: {type: string, minLength: 1, maxLength: 128}}
+          reason: {type: string, minLength: 1, maxLength: 500}
+    evidence_requests:
+      type: array
+      maxItems: 16
+      items:
+        type: object
+        additionalProperties: false
+        required: [target_field, question, preferred_source_types, priority]
+        properties:
+          target_field: {type: string, enum: [failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]}
+          question: {type: string, minLength: 1, maxLength: 1000}
+          preferred_source_types: {type: array, uniqueItems: true, maxItems: 16, items: {type: string, minLength: 1, maxLength: 64}}
+          priority: {type: string, enum: [low, normal, high]}
+    missing_evidence:
+      type: array
+      maxItems: 16
+      items:
+        type: object
+        additionalProperties: false
+        required: [target_field, description]
+        properties:
+          target_field: {type: string, enum: [failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]}
+          description: {type: string, minLength: 1, maxLength: 500}
+    conflicts:
+      type: array
+      maxItems: 16
+      items:
+        type: object
+        additionalProperties: false
+        required: [target_field, evidence_ids, description]
+        properties:
+          target_field: {type: string, enum: [failure_mode, causes, mechanisms, effects, symptoms, controls, barriers, actions]}
+          evidence_ids: {type: array, uniqueItems: true, minItems: 2, maxItems: 32, items: {type: string, minLength: 1, maxLength: 128}}
+          description: {type: string, minLength: 1, maxLength: 500}
+    rationale: {type: string, minLength: 1, maxLength: 500}
+evidence_bindings:
+  - {target: /field_findings/*, requirement: optional, min_refs: 0, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /proposed_edits/*, requirement: optional, min_refs: 0, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
+  - {target: /conflicts/*, requirement: optional, min_refs: 0, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}
