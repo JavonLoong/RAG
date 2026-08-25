@@ -9,48 +9,36 @@ import json
 import re
 import sqlite3
 from collections.abc import Callable, Iterator
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import replace
 from datetime import datetime, timezone
-from enum import Enum
 from hashlib import sha256
 from importlib import import_module
 from pathlib import Path
-from typing import Any, NoReturn, TypeVar, cast
+from typing import NoReturn, cast
 
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
 from core_domain.fmea.policies import validate_row_evidence
 from core_domain.fmea.states import (
     ActorType,
-    ClaimStatus,
-    EvidenceSupportStatus,
     PublicationStatus,
     ReviewStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack
-from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from fmea_application.review_contracts import (
     ActorContext,
-    ConflictItem,
-    EvidenceRequestItem,
-    FieldFinding,
-    FieldReviewEdit,
-    MissingEvidenceItem,
-    ReviewAction,
     ReviewCandidateBundle,
     ReviewDecisionRecord,
-    ReviewJudgement,
-    ReviewModelManifest,
-    ReviewPriority,
-    ReviewReasonCode,
     ReviewSourceSnapshot,
     ReviewSuggestion,
-    UnresolvedAcknowledgement,
+    decode_review_decision_record,
+    decode_review_source_snapshot,
+    decode_review_suggestion,
+    encode_review_json,
 )
 from fmea_application.review_errors import ReviewError
 
 _MIGRATION_PATTERN = re.compile(r"^(\d+)_([a-z0-9_]+)\.sql$")
 _MAX_BUSY_TIMEOUT_MS = 60_000
-_T = TypeVar("_T")
 _FMEA_CODEC = import_module("core_domain.fmea.codec")
 encode_json = cast(Callable[[object], str], _FMEA_CODEC.encode_json)
 decode_analysis = cast(Callable[[str], object], _FMEA_CODEC.decode_analysis)
@@ -95,172 +83,6 @@ def _load_strict_json(payload: object, kind: str) -> dict[str, object]:
     return value
 
 
-def _review_json_value(value: object) -> object:
-    if isinstance(value, Enum):
-        return value.value
-    if is_dataclass(value):
-        return {field.name: _review_json_value(getattr(value, field.name)) for field in fields(value)}
-    if isinstance(value, tuple | list):
-        return [_review_json_value(item) for item in value]
-    if isinstance(value, frozenset):
-        return sorted(str(_review_json_value(item)) for item in value)
-    if isinstance(value, dict):
-        return {str(key): _review_json_value(item) for key, item in value.items()}
-    return value
-
-
-def _encode_review_json(value: object) -> str:
-    return json.dumps(
-        _review_json_value(value),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-        allow_nan=False,
-    )
-
-
-def _require_keys(data: dict[str, object], expected: set[str], kind: str) -> None:
-    if set(data) != expected:
-        missing = sorted(expected - set(data))
-        extra = sorted(set(data) - expected)
-        raise ValueError(f"{kind} JSON keys do not match; missing={missing}, extra={extra}")
-
-
-def _as_list(value: object, field_name: str) -> list[object]:
-    if not isinstance(value, list):
-        raise ValueError(f"{field_name} must be a JSON array")
-    return value
-
-
-def _as_pair(value: object, field_name: str) -> tuple[object, object]:
-    if not isinstance(value, list) or len(value) != 2:
-        raise ValueError(f"{field_name} must contain pairs")
-    return value[0], value[1]
-
-
-def _construct(type_: Callable[..., _T], data: dict[str, object]) -> _T:
-    return type_(**cast(dict[str, Any], data))
-
-
-def _decode_review_source(payload: object) -> ReviewSourceSnapshot:
-    data = _load_strict_json(payload, "source snapshot")
-    _require_keys(data, {field.name for field in fields(ReviewSourceSnapshot)}, "source snapshot")
-    data["requested_evidence_profile"] = EvidenceSelectionProfile(cast(str, data["requested_evidence_profile"]))
-    data["resolved_evidence_profile"] = EvidenceSelectionProfile(cast(str, data["resolved_evidence_profile"]))
-    data["evidence_types"] = tuple(CitationType(cast(str, item)) for item in _as_list(data["evidence_types"], "evidence_types"))
-    data["retrieval_warnings"] = tuple(cast(str, item) for item in _as_list(data["retrieval_warnings"], "retrieval_warnings"))
-    data["field_claim_statuses"] = tuple(
-        (cast(str, field_name), ClaimStatus(cast(str, status)))
-        for field_name, status in (
-            _as_pair(item, "field_claim_statuses") for item in _as_list(data["field_claim_statuses"], "field_claim_statuses")
-        )
-    )
-    result = _construct(ReviewSourceSnapshot, data)
-    rebuilt = ReviewSourceSnapshot.build(
-        **{
-            field.name: getattr(result, field.name)
-            for field in fields(result)
-            if field.name != "source_hash"
-        }
-    )
-    if rebuilt != result:
-        raise ValueError("source snapshot hash does not match contents")
-    if _encode_review_json(result) != cast(str, payload):
-        raise ValueError("source snapshot JSON is not canonical")
-    return result
-
-
-def _decode_field_finding(payload: object) -> FieldFinding:
-    data = _load_strict_json(payload, "field finding")
-    _require_keys(data, {field.name for field in fields(FieldFinding)}, "field finding")
-    data["judgement"] = ReviewJudgement(cast(str, data["judgement"]))
-    data["recommended_claim_status"] = ClaimStatus(cast(str, data["recommended_claim_status"]))
-    data["evidence_ids"] = tuple(cast(str, item) for item in _as_list(data["evidence_ids"], "evidence_ids"))
-    return _construct(FieldFinding, data)
-
-
-def _decode_field_edit(payload: object) -> FieldReviewEdit:
-    data = _load_strict_json(payload, "field review edit")
-    _require_keys(data, {field.name for field in fields(FieldReviewEdit)}, "field review edit")
-    value = data["value"]
-    if isinstance(value, list):
-        data["value"] = tuple(cast(str, item) for item in value)
-    data["claim_status"] = ClaimStatus(cast(str, data["claim_status"]))
-    data["support_status"] = EvidenceSupportStatus(cast(str, data["support_status"]))
-    data["evidence_ids"] = tuple(cast(str, item) for item in _as_list(data["evidence_ids"], "evidence_ids"))
-    return _construct(FieldReviewEdit, data)
-
-
-def _decode_evidence_request(payload: object) -> EvidenceRequestItem:
-    data = _load_strict_json(payload, "evidence request")
-    _require_keys(data, {field.name for field in fields(EvidenceRequestItem)}, "evidence request")
-    data["preferred_source_types"] = tuple(
-        cast(str, item) for item in _as_list(data["preferred_source_types"], "preferred_source_types")
-    )
-    data["priority"] = ReviewPriority(cast(str, data["priority"]))
-    return _construct(EvidenceRequestItem, data)
-
-
-def _decode_missing_evidence(payload: object) -> MissingEvidenceItem:
-    data = _load_strict_json(payload, "missing evidence")
-    _require_keys(data, {field.name for field in fields(MissingEvidenceItem)}, "missing evidence")
-    return _construct(MissingEvidenceItem, data)
-
-
-def _decode_conflict(payload: object) -> ConflictItem:
-    data = _load_strict_json(payload, "conflict")
-    _require_keys(data, {field.name for field in fields(ConflictItem)}, "conflict")
-    data["evidence_ids"] = tuple(cast(str, item) for item in _as_list(data["evidence_ids"], "evidence_ids"))
-    return _construct(ConflictItem, data)
-
-
-def _decode_manifest(payload: object) -> ReviewModelManifest:
-    data = _load_strict_json(payload, "model manifest")
-    _require_keys(data, {field.name for field in fields(ReviewModelManifest)}, "model manifest")
-    return _construct(ReviewModelManifest, data)
-
-
-def _decode_review_suggestion(payload: object) -> ReviewSuggestion:
-    data = _load_strict_json(payload, "suggestion")
-    _require_keys(data, {field.name for field in fields(ReviewSuggestion)}, "suggestion")
-    data["recommended_action"] = ReviewAction(cast(str, data["recommended_action"]))
-    data["field_findings"] = tuple(_decode_field_finding(item) for item in _as_list(data["field_findings"], "field_findings"))
-    data["proposed_edits"] = tuple(_decode_field_edit(item) for item in _as_list(data["proposed_edits"], "proposed_edits"))
-    data["evidence_requests"] = tuple(
-        _decode_evidence_request(item) for item in _as_list(data["evidence_requests"], "evidence_requests")
-    )
-    data["missing_evidence"] = tuple(
-        _decode_missing_evidence(item) for item in _as_list(data["missing_evidence"], "missing_evidence")
-    )
-    data["conflicts"] = tuple(_decode_conflict(item) for item in _as_list(data["conflicts"], "conflicts"))
-    data["model_manifest"] = _decode_manifest(data["model_manifest"])
-    data["actor_type"] = ActorType(cast(str, data["actor_type"]))
-    return _construct(ReviewSuggestion, data)
-
-
-def _decode_acknowledgement(payload: object) -> UnresolvedAcknowledgement:
-    data = _load_strict_json(payload, "unresolved acknowledgement")
-    _require_keys(data, {field.name for field in fields(UnresolvedAcknowledgement)}, "unresolved acknowledgement")
-    data["claim_status"] = ClaimStatus(cast(str, data["claim_status"]))
-    return _construct(UnresolvedAcknowledgement, data)
-
-
-def _decode_review_decision(payload: object) -> ReviewDecisionRecord:
-    data = _load_strict_json(payload, "decision")
-    _require_keys(data, {field.name for field in fields(ReviewDecisionRecord)}, "decision")
-    data["action"] = ReviewAction(cast(str, data["action"]))
-    data["reason_code"] = ReviewReasonCode(cast(str, data["reason_code"]))
-    data["edits"] = tuple(_decode_field_edit(item) for item in _as_list(data["edits"], "edits"))
-    data["evidence_requests"] = tuple(
-        _decode_evidence_request(item) for item in _as_list(data["evidence_requests"], "evidence_requests")
-    )
-    data["unresolved_acknowledgements"] = tuple(
-        _decode_acknowledgement(item)
-        for item in _as_list(data["unresolved_acknowledgements"], "unresolved_acknowledgements")
-    )
-    return _construct(ReviewDecisionRecord, data)
-
-
 def _decode_fmea_json(payload: object, decoder: Callable[[str], object], kind: str) -> object:
     if not isinstance(payload, str):
         raise ValueError(f"{kind} JSON must be text")
@@ -287,11 +109,15 @@ class SqliteFmeaRepository:
         self._migrations_path = Path(__file__).resolve().parent / "migrations"
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(str(self.database_path), isolation_level=None)
+        connection = sqlite3.connect(
+            str(self.database_path),
+            timeout=self._busy_timeout_ms / 1000,
+            isolation_level=None,
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA journal_mode = WAL")
         connection.execute(f"PRAGMA busy_timeout = {self._busy_timeout_ms}")
+        connection.execute("PRAGMA journal_mode = WAL")
         return connection
 
     @staticmethod
@@ -361,7 +187,7 @@ class SqliteFmeaRepository:
         for row in rows:
             finished_at = _utc_now()
             event_id = "recovery-" + sha256(str(row["run_id"]).encode("utf-8")).hexdigest()
-            event_json = _encode_review_json(
+            event_json = encode_review_json(
                 {
                     "event_id": event_id,
                     "command": "review.suggestion.fail",
@@ -436,8 +262,8 @@ class SqliteFmeaRepository:
 
     @staticmethod
     def _source_json(source: ReviewSourceSnapshot) -> tuple[str, str]:
-        payload = _encode_review_json(source)
-        decoded = _decode_review_source(payload)
+        payload = encode_review_json(source)
+        decoded = decode_review_source_snapshot(payload)
         return payload, decoded.source_hash
 
     def _validate_bundle(  # noqa: C901
@@ -655,7 +481,7 @@ class SqliteFmeaRepository:
             ).fetchone()
             if row is None:
                 return None
-            result = _decode_review_source(row["snapshot_json"])
+            result = decode_review_source_snapshot(cast(str, row["snapshot_json"]))
             if result.row_id != row["row_id"] or result.source_record_version != row["source_record_version"]:
                 raise ValueError("persisted source snapshot identity does not match its columns")
             if result.source_hash != row["source_hash"]:
@@ -669,8 +495,10 @@ class SqliteFmeaRepository:
         connection = self._connect()
         try:
             row = connection.execute(
-                "SELECT * FROM evidence_packs WHERE pack_id = ? AND workspace_id = ?",
-                (pack_id, workspace),
+                "SELECT p.* FROM evidence_packs AS p "
+                "JOIN fmea_rows AS r ON r.evidence_pack_id = p.pack_id AND r.workspace_id = p.workspace_id "
+                "WHERE p.pack_id = ? AND p.workspace_id = ? AND r.workspace_id = ?",
+                (pack_id, workspace, workspace),
             ).fetchone()
             return None if row is None else self._decode_pack_record(row)
         finally:
@@ -690,14 +518,16 @@ class SqliteFmeaRepository:
             ).fetchall()
             result: list[ReviewSuggestion] = []
             for row in rows:
-                suggestion = _decode_review_suggestion(row["suggestion_json"])
+                suggestion = decode_review_suggestion(
+                    cast(str, row["suggestion_json"]),
+                    expected_hash=cast(str, row["suggestion_hash"]),
+                )
                 if (
                     suggestion.suggestion_id != row["suggestion_id"]
                     or suggestion.run_id != row["run_id"]
                     or suggestion.row_id != row["row_id"]
                     or suggestion.source_record_version != row["source_record_version"]
                     or suggestion.stale != bool(row["stale"])
-                    or row["suggestion_hash"] != _json_hash(cast(str, row["suggestion_json"]))
                 ):
                     raise ValueError("persisted suggestion identity or hash does not match its columns")
                 result.append(suggestion)
@@ -719,7 +549,7 @@ class SqliteFmeaRepository:
             ).fetchall()
             result: list[ReviewDecisionRecord] = []
             for row in rows:
-                decision = _decode_review_decision(row["decision_json"])
+                decision = decode_review_decision_record(cast(str, row["decision_json"]))
                 if (
                     decision.decision_id != row["decision_id"]
                     or decision.row_id != row["row_id"]

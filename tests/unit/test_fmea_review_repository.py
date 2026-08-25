@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import replace
+from hashlib import sha256
 
 import pytest
-from fmea_review_fixtures import make_review_source
+from fmea_review_fixtures import make_review_decision_record, make_review_source, make_review_suggestion
 
+from fmea_application.review_contracts import encode_review_json
 from fmea_application.review_errors import ReviewError
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 
@@ -52,6 +55,94 @@ def test_malformed_persisted_row_json_fails_closed(seeded_review_repository) -> 
 
     with pytest.raises(ValueError, match="row JSON"):
         seeded_review_repository.get_row("row-1", "ws-1")
+
+
+def test_evidence_pack_requires_a_workspace_matched_row(seeded_review_repository) -> None:
+    connection = sqlite3.connect(seeded_review_repository.database_path)
+    try:
+        connection.execute("DELETE FROM fmea_rows WHERE row_id = ?", ("row-1",))
+        connection.commit()
+    finally:
+        connection.close()
+
+    assert seeded_review_repository.get_evidence_pack("pack-1", "ws-1") is None
+
+
+@pytest.mark.parametrize("history_kind", ("suggestion", "decision"))
+def test_history_rejects_valid_but_noncanonical_json(
+    seeded_review_repository, history_kind: str
+) -> None:
+    suggestion = make_review_suggestion()
+    decision = make_review_decision_record()
+    value = suggestion if history_kind == "suggestion" else decision
+    canonical_json = encode_review_json(value)
+    noncanonical_json = json.dumps(json.loads(canonical_json), ensure_ascii=False, indent=2)
+
+    connection = sqlite3.connect(seeded_review_repository.database_path)
+    try:
+        if history_kind == "suggestion":
+            connection.execute(
+                "INSERT INTO review_suggestion_runs "
+                "(run_id, row_id, workspace_id, actor_id, source_record_version, status, request_hash, "
+                "idempotency_scope, request_id, trace_id, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    "run-1",
+                    "row-1",
+                    "ws-1",
+                    "system-1",
+                    1,
+                    "queued",
+                    "sha256:" + "a" * 64,
+                    "scope-1",
+                    "request-1",
+                    "trace-1",
+                    "2026-08-23T00:00:00Z",
+                ),
+            )
+            connection.execute(
+                "INSERT INTO review_suggestions "
+                "(suggestion_id, run_id, row_id, workspace_id, source_record_version, stale, suggestion_json, suggestion_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    suggestion.suggestion_id,
+                    suggestion.run_id,
+                    suggestion.row_id,
+                    "ws-1",
+                    suggestion.source_record_version,
+                    int(suggestion.stale),
+                    noncanonical_json,
+                    "sha256:" + sha256(canonical_json.encode("utf-8")).hexdigest(),
+                    suggestion.created_at,
+                ),
+            )
+        else:
+            connection.execute(
+                "INSERT INTO review_decisions "
+                "(decision_id, row_id, workspace_id, previous_record_version, record_version, actor_id, action, reason_code, decision_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    decision.decision_id,
+                    decision.row_id,
+                    "ws-1",
+                    decision.previous_record_version,
+                    decision.record_version,
+                    decision.actor_id,
+                    decision.action.value,
+                    decision.reason_code.value,
+                    noncanonical_json,
+                    decision.created_at,
+                ),
+            )
+        connection.commit()
+    finally:
+        connection.close()
+
+    with pytest.raises(ValueError, match="canonical"):
+        if history_kind == "suggestion":
+            seeded_review_repository.list_suggestions("row-1", "ws-1")
+        else:
+            seeded_review_repository.list_decisions("row-1", "ws-1")
 
 
 def test_candidate_validation_has_no_partial_writes(

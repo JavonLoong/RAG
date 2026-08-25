@@ -13,7 +13,7 @@ from dataclasses import dataclass, fields, is_dataclass, replace
 from datetime import datetime, timedelta
 from enum import Enum
 from hashlib import sha256
-from typing import Literal, TypeVar, cast
+from typing import Literal, NoReturn, TypeVar, cast
 from uuid import UUID
 
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
@@ -249,6 +249,287 @@ def _canonical_json(value: object) -> str:
 def _canonical_hash(value: object, *, prefixed: bool = True) -> str:
     digest = sha256(_canonical_json(value).encode("utf-8")).hexdigest()
     return f"sha256:{digest}" if prefixed else digest
+
+
+def encode_review_json(value: object) -> str:
+    """Encode a review contract as canonical compact sorted JSON."""
+
+    return _canonical_json(value)
+
+
+def _strict_review_object_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")  # noqa: TRY003
+        result[key] = value
+    return result
+
+
+def _reject_review_json_constant(value: str) -> NoReturn:
+    raise ValueError(f"invalid JSON constant: {value}")  # noqa: TRY003
+
+
+def _load_review_json_object(payload: str, kind: str) -> dict[str, object]:
+    try:
+        value = json.loads(
+            payload,
+            object_pairs_hook=_strict_review_object_pairs,
+            parse_constant=_reject_review_json_constant,
+        )
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid persisted {kind} JSON") from exc  # noqa: TRY003
+    if not isinstance(value, dict):
+        raise ValueError(f"persisted {kind} JSON must be an object")  # noqa: TRY003
+    return value
+
+
+def _require_review_keys(data: dict[str, object], expected: set[str], kind: str) -> None:
+    if set(data) != expected:
+        missing = sorted(expected - set(data))
+        extra = sorted(set(data) - expected)
+        raise ValueError(f"{kind} JSON keys do not match; missing={missing}, extra={extra}")  # noqa: TRY003
+
+
+def _review_json_list(value: object, field_name: str) -> list[object]:
+    if not isinstance(value, list):
+        raise ValueError(f"{field_name} must be a JSON array")  # noqa: TRY003
+    return value
+
+
+def _review_json_object(value: object, field_name: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{field_name} must be a JSON object")  # noqa: TRY003
+    return value
+
+
+def _review_json_pair(value: object, field_name: str) -> tuple[object, object]:
+    if not isinstance(value, list) or len(value) != 2:
+        raise ValueError(f"{field_name} must contain pairs")  # noqa: TRY003
+    return value[0], value[1]
+
+
+def _require_canonical_review_json(payload: str, value: object, kind: str) -> None:
+    if encode_review_json(value) != payload:
+        raise ValueError(f"{kind} JSON is not canonical")  # noqa: TRY003
+
+
+def _decode_review_field_finding(data: dict[str, object]) -> FieldFinding:
+    _require_review_keys(data, {field.name for field in fields(FieldFinding)}, "field finding")
+    return FieldFinding(
+        target_field=cast(str, data["target_field"]),
+        judgement=ReviewJudgement(cast(str, data["judgement"])),
+        recommended_claim_status=ClaimStatus(cast(str, data["recommended_claim_status"])),
+        evidence_ids=tuple(cast(str, item) for item in _review_json_list(data["evidence_ids"], "evidence_ids")),
+        rationale=cast(str, data["rationale"]),
+    )
+
+
+def _decode_review_field_edit(data: dict[str, object]) -> FieldReviewEdit:
+    _require_review_keys(data, {field.name for field in fields(FieldReviewEdit)}, "field review edit")
+    value = data["value"]
+    normalized_value: str | tuple[str, ...] = (
+        tuple(cast(str, item) for item in value) if isinstance(value, list) else cast(str, value)
+    )
+    return FieldReviewEdit(
+        target_field=cast(str, data["target_field"]),
+        operation=cast(Literal["replace"], data["operation"]),
+        value=normalized_value,
+        claim_status=ClaimStatus(cast(str, data["claim_status"])),
+        support_status=EvidenceSupportStatus(cast(str, data["support_status"])),
+        evidence_ids=tuple(cast(str, item) for item in _review_json_list(data["evidence_ids"], "evidence_ids")),
+        reason=cast(str, data["reason"]),
+    )
+
+
+def _decode_review_evidence_request(data: dict[str, object]) -> EvidenceRequestItem:
+    _require_review_keys(data, {field.name for field in fields(EvidenceRequestItem)}, "evidence request")
+    return EvidenceRequestItem(
+        target_field=cast(str, data["target_field"]),
+        question=cast(str, data["question"]),
+        preferred_source_types=tuple(
+            cast(str, item) for item in _review_json_list(data["preferred_source_types"], "preferred_source_types")
+        ),
+        priority=ReviewPriority(cast(str, data["priority"])),
+    )
+
+
+def _decode_review_missing_evidence(data: dict[str, object]) -> MissingEvidenceItem:
+    _require_review_keys(data, {field.name for field in fields(MissingEvidenceItem)}, "missing evidence")
+    return MissingEvidenceItem(
+        target_field=cast(str, data["target_field"]),
+        description=cast(str, data["description"]),
+    )
+
+
+def _decode_review_conflict(data: dict[str, object]) -> ConflictItem:
+    _require_review_keys(data, {field.name for field in fields(ConflictItem)}, "conflict")
+    return ConflictItem(
+        target_field=cast(str, data["target_field"]),
+        evidence_ids=tuple(cast(str, item) for item in _review_json_list(data["evidence_ids"], "evidence_ids")),
+        description=cast(str, data["description"]),
+    )
+
+
+def _decode_review_manifest(data: dict[str, object]) -> ReviewModelManifest:
+    _require_review_keys(data, {field.name for field in fields(ReviewModelManifest)}, "model manifest")
+    return ReviewModelManifest(
+        provider=cast(str, data["provider"]),
+        model=cast(str, data["model"]),
+        template_id=cast(str, data["template_id"]),
+        template_version=cast(str, data["template_version"]),
+        prompt_hash=cast(str, data["prompt_hash"]),
+    )
+
+
+def _decode_review_acknowledgement(data: dict[str, object]) -> UnresolvedAcknowledgement:
+    _require_review_keys(data, {field.name for field in fields(UnresolvedAcknowledgement)}, "unresolved acknowledgement")
+    return UnresolvedAcknowledgement(
+        target_field=cast(str, data["target_field"]),
+        claim_status=ClaimStatus(cast(str, data["claim_status"])),
+        reason=cast(str, data["reason"]),
+    )
+
+
+def _decode_review_source_object(data: dict[str, object]) -> ReviewSourceSnapshot:
+    _require_review_keys(data, {field.name for field in fields(ReviewSourceSnapshot)}, "source snapshot")
+    return ReviewSourceSnapshot(
+        row_id=cast(str, data["row_id"]),
+        source_record_version=cast(int, data["source_record_version"]),
+        candidate_id=cast(str, data["candidate_id"]),
+        item_label=cast(str, data["item_label"]),
+        function_label=cast(str, data["function_label"]),
+        template_id=cast(str, data["template_id"]),
+        template_version=cast(str, data["template_version"]),
+        profile_id=cast(str, data["profile_id"]),
+        profile_version=cast(str, data["profile_version"]),
+        generation_run_id=cast(str, data["generation_run_id"]),
+        requested_evidence_profile=EvidenceSelectionProfile(cast(str, data["requested_evidence_profile"])),
+        resolved_evidence_profile=EvidenceSelectionProfile(cast(str, data["resolved_evidence_profile"])),
+        evidence_types=tuple(
+            CitationType(cast(str, item)) for item in _review_json_list(data["evidence_types"], "evidence_types")
+        ),
+        trace_id=cast(str, data["trace_id"]),
+        retrieval_warnings=tuple(
+            cast(str, item) for item in _review_json_list(data["retrieval_warnings"], "retrieval_warnings")
+        ),
+        retrieval_incomplete=cast(bool, data["retrieval_incomplete"]),
+        field_claim_statuses=tuple(
+            (cast(str, field_name), ClaimStatus(cast(str, status)))
+            for field_name, status in (
+                _review_json_pair(item, "field_claim_statuses")
+                for item in _review_json_list(data["field_claim_statuses"], "field_claim_statuses")
+            )
+        ),
+        source_hash=cast(str, data["source_hash"]),
+    )
+
+
+def decode_review_source_snapshot(payload: str) -> ReviewSourceSnapshot:
+    """Strictly decode and validate one canonical source snapshot payload."""
+
+    data = _load_review_json_object(payload, "source snapshot")
+    result = _decode_review_source_object(data)
+    rebuilt = ReviewSourceSnapshot.build(
+        row_id=result.row_id,
+        source_record_version=result.source_record_version,
+        candidate_id=result.candidate_id,
+        item_label=result.item_label,
+        function_label=result.function_label,
+        template_id=result.template_id,
+        template_version=result.template_version,
+        profile_id=result.profile_id,
+        profile_version=result.profile_version,
+        generation_run_id=result.generation_run_id,
+        requested_evidence_profile=result.requested_evidence_profile,
+        resolved_evidence_profile=result.resolved_evidence_profile,
+        evidence_types=result.evidence_types,
+        trace_id=result.trace_id,
+        retrieval_warnings=result.retrieval_warnings,
+        retrieval_incomplete=result.retrieval_incomplete,
+        field_claim_statuses=result.field_claim_statuses,
+    )
+    if rebuilt != result:
+        raise ValueError("source snapshot hash does not match contents")  # noqa: TRY003
+    _require_canonical_review_json(payload, result, "source snapshot")
+    return result
+
+
+def decode_review_suggestion(payload: str, *, expected_hash: str | None = None) -> ReviewSuggestion:
+    """Strictly decode one canonical suggestion and optionally verify its stored hash."""
+
+    data = _load_review_json_object(payload, "suggestion")
+    _require_review_keys(data, {field.name for field in fields(ReviewSuggestion)}, "suggestion")
+    result = ReviewSuggestion(
+        suggestion_id=cast(str, data["suggestion_id"]),
+        run_id=cast(str, data["run_id"]),
+        row_id=cast(str, data["row_id"]),
+        source_record_version=cast(int, data["source_record_version"]),
+        recommended_action=ReviewAction(cast(str, data["recommended_action"])),
+        field_findings=tuple(
+            _decode_review_field_finding(_review_json_object(item, "field_findings item"))
+            for item in _review_json_list(data["field_findings"], "field_findings")
+        ),
+        proposed_edits=tuple(
+            _decode_review_field_edit(_review_json_object(item, "proposed_edits item"))
+            for item in _review_json_list(data["proposed_edits"], "proposed_edits")
+        ),
+        evidence_requests=tuple(
+            _decode_review_evidence_request(_review_json_object(item, "evidence_requests item"))
+            for item in _review_json_list(data["evidence_requests"], "evidence_requests")
+        ),
+        missing_evidence=tuple(
+            _decode_review_missing_evidence(_review_json_object(item, "missing_evidence item"))
+            for item in _review_json_list(data["missing_evidence"], "missing_evidence")
+        ),
+        conflicts=tuple(
+            _decode_review_conflict(_review_json_object(item, "conflicts item"))
+            for item in _review_json_list(data["conflicts"], "conflicts")
+        ),
+        rationale=cast(str, data["rationale"]),
+        model_manifest=_decode_review_manifest(_review_json_object(data["model_manifest"], "model_manifest")),
+        actor_type=ActorType(cast(str, data["actor_type"])),
+        applied=cast(bool, data["applied"]),
+        stale=cast(bool, data["stale"]),
+        created_at=cast(str, data["created_at"]),
+    )
+    _require_canonical_review_json(payload, result, "suggestion")
+    if expected_hash is not None and expected_hash != _canonical_hash(result):
+        raise ValueError("suggestion hash does not match canonical JSON")  # noqa: TRY003
+    return result
+
+
+def decode_review_decision_record(payload: str) -> ReviewDecisionRecord:
+    """Strictly decode one canonical decision record payload."""
+
+    data = _load_review_json_object(payload, "decision")
+    _require_review_keys(data, {field.name for field in fields(ReviewDecisionRecord)}, "decision")
+    result = ReviewDecisionRecord(
+        decision_id=cast(str, data["decision_id"]),
+        row_id=cast(str, data["row_id"]),
+        previous_record_version=cast(int, data["previous_record_version"]),
+        record_version=cast(int, data["record_version"]),
+        actor_id=cast(str, data["actor_id"]),
+        action=ReviewAction(cast(str, data["action"])),
+        suggestion_id=None if data["suggestion_id"] is None else cast(str, data["suggestion_id"]),
+        reason_code=ReviewReasonCode(cast(str, data["reason_code"])),
+        reason=cast(str, data["reason"]),
+        edits=tuple(
+            _decode_review_field_edit(_review_json_object(item, "edits item"))
+            for item in _review_json_list(data["edits"], "edits")
+        ),
+        evidence_requests=tuple(
+            _decode_review_evidence_request(_review_json_object(item, "evidence_requests item"))
+            for item in _review_json_list(data["evidence_requests"], "evidence_requests")
+        ),
+        unresolved_acknowledgements=tuple(
+            _decode_review_acknowledgement(_review_json_object(item, "unresolved_acknowledgements item"))
+            for item in _review_json_list(data["unresolved_acknowledgements"], "unresolved_acknowledgements")
+        ),
+        created_at=cast(str, data["created_at"]),
+    )
+    _require_canonical_review_json(payload, result, "decision")
+    return result
 
 
 def _validate_contract_tuple(value: object, expected: type[_T], field_name: str) -> tuple[_T, ...]:
@@ -1213,5 +1494,9 @@ __all__ = [
     "SuggestionRunReservation",
     "UnresolvedAcknowledgement",
     "canonical_payload_hash",
+    "decode_review_decision_record",
+    "decode_review_source_snapshot",
+    "decode_review_suggestion",
+    "encode_review_json",
     "idempotency_key_hash",
 ]
