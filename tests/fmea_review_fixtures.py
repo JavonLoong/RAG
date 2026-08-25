@@ -475,6 +475,38 @@ class MemoryReviewRepository:
             return ()
         return self.decisions
 
+    def page_suggestions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: tuple[str, str] | None,
+        limit: int,
+    ) -> tuple[ReviewSuggestion, ...]:
+        self.calls.append("page_suggestions")
+        if not self._visible(workspace_id) or self.row is None or self.row.row_id != row_id:
+            return ()
+        ordered = tuple(sorted(self.suggestions, key=lambda item: (item.created_at, item.suggestion_id)))
+        if after is not None:
+            ordered = tuple(item for item in ordered if (item.created_at, item.suggestion_id) > after)
+        return ordered[: limit + 1]
+
+    def page_decisions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: tuple[str, str] | None,
+        limit: int,
+    ) -> tuple[ReviewDecisionRecord, ...]:
+        self.calls.append("page_decisions")
+        if not self._visible(workspace_id) or self.row is None or self.row.row_id != row_id:
+            return ()
+        ordered = tuple(sorted(self.decisions, key=lambda item: (item.created_at, item.decision_id)))
+        if after is not None:
+            ordered = tuple(item for item in ordered if (item.created_at, item.decision_id) > after)
+        return ordered[: limit + 1]
+
     def save_review_candidate_bundle(
         self, bundle: ReviewCandidateBundle, actor: ActorContext
     ) -> tuple[FmeaRow, ...]:
@@ -580,13 +612,14 @@ class RecordingReviewExecutor:
     def __init__(self) -> None:
         self.calls: list[tuple[str, bool]] = []
         self.operations: dict[str, Callable[[], None]] = {}
+        self.closed = False
 
     def submit(self, run_id: str, operation: Callable[[], None]) -> None:
         self.calls.append((run_id, callable(operation)))
         self.operations[run_id] = operation
 
     def close(self) -> None:
-        return None
+        self.closed = True
 
 
 class InlineReviewExecutor(RecordingReviewExecutor):

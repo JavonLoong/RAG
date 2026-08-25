@@ -68,6 +68,95 @@ def test_evidence_pack_requires_a_workspace_matched_row(seeded_review_repository
     assert seeded_review_repository.get_evidence_pack("pack-1", "ws-1") is None
 
 
+def test_sqlite_history_pages_are_keyset_ordered_bounded_and_cursor_exclusive(seeded_review_repository) -> None:
+    timestamp = "2026-08-23T00:00:00Z"
+    connection = sqlite3.connect(seeded_review_repository.database_path)
+    try:
+        for record_version, suffix in enumerate(("b", "a", "c"), start=2):
+            suggestion = make_review_suggestion(
+                suggestion_id=f"suggestion-{suffix}",
+                run_id=f"run-{suffix}",
+                created_at=timestamp,
+            )
+            encoded = encode_review_json(suggestion)
+            connection.execute(
+                "INSERT INTO review_suggestion_runs "
+                "(run_id, row_id, workspace_id, actor_id, source_record_version, status, request_hash, "
+                "idempotency_scope, request_id, trace_id, created_at, suggestion_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    suggestion.run_id,
+                    "row-1",
+                    "ws-1",
+                    "system-1",
+                    1,
+                    "succeeded",
+                    "sha256:" + suffix * 64,
+                    "scope-" + suffix,
+                    "request-" + suffix,
+                    "trace-" + suffix,
+                    timestamp,
+                    suggestion.suggestion_id,
+                ),
+            )
+            connection.execute(
+                "INSERT INTO review_suggestions "
+                "(suggestion_id, run_id, row_id, workspace_id, source_record_version, stale, suggestion_json, suggestion_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    suggestion.suggestion_id,
+                    suggestion.run_id,
+                    "row-1",
+                    "ws-1",
+                    1,
+                    0,
+                    encoded,
+                    "sha256:" + sha256(encoded.encode("utf-8")).hexdigest(),
+                    timestamp,
+                ),
+            )
+            decision = make_review_decision_record(
+                decision_id=f"decision-{suffix}",
+                previous_record_version=record_version - 1,
+                record_version=record_version,
+                created_at=timestamp,
+            )
+            decision_json = encode_review_json(decision)
+            connection.execute(
+                "INSERT INTO review_decisions "
+                "(decision_id, row_id, workspace_id, previous_record_version, record_version, actor_id, action, reason_code, decision_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    decision.decision_id,
+                    "row-1",
+                    "ws-1",
+                    decision.previous_record_version,
+                    decision.record_version,
+                    decision.actor_id,
+                    decision.action.value,
+                    decision.reason_code.value,
+                    decision_json,
+                    timestamp,
+                ),
+            )
+        connection.commit()
+    finally:
+        connection.close()
+
+    first_page = seeded_review_repository.page_suggestions("row-1", "ws-1", after=None, limit=2)
+    assert [item.suggestion_id for item in first_page] == ["suggestion-a", "suggestion-b", "suggestion-c"]
+    after = (first_page[1].created_at, first_page[1].suggestion_id)
+    second_page = seeded_review_repository.page_suggestions("row-1", "ws-1", after=after, limit=2)
+    assert [item.suggestion_id for item in second_page] == ["suggestion-c"]
+    first_decisions = seeded_review_repository.page_decisions("row-1", "ws-1", after=None, limit=2)
+    assert [item.decision_id for item in first_decisions] == ["decision-a", "decision-b", "decision-c"]
+    decision_after = (first_decisions[1].created_at, first_decisions[1].decision_id)
+    second_decisions = seeded_review_repository.page_decisions(
+        "row-1", "ws-1", after=decision_after, limit=2
+    )
+    assert [item.decision_id for item in second_decisions] == ["decision-c"]
+
+
 @pytest.mark.parametrize("history_kind", ("suggestion", "decision"))
 def test_history_rejects_valid_but_noncanonical_json(
     seeded_review_repository, history_kind: str

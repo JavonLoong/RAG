@@ -25,7 +25,7 @@ from core_domain.fmea.states import (
 )
 from core_domain.fmea.value_objects import EvidencePack, VersionSet
 
-from .ports import ReviewRepository, ReviewRunExecutor, ReviewSuggestionGenerator
+from .ports import ReviewHistoryPosition, ReviewRepository, ReviewRunExecutor, ReviewSuggestionGenerator
 from .review_contracts import (
     EDITABLE_REVIEW_FIELDS,
     ActorContext,
@@ -130,6 +130,31 @@ class ReviewService:
         self._authorize_query(actor)
         suggestions = self._repository.list_suggestions(row_id, actor.workspace_id)
         return tuple(sorted(suggestions, key=lambda item: (item.created_at, item.suggestion_id)))
+
+    def page_suggestions(
+        self,
+        row_id: str,
+        actor: ActorContext,
+        *,
+        after: ReviewHistoryPosition | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewSuggestion, ...]:
+        self._authorize_query(actor)
+        self._validate_history_page(limit)
+        return self._repository.page_suggestions(
+            row_id,
+            actor.workspace_id,
+            after=after,
+            limit=limit,
+        )
+
+    def get_retrieval_trace(self, row_id: str, actor: ActorContext) -> str:
+        self._authorize_query(actor)
+        row = self._repository.get_row(row_id, actor.workspace_id)
+        if row is None:
+            raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+        source = self._repository.get_review_source(row_id, actor.workspace_id)
+        return f"legacy:{row_id}" if source is None else source.trace_id
 
     def start_suggestion(self, command: StartReviewSuggestionCommand, actor: ActorContext) -> ReviewSuggestionRun:
         self._authorize_suggestion(actor)
@@ -331,6 +356,28 @@ class ReviewService:
         self._authorize_query(actor)
         decisions = self._repository.list_decisions(row_id, actor.workspace_id)
         return tuple(sorted(decisions, key=lambda item: (item.record_version, item.created_at, item.decision_id)))
+
+    def page_decisions(
+        self,
+        row_id: str,
+        actor: ActorContext,
+        *,
+        after: ReviewHistoryPosition | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewDecisionRecord, ...]:
+        self._authorize_query(actor)
+        self._validate_history_page(limit)
+        return self._repository.page_decisions(
+            row_id,
+            actor.workspace_id,
+            after=after,
+            limit=limit,
+        )
+
+    @staticmethod
+    def _validate_history_page(limit: int) -> None:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "history page limit is invalid")
 
     def submit_decision(self, command: ReviewDecisionCommand, actor: ActorContext) -> ReviewDecisionResult:
         """Authorize and atomically apply one human review decision."""

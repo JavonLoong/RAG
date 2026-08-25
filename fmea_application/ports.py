@@ -35,6 +35,8 @@ from .review_contracts import (
     SuggestionRunReservation,
 )
 
+ReviewHistoryPosition = tuple[str, str]
+
 
 @dataclass(frozen=True, slots=True)
 class EvidenceRequest:
@@ -169,7 +171,25 @@ class ReviewRepository(Protocol):
 
     def list_suggestions(self, row_id: str, workspace_id: str) -> tuple[ReviewSuggestion, ...]: ...
 
+    def page_suggestions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: ReviewHistoryPosition | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewSuggestion, ...]: ...
+
     def list_decisions(self, row_id: str, workspace_id: str) -> tuple[ReviewDecisionRecord, ...]: ...
+
+    def page_decisions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: ReviewHistoryPosition | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewDecisionRecord, ...]: ...
 
     def reserve_suggestion_run(self, prepared: PreparedSuggestionRun) -> SuggestionRunReservation: ...
 

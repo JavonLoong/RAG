@@ -1674,6 +1674,53 @@ class SqliteFmeaRepository:
         finally:
             connection.close()
 
+    def page_suggestions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: tuple[str, str] | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewSuggestion, ...]:
+        if limit < 1:
+            raise ValueError("history page limit must be positive")
+        workspace = self._workspace(workspace_id)
+        cursor_parameters = (None, None, None, None) if after is None else (
+            after[0],
+            after[0],
+            after[0],
+            after[1],
+        )
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                "SELECT s.* FROM review_suggestions AS s "
+                "JOIN fmea_rows AS r ON r.row_id = s.row_id AND r.workspace_id = s.workspace_id "
+                "JOIN evidence_packs AS p ON p.pack_id = r.evidence_pack_id AND p.workspace_id = r.workspace_id "
+                "WHERE s.row_id = ? AND s.workspace_id = ? AND r.workspace_id = ? AND p.workspace_id = ? "
+                "AND (? IS NULL OR s.created_at > ? OR (s.created_at = ? AND s.suggestion_id > ?)) "
+                "ORDER BY s.created_at, s.suggestion_id LIMIT ?",
+                (row_id, workspace, workspace, workspace, *cursor_parameters, limit + 1),
+            ).fetchall()
+            result: list[ReviewSuggestion] = []
+            for row in rows:
+                suggestion = decode_review_suggestion(
+                    cast(str, row["suggestion_json"]),
+                    expected_hash=cast(str, row["suggestion_hash"]),
+                )
+                if (
+                    suggestion.suggestion_id != row["suggestion_id"]
+                    or suggestion.run_id != row["run_id"]
+                    or suggestion.row_id != row["row_id"]
+                    or suggestion.source_record_version != row["source_record_version"]
+                    or suggestion.stale != bool(row["stale"])
+                ):
+                    raise ValueError("persisted suggestion identity or hash does not match its columns")
+                result.append(suggestion)
+            return tuple(result)
+        finally:
+            connection.close()
+
     def list_decisions(self, row_id: str, workspace_id: str) -> tuple[ReviewDecisionRecord, ...]:
         workspace = self._workspace(workspace_id)
         connection = self._connect()
@@ -1685,6 +1732,52 @@ class SqliteFmeaRepository:
                 "WHERE d.row_id = ? AND d.workspace_id = ? AND r.workspace_id = ? AND p.workspace_id = ? "
                 "ORDER BY d.record_version, d.created_at, d.decision_id",
                 (row_id, workspace, workspace, workspace),
+            ).fetchall()
+            result: list[ReviewDecisionRecord] = []
+            for row in rows:
+                decision = decode_review_decision_record(cast(str, row["decision_json"]))
+                if (
+                    decision.decision_id != row["decision_id"]
+                    or decision.row_id != row["row_id"]
+                    or decision.previous_record_version != row["previous_record_version"]
+                    or decision.record_version != row["record_version"]
+                    or decision.actor_id != row["actor_id"]
+                    or decision.action.value != row["action"]
+                    or decision.reason_code.value != row["reason_code"]
+                ):
+                    raise ValueError("persisted decision identity does not match its columns")
+                result.append(decision)
+            return tuple(result)
+        finally:
+            connection.close()
+
+    def page_decisions(
+        self,
+        row_id: str,
+        workspace_id: str,
+        *,
+        after: tuple[str, str] | None = None,
+        limit: int = 50,
+    ) -> tuple[ReviewDecisionRecord, ...]:
+        if limit < 1:
+            raise ValueError("history page limit must be positive")
+        workspace = self._workspace(workspace_id)
+        cursor_parameters = (None, None, None, None) if after is None else (
+            after[0],
+            after[0],
+            after[0],
+            after[1],
+        )
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                "SELECT d.* FROM review_decisions AS d "
+                "JOIN fmea_rows AS r ON r.row_id = d.row_id AND r.workspace_id = d.workspace_id "
+                "JOIN evidence_packs AS p ON p.pack_id = r.evidence_pack_id AND p.workspace_id = r.workspace_id "
+                "WHERE d.row_id = ? AND d.workspace_id = ? AND r.workspace_id = ? AND p.workspace_id = ? "
+                "AND (? IS NULL OR d.created_at > ? OR (d.created_at = ? AND d.decision_id > ?)) "
+                "ORDER BY d.created_at, d.decision_id LIMIT ?",
+                (row_id, workspace, workspace, workspace, *cursor_parameters, limit + 1),
             ).fetchall()
             result: list[ReviewDecisionRecord] = []
             for row in rows:

@@ -110,3 +110,28 @@ def test_query_history_is_stably_ordered(
         "decision-1",
         "decision-2",
     )
+
+
+def test_query_history_page_and_trace_do_not_build_full_context(
+    memory_review_repository,
+    fixture_human_reviewer,
+    fixture_review_row,
+    fixture_pack,
+    fixture_review_source,
+    fixture_review_suggestion,
+    fixture_decision_record,
+) -> None:
+    memory_review_repository.seed(
+        row=fixture_review_row,
+        pack=fixture_pack,
+        source=fixture_review_source,
+        suggestions=(fixture_review_suggestion,),
+        decisions=(fixture_decision_record,),
+    )
+    service = ReviewService.for_queries(memory_review_repository)
+
+    assert service.get_retrieval_trace("row-1", fixture_human_reviewer) == fixture_review_source.trace_id
+    assert service.page_suggestions("row-1", fixture_human_reviewer, after=None, limit=1)
+    assert service.page_decisions("row-1", fixture_human_reviewer, after=None, limit=1)
+    assert "list_suggestions" not in memory_review_repository.calls
+    assert "list_decisions" not in memory_review_repository.calls

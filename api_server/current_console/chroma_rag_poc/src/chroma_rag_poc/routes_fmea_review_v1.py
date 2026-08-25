@@ -145,13 +145,48 @@ def review_error_response(_request: Request, error: ReviewError) -> JSONResponse
 
 
 def fmea_validation_error_response(_request: Request, error: RequestValidationError) -> JSONResponse:
+    def validation_code(item: dict[str, Any]) -> str:
+        location = tuple(str(part) for part in item.get("loc", ()) if str(part) != "body")
+        if not location or item.get("type") == "missing":
+            return "FMEA_REVIEW_REQUEST_INVALID"
+        leaf = location[-1]
+        if location == ("action",):
+            return "FMEA_REVIEW_ACTION_INVALID"
+        if location and location[0] == "edits" and leaf in {
+            "target_field",
+            "operation",
+            "claim_status",
+            "support_status",
+        }:
+            return "FMEA_REVIEW_FIELD_INVALID"
+        if location and location[0] == "evidence_requests" and leaf in {
+            "target_field",
+            "question",
+            "preferred_source_types",
+            "priority",
+        }:
+            return "FMEA_EVIDENCE_INVALID"
+        if location and location[0] == "unresolved_acknowledgements" and leaf in {
+            "target_field",
+            "claim_status",
+            "reason",
+        }:
+            return "FMEA_UNRESOLVED_ACK_REQUIRED"
+        return "FMEA_REVIEW_REQUEST_INVALID"
+
     safe_errors: list[dict[str, object]] = []
+    codes: list[str] = []
     for item in error.errors()[:16]:
         location = [str(part)[:64] for part in item.get("loc", ()) if str(part) != "body"][:6]
         safe_errors.append({"loc": location, "message": "invalid request field"})
+        codes.append(validation_code(cast(dict[str, Any], item)))
+    code = next(
+        (candidate for candidate in codes if candidate != "FMEA_REVIEW_REQUEST_INVALID"),
+        "FMEA_REVIEW_REQUEST_INVALID",
+    )
     return _problem_response(
-        code="FMEA_REVIEW_REQUEST_INVALID",
-        status_code=400,
+        code=code,
+        status_code=_ERROR_STATUS[code],
         detail="review request validation failed",
         retryable=False,
         errors=safe_errors,
@@ -673,10 +708,6 @@ def _decode_cursor(request: Request, value: str | None) -> tuple[str, str] | Non
     return created_at, stable_id
 
 
-def _after_cursor(created_at: str, stable_id: str, cursor: tuple[str, str] | None) -> bool:
-    return cursor is None or (created_at, stable_id) > cursor
-
-
 def _fresh_request_id() -> str:
     return str(uuid4())
 
@@ -734,23 +765,20 @@ def list_review_suggestions(
     access: ReviewAccess = Depends(get_review_access),  # noqa: B008
 ) -> Response:
     position = _decode_cursor(request, cursor)
-    context = _service_call(lambda: access.runtime.service.get_context(row_id, access.actor))
-    suggestions = [
-        item
-        for item in _service_call(lambda: access.runtime.service.list_suggestions(row_id, access.actor))
-        if _after_cursor(item.created_at, item.suggestion_id, position)
-    ]
-    suggestions.sort(key=lambda item: (item.created_at, item.suggestion_id))
+    trace_id = _service_call(lambda: access.runtime.service.get_retrieval_trace(row_id, access.actor))
+    suggestions = _service_call(
+        lambda: access.runtime.service.page_suggestions(
+            row_id,
+            access.actor,
+            after=position,
+            limit=limit,
+        )
+    )
     page = suggestions[:limit]
     next_cursor = None
     if len(suggestions) > limit:
         last = page[-1]
         next_cursor = _encode_cursor(request, last.created_at, last.suggestion_id)
-    trace_id = context.retrieval.trace_id
-    if page:
-        trace_id = _service_call(
-            lambda: access.runtime.service.get_suggestion_run(page[0].run_id, access.actor)
-        ).trace_id
     data = HistoryPage[SuggestionData](
         items=[_suggestion_data(item) for item in page],
         next_cursor=next_cursor,
@@ -793,13 +821,15 @@ def list_review_decisions(
     access: ReviewAccess = Depends(get_review_access),  # noqa: B008
 ) -> Response:
     position = _decode_cursor(request, cursor)
-    context = _service_call(lambda: access.runtime.service.get_context(row_id, access.actor))
-    decisions = [
-        item
-        for item in _service_call(lambda: access.runtime.service.list_decisions(row_id, access.actor))
-        if _after_cursor(item.created_at, item.decision_id, position)
-    ]
-    decisions.sort(key=lambda item: (item.created_at, item.decision_id))
+    trace_id = _service_call(lambda: access.runtime.service.get_retrieval_trace(row_id, access.actor))
+    decisions = _service_call(
+        lambda: access.runtime.service.page_decisions(
+            row_id,
+            access.actor,
+            after=position,
+            limit=limit,
+        )
+    )
     page = decisions[:limit]
     next_cursor = None
     if len(decisions) > limit:
@@ -814,7 +844,7 @@ def list_review_decisions(
         status_code=200,
         resource_type="review_decision_history",
         request_id=_fresh_request_id(),
-        trace_id=context.retrieval.trace_id,
+        trace_id=trace_id,
         data=data,
     )
 
