@@ -9,7 +9,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -37,6 +37,8 @@ class WorkspaceConfig(BaseModel):
     chroma_persist_dir: Path
     chroma_collection: str
     graph_db_path: Path | None = None
+    fmea_db_path: Path | None = None
+    fmea_template_registry_path: Path | None = None
     supported_modes: frozenset[QueryMode]
     default_mode: QueryMode
 
@@ -170,14 +172,46 @@ class WorkspaceRegistry:
                     field_name=f"{workspace_id}.graph_db_path",
                 )
 
+            raw_fmea_db_path = raw_workspace.get("fmea_db_path")
+            fmea_db_path = None
+            if raw_fmea_db_path is not None:
+                resolved_fmea_db_path = _resolve_configured_path(
+                    raw_fmea_db_path,
+                    registry_dir=registry_dir,
+                    field_name=f"{workspace_id}.fmea_db_path",
+                )
+                _ensure_contained(
+                    resolved_fmea_db_path,
+                    allowed_root=allowed_root,
+                    field_name=f"{workspace_id}.fmea_db_path",
+                )
+                fmea_db_path = resolved_fmea_db_path
+
+            raw_fmea_template_registry_path = raw_workspace.get("fmea_template_registry_path")
+            fmea_template_registry_path = None
+            if raw_fmea_template_registry_path is not None:
+                resolved_fmea_template_registry_path = _resolve_configured_path(
+                    raw_fmea_template_registry_path,
+                    registry_dir=registry_dir,
+                    field_name=f"{workspace_id}.fmea_template_registry_path",
+                )
+                _ensure_contained(
+                    resolved_fmea_template_registry_path,
+                    allowed_root=allowed_root,
+                    field_name=f"{workspace_id}.fmea_template_registry_path",
+                )
+                fmea_template_registry_path = resolved_fmea_template_registry_path
+
             try:
                 workspaces[workspace_id] = WorkspaceConfig(
                     workspace_id=workspace_id,
                     chroma_persist_dir=chroma_persist_dir,
-                    chroma_collection=raw_workspace.get("chroma_collection"),
+                    chroma_collection=cast(str, raw_workspace.get("chroma_collection")),
                     graph_db_path=graph_db_path,
-                    supported_modes=raw_workspace.get("supported_modes"),
-                    default_mode=raw_workspace.get("default_mode"),
+                    fmea_db_path=fmea_db_path,
+                    fmea_template_registry_path=fmea_template_registry_path,
+                    supported_modes=cast(frozenset[QueryMode], raw_workspace.get("supported_modes")),
+                    default_mode=cast(QueryMode, raw_workspace.get("default_mode")),
                 )
             except ValidationError as exc:
                 raise WorkspaceConfigError(f"Invalid configuration for workspace '{workspace_id}'.") from exc

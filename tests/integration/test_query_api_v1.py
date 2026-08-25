@@ -95,6 +95,9 @@ def _real_service(
         encoding="utf-8",
     )
     registry = WorkspaceRegistry.from_file(registry_path)
+    workspace = registry.get("power-equipment")
+    assert workspace.fmea_db_path is None
+    assert workspace.fmea_template_registry_path is None
     runtime = QueryRuntime(
         text_retriever=object(),
         graph_retriever=None,

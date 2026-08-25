@@ -1,0 +1,129 @@
+"""Concrete, workspace-owned composition for the FMEA review service."""
+
+# Composition validation exposes concise local ValueError messages.
+# ruff: noqa: TRY003
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import TYPE_CHECKING
+from uuid import uuid4
+
+from fmea_application import (
+    ReviewRunExecutor,
+    ReviewService,
+    ReviewSuggestionGenerator,
+    build_review_service,
+)
+from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
+from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
+from structured_output_application import TemplateCompiler
+from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
+
+if TYPE_CHECKING:
+    from chroma_rag_poc.workspace_registry import WorkspaceConfig
+
+_TEMPLATE_ID = "fmea-row-review"
+_TEMPLATE_VERSION = "1.0.0"
+_TEMPLATE_SOURCE = Path(__file__).resolve().parents[1] / "templates" / "examples" / "fmea-row-review.yaml"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def new_prefixed_uuid(prefix: str) -> str:
+    return f"{prefix}-{uuid4()}"
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewRuntime:
+    service: ReviewService
+    repository: SqliteFmeaRepository
+    executor: ReviewRunExecutor
+    template_registry_root: Path
+
+
+def _resolved_path(path: Path) -> Path:
+    return Path(path).expanduser().resolve()
+
+
+def _reject_parent_collisions(path: Path, *, expected: str) -> None:
+    if path.exists():
+        if expected == "file" and path.is_dir():
+            raise ValueError("FMEA review database path must be a file")
+        if expected == "directory" and not path.is_dir():
+            raise ValueError("FMEA review template registry path must be a directory")
+    for parent in path.parents:
+        if parent.exists() and not parent.is_dir():
+            raise ValueError("FMEA review path has a file/directory collision")
+
+
+def _workspace_review_paths(workspace: WorkspaceConfig) -> tuple[Path, Path]:
+    default_root = _resolved_path(workspace.chroma_persist_dir).parent
+    database_path = _resolved_path(workspace.fmea_db_path or default_root / "fmea" / "fmea.sqlite3")
+    template_registry_root = _resolved_path(
+        workspace.fmea_template_registry_path or default_root / "fmea" / "template_registry"
+    )
+    graph_db_path = None if workspace.graph_db_path is None else _resolved_path(workspace.graph_db_path)
+    if graph_db_path is not None and database_path == graph_db_path:
+        raise ValueError("FMEA review database must be separate from the graph database")
+    if database_path == template_registry_root:
+        raise ValueError("FMEA review database and template registry must be separate paths")
+    _reject_parent_collisions(database_path, expected="file")
+    _reject_parent_collisions(template_registry_root, expected="directory")
+    return database_path, template_registry_root
+
+
+def _register_review_template(template_registry_root: Path) -> None:
+    schema = Draft202012SchemaAdapter()
+    compiler = TemplateCompiler(schema_validator=schema, source_loader=load_template_source)
+    compiled = compiler.compile_path(_TEMPLATE_SOURCE)
+    if compiled.metadata.template_id != _TEMPLATE_ID or compiled.metadata.version != _TEMPLATE_VERSION:
+        raise ValueError("built-in FMEA review template identity is invalid")
+    registry = FileTemplateRegistry(template_registry_root)
+    registry.register(compiled, _TEMPLATE_SOURCE.read_bytes(), _TEMPLATE_SOURCE.suffix.lower())
+
+
+def build_workspace_review_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    generator: ReviewSuggestionGenerator | None = None,
+    executor: ReviewRunExecutor | None = None,
+    clock: Callable[[], str] = utc_now,
+    id_factory: Callable[[str], str] = new_prefixed_uuid,
+) -> ReviewRuntime:
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    repository = SqliteFmeaRepository(database_path)
+    repository.initialize()
+    _register_review_template(template_registry_root)
+
+    review_generator = generator if generator is not None else EnvironmentReviewSuggestionGenerator(
+        registry_root=template_registry_root
+    )
+    review_executor = executor if executor is not None else ThreadPoolReviewRunExecutor()
+    service = build_review_service(
+        repository,
+        review_generator,
+        review_executor,
+        clock=clock,
+        id_factory=id_factory,
+    )
+    return ReviewRuntime(
+        service=service,
+        repository=repository,
+        executor=review_executor,
+        template_registry_root=template_registry_root,
+    )
+
+
+__all__ = [
+    "ReviewRuntime",
+    "build_workspace_review_runtime",
+    "new_prefixed_uuid",
+    "utc_now",
+]
