@@ -8,6 +8,7 @@ import orjson
 import pytest
 
 from core_domain.fmea.codec import encode_json
+from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.states import ClaimStatus, PublicationStatus, ReviewStatus
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
@@ -134,6 +135,15 @@ def _source_snapshot(row_id: str) -> ReviewSourceSnapshot:
     )
 
 
+def _adaptation(row: FmeaRow, *, needs_review: bool) -> FmeaAdaptationResult:
+    return FmeaAdaptationResult(
+        rows=(row,),
+        source_snapshots=(_source_snapshot(row.row_id),),
+        issues=(),
+        needs_review=needs_review,
+    )
+
+
 def _files(tmp_path: Path, fixture_pack, fixture_analysis, *, request: object | None = None):
     pack_path = tmp_path / "pack.json"
     analysis_path = tmp_path / "analysis.json"
@@ -218,12 +228,7 @@ def test_run_fmea_outputs_unpersisted_suggestion(
     )
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(
-            rows=(row,),
-            source_snapshots=(_source_snapshot(row.row_id),),
-            issues=(),
-            needs_review=False,
-        ),
+        adaptation=_adaptation(row, needs_review=False),
     )
     args = [
         "run-fmea",
@@ -277,12 +282,7 @@ def test_run_fmea_passes_explicit_slow_network_budget(
     pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(
-            rows=(fixture_row,),
-            source_snapshots=(_source_snapshot(fixture_row.row_id),),
-            issues=(),
-            needs_review=True,
-        ),
+        adaptation=_adaptation(fixture_row, needs_review=True),
     )
     args = [
         "run-fmea",
@@ -392,12 +392,7 @@ def test_run_fmea_adaptation_review_flag_controls_process_status(
     pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(
-            rows=(fixture_row,),
-            source_snapshots=(_source_snapshot(fixture_row.row_id),),
-            issues=(),
-            needs_review=True,
-        ),
+        adaptation=_adaptation(fixture_row, needs_review=True),
     )
     args = [
         "run-fmea",

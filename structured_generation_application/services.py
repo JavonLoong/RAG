@@ -18,6 +18,7 @@ from fmea_application import (
     FmeaTemplateProfile,
     StructuredCandidateFmeaAdapter,
 )
+from fmea_application.review_contracts import RetrievalProvenance
 from structured_output_application import TemplateRegistry
 
 from .contracts import GenerationRunRequest
@@ -63,13 +64,36 @@ def _fmea_provenance(
             "FMEA retrieval provenance must be supplied as all six values or omitted.",
         )
     if all(value is not None for value in supplied):
+        if (
+            not isinstance(evidence_types, tuple)
+            or not isinstance(retrieval_warnings, tuple)
+            or type(retrieval_incomplete) is not bool
+        ):
+            raise StructuredGenerationError(
+                "FMEA_RETRIEVAL_PROVENANCE_REQUIRED",
+                "FMEA retrieval provenance is invalid.",
+            )
+        try:
+            provenance = RetrievalProvenance(
+                requested_profile=cast(EvidenceSelectionProfile, requested_evidence_profile),
+                resolved_profile=cast(EvidenceSelectionProfile, resolved_evidence_profile),
+                evidence_types=cast(tuple[CitationType, ...], evidence_types),
+                trace_id=cast(str, trace_id),
+                warnings=cast(tuple[str, ...], retrieval_warnings),
+                incomplete=cast(bool, retrieval_incomplete),
+            )
+        except (TypeError, ValueError) as exc:
+            raise StructuredGenerationError(
+                "FMEA_RETRIEVAL_PROVENANCE_REQUIRED",
+                "FMEA retrieval provenance is invalid.",
+            ) from exc
         return (
-            cast(EvidenceSelectionProfile, requested_evidence_profile),
-            cast(EvidenceSelectionProfile, resolved_evidence_profile),
-            cast(tuple[CitationType, ...], evidence_types),
-            cast(str, trace_id),
-            cast(tuple[str, ...], retrieval_warnings),
-            cast(bool, retrieval_incomplete),
+            provenance.requested_profile,
+            provenance.resolved_profile,
+            provenance.evidence_types,
+            provenance.trace_id,
+            provenance.warnings,
+            provenance.incomplete,
         )
 
     inferred_types: list[CitationType] = []

@@ -239,15 +239,94 @@ def test_adapter_owns_row_and_source_metadata_over_model_payload(
     assert source.generation_run_id == "generation-1"
 
 
-def test_service_requires_all_or_none_retrieval_provenance(
+@pytest.mark.parametrize(
+    ("overrides", "omitted"),
+    [
+        pytest.param(
+            {"requested_evidence_profile": EvidenceSelectionProfile.AUTO},
+            (
+                "resolved_evidence_profile",
+                "evidence_types",
+                "trace_id",
+                "retrieval_warnings",
+                "retrieval_incomplete",
+            ),
+            id="partial-provenance",
+        ),
+        pytest.param(
+            {"requested_evidence_profile": "auto"},
+            (),
+            id="requested-profile-type",
+        ),
+        pytest.param(
+            {"resolved_evidence_profile": EvidenceSelectionProfile.AUTO},
+            (),
+            id="resolved-profile-auto",
+        ),
+        pytest.param(
+            {"evidence_types": (CitationType.TEXT, CitationType.TEXT)},
+            (),
+            id="duplicate-evidence-type",
+        ),
+        pytest.param(
+            {"evidence_types": ("text",)},
+            (),
+            id="evidence-type-member",
+        ),
+        pytest.param(
+            {"trace_id": "t" * 257},
+            (),
+            id="trace-id-bound",
+        ),
+        pytest.param(
+            {"retrieval_warnings": ["stable-warning"]},
+            (),
+            id="warnings-tuple",
+        ),
+        pytest.param(
+            {"retrieval_warnings": ("w" * 4001,)},
+            (),
+            id="warning-bound",
+        ),
+        pytest.param(
+            {"retrieval_incomplete": 1},
+            (),
+            id="incomplete-bool",
+        ),
+        pytest.param(
+            {
+                "resolved_evidence_profile": EvidenceSelectionProfile.CUSTOM,
+                "evidence_types": (),
+                "retrieval_warnings": (),
+                "retrieval_incomplete": False,
+            },
+            (),
+            id="custom-empty-without-incomplete-warning",
+        ),
+    ],
+)
+def test_service_rejects_malformed_explicit_retrieval_provenance_before_pipeline(
     fixture_analysis,
     fixture_pack,
+    overrides: dict[str, object],
+    omitted: tuple[str, ...],
 ) -> None:
     template = TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source).compile_path(
         ROOT / "templates" / "examples" / "fuel-combustion-fmea-full.yaml"
     )
     batch = _batch(template, fixture_pack)
     service, pipeline = _service(template, batch)
+    provenance: dict[str, object] = {
+        "requested_evidence_profile": EvidenceSelectionProfile.AUTO,
+        "resolved_evidence_profile": EvidenceSelectionProfile.COMBINED,
+        "evidence_types": tuple(CitationType),
+        "trace_id": "trace-1",
+        "retrieval_warnings": (),
+        "retrieval_incomplete": False,
+    }
+    for field_name in omitted:
+        provenance.pop(field_name)
+    provenance.update(overrides)
 
     with pytest.raises(StructuredGenerationError) as error:
         service.run_fmea(
@@ -260,7 +339,7 @@ def test_service_requires_all_or_none_retrieval_provenance(
             profile=load_fmea_template_profile(
                 ROOT / "templates" / "fmea_profiles" / "fuel-combustion-fmea-full.json"
             ),
-            requested_evidence_profile=EvidenceSelectionProfile.AUTO,
+            **provenance,
         )
 
     assert error.value.code == "FMEA_RETRIEVAL_PROVENANCE_REQUIRED"

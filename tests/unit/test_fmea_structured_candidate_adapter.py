@@ -162,17 +162,7 @@ def test_supported_candidate_maps_to_server_owned_fmea_row(
     assert all(status is EvidenceSupportStatus.SUPPORTED for _, status in row.field_support)
     assert result.needs_review is False
     validate_row_evidence(row, fixture_pack)
-
-
-def test_adapter_preserves_labels_and_field_claim_states_in_source_snapshot(
-    fixture_analysis: FmeaAnalysis,
-    fixture_pack: EvidencePack,
-) -> None:
-    result = _adapt(fixture_analysis, fixture_pack)
-    row = result.rows[0]
     source = result.source_snapshots[0]
-
-    assert source.row_id == row.row_id
     assert source.item_label == "Fuel  Filter"
     assert source.function_label == "Filter particles"
     assert dict(source.field_claim_statuses)["failure_mode"] is ClaimStatus.KNOWN
@@ -185,7 +175,12 @@ def test_source_snapshot_aggregates_claim_states_by_profile_field(
 ) -> None:
     payload = {
         **_payload(),
-        "causes": ["Excess particles", "Wrong maintenance interval"],
+        "causes": [
+            "Excess particles",
+            "Wrong maintenance interval",
+            "Unverified operating condition",
+            "Contradictory maintenance record",
+        ],
         "mechanisms": ["Pressure drop rises", "Flow restriction"],
         "effects": ["Combustion instability", "Flameout"],
         "symptoms": ["Differential pressure alarm", "Low flow"],
@@ -193,8 +188,15 @@ def test_source_snapshot_aggregates_claim_states_by_profile_field(
     candidate = replace(
         _candidate(payload=payload),
         claims=(
-            *tuple(CandidateClaim(target, ClaimState.KNOWN, ("ev-1",)) for _, target in FIELD_TARGETS),
-            CandidateClaim("/causes/1", ClaimState.NOT_APPLICABLE, ()),
+            *tuple(
+                CandidateClaim(target, ClaimState.KNOWN, ("ev-1",))
+                for _, target in FIELD_TARGETS
+                if target != "/causes/0"
+            ),
+            CandidateClaim("/causes/0", ClaimState.NOT_APPLICABLE, ()),
+            CandidateClaim("/causes/1", ClaimState.UNKNOWN, ()),
+            CandidateClaim("/causes/2", ClaimState.INSUFFICIENT_EVIDENCE, ()),
+            CandidateClaim("/causes/3", ClaimState.CONFLICT, ("ev-1", "ev-2")),
             CandidateClaim("/mechanisms/1", ClaimState.UNKNOWN, ()),
             CandidateClaim("/effects/1", ClaimState.INSUFFICIENT_EVIDENCE, ()),
             CandidateClaim("/symptoms/1", ClaimState.CONFLICT, ("ev-1", "ev-2")),
@@ -208,7 +210,7 @@ def test_source_snapshot_aggregates_claim_states_by_profile_field(
     ).source_snapshots[0]
 
     statuses = dict(source.field_claim_statuses)
-    assert statuses["causes"] is ClaimStatus.NOT_APPLICABLE
+    assert statuses["causes"] is ClaimStatus.CONFLICT
     assert statuses["mechanisms"] is ClaimStatus.UNKNOWN
     assert statuses["effects"] is ClaimStatus.INSUFFICIENT_EVIDENCE
     assert statuses["symptoms"] is ClaimStatus.CONFLICT
@@ -224,12 +226,14 @@ def test_every_adapted_row_has_one_matching_source_snapshot(
     result = _adapt(
         fixture_analysis,
         fixture_pack,
-        batch=_batch(fixture_pack, _candidate(), _candidate("candidate-2", payload=second_payload)),
+        batch=_batch(fixture_pack, _candidate("candidate-2", payload=second_payload), _candidate()),
         critic=None,
         repair_count=1,
     )
 
     assert tuple(source.row_id for source in result.source_snapshots) == tuple(row.row_id for row in result.rows)
+    assert tuple(source.candidate_id for source in result.source_snapshots) == ("candidate-1", "candidate-2")
+    assert tuple(source.item_label for source in result.source_snapshots) == ("Fuel  Filter", "Fuel valve")
 
 
 def test_repaired_or_uncriticised_candidate_is_never_known(
