@@ -21,7 +21,12 @@ from fmea_application.ports import (
     FmeaRepository,
     PropagationEvidenceProvider,
     PropagationRequest,
+    ReviewRepository,
+    ReviewRunExecutor,
+    ReviewSuggestionGenerator,
 )
+from fmea_application.review_contracts import ReviewModelRequest
+from fmea_application.review_errors import REVIEW_ERROR_CODES, ReviewError
 
 
 def test_evidence_request_defaults_to_combined_sources(fixture_versions: VersionSet) -> None:
@@ -300,3 +305,58 @@ def test_fmea_contracts_reexport_exact_domain_identities() -> None:
 
     for name, source_module in source_modules.items():
         assert getattr(contracts, name) is getattr(source_module, name)
+
+
+def test_review_model_request_keeps_exact_transport_free_field_surface() -> None:
+    assert tuple(field.name for field in fields(ReviewModelRequest)) == (
+        "run_id",
+        "context",
+        "evidence_pack",
+        "review_policy",
+        "focus_fields",
+        "template_id",
+        "template_version",
+    )
+
+
+def test_review_ports_are_separate_from_fmea_repository() -> None:
+    assert not hasattr(FmeaRepository, "reserve_suggestion_run")
+    assert tuple(name for name, member in ReviewSuggestionGenerator.__dict__.items() if not name.startswith("_") and callable(member)) == (
+        "generate",
+    )
+    assert tuple(name for name, member in ReviewRunExecutor.__dict__.items() if not name.startswith("_") and callable(member)) == (
+        "submit",
+        "close",
+    )
+    assert hasattr(ReviewRepository, "reserve_suggestion_run")
+
+
+def test_review_error_exposes_only_stable_codes_and_public_message() -> None:
+    assert frozenset({
+        "FMEA_REVIEW_REQUEST_INVALID",
+        "FMEA_AUTH_REQUIRED",
+        "FMEA_AUTH_CONFIGURATION_INVALID",
+        "FMEA_REVIEW_FORBIDDEN",
+        "FMEA_ROW_NOT_FOUND",
+        "FMEA_REVIEW_SUGGESTION_NOT_FOUND",
+        "FMEA_IDEMPOTENCY_CONFLICT",
+        "FMEA_REVIEW_TERMINAL",
+        "FMEA_REVIEW_SUGGESTION_STALE",
+        "FMEA_VERSION_CONFLICT",
+        "FMEA_REVIEW_ACTION_INVALID",
+        "FMEA_REVIEW_FIELD_INVALID",
+        "FMEA_EVIDENCE_INVALID",
+        "FMEA_UNRESOLVED_ACK_REQUIRED",
+        "FMEA_REVIEW_SOURCE_MISSING",
+        "FMEA_PRECONDITION_REQUIRED",
+        "FMEA_REVIEW_RATE_LIMITED",
+        "FMEA_MODEL_SUGGESTION_INVALID",
+        "FMEA_MODEL_SUGGESTION_UNAVAILABLE",
+        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+        "FMEA_REVIEW_RUN_INTERRUPTED",
+        "FMEA_REVIEW_CONFIRMATION_REQUIRED",
+    }) == REVIEW_ERROR_CODES
+    error = ReviewError("FMEA_ROW_NOT_FOUND", "row not found")
+    assert str(error) == "row not found"
+    with pytest.raises(ValueError, match="unknown review error code"):
+        ReviewError("NOT_A_REVIEW_CODE", "private detail")

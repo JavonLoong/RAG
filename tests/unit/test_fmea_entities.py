@@ -51,6 +51,30 @@ def test_model_cannot_accept_or_publish() -> None:
         )
 
 
+@pytest.mark.parametrize("requested", (ReviewStatus.IN_REVIEW, ReviewStatus.REJECTED))
+def test_model_cannot_make_any_review_decision(requested: ReviewStatus) -> None:
+    with pytest.raises(FmeaDomainError, match="human actor"):
+        validate_review_transition(
+            current=ReviewStatus.SUGGESTED,
+            requested=requested,
+            actor_type=ActorType.MODEL,
+        )
+
+
+def test_review_policy_allows_audited_in_review_self_event_but_not_rejected_reopen() -> None:
+    validate_review_transition(
+        current=ReviewStatus.IN_REVIEW,
+        requested=ReviewStatus.IN_REVIEW,
+        actor_type=ActorType.HUMAN,
+    )
+    with pytest.raises(FmeaDomainError, match="invalid review transition"):
+        validate_review_transition(
+            current=ReviewStatus.REJECTED,
+            requested=ReviewStatus.DRAFT,
+            actor_type=ActorType.HUMAN,
+        )
+
+
 def test_human_can_accept_and_publish() -> None:
     validate_review_transition(
         current=ReviewStatus.IN_REVIEW,

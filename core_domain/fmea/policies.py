@@ -35,9 +35,9 @@ _EVIDENCE_FIELDS = frozenset(
 _REVIEW_EDGES = {
     ReviewStatus.DRAFT: {ReviewStatus.SUGGESTED, ReviewStatus.IN_REVIEW, ReviewStatus.REJECTED},
     ReviewStatus.SUGGESTED: {ReviewStatus.IN_REVIEW, ReviewStatus.ACCEPTED, ReviewStatus.REJECTED},
-    ReviewStatus.IN_REVIEW: {ReviewStatus.ACCEPTED, ReviewStatus.REJECTED},
+    ReviewStatus.IN_REVIEW: {ReviewStatus.IN_REVIEW, ReviewStatus.ACCEPTED, ReviewStatus.REJECTED},
     ReviewStatus.ACCEPTED: {ReviewStatus.SUPERSEDED},
-    ReviewStatus.REJECTED: {ReviewStatus.DRAFT, ReviewStatus.SUPERSEDED},
+    ReviewStatus.REJECTED: {ReviewStatus.SUPERSEDED},
     ReviewStatus.SUPERSEDED: set(),
 }
 
@@ -106,8 +106,8 @@ def validate_review_transition(
 ) -> None:
     if requested not in _REVIEW_EDGES[current]:
         raise FmeaDomainError(f"invalid review transition: {current.value}->{requested.value}")  # noqa: TRY003
-    if requested is ReviewStatus.ACCEPTED and actor_type is not ActorType.HUMAN:
-        raise FmeaDomainError("accepted requires a human actor")  # noqa: TRY003
+    if requested in {ReviewStatus.IN_REVIEW, ReviewStatus.ACCEPTED, ReviewStatus.REJECTED} and actor_type is not ActorType.HUMAN:
+        raise FmeaDomainError("review decision requires a human actor")  # noqa: TRY003
 
 
 def validate_publication_transition(
