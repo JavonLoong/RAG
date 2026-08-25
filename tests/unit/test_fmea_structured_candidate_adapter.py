@@ -11,6 +11,7 @@ from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.policies import validate_row_evidence
 from core_domain.fmea.states import ClaimStatus, EvidenceSupportStatus, PublicationStatus, ReviewStatus
 from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from core_domain.structured_generation import (
     CriticFinding,
     CriticReport,
@@ -128,6 +129,13 @@ def _adapt(
         profile=load_fmea_template_profile(PROFILE_PATH),
         repair_count=repair_count,
         deterministic_issues=deterministic_issues,
+        generation_run_id="generation-1",
+        requested_evidence_profile=EvidenceSelectionProfile.AUTO,
+        resolved_evidence_profile=EvidenceSelectionProfile.COMBINED,
+        evidence_types=tuple(CitationType),
+        trace_id="trace-1",
+        retrieval_warnings=(),
+        retrieval_incomplete=False,
     )
 
 
@@ -154,6 +162,74 @@ def test_supported_candidate_maps_to_server_owned_fmea_row(
     assert all(status is EvidenceSupportStatus.SUPPORTED for _, status in row.field_support)
     assert result.needs_review is False
     validate_row_evidence(row, fixture_pack)
+
+
+def test_adapter_preserves_labels_and_field_claim_states_in_source_snapshot(
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+) -> None:
+    result = _adapt(fixture_analysis, fixture_pack)
+    row = result.rows[0]
+    source = result.source_snapshots[0]
+
+    assert source.row_id == row.row_id
+    assert source.item_label == "Fuel  Filter"
+    assert source.function_label == "Filter particles"
+    assert dict(source.field_claim_statuses)["failure_mode"] is ClaimStatus.KNOWN
+    assert source.source_hash.startswith("sha256:")
+
+
+def test_source_snapshot_aggregates_claim_states_by_profile_field(
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+) -> None:
+    payload = {
+        **_payload(),
+        "causes": ["Excess particles", "Wrong maintenance interval"],
+        "mechanisms": ["Pressure drop rises", "Flow restriction"],
+        "effects": ["Combustion instability", "Flameout"],
+        "symptoms": ["Differential pressure alarm", "Low flow"],
+    }
+    candidate = replace(
+        _candidate(payload=payload),
+        claims=(
+            *tuple(CandidateClaim(target, ClaimState.KNOWN, ("ev-1",)) for _, target in FIELD_TARGETS),
+            CandidateClaim("/causes/1", ClaimState.NOT_APPLICABLE, ()),
+            CandidateClaim("/mechanisms/1", ClaimState.UNKNOWN, ()),
+            CandidateClaim("/effects/1", ClaimState.INSUFFICIENT_EVIDENCE, ()),
+            CandidateClaim("/symptoms/1", ClaimState.CONFLICT, ("ev-1", "ev-2")),
+        ),
+    )
+
+    source = _adapt(
+        fixture_analysis,
+        fixture_pack,
+        batch=_batch(fixture_pack, candidate),
+    ).source_snapshots[0]
+
+    statuses = dict(source.field_claim_statuses)
+    assert statuses["causes"] is ClaimStatus.NOT_APPLICABLE
+    assert statuses["mechanisms"] is ClaimStatus.UNKNOWN
+    assert statuses["effects"] is ClaimStatus.INSUFFICIENT_EVIDENCE
+    assert statuses["symptoms"] is ClaimStatus.CONFLICT
+
+
+def test_every_adapted_row_has_one_matching_source_snapshot(
+    fixture_analysis: FmeaAnalysis,
+    fixture_pack: EvidencePack,
+) -> None:
+    second_payload = _payload()
+    second_payload["item"] = "Fuel valve"
+    second_payload["function"] = "Control fuel flow"
+    result = _adapt(
+        fixture_analysis,
+        fixture_pack,
+        batch=_batch(fixture_pack, _candidate(), _candidate("candidate-2", payload=second_payload)),
+        critic=None,
+        repair_count=1,
+    )
+
+    assert tuple(source.row_id for source in result.source_snapshots) == tuple(row.row_id for row in result.rows)
 
 
 def test_repaired_or_uncriticised_candidate_is_never_known(
@@ -274,6 +350,13 @@ def test_adapter_rejects_identity_mismatches(
             profile=profile,
             repair_count=0,
             deterministic_issues=(),
+            generation_run_id="generation-1",
+            requested_evidence_profile=EvidenceSelectionProfile.AUTO,
+            resolved_evidence_profile=EvidenceSelectionProfile.COMBINED,
+            evidence_types=tuple(CitationType),
+            trace_id="trace-1",
+            retrieval_warnings=(),
+            retrieval_incomplete=False,
         )
 
 

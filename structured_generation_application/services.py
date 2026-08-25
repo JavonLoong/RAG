@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from core_domain.fmea.entities import FmeaAnalysis
 from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from core_domain.structured_generation import (
     GenerationBudget,
     GenerationIssue,
@@ -19,6 +22,74 @@ from structured_output_application import TemplateRegistry
 
 from .contracts import GenerationRunRequest
 from .pipeline import StructuredGenerationPipeline
+
+_LEGACY_SOURCE_TYPES = {
+    "rag_text": CitationType.TEXT,
+    "primary_document": CitationType.TEXT,
+    "graphrag_relation": CitationType.GRAPH,
+    "graphrag_community": CitationType.COMMUNITY,
+}
+
+
+def _fmea_provenance(
+    *,
+    run_id: str,
+    evidence_pack: EvidencePack,
+    requested_evidence_profile: EvidenceSelectionProfile | None,
+    resolved_evidence_profile: EvidenceSelectionProfile | None,
+    evidence_types: tuple[CitationType, ...] | None,
+    trace_id: str | None,
+    retrieval_warnings: tuple[str, ...] | None,
+    retrieval_incomplete: bool | None,
+) -> tuple[
+    EvidenceSelectionProfile,
+    EvidenceSelectionProfile,
+    tuple[CitationType, ...],
+    str,
+    tuple[str, ...],
+    bool,
+]:
+    supplied = (
+        requested_evidence_profile,
+        resolved_evidence_profile,
+        evidence_types,
+        trace_id,
+        retrieval_warnings,
+        retrieval_incomplete,
+    )
+    if any(value is not None for value in supplied) and not all(value is not None for value in supplied):
+        raise StructuredGenerationError(
+            "FMEA_RETRIEVAL_PROVENANCE_REQUIRED",
+            "FMEA retrieval provenance must be supplied as all six values or omitted.",
+        )
+    if all(value is not None for value in supplied):
+        return (
+            cast(EvidenceSelectionProfile, requested_evidence_profile),
+            cast(EvidenceSelectionProfile, resolved_evidence_profile),
+            cast(tuple[CitationType, ...], evidence_types),
+            cast(str, trace_id),
+            cast(tuple[str, ...], retrieval_warnings),
+            cast(bool, retrieval_incomplete),
+        )
+
+    inferred_types: list[CitationType] = []
+    for ref in evidence_pack.refs:
+        citation_type = _LEGACY_SOURCE_TYPES.get(ref.source_type)
+        if citation_type is None:
+            raise StructuredGenerationError(
+                "FMEA_RETRIEVAL_PROVENANCE_REQUIRED",
+                "FMEA retrieval provenance cannot be inferred from the evidence pack.",
+            )
+        if citation_type not in inferred_types:
+            inferred_types.append(citation_type)
+    return (
+        EvidenceSelectionProfile.CUSTOM,
+        EvidenceSelectionProfile.CUSTOM,
+        tuple(inferred_types),
+        run_id,
+        ("FMEA_RETRIEVAL_PROVENANCE_INFERRED",),
+        False,
+    )
 
 
 class StructuredGenerationService:
@@ -85,12 +156,35 @@ class StructuredGenerationService:
         analysis: FmeaAnalysis,
         profile: FmeaTemplateProfile,
         budget: GenerationBudget | None = None,
+        requested_evidence_profile: EvidenceSelectionProfile | None = None,
+        resolved_evidence_profile: EvidenceSelectionProfile | None = None,
+        evidence_types: tuple[CitationType, ...] | None = None,
+        trace_id: str | None = None,
+        retrieval_warnings: tuple[str, ...] | None = None,
+        retrieval_incomplete: bool | None = None,
     ) -> tuple[GenerationRunResult, FmeaAdaptationResult]:
         if self._fmea_adapter is None:
             raise StructuredGenerationError(
                 "FMEA_ADAPTER_UNAVAILABLE",
                 "Structured-generation FMEA adaptation is not configured.",
             )
+        (
+            requested_profile,
+            resolved_profile,
+            resolved_types,
+            resolved_trace_id,
+            resolved_warnings,
+            resolved_incomplete,
+        ) = _fmea_provenance(
+            run_id=run_id,
+            evidence_pack=evidence_pack,
+            requested_evidence_profile=requested_evidence_profile,
+            resolved_evidence_profile=resolved_evidence_profile,
+            evidence_types=evidence_types,
+            trace_id=trace_id,
+            retrieval_warnings=retrieval_warnings,
+            retrieval_incomplete=retrieval_incomplete,
+        )
         request = self._request(
             run_id=run_id,
             task=task,
@@ -103,6 +197,7 @@ class StructuredGenerationService:
         if result.batch is None:
             return result, FmeaAdaptationResult(
                 rows=(),
+                source_snapshots=(),
                 issues=(
                     GenerationIssue(
                         code="FMEA_GENERATION_FAILED",
@@ -120,6 +215,13 @@ class StructuredGenerationService:
             profile=profile,
             repair_count=result.repair_count,
             deterministic_issues=result.deterministic_issues,
+            generation_run_id=run_id,
+            requested_evidence_profile=requested_profile,
+            resolved_evidence_profile=resolved_profile,
+            evidence_types=resolved_types,
+            trace_id=resolved_trace_id,
+            retrieval_warnings=resolved_warnings,
+            retrieval_incomplete=resolved_incomplete,
         )
         return result, adaptation
 

@@ -39,6 +39,7 @@ from core_domain.structured_output import (
     ValidationIssue,
 )
 from fmea_application import FmeaAdaptationResult, StructuredCandidateFmeaAdapter
+from fmea_application.review_contracts import ReviewSourceSnapshot
 from fmea_infrastructure import load_fmea_template_profile
 from structured_generation_application import (
     StructuredGenerationPipeline,
@@ -303,11 +304,37 @@ def _row(row: FmeaRow) -> dict[str, JsonValue]:
     }
 
 
+def _source_snapshot(source: ReviewSourceSnapshot) -> dict[str, JsonValue]:
+    return {
+        "row_id": source.row_id,
+        "source_record_version": source.source_record_version,
+        "candidate_id": source.candidate_id,
+        "item_label": source.item_label,
+        "function_label": source.function_label,
+        "template_id": source.template_id,
+        "template_version": source.template_version,
+        "profile_id": source.profile_id,
+        "profile_version": source.profile_version,
+        "generation_run_id": source.generation_run_id,
+        "requested_evidence_profile": source.requested_evidence_profile.value,
+        "resolved_evidence_profile": source.resolved_evidence_profile.value,
+        "evidence_types": [evidence_type.value for evidence_type in source.evidence_types],
+        "trace_id": source.trace_id,
+        "retrieval_warnings": list(source.retrieval_warnings),
+        "retrieval_incomplete": source.retrieval_incomplete,
+        "field_claim_statuses": [
+            [field_name, claim_status.value] for field_name, claim_status in source.field_claim_statuses
+        ],
+        "source_hash": source.source_hash,
+    }
+
+
 def _fmea(adaptation: FmeaAdaptationResult) -> dict[str, JsonValue]:
     return {
         "persisted": False,
         "needs_review": adaptation.needs_review,
         "rows": [_row(row) for row in adaptation.rows],
+        "source_snapshots": [_source_snapshot(source) for source in adaptation.source_snapshots],
         "issues": [_generation_issue(issue) for issue in adaptation.issues],
     }
 

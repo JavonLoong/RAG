@@ -16,6 +16,7 @@ from core_domain.fmea.states import (
     ReviewStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from core_domain.structured_generation import (
     CriticReport,
     CriticVerdict,
@@ -31,6 +32,7 @@ from core_domain.structured_output import (
     ValidationIssue,
     resolve_pointer,
 )
+from fmea_application.review_contracts import EDITABLE_REVIEW_FIELDS, ReviewSourceSnapshot
 
 FMEA_PROFILE_FIELDS = (
     ("item_id", "/item"),
@@ -87,6 +89,7 @@ _BATCH_TEMPLATE_ERROR = "FMEA candidate batch does not match template identity"
 _BATCH_PACK_ERROR = "FMEA candidate batch does not match EvidencePack"
 _REPAIR_COUNT_ERROR = "FMEA repair count is invalid"
 _IDENTITY_FIELDS_ERROR = "FMEA candidate identity fields are invalid"
+_SOURCE_SNAPSHOTS_ERROR = "FMEA rows and source snapshots must match one-to-one"
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,18 +120,25 @@ class FmeaTemplateProfile:
 @dataclass(frozen=True, slots=True)
 class FmeaAdaptationResult:
     rows: tuple[FmeaRow, ...]
+    source_snapshots: tuple[ReviewSourceSnapshot, ...]
     issues: tuple[GenerationIssue, ...]
     needs_review: bool
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "rows", tuple(self.rows))
+        object.__setattr__(self, "source_snapshots", tuple(self.source_snapshots))
         object.__setattr__(self, "issues", tuple(self.issues))
         if (
             any(not isinstance(row, FmeaRow) for row in self.rows)
+            or any(not isinstance(source, ReviewSourceSnapshot) for source in self.source_snapshots)
             or any(not isinstance(issue, GenerationIssue) for issue in self.issues)
             or not isinstance(self.needs_review, bool)
         ):
             raise FmeaDomainError(_REVIEW_FLAG_ERROR)
+        if len(self.rows) != len(self.source_snapshots) or any(
+            row.row_id != source.row_id for row, source in zip(self.rows, self.source_snapshots, strict=True)
+        ):
+            raise FmeaDomainError(_SOURCE_SNAPSHOTS_ERROR)
 
 
 def _normalized(value: str) -> str:
@@ -238,6 +248,22 @@ def _claim_status(
     return active
 
 
+def _field_claim_statuses(
+    candidate: StructuredCandidate,
+    profile: FmeaTemplateProfile,
+) -> tuple[tuple[str, ClaimStatus], ...]:
+    statuses: list[tuple[str, ClaimStatus]] = []
+    for field_name, pointer in profile.fields:
+        if field_name not in EDITABLE_REVIEW_FIELDS:
+            continue
+        claims = tuple(
+            _CLAIM_MAP[claim.state] for claim in candidate.claims if _matches(claim.target, pointer)
+        )
+        active = max(claims, key=lambda item: _CLAIM_PRIORITY[item]) if claims else ClaimStatus.UNKNOWN
+        statuses.append((field_name, active))
+    return tuple(statuses)
+
+
 class StructuredCandidateFmeaAdapter:
     def _validate_identities(
         self,
@@ -320,6 +346,46 @@ class StructuredCandidateFmeaAdapter:
             publication_status=PublicationStatus.UNPUBLISHED,
         )
 
+    @staticmethod
+    def _source_snapshot(
+        *,
+        row: FmeaRow,
+        candidate: StructuredCandidate,
+        values: dict[str, object],
+        template: CompiledTemplate,
+        profile: FmeaTemplateProfile,
+        generation_run_id: str,
+        requested_evidence_profile: EvidenceSelectionProfile,
+        resolved_evidence_profile: EvidenceSelectionProfile,
+        evidence_types: tuple[CitationType, ...],
+        trace_id: str,
+        retrieval_warnings: tuple[str, ...],
+        retrieval_incomplete: bool,
+    ) -> ReviewSourceSnapshot:
+        item_text = values["item_id"]
+        function_text = values["function_id"]
+        if not isinstance(item_text, str) or not isinstance(function_text, str):
+            raise FmeaDomainError(_IDENTITY_FIELDS_ERROR)
+        return ReviewSourceSnapshot.build(
+            row_id=row.row_id,
+            source_record_version=row.record_version,
+            candidate_id=candidate.candidate_id,
+            item_label=item_text,
+            function_label=function_text,
+            template_id=template.metadata.template_id,
+            template_version=template.metadata.version,
+            profile_id=profile.profile_id,
+            profile_version=profile.version,
+            generation_run_id=generation_run_id,
+            requested_evidence_profile=requested_evidence_profile,
+            resolved_evidence_profile=resolved_evidence_profile,
+            evidence_types=evidence_types,
+            trace_id=trace_id,
+            retrieval_warnings=retrieval_warnings,
+            retrieval_incomplete=retrieval_incomplete,
+            field_claim_statuses=_field_claim_statuses(candidate, profile),
+        )
+
     def adapt(
         self,
         *,
@@ -331,6 +397,13 @@ class StructuredCandidateFmeaAdapter:
         profile: FmeaTemplateProfile,
         repair_count: int,
         deterministic_issues: tuple[ValidationIssue, ...],
+        generation_run_id: str,
+        requested_evidence_profile: EvidenceSelectionProfile,
+        resolved_evidence_profile: EvidenceSelectionProfile,
+        evidence_types: tuple[CitationType, ...],
+        trace_id: str,
+        retrieval_warnings: tuple[str, ...],
+        retrieval_incomplete: bool,
     ) -> FmeaAdaptationResult:
         self._validate_identities(
             template=template,
@@ -344,9 +417,15 @@ class StructuredCandidateFmeaAdapter:
                 GenerationIssue(code=issue.code, message=issue.message, pointer=issue.pointer)
                 for issue in deterministic_issues
             )
-            return FmeaAdaptationResult(rows=(), issues=deterministic_adaptation_issues, needs_review=True)
+            return FmeaAdaptationResult(
+                rows=(),
+                source_snapshots=(),
+                issues=deterministic_adaptation_issues,
+                needs_review=True,
+            )
 
         rows: list[FmeaRow] = []
+        source_snapshots: list[ReviewSourceSnapshot] = []
         issues: list[GenerationIssue] = []
         semantic_keys: set[tuple[str, str, str]] = set()
         for candidate in sorted(batch.candidates, key=lambda item: item.candidate_id):
@@ -376,18 +455,32 @@ class StructuredCandidateFmeaAdapter:
                 )
                 continue
             semantic_keys.add(semantic_key)
-            rows.append(
-                self._row(
-                    analysis=analysis,
-                    evidence_pack=evidence_pack,
-                    template=template,
-                    candidate=candidate,
-                    values=values,
-                    profile=profile,
-                    critic_report=critic_report,
-                    repair_count=repair_count,
-                )
+            row = self._row(
+                analysis=analysis,
+                evidence_pack=evidence_pack,
+                template=template,
+                candidate=candidate,
+                values=values,
+                profile=profile,
+                critic_report=critic_report,
+                repair_count=repair_count,
             )
+            source_snapshot = self._source_snapshot(
+                row=row,
+                candidate=candidate,
+                values=values,
+                template=template,
+                profile=profile,
+                generation_run_id=generation_run_id,
+                requested_evidence_profile=requested_evidence_profile,
+                resolved_evidence_profile=resolved_evidence_profile,
+                evidence_types=evidence_types,
+                trace_id=trace_id,
+                retrieval_warnings=retrieval_warnings,
+                retrieval_incomplete=retrieval_incomplete,
+            )
+            rows.append(row)
+            source_snapshots.append(source_snapshot)
 
         if critic_report is not None:
             mapped_candidates = {candidate.candidate_id: candidate for candidate in batch.candidates}
@@ -412,7 +505,12 @@ class StructuredCandidateFmeaAdapter:
             or not safe_critic
             or any(row.claim_status is not ClaimStatus.KNOWN for row in rows)
         )
-        return FmeaAdaptationResult(rows=tuple(rows), issues=sorted_issues, needs_review=needs_review)
+        return FmeaAdaptationResult(
+            rows=tuple(rows),
+            source_snapshots=tuple(source_snapshots),
+            issues=sorted_issues,
+            needs_review=needs_review,
+        )
 
 
 __all__ = [

@@ -9,7 +9,8 @@ import pytest
 
 from core_domain.fmea.codec import encode_json
 from core_domain.fmea.errors import FmeaDomainError
-from core_domain.fmea.states import PublicationStatus, ReviewStatus
+from core_domain.fmea.states import ClaimStatus, PublicationStatus, ReviewStatus
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from core_domain.structured_generation import (
     CriticReport,
     CriticVerdict,
@@ -28,6 +29,7 @@ from core_domain.structured_output import (
     StructuredOutputError,
 )
 from fmea_application import FmeaAdaptationResult
+from fmea_application.review_contracts import ReviewSourceSnapshot
 from scripts.structured_generation_skill import SmokeResult, main
 
 ROOT = Path(__file__).parents[2]
@@ -107,6 +109,28 @@ def _result(pack_id: str, status: GenerationRunStatus = GenerationRunStatus.SUCC
         generation_issues=issues,
         traces=(),
         repair_count=0,
+    )
+
+
+def _source_snapshot(row_id: str) -> ReviewSourceSnapshot:
+    return ReviewSourceSnapshot.build(
+        row_id=row_id,
+        source_record_version=1,
+        candidate_id="candidate-1",
+        item_label="Fuel filter",
+        function_label="Remove particles",
+        template_id="demo",
+        template_version="1.0.0",
+        profile_id="fuel-combustion-fmea-row",
+        profile_version="1.0.0",
+        generation_run_id="run-1",
+        requested_evidence_profile=EvidenceSelectionProfile.CUSTOM,
+        resolved_evidence_profile=EvidenceSelectionProfile.CUSTOM,
+        evidence_types=(CitationType.TEXT,),
+        trace_id="run-1",
+        retrieval_warnings=("FMEA_RETRIEVAL_PROVENANCE_INFERRED",),
+        retrieval_incomplete=False,
+        field_claim_statuses=(("failure_mode", ClaimStatus.KNOWN),),
     )
 
 
@@ -194,7 +218,12 @@ def test_run_fmea_outputs_unpersisted_suggestion(
     )
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(rows=(row,), issues=(), needs_review=False),
+        adaptation=FmeaAdaptationResult(
+            rows=(row,),
+            source_snapshots=(_source_snapshot(row.row_id),),
+            issues=(),
+            needs_review=False,
+        ),
     )
     args = [
         "run-fmea",
@@ -219,6 +248,23 @@ def test_run_fmea_outputs_unpersisted_suggestion(
     assert body["result"]["fmea"]["persisted"] is False
     assert body["result"]["fmea"]["rows"][0]["review_status"] == "suggested"
     assert body["result"]["fmea"]["rows"][0]["publication_status"] == "unpublished"
+    source = body["result"]["fmea"]["source_snapshots"][0]
+    assert source["requested_evidence_profile"] == "custom"
+    assert source["resolved_evidence_profile"] == "custom"
+    assert source["evidence_types"] == ["text"]
+    assert source["retrieval_warnings"] == ["FMEA_RETRIEVAL_PROVENANCE_INFERRED"]
+    assert "payload" not in source
+    assert service.run_fmea_kwargs is not None
+    assert {
+        "run_id",
+        "task",
+        "template_id",
+        "version",
+        "evidence_pack",
+        "analysis",
+        "profile",
+        "budget",
+    } == set(service.run_fmea_kwargs)
 
 
 def test_run_fmea_passes_explicit_slow_network_budget(
@@ -231,7 +277,12 @@ def test_run_fmea_passes_explicit_slow_network_budget(
     pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(rows=(fixture_row,), issues=(), needs_review=True),
+        adaptation=FmeaAdaptationResult(
+            rows=(fixture_row,),
+            source_snapshots=(_source_snapshot(fixture_row.row_id),),
+            issues=(),
+            needs_review=True,
+        ),
     )
     args = [
         "run-fmea",
@@ -341,7 +392,12 @@ def test_run_fmea_adaptation_review_flag_controls_process_status(
     pack_path, analysis_path, request_path = _files(tmp_path, fixture_pack, fixture_analysis)
     service = FakeService(
         _result(fixture_pack.pack_id),
-        adaptation=FmeaAdaptationResult(rows=(fixture_row,), issues=(), needs_review=True),
+        adaptation=FmeaAdaptationResult(
+            rows=(fixture_row,),
+            source_snapshots=(_source_snapshot(fixture_row.row_id),),
+            issues=(),
+            needs_review=True,
+        ),
     )
     args = [
         "run-fmea",
