@@ -111,13 +111,54 @@ def test_context_selects_latest_suggestion_stably(
     assert context.latest_suggestion.suggestion_id == "suggestion-b"
 
 
+def test_context_repr_is_bounded_and_excludes_private_review_content(
+    fixture_review_row,
+    fixture_pack,
+    fixture_review_source,
+    fixture_review_suggestion,
+    fixture_decision_record,
+) -> None:
+    row = replace(fixture_review_row, failure_mode="ROW_PRIVATE_MARKER")
+    private_ref = replace(
+        fixture_pack.refs[0],
+        locator='{"safe":"EVIDENCE_LOCATOR_PRIVATE_MARKER"}',
+        quote="EVIDENCE_QUOTE_PRIVATE_MARKER",
+    )
+    suggestion = replace(fixture_review_suggestion, rationale="SUGGESTION_RATIONALE_PRIVATE_MARKER")
+    decision = replace(fixture_decision_record, reason="DECISION_REASON_PRIVATE_MARKER")
+    context = build_review_context(
+        row=row,
+        source=fixture_review_source,
+        pack=replace(fixture_pack, refs=(private_ref,)),
+        suggestions=(suggestion,),
+        decisions=(decision,),
+    )
+
+    rendered = repr(context)
+    assert all(marker not in rendered for marker in (
+        "ROW_PRIVATE_MARKER",
+        "EVIDENCE_LOCATOR_PRIVATE_MARKER",
+        "EVIDENCE_QUOTE_PRIVATE_MARKER",
+        "SUGGESTION_RATIONALE_PRIVATE_MARKER",
+        "DECISION_REASON_PRIVATE_MARKER",
+    ))
+    assert "ReviewContext(" in rendered
+    assert "row_id='row-1'" in rendered
+    assert "reviewability=True" in rendered
+    assert "field_count=8" in rendered
+
+
 @pytest.mark.parametrize(
     ("locator", "expected"),
     (
         ('{"FILE":"C:/private/manual.pdf","Page":42,"chunk_id":"c-1"}', '{"Page":42,"chunk_id":"c-1"}'),
+        ('{"nested":{"PaTh":"C:/private/manual.pdf","safe":"keep"}}', '{"nested":{"safe":"keep"}}'),
+        ('{"safe":"C:private/manual.pdf","items":["https://private.example","ok","../private"]}', '{"items":["redacted","ok","redacted"],"safe":"redacted"}'),
         ("manual.pdf#page=4", "manual.pdf#page=4"),
+        ("C:private/manual.pdf", "redacted"),
         ("C:/private/manual.pdf", "redacted"),
         (r"\\server\private\manual.pdf", "redacted"),
+        ("//server/private/manual.pdf", "redacted"),
         ("../private/manual.pdf", "redacted"),
         ("file://private/manual.pdf", "redacted"),
         ("https://private.example/manual.pdf", "redacted"),

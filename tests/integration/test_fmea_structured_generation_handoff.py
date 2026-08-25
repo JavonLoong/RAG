@@ -25,6 +25,7 @@ from core_domain.structured_output import (
     StructuredCandidateBatch,
 )
 from fmea_application import StructuredCandidateFmeaAdapter
+from fmea_application.review_contracts import legacy_citation_type
 from fmea_infrastructure import load_fmea_template_profile
 from structured_generation_application import StructuredGenerationService
 from structured_output_application import StructuredCandidateValidator, TemplateCompiler
@@ -374,6 +375,10 @@ def test_service_infers_legacy_custom_provenance_from_pack_source_types(
     source = adaptation.source_snapshots[0]
     assert source.requested_evidence_profile is EvidenceSelectionProfile.CUSTOM
     assert source.resolved_evidence_profile is EvidenceSelectionProfile.CUSTOM
+    assert tuple(
+        legacy_citation_type(source_type)
+        for source_type in ("primary_document", "rag_text", "graphrag_relation", "graphrag_community")
+    ) == (CitationType.TEXT, CitationType.TEXT, CitationType.GRAPH, CitationType.COMMUNITY)
     assert source.evidence_types == (CitationType.TEXT, CitationType.GRAPH, CitationType.COMMUNITY)
     assert source.trace_id == "run-1"
     assert source.retrieval_warnings == ("FMEA_RETRIEVAL_PROVENANCE_INFERRED",)

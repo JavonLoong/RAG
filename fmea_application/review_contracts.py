@@ -13,6 +13,7 @@ from dataclasses import dataclass, fields, is_dataclass, replace
 from datetime import datetime, timedelta
 from enum import Enum
 from hashlib import sha256
+from types import MappingProxyType
 from typing import Literal, NoReturn, TypeVar, cast
 from uuid import UUID
 
@@ -59,6 +60,21 @@ _UNRESOLVED_CLAIM_STATUSES = frozenset(
     }
 )
 
+LEGACY_SOURCE_TYPE_MAP = MappingProxyType(
+    {
+        "rag_text": CitationType.TEXT,
+        "primary_document": CitationType.TEXT,
+        "graphrag_relation": CitationType.GRAPH,
+        "graphrag_community": CitationType.COMMUNITY,
+    }
+)
+
+
+def legacy_citation_type(source_type: str) -> CitationType | None:
+    """Resolve only the approved legacy evidence source types."""
+
+    return LEGACY_SOURCE_TYPE_MAP.get(source_type)
+
 _T = TypeVar("_T")
 
 
@@ -77,6 +93,14 @@ def _text(value: object, field_name: str, *, limit: int) -> str:
 
 def _label(value: object, field_name: str) -> str:
     return _text(value, field_name, limit=_MAX_ID_LENGTH)
+
+
+def _bounded_text_repr(value: str | None, *, limit: int = 64) -> str:
+    if value is None:
+        return "None"
+    if len(value) > limit:
+        value = value[: limit - 3] + "..."
+    return repr(value)
 
 
 def _tuple(value: object, field_name: str) -> tuple[object, ...]:
@@ -1191,6 +1215,30 @@ class ReviewContext:
         )
         object.__setattr__(self, "warnings", _strings(self.warnings, "warnings", limit=4000))
 
+    def field_by_name(self, target_field: str) -> FieldReviewState:
+        for field_review in self.field_reviews:
+            if field_review.target_field == target_field:
+                return field_review
+        raise KeyError(target_field)
+
+    def __repr__(self) -> str:
+        latest_suggestion_id = self.latest_suggestion.suggestion_id if self.latest_suggestion is not None else None
+        return (
+            "ReviewContext("
+            f"row_id={_bounded_text_repr(self.row.row_id)}, "
+            f"item_id={_bounded_text_repr(self.row.item_id)}, "
+            f"function_id={_bounded_text_repr(self.row.function_id)}, "
+            f"reviewability={self.reviewability!r}, "
+            f"review_status={self.row.review_status.value!r}, "
+            f"claim_status={self.row.claim_status.value!r}, "
+            f"field_count={len(self.field_reviews)}, "
+            f"evidence_count={len(self.evidence.refs)}, "
+            f"latest_suggestion_id={_bounded_text_repr(latest_suggestion_id)}, "
+            f"decision_count={len(self.decision_history)}, "
+            f"warning_count={len(self.warnings)}"
+            ")"
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class IdempotencyScope:
@@ -1461,6 +1509,7 @@ def canonical_payload_hash(command: StartReviewSuggestionCommand | ReviewDecisio
 
 __all__ = [
     "EDITABLE_REVIEW_FIELDS",
+    "LEGACY_SOURCE_TYPE_MAP",
     "ActorContext",
     "AuditEvent",
     "ConflictItem",
@@ -1499,4 +1548,5 @@ __all__ = [
     "decode_review_suggestion",
     "encode_review_json",
     "idempotency_key_hash",
+    "legacy_citation_type",
 ]

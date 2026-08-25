@@ -18,18 +18,11 @@ from fmea_application import (
     FmeaTemplateProfile,
     StructuredCandidateFmeaAdapter,
 )
-from fmea_application.review_contracts import RetrievalProvenance
+from fmea_application.review_contracts import RetrievalProvenance, legacy_citation_type
 from structured_output_application import TemplateRegistry
 
 from .contracts import GenerationRunRequest
 from .pipeline import StructuredGenerationPipeline
-
-_LEGACY_SOURCE_TYPES = {
-    "rag_text": CitationType.TEXT,
-    "primary_document": CitationType.TEXT,
-    "graphrag_relation": CitationType.GRAPH,
-    "graphrag_community": CitationType.COMMUNITY,
-}
 
 
 def _fmea_provenance(
@@ -98,7 +91,7 @@ def _fmea_provenance(
 
     inferred_types: list[CitationType] = []
     for ref in evidence_pack.refs:
-        citation_type = _LEGACY_SOURCE_TYPES.get(ref.source_type)
+        citation_type = legacy_citation_type(ref.source_type)
         if citation_type is None:
             raise StructuredGenerationError(
                 "FMEA_RETRIEVAL_PROVENANCE_REQUIRED",

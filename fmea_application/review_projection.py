@@ -23,6 +23,7 @@ from .review_contracts import (
     ReviewEvidenceRef,
     ReviewSourceSnapshot,
     ReviewSuggestion,
+    legacy_citation_type,
 )
 
 _FIELD_ORDER = tuple(sorted(EDITABLE_REVIEW_FIELDS))
@@ -33,32 +34,13 @@ _CLAIM_PRIORITY = {
     ClaimStatus.INSUFFICIENT_EVIDENCE: 3,
     ClaimStatus.CONFLICT: 4,
 }
-_SOURCE_TYPE_MAP = {
-    "rag_text": CitationType.TEXT,
-    "graphrag_relation": CitationType.GRAPH,
-    "graphrag_community": CitationType.COMMUNITY,
-    "primary_document": CitationType.TEXT,
-    "text": CitationType.TEXT,
-    "graph": CitationType.GRAPH,
-    "community": CitationType.COMMUNITY,
-}
 _SENSITIVE_LOCATOR_KEYS = frozenset({"file", "path", "url", "uri", "database", "db"})
 _WARNING_CODE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
-_UNSAFE_LOCATOR = re.compile(r"(?i)(?:[a-z]:[\\/]|\\\\|^//|\.\.|file://|https?://)")
+_UNSAFE_LOCATOR = re.compile(
+    r"(?i)(?:[a-z]:[\\/]|(?<![a-z])[a-z]:(?=[^\s/?:])|\\\\|^//|\.\.|file://|https?://)"
+)
 _RAW_PACK_HASH = re.compile(r"^[0-9a-f]{64}$")
 _STRICT_PACK_HASH = re.compile(r"^sha256:[0-9a-f]{64}$")
-
-
-class _ProjectedReviewContext(ReviewContext):
-    """Add the small lookup convenience used by review consumers."""
-
-    __slots__ = ()
-
-    def field_by_name(self, target_field: str) -> FieldReviewState:
-        for field_review in self.field_reviews:
-            if field_review.target_field == target_field:
-                return field_review
-        raise KeyError(target_field)
 
 
 def build_review_context(
@@ -77,7 +59,7 @@ def build_review_context(
     latest_suggestion = max(suggestions, key=_suggestion_order, default=None)
     evidence = _project_evidence(row, suggestions, ordered_decisions, pack)
     retrieval, warnings, reviewability, item_label, function_label = _project_retrieval(row, source, pack)
-    return _ProjectedReviewContext(
+    return ReviewContext(
         row=projected_row,
         item_label=item_label,
         function_label=function_label,
@@ -187,7 +169,7 @@ def _stable_warning_codes(warnings: Iterable[str]) -> tuple[str, ...]:
 def _infer_evidence_types(refs: Iterable[EvidenceRef]) -> tuple[CitationType, ...]:
     result: list[CitationType] = []
     for ref in refs:
-        citation_type = _SOURCE_TYPE_MAP.get(ref.source_type)
+        citation_type = legacy_citation_type(ref.source_type)
         if citation_type is not None and citation_type not in result:
             result.append(citation_type)
     return tuple(result)
@@ -236,7 +218,7 @@ def _sanitize_locator(locator: str) -> str:
         parsed = json.loads(locator)
     except (json.JSONDecodeError, TypeError):
         return locator if _UNSAFE_LOCATOR.search(locator) is None else "redacted"
-    if not isinstance(parsed, dict | list):
+    if not isinstance(parsed, dict | list | str):
         return locator if _UNSAFE_LOCATOR.search(locator) is None else "redacted"
     sanitized = _sanitize_json_locator(parsed)
     return json.dumps(sanitized, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -251,6 +233,8 @@ def _sanitize_json_locator(value: object) -> object:
         }
     if isinstance(value, list):
         return [_sanitize_json_locator(item) for item in value]
+    if isinstance(value, str):
+        return value if _UNSAFE_LOCATOR.search(value) is None else "redacted"
     return value
 
 
