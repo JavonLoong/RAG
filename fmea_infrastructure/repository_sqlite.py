@@ -9,23 +9,27 @@ import json
 import re
 import sqlite3
 from collections.abc import Callable, Iterator
-from dataclasses import replace
+from dataclasses import fields, replace
 from datetime import datetime, timezone
 from hashlib import sha256
 from importlib import import_module
 from pathlib import Path
-from typing import NoReturn, cast
+from typing import Any, NoReturn, cast
 
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
+from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.policies import validate_row_evidence
 from core_domain.fmea.states import (
     ActorType,
+    ClaimStatus,
+    EvidenceSupportStatus,
     PublicationStatus,
     ReviewStatus,
     RunStatus,
 )
-from core_domain.fmea.value_objects import EvidencePack
+from core_domain.fmea.value_objects import EvidencePack, VersionSet
 from fmea_application.review_contracts import (
+    EDITABLE_REVIEW_FIELDS,
     ActorContext,
     AuditEvent,
     EvidenceRequestItem,
@@ -36,7 +40,9 @@ from fmea_application.review_contracts import (
     ReviewCandidateBundle,
     ReviewDecisionRecord,
     ReviewDecisionResult,
+    ReviewModelManifest,
     ReviewPriority,
+    ReviewReasonCode,
     ReviewSourceSnapshot,
     ReviewSuggestion,
     ReviewSuggestionRun,
@@ -57,6 +63,20 @@ _SUGGESTION_CREATE_COMMAND = "review.suggestion.create"
 _SUGGESTION_COMPLETE_COMMAND = "review.suggestion.complete"
 _SUGGESTION_FAIL_COMMAND = "review.suggestion.fail"
 _DECISION_COMMAND = "review.decision"
+_DECISION_REVIEW_STATUS = {
+    ReviewAction.ACCEPT: ReviewStatus.ACCEPTED,
+    ReviewAction.MODIFY_AND_ACCEPT: ReviewStatus.ACCEPTED,
+    ReviewAction.REJECT: ReviewStatus.REJECTED,
+    ReviewAction.REQUEST_EVIDENCE: ReviewStatus.IN_REVIEW,
+    ReviewAction.DEFER: ReviewStatus.IN_REVIEW,
+}
+_CLAIM_PRIORITY = {
+    ClaimStatus.KNOWN: 0,
+    ClaimStatus.NOT_APPLICABLE: 1,
+    ClaimStatus.UNKNOWN: 2,
+    ClaimStatus.INSUFFICIENT_EVIDENCE: 3,
+    ClaimStatus.CONFLICT: 4,
+}
 _FMEA_CODEC = import_module("core_domain.fmea.codec")
 encode_json = cast(Callable[[object], str], _FMEA_CODEC.encode_json)
 decode_analysis = cast(Callable[[str], object], _FMEA_CODEC.decode_analysis)
@@ -105,7 +125,13 @@ def _decision_result_json(result: ReviewDecisionResult) -> str:
     return encode_review_json(result)
 
 
-def _decode_decision_result(payload: object) -> ReviewDecisionResult:
+def _strict_string_tuple(value: object, kind: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ValueError(f"persisted {kind} must be a string array")
+    return tuple(value)
+
+
+def _decode_decision_result(payload: object) -> ReviewDecisionResult:  # noqa: C901
     data = _load_strict_json(payload, "review decision response")
     expected = {
         "decision_id",
@@ -126,15 +152,18 @@ def _decode_decision_result(payload: object) -> ReviewDecisionResult:
     row_data = data["row"]
     if not isinstance(row_data, dict):
         raise ValueError("persisted review decision response row is invalid")
-    row_payload = encode_review_json(row_data)
+    row_payload = encode_json(row_data)
     row = cast(FmeaRow, _decode_fmea_json(row_payload, decode_row, "row"))
     raw_requests = data["evidence_requests"]
     if not isinstance(raw_requests, list):
         raise ValueError("persisted review decision response requests are invalid")
     evidence_requests_list: list[EvidenceRequestItem] = []
+    request_keys = {field.name for field in fields(EvidenceRequestItem)}
     for item in raw_requests:
         if not isinstance(item, dict):
             raise ValueError("persisted review decision response requests are invalid")
+        if set(item) != request_keys:
+            raise ValueError("persisted review decision response request fields are invalid")
         raw_types = item.get("preferred_source_types")
         if not isinstance(raw_types, list) or not all(isinstance(value, str) for value in raw_types):
             raise ValueError("persisted review decision response requests are invalid")
@@ -166,6 +195,76 @@ def _decode_decision_result(payload: object) -> ReviewDecisionResult:
         raise ValueError("persisted review decision response values are invalid") from exc
     if not result.persisted:
         raise ValueError("persisted review decision response must be persisted")
+    if encode_review_json(result) != payload:
+        raise ValueError("persisted review decision response is not canonical")
+    return result
+
+
+def _decode_audit_event(payload: object) -> AuditEvent:
+    data = _load_strict_json(payload, "audit event")
+    expected = {field.name for field in fields(AuditEvent)}
+    if set(data) != expected:
+        raise ValueError("persisted audit event fields are invalid")
+    raw_versions = data["versions"]
+    if (
+        not isinstance(raw_versions, dict)
+        or set(raw_versions) != {field.name for field in fields(VersionSet)}
+        or not all(isinstance(value, str) for value in raw_versions.values())
+    ):
+        raise ValueError("persisted audit event versions are invalid")
+    raw_manifest = data["model_manifest"]
+    if raw_manifest is not None and (
+        not isinstance(raw_manifest, dict)
+        or set(raw_manifest) != {field.name for field in fields(ReviewModelManifest)}
+    ):
+        raise ValueError("persisted audit event model manifest is invalid")
+    try:
+        versions = VersionSet(**cast(dict[str, Any], raw_versions))
+        manifest = None if raw_manifest is None else ReviewModelManifest(**cast(dict[str, Any], raw_manifest))
+        result = AuditEvent(
+            event_id=cast(str, data["event_id"]),
+            occurred_at_server=cast(str, data["occurred_at_server"]),
+            workspace_id=cast(str, data["workspace_id"]),
+            actor_id=cast(str, data["actor_id"]),
+            actor_type=ActorType(cast(str, data["actor_type"])),
+            actor_roles=_strict_string_tuple(data["actor_roles"], "audit actor_roles"),
+            command=cast(str, data["command"]),
+            action=None if data["action"] is None else ReviewAction(cast(str, data["action"])),
+            reason_code=None if data["reason_code"] is None else ReviewReasonCode(cast(str, data["reason_code"])),
+            reason=cast(str, data["reason"]),
+            analysis_id=cast(str, data["analysis_id"]),
+            row_id=cast(str, data["row_id"]),
+            suggestion_id=None if data["suggestion_id"] is None else cast(str, data["suggestion_id"]),
+            decision_id=None if data["decision_id"] is None else cast(str, data["decision_id"]),
+            expected_record_version=None
+            if data["expected_record_version"] is None
+            else cast(int, data["expected_record_version"]),
+            applied_record_version=None
+            if data["applied_record_version"] is None
+            else cast(int, data["applied_record_version"]),
+            before_hash=None if data["before_hash"] is None else cast(str, data["before_hash"]),
+            after_hash=None if data["after_hash"] is None else cast(str, data["after_hash"]),
+            changed_fields=_strict_string_tuple(data["changed_fields"], "audit changed_fields"),
+            evidence_ids=_strict_string_tuple(data["evidence_ids"], "audit evidence_ids"),
+            evidence_request_targets=_strict_string_tuple(
+                data["evidence_request_targets"], "audit evidence_request_targets"
+            ),
+            idempotency_key_hash=cast(str, data["idempotency_key_hash"]),
+            canonical_payload_hash=cast(str, data["canonical_payload_hash"]),
+            versions=versions,
+            template_id=cast(str, data["template_id"]),
+            template_version=cast(str, data["template_version"]),
+            profile_id=cast(str, data["profile_id"]),
+            profile_version=cast(str, data["profile_version"]),
+            model_manifest=manifest,
+            request_id=cast(str, data["request_id"]),
+            trace_id=cast(str, data["trace_id"]),
+            retrieval_trace_id=cast(str, data["retrieval_trace_id"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("persisted audit event values are invalid") from exc
+    if encode_review_json(result) != payload:
+        raise ValueError("persisted audit event is not canonical")
     return result
 
 
@@ -879,19 +978,66 @@ class SqliteFmeaRepository:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review run could not be loaded", retryable=True)
         return SqliteFmeaRepository._decode_suggestion_run(row)
 
+    @staticmethod
+    def _derive_next_row(previous: FmeaRow, decision: ReviewDecisionRecord) -> FmeaRow:  # noqa: C901
+        try:
+            expected_status = _DECISION_REVIEW_STATUS[decision.action]
+        except (KeyError, TypeError) as exc:
+            raise ValueError("review decision action is invalid") from exc
+        if decision.action is ReviewAction.MODIFY_AND_ACCEPT and not decision.edits:
+            raise ValueError("modify_and_accept decision must contain edits")
+        if decision.action is not ReviewAction.MODIFY_AND_ACCEPT and decision.edits:
+            raise ValueError("non-modify decision must not contain edits")
+        if decision.action is ReviewAction.REQUEST_EVIDENCE and not decision.evidence_requests:
+            raise ValueError("request_evidence decision must contain requests")
+        if decision.action is not ReviewAction.REQUEST_EVIDENCE and decision.evidence_requests:
+            raise ValueError("non-request decision must not contain requests")
+
+        values = {field: getattr(previous, field) for field in EDITABLE_REVIEW_FIELDS}
+        field_evidence = dict(previous.field_evidence)
+        field_support = dict(previous.field_support)
+        statuses = [previous.claim_status, *(item.claim_status for item in decision.unresolved_acknowledgements)]
+        seen_fields: set[str] = set()
+        for edit in decision.edits:
+            if edit.target_field not in EDITABLE_REVIEW_FIELDS or edit.target_field in seen_fields:
+                raise ValueError("review decision edit fields are invalid")
+            if edit.target_field == "failure_mode":
+                if not isinstance(edit.value, str):
+                    raise ValueError("failure_mode edit value is invalid")
+            elif not isinstance(edit.value, tuple) or not all(isinstance(item, str) for item in edit.value):
+                raise ValueError("review edit value is invalid")
+            if not isinstance(edit.claim_status, ClaimStatus) or not isinstance(edit.support_status, EvidenceSupportStatus):
+                raise ValueError("review edit statuses are invalid")
+            if edit.target_field not in field_evidence or edit.target_field not in field_support:
+                raise ValueError("review edit field is not present on the row")
+            seen_fields.add(edit.target_field)
+            values[edit.target_field] = edit.value
+            field_evidence[edit.target_field] = edit.evidence_ids
+            field_support[edit.target_field] = edit.support_status
+            statuses.append(edit.claim_status)
+
+        claim_status = max(statuses, key=lambda status: _CLAIM_PRIORITY[status])
+        return replace(
+            previous,
+            **values,
+            field_evidence=tuple((field, field_evidence[field]) for field, _ in previous.field_evidence),
+            field_support=tuple((field, field_support[field]) for field, _ in previous.field_support),
+            claim_status=claim_status,
+            review_status=expected_status,
+            record_version=previous.record_version + 1,
+        )
+
     def _validate_prepared_decision(self, prepared: PreparedReviewDecision) -> None:
         decision = prepared.decision
         previous = prepared.previous_row
         next_row = prepared.next_row
         audit = prepared.audit
         scope = prepared.scope
-        expected_status = {
-            ReviewAction.ACCEPT: ReviewStatus.ACCEPTED,
-            ReviewAction.MODIFY_AND_ACCEPT: ReviewStatus.ACCEPTED,
-            ReviewAction.REJECT: ReviewStatus.REJECTED,
-            ReviewAction.REQUEST_EVIDENCE: ReviewStatus.IN_REVIEW,
-            ReviewAction.DEFER: ReviewStatus.IN_REVIEW,
-        }[decision.action]
+        try:
+            expected_status = _DECISION_REVIEW_STATUS[decision.action]
+            expected_next = self._derive_next_row(previous, decision)
+        except (KeyError, TypeError, ValueError, AttributeError):
+            self._binding_error("review decision next row derivation is invalid")
         if (
             scope.workspace_id != audit.workspace_id
             or scope.actor_id != decision.actor_id
@@ -922,6 +1068,7 @@ class SqliteFmeaRepository:
             or audit.request_id == ""
             or audit.trace_id == ""
             or audit.retrieval_trace_id != audit.trace_id
+            or next_row != expected_next
         ):
             self._binding_error("review decision binding is invalid")
         if audit.before_hash != self._row_json(previous)[1] or audit.after_hash != self._row_json(next_row)[1]:
@@ -944,6 +1091,95 @@ class SqliteFmeaRepository:
         if decision.action is not ReviewAction.REQUEST_EVIDENCE and decision.evidence_requests:
             self._binding_error("review decision action binding is invalid")
 
+    @staticmethod
+    def _validate_decision_replay_binding(
+        *,
+        existing: sqlite3.Row,
+        decision_row: sqlite3.Row,
+        audit_row: sqlite3.Row,
+        result: ReviewDecisionResult,
+        decision: ReviewDecisionRecord,
+        audit: AuditEvent,
+        scope: IdempotencyScope,
+        payload_hash: str,
+    ) -> None:
+        try:
+            expected_status = _DECISION_REVIEW_STATUS[decision.action]
+        except (KeyError, TypeError) as exc:
+            raise ValueError("persisted review decision action is invalid") from exc
+        row_hash = _json_hash(encode_json(result.row))
+        expected_changed_fields = tuple(sorted(edit.target_field for edit in decision.edits))
+        expected_evidence_ids = tuple(sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids}))
+        expected_request_targets = tuple(sorted(item.target_field for item in decision.evidence_requests))
+        if (
+            existing["payload_hash"] != payload_hash
+            or existing["resource_id"] != result.decision_id
+            or existing["state"] != "completed"
+            or existing["status_code"] != 200
+            or decision_row["decision_id"] != decision.decision_id
+            or decision_row["workspace_id"] != scope.workspace_id
+            or decision_row["row_id"] != result.row.row_id
+            or decision_row["previous_record_version"] != decision.previous_record_version
+            or decision_row["record_version"] != decision.record_version
+            or decision_row["actor_id"] != decision.actor_id
+            or decision_row["action"] != decision.action.value
+            or decision_row["reason_code"] != decision.reason_code.value
+            or decision_row["created_at"] != decision.created_at
+            or cast(str, decision_row["decision_json"]) != encode_review_json(decision)
+            or decision.decision_id != result.decision_id
+            or decision.row_id != result.row.row_id
+            or decision.previous_record_version != result.previous_record_version
+            or decision.record_version != result.record_version
+            or decision.record_version != decision.previous_record_version + 1
+            or decision.suggestion_id != result.suggestion_id
+            or decision.evidence_requests != result.evidence_requests
+            or result.row.record_version != result.record_version
+            or result.row.review_status is not result.review_status
+            or result.row.publication_status is not result.publication_status
+            or result.review_status is not expected_status
+            or audit_row["event_id"] != result.audit_event_id
+            or audit_row["row_id"] != result.row.row_id
+            or audit_row["workspace_id"] != scope.workspace_id
+            or audit_row["actor_id"] != scope.actor_id
+            or audit_row["actor_type"] != audit.actor_type.value
+            or audit_row["command"] != _DECISION_COMMAND
+            or audit.action is None
+            or audit_row["action"] != audit.action.value
+            or audit_row["suggestion_id"] != audit.suggestion_id
+            or audit_row["decision_id"] != result.decision_id
+            or audit_row["expected_record_version"] != audit.expected_record_version
+            or audit_row["applied_record_version"] != audit.applied_record_version
+            or audit_row["before_hash"] != audit.before_hash
+            or audit_row["after_hash"] != audit.after_hash
+            or audit_row["canonical_payload_hash"] != audit.canonical_payload_hash
+            or audit_row["created_at"] != audit.occurred_at_server
+            or cast(str, audit_row["event_json"]) != encode_review_json(audit)
+            or audit.event_id != result.audit_event_id
+            or audit.workspace_id != scope.workspace_id
+            or audit.actor_id != scope.actor_id
+            or audit.actor_type is not ActorType.HUMAN
+            or audit.command != _DECISION_COMMAND
+            or audit.action is not decision.action
+            or audit.reason_code is not decision.reason_code
+            or audit.suggestion_id != decision.suggestion_id
+            or audit.decision_id != result.decision_id
+            or audit.analysis_id != result.row.analysis_id
+            or audit.row_id != result.row.row_id
+            or audit.expected_record_version != result.previous_record_version
+            or audit.applied_record_version != result.record_version
+            or audit.after_hash != row_hash
+            or audit.before_hash is None
+            or audit.idempotency_key_hash != scope.key_hash
+            or audit.canonical_payload_hash != payload_hash
+            or audit.changed_fields != expected_changed_fields
+            or audit.evidence_ids != expected_evidence_ids
+            or audit.evidence_request_targets != expected_request_targets
+            or audit.request_id != result.request_id
+            or audit.trace_id != result.trace_id
+            or audit.retrieval_trace_id != result.trace_id
+        ):
+            raise ValueError("persisted review decision replay binding is invalid")
+
     @classmethod
     def _decision_replay(
         cls,
@@ -960,10 +1196,30 @@ class SqliteFmeaRepository:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True)
         try:
             result = _decode_decision_result(existing["response_json"])
-        except (TypeError, ValueError) as exc:
+            decision_row = connection.execute(
+                "SELECT * FROM review_decisions WHERE decision_id = ? AND workspace_id = ?",
+                (result.decision_id, scope.workspace_id),
+            ).fetchone()
+            audit_row = connection.execute(
+                "SELECT * FROM audit_events WHERE event_id = ? AND workspace_id = ?",
+                (result.audit_event_id, scope.workspace_id),
+            ).fetchone()
+            if decision_row is None or audit_row is None:
+                raise ValueError("persisted review decision replay records are missing")
+            decision = decode_review_decision_record(cast(str, decision_row["decision_json"]))
+            audit = _decode_audit_event(audit_row["event_json"])
+            cls._validate_decision_replay_binding(
+                existing=existing,
+                decision_row=decision_row,
+                audit_row=audit_row,
+                result=result,
+                decision=decision,
+                audit=audit,
+                scope=scope,
+                payload_hash=payload_hash,
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True) from exc
-        if existing["resource_id"] != result.decision_id:
-            cls._binding_error("persisted review decision replay binding is invalid")
         return result
 
     def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> ReviewDecisionResult | None:
@@ -1011,6 +1267,17 @@ class SqliteFmeaRepository:
                 raise ReviewError("FMEA_VERSION_CONFLICT", "review row version does not match the request")
             if current_row != prepared.previous_row:
                 raise ReviewError("FMEA_VERSION_CONFLICT", "review row changed before the decision was committed")
+            pack_record = connection.execute(
+                "SELECT * FROM evidence_packs WHERE pack_id = ? AND workspace_id = ?",
+                (current_row.evidence_pack_id, prepared.scope.workspace_id),
+            ).fetchone()
+            if pack_record is None:
+                raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+            authoritative_pack = self._decode_pack_record(pack_record)
+            try:
+                validate_row_evidence(prepared.next_row, authoritative_pack)
+            except (FmeaDomainError, ValueError):
+                self._binding_error("review decision next row evidence binding is invalid")
             if current_row.review_status in {ReviewStatus.ACCEPTED, ReviewStatus.REJECTED, ReviewStatus.SUPERSEDED}:
                 raise ReviewError("FMEA_REVIEW_TERMINAL", "review row is already terminal")
             if current_row.review_status not in {ReviewStatus.SUGGESTED, ReviewStatus.IN_REVIEW}:
