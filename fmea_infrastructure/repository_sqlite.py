@@ -71,6 +71,7 @@ _DECISION_REVIEW_STATUS = {
     ReviewAction.REQUEST_EVIDENCE: ReviewStatus.IN_REVIEW,
     ReviewAction.DEFER: ReviewStatus.IN_REVIEW,
 }
+_AUDIT_LEGACY_FIELDS = frozenset({"run_id", "request_hash", "error_code", "retryable"})
 _CLAIM_PRIORITY = {
     ClaimStatus.KNOWN: 0,
     ClaimStatus.NOT_APPLICABLE: 1,
@@ -203,8 +204,10 @@ def _decode_decision_result(payload: object) -> ReviewDecisionResult:  # noqa: C
 
 def _decode_audit_event(payload: object) -> AuditEvent:
     data = _load_strict_json(payload, "audit event")
-    expected = {field.name for field in fields(AuditEvent)}
-    if set(data) != expected:
+    current_fields = {field.name for field in fields(AuditEvent)}
+    legacy_fields = current_fields - _AUDIT_LEGACY_FIELDS
+    is_legacy = set(data) == legacy_fields
+    if set(data) != current_fields and not is_legacy:
         raise ValueError("persisted audit event fields are invalid")
     raw_versions = data["versions"]
     if (
@@ -261,16 +264,37 @@ def _decode_audit_event(payload: object) -> AuditEvent:
             request_id=cast(str, data["request_id"]),
             trace_id=cast(str, data["trace_id"]),
             retrieval_trace_id=cast(str, data["retrieval_trace_id"]),
-            run_id=None if data["run_id"] is None else cast(str, data["run_id"]),
-            request_hash=None if data["request_hash"] is None else cast(str, data["request_hash"]),
-            error_code=None if data["error_code"] is None else cast(str, data["error_code"]),
-            retryable=cast(bool, data["retryable"]),
+            run_id=None if is_legacy or data["run_id"] is None else cast(str, data["run_id"]),
+            request_hash=None if is_legacy or data["request_hash"] is None else cast(str, data["request_hash"]),
+            error_code=None if is_legacy or data["error_code"] is None else cast(str, data["error_code"]),
+            retryable=False if is_legacy else cast(bool, data["retryable"]),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("persisted audit event values are invalid") from exc
-    if encode_review_json(result) != payload:
+    canonical_payload = _load_strict_json(encode_review_json(result), "audit event")
+    if is_legacy:
+        for field_name in _AUDIT_LEGACY_FIELDS:
+            canonical_payload.pop(field_name)
+    if encode_review_json(canonical_payload) != payload:
         raise ValueError("persisted audit event is not canonical")
     return result
+
+
+def _audit_event_json_matches(payload: object, audit: AuditEvent) -> bool:
+    if not isinstance(payload, str):
+        return False
+    if payload == encode_review_json(audit):
+        return True
+    try:
+        canonical_payload = _load_strict_json(encode_review_json(audit), "audit event")
+        stored_payload = _load_strict_json(payload, "audit event")
+    except ValueError:
+        return False
+    if set(stored_payload) != set(canonical_payload) - _AUDIT_LEGACY_FIELDS:
+        return False
+    for field_name in _AUDIT_LEGACY_FIELDS:
+        canonical_payload.pop(field_name)
+    return encode_review_json(canonical_payload) == payload
 
 
 def _decode_fmea_json(payload: object, decoder: Callable[[str], object], kind: str) -> object:
@@ -1190,7 +1214,7 @@ class SqliteFmeaRepository:
             or audit_row["after_hash"] != audit.after_hash
             or audit_row["canonical_payload_hash"] != audit.canonical_payload_hash
             or audit_row["created_at"] != audit.occurred_at_server
-            or cast(str, audit_row["event_json"]) != encode_review_json(audit)
+            or not _audit_event_json_matches(audit_row["event_json"], audit)
             or audit.event_id != result.audit_event_id
             or audit.workspace_id != scope.workspace_id
             or audit.actor_id != scope.actor_id

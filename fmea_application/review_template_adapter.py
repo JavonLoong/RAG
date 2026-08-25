@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
+from dataclasses import replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal, cast
@@ -15,7 +16,7 @@ from core_domain.fmea.value_objects import EvidencePack
 from core_domain.query_contracts import (
     CitationType,
     citation_type_for_source_type,
-    validate_resolved_evidence_types,
+    validate_evidence_source_types,
 )
 from core_domain.structured_generation import GenerationRunResult, GenerationRunStatus
 from core_domain.structured_output import ClaimState, CompiledTemplate, JsonValue, StructuredOutputError
@@ -38,6 +39,7 @@ from .review_contracts import (
     ReviewSuggestionDraft,
 )
 from .review_errors import ReviewError
+from .review_projection import project_evidence_ref
 
 _TEMPLATE_ID: Final[Literal["fmea-row-review"]] = "fmea-row-review"
 _TEMPLATE_VERSION: Final[Literal["1.0.0"]] = "1.0.0"
@@ -182,22 +184,15 @@ class ReviewTemplateAdapter:
         normalized_hash = _normalized_pack_hash(evidence_pack.pack_hash)
         expected_ids = {ref.evidence_id for ref in context.evidence.refs}
         try:
-            allowed_types = validate_resolved_evidence_types(
+            validate_evidence_source_types(
                 context.retrieval.resolved_profile,
                 context.retrieval.evidence_types,
+                tuple(ref.source_type for ref in evidence_pack.refs),
                 allow_subset=context.retrieval.incomplete,
                 allow_empty=context.retrieval.incomplete,
             )
         except ValueError as exc:
             raise _invalid_request("Review retrieval provenance is invalid.") from exc
-        observed_types: set[CitationType] = set()
-        for ref in evidence_pack.refs:
-            citation_type = citation_type_for_source_type(ref.source_type)
-            if citation_type is None or citation_type not in allowed_types:
-                raise _invalid_request("Evidence pack contains evidence outside the resolved profile allowlist.")
-            observed_types.add(citation_type)
-        if not context.retrieval.incomplete and observed_types != set(context.retrieval.evidence_types):
-            raise _invalid_request("Evidence pack source types do not match the resolved profile.")
         if (
             context.evidence.pack_id != evidence_pack.pack_id
             or context.row.evidence_pack_id != evidence_pack.pack_id
@@ -206,13 +201,30 @@ class ReviewTemplateAdapter:
             or context.evidence.workspace_id != evidence_pack.workspace_id
         ):
             raise _invalid_request("Evidence pack does not match the review context.")
-        bounded_refs = tuple(ref for ref in evidence_pack.refs if ref.evidence_id in expected_ids)
+        projected_by_id = {ref.evidence_id: ref for ref in context.evidence.refs}
+        bounded_refs = []
+        for ref in evidence_pack.refs:
+            if ref.evidence_id not in expected_ids:
+                continue
+            projected_ref = projected_by_id.get(ref.evidence_id)
+            if projected_ref is None or project_evidence_ref(ref) != projected_ref:
+                raise _invalid_request("Evidence pack fields do not match the validated review projection.")
+            bounded_refs.append(
+                replace(
+                    ref,
+                    source_type=projected_ref.source_type,
+                    source_trust=projected_ref.source_trust,
+                    is_primary=projected_ref.is_primary,
+                    locator=projected_ref.locator,
+                    quote=projected_ref.quote,
+                )
+            )
         bounded_pack = EvidencePack.build(
             pack_id=evidence_pack.pack_id,
             workspace_id=evidence_pack.workspace_id,
             acl_scope=evidence_pack.acl_scope,
             versions=evidence_pack.versions,
-            refs=bounded_refs,
+            refs=tuple(bounded_refs),
             created_at=evidence_pack.created_at,
             expires_at=evidence_pack.expires_at,
         )

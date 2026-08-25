@@ -10,6 +10,7 @@ from core_domain.fmea.value_objects import EvidencePack
 from core_domain.structured_output import CandidateClaim, ClaimState
 from fmea_application.review_contracts import ReviewAction
 from fmea_application.review_errors import ReviewError
+from fmea_application.review_projection import build_review_context
 from fmea_application.review_template_adapter import ReviewTemplateAdapter
 from tests.fmea_review_fixtures import _valid_review_payload, make_review_generation_result
 
@@ -32,6 +33,92 @@ def test_adapter_builds_bounded_canonical_model_input(
     assert len(rendered.encode("utf-8")) <= 4_000
     assert "C:/" not in rendered
     assert "acl_scope" not in rendered
+
+
+def test_adapter_model_pack_uses_projected_locator_and_quote(
+    fixture_review_row, fixture_pack, fixture_review_source
+) -> None:
+    private_ref = replace(
+        fixture_pack.refs[0],
+        locator='{"file":"C:/private/manual.pdf","page":42}',
+        quote="q" * 5001,
+    )
+    private_pack = EvidencePack.build(
+        pack_id=fixture_pack.pack_id,
+        workspace_id=fixture_pack.workspace_id,
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=(private_ref,),
+        created_at=fixture_pack.created_at,
+        expires_at=fixture_pack.expires_at,
+    )
+    context = build_review_context(
+        row=fixture_review_row,
+        source=fixture_review_source,
+        pack=private_pack,
+        suggestions=(),
+        decisions=(),
+    )
+
+    request = ReviewTemplateAdapter().build_request(
+        context,
+        private_pack,
+        "review-run-1",
+        review_policy="default",
+        focus_fields=(),
+    )
+
+    model_ref = request.evidence_pack.refs[0]
+    projected_ref = context.evidence.refs[0]
+    assert model_ref.source_type == projected_ref.source_type
+    assert model_ref.source_trust == projected_ref.source_trust
+    assert model_ref.is_primary == projected_ref.is_primary
+    assert model_ref.locator == projected_ref.locator
+    assert model_ref.quote == projected_ref.quote
+
+
+@pytest.mark.parametrize(
+    ("field", "forged_value"),
+    (
+        ("source_type", "rag_text"),
+        ("source_trust", "forged"),
+        ("is_primary", False),
+        ("locator", "forged-locator"),
+        ("quote", "FORGED QUOTE"),
+    ),
+)
+def test_adapter_rejects_or_reprojects_stale_raw_evidence_fields(
+    fixture_review_context, fixture_pack, field: str, forged_value: object
+) -> None:
+    stale_ref = replace(fixture_pack.refs[0], **{field: forged_value})
+    stale_pack = EvidencePack.build(
+        pack_id=fixture_pack.pack_id,
+        workspace_id=fixture_pack.workspace_id,
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=(stale_ref,),
+        created_at=fixture_pack.created_at,
+        expires_at=fixture_pack.expires_at,
+    )
+
+    try:
+        request = ReviewTemplateAdapter().build_request(
+            fixture_review_context,
+            stale_pack,
+            "review-run-1",
+            review_policy="default",
+            focus_fields=(),
+        )
+    except ReviewError:
+        return
+
+    model_ref = request.evidence_pack.refs[0]
+    projected_ref = fixture_review_context.evidence.refs[0]
+    assert model_ref.source_type == projected_ref.source_type
+    assert model_ref.source_trust == projected_ref.source_trust
+    assert model_ref.is_primary == projected_ref.is_primary
+    assert model_ref.locator == projected_ref.locator
+    assert model_ref.quote == projected_ref.quote
 
 
 def test_adapter_task_carries_canonical_retrieval_provenance(

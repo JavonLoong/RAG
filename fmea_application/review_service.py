@@ -13,7 +13,7 @@ from typing import Any, cast
 
 from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.errors import FmeaDomainError
-from core_domain.fmea.policies import validate_row_evidence
+from core_domain.fmea.policies import validate_evidence_ids, validate_row_evidence
 from core_domain.fmea.states import (
     FMEA_SCHEMA_ID,
     ActorType,
@@ -24,7 +24,6 @@ from core_domain.fmea.states import (
     RunStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack, VersionSet
-from core_domain.query_contracts import citation_type_for_source_type
 
 from .ports import ReviewHistoryPosition, ReviewRepository, ReviewRunExecutor, ReviewSuggestionGenerator
 from .review_contracts import (
@@ -602,7 +601,7 @@ class ReviewService:
         return result
 
     @staticmethod
-    def _validate_edit(  # noqa: C901
+    def _validate_edit(
         edit: FieldReviewEdit,
         pack: EvidencePack,
         field_evidence: dict[str, tuple[str, ...]],
@@ -617,16 +616,14 @@ class ReviewService:
                 raise ReviewError("FMEA_REVIEW_FIELD_INVALID", "failure_mode must be scalar text")
         elif not isinstance(edit.value, tuple):
             raise ReviewError("FMEA_REVIEW_FIELD_INVALID", "review field must be an array of text")
-        pack_evidence_ids = {ref.evidence_id for ref in pack.refs}
-        if not set(edit.evidence_ids).issubset(pack_evidence_ids):
-            raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence is outside the current pack")
-        if source is not None:
-            allowed_types = set(source.evidence_types)
-            for evidence_id in edit.evidence_ids:
-                ref = next(ref for ref in pack.refs if ref.evidence_id == evidence_id)
-                citation_type = citation_type_for_source_type(ref.source_type)
-                if citation_type is None or citation_type not in allowed_types:
-                    raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence type is outside the resolved profile")
+        try:
+            validate_evidence_ids(
+                edit.evidence_ids,
+                pack,
+                allowed_types=None if source is None else source.evidence_types,
+            )
+        except FmeaDomainError as exc:
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence binding is invalid") from exc
         if edit.claim_status is ClaimStatus.KNOWN:
             if edit.support_status is not EvidenceSupportStatus.SUPPORTED:
                 raise ReviewError("FMEA_EVIDENCE_INVALID", "known review claims require supported evidence")

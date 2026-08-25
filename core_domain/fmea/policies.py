@@ -6,7 +6,7 @@ from core_domain.query_contracts import (
     CitationType,
     EvidenceSelectionProfile,
     citation_type_for_source_type,
-    validate_resolved_evidence_types,
+    validate_evidence_source_types,
 )
 
 from .entities import FmeaRow
@@ -19,7 +19,7 @@ from .states import (
     PublicationStatus,
     ReviewStatus,
 )
-from .value_objects import EvidencePack
+from .value_objects import EvidencePack, EvidenceRef
 
 if TYPE_CHECKING:
     from .propagation import PropagationEdge
@@ -85,7 +85,29 @@ def _validate_field_names(bindings: tuple[tuple[str, object], ...]) -> set[str]:
     return field_names
 
 
-def validate_row_evidence(  # noqa: C901
+def validate_evidence_ids(
+    evidence_ids: tuple[str, ...],
+    pack: EvidencePack,
+    *,
+    allowed_types: tuple[CitationType, ...] | None = None,
+) -> tuple[EvidenceRef, ...]:
+    """Validate evidence IDs and, when supplied, their declared citation types."""
+
+    refs_by_id = {ref.evidence_id: ref for ref in pack.refs}
+    refs: list[EvidenceRef] = []
+    for evidence_id in evidence_ids:
+        ref = refs_by_id.get(evidence_id)
+        if ref is None:
+            raise FmeaDomainError(f"evidence ID {evidence_id} is absent from EvidencePack")  # noqa: TRY003
+        if allowed_types is not None:
+            citation_type = citation_type_for_source_type(ref.source_type)
+            if citation_type is None or citation_type not in set(allowed_types):
+                raise FmeaDomainError("evidence source type is outside the declared evidence types")  # noqa: TRY003
+        refs.append(ref)
+    return tuple(refs)
+
+
+def validate_row_evidence(
     row: FmeaRow,
     pack: EvidencePack,
     *,
@@ -101,11 +123,8 @@ def validate_row_evidence(  # noqa: C901
     if evidence_fields != support_fields:
         raise FmeaDomainError("field_evidence and field_support must bind the same fields")  # noqa: TRY003
 
-    pack_evidence_ids = {ref.evidence_id for ref in pack.refs}
     for _, evidence_ids in row.field_evidence:
-        for evidence_id in evidence_ids:
-            if evidence_id not in pack_evidence_ids:
-                raise FmeaDomainError(f"evidence ID {evidence_id} is absent from EvidencePack")  # noqa: TRY003
+        validate_evidence_ids(evidence_ids, pack)
 
     if row.claim_status is ClaimStatus.KNOWN:
         if not any(evidence_ids for _, evidence_ids in row.field_evidence):
@@ -118,24 +137,15 @@ def validate_row_evidence(  # noqa: C901
         raise FmeaDomainError("resolved profile and evidence types must be supplied together")  # noqa: TRY003
     if resolved_profile is not None and evidence_types is not None:
         try:
-            allowed = validate_resolved_evidence_types(
+            validate_evidence_source_types(
                 resolved_profile,
                 evidence_types,
+                tuple(ref.source_type for ref in pack.refs),
                 allow_subset=retrieval_incomplete,
                 allow_empty=retrieval_incomplete,
             )
         except ValueError as exc:
             raise FmeaDomainError("evidence profile and evidence types are inconsistent") from exc  # noqa: TRY003
-        observed: set[CitationType] = set()
-        for ref in pack.refs:
-            citation_type = citation_type_for_source_type(ref.source_type)
-            if citation_type is None:
-                raise FmeaDomainError("EvidencePack contains an unmapped evidence source type")  # noqa: TRY003
-            observed.add(citation_type)
-        if not observed.issubset(set(allowed)):
-            raise FmeaDomainError("EvidencePack contains evidence outside the resolved profile")  # noqa: TRY003
-        if not retrieval_incomplete and observed != set(evidence_types):
-            raise FmeaDomainError("EvidencePack types do not match the resolved evidence types")  # noqa: TRY003
 
 
 def validate_review_transition(

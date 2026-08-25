@@ -15,7 +15,7 @@ from core_domain.query_contracts import (
     CitationType,
     EvidenceSelectionProfile,
     citation_type_for_source_type,
-    validate_resolved_evidence_types,
+    validate_evidence_source_types,
 )
 
 from .review_contracts import (
@@ -190,25 +190,15 @@ def _validate_pack_profile(
     incomplete: bool,
 ) -> None:
     try:
-        allowed = validate_resolved_evidence_types(
+        validate_evidence_source_types(
             resolved_profile,
             evidence_types,
+            tuple(ref.source_type for ref in pack.refs),
             allow_subset=incomplete,
             allow_empty=incomplete,
         )
     except ValueError as exc:
         raise ValueError("evidence profile and evidence types are inconsistent") from exc  # noqa: TRY003
-    observed: list[CitationType] = []
-    for ref in pack.refs:
-        citation_type = citation_type_for_source_type(ref.source_type)
-        if citation_type is None:
-            raise ValueError("evidence profile contains an unmapped source type")  # noqa: TRY003
-        if citation_type not in observed:
-            observed.append(citation_type)
-    if not set(observed).issubset(set(allowed)):
-        raise ValueError("evidence profile does not allow all EvidencePack source types")  # noqa: TRY003
-    if not incomplete and set(observed) != set(evidence_types):
-        raise ValueError("EvidencePack source types do not match the evidence profile")  # noqa: TRY003
 
 
 def _project_evidence(
@@ -222,7 +212,7 @@ def _project_evidence(
         evidence_ids.update(_suggestion_evidence_ids(suggestion))
     for decision in decisions:
         evidence_ids.update(edit_evidence_id for edit in decision.edits for edit_evidence_id in edit.evidence_ids)
-    refs = tuple(_project_evidence_ref(ref) for ref in pack.refs if ref.evidence_id in evidence_ids)
+    refs = tuple(project_evidence_ref(ref) for ref in pack.refs if ref.evidence_id in evidence_ids)
     return ReviewEvidenceProjection(
         pack_id=pack.pack_id,
         workspace_id=pack.workspace_id,
@@ -239,7 +229,7 @@ def _suggestion_evidence_ids(suggestion: ReviewSuggestion) -> set[str]:
     return evidence_ids
 
 
-def _project_evidence_ref(ref: EvidenceRef) -> ReviewEvidenceRef:
+def project_evidence_ref(ref: EvidenceRef) -> ReviewEvidenceRef:
     return ReviewEvidenceRef(
         evidence_id=ref.evidence_id,
         source_type=ref.source_type,
@@ -285,4 +275,4 @@ def _normalize_pack_hash(pack_hash: str) -> str:
     raise ValueError("pack_hash must be a raw or sha256-prefixed lowercase SHA-256 hash")  # noqa: TRY003
 
 
-__all__ = ["build_review_context"]
+__all__ = ["build_review_context", "project_evidence_ref"]

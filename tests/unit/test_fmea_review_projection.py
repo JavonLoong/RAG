@@ -1,4 +1,4 @@
-from dataclasses import replace
+from dataclasses import fields, replace
 
 import pytest
 
@@ -240,6 +240,33 @@ def test_projection_fails_closed_for_mixed_pack_outside_profile_allowlist(
             row=fixture_review_row,
             source=fixture_review_source,
             pack=mixed_pack,
+            suggestions=(),
+            decisions=(),
+        )
+
+
+def test_incomplete_projection_requires_pack_types_to_equal_declared_types(
+    fixture_review_row, fixture_review_source, fixture_pack
+) -> None:
+    source = type(fixture_review_source).build(
+        **{
+            field.name: (
+                ()
+                if field.name == "evidence_types"
+                else True
+                if field.name == "retrieval_incomplete"
+                else getattr(fixture_review_source, field.name)
+            )
+            for field in fields(fixture_review_source)
+            if field.name != "source_hash"
+        },
+    )
+
+    with pytest.raises(ValueError, match="evidence types"):
+        build_review_context(
+            row=fixture_review_row,
+            source=source,
+            pack=fixture_pack,
             suggestions=(),
             decisions=(),
         )
