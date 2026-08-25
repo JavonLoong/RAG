@@ -1,0 +1,174 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+from dataclasses import replace
+from pathlib import Path
+
+import pytest
+from fmea_review_fixtures import (
+    FakeReviewSuggestionGenerator,
+    RecordingReviewExecutor,
+    make_start_suggestion_command,
+)
+
+from core_domain.fmea.states import RunStatus
+from fmea_application.review_errors import ReviewError
+from fmea_application.review_service import ReviewService
+from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+
+
+class SeededReviewDatabase:
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def insert_run(self, status: str) -> None:
+        connection = sqlite3.connect(self.path)
+        try:
+            connection.execute(
+                "INSERT INTO review_suggestion_runs "
+                "(run_id, row_id, workspace_id, actor_id, source_record_version, status, request_hash, "
+                "idempotency_scope, request_id, trace_id, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    "run-1", "row-1", "ws-1", "reviewer-1", 1, status,
+                    "sha256:" + "b" * 64, "scope-1", "request-1", "trace-1", "2026-08-23T00:00:00Z",
+                ),
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+
+def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_repository) -> None:
+    seeded_database = SeededReviewDatabase(seeded_review_repository.database_path)
+    seeded_database.insert_run(status="running")
+    repository = SqliteFmeaRepository(seeded_database.path)
+    repository.initialize()
+    run = repository.get_suggestion_run("run-1", "ws-1")
+    assert run is not None
+    assert run.status is RunStatus.FAILED
+    assert run.error_code == "FMEA_REVIEW_RUN_INTERRUPTED"
+    assert run.retryable is True
+
+
+def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
+    inline_review_service,
+    inline_executor,
+    seeded_review_repository,
+    fixture_human_reviewer,
+    fixture_start_suggestion_command,
+) -> None:
+    succeeded = inline_review_service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
+    generator = inline_review_service._suggestion_generator
+    assert generator is not None
+    generator.generate = lambda request: (_ for _ in ()).throw(RuntimeError("private provider failure"))
+    failed_command = replace(
+        fixture_start_suggestion_command,
+        idempotency_key="00000000-0000-4000-8000-000000000002",
+    )
+    failed = inline_review_service.start_suggestion(failed_command, fixture_human_reviewer)
+    succeeded_terminal = inline_review_service.get_suggestion_run(succeeded.run_id, fixture_human_reviewer)
+    failed_terminal = inline_review_service.get_suggestion_run(failed.run_id, fixture_human_reviewer)
+    assert succeeded.status is RunStatus.QUEUED
+    assert failed.status is RunStatus.QUEUED
+    assert succeeded_terminal.status is RunStatus.SUCCEEDED, succeeded_terminal.error_code
+    assert failed_terminal.status is RunStatus.FAILED
+
+    connection = seeded_review_repository._connect()
+    try:
+        events = connection.execute(
+            "SELECT command, canonical_payload_hash, event_json, created_at "
+            "FROM audit_events ORDER BY created_at, event_id"
+        ).fetchall()
+        decisions = connection.execute("SELECT COUNT(*) AS count FROM review_decisions").fetchone()["count"]
+    finally:
+        connection.close()
+    assert [row["command"] for row in events] == [
+        "review.suggestion.create",
+        "review.suggestion.complete",
+        "review.suggestion.create",
+        "review.suggestion.fail",
+    ]
+    assert decisions == 0
+    payloads = [json.loads(row["event_json"]) for row in events]
+    assert all(row["created_at"] == payload["occurred_at_server"] for row, payload in zip(events, payloads, strict=True))
+    assert all(row["command"] == payload["command"] for row, payload in zip(events, payloads, strict=True))
+    assert all(
+        row["canonical_payload_hash"] == payload["canonical_payload_hash"]
+        for row, payload in zip(events, payloads, strict=True)
+    )
+    for run in (succeeded, failed):
+        run_events = [payload for payload in payloads if payload["request_id"] == run.request_id]
+        assert len(run_events) == 2
+        assert {payload["trace_id"] for payload in run_events} == {run.trace_id}
+        assert len({payload["canonical_payload_hash"] for payload in run_events}) == 1
+    complete_payload = payloads[1]
+    failed_payload = payloads[3]
+    assert complete_payload["model_manifest"]["model"] == "deepseek-v4-pro"
+    assert complete_payload["suggestion_id"] == succeeded_terminal.suggestion_id
+    assert failed_payload["error_code"] == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+
+
+def test_fifth_active_sqlite_reservation_has_zero_side_effects(
+    seeded_review_repository,
+    fixture_human_reviewer,
+    fixture_review_model_manifest,
+    valid_review_suggestion_draft,
+) -> None:
+    executor = RecordingReviewExecutor()
+    counts: dict[str, int] = {}
+
+    def id_factory(prefix: str) -> str:
+        counts[prefix] = counts.get(prefix, 0) + 1
+        return f"{prefix}-{counts[prefix]}"
+
+    service = ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        executor,
+        clock=lambda: "2026-08-23T00:00:00Z",
+        id_factory=id_factory,
+    )
+    for index in range(4):
+        service.start_suggestion(
+            replace(
+                make_start_suggestion_command(),
+                idempotency_key=f"00000000-0000-4000-8000-{index + 10:012d}",
+            ),
+            fixture_human_reviewer,
+        )
+    connection = seeded_review_repository._connect()
+    try:
+        before = tuple(
+            connection.execute(query).fetchone()["count"]
+            for query in (
+                "SELECT COUNT(*) AS count FROM review_suggestion_runs",
+                "SELECT COUNT(*) AS count FROM idempotency_records",
+                "SELECT COUNT(*) AS count FROM audit_events",
+            )
+        )
+    finally:
+        connection.close()
+    with pytest.raises(ReviewError) as raised:
+        service.start_suggestion(
+            replace(
+                make_start_suggestion_command(),
+                idempotency_key="00000000-0000-4000-8000-000000000099",
+            ),
+            fixture_human_reviewer,
+        )
+    assert raised.value.code == "FMEA_REVIEW_RATE_LIMITED"
+    connection = seeded_review_repository._connect()
+    try:
+        after = tuple(
+            connection.execute(query).fetchone()["count"]
+            for query in (
+                "SELECT COUNT(*) AS count FROM review_suggestion_runs",
+                "SELECT COUNT(*) AS count FROM idempotency_records",
+                "SELECT COUNT(*) AS count FROM audit_events",
+            )
+        )
+    finally:
+        connection.close()
+    assert after == before

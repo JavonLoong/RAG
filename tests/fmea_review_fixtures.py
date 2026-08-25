@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import fields, replace
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +43,9 @@ from fmea_application.review_contracts import (
     ReviewSuggestionDraft,
     ReviewSuggestionRun,
     StartReviewSuggestionCommand,
+    SuggestionRunReservation,
 )
+from fmea_application.review_errors import ReviewError
 from fmea_application.review_projection import build_review_context
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
@@ -226,6 +230,31 @@ def make_review_suggestion(**overrides: Any) -> ReviewSuggestion:
         created_at=_UTC,
     )
     return replace(suggestion, **overrides) if overrides else suggestion
+
+
+@pytest.fixture
+def valid_review_suggestion_draft() -> ReviewSuggestionDraft:
+    suggestion = make_review_suggestion()
+    return ReviewSuggestionDraft(
+        recommended_action=suggestion.recommended_action,
+        field_findings=suggestion.field_findings,
+        proposed_edits=suggestion.proposed_edits,
+        evidence_requests=suggestion.evidence_requests,
+        missing_evidence=suggestion.missing_evidence,
+        conflicts=suggestion.conflicts,
+        rationale=suggestion.rationale,
+    )
+
+
+@pytest.fixture
+def fixture_review_model_manifest() -> ReviewModelManifest:
+    return ReviewModelManifest(
+        provider="deepseek",
+        model="deepseek-v4-pro",
+        template_id="fmea-row-review",
+        template_version="1.0.0",
+        prompt_hash=_PROMPT_HASH,
+    )
 
 
 def make_review_decision_record(**overrides: Any) -> ReviewDecisionRecord:
@@ -436,6 +465,100 @@ class MemoryReviewRepository:
         raise AssertionError(method_name)
 
 
+class RecordingReviewRepository(MemoryReviewRepository):
+    def __init__(self) -> None:
+        super().__init__()
+        self.runs: dict[str, ReviewSuggestionRun] = {}
+        self.reservations: dict[str, tuple[str, ReviewSuggestionRun]] = {}
+        self.audits: list[Any] = []
+
+    def reserve_suggestion_run(self, prepared: Any) -> SuggestionRunReservation:
+        self.calls.append("reserve_suggestion_run")
+        existing = self.reservations.get(prepared.scope.scope_key)
+        if existing is not None:
+            payload_hash, run = existing
+            if payload_hash != prepared.payload_hash:
+                raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "idempotency key already has a different payload")
+            return SuggestionRunReservation(run=run, replayed=True)
+        if self.row is None or self.pack is None or self.row.row_id != prepared.command.row_id:
+            raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+        if self.row.record_version != prepared.command.expected_record_version:
+            raise ReviewError("FMEA_VERSION_CONFLICT", "review row version does not match the request")
+        active = tuple(
+            run
+            for run in self.runs.values()
+            if run.status in {RunStatus.QUEUED, RunStatus.RUNNING}
+            and run.row_id == prepared.run.row_id
+        )
+        if len(active) >= 4:
+            raise ReviewError("FMEA_REVIEW_RATE_LIMITED", "too many active review runs", retryable=True)
+        self.runs[prepared.run.run_id] = prepared.run
+        self.reservations[prepared.scope.scope_key] = (prepared.payload_hash, prepared.run)
+        self.audits.append(prepared.audit)
+        return SuggestionRunReservation(run=prepared.run, replayed=False)
+
+    def get_suggestion_run(self, run_id: str, workspace_id: str) -> ReviewSuggestionRun | None:
+        self.calls.append("get_suggestion_run")
+        run = self.runs.get(run_id)
+        return run if run is not None and self.pack is not None and self.pack.workspace_id == workspace_id else None
+
+    def mark_suggestion_run_running(self, run_id: str) -> ReviewSuggestionRun:
+        self.calls.append("mark_suggestion_run_running")
+        run = self.runs[run_id]
+        updated = replace(run, status=RunStatus.RUNNING, started_at=_UTC)
+        self.runs[run_id] = updated
+        return updated
+
+    def complete_suggestion_run(self, run_id: str, suggestion: ReviewSuggestion, audit: Any) -> ReviewSuggestionRun:
+        self.calls.append("complete_suggestion_run")
+        run = self.runs[run_id]
+        updated = replace(run, status=RunStatus.SUCCEEDED, suggestion_id=suggestion.suggestion_id, finished_at=_UTC)
+        self.runs[run_id] = updated
+        current_version = self.row.record_version if self.row is not None else suggestion.source_record_version
+        self.suggestions = (*self.suggestions, replace(suggestion, stale=current_version != suggestion.source_record_version))
+        self.audits.append(audit)
+        return updated
+
+    def fail_suggestion_run(self, run_id: str, error_code: str, retryable: bool, audit: Any) -> ReviewSuggestionRun:
+        self.calls.append("fail_suggestion_run")
+        run = self.runs[run_id]
+        updated = replace(run, status=RunStatus.FAILED, error_code=error_code, retryable=retryable, finished_at=_UTC)
+        self.runs[run_id] = updated
+        self.audits.append(audit)
+        return updated
+
+
+class RecordingReviewExecutor:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, bool]] = []
+        self.operations: dict[str, Callable[[], None]] = {}
+
+    def submit(self, run_id: str, operation: Callable[[], None]) -> None:
+        self.calls.append((run_id, callable(operation)))
+        self.operations[run_id] = operation
+
+    def close(self) -> None:
+        return None
+
+
+class InlineReviewExecutor(RecordingReviewExecutor):
+    def submit(self, run_id: str, operation: Callable[[], None]) -> None:
+        self.calls.append((run_id, callable(operation)))
+        self.operations[run_id] = operation
+        operation()
+
+
+class FakeReviewSuggestionGenerator:
+    def __init__(self, draft: ReviewSuggestionDraft, manifest: ReviewModelManifest) -> None:
+        self.draft = draft
+        self.manifest = manifest
+        self.calls: list[Any] = []
+
+    def generate(self, request: Any) -> tuple[ReviewSuggestionDraft, ReviewModelManifest]:
+        self.calls.append(request)
+        return self.draft, self.manifest
+
+
 @pytest.fixture
 def memory_review_repository() -> MemoryReviewRepository:
     return MemoryReviewRepository()
@@ -464,6 +587,134 @@ def seeded_review_repository(tmp_path, fixture_review_bundle: ReviewCandidateBun
     repository.initialize()
     repository.save_review_candidate_bundle(fixture_review_bundle, fixture_system_actor)
     return repository
+
+
+@pytest.fixture
+def recording_repository(
+    fixture_review_bundle: ReviewCandidateBundle,
+    fixture_system_actor: ActorContext,
+) -> RecordingReviewRepository:
+    repository = RecordingReviewRepository()
+    repository.seed(
+        row=fixture_review_bundle.rows[0],
+        pack=fixture_review_bundle.evidence_pack,
+        source=fixture_review_bundle.source_snapshots[0],
+    )
+    return repository
+
+
+@pytest.fixture
+def recording_executor() -> RecordingReviewExecutor:
+    return RecordingReviewExecutor()
+
+
+@pytest.fixture
+def inline_executor() -> InlineReviewExecutor:
+    return InlineReviewExecutor()
+
+
+def _test_id_factory() -> Callable[[str], str]:
+    counts: dict[str, int] = {}
+
+    def make(prefix: str) -> str:
+        counts[prefix] = counts.get(prefix, 0) + 1
+        return f"{prefix}-{counts[prefix]}"
+
+    return make
+
+
+@pytest.fixture
+def recording_review_service(
+    recording_repository: RecordingReviewRepository,
+    recording_executor: RecordingReviewExecutor,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+):
+    from fmea_application.review_service import ReviewService
+
+    return ReviewService(
+        recording_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        recording_executor,
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+
+
+@pytest.fixture
+def inline_review_service(
+    seeded_review_repository,
+    inline_executor: InlineReviewExecutor,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+):
+    from fmea_application.review_service import ReviewService
+
+    return ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        inline_executor,
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+
+
+@pytest.fixture
+def running_suggestion_run(
+    seeded_review_repository,
+    recording_executor: RecordingReviewExecutor,
+    valid_review_suggestion_draft: ReviewSuggestionDraft,
+    fixture_review_model_manifest: ReviewModelManifest,
+    fixture_human_reviewer: ActorContext,
+    fixture_start_suggestion_command: StartReviewSuggestionCommand,
+) -> ReviewSuggestionRun:
+    from fmea_application.review_service import ReviewService
+
+    service = ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        recording_executor,
+        clock=lambda: _UTC,
+        id_factory=_test_id_factory(),
+    )
+    run = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
+    return seeded_review_repository.mark_suggestion_run_running(run.run_id)
+
+
+@pytest.fixture
+def suggestion_worker(
+    seeded_review_repository,
+    recording_executor: RecordingReviewExecutor,
+):
+    def work(run_id: str) -> ReviewSuggestionRun:
+        recording_executor.operations[run_id]()
+        result = seeded_review_repository.get_suggestion_run(run_id, "ws-1")
+        assert result is not None
+        return result
+
+    return work
+
+
+@pytest.fixture
+def advance_seeded_row_to_version_2(seeded_review_repository):
+    def advance() -> None:
+        row = seeded_review_repository.get_row("row-1", "ws-1")
+        assert row is not None
+        updated = replace(row, record_version=2)
+        from core_domain.fmea.codec import encode_json
+
+        payload = encode_json(updated)
+        digest = "sha256:" + sha256(payload.encode("utf-8")).hexdigest()
+        connection = seeded_review_repository._connect()
+        try:
+            connection.execute(
+                "UPDATE fmea_rows SET record_version = ?, row_hash = ?, row_json = ? WHERE row_id = ?",
+                (2, digest, payload, "row-1"),
+            )
+        finally:
+            connection.close()
+
+    return advance
 
 
 @pytest.fixture

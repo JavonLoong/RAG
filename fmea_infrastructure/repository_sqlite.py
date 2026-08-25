@@ -22,14 +22,20 @@ from core_domain.fmea.states import (
     ActorType,
     PublicationStatus,
     ReviewStatus,
+    RunStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack
 from fmea_application.review_contracts import (
     ActorContext,
+    AuditEvent,
+    IdempotencyScope,
+    PreparedSuggestionRun,
     ReviewCandidateBundle,
     ReviewDecisionRecord,
     ReviewSourceSnapshot,
     ReviewSuggestion,
+    ReviewSuggestionRun,
+    SuggestionRunReservation,
     decode_review_decision_record,
     decode_review_source_snapshot,
     decode_review_suggestion,
@@ -501,6 +507,399 @@ class SqliteFmeaRepository:
                 (pack_id, workspace, workspace),
             ).fetchone()
             return None if row is None else self._decode_pack_record(row)
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _decode_suggestion_run(row: sqlite3.Row) -> ReviewSuggestionRun:
+        try:
+            status = RunStatus(str(row["status"]))
+        except ValueError as exc:
+            raise ValueError("persisted suggestion run status is invalid") from exc
+        return ReviewSuggestionRun(
+            run_id=str(row["run_id"]),
+            row_id=str(row["row_id"]),
+            source_record_version=int(row["source_record_version"]),
+            status=status,
+            suggestion_id=None if row["suggestion_id"] is None else str(row["suggestion_id"]),
+            error_code=None if row["error_code"] is None else str(row["error_code"]),
+            retryable=bool(row["retryable"]),
+            request_id=str(row["request_id"]),
+            trace_id=str(row["trace_id"]),
+            created_at=str(row["created_at"]),
+            started_at=None if row["started_at"] is None else str(row["started_at"]),
+            finished_at=None if row["finished_at"] is None else str(row["finished_at"]),
+        )
+
+    @staticmethod
+    def _run_response_json(run: ReviewSuggestionRun) -> str:
+        return encode_review_json(
+            {
+                "run_id": run.run_id,
+                "row_id": run.row_id,
+                "source_record_version": run.source_record_version,
+                "status": run.status.value,
+                "suggestion_id": run.suggestion_id,
+                "error_code": run.error_code,
+                "retryable": run.retryable,
+                "request_id": run.request_id,
+                "trace_id": run.trace_id,
+                "created_at": run.created_at,
+                "started_at": run.started_at,
+                "finished_at": run.finished_at,
+            }
+        )
+
+    @staticmethod
+    def _decode_run_response_json(payload: object) -> ReviewSuggestionRun:
+        data = _load_strict_json(payload, "review run response")
+        expected = {
+            "run_id",
+            "row_id",
+            "source_record_version",
+            "status",
+            "suggestion_id",
+            "error_code",
+            "retryable",
+            "request_id",
+            "trace_id",
+            "created_at",
+            "started_at",
+            "finished_at",
+        }
+        if set(data) != expected:
+            raise ValueError("persisted review run response fields are invalid")
+        run_id = data["run_id"]
+        row_id = data["row_id"]
+        source_record_version = data["source_record_version"]
+        raw_status = data["status"]
+        suggestion_id = data["suggestion_id"]
+        error_code = data["error_code"]
+        retryable = data["retryable"]
+        request_id = data["request_id"]
+        trace_id = data["trace_id"]
+        created_at = data["created_at"]
+        started_at = data["started_at"]
+        finished_at = data["finished_at"]
+        if (
+            not isinstance(run_id, str)
+            or not isinstance(row_id, str)
+            or isinstance(source_record_version, bool)
+            or not isinstance(source_record_version, int)
+            or not isinstance(raw_status, str)
+            or (suggestion_id is not None and not isinstance(suggestion_id, str))
+            or (error_code is not None and not isinstance(error_code, str))
+            or type(retryable) is not bool
+            or not isinstance(request_id, str)
+            or not isinstance(trace_id, str)
+            or not isinstance(created_at, str)
+            or (started_at is not None and not isinstance(started_at, str))
+            or (finished_at is not None and not isinstance(finished_at, str))
+        ):
+            raise ValueError("persisted review run response values are invalid")
+        try:
+            status = RunStatus(raw_status)
+        except ValueError as exc:
+            raise ValueError("persisted review run response status is invalid") from exc
+        return ReviewSuggestionRun(
+            run_id=run_id,
+            row_id=row_id,
+            source_record_version=source_record_version,
+            status=status,
+            suggestion_id=suggestion_id,
+            error_code=error_code,
+            retryable=retryable,
+            request_id=request_id,
+            trace_id=trace_id,
+            created_at=created_at,
+            started_at=started_at,
+            finished_at=finished_at,
+        )
+
+    @staticmethod
+    def _insert_audit(
+        connection: sqlite3.Connection,
+        audit: AuditEvent,
+        extra: dict[str, object] | None = None,
+    ) -> None:
+        event_payload = json.loads(encode_review_json(audit))
+        if extra:
+            event_payload.update(extra)
+        connection.execute(
+            "INSERT INTO audit_events "
+            "(event_id, row_id, workspace_id, actor_id, actor_type, command, action, suggestion_id, decision_id, "
+            "expected_record_version, applied_record_version, before_hash, after_hash, canonical_payload_hash, event_json, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                audit.event_id,
+                audit.row_id,
+                audit.workspace_id,
+                audit.actor_id,
+                audit.actor_type.value,
+                audit.command,
+                None if audit.action is None else audit.action.value,
+                audit.suggestion_id,
+                audit.decision_id,
+                audit.expected_record_version,
+                audit.applied_record_version,
+                audit.before_hash,
+                audit.after_hash,
+                audit.canonical_payload_hash,
+                encode_review_json(event_payload),
+                audit.occurred_at_server,
+            ),
+        )
+
+    @staticmethod
+    def _reservation_row(connection: sqlite3.Connection, scope: IdempotencyScope) -> sqlite3.Row | None:
+        row = connection.execute(
+            "SELECT * FROM idempotency_records WHERE scope_key = ?",
+            (scope.scope_key,),
+        ).fetchone()
+        return cast(sqlite3.Row | None, row)
+
+    @staticmethod
+    def _load_reservation_run(connection: sqlite3.Connection, run_id: str, workspace_id: str) -> ReviewSuggestionRun:
+        row = connection.execute(
+            "SELECT * FROM review_suggestion_runs WHERE run_id = ? AND workspace_id = ?",
+            (run_id, workspace_id),
+        ).fetchone()
+        if row is None:
+            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review run could not be loaded", retryable=True)
+        return SqliteFmeaRepository._decode_suggestion_run(row)
+
+    def reserve_suggestion_run(self, prepared: PreparedSuggestionRun) -> SuggestionRunReservation:  # noqa: C901
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = self._reservation_row(connection, prepared.scope)
+            if existing is not None:
+                if existing["payload_hash"] != prepared.payload_hash:
+                    self._conflict("idempotency key already has a different payload")
+                run_id = existing["resource_id"]
+                if not isinstance(run_id, str) or not run_id:
+                    raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review replay is unavailable", retryable=True)
+                response_json = existing["response_json"]
+                run = self._decode_run_response_json(response_json)
+                if run.run_id != run_id:
+                    raise ValueError("persisted review replay resource does not match its run")
+                connection.execute("COMMIT")
+                return SuggestionRunReservation(run=run, replayed=True)
+
+            row = connection.execute(
+                "SELECT r.row_id, r.workspace_id, r.evidence_pack_id, r.review_status, r.publication_status, "
+                "r.record_version, s.source_record_version, p.workspace_id AS pack_workspace_id "
+                "FROM fmea_rows AS r "
+                "LEFT JOIN review_source_snapshots AS s ON s.row_id = r.row_id AND s.workspace_id = r.workspace_id "
+                "LEFT JOIN evidence_packs AS p ON p.pack_id = r.evidence_pack_id AND p.workspace_id = r.workspace_id "
+                "WHERE r.row_id = ? AND r.workspace_id = ?",
+                (prepared.command.row_id, prepared.actor.workspace_id),
+            ).fetchone()
+            if row is None or row["pack_workspace_id"] != prepared.actor.workspace_id:
+                raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+            if row["review_status"] not in {ReviewStatus.SUGGESTED.value, ReviewStatus.IN_REVIEW.value}:
+                raise ReviewError("FMEA_PRECONDITION_REQUIRED", "review row is not available for model suggestions")
+            if row["publication_status"] != PublicationStatus.UNPUBLISHED.value:
+                raise ReviewError("FMEA_PRECONDITION_REQUIRED", "published rows cannot receive model suggestions")
+            if row["record_version"] != prepared.command.expected_record_version:
+                raise ReviewError("FMEA_VERSION_CONFLICT", "review row version does not match the request")
+            if row["source_record_version"] is None:
+                raise ReviewError("FMEA_REVIEW_SOURCE_MISSING", "review source snapshot was not found")
+
+            workspace_active = connection.execute(
+                "SELECT COUNT(*) AS count FROM review_suggestion_runs "
+                "WHERE workspace_id = ? AND status IN ('queued', 'running')",
+                (prepared.actor.workspace_id,),
+            ).fetchone()
+            actor_active = connection.execute(
+                "SELECT COUNT(*) AS count FROM review_suggestion_runs "
+                "WHERE workspace_id = ? AND actor_id = ? AND status IN ('queued', 'running')",
+                (prepared.actor.workspace_id, prepared.actor.actor_id),
+            ).fetchone()
+            if int(workspace_active["count"]) >= 16 or int(actor_active["count"]) >= 4:
+                raise ReviewError("FMEA_REVIEW_RATE_LIMITED", "too many active review runs", retryable=True)
+
+            run = prepared.run
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(scope_key, payload_hash, state, status_code, resource_id, response_json, created_at, completed_at) "
+                "VALUES (?, ?, 'completed', ?, ?, ?, ?, ?)",
+                (
+                    prepared.scope.scope_key,
+                    prepared.payload_hash,
+                    prepared.response_status,
+                    run.run_id,
+                    self._run_response_json(run),
+                    run.created_at,
+                    run.created_at,
+                ),
+            )
+            connection.execute(
+                "INSERT INTO review_suggestion_runs "
+                "(run_id, row_id, workspace_id, actor_id, source_record_version, status, request_hash, idempotency_scope, "
+                "request_id, trace_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    run.run_id,
+                    run.row_id,
+                    prepared.actor.workspace_id,
+                    prepared.actor.actor_id,
+                    run.source_record_version,
+                    run.status.value,
+                    prepared.payload_hash,
+                    prepared.scope.scope_key,
+                    run.request_id,
+                    run.trace_id,
+                    run.created_at,
+                ),
+            )
+            self._insert_audit(connection, prepared.audit)
+            connection.execute("COMMIT")
+            return SuggestionRunReservation(run=run, replayed=False)
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def get_suggestion_run(self, run_id: str, workspace_id: str) -> ReviewSuggestionRun | None:
+        workspace = self._workspace(workspace_id)
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT r.* FROM review_suggestion_runs AS r "
+                "JOIN fmea_rows AS f ON f.row_id = r.row_id AND f.workspace_id = r.workspace_id "
+                "JOIN evidence_packs AS p ON p.pack_id = f.evidence_pack_id AND p.workspace_id = f.workspace_id "
+                "WHERE r.run_id = ? AND r.workspace_id = ? AND f.workspace_id = ? AND p.workspace_id = ?",
+                (run_id, workspace, workspace, workspace),
+            ).fetchone()
+            return None if row is None else self._decode_suggestion_run(row)
+        finally:
+            connection.close()
+
+    def mark_suggestion_run_running(self, run_id: str) -> ReviewSuggestionRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            current = connection.execute(
+                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            if current is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            if current["status"] == RunStatus.QUEUED.value:
+                connection.execute(
+                    "UPDATE review_suggestion_runs SET status = 'running', started_at = ? WHERE run_id = ?",
+                    (_utc_now(), run_id),
+                )
+            result = self._decode_suggestion_run(
+                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
+            )
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def complete_suggestion_run(
+        self, run_id: str, suggestion: ReviewSuggestion, audit: AuditEvent
+    ) -> ReviewSuggestionRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            run_row = connection.execute(
+                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            if run_row is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            run = self._decode_suggestion_run(run_row)
+            if run.status is RunStatus.SUCCEEDED:
+                connection.execute("COMMIT")
+                return run
+            if run.status is RunStatus.FAILED:
+                raise ReviewError("FMEA_REVIEW_TERMINAL", "review run is already terminal")
+            row = connection.execute(
+                "SELECT record_version, workspace_id FROM fmea_rows WHERE row_id = ? AND workspace_id = ?",
+                (run.row_id, audit.workspace_id),
+            ).fetchone()
+            if row is None:
+                raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
+            if suggestion.run_id != run_id or suggestion.row_id != run.row_id:
+                raise ReviewError("FMEA_MODEL_SUGGESTION_INVALID", "review suggestion identity is invalid")
+            stale = int(row["record_version"]) != suggestion.source_record_version
+            stored_suggestion = replace(suggestion, stale=stale)
+            suggestion_json = encode_review_json(stored_suggestion)
+            suggestion_hash = _json_hash(suggestion_json)
+            connection.execute(
+                "INSERT INTO review_suggestions "
+                "(suggestion_id, run_id, row_id, workspace_id, source_record_version, stale, suggestion_json, suggestion_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    stored_suggestion.suggestion_id,
+                    stored_suggestion.run_id,
+                    stored_suggestion.row_id,
+                    audit.workspace_id,
+                    stored_suggestion.source_record_version,
+                    int(stale),
+                    suggestion_json,
+                    suggestion_hash,
+                    stored_suggestion.created_at,
+                ),
+            )
+            self._insert_audit(connection, audit)
+            finished_at = _utc_now()
+            connection.execute(
+                "UPDATE review_suggestion_runs SET status = 'succeeded', suggestion_id = ?, finished_at = ? WHERE run_id = ?",
+                (stored_suggestion.suggestion_id, finished_at, run_id),
+            )
+            result = self._decode_suggestion_run(
+                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
+            )
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def fail_suggestion_run(
+        self, run_id: str, error_code: str, retryable: bool, audit: AuditEvent
+    ) -> ReviewSuggestionRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            current = connection.execute(
+                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            if current is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            run = self._decode_suggestion_run(current)
+            if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED}:
+                connection.execute("COMMIT")
+                return run
+            finished_at = _utc_now()
+            connection.execute(
+                "UPDATE review_suggestion_runs SET status = 'failed', error_code = ?, retryable = ?, finished_at = ? "
+                "WHERE run_id = ?",
+                (error_code, int(retryable), finished_at, run_id),
+            )
+            self._insert_audit(connection, audit, {"error_code": error_code, "retryable": retryable})
+            result = self._decode_suggestion_run(
+                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
+            )
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
         finally:
             connection.close()
 
