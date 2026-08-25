@@ -502,16 +502,28 @@ class RecordingReviewRepository(MemoryReviewRepository):
         run = self.runs.get(run_id)
         return run if run is not None and self.pack is not None and self.pack.workspace_id == workspace_id else None
 
-    def mark_suggestion_run_running(self, run_id: str) -> ReviewSuggestionRun:
+    def mark_suggestion_run_running(self, run_id: str, workspace_id: str) -> ReviewSuggestionRun:
         self.calls.append("mark_suggestion_run_running")
+        if self.pack is None or self.pack.workspace_id != workspace_id:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
         run = self.runs[run_id]
+        if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED}:
+            raise ReviewError("FMEA_REVIEW_TERMINAL", "review run is already terminal")
         updated = replace(run, status=RunStatus.RUNNING, started_at=_UTC)
         self.runs[run_id] = updated
         return updated
 
-    def complete_suggestion_run(self, run_id: str, suggestion: ReviewSuggestion, audit: Any) -> ReviewSuggestionRun:
+    def complete_suggestion_run(
+        self, run_id: str, workspace_id: str, suggestion: ReviewSuggestion, audit: Any
+    ) -> ReviewSuggestionRun:
         self.calls.append("complete_suggestion_run")
+        if self.pack is None or self.pack.workspace_id != workspace_id:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
         run = self.runs[run_id]
+        if run.status is RunStatus.SUCCEEDED:
+            return run
+        if run.status is not RunStatus.RUNNING:
+            raise ReviewError("FMEA_REVIEW_TERMINAL", "review run is not running")
         updated = replace(run, status=RunStatus.SUCCEEDED, suggestion_id=suggestion.suggestion_id, finished_at=_UTC)
         self.runs[run_id] = updated
         current_version = self.row.record_version if self.row is not None else suggestion.source_record_version
@@ -519,9 +531,17 @@ class RecordingReviewRepository(MemoryReviewRepository):
         self.audits.append(audit)
         return updated
 
-    def fail_suggestion_run(self, run_id: str, error_code: str, retryable: bool, audit: Any) -> ReviewSuggestionRun:
+    def fail_suggestion_run(
+        self, run_id: str, workspace_id: str, error_code: str, retryable: bool, audit: Any
+    ) -> ReviewSuggestionRun:
         self.calls.append("fail_suggestion_run")
+        if self.pack is None or self.pack.workspace_id != workspace_id:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
         run = self.runs[run_id]
+        if run.status is RunStatus.SUCCEEDED:
+            raise ReviewError("FMEA_REVIEW_TERMINAL", "review run is already terminal")
+        if run.status is RunStatus.FAILED:
+            return run
         updated = replace(run, status=RunStatus.FAILED, error_code=error_code, retryable=retryable, finished_at=_UTC)
         self.runs[run_id] = updated
         self.audits.append(audit)
@@ -678,7 +698,7 @@ def running_suggestion_run(
         id_factory=_test_id_factory(),
     )
     run = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
-    return seeded_review_repository.mark_suggestion_run_running(run.run_id)
+    return seeded_review_repository.mark_suggestion_run_running(run.run_id, "ws-1")
 
 
 @pytest.fixture

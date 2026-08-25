@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from core_domain.structured_generation import GenerationRunStatus, GenerationStage, StructuredGenerationError
+from core_domain.structured_output import StructuredOutputError
 from fmea_application.review_contracts import ReviewModelManifest, ReviewModelRequest, ReviewSuggestionDraft
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_template_adapter import ReviewTemplateAdapter
@@ -23,6 +24,8 @@ _UNAVAILABLE_MODEL_CODES = frozenset(
         "MODEL_RATE_LIMITED",
         "MODEL_REQUEST_REJECTED",
         "MODEL_UPSTREAM_UNAVAILABLE",
+        "MODEL_TIMEOUT",
+        "MODEL_TOTAL_TIMEOUT",
     }
 )
 
@@ -57,12 +60,39 @@ class EnvironmentReviewSuggestionGenerator:
         schema_adapter = Draft202012SchemaAdapter()
         compiler = TemplateCompiler(schema_validator=schema_adapter, source_loader=load_template_source)
         registry = FileTemplateRegistry(registry_root)
+        compiled = compiler.compile_path(source_path)
+        source_bytes = source_path.read_bytes()
         try:
-            template = registry.get(_TEMPLATE_ID, _TEMPLATE_VERSION)
-        except Exception:
-            template = compiler.compile_path(source_path)
-            source_bytes = source_path.read_bytes()
-            template = registry.register(template, source_bytes, source_path.suffix.lower())
+            stored = registry.get(_TEMPLATE_ID, _TEMPLATE_VERSION)
+        except StructuredOutputError as exc:
+            if exc.code != "TEMPLATE_NOT_FOUND":
+                raise ReviewError(
+                    "FMEA_MODEL_SUGGESTION_INVALID",
+                    "the review template registry is invalid",
+                ) from exc
+            try:
+                template = registry.register(compiled, source_bytes, source_path.suffix.lower())
+            except StructuredOutputError as register_error:
+                try:
+                    raced = registry.get(_TEMPLATE_ID, _TEMPLATE_VERSION)
+                except Exception as reread_error:
+                    raise ReviewError(
+                        "FMEA_MODEL_SUGGESTION_INVALID",
+                        "the review template registry is invalid",
+                    ) from reread_error
+                if raced.template_hash != compiled.template_hash:
+                    raise ReviewError(
+                        "FMEA_MODEL_SUGGESTION_INVALID",
+                        "the review template registry is stale",
+                    ) from register_error
+                template = raced
+        else:
+            if stored.template_hash != compiled.template_hash:
+                raise ReviewError(
+                    "FMEA_MODEL_SUGGESTION_INVALID",
+                    "the review template registry is stale",
+                )
+            template = stored
         pipeline = StructuredGenerationPipeline(
             gateway=build_deepseek_gateway_from_env(),
             batch_codec=StrictCandidateBatchCodec(),
@@ -88,6 +118,16 @@ class EnvironmentReviewSuggestionGenerator:
             )
             return ReviewError(code, message, retryable=code == "FMEA_MODEL_SUGGESTION_UNAVAILABLE")
         return ReviewError("FMEA_MODEL_SUGGESTION_UNAVAILABLE", "the review model is temporarily unavailable", retryable=True)
+
+    @staticmethod
+    def _failed_result_error(result: Any) -> ReviewError:
+        if any(getattr(issue, "code", None) in _UNAVAILABLE_MODEL_CODES for issue in result.generation_issues):
+            return ReviewError(
+                "FMEA_MODEL_SUGGESTION_UNAVAILABLE",
+                "the review model is temporarily unavailable",
+                retryable=True,
+            )
+        return ReviewError("FMEA_MODEL_SUGGESTION_INVALID", "the review model returned an invalid suggestion")
 
     @staticmethod
     def _final_pro_trace(result: Any) -> str:
@@ -122,6 +162,8 @@ class EnvironmentReviewSuggestionGenerator:
                 version=_TEMPLATE_VERSION,
                 evidence_pack=request.evidence_pack,
             )
+            if result.status is GenerationRunStatus.FAILED:
+                raise self._failed_result_error(result)
             if result.status is not GenerationRunStatus.SUCCEEDED:
                 raise ReviewError("FMEA_MODEL_SUGGESTION_INVALID", "the review model returned an invalid suggestion")
             draft = adapter.decode_draft(result, request.context)

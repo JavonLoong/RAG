@@ -158,6 +158,7 @@ class ReviewService:
             )
             self._repository.fail_suggestion_run(
                 reservation.run.run_id,
+                actor.workspace_id,
                 exc.code,
                 exc.retryable,
                 failed_audit,
@@ -176,6 +177,7 @@ class ReviewService:
             )
             self._repository.fail_suggestion_run(
                 reservation.run.run_id,
+                actor.workspace_id,
                 "FMEA_REVIEW_STORAGE_UNAVAILABLE",
                 True,
                 failed_audit,
@@ -194,7 +196,7 @@ class ReviewService:
     def _execute_suggestion(self, prepared: PreparedSuggestionRun) -> None:
         run_id = prepared.run.run_id
         try:
-            self._repository.mark_suggestion_run_running(run_id)
+            self._repository.mark_suggestion_run_running(run_id, prepared.actor.workspace_id)
             request = self._model_request(prepared)
             generator = self._suggestion_generator
             if generator is None:
@@ -221,7 +223,12 @@ class ReviewService:
                 created_at=self._now(),
             )
             complete_audit = self._complete_audit(prepared.audit, suggestion)
-            self._repository.complete_suggestion_run(run_id, suggestion, complete_audit)
+            self._repository.complete_suggestion_run(
+                run_id,
+                prepared.actor.workspace_id,
+                suggestion,
+                complete_audit,
+            )
         except ReviewError as exc:
             self._fail_worker(prepared, exc.code, exc.retryable)
         except Exception as exc:
@@ -265,7 +272,13 @@ class ReviewService:
                 actor_roles=(),
                 reason=error_code,
             )
-            self._repository.fail_suggestion_run(prepared.run.run_id, error_code, retryable, audit)
+            self._repository.fail_suggestion_run(
+                prepared.run.run_id,
+                prepared.actor.workspace_id,
+                error_code,
+                retryable,
+                audit,
+            )
         except Exception:
             return None
 

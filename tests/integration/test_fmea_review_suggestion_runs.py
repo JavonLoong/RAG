@@ -40,6 +40,14 @@ class SeededReviewDatabase:
             connection.close()
 
 
+class RejectingReviewExecutor:
+    def submit(self, run_id, operation) -> None:
+        raise ReviewError("FMEA_REVIEW_RATE_LIMITED", "review execution capacity is full", retryable=True)
+
+    def close(self) -> None:
+        return None
+
+
 def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_repository) -> None:
     seeded_database = SeededReviewDatabase(seeded_review_repository.database_path)
     seeded_database.insert_run(status="running")
@@ -108,6 +116,89 @@ def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
     assert complete_payload["model_manifest"]["model"] == "deepseek-v4-pro"
     assert complete_payload["suggestion_id"] == succeeded_terminal.suggestion_id
     assert failed_payload["error_code"] == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+    assert all(payload["analysis_id"] == "analysis-1" for payload in payloads)
+
+
+def test_sqlite_executor_rejection_preserves_queued_response_and_replays_it(
+    seeded_review_repository,
+    fixture_human_reviewer,
+    fixture_start_suggestion_command,
+    fixture_review_model_manifest,
+    valid_review_suggestion_draft,
+) -> None:
+    ids: dict[str, int] = {}
+
+    def id_factory(prefix: str) -> str:
+        ids[prefix] = ids.get(prefix, 0) + 1
+        return f"{prefix}-reject-{ids[prefix]}"
+
+    service = ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        RejectingReviewExecutor(),
+        clock=lambda: "2026-08-23T00:00:00Z",
+        id_factory=id_factory,
+    )
+    before = seeded_review_repository.get_row("row-1", "ws-1")
+    queued = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
+    failed = service.get_suggestion_run(queued.run_id, fixture_human_reviewer)
+    replay = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
+    after = seeded_review_repository.get_row("row-1", "ws-1")
+    assert queued.status is RunStatus.QUEUED
+    assert failed.status is RunStatus.FAILED
+    assert failed.error_code == "FMEA_REVIEW_RATE_LIMITED"
+    assert replay == queued
+    assert after == before
+
+    connection = seeded_review_repository._connect()
+    try:
+        events = connection.execute(
+            "SELECT command, event_json FROM audit_events WHERE row_id = ? ORDER BY created_at, event_id",
+            ("row-1",),
+        ).fetchall()
+        decisions = connection.execute("SELECT COUNT(*) AS count FROM review_decisions").fetchone()["count"]
+    finally:
+        connection.close()
+    payloads = [json.loads(row["event_json"]) for row in events]
+    assert [row["command"] for row in events] == ["review.suggestion.create", "review.suggestion.fail"]
+    assert decisions == 0
+    assert all(payload["request_id"] == queued.request_id for payload in payloads)
+    assert all(payload["trace_id"] == queued.trace_id for payload in payloads)
+    assert len({payload["canonical_payload_hash"] for payload in payloads}) == 1
+    assert all(payload["analysis_id"] == "analysis-1" for payload in payloads)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "workspace_id", "expected_code"),
+    [
+        ("running", "wrong-workspace", "FMEA_REVIEW_SUGGESTION_NOT_FOUND"),
+        ("complete-queued", "ws-1", "FMEA_REVIEW_TERMINAL"),
+    ],
+)
+def test_sqlite_run_mutations_fail_closed_on_workspace_or_transition(
+    seeded_review_repository,
+    fixture_human_reviewer,
+    fixture_start_suggestion_command,
+    fixture_review_model_manifest,
+    valid_review_suggestion_draft,
+    mutation,
+    workspace_id,
+    expected_code,
+) -> None:
+    service = ReviewService(
+        seeded_review_repository,
+        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+        RecordingReviewExecutor(),
+        clock=lambda: "2026-08-23T00:00:00Z",
+        id_factory=lambda prefix: f"{prefix}-mismatch",
+    )
+    run = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
+    with pytest.raises(ReviewError) as raised:
+        if mutation == "running":
+            seeded_review_repository.mark_suggestion_run_running(run.run_id, workspace_id)
+        else:
+            seeded_review_repository.complete_suggestion_run(run.run_id, workspace_id, object(), object())
+    assert raised.value.code == expected_code
 
 
 def test_fifth_active_sqlite_reservation_has_zero_side_effects(

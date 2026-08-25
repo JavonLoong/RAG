@@ -36,15 +36,21 @@ from fmea_application.review_contracts import (
     ReviewSuggestion,
     ReviewSuggestionRun,
     SuggestionRunReservation,
+    canonical_payload_hash,
     decode_review_decision_record,
     decode_review_source_snapshot,
     decode_review_suggestion,
     encode_review_json,
+    idempotency_key_hash,
 )
-from fmea_application.review_errors import ReviewError
+from fmea_application.review_errors import REVIEW_ERROR_CODES, ReviewError
 
 _MIGRATION_PATTERN = re.compile(r"^(\d+)_([a-z0-9_]+)\.sql$")
 _MAX_BUSY_TIMEOUT_MS = 60_000
+_SUGGESTION_START_COMMAND = "review.suggestion.start"
+_SUGGESTION_CREATE_COMMAND = "review.suggestion.create"
+_SUGGESTION_COMPLETE_COMMAND = "review.suggestion.complete"
+_SUGGESTION_FAIL_COMMAND = "review.suggestion.fail"
 _FMEA_CODEC = import_module("core_domain.fmea.codec")
 encode_json = cast(Callable[[object], str], _FMEA_CODEC.encode_json)
 decode_analysis = cast(Callable[[str], object], _FMEA_CODEC.decode_analysis)
@@ -659,6 +665,132 @@ class SqliteFmeaRepository:
         return cast(sqlite3.Row | None, row)
 
     @staticmethod
+    def _mutation_row(
+        connection: sqlite3.Connection,
+        run_id: str,
+        workspace_id: str,
+    ) -> sqlite3.Row | None:
+        row = connection.execute(
+            "SELECT r.*, f.analysis_id AS analysis_id "
+            "FROM review_suggestion_runs AS r "
+            "JOIN fmea_rows AS f ON f.row_id = r.row_id AND f.workspace_id = r.workspace_id "
+            "JOIN evidence_packs AS p ON p.pack_id = f.evidence_pack_id AND p.workspace_id = f.workspace_id "
+            "WHERE r.run_id = ? AND r.workspace_id = ? AND f.workspace_id = ? AND p.workspace_id = ?",
+            (run_id, workspace_id, workspace_id, workspace_id),
+        ).fetchone()
+        return cast(sqlite3.Row | None, row)
+
+    @staticmethod
+    def _binding_error(message: str) -> NoReturn:
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", message)
+
+    @staticmethod
+    def _transition_error(message: str) -> NoReturn:
+        raise ReviewError("FMEA_REVIEW_TERMINAL", message)
+
+    @classmethod
+    def _validate_prepared_binding(cls, prepared: PreparedSuggestionRun) -> None:
+        command = prepared.command
+        actor = prepared.actor
+        scope = prepared.scope
+        run = prepared.run
+        audit = prepared.audit
+        expected_key_hash = idempotency_key_hash(command.idempotency_key)
+        if (
+            scope.workspace_id != actor.workspace_id
+            or scope.actor_id != actor.actor_id
+            or scope.command != _SUGGESTION_START_COMMAND
+            or scope.resource_path != f"/rows/{command.row_id}"
+            or scope.key_hash != expected_key_hash
+        ):
+            cls._binding_error("review suggestion reservation binding is invalid")
+        expected_payload_hash = canonical_payload_hash(command)
+        if (
+            prepared.payload_hash != expected_payload_hash
+            or run.row_id != command.row_id
+            or run.source_record_version != command.expected_record_version
+            or run.status is not RunStatus.QUEUED
+            or not run.request_id
+            or not run.trace_id
+        ):
+            cls._binding_error("review suggestion reservation binding is invalid")
+        if (
+            audit.workspace_id != actor.workspace_id
+            or audit.actor_id != actor.actor_id
+            or audit.actor_type is not actor.actor_type
+            or audit.actor_roles != tuple(sorted(actor.roles))
+            or audit.row_id != command.row_id
+            or audit.command != _SUGGESTION_CREATE_COMMAND
+            or audit.suggestion_id is not None
+            or audit.decision_id is not None
+            or audit.expected_record_version != command.expected_record_version
+            or audit.applied_record_version is not None
+            or audit.request_id != run.request_id
+            or audit.trace_id != run.trace_id
+            or audit.retrieval_trace_id != run.trace_id
+            or audit.idempotency_key_hash != expected_key_hash
+            or audit.canonical_payload_hash != prepared.payload_hash
+        ):
+            cls._binding_error("review suggestion audit binding is invalid")
+
+    @classmethod
+    def _validate_complete_binding(
+        cls,
+        run: ReviewSuggestionRun,
+        run_row: sqlite3.Row,
+        workspace_id: str,
+        suggestion: ReviewSuggestion,
+        audit: AuditEvent,
+    ) -> None:
+        if (
+            suggestion.run_id != run.run_id
+            or suggestion.row_id != run.row_id
+            or suggestion.source_record_version != run.source_record_version
+            or audit.workspace_id != workspace_id
+            or audit.row_id != run.row_id
+            or audit.request_id != run.request_id
+            or audit.trace_id != run.trace_id
+            or audit.canonical_payload_hash != str(run_row["request_hash"])
+            or audit.expected_record_version != run.source_record_version
+            or audit.command != _SUGGESTION_COMPLETE_COMMAND
+            or audit.suggestion_id != suggestion.suggestion_id
+            or audit.model_manifest != suggestion.model_manifest
+            or audit.action != suggestion.recommended_action
+            or audit.actor_type is not ActorType.MODEL
+            or audit.actor_id != "review-model"
+            or audit.decision_id is not None
+        ):
+            cls._binding_error("review suggestion completion binding is invalid")
+
+    @classmethod
+    def _validate_fail_binding(
+        cls,
+        run: ReviewSuggestionRun,
+        run_row: sqlite3.Row,
+        workspace_id: str,
+        error_code: str,
+        retryable: bool,
+        audit: AuditEvent,
+    ) -> None:
+        if (
+            error_code not in REVIEW_ERROR_CODES
+            or not isinstance(retryable, bool)
+            or audit.workspace_id != workspace_id
+            or audit.row_id != run.row_id
+            or audit.request_id != run.request_id
+            or audit.trace_id != run.trace_id
+            or audit.canonical_payload_hash != str(run_row["request_hash"])
+            or audit.expected_record_version != run.source_record_version
+            or audit.command != _SUGGESTION_FAIL_COMMAND
+            or audit.reason != error_code
+            or audit.suggestion_id is not None
+            or audit.decision_id is not None
+            or audit.actor_type is not ActorType.SYSTEM
+            or audit.actor_id != "review-system"
+        ):
+            cls._binding_error("review suggestion failure binding is invalid")
+
+    @staticmethod
     def _load_reservation_run(connection: sqlite3.Connection, run_id: str, workspace_id: str) -> ReviewSuggestionRun:
         row = connection.execute(
             "SELECT * FROM review_suggestion_runs WHERE run_id = ? AND workspace_id = ?",
@@ -669,6 +801,7 @@ class SqliteFmeaRepository:
         return SqliteFmeaRepository._decode_suggestion_run(row)
 
     def reserve_suggestion_run(self, prepared: PreparedSuggestionRun) -> SuggestionRunReservation:  # noqa: C901
+        self._validate_prepared_binding(prepared)
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
@@ -681,14 +814,19 @@ class SqliteFmeaRepository:
                     raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review replay is unavailable", retryable=True)
                 response_json = existing["response_json"]
                 run = self._decode_run_response_json(response_json)
-                if run.run_id != run_id:
+                if (
+                    run.run_id != run_id
+                    or run.row_id != prepared.command.row_id
+                    or run.source_record_version != prepared.command.expected_record_version
+                    or run.status is not RunStatus.QUEUED
+                ):
                     raise ValueError("persisted review replay resource does not match its run")
                 connection.execute("COMMIT")
                 return SuggestionRunReservation(run=run, replayed=True)
 
             row = connection.execute(
-                "SELECT r.row_id, r.workspace_id, r.evidence_pack_id, r.review_status, r.publication_status, "
-                "r.record_version, s.source_record_version, p.workspace_id AS pack_workspace_id "
+                "SELECT r.row_id, r.workspace_id, r.analysis_id, r.evidence_pack_id, r.review_status, "
+                "r.publication_status, r.record_version, s.source_record_version, p.workspace_id AS pack_workspace_id "
                 "FROM fmea_rows AS r "
                 "LEFT JOIN review_source_snapshots AS s ON s.row_id = r.row_id AND s.workspace_id = r.workspace_id "
                 "LEFT JOIN evidence_packs AS p ON p.pack_id = r.evidence_pack_id AND p.workspace_id = r.workspace_id "
@@ -705,6 +843,8 @@ class SqliteFmeaRepository:
                 raise ReviewError("FMEA_VERSION_CONFLICT", "review row version does not match the request")
             if row["source_record_version"] is None:
                 raise ReviewError("FMEA_REVIEW_SOURCE_MISSING", "review source snapshot was not found")
+            if row["analysis_id"] is None:
+                raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review row analysis binding is unavailable", retryable=True)
 
             workspace_active = connection.execute(
                 "SELECT COUNT(*) AS count FROM review_suggestion_runs "
@@ -752,7 +892,7 @@ class SqliteFmeaRepository:
                     run.created_at,
                 ),
             )
-            self._insert_audit(connection, prepared.audit)
+            self._insert_audit(connection, replace(prepared.audit, analysis_id=str(row["analysis_id"])))
             connection.execute("COMMIT")
             return SuggestionRunReservation(run=run, replayed=False)
         except Exception:
@@ -766,35 +906,32 @@ class SqliteFmeaRepository:
         workspace = self._workspace(workspace_id)
         connection = self._connect()
         try:
-            row = connection.execute(
-                "SELECT r.* FROM review_suggestion_runs AS r "
-                "JOIN fmea_rows AS f ON f.row_id = r.row_id AND f.workspace_id = r.workspace_id "
-                "JOIN evidence_packs AS p ON p.pack_id = f.evidence_pack_id AND p.workspace_id = f.workspace_id "
-                "WHERE r.run_id = ? AND r.workspace_id = ? AND f.workspace_id = ? AND p.workspace_id = ?",
-                (run_id, workspace, workspace, workspace),
-            ).fetchone()
+            row = self._mutation_row(connection, run_id, workspace)
             return None if row is None else self._decode_suggestion_run(row)
         finally:
             connection.close()
 
-    def mark_suggestion_run_running(self, run_id: str) -> ReviewSuggestionRun:
+    def mark_suggestion_run_running(self, run_id: str, workspace_id: str) -> ReviewSuggestionRun:
+        workspace = self._workspace(workspace_id)
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            current = connection.execute(
-                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
-                (run_id,),
-            ).fetchone()
+            current = self._mutation_row(connection, run_id, workspace)
             if current is None:
                 raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
-            if current["status"] == RunStatus.QUEUED.value:
+            run = self._decode_suggestion_run(current)
+            if run.status is RunStatus.SUCCEEDED or run.status is RunStatus.FAILED:
+                self._transition_error("terminal review run cannot become running")
+            if run.status is RunStatus.QUEUED:
                 connection.execute(
-                    "UPDATE review_suggestion_runs SET status = 'running', started_at = ? WHERE run_id = ?",
-                    (_utc_now(), run_id),
+                    "UPDATE review_suggestion_runs SET status = 'running', started_at = ? "
+                    "WHERE run_id = ? AND workspace_id = ? AND status = 'queued'",
+                    (_utc_now(), run_id, workspace),
                 )
-            result = self._decode_suggestion_run(
-                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
-            )
+            result_row = self._mutation_row(connection, run_id, workspace)
+            if result_row is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            result = self._decode_suggestion_run(result_row)
             connection.execute("COMMIT")
             return result
         except Exception:
@@ -804,32 +941,47 @@ class SqliteFmeaRepository:
         finally:
             connection.close()
 
-    def complete_suggestion_run(
-        self, run_id: str, suggestion: ReviewSuggestion, audit: AuditEvent
+    def complete_suggestion_run(  # noqa: C901
+        self,
+        run_id: str,
+        workspace_id: str,
+        suggestion: ReviewSuggestion,
+        audit: AuditEvent,
     ) -> ReviewSuggestionRun:
+        workspace = self._workspace(workspace_id)
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            run_row = connection.execute(
-                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
-                (run_id,),
-            ).fetchone()
+            run_row = self._mutation_row(connection, run_id, workspace)
             if run_row is None:
                 raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
             run = self._decode_suggestion_run(run_row)
             if run.status is RunStatus.SUCCEEDED:
+                self._validate_complete_binding(run, run_row, workspace, suggestion, audit)
+                stored_row = connection.execute(
+                    "SELECT suggestion_json FROM review_suggestions "
+                    "WHERE run_id = ? AND workspace_id = ?",
+                    (run_id, workspace),
+                ).fetchone()
+                if stored_row is None:
+                    self._binding_error("persisted review suggestion binding is invalid")
+                stored = decode_review_suggestion(str(stored_row["suggestion_json"]))
+                if stored != replace(suggestion, stale=stored.stale):
+                    self._binding_error("persisted review suggestion binding is invalid")
                 connection.execute("COMMIT")
                 return run
             if run.status is RunStatus.FAILED:
-                raise ReviewError("FMEA_REVIEW_TERMINAL", "review run is already terminal")
+                self._transition_error("failed review run cannot complete")
+            if run.status is not RunStatus.RUNNING:
+                self._transition_error("review run is not running")
+            self._validate_complete_binding(run, run_row, workspace, suggestion, audit)
             row = connection.execute(
-                "SELECT record_version, workspace_id FROM fmea_rows WHERE row_id = ? AND workspace_id = ?",
-                (run.row_id, audit.workspace_id),
+                "SELECT record_version, workspace_id, analysis_id FROM fmea_rows "
+                "WHERE row_id = ? AND workspace_id = ?",
+                (run.row_id, workspace),
             ).fetchone()
             if row is None:
                 raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
-            if suggestion.run_id != run_id or suggestion.row_id != run.row_id:
-                raise ReviewError("FMEA_MODEL_SUGGESTION_INVALID", "review suggestion identity is invalid")
             stale = int(row["record_version"]) != suggestion.source_record_version
             stored_suggestion = replace(suggestion, stale=stale)
             suggestion_json = encode_review_json(stored_suggestion)
@@ -850,15 +1002,17 @@ class SqliteFmeaRepository:
                     stored_suggestion.created_at,
                 ),
             )
-            self._insert_audit(connection, audit)
+            self._insert_audit(connection, replace(audit, analysis_id=str(row["analysis_id"])))
             finished_at = _utc_now()
             connection.execute(
-                "UPDATE review_suggestion_runs SET status = 'succeeded', suggestion_id = ?, finished_at = ? WHERE run_id = ?",
-                (stored_suggestion.suggestion_id, finished_at, run_id),
+                "UPDATE review_suggestion_runs SET status = 'succeeded', suggestion_id = ?, finished_at = ? "
+                "WHERE run_id = ? AND workspace_id = ? AND status = 'running'",
+                (stored_suggestion.suggestion_id, finished_at, run_id, workspace),
             )
-            result = self._decode_suggestion_run(
-                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
-            )
+            result_row = self._mutation_row(connection, run_id, workspace)
+            if result_row is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            result = self._decode_suggestion_run(result_row)
             connection.execute("COMMIT")
             return result
         except Exception:
@@ -869,31 +1023,53 @@ class SqliteFmeaRepository:
             connection.close()
 
     def fail_suggestion_run(
-        self, run_id: str, error_code: str, retryable: bool, audit: AuditEvent
+        self,
+        run_id: str,
+        workspace_id: str,
+        error_code: str,
+        retryable: bool,
+        audit: AuditEvent,
     ) -> ReviewSuggestionRun:
+        workspace = self._workspace(workspace_id)
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            current = connection.execute(
-                "SELECT * FROM review_suggestion_runs WHERE run_id = ?",
-                (run_id,),
-            ).fetchone()
+            current = self._mutation_row(connection, run_id, workspace)
             if current is None:
                 raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
             run = self._decode_suggestion_run(current)
-            if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED}:
+            if run.status is RunStatus.SUCCEEDED:
+                self._transition_error("succeeded review run cannot fail")
+            if run.status is RunStatus.FAILED:
+                self._validate_fail_binding(run, current, workspace, error_code, retryable, audit)
+                if run.error_code != error_code or run.retryable is not retryable:
+                    self._binding_error("persisted review failure binding is invalid")
                 connection.execute("COMMIT")
                 return run
+            if run.status not in {RunStatus.QUEUED, RunStatus.RUNNING}:
+                self._transition_error("review run cannot fail from this state")
+            self._validate_fail_binding(run, current, workspace, error_code, retryable, audit)
+            row = connection.execute(
+                "SELECT analysis_id FROM fmea_rows WHERE row_id = ? AND workspace_id = ?",
+                (run.row_id, workspace),
+            ).fetchone()
+            if row is None:
+                raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
             finished_at = _utc_now()
             connection.execute(
                 "UPDATE review_suggestion_runs SET status = 'failed', error_code = ?, retryable = ?, finished_at = ? "
-                "WHERE run_id = ?",
-                (error_code, int(retryable), finished_at, run_id),
+                "WHERE run_id = ? AND workspace_id = ? AND status IN ('queued', 'running')",
+                (error_code, int(retryable), finished_at, run_id, workspace),
             )
-            self._insert_audit(connection, audit, {"error_code": error_code, "retryable": retryable})
-            result = self._decode_suggestion_run(
-                connection.execute("SELECT * FROM review_suggestion_runs WHERE run_id = ?", (run_id,)).fetchone()
+            self._insert_audit(
+                connection,
+                replace(audit, analysis_id=str(row["analysis_id"])),
+                {"error_code": error_code, "retryable": retryable},
             )
+            result_row = self._mutation_row(connection, run_id, workspace)
+            if result_row is None:
+                raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
+            result = self._decode_suggestion_run(result_row)
             connection.execute("COMMIT")
             return result
         except Exception:
