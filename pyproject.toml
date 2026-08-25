@@ -81,10 +81,17 @@ files = [
   "core_domain/structured_generation",
   "structured_generation_application",
   "structured_generation_infrastructure",
+  "fmea_application",
+  "fmea_infrastructure",
+  "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/fmea_review_contracts.py",
+  "api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_fmea_review_v1.py",
   "fmea_application/structured_candidate_adapter.py",
   "fmea_infrastructure/profile_loader.py",
   "scripts/output_template_skill.py",
   "scripts/structured_generation_skill.py",
+  "scripts/fmea_skill.py",
+  "scripts/run_fmea_review_acceptance.py",
+  "scripts/verify_fmea_review_acceptance.py",
   "tests",
 ]
 disallow_untyped_defs = true
