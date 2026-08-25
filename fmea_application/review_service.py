@@ -620,7 +620,9 @@ class ReviewService:
             validate_evidence_ids(
                 edit.evidence_ids,
                 pack,
-                allowed_types=None if source is None else source.evidence_types,
+                resolved_profile=None if source is None else source.resolved_evidence_profile,
+                evidence_types=None if source is None else source.evidence_types,
+                retrieval_incomplete=False if source is None else source.retrieval_incomplete,
             )
         except FmeaDomainError as exc:
             raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence binding is invalid") from exc

@@ -7,12 +7,21 @@ import pytest
 
 from core_domain.fmea.states import ClaimStatus
 from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import (
+    CitationType,
+    EvidenceSelectionProfile,
+    validate_evidence_type_membership,
+)
 from core_domain.structured_output import CandidateClaim, ClaimState
 from fmea_application.review_contracts import ReviewAction
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_projection import build_review_context
 from fmea_application.review_template_adapter import ReviewTemplateAdapter
-from tests.fmea_review_fixtures import _valid_review_payload, make_review_generation_result
+from tests.fmea_review_fixtures import (
+    _valid_review_payload,
+    make_review_generation_result,
+    make_review_source,
+)
 
 
 def test_adapter_builds_bounded_canonical_model_input(
@@ -75,6 +84,103 @@ def test_adapter_model_pack_uses_projected_locator_and_quote(
     assert model_ref.is_primary == projected_ref.is_primary
     assert model_ref.locator == projected_ref.locator
     assert model_ref.quote == projected_ref.quote
+    assert request.evidence_pack.pack_hash == private_pack.pack_hash
+    assert context.evidence.pack_hash == "sha256:" + request.evidence_pack.pack_hash
+    assert request.evidence_pack.pack_id == private_pack.pack_id
+    assert request.evidence_pack.workspace_id == private_pack.workspace_id
+    assert request.evidence_pack.acl_scope == private_pack.acl_scope
+    assert request.evidence_pack.versions == private_pack.versions
+    assert request.evidence_pack.created_at == private_pack.created_at
+    assert request.evidence_pack.expires_at == private_pack.expires_at
+    assert "C:/private/manual.pdf" not in model_ref.locator
+    assert model_ref.quote != private_ref.quote
+
+
+def test_combined_claim_membership_allows_text_subset_and_rejects_undeclared_graph(
+    fixture_review_row, fixture_pack
+) -> None:
+    assert validate_evidence_type_membership(
+        EvidenceSelectionProfile.COMBINED,
+        (CitationType.TEXT, CitationType.GRAPH),
+        ("primary_document",),
+        allow_subset=True,
+    ) == (CitationType.TEXT,)
+    with pytest.raises(ValueError, match="declared evidence_types"):
+        validate_evidence_type_membership(
+            EvidenceSelectionProfile.COMBINED,
+            (CitationType.TEXT,),
+            ("graphrag_relation",),
+            allow_subset=True,
+        )
+
+    graph_ref = replace(
+        fixture_pack.refs[0],
+        evidence_id="ev-graph",
+        source_type="graphrag_relation",
+        evidence_hash="a" * 64,
+        locator="relation:filter-blockage",
+        quote="filter causes blockage",
+        normalized_quote="filter causes blockage",
+    )
+    combined_pack = EvidencePack.build(
+        pack_id=fixture_pack.pack_id,
+        workspace_id=fixture_pack.workspace_id,
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=(fixture_pack.refs[0], graph_ref),
+        created_at=fixture_pack.created_at,
+        expires_at=fixture_pack.expires_at,
+    )
+    row = replace(
+        fixture_review_row,
+        field_evidence=tuple(
+            (field, ("ev-graph",) if field == "controls" else evidence_ids)
+            for field, evidence_ids in fixture_review_row.field_evidence
+        ),
+    )
+    source = make_review_source(
+        requested_evidence_profile=EvidenceSelectionProfile.COMBINED,
+        resolved_evidence_profile=EvidenceSelectionProfile.COMBINED,
+        evidence_types=(CitationType.TEXT, CitationType.GRAPH),
+        retrieval_incomplete=True,
+    )
+    context = build_review_context(
+        row=row,
+        source=source,
+        pack=combined_pack,
+        suggestions=(),
+        decisions=(),
+    )
+
+    draft = ReviewTemplateAdapter().decode_draft(
+        make_review_generation_result(_valid_review_payload()),
+        context,
+    )
+    assert draft.field_findings[0].evidence_ids == ("ev-1",)
+
+    undeclared_context = replace(
+        context,
+        retrieval=replace(
+            context.retrieval,
+            evidence_types=(CitationType.TEXT,),
+            incomplete=True,
+        ),
+    )
+    graph_payload = _valid_review_payload()
+    graph_findings = graph_payload["field_findings"]
+    graph_edits = graph_payload["proposed_edits"]
+    assert isinstance(graph_findings, list) and isinstance(graph_findings[0], dict)
+    assert isinstance(graph_edits, list) and isinstance(graph_edits[0], dict)
+    graph_findings[0]["evidence_ids"] = ["ev-graph"]
+    graph_edits[0]["evidence_ids"] = ["ev-graph"]
+
+    with pytest.raises(ReviewError) as captured:
+        ReviewTemplateAdapter().decode_draft(
+            make_review_generation_result(graph_payload),
+            undeclared_context,
+        )
+
+    assert captured.value.code == "FMEA_MODEL_SUGGESTION_INVALID"
 
 
 @pytest.mark.parametrize(

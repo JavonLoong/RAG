@@ -15,8 +15,9 @@ from core_domain.fmea.states import ClaimStatus, EvidenceSupportStatus
 from core_domain.fmea.value_objects import EvidencePack
 from core_domain.query_contracts import (
     CitationType,
-    citation_type_for_source_type,
+    EvidenceSelectionProfile,
     validate_evidence_source_types,
+    validate_evidence_type_membership,
 )
 from core_domain.structured_generation import GenerationRunResult, GenerationRunStatus
 from core_domain.structured_output import ClaimState, CompiledTemplate, JsonValue, StructuredOutputError
@@ -133,7 +134,9 @@ def _claim_evidence_is_exact(  # noqa: C901
     result: GenerationRunResult,
     payload: dict[str, object],
     allowed_evidence_refs: Mapping[str, ReviewEvidenceRef],
-    allowed_evidence_types: tuple[CitationType, ...],
+    resolved_profile: EvidenceSelectionProfile,
+    declared_evidence_types: tuple[CitationType, ...],
+    retrieval_incomplete: bool,
 ) -> None:
     batch = result.batch
     if batch is None:
@@ -145,13 +148,22 @@ def _claim_evidence_is_exact(  # noqa: C901
         for index, raw_item in enumerate(items):
             item = _json_object(raw_item, f"{collection} item must be an object.")
             evidence_ids = _json_evidence_ids(item["evidence_ids"])
+            refs: list[ReviewEvidenceRef] = []
             for evidence_id in evidence_ids:
                 ref = allowed_evidence_refs.get(evidence_id)
                 if ref is None:
                     raise _invalid_suggestion("Model evidence must come from the projected evidence pack.")
-                citation_type = citation_type_for_source_type(ref.source_type)
-                if citation_type is None or citation_type not in allowed_evidence_types:
-                    raise _invalid_suggestion("Model evidence is outside the resolved profile allowlist.")
+                refs.append(ref)
+            try:
+                validate_evidence_type_membership(
+                    resolved_profile,
+                    declared_evidence_types,
+                    tuple(ref.source_type for ref in refs),
+                    allow_subset=retrieval_incomplete,
+                    allow_empty=retrieval_incomplete,
+                )
+            except ValueError as exc:
+                raise _invalid_suggestion("Model evidence is outside the declared evidence types.") from exc
             expected_targets.append((f"/{collection}/{index}", collection, evidence_ids))
 
     claims = {claim.target: claim for claim in candidate.claims}
@@ -219,15 +231,7 @@ class ReviewTemplateAdapter:
                     quote=projected_ref.quote,
                 )
             )
-        bounded_pack = EvidencePack.build(
-            pack_id=evidence_pack.pack_id,
-            workspace_id=evidence_pack.workspace_id,
-            acl_scope=evidence_pack.acl_scope,
-            versions=evidence_pack.versions,
-            refs=tuple(bounded_refs),
-            created_at=evidence_pack.created_at,
-            expires_at=evidence_pack.expires_at,
-        )
+        bounded_pack = replace(evidence_pack, refs=tuple(bounded_refs))
         try:
             request = ReviewModelRequest(
                 run_id=run_id,
@@ -314,7 +318,9 @@ class ReviewTemplateAdapter:
                 result,
                 payload,
                 {ref.evidence_id: ref for ref in context.evidence.refs},
+                context.retrieval.resolved_profile,
                 context.retrieval.evidence_types,
+                context.retrieval.incomplete,
             )
 
             action = ReviewAction(_json_string(payload["recommended_action"], "Recommended action is invalid."))

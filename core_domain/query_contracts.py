@@ -190,7 +190,7 @@ def citation_type_for_source_type(source_type: str) -> CitationType | None:
     return _SOURCE_TYPE_TO_CITATION_TYPE.get(source_type)
 
 
-def validate_evidence_source_types(
+def validate_evidence_type_membership(
     profile: EvidenceSelectionProfile,
     evidence_types: tuple[CitationType, ...],
     source_types: tuple[str, ...],
@@ -198,9 +198,9 @@ def validate_evidence_source_types(
     allow_subset: bool = False,
     allow_empty: bool = False,
 ) -> tuple[CitationType, ...]:
-    """Validate declared types and the exact types observed in persisted refs."""
+    """Validate declared profile types and source membership within that declaration."""
 
-    allowed = validate_resolved_evidence_types(
+    validate_resolved_evidence_types(
         profile,
         evidence_types,
         allow_subset=allow_subset,
@@ -211,13 +211,33 @@ def validate_evidence_source_types(
         citation_type = citation_type_for_source_type(source_type)
         if citation_type is None:
             raise ValueError("evidence source type is unmapped")  # noqa: TRY003
+        if citation_type not in evidence_types:
+            raise ValueError("evidence source type is outside declared evidence_types")  # noqa: TRY003
         if citation_type not in observed:
             observed.append(citation_type)
-    if not set(observed).issubset(set(allowed)):
-        raise ValueError("observed evidence source types exceed the resolved profile allowlist")  # noqa: TRY003
+    return tuple(observed)
+
+
+def validate_evidence_source_types(
+    profile: EvidenceSelectionProfile,
+    evidence_types: tuple[CitationType, ...],
+    source_types: tuple[str, ...],
+    *,
+    allow_subset: bool = False,
+    allow_empty: bool = False,
+) -> tuple[CitationType, ...]:
+    """Validate declared types and the exact types observed in persisted refs."""
+
+    observed = validate_evidence_type_membership(
+        profile,
+        evidence_types,
+        source_types,
+        allow_subset=allow_subset,
+        allow_empty=allow_empty,
+    )
     if set(observed) != set(evidence_types):
         raise ValueError("observed evidence source types do not match declared evidence_types")  # noqa: TRY003
-    return tuple(observed)
+    return observed
 
 
 class SourceRef(_ContractModel):
@@ -393,5 +413,7 @@ __all__ = [
     "allowed_citation_types_for_profile",
     "citation_type_for_source_type",
     "selected_citation_types",
+    "validate_evidence_source_types",
+    "validate_evidence_type_membership",
     "validate_resolved_evidence_types",
 ]
