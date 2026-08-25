@@ -30,7 +30,7 @@ process that starts the API or CLI:
 ```powershell
 $env:RAG_WORKSPACE_CONFIG = "C:\path\to\workspaces.json"
 $env:FMEA_LOCAL_AUTH_ENABLED = "true"
-$env:FMEA_REVIEW_TOKEN = "a-32-byte-local-token"
+$env:FMEA_REVIEW_TOKEN = "task11-local-review-token-placeholder-0001"
 $env:FMEA_REVIEW_ACTOR_ID = "reviewer-1"
 $env:FMEA_REVIEW_WORKSPACE_ID = "ws-1"
 ```
@@ -39,6 +39,8 @@ The optional paid live gate additionally reads `DEEPSEEK_API_KEY` from the
 environment. Never place it in workspace JSON, request bodies, templates,
 EvidencePacks, logs, artifacts, or command output. The live check is a model
 suggestion smoke test and never submits a human decision.
+Real secrets remain environment-only; the token shown above is an explicit
+documentation placeholder, not a credential.
 
 The FMEA routes are loopback-only by contract. Run the console behind a
 loopback binding or a separately authenticated reverse proxy; do not expose
@@ -108,14 +110,14 @@ Read context without a write precondition:
 
 ```powershell
 curl.exe http://127.0.0.1:8000/api/v1/fmea/rows/row-1/review-context `
-  -H "Authorization: Bearer a-32-byte-local-token"
+  -H "Authorization: Bearer task11-local-review-token-placeholder-0001"
 ```
 
 Start a durable suggestion run with exact replay identity:
 
 ```powershell
 curl.exe -X POST http://127.0.0.1:8000/api/v1/fmea/rows/row-1/review-suggestion-runs `
-  -H "Authorization: Bearer a-32-byte-local-token" `
+  -H "Authorization: Bearer task11-local-review-token-placeholder-0001" `
   -H 'If-Match: "1"' `
   -H "Idempotency-Key: 00000000-0000-4000-8000-000000000001" `
   -H "Content-Type: application/json" `

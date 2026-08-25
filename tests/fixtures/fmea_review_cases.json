@@ -3,93 +3,245 @@
     "case_id": "rag-only",
     "requested_profile": "rag_only",
     "resolved_profile": "rag_only",
-    "evidence_types": ["text"],
+    "evidence_types": [
+      "text"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
     "row": {
-      "row_id": "row-1",
+      "actions": [
+        "inspect filter"
+      ],
       "analysis_id": "analysis-1",
-      "evidence_pack_id": "pack-1",
-      "item_id": "filter-1",
-      "function_id": "fuel-filter-function",
-      "failure_mode": "low fuel pressure",
-      "causes": ["filter blockage"],
-      "mechanisms": ["flow restriction"],
-      "effects": ["flame instability"],
-      "symptoms": ["pressure alarm"],
-      "controls": ["pressure transmitter"],
-      "barriers": ["trip logic"],
-      "actions": ["inspect filter"],
-      "risk_assessment": null,
-      "field_evidence": [["failure_mode", ["ev-1"]]],
-      "field_support": [["failure_mode", "supported"]],
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
       "claim_status": "known",
-      "review_status": "suggested",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
       "publication_status": "unpublished",
-      "record_version": 1
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
     },
     "source": {
-      "row_id": "row-1",
-      "source_record_version": 1,
       "candidate_id": "candidate-1",
-      "item_label": "Fuel filter",
+      "evidence_types": [
+        "text"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
       "function_label": "Remove particles",
-      "template_id": "fuel-combustion-fmea-row",
-      "template_version": "1.0.0",
-      "profile_id": "fuel-combustion-fmea-row",
+      "generation_run_id": "generation-rag_only",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-rag_only",
       "profile_version": "1.0.0",
-      "generation_run_id": "generation-1",
-      "trace_id": "trace-1",
-      "retrieval_warnings": [],
+      "requested_evidence_profile": "rag_only",
+      "resolved_evidence_profile": "rag_only",
       "retrieval_incomplete": false,
-      "field_claim_statuses": []
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:80dedf302a5171f9ce84c6cb579155d909f1286c130b18d9909e338d2de10c21",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-rag_only"
     },
     "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "64d7f23a1bff301865b168b8f000a3ea66cdbd5e8a96cd32b7877ea7c8f797c3",
       "pack_id": "pack-1",
-      "workspace_id": "ws-1",
-      "acl_scope": ["engineering"],
-      "versions": {
-        "schema_id": "graphrag.fmea.v1",
-        "data_version": "data-1",
-        "graph_version": "graph-1",
-        "evidence_pack_version": "evidence-1",
-        "profile_version": "profile-1",
-        "template_version": "template-1",
-        "scoring_version": "score-1",
-        "prompt_version": "prompt-0",
-        "model_version": "model-0",
-        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-      },
       "refs": [
         {
-          "evidence_id": "ev-1",
-          "workspace_id": "ws-1",
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
           "document_id": "doc-1",
           "document_version": "doc-v1",
-          "content_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-          "locator": "page:1#span:1",
-          "quote": "pressure is low",
-          "normalized_quote": "pressure is low",
-          "evidence_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-          "acl_scope": ["engineering"],
-          "source_type": "primary_document",
-          "source_trust": "reviewed",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
           "is_primary": true,
-          "created_at": "2026-08-23T00:00:00Z",
-          "expires_at": null
+          "locator": "page:1#span:1",
+          "normalized_quote": "pressure is low",
+          "quote": "pressure is low",
+          "source_trust": "reviewed",
+          "source_type": "primary_document",
+          "workspace_id": "ws-1"
         }
       ],
-      "created_at": "2026-08-23T00:00:00Z",
-      "expires_at": null
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
     },
     "model_payload": {
-      "recommended_action": "accept",
-      "field_findings": [],
-      "proposed_edits": [],
-      "evidence_requests": [],
-      "missing_evidence": [],
       "conflicts": [],
-      "rationale": "The candidate is supported by the current evidence."
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
     },
     "decision": {
       "action": "accept",
@@ -104,78 +256,1644 @@
     "case_id": "graphrag-local-only",
     "requested_profile": "graphrag_local_only",
     "resolved_profile": "graphrag_local_only",
-    "evidence_types": ["graph"],
+    "evidence_types": [
+      "graph"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "graphrag_local_only", "resolved_profile": "graphrag_local_only", "evidence_types": ["graph"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "graphrag_relation", "quote": "filter restricts fuel flow"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "graph"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-graphrag_local_only",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-graphrag_local_only",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "graphrag_local_only",
+      "resolved_evidence_profile": "graphrag_local_only",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:6ccbe60236d521f6a19112b4cb21ac19555854c71df289094752c30f849e7207",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-graphrag_local_only"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "64d7f23a1bff301865b168b8f000a3ea66cdbd5e8a96cd32b7877ea7c8f797c3",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "filter restricts fuel flow",
+          "quote": "filter restricts fuel flow",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_relation",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   },
   {
     "case_id": "graphrag-global-only",
     "requested_profile": "graphrag_global_only",
     "resolved_profile": "graphrag_global_only",
-    "evidence_types": ["community"],
+    "evidence_types": [
+      "community"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "graphrag_global_only", "resolved_profile": "graphrag_global_only", "evidence_types": ["community"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "graphrag_community", "quote": "fuel stability community summary"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "community"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-graphrag_global_only",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-graphrag_global_only",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "graphrag_global_only",
+      "resolved_evidence_profile": "graphrag_global_only",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:195f137782ed1dea17dc28902ac857b11df4a4f8008431b8f4741c3eb97c401c",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-graphrag_global_only"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "64d7f23a1bff301865b168b8f000a3ea66cdbd5e8a96cd32b7877ea7c8f797c3",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "fuel stability community summary",
+          "quote": "fuel stability community summary",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_community",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   },
   {
     "case_id": "graphrag-only",
     "requested_profile": "graphrag_only",
     "resolved_profile": "graphrag_only",
-    "evidence_types": ["graph", "community"],
+    "evidence_types": [
+      "graph",
+      "community"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "graphrag_only", "resolved_profile": "graphrag_only", "evidence_types": ["graph", "community"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "graphrag_relation", "quote": "filter restricts fuel flow"}, {"evidence_id": "ev-2", "source_type": "graphrag_community", "quote": "fuel stability community summary"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "graph",
+        "community"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-graphrag_only",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-graphrag_only",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "graphrag_only",
+      "resolved_evidence_profile": "graphrag_only",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:bfe84fd02a0b723051f394fd32f48cad8ff4d92234b7436f649ac43147d732ce",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-graphrag_only"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "ec8cf901066f5bf5aa48f83b2e455afb4f41277e4adb2ddd2100f299b3d1fb0a",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "filter restricts fuel flow",
+          "quote": "filter restricts fuel flow",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_relation",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "evidence_id": "ev-2",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:2#span:1",
+          "normalized_quote": "fuel stability community summary",
+          "quote": "fuel stability community summary",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_community",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   },
   {
     "case_id": "combined",
     "requested_profile": "combined",
     "resolved_profile": "combined",
-    "evidence_types": ["text", "graph", "community"],
+    "evidence_types": [
+      "text",
+      "graph",
+      "community"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "combined", "resolved_profile": "combined", "evidence_types": ["text", "graph", "community"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "primary_document", "quote": "pressure is low"}, {"evidence_id": "ev-2", "source_type": "graphrag_relation", "quote": "filter restricts fuel flow"}, {"evidence_id": "ev-3", "source_type": "graphrag_community", "quote": "fuel stability community summary"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "text",
+        "graph",
+        "community"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-combined",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-combined",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "combined",
+      "resolved_evidence_profile": "combined",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:54d92946123194cad0147cc03b0fe68e0e4ab7c13d5aea311b8ee31ddcad3adf",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-combined"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "f317a3af9c7814423c00f79c3791c96f84f559cb86a4e590560f3ee98f5dcaf1",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "pressure is low",
+          "quote": "pressure is low",
+          "source_trust": "reviewed",
+          "source_type": "primary_document",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "evidence_id": "ev-2",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:2#span:1",
+          "normalized_quote": "filter restricts fuel flow",
+          "quote": "filter restricts fuel flow",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_relation",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "evidence_id": "ev-3",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:3#span:1",
+          "normalized_quote": "fuel stability community summary",
+          "quote": "fuel stability community summary",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_community",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   },
   {
     "case_id": "auto",
     "requested_profile": "auto",
     "resolved_profile": "combined",
-    "evidence_types": ["text", "graph", "community"],
+    "evidence_types": [
+      "text",
+      "graph",
+      "community"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "auto", "resolved_profile": "combined", "evidence_types": ["text", "graph", "community"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "primary_document", "quote": "pressure is low"}, {"evidence_id": "ev-2", "source_type": "graphrag_relation", "quote": "filter restricts fuel flow"}, {"evidence_id": "ev-3", "source_type": "graphrag_community", "quote": "fuel stability community summary"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "text",
+        "graph",
+        "community"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-auto",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-auto",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "auto",
+      "resolved_evidence_profile": "combined",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:e3ce9a9504fcca77ed26d0abeadbb2d41814ba5d6dcb67a1c2e4d86ef2c886fd",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-auto"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "f317a3af9c7814423c00f79c3791c96f84f559cb86a4e590560f3ee98f5dcaf1",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "pressure is low",
+          "quote": "pressure is low",
+          "source_trust": "reviewed",
+          "source_type": "primary_document",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "evidence_id": "ev-2",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:2#span:1",
+          "normalized_quote": "filter restricts fuel flow",
+          "quote": "filter restricts fuel flow",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_relation",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "evidence_id": "ev-3",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:3#span:1",
+          "normalized_quote": "fuel stability community summary",
+          "quote": "fuel stability community summary",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_community",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   },
   {
     "case_id": "custom",
     "requested_profile": "custom",
     "resolved_profile": "custom",
-    "evidence_types": ["text", "graph"],
+    "evidence_types": [
+      "text",
+      "graph"
+    ],
     "retrieval_warnings": [],
     "retrieval_incomplete": false,
-    "row": {"row_id": "row-1", "record_version": 1, "review_status": "suggested", "publication_status": "unpublished"},
-    "source": {"row_id": "row-1", "source_record_version": 1, "requested_profile": "custom", "resolved_profile": "custom", "evidence_types": ["text", "graph"]},
-    "evidence_pack": {"pack_id": "pack-1", "refs": [{"evidence_id": "ev-1", "source_type": "primary_document", "quote": "pressure is low"}, {"evidence_id": "ev-2", "source_type": "graphrag_relation", "quote": "filter restricts fuel flow"}]},
-    "model_payload": {"recommended_action": "accept", "field_findings": [], "proposed_edits": [], "evidence_requests": [], "missing_evidence": [], "conflicts": [], "rationale": "The candidate is supported by the current evidence."},
-    "decision": {"action": "accept", "reason_code": "ACCEPT_AS_IS", "reason": "Human reviewer accepts the supported row.", "edits": [], "evidence_requests": [], "unresolved_acknowledgements": []}
+    "row": {
+      "actions": [
+        "inspect filter"
+      ],
+      "analysis_id": "analysis-1",
+      "barriers": [
+        "trip logic"
+      ],
+      "causes": [
+        "filter blockage"
+      ],
+      "claim_status": "known",
+      "controls": [
+        "pressure transmitter"
+      ],
+      "effects": [
+        "flame instability"
+      ],
+      "evidence_pack_id": "pack-1",
+      "failure_mode": "low fuel pressure",
+      "field_evidence": [
+        [
+          "actions",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "barriers",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "causes",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "controls",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "effects",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "failure_mode",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "mechanisms",
+          [
+            "ev-1"
+          ]
+        ],
+        [
+          "symptoms",
+          [
+            "ev-1"
+          ]
+        ]
+      ],
+      "field_support": [
+        [
+          "actions",
+          "supported"
+        ],
+        [
+          "barriers",
+          "supported"
+        ],
+        [
+          "causes",
+          "supported"
+        ],
+        [
+          "controls",
+          "supported"
+        ],
+        [
+          "effects",
+          "supported"
+        ],
+        [
+          "failure_mode",
+          "supported"
+        ],
+        [
+          "mechanisms",
+          "supported"
+        ],
+        [
+          "symptoms",
+          "supported"
+        ]
+      ],
+      "function_id": "fuel-filter-function",
+      "item_id": "filter-1",
+      "mechanisms": [
+        "flow restriction"
+      ],
+      "publication_status": "unpublished",
+      "record_version": 1,
+      "review_status": "suggested",
+      "risk_assessment": null,
+      "row_id": "row-1",
+      "symptoms": [
+        "pressure alarm"
+      ]
+    },
+    "source": {
+      "candidate_id": "candidate-1",
+      "evidence_types": [
+        "text",
+        "graph"
+      ],
+      "field_claim_statuses": [
+        [
+          "actions",
+          "known"
+        ],
+        [
+          "barriers",
+          "known"
+        ],
+        [
+          "causes",
+          "known"
+        ],
+        [
+          "controls",
+          "known"
+        ],
+        [
+          "effects",
+          "known"
+        ],
+        [
+          "failure_mode",
+          "known"
+        ],
+        [
+          "mechanisms",
+          "known"
+        ],
+        [
+          "symptoms",
+          "known"
+        ]
+      ],
+      "function_label": "Remove particles",
+      "generation_run_id": "generation-custom",
+      "item_label": "Fuel filter",
+      "profile_id": "fmea-review-custom",
+      "profile_version": "1.0.0",
+      "requested_evidence_profile": "custom",
+      "resolved_evidence_profile": "custom",
+      "retrieval_incomplete": false,
+      "retrieval_warnings": [],
+      "row_id": "row-1",
+      "source_hash": "sha256:83f95c7a44375489977842fcc6cc647d56c60fd190caa0307e2e3280f3ae26cc",
+      "source_record_version": 1,
+      "template_id": "fmea-row-review",
+      "template_version": "1.0.0",
+      "trace_id": "trace-custom"
+    },
+    "evidence_pack": {
+      "acl_scope": [
+        "engineering"
+      ],
+      "created_at": "2026-08-25T00:00:00Z",
+      "expires_at": null,
+      "pack_hash": "ec8cf901066f5bf5aa48f83b2e455afb4f41277e4adb2ddd2100f299b3d1fb0a",
+      "pack_id": "pack-1",
+      "refs": [
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "evidence_id": "ev-1",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:1#span:1",
+          "normalized_quote": "pressure is low",
+          "quote": "pressure is low",
+          "source_trust": "reviewed",
+          "source_type": "primary_document",
+          "workspace_id": "ws-1"
+        },
+        {
+          "acl_scope": [
+            "engineering"
+          ],
+          "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "created_at": "2026-08-25T00:00:00Z",
+          "document_id": "doc-1",
+          "document_version": "doc-v1",
+          "evidence_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "evidence_id": "ev-2",
+          "expires_at": null,
+          "is_primary": true,
+          "locator": "page:2#span:1",
+          "normalized_quote": "filter restricts fuel flow",
+          "quote": "filter restricts fuel flow",
+          "source_trust": "reviewed",
+          "source_type": "graphrag_relation",
+          "workspace_id": "ws-1"
+        }
+      ],
+      "versions": {
+        "data_version": "data-1",
+        "evidence_pack_version": "evidence-1",
+        "graph_version": "graph-1",
+        "input_snapshot_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "model_version": "model-0",
+        "profile_version": "profile-1",
+        "prompt_version": "prompt-0",
+        "schema_id": "graphrag.fmea.v1",
+        "scoring_version": "score-1",
+        "template_version": "template-1"
+      },
+      "workspace_id": "ws-1"
+    },
+    "model_payload": {
+      "conflicts": [],
+      "evidence_requests": [],
+      "field_findings": [
+        {
+          "evidence_ids": [
+            "ev-1"
+          ],
+          "judgement": "supported",
+          "rationale": "The current control is supported.",
+          "recommended_claim_status": "known",
+          "target_field": "controls"
+        }
+      ],
+      "missing_evidence": [],
+      "proposed_edits": [],
+      "rationale": "The candidate is supported by the current evidence.",
+      "recommended_action": "accept"
+    },
+    "decision": {
+      "action": "accept",
+      "reason_code": "ACCEPT_AS_IS",
+      "reason": "Human reviewer accepts the supported row.",
+      "edits": [],
+      "evidence_requests": [],
+      "unresolved_acknowledgements": []
+    }
   }
 ]

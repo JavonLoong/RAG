@@ -38,6 +38,32 @@ _PROFILE_CASES = (
     ("auto", "combined", ["text", "graph", "community"]),
     ("custom", "custom", ["text", "graph"]),
 )
+_PROFILE_CASE_KEYS = {
+    "case_id", "requested_profile", "resolved_profile", "evidence_types", "retrieval_warnings",
+    "retrieval_incomplete", "row", "source", "evidence_pack", "model_payload", "decision", "execution",
+}
+_SOURCE_KEYS = {
+    "row_id", "source_record_version", "candidate_id", "item_label", "function_label", "template_id",
+    "template_version", "profile_id", "profile_version", "generation_run_id", "requested_evidence_profile",
+    "resolved_evidence_profile", "evidence_types", "trace_id", "retrieval_warnings", "retrieval_incomplete",
+    "field_claim_statuses", "source_hash",
+}
+_PACK_KEYS = {"pack_id", "workspace_id", "acl_scope", "versions", "refs", "pack_hash", "created_at", "expires_at"}
+_REF_KEYS = {
+    "evidence_id", "workspace_id", "document_id", "document_version", "content_hash", "locator", "quote",
+    "normalized_quote", "evidence_hash", "acl_scope", "source_type", "source_trust", "is_primary",
+    "created_at", "expires_at",
+}
+_MODEL_PAYLOAD_KEYS = {
+    "recommended_action", "field_findings", "proposed_edits", "evidence_requests", "missing_evidence",
+    "conflicts", "rationale",
+}
+_DECISION_INPUT_KEYS = {"action", "reason_code", "reason", "edits", "evidence_requests", "unresolved_acknowledgements"}
+_EXECUTION_KEYS = {
+    "status", "requested_profile", "resolved_profile", "evidence_types", "template_id", "template_version",
+    "template_hash", "row_hash", "row_after_hash", "source_hash", "evidence_pack_hash", "model_payload_hash",
+    "run_id", "suggestion_id", "decision_id", "audit_event_ids",
+}
 _MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 _MARKERS = tuple(
     marker.encode("utf-8")
@@ -153,29 +179,138 @@ def _schema(value: dict[str, object], expected: str) -> None:
         _fail("SCHEMA_MISMATCH")
 
 
+def _canonical_json(value: object) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+
+
+def _entity_hash(value: object) -> str:
+    return "sha256:" + sha256(_canonical_json(value)).hexdigest()
+
+
+def _evidence_pack_hash(pack: dict[str, object]) -> str:
+    refs = pack.get("refs")
+    if not isinstance(refs, list):
+        _fail("EVIDENCE_PACK_INVALID")
+    evidence_content = []
+    for ref in refs:
+        item = _exact(ref, _REF_KEYS, "EVIDENCE_REF_INVALID")
+        evidence_content.append(
+            {
+                "evidence_id": item["evidence_id"],
+                "evidence_hash": item["evidence_hash"],
+                "locator": item["locator"],
+            }
+        )
+    payload = json.dumps(sorted(evidence_content, key=lambda item: str(item["evidence_id"])), sort_keys=True, separators=(",", ":"))
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_profile_source(
+    value: object,
+    row: dict[str, object],
+    requested: str,
+    resolved: str,
+    types: list[str],
+) -> dict[str, object]:
+    source = _exact(value, _SOURCE_KEYS, "PROFILE_SOURCE_INVALID")
+    if (
+        source.get("row_id") != row.get("row_id")
+        or source.get("source_record_version") != 1
+        or source.get("requested_evidence_profile") != requested
+        or source.get("resolved_evidence_profile") != resolved
+        or source.get("evidence_types") != types
+        or source.get("template_id") != "fmea-row-review"
+        or source.get("template_version") != "1.0.0"
+    ):
+        _fail("PROFILE_SOURCE_INVALID")
+    source_hash = source.get("source_hash")
+    source_without_hash = {key: value for key, value in source.items() if key != "source_hash"}
+    if source_hash != _hash_bytes(_canonical_json(source_without_hash)):
+        _fail("SOURCE_HASH_MISMATCH")
+    return source
+
+
+def _validate_profile_execution(
+    value: object,
+    case: dict[str, object],
+    row: dict[str, object],
+    source: dict[str, object],
+    pack: dict[str, object],
+    requested: str,
+    resolved: str,
+    types: list[str],
+) -> dict[str, object]:
+    execution = _exact(value, _EXECUTION_KEYS, "PROFILE_EXECUTION_INVALID")
+    payload = _exact(case.get("model_payload"), _MODEL_PAYLOAD_KEYS, "MODEL_PAYLOAD_INVALID")
+    if (
+        execution.get("status") != "succeeded"
+        or execution.get("requested_profile") != requested
+        or execution.get("resolved_profile") != resolved
+        or execution.get("evidence_types") != types
+        or execution.get("template_id") != "fmea-row-review"
+        or execution.get("template_version") != "1.0.0"
+        or execution.get("source_hash") != source.get("source_hash")
+        or execution.get("evidence_pack_hash") != pack["pack_hash"]
+        or execution.get("row_hash") != _hash_json(row)
+        or execution.get("model_payload_hash") != _hash_json(payload)
+    ):
+        _fail("PROFILE_EXECUTION_INVALID")
+    if not isinstance(execution.get("template_hash"), str) or not re.fullmatch(r"[0-9a-f]{64}", execution["template_hash"]):
+        _fail("PROFILE_EXECUTION_INVALID")
+    if not isinstance(execution.get("row_after_hash"), str) or not _SHA256.fullmatch(execution["row_after_hash"]):
+        _fail("PROFILE_EXECUTION_INVALID")
+    if not isinstance(execution.get("audit_event_ids"), list) or len(execution["audit_event_ids"]) != 3:
+        _fail("PROFILE_EXECUTION_INVALID")
+    if (
+        not isinstance(execution.get("run_id"), str)
+        or not isinstance(execution.get("suggestion_id"), str)
+        or not isinstance(execution.get("decision_id"), str)
+    ):
+        _fail("PROFILE_EXECUTION_INVALID")
+    return execution
+
+
+def _validate_profile_case(item: object) -> dict[str, object]:
+    case = _exact(item, _PROFILE_CASE_KEYS, "PROFILE_MATRIX_INVALID")
+    requested = case.get("requested_profile")
+    if not isinstance(requested, str):
+        _fail("PROFILE_MATRIX_INVALID")
+    expected = {name: (resolved, types) for name, resolved, types in _PROFILE_CASES}
+    if requested not in expected:
+        _fail("PROFILE_MATRIX_INVALID")
+    resolved, types = expected[requested]
+    if case.get("resolved_profile") != resolved or case.get("evidence_types") != types:
+        _fail("PROFILE_MATRIX_INVALID")
+    if not isinstance(case.get("retrieval_warnings"), list) or not isinstance(case.get("retrieval_incomplete"), bool):
+        _fail("PROFILE_MATRIX_INVALID")
+    row = _validate_row(case.get("row"), version=1, code="PROFILE_ROW_INVALID")
+    source = _validate_profile_source(case.get("source"), row, requested, resolved, types)
+    pack = _exact(case.get("evidence_pack"), _PACK_KEYS, "EVIDENCE_PACK_INVALID")
+    refs = pack.get("refs")
+    if not isinstance(refs, list) or not refs or pack.get("pack_id") != row.get("evidence_pack_id"):
+        _fail("EVIDENCE_PACK_INVALID")
+    if not isinstance(pack.get("pack_hash"), str) or not re.fullmatch(r"[0-9a-f]{64}", pack["pack_hash"]):
+        _fail("EVIDENCE_PACK_INVALID")
+    if _evidence_pack_hash(pack) != pack["pack_hash"]:
+        _fail("EVIDENCE_PACK_HASH_MISMATCH")
+    _exact(case.get("decision"), _DECISION_INPUT_KEYS, "DECISION_INPUT_INVALID")
+    _validate_profile_execution(case.get("execution"), case, row, source, pack, requested, resolved, types)
+    return case
+
+
 def _validate_profiles(value: object) -> list[dict[str, object]]:
     if not isinstance(value, list) or len(value) != len(_PROFILE_CASES):
         _fail("PROFILE_MATRIX_INVALID")
-    expected = {requested: (resolved, types) for requested, resolved, types in _PROFILE_CASES}
     result: list[dict[str, object]] = []
     seen: set[str] = set()
     for item in value:
-        case = _exact(
-            item,
-            {"case_id", "requested_profile", "resolved_profile", "evidence_types", "retrieval_warnings", "retrieval_incomplete"},
-            "PROFILE_MATRIX_INVALID",
-        )
-        requested = case.get("requested_profile")
-        if not isinstance(requested, str) or requested in seen or requested not in expected:
-            _fail("PROFILE_MATRIX_INVALID")
-        resolved, types = expected[requested]
-        if case.get("resolved_profile") != resolved or case.get("evidence_types") != types:
-            _fail("PROFILE_MATRIX_INVALID")
-        if not isinstance(case.get("retrieval_warnings"), list) or not isinstance(case.get("retrieval_incomplete"), bool):
+        case = _validate_profile_case(item)
+        requested = cast(str, case.get("requested_profile"))
+        if requested in seen:
             _fail("PROFILE_MATRIX_INVALID")
         seen.add(requested)
         result.append(case)
-    if seen != set(expected):
+    if seen != {requested for requested, _, _ in _PROFILE_CASES}:
         _fail("PROFILE_MATRIX_INVALID")
     return result
 
@@ -232,7 +367,9 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
     row_before = _validate_row(context_data["row"], version=1, code="ROW_BEFORE_INVALID")
     if context_data["row_hash"] != _hash_json(row_before):
         _fail("ROW_HASH_MISMATCH")
-    _validate_profiles(context_data["profile_cases"])
+    profile_cases = _validate_profiles(context_data["profile_cases"])
+    combined_case = next(case for case in profile_cases if case["requested_profile"] == "combined")
+    combined_pack = cast(dict[str, object], combined_case["evidence_pack"])
     retrieval = _exact(
         context_data["retrieval"],
         {"requested_profile", "resolved_profile", "evidence_types", "trace_id", "warnings", "incomplete"},
@@ -241,7 +378,12 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
     if retrieval["requested_profile"] != "combined" or retrieval["resolved_profile"] != "combined":
         _fail("RETRIEVAL_INVALID")
     evidence = _exact(context_data["evidence"], {"pack_id", "pack_hash", "refs"}, "EVIDENCE_INVALID")
-    if evidence["pack_id"] != "pack-1" or not isinstance(evidence["pack_hash"], str) or not _SHA256.fullmatch(evidence["pack_hash"]):
+    if (
+        evidence["pack_id"] != combined_pack["pack_id"]
+        or evidence["pack_hash"] != "sha256:" + str(combined_pack["pack_hash"])
+        or not isinstance(evidence["pack_hash"], str)
+        or not _SHA256.fullmatch(evidence["pack_hash"])
+    ):
         _fail("EVIDENCE_INVALID")
     if not isinstance(evidence["refs"], list) or not evidence["refs"]:
         _fail("EVIDENCE_INVALID")
@@ -253,8 +395,19 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
     run = _exact(run, {"schema_version", "data"}, "RUN_ENVELOPE_INVALID")
     _schema(run, SCHEMA_VERSION)
     run_data = _exact(run["data"], _RUN_KEYS, "RUN_INVALID")
-    if run_data.get("status") != "succeeded" or run_data.get("source_record_version") != 1:
+    combined_execution = cast(dict[str, object], combined_case["execution"])
+    if (
+        run_data.get("status") != "succeeded"
+        or run_data.get("source_record_version") != 1
+        or run_data.get("run_id") != combined_execution.get("run_id")
+        or run_data.get("row_id") != combined_case.get("row")["row_id"]
+    ):
         _fail("RUN_INVALID")
+    if (
+        run_data.get("suggestion_id") != combined_execution.get("suggestion_id")
+        or run_data.get("source_record_version") != combined_case.get("source")["source_record_version"]
+    ):
+        _fail("RUN_SUGGESTION_BINDING_INVALID")
     run_id = run_data.get("run_id")
     if not isinstance(run_id, str):
         _fail("RUN_INVALID")
@@ -262,23 +415,37 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
     suggestion = _exact(suggestion, {"schema_version", "data"}, "SUGGESTION_ENVELOPE_INVALID")
     _schema(suggestion, SCHEMA_VERSION)
     suggestion_data = _exact(suggestion["data"], _SUGGESTION_KEYS, "SUGGESTION_INVALID")
+    model_manifest = suggestion_data.get("model_manifest")
+    if not isinstance(model_manifest, dict):
+        _fail("SUGGESTION_BINDING_INVALID")
     if (
         suggestion_data.get("run_id") != run_id
+        or suggestion_data.get("suggestion_id") != run_data.get("suggestion_id")
+        or suggestion_data.get("row_id") != run_data.get("row_id")
         or suggestion_data.get("source_record_version") != 1
         or suggestion_data.get("actor_type") != "model"
         or suggestion_data.get("applied") is not False
+        or model_manifest.get("template_id") != combined_execution.get("template_id")
+        or model_manifest.get("template_version") != combined_execution.get("template_version")
     ):
-        _fail("SUGGESTION_INVALID")
+        _fail("SUGGESTION_BINDING_INVALID")
 
     decision = _exact(decision, {"schema_version", "data"}, "DECISION_ENVELOPE_INVALID")
     _schema(decision, SCHEMA_VERSION)
     decision_data = _exact(decision["data"], _DECISION_KEYS, "DECISION_INVALID")
     row_after = _validate_row(decision_data["row"], version=2, code="ROW_AFTER_INVALID")
-    if decision_data.get("previous_record_version") != 1 or decision_data.get("record_version") != 2:
-        _fail("DECISION_INVALID")
+    if (
+        decision_data.get("previous_record_version") != 1
+        or decision_data.get("record_version") != 2
+        or row_after.get("row_id") != run_data.get("row_id")
+        or row_after.get("record_version") != decision_data.get("record_version")
+    ):
+        _fail("DECISION_VERSION_BINDING_INVALID")
     if decision_data.get("review_status") != "accepted" or decision_data.get("persisted") is not True:
         _fail("DECISION_INVALID")
     if decision_data.get("suggestion_id") != suggestion_data.get("suggestion_id"):
+        _fail("DECISION_BINDING_INVALID")
+    if decision_data.get("audit_event_id") is None:
         _fail("DECISION_BINDING_INVALID")
 
     audit = _exact(audit, {"schema_version", "events", "counts", "decision_ids", "audit_event_ids"}, "AUDIT_SUMMARY_INVALID")
@@ -304,6 +471,21 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
         _fail("AUDIT_SUMMARY_INVALID")
     if audit.get("decision_ids") != [decision_data.get("decision_id")] or audit.get("audit_event_ids") != event_ids:
         _fail("AUDIT_BINDING_INVALID")
+    decision_event = next(event for event in events if event.get("command") == "review.decision")
+    complete_event = next(event for event in events if event.get("command") == "review.suggestion.complete")
+    if (
+        decision_event.get("decision_id") != decision_data.get("decision_id")
+        or decision_event.get("suggestion_id") != suggestion_data.get("suggestion_id")
+        or decision_event.get("row_id") != row_after.get("row_id")
+        or decision_event.get("expected_record_version") != 1
+        or decision_event.get("applied_record_version") != 2
+        or decision_event.get("before_hash") != _entity_hash(row_before)
+        or decision_event.get("after_hash") != _entity_hash(row_after)
+        or decision_data.get("audit_event_id") != decision_event.get("event_id")
+        or complete_event.get("suggestion_id") != suggestion_data.get("suggestion_id")
+        or complete_event.get("row_id") != suggestion_data.get("row_id")
+    ):
+        _fail("AUDIT_HASH_BINDING_INVALID")
     counts = _exact(audit["counts"], {"audit_count", "model_decision_count", "publication_event_count"}, "AUDIT_SUMMARY_INVALID")
     if counts != {"audit_count": 3, "model_decision_count": 0, "publication_event_count": 0}:
         _fail("AUDIT_COUNT_INVALID")
@@ -336,6 +518,8 @@ def verify_acceptance_directory(directory: str | Path) -> dict[str, object]:  # 
     if hashes.get("schema_hash") != _hash_json(SCHEMA_VERSION):
         _fail("SCHEMA_HASH_MISMATCH")
     _validate_template_hash(hashes.get("template_hash"))
+    if any(cast(dict[str, object], case["execution"]).get("template_hash") != hashes.get("template_hash") for case in profile_cases):
+        _fail("TEMPLATE_HASH_MISMATCH")
     if hashes.get("row_before_hash") != _hash_json(row_before) or hashes.get("row_after_hash") != _hash_json(row_after):
         _fail("ROW_HASH_MISMATCH")
     artifact_hashes = _exact(hashes["artifacts"], set(_ARTIFACTS) - {"acceptance-summary.json"}, "SUMMARY_HASHES_INVALID")

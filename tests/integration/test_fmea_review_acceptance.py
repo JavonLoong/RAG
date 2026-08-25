@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass, replace
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -159,6 +160,36 @@ def test_fixture_contains_one_complete_case_per_profile() -> None:
         "retrieval_incomplete", "row", "source", "evidence_pack", "model_payload", "decision",
     }
     assert all(set(case) == required for case in cases)
+    row_keys = {
+        "row_id", "analysis_id", "evidence_pack_id", "item_id", "function_id", "failure_mode", "causes",
+        "mechanisms", "effects", "symptoms", "controls", "barriers", "actions", "risk_assessment",
+        "field_evidence", "field_support", "claim_status", "review_status", "publication_status", "record_version",
+    }
+    source_keys = {
+        "row_id", "source_record_version", "candidate_id", "item_label", "function_label", "template_id",
+        "template_version", "profile_id", "profile_version", "generation_run_id", "requested_evidence_profile",
+        "resolved_evidence_profile", "evidence_types", "trace_id", "retrieval_warnings", "retrieval_incomplete",
+        "field_claim_statuses", "source_hash",
+    }
+    pack_keys = {"pack_id", "workspace_id", "acl_scope", "versions", "refs", "pack_hash", "created_at", "expires_at"}
+    ref_keys = {
+        "evidence_id", "workspace_id", "document_id", "document_version", "content_hash", "locator", "quote",
+        "normalized_quote", "evidence_hash", "acl_scope", "source_type", "source_trust", "is_primary",
+        "created_at", "expires_at",
+    }
+    for case in cases:
+        assert set(case["row"]) == row_keys
+        assert set(case["source"]) == source_keys
+        assert set(case["evidence_pack"]) == pack_keys
+        assert case["evidence_pack"]["refs"]
+        assert all(set(ref) == ref_keys for ref in case["evidence_pack"]["refs"])
+        assert set(case["model_payload"]) == {
+            "recommended_action", "field_findings", "proposed_edits", "evidence_requests", "missing_evidence",
+            "conflicts", "rationale",
+        }
+        assert set(case["decision"]) == {
+            "action", "reason_code", "reason", "edits", "evidence_requests", "unresolved_acknowledgements",
+        }
 
 
 @pytest.mark.parametrize(("requested", "resolved", "types"), PROFILE_CASES)
@@ -219,3 +250,92 @@ def test_offline_runner_writes_exact_pack_and_tampering_fails_closed(tmp_path: P
     with pytest.raises(AcceptanceVerificationError) as caught:
         verify_acceptance_directory(output)
     assert caught.value.code == "ARTIFACT_SET_INVALID"
+
+
+def _rewrite_pack_artifact(output: Path, name: str, mutate: Any) -> None:
+    value = json.loads((output / name).read_text(encoding="utf-8"))
+    mutate(value)
+    (output / name).write_bytes(
+        (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    )
+    if name != "acceptance-summary.json":
+        summary_path = output / "acceptance-summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["hashes"]["artifacts"][name] = "sha256:" + sha256((output / name).read_bytes()).hexdigest()
+        summary_path.write_bytes(
+            (json.dumps(summary, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        )
+
+
+@pytest.mark.parametrize(
+    ("name", "mutate", "code"),
+    [
+        (
+            "profile mapping",
+            lambda value: value["data"]["profile_cases"][0].update({"resolved_profile": "rag_only"}),
+            "PROFILE_MATRIX_INVALID",
+        ),
+        (
+            "evidence pack content",
+            lambda value: value["data"]["profile_cases"][0]["evidence_pack"]["refs"][0].update(
+                {"locator": "page:999#span:tampered"}
+            ),
+            "EVIDENCE_PACK_HASH_MISMATCH",
+        ),
+        (
+            "run suggestion binding",
+            lambda value: value["data"].update({"suggestion_id": "other-suggestion"}),
+            "RUN_SUGGESTION_BINDING_INVALID",
+        ),
+        (
+            "decision version binding",
+            lambda value: value["data"].update({"previous_record_version": 2}),
+            "DECISION_VERSION_BINDING_INVALID",
+        ),
+        (
+            "audit hash binding",
+            lambda value: value["events"][-1].update({"before_hash": "sha256:" + "0" * 64}),
+            "AUDIT_HASH_BINDING_INVALID",
+        ),
+        (
+            "exact audit counts",
+            lambda value: value["counts"].update({"audit_count": 2}),
+            "AUDIT_COUNT_INVALID",
+        ),
+    ],
+)
+def test_independent_verifier_rejects_each_semantic_tamper_class(
+    tmp_path: Path,
+    name: str,
+    mutate: Any,
+    code: str,
+) -> None:
+    del name
+    from scripts.run_fmea_review_acceptance import _run
+    from scripts.verify_fmea_review_acceptance import AcceptanceVerificationError, verify_acceptance_directory
+
+    output = _run(tmp_path / "pack")
+    artifact = "context.json"
+    if code.startswith("RUN_"):
+        artifact = "suggestion-run.json"
+    elif code.startswith("DECISION_"):
+        artifact = "decision.json"
+    elif code.startswith("AUDIT_"):
+        artifact = "audit-summary.json"
+    _rewrite_pack_artifact(output, artifact, mutate)
+    with pytest.raises(AcceptanceVerificationError) as caught:
+        verify_acceptance_directory(output)
+    assert caught.value.code == code
+
+
+def test_runner_executes_every_fixture_profile_through_bound_template_path(tmp_path: Path) -> None:
+    from scripts.run_fmea_review_acceptance import _run
+    from scripts.verify_fmea_review_acceptance import verify_acceptance_directory
+
+    output = _run(tmp_path / "pack")
+    summary = verify_acceptance_directory(output)
+    cases = json.loads((output / "context.json").read_text(encoding="utf-8"))["data"]["profile_cases"]
+    assert len(cases) == len(PROFILE_CASES)
+    assert all(case["execution"]["status"] == "succeeded" for case in cases)
+    assert all(case["execution"]["template_id"] == "fmea-row-review" for case in cases)
+    assert all(case["execution"]["template_hash"] == summary["hashes"]["template_hash"] for case in cases)
