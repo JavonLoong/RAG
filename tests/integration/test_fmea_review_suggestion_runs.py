@@ -4,6 +4,7 @@ import json
 import sqlite3
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fmea_review_fixtures import (
@@ -12,7 +13,7 @@ from fmea_review_fixtures import (
     make_start_suggestion_command,
 )
 
-from core_domain.fmea.states import RunStatus
+from core_domain.fmea.states import ActorType, RunStatus
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_service import ReviewService
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
@@ -58,6 +59,22 @@ def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_re
     assert run.status is RunStatus.FAILED
     assert run.error_code == "FMEA_REVIEW_RUN_INTERRUPTED"
     assert run.retryable is True
+    connection = repository._connect()
+    try:
+        event = connection.execute(
+            "SELECT command, canonical_payload_hash, event_json "
+            "FROM audit_events WHERE event_id LIKE 'recovery-%'"
+        ).fetchone()
+    finally:
+        connection.close()
+    assert event is not None
+    payload = json.loads(event["event_json"])
+    assert payload["analysis_id"] == "analysis-1"
+    assert payload["request_id"] == "request-1"
+    assert payload["trace_id"] == "trace-1"
+    assert payload["request_hash"] == "sha256:" + "b" * 64
+    assert event["command"] == "review.suggestion.fail"
+    assert event["canonical_payload_hash"] == "sha256:" + "b" * 64
 
 
 def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
@@ -173,6 +190,8 @@ def test_sqlite_executor_rejection_preserves_queued_response_and_replays_it(
     [
         ("running", "wrong-workspace", "FMEA_REVIEW_SUGGESTION_NOT_FOUND"),
         ("complete-queued", "ws-1", "FMEA_REVIEW_TERMINAL"),
+        ("repeated-running", "ws-1", "FMEA_REVIEW_TERMINAL"),
+        ("succeeded-wrong-suggestion-id", "ws-1", "FMEA_REVIEW_REQUEST_INVALID"),
     ],
 )
 def test_sqlite_run_mutations_fail_closed_on_workspace_or_transition(
@@ -181,21 +200,61 @@ def test_sqlite_run_mutations_fail_closed_on_workspace_or_transition(
     fixture_start_suggestion_command,
     fixture_review_model_manifest,
     valid_review_suggestion_draft,
+    recording_executor,
+    inline_review_service,
     mutation,
     workspace_id,
     expected_code,
 ) -> None:
-    service = ReviewService(
-        seeded_review_repository,
-        FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
-        RecordingReviewExecutor(),
-        clock=lambda: "2026-08-23T00:00:00Z",
-        id_factory=lambda prefix: f"{prefix}-mismatch",
+    service = (
+        inline_review_service
+        if mutation == "succeeded-wrong-suggestion-id"
+        else ReviewService(
+            seeded_review_repository,
+            FakeReviewSuggestionGenerator(valid_review_suggestion_draft, fixture_review_model_manifest),
+            recording_executor,
+            clock=lambda: "2026-08-23T00:00:00Z",
+            id_factory=lambda prefix: f"{prefix}-mismatch",
+        )
     )
     run = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
     with pytest.raises(ReviewError) as raised:
         if mutation == "running":
             seeded_review_repository.mark_suggestion_run_running(run.run_id, workspace_id)
+        elif mutation == "repeated-running":
+            seeded_review_repository.mark_suggestion_run_running(run.run_id, workspace_id)
+            seeded_review_repository.mark_suggestion_run_running(run.run_id, workspace_id)
+        elif mutation == "succeeded-wrong-suggestion-id":
+            suggestion = seeded_review_repository.list_suggestions("row-1", "ws-1")[0]
+            connection = seeded_review_repository._connect()
+            try:
+                request_hash = connection.execute(
+                    "SELECT request_hash FROM review_suggestion_runs WHERE run_id = ? AND workspace_id = ?",
+                    (run.run_id, workspace_id),
+                ).fetchone()["request_hash"]
+                connection.execute(
+                    "UPDATE review_suggestion_runs SET suggestion_id = ? WHERE run_id = ? AND workspace_id = ?",
+                    ("wrong-suggestion", run.run_id, workspace_id),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+            audit = SimpleNamespace(
+                workspace_id=workspace_id,
+                row_id=suggestion.row_id,
+                request_id=run.request_id,
+                trace_id=run.trace_id,
+                canonical_payload_hash=request_hash,
+                expected_record_version=suggestion.source_record_version,
+                command="review.suggestion.complete",
+                suggestion_id=suggestion.suggestion_id,
+                model_manifest=suggestion.model_manifest,
+                action=suggestion.recommended_action,
+                actor_type=ActorType.MODEL,
+                actor_id="review-model",
+                decision_id=None,
+            )
+            seeded_review_repository.complete_suggestion_run(run.run_id, workspace_id, suggestion, audit)
         else:
             seeded_review_repository.complete_suggestion_run(run.run_id, workspace_id, object(), object())
     assert raised.value.code == expected_code

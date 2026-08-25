@@ -698,7 +698,7 @@ def running_suggestion_run(
         id_factory=_test_id_factory(),
     )
     run = service.start_suggestion(fixture_start_suggestion_command, fixture_human_reviewer)
-    return seeded_review_repository.mark_suggestion_run_running(run.run_id, "ws-1")
+    return run
 
 
 @pytest.fixture

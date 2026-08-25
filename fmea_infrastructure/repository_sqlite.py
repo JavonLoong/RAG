@@ -193,8 +193,11 @@ class SqliteFmeaRepository:
 
     def _recover_interrupted_runs(self, connection: sqlite3.Connection) -> None:
         rows = connection.execute(
-            "SELECT run_id, row_id, workspace_id, request_hash, idempotency_scope, request_id, trace_id "
-            "FROM review_suggestion_runs WHERE status IN ('queued', 'running') ORDER BY run_id"
+            "SELECT r.run_id, r.row_id, r.workspace_id, r.request_hash, r.idempotency_scope, r.request_id, "
+            "r.trace_id, f.analysis_id "
+            "FROM review_suggestion_runs AS r "
+            "JOIN fmea_rows AS f ON f.row_id = r.row_id AND f.workspace_id = r.workspace_id "
+            "WHERE r.status IN ('queued', 'running') ORDER BY r.run_id"
         ).fetchall()
         for row in rows:
             finished_at = _utc_now()
@@ -205,6 +208,7 @@ class SqliteFmeaRepository:
                     "command": "review.suggestion.fail",
                     "error_code": "FMEA_REVIEW_RUN_INTERRUPTED",
                     "idempotency_scope": str(row["idempotency_scope"]),
+                    "analysis_id": str(row["analysis_id"]),
                     "request_hash": str(row["request_hash"]),
                     "request_id": str(row["request_id"]),
                     "run_id": str(row["run_id"]),
@@ -783,6 +787,7 @@ class SqliteFmeaRepository:
             or audit.expected_record_version != run.source_record_version
             or audit.command != _SUGGESTION_FAIL_COMMAND
             or audit.reason != error_code
+            or run.suggestion_id is not None
             or audit.suggestion_id is not None
             or audit.decision_id is not None
             or audit.actor_type is not ActorType.SYSTEM
@@ -920,14 +925,13 @@ class SqliteFmeaRepository:
             if current is None:
                 raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
             run = self._decode_suggestion_run(current)
-            if run.status is RunStatus.SUCCEEDED or run.status is RunStatus.FAILED:
-                self._transition_error("terminal review run cannot become running")
-            if run.status is RunStatus.QUEUED:
-                connection.execute(
-                    "UPDATE review_suggestion_runs SET status = 'running', started_at = ? "
-                    "WHERE run_id = ? AND workspace_id = ? AND status = 'queued'",
-                    (_utc_now(), run_id, workspace),
-                )
+            if run.status is not RunStatus.QUEUED:
+                self._transition_error("review run is not queued")
+            connection.execute(
+                "UPDATE review_suggestion_runs SET status = 'running', started_at = ? "
+                "WHERE run_id = ? AND workspace_id = ? AND status = 'queued'",
+                (_utc_now(), run_id, workspace),
+            )
             result_row = self._mutation_row(connection, run_id, workspace)
             if result_row is None:
                 raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "review run was not found")
@@ -958,6 +962,8 @@ class SqliteFmeaRepository:
             run = self._decode_suggestion_run(run_row)
             if run.status is RunStatus.SUCCEEDED:
                 self._validate_complete_binding(run, run_row, workspace, suggestion, audit)
+                if run.suggestion_id != suggestion.suggestion_id:
+                    self._binding_error("persisted review run suggestion binding is invalid")
                 stored_row = connection.execute(
                     "SELECT suggestion_json FROM review_suggestions "
                     "WHERE run_id = ? AND workspace_id = ?",
