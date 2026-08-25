@@ -51,7 +51,6 @@ _MAX_DESCRIPTION_LENGTH = 500
 _MAX_VALUE_LENGTH = 4000
 _MAX_VALUE_ITEM_LENGTH = 1000
 _HASH_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
-_PLAIN_HASH_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _UNRESOLVED_CLAIM_STATUSES = frozenset(
     {
         ClaimStatus.UNKNOWN,
@@ -126,7 +125,7 @@ def _hash(value: object, field_name: str) -> str:
 
 def _pack_hash(value: object, field_name: str) -> str:
     normalized = _text(value, field_name, limit=71)
-    if not (_HASH_PATTERN.fullmatch(normalized) or _PLAIN_HASH_PATTERN.fullmatch(normalized)):
+    if not _HASH_PATTERN.fullmatch(normalized):
         raise ValueError(f"{field_name} must be a SHA-256 hash")  # noqa: TRY003
     return normalized
 
@@ -147,6 +146,8 @@ def _optional_timestamp(value: object, field_name: str) -> str | None:
 
 
 def _uuid(value: object, field_name: str) -> str:
+    if not isinstance(value, str) or value != value.strip():
+        raise ValueError(f"{field_name} must be a canonical lowercase UUID")  # noqa: TRY003
     normalized = _text(value, field_name, limit=36)
     try:
         parsed = UUID(normalized)
@@ -382,6 +383,8 @@ class ReviewSourceSnapshot:
             "resolved_evidence_profile",
             _enum(self.resolved_evidence_profile, EvidenceSelectionProfile, "resolved_evidence_profile"),
         )
+        if self.resolved_evidence_profile is EvidenceSelectionProfile.AUTO:
+            raise ValueError("resolved_evidence_profile cannot be AUTO")  # noqa: TRY003
         evidence_types = _tuple_of_unique(self.evidence_types, CitationType, "evidence_types")
         object.__setattr__(self, "evidence_types", evidence_types)
         object.__setattr__(self, "retrieval_warnings", _strings(self.retrieval_warnings, "retrieval_warnings", limit=4000))

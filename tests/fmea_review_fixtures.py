@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 from typing import Any
 
 import pytest
@@ -70,7 +70,14 @@ def make_review_source(**overrides: Any) -> ReviewSourceSnapshot:
     )
     if not overrides:
         return source
-    return replace(source, **overrides)
+    updated = replace(source, **overrides)
+    return ReviewSourceSnapshot.build(
+        **{
+            field.name: getattr(updated, field.name)
+            for field in fields(updated)
+            if field.name != "source_hash"
+        },
+    )
 
 
 def make_review_suggestion(**overrides: Any) -> ReviewSuggestion:
