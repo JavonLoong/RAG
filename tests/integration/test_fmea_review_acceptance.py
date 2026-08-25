@@ -7,7 +7,7 @@ import sqlite3
 from dataclasses import dataclass, replace
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fmea_review_fixtures import (
@@ -267,6 +267,16 @@ def _rewrite_pack_artifact(output: Path, name: str, mutate: Any) -> None:
         )
 
 
+def _sync_summary_profile_cases(output: Path) -> None:
+    context = json.loads((output / "context.json").read_text(encoding="utf-8"))
+    summary_path = output / "acceptance-summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["profile_cases"] = context["data"]["profile_cases"]
+    summary_path.write_bytes(
+        (json.dumps(summary, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    )
+
+
 @pytest.mark.parametrize(
     ("name", "mutate", "code"),
     [
@@ -302,6 +312,47 @@ def _rewrite_pack_artifact(output: Path, name: str, mutate: Any) -> None:
             lambda value: value["counts"].update({"audit_count": 2}),
             "AUDIT_COUNT_INVALID",
         ),
+        (
+            "profile run binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update({"run_id": "other-run"}),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "profile suggestion binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update(
+                {"suggestion_id": "other-suggestion"}
+            ),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "profile decision binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update({"decision_id": "other-decision"}),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "profile row-after hash binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update(
+                {"row_after_hash": "sha256:" + "0" * 64}
+            ),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "profile audit-event binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update(
+                {"audit_event_ids": ["other-event", "other-event-2", "other-event-3"]}
+            ),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "summary profile execution binding",
+            lambda value: value["data"]["profile_cases"][0]["execution"].update({"run_id": "other-run"}),
+            "PROFILE_EXECUTION_BINDING_INVALID",
+        ),
+        (
+            "template registry hash",
+            lambda value: value["hashes"].update({"template_hash": "0" * 64}),
+            "TEMPLATE_HASH_MISMATCH",
+        ),
     ],
 )
 def test_independent_verifier_rejects_each_semantic_tamper_class(
@@ -310,7 +361,6 @@ def test_independent_verifier_rejects_each_semantic_tamper_class(
     mutate: Any,
     code: str,
 ) -> None:
-    del name
     from scripts.run_fmea_review_acceptance import _run
     from scripts.verify_fmea_review_acceptance import AcceptanceVerificationError, verify_acceptance_directory
 
@@ -322,6 +372,17 @@ def test_independent_verifier_rejects_each_semantic_tamper_class(
         artifact = "decision.json"
     elif code.startswith("AUDIT_"):
         artifact = "audit-summary.json"
+    elif code == "PROFILE_EXECUTION_BINDING_INVALID":
+        artifact = "context.json"
+        _rewrite_pack_artifact(output, artifact, mutate)
+        if name == "summary profile execution binding":
+            _sync_summary_profile_cases(output)
+        with pytest.raises(AcceptanceVerificationError) as caught:
+            verify_acceptance_directory(output)
+        assert caught.value.code == code
+        return
+    elif code == "TEMPLATE_HASH_MISMATCH":
+        artifact = "acceptance-summary.json"
     _rewrite_pack_artifact(output, artifact, mutate)
     with pytest.raises(AcceptanceVerificationError) as caught:
         verify_acceptance_directory(output)
@@ -334,7 +395,10 @@ def test_runner_executes_every_fixture_profile_through_bound_template_path(tmp_p
 
     output = _run(tmp_path / "pack")
     summary = verify_acceptance_directory(output)
-    cases = json.loads((output / "context.json").read_text(encoding="utf-8"))["data"]["profile_cases"]
+    cases = cast(
+        list[dict[str, Any]],
+        json.loads((output / "context.json").read_text(encoding="utf-8"))["data"]["profile_cases"],
+    )
     assert len(cases) == len(PROFILE_CASES)
     assert all(case["execution"]["status"] == "succeeded" for case in cases)
     assert all(case["execution"]["template_id"] == "fmea-row-review" for case in cases)

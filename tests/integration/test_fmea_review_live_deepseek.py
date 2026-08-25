@@ -110,6 +110,7 @@ class LiveDeepSeekReviewGenerator:
 
 
 def _assert_review_invariants(
+    tmp_path: Path,
     runtime: Any,
     queued: Any,
     row_before: Any,
@@ -134,6 +135,12 @@ def _assert_review_invariants(
         decision_events = int(
             connection.execute("SELECT COUNT(*) FROM audit_events WHERE command = 'review.decision'").fetchone()[0]
         )
+        publication_events = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM audit_events "
+                "WHERE command LIKE 'publish.%' OR command LIKE 'publication.%'"
+            ).fetchone()[0]
+        )
         stored_artifacts = "\n".join(
             str(row[0])
             for table, column in (
@@ -145,10 +152,21 @@ def _assert_review_invariants(
             for row in connection.execute(f"SELECT {column} FROM {table} WHERE {column} IS NOT NULL")  # noqa: S608
         )
     captured = capsys.readouterr()
+    artifact_dir = tmp_path / "observability-artifacts"
+    artifact_dir.mkdir(exist_ok=True)
+    (artifact_dir / "stdout.log").write_text(captured.out, encoding="utf-8")
+    (artifact_dir / "stderr.log").write_text(captured.err, encoding="utf-8")
+    (artifact_dir / "log.txt").write_text(caplog.text, encoding="utf-8")
+    (artifact_dir / "sqlite-json.txt").write_text(stored_artifacts, encoding="utf-8")
+    filesystem_bytes = b"\n".join(
+        path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()
+    )
     surfaces = captured.out + captured.err + caplog.text + stored_artifacts
     assert all(marker not in surfaces for marker in PRIVATE_MARKERS)
+    assert all(marker.encode("utf-8") not in filesystem_bytes for marker in PRIVATE_MARKERS)
     assert decision_count == 0
     assert decision_events == 0
+    assert publication_events == 0
     if terminal.status is not RunStatus.SUCCEEDED:
         code = terminal.error_code or "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
         if allow_external_failure:
@@ -202,7 +220,7 @@ def test_live_deepseek_creates_only_unapplied_model_suggestion(
             focus_fields=(),
         )
         queued = runtime.service.start_suggestion(command, fixture_human_reviewer)
-        _assert_review_invariants(runtime, queued, row_before, fixture_human_reviewer, capsys, caplog)
+        _assert_review_invariants(tmp_path, runtime, queued, row_before, fixture_human_reviewer, capsys, caplog)
         assert generator.last_budget is not None
         assert generator.last_budget.request_timeout_seconds == REQUEST_TIMEOUT_SECONDS
         assert generator.last_budget.total_timeout_seconds == TOTAL_TIMEOUT_SECONDS
@@ -257,7 +275,7 @@ def test_injected_provider_failure_is_classified_after_safety_invariants(
             fixture_human_reviewer,
         )
         terminal = _assert_review_invariants(
-            runtime, queued, row_before, fixture_human_reviewer, capsys, caplog, allow_external_failure=True
+            tmp_path, runtime, queued, row_before, fixture_human_reviewer, capsys, caplog, allow_external_failure=True
         )
         assert terminal.status is RunStatus.FAILED
         assert terminal.error_code == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"

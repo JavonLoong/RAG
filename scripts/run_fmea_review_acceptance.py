@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -38,6 +38,7 @@ from core_domain.structured_generation import (  # noqa: E402
 from core_domain.structured_output import (  # noqa: E402
     CandidateClaim,
     ClaimState,
+    JsonValue,
     StructuredCandidate,
     StructuredCandidateBatch,
 )
@@ -372,7 +373,7 @@ def _generation_result(template: Any, case: _ProfileCase) -> GenerationRunResult
                 raise AcceptanceRunError("FIXTURE_INVALID") from exc
     candidate = StructuredCandidate(
         candidate_id=case.source.candidate_id,
-        payload=case.model_payload,
+        payload=cast(JsonValue, case.model_payload),
         claims=tuple(claims),
     )
     batch = StructuredCandidateBatch(
@@ -396,6 +397,33 @@ def _generation_result(template: Any, case: _ProfileCase) -> GenerationRunResult
 
 def _profile_output(case: _ProfileCase, execution: dict[str, object]) -> dict[str, object]:
     return {**case.raw, "execution": execution}
+
+
+def _context_payload(context: Any) -> dict[str, object]:
+    return {
+        "row": json.loads(encode_json(context.row)),
+        "row_hash": _hash_json(json.loads(encode_json(context.row))),
+        "retrieval": {
+            "requested_profile": context.retrieval.requested_profile.value,
+            "resolved_profile": context.retrieval.resolved_profile.value,
+            "evidence_types": [item.value for item in context.retrieval.evidence_types],
+            "trace_id": context.retrieval.trace_id,
+            "warnings": list(context.retrieval.warnings),
+            "incomplete": context.retrieval.incomplete,
+        },
+        "evidence": {
+            "pack_id": context.evidence.pack_id,
+            "pack_hash": context.evidence.pack_hash,
+            "refs": [
+                {
+                    "evidence_id": item.evidence_id,
+                    "source_type": item.source_type,
+                    "quote": item.quote[:4000],
+                }
+                for item in context.evidence.refs
+            ],
+        },
+    }
 
 
 def _compile_template() -> Any:
@@ -492,6 +520,18 @@ def _execute_profile_case(
     finally:
         connection.close()
     events = [json.loads(str(item[0])) for item in event_rows]
+    audit_payload = {
+        "schema_version": SCHEMA_VERSION,
+        "events": events,
+        "counts": {
+            "audit_count": len(events),
+            "model_decision_count": 0,
+            "publication_event_count": 0,
+        },
+        "decision_ids": [decision.decision_id],
+        "audit_event_ids": [str(event["event_id"]) for event in events],
+    }
+    context_payload = _context_payload(context)
     execution = {
         "status": "succeeded",
         "requested_profile": case.raw["requested_profile"],
@@ -509,6 +549,11 @@ def _execute_profile_case(
         "suggestion_id": suggestion.suggestion_id,
         "decision_id": decision.decision_id,
         "audit_event_ids": [str(event["event_id"]) for event in events],
+        "context": context_payload,
+        "run": json.loads(encode_review_json(run)),
+        "suggestion": json.loads(encode_review_json(suggestion)),
+        "decision": json.loads(encode_review_json(decision)),
+        "audit": audit_payload,
     }
     return {
         "case": _profile_output(case, execution),
@@ -569,43 +614,28 @@ def _run(output_directory: Path) -> Path:
                 _execute_profile_case(case, temp_root_path, registered, registry, analysis, reviewer, system, index)
                 for index, case in enumerate(profile_cases)
             ]
-            primary = next(item for item in executions if item["case"].get("requested_profile") == "combined")
+            primary = cast(
+                dict[str, Any],
+                next(
+                    item
+                    for item in executions
+                    if cast(dict[str, object], item["case"]).get("requested_profile") == "combined"
+                ),
+            )
             context = primary["context"]
             run = primary["run"]
             suggestion = primary["suggestion"]
             decision = primary["decision"]
             row_before = primary["row_before"]
             row_after = primary["row_after"]
-            events = primary["events"]
+            events = cast(list[dict[str, object]], primary["events"])
             profile_outputs = [item["case"] for item in executions]
+            context_data = _context_payload(context)
+            context_data["profile_cases"] = profile_outputs
             context_payload = {
                 "schema_version": FMEA_SCHEMA_ID,
                 "resource_type": "review_context",
-                "data": {
-                    "row": row_before,
-                    "row_hash": _hash_json(row_before),
-                    "retrieval": {
-                        "requested_profile": context.retrieval.requested_profile.value,
-                        "resolved_profile": context.retrieval.resolved_profile.value,
-                        "evidence_types": [item.value for item in context.retrieval.evidence_types],
-                        "trace_id": context.retrieval.trace_id,
-                        "warnings": list(context.retrieval.warnings),
-                        "incomplete": context.retrieval.incomplete,
-                    },
-                    "evidence": {
-                        "pack_id": context.evidence.pack_id,
-                        "pack_hash": context.evidence.pack_hash,
-                        "refs": [
-                            {
-                                "evidence_id": item.evidence_id,
-                                "source_type": item.source_type,
-                                "quote": item.quote[:4000],
-                            }
-                            for item in context.evidence.refs
-                        ],
-                    },
-                    "profile_cases": profile_outputs,
-                },
+                "data": context_data,
             }
             run_payload = {"schema_version": SCHEMA_VERSION, "data": json.loads(encode_review_json(run))}
             suggestion_payload = {"schema_version": SCHEMA_VERSION, "data": json.loads(encode_review_json(suggestion))}
