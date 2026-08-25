@@ -195,6 +195,20 @@ def _invalid_request_file() -> CliUsageError:
     return _InvalidRequestFileError()
 
 
+def _strict_object_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")  # noqa: TRY003
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> NoReturn:
+    del value
+    raise ValueError("non-finite JSON number")  # noqa: TRY003
+
+
 def _require_exact_keys(value: object, keys: frozenset[str]) -> dict[str, object]:
     if not isinstance(value, dict) or set(value) != keys or not all(isinstance(key, str) for key in value):
         raise _invalid_request_file()
@@ -272,7 +286,11 @@ def load_decision_request(path: str | Path) -> dict[str, object]:
 
     try:
         raw = _read_bounded_request_file(Path(path))
-        decoded = json.loads(raw.decode("utf-8"))
+        decoded = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object_pairs,
+            parse_constant=_reject_json_constant,
+        )
         return _require_exact_keys(decoded, _DECISION_REQUEST_KEYS)
     except CliUsageError:
         raise
@@ -823,8 +841,13 @@ def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, 
         )
         return 0
     if args.review_command == "decisions":
-        decisions = service.list_decisions(args.row_id, actor)
-        data = {"items": [_decision_data(item) for item in decisions], "next_cursor": None, "limit": 50}
+        page = tuple(service.page_decisions(args.row_id, actor, after=None, limit=50))
+        decisions = page[:50]
+        next_cursor = None
+        if len(page) > 50 and decisions:
+            last = decisions[-1]
+            next_cursor = [last.created_at, last.decision_id]
+        data = {"items": [_decision_data(item) for item in decisions], "next_cursor": next_cursor, "limit": 50}
         _emit_resource("review_decision_history", data, pretty=pretty)
         return 0
     raise CliUsageError

@@ -27,7 +27,11 @@ from core_domain.fmea.states import (
     RunStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack, VersionSet
-from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
+from core_domain.query_contracts import (
+    CitationType,
+    EvidenceSelectionProfile,
+    validate_resolved_evidence_types,
+)
 
 from .review_errors import REVIEW_ERROR_CODES
 
@@ -688,6 +692,11 @@ class ReviewSourceSnapshot:
             "resolved_evidence_profile",
             _enum(self.resolved_evidence_profile, EvidenceSelectionProfile, "resolved_evidence_profile"),
         )
+        if (
+            self.requested_evidence_profile is not EvidenceSelectionProfile.AUTO
+            and self.requested_evidence_profile is not self.resolved_evidence_profile
+        ):
+            raise ValueError("requested and resolved evidence profiles are inconsistent")  # noqa: TRY003
         if self.resolved_evidence_profile is EvidenceSelectionProfile.AUTO:
             raise ValueError("resolved_evidence_profile cannot be AUTO")  # noqa: TRY003
         evidence_types = _tuple_of_unique(self.evidence_types, CitationType, "evidence_types")
@@ -695,6 +704,15 @@ class ReviewSourceSnapshot:
         object.__setattr__(self, "retrieval_warnings", _strings(self.retrieval_warnings, "retrieval_warnings", limit=4000))
         if not isinstance(self.retrieval_incomplete, bool):
             raise ValueError("retrieval_incomplete must be a boolean")  # noqa: TRY003
+        try:
+            validate_resolved_evidence_types(
+                self.resolved_evidence_profile,
+                evidence_types,
+                allow_subset=self.retrieval_incomplete,
+                allow_empty=self.retrieval_incomplete,
+            )
+        except ValueError as exc:
+            raise ValueError("evidence profile and evidence types are inconsistent") from exc  # noqa: TRY003
         object.__setattr__(self, "field_claim_statuses", _field_claim_statuses(self.field_claim_statuses))
         object.__setattr__(self, "source_hash", _hash(self.source_hash, "source_hash"))
 
@@ -1168,6 +1186,8 @@ class RetrievalProvenance:
         if resolved is EvidenceSelectionProfile.AUTO:
             raise ValueError("resolved_profile cannot be AUTO")  # noqa: TRY003
         object.__setattr__(self, "resolved_profile", resolved)
+        if self.requested_profile is not EvidenceSelectionProfile.AUTO and self.requested_profile is not resolved:
+            raise ValueError("requested and resolved evidence profiles are inconsistent")  # noqa: TRY003
         evidence_types = _tuple_of_unique(self.evidence_types, CitationType, "evidence_types")
         object.__setattr__(self, "evidence_types", evidence_types)
         object.__setattr__(self, "trace_id", _label(self.trace_id, "trace_id"))
@@ -1175,11 +1195,21 @@ class RetrievalProvenance:
         if not isinstance(self.incomplete, bool):
             raise ValueError("incomplete must be a boolean")  # noqa: TRY003
         if (
-            resolved is EvidenceSelectionProfile.CUSTOM
+            self.resolved_profile is EvidenceSelectionProfile.CUSTOM
             and not evidence_types
-            and (not self.incomplete or not warnings)
+            and self.incomplete
+            and not warnings
         ):
-            raise ValueError("custom resolved_profile requires unique evidence_types")  # noqa: TRY003
+            raise ValueError("legacy projection requires a warning for empty unique evidence_types")  # noqa: TRY003
+        try:
+            validate_resolved_evidence_types(
+                resolved,
+                evidence_types,
+                allow_subset=self.incomplete,
+                allow_empty=self.incomplete,
+            )
+        except ValueError as exc:
+            raise ValueError("resolved profile and evidence types are inconsistent") from exc  # noqa: TRY003
         object.__setattr__(self, "warnings", warnings)
 
 
@@ -1303,6 +1333,10 @@ class AuditEvent:
     request_id: str
     trace_id: str
     retrieval_trace_id: str
+    run_id: str | None = None
+    request_hash: str | None = None
+    error_code: str | None = None
+    retryable: bool = False
 
     def __post_init__(self) -> None:  # noqa: C901
         for field_name in (
@@ -1359,6 +1393,17 @@ class AuditEvent:
             raise ValueError("versions must be a VersionSet")  # noqa: TRY003
         if self.model_manifest is not None and not isinstance(self.model_manifest, ReviewModelManifest):
             raise ValueError("model_manifest must be a ReviewModelManifest or None")  # noqa: TRY003
+        if self.run_id is not None:
+            object.__setattr__(self, "run_id", _label(self.run_id, "run_id"))
+        if self.request_hash is not None:
+            object.__setattr__(self, "request_hash", _hash(self.request_hash, "request_hash"))
+        if self.error_code is not None:
+            error_code = _label(self.error_code, "error_code")
+            if error_code not in REVIEW_ERROR_CODES:
+                raise ValueError("error_code is not a stable review error code")  # noqa: TRY003
+            object.__setattr__(self, "error_code", error_code)
+        if not isinstance(self.retryable, bool):
+            raise ValueError("retryable must be a boolean")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)

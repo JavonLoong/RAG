@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 import pytest
@@ -31,6 +32,26 @@ def test_adapter_builds_bounded_canonical_model_input(
     assert len(rendered.encode("utf-8")) <= 4_000
     assert "C:/" not in rendered
     assert "acl_scope" not in rendered
+
+
+def test_adapter_task_carries_canonical_retrieval_provenance(
+    fixture_review_context, fixture_pack
+) -> None:
+    request = ReviewTemplateAdapter().build_request(
+        fixture_review_context,
+        fixture_pack,
+        "review-run-1",
+        review_policy="default",
+        focus_fields=(),
+    )
+    task = json.loads(ReviewTemplateAdapter().render_task(request))
+    assert task["retrieval"] == {
+        "requested_profile": "rag_only",
+        "resolved_profile": "rag_only",
+        "allowed_evidence_types": ["text"],
+        "warnings": [],
+        "incomplete": False,
+    }
 
 
 def test_adapter_rejects_same_pack_identity_from_other_workspace(

@@ -20,6 +20,7 @@ from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.policies import validate_row_evidence
 from core_domain.fmea.states import (
+    FMEA_SCHEMA_ID,
     ActorType,
     ClaimStatus,
     EvidenceSupportStatus,
@@ -260,6 +261,10 @@ def _decode_audit_event(payload: object) -> AuditEvent:
             request_id=cast(str, data["request_id"]),
             trace_id=cast(str, data["trace_id"]),
             retrieval_trace_id=cast(str, data["retrieval_trace_id"]),
+            run_id=None if data["run_id"] is None else cast(str, data["run_id"]),
+            request_hash=None if data["request_hash"] is None else cast(str, data["request_hash"]),
+            error_code=None if data["error_code"] is None else cast(str, data["error_code"]),
+            retryable=cast(bool, data["retryable"]),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("persisted audit event values are invalid") from exc
@@ -367,7 +372,7 @@ class SqliteFmeaRepository:
     def _recover_interrupted_runs(self, connection: sqlite3.Connection) -> None:
         rows = connection.execute(
             "SELECT r.run_id, r.row_id, r.workspace_id, r.request_hash, r.idempotency_scope, r.request_id, "
-            "r.trace_id, f.analysis_id "
+            "r.trace_id, r.source_record_version, f.analysis_id "
             "FROM review_suggestion_runs AS r "
             "JOIN fmea_rows AS f ON f.row_id = r.row_id AND f.workspace_id = r.workspace_id "
             "WHERE r.status IN ('queued', 'running') ORDER BY r.run_id"
@@ -375,40 +380,62 @@ class SqliteFmeaRepository:
         for row in rows:
             finished_at = _utc_now()
             event_id = "recovery-" + sha256(str(row["run_id"]).encode("utf-8")).hexdigest()
-            event_json = encode_review_json(
-                {
-                    "event_id": event_id,
-                    "command": "review.suggestion.fail",
-                    "error_code": "FMEA_REVIEW_RUN_INTERRUPTED",
-                    "idempotency_scope": str(row["idempotency_scope"]),
-                    "analysis_id": str(row["analysis_id"]),
-                    "request_hash": str(row["request_hash"]),
-                    "request_id": str(row["request_id"]),
-                    "run_id": str(row["run_id"]),
-                    "trace_id": str(row["trace_id"]),
-                }
+            request_hash = str(row["request_hash"])
+            recovery_audit = AuditEvent(
+                event_id=event_id,
+                occurred_at_server=finished_at,
+                workspace_id=str(row["workspace_id"]),
+                actor_id="review-system",
+                actor_type=ActorType.SYSTEM,
+                actor_roles=(),
+                command=_SUGGESTION_FAIL_COMMAND,
+                action=None,
+                reason_code=None,
+                reason="FMEA_REVIEW_RUN_INTERRUPTED",
+                analysis_id=str(row["analysis_id"]),
+                row_id=str(row["row_id"]),
+                suggestion_id=None,
+                decision_id=None,
+                expected_record_version=int(row["source_record_version"]),
+                applied_record_version=None,
+                before_hash=None,
+                after_hash=None,
+                changed_fields=(),
+                evidence_ids=(),
+                evidence_request_targets=(),
+                idempotency_key_hash=_json_hash(str(row["idempotency_scope"])),
+                canonical_payload_hash=request_hash,
+                versions=VersionSet(
+                    schema_id=FMEA_SCHEMA_ID,
+                    data_version="review-v1",
+                    graph_version="review-v1",
+                    evidence_pack_version="review-v1",
+                    profile_version="review-v1",
+                    template_version="1.0.0",
+                    scoring_version="review-v1",
+                    prompt_version="review-v1",
+                    model_version="review-v1",
+                    input_snapshot_hash=request_hash,
+                ),
+                template_id="fmea-row-review",
+                template_version="1.0.0",
+                profile_id="fmea-review",
+                profile_version="1.0.0",
+                model_manifest=None,
+                request_id=str(row["request_id"]),
+                trace_id=str(row["trace_id"]),
+                retrieval_trace_id=str(row["trace_id"]),
+                run_id=str(row["run_id"]),
+                request_hash=request_hash,
+                error_code="FMEA_REVIEW_RUN_INTERRUPTED",
+                retryable=True,
             )
             connection.execute(
                 "UPDATE review_suggestion_runs SET status = 'failed', error_code = ?, retryable = 1, finished_at = ? "
                 "WHERE run_id = ?",
                 ("FMEA_REVIEW_RUN_INTERRUPTED", finished_at, row["run_id"]),
             )
-            connection.execute(
-                "INSERT INTO audit_events "
-                "(event_id, row_id, workspace_id, actor_id, actor_type, command, canonical_payload_hash, event_json, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    event_id,
-                    row["row_id"],
-                    row["workspace_id"],
-                    "system",
-                    ActorType.SYSTEM.value,
-                    "review.suggestion.fail",
-                    row["request_hash"],
-                    event_json,
-                    finished_at,
-                ),
-            )
+            self._insert_audit(connection, recovery_audit)
 
     def initialize(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -477,15 +504,21 @@ class SqliteFmeaRepository:
                 raise ValueError("row analysis_id does not match analysis")
             if row.evidence_pack_id != bundle.evidence_pack.pack_id:
                 raise ValueError("row evidence_pack_id does not match evidence pack")
-            validate_row_evidence(row, bundle.evidence_pack)
+            source = source_by_row.get(row.row_id)
+            if source is None:
+                raise ValueError(f"missing source snapshot for row {row.row_id}")
+            validate_row_evidence(
+                row,
+                bundle.evidence_pack,
+                resolved_profile=source.resolved_evidence_profile,
+                evidence_types=source.evidence_types,
+                retrieval_incomplete=source.retrieval_incomplete,
+            )
             final_row = replace(
                 row,
                 review_status=ReviewStatus.SUGGESTED,
                 publication_status=PublicationStatus.UNPUBLISHED,
             )
-            source = source_by_row.get(row.row_id)
-            if source is None:
-                raise ValueError(f"missing source snapshot for row {row.row_id}")
             if source.source_record_version != final_row.record_version:
                 raise ValueError(f"source record version does not match row {row.row_id}")
             source_json, _ = self._source_json(source)
@@ -803,11 +836,7 @@ class SqliteFmeaRepository:
     def _insert_audit(
         connection: sqlite3.Connection,
         audit: AuditEvent,
-        extra: dict[str, object] | None = None,
     ) -> None:
-        event_payload = json.loads(encode_review_json(audit))
-        if extra:
-            event_payload.update(extra)
         connection.execute(
             "INSERT INTO audit_events "
             "(event_id, row_id, workspace_id, actor_id, actor_type, command, action, suggestion_id, decision_id, "
@@ -828,7 +857,7 @@ class SqliteFmeaRepository:
                 audit.before_hash,
                 audit.after_hash,
                 audit.canonical_payload_hash,
-                encode_review_json(event_payload),
+                encode_review_json(audit),
                 audit.occurred_at_server,
             ),
         )
@@ -905,6 +934,8 @@ class SqliteFmeaRepository:
             or audit.request_id != run.request_id
             or audit.trace_id != run.trace_id
             or audit.retrieval_trace_id != run.trace_id
+            or audit.run_id != run.run_id
+            or audit.request_hash != prepared.payload_hash
             or audit.idempotency_key_hash != expected_key_hash
             or audit.canonical_payload_hash != prepared.payload_hash
         ):
@@ -928,6 +959,8 @@ class SqliteFmeaRepository:
             or audit.request_id != run.request_id
             or audit.trace_id != run.trace_id
             or audit.canonical_payload_hash != str(run_row["request_hash"])
+            or getattr(audit, "run_id", None) != run.run_id
+            or getattr(audit, "request_hash", None) != str(run_row["request_hash"])
             or audit.expected_record_version != run.source_record_version
             or audit.command != _SUGGESTION_COMPLETE_COMMAND
             or audit.suggestion_id != suggestion.suggestion_id
@@ -957,9 +990,13 @@ class SqliteFmeaRepository:
             or audit.request_id != run.request_id
             or audit.trace_id != run.trace_id
             or audit.canonical_payload_hash != str(run_row["request_hash"])
+            or getattr(audit, "run_id", None) != run.run_id
+            or getattr(audit, "request_hash", None) != str(run_row["request_hash"])
             or audit.expected_record_version != run.source_record_version
             or audit.command != _SUGGESTION_FAIL_COMMAND
             or audit.reason != error_code
+            or audit.error_code != error_code
+            or audit.retryable is not retryable
             or run.suggestion_id is not None
             or audit.suggestion_id is not None
             or audit.decision_id is not None
@@ -1274,8 +1311,30 @@ class SqliteFmeaRepository:
             if pack_record is None:
                 raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
             authoritative_pack = self._decode_pack_record(pack_record)
+            source_record = connection.execute(
+                "SELECT snapshot_json FROM review_source_snapshots "
+                "WHERE row_id = ? AND workspace_id = ?",
+                (current_row.row_id, prepared.scope.workspace_id),
+            ).fetchone()
+            authoritative_source = (
+                None
+                if source_record is None
+                else decode_review_source_snapshot(cast(str, source_record["snapshot_json"]))
+            )
             try:
-                validate_row_evidence(prepared.next_row, authoritative_pack)
+                validate_row_evidence(
+                    prepared.next_row,
+                    authoritative_pack,
+                    resolved_profile=None
+                    if authoritative_source is None
+                    else authoritative_source.resolved_evidence_profile,
+                    evidence_types=None
+                    if authoritative_source is None
+                    else authoritative_source.evidence_types,
+                    retrieval_incomplete=False
+                    if authoritative_source is None
+                    else authoritative_source.retrieval_incomplete,
+                )
             except (FmeaDomainError, ValueError):
                 self._binding_error("review decision next row evidence binding is invalid")
             if current_row.review_status in {ReviewStatus.ACCEPTED, ReviewStatus.REJECTED, ReviewStatus.SUPERSEDED}:
@@ -1628,7 +1687,6 @@ class SqliteFmeaRepository:
             self._insert_audit(
                 connection,
                 replace(audit, analysis_id=str(row["analysis_id"])),
-                {"error_code": error_code, "retryable": retryable},
             )
             result_row = self._mutation_row(connection, run_id, workspace)
             if result_row is None:

@@ -3,7 +3,8 @@ from dataclasses import replace
 import pytest
 
 from core_domain.fmea.states import ClaimStatus
-from core_domain.query_contracts import EvidenceSelectionProfile
+from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from fmea_application.review_contracts import ReviewAction, ReviewReasonCode
 from fmea_application.review_projection import build_review_context
 
@@ -27,7 +28,7 @@ def test_context_exposes_labels_profile_and_acl_safe_evidence(
 
     assert context.reviewability is True
     assert context.item_label == "Fuel filter"
-    assert context.retrieval.resolved_profile is EvidenceSelectionProfile.COMBINED
+    assert context.retrieval.resolved_profile is EvidenceSelectionProfile.RAG_ONLY
     assert context.evidence.workspace_id == fixture_pack.workspace_id
     assert context.evidence.pack_hash == "sha256:" + fixture_pack.pack_hash
     assert context.evidence.refs[0].locator == '{"chunk_id":"c-1","page":42}'
@@ -214,3 +215,58 @@ def test_projection_does_not_change_supplied_row_or_source(
 
     assert fixture_review_row == original_row
     assert fixture_review_source == original_source
+
+
+def test_projection_fails_closed_for_mixed_pack_outside_profile_allowlist(
+    fixture_review_row, fixture_pack, fixture_review_source
+) -> None:
+    graph_ref = replace(
+        fixture_pack.refs[0],
+        evidence_id="ev-graph",
+        source_type="graphrag_relation",
+        evidence_hash="a" * 64,
+    )
+    mixed_pack = EvidencePack.build(
+        pack_id=fixture_pack.pack_id,
+        workspace_id=fixture_pack.workspace_id,
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=(fixture_pack.refs[0], graph_ref),
+        created_at=fixture_pack.created_at,
+        expires_at=fixture_pack.expires_at,
+    )
+    with pytest.raises(ValueError, match="evidence profile"):
+        build_review_context(
+            row=fixture_review_row,
+            source=fixture_review_source,
+            pack=mixed_pack,
+            suggestions=(),
+            decisions=(),
+        )
+
+
+@pytest.mark.parametrize(
+    ("profile", "evidence_types"),
+    [
+        (EvidenceSelectionProfile.RAG_ONLY, (CitationType.GRAPH,)),
+        (EvidenceSelectionProfile.GRAPHRAG_ONLY, (CitationType.TEXT,)),
+        (EvidenceSelectionProfile.CUSTOM, (CitationType.COMMUNITY, CitationType.TEXT)),
+    ],
+)
+def test_source_snapshot_profile_and_evidence_types_are_consistent(
+    fixture_review_source, profile, evidence_types
+) -> None:
+    with pytest.raises(ValueError, match="evidence profile"):
+        type(fixture_review_source).build(
+            **{
+                field.name: (
+                    profile
+                    if field.name == "resolved_evidence_profile"
+                    else evidence_types
+                    if field.name == "evidence_types"
+                    else getattr(fixture_review_source, field.name)
+                )
+                for field in __import__("dataclasses").fields(fixture_review_source)
+                if field.name != "source_hash"
+            },
+        )

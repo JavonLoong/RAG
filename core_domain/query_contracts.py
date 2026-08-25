@@ -65,6 +65,13 @@ _PROFILE_TYPES: dict[EvidenceSelectionProfile, tuple[CitationType, ...]] = {
     ),
 }
 
+_SOURCE_TYPE_TO_CITATION_TYPE: dict[str, CitationType] = {
+    "rag_text": CitationType.TEXT,
+    "primary_document": CitationType.TEXT,
+    "graphrag_relation": CitationType.GRAPH,
+    "graphrag_community": CitationType.COMMUNITY,
+}
+
 _EVIDENCE_SELECTION_FIELDS = ("evidence_only", "evidence_profile", "evidence_types")
 
 
@@ -130,6 +137,57 @@ def selected_citation_types(request: QueryRequest) -> tuple[CitationType, ...] |
     if request.evidence_profile is EvidenceSelectionProfile.CUSTOM:
         return request.evidence_types
     return _PROFILE_TYPES[request.evidence_profile]
+
+
+def allowed_citation_types_for_profile(
+    profile: EvidenceSelectionProfile,
+    evidence_types: tuple[CitationType, ...] = (),
+) -> tuple[CitationType, ...]:
+    """Return the canonical citation-type allowlist for a resolved profile."""
+
+    if not isinstance(profile, EvidenceSelectionProfile):
+        raise ValueError("resolved evidence profile is invalid")  # noqa: TRY003, TRY004
+    if profile is EvidenceSelectionProfile.AUTO:
+        raise ValueError("resolved evidence profile cannot be AUTO")  # noqa: TRY003
+    if profile is EvidenceSelectionProfile.CUSTOM:
+        if not isinstance(evidence_types, tuple) or not evidence_types:
+            raise ValueError("custom evidence profile requires evidence_types")  # noqa: TRY003
+        if any(not isinstance(item, CitationType) for item in evidence_types):
+            raise ValueError("custom evidence_types are invalid")  # noqa: TRY003
+        if len(evidence_types) != len(set(evidence_types)):
+            raise ValueError("custom evidence_types must not contain duplicates")  # noqa: TRY003
+        return evidence_types
+    return _PROFILE_TYPES[profile]
+
+
+def validate_resolved_evidence_types(
+    profile: EvidenceSelectionProfile,
+    evidence_types: tuple[CitationType, ...],
+    *,
+    allow_subset: bool = False,
+    allow_empty: bool = False,
+) -> tuple[CitationType, ...]:
+    """Validate resolved profile metadata against its allowed citation types."""
+
+    if not isinstance(evidence_types, tuple) or any(not isinstance(item, CitationType) for item in evidence_types):
+        raise ValueError("evidence_types are invalid")  # noqa: TRY003
+    if len(evidence_types) != len(set(evidence_types)):
+        raise ValueError("evidence_types must not contain duplicates")  # noqa: TRY003
+    if not evidence_types and allow_empty and allow_subset:
+        return allowed_citation_types_for_profile(profile, (CitationType.TEXT,)) if profile is not EvidenceSelectionProfile.CUSTOM else ()
+    allowed = allowed_citation_types_for_profile(profile, evidence_types)
+    if allow_subset:
+        if not set(evidence_types).issubset(set(allowed)):
+            raise ValueError("evidence_types exceed the resolved profile allowlist")  # noqa: TRY003
+    elif set(evidence_types) != set(allowed):
+        raise ValueError("evidence_types do not match the resolved profile")  # noqa: TRY003
+    return allowed
+
+
+def citation_type_for_source_type(source_type: str) -> CitationType | None:
+    """Map persisted evidence source types to the domain-neutral citation type."""
+
+    return _SOURCE_TYPE_TO_CITATION_TYPE.get(source_type)
 
 
 class SourceRef(_ContractModel):
@@ -302,5 +360,8 @@ __all__ = [
     "SourceRef",
     "UsageMetrics",
     "WarningItem",
+    "allowed_citation_types_for_profile",
+    "citation_type_for_source_type",
     "selected_citation_types",
+    "validate_resolved_evidence_types",
 ]

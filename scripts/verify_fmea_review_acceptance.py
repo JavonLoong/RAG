@@ -107,6 +107,7 @@ _AUDIT_KEYS = {
     "applied_record_version", "before_hash", "after_hash", "changed_fields", "evidence_ids", "evidence_request_targets",
     "idempotency_key_hash", "canonical_payload_hash", "versions", "template_id", "template_version", "profile_id",
     "profile_version", "model_manifest", "request_id", "trace_id", "retrieval_trace_id",
+    "run_id", "request_hash", "error_code", "retryable",
 }
 
 

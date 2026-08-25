@@ -85,6 +85,14 @@ class FakeReviewService:
             raise self.error
         return self.decisions
 
+    def page_decisions(
+        self, row_id: str, actor: ActorContext, *, after: tuple[str, str] | None, limit: int
+    ) -> tuple[Any, ...]:
+        self.calls.append(f"page_decisions:{limit}")
+        if self.error is not None:
+            raise self.error
+        return self.decisions[: limit + 1]
+
 
 def fake_cli_runtime(
     fake_review_service: FakeReviewService,
@@ -467,3 +475,37 @@ def test_invalid_decision_domain_value_is_sanitized_and_closes_runtime(
     assert payload["error"]["code"] == "FMEA_REVIEW_REQUEST_INVALID"
     assert fake_review_service.calls == []
     assert close_calls == [1]
+
+
+def test_decisions_cli_uses_bounded_service_page_and_real_first_page_cursor(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    fake_review_service: FakeReviewService,
+    fake_actor: ActorContext,
+    fixture_decision_record: Any,
+) -> None:
+    records = tuple(
+        replace(
+            fixture_decision_record,
+            decision_id=f"decision-{index:03d}",
+            previous_record_version=index + 1,
+            record_version=index + 2,
+            created_at=f"2026-08-25T00:00:{index:02d}Z",
+        )
+        for index in range(51)
+    )
+    fake_review_service.decisions = records
+    monkeypatch.setattr(
+        fmea_skill,
+        "build_cli_runtime",
+        lambda: fake_cli_runtime(fake_review_service, fake_actor),
+    )
+
+    exit_code = fmea_skill.main(["review", "decisions", "--row-id", "row-1"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert len(payload["data"]["items"]) == 50
+    assert payload["data"]["limit"] == 50
+    assert payload["data"]["next_cursor"] == [records[49].created_at, records[49].decision_id]
+    assert fake_review_service.calls == ["page_decisions:50"]

@@ -5,12 +5,18 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal, cast
 
 from core_domain.fmea.states import ClaimStatus, EvidenceSupportStatus
 from core_domain.fmea.value_objects import EvidencePack
+from core_domain.query_contracts import (
+    CitationType,
+    citation_type_for_source_type,
+    validate_resolved_evidence_types,
+)
 from core_domain.structured_generation import GenerationRunResult, GenerationRunStatus
 from core_domain.structured_output import ClaimState, CompiledTemplate, JsonValue, StructuredOutputError
 from structured_output_application import TemplateCompiler
@@ -25,6 +31,7 @@ from .review_contracts import (
     MissingEvidenceItem,
     ReviewAction,
     ReviewContext,
+    ReviewEvidenceRef,
     ReviewJudgement,
     ReviewModelRequest,
     ReviewPriority,
@@ -120,10 +127,11 @@ def _claim_state(collection: str, item: dict[str, object]) -> ClaimState:
         raise _invalid_suggestion("Claim status is invalid.") from exc
 
 
-def _claim_evidence_is_exact(
+def _claim_evidence_is_exact(  # noqa: C901
     result: GenerationRunResult,
     payload: dict[str, object],
-    allowed_evidence_ids: set[str],
+    allowed_evidence_refs: Mapping[str, ReviewEvidenceRef],
+    allowed_evidence_types: tuple[CitationType, ...],
 ) -> None:
     batch = result.batch
     if batch is None:
@@ -135,8 +143,13 @@ def _claim_evidence_is_exact(
         for index, raw_item in enumerate(items):
             item = _json_object(raw_item, f"{collection} item must be an object.")
             evidence_ids = _json_evidence_ids(item["evidence_ids"])
-            if any(evidence_id not in allowed_evidence_ids for evidence_id in evidence_ids):
-                raise _invalid_suggestion("Model evidence must come from the projected evidence pack.")
+            for evidence_id in evidence_ids:
+                ref = allowed_evidence_refs.get(evidence_id)
+                if ref is None:
+                    raise _invalid_suggestion("Model evidence must come from the projected evidence pack.")
+                citation_type = citation_type_for_source_type(ref.source_type)
+                if citation_type is None or citation_type not in allowed_evidence_types:
+                    raise _invalid_suggestion("Model evidence is outside the resolved profile allowlist.")
             expected_targets.append((f"/{collection}/{index}", collection, evidence_ids))
 
     claims = {claim.target: claim for claim in candidate.claims}
@@ -168,6 +181,23 @@ class ReviewTemplateAdapter:
             raise _invalid_request("Review context and evidence pack are invalid.")
         normalized_hash = _normalized_pack_hash(evidence_pack.pack_hash)
         expected_ids = {ref.evidence_id for ref in context.evidence.refs}
+        try:
+            allowed_types = validate_resolved_evidence_types(
+                context.retrieval.resolved_profile,
+                context.retrieval.evidence_types,
+                allow_subset=context.retrieval.incomplete,
+                allow_empty=context.retrieval.incomplete,
+            )
+        except ValueError as exc:
+            raise _invalid_request("Review retrieval provenance is invalid.") from exc
+        observed_types: set[CitationType] = set()
+        for ref in evidence_pack.refs:
+            citation_type = citation_type_for_source_type(ref.source_type)
+            if citation_type is None or citation_type not in allowed_types:
+                raise _invalid_request("Evidence pack contains evidence outside the resolved profile allowlist.")
+            observed_types.add(citation_type)
+        if not context.retrieval.incomplete and observed_types != set(context.retrieval.evidence_types):
+            raise _invalid_request("Evidence pack source types do not match the resolved profile.")
         if (
             context.evidence.pack_id != evidence_pack.pack_id
             or context.row.evidence_pack_id != evidence_pack.pack_id
@@ -176,11 +206,21 @@ class ReviewTemplateAdapter:
             or context.evidence.workspace_id != evidence_pack.workspace_id
         ):
             raise _invalid_request("Evidence pack does not match the review context.")
+        bounded_refs = tuple(ref for ref in evidence_pack.refs if ref.evidence_id in expected_ids)
+        bounded_pack = EvidencePack.build(
+            pack_id=evidence_pack.pack_id,
+            workspace_id=evidence_pack.workspace_id,
+            acl_scope=evidence_pack.acl_scope,
+            versions=evidence_pack.versions,
+            refs=bounded_refs,
+            created_at=evidence_pack.created_at,
+            expires_at=evidence_pack.expires_at,
+        )
         try:
             request = ReviewModelRequest(
                 run_id=run_id,
                 context=context,
-                evidence_pack=evidence_pack,
+                evidence_pack=bounded_pack,
                 review_policy=review_policy,
                 focus_fields=focus_fields,
                 template_id=_TEMPLATE_ID,
@@ -215,6 +255,13 @@ class ReviewTemplateAdapter:
                 "fields": fields,
                 "allowed_actions": [action.value for action in ReviewAction],
                 "focus_fields": list(request.focus_fields),
+                "retrieval": {
+                    "requested_profile": request.context.retrieval.requested_profile.value,
+                    "resolved_profile": request.context.retrieval.resolved_profile.value,
+                    "allowed_evidence_types": [item.value for item in request.context.retrieval.evidence_types],
+                    "warnings": list(request.context.retrieval.warnings),
+                    "incomplete": request.context.retrieval.incomplete,
+                },
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -254,7 +301,8 @@ class ReviewTemplateAdapter:
             _claim_evidence_is_exact(
                 result,
                 payload,
-                {ref.evidence_id for ref in context.evidence.refs},
+                {ref.evidence_id: ref for ref in context.evidence.refs},
+                context.retrieval.evidence_types,
             )
 
             action = ReviewAction(_json_string(payload["recommended_action"], "Recommended action is invalid."))

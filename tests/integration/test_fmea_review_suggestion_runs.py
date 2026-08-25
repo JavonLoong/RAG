@@ -16,7 +16,10 @@ from fmea_review_fixtures import (
 from core_domain.fmea.states import ActorType, RunStatus
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_service import ReviewService
-from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+from fmea_infrastructure.repository_sqlite import (
+    SqliteFmeaRepository,
+    _decode_audit_event,
+)
 
 
 class SeededReviewDatabase:
@@ -62,7 +65,7 @@ def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_re
     connection = repository._connect()
     try:
         event = connection.execute(
-            "SELECT command, canonical_payload_hash, event_json "
+            "SELECT event_id, command, canonical_payload_hash, event_json "
             "FROM audit_events WHERE event_id LIKE 'recovery-%'"
         ).fetchone()
     finally:
@@ -75,6 +78,11 @@ def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_re
     assert payload["request_hash"] == "sha256:" + "b" * 64
     assert event["command"] == "review.suggestion.fail"
     assert event["canonical_payload_hash"] == "sha256:" + "b" * 64
+    decoded = _decode_audit_event(event["event_json"])
+    assert decoded.event_id == event["event_id"]
+    assert decoded.command == "review.suggestion.fail"
+    assert decoded.error_code == "FMEA_REVIEW_RUN_INTERRUPTED"
+    assert decoded.retryable is True
 
 
 def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
@@ -103,7 +111,7 @@ def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
     connection = seeded_review_repository._connect()
     try:
         events = connection.execute(
-            "SELECT command, canonical_payload_hash, event_json, created_at "
+            "SELECT event_id, command, canonical_payload_hash, event_json, created_at "
             "FROM audit_events ORDER BY created_at, event_id"
         ).fetchall()
         decisions = connection.execute("SELECT COUNT(*) AS count FROM review_decisions").fetchone()["count"]
@@ -117,6 +125,7 @@ def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
     ]
     assert decisions == 0
     payloads = [json.loads(row["event_json"]) for row in events]
+    decoded_events = [_decode_audit_event(row["event_json"]) for row in events]
     assert all(row["created_at"] == payload["occurred_at_server"] for row, payload in zip(events, payloads, strict=True))
     assert all(row["command"] == payload["command"] for row, payload in zip(events, payloads, strict=True))
     assert all(
@@ -130,6 +139,10 @@ def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
         assert len({payload["canonical_payload_hash"] for payload in run_events}) == 1
     complete_payload = payloads[1]
     failed_payload = payloads[3]
+    assert decoded_events[0].event_id == events[0]["event_id"]
+    assert decoded_events[1].suggestion_id == succeeded_terminal.suggestion_id
+    assert decoded_events[3].error_code == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+    assert decoded_events[3].retryable is True
     assert complete_payload["model_manifest"]["model"] == "deepseek-v4-pro"
     assert complete_payload["suggestion_id"] == succeeded_terminal.suggestion_id
     assert failed_payload["error_code"] == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"

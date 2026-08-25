@@ -44,6 +44,26 @@ def test_decision_request_requires_exact_top_level_keys(
         fmea_skill.load_decision_request(request)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        '{"row_id":"row-1","expected_record_version":1,"idempotency_key":"00000000-0000-4000-8000-000000000011","action":"accept","suggestion_id":null,"reason_code":"ACCEPT_AS_IS","reason":"ok","edits":[],"evidence_requests":[],"unresolved_acknowledgements":[],"edits":[]}',
+        '{"row_id":"row-1","expected_record_version":1,"idempotency_key":"00000000-0000-4000-8000-000000000011","action":"accept","suggestion_id":null,"reason_code":"ACCEPT_AS_IS","reason":"ok","edits":[{"target_field":"controls","operation":"replace","value":[],"claim_status":"unknown","support_status":"not_supported","evidence_ids":[],"reason":"x","reason":"duplicate"}],"evidence_requests":[],"unresolved_acknowledgements":[]}',
+        '{"row_id":"row-1","expected_record_version":NaN,"idempotency_key":"00000000-0000-4000-8000-000000000011","action":"accept","suggestion_id":null,"reason_code":"ACCEPT_AS_IS","reason":"ok","edits":[],"evidence_requests":[],"unresolved_acknowledgements":[]}',
+    ],
+    ids=["duplicate-top-level", "duplicate-nested", "non-standard-constant"],
+)
+def test_decision_request_rejects_duplicate_keys_and_non_standard_constants(
+    tmp_path: Path, raw: str
+) -> None:
+    request = tmp_path / "decision.json"
+    request.write_text(raw, encoding="utf-8")
+    with pytest.raises(fmea_skill.CliUsageError, match="invalid review request file") as exc_info:
+        fmea_skill.load_decision_request(request)
+    assert "row-1" not in str(exc_info.value)
+    assert "NaN" not in str(exc_info.value)
+
+
 def test_decision_request_rejects_symlink(tmp_path: Path) -> None:
     target = tmp_path / "real.json"
     target.write_text("{}", encoding="utf-8")

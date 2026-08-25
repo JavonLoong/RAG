@@ -20,6 +20,7 @@ from fmea_review_fixtures import (
 
 from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.states import ActorType, PublicationStatus, ReviewStatus, RunStatus
+from core_domain.fmea.value_objects import EvidencePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 from fmea_application.review_contracts import (
     ActorContext,
@@ -78,7 +79,35 @@ class AcceptanceRuntime:
             ),
             evidence_types=tuple(CitationType(item) for item in types),
         )
-        bundle = replace(self._bundle, source_snapshots=(source,))
+        source_type_by_citation = {
+            "text": "primary_document",
+            "graph": "graphrag_relation",
+            "community": "graphrag_community",
+        }
+        base_ref = self._bundle.evidence_pack.refs[0]
+        refs = tuple(
+            replace(
+                base_ref,
+                evidence_id=f"ev-{index}",
+                source_type=source_type_by_citation[citation_type],
+            )
+            for index, citation_type in enumerate(types, start=1)
+        )
+        pack = EvidencePack.build(
+            pack_id=self._bundle.evidence_pack.pack_id,
+            workspace_id=self._bundle.evidence_pack.workspace_id,
+            acl_scope=self._bundle.evidence_pack.acl_scope,
+            versions=self._bundle.evidence_pack.versions,
+            refs=refs,
+            created_at=self._bundle.evidence_pack.created_at,
+            expires_at=self._bundle.evidence_pack.expires_at,
+        )
+        bundle = replace(
+            self._bundle,
+            evidence_pack=pack,
+            rows=tuple(replace(row, evidence_pack_id=pack.pack_id) for row in self._bundle.rows),
+            source_snapshots=(source,),
+        )
         repository.save_review_candidate_bundle(bundle, ActorContext("system", ActorType.SYSTEM, frozenset(), "ws-1"))
         service = ReviewService.for_queries(repository)
         return service.get_context("row-1", self.reviewer)

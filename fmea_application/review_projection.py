@@ -11,7 +11,12 @@ from typing import cast
 from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.states import ClaimStatus, EvidenceSupportStatus
 from core_domain.fmea.value_objects import EvidencePack, EvidenceRef
-from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
+from core_domain.query_contracts import (
+    CitationType,
+    EvidenceSelectionProfile,
+    citation_type_for_source_type,
+    validate_resolved_evidence_types,
+)
 
 from .review_contracts import (
     EDITABLE_REVIEW_FIELDS,
@@ -23,7 +28,6 @@ from .review_contracts import (
     ReviewEvidenceRef,
     ReviewSourceSnapshot,
     ReviewSuggestion,
-    legacy_citation_type,
 )
 
 _FIELD_ORDER = tuple(sorted(EDITABLE_REVIEW_FIELDS))
@@ -57,8 +61,8 @@ def build_review_context(
     projected_row = replace(row, claim_status=aggregate_claim)
     ordered_decisions = tuple(sorted(decisions, key=_decision_order))
     latest_suggestion = max(suggestions, key=_suggestion_order, default=None)
-    evidence = _project_evidence(row, suggestions, ordered_decisions, pack)
     retrieval, warnings, reviewability, item_label, function_label = _project_retrieval(row, source, pack)
+    evidence = _project_evidence(row, suggestions, ordered_decisions, pack)
     return ReviewContext(
         row=projected_row,
         item_label=item_label,
@@ -143,6 +147,7 @@ def _project_retrieval(
     warnings = _stable_warning_codes(source.retrieval_warnings)
     evidence_types = source.evidence_types
     incomplete = source.retrieval_incomplete
+    _validate_pack_profile(source.resolved_evidence_profile, evidence_types, pack, incomplete=incomplete)
     if source.resolved_evidence_profile is EvidenceSelectionProfile.CUSTOM and not evidence_types and not warnings:
         warnings = ("FMEA_REVIEW_EVIDENCE_TYPES_EMPTY",)
         incomplete = True
@@ -169,10 +174,41 @@ def _stable_warning_codes(warnings: Iterable[str]) -> tuple[str, ...]:
 def _infer_evidence_types(refs: Iterable[EvidenceRef]) -> tuple[CitationType, ...]:
     result: list[CitationType] = []
     for ref in refs:
-        citation_type = legacy_citation_type(ref.source_type)
-        if citation_type is not None and citation_type not in result:
+        citation_type = citation_type_for_source_type(ref.source_type)
+        if citation_type is None:
+            raise ValueError("evidence profile contains an unmapped source type")  # noqa: TRY003
+        if citation_type not in result:
             result.append(citation_type)
     return tuple(result)
+
+
+def _validate_pack_profile(
+    resolved_profile: EvidenceSelectionProfile,
+    evidence_types: tuple[CitationType, ...],
+    pack: EvidencePack,
+    *,
+    incomplete: bool,
+) -> None:
+    try:
+        allowed = validate_resolved_evidence_types(
+            resolved_profile,
+            evidence_types,
+            allow_subset=incomplete,
+            allow_empty=incomplete,
+        )
+    except ValueError as exc:
+        raise ValueError("evidence profile and evidence types are inconsistent") from exc  # noqa: TRY003
+    observed: list[CitationType] = []
+    for ref in pack.refs:
+        citation_type = citation_type_for_source_type(ref.source_type)
+        if citation_type is None:
+            raise ValueError("evidence profile contains an unmapped source type")  # noqa: TRY003
+        if citation_type not in observed:
+            observed.append(citation_type)
+    if not set(observed).issubset(set(allowed)):
+        raise ValueError("evidence profile does not allow all EvidencePack source types")  # noqa: TRY003
+    if not incomplete and set(observed) != set(evidence_types):
+        raise ValueError("EvidencePack source types do not match the evidence profile")  # noqa: TRY003
 
 
 def _project_evidence(

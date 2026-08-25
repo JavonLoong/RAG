@@ -24,6 +24,7 @@ from core_domain.fmea.states import (
     RunStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack, VersionSet
+from core_domain.query_contracts import citation_type_for_source_type
 
 from .ports import ReviewHistoryPosition, ReviewRepository, ReviewRunExecutor, ReviewSuggestionGenerator
 from .review_contracts import (
@@ -53,6 +54,7 @@ from .review_contracts import (
 )
 from .review_errors import ReviewError
 from .review_projection import build_review_context
+from .review_template_adapter import ReviewTemplateAdapter
 
 _FMEA_CODEC = import_module("core_domain.fmea.codec")
 encode_json = cast(Callable[[object], str], _FMEA_CODEC.encode_json)
@@ -198,6 +200,7 @@ class ReviewService:
             request_id=request_id,
             trace_id=trace_id,
         )
+        audit = replace(audit, run_id=run_id, request_hash=payload_hash)
         prepared = PreparedSuggestionRun(
             scope=scope,
             payload_hash=payload_hash,
@@ -225,6 +228,8 @@ class ReviewService:
                 actor_type=ActorType.SYSTEM,
                 actor_roles=(),
                 reason=exc.code,
+                error_code=exc.code,
+                retryable=exc.retryable,
             )
             self._repository.fail_suggestion_run(
                 reservation.run.run_id,
@@ -244,6 +249,8 @@ class ReviewService:
                 actor_type=ActorType.SYSTEM,
                 actor_roles=(),
                 reason="FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                error_code="FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                retryable=True,
             )
             self._repository.fail_suggestion_run(
                 reservation.run.run_id,
@@ -320,14 +327,12 @@ class ReviewService:
         context = build_review_context(row, source, pack, suggestions, decisions)
         if context.evidence.workspace_id != prepared.actor.workspace_id:
             raise ReviewError("FMEA_REVIEW_FORBIDDEN", "review context is outside the actor workspace")
-        return ReviewModelRequest(
-            run_id=prepared.run.run_id,
-            context=context,
-            evidence_pack=pack,
+        return ReviewTemplateAdapter().build_request(
+            context,
+            pack,
+            prepared.run.run_id,
             review_policy=prepared.command.review_policy,
             focus_fields=prepared.command.focus_fields,
-            template_id="fmea-row-review",
-            template_version="1.0.0",
         )
 
     def _fail_worker(self, prepared: PreparedSuggestionRun, error_code: str, retryable: bool) -> None:
@@ -341,6 +346,8 @@ class ReviewService:
                 actor_type=ActorType.SYSTEM,
                 actor_roles=(),
                 reason=error_code,
+                error_code=error_code,
+                retryable=retryable,
             )
             self._repository.fail_suggestion_run(
                 prepared.run.run_id,
@@ -466,7 +473,7 @@ class ReviewService:
         field_support = dict(row.field_support)
         if command.action is ReviewAction.MODIFY_AND_ACCEPT:
             for edit in command.edits:
-                self._validate_edit(edit, pack, field_evidence, field_support)
+                self._validate_edit(edit, pack, field_evidence, field_support, source=source)
                 field_evidence[edit.target_field] = edit.evidence_ids
                 field_support[edit.target_field] = edit.support_status
                 status_by_field[edit.target_field] = edit.claim_status
@@ -491,7 +498,13 @@ class ReviewService:
         for edit in command.edits:
             next_row = self._replace_row_field(next_row, edit)
         try:
-            validate_row_evidence(next_row, pack)
+            validate_row_evidence(
+                next_row,
+                pack,
+                resolved_profile=None if source is None else source.resolved_evidence_profile,
+                evidence_types=None if source is None else source.evidence_types,
+                retrieval_incomplete=False if source is None else source.retrieval_incomplete,
+            )
         except (FmeaDomainError, ValueError) as exc:
             raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence is invalid") from exc
 
@@ -589,11 +602,13 @@ class ReviewService:
         return result
 
     @staticmethod
-    def _validate_edit(
+    def _validate_edit(  # noqa: C901
         edit: FieldReviewEdit,
         pack: EvidencePack,
         field_evidence: dict[str, tuple[str, ...]],
         field_support: dict[str, EvidenceSupportStatus],
+        *,
+        source: ReviewSourceSnapshot | None = None,
     ) -> None:
         if edit.target_field not in EDITABLE_REVIEW_FIELDS:
             raise ReviewError("FMEA_REVIEW_FIELD_INVALID", "review field is not editable")
@@ -605,6 +620,13 @@ class ReviewService:
         pack_evidence_ids = {ref.evidence_id for ref in pack.refs}
         if not set(edit.evidence_ids).issubset(pack_evidence_ids):
             raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence is outside the current pack")
+        if source is not None:
+            allowed_types = set(source.evidence_types)
+            for evidence_id in edit.evidence_ids:
+                ref = next(ref for ref in pack.refs if ref.evidence_id == evidence_id)
+                citation_type = citation_type_for_source_type(ref.source_type)
+                if citation_type is None or citation_type not in allowed_types:
+                    raise ReviewError("FMEA_EVIDENCE_INVALID", "review decision evidence type is outside the resolved profile")
         if edit.claim_status is ClaimStatus.KNOWN:
             if edit.support_status is not EvidenceSupportStatus.SUPPORTED:
                 raise ReviewError("FMEA_EVIDENCE_INVALID", "known review claims require supported evidence")
@@ -744,6 +766,8 @@ class ReviewService:
         evidence_ids: tuple[str, ...] = (),
         changed_fields: tuple[str, ...] = (),
         evidence_request_targets: tuple[str, ...] = (),
+        error_code: str | None = None,
+        retryable: bool = False,
     ) -> AuditEvent:
         return replace(
             audit,
@@ -760,6 +784,8 @@ class ReviewService:
             evidence_ids=evidence_ids,
             changed_fields=changed_fields,
             evidence_request_targets=evidence_request_targets,
+            error_code=error_code,
+            retryable=retryable,
         )
 
     def _complete_audit(self, audit: AuditEvent, suggestion: ReviewSuggestion) -> AuditEvent:
