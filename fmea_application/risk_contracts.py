@@ -536,11 +536,15 @@ class PreparedRiskProposal:
             raise ValueError("scope must be an IdempotencyScope")
         if not isinstance(self.audit, AuditEvent):
             raise ValueError("audit must be an AuditEvent")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         _validate_assessment_identity(self.proposal, self.assessment, expected_status=RiskStatus.PROPOSED)
         if self.assessment.derived is not None:
             raise ValueError("proposed assessment must not contain derived risk")
         if self.assessment.confirmer_actor_id is not None or self.assessment.invalidated_reason is not None:
             raise ValueError("proposed assessment contains terminal state")
+        if self.assessment.record_version != 1 or self.assessment.updated_at != self.assessment.created_at:
+            raise ValueError("proposed assessment must be an initial version")
         object.__setattr__(
             self,
             "payload_hash",
@@ -573,7 +577,7 @@ class PreparedRiskConfirmation:
     decision_id: str
     audit: AuditEvent
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # noqa: C901
         expected = _positive(self.expected_assessment_version, "expected_assessment_version")
         object.__setattr__(self, "expected_assessment_version", expected)
         decision_id = _text(self.decision_id, "decision_id")
@@ -582,6 +586,8 @@ class PreparedRiskConfirmation:
             raise ValueError("scope must be an IdempotencyScope")
         if not isinstance(self.audit, AuditEvent):
             raise ValueError("audit must be an AuditEvent")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         if not isinstance(self.previous_assessment, RiskAssessmentRecord):
             raise ValueError("previous_assessment must be a RiskAssessmentRecord")
         _validate_assessment_identity(self.proposal, self.previous_assessment, expected_status=self.previous_assessment.status)
@@ -647,6 +653,8 @@ class PreparedRiskRejection:
             raise ValueError("scope must be an IdempotencyScope")
         if not isinstance(self.audit, AuditEvent):
             raise ValueError("audit must be an AuditEvent")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         if not isinstance(self.previous_assessment, RiskAssessmentRecord):
             raise ValueError("previous_assessment must be a RiskAssessmentRecord")
         if self.previous_assessment.status not in (RiskStatus.PROPOSED, RiskStatus.REVIEWED):
@@ -709,6 +717,8 @@ class PreparedRiskInvalidation:
             raise ValueError("scope must be an IdempotencyScope")
         if not isinstance(self.audit, AuditEvent):
             raise ValueError("audit must be an AuditEvent")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         if not isinstance(self.previous_assessment, RiskAssessmentRecord):
             raise ValueError("previous_assessment must be a RiskAssessmentRecord")
         if not isinstance(self.assessment, RiskAssessmentRecord):

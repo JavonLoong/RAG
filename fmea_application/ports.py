@@ -260,6 +260,16 @@ class RiskRepository(Protocol):
 
     def initialize(self) -> None: ...
 
+    def register_pack_snapshots(
+        self,
+        workspace_id: str,
+        domain_pack: DomainPackManifest,
+        domain_source: bytes,
+        rule_pack: ScoringRulePack,
+        rule_source: bytes,
+        created_at: str,
+    ) -> None: ...
+
     def get_row(self, row_id: str, workspace_id: str) -> FmeaRow | None: ...
 
     def get_evidence_pack(self, pack_id: str, workspace_id: str) -> EvidencePack | None: ...

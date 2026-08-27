@@ -146,14 +146,23 @@ CREATE TABLE IF NOT EXISTS fmea_risk_proposals (
     uncertainty TEXT,
     status TEXT NOT NULL CHECK (status = 'proposed'),
     proposal_hash TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    audit_event_id TEXT NOT NULL UNIQUE,
+    idempotency_scope TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL,
     UNIQUE (workspace_id, row_id, proposal_id),
     UNIQUE (workspace_id, proposal_hash),
     CHECK (length(proposal_hash) = 71 AND substr(proposal_hash, 1, 7) = 'sha256:'),
+    CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
     FOREIGN KEY (workspace_id, row_id) REFERENCES fmea_rows(workspace_id, row_id),
     FOREIGN KEY (workspace_id, evidence_pack_id) REFERENCES evidence_packs(workspace_id, pack_id),
+    FOREIGN KEY (workspace_id, domain_pack_id, domain_pack_version)
+        REFERENCES fmea_domain_packs(workspace_id, pack_id, version),
+    FOREIGN KEY (workspace_id, rule_pack_id, rule_pack_version)
+        REFERENCES fmea_scoring_rule_packs(workspace_id, rule_pack_id, version),
     FOREIGN KEY (workspace_id, assistance_suggestion_id)
-        REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id)
+        REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id),
+    FOREIGN KEY (workspace_id, audit_event_id) REFERENCES audit_events(workspace_id, event_id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_fmea_risk_proposals_workspace_proposal
@@ -191,8 +200,13 @@ CREATE TABLE IF NOT EXISTS fmea_risk_assessments (
         )
     ),
     CHECK (status <> 'invalidated' OR (invalidated_reason IS NOT NULL AND length(invalidated_reason) > 0)),
+    CHECK (status <> 'proposed' OR proposal_id IS NOT NULL),
     FOREIGN KEY (workspace_id, row_id) REFERENCES fmea_rows(workspace_id, row_id),
     FOREIGN KEY (workspace_id, evidence_pack_id) REFERENCES evidence_packs(workspace_id, pack_id),
+    FOREIGN KEY (workspace_id, domain_pack_id, domain_pack_version)
+        REFERENCES fmea_domain_packs(workspace_id, pack_id, version),
+    FOREIGN KEY (workspace_id, rule_pack_id, rule_pack_version)
+        REFERENCES fmea_scoring_rule_packs(workspace_id, rule_pack_id, version),
     FOREIGN KEY (workspace_id, proposal_id) REFERENCES fmea_risk_proposals(workspace_id, proposal_id),
     FOREIGN KEY (workspace_id, assistance_suggestion_id)
         REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id)
@@ -200,14 +214,18 @@ CREATE TABLE IF NOT EXISTS fmea_risk_assessments (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_fmea_risk_assessments_workspace_assessment
     ON fmea_risk_assessments(workspace_id, assessment_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_fmea_risk_assessments_result_binding
+    ON fmea_risk_assessments(workspace_id, assessment_id, row_id);
 
 CREATE TABLE IF NOT EXISTS fmea_risk_decisions (
     decision_id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,
     row_id TEXT NOT NULL,
-    assessment_id TEXT NOT NULL,
+    previous_assessment_id TEXT NOT NULL,
+    resulting_assessment_id TEXT NOT NULL,
     proposal_id TEXT,
     audit_event_id TEXT NOT NULL,
+    outbox_event_id TEXT NOT NULL UNIQUE,
     decision_type TEXT NOT NULL CHECK (decision_type IN ('confirm','reject','invalidate')),
     from_status TEXT NOT NULL CHECK (from_status IN ('unscored','proposed','reviewed','confirmed','invalidated')),
     to_status TEXT NOT NULL CHECK (to_status IN ('unscored','proposed','reviewed','confirmed','invalidated')),
@@ -219,18 +237,32 @@ CREATE TABLE IF NOT EXISTS fmea_risk_decisions (
     idempotency_scope TEXT NOT NULL UNIQUE,
     payload_hash TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    UNIQUE (workspace_id, assessment_id, applied_assessment_version),
+    UNIQUE (workspace_id, previous_assessment_id, applied_assessment_version),
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
+    CHECK (applied_assessment_version = expected_assessment_version + 1),
+    CHECK (
+        (decision_type IN ('confirm','reject') AND resulting_assessment_id = previous_assessment_id)
+        OR (decision_type = 'invalidate' AND from_status = 'confirmed'
+            AND resulting_assessment_id <> previous_assessment_id)
+        OR (decision_type = 'invalidate' AND from_status IN ('unscored','proposed','reviewed')
+            AND resulting_assessment_id = previous_assessment_id)
+    ),
     CHECK (
         (decision_type = 'confirm' AND from_status IN ('proposed','reviewed') AND to_status = 'confirmed' AND actor_type = 'human')
-        OR (decision_type = 'reject' AND from_status = 'proposed' AND to_status = 'reviewed' AND actor_type = 'human')
+        OR (decision_type = 'reject' AND from_status IN ('proposed','reviewed')
+            AND to_status = 'reviewed' AND actor_type = 'human')
         OR (decision_type = 'invalidate' AND from_status IN ('unscored','proposed','reviewed','confirmed')
             AND to_status = 'invalidated' AND actor_type IN ('human','system'))
     ),
     FOREIGN KEY (workspace_id, row_id) REFERENCES fmea_rows(workspace_id, row_id),
-    FOREIGN KEY (workspace_id, assessment_id) REFERENCES fmea_risk_assessments(workspace_id, assessment_id),
+    FOREIGN KEY (workspace_id, previous_assessment_id)
+        REFERENCES fmea_risk_assessments(workspace_id, assessment_id),
+    FOREIGN KEY (workspace_id, resulting_assessment_id, row_id)
+        REFERENCES fmea_risk_assessments(workspace_id, assessment_id, row_id)
+        DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (workspace_id, proposal_id) REFERENCES fmea_risk_proposals(workspace_id, proposal_id),
-    FOREIGN KEY (workspace_id, audit_event_id) REFERENCES audit_events(workspace_id, event_id)
+    FOREIGN KEY (workspace_id, audit_event_id) REFERENCES audit_events(workspace_id, event_id),
+    FOREIGN KEY (outbox_event_id) REFERENCES fmea_outbox_events(event_id) DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE TABLE IF NOT EXISTS fmea_outbox_events (
@@ -242,7 +274,7 @@ CREATE TABLE IF NOT EXISTS fmea_outbox_events (
     status TEXT NOT NULL CHECK (status = 'pending'),
     payload_json TEXT NOT NULL CHECK (length(payload_json) > 0),
     payload_hash TEXT NOT NULL,
-    idempotency_scope TEXT,
+    idempotency_scope TEXT NOT NULL,
     created_at TEXT NOT NULL,
     UNIQUE (workspace_id, aggregate_type, aggregate_id, event_type, payload_hash),
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:')
@@ -386,6 +418,26 @@ BEGIN
     SELECT RAISE(ABORT, 'immutable fmea_risk_proposals');
 END;
 
+CREATE TRIGGER IF NOT EXISTS fmea_risk_proposals_audit_binding
+BEFORE INSERT ON fmea_risk_proposals
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM audit_events AS audit
+    JOIN idempotency_records AS idem
+      ON idem.scope_key = NEW.idempotency_scope
+     AND idem.payload_hash = NEW.payload_hash
+     AND idem.state IN ('reserved','completed')
+    WHERE audit.workspace_id = NEW.workspace_id
+      AND audit.event_id = NEW.audit_event_id
+      AND audit.row_id = NEW.row_id
+      AND audit.suggestion_id IS NEW.assistance_suggestion_id
+      AND audit.decision_id IS NULL
+      AND audit.canonical_payload_hash = NEW.payload_hash
+)
+BEGIN
+    SELECT RAISE(ABORT, 'risk proposal requires matching audit and idempotency');
+END;
+
 CREATE TRIGGER IF NOT EXISTS fmea_risk_proposals_no_delete
 BEFORE DELETE ON fmea_risk_proposals
 BEGIN
@@ -406,18 +458,86 @@ BEGIN
     SELECT RAISE(ABORT, 'immutable confirmed fmea_risk_assessments');
 END;
 
+CREATE TRIGGER IF NOT EXISTS fmea_risk_assessments_no_delete
+BEFORE DELETE ON fmea_risk_assessments
+BEGIN
+    SELECT RAISE(ABORT, 'immutable fmea_risk_assessments');
+END;
+
 CREATE TRIGGER IF NOT EXISTS fmea_risk_assessments_transition_guard
 BEFORE UPDATE ON fmea_risk_assessments
 WHEN NOT (
     NEW.record_version = OLD.record_version + 1
+    AND NEW.assessment_id = OLD.assessment_id
+    AND NEW.workspace_id = OLD.workspace_id
+    AND NEW.row_id = OLD.row_id
+    AND NEW.source_record_version = OLD.source_record_version
+    AND NEW.evidence_pack_id = OLD.evidence_pack_id
+    AND NEW.domain_pack_id = OLD.domain_pack_id
+    AND NEW.domain_pack_version = OLD.domain_pack_version
+    AND NEW.rule_pack_id = OLD.rule_pack_id
+    AND NEW.rule_pack_version = OLD.rule_pack_version
+    AND NEW.dimensions_json = OLD.dimensions_json
+    AND NEW.proposal_id IS OLD.proposal_id
+    AND NEW.assistance_suggestion_id IS OLD.assistance_suggestion_id
+    AND NEW.created_at = OLD.created_at
     AND (
         (OLD.status = 'proposed' AND NEW.status IN ('reviewed', 'confirmed', 'invalidated'))
-        OR (OLD.status = 'reviewed' AND NEW.status IN ('confirmed', 'invalidated'))
+        OR (OLD.status = 'reviewed' AND NEW.status IN ('reviewed', 'confirmed', 'invalidated'))
         OR (OLD.status = 'unscored' AND NEW.status = 'invalidated')
     )
 )
 BEGIN
     SELECT RAISE(ABORT, 'illegal fmea risk assessment transition');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_risk_assessments_initial_proposal_guard
+BEFORE INSERT ON fmea_risk_assessments
+WHEN NEW.status = 'proposed' AND NOT EXISTS (
+    SELECT 1
+    FROM fmea_risk_proposals AS proposal
+    WHERE proposal.workspace_id = NEW.workspace_id
+      AND proposal.proposal_id = NEW.proposal_id
+      AND proposal.row_id = NEW.row_id
+      AND proposal.source_record_version = NEW.source_record_version
+      AND proposal.evidence_pack_id = NEW.evidence_pack_id
+      AND proposal.domain_pack_id = NEW.domain_pack_id
+      AND proposal.domain_pack_version = NEW.domain_pack_version
+      AND proposal.rule_pack_id = NEW.rule_pack_id
+      AND proposal.rule_pack_version = NEW.rule_pack_version
+      AND proposal.dimensions_json = NEW.dimensions_json
+      AND proposal.assistance_suggestion_id IS NEW.assistance_suggestion_id
+)
+BEGIN
+    SELECT RAISE(ABORT, 'proposed assessment requires matching proposal');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_risk_assessments_initial_state_guard
+BEFORE INSERT ON fmea_risk_assessments
+WHEN NEW.status NOT IN ('unscored','proposed') AND NOT EXISTS (
+    SELECT 1
+    FROM fmea_risk_decisions AS decision
+    JOIN fmea_risk_assessments AS previous
+      ON previous.workspace_id = decision.workspace_id
+     AND previous.assessment_id = decision.previous_assessment_id
+    WHERE decision.workspace_id = NEW.workspace_id
+      AND decision.resulting_assessment_id = NEW.assessment_id
+      AND decision.row_id = NEW.row_id
+      AND decision.to_status = NEW.status
+      AND decision.applied_assessment_version = NEW.record_version
+      AND NEW.record_version = previous.record_version + 1
+      AND NEW.source_record_version = previous.source_record_version
+      AND NEW.evidence_pack_id = previous.evidence_pack_id
+      AND NEW.domain_pack_id = previous.domain_pack_id
+      AND NEW.domain_pack_version = previous.domain_pack_version
+      AND NEW.rule_pack_id = previous.rule_pack_id
+      AND NEW.rule_pack_version = previous.rule_pack_version
+      AND NEW.dimensions_json = previous.dimensions_json
+      AND NEW.proposal_id IS previous.proposal_id
+      AND NEW.assistance_suggestion_id IS previous.assistance_suggestion_id
+)
+BEGIN
+    SELECT RAISE(ABORT, 'risk assessment insert requires matching decision');
 END;
 
 CREATE TRIGGER IF NOT EXISTS fmea_risk_assessments_requires_decision
@@ -426,7 +546,8 @@ WHEN NOT EXISTS (
     SELECT 1
     FROM fmea_risk_decisions AS d
     WHERE d.workspace_id = OLD.workspace_id
-      AND d.assessment_id = OLD.assessment_id
+      AND d.previous_assessment_id = OLD.assessment_id
+      AND d.resulting_assessment_id = NEW.assessment_id
       AND d.row_id = OLD.row_id
       AND (d.proposal_id IS NEW.proposal_id)
       AND d.from_status = OLD.status
@@ -448,6 +569,13 @@ BEFORE INSERT ON fmea_risk_decisions
 WHEN NOT EXISTS (
     SELECT 1
     FROM audit_events AS a
+    JOIN idempotency_records AS idem
+      ON idem.scope_key = NEW.idempotency_scope
+     AND idem.payload_hash = NEW.payload_hash
+     AND idem.state IN ('reserved','completed')
+    JOIN fmea_risk_assessments AS previous
+      ON previous.workspace_id = NEW.workspace_id
+     AND previous.assessment_id = NEW.previous_assessment_id
     WHERE a.workspace_id = NEW.workspace_id
       AND a.event_id = NEW.audit_event_id
       AND a.row_id = NEW.row_id
@@ -455,6 +583,10 @@ WHEN NOT EXISTS (
       AND a.actor_id = NEW.actor_id
       AND a.actor_type = NEW.actor_type
       AND a.canonical_payload_hash = NEW.payload_hash
+      AND previous.row_id = NEW.row_id
+      AND previous.status = NEW.from_status
+      AND previous.record_version = NEW.expected_assessment_version
+      AND previous.proposal_id IS NEW.proposal_id
 )
 BEGIN
     SELECT RAISE(ABORT, 'risk decision requires matching audit event');
@@ -476,6 +608,58 @@ CREATE TRIGGER IF NOT EXISTS fmea_outbox_events_no_update
 BEFORE UPDATE ON fmea_outbox_events
 BEGIN
     SELECT RAISE(ABORT, 'immutable fmea_outbox_events');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_outbox_events_risk_binding
+BEFORE INSERT ON fmea_outbox_events
+WHEN NEW.event_type LIKE 'risk.%' AND NOT (
+    (
+        NEW.aggregate_type = 'risk_assessment'
+        AND NEW.event_type = 'risk.proposed'
+        AND EXISTS (
+            SELECT 1
+            FROM fmea_risk_assessments AS assessment
+            JOIN fmea_risk_proposals AS proposal
+              ON proposal.workspace_id = assessment.workspace_id
+             AND proposal.proposal_id = assessment.proposal_id
+            JOIN idempotency_records AS idem
+              ON idem.scope_key = proposal.idempotency_scope
+             AND idem.payload_hash = proposal.payload_hash
+             AND (idem.state = 'reserved' OR (
+                    idem.state = 'completed' AND idem.resource_id = assessment.assessment_id
+                 ))
+            WHERE assessment.workspace_id = NEW.workspace_id
+              AND assessment.assessment_id = NEW.aggregate_id
+              AND assessment.status = 'proposed'
+              AND proposal.idempotency_scope = NEW.idempotency_scope
+        )
+    )
+    OR (
+        NEW.aggregate_type = 'risk_assessment'
+        AND NEW.event_type IN ('risk.confirmed','risk.rejected','risk.invalidated')
+        AND EXISTS (
+            SELECT 1
+            FROM fmea_risk_decisions AS decision
+            JOIN idempotency_records AS idem
+              ON idem.scope_key = decision.idempotency_scope
+             AND idem.payload_hash = decision.payload_hash
+             AND (idem.state = 'reserved' OR (
+                    idem.state = 'completed' AND idem.resource_id = decision.resulting_assessment_id
+                 ))
+            WHERE decision.workspace_id = NEW.workspace_id
+              AND decision.outbox_event_id = NEW.event_id
+              AND decision.resulting_assessment_id = NEW.aggregate_id
+              AND decision.idempotency_scope = NEW.idempotency_scope
+              AND NEW.event_type = CASE decision.decision_type
+                    WHEN 'confirm' THEN 'risk.confirmed'
+                    WHEN 'reject' THEN 'risk.rejected'
+                    WHEN 'invalidate' THEN 'risk.invalidated'
+                  END
+        )
+    )
+)
+BEGIN
+    SELECT RAISE(ABORT, 'risk outbox requires matching lifecycle chain');
 END;
 
 CREATE TRIGGER IF NOT EXISTS fmea_outbox_events_no_delete

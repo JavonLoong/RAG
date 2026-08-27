@@ -280,6 +280,7 @@ def test_result_and_outbox_are_immutable_and_canonical() -> None:
 def test_risk_repository_port_contains_atomic_lifecycle_methods() -> None:
     expected = {
         "initialize",
+        "register_pack_snapshots",
         "get_row",
         "get_evidence_pack",
         "get_current_assessment",

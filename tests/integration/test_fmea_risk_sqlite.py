@@ -35,10 +35,16 @@ EXPECTED_TRIGGERS = {
     "fmea_risk_proposals_no_delete",
     "fmea_risk_assessments_confirmed_no_update",
     "fmea_risk_assessments_confirmed_no_delete",
+    "fmea_risk_assessments_no_delete",
+    "fmea_risk_assessments_transition_guard",
+    "fmea_risk_assessments_initial_state_guard",
+    "fmea_risk_assessments_initial_proposal_guard",
+    "fmea_risk_assessments_requires_decision",
     "fmea_risk_decisions_no_update",
     "fmea_risk_decisions_no_delete",
     "fmea_outbox_events_no_update",
     "fmea_outbox_events_no_delete",
+    "fmea_outbox_events_risk_binding",
 }
 
 
@@ -92,6 +98,7 @@ def test_confirmed_assessment_requires_matching_decision_and_audit(tmp_path) -> 
     path = tmp_path / "fmea.sqlite3"
     SqliteFmeaRepository(path).initialize()
     with sqlite3.connect(path) as connection:
+        connection.execute("DROP TRIGGER fmea_risk_assessments_initial_proposal_guard")
         connection.execute(
             "INSERT INTO fmea_risk_assessments "
             "(assessment_id, workspace_id, row_id, source_record_version, evidence_pack_id, "
@@ -128,3 +135,28 @@ def test_confirmed_assessment_requires_matching_decision_and_audit(tmp_path) -> 
                 "confirmer_actor_id = 'reviewer-1', record_version = 2 WHERE assessment_id = ?",
                 ("assessment-1",),
             )
+
+
+def test_risk_outbox_rejects_an_orphan_lifecycle_event(tmp_path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    SqliteFmeaRepository(path).initialize()
+    with sqlite3.connect(path) as connection, pytest.raises(
+        sqlite3.IntegrityError, match="matching lifecycle chain"
+    ):
+        connection.execute(
+            "INSERT INTO fmea_outbox_events "
+            "(event_id, workspace_id, aggregate_type, aggregate_id, event_type, status, payload_json, "
+            "payload_hash, idempotency_scope, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                "outbox-orphan",
+                "ws-1",
+                "risk_assessment",
+                "assessment-orphan",
+                "risk.proposed",
+                "pending",
+                "{}",
+                "sha256:" + "a" * 64,
+                "scope-orphan",
+                "2026-01-01T00:00:00Z",
+            ),
+        )
