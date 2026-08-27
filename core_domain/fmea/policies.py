@@ -118,6 +118,32 @@ def validate_evidence_ids(
     return tuple(refs)
 
 
+def _validate_field_claims(
+    row: FmeaRow,
+    pack: EvidencePack,
+    evidence_by_field: dict[str, tuple[str, ...]],
+    support_by_field: dict[str, EvidenceSupportStatus],
+    extension_fields: set[str],
+) -> None:
+    for claim in row.field_claims:
+        if claim.field_key in _EVIDENCE_FIELDS:
+            if claim.field_key not in evidence_by_field or claim.field_key not in support_by_field:
+                raise FmeaDomainError("canonical field claim must have legacy field bindings")  # noqa: TRY003
+            if claim.evidence_ids != evidence_by_field[claim.field_key]:
+                raise FmeaDomainError("canonical field claim evidence IDs do not match legacy binding")  # noqa: TRY003
+            if claim.support_status is not support_by_field[claim.field_key]:
+                raise FmeaDomainError("canonical field claim support status does not match legacy binding")  # noqa: TRY003
+            if claim.claim_status is not row.claim_status:
+                raise FmeaDomainError("canonical field claim status does not match row claim status")  # noqa: TRY003
+            continue
+
+        if "." not in claim.field_key:
+            raise FmeaDomainError("field claim must be canonical or a namespaced extension")  # noqa: TRY003
+        if claim.field_key not in extension_fields:
+            raise FmeaDomainError("extension field claim requires a matching extension value")  # noqa: TRY003
+        validate_evidence_ids(claim.evidence_ids, pack)
+
+
 def validate_row_evidence(
     row: FmeaRow,
     pack: EvidencePack,
@@ -136,6 +162,14 @@ def validate_row_evidence(
 
     for _, evidence_ids in row.field_evidence:
         validate_evidence_ids(evidence_ids, pack)
+
+    _validate_field_claims(
+        row,
+        pack,
+        dict(row.field_evidence),
+        dict(row.field_support),
+        {value.field_key for value in row.extension_values},
+    )
 
     if row.claim_status is ClaimStatus.KNOWN:
         if not any(evidence_ids for _, evidence_ids in row.field_evidence):

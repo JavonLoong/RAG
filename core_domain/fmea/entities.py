@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from math import isfinite
 from typing import cast
 
 from .errors import FmeaDomainError
@@ -12,6 +13,18 @@ from .value_objects import VersionSet
 
 _FIELD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _DECIMAL = re.compile(r"^[+-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$")
+_VALUE_TYPE_ALIASES = {
+    "string": "string",
+    "text": "string",
+    "enum": "string",
+    "integer": "integer",
+    "int": "integer",
+    "decimal": "decimal",
+    "number": "decimal",
+    "float": "decimal",
+    "boolean": "boolean",
+    "bool": "boolean",
+}
 
 
 def _text(value: object, field_name: str) -> str:
@@ -33,7 +46,7 @@ def _string_tuple(value: object, field_name: str) -> tuple[str, ...]:
     try:
         result = tuple(value)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise FmeaDomainError(f"{field_name} must be a sequence") from exc
+        raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
     if any(not isinstance(item, str) or not item for item in result):
         raise FmeaDomainError(f"{field_name} must contain non-empty strings")  # noqa: TRY003
     if len(result) != len(set(result)):
@@ -54,11 +67,18 @@ class FieldValue:
         if "." not in field_key:
             raise FmeaDomainError("field_key must be namespaced")  # noqa: TRY003
         object.__setattr__(self, "field_key", field_key)
-        object.__setattr__(self, "value_type", _text(self.value_type, "value_type"))
-        if self.value is None or isinstance(self.value, Mapping):
-            raise FmeaDomainError("field value must be a scalar or sequence")  # noqa: TRY003
-        if isinstance(self.value, Sequence) and not isinstance(self.value, str | bytes | tuple | list):
-            raise FmeaDomainError("field value sequence is invalid")  # noqa: TRY003
+        value_type = _text(self.value_type, "value_type")
+        canonical_type = _canonical_value_type(value_type)
+        object.__setattr__(self, "value_type", value_type)
+
+        value = self.value
+        if canonical_type.endswith("[]"):
+            if not isinstance(value, list | tuple):
+                raise FmeaDomainError(f"field value is invalid for extension field: {field_key}")  # noqa: TRY003
+            value = tuple(value)
+            object.__setattr__(self, "value", value)
+        if not _value_matches(value, value_type):
+            raise FmeaDomainError(f"field value is invalid for extension field: {field_key}")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +114,7 @@ class FieldClaim:
                 raise FmeaDomainError("known claim cannot use unsupported evidence")  # noqa: TRY003
 
 
-def _extension_schema(template: object) -> dict[str, str]:
+def _extension_schema(template: object) -> dict[str, str]:  # noqa: C901
     """Read only a structural extension-field contract from a template-like value."""
 
     raw: object = None
@@ -142,9 +162,8 @@ def _extension_schema(template: object) -> dict[str, str]:
             if isinstance(properties, Mapping):
                 for key, child in properties.items():
                     child_path = (*path, str(key))
-                    if "." in str(key):
-                        if isinstance(child, Mapping):
-                            add(str(key), child.get("x-value-type") or child.get("value_type") or child.get("type"))
+                    if "." in str(key) and isinstance(child, Mapping):
+                        add(str(key), child.get("x-value-type") or child.get("value_type") or child.get("type"))
                     walk(child, child_path)
             if isinstance(node.get("items"), Mapping):
                 walk(node["items"], (*path, "0"))
@@ -153,34 +172,50 @@ def _extension_schema(template: object) -> dict[str, str]:
     return result
 
 
+def _canonical_value_type(value_type: str) -> str:
+    is_array = value_type.endswith("[]")
+    base_type = value_type[:-2] if is_array else value_type
+    canonical_base = _VALUE_TYPE_ALIASES.get(base_type)
+    if canonical_base is None:
+        raise FmeaDomainError(f"value_type is invalid: {value_type}")  # noqa: TRY003
+    return f"{canonical_base}[]" if is_array else canonical_base
+
+
 def _type_matches(value_type: str, expected: str) -> bool:
-    aliases = {
-        "number": {"number", "decimal", "float"},
-        "decimal": {"decimal", "number", "float"},
-        "integer": {"integer", "int"},
-        "string": {"string", "text"},
-        "boolean": {"boolean", "bool"},
-        "array": {"array", "string[]", "integer[]", "decimal[]"},
-    }
-    return value_type == expected or value_type in aliases.get(expected, {expected})
+    try:
+        return _canonical_value_type(value_type) == _canonical_value_type(expected)
+    except FmeaDomainError:
+        return False
+
+
+def _scalar_value_matches(value: object, value_type: str) -> bool:
+    if value_type == "string":
+        return isinstance(value, str)
+    if value_type == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if value_type == "decimal":
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return True
+        if isinstance(value, float):
+            return isfinite(value)
+        return isinstance(value, str) and _DECIMAL.fullmatch(value.strip()) is not None
+    if value_type == "boolean":
+        return isinstance(value, bool)
+    return False
 
 
 def _value_matches(value: object, value_type: str) -> bool:
-    if value_type in {"decimal", "number", "float"}:
-        return isinstance(value, int | float | str) and not isinstance(value, bool) and (
-            not isinstance(value, str) or _DECIMAL.fullmatch(value.strip()) is not None
+    try:
+        canonical_type = _canonical_value_type(value_type)
+    except FmeaDomainError:
+        return False
+    if canonical_type.endswith("[]"):
+        return isinstance(value, tuple | list) and all(
+            _scalar_value_matches(item, canonical_type[:-2]) for item in value
         )
-    if value_type in {"integer", "int"}:
-        return (isinstance(value, int) and not isinstance(value, bool)) or (
-            isinstance(value, str) and value.isdigit()
-        )
-    if value_type in {"boolean", "bool"}:
-        return isinstance(value, bool)
-    if value_type in {"array", "string[]", "integer[]", "decimal[]"}:
-        return isinstance(value, tuple | list)
-    if value_type in {"string", "text", "enum"}:
-        return isinstance(value, str)
-    return True
+    return _scalar_value_matches(value, canonical_type)
 
 
 def validate_extension_values(row: object, compiled_template: object) -> None:

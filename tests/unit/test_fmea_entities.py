@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError, fields, replace
 import pytest
 
 from core_domain.fmea.codec import decode_analysis, decode_evidence_pack, decode_row, encode_json
-from core_domain.fmea.entities import FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
+from core_domain.fmea.entities import FieldClaim, FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.policies import (
     validate_publication_transition,
@@ -197,6 +197,78 @@ def test_typed_extensions_round_trip(fixture_row) -> None:
     )
     validate_extension_values(row, {"extension_fields": {"gas_turbine.fuel.wobbe_index": "decimal"}})
     assert decode_row(encode_json(row)) == row
+
+
+@pytest.mark.parametrize("value", (["48"], [{"value": 48}], [[48]]))
+def test_integer_array_rejects_non_integer_elements(value) -> None:
+    with pytest.raises(FmeaDomainError, match="field value"):
+        FieldValue("gas_turbine.fuel.pressure_steps", "integer[]", value)
+
+
+def test_field_value_snapshots_mutable_list_as_tuple() -> None:
+    raw_values = [1, 2]
+    field_value = FieldValue("gas_turbine.fuel.pressure_steps", "integer[]", raw_values)
+
+    raw_values[0] = 99
+    raw_values.append(3)
+
+    assert field_value.value == (1, 2)
+    assert isinstance(field_value.value, tuple)
+
+
+@pytest.mark.parametrize(
+    ("value_type", "value"),
+    (("object", "not-allowed"), ("number", float("nan")), ("float", float("inf")), ("decimal", float("-inf"))),
+)
+def test_field_value_rejects_unknown_or_non_finite_types(value_type, value) -> None:
+    with pytest.raises(FmeaDomainError, match="value_type|field value"):
+        FieldValue("gas_turbine.fuel.pressure_steps", value_type, value)
+
+
+@pytest.mark.parametrize(
+    "claim",
+    (
+        FieldClaim("failure_mode", ClaimStatus.KNOWN, EvidenceSupportStatus.SUPPORTED, ("missing-id",)),
+        FieldClaim("failure_mode", ClaimStatus.KNOWN, EvidenceSupportStatus.PARTIALLY_SUPPORTED, ("ev-1",)),
+        FieldClaim("failure_mode", ClaimStatus.UNKNOWN, EvidenceSupportStatus.SUPPORTED, ()),
+    ),
+)
+def test_canonical_field_claim_must_match_legacy_bindings_and_row_status(fixture_pack, fixture_row, claim) -> None:
+    row = replace(fixture_row, field_claims=(claim,))
+
+    with pytest.raises(FmeaDomainError, match="field claim"):
+        validate_row_evidence(row, fixture_pack)
+
+
+def test_matching_canonical_field_claim_is_accepted(fixture_pack, fixture_row) -> None:
+    claim = FieldClaim("failure_mode", ClaimStatus.KNOWN, EvidenceSupportStatus.SUPPORTED, ("ev-1",))
+    validate_row_evidence(replace(fixture_row, field_claims=(claim,)), fixture_pack)
+
+
+def test_extension_field_claim_requires_an_extension_value(fixture_pack, fixture_row) -> None:
+    claim = FieldClaim(
+        "gas_turbine.fuel.wobbe_index",
+        ClaimStatus.KNOWN,
+        EvidenceSupportStatus.SUPPORTED,
+        ("ev-1",),
+    )
+
+    with pytest.raises(FmeaDomainError, match="extension value"):
+        validate_row_evidence(replace(fixture_row, field_claims=(claim,)), fixture_pack)
+
+
+def test_extension_field_claim_evidence_must_belong_to_pack(fixture_pack, fixture_row) -> None:
+    extension_value = FieldValue("gas_turbine.fuel.wobbe_index", "decimal", "48.2")
+    claim = FieldClaim(
+        "gas_turbine.fuel.wobbe_index",
+        ClaimStatus.KNOWN,
+        EvidenceSupportStatus.SUPPORTED,
+        ("missing-id",),
+    )
+    row = replace(fixture_row, extension_values=(extension_value,), field_claims=(claim,))
+
+    with pytest.raises(FmeaDomainError, match="EvidencePack"):
+        validate_row_evidence(row, fixture_pack)
 
 
 def test_legacy_row_json_keeps_old_canonical_bytes(fixture_row) -> None:
