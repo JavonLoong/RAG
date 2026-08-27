@@ -15,6 +15,7 @@ from core_domain.fmea.states import FMEA_SCHEMA_ID, ActorType
 from .assistance_contracts import (
     AssistanceDecision,
     AssistanceDecisionAction,
+    AssistanceHandlerCheckpoint,
     AssistanceSuggestion,
 )
 from .ports import AssistanceRepository
@@ -219,6 +220,47 @@ def _validate_existing_decision(
     return existing
 
 
+def _handler_values(
+    action: AssistanceDecisionAction,
+    suggestion: AssistanceSuggestion[object],
+    command: DecideAssistanceCommand,
+    result: AssistanceHandlerResult | None,
+) -> tuple[tuple[str, str] | None, int | None]:
+    if _is_adoption(action):
+        if not isinstance(result, AssistanceHandlerResult):
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "adopt handlers must return a typed result")
+        if (
+            result.target_type != suggestion.target_type
+            or result.target_id != suggestion.target_id
+            or result.idempotency_key != command.idempotency_key
+            or result.applied_record_version <= suggestion.target_record_version
+        ):
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance handler result is not bound to the command")
+        return (result.target_type, result.target_id), result.applied_record_version
+    if result is not None:
+        raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "non-adopt handlers must not return a resource")
+    return None, None
+
+
+def _checkpoint_values(
+    checkpoint: AssistanceHandlerCheckpoint,
+    suggestion: AssistanceSuggestion[object],
+    command: DecideAssistanceCommand,
+) -> tuple[tuple[str, str] | None, int | None]:
+    identity = checkpoint.resulting_resource_identity
+    result = (
+        None
+        if identity is None
+        else AssistanceHandlerResult(
+            target_type=identity[0],
+            target_id=identity[1],
+            idempotency_key=command.idempotency_key,
+            applied_record_version=checkpoint.applied_record_version or 0,
+        )
+    )
+    return _handler_values(command.action, suggestion, command, result)
+
+
 class AssistanceDecisionService:
     """Apply only allowlisted typed human decisions; handlers own domain adoption."""
 
@@ -284,27 +326,49 @@ class AssistanceDecisionService:
         if raced is not None:
             return _validate_existing_decision(raced, suggestion, command, actor)
 
-        handler_request = AssistanceHandlerRequest(suggestion, command, actor, reservation_hash)
-        try:
-            resulting_identity = self._handlers[command.action](handler_request)
-        except KeyError as exc:
-            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance decision action is not allowlisted") from exc
-        if _is_adoption(command.action):
-            if not isinstance(resulting_identity, AssistanceHandlerResult):
-                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "adopt handlers must return a typed result")
-            if (
-                resulting_identity.target_type != suggestion.target_type
-                or resulting_identity.target_id != suggestion.target_id
-                or resulting_identity.idempotency_key != command.idempotency_key
-            ):
-                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance handler result is not bound to the command")
-            resource_identity = (resulting_identity.target_type, resulting_identity.target_id)
-            applied_record_version = resulting_identity.applied_record_version
+        checkpoint = self._repository.get_decision_handler_checkpoint(
+            scope,
+            reservation_hash,
+            decision_id,
+        )
+        if checkpoint is None:
+            claimed = self._repository.claim_decision_handler(scope, reservation_hash, decision_id)
+            if not claimed:
+                checkpoint = self._repository.get_decision_handler_checkpoint(
+                    scope,
+                    reservation_hash,
+                    decision_id,
+                )
+            if not claimed and checkpoint is None:
+                raise ReviewError(
+                    "FMEA_REVIEW_ACTION_INVALID",
+                    "assistance handler execution was already claimed and requires recovery",
+                )
+        if checkpoint is not None:
+            resource_identity, applied_record_version = _checkpoint_values(
+                checkpoint,
+                suggestion,
+                command,
+            )
         else:
-            if resulting_identity is not None:
-                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "non-adopt handlers must not return a resource")
-            resource_identity = None
-            applied_record_version = None
+            handler_request = AssistanceHandlerRequest(suggestion, command, actor, reservation_hash)
+            try:
+                handler_result = self._handlers[command.action](handler_request)
+            except KeyError as exc:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance decision action is not allowlisted") from exc
+            resource_identity, applied_record_version = _handler_values(
+                command.action,
+                suggestion,
+                command,
+                handler_result,
+            )
+            checkpoint = AssistanceHandlerCheckpoint(
+                decision_id=decision_id,
+                reservation_hash=reservation_hash,
+                resulting_resource_identity=resource_identity,
+                applied_record_version=applied_record_version,
+            )
+            self._repository.save_decision_handler_checkpoint(scope, checkpoint)
 
         decision = AssistanceDecision(
             decision_id=decision_id,

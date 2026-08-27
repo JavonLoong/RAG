@@ -19,7 +19,12 @@ from core_domain.fmea.domain_pack import DomainPackManifest
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
-from .assistance_contracts import AssistanceDecision, AssistanceRequest, AssistanceSuggestion
+from .assistance_contracts import (
+    AssistanceDecision,
+    AssistanceHandlerCheckpoint,
+    AssistanceRequest,
+    AssistanceSuggestion,
+)
 from .review_contracts import (
     ActorContext,
     AuditEvent,
@@ -268,6 +273,26 @@ class AssistanceRepository(Protocol):
         decision_id: str,
         created_at: str,
     ) -> AssistanceDecision | None: ...
+
+    def get_decision_handler_checkpoint(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+    ) -> AssistanceHandlerCheckpoint | None: ...
+
+    def claim_decision_handler(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+    ) -> bool: ...
+
+    def save_decision_handler_checkpoint(
+        self,
+        scope: IdempotencyScope,
+        checkpoint: AssistanceHandlerCheckpoint,
+    ) -> None: ...
 
     def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> AssistanceDecision | None: ...
 

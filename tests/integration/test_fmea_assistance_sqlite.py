@@ -11,6 +11,7 @@ from core_domain.fmea.states import ActorType
 from fmea_application.assistance_contracts import (
     AssistanceDecision,
     AssistanceDecisionAction,
+    AssistanceHandlerCheckpoint,
     AssistanceKind,
     AssistanceSuggestion,
 )
@@ -225,7 +226,32 @@ def test_decision_reservation_is_durable_and_completed_by_the_same_uuid(assistan
             (base.scope.scope_key,),
         ).fetchone() == (reservation_hash, "reserved", base.decision.decision_id)
 
-    prepared = replace(base, reservation_hash=reservation_hash)
+    assert assistance_repository.claim_decision_handler(
+        base.scope,
+        reservation_hash,
+        base.decision.decision_id,
+    ) is True
+    assert assistance_repository.claim_decision_handler(
+        base.scope,
+        reservation_hash,
+        base.decision.decision_id,
+    ) is False
+    applied_record_version = base.decision.target_record_version + 1
+    assistance_repository.save_decision_handler_checkpoint(
+        base.scope,
+        AssistanceHandlerCheckpoint(
+            decision_id=base.decision.decision_id,
+            reservation_hash=reservation_hash,
+            resulting_resource_identity=base.decision.resulting_resource_identity,
+            applied_record_version=applied_record_version,
+        ),
+    )
+
+    prepared = replace(
+        base,
+        audit=replace(base.audit, applied_record_version=applied_record_version),
+        reservation_hash=reservation_hash,
+    )
     saved = assistance_repository.append_decision(prepared)
 
     assert saved == prepared.decision

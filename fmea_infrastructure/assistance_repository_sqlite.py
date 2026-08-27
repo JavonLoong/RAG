@@ -19,6 +19,7 @@ from core_domain.fmea.states import ActorType
 from fmea_application.assistance_contracts import (
     AssistanceDecision,
     AssistanceDecisionAction,
+    AssistanceHandlerCheckpoint,
     AssistanceKind,
     AssistanceSuggestion,
 )
@@ -785,9 +786,9 @@ class SqliteAssistanceRepository:
                 row["state"] != "reserved"
                 or row["payload_hash"] != reservation_hash
                 or row["resource_id"] != decision_id
-                or row["response_json"] is not None
             ):
                 _conflict()
+            self._decode_handler_checkpoint(row, reservation_hash, decision_id)
             connection.execute("COMMIT")
             return None
         except ReviewError:
@@ -805,6 +806,134 @@ class SqliteAssistanceRepository:
         finally:
             connection.close()
 
+    @staticmethod
+    def _decode_handler_checkpoint(
+        row: sqlite3.Row,
+        reservation_hash: str,
+        decision_id: str,
+    ) -> AssistanceHandlerCheckpoint | None:
+        if (
+            row["state"] != "reserved"
+            or row["payload_hash"] != reservation_hash
+            or row["resource_id"] != decision_id
+        ):
+            raise _storage_error()
+        if row["response_json"] is None:
+            return None
+        payload = _strict_json(row["response_json"], "assistance handler checkpoint")
+        if payload == {"handler_state": "started"}:
+            return None
+        if not isinstance(payload, dict) or set(payload) != {
+            "applied_record_version",
+            "decision_id",
+            "handler_state",
+            "reservation_hash",
+            "resulting_resource_identity",
+        }:
+            raise _storage_error()
+        identity = payload["resulting_resource_identity"]
+        if identity is not None:
+            if not isinstance(identity, list) or len(identity) != 2:
+                raise _storage_error()
+            identity = (identity[0], identity[1])
+        if payload["handler_state"] != "completed":
+            raise _storage_error()
+        try:
+            return AssistanceHandlerCheckpoint(
+                decision_id=payload["decision_id"],
+                reservation_hash=payload["reservation_hash"],
+                resulting_resource_identity=identity,
+                applied_record_version=payload["applied_record_version"],
+            )
+        except (TypeError, ValueError) as exc:
+            raise _storage_error() from exc
+
+    def get_decision_handler_checkpoint(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+    ) -> AssistanceHandlerCheckpoint | None:
+        connection = self._connect()
+        try:
+            row = self._idempotency_row(connection, scope)
+            if row is None:
+                raise _storage_error()
+            return self._decode_handler_checkpoint(row, reservation_hash, decision_id)
+        finally:
+            connection.close()
+
+    def claim_decision_handler(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+    ) -> bool:
+        connection = self._connect()
+        started = canonical_json({"handler_state": "started"})
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                "UPDATE idempotency_records SET response_json=? WHERE scope_key=? AND payload_hash=? "
+                "AND state='reserved' AND resource_id=? AND response_json IS NULL",
+                (started, scope.scope_key, reservation_hash, decision_id),
+            )
+            if cursor.rowcount == 1:
+                connection.execute("COMMIT")
+                return True
+            row = self._idempotency_row(connection, scope)
+            if row is None:
+                raise _storage_error()
+            self._decode_handler_checkpoint(row, reservation_hash, decision_id)
+            connection.execute("COMMIT")
+            return False
+        except ReviewError:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def save_decision_handler_checkpoint(
+        self,
+        scope: IdempotencyScope,
+        checkpoint: AssistanceHandlerCheckpoint,
+    ) -> None:
+        identity = checkpoint.resulting_resource_identity
+        completed = canonical_json(
+            {
+                "applied_record_version": checkpoint.applied_record_version,
+                "decision_id": checkpoint.decision_id,
+                "handler_state": "completed",
+                "reservation_hash": checkpoint.reservation_hash,
+                "resulting_resource_identity": None if identity is None else list(identity),
+            }
+        )
+        started = canonical_json({"handler_state": "started"})
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                "UPDATE idempotency_records SET response_json=? WHERE scope_key=? AND payload_hash=? "
+                "AND state='reserved' AND resource_id=? AND response_json=?",
+                (
+                    completed,
+                    scope.scope_key,
+                    checkpoint.reservation_hash,
+                    checkpoint.decision_id,
+                    started,
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise _storage_error()
+            connection.execute("COMMIT")
+        except ReviewError:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
     def append_decision(self, prepared: PreparedAssistanceDecision) -> AssistanceDecision:  # noqa: C901
         if not isinstance(prepared, PreparedAssistanceDecision):
             raise _safe_error("FMEA_REVIEW_REQUEST_INVALID", "Prepared assistance decision is invalid.")
@@ -819,12 +948,18 @@ class SqliteAssistanceRepository:
                     idempotency_row, prepared.payload_hash, "assistance_decision"
                 )
             else:
+                if idempotency_row is None:
+                    raise _storage_error()
+                checkpoint = self._decode_handler_checkpoint(
+                    idempotency_row,
+                    prepared.reservation_hash,
+                    prepared.decision.decision_id,
+                )
                 if (
-                    idempotency_row is None
-                    or idempotency_row["state"] != "reserved"
-                    or idempotency_row["payload_hash"] != prepared.reservation_hash
-                    or idempotency_row["resource_id"] != prepared.decision.decision_id
-                    or idempotency_row["response_json"] is not None
+                    checkpoint is None
+                    or checkpoint.resulting_resource_identity
+                    != prepared.decision.resulting_resource_identity
+                    or checkpoint.applied_record_version != prepared.audit.applied_record_version
                 ):
                     raise _storage_error()
                 replay_id = None

@@ -39,6 +39,8 @@ class _Repository:
         self.suggestion = suggestion
         self.decisions = []
         self.reservations = {}
+        self.claimed = set()
+        self.checkpoints = {}
 
     def get_suggestion(self, suggestion_id: str, workspace_id: str):
         if suggestion_id == self.suggestion.suggestion_id and workspace_id == self.suggestion.workspace_id:
@@ -50,6 +52,7 @@ class _Repository:
             prepared.reservation_hash,
             prepared.decision.decision_id,
         )
+        assert prepared.scope.scope_key in self.checkpoints
         self.decisions.append(prepared)
         return prepared.decision
 
@@ -66,6 +69,21 @@ class _Repository:
             raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "reservation key is already bound")
         self.reservations[scope.scope_key] = (reservation_hash, decision_id)
         return self.get_decision(decision_id, scope.workspace_id)
+
+    def get_decision_handler_checkpoint(self, scope, reservation_hash, decision_id):
+        assert self.reservations[scope.scope_key] == (reservation_hash, decision_id)
+        return self.checkpoints.get(scope.scope_key)
+
+    def claim_decision_handler(self, scope, reservation_hash, decision_id):
+        assert self.reservations[scope.scope_key] == (reservation_hash, decision_id)
+        if scope.scope_key in self.claimed:
+            return False
+        self.claimed.add(scope.scope_key)
+        return True
+
+    def save_decision_handler_checkpoint(self, scope, checkpoint):
+        assert scope.scope_key in self.claimed
+        self.checkpoints[scope.scope_key] = checkpoint
 
     def replay_decision(self, scope, payload_hash):
         for prepared in self.decisions:
@@ -458,7 +476,7 @@ def test_retry_after_append_failure_reuses_the_same_handler_idempotency_uuid() -
         service.decide(command, actor)
     decision = service.decide(command, actor)
 
-    assert handler_keys == [command.idempotency_key, command.idempotency_key]
+    assert handler_keys == [command.idempotency_key]
     assert canonical_resources == {command.idempotency_key}
     assert decision.resulting_resource_identity == (suggestion.target_type, suggestion.target_id)
     assert len(repository.decisions) == 1
@@ -501,3 +519,42 @@ def test_decision_reservation_is_durable_before_the_adoption_handler_runs() -> N
     service.decide(command, ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1"))
 
     assert len(repository.reservations) == 1
+
+
+def test_claimed_handler_failure_is_not_executed_twice() -> None:
+    service_type, command_type, _ = _types()
+    suggestion = _suggestion()
+    repository = _Repository(suggestion)
+    calls = []
+
+    def failing_handler(request):
+        calls.append(request.command.idempotency_key)
+        raise RuntimeError("canonical write outcome is unknown")  # noqa: TRY003
+
+    service = service_type(
+        repository,
+        handlers={
+            AssistanceDecisionAction.ADOPT: failing_handler,
+            AssistanceDecisionAction.PARTIAL_ADOPT: failing_handler,
+            AssistanceDecisionAction.EDIT_AND_ADOPT: failing_handler,
+            AssistanceDecisionAction.REJECT: lambda _request: None,
+            AssistanceDecisionAction.DEFER: lambda _request: None,
+            AssistanceDecisionAction.REQUEST_EVIDENCE: lambda _request: None,
+        },
+    )
+    command = command_type(
+        suggestion_id=suggestion.suggestion_id,
+        expected_suggestion_version=suggestion.record_version,
+        expected_target_record_version=suggestion.target_record_version,
+        action=AssistanceDecisionAction.ADOPT,
+        idempotency_key="00000000-0000-4000-8000-000000000297",
+        reason="fail closed after claimed execution",
+    )
+    actor = ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1")
+
+    with pytest.raises(RuntimeError, match="outcome is unknown"):
+        service.decide(command, actor)
+    with pytest.raises(ReviewError, match="requires recovery"):
+        service.decide(command, actor)
+
+    assert calls == [command.idempotency_key]

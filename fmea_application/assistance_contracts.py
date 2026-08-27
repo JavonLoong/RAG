@@ -441,6 +441,31 @@ class AssistanceSuggestion(Generic[_T]):
 
 
 @dataclass(frozen=True, slots=True)
+class AssistanceHandlerCheckpoint:
+    decision_id: str
+    reservation_hash: str
+    resulting_resource_identity: tuple[str, str] | None
+    applied_record_version: int | None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "decision_id", _text(self.decision_id, "decision_id", max_length=_MAX_ID_LENGTH))
+        reservation_hash = _text(self.reservation_hash, "reservation_hash")
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", reservation_hash):
+            raise ValueError("reservation_hash must be a canonical hash")  # noqa: TRY003
+        object.__setattr__(self, "reservation_hash", reservation_hash)
+        identity = _normalize_resource_identity(self.resulting_resource_identity)
+        object.__setattr__(self, "resulting_resource_identity", identity)
+        if self.applied_record_version is not None:
+            object.__setattr__(
+                self,
+                "applied_record_version",
+                _positive(self.applied_record_version, "applied_record_version"),
+            )
+        if (identity is None) != (self.applied_record_version is None):
+            raise ValueError("checkpoint resource identity and applied version require both values")  # noqa: TRY003
+
+
+@dataclass(frozen=True, slots=True)
 class AssistanceDecision:
     decision_id: str
     suggestion_id: str
@@ -499,6 +524,7 @@ class AssistanceDecision:
 __all__ = [
     "AssistanceDecision",
     "AssistanceDecisionAction",
+    "AssistanceHandlerCheckpoint",
     "AssistanceKind",
     "AssistanceRequest",
     "AssistanceSuggestion",
