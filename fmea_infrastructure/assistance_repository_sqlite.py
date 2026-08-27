@@ -37,7 +37,8 @@ from fmea_application.risk_contracts import (
     canonical_json,
 )
 
-from .repository_sqlite import SqliteFmeaRepository, _decode_audit_event
+from .repository_sqlite import SqliteFmeaRepository
+from .sqlite_codec import decode_audit_event
 
 _MAX_BUSY_TIMEOUT_MS = 60_000
 _SUGGESTION_COLUMNS = (
@@ -245,7 +246,7 @@ class SqliteAssistanceRepository:
         if audit is None:
             raise _storage_error()
         try:
-            event = _decode_audit_event(audit["event_json"])
+            event = decode_audit_event(audit["event_json"])
         except (TypeError, ValueError) as exc:
             raise _storage_error() from exc
         if encode_review_json(event) != audit["event_json"]:
