@@ -77,10 +77,15 @@ def _decode_evidence_pack_payload(payload: object) -> EvidencePack:
     data = _object_payload(payload, "EvidencePack")
     refs = tuple(_decode_evidence_ref(item) for item in _array_payload(data["refs"], "refs"))
     raw_parent_refs = data.get("parent_pack_refs", [])
-    parent_refs = tuple(
-        (cast(str, pair[0]), cast(str, pair[1]))
-        for pair in (cast(list[object], item) for item in _array_payload(raw_parent_refs, "parent_pack_refs"))
-    )
+    parent_refs_list = _array_payload(raw_parent_refs, "parent_pack_refs")
+    parent_refs: list[tuple[str, str]] = []
+    for item in parent_refs_list:
+        if not isinstance(item, list) or len(item) != 2:
+            raise FmeaDomainError(  # noqa: TRY003
+                "parent_pack_refs entries must be length-2 lists"
+            )
+        pair = cast(list[object], item)
+        parent_refs.append((cast(str, pair[0]), cast(str, pair[1])))
     result = EvidencePack.build(
         pack_id=cast(str, data["pack_id"]),
         workspace_id=cast(str, data["workspace_id"]),
@@ -89,7 +94,7 @@ def _decode_evidence_pack_payload(payload: object) -> EvidencePack:
         refs=refs,
         created_at=cast(str, data["created_at"]),
         expires_at=cast(str | None, data["expires_at"]),
-        parent_pack_refs=parent_refs,
+        parent_pack_refs=tuple(parent_refs),
         lineage_reason=cast(str | None, data.get("lineage_reason")),
         lineage_schema_version=cast(str | None, data.get("lineage_schema_version")),
     )

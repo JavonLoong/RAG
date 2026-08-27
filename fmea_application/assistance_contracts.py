@@ -24,15 +24,17 @@ _MAX_STRING_LENGTH = 4096
 _MAX_ID_LENGTH = 256
 _MAX_FIELD_LENGTH = 256
 _MAX_CANONICAL_BYTES = 65536
-_FORBIDDEN_KEYS = frozenset(
+_FORBIDDEN_KEY_MARKERS = frozenset(
     {
-        "api_key",
+        "password",
+        "passwd",
         "authorization",
+        "apikey",
         "secret",
-        "access_token",
-        "raw_prompt",
-        "private_path",
-        "provider_error",
+        "accesstoken",
+        "rawprompt",
+        "privatepath",
+        "providererror",
     }
 )
 
@@ -93,7 +95,19 @@ def _hash(value: object, field_name: str) -> str:
 
 
 def _normalized_sensitive_key(value: str) -> str:
-    return re.sub(r"-+", "_", value.casefold())
+    camel_case_separated = re.sub(
+        r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])",
+        "_",
+        value,
+    )
+    normalized = re.sub(r"[^a-z0-9]+", "_", camel_case_separated.casefold())
+    return re.sub(r"_+", "_", normalized).strip("_")
+
+
+def _is_forbidden_sensitive_key(value: str) -> bool:
+    normalized = _normalized_sensitive_key(value)
+    compact = normalized.replace("_", "")
+    return any(marker in compact for marker in _FORBIDDEN_KEY_MARKERS)
 
 
 def _json_key(value: object) -> str:
@@ -101,7 +115,7 @@ def _json_key(value: object) -> str:
         raise ValueError("JSON object key must be a string")  # noqa: TRY003, TRY004
     if len(value) > _MAX_STRING_LENGTH:
         raise ValueError(f"JSON object keys must be at most {_MAX_STRING_LENGTH} characters")  # noqa: TRY003
-    if _normalized_sensitive_key(value) in _FORBIDDEN_KEYS:
+    if _is_forbidden_sensitive_key(value):
         raise ValueError("JSON object contains a forbidden private key")  # noqa: TRY003
     return value
 
@@ -268,7 +282,7 @@ def _normalize_edits(value: object) -> tuple[tuple[str, object], ...]:
         if not isinstance(edit, tuple | list) or len(edit) != 2:
             raise ValueError("edits must contain field/value pairs")  # noqa: TRY003
         field = _text(edit[0], "edit field", max_length=_MAX_FIELD_LENGTH)
-        if _normalized_sensitive_key(field) in _FORBIDDEN_KEYS:
+        if _is_forbidden_sensitive_key(field):
             raise ValueError("edit field is a forbidden private key")  # noqa: TRY003
         if field in seen_fields:
             raise ValueError("edit fields must be unique")  # noqa: TRY003

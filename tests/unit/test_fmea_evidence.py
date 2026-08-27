@@ -86,6 +86,26 @@ def test_legacy_evidence_pack_json_keeps_old_canonical_bytes(fixture_pack: Evide
     assert encode_json(decode_evidence_pack(legacy_json)) == legacy_json
 
 
+@pytest.mark.parametrize(
+    "malformed_parent_refs",
+    (
+        [["pack-1"]],
+        [["pack-1", "f" * 64, "extra"]],
+        [{"pack_id": "pack-1", "pack_hash": "f" * 64}],
+        ["pack-1", "f" * 64],
+    ),
+)
+def test_decode_rejects_malformed_parent_pack_ref_shapes(
+    fixture_pack: EvidencePack,
+    malformed_parent_refs: list[object],
+) -> None:
+    payload = json.loads(encode_json(fixture_pack))
+    payload["parent_pack_refs"] = malformed_parent_refs
+
+    with pytest.raises(FmeaDomainError, match="parent_pack_refs entries must be length-2 lists"):
+        decode_evidence_pack(json.dumps(payload))
+
+
 def test_lineage_rejects_unknown_hash_workspace_mismatch_and_cycles(fixture_pack: EvidencePack) -> None:
     from core_domain.fmea.value_objects import validate_evidence_lineage
 

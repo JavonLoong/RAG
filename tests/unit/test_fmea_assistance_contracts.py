@@ -189,6 +189,33 @@ def test_assistance_rejects_unsupported_or_sensitive_payloads(payload: object, m
         _suggestion(payload=payload)
 
 
+@pytest.mark.parametrize(
+    "key",
+    (
+        "password",
+        "passwd_hash",
+        "authorization-header",
+        "request authorization header",
+        "api.key",
+        "request_api_key_value",
+        "secret.value",
+        "access token",
+        "raw.prompt",
+        "private-path",
+        "provider error",
+    ),
+)
+def test_assistance_rejects_sensitive_json_keys_across_separators_and_affixes(key: str) -> None:
+    with pytest.raises(ValueError, match="forbidden"):
+        _suggestion(payload={key: "do not persist"})
+
+
+def test_assistance_keeps_generic_json_keys() -> None:
+    suggestion = _suggestion(payload={"metadata.value": {"status": "ok"}})
+
+    assert suggestion.payload["metadata.value"]["status"] == "ok"  # type: ignore[index]
+
+
 def test_assistance_rejects_payload_beyond_depth_and_canonical_size_limits() -> None:
     too_deep: object = True
     for _ in range(9):
@@ -288,6 +315,12 @@ def test_assistance_edit_payload_rejects_sensitive_fields_and_canonical_size() -
     too_large = tuple((f"field-{index}", "x" * 4096) for index in range(16))
     with pytest.raises(ValueError, match="canonical edits"):
         _decision(action=AssistanceDecisionAction.EDIT_AND_ADOPT, edits=too_large)
+
+
+@pytest.mark.parametrize("field", ("password", "authorization-header", "api.key"))
+def test_assistance_edit_fields_reject_sensitive_key_variants(field: str) -> None:
+    with pytest.raises(ValueError, match="forbidden"):
+        _decision(action=AssistanceDecisionAction.EDIT_AND_ADOPT, edits=((field, "value"),))
 
 
 def test_assistance_human_actor_validation_does_not_guess_from_actor_id() -> None:

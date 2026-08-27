@@ -225,6 +225,10 @@ class RiskAssessmentRecord:
         ):
             raise FmeaDomainError("invalidated reason must not be empty")  # noqa: TRY003
         if self.status == RiskStatus.CONFIRMED:
+            if set(names) != {"severity", "occurrence", "detection"}:
+                raise FmeaDomainError(  # noqa: TRY003
+                    "confirmed risk dimensions must be exactly severity, occurrence, detection"
+                )
             if self.derived is None:
                 raise FmeaDomainError("confirmed risk record requires a derived assessment")  # noqa: TRY003
             if self.proposal_id is None:
@@ -276,6 +280,9 @@ def calculate_risk(
     reason: str,
     evidence_ids: tuple[str, ...],
 ) -> RiskAssessment:
+    if rule_pack.required_dimensions != ("severity", "occurrence", "detection"):
+        raise FmeaDomainError("rule pack required dimensions are not supported")  # noqa: TRY003
+
     consequence_classes: set[str] = set()
     for consequence_class, _ in severity_by_consequence_class:
         if consequence_class in consequence_classes:

@@ -213,6 +213,25 @@ def test_duplicate_consequence_classes_fail() -> None:
         )
 
 
+def test_calculate_risk_rejects_alternative_dimensions_before_calculation() -> None:
+    alternative = replace(rules(), required_dimensions=("severity", "likelihood", "detection"))
+
+    with pytest.raises(FmeaDomainError, match="required dimensions"):
+        calculate_risk(
+            rule_pack=alternative,
+            severity_by_consequence_class=(("safety", 5), ("safety", 7)),
+            occurrence=1,
+            detection=1,
+            inherent_risk=None,
+            current_risk=None,
+            target_residual_risk=None,
+            verified_residual_risk=None,
+            uncertainty=None,
+            reason="alternative dimensions must fail closed",
+            evidence_ids=(),
+        )
+
+
 def test_scoring_rule_pack_requires_complete_dimension_anchors() -> None:
     with pytest.raises(FmeaDomainError, match="dimension anchors"):
         ScoringRulePack(
@@ -521,6 +540,35 @@ def test_confirmed_risk_record_requires_complete_identity_and_derived_consistenc
     )
     assert confirmed.derived is not None
     assert confirmed.derived.rpn == 108
+
+
+@pytest.mark.parametrize(
+    "dimensions",
+    (
+        (
+            ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+            ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+            ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+            ScoreDimension("temperature", 2, ("ev-1",), "unexpected", None),
+        ),
+        (
+            ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+            ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+            ScoreDimension("likelihood", 4, ("ev-1",), "unknown name", None),
+        ),
+    ),
+)
+def test_confirmed_risk_record_requires_exact_sod_dimension_names(
+    dimensions: tuple[ScoreDimension, ...],
+) -> None:
+    with pytest.raises(FmeaDomainError, match="exactly severity, occurrence, detection"):
+        _record(
+            status=RiskStatus.CONFIRMED,
+            derived=_assessment(),
+            proposal_id="proposal-1",
+            confirmer_actor_id="actor-1",
+            dimensions=dimensions,
+        )
 
 
 def test_invalidated_risk_record_requires_reason() -> None:
