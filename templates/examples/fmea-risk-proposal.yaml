@@ -1,0 +1,30 @@
+template:
+  id: fmea-risk-proposal
+  version: 1.0.0
+  title: Evidence-bound FMEA risk proposal
+  description: Propose S/O/D dimensions only; deterministic code and a human reviewer own confirmation.
+  domain_tags: [fmea, risk, proposal]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [dimensions, reason, uncertainty]
+  properties:
+    dimensions:
+      type: array
+      minItems: 3
+      maxItems: 3
+      items:
+        type: object
+        additionalProperties: false
+        required: [name, value, evidence_ids, reason, uncertainty]
+        properties:
+          name: {type: string, enum: [severity, occurrence, detection]}
+          value: {type: [integer, 'null'], minimum: 1, maximum: 10}
+          evidence_ids: {type: array, uniqueItems: true, maxItems: 32, items: {type: string, minLength: 1, maxLength: 128}}
+          reason: {type: string, minLength: 1, maxLength: 1000}
+          uncertainty: {type: [string, 'null'], maxLength: 1000}
+    reason: {type: string, minLength: 1, maxLength: 2000}
+    uncertainty: {type: [string, 'null'], maxLength: 1000}
+evidence_bindings:
+  - {target: /dimensions/*, requirement: optional, min_refs: 0, allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]}

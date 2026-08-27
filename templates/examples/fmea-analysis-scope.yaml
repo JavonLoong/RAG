@@ -1,0 +1,19 @@
+template:
+  id: fmea-analysis-scope
+  version: 1.0.0
+  title: FMEA analysis scope draft
+  description: Draft a bounded analysis scope without creating canonical analysis state.
+  domain_tags: [fmea, analysis, assistance]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [scope, system_boundary, exclusions, operating_modes, assumptions, limitations]
+  properties:
+    scope: {type: string, minLength: 1, maxLength: 4000}
+    system_boundary: {type: string, minLength: 1, maxLength: 4000}
+    exclusions: {type: array, uniqueItems: true, maxItems: 64, items: {type: string, minLength: 1, maxLength: 1000}}
+    operating_modes: {type: array, uniqueItems: true, maxItems: 64, items: {type: string, minLength: 1, maxLength: 1000}}
+    assumptions: {type: array, uniqueItems: true, maxItems: 64, items: {type: string, minLength: 1, maxLength: 1000}}
+    limitations: {type: array, uniqueItems: true, maxItems: 64, items: {type: string, minLength: 1, maxLength: 1000}}
+evidence_bindings: []

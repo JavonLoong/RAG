@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,9 +18,28 @@ from fmea_application import (
     ReviewSuggestionGenerator,
     build_review_service,
 )
+from fmea_application.analysis_assistance_service import AnalysisAssistanceService
+from fmea_application.assistance_contracts import AssistanceDecisionAction
+from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
+from fmea_application.ports import (
+    AnalysisAssistanceGenerator,
+    DomainPackRegistry,
+    RiskSuggestionGenerator,
+    ScoringRuleRegistry,
+)
+from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
+from fmea_application.service_factory import (
+    build_analysis_assistance_service,
+    build_assistance_decision_service,
+    build_risk_assessment_service,
+)
+from fmea_infrastructure.analysis_assistance_generator import EnvironmentAnalysisAssistanceGenerator
+from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
 from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
+from fmea_infrastructure.risk_generator import EnvironmentRiskSuggestionGenerator
+from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
 
@@ -45,6 +64,16 @@ class ReviewRuntime:
     service: ReviewService
     repository: SqliteFmeaRepository
     executor: ReviewRunExecutor
+    template_registry_root: Path
+
+
+@dataclass(frozen=True, slots=True)
+class RiskRuntime:
+    analysis_service: AnalysisAssistanceService
+    decision_service: AssistanceDecisionService
+    risk_service: RiskAssessmentService
+    assistance_repository: SqliteAssistanceRepository
+    risk_repository: SqliteRiskRepository
     template_registry_root: Path
 
 
@@ -134,9 +163,67 @@ def build_workspace_review_runtime(
     )
 
 
+def build_workspace_risk_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    domain_pack_registry: DomainPackRegistry,
+    scoring_rule_registry: ScoringRuleRegistry,
+    context_provider: RiskContextProvider,
+    assistance_handlers: Mapping[AssistanceDecisionAction, AssistanceHandler],
+    analysis_generator: AnalysisAssistanceGenerator | None = None,
+    risk_generator: RiskSuggestionGenerator | None = None,
+    clock: Callable[[], str] = utc_now,
+    id_factory: Callable[[str], str] = new_prefixed_uuid,
+) -> RiskRuntime:
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    assistance_repository = SqliteAssistanceRepository(database_path)
+    risk_repository = SqliteRiskRepository(database_path)
+    assistance_repository.initialize()
+    risk_repository.initialize()
+
+    resolved_analysis_generator = analysis_generator or EnvironmentAnalysisAssistanceGenerator(
+        evidence_loader=risk_repository.get_evidence_pack,
+        registry_root=template_registry_root / "assistance",
+    )
+    resolved_risk_generator = risk_generator or EnvironmentRiskSuggestionGenerator(
+        registry_root=template_registry_root / "assistance"
+    )
+    analysis_service = build_analysis_assistance_service(
+        assistance_repository,
+        resolved_analysis_generator,
+        clock=clock,
+        id_factory=id_factory,
+    )
+    decision_service = build_assistance_decision_service(
+        assistance_repository,
+        handlers=dict(assistance_handlers),
+        clock=clock,
+        id_factory=id_factory,
+    )
+    risk_service = build_risk_assessment_service(
+        risk_repository,
+        assistance_repository=assistance_repository,
+        domain_pack_registry=domain_pack_registry,
+        scoring_rule_registry=scoring_rule_registry,
+        generator=resolved_risk_generator,
+        context_provider=context_provider,
+        clock=clock,
+    )
+    return RiskRuntime(
+        analysis_service=analysis_service,
+        decision_service=decision_service,
+        risk_service=risk_service,
+        assistance_repository=assistance_repository,
+        risk_repository=risk_repository,
+        template_registry_root=template_registry_root,
+    )
+
+
 __all__ = [
     "ReviewRuntime",
+    "RiskRuntime",
     "build_workspace_review_runtime",
+    "build_workspace_risk_runtime",
     "new_prefixed_uuid",
     "utc_now",
 ]

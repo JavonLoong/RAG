@@ -42,7 +42,7 @@ def test_local_auth_security_matrix(
     if expected_code is None:
         actor = provider.authenticate(candidate, remote_host)
         assert actor.actor_type is ActorType.HUMAN
-        assert actor.roles == frozenset({"reviewer"})
+        assert actor.roles == frozenset({"reviewer", "risk_reviewer"})
         return
 
     with pytest.raises(ReviewError) as captured:

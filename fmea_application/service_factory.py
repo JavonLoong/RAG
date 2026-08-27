@@ -4,8 +4,22 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .ports import ReviewRepository, ReviewRunExecutor, ReviewSuggestionGenerator
+from .analysis_assistance_service import AnalysisAssistanceService
+from .assistance_contracts import AssistanceDecisionAction
+from .assistance_service import AssistanceDecisionService, AssistanceHandler
+from .ports import (
+    AnalysisAssistanceGenerator,
+    AssistanceRepository,
+    DomainPackRegistry,
+    ReviewRepository,
+    ReviewRunExecutor,
+    ReviewSuggestionGenerator,
+    RiskRepository,
+    RiskSuggestionGenerator,
+    ScoringRuleRegistry,
+)
 from .review_service import ReviewService
+from .risk_service import RiskAssessmentService, RiskContextProvider
 
 
 def build_review_service(
@@ -25,4 +39,50 @@ def build_review_service(
     )
 
 
-__all__ = ["build_review_service"]
+def build_analysis_assistance_service(
+    repository: AssistanceRepository,
+    generator: AnalysisAssistanceGenerator,
+    *,
+    clock: Callable[[], str],
+    id_factory: Callable[[str], str],
+) -> AnalysisAssistanceService:
+    return AnalysisAssistanceService(generator, repository, clock=clock, id_factory=id_factory)
+
+
+def build_assistance_decision_service(
+    repository: AssistanceRepository,
+    *,
+    handlers: dict[AssistanceDecisionAction, AssistanceHandler],
+    clock: Callable[[], str],
+    id_factory: Callable[[str], str],
+) -> AssistanceDecisionService:
+    return AssistanceDecisionService(repository, handlers=handlers, clock=clock, id_factory=id_factory)
+
+
+def build_risk_assessment_service(
+    repository: RiskRepository,
+    *,
+    assistance_repository: AssistanceRepository,
+    domain_pack_registry: DomainPackRegistry,
+    scoring_rule_registry: ScoringRuleRegistry,
+    generator: RiskSuggestionGenerator,
+    context_provider: RiskContextProvider,
+    clock: Callable[[], str],
+) -> RiskAssessmentService:
+    return RiskAssessmentService(
+        repository,
+        assistance_repository=assistance_repository,
+        domain_pack_registry=domain_pack_registry,
+        scoring_rule_registry=scoring_rule_registry,
+        generator=generator,
+        context_provider=context_provider,
+        clock=clock,
+    )
+
+
+__all__ = [
+    "build_analysis_assistance_service",
+    "build_assistance_decision_service",
+    "build_review_service",
+    "build_risk_assessment_service",
+]
