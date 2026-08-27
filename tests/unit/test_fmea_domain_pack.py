@@ -57,7 +57,6 @@ def test_domain_pack_rejects_numeric_prerelease_leading_zero() -> None:
     (
         ">>1.0.0",
         "~^1.0.0",
-        "1.0.0,<2.0.0",
         ">=1.0.0-01,<2.0.0",
     ),
 )
@@ -90,6 +89,11 @@ def test_domain_pack_accepts_closed_equal_kernel_compatibility_boundary() -> Non
 def test_domain_pack_accepts_exact_kernel_compatibility_comparator() -> None:
     manifest = _manifest(kernel_compatibility_range="=1.0.0")
     assert manifest.kernel_compatibility_range == "=1.0.0"
+
+
+def test_domain_pack_accepts_empty_operator_as_exact_kernel_compatibility_comparator() -> None:
+    manifest = _manifest(kernel_compatibility_range="1.0.0,<2.0.0")
+    assert manifest.kernel_compatibility_range == "1.0.0,<2.0.0"
 
 
 def test_extension_values_use_structural_template_contract() -> None:

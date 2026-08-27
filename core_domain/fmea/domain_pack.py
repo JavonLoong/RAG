@@ -16,7 +16,7 @@ _SEMVER = re.compile(
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_RANGE_PART = re.compile(rf"^(?P<operator>>=|<=|=|>|<)(?P<version>{_SEMVER_CORE})$")
+_RANGE_PART = re.compile(rf"^(?P<operator>>=|<=|=|>|<)?(?P<version>{_SEMVER_CORE})$")
 _DEFAULT_KERNEL_COMPATIBILITY_RANGE = ">=1.0.0,<2.0.0"
 
 
@@ -134,7 +134,7 @@ def _compatibility_range(value: object) -> str:
             )
         major, minor, patch = (int(component) for component in match.group("version").split("."))
         version = (major, minor, patch)
-        operator = match.group("operator")
+        operator = match.group("operator") or "="
         is_open = operator in (">", "<")
         if operator in (">", ">="):
             lower = _merge_lower_bound(lower, version, is_open)
