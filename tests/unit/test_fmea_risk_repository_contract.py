@@ -213,7 +213,7 @@ def test_rejection_and_invalidation_have_explicit_status_transitions() -> None:
     previous = assessment(RiskStatus.PROPOSED)
     reviewed = assessment(RiskStatus.REVIEWED, version=2)
     rejection_hash = risk_rejection_payload_hash(
-        scope("reviewer-1"), proposal(), previous, reviewed, 1, "risk-decision-2"
+        scope("reviewer-1"), proposal(), previous, reviewed, 1, "risk-decision-2", "risk lifecycle"
     )
     rejected = PreparedRiskRejection(
         scope=scope("reviewer-1"),
@@ -284,8 +284,10 @@ def test_risk_repository_port_contains_atomic_lifecycle_methods() -> None:
         "get_row",
         "get_evidence_pack",
         "get_current_assessment",
+        "get_assessment_version",
         "save_proposal",
         "replay_confirmation",
+        "replay_rejection",
         "commit_confirmation",
         "reject",
         "invalidate",

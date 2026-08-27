@@ -28,7 +28,7 @@ from core_domain.fmea.states import ActorType, RiskStatus
 from core_domain.fmea.value_objects import EvidencePack
 
 from .assistance_contracts import AssistanceDecision, AssistanceSuggestion
-from .review_contracts import AuditEvent, IdempotencyScope, ReviewContext, idempotency_key_hash
+from .review_contracts import AuditEvent, IdempotencyScope, ReviewContext, encode_review_json, idempotency_key_hash
 
 _HASH_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _MAX_TEXT_LENGTH = 256
@@ -41,6 +41,18 @@ _UUID_PATTERN = re.compile(
 
 AnalysisScopeDraftInput: TypeAlias = Mapping[str, object]
 AnalysisScopeDraft: TypeAlias = Mapping[str, object]
+
+
+def risk_context_hash(context: ReviewContext) -> str:
+    if not isinstance(context, ReviewContext):
+        raise ValueError("context must be a ReviewContext")
+    return sha256(encode_review_json(context).encode("utf-8")).hexdigest()
+
+
+def risk_dependency_hash(snapshot: RiskDependencySnapshot) -> str:
+    if not isinstance(snapshot, RiskDependencySnapshot):
+        raise ValueError("snapshot must be a RiskDependencySnapshot")
+    return sha256(encode_review_json(snapshot).encode("utf-8")).hexdigest()
 
 
 def _uuid(value: object, field_name: str) -> str:
@@ -319,6 +331,7 @@ def risk_rejection_payload(
     assessment: RiskAssessmentRecord,
     expected_assessment_version: int,
     decision_id: str,
+    reason: str,
 ) -> Mapping[str, object]:
     return _prepared_payload(
         "risk.rejection",
@@ -328,6 +341,7 @@ def risk_rejection_payload(
         assessment=_canonical_projection(assessment),
         expected_assessment_version=expected_assessment_version,
         decision_id=decision_id,
+        reason=_text(reason, "reason", limit=_MAX_REASON_LENGTH),
     )
 
 
@@ -338,6 +352,7 @@ def risk_rejection_payload_hash(
     assessment: RiskAssessmentRecord,
     expected_assessment_version: int,
     decision_id: str,
+    reason: str,
 ) -> str:
     return _prepared_payload_hash(
         risk_rejection_payload(
@@ -347,6 +362,7 @@ def risk_rejection_payload_hash(
             assessment,
             expected_assessment_version,
             decision_id,
+            reason,
         )
     )
 
@@ -501,6 +517,7 @@ class RiskDependencySnapshot:
     template_version: str
     rule_pack_id: str
     rule_pack_version: str
+    operating_context_hash: str
 
     def __post_init__(self) -> None:
         for field_name in (
@@ -517,6 +534,11 @@ class RiskDependencySnapshot:
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
         object.__setattr__(self, "row_version", _positive(self.row_version, "row_version"))
         object.__setattr__(self, "evidence_pack_hash", _raw_hash(self.evidence_pack_hash, "evidence_pack_hash"))
+        object.__setattr__(
+            self,
+            "operating_context_hash",
+            _raw_hash(self.operating_context_hash, "operating_context_hash"),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -831,6 +853,7 @@ class PreparedRiskRejection:
                     self.assessment,
                     self.expected_assessment_version,
                     self.decision_id,
+                    self.audit.reason or "",
                 ),
             ),
         )
@@ -993,6 +1016,8 @@ __all__ = [
     "outbox_payload_hash",
     "risk_confirmation_payload",
     "risk_confirmation_payload_hash",
+    "risk_context_hash",
+    "risk_dependency_hash",
     "risk_invalidation_payload",
     "risk_invalidation_payload_hash",
     "risk_proposal_payload",

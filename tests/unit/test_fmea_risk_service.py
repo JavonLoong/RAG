@@ -16,6 +16,7 @@ from fmea_application.risk_contracts import (
     RiskConfirmationResult,
     RiskDependencySnapshot,
     StartRiskProposalCommand,
+    risk_context_hash,
 )
 
 
@@ -98,6 +99,9 @@ class _RiskRepository:
         self.current = None
         self.proposal = None
         self.calls = []
+        self.history = {}
+        self.confirmation_replays = {}
+        self.rejection_replays = {}
 
     def get_row(self, row_id: str, workspace_id: str):
         if row_id == self.row.row_id and workspace_id == "ws-1":
@@ -114,6 +118,11 @@ class _RiskRepository:
             return self.current
         return None
 
+    def get_assessment_version(self, row_id: str, workspace_id: str, record_version: int):
+        if row_id != self.row.row_id or workspace_id != "ws-1":
+            return None
+        return self.history.get(record_version)
+
     def get_proposal(self, proposal_id: str, workspace_id: str):
         if self.proposal is not None and self.proposal.proposal_id == proposal_id and workspace_id == "ws-1":
             return self.proposal
@@ -123,29 +132,45 @@ class _RiskRepository:
         self.calls.append("proposal")
         self.proposal = prepared.proposal
         self.current = prepared.assessment
+        self.history[self.current.record_version] = self.current
         return self.current
 
     def replay_confirmation(self, scope, payload_hash):
-        return None
+        result = self.confirmation_replays.get((scope.scope_key, payload_hash))
+        if result is None and any(key == scope.scope_key for key, _ in self.confirmation_replays):
+            raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "confirmation key is already bound")
+        return result
 
     def commit_confirmation(self, prepared):
         self.calls.append("confirm")
         self.current = prepared.assessment
-        return RiskConfirmationResult(
+        self.history[self.current.record_version] = self.current
+        result = RiskConfirmationResult(
             assessment=prepared.assessment,
             decision_id=prepared.decision_id,
             audit_event_id=prepared.audit.event_id,
             outbox_event_id=f"outbox-{prepared.decision_id}",
         )
+        self.confirmation_replays[(prepared.scope.scope_key, prepared.payload_hash)] = replace(result, replayed=True)
+        return result
+
+    def replay_rejection(self, scope, payload_hash):
+        result = self.rejection_replays.get((scope.scope_key, payload_hash))
+        if result is None and any(key == scope.scope_key for key, _ in self.rejection_replays):
+            raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "rejection key is already bound")
+        return result
 
     def reject(self, prepared):
         self.calls.append("reject")
         self.current = prepared.assessment
+        self.history[self.current.record_version] = self.current
+        self.rejection_replays[(prepared.scope.scope_key, prepared.payload_hash)] = self.current
         return self.current
 
     def invalidate(self, prepared):
         self.calls.append("invalidate")
         self.current = prepared.assessment
+        self.history[self.current.record_version] = self.current
         return self.current
 
 
@@ -171,6 +196,12 @@ class _RiskGenerator:
                 ],
                 "reason": "bounded evidence proposal",
                 "uncertainty": None,
+                "binding": {
+                    "operating_context_hash": risk_context_hash(request.context),
+                    "evidence_pack_hash": request.evidence_pack.pack_hash.removeprefix("sha256:"),
+                    "model_template_id": "fmea-risk-proposal",
+                    "model_template_version": "1.0.0",
+                },
             },
             evidence_ids=("ev-1",),
             model_hash="a" * 64,
@@ -190,12 +221,14 @@ class _RiskGenerator:
 def _service(fixture_review_row, fixture_pack, fixture_review_context):
     assistance = _AssistanceRepository()
     risk = _RiskRepository(fixture_review_row, fixture_pack)
+    generator = _RiskGenerator()
+    risk.generator = generator
     service = _service_type()(
         risk,
         assistance_repository=assistance,
         domain_pack_registry=_Registry(_domain_pack()),
         scoring_rule_registry=_Registry(_rule_pack()),
-        generator=_RiskGenerator(),
+        generator=generator,
         context_provider=_ContextProvider(fixture_review_context),
         clock=lambda: "2026-08-28T00:00:01Z",
     )
@@ -297,6 +330,7 @@ def test_confirmed_risk_is_invalidated_once_after_row_version_change(
         template_version="1.0.0",
         rule_pack_id="fuel-sod-rpn",
         rule_pack_version="1.0.0",
+        operating_context_hash=risk_context_hash(fixture_review_context),
     )
 
     invalidated = service.invalidate_if_stale("row-1", dependencies, ActorContext("risk-system", ActorType.SYSTEM, frozenset(), "ws-1"))
@@ -305,6 +339,8 @@ def test_confirmed_risk_is_invalidated_once_after_row_version_change(
     assert invalidated is not None
     assert invalidated.status is RiskStatus.INVALIDATED
     assert invalidated.derived is None
+    assert invalidated.invalidated_reason is not None
+    assert "sha256:" in invalidated.invalidated_reason
     assert service.invalidate_if_stale("row-1", dependencies, ActorContext("risk-system", ActorType.SYSTEM, frozenset(), "ws-1")) == invalidated
     assert risk.calls.count("invalidate") == 1
 
@@ -326,3 +362,100 @@ def test_reject_requires_risk_reviewer_and_exact_expected_version(
         service.reject(command, ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1"))
     assert captured.value.code == "FMEA_REVIEW_FORBIDDEN"
     assert service.reject(command, _reviewer()).status is RiskStatus.REVIEWED
+
+
+def test_confirmation_invalidates_instead_of_confirming_after_row_change(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, risk, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+    proposal = service.propose(_start(), _model())
+    risk.row = replace(risk.row, record_version=2)
+
+    with pytest.raises(ReviewError) as captured:
+        service.confirm(
+            ConfirmRiskCommand(
+                row_id="row-1",
+                proposal_id=proposal.proposal_id,
+                expected_assessment_version=1,
+                idempotency_key="00000000-0000-4000-8000-000000000006",
+            ),
+            _reviewer(),
+        )
+
+    assert captured.value.code == "FMEA_VERSION_CONFLICT"
+    assert risk.current.status is RiskStatus.INVALIDATED
+    assert risk.current.derived is None
+
+
+def test_same_proposal_command_replays_without_calling_model_again(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, risk, assistance = _service(fixture_review_row, fixture_pack, fixture_review_context)
+
+    first = service.propose(_start(), _model())
+    second = service.propose(_start(), _model())
+
+    assert second == first
+    assert len(risk.generator.calls) == 1
+    assert assistance.calls == ["suggestion"]
+    assert risk.calls == ["proposal"]
+
+
+def test_same_confirmation_command_replays_before_current_version_check(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, risk, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+    proposed = service.propose(_start(), _model())
+    command = ConfirmRiskCommand(
+        row_id="row-1",
+        proposal_id=proposed.proposal_id,
+        expected_assessment_version=1,
+        idempotency_key="00000000-0000-4000-8000-000000000003",
+    )
+
+    first = service.confirm(command, _reviewer())
+    replayed = service.confirm(command, _reviewer())
+
+    assert replayed.assessment == first.assessment
+    assert replayed.replayed is True
+    assert risk.calls.count("confirm") == 1
+
+
+def test_same_rejection_command_replays_before_current_version_check(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, risk, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+    proposed = service.propose(_start(), _model())
+    command = RejectRiskCommand(
+        row_id="row-1",
+        proposal_id=proposed.proposal_id,
+        expected_assessment_version=1,
+        idempotency_key="00000000-0000-4000-8000-000000000004",
+        reason="evidence is insufficient",
+    )
+
+    first = service.reject(command, _reviewer())
+    replayed = service.reject(command, _reviewer())
+
+    assert replayed == first
+    assert risk.calls.count("reject") == 1
+
+
+def test_rejection_replay_binds_the_human_reason(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, _, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+    proposed = service.propose(_start(), _model())
+    first = RejectRiskCommand(
+        row_id="row-1",
+        proposal_id=proposed.proposal_id,
+        expected_assessment_version=1,
+        idempotency_key="00000000-0000-4000-8000-000000000004",
+        reason="evidence is insufficient",
+    )
+    service.reject(first, _reviewer())
+
+    with pytest.raises(ReviewError) as captured:
+        service.reject(replace(first, reason="different human rationale"), _reviewer())
+
+    assert captured.value.code == "FMEA_IDEMPOTENCY_CONFLICT"

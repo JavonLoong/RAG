@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from uuid import NAMESPACE_URL, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from core_domain.fmea.states import FMEA_SCHEMA_ID, ActorType
 
@@ -129,7 +129,40 @@ class AssistanceHandlerRequest:
     actor: ActorContext
 
 
-AssistanceHandler = Callable[[AssistanceHandlerRequest], tuple[str, str] | None]
+@dataclass(frozen=True, slots=True)
+class AssistanceHandlerResult:
+    """The durable result of an adoption handler's idempotent canonical write."""
+
+    target_type: str
+    target_id: str
+    idempotency_key: str
+    applied_record_version: int
+
+    def __post_init__(self) -> None:
+        for field_name in ("target_type", "target_id"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must not be empty")
+            object.__setattr__(self, field_name, value.strip())
+        if not isinstance(self.idempotency_key, str) or str(UUID(self.idempotency_key)) != self.idempotency_key:
+            raise ValueError("idempotency_key must be a canonical lowercase UUID")
+        if (
+            isinstance(self.applied_record_version, bool)
+            or not isinstance(self.applied_record_version, int)
+            or self.applied_record_version < 1
+        ):
+            raise ValueError("applied_record_version must be positive")
+
+
+AssistanceHandler = Callable[[AssistanceHandlerRequest], AssistanceHandlerResult | None]
+
+
+def _is_adoption(action: AssistanceDecisionAction) -> bool:
+    return action in {
+        AssistanceDecisionAction.ADOPT,
+        AssistanceDecisionAction.PARTIAL_ADOPT,
+        AssistanceDecisionAction.EDIT_AND_ADOPT,
+    }
 
 
 class AssistanceDecisionService:
@@ -156,6 +189,14 @@ class AssistanceDecisionService:
     def decide(self, command: DecideAssistanceCommand, actor: ActorContext) -> AssistanceDecision:  # noqa: C901
         if not isinstance(command, DecideAssistanceCommand):
             raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "assistance decision command is invalid")
+        if not isinstance(command.idempotency_key, str):
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "assistance decision idempotency key is invalid")
+        try:
+            parsed_idempotency_key = UUID(command.idempotency_key)
+        except ValueError as exc:
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "assistance decision idempotency key is invalid") from exc
+        if str(parsed_idempotency_key) != command.idempotency_key:
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "assistance decision idempotency key is invalid")
         if actor.actor_type is not ActorType.HUMAN or not ({"reviewer", "risk_reviewer"} & actor.roles):
             raise ReviewError("FMEA_REVIEW_FORBIDDEN", "a human reviewer is required")
         suggestion = self._repository.get_suggestion(command.suggestion_id, actor.workspace_id)
@@ -186,12 +227,22 @@ class AssistanceDecisionService:
             resulting_identity = self._handlers[command.action](handler_request)
         except KeyError as exc:
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance decision action is not allowlisted") from exc
-        if resulting_identity is not None and (
-            not isinstance(resulting_identity, tuple)
-            or len(resulting_identity) != 2
-            or any(not isinstance(item, str) or not item.strip() for item in resulting_identity)
-        ):
-            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance handler returned an invalid resource identity")
+        if _is_adoption(command.action):
+            if not isinstance(resulting_identity, AssistanceHandlerResult):
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "adopt handlers must return a typed result")
+            if (
+                resulting_identity.target_type != suggestion.target_type
+                or resulting_identity.target_id != suggestion.target_id
+                or resulting_identity.idempotency_key != command.idempotency_key
+            ):
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "assistance handler result is not bound to the command")
+            resource_identity = (resulting_identity.target_type, resulting_identity.target_id)
+            applied_record_version = resulting_identity.applied_record_version
+        else:
+            if resulting_identity is not None:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "non-adopt handlers must not return a resource")
+            resource_identity = None
+            applied_record_version = None
 
         created_at = self._clock()
         decision = AssistanceDecision(
@@ -206,7 +257,7 @@ class AssistanceDecisionService:
             edits=command.edits,
             reason=command.reason,
             idempotency_key=command.idempotency_key,
-            resulting_resource_identity=resulting_identity,
+            resulting_resource_identity=resource_identity,
             created_at=created_at,
         )
         scope = IdempotencyScope(
@@ -231,7 +282,7 @@ class AssistanceDecisionService:
             suggestion_id=suggestion.suggestion_id,
             decision_id=decision.decision_id,
             expected_record_version=suggestion.target_record_version,
-            applied_record_version=suggestion.target_record_version,
+            applied_record_version=applied_record_version,
             evidence_ids=suggestion.evidence_ids,
             template_id=suggestion.template_id or "unbound",
             template_version=suggestion.template_version or "unbound",
@@ -254,6 +305,7 @@ class AssistanceDecisionService:
 __all__ = [
     "AssistanceDecisionService",
     "AssistanceHandlerRequest",
+    "AssistanceHandlerResult",
     "DecideAssistanceCommand",
     "make_audit",
     "stable_id",

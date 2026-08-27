@@ -8,13 +8,16 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import Protocol
 
+from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.scoring import (
     RiskAssessmentRecord,
     RiskProposal,
     ScoreDimension,
+    ScoringRulePack,
     validate_risk_confirmation,
 )
 from core_domain.fmea.states import ActorType, RiskStatus
+from core_domain.fmea.value_objects import EvidencePack
 
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .assistance_service import make_audit, stable_id, utc_now
@@ -41,6 +44,8 @@ from .risk_contracts import (
     StartRiskProposalCommand,
     assistance_suggestion_payload_hash,
     risk_confirmation_payload_hash,
+    risk_context_hash,
+    risk_dependency_hash,
     risk_invalidation_payload_hash,
     risk_proposal_payload_hash,
     risk_rejection_payload_hash,
@@ -107,7 +112,7 @@ def _proposal_from_suggestion(
     created_at: str,
 ) -> RiskProposal:
     payload = suggestion.payload
-    if not isinstance(payload, Mapping) or set(payload) != {"dimensions", "reason", "uncertainty"}:
+    if not isinstance(payload, Mapping) or set(payload) != {"dimensions", "reason", "uncertainty", "binding"}:
         raise _invalid("risk suggestion payload is invalid")
     dimensions_value = payload["dimensions"]
     if isinstance(dimensions_value, str | bytes) or not isinstance(dimensions_value, Sequence):
@@ -134,6 +139,66 @@ def _proposal_from_suggestion(
         raise _invalid("risk suggestion cannot form a proposal") from exc
 
 
+def _binding(suggestion: AssistanceSuggestion[object]) -> Mapping[str, object]:
+    payload = suggestion.payload
+    if not isinstance(payload, Mapping):
+        raise _invalid("risk suggestion binding is invalid")
+    binding = payload.get("binding")
+    if not isinstance(binding, Mapping) or set(binding) != {
+        "operating_context_hash",
+        "evidence_pack_hash",
+        "model_template_id",
+        "model_template_version",
+    }:
+        raise _invalid("risk suggestion binding is invalid")
+    return binding
+
+
+def _bounded_context_matches(row: FmeaRow, evidence_pack: EvidencePack, context: ReviewContext) -> bool:
+    return (
+        context.row == row
+        and row.evidence_pack_id == evidence_pack.pack_id
+        and context.evidence.pack_id == evidence_pack.pack_id
+        and context.evidence.pack_hash.removeprefix("sha256:")
+        == evidence_pack.pack_hash.removeprefix("sha256:")
+    )
+
+
+def _suggestion_matches_command(
+    suggestion: AssistanceSuggestion[object],
+    command: StartRiskProposalCommand,
+    workspace_id: str,
+) -> bool:
+    return (
+        suggestion.kind is AssistanceKind.SCORE_RECOMMENDATION
+        and not suggestion.applied
+        and suggestion.workspace_id == workspace_id
+        and suggestion.target_type == "fmea_row"
+        and suggestion.target_id == command.row_id
+        and suggestion.target_record_version == command.expected_record_version
+        and suggestion.evidence_pack_ids == (command.evidence_pack_id,)
+        and suggestion.domain_pack_id == command.domain_pack_id
+        and suggestion.domain_pack_version == command.domain_pack_version
+        and suggestion.template_id == command.template_id
+        and suggestion.template_version == command.template_version
+        and suggestion.rule_pack_id == command.rule_pack_id
+        and suggestion.rule_pack_version == command.rule_pack_version
+    )
+
+
+def _validate_server_binding(
+    suggestion: AssistanceSuggestion[object], context: ReviewContext, evidence_pack: EvidencePack
+) -> None:
+    binding = _binding(suggestion)
+    if (
+        binding["operating_context_hash"] != risk_context_hash(context)
+        or binding["evidence_pack_hash"] != evidence_pack.pack_hash.removeprefix("sha256:")
+        or binding["model_template_id"] != "fmea-risk-proposal"
+        or binding["model_template_version"] != "1.0.0"
+    ):
+        raise _invalid("risk generator changed a server-owned binding")
+
+
 class RiskAssessmentService:
     def __init__(
         self,
@@ -154,8 +219,41 @@ class RiskAssessmentService:
         self._contexts = context_provider
         self._clock = clock
 
+    def _replay_proposal(
+        self,
+        command: StartRiskProposalCommand,
+        actor: ActorContext,
+        proposal_id: str,
+    ) -> RiskAssessmentRecord | None:
+        existing = self._repository.get_proposal(proposal_id, actor.workspace_id)
+        if existing is None:
+            return None
+        initial = self._repository.get_assessment_version(command.row_id, actor.workspace_id, 1)
+        suggestion = self._assistance.get_suggestion(existing.assistance_suggestion_id or "", actor.workspace_id)
+        exact_replay = (
+            initial is not None
+            and suggestion is not None
+            and initial.proposal_id == existing.proposal_id
+            and existing.row_id == command.row_id
+            and existing.source_record_version == command.expected_record_version
+            and existing.evidence_pack_id == command.evidence_pack_id
+            and existing.domain_pack_id == command.domain_pack_id
+            and existing.domain_pack_version == command.domain_pack_version
+            and existing.rule_pack_id == command.rule_pack_id
+            and existing.rule_pack_version == command.rule_pack_version
+            and suggestion.template_id == command.template_id
+            and suggestion.template_version == command.template_version
+        )
+        if not exact_replay:
+            raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "risk proposal key is already bound")
+        return initial
+
     def propose(self, command: StartRiskProposalCommand, actor: ActorContext) -> RiskAssessmentRecord:
         _require_model(actor)
+        proposal_id = stable_id("risk-proposal", command.idempotency_key)
+        replayed = self._replay_proposal(command, actor, proposal_id)
+        if replayed is not None:
+            return replayed
         row = self._repository.get_row(command.row_id, actor.workspace_id)
         if row is None:
             raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk row was not found")
@@ -171,7 +269,7 @@ class RiskAssessmentService:
         if (command.rule_pack_id, command.rule_pack_version) not in domain_pack.scoring_rule_identities:
             raise _invalid("rule pack identity is outside the DomainPack")
         context = self._contexts.get_context(command.row_id, actor)
-        if context.row != row or context.evidence.pack_id != evidence_pack.pack_id:
+        if not _bounded_context_matches(row, evidence_pack, context):
             raise _invalid("bounded review context does not match the requested row and evidence")
 
         run_id = stable_id("risk-run", command.idempotency_key)
@@ -188,28 +286,14 @@ class RiskAssessmentService:
         )
         if not isinstance(suggestion, AssistanceSuggestion):
             raise _invalid("risk generator returned an invalid suggestion")
-        expected_bindings = (
-            suggestion.kind is AssistanceKind.SCORE_RECOMMENDATION
-            and not suggestion.applied
-            and suggestion.workspace_id == actor.workspace_id
-            and suggestion.target_type == "fmea_row"
-            and suggestion.target_id == command.row_id
-            and suggestion.target_record_version == command.expected_record_version
-            and suggestion.evidence_pack_ids == (evidence_pack.pack_id,)
-            and suggestion.domain_pack_id == command.domain_pack_id
-            and suggestion.domain_pack_version == command.domain_pack_version
-            and suggestion.template_id == command.template_id
-            and suggestion.template_version == command.template_version
-            and suggestion.rule_pack_id == command.rule_pack_id
-            and suggestion.rule_pack_version == command.rule_pack_version
-        )
-        if not expected_bindings:
+        if not _suggestion_matches_command(suggestion, command, actor.workspace_id):
             raise _invalid("risk generator changed an immutable binding")
+        _validate_server_binding(suggestion, context, evidence_pack)
 
         created_at = suggestion.created_at or self._clock()
         proposal = _proposal_from_suggestion(
             suggestion,
-            proposal_id=stable_id("risk-proposal", command.idempotency_key),
+            proposal_id=proposal_id,
             created_at=created_at,
         )
         assessment = RiskAssessmentRecord(
@@ -300,6 +384,56 @@ class RiskAssessmentService:
             PreparedRiskProposal(proposal_scope, proposal_hash, proposal, assessment, proposal_audit)
         )
 
+    def _replay_transition(
+        self,
+        command: ConfirmRiskCommand | RejectRiskCommand,
+        actor: ActorContext,
+    ) -> RiskConfirmationResult | RiskAssessmentRecord | None:
+        proposal = self._repository.get_proposal(command.proposal_id, actor.workspace_id)
+        if proposal is None or proposal.row_id != command.row_id:
+            return None
+        previous = self._repository.get_assessment_version(
+            command.row_id, actor.workspace_id, command.expected_assessment_version
+        )
+        assessment = self._repository.get_assessment_version(
+            command.row_id, actor.workspace_id, command.expected_assessment_version + 1
+        )
+        if previous is None or assessment is None or previous.proposal_id != proposal.proposal_id:
+            return None
+        if isinstance(command, ConfirmRiskCommand):
+            if assessment.status is not RiskStatus.CONFIRMED:
+                return None
+            scope = _scope(
+                actor,
+                "fmea.risk.confirm",
+                f"/fmea/rows/{proposal.row_id}/risk-confirmations",
+                command.idempotency_key,
+            )
+            decision_id = stable_id("risk-confirmation", command.idempotency_key)
+            payload_hash = risk_confirmation_payload_hash(
+                scope, proposal, previous, assessment, command.expected_assessment_version, decision_id
+            )
+            return self._repository.replay_confirmation(scope, payload_hash)
+        if assessment.status is not RiskStatus.REVIEWED:
+            return None
+        scope = _scope(
+            actor,
+            "fmea.risk.reject",
+            f"/fmea/rows/{proposal.row_id}/risk-rejections",
+            command.idempotency_key,
+        )
+        decision_id = stable_id("risk-rejection", command.idempotency_key)
+        payload_hash = risk_rejection_payload_hash(
+            scope,
+            proposal,
+            previous,
+            assessment,
+            command.expected_assessment_version,
+            decision_id,
+            command.reason,
+        )
+        return self._repository.replay_rejection(scope, payload_hash)
+
     def get(self, row_id: str, actor: ActorContext) -> RiskAssessmentRecord | None:
         return self._repository.get_current_assessment(row_id, actor.workspace_id)
 
@@ -307,7 +441,14 @@ class RiskAssessmentService:
         self,
         command: ConfirmRiskCommand | RejectRiskCommand,
         actor: ActorContext,
-    ) -> tuple[RiskProposal, RiskAssessmentRecord, object, object, AssistanceSuggestion[object]]:
+    ) -> tuple[
+        RiskProposal,
+        RiskAssessmentRecord,
+        EvidencePack,
+        ScoringRulePack,
+        AssistanceSuggestion[object],
+        FmeaRow,
+    ]:
         current = self._repository.get_current_assessment(command.row_id, actor.workspace_id)
         if current is None:
             raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk assessment was not found")
@@ -325,11 +466,52 @@ class RiskAssessmentService:
         suggestion = self._assistance.get_suggestion(proposal.assistance_suggestion_id or "", actor.workspace_id)
         if suggestion is None:
             raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "risk suggestion was not found")
-        return proposal, current, evidence_pack, rule_pack, suggestion
+        row = self._repository.get_row(proposal.row_id, actor.workspace_id)
+        if row is None:
+            raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk row was not found")
+        context = self._contexts.get_context(proposal.row_id, actor)
+        domain_pack = self._domain_packs.get(proposal.domain_pack_id, proposal.domain_pack_version)
+        binding = _binding(suggestion)
+        if (
+            row.record_version != proposal.source_record_version
+            or row.evidence_pack_id != proposal.evidence_pack_id
+            or context.row != row
+            or context.evidence.pack_id != evidence_pack.pack_id
+            or context.evidence.pack_hash.removeprefix("sha256:") != evidence_pack.pack_hash.removeprefix("sha256:")
+            or binding["operating_context_hash"] != risk_context_hash(context)
+            or binding["evidence_pack_hash"] != evidence_pack.pack_hash.removeprefix("sha256:")
+            or (suggestion.template_id, suggestion.template_version) not in domain_pack.template_identities
+            or (proposal.rule_pack_id, proposal.rule_pack_version) not in domain_pack.scoring_rule_identities
+        ):
+            self.invalidate_if_stale(
+                proposal.row_id,
+                RiskDependencySnapshot(
+                    workspace_id=actor.workspace_id,
+                    row_id=proposal.row_id,
+                    row_version=row.record_version,
+                    evidence_pack_id=evidence_pack.pack_id,
+                    evidence_pack_hash=evidence_pack.pack_hash.removeprefix("sha256:"),
+                    domain_pack_id=domain_pack.pack_id,
+                    domain_pack_version=domain_pack.version,
+                    template_id=suggestion.template_id or "unbound",
+                    template_version=suggestion.template_version or "unbound",
+                    rule_pack_id=rule_pack.rule_pack_id,
+                    rule_pack_version=rule_pack.version,
+                    operating_context_hash=risk_context_hash(context),
+                ),
+                actor,
+            )
+            raise ReviewError("FMEA_VERSION_CONFLICT", "risk proposal dependencies are stale")
+        return proposal, current, evidence_pack, rule_pack, suggestion, row
 
     def confirm(self, command: ConfirmRiskCommand, actor: ActorContext) -> RiskConfirmationResult:
         _require_risk_reviewer(actor)
-        proposal, previous, evidence_pack, rule_pack, suggestion = self._proposal_for_command(command, actor)
+        replayed = self._replay_transition(command, actor)
+        if isinstance(replayed, RiskConfirmationResult):
+            return replayed
+        proposal, previous, evidence_pack, rule_pack, suggestion, row = self._proposal_for_command(command, actor)
+        if suggestion.conflict_ids and rule_pack.conflict_score_policy == "block_rpn":
+            raise _invalid("conflicting risk evidence cannot be confirmed")
         try:
             derived = validate_risk_confirmation(proposal, rule_pack=rule_pack, evidence_pack=evidence_pack)
         except (TypeError, ValueError) as exc:
@@ -359,7 +541,7 @@ class RiskAssessmentService:
             command=scope.command,
             reason="human risk confirmation",
             row_id=proposal.row_id,
-            analysis_id=proposal.row_id,
+            analysis_id=row.analysis_id,
             suggestion_id=proposal.assistance_suggestion_id,
             decision_id=decision_id,
             expected_record_version=previous.record_version,
@@ -389,7 +571,10 @@ class RiskAssessmentService:
 
     def reject(self, command: RejectRiskCommand, actor: ActorContext) -> RiskAssessmentRecord:
         _require_risk_reviewer(actor)
-        proposal, previous, _evidence_pack, _rule_pack, suggestion = self._proposal_for_command(command, actor)
+        replayed = self._replay_transition(command, actor)
+        if isinstance(replayed, RiskAssessmentRecord):
+            return replayed
+        proposal, previous, _evidence_pack, _rule_pack, suggestion, row = self._proposal_for_command(command, actor)
         updated_at = self._clock()
         assessment = replace(
             previous,
@@ -403,8 +588,17 @@ class RiskAssessmentService:
         scope = _scope(actor, "fmea.risk.reject", f"/fmea/rows/{proposal.row_id}/risk-rejections", command.idempotency_key)
         decision_id = stable_id("risk-rejection", command.idempotency_key)
         payload_hash = risk_rejection_payload_hash(
-            scope, proposal, previous, assessment, command.expected_assessment_version, decision_id
+            scope,
+            proposal,
+            previous,
+            assessment,
+            command.expected_assessment_version,
+            decision_id,
+            command.reason,
         )
+        replayed = self._repository.replay_rejection(scope, payload_hash)
+        if replayed is not None:
+            return replayed
         audit = make_audit(
             actor=actor,
             scope=scope,
@@ -412,7 +606,7 @@ class RiskAssessmentService:
             command=scope.command,
             reason=command.reason,
             row_id=proposal.row_id,
-            analysis_id=proposal.row_id,
+            analysis_id=row.analysis_id,
             suggestion_id=proposal.assistance_suggestion_id,
             decision_id=decision_id,
             expected_record_version=previous.record_version,
@@ -458,6 +652,7 @@ class RiskAssessmentService:
         if evidence_pack is None or suggestion is None:
             stale_reasons = ["bound dependency is missing"]
         else:
+            binding = _binding(suggestion)
             stale_reasons = []
             checks = (
                 (previous.source_record_version, dependencies.row_version, "row version"),
@@ -469,6 +664,7 @@ class RiskAssessmentService:
                 (suggestion.template_version, dependencies.template_version, "template version"),
                 (previous.rule_pack_id, dependencies.rule_pack_id, "rule pack"),
                 (previous.rule_pack_version, dependencies.rule_pack_version, "rule pack version"),
+                (binding["operating_context_hash"], dependencies.operating_context_hash, "operating context"),
             )
             stale_reasons.extend(label for actual, expected, label in checks if actual != expected)
         if not stale_reasons:
@@ -492,11 +688,13 @@ class RiskAssessmentService:
         assessment = replace(
             previous,
             assessment_id=assessment_id,
-            source_record_version=dependencies.row_version,
             status=RiskStatus.INVALIDATED,
             derived=None,
             confirmer_actor_id=None,
-            invalidated_reason="stale dependencies: " + ", ".join(stale_reasons),
+            invalidated_reason=(
+                f"stale dependencies [sha256:{risk_dependency_hash(dependencies)}]: "
+                + ", ".join(stale_reasons)
+            ),
             record_version=previous.record_version + 1,
             updated_at=updated_at,
         )
@@ -504,6 +702,7 @@ class RiskAssessmentService:
         payload_hash = risk_invalidation_payload_hash(
             scope, previous, assessment, previous.record_version, decision_id
         )
+        source_row = self._repository.get_row(row_id, actor.workspace_id)
         audit = make_audit(
             actor=actor,
             scope=scope,
@@ -511,7 +710,7 @@ class RiskAssessmentService:
             command=scope.command,
             reason=assessment.invalidated_reason or "stale dependencies",
             row_id=row_id,
-            analysis_id=row_id,
+            analysis_id=source_row.analysis_id if source_row is not None else row_id,
             suggestion_id=previous.assistance_suggestion_id,
             decision_id=decision_id,
             expected_record_version=previous.record_version,

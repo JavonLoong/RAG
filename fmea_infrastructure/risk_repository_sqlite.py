@@ -25,7 +25,13 @@ from core_domain.fmea.scoring import (
     ScoringRulePack,
 )
 from core_domain.fmea.states import RiskStatus
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope, encode_review_json
+from fmea_application.assistance_contracts import AssistanceKind, AssistanceSuggestion
+from fmea_application.review_contracts import (
+    AuditEvent,
+    IdempotencyScope,
+    decode_review_source_snapshot,
+    encode_review_json,
+)
 from fmea_application.review_errors import ReviewError
 from fmea_application.risk_contracts import (
     OutboxEvent,
@@ -37,8 +43,11 @@ from fmea_application.risk_contracts import (
     canonical_json,
     outbox_payload_hash,
     risk_confirmation_payload_hash,
+    risk_invalidation_payload_hash,
+    risk_rejection_payload_hash,
 )
 
+from .assistance_repository_sqlite import SqliteAssistanceRepository
 from .domain_pack_registry import (
     canonical_domain_pack_body,
     canonical_scoring_rule_body,
@@ -232,7 +241,7 @@ def _decode_derived(value: object) -> RiskAssessment | None:
 
 
 def _decode_assessment_value(value: object) -> RiskAssessmentRecord:
-    if not isinstance(value, dict):
+    if not isinstance(value, Mapping):
         raise ValueError("assessment must be an object")
     expected = {
         "assessment_id",
@@ -319,6 +328,54 @@ def _assessment_identity_matches(left: RiskAssessmentRecord, right: RiskAssessme
             "assistance_suggestion_id",
             "created_at",
         )
+    )
+
+
+def _linked_risk_suggestion_matches(
+    suggestion: AssistanceSuggestion[object],
+    proposal: RiskProposal,
+    evidence_pack_hash: str,
+    domain_body: Mapping[str, object],
+) -> bool:
+    templates = domain_body.get("templates")
+    scoring_rules = domain_body.get("scoring_rules")
+    if not isinstance(templates, list) or not isinstance(scoring_rules, list):
+        return False
+    template_identities = {
+        (item.get("id"), item.get("version")) for item in templates if isinstance(item, dict)
+    }
+    scoring_identities = {
+        (item.get("id"), item.get("version")) for item in scoring_rules if isinstance(item, dict)
+    }
+    payload = suggestion.payload
+    binding = payload.get("binding") if isinstance(payload, Mapping) else None
+    context_hash = binding.get("operating_context_hash") if isinstance(binding, Mapping) else None
+    return (
+        suggestion.kind is AssistanceKind.SCORE_RECOMMENDATION
+        and suggestion.target_type == "fmea_row"
+        and suggestion.target_id == proposal.row_id
+        and suggestion.target_record_version == proposal.source_record_version
+        and suggestion.evidence_pack_ids == (proposal.evidence_pack_id,)
+        and suggestion.domain_pack_id == proposal.domain_pack_id
+        and suggestion.domain_pack_version == proposal.domain_pack_version
+        and suggestion.rule_pack_id == proposal.rule_pack_id
+        and suggestion.rule_pack_version == proposal.rule_pack_version
+        and (suggestion.template_id, suggestion.template_version) in template_identities
+        and (proposal.rule_pack_id, proposal.rule_pack_version) in scoring_identities
+        and isinstance(binding, Mapping)
+        and set(binding)
+        == {
+            "operating_context_hash",
+            "evidence_pack_hash",
+            "model_template_id",
+            "model_template_version",
+        }
+        and binding["evidence_pack_hash"] == evidence_pack_hash.removeprefix("sha256:")
+        and binding["model_template_id"] == "fmea-risk-proposal"
+        and binding["model_template_version"] == "1.0.0"
+        and isinstance(context_hash, str)
+        and len(context_hash) == 64
+        and all(character in "0123456789abcdef" for character in context_hash)
     )
 
 
@@ -672,6 +729,238 @@ class SqliteRiskRepository:
         ):
             raise _storage_error()
 
+    def _validated_historical_transition(
+        self, connection: sqlite3.Connection, decision_row: sqlite3.Row
+    ) -> tuple[RiskAssessmentRecord, RiskAssessmentRecord]:
+        decision_body = _strict_json(decision_row["decision_json"], "risk decision")
+        if not isinstance(decision_body, dict) or set(decision_body) != {
+            "assessment",
+            "decision_id",
+            "decision_type",
+            "previous_assessment",
+        }:
+            raise _storage_error()
+        previous = _decode_assessment_value(decision_body["previous_assessment"])
+        assessment = _decode_assessment_value(decision_body["assessment"])
+        decision_type = str(decision_row["decision_type"])
+        transition = {
+            "confirm": ("risk.confirmed", "risk_confirmation", "fmea.risk.confirm", "risk-confirmations"),
+            "reject": ("risk.rejected", "risk_rejection", "fmea.risk.reject", "risk-rejections"),
+            "invalidate": (
+                "risk.invalidated",
+                "risk_invalidation",
+                "fmea.risk.invalidate",
+                "risk-invalidations",
+            ),
+        }.get(decision_type)
+        if transition is None:
+            raise _storage_error()
+        event_type, resource_type, command, resource_name = transition
+        audit_row = connection.execute(
+            "SELECT * FROM audit_events WHERE event_id=? AND workspace_id=?",
+            (decision_row["audit_event_id"], decision_row["workspace_id"]),
+        ).fetchone()
+        if audit_row is None:
+            raise _storage_error()
+        audit = decode_audit_event(audit_row["event_json"])
+        scope = IdempotencyScope(
+            workspace_id=decision_row["workspace_id"],
+            actor_id=audit.actor_id,
+            command=command,
+            resource_path=f"/fmea/rows/{previous.row_id}/{resource_name}",
+            key_hash=audit.idempotency_key_hash,
+        )
+        if (
+            scope.scope_key != decision_row["idempotency_scope"]
+            or audit.event_id != decision_row["audit_event_id"]
+            or audit.decision_id != decision_row["decision_id"]
+            or decision_body["decision_id"] != decision_row["decision_id"]
+            or decision_body["decision_type"] != decision_type
+            or previous.record_version != decision_row["expected_assessment_version"]
+            or assessment.record_version != decision_row["applied_assessment_version"]
+            or assessment.row_id != decision_row["row_id"]
+            or assessment.workspace_id != decision_row["workspace_id"]
+        ):
+            raise _storage_error()
+        proposal: RiskProposal | None = None
+        if decision_type in {"confirm", "reject"}:
+            if assessment.proposal_id is None:
+                raise _storage_error()
+            proposal_row = connection.execute(
+                f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (assessment.proposal_id, assessment.workspace_id),
+            ).fetchone()
+            if proposal_row is None:
+                raise _storage_error()
+            proposal = self._decode_proposal(proposal_row)
+        elif assessment.proposal_id is not None:
+            proposal_row = connection.execute(
+                f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (assessment.proposal_id, assessment.workspace_id),
+            ).fetchone()
+            if proposal_row is None:
+                raise _storage_error()
+            proposal = self._decode_proposal(proposal_row)
+        response = self._replay_response(
+            self._idempotency_row(connection, decision_row["idempotency_scope"]),
+            decision_row["payload_hash"],
+            resource_type,
+        )
+        if response is None or response["assessment_id"] != assessment.assessment_id:
+            raise _storage_error()
+        if decision_type == "confirm":
+            if proposal is None:
+                raise _storage_error()
+            expected_hash = risk_confirmation_payload_hash(
+                scope, proposal, previous, assessment, previous.record_version, decision_row["decision_id"]
+            )
+            prepared: PreparedRiskConfirmation | PreparedRiskRejection | PreparedRiskInvalidation = (
+                PreparedRiskConfirmation(
+                    scope=scope,
+                    payload_hash=expected_hash,
+                    proposal=proposal,
+                    previous_assessment=previous,
+                    assessment=assessment,
+                    expected_assessment_version=previous.record_version,
+                    decision_id=decision_row["decision_id"],
+                    audit=audit,
+                )
+            )
+        elif decision_type == "reject":
+            if proposal is None:
+                raise _storage_error()
+            expected_hash = risk_rejection_payload_hash(
+                scope,
+                proposal,
+                previous,
+                assessment,
+                previous.record_version,
+                decision_row["decision_id"],
+                audit.reason or "",
+            )
+            prepared = PreparedRiskRejection(
+                scope=scope,
+                payload_hash=expected_hash,
+                proposal=proposal,
+                previous_assessment=previous,
+                assessment=assessment,
+                expected_assessment_version=previous.record_version,
+                decision_id=decision_row["decision_id"],
+                audit=audit,
+            )
+        else:
+            expected_hash = risk_invalidation_payload_hash(
+                scope, previous, assessment, previous.record_version, decision_row["decision_id"]
+            )
+            prepared = PreparedRiskInvalidation(
+                scope=scope,
+                payload_hash=expected_hash,
+                previous_assessment=previous,
+                assessment=assessment,
+                expected_assessment_version=previous.record_version,
+                decision_id=decision_row["decision_id"],
+                audit=audit,
+            )
+        self._validate_transition_replay(connection, prepared, decision_type, event_type, response)
+        if proposal is not None:
+            initial = self._validate_proposal_chain(connection, proposal)
+            if not _assessment_identity_matches(previous, initial):
+                raise _storage_error()
+        return previous, assessment
+
+    def _read_historical_assessment(
+        self,
+        connection: sqlite3.Connection,
+        row_id: str,
+        workspace_id: str,
+        record_version: int,
+        seen: frozenset[int] = frozenset(),
+    ) -> RiskAssessmentRecord | None:
+        if record_version in seen:
+            raise _storage_error()
+        seen = seen | {record_version}
+        current_row = connection.execute(
+            f"SELECT {_ASSESSMENT_COLUMNS} FROM fmea_risk_assessments "
+            "WHERE row_id=? AND workspace_id=? AND record_version=?",
+            (row_id, workspace_id, record_version),
+        ).fetchone()
+        if record_version == 1 and current_row is not None:
+            candidate = self._decode_assessment(current_row)
+            if candidate.proposal_id is None:
+                return None
+            proposal_row = connection.execute(
+                f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (candidate.proposal_id, workspace_id),
+            ).fetchone()
+            if proposal_row is None:
+                raise _storage_error()
+            initial = self._validate_proposal_chain(connection, self._decode_proposal(proposal_row))
+            if candidate != initial:
+                raise _storage_error()
+            return candidate
+        if record_version == 1:
+            decision_rows = connection.execute(
+                "SELECT * FROM fmea_risk_decisions WHERE row_id=? AND workspace_id=? "
+                "AND expected_assessment_version=1 AND applied_assessment_version=2",
+                (row_id, workspace_id),
+            ).fetchall()
+        else:
+            decision_rows = connection.execute(
+                "SELECT * FROM fmea_risk_decisions WHERE row_id=? AND workspace_id=? "
+                "AND applied_assessment_version=?",
+                (row_id, workspace_id, record_version),
+            ).fetchall()
+        if not decision_rows:
+            if current_row is not None:
+                raise _storage_error()
+            return None
+        if len(decision_rows) != 1:
+            raise _storage_error()
+        previous, assessment = self._validated_historical_transition(connection, decision_rows[0])
+        if record_version == 1:
+            if previous.record_version != 1 or previous.row_id != row_id or previous.workspace_id != workspace_id:
+                raise _storage_error()
+            return previous
+        if (
+            assessment.record_version != record_version
+            or assessment.row_id != row_id
+            or assessment.workspace_id != workspace_id
+        ):
+            raise _storage_error()
+        if current_row is not None and self._decode_assessment(current_row) != assessment:
+            raise _storage_error()
+        historical_previous = self._read_historical_assessment(
+            connection, row_id, workspace_id, previous.record_version, seen
+        )
+        if historical_previous != previous:
+            raise _storage_error()
+        return assessment
+
+    def get_assessment_version(
+        self, row_id: str, workspace_id: str, record_version: int
+    ) -> RiskAssessmentRecord | None:
+        if (
+            not isinstance(row_id, str)
+            or not row_id.strip()
+            or not isinstance(workspace_id, str)
+            or not workspace_id.strip()
+            or isinstance(record_version, bool)
+            or not isinstance(record_version, int)
+            or record_version < 1
+        ):
+            raise _safe_error("FMEA_REVIEW_REQUEST_INVALID", "Assessment history lookup is invalid.")
+        connection = self._connect()
+        try:
+            return self._read_historical_assessment(connection, row_id, workspace_id, record_version)
+        except ReviewError:
+            raise
+        except sqlite3.Error as exc:
+            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Risk storage is unavailable.", retryable=True) from exc
+        except Exception as exc:
+            raise _storage_error() from exc
+        finally:
+            connection.close()
+
     def get_current_assessment(self, row_id: str, workspace_id: str) -> RiskAssessmentRecord | None:
         connection = self._connect()
         try:
@@ -719,7 +1008,11 @@ class SqliteRiskRepository:
                 f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
                 (proposal_id, workspace_id),
             ).fetchone()
-            return None if row is None else self._decode_proposal(row)
+            if row is None:
+                return None
+            proposal = self._decode_proposal(row)
+            self._validate_proposal_chain(connection, proposal)
+            return proposal
         except ReviewError:
             raise
         except sqlite3.Error as exc:
@@ -729,15 +1022,126 @@ class SqliteRiskRepository:
         finally:
             connection.close()
 
-    def _validate_sources(self, connection: sqlite3.Connection, proposal: RiskProposal) -> None:
+    def _validate_proposal_chain(
+        self, connection: sqlite3.Connection, proposal: RiskProposal
+    ) -> RiskAssessmentRecord:
+        self._validate_sources(connection, proposal, require_current_version=False)
+        outbox_row = connection.execute(
+            f"SELECT {_OUTBOX_COLUMNS} FROM fmea_outbox_events "
+            "WHERE event_id=? AND workspace_id=?",
+            (f"outbox-proposal-{proposal.proposal_id}", proposal.workspace_id),
+        ).fetchone()
+        audit_row = connection.execute(
+            "SELECT * FROM audit_events WHERE event_id=? AND workspace_id=?",
+            (connection.execute(
+                "SELECT audit_event_id FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (proposal.proposal_id, proposal.workspace_id),
+            ).fetchone()[0], proposal.workspace_id),
+        ).fetchone()
+        if outbox_row is None or audit_row is None:
+            raise _storage_error()
+        outbox = self._decode_outbox(outbox_row)
+        audit = decode_audit_event(audit_row["event_json"])
+        proposal_row = connection.execute(
+            f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+            (proposal.proposal_id, proposal.workspace_id),
+        ).fetchone()
+        if proposal_row is None:
+            raise _storage_error()
+        if (
+            proposal_row["audit_event_id"] != audit.event_id
+            or proposal_row["idempotency_scope"] != outbox.scope_key
+            or not _audit_row_matches(audit_row, audit)
+            or audit.row_id != proposal.row_id
+            or audit.suggestion_id != proposal.assistance_suggestion_id
+            or audit.decision_id is not None
+        ):
+            raise _storage_error()
+        response = self._replay_response(
+            self._idempotency_row(connection, proposal_row["idempotency_scope"]),
+            proposal_row["payload_hash"],
+            "risk_proposal",
+        )
+        if response is None or response["outbox_event_id"] != outbox.event_id:
+            raise _storage_error()
+        payload = outbox.payload
+        if set(payload) != {"assessment", "audit_event_id", "proposal"}:
+            raise _storage_error()
+        initial = _decode_assessment_value(_json_value(payload["assessment"]))
+        proposal_payload = _json_value(payload["proposal"])
+        if not isinstance(proposal_payload, dict):
+            raise _storage_error()
+        if (
+            proposal_payload != _json_value(proposal)
+            or payload["audit_event_id"] != audit.event_id
+            or initial.status is not RiskStatus.PROPOSED
+            or initial.record_version != 1
+            or initial.proposal_id != proposal.proposal_id
+            or initial.assessment_id != response["assessment_id"]
+        ):
+            raise _storage_error()
+        linked_row = connection.execute(
+            f"SELECT {_ASSESSMENT_COLUMNS} FROM fmea_risk_assessments "
+            "WHERE proposal_id=? AND workspace_id=? ORDER BY record_version DESC LIMIT 1",
+            (proposal.proposal_id, proposal.workspace_id),
+        ).fetchone()
+        if linked_row is None:
+            raise _storage_error()
+        linked = self._decode_assessment(linked_row)
+        if not _assessment_identity_matches(linked, initial):
+            raise _storage_error()
+        self._validate_outbox_chain(connection, outbox)
+        return initial
+
+    def _validate_sources(
+        self,
+        connection: sqlite3.Connection,
+        proposal: RiskProposal,
+        *,
+        require_current_version: bool = True,
+    ) -> None:
         row = connection.execute(
-            "SELECT row_json, record_version FROM fmea_rows WHERE row_id=? AND workspace_id=?",
+            "SELECT row_json, row_hash, record_version FROM fmea_rows WHERE row_id=? AND workspace_id=?",
             (proposal.row_id, proposal.workspace_id),
         ).fetchone()
         if row is None:
             raise _safe_error("FMEA_ROW_NOT_FOUND", "FMEA row was not found.")
-        if row["record_version"] != proposal.source_record_version:
+        if require_current_version and row["record_version"] != proposal.source_record_version:
             raise _safe_error("FMEA_RISK_VERSION_CONFLICT", "Risk source row version is stale.")
+        try:
+            source_row = decode_row(str(row["row_json"]))
+            if (
+                encode_json(source_row) != row["row_json"]
+                or source_row.record_version != row["record_version"]
+                or source_row.row_id != proposal.row_id
+                or "sha256:" + sha256(str(row["row_json"]).encode("utf-8")).hexdigest() != row["row_hash"]
+            ):
+                raise ValueError("risk source row integrity mismatch")
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
+        source_snapshot_row = connection.execute(
+            "SELECT workspace_id, source_record_version, source_hash, snapshot_json "
+            "FROM review_source_snapshots WHERE row_id=?",
+            (proposal.row_id,),
+        ).fetchone()
+        if source_snapshot_row is None:
+            raise _storage_error()
+        try:
+            source_snapshot = decode_review_source_snapshot(str(source_snapshot_row["snapshot_json"]))
+            if (
+                source_snapshot.row_id != proposal.row_id
+                or source_snapshot.source_record_version != proposal.source_record_version
+                or source_snapshot.source_hash != source_snapshot_row["source_hash"]
+                or source_snapshot_row["workspace_id"] != proposal.workspace_id
+                or encode_review_json(source_snapshot) != source_snapshot_row["snapshot_json"]
+            ):
+                raise ValueError("risk source snapshot integrity mismatch")
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
         pack_row = connection.execute(
             "SELECT pack_json, pack_hash FROM evidence_packs WHERE pack_id=? AND workspace_id=?",
             (proposal.evidence_pack_id, proposal.workspace_id),
@@ -772,13 +1176,24 @@ class SqliteRiskRepository:
             != "sha256:" + sha256(str(rule_row["rule_json"]).encode("utf-8")).hexdigest()
         ):
             raise _safe_error("FMEA_REVIEW_ACTION_INVALID", "Risk pack snapshots are unavailable or invalid.")
+        domain_body = _strict_json(domain_row["manifest_json"], "domain pack manifest")
+        if not isinstance(domain_body, dict):
+            raise _storage_error()
         if proposal.assistance_suggestion_id is not None:
-            suggestion = connection.execute(
-                "SELECT 1 FROM fmea_assistance_suggestions WHERE suggestion_id=? AND workspace_id=?",
+            suggestion_row = connection.execute(
+                "SELECT * FROM fmea_assistance_suggestions WHERE suggestion_id=? AND workspace_id=?",
                 (proposal.assistance_suggestion_id, proposal.workspace_id),
             ).fetchone()
-            if suggestion is None:
+            if suggestion_row is None:
                 raise _safe_error("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "Assistance suggestion was not found.")
+            suggestion = SqliteAssistanceRepository._decode_suggestion(suggestion_row, connection)
+            if not _linked_risk_suggestion_matches(
+                suggestion,
+                proposal,
+                pack.pack_hash,
+                domain_body,
+            ):
+                raise _storage_error()
 
     @staticmethod
     def _insert_proposal(
@@ -1050,12 +1465,24 @@ class SqliteRiskRepository:
             raise _safe_error("FMEA_RISK_VERSION_CONFLICT", "Risk assessment version is stale.")
         if current != previous:
             raise _storage_error()
-        if proposal_value is not None:
+        bound_proposal = proposal_value
+        if bound_proposal is None and previous.proposal_id is not None:
             proposal_row = connection.execute(
                 f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
-                (proposal_value.proposal_id, proposal_value.workspace_id),
+                (previous.proposal_id, previous.workspace_id),
             ).fetchone()
-            if proposal_row is None or self._decode_proposal(proposal_row) != proposal_value:
+            if proposal_row is None:
+                raise _storage_error()
+            bound_proposal = self._decode_proposal(proposal_row)
+        if bound_proposal is not None:
+            proposal_row = connection.execute(
+                f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (bound_proposal.proposal_id, bound_proposal.workspace_id),
+            ).fetchone()
+            if proposal_row is None or self._decode_proposal(proposal_row) != bound_proposal:
+                raise _storage_error()
+            initial = self._validate_proposal_chain(connection, bound_proposal)
+            if not _assessment_identity_matches(previous, initial):
                 raise _storage_error()
         return current
 
@@ -1261,11 +1688,19 @@ class SqliteRiskRepository:
             ),
         )
 
-    def replay_confirmation(self, scope: IdempotencyScope, payload_hash: str) -> RiskConfirmationResult | None:
+    def _replay_human_transition(
+        self,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        decision_type: str,
+        event_type: str,
+        resource_type: str,
+    ) -> RiskConfirmationResult | RiskAssessmentRecord | None:
         connection = self._connect()
         try:
             response = self._replay_response(
-                self._idempotency_row(connection, scope.scope_key), payload_hash, "risk_confirmation"
+                self._idempotency_row(connection, scope.scope_key), payload_hash, resource_type
             )
             if response is None:
                 return None
@@ -1308,44 +1743,93 @@ class SqliteRiskRepository:
                 raise _storage_error()
             proposal = self._decode_proposal(proposal_row)
             decision_id = cast(str, decision_body["decision_id"])
-            expected_hash = risk_confirmation_payload_hash(
-                scope,
-                proposal,
-                previous,
-                decision_assessment,
-                previous.record_version,
-                decision_id,
-            )
-            prepared = PreparedRiskConfirmation(
-                scope=scope,
-                payload_hash=expected_hash,
-                proposal=proposal,
-                previous_assessment=previous,
-                assessment=decision_assessment,
-                expected_assessment_version=previous.record_version,
-                decision_id=decision_id,
-                audit=audit_value,
-            )
-            self._validate_transition_replay(connection, prepared, "confirm", "risk.confirmed", response)
+            if decision_type == "confirm":
+                expected_hash = risk_confirmation_payload_hash(
+                    scope,
+                    proposal,
+                    previous,
+                    decision_assessment,
+                    previous.record_version,
+                    decision_id,
+                )
+                prepared = PreparedRiskConfirmation(
+                    scope=scope,
+                    payload_hash=expected_hash,
+                    proposal=proposal,
+                    previous_assessment=previous,
+                    assessment=decision_assessment,
+                    expected_assessment_version=previous.record_version,
+                    decision_id=decision_id,
+                    audit=audit_value,
+                )
+            elif decision_type == "reject":
+                expected_hash = risk_rejection_payload_hash(
+                    scope,
+                    proposal,
+                    previous,
+                    decision_assessment,
+                    previous.record_version,
+                    decision_id,
+                    audit_value.reason or "",
+                )
+                prepared = PreparedRiskRejection(
+                    scope=scope,
+                    payload_hash=expected_hash,
+                    proposal=proposal,
+                    previous_assessment=previous,
+                    assessment=decision_assessment,
+                    expected_assessment_version=previous.record_version,
+                    decision_id=decision_id,
+                    audit=audit_value,
+                )
+            else:
+                raise _storage_error()
+            self._validate_transition_replay(connection, prepared, decision_type, event_type, response)
             if (
-                decision_body["decision_type"] != "confirm"
+                decision_body["decision_type"] != decision_type
                 or decision_assessment != assessment
                 or expected_hash != payload_hash
             ):
                 raise _storage_error()
-            return RiskConfirmationResult(
-                assessment=assessment,
-                decision_id=cast(str, response.get("decision_id")),
-                audit_event_id=cast(str, response.get("audit_event_id")),
-                outbox_event_id=cast(str, response.get("outbox_event_id")),
-                replayed=True,
-            )
+            if decision_type == "confirm":
+                return RiskConfirmationResult(
+                    assessment=assessment,
+                    decision_id=cast(str, response.get("decision_id")),
+                    audit_event_id=cast(str, response.get("audit_event_id")),
+                    outbox_event_id=cast(str, response.get("outbox_event_id")),
+                    replayed=True,
+                )
+            return assessment
         except ReviewError:
             raise
         except Exception as exc:
             raise _storage_error() from exc
         finally:
             connection.close()
+
+    def replay_confirmation(self, scope: IdempotencyScope, payload_hash: str) -> RiskConfirmationResult | None:
+        return cast(
+            RiskConfirmationResult | None,
+            self._replay_human_transition(
+                scope,
+                payload_hash,
+                decision_type="confirm",
+                event_type="risk.confirmed",
+                resource_type="risk_confirmation",
+            ),
+        )
+
+    def replay_rejection(self, scope: IdempotencyScope, payload_hash: str) -> RiskAssessmentRecord | None:
+        return cast(
+            RiskAssessmentRecord | None,
+            self._replay_human_transition(
+                scope,
+                payload_hash,
+                decision_type="reject",
+                event_type="risk.rejected",
+                resource_type="risk_rejection",
+            ),
+        )
 
     @staticmethod
     def _decode_outbox(row: sqlite3.Row) -> OutboxEvent:

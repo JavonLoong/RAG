@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -37,30 +38,35 @@ class AnalysisAssistanceGenerator:
     def generate(self, request: AssistanceRequest[object]) -> AssistanceSuggestion[object]:
         if not isinstance(request, AssistanceRequest) or request.kind is not AssistanceKind.ANALYSIS_SCOPE_DRAFT:
             raise _invalid("analysis scope model request is invalid")
+        if len(request.evidence_pack_ids) != 1:
+            raise _invalid("analysis scope generation supports exactly one EvidencePack")
         pack = self._evidence_loader(request.evidence_pack_ids[0], request.workspace_id)
         if pack is None or pack.pack_id != request.evidence_pack_ids[0] or pack.workspace_id != request.workspace_id:
             raise _invalid("analysis scope EvidencePack is invalid")
-        task = json.dumps(
-            {
-                "analysis": dict(request.payload) if isinstance(request.payload, Mapping) else request.payload,
-                "allowed_fields": sorted(_ROOT_KEYS),
-                "rule": "Draft scope only. Never create an analysis or return risk, workflow, publication, or confirmation state.",
-            },
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-            allow_nan=False,
-        )
         try:
+            task = json.dumps(
+                {
+                    "analysis": dict(request.payload) if isinstance(request.payload, Mapping) else request.payload,
+                    "allowed_fields": sorted(_ROOT_KEYS),
+                    "rule": "Draft scope only. Never create an analysis or return risk, workflow, publication, or confirmation state.",
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+            model_pack = replace(pack, refs=())
             result = self._service.run(
                 run_id=request.request_id,
                 task=task,
                 template_id=_TEMPLATE_ID,
                 version=_TEMPLATE_VERSION,
-                evidence_pack=pack,
+                evidence_pack=model_pack,
             )
         except StructuredGenerationError as exc:
             raise _safe_generation_error(exc) from exc
+        except (TypeError, ValueError) as exc:
+            raise _invalid("analysis scope model request is invalid") from exc
         candidate, trace = _candidate(result, template_id=_TEMPLATE_ID, evidence_pack_id=pack.pack_id)
         if not isinstance(candidate.payload, Mapping) or set(candidate.payload) != _ROOT_KEYS:
             raise _invalid("analysis scope candidate contains unknown or missing fields")
@@ -73,7 +79,7 @@ class AnalysisAssistanceGenerator:
             target_record_version=request.target_record_version,
             evidence_pack_ids=request.evidence_pack_ids,
             payload=dict(candidate.payload),
-            evidence_ids=tuple(ref.evidence_id for ref in pack.refs),
+            evidence_ids=(),
             model_hash=trace.response_hash,
             prompt_hash=trace.prompt_hash,
             run_id=request.request_id,
@@ -95,15 +101,21 @@ class EnvironmentAnalysisAssistanceGenerator:
         evidence_loader: Callable[[str, str], EvidencePack | None],
         registry_root: Path | None = None,
         template_path: Path | None = None,
+        clock: Callable[[], str] = utc_now,
     ) -> None:
         self._evidence_loader = evidence_loader
         self._registry_root = registry_root
         self._template_path = template_path or Path(__file__).resolve().parents[1] / "templates" / "examples" / "fmea-analysis-scope.yaml"
+        self._clock = clock
 
     def generate(self, request: AssistanceRequest[object]) -> AssistanceSuggestion[object]:
         try:
             service = _compose_service(_TEMPLATE_ID, _TEMPLATE_VERSION, self._template_path, self._registry_root)
-            return AnalysisAssistanceGenerator(service, evidence_loader=self._evidence_loader).generate(request)
+            return AnalysisAssistanceGenerator(
+                service,
+                evidence_loader=self._evidence_loader,
+                clock=self._clock,
+            ).generate(request)
         except ReviewError:
             raise
         except Exception as exc:

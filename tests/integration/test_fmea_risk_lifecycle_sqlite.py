@@ -103,7 +103,7 @@ def _rejection(actor_id: str = "reviewer-1") -> PreparedRiskRejection:
     decision_id = "risk-decision-reject-1"
     prepared_scope = scope(actor_id)
     payload_hash = risk_rejection_payload_hash(
-        prepared_scope, proposal(), previous, reviewed, 1, decision_id
+        prepared_scope, proposal(), previous, reviewed, 1, decision_id, "risk lifecycle"
     )
     return PreparedRiskRejection(
         scope=prepared_scope,
@@ -329,7 +329,7 @@ def test_reviewed_assessment_can_be_rejected_again_with_a_new_version(risk_repos
     prepared_scope = scope("reviewer-1")
     prepared_scope = replace(prepared_scope, key_hash="sha256:" + "c" * 64)
     payload_hash = risk_rejection_payload_hash(
-        prepared_scope, proposal(), first, second_assessment, 2, decision_id
+        prepared_scope, proposal(), first, second_assessment, 2, decision_id, "risk lifecycle"
     )
     prepared = PreparedRiskRejection(
         scope=prepared_scope,

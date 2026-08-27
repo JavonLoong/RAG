@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -105,3 +106,15 @@ def test_analysis_generator_maps_provider_timeout_to_retryable_safe_error(fixtur
     assert captured.value.code == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
     assert captured.value.retryable is True
     assert "secret upstream detail" not in str(captured.value)
+
+
+def test_analysis_generator_rejects_multiple_unmerged_evidence_packs(fixture_pack) -> None:
+    generator = AnalysisAssistanceGenerator(
+        _Service(_payload()),
+        evidence_loader=lambda pack_id, workspace_id: fixture_pack,
+    )
+
+    with pytest.raises(ReviewError) as captured:
+        generator.generate(replace(_request(), evidence_pack_ids=("pack-1", "pack-2")))
+
+    assert captured.value.code == "FMEA_MODEL_SUGGESTION_INVALID"

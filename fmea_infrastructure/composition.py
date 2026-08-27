@@ -184,9 +184,11 @@ def build_workspace_risk_runtime(
     resolved_analysis_generator = analysis_generator or EnvironmentAnalysisAssistanceGenerator(
         evidence_loader=risk_repository.get_evidence_pack,
         registry_root=template_registry_root / "assistance",
+        clock=clock,
     )
     resolved_risk_generator = risk_generator or EnvironmentRiskSuggestionGenerator(
-        registry_root=template_registry_root / "assistance"
+        registry_root=template_registry_root / "assistance",
+        clock=clock,
     )
     analysis_service = build_analysis_assistance_service(
         assistance_repository,
