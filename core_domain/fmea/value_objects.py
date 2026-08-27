@@ -11,6 +11,24 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 EVIDENCE_LINEAGE_SCHEMA = "graphrag.fmea.evidence-lineage.v1"
 
 
+def _normalize_parent_pack_refs(parent_pack_refs: Iterable[object]) -> tuple[tuple[str, str], ...]:
+    normalized: list[tuple[str, str]] = []
+    for item in parent_pack_refs:
+        if not isinstance(item, tuple | list) or len(item) != 2:
+            raise FmeaDomainError("parent_pack_refs must contain pack ID/hash pairs")  # noqa: TRY003
+        parent_id, parent_hash = item
+        if not isinstance(parent_id, str) or not parent_id.strip():
+            raise FmeaDomainError("parent pack ID must not be empty")  # noqa: TRY003
+        if not isinstance(parent_hash, str) or _SHA256.fullmatch(parent_hash) is None:
+            raise FmeaDomainError("parent pack hash must be lowercase SHA-256")  # noqa: TRY003
+        normalized.append((parent_id.strip(), parent_hash))
+
+    normalized_refs = tuple(sorted(normalized))
+    if len({parent_id for parent_id, _ in normalized_refs}) != len(normalized_refs):
+        raise FmeaDomainError("duplicate parent pack reference")  # noqa: TRY003
+    return normalized_refs
+
+
 @dataclass(frozen=True, slots=True)
 class VersionSet:
     schema_id: str
@@ -63,6 +81,36 @@ class EvidenceRef:
         object.__setattr__(self, "acl_scope", tuple(self.acl_scope))
 
 
+def _evidence_pack_hash(
+    refs: tuple[EvidenceRef, ...],
+    parent_pack_refs: tuple[tuple[str, str], ...],
+    lineage_reason: str | None,
+    lineage_schema_version: str | None,
+) -> str:
+    evidence_payload = [
+        {"evidence_id": ref.evidence_id, "evidence_hash": ref.evidence_hash, "locator": ref.locator}
+        for ref in sorted(refs, key=lambda item: item.evidence_id)
+    ]
+    if parent_pack_refs:
+        hash_payload: object = {
+            "evidence_refs": evidence_payload,
+            "lineage": {
+                "lineage_reason": lineage_reason,
+                "lineage_schema_version": lineage_schema_version,
+                "parent_pack_refs": [
+                    {"pack_id": pack_id, "pack_hash": pack_hash}
+                    for pack_id, pack_hash in parent_pack_refs
+                ],
+            },
+        }
+    else:
+        # Keep the original bytes for legacy packs. Empty lineage is not a
+        # new version of the identity algorithm.
+        hash_payload = evidence_payload
+    payload = json.dumps(hash_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return sha256(payload).hexdigest()
+
+
 @dataclass(frozen=True, slots=True)
 class EvidencePack:
     pack_id: str
@@ -80,20 +128,7 @@ class EvidencePack:
     def __post_init__(self) -> None:
         object.__setattr__(self, "acl_scope", tuple(self.acl_scope))
         object.__setattr__(self, "refs", tuple(self.refs))
-        parent_refs = tuple(self.parent_pack_refs)
-        normalized: list[tuple[str, str]] = []
-        for item in parent_refs:
-            if not isinstance(item, tuple | list) or len(item) != 2:
-                raise FmeaDomainError("parent_pack_refs must contain pack ID/hash pairs")  # noqa: TRY003
-            parent_id, parent_hash = item
-            if not isinstance(parent_id, str) or not parent_id.strip():
-                raise FmeaDomainError("parent pack ID must not be empty")  # noqa: TRY003
-            if not isinstance(parent_hash, str) or _SHA256.fullmatch(parent_hash) is None:
-                raise FmeaDomainError("parent pack hash must be lowercase SHA-256")  # noqa: TRY003
-            normalized.append((parent_id.strip(), parent_hash))
-        normalized_refs = tuple(sorted(normalized))
-        if len({parent_id for parent_id, _ in normalized_refs}) != len(normalized_refs):
-            raise FmeaDomainError("duplicate parent pack reference")  # noqa: TRY003
+        normalized_refs = _normalize_parent_pack_refs(self.parent_pack_refs)
         if self.pack_id in {parent_id for parent_id, _ in normalized_refs}:
             raise FmeaDomainError("EvidencePack lineage cannot self-reference")  # noqa: TRY003
         object.__setattr__(self, "parent_pack_refs", normalized_refs)
@@ -130,39 +165,26 @@ class EvidencePack:
                 raise FmeaDomainError("evidence workspace_id does not match pack workspace_id")  # noqa: TRY003
             if not set(ref.acl_scope).issubset(acl_scope):
                 raise FmeaDomainError("evidence acl_scope is not compatible with pack acl_scope")  # noqa: TRY003
-        evidence_payload = [
-            {"evidence_id": ref.evidence_id, "evidence_hash": ref.evidence_hash, "locator": ref.locator}
-            for ref in sorted(refs, key=lambda item: item.evidence_id)
-        ]
-        normalized_parent_refs = tuple(sorted(tuple(item) for item in parent_pack_refs))
-        if normalized_parent_refs:
-            hash_payload: object = {
-                "evidence_refs": evidence_payload,
-                "lineage": {
-                    "lineage_reason": lineage_reason,
-                    "lineage_schema_version": lineage_schema_version,
-                    "parent_pack_refs": [
-                        {"pack_id": pack_id, "pack_hash": pack_hash}
-                        for pack_id, pack_hash in normalized_parent_refs
-                    ],
-                },
-            }
-        else:
-            # Keep the original bytes for legacy packs. Empty lineage is not a
-            # new version of the identity algorithm.
-            hash_payload = evidence_payload
-        payload = json.dumps(hash_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        normalized_parent_refs = _normalize_parent_pack_refs(parent_pack_refs)
+        normalized_lineage_reason = (
+            lineage_reason.strip() if isinstance(lineage_reason, str) else lineage_reason
+        )
         return cls(
             pack_id=pack_id,
             workspace_id=workspace_id,
             acl_scope=tuple(acl_scope),
             versions=versions,
             refs=tuple(refs),
-            pack_hash=sha256(payload).hexdigest(),
+            pack_hash=_evidence_pack_hash(
+                tuple(refs),
+                normalized_parent_refs,
+                normalized_lineage_reason,
+                lineage_schema_version,
+            ),
             created_at=created_at,
             expires_at=expires_at,
             parent_pack_refs=normalized_parent_refs,
-            lineage_reason=lineage_reason,
+            lineage_reason=normalized_lineage_reason,
             lineage_schema_version=lineage_schema_version,
         )
 
@@ -230,3 +252,13 @@ def validate_evidence_lineage(
         visited.add(pack.pack_id)
 
     visit(candidate)
+    if (
+        _evidence_pack_hash(
+            candidate.refs,
+            candidate.parent_pack_refs,
+            candidate.lineage_reason,
+            candidate.lineage_schema_version,
+        )
+        != candidate.pack_hash
+    ):
+        raise FmeaDomainError("candidate pack_hash does not match contents")  # noqa: TRY003

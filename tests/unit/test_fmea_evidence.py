@@ -7,7 +7,7 @@ import pytest
 
 from core_domain.fmea.codec import decode_evidence_pack, encode_json
 from core_domain.fmea.errors import FmeaDomainError
-from core_domain.fmea.value_objects import EvidencePack
+from core_domain.fmea.value_objects import EvidencePack, validate_evidence_lineage
 
 
 def test_supplemental_evidence_pack_hashes_lineage_envelope(fixture_pack: EvidencePack) -> None:
@@ -37,6 +37,44 @@ def test_supplemental_evidence_pack_hashes_lineage_envelope(fixture_pack: Eviden
     )
     assert supplemental.pack_hash != changed.pack_hash
     assert decode_evidence_pack(encode_json(supplemental)) == supplemental
+
+
+def test_supplemental_hash_normalizes_lineage_before_hashing(fixture_pack: EvidencePack) -> None:
+    supplemental = EvidencePack.build(
+        pack_id="pack-2",
+        workspace_id="ws-1",
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=fixture_pack.refs,
+        created_at=fixture_pack.created_at,
+        expires_at=None,
+        parent_pack_refs=((f" {fixture_pack.pack_id} ", fixture_pack.pack_hash),),
+        lineage_reason=" evidence refresh ",
+        lineage_schema_version="graphrag.fmea.evidence-lineage.v1",
+    )
+
+    assert supplemental.parent_pack_refs == ((fixture_pack.pack_id, fixture_pack.pack_hash),)
+    assert supplemental.lineage_reason == "evidence refresh"
+    assert decode_evidence_pack(encode_json(supplemental)) == supplemental
+
+
+def test_lineage_rejects_tampered_candidate_self_hash(fixture_pack: EvidencePack) -> None:
+    candidate = EvidencePack.build(
+        pack_id="pack-2",
+        workspace_id="ws-1",
+        acl_scope=fixture_pack.acl_scope,
+        versions=fixture_pack.versions,
+        refs=fixture_pack.refs,
+        created_at=fixture_pack.created_at,
+        expires_at=None,
+        parent_pack_refs=((fixture_pack.pack_id, fixture_pack.pack_hash),),
+        lineage_reason="evidence refresh",
+        lineage_schema_version="graphrag.fmea.evidence-lineage.v1",
+    )
+    tampered = replace(candidate, lineage_reason="tampered")
+
+    with pytest.raises(FmeaDomainError, match="candidate pack_hash"):
+        validate_evidence_lineage(tampered, (fixture_pack,))
 
 
 def test_legacy_evidence_pack_json_keeps_old_canonical_bytes(fixture_pack: EvidencePack) -> None:
@@ -101,8 +139,6 @@ def test_lineage_rejects_unknown_hash_workspace_mismatch_and_cycles(fixture_pack
 
 
 def test_lineage_rejects_candidate_replacing_a_resolved_pack(fixture_pack: EvidencePack) -> None:
-    from core_domain.fmea.value_objects import validate_evidence_lineage
-
     candidate = replace(fixture_pack, pack_id="pack-2", created_at="2026-08-24T00:00:00Z")
     resolved = replace(fixture_pack, pack_id="pack-2")
     with pytest.raises(FmeaDomainError, match="silent parent pack replacement"):
