@@ -32,7 +32,7 @@ def test_migrations_are_ordered_and_same_version_hash_replay_is_rejected(tmp_pat
 
     connection = sqlite3.connect(path)
     try:
-        assert connection.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [(1,), (2,)]
+        assert connection.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [(1,), (2,), (3,)]
         connection.execute(
             "UPDATE schema_migrations SET migration_hash = ? WHERE version = 1",
             ("sha256:" + "0" * 64,),

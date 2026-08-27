@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 
+import pytest
+
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 
 EXPECTED_TABLES = {
@@ -79,7 +81,7 @@ def test_risk_migration_is_hash_managed_idempotent_and_has_required_schema(tmp_p
             assert fragment in schema_sql
 
 
-def test_confirmed_assessment_trigger_does_not_block_proposed_transition(tmp_path) -> None:
+def test_confirmed_assessment_requires_matching_decision_and_audit(tmp_path) -> None:
     path = tmp_path / "fmea.sqlite3"
     SqliteFmeaRepository(path).initialize()
     with sqlite3.connect(path) as connection:
@@ -113,8 +115,9 @@ def test_confirmed_assessment_trigger_does_not_block_proposed_transition(tmp_pat
                 "2026-01-01T00:00:00Z",
             ),
         )
-        connection.execute(
-            "UPDATE fmea_risk_assessments SET status = 'confirmed', derived_json = '{}', "
-            "confirmer_actor_id = 'reviewer-1', record_version = 2 WHERE assessment_id = ?",
-            ("assessment-1",),
-        )
+        with pytest.raises(sqlite3.IntegrityError, match="matching decision and audit"):
+            connection.execute(
+                "UPDATE fmea_risk_assessments SET status = 'confirmed', derived_json = '{}', "
+                "confirmer_actor_id = 'reviewer-1', record_version = 2 WHERE assessment_id = ?",
+                ("assessment-1",),
+            )

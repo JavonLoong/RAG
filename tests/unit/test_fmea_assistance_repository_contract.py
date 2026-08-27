@@ -17,13 +17,21 @@ from fmea_application.review_contracts import AuditEvent, IdempotencyScope
 from fmea_application.risk_contracts import (
     PreparedAssistanceDecision,
     PreparedAssistanceSuggestion,
+    assistance_decision_payload_hash,
+    assistance_suggestion_payload_hash,
 )
 
 HASH = "sha256:" + "a" * 64
 UUID_KEY = "00000000-0000-4000-8000-000000000001"
 
 
-def audit_event(*, actor_id: str = "model-1", actor_type: ActorType = ActorType.MODEL, decision_id: str | None = None) -> AuditEvent:
+def audit_event(
+    *,
+    actor_id: str = "model-1",
+    actor_type: ActorType = ActorType.MODEL,
+    decision_id: str | None = None,
+    canonical_hash: str = HASH,
+) -> AuditEvent:
     from core_domain.fmea.value_objects import VersionSet
 
     return AuditEvent(
@@ -49,7 +57,7 @@ def audit_event(*, actor_id: str = "model-1", actor_type: ActorType = ActorType.
         evidence_ids=("e-1",),
         evidence_request_targets=(),
         idempotency_key_hash=HASH,
-        canonical_payload_hash=HASH,
+        canonical_payload_hash=canonical_hash,
         versions=VersionSet(
             schema_id="graphrag.fmea.v1",
             data_version="1.0.0",
@@ -126,13 +134,36 @@ def scope(actor_id: str) -> IdempotencyScope:
     )
 
 
-def test_prepared_assistance_suggestion_is_immutable_and_workspace_bound() -> None:
-    prepared = PreparedAssistanceSuggestion(
+def prepared_suggestion() -> PreparedAssistanceSuggestion:
+    saved_suggestion = suggestion()
+    prepared_hash = assistance_suggestion_payload_hash(scope("model-1"), saved_suggestion)
+    return PreparedAssistanceSuggestion(
         scope=scope("model-1"),
-        payload_hash=HASH,
-        suggestion=suggestion(),
-        audit=audit_event(),
+        payload_hash=prepared_hash,
+        suggestion=saved_suggestion,
+        audit=audit_event(canonical_hash=prepared_hash),
     )
+
+
+def prepared_decision() -> PreparedAssistanceDecision:
+    saved_suggestion = suggestion()
+    prepared_hash = assistance_decision_payload_hash(scope("reviewer-1"), saved_suggestion, decision(saved_suggestion))
+    return PreparedAssistanceDecision(
+        scope=scope("reviewer-1"),
+        payload_hash=prepared_hash,
+        suggestion=saved_suggestion,
+        decision=decision(saved_suggestion),
+        audit=audit_event(
+            actor_id="reviewer-1",
+            actor_type=ActorType.HUMAN,
+            decision_id="decision-1",
+            canonical_hash=prepared_hash,
+        ),
+    )
+
+
+def test_prepared_assistance_suggestion_is_immutable_and_workspace_bound() -> None:
+    prepared = prepared_suggestion()
 
     assert prepared.suggestion.applied is False
     assert prepared.scope.workspace_id == prepared.suggestion.workspace_id
@@ -142,13 +173,7 @@ def test_prepared_assistance_suggestion_is_immutable_and_workspace_bound() -> No
 
 def test_prepared_assistance_decision_reuses_existing_decision_and_requires_exact_binding() -> None:
     saved_suggestion = suggestion()
-    prepared = PreparedAssistanceDecision(
-        scope=scope("reviewer-1"),
-        payload_hash=HASH,
-        suggestion=saved_suggestion,
-        decision=decision(saved_suggestion),
-        audit=audit_event(actor_id="reviewer-1", actor_type=ActorType.HUMAN, decision_id="decision-1"),
-    )
+    prepared = prepared_decision()
 
     assert prepared.decision is not None
     assert prepared.decision.suggestion_hash == saved_suggestion.suggestion_hash
@@ -157,7 +182,7 @@ def test_prepared_assistance_decision_reuses_existing_decision_and_requires_exac
     with pytest.raises(ValueError, match="suggestion hash"):
         PreparedAssistanceDecision(
             scope=prepared.scope,
-            payload_hash=HASH,
+            payload_hash=prepared.payload_hash,
             suggestion=saved_suggestion,
             decision=mismatched,
             audit=prepared.audit,
@@ -176,6 +201,36 @@ def test_prepared_assistance_decision_rejects_model_actor_and_cross_workspace() 
             payload_hash=HASH,
             suggestion=saved_suggestion,
             audit=audit_event(),
+        )
+
+
+def test_prepared_assistance_payload_hash_is_bound_to_body_and_audit() -> None:
+    prepared = prepared_suggestion()
+    forged_hash = "sha256:" + "c" * 64
+    with pytest.raises(ValueError, match="payload hash does not match canonical payload"):
+        PreparedAssistanceSuggestion(
+            scope=prepared.scope,
+            payload_hash=forged_hash,
+            suggestion=prepared.suggestion,
+            audit=prepared.audit,
+        )
+
+    with pytest.raises(ValueError, match="audit canonical payload hash"):
+        PreparedAssistanceSuggestion(
+            scope=prepared.scope,
+            payload_hash=prepared.payload_hash,
+            suggestion=prepared.suggestion,
+            audit=replace(prepared.audit, canonical_payload_hash=forged_hash),
+        )
+
+    decision_prepared = prepared_decision()
+    with pytest.raises(ValueError, match="payload hash does not match canonical payload"):
+        PreparedAssistanceDecision(
+            scope=decision_prepared.scope,
+            payload_hash=forged_hash,
+            suggestion=decision_prepared.suggestion,
+            decision=decision_prepared.decision,
+            audit=decision_prepared.audit,
         )
 
 
