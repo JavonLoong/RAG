@@ -252,6 +252,124 @@ def test_scoring_rule_pack_requires_complete_dimension_anchors() -> None:
         )
 
 
+def test_scoring_rule_pack_legacy_constructor_gets_compatible_policy_defaults() -> None:
+    pack = rules()
+
+    assert pack.decision_severity_policy == "max_consequence"
+    assert pack.rpn_formula == "S*O*D"
+    assert pack.critical_severity_threshold == 9
+    assert pack.medium_priority_rpn is None
+    assert pack.missing_score_policy == "unknown_no_zero"
+    assert pack.conflict_score_policy == "block_rpn"
+    assert pack.uncertainty_policy == "preserve_require_review"
+    assert pack.policy_basis == "project_default_non_certification"
+
+
+def test_scoring_rule_pack_accepts_explicit_fuel_policies() -> None:
+    pack = replace(
+        rules(),
+        decision_severity_policy="max_consequence",
+        rpn_formula="S*O*D",
+        critical_severity_threshold=9,
+        medium_priority_rpn=100,
+        missing_score_policy="unknown_no_zero",
+        conflict_score_policy="block_rpn",
+        uncertainty_policy="preserve_require_review",
+        policy_basis="project_default_non_certification",
+    )
+
+    assert pack.medium_priority_rpn == 100
+
+
+@pytest.mark.parametrize(
+    ("field_name", "invalid_value"),
+    (
+        ("decision_severity_policy", "first_consequence"),
+        ("rpn_formula", "S+O+D"),
+        ("missing_score_policy", "zero_fill"),
+        ("conflict_score_policy", "average"),
+        ("uncertainty_policy", "discard"),
+        ("policy_basis", "certified_default"),
+    ),
+)
+def test_scoring_rule_pack_rejects_unsupported_policies_and_formula(field_name, invalid_value) -> None:
+    with pytest.raises(FmeaDomainError, match=field_name):
+        replace(rules(), **{field_name: invalid_value})
+
+
+@pytest.mark.parametrize("invalid_value", (8.5, True, 0, 11))
+def test_scoring_rule_pack_rejects_invalid_critical_severity_threshold(invalid_value) -> None:
+    with pytest.raises(FmeaDomainError, match="critical_severity_threshold"):
+        replace(rules(), critical_severity_threshold=invalid_value)
+
+
+@pytest.mark.parametrize("invalid_value", (8.5, True, 0, -1))
+def test_scoring_rule_pack_rejects_invalid_medium_priority_rpn(invalid_value) -> None:
+    with pytest.raises(FmeaDomainError, match="medium_priority_rpn"):
+        replace(rules(), medium_priority_rpn=invalid_value)
+
+
+@pytest.mark.parametrize("invalid_value", (8.5, True, 0, -1))
+def test_scoring_rule_pack_rejects_invalid_high_priority_rpn(invalid_value) -> None:
+    with pytest.raises(FmeaDomainError, match="high_priority_rpn"):
+        replace(rules(), high_priority_rpn=invalid_value)
+
+
+def test_scoring_rule_pack_requires_medium_rpn_not_to_exceed_high_rpn() -> None:
+    with pytest.raises(FmeaDomainError, match="medium_priority_rpn"):
+        replace(rules(), medium_priority_rpn=201)
+
+
+def test_calculate_risk_uses_missing_score_as_unknown_and_declared_thresholds() -> None:
+    pack = replace(rules(), critical_severity_threshold=8, medium_priority_rpn=100)
+
+    critical = calculate_risk(
+        rule_pack=pack,
+        severity_by_consequence_class=(("safety", 8),),
+        occurrence=1,
+        detection=1,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=None,
+        verified_residual_risk=None,
+        uncertainty=None,
+        reason="declared critical threshold",
+        evidence_ids=(),
+    )
+    medium = calculate_risk(
+        rule_pack=pack,
+        severity_by_consequence_class=(("safety", 5),),
+        occurrence=5,
+        detection=4,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=None,
+        verified_residual_risk=None,
+        uncertainty=None,
+        reason="declared medium threshold",
+        evidence_ids=(),
+    )
+    missing_occurrence = calculate_risk(
+        rule_pack=pack,
+        severity_by_consequence_class=(("safety", 8),),
+        occurrence=None,
+        detection=4,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=None,
+        verified_residual_risk=None,
+        uncertainty="occurrence is unknown",
+        reason="missing occurrence remains unknown",
+        evidence_ids=(),
+    )
+
+    assert critical.decision_priority == "critical"
+    assert critical.rpn == 8
+    assert medium.decision_priority == "medium"
+    assert medium.rpn == 100
+    assert missing_occurrence.rpn is None
+
+
 def test_missing_required_dimension_never_produces_confirmed_rpn() -> None:
     proposal = RiskProposal(
         proposal_id="proposal-1",

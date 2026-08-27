@@ -24,6 +24,14 @@ class ScoringRulePack:
     high_priority_rpn: int
     required_dimensions: tuple[str, ...] = ("severity", "occurrence", "detection")
     dimension_anchors: tuple[tuple[str, tuple[tuple[int, str], ...]], ...] = ()
+    decision_severity_policy: str = "max_consequence"
+    rpn_formula: str = "S*O*D"
+    critical_severity_threshold: int | None = 9
+    medium_priority_rpn: int | None = None
+    missing_score_policy: str = "unknown_no_zero"
+    conflict_score_policy: str = "block_rpn"
+    uncertainty_policy: str = "preserve_require_review"
+    policy_basis: str = "project_default_non_certification"
 
     def __post_init__(self) -> None:  # noqa: C901
         required = tuple(self.required_dimensions)
@@ -38,6 +46,33 @@ class ScoringRulePack:
         if isinstance(self.score_max, bool) or not isinstance(self.score_max, int) or self.score_min > self.score_max:
             raise FmeaDomainError("score_max must be an integer at least score_min")  # noqa: TRY003
 
+        allowed_values = (
+            ("decision_severity_policy", "max_consequence"),
+            ("rpn_formula", "S*O*D"),
+            ("missing_score_policy", "unknown_no_zero"),
+            ("conflict_score_policy", "block_rpn"),
+            ("uncertainty_policy", "preserve_require_review"),
+            ("policy_basis", "project_default_non_certification"),
+        )
+        for field_name, allowed_value in allowed_values:
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or value != allowed_value:
+                raise FmeaDomainError(f"unsupported {field_name}: {value!r}")  # noqa: TRY003
+
+        if (
+            isinstance(self.high_priority_rpn, bool)
+            or not isinstance(self.high_priority_rpn, int)
+            or self.high_priority_rpn <= 0
+        ):
+            raise FmeaDomainError("high_priority_rpn must be a positive integer")  # noqa: TRY003
+        if self.medium_priority_rpn is not None and (
+            isinstance(self.medium_priority_rpn, bool)
+            or not isinstance(self.medium_priority_rpn, int)
+            or self.medium_priority_rpn <= 0
+        ):
+            raise FmeaDomainError("medium_priority_rpn must be a positive integer or None")  # noqa: TRY003
+        if self.medium_priority_rpn is not None and self.medium_priority_rpn > self.high_priority_rpn:
+            raise FmeaDomainError("medium_priority_rpn must not exceed high_priority_rpn")  # noqa: TRY003
         raw_anchors = tuple(self.dimension_anchors)
         normalized: list[tuple[str, tuple[tuple[int, str], ...]]] = []
         seen: set[str] = set()
@@ -67,6 +102,16 @@ class ScoringRulePack:
             if missing:
                 raise FmeaDomainError("dimension anchors are incomplete for required dimensions")  # noqa: TRY003
         object.__setattr__(self, "dimension_anchors", tuple(normalized))
+
+        if self.critical_severity_threshold is not None and (
+            isinstance(self.critical_severity_threshold, bool)
+            or not isinstance(self.critical_severity_threshold, int)
+        ):
+            raise FmeaDomainError("critical_severity_threshold must be an integer or None")  # noqa: TRY003
+        if self.critical_severity_threshold is not None and not (
+            self.score_min <= self.critical_severity_threshold <= self.score_max
+        ):
+            raise FmeaDomainError("critical_severity_threshold must be within the score range")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)
@@ -266,7 +311,7 @@ class RiskAssessmentRecord:
                 raise FmeaDomainError("derived risk evidence does not match record dimensions")  # noqa: TRY003
 
 
-def calculate_risk(
+def calculate_risk(  # noqa: C901
     *,
     rule_pack: ScoringRulePack,
     severity_by_consequence_class: tuple[tuple[str, int | None], ...],
@@ -290,7 +335,10 @@ def calculate_risk(
         consequence_classes.add(consequence_class)
 
     scores = [score for _, score in severity_by_consequence_class if score is not None]
-    decision_severity = max(scores) if scores else None
+    if rule_pack.decision_severity_policy == "max_consequence":
+        decision_severity = max(scores) if scores else None
+    else:  # pragma: no cover - ScoringRulePack rejects unsupported policies.
+        raise FmeaDomainError("unsupported decision_severity_policy")  # noqa: TRY003
     for score in [*scores, occurrence, detection]:
         if score is not None and not rule_pack.score_min <= score <= rule_pack.score_max:
             raise FmeaDomainError(  # noqa: TRY003
@@ -301,16 +349,28 @@ def calculate_risk(
     ):
         raise FmeaDomainError("target_residual_risk must be an integer")  # noqa: TRY003
 
-    rpn = (
-        decision_severity * occurrence * detection
-        if decision_severity is not None and occurrence is not None and detection is not None
-        else None
-    )
-    if decision_severity is not None and decision_severity >= 9:
+    if rule_pack.missing_score_policy == "unknown_no_zero":
+        rpn = (
+            decision_severity * occurrence * detection
+            if decision_severity is not None and occurrence is not None and detection is not None
+            else None
+        )
+    else:  # pragma: no cover - ScoringRulePack rejects unsupported policies.
+        raise FmeaDomainError("unsupported missing_score_policy")  # noqa: TRY003
+    if rule_pack.rpn_formula != "S*O*D":  # pragma: no cover - constructor rejects it.
+        raise FmeaDomainError("unsupported rpn_formula")  # noqa: TRY003
+    if decision_severity is not None and (
+        rule_pack.critical_severity_threshold is not None
+        and decision_severity >= rule_pack.critical_severity_threshold
+    ):
         decision_priority = "critical"
     elif rpn is not None and rpn >= rule_pack.high_priority_rpn:
         decision_priority = "high"
-    elif rpn is not None and rpn >= rule_pack.high_priority_rpn // 2:
+    elif rpn is not None and rpn >= (
+        rule_pack.medium_priority_rpn
+        if rule_pack.medium_priority_rpn is not None
+        else rule_pack.high_priority_rpn // 2
+    ):
         decision_priority = "medium"
     else:
         decision_priority = "normal"
