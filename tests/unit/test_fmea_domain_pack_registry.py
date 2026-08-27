@@ -147,6 +147,37 @@ def test_domain_manifest_rejects_invalid_encoding_and_source_size(tmp_path: Path
         load_domain_pack_manifest(path)
 
 
+def test_yaml_depth_attack_below_source_limit_fails_as_stable_domain_error() -> None:
+    depth = 800
+    source = (
+        "\n".join(
+            ["domain_pack:"]
+            + [f"{'  ' * (index + 1)}nested{index}:" for index in range(depth)]
+            + [f"{'  ' * (depth + 1)}value"]
+        )
+        + "\n"
+    ).encode("utf-8")
+    assert len(source) < 1024 * 1024
+
+    with pytest.raises(FmeaDomainError, match="FMEA YAML source is invalid"):
+        load_domain_pack_manifest(source)
+
+
+def test_path_source_rejects_oversized_file_before_unbounded_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "oversized.yaml"
+    path.write_bytes(b"x" * (1024 * 1024 + 1))
+
+    def fail_unbounded_read(self: Path) -> bytes:
+        raise AssertionError
+
+    monkeypatch.setattr(Path, "read_bytes", fail_unbounded_read)
+
+    with pytest.raises(FmeaDomainError, match="1 MiB"):
+        load_domain_pack_manifest(path)
+
+
 def test_valid_scoring_rule_pack_loads_all_sod_anchors_and_policies() -> None:
     pack = load_scoring_rule_pack(_scoring_source())
 
@@ -463,6 +494,52 @@ def test_domain_registry_rejects_oversized_source_before_io(tmp_path: Path) -> N
     with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_LIMIT_EXCEEDED"):
         registry.register(manifest, b"x" * (1024 * 1024 + 1))
     assert not (tmp_path / manifest.pack_id).exists()
+
+
+@pytest.mark.parametrize("filename", ["source.yaml", "body.json", "manifest.json"])
+def test_registry_rejects_oversized_stored_file_before_unbounded_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str
+) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    (tmp_path / manifest.pack_id / manifest.version / filename).write_bytes(b"x" * (1024 * 1024 + 1))
+
+    def fail_unbounded_read(self: Path) -> bytes:
+        raise AssertionError
+
+    monkeypatch.setattr(Path, "read_bytes", fail_unbounded_read)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_INTEGRITY_FAILED"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+def test_registry_rejects_file_replaced_after_validation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    source_path = tmp_path / manifest.pack_id / manifest.version / "source.yaml"
+    external = tmp_path / "outside-source.yaml"
+    external.write_bytes(source)
+    original_validate = registry._validate_existing_path
+    injected = False
+
+    def replace_after_validation(
+        path: Path, *, expected_directory: bool, allow_missing: bool
+    ) -> object:
+        nonlocal injected
+        result = original_validate(path, expected_directory=expected_directory, allow_missing=allow_missing)
+        if path == source_path and not injected:
+            injected = True
+            external.replace(source_path)
+        return result
+
+    monkeypatch.setattr(registry, "_validate_existing_path", replace_after_validation)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_(PATH_INVALID|INTEGRITY_FAILED)"):
+        registry.get(manifest.pack_id, manifest.version)
 
 
 def test_interrupted_registry_write_leaves_no_final_version_directory(

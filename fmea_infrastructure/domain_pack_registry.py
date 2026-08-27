@@ -65,12 +65,25 @@ _REGISTRY_SEMVER = re.compile(
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 _REGISTRY_HASH = re.compile(r"^[0-9a-f]{64}$")
-_REGISTRY_MAX_STORED_BYTES = 1024 * 1024
+_MAX_YAML_DEPTH = 128
+_MAX_YAML_EVENTS = 8192
+_MAX_YAML_NODES = 4096
+_MAX_READ_CHUNK_BYTES = 64 * 1024
+_MAX_STORED_BODY_BYTES = 256 * 1024
+_MAX_STORED_MANIFEST_BYTES = 64 * 1024
 _WINDOWS_RESERVED_NAMES = frozenset(
     {"CON", "PRN", "AUX", "NUL", *(f"COM{index}" for index in range(1, 10)), *(f"LPT{index}" for index in range(1, 10))}
 )
 
 _ModelT = TypeVar("_ModelT")
+
+
+class _BoundedReadLimitExceeded(Exception):
+    """Internal signal that a bounded file read found more bytes than allowed."""
+
+
+class _UnsafeFilePath(Exception):
+    """Internal signal that a path changed or traversed a reparse/link object."""
 
 
 def _invalid(message: str, cause: BaseException | None = None) -> NoReturn:
@@ -82,7 +95,11 @@ def _invalid(message: str, cause: BaseException | None = None) -> NoReturn:
 
 def _read_path(path: Path) -> bytes:
     try:
-        return path.read_bytes()
+        return _read_bounded_path(path, _MAX_SOURCE_BYTES)
+    except _BoundedReadLimitExceeded as exc:
+        _invalid("FMEA YAML source exceeds 1 MiB", exc)
+    except _UnsafeFilePath as exc:
+        _invalid("FMEA YAML source is invalid", exc)
     except OSError as exc:
         _invalid("FMEA YAML source is invalid", exc)
 
@@ -136,32 +153,72 @@ def _node_key(node: object) -> tuple[str, str]:
 def _reject_duplicate_keys(node: object | None) -> None:
     if node is None:
         return
-    if isinstance(node, yaml.nodes.MappingNode):
-        seen: set[tuple[str, str]] = set()
-        for key_node, value_node in node.value:
-            identity = _node_key(key_node)
-            if identity in seen:
-                _invalid("FMEA YAML source contains duplicate YAML key")
-            seen.add(identity)
-            _reject_duplicate_keys(key_node)
-            _reject_duplicate_keys(value_node)
-    elif isinstance(node, yaml.nodes.SequenceNode):
-        for child in node.value:
-            _reject_duplicate_keys(child)
+    pending: list[tuple[object, int]] = [(node, 0)]
+    node_count = 0
+    while pending:
+        current, depth = pending.pop()
+        node_count += 1
+        if node_count > _MAX_YAML_NODES or depth > _MAX_YAML_DEPTH:
+            _invalid("FMEA YAML source is invalid: parser resource limits exceeded")
+        if isinstance(current, yaml.nodes.MappingNode):
+            seen: set[tuple[str, str]] = set()
+            children: list[object] = []
+            for key_node, value_node in current.value:
+                identity = _node_key(key_node)
+                if identity in seen:
+                    _invalid("FMEA YAML source contains duplicate YAML key")
+                seen.add(identity)
+                children.extend((key_node, value_node))
+            pending.extend((child, depth + 1) for child in reversed(children))
+        elif isinstance(current, yaml.nodes.SequenceNode):
+            pending.extend((child, depth + 1) for child in reversed(current.value))
+
+
+def _consume_yaml_event(event: object, depth: int, node_count: int) -> tuple[int, int]:
+    if isinstance(event, yaml.events.AliasEvent) or getattr(event, "anchor", None) is not None:
+        _invalid("FMEA YAML source aliases and anchors are not allowed")
+    if isinstance(event, yaml.events.MappingStartEvent | yaml.events.SequenceStartEvent):
+        node_count += 1
+        depth += 1
+        if depth > _MAX_YAML_DEPTH:
+            _invalid("FMEA YAML source is invalid: parser resource limits exceeded")
+    elif isinstance(event, yaml.events.ScalarEvent):
+        node_count += 1
+    elif isinstance(event, yaml.events.MappingEndEvent | yaml.events.SequenceEndEvent):
+        depth -= 1
+    if node_count > _MAX_YAML_NODES:
+        _invalid("FMEA YAML source is invalid: parser resource limits exceeded")
+    return depth, node_count
+
+
+def _parse_yaml_event_limits(text: str) -> int:
+    document_count = 0
+    depth = 0
+    event_count = 0
+    node_count = 0
+    try:
+        for event in yaml.parse(text, Loader=yaml.SafeLoader):
+            event_count += 1
+            if event_count > _MAX_YAML_EVENTS:
+                _invalid("FMEA YAML source is invalid: parser resource limits exceeded")
+            if isinstance(event, yaml.events.DocumentStartEvent):
+                document_count += 1
+            depth, node_count = _consume_yaml_event(event, depth, node_count)
+    except FmeaDomainError:
+        raise
+    except (yaml.YAMLError, RecursionError) as exc:
+        _invalid("FMEA YAML source is invalid", exc)
+    if depth != 0:
+        _invalid("FMEA YAML source is invalid")
+    return document_count
 
 
 def _load_yaml(source: bytes | str | Path) -> object:
     raw = _source_bytes(source)
     text = raw.decode("utf-8", errors="strict")
-    try:
-        events = tuple(yaml.parse(text, Loader=yaml.SafeLoader))
-    except yaml.YAMLError as exc:
-        _invalid("FMEA YAML source is invalid", exc)
-    document_count = sum(isinstance(event, yaml.events.DocumentStartEvent) for event in events)
+    document_count = _parse_yaml_event_limits(text)
     if document_count != 1:
         _invalid("FMEA YAML source must contain exactly one document")
-    if any(isinstance(event, yaml.events.AliasEvent) or getattr(event, "anchor", None) is not None for event in events):
-        _invalid("FMEA YAML source aliases and anchors are not allowed")
     try:
         node = yaml.compose(text, Loader=yaml.SafeLoader)
         _reject_duplicate_keys(node)
@@ -170,7 +227,7 @@ def _load_yaml(source: bytes | str | Path) -> object:
         loaded = yaml.safe_load(text)
     except FmeaDomainError:
         raise
-    except yaml.YAMLError as exc:
+    except (yaml.YAMLError, RecursionError) as exc:
         _invalid("FMEA YAML source is invalid", exc)
     return loaded
 
@@ -535,6 +592,189 @@ def _is_reparse_point(path: Path, info: os.stat_result | None = None) -> bool:
     return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
 
 
+def _checked_regular_lstat(path: Path) -> os.stat_result:
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise _UnsafeFilePath from exc
+    if _is_reparse_point(path, info) or not stat.S_ISREG(info.st_mode):
+        raise _UnsafeFilePath
+    return info
+
+
+def _checked_directory_lstat(path: Path) -> os.stat_result:
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise _UnsafeFilePath from exc
+    if _is_reparse_point(path, info) or not stat.S_ISDIR(info.st_mode):
+        raise _UnsafeFilePath
+    return info
+
+
+def _file_identity(info: os.stat_result) -> tuple[int, int]:
+    return int(getattr(info, "st_dev", 0)), int(getattr(info, "st_ino", 0))
+
+
+def _same_file_identity(first: os.stat_result, second: os.stat_result) -> bool:
+    first_identity = _file_identity(first)
+    second_identity = _file_identity(second)
+    if first_identity != (0, 0) and second_identity != (0, 0):
+        return first_identity == second_identity
+    return (
+        first.st_mode,
+        first.st_size,
+        getattr(first, "st_mtime_ns", 0),
+        getattr(first, "st_ctime_ns", 0),
+    ) == (
+        second.st_mode,
+        second.st_size,
+        getattr(second, "st_mtime_ns", 0),
+        getattr(second, "st_ctime_ns", 0),
+    )
+
+
+def _verify_read_handle(path: Path, expected_info: os.stat_result, descriptor: int) -> None:
+    descriptor_info = os.fstat(descriptor)
+    current_info = _checked_regular_lstat(path)
+    if not _same_file_identity(expected_info, descriptor_info) or not _same_file_identity(
+        expected_info, current_info
+    ):
+        raise _UnsafeFilePath
+
+
+def _open_checked_read(path: Path, expected_info: os.stat_result) -> int:
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_CLOEXEC", 0)
+    if os.name != "nt":
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(str(path), flags)
+    except OSError as exc:
+        try:
+            current_info = path.lstat()
+        except OSError:
+            raise _UnsafeFilePath from exc
+        if _is_reparse_point(path, current_info):
+            raise _UnsafeFilePath from exc
+        raise
+    try:
+        _verify_read_handle(path, expected_info, descriptor)
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+def _read_bounded_path(
+    path: Path,
+    max_bytes: int,
+    *,
+    expected_info: os.stat_result | None = None,
+) -> bytes:
+    initial_info = _checked_regular_lstat(path) if expected_info is None else expected_info
+    current_info = _checked_regular_lstat(path)
+    if not _same_file_identity(initial_info, current_info):
+        raise _UnsafeFilePath
+    if initial_info.st_size > max_bytes:
+        raise _BoundedReadLimitExceeded
+
+    descriptor = _open_checked_read(path, initial_info)
+    chunks: list[bytes] = []
+    total = 0
+    try:
+        while True:
+            remaining = max_bytes + 1 - total
+            if remaining <= 0:
+                raise _BoundedReadLimitExceeded
+            chunk = os.read(descriptor, min(_MAX_READ_CHUNK_BYTES, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > max_bytes:
+                raise _BoundedReadLimitExceeded
+
+        final_descriptor_info = os.fstat(descriptor)
+        final_path_info = _checked_regular_lstat(path)
+        if not _same_file_identity(initial_info, final_descriptor_info) or not _same_file_identity(
+            initial_info, final_path_info
+        ):
+            raise _UnsafeFilePath
+        if final_descriptor_info.st_size > max_bytes:
+            raise _BoundedReadLimitExceeded
+        if final_descriptor_info.st_size != initial_info.st_size or final_descriptor_info.st_size != total:
+            raise _UnsafeFilePath
+        return b"".join(chunks)
+    finally:
+        os.close(descriptor)
+
+
+def _raise_if_reparse(path: Path, cause: OSError) -> None:
+    try:
+        current_info = path.lstat()
+    except OSError:
+        return
+    if _is_reparse_point(path, current_info):
+        raise _UnsafeFilePath from cause
+
+
+def _verify_new_file(path: Path, parent_info: os.stat_result, descriptor_info: os.stat_result) -> None:
+    current_parent_info = _checked_directory_lstat(path.parent)
+    current_path_info = _checked_regular_lstat(path)
+    if not _same_file_identity(parent_info, current_parent_info) or not _same_file_identity(
+        descriptor_info, current_path_info
+    ):
+        raise _UnsafeFilePath
+
+
+def _open_exclusive_write(path: Path) -> tuple[int, os.stat_result, os.stat_result]:
+    parent_info = _checked_directory_lstat(path.parent)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0) | getattr(os, "O_CLOEXEC", 0)
+    if os.name != "nt":
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(str(path), flags, 0o600)
+    except OSError as exc:
+        _raise_if_reparse(path, exc)
+        raise
+    try:
+        descriptor_info = os.fstat(descriptor)
+        _verify_new_file(path, parent_info, descriptor_info)
+    except BaseException:
+        os.close(descriptor)
+        raise
+    else:
+        return descriptor, parent_info, descriptor_info
+
+
+def _write_all(descriptor: int, data: bytes) -> None:
+    view = memoryview(data)
+    offset = 0
+    while offset < len(view):
+        written = os.write(descriptor, view[offset:])
+        if written <= 0:
+            raise OSError(errno.EIO, "short registry write")
+        offset += written
+
+
+def _verify_written_file(
+    path: Path,
+    parent_info: os.stat_result,
+    descriptor_info: os.stat_result,
+    descriptor: int,
+    expected_size: int,
+) -> None:
+    final_parent_info = _checked_directory_lstat(path.parent)
+    final_path_info = _checked_regular_lstat(path)
+    final_descriptor_info = os.fstat(descriptor)
+    if not _same_file_identity(parent_info, final_parent_info) or not _same_file_identity(
+        descriptor_info, final_path_info
+    ) or not _same_file_identity(descriptor_info, final_descriptor_info):
+        raise _UnsafeFilePath
+    if final_descriptor_info.st_size != expected_size:
+        raise OSError(errno.EIO, "short registry write")
+
+
 def _path_components(path: Path) -> tuple[Path, ...]:
     anchor_parts = Path(path.anchor).parts if path.anchor else ()
     current = Path(path.anchor) if path.anchor else Path()
@@ -656,21 +896,26 @@ class _FileImmutableRegistry(Generic[_ModelT]):
         self._validate_existing_path(target_version, expected_directory=True, allow_missing=True)
         return target_identity, target_version
 
-    def _validate_existing_path(self, path: Path, *, expected_directory: bool, allow_missing: bool) -> bool:
+    def _validate_existing_path(
+        self, path: Path, *, expected_directory: bool, allow_missing: bool
+    ) -> os.stat_result | None:
         info = self._inspect_path(path, allow_missing=allow_missing)
         if info is None:
-            return False
+            return None
         is_directory = stat.S_ISDIR(info.st_mode)
         if is_directory != expected_directory:
             self._raise_path()
-        return True
+        return info
 
     @staticmethod
     def _write_file(path: Path, data: bytes) -> None:
-        with path.open("xb") as stream:
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
+        descriptor, parent_info, descriptor_info = _open_exclusive_write(path)
+        try:
+            _write_all(descriptor, data)
+            os.fsync(descriptor)
+            _verify_written_file(path, parent_info, descriptor_info, descriptor, len(data))
+        finally:
+            os.close(descriptor)
 
     @staticmethod
     def _directory_fsync_unsupported(error: OSError) -> bool:
@@ -734,10 +979,16 @@ class _FileImmutableRegistry(Generic[_ModelT]):
             "source_suffix": self._source_suffix,
         }
 
-    def _read_bytes(self, path: Path) -> bytes:
-        self._validate_existing_path(path, expected_directory=False, allow_missing=False)
+    def _read_bytes(self, path: Path, *, max_bytes: int) -> bytes:
+        initial_info = self._validate_existing_path(path, expected_directory=False, allow_missing=False)
+        if initial_info is None:
+            self._raise_not_found()
         try:
-            return path.read_bytes()
+            return _read_bounded_path(path, max_bytes, expected_info=initial_info)
+        except _BoundedReadLimitExceeded as exc:
+            self._raise_integrity(exc)
+        except _UnsafeFilePath as exc:
+            self._raise_path(exc)
         except (OSError, ValueError) as exc:
             self._raise_integrity(exc)
 
@@ -763,7 +1014,7 @@ class _FileImmutableRegistry(Generic[_ModelT]):
         return source_path, version_dir / "body.json", version_dir / "manifest.json"
 
     def _decode_stored_json(self, body_bytes: bytes, manifest_bytes: bytes) -> tuple[object, object]:
-        if len(body_bytes) > _REGISTRY_MAX_STORED_BYTES or len(manifest_bytes) > _REGISTRY_MAX_STORED_BYTES:
+        if len(body_bytes) > _MAX_STORED_BODY_BYTES or len(manifest_bytes) > _MAX_STORED_MANIFEST_BYTES:
             self._raise_integrity()
         try:
             manifest_object = _strict_json(manifest_bytes)
@@ -808,11 +1059,9 @@ class _FileImmutableRegistry(Generic[_ModelT]):
 
     def _stored_model(self, object_id: str, version: str, version_dir: Path) -> _ModelT:
         source_path, body_path, manifest_path = self._stored_paths(version_dir)
-        source_bytes = self._read_bytes(source_path)
-        body_bytes = self._read_bytes(body_path)
-        manifest_bytes = self._read_bytes(manifest_path)
-        if len(source_bytes) > _REGISTRY_MAX_STORED_BYTES:
-            self._raise_integrity()
+        source_bytes = self._read_bytes(source_path, max_bytes=self._max_source_bytes)
+        body_bytes = self._read_bytes(body_path, max_bytes=_MAX_STORED_BODY_BYTES)
+        manifest_bytes = self._read_bytes(manifest_path, max_bytes=_MAX_STORED_MANIFEST_BYTES)
         manifest_object, _ = self._decode_stored_json(body_bytes, manifest_bytes)
         self._validate_stored_manifest(
             manifest_object,
@@ -872,13 +1121,23 @@ class _FileImmutableRegistry(Generic[_ModelT]):
         source_bytes: bytes,
     ) -> Path:
         try:
+            parent_info = self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=False)
+            if parent_info is None:
+                self._raise_path()
             temp_dir = Path(tempfile.mkdtemp(prefix=f".{version}.tmp-", dir=str(identity_dir)))
             self._validate_existing_path(temp_dir, expected_directory=True, allow_missing=False)
+            current_parent_info = self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=False)
+            if current_parent_info is None or not _same_file_identity(parent_info, current_parent_info):
+                self._raise_path()
             self._write_file(temp_dir / f"source{self._source_suffix}", source_bytes)
             self._write_file(temp_dir / "body.json", body_bytes)
             manifest_bytes = _canonical_json(self._manifest(loaded, body_bytes, source_bytes)).encode("utf-8")
             self._write_file(temp_dir / "manifest.json", manifest_bytes)
             self._fsync_directory(temp_dir)
+        except _UnsafeFilePath as exc:
+            if "temp_dir" in locals():
+                self._cleanup_temp(temp_dir)
+            self._raise_path(exc)
         except FmeaDomainError:
             if "temp_dir" in locals():
                 self._cleanup_temp(temp_dir)
