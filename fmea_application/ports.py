@@ -16,9 +16,10 @@ from core_domain.fmea.contracts import (
     VersionSet,
 )
 from core_domain.fmea.domain_pack import DomainPackManifest
-from core_domain.fmea.scoring import ScoringRulePack
+from core_domain.fmea.scoring import RiskAssessmentRecord, ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
+from .assistance_contracts import AssistanceDecision, AssistanceSuggestion
 from .review_contracts import (
     ActorContext,
     AuditEvent,
@@ -35,6 +36,16 @@ from .review_contracts import (
     ReviewSuggestionDraft,
     ReviewSuggestionRun,
     SuggestionRunReservation,
+)
+from .risk_contracts import (
+    OutboxEvent,
+    PreparedAssistanceDecision,
+    PreparedAssistanceSuggestion,
+    PreparedRiskConfirmation,
+    PreparedRiskInvalidation,
+    PreparedRiskProposal,
+    PreparedRiskRejection,
+    RiskConfirmationResult,
 )
 
 ReviewHistoryPosition = tuple[str, str]
@@ -228,6 +239,46 @@ class ReviewSuggestionGenerator(Protocol):
     def generate(self, request: ReviewModelRequest) -> tuple[ReviewSuggestionDraft, ReviewModelManifest]: ...
 
 
+class AssistanceRepository(Protocol):
+    """Persistence boundary for immutable model suggestions and human decisions."""
+
+    def initialize(self) -> None: ...
+
+    def save_suggestion(self, prepared: PreparedAssistanceSuggestion) -> AssistanceSuggestion[object]: ...
+
+    def get_suggestion(self, suggestion_id: str, workspace_id: str) -> AssistanceSuggestion[object] | None: ...
+
+    def append_decision(self, prepared: PreparedAssistanceDecision) -> AssistanceDecision: ...
+
+    def get_decision(self, decision_id: str, workspace_id: str) -> AssistanceDecision | None: ...
+
+    def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> AssistanceDecision | None: ...
+
+
+class RiskRepository(Protocol):
+    """Atomic storage boundary for risk proposals and human-reviewed lifecycle state."""
+
+    def initialize(self) -> None: ...
+
+    def get_row(self, row_id: str, workspace_id: str) -> FmeaRow | None: ...
+
+    def get_evidence_pack(self, pack_id: str, workspace_id: str) -> EvidencePack | None: ...
+
+    def get_current_assessment(self, row_id: str, workspace_id: str) -> RiskAssessmentRecord | None: ...
+
+    def save_proposal(self, prepared: PreparedRiskProposal) -> RiskAssessmentRecord: ...
+
+    def replay_confirmation(self, scope: IdempotencyScope, payload_hash: str) -> RiskConfirmationResult | None: ...
+
+    def commit_confirmation(self, prepared: PreparedRiskConfirmation) -> RiskConfirmationResult: ...
+
+    def reject(self, prepared: PreparedRiskRejection) -> RiskAssessmentRecord: ...
+
+    def invalidate(self, prepared: PreparedRiskInvalidation) -> RiskAssessmentRecord: ...
+
+    def list_outbox_events(self, aggregate_id: str, workspace_id: str) -> tuple[OutboxEvent, ...]: ...
+
+
 class ReviewRunExecutor(Protocol):
     def submit(self, run_id: str, operation: Callable[[], None]) -> None: ...
 
@@ -235,6 +286,7 @@ class ReviewRunExecutor(Protocol):
 
 
 __all__ = [
+    "AssistanceRepository",
     "DomainPackRegistry",
     "EvidenceProvider",
     "EvidenceRequest",
@@ -245,5 +297,6 @@ __all__ = [
     "ReviewRepository",
     "ReviewRunExecutor",
     "ReviewSuggestionGenerator",
+    "RiskRepository",
     "ScoringRuleRegistry",
 ]
