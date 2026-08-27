@@ -15,6 +15,8 @@ from core_domain.fmea.contracts import (
     PropagationEdge,
     VersionSet,
 )
+from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.scoring import ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
 from .review_contracts import (
@@ -99,6 +101,18 @@ class EvidenceProvider(Protocol):
 
 class PropagationEvidenceProvider(Protocol):
     def find_propagation_edges(self, request: PropagationRequest) -> tuple[PropagationEdge, ...]: ...
+
+
+class DomainPackRegistry(Protocol):
+    def register(self, manifest: DomainPackManifest, source_bytes: bytes) -> DomainPackManifest: ...
+
+    def get(self, pack_id: str, version: str) -> DomainPackManifest: ...
+
+
+class ScoringRuleRegistry(Protocol):
+    def register(self, rule_pack: ScoringRulePack, source_bytes: bytes) -> ScoringRulePack: ...
+
+    def get(self, rule_pack_id: str, version: str) -> ScoringRulePack: ...
 
 
 class FmeaRepository(Protocol):
@@ -221,6 +235,7 @@ class ReviewRunExecutor(Protocol):
 
 
 __all__ = [
+    "DomainPackRegistry",
     "EvidenceProvider",
     "EvidenceRequest",
     "EvidenceSnapshot",
@@ -230,4 +245,5 @@ __all__ = [
     "ReviewRepository",
     "ReviewRunExecutor",
     "ReviewSuggestionGenerator",
+    "ScoringRuleRegistry",
 ]

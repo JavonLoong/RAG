@@ -7,11 +7,17 @@ the filesystem registry slice.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
-from collections.abc import Mapping
+import os
+import re
+import shutil
+import stat
+import tempfile
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import NoReturn, cast
+from typing import Generic, NoReturn, TypeVar, cast
 
 import yaml  # type: ignore[import-untyped]
 
@@ -51,6 +57,20 @@ _SCORING_KEYS = frozenset({
 })
 _DIMENSION_NAMES = ("severity", "occurrence", "detection")
 _ANCHOR_KEYS = frozenset({"anchors"})
+_REGISTRY_SUFFIXES = frozenset({".yaml", ".yml"})
+_REGISTRY_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+_REGISTRY_SEMVER = re.compile(
+    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
+_REGISTRY_HASH = re.compile(r"^[0-9a-f]{64}$")
+_REGISTRY_MAX_STORED_BYTES = 1024 * 1024
+_WINDOWS_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL", *(f"COM{index}" for index in range(1, 10)), *(f"LPT{index}" for index in range(1, 10))}
+)
+
+_ModelT = TypeVar("_ModelT")
 
 
 def _invalid(message: str, cause: BaseException | None = None) -> NoReturn:
@@ -441,6 +461,8 @@ def load_scoring_rule_pack(source: bytes | str | Path) -> ScoringRulePack:
 
 
 __all__ = [
+    "FileDomainPackRegistry",
+    "FileScoringRuleRegistry",
     "canonical_domain_pack_body",
     "canonical_scoring_rule_body",
     "domain_pack_content_hash",
@@ -448,3 +470,542 @@ __all__ = [
     "load_scoring_rule_pack",
     "scoring_rule_content_hash",
 ]
+
+
+def _registry_error(token: str, message: str, cause: BaseException | None = None) -> NoReturn:
+    error = FmeaDomainError(f"{token}: {message}")
+    if cause is None:
+        raise error
+    raise error from cause
+
+
+def _registry_identity_segment(value: object, *, version: bool, path_code: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 128:
+        _registry_error(path_code, "Registry identity is invalid.")
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        _registry_error(path_code, "Registry identity is invalid.")
+    if any(separator in value for separator in ("/", "\\", ":")) or value in {".", ".."}:
+        _registry_error(path_code, "Registry identity is invalid.")
+    if value.endswith((".", " ")):
+        _registry_error(path_code, "Registry identity is invalid.")
+    if version:
+        if _REGISTRY_SEMVER.fullmatch(value) is None:
+            _registry_error(path_code, "Registry identity is invalid.")
+    elif _REGISTRY_ID.fullmatch(value) is None:
+        _registry_error(path_code, "Registry identity is invalid.")
+    if value.split(".", maxsplit=1)[0].upper() in _WINDOWS_RESERVED_NAMES:
+        _registry_error(path_code, "Registry identity is invalid.")
+    return value
+
+
+def _registry_hash(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _strict_json(data: bytes) -> object:
+    def reject_constant(value: str) -> NoReturn:
+        raise ValueError(value)
+
+    return json.loads(data.decode("utf-8", errors="strict"), parse_constant=reject_constant)
+
+
+def _path_lexists(path: Path) -> bool:
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        # The caller immediately performs a typed lstat-based validation.  A
+        # positive result here prevents an I/O error from being mistaken for a
+        # missing path during that validation.
+        return True
+    return True
+
+
+def _is_reparse_point(path: Path, info: os.stat_result | None = None) -> bool:
+    try:
+        stat_result = info or path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        raise
+    if stat.S_ISLNK(stat_result.st_mode):
+        return True
+    attributes = getattr(stat_result, "st_file_attributes", 0)
+    return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+
+
+def _path_components(path: Path) -> tuple[Path, ...]:
+    anchor_parts = Path(path.anchor).parts if path.anchor else ()
+    current = Path(path.anchor) if path.anchor else Path()
+    components: list[Path] = []
+    for part in path.parts[len(anchor_parts) :]:
+        current = current / part
+        components.append(current)
+    return tuple(components)
+
+
+class _FileImmutableRegistry(Generic[_ModelT]):
+    """Contained, source-bound, immutable storage for one FMEA contract type."""
+
+    def __init__(
+        self,
+        root: str | Path,
+        *,
+        model_type: type[_ModelT],
+        loader: Callable[[bytes], _ModelT],
+        canonical_body: Callable[[_ModelT], str],
+        identity: Callable[[_ModelT], tuple[str, str]],
+        kind: str,
+        errors: Mapping[str, str],
+        source_suffix: str = ".yaml",
+        max_source_bytes: int = _MAX_SOURCE_BYTES,
+    ) -> None:
+        if source_suffix not in _REGISTRY_SUFFIXES:
+            _registry_error(errors["path"], "Registry source suffix is invalid.")
+        if not isinstance(max_source_bytes, int) or max_source_bytes <= 0:
+            _registry_error(errors["limit"], "Registry source limit is invalid.")
+        self._root = Path(root).absolute()
+        self._model_type = model_type
+        self._loader = loader
+        self._canonical_body = canonical_body
+        self._identity = identity
+        self._kind = kind
+        self._errors = dict(errors)
+        self._source_suffix = source_suffix
+        self._max_source_bytes = max_source_bytes
+
+    @property
+    def root(self) -> Path:
+        return self._root
+
+    def _raise_path(self, cause: BaseException | None = None) -> NoReturn:
+        _registry_error(self._errors["path"], "Registry path is invalid.", cause)
+
+    def _raise_io(self, cause: BaseException | None = None) -> NoReturn:
+        _registry_error(self._errors["io"], "Registry I/O failed.", cause)
+
+    def _raise_source(self, cause: BaseException | None = None) -> NoReturn:
+        _registry_error(self._errors["source"], "Registry source is invalid.", cause)
+
+    def _raise_integrity(self, cause: BaseException | None = None) -> NoReturn:
+        _registry_error(self._errors["integrity"], "Stored registry integrity check failed.", cause)
+
+    def _raise_not_found(self) -> NoReturn:
+        _registry_error(self._errors["not_found"], "Registry version was not found.")
+
+    def _raise_limit(self) -> NoReturn:
+        _registry_error(self._errors["limit"], "Registry source exceeds the configured byte limit.")
+
+    def _raise_conflict(self) -> NoReturn:
+        _registry_error(self._errors["conflict"], "Registry identity already has different content.")
+
+    def _validate_root_components(self, *, allow_missing: bool) -> None:
+        root_info = self._inspect_path(self._root, allow_missing=allow_missing)
+        if root_info is not None and not stat.S_ISDIR(root_info.st_mode):
+            self._raise_path()
+
+    def _lstat_or_missing(self, path: Path, *, allow_missing: bool) -> os.stat_result | None:
+        try:
+            return path.lstat()
+        except FileNotFoundError:
+            if allow_missing:
+                return None
+            self._raise_not_found()
+        except OSError as exc:
+            self._raise_path(exc)
+
+    def _inspect_path(self, path: Path, *, allow_missing: bool) -> os.stat_result | None:
+        try:
+            path.relative_to(self._root)
+        except ValueError as exc:
+            self._raise_path(exc)
+        for component in _path_components(path):
+            info = self._lstat_or_missing(component, allow_missing=allow_missing)
+            if info is None:
+                return None
+            if _is_reparse_point(component, info):
+                self._raise_path()
+        info = self._lstat_or_missing(path, allow_missing=allow_missing)
+        if info is None:
+            return None
+        if _is_reparse_point(path, info):
+            self._raise_path()
+        return info
+
+    def _ensure_root(self) -> None:
+        self._validate_root_components(allow_missing=True)
+        if not _path_lexists(self._root):
+            try:
+                self._root.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                self._raise_io(exc)
+        self._validate_root_components(allow_missing=False)
+
+    def _safe_identity_path(self, object_id: str, version: str) -> tuple[Path, Path]:
+        _registry_identity_segment(object_id, version=False, path_code=self._errors["path"])
+        _registry_identity_segment(version, version=True, path_code=self._errors["path"])
+        target_identity = self._root / object_id
+        target_version = target_identity / version
+        try:
+            target_identity.relative_to(self._root)
+            target_version.relative_to(self._root)
+        except ValueError as exc:
+            self._raise_path(exc)
+        self._validate_existing_path(target_identity, expected_directory=True, allow_missing=True)
+        self._validate_existing_path(target_version, expected_directory=True, allow_missing=True)
+        return target_identity, target_version
+
+    def _validate_existing_path(self, path: Path, *, expected_directory: bool, allow_missing: bool) -> bool:
+        info = self._inspect_path(path, allow_missing=allow_missing)
+        if info is None:
+            return False
+        is_directory = stat.S_ISDIR(info.st_mode)
+        if is_directory != expected_directory:
+            self._raise_path()
+        return True
+
+    @staticmethod
+    def _write_file(path: Path, data: bytes) -> None:
+        with path.open("xb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+    @staticmethod
+    def _directory_fsync_unsupported(error: OSError) -> bool:
+        unsupported = {
+            errno.EINVAL,
+            errno.ENOSYS,
+            getattr(errno, "ENOTSUP", errno.EINVAL),
+            getattr(errno, "EOPNOTSUPP", errno.EINVAL),
+        }
+        if os.name == "nt":
+            unsupported.add(errno.EACCES)
+        return error.errno in unsupported
+
+    @classmethod
+    def _fsync_directory(cls, path: Path) -> None:
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        try:
+            descriptor = os.open(str(path), flags)
+        except OSError as exc:
+            if cls._directory_fsync_unsupported(exc):
+                return
+            raise
+        try:
+            try:
+                os.fsync(descriptor)
+            except OSError as exc:
+                if not cls._directory_fsync_unsupported(exc):
+                    raise
+        finally:
+            os.close(descriptor)
+
+    def _source_and_body(self, model: _ModelT, source_bytes: bytes) -> tuple[_ModelT, bytes, str]:
+        if not isinstance(model, self._model_type):
+            self._raise_source()
+        if type(source_bytes) is not bytes:
+            self._raise_source()
+        if len(source_bytes) > self._max_source_bytes:
+            self._raise_limit()
+        try:
+            loaded = self._loader(source_bytes)
+            model_body = self._canonical_body(model)
+            loaded_body = self._canonical_body(loaded)
+        except (FmeaDomainError, TypeError, ValueError, UnicodeError) as exc:
+            self._raise_source(exc)
+        if self._identity(loaded) != self._identity(model) or loaded_body != model_body:
+            self._raise_source()
+        try:
+            body_bytes = model_body.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            self._raise_source(exc)
+        return loaded, body_bytes, model_body
+
+    def _manifest(self, model: _ModelT, body_bytes: bytes, source_bytes: bytes) -> dict[str, str]:
+        object_id, version = self._identity(model)
+        return {
+            "kind": self._kind,
+            "id": object_id,
+            "version": version,
+            "body_hash": _registry_hash(body_bytes),
+            "source_hash": _registry_hash(source_bytes),
+            "source_suffix": self._source_suffix,
+        }
+
+    def _read_bytes(self, path: Path) -> bytes:
+        self._validate_existing_path(path, expected_directory=False, allow_missing=False)
+        try:
+            return path.read_bytes()
+        except (OSError, ValueError) as exc:
+            self._raise_integrity(exc)
+
+    def _stored_paths(self, version_dir: Path) -> tuple[Path, Path, Path]:
+        try:
+            children = tuple(version_dir.iterdir())
+        except OSError as exc:
+            self._raise_integrity(exc)
+        for child in children:
+            try:
+                info = child.lstat()
+            except OSError as exc:
+                self._raise_integrity(exc)
+            if _is_reparse_point(child, info):
+                self._raise_path()
+            if not stat.S_ISREG(info.st_mode):
+                self._raise_integrity()
+        names = {child.name for child in children}
+        source_names = names & {"source.yaml", "source.yml"}
+        if len(source_names) != 1 or names != source_names | {"body.json", "manifest.json"}:
+            self._raise_integrity()
+        source_path = version_dir / next(iter(source_names))
+        return source_path, version_dir / "body.json", version_dir / "manifest.json"
+
+    def _decode_stored_json(self, body_bytes: bytes, manifest_bytes: bytes) -> tuple[object, object]:
+        if len(body_bytes) > _REGISTRY_MAX_STORED_BYTES or len(manifest_bytes) > _REGISTRY_MAX_STORED_BYTES:
+            self._raise_integrity()
+        try:
+            manifest_object = _strict_json(manifest_bytes)
+            body_object = _strict_json(body_bytes)
+            manifest_canonical = _canonical_json(cast("Mapping[str, object]", manifest_object)).encode("utf-8")
+            body_canonical = _canonical_json(cast("Mapping[str, object]", body_object)).encode("utf-8")
+        except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            self._raise_integrity(exc)
+        if manifest_canonical != manifest_bytes or body_canonical != body_bytes:
+            self._raise_integrity()
+        return manifest_object, body_object
+
+    def _validate_stored_manifest(
+        self,
+        manifest_object: object,
+        *,
+        object_id: str,
+        version: str,
+        source_path: Path,
+        body_bytes: bytes,
+        source_bytes: bytes,
+    ) -> None:
+        if not isinstance(manifest_object, dict) or set(manifest_object) != {
+            "kind",
+            "id",
+            "version",
+            "body_hash",
+            "source_hash",
+            "source_suffix",
+        }:
+            self._raise_integrity()
+        expected_manifest = {
+            "kind": self._kind,
+            "id": object_id,
+            "version": version,
+            "body_hash": _registry_hash(body_bytes),
+            "source_hash": _registry_hash(source_bytes),
+            "source_suffix": source_path.suffix,
+        }
+        if manifest_object != expected_manifest:
+            self._raise_integrity()
+
+    def _stored_model(self, object_id: str, version: str, version_dir: Path) -> _ModelT:
+        source_path, body_path, manifest_path = self._stored_paths(version_dir)
+        source_bytes = self._read_bytes(source_path)
+        body_bytes = self._read_bytes(body_path)
+        manifest_bytes = self._read_bytes(manifest_path)
+        if len(source_bytes) > _REGISTRY_MAX_STORED_BYTES:
+            self._raise_integrity()
+        manifest_object, _ = self._decode_stored_json(body_bytes, manifest_bytes)
+        self._validate_stored_manifest(
+            manifest_object,
+            object_id=object_id,
+            version=version,
+            source_path=source_path,
+            body_bytes=body_bytes,
+            source_bytes=source_bytes,
+        )
+        try:
+            loaded = self._loader(source_bytes)
+            loaded_id, loaded_version = self._identity(loaded)
+            loaded_body = self._canonical_body(loaded).encode("utf-8")
+        except (FmeaDomainError, TypeError, ValueError, UnicodeError) as exc:
+            self._raise_integrity(exc)
+        if (loaded_id, loaded_version) != (object_id, version) or loaded_body != body_bytes:
+            self._raise_integrity()
+        return loaded
+
+    def _ensure_identity_directory(self, identity_dir: Path) -> None:
+        self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=True)
+        if not _path_lexists(identity_dir):
+            try:
+                identity_dir.mkdir(parents=False, exist_ok=False)
+            except FileExistsError:
+                pass
+            except OSError as exc:
+                self._raise_io(exc)
+            self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=False)
+
+    def _existing_model(
+        self, object_id: str, version: str, final_dir: Path, candidate: _ModelT
+    ) -> _ModelT | None:
+        if not _path_lexists(final_dir):
+            return None
+        self._validate_existing_path(final_dir, expected_directory=True, allow_missing=False)
+        existing = self._stored_model(object_id, version, final_dir)
+        if self._canonical_body(existing) == self._canonical_body(candidate):
+            return existing
+        self._raise_conflict()
+
+    def _cleanup_temp(self, temp_dir: Path) -> None:
+        if not _path_lexists(temp_dir):
+            return
+        self._validate_existing_path(temp_dir, expected_directory=True, allow_missing=False)
+        try:
+            shutil.rmtree(temp_dir)
+        except OSError as exc:
+            self._raise_io(exc)
+
+    def _create_temp_entry(
+        self,
+        identity_dir: Path,
+        version: str,
+        loaded: _ModelT,
+        body_bytes: bytes,
+        source_bytes: bytes,
+    ) -> Path:
+        try:
+            temp_dir = Path(tempfile.mkdtemp(prefix=f".{version}.tmp-", dir=str(identity_dir)))
+            self._validate_existing_path(temp_dir, expected_directory=True, allow_missing=False)
+            self._write_file(temp_dir / f"source{self._source_suffix}", source_bytes)
+            self._write_file(temp_dir / "body.json", body_bytes)
+            manifest_bytes = _canonical_json(self._manifest(loaded, body_bytes, source_bytes)).encode("utf-8")
+            self._write_file(temp_dir / "manifest.json", manifest_bytes)
+            self._fsync_directory(temp_dir)
+        except FmeaDomainError:
+            if "temp_dir" in locals():
+                self._cleanup_temp(temp_dir)
+            raise
+        except OSError as exc:
+            if "temp_dir" in locals():
+                self._cleanup_temp(temp_dir)
+            self._raise_io(exc)
+        else:
+            return temp_dir
+
+    def _publish_new_model(
+        self,
+        identity_dir: Path,
+        final_dir: Path,
+        object_id: str,
+        version: str,
+        loaded: _ModelT,
+        body_bytes: bytes,
+        source_bytes: bytes,
+    ) -> _ModelT:
+        if _path_lexists(final_dir):
+            existing = self._existing_model(object_id, version, final_dir, loaded)
+            if existing is not None:
+                return existing
+        temp_dir = self._create_temp_entry(identity_dir, version, loaded, body_bytes, source_bytes)
+        try:
+            existing = self._existing_model(object_id, version, final_dir, loaded)
+            if existing is not None:
+                return existing
+            temp_dir.rename(final_dir)
+            self._fsync_directory(identity_dir)
+        except FileExistsError:
+            existing = self._existing_model(object_id, version, final_dir, loaded)
+            if existing is not None:
+                return existing
+            self._raise_io()
+        except FmeaDomainError:
+            raise
+        except OSError as exc:
+            self._raise_io(exc)
+        finally:
+            self._cleanup_temp(temp_dir)
+        return loaded
+
+    def _register(self, model: _ModelT, source_bytes: bytes) -> _ModelT:
+        loaded, body_bytes, _ = self._source_and_body(model, source_bytes)
+        object_id, version = self._identity(loaded)
+        identity_dir, final_dir = self._safe_identity_path(object_id, version)
+        self._ensure_root()
+        self._ensure_identity_directory(identity_dir)
+        existing = self._existing_model(object_id, version, final_dir, loaded)
+        if existing is not None:
+            return existing
+        return self._publish_new_model(
+            identity_dir,
+            final_dir,
+            object_id,
+            version,
+            loaded,
+            body_bytes,
+            source_bytes,
+        )
+
+    def _get(self, object_id: str, version: str) -> _ModelT:
+        _, version_dir = self._safe_identity_path(object_id, version)
+        self._validate_root_components(allow_missing=True)
+        if not _path_lexists(self._root):
+            self._raise_not_found()
+        self._validate_root_components(allow_missing=False)
+        if not _path_lexists(version_dir):
+            self._raise_not_found()
+        self._validate_existing_path(version_dir, expected_directory=True, allow_missing=False)
+        return self._stored_model(object_id, version, version_dir)
+
+
+class FileDomainPackRegistry(_FileImmutableRegistry[DomainPackManifest]):
+    def __init__(self, root: str | Path, *, source_suffix: str = ".yaml") -> None:
+        super().__init__(
+            root,
+            model_type=DomainPackManifest,
+            loader=load_domain_pack_manifest,
+            canonical_body=canonical_domain_pack_body,
+            identity=lambda manifest: (manifest.pack_id, manifest.version),
+            kind="domain_pack",
+            errors={
+                "not_found": "DOMAIN_PACK_NOT_FOUND",
+                "conflict": "DOMAIN_PACK_IDENTITY_CONFLICT",
+                "path": "DOMAIN_PACK_PATH_INVALID",
+                "limit": "DOMAIN_PACK_LIMIT_EXCEEDED",
+                "source": "DOMAIN_PACK_SOURCE_INVALID",
+                "integrity": "DOMAIN_PACK_INTEGRITY_FAILED",
+                "io": "DOMAIN_PACK_REGISTRY_ERROR",
+            },
+            source_suffix=source_suffix,
+        )
+
+    def register(self, manifest: DomainPackManifest, source_bytes: bytes) -> DomainPackManifest:
+        return self._register(manifest, source_bytes)
+
+    def get(self, pack_id: str, version: str) -> DomainPackManifest:
+        return self._get(pack_id, version)
+
+
+class FileScoringRuleRegistry(_FileImmutableRegistry[ScoringRulePack]):
+    def __init__(self, root: str | Path, *, source_suffix: str = ".yaml") -> None:
+        super().__init__(
+            root,
+            model_type=ScoringRulePack,
+            loader=load_scoring_rule_pack,
+            canonical_body=canonical_scoring_rule_body,
+            identity=lambda pack: (pack.rule_pack_id, pack.version),
+            kind="scoring_rule",
+            errors={
+                "not_found": "SCORING_RULE_NOT_FOUND",
+                "conflict": "SCORING_RULE_IDENTITY_CONFLICT",
+                "path": "SCORING_RULE_PATH_INVALID",
+                "limit": "SCORING_RULE_LIMIT_EXCEEDED",
+                "source": "SCORING_RULE_SOURCE_INVALID",
+                "integrity": "SCORING_RULE_INTEGRITY_FAILED",
+                "io": "SCORING_RULE_REGISTRY_ERROR",
+            },
+            source_suffix=source_suffix,
+        )
+
+    def register(self, rule_pack: ScoringRulePack, source_bytes: bytes) -> ScoringRulePack:
+        return self._register(rule_pack, source_bytes)
+
+    def get(self, rule_pack_id: str, version: str) -> ScoringRulePack:
+        return self._get(rule_pack_id, version)

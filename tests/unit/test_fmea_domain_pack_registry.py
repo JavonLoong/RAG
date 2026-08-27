@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import errno
 import hashlib
+import inspect
 import json
 from pathlib import Path
 
@@ -8,7 +10,10 @@ import pytest
 import yaml
 
 from core_domain.fmea.errors import FmeaDomainError
+from fmea_application.ports import DomainPackRegistry, ScoringRuleRegistry
 from fmea_infrastructure.domain_pack_registry import (
+    FileDomainPackRegistry,
+    FileScoringRuleRegistry,
     canonical_domain_pack_body,
     canonical_scoring_rule_body,
     load_domain_pack_manifest,
@@ -248,3 +253,319 @@ def test_loaders_reject_yaml_aliases_and_multiple_documents() -> None:
 
     with pytest.raises(FmeaDomainError, match="document"):
         load_domain_pack_manifest(_domain_source() + b"\n---\nnull\n")
+
+
+def test_domain_registry_protocol_requires_source_bytes_signature() -> None:
+    signature = inspect.signature(DomainPackRegistry.register)
+
+    assert tuple(signature.parameters) == ("self", "manifest", "source_bytes")
+    assert signature.parameters["source_bytes"].annotation == "bytes"
+
+
+def test_scoring_registry_protocol_requires_source_bytes_signature() -> None:
+    signature = inspect.signature(ScoringRuleRegistry.register)
+
+    assert tuple(signature.parameters) == ("self", "rule_pack", "source_bytes")
+    assert signature.parameters["source_bytes"].annotation == "bytes"
+
+
+def test_domain_registry_writes_exact_immutable_layout_and_round_trips(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+
+    assert registry.register(manifest, source) == manifest
+    version_dir = tmp_path / manifest.pack_id / manifest.version
+
+    assert sorted(path.name for path in version_dir.iterdir()) == [
+        "body.json",
+        "manifest.json",
+        "source.yaml",
+    ]
+    assert registry.get(manifest.pack_id, manifest.version) == manifest
+
+
+def test_same_domain_identity_same_body_replay_preserves_first_raw_source(tmp_path: Path) -> None:
+    first_source = _domain_source()
+    manifest = load_domain_pack_manifest(first_source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, first_source)
+    version_dir = tmp_path / manifest.pack_id / manifest.version
+    before = {path.name: path.stat().st_mtime_ns for path in version_dir.iterdir()}
+
+    reformatted = yaml.safe_dump(
+        yaml.safe_load(first_source), sort_keys=True, allow_unicode=True, indent=4
+    ).encode("utf-8")
+    assert registry.register(load_domain_pack_manifest(reformatted), reformatted) == manifest
+
+    assert (version_dir / "source.yaml").read_bytes() == first_source
+    assert {path.name: path.stat().st_mtime_ns for path in version_dir.iterdir()} == before
+
+
+def test_same_domain_identity_with_different_body_is_rejected(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    changed_body = _domain_body()
+    changed_body["analysis_types"] = ["process_fmea"]
+    changed_source = _domain_source(changed_body)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_IDENTITY_CONFLICT"):
+        registry.register(load_domain_pack_manifest(changed_source), changed_source)
+
+
+def test_scoring_registry_writes_exact_layout_and_round_trips(tmp_path: Path) -> None:
+    source = _scoring_source()
+    pack = load_scoring_rule_pack(source)
+    registry = FileScoringRuleRegistry(tmp_path)
+
+    assert registry.register(pack, source) == pack
+    version_dir = tmp_path / pack.rule_pack_id / pack.version
+
+    assert sorted(path.name for path in version_dir.iterdir()) == [
+        "body.json",
+        "manifest.json",
+        "source.yaml",
+    ]
+    assert registry.get(pack.rule_pack_id, pack.version) == pack
+
+
+def test_same_scoring_identity_with_different_body_is_rejected(tmp_path: Path) -> None:
+    source = _scoring_source()
+    pack = load_scoring_rule_pack(source)
+    registry = FileScoringRuleRegistry(tmp_path)
+    registry.register(pack, source)
+    changed_payload = _scoring_payload()
+    changed_payload["rule_pack"]["priority"]["high_rpn"] = 201
+    changed_source = _scoring_source(changed_payload)
+
+    with pytest.raises(FmeaDomainError, match="SCORING_RULE_IDENTITY_CONFLICT"):
+        registry.register(load_scoring_rule_pack(changed_source), changed_source)
+
+
+@pytest.mark.parametrize("registry_kind", ["domain", "scoring"])
+def test_registry_manifest_binds_raw_and_canonical_hashes(tmp_path: Path, registry_kind: str) -> None:
+    if registry_kind == "domain":
+        source = _domain_source()
+        model = load_domain_pack_manifest(source)
+        registry = FileDomainPackRegistry(tmp_path)
+        object_id = model.pack_id
+    else:
+        source = _scoring_source()
+        model = load_scoring_rule_pack(source)
+        registry = FileScoringRuleRegistry(tmp_path)
+        object_id = model.rule_pack_id
+
+    registry.register(model, source)
+    version_dir = tmp_path / object_id / model.version
+    manifest = json.loads((version_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["body_hash"] == hashlib.sha256((version_dir / "body.json").read_bytes()).hexdigest()
+    assert manifest["source_hash"] == hashlib.sha256(source).hexdigest()
+    assert manifest["source_suffix"] == ".yaml"
+    assert set(manifest) == {"kind", "id", "version", "body_hash", "source_hash", "source_suffix"}
+
+
+def test_registry_get_does_not_auto_discover_authored_source(tmp_path: Path) -> None:
+    authored = tmp_path / "authored.yaml"
+    authored.write_bytes(_domain_source())
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_NOT_FOUND"):
+        FileDomainPackRegistry(tmp_path / "registry").get("fuel-combustion", "1.0.0")
+
+
+@pytest.mark.parametrize("value", ["../escape", "a/b", "a\\b", "CON", "a.", "a "])
+def test_domain_registry_rejects_unsafe_identity_segments(tmp_path: Path, value: str) -> None:
+    registry = FileDomainPackRegistry(tmp_path)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_PATH_INVALID"):
+        registry.get(value, "1.0.0")
+
+
+def test_registry_returns_frozen_models(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    returned = FileDomainPackRegistry(tmp_path).register(manifest, source)
+
+    with pytest.raises((AttributeError, TypeError)):
+        returned.pack_id = "changed"  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("filename", ["source.yaml", "body.json", "manifest.json"])
+def test_domain_registry_rejects_single_file_tampering(tmp_path: Path, filename: str) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    target = tmp_path / manifest.pack_id / manifest.version / filename
+    if filename == "source.yaml":
+        target.write_bytes(_domain_source({**_domain_body(), "analysis_types": ["process_fmea"]}))
+    elif filename == "body.json":
+        target.write_bytes(b"{\"tampered\":true}")
+    else:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+        payload["body_hash"] = "0" * 64
+        target.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_INTEGRITY_FAILED"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+def test_domain_registry_rejects_noncanonical_body_json(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    target = tmp_path / manifest.pack_id / manifest.version / "body.json"
+    target.write_text(json.dumps(json.loads(target.read_text(encoding="utf-8"))), encoding="utf-8")
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_INTEGRITY_FAILED"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+@pytest.mark.parametrize("missing", ["source.yaml", "body.json", "manifest.json"])
+def test_domain_registry_rejects_missing_final_entry(tmp_path: Path, missing: str) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    (tmp_path / manifest.pack_id / manifest.version / missing).unlink()
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_INTEGRITY_FAILED"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+def test_domain_registry_rejects_extra_final_entry(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    (tmp_path / manifest.pack_id / manifest.version / "extra").write_bytes(b"extra")
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_INTEGRITY_FAILED"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+def test_register_rejects_non_bytes_source_before_io(tmp_path: Path) -> None:
+    manifest = load_domain_pack_manifest(_domain_source())
+    registry = FileDomainPackRegistry(tmp_path)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_SOURCE_INVALID"):
+        registry.register(manifest, bytearray(_domain_source()))  # type: ignore[arg-type]
+    assert not (tmp_path / manifest.pack_id).exists()
+
+
+def test_domain_registry_rejects_oversized_source_before_io(tmp_path: Path) -> None:
+    manifest = load_domain_pack_manifest(_domain_source())
+    registry = FileDomainPackRegistry(tmp_path)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_LIMIT_EXCEEDED"):
+        registry.register(manifest, b"x" * (1024 * 1024 + 1))
+    assert not (tmp_path / manifest.pack_id).exists()
+
+
+def test_interrupted_registry_write_leaves_no_final_version_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    original = registry._write_file
+    calls = 0
+
+    def fail_second(path: Path, data: bytes) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError
+        original(path, data)
+
+    monkeypatch.setattr(registry, "_write_file", fail_second)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_REGISTRY_ERROR"):
+        registry.register(manifest, source)
+    identity_dir = tmp_path / manifest.pack_id
+    assert not (identity_dir / manifest.version).exists()
+    assert not tuple(identity_dir.glob(".*.tmp-*"))
+
+
+def test_registry_per_file_writes_are_flushed_and_synced(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    written: list[str] = []
+    original = registry._write_file
+
+    def track(path: Path, data: bytes) -> None:
+        written.append(path.name)
+        original(path, data)
+
+    monkeypatch.setattr(registry, "_write_file", track)
+    registry.register(manifest, source)
+
+    assert written == ["source.yaml", "body.json", "manifest.json"]
+
+
+def _make_symlink_or_skip(link: Path, target: Path, *, target_is_directory: bool) -> None:
+    try:
+        link.symlink_to(target, target_is_directory=target_is_directory)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+
+def test_registry_root_symlink_is_rejected(tmp_path: Path) -> None:
+    external = tmp_path / "external"
+    external.mkdir()
+    root = tmp_path / "registry"
+    _make_symlink_or_skip(root, external, target_is_directory=True)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_PATH_INVALID"):
+        FileDomainPackRegistry(root).get("fuel-combustion", "1.0.0")
+
+
+def test_identity_directory_symlink_is_rejected(tmp_path: Path) -> None:
+    root = tmp_path / "registry"
+    root.mkdir()
+    external = tmp_path / "external"
+    external.mkdir()
+    _make_symlink_or_skip(root / "fuel-combustion", external, target_is_directory=True)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_PATH_INVALID"):
+        FileDomainPackRegistry(root).register(load_domain_pack_manifest(_domain_source()), _domain_source())
+
+
+def test_version_directory_symlink_is_rejected(tmp_path: Path) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    root = tmp_path / "registry"
+    root.mkdir()
+    identity_dir = root / manifest.pack_id
+    identity_dir.mkdir()
+    external = tmp_path / "external"
+    external.mkdir()
+    _make_symlink_or_skip(identity_dir / manifest.version, external, target_is_directory=True)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_PATH_INVALID"):
+        FileDomainPackRegistry(root).get(manifest.pack_id, manifest.version)
+
+
+@pytest.mark.parametrize("filename", ["source.yaml", "body.json", "manifest.json"])
+def test_final_entry_symlink_is_rejected(tmp_path: Path, filename: str) -> None:
+    source = _domain_source()
+    manifest = load_domain_pack_manifest(source)
+    registry = FileDomainPackRegistry(tmp_path)
+    registry.register(manifest, source)
+    version_dir = tmp_path / manifest.pack_id / manifest.version
+    original = version_dir / filename
+    external = tmp_path / f"external-{filename}"
+    external.write_bytes(original.read_bytes())
+    original.unlink()
+    _make_symlink_or_skip(original, external, target_is_directory=False)
+
+    with pytest.raises(FmeaDomainError, match="DOMAIN_PACK_PATH_INVALID"):
+        registry.get(manifest.pack_id, manifest.version)
+
+
+def test_directory_fsync_explicit_unsupported_error_is_ignored() -> None:
+    assert FileDomainPackRegistry._directory_fsync_unsupported(OSError(errno.EINVAL, "unsupported"))
