@@ -1,0 +1,72 @@
+rule_pack:
+  id: fuel-sod-rpn
+  version: 1.0.0
+  applicable_analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  score_range:
+    min: 1
+    max: 10
+  dimensions:
+    severity:
+      anchors:
+        1: "无可观察影响；不影响功能、安全、排放或可维护性"
+        2: "轻微性能波动；无需停机或额外处置即可恢复"
+        3: "轻微功能退化；局部调整或例行维护可恢复"
+        4: "可感知的功能下降；需要计划内维护或参数修正"
+        5: "关键功能部分受限；可能造成降负荷或短时停机"
+        6: "明显功能失效；需要非计划维护并影响运行连续性"
+        7: "主要功能丧失；可能导致较长停机、设备损伤或排放异常"
+        8: "严重系统后果；可能造成重大设备损伤、失控工况或大范围生产中断"
+        9: "对人员、环境或关键资产存在严重后果；可能触发保护停车或高危事故场景"
+        10: "灾难性后果；可能导致燃料失控、火灾/爆炸、重大人员伤害或重大环境事件"
+    occurrence:
+      anchors:
+        1: "可比工况下未见失效；预计低于每 1000 operating_hours 0.01 次"
+        2: "极少发生；预计每 1000 operating_hours 0.01 至 0.1 次"
+        3: "偶发但不常见；预计每 1000 operating_hours 0.1 至 0.3 次"
+        4: "低频发生；预计每 1000 operating_hours 0.3 至 1 次"
+        5: "间歇发生；预计每 1000 operating_hours 1 至 3 次"
+        6: "中等频率；预计每 1000 operating_hours 3 至 10 次"
+        7: "较频繁发生；预计每 1000 operating_hours 10 至 30 次"
+        8: "高频发生；预计每 1000 operating_hours 30 至 100 次"
+        9: "很高频发生；预计每 1000 operating_hours 100 至 300 次"
+        10: "持续或近乎必然发生；预计每 1000 operating_hours 超过 300 次"
+    detection:
+      anchors:
+        1: "传感器、诊断逻辑和操作员三者均能在后果发生前可靠识别"
+        2: "自动传感器通常能在后果前识别，且有独立报警"
+        3: "传感器或控制逻辑可较早识别，人工确认容易完成"
+        4: "在线监测可识别趋势，但需要专业人员解释"
+        5: "仅部分工况可由传感器或逻辑识别，提前量有限"
+        6: "主要依赖报警后的操作员判断，可能错过早期信号"
+        7: "只能通过定期巡检或维护测试发现，在线检测覆盖不足"
+        8: "通常在性能明显下降或保护动作时才被发现"
+        9: "几乎没有稳定的传感器、逻辑或操作员提前发现机会"
+        10: "在后果发生前无有效检测位置，通常只能事后确认"
+  occurrence:
+    window: operating_hours
+    denominator: 1000_operating_hours
+  detection:
+    positions:
+      - sensor
+      - logic
+      - operator
+  decision_severity:
+    aggregation: max_consequence
+  rpn:
+    formula: S*O*D
+    version: S*O*D-1
+  risk_matrix:
+    version: fuel-risk-matrix-1
+  priority:
+    version: fuel-priority-1
+    high_rpn: 200
+    critical_severity: 9
+    medium_rpn: 100
+  uncertainty:
+    missing_score_policy: unknown_no_zero
+    conflict_score_policy: block_rpn
+    uncertainty_policy: preserve_require_review
+  policy_basis: project_default_non_certification
