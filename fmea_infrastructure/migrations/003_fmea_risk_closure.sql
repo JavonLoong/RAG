@@ -37,6 +37,27 @@ CREATE TABLE IF NOT EXISTS fmea_scoring_rule_packs (
     CHECK (length(source_hash) = 71 AND substr(source_hash, 1, 7) = 'sha256:')
 );
 
+CREATE TABLE IF NOT EXISTS fmea_assistance_audit_events (
+    event_id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    actor_id TEXT NOT NULL,
+    actor_type TEXT NOT NULL CHECK (actor_type IN ('human','model','system')),
+    command TEXT NOT NULL,
+    suggestion_id TEXT NOT NULL,
+    decision_id TEXT,
+    idempotency_scope TEXT NOT NULL,
+    resource_path TEXT NOT NULL,
+    canonical_payload_hash TEXT NOT NULL,
+    event_hash TEXT NOT NULL,
+    event_json TEXT NOT NULL CHECK (length(event_json) > 0),
+    created_at TEXT NOT NULL,
+    UNIQUE (workspace_id, event_id),
+    CHECK (length(canonical_payload_hash) = 71 AND substr(canonical_payload_hash, 1, 7) = 'sha256:'),
+    CHECK (length(event_hash) = 71 AND substr(event_hash, 1, 7) = 'sha256:')
+);
+
 CREATE TABLE IF NOT EXISTS fmea_assistance_suggestions (
     suggestion_id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,
@@ -63,6 +84,8 @@ CREATE TABLE IF NOT EXISTS fmea_assistance_suggestions (
     status TEXT NOT NULL CHECK (status IN ('proposed','stale')),
     applied INTEGER NOT NULL DEFAULT 0 CHECK (applied = 0),
     suggestion_hash TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,
+    audit_event_id TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL,
     UNIQUE (workspace_id, suggestion_id, suggestion_record_version),
     UNIQUE (workspace_id, suggestion_id),
@@ -70,9 +93,12 @@ CREATE TABLE IF NOT EXISTS fmea_assistance_suggestions (
     CHECK (length(model_hash) = 71 AND substr(model_hash, 1, 7) = 'sha256:'),
     CHECK (length(prompt_hash) = 71 AND substr(prompt_hash, 1, 7) = 'sha256:'),
     CHECK (length(suggestion_hash) = 71 AND substr(suggestion_hash, 1, 7) = 'sha256:'),
+    CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
     CHECK ((domain_pack_id IS NULL) = (domain_pack_version IS NULL)),
     CHECK ((template_id IS NULL) = (template_version IS NULL)),
-    CHECK ((rule_pack_id IS NULL) = (rule_pack_version IS NULL))
+    CHECK ((rule_pack_id IS NULL) = (rule_pack_version IS NULL)),
+    FOREIGN KEY (workspace_id, audit_event_id)
+        REFERENCES fmea_assistance_audit_events(workspace_id, event_id)
 );
 
 CREATE TABLE IF NOT EXISTS fmea_assistance_decisions (
@@ -101,7 +127,7 @@ CREATE TABLE IF NOT EXISTS fmea_assistance_decisions (
     FOREIGN KEY (workspace_id, suggestion_id)
         REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id),
     FOREIGN KEY (workspace_id, audit_event_id)
-        REFERENCES audit_events(workspace_id, event_id)
+        REFERENCES fmea_assistance_audit_events(workspace_id, event_id)
 );
 
 CREATE TABLE IF NOT EXISTS fmea_risk_proposals (
@@ -226,6 +252,8 @@ CREATE INDEX IF NOT EXISTS idx_fmea_domain_packs_workspace_identity
     ON fmea_domain_packs(workspace_id, pack_id, version, status);
 CREATE INDEX IF NOT EXISTS idx_fmea_scoring_rule_packs_workspace_identity
     ON fmea_scoring_rule_packs(workspace_id, rule_pack_id, version, status);
+CREATE INDEX IF NOT EXISTS idx_fmea_assistance_audit_workspace_target
+    ON fmea_assistance_audit_events(workspace_id, target_type, target_id, created_at, event_id);
 CREATE INDEX IF NOT EXISTS idx_fmea_assistance_suggestions_workspace_target
     ON fmea_assistance_suggestions(workspace_id, target_type, target_id, kind, status, suggestion_record_version);
 CREATE INDEX IF NOT EXISTS idx_fmea_assistance_decisions_workspace_suggestion
@@ -261,6 +289,71 @@ CREATE TRIGGER IF NOT EXISTS fmea_scoring_rule_packs_no_delete
 BEFORE DELETE ON fmea_scoring_rule_packs
 BEGIN
     SELECT RAISE(ABORT, 'immutable fmea_scoring_rule_packs');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_assistance_audit_events_no_update
+BEFORE UPDATE ON fmea_assistance_audit_events
+BEGIN
+    SELECT RAISE(ABORT, 'immutable fmea_assistance_audit_events');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_assistance_audit_events_no_delete
+BEFORE DELETE ON fmea_assistance_audit_events
+BEGIN
+    SELECT RAISE(ABORT, 'immutable fmea_assistance_audit_events');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_assistance_suggestions_audit_binding
+BEFORE INSERT ON fmea_assistance_suggestions
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM fmea_assistance_audit_events AS audit
+    WHERE audit.workspace_id = NEW.workspace_id
+      AND audit.event_id = NEW.audit_event_id
+      AND audit.target_type = NEW.target_type
+      AND audit.target_id = NEW.target_id
+      AND audit.suggestion_id = NEW.suggestion_id
+      AND audit.decision_id IS NULL
+      AND audit.canonical_payload_hash = NEW.payload_hash
+      AND EXISTS (
+          SELECT 1
+          FROM idempotency_records AS idem
+          WHERE idem.scope_key = audit.idempotency_scope
+            AND idem.payload_hash = NEW.payload_hash
+            AND idem.state IN ('reserved','completed')
+      )
+)
+BEGIN
+    SELECT RAISE(ABORT, 'assistance suggestion audit mismatch');
+END;
+
+CREATE TRIGGER IF NOT EXISTS fmea_assistance_decisions_audit_binding
+BEFORE INSERT ON fmea_assistance_decisions
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM fmea_assistance_audit_events AS audit
+    JOIN fmea_assistance_suggestions AS suggestion
+      ON suggestion.workspace_id = NEW.workspace_id
+     AND suggestion.suggestion_id = NEW.suggestion_id
+    WHERE audit.workspace_id = NEW.workspace_id
+      AND audit.event_id = NEW.audit_event_id
+      AND audit.target_type = suggestion.target_type
+      AND audit.target_id = suggestion.target_id
+      AND audit.suggestion_id = NEW.suggestion_id
+      AND audit.decision_id = NEW.decision_id
+      AND audit.actor_id = NEW.actor_id
+      AND audit.actor_type = NEW.actor_type
+      AND audit.canonical_payload_hash = NEW.payload_hash
+      AND EXISTS (
+          SELECT 1
+          FROM idempotency_records AS idem
+          WHERE idem.scope_key = audit.idempotency_scope
+            AND idem.payload_hash = NEW.payload_hash
+            AND idem.state IN ('reserved','completed')
+      )
+)
+BEGIN
+    SELECT RAISE(ABORT, 'assistance decision audit mismatch');
 END;
 
 CREATE TRIGGER IF NOT EXISTS fmea_assistance_suggestions_no_update

@@ -7,6 +7,7 @@ import pytest
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 
 EXPECTED_TABLES = {
+    "fmea_assistance_audit_events",
     "fmea_domain_packs",
     "fmea_scoring_rule_packs",
     "fmea_assistance_suggestions",
@@ -18,6 +19,10 @@ EXPECTED_TABLES = {
 }
 
 EXPECTED_TRIGGERS = {
+    "fmea_assistance_audit_events_no_update",
+    "fmea_assistance_audit_events_no_delete",
+    "fmea_assistance_suggestions_audit_binding",
+    "fmea_assistance_decisions_audit_binding",
     "fmea_domain_packs_no_update",
     "fmea_domain_packs_no_delete",
     "fmea_scoring_rule_packs_no_update",

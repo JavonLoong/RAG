@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections.abc import Mapping
+from hashlib import sha256
 from pathlib import Path
 from typing import NoReturn, cast
 
@@ -21,7 +22,12 @@ from fmea_application.assistance_contracts import (
     AssistanceKind,
     AssistanceSuggestion,
 )
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope, encode_review_json
+from fmea_application.review_contracts import (
+    AuditEvent,
+    IdempotencyScope,
+    encode_review_json,
+    idempotency_key_hash,
+)
 from fmea_application.review_errors import ReviewError
 from fmea_application.risk_contracts import (
     PreparedAssistanceDecision,
@@ -31,7 +37,7 @@ from fmea_application.risk_contracts import (
     canonical_json,
 )
 
-from .repository_sqlite import SqliteFmeaRepository
+from .repository_sqlite import SqliteFmeaRepository, _decode_audit_event
 
 _MAX_BUSY_TIMEOUT_MS = 60_000
 _SUGGESTION_COLUMNS = (
@@ -39,7 +45,7 @@ _SUGGESTION_COLUMNS = (
     "evidence_pack_ids_json, payload_json, evidence_ids_json, conflict_ids_json, uncertainty, "
     "model_hash, prompt_hash, run_id, trace_id, domain_pack_id, domain_pack_version, template_id, "
     "template_version, rule_pack_id, rule_pack_version, suggestion_record_version, status, applied, "
-    "suggestion_hash, created_at"
+    "suggestion_hash, payload_hash, audit_event_id, created_at"
 )
 _DECISION_COLUMNS = (
     "decision_id, workspace_id, suggestion_id, suggestion_hash, suggestion_record_version, "
@@ -140,28 +146,35 @@ class SqliteAssistanceRepository:
         return connection
 
     @staticmethod
-    def _insert_audit(connection: sqlite3.Connection, audit: AuditEvent) -> None:
+    def _insert_audit(
+        connection: sqlite3.Connection,
+        audit: AuditEvent,
+        *,
+        target_type: str,
+        target_id: str,
+        scope: IdempotencyScope,
+    ) -> None:
         event_json = encode_review_json(audit)
+        event_hash = "sha256:" + sha256(event_json.encode("utf-8")).hexdigest()
         connection.execute(
-            "INSERT INTO audit_events "
-            "(event_id, row_id, workspace_id, actor_id, actor_type, command, action, suggestion_id, decision_id, "
-            "expected_record_version, applied_record_version, before_hash, after_hash, canonical_payload_hash, "
-            "event_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO fmea_assistance_audit_events "
+            "(event_id, workspace_id, target_type, target_id, actor_id, actor_type, command, suggestion_id, "
+            "decision_id, idempotency_scope, resource_path, canonical_payload_hash, event_hash, event_json, "
+            "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 audit.event_id,
-                audit.row_id,
                 audit.workspace_id,
+                target_type,
+                target_id,
                 audit.actor_id,
                 audit.actor_type.value,
                 audit.command,
-                audit.action.value if audit.action is not None else None,
                 audit.suggestion_id,
                 audit.decision_id,
-                audit.expected_record_version,
-                audit.applied_record_version,
-                audit.before_hash,
-                audit.after_hash,
+                scope.scope_key,
+                scope.resource_path,
                 audit.canonical_payload_hash,
+                event_hash,
                 event_json,
                 audit.occurred_at_server,
             ),
@@ -189,6 +202,99 @@ class SqliteAssistanceRepository:
         }:
             raise _storage_error()
         return str(row["resource_id"])
+
+    @classmethod
+    def _validate_completed_idempotency(
+        cls,
+        connection: sqlite3.Connection,
+        *,
+        scope_key: str,
+        payload_hash: str,
+        resource_type: str,
+        resource_id: str,
+    ) -> None:
+        row = connection.execute(
+            "SELECT payload_hash, state, resource_id, response_json FROM idempotency_records WHERE scope_key=?",
+            (scope_key,),
+        ).fetchone()
+        if cls._check_replay_row(row, payload_hash, resource_type) != resource_id:
+            raise _storage_error()
+
+    @staticmethod
+    def _validate_assistance_audit(
+        connection: sqlite3.Connection,
+        *,
+        event_id: str,
+        workspace_id: str,
+        target_type: str,
+        target_id: str,
+        suggestion_id: str,
+        decision_id: str | None,
+        actor_id: str | None,
+        actor_type: str | None,
+        payload_hash: str | None = None,
+        idempotency_key_hash_value: str | None = None,
+    ) -> tuple[IdempotencyScope, str]:
+        audit = connection.execute(
+            "SELECT event_id, workspace_id, target_type, target_id, actor_id, actor_type, command, "
+            "suggestion_id, decision_id, idempotency_scope, resource_path, canonical_payload_hash, event_hash, "
+            "event_json, created_at "
+            "FROM fmea_assistance_audit_events WHERE event_id=? AND workspace_id=?",
+            (event_id, workspace_id),
+        ).fetchone()
+        if audit is None:
+            raise _storage_error()
+        try:
+            event = _decode_audit_event(audit["event_json"])
+        except (TypeError, ValueError) as exc:
+            raise _storage_error() from exc
+        if encode_review_json(event) != audit["event_json"]:
+            raise _storage_error()
+        expected_hash = "sha256:" + sha256(str(audit["event_json"]).encode("utf-8")).hexdigest()
+        if audit["event_hash"] != expected_hash:
+            raise _storage_error()
+        expected_actor_id = str(audit["actor_id"]) if actor_id is None else actor_id
+        expected_actor_type = str(audit["actor_type"]) if actor_type is None else actor_type
+        event_key_hash = event.idempotency_key_hash
+        if (
+            idempotency_key_hash_value is not None
+            and event_key_hash != idempotency_key_hash_value
+        ):
+            raise _storage_error()
+        reconstructed_scope = IdempotencyScope(
+            workspace_id,
+            expected_actor_id,
+            str(audit["command"]),
+            str(audit["resource_path"]),
+            event_key_hash,
+        )
+        if reconstructed_scope.scope_key != audit["idempotency_scope"]:
+            raise _storage_error()
+        checks = (
+            event.event_id == event_id,
+            event.workspace_id == workspace_id,
+            event.actor_id == expected_actor_id,
+            event.actor_type.value == expected_actor_type,
+            event.command == audit["command"],
+            event.row_id == target_id,
+            event.suggestion_id == suggestion_id,
+            event.decision_id == decision_id,
+            event.canonical_payload_hash == audit["canonical_payload_hash"],
+            event.occurred_at_server == audit["created_at"],
+            event.action is None,
+            audit["event_id"] == event_id,
+            audit["workspace_id"] == workspace_id,
+            audit["target_type"] == target_type,
+            audit["target_id"] == target_id,
+            audit["actor_id"] == expected_actor_id,
+            audit["actor_type"] == expected_actor_type,
+            audit["suggestion_id"] == suggestion_id,
+            audit["decision_id"] == decision_id,
+            payload_hash is None or audit["canonical_payload_hash"] == payload_hash,
+        )
+        if not all(checks):
+            raise _storage_error()
+        return reconstructed_scope, str(audit["canonical_payload_hash"])
 
     @staticmethod
     def _reserve_idempotency(
@@ -271,12 +377,17 @@ class SqliteAssistanceRepository:
             raise _safe_error("FMEA_EVIDENCE_INVALID", "Assistance evidence is invalid.")
 
     @staticmethod
-    def _insert_suggestion(connection: sqlite3.Connection, suggestion: AssistanceSuggestion[object]) -> None:
+    def _insert_suggestion(
+        connection: sqlite3.Connection,
+        suggestion: AssistanceSuggestion[object],
+        payload_hash: str,
+        audit_event_id: str,
+    ) -> None:
         connection.execute(
             "INSERT INTO fmea_assistance_suggestions ("
             + _SUGGESTION_COLUMNS
             + ") VALUES ("
-            + ",".join("?" for _ in range(26))
+            + ",".join("?" for _ in range(28))
             + ")",
             (
                 suggestion.suggestion_id,
@@ -304,12 +415,14 @@ class SqliteAssistanceRepository:
                 "proposed",
                 0,
                 suggestion.suggestion_hash,
+                payload_hash,
+                audit_event_id,
                 suggestion.created_at,
             ),
         )
 
     @staticmethod
-    def _decode_suggestion(row: sqlite3.Row) -> AssistanceSuggestion[object]:
+    def _decode_suggestion(row: sqlite3.Row, connection: sqlite3.Connection) -> AssistanceSuggestion[object]:
         try:
             evidence_pack_ids = _strict_json(row["evidence_pack_ids_json"], "evidence packs")
             payload = _strict_json(row["payload_json"], "suggestion payload")
@@ -346,6 +459,27 @@ class SqliteAssistanceRepository:
             )
             if row["status"] != "proposed" or int(row["applied"]) != 0:
                 raise ValueError("invalid suggestion state")
+            scope, payload_hash = SqliteAssistanceRepository._validate_assistance_audit(
+                connection,
+                event_id=str(row["audit_event_id"]),
+                workspace_id=suggestion.workspace_id,
+                target_type=suggestion.target_type,
+                target_id=suggestion.target_id,
+                suggestion_id=suggestion.suggestion_id,
+                decision_id=None,
+                actor_id=None,
+                actor_type=None,
+                payload_hash=str(row["payload_hash"]),
+            )
+            SqliteAssistanceRepository._validate_completed_idempotency(
+                connection,
+                scope_key=scope.scope_key,
+                payload_hash=payload_hash,
+                resource_type="assistance_suggestion",
+                resource_id=suggestion.suggestion_id,
+            )
+            if assistance_suggestion_payload_hash(scope, suggestion) != payload_hash:
+                raise ValueError("suggestion payload hash mismatch")
             return suggestion
         except ReviewError:
             raise
@@ -360,7 +494,7 @@ class SqliteAssistanceRepository:
                 "WHERE suggestion_id=? AND workspace_id=?",
                 (suggestion_id, workspace_id),
             ).fetchone()
-            return None if row is None else self._decode_suggestion(row)
+            return None if row is None else self._decode_suggestion(row, connection)
         finally:
             connection.close()
 
@@ -383,7 +517,7 @@ class SqliteAssistanceRepository:
                 ).fetchone()
                 if row is None:
                     raise _storage_error()
-                result = self._decode_suggestion(row)
+                result = self._decode_suggestion(row, connection)
                 if assistance_suggestion_payload_hash(prepared.scope, result) != prepared.payload_hash:
                     raise _storage_error()
                 connection.execute("COMMIT")
@@ -392,8 +526,19 @@ class SqliteAssistanceRepository:
             self._reserve_idempotency(
                 connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
             )
-            self._insert_suggestion(connection, prepared.suggestion)
-            self._insert_audit(connection, prepared.audit)
+            self._insert_audit(
+                connection,
+                prepared.audit,
+                target_type=prepared.suggestion.target_type,
+                target_id=prepared.suggestion.target_id,
+                scope=prepared.scope,
+            )
+            self._insert_suggestion(
+                connection,
+                prepared.suggestion,
+                prepared.payload_hash,
+                prepared.audit.event_id,
+            )
             self._complete_idempotency(
                 connection,
                 prepared.scope,
@@ -505,23 +650,56 @@ class SqliteAssistanceRepository:
                 decision.actor_type.value == row["actor_type"],
                 decision.reason == row["reason"],
                 decision.created_at == row["created_at"],
+                (
+                    decision.resulting_resource_identity
+                    == (
+                        None
+                        if row["resulting_resource_type"] is None and row["resulting_resource_id"] is None
+                        else (row["resulting_resource_type"], row["resulting_resource_id"])
+                    )
+                ),
                 canonical_json(_decision_body(decision)) == row["decision_json"],
             )
             if not all(checks):
                 raise ValueError("decision columns mismatch")
-            audit = connection.execute(
-                "SELECT workspace_id, decision_id, actor_id, actor_type, canonical_payload_hash "
-                "FROM audit_events WHERE event_id=?",
-                (row["audit_event_id"],),
+            suggestion_row = connection.execute(
+                f"SELECT {_SUGGESTION_COLUMNS} FROM fmea_assistance_suggestions "
+                "WHERE suggestion_id=? AND workspace_id=?",
+                (decision.suggestion_id, row["workspace_id"]),
             ).fetchone()
-            if audit is None or (
-                audit["workspace_id"] != row["workspace_id"]
-                or audit["decision_id"] != decision.decision_id
-                or audit["actor_id"] != decision.actor_id
-                or audit["actor_type"] != decision.actor_type.value
-                or audit["canonical_payload_hash"] != row["payload_hash"]
+            if suggestion_row is None:
+                raise ValueError("decision suggestion missing")
+            suggestion = SqliteAssistanceRepository._decode_suggestion(suggestion_row, connection)
+            if (
+                decision.suggestion_hash != suggestion.suggestion_hash
+                or decision.suggestion_record_version != suggestion.record_version
+                or decision.target_record_version != suggestion.target_record_version
             ):
-                raise ValueError("decision audit mismatch")
+                raise ValueError("decision suggestion binding mismatch")
+            scope, _ = SqliteAssistanceRepository._validate_assistance_audit(
+                connection,
+                event_id=str(row["audit_event_id"]),
+                workspace_id=str(row["workspace_id"]),
+                target_type=suggestion.target_type,
+                target_id=suggestion.target_id,
+                suggestion_id=decision.suggestion_id,
+                decision_id=decision.decision_id,
+                actor_id=decision.actor_id,
+                actor_type=decision.actor_type.value,
+                payload_hash=str(row["payload_hash"]),
+                idempotency_key_hash_value=idempotency_key_hash(decision.idempotency_key),
+            )
+            if scope.scope_key != row["idempotency_scope"]:
+                raise ValueError("decision idempotency scope mismatch")
+            if assistance_decision_payload_hash(scope, suggestion, decision) != row["payload_hash"]:
+                raise ValueError("decision payload hash mismatch")
+            SqliteAssistanceRepository._validate_completed_idempotency(
+                connection,
+                scope_key=scope.scope_key,
+                payload_hash=str(row["payload_hash"]),
+                resource_type="assistance_decision",
+                resource_id=decision.decision_id,
+            )
             return decision
         except ReviewError:
             raise
@@ -563,7 +741,7 @@ class SqliteAssistanceRepository:
             ).fetchone()
             if suggestion_row is None:
                 raise _storage_error()
-            suggestion = self._decode_suggestion(suggestion_row)
+            suggestion = self._decode_suggestion(suggestion_row, connection)
             if assistance_decision_payload_hash(scope, suggestion, decision) != payload_hash:
                 raise _storage_error()
             return decision
@@ -602,7 +780,7 @@ class SqliteAssistanceRepository:
             ).fetchone()
             if source is None:
                 raise _safe_error("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "Assistance suggestion was not found.")
-            authoritative = self._decode_suggestion(source)
+            authoritative = self._decode_suggestion(source, connection)
             if authoritative != prepared.suggestion:
                 raise _safe_error("FMEA_MODEL_SUGGESTION_INVALID", "Assistance suggestion binding is invalid.")
             self._validate_suggestion_source(connection, authoritative)
@@ -612,7 +790,13 @@ class SqliteAssistanceRepository:
                 connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
             )
             # The decision has an FK to its immutable audit row, so the audit is inserted first.
-            self._insert_audit(connection, prepared.audit)
+            self._insert_audit(
+                connection,
+                prepared.audit,
+                target_type=prepared.suggestion.target_type,
+                target_id=prepared.suggestion.target_id,
+                scope=prepared.scope,
+            )
             self._insert_decision(connection, prepared)
             self._complete_idempotency(
                 connection,

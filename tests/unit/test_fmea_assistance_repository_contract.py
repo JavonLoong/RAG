@@ -13,7 +13,7 @@ from fmea_application.assistance_contracts import (
     AssistanceSuggestion,
 )
 from fmea_application.ports import AssistanceRepository
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope
+from fmea_application.review_contracts import AuditEvent, IdempotencyScope, idempotency_key_hash
 from fmea_application.risk_contracts import (
     PreparedAssistanceDecision,
     PreparedAssistanceSuggestion,
@@ -31,6 +31,7 @@ def audit_event(
     actor_type: ActorType = ActorType.MODEL,
     decision_id: str | None = None,
     canonical_hash: str = HASH,
+    key_hash: str = HASH,
 ) -> AuditEvent:
     from core_domain.fmea.value_objects import VersionSet
 
@@ -56,7 +57,7 @@ def audit_event(
         changed_fields=(),
         evidence_ids=("e-1",),
         evidence_request_targets=(),
-        idempotency_key_hash=HASH,
+        idempotency_key_hash=key_hash,
         canonical_payload_hash=canonical_hash,
         versions=VersionSet(
             schema_id="graphrag.fmea.v1",
@@ -125,12 +126,13 @@ def decision(suggestion_value: AssistanceSuggestion[object]) -> AssistanceDecisi
 
 
 def scope(actor_id: str) -> IdempotencyScope:
+    key_hash = idempotency_key_hash(UUID_KEY) if actor_id == "reviewer-1" else HASH
     return IdempotencyScope(
         workspace_id="ws-1",
         actor_id=actor_id,
         command="fmea.assistance",
         resource_path="/fmea/rows/row-1",
-        key_hash=HASH,
+        key_hash=key_hash,
     )
 
 
@@ -158,6 +160,7 @@ def prepared_decision() -> PreparedAssistanceDecision:
             actor_type=ActorType.HUMAN,
             decision_id="decision-1",
             canonical_hash=prepared_hash,
+            key_hash=scope("reviewer-1").key_hash,
         ),
     )
 
@@ -186,6 +189,21 @@ def test_prepared_assistance_decision_reuses_existing_decision_and_requires_exac
             suggestion=saved_suggestion,
             decision=mismatched,
             audit=prepared.audit,
+        )
+
+    wrong_scope = replace(prepared.scope, key_hash=HASH)
+    wrong_hash = assistance_decision_payload_hash(wrong_scope, saved_suggestion, prepared.decision)
+    with pytest.raises(ValueError, match="idempotency key"):
+        PreparedAssistanceDecision(
+            scope=wrong_scope,
+            payload_hash=wrong_hash,
+            suggestion=saved_suggestion,
+            decision=prepared.decision,
+            audit=replace(
+                prepared.audit,
+                idempotency_key_hash=wrong_scope.key_hash,
+                canonical_payload_hash=wrong_hash,
+            ),
         )
 
 

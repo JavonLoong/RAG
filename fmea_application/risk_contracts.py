@@ -24,7 +24,7 @@ from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal
 from core_domain.fmea.states import ActorType, RiskStatus
 
 from .assistance_contracts import AssistanceDecision, AssistanceSuggestion
-from .review_contracts import AuditEvent, IdempotencyScope
+from .review_contracts import AuditEvent, IdempotencyScope, idempotency_key_hash
 
 _HASH_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _MAX_TEXT_LENGTH = 256
@@ -444,6 +444,8 @@ class PreparedAssistanceSuggestion:
             raise ValueError("audit must be an AuditEvent")
         if not isinstance(self.suggestion, AssistanceSuggestion):
             raise ValueError("suggestion must be an AssistanceSuggestion")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         object.__setattr__(
             self,
             "payload_hash",
@@ -459,6 +461,7 @@ class PreparedAssistanceSuggestion:
         _validate_audit(
             self.audit,
             workspace_id=self.suggestion.workspace_id,
+            row_id=self.suggestion.target_id,
             actor_id=self.scope.actor_id,
             suggestion_id=self.suggestion.suggestion_id,
             idempotency_key_hash=self.scope.key_hash,
@@ -476,7 +479,7 @@ class PreparedAssistanceDecision:
     decision: AssistanceDecision
     audit: AuditEvent
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # noqa: C901
         if not isinstance(self.scope, IdempotencyScope):
             raise ValueError("scope must be an IdempotencyScope")
         if not isinstance(self.audit, AuditEvent):
@@ -485,6 +488,8 @@ class PreparedAssistanceDecision:
             raise ValueError("suggestion must be an AssistanceSuggestion")
         if not isinstance(self.decision, AssistanceDecision):
             raise ValueError("decision must be an AssistanceDecision")
+        if self.audit.command != self.scope.command:
+            raise ValueError("audit command does not match scope")
         if self.decision.suggestion_id != self.suggestion.suggestion_id:
             raise ValueError("decision suggestion identity does not match suggestion")
         if self.decision.suggestion_hash != self.suggestion.suggestion_hash:
@@ -493,6 +498,8 @@ class PreparedAssistanceDecision:
             raise ValueError("decision suggestion version does not match suggestion")
         if self.decision.target_record_version != self.suggestion.target_record_version:
             raise ValueError("decision target version does not match suggestion")
+        if idempotency_key_hash(self.decision.idempotency_key) != self.scope.key_hash:
+            raise ValueError("decision idempotency key does not match scope")
         object.__setattr__(
             self,
             "payload_hash",
@@ -506,6 +513,7 @@ class PreparedAssistanceDecision:
         _validate_audit(
             self.audit,
             workspace_id=self.suggestion.workspace_id,
+            row_id=self.suggestion.target_id,
             actor_id=self.decision.actor_id,
             actor_type=ActorType.HUMAN,
             suggestion_id=self.suggestion.suggestion_id,

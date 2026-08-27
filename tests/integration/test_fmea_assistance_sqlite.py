@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import replace
 
 import pytest
 
+from core_domain.fmea.codec import encode_json
 from core_domain.fmea.states import ActorType
 from fmea_application.assistance_contracts import (
     AssistanceDecision,
@@ -12,13 +14,14 @@ from fmea_application.assistance_contracts import (
     AssistanceKind,
     AssistanceSuggestion,
 )
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope
+from fmea_application.review_contracts import AuditEvent, IdempotencyScope, idempotency_key_hash
 from fmea_application.review_errors import ReviewError
 from fmea_application.risk_contracts import (
     PreparedAssistanceDecision,
     PreparedAssistanceSuggestion,
     assistance_decision_payload_hash,
     assistance_suggestion_payload_hash,
+    canonical_json,
 )
 from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
 
@@ -85,6 +88,7 @@ def _audit(
     decision_id: str | None = None,
     idempotency_key_hash: str = HASH,
     suggestion_id: str = "suggestion-1",
+    target_id: str = "row-1",
 ) -> AuditEvent:
     from core_domain.fmea.value_objects import VersionSet
 
@@ -100,7 +104,7 @@ def _audit(
         reason_code=None,
         reason="assistance persistence",
         analysis_id="analysis-1",
-        row_id="row-1",
+        row_id=target_id,
         suggestion_id=suggestion_id,
         decision_id=decision_id,
         expected_record_version=1,
@@ -153,13 +157,14 @@ def _prepared_suggestion(
             payload_hash=payload_hash,
             suggestion_id=value.suggestion_id,
             idempotency_key_hash=scope.key_hash,
+            target_id=value.target_id,
         ),
     )
 
 
 def _prepared_decision(suggestion: AssistanceSuggestion[object]) -> PreparedAssistanceDecision:
     decision = _decision(suggestion)
-    scope = _scope("reviewer-1", key_hash="sha256:" + "b" * 64)
+    scope = _scope("reviewer-1", key_hash=idempotency_key_hash(UUID_KEY))
     payload_hash = assistance_decision_payload_hash(scope, suggestion, decision)
     return PreparedAssistanceDecision(
         scope=scope,
@@ -193,7 +198,51 @@ def test_suggestion_round_trips_canonically_and_replays_once(assistance_reposito
     assert assistance_repository.get_suggestion("suggestion-1", "ws-2") is None
     with sqlite3.connect(assistance_repository.database_path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM fmea_assistance_suggestions").fetchone() == (1,)
-        assert connection.execute("SELECT COUNT(*) FROM audit_events WHERE event_id='audit-suggestion-1'").fetchone() == (1,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_assistance_audit_events WHERE event_id='audit-suggestion-1'"
+        ).fetchone() == (1,)
+
+
+def test_non_row_scope_suggestion_persists_without_borrowing_an_fmea_row(tmp_path, fixture_pack) -> None:
+    assistance_repository = SqliteAssistanceRepository(tmp_path / "scope-only.sqlite3")
+    assistance_repository.initialize()
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        connection.execute(
+            "INSERT INTO evidence_packs(pack_id, workspace_id, pack_hash, pack_json, created_at, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                fixture_pack.pack_id,
+                fixture_pack.workspace_id,
+                fixture_pack.pack_hash,
+                encode_json(fixture_pack),
+                fixture_pack.created_at,
+                fixture_pack.expires_at,
+            ),
+        )
+    suggestion = _suggestion(
+        suggestion_id="scope-draft-1",
+        kind=AssistanceKind.ANALYSIS_SCOPE_DRAFT,
+        target_type="fmea_analysis",
+        target_id="analysis-draft-1",
+        payload={"system_boundary": "fuel and combustion system"},
+    )
+    scope = IdempotencyScope(
+        "ws-1",
+        "model-1",
+        "fmea.assistance",
+        "/fmea/analyses/analysis-draft-1",
+        "sha256:" + "c" * 64,
+    )
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_rows").fetchone() == (0,)
+
+    saved = assistance_repository.save_suggestion(_prepared_suggestion(suggestion, scope_value=scope))
+
+    assert saved == suggestion
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        assert connection.execute(
+            "SELECT target_type, target_id FROM fmea_assistance_audit_events WHERE event_id='audit-suggestion-1'"
+        ).fetchone() == ("fmea_analysis", "analysis-draft-1")
 
 
 def test_suggestion_rejects_unknown_evidence_and_same_scope_changed_body(assistance_repository) -> None:
@@ -261,3 +310,65 @@ def test_tampered_noncanonical_suggestion_fails_closed(assistance_repository) ->
         )
     with pytest.raises(ReviewError):
         assistance_repository.get_suggestion("suggestion-1", "ws-1")
+
+
+def test_ordinary_decision_read_rejects_tampered_result_identity(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    assistance_repository.append_decision(_prepared_decision(suggestion))
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_assistance_decisions_no_update")
+        connection.execute(
+            "UPDATE fmea_assistance_decisions SET resulting_resource_id='row-2' WHERE decision_id='decision-1'"
+        )
+
+    with pytest.raises(ReviewError):
+        assistance_repository.get_decision("decision-1", "ws-1")
+
+
+def test_ordinary_decision_read_rejects_tampered_audit_json(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    assistance_repository.append_decision(_prepared_decision(suggestion))
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_assistance_audit_events_no_update")
+        event_json = connection.execute(
+            "SELECT event_json FROM fmea_assistance_audit_events WHERE event_id='audit-decision-1'"
+        ).fetchone()[0]
+        event = json.loads(event_json)
+        event["reason"] = "tampered but still valid"
+        connection.execute(
+            "UPDATE fmea_assistance_audit_events SET event_json=? WHERE event_id='audit-decision-1'",
+            (canonical_json(event),),
+        )
+
+    with pytest.raises(ReviewError):
+        assistance_repository.get_decision("decision-1", "ws-1")
+
+
+def test_ordinary_decision_read_recomputes_business_payload_hash(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    assistance_repository.append_decision(_prepared_decision(suggestion))
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_assistance_decisions_no_update")
+        body_json = connection.execute(
+            "SELECT decision_json FROM fmea_assistance_decisions WHERE decision_id='decision-1'"
+        ).fetchone()[0]
+        body = json.loads(body_json)
+        body["reason"] = "tampered but still valid"
+        connection.execute(
+            "UPDATE fmea_assistance_decisions SET reason=?, decision_json=? WHERE decision_id='decision-1'",
+            (body["reason"], canonical_json(body)),
+        )
+
+    with pytest.raises(ReviewError):
+        assistance_repository.get_decision("decision-1", "ws-1")
+
+
+def test_ordinary_decision_read_requires_completed_idempotency_record(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    prepared = _prepared_decision(suggestion)
+    assistance_repository.append_decision(prepared)
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        connection.execute("DELETE FROM idempotency_records WHERE scope_key=?", (prepared.scope.scope_key,))
+
+    with pytest.raises(ReviewError):
+        assistance_repository.get_decision("decision-1", "ws-1")
