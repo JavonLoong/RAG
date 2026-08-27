@@ -183,6 +183,8 @@ def test_proposal_and_proposed_assessment_save_atomically_and_replay(risk_reposi
     replayed = risk_repository.save_proposal(prepared)
 
     assert saved == prepared.assessment == replayed
+    assert risk_repository.get_proposal(prepared.proposal.proposal_id, "ws-1") == prepared.proposal
+    assert risk_repository.get_proposal(prepared.proposal.proposal_id, "ws-2") is None
     assert risk_repository.get_current_assessment("row-1", "ws-1") == saved
     assert risk_repository.get_current_assessment("row-1", "ws-2") is None
     assert risk_repository.list_outbox_events("assessment-1", "ws-1")[0].event_type == "risk.proposed"

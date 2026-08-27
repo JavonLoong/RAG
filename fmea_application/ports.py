@@ -16,10 +16,10 @@ from core_domain.fmea.contracts import (
     VersionSet,
 )
 from core_domain.fmea.domain_pack import DomainPackManifest
-from core_domain.fmea.scoring import RiskAssessmentRecord, ScoringRulePack
+from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
-from .assistance_contracts import AssistanceDecision, AssistanceSuggestion
+from .assistance_contracts import AssistanceDecision, AssistanceRequest, AssistanceSuggestion
 from .review_contracts import (
     ActorContext,
     AuditEvent,
@@ -46,6 +46,7 @@ from .risk_contracts import (
     PreparedRiskProposal,
     PreparedRiskRejection,
     RiskConfirmationResult,
+    RiskModelRequest,
 )
 
 ReviewHistoryPosition = tuple[str, str]
@@ -239,6 +240,14 @@ class ReviewSuggestionGenerator(Protocol):
     def generate(self, request: ReviewModelRequest) -> tuple[ReviewSuggestionDraft, ReviewModelManifest]: ...
 
 
+class AnalysisAssistanceGenerator(Protocol):
+    def generate(self, request: AssistanceRequest[object]) -> AssistanceSuggestion[object]: ...
+
+
+class RiskSuggestionGenerator(Protocol):
+    def generate(self, request: RiskModelRequest) -> AssistanceSuggestion[object]: ...
+
+
 class AssistanceRepository(Protocol):
     """Persistence boundary for immutable model suggestions and human decisions."""
 
@@ -276,6 +285,8 @@ class RiskRepository(Protocol):
 
     def get_current_assessment(self, row_id: str, workspace_id: str) -> RiskAssessmentRecord | None: ...
 
+    def get_proposal(self, proposal_id: str, workspace_id: str) -> RiskProposal | None: ...
+
     def save_proposal(self, prepared: PreparedRiskProposal) -> RiskAssessmentRecord: ...
 
     def replay_confirmation(self, scope: IdempotencyScope, payload_hash: str) -> RiskConfirmationResult | None: ...
@@ -296,6 +307,7 @@ class ReviewRunExecutor(Protocol):
 
 
 __all__ = [
+    "AnalysisAssistanceGenerator",
     "AssistanceRepository",
     "DomainPackRegistry",
     "EvidenceProvider",
@@ -308,5 +320,6 @@ __all__ = [
     "ReviewRunExecutor",
     "ReviewSuggestionGenerator",
     "RiskRepository",
+    "RiskSuggestionGenerator",
     "ScoringRuleRegistry",
 ]

@@ -327,6 +327,7 @@ class AssistanceRequest(Generic[_T]):
     rule_pack_id: str | None = None
     rule_pack_version: str | None = None
     record_version: int = 1
+    idempotency_key: str | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("request_id", "workspace_id", "target_type", "target_id"):
@@ -354,6 +355,8 @@ class AssistanceRequest(Generic[_T]):
             object.__setattr__(self, identifier_name, identifier)
             object.__setattr__(self, version_name, version)
         object.__setattr__(self, "payload", _freeze_payload(self.payload, "payload"))
+        if self.idempotency_key is not None:
+            object.__setattr__(self, "idempotency_key", _uuid(self.idempotency_key, "idempotency_key"))
 
 
 @dataclass(frozen=True, slots=True)

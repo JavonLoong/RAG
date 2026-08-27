@@ -712,6 +712,23 @@ class SqliteRiskRepository:
         finally:
             connection.close()
 
+    def get_proposal(self, proposal_id: str, workspace_id: str) -> RiskProposal | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                f"SELECT {_PROPOSAL_COLUMNS} FROM fmea_risk_proposals WHERE proposal_id=? AND workspace_id=?",
+                (proposal_id, workspace_id),
+            ).fetchone()
+            return None if row is None else self._decode_proposal(row)
+        except ReviewError:
+            raise
+        except sqlite3.Error as exc:
+            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Risk storage is unavailable.", retryable=True) from exc
+        except Exception as exc:
+            raise _storage_error() from exc
+        finally:
+            connection.close()
+
     def _validate_sources(self, connection: sqlite3.Connection, proposal: RiskProposal) -> None:
         row = connection.execute(
             "SELECT row_json, record_version FROM fmea_rows WHERE row_id=? AND workspace_id=?",

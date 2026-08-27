@@ -19,18 +19,46 @@ from enum import Enum
 from hashlib import sha256
 from math import isfinite
 from types import MappingProxyType
+from typing import TypeAlias
+from uuid import UUID
 
-from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal
+from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
 from core_domain.fmea.states import ActorType, RiskStatus
+from core_domain.fmea.value_objects import EvidencePack
 
 from .assistance_contracts import AssistanceDecision, AssistanceSuggestion
-from .review_contracts import AuditEvent, IdempotencyScope, idempotency_key_hash
+from .review_contracts import AuditEvent, IdempotencyScope, ReviewContext, idempotency_key_hash
 
 _HASH_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 _MAX_TEXT_LENGTH = 256
 _MAX_REASON_LENGTH = 4096
 _MAX_PAYLOAD_DEPTH = 8
 _MAX_PAYLOAD_ITEMS = 128
+_UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+)
+
+AnalysisScopeDraftInput: TypeAlias = Mapping[str, object]
+AnalysisScopeDraft: TypeAlias = Mapping[str, object]
+
+
+def _uuid(value: object, field_name: str) -> str:
+    if not isinstance(value, str) or value != value.strip() or _UUID_PATTERN.fullmatch(value) is None:
+        raise ValueError(f"{field_name} must be a canonical lowercase UUID")
+    try:
+        parsed = UUID(value)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a canonical lowercase UUID") from exc
+    if str(parsed) != value:
+        raise ValueError(f"{field_name} must be a canonical lowercase UUID")
+    return value
+
+
+def _raw_hash(value: object, field_name: str) -> str:
+    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+        raise ValueError(f"{field_name} must be a lowercase SHA-256 hash")
+    return value
 
 
 def _text(value: object, field_name: str, *, limit: int = _MAX_TEXT_LENGTH) -> str:
@@ -431,6 +459,126 @@ def _validate_assessment_identity(
 
 
 @dataclass(frozen=True, slots=True)
+class RiskModelRequest:
+    """Bounded model input; no retrieval backend or mutable run state crosses it."""
+
+    run_id: str
+    context: ReviewContext
+    evidence_pack: EvidencePack
+    domain_pack: DomainPackManifest
+    rule_pack: ScoringRulePack
+    template_id: str
+    template_version: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "run_id", _text(self.run_id, "run_id"))
+        if not isinstance(self.context, ReviewContext):
+            raise ValueError("context must be a ReviewContext")
+        if not isinstance(self.evidence_pack, EvidencePack):
+            raise ValueError("evidence_pack must be an EvidencePack")
+        if not isinstance(self.domain_pack, DomainPackManifest):
+            raise ValueError("domain_pack must be a DomainPackManifest")
+        if not isinstance(self.rule_pack, ScoringRulePack):
+            raise ValueError("rule_pack must be a ScoringRulePack")
+        object.__setattr__(self, "template_id", _text(self.template_id, "template_id"))
+        object.__setattr__(self, "template_version", _text(self.template_version, "template_version"))
+        if self.context.evidence.workspace_id != self.evidence_pack.workspace_id:
+            raise ValueError("context and evidence pack workspace do not match")
+        if self.context.evidence.pack_id != self.evidence_pack.pack_id:
+            raise ValueError("context and evidence pack do not match")
+
+
+@dataclass(frozen=True, slots=True)
+class RiskDependencySnapshot:
+    workspace_id: str
+    row_id: str
+    row_version: int
+    evidence_pack_id: str
+    evidence_pack_hash: str
+    domain_pack_id: str
+    domain_pack_version: str
+    template_id: str
+    template_version: str
+    rule_pack_id: str
+    rule_pack_version: str
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "workspace_id",
+            "row_id",
+            "evidence_pack_id",
+            "domain_pack_id",
+            "domain_pack_version",
+            "template_id",
+            "template_version",
+            "rule_pack_id",
+            "rule_pack_version",
+        ):
+            object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
+        object.__setattr__(self, "row_version", _positive(self.row_version, "row_version"))
+        object.__setattr__(self, "evidence_pack_hash", _raw_hash(self.evidence_pack_hash, "evidence_pack_hash"))
+
+
+@dataclass(frozen=True, slots=True)
+class StartRiskProposalCommand:
+    row_id: str
+    expected_record_version: int
+    evidence_pack_id: str
+    domain_pack_id: str
+    domain_pack_version: str
+    template_id: str
+    template_version: str
+    rule_pack_id: str
+    rule_pack_version: str
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "row_id",
+            "evidence_pack_id",
+            "domain_pack_id",
+            "domain_pack_version",
+            "template_id",
+            "template_version",
+            "rule_pack_id",
+            "rule_pack_version",
+        ):
+            object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
+        object.__setattr__(self, "expected_record_version", _positive(self.expected_record_version, "expected_record_version"))
+        object.__setattr__(self, "idempotency_key", _uuid(self.idempotency_key, "idempotency_key"))
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmRiskCommand:
+    row_id: str
+    proposal_id: str
+    expected_assessment_version: int
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "row_id", _text(self.row_id, "row_id"))
+        object.__setattr__(self, "proposal_id", _text(self.proposal_id, "proposal_id"))
+        object.__setattr__(self, "expected_assessment_version", _positive(self.expected_assessment_version, "expected_assessment_version"))
+        object.__setattr__(self, "idempotency_key", _uuid(self.idempotency_key, "idempotency_key"))
+
+
+@dataclass(frozen=True, slots=True)
+class RejectRiskCommand:
+    row_id: str
+    proposal_id: str
+    expected_assessment_version: int
+    idempotency_key: str
+    reason: str
+
+    def __post_init__(self) -> None:
+        for field_name in ("row_id", "proposal_id"):
+            object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
+        object.__setattr__(self, "expected_assessment_version", _positive(self.expected_assessment_version, "expected_assessment_version"))
+        object.__setattr__(self, "idempotency_key", _uuid(self.idempotency_key, "idempotency_key"))
+        object.__setattr__(self, "reason", _text(self.reason, "reason", limit=_MAX_REASON_LENGTH))
+
+
+@dataclass(frozen=True, slots=True)
 class PreparedAssistanceSuggestion:
     scope: IdempotencyScope
     payload_hash: str
@@ -822,6 +970,9 @@ class OutboxEvent:
 
 
 __all__ = [
+    "AnalysisScopeDraft",
+    "AnalysisScopeDraftInput",
+    "ConfirmRiskCommand",
     "OutboxEvent",
     "PreparedAssistanceDecision",
     "PreparedAssistanceSuggestion",
@@ -829,7 +980,11 @@ __all__ = [
     "PreparedRiskInvalidation",
     "PreparedRiskProposal",
     "PreparedRiskRejection",
+    "RejectRiskCommand",
     "RiskConfirmationResult",
+    "RiskDependencySnapshot",
+    "RiskModelRequest",
+    "StartRiskProposalCommand",
     "assistance_decision_payload",
     "assistance_decision_payload_hash",
     "assistance_suggestion_payload",
