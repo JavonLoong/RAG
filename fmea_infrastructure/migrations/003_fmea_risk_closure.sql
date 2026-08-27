@@ -86,9 +86,11 @@ CREATE TABLE IF NOT EXISTS fmea_assistance_decisions (
     actor_id TEXT NOT NULL,
     actor_type TEXT NOT NULL CHECK (actor_type = 'human'),
     edits_json TEXT NOT NULL CHECK (length(edits_json) > 0),
+    decision_json TEXT NOT NULL CHECK (length(decision_json) > 0),
     reason TEXT NOT NULL,
     idempotency_scope TEXT NOT NULL UNIQUE,
     payload_hash TEXT NOT NULL,
+    audit_event_id TEXT NOT NULL UNIQUE,
     resulting_resource_type TEXT,
     resulting_resource_id TEXT,
     created_at TEXT NOT NULL,
@@ -97,7 +99,9 @@ CREATE TABLE IF NOT EXISTS fmea_assistance_decisions (
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
     CHECK ((resulting_resource_type IS NULL) = (resulting_resource_id IS NULL)),
     FOREIGN KEY (workspace_id, suggestion_id)
-        REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id)
+        REFERENCES fmea_assistance_suggestions(workspace_id, suggestion_id),
+    FOREIGN KEY (workspace_id, audit_event_id)
+        REFERENCES audit_events(workspace_id, event_id)
 );
 
 CREATE TABLE IF NOT EXISTS fmea_risk_proposals (

@@ -77,6 +77,8 @@ def test_risk_migration_is_hash_managed_idempotent_and_has_required_schema(tmp_p
             "CHECK (actor_type = 'human')",
             "UNIQUE (workspace_id, suggestion_id, suggestion_record_version)",
             "UNIQUE (workspace_id, row_id, record_version)",
+            "decision_json TEXT NOT NULL",
+            "audit_event_id TEXT NOT NULL UNIQUE",
         ):
             assert fragment in schema_sql
 

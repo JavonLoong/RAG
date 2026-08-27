@@ -1,0 +1,643 @@
+"""Atomic SQLite persistence for immutable FMEA assistance records."""
+
+# Internal codec sentinel errors are normalized to safe ReviewError values at
+# the repository boundary. SQL fragments are module constants; all data values
+# remain parameterized.
+# ruff: noqa: S608, TRY003, TRY004, TRY300, TRY301
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from collections.abc import Mapping
+from pathlib import Path
+from typing import NoReturn, cast
+
+from core_domain.fmea.codec import decode_evidence_pack, decode_row, encode_json
+from core_domain.fmea.states import ActorType
+from fmea_application.assistance_contracts import (
+    AssistanceDecision,
+    AssistanceDecisionAction,
+    AssistanceKind,
+    AssistanceSuggestion,
+)
+from fmea_application.review_contracts import AuditEvent, IdempotencyScope, encode_review_json
+from fmea_application.review_errors import ReviewError
+from fmea_application.risk_contracts import (
+    PreparedAssistanceDecision,
+    PreparedAssistanceSuggestion,
+    assistance_decision_payload_hash,
+    assistance_suggestion_payload_hash,
+    canonical_json,
+)
+
+from .repository_sqlite import SqliteFmeaRepository
+
+_MAX_BUSY_TIMEOUT_MS = 60_000
+_SUGGESTION_COLUMNS = (
+    "suggestion_id, workspace_id, kind, target_type, target_id, target_record_version, "
+    "evidence_pack_ids_json, payload_json, evidence_ids_json, conflict_ids_json, uncertainty, "
+    "model_hash, prompt_hash, run_id, trace_id, domain_pack_id, domain_pack_version, template_id, "
+    "template_version, rule_pack_id, rule_pack_version, suggestion_record_version, status, applied, "
+    "suggestion_hash, created_at"
+)
+_DECISION_COLUMNS = (
+    "decision_id, workspace_id, suggestion_id, suggestion_hash, suggestion_record_version, "
+    "target_record_version, action, actor_id, actor_type, edits_json, decision_json, reason, "
+    "idempotency_scope, payload_hash, audit_event_id, resulting_resource_type, resulting_resource_id, created_at"
+)
+
+
+def _safe_error(code: str, message: str, *, retryable: bool = False) -> ReviewError:
+    return ReviewError(code, message, retryable)
+
+
+def _storage_error() -> ReviewError:
+    return _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Stored assistance resource failed integrity validation.")
+
+
+def _conflict(message: str = "Idempotency key was already used with a different payload.") -> NoReturn:
+    raise _safe_error("FMEA_IDEMPOTENCY_CONFLICT", message)
+
+
+def _json_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_constant(_value: str) -> NoReturn:
+    raise ValueError("non-finite JSON number")
+
+
+def _strict_json(payload: object, label: str) -> object:
+    if not isinstance(payload, str):
+        raise _storage_error()
+    try:
+        value = json.loads(payload, object_pairs_hook=_json_pairs, parse_constant=_reject_constant)
+        if canonical_json(value) != payload:
+            raise ValueError(f"noncanonical {label}")
+        return value
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise _storage_error() from exc
+
+
+def _plain(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {str(key): _plain(item) for key, item in value.items()}
+    if isinstance(value, tuple | list):
+        return [_plain(item) for item in value]
+    return value
+
+
+def _decision_body(decision: AssistanceDecision) -> dict[str, object]:
+    return {
+        "decision_id": decision.decision_id,
+        "suggestion_id": decision.suggestion_id,
+        "suggestion_hash": decision.suggestion_hash,
+        "suggestion_record_version": decision.suggestion_record_version,
+        "target_record_version": decision.target_record_version,
+        "action": decision.action.value,
+        "actor_id": decision.actor_id,
+        "actor_type": decision.actor_type.value,
+        "edits": [[field, _plain(value)] for field, value in decision.edits],
+        "reason": decision.reason,
+        "idempotency_key": decision.idempotency_key,
+        "resulting_resource_identity": (
+            list(decision.resulting_resource_identity) if decision.resulting_resource_identity is not None else None
+        ),
+        "created_at": decision.created_at,
+    }
+
+
+class SqliteAssistanceRepository:
+    """Workspace-scoped, append-only assistance persistence adapter."""
+
+    def __init__(self, database_path: str | Path, *, busy_timeout_ms: int = 5000) -> None:
+        if isinstance(busy_timeout_ms, bool) or not isinstance(busy_timeout_ms, int):
+            raise ValueError("busy_timeout_ms must be an integer")
+        if not 1 <= busy_timeout_ms <= _MAX_BUSY_TIMEOUT_MS:
+            raise ValueError(f"busy_timeout_ms must be between 1 and {_MAX_BUSY_TIMEOUT_MS}")
+        self.database_path = Path(database_path).expanduser().resolve()
+        self._busy_timeout_ms = busy_timeout_ms
+
+    def initialize(self) -> None:
+        SqliteFmeaRepository(self.database_path, busy_timeout_ms=self._busy_timeout_ms).initialize()
+
+    def _connect(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            str(self.database_path),
+            timeout=self._busy_timeout_ms / 1000,
+            isolation_level=None,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(f"PRAGMA busy_timeout = {self._busy_timeout_ms}")
+        connection.execute("PRAGMA journal_mode = WAL")
+        return connection
+
+    @staticmethod
+    def _insert_audit(connection: sqlite3.Connection, audit: AuditEvent) -> None:
+        event_json = encode_review_json(audit)
+        connection.execute(
+            "INSERT INTO audit_events "
+            "(event_id, row_id, workspace_id, actor_id, actor_type, command, action, suggestion_id, decision_id, "
+            "expected_record_version, applied_record_version, before_hash, after_hash, canonical_payload_hash, "
+            "event_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                audit.event_id,
+                audit.row_id,
+                audit.workspace_id,
+                audit.actor_id,
+                audit.actor_type.value,
+                audit.command,
+                audit.action.value if audit.action is not None else None,
+                audit.suggestion_id,
+                audit.decision_id,
+                audit.expected_record_version,
+                audit.applied_record_version,
+                audit.before_hash,
+                audit.after_hash,
+                audit.canonical_payload_hash,
+                event_json,
+                audit.occurred_at_server,
+            ),
+        )
+
+    @staticmethod
+    def _idempotency_row(connection: sqlite3.Connection, scope: IdempotencyScope) -> sqlite3.Row | None:
+        return connection.execute(
+            "SELECT payload_hash, state, resource_id, response_json FROM idempotency_records WHERE scope_key=?",
+            (scope.scope_key,),
+        ).fetchone()
+
+    @staticmethod
+    def _check_replay_row(row: sqlite3.Row | None, payload_hash: str, resource_type: str) -> str | None:
+        if row is None:
+            return None
+        if str(row["payload_hash"]) != payload_hash:
+            _conflict()
+        if row["state"] != "completed" or row["resource_id"] is None or row["response_json"] is None:
+            raise _storage_error()
+        response = _strict_json(row["response_json"], "idempotency response")
+        if not isinstance(response, dict) or response != {
+            "resource_id": str(row["resource_id"]),
+            "resource_type": resource_type,
+        }:
+            raise _storage_error()
+        return str(row["resource_id"])
+
+    @staticmethod
+    def _reserve_idempotency(
+        connection: sqlite3.Connection,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        created_at: str,
+    ) -> None:
+        connection.execute(
+            "INSERT INTO idempotency_records "
+            "(scope_key, payload_hash, state, status_code, resource_id, response_json, created_at, completed_at) "
+            "VALUES (?, ?, 'reserved', NULL, NULL, NULL, ?, NULL)",
+            (scope.scope_key, payload_hash, created_at),
+        )
+
+    @staticmethod
+    def _complete_idempotency(
+        connection: sqlite3.Connection,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        resource_type: str,
+        resource_id: str,
+        completed_at: str,
+    ) -> None:
+        response_json = canonical_json({"resource_id": resource_id, "resource_type": resource_type})
+        cursor = connection.execute(
+            "UPDATE idempotency_records SET state='completed', status_code=201, resource_id=?, response_json=?, "
+            "completed_at=? WHERE scope_key=? AND payload_hash=? AND state='reserved'",
+            (resource_id, response_json, completed_at, scope.scope_key, payload_hash),
+        )
+        if cursor.rowcount != 1:
+            raise _storage_error()
+
+    @staticmethod
+    def _authoritative_row(connection: sqlite3.Connection, row_id: str, workspace_id: str):
+        row = connection.execute(
+            "SELECT row_json, row_hash, record_version FROM fmea_rows WHERE row_id=? AND workspace_id=?",
+            (row_id, workspace_id),
+        ).fetchone()
+        if row is None:
+            raise _safe_error("FMEA_ROW_NOT_FOUND", "FMEA row was not found.")
+        try:
+            domain_row = decode_row(str(row["row_json"]))
+            if encode_json(domain_row) != row["row_json"] or domain_row.record_version != int(row["record_version"]):
+                raise ValueError("row mismatch")
+        except Exception as exc:
+            raise _storage_error() from exc
+        return domain_row
+
+    @staticmethod
+    def _authoritative_evidence(connection: sqlite3.Connection, pack_id: str, workspace_id: str):
+        row = connection.execute(
+            "SELECT pack_json, pack_hash FROM evidence_packs WHERE pack_id=? AND workspace_id=?",
+            (pack_id, workspace_id),
+        ).fetchone()
+        if row is None:
+            raise _safe_error("FMEA_EVIDENCE_INVALID", "Evidence pack is invalid.")
+        try:
+            pack = decode_evidence_pack(str(row["pack_json"]))
+            if encode_json(pack) != row["pack_json"] or pack.pack_hash != row["pack_hash"]:
+                raise ValueError("evidence mismatch")
+        except Exception as exc:
+            raise _storage_error() from exc
+        return pack
+
+    def _validate_suggestion_source(
+        self,
+        connection: sqlite3.Connection,
+        suggestion: AssistanceSuggestion[object],
+    ) -> None:
+        if suggestion.target_type == "fmea_row":
+            row = self._authoritative_row(connection, suggestion.target_id, suggestion.workspace_id)
+            if row.record_version != suggestion.target_record_version:
+                raise _safe_error("FMEA_REVIEW_SUGGESTION_STALE", "Assistance suggestion is stale.")
+        available: set[str] = set()
+        for pack_id in suggestion.evidence_pack_ids:
+            pack = self._authoritative_evidence(connection, pack_id, suggestion.workspace_id)
+            available.update(ref.evidence_id for ref in pack.refs)
+        if not set(suggestion.evidence_ids).issubset(available):
+            raise _safe_error("FMEA_EVIDENCE_INVALID", "Assistance evidence is invalid.")
+
+    @staticmethod
+    def _insert_suggestion(connection: sqlite3.Connection, suggestion: AssistanceSuggestion[object]) -> None:
+        connection.execute(
+            "INSERT INTO fmea_assistance_suggestions ("
+            + _SUGGESTION_COLUMNS
+            + ") VALUES ("
+            + ",".join("?" for _ in range(26))
+            + ")",
+            (
+                suggestion.suggestion_id,
+                suggestion.workspace_id,
+                suggestion.kind.value,
+                suggestion.target_type,
+                suggestion.target_id,
+                suggestion.target_record_version,
+                canonical_json(list(suggestion.evidence_pack_ids)),
+                canonical_json(_plain(suggestion.payload)),
+                canonical_json(list(suggestion.evidence_ids)),
+                canonical_json(list(suggestion.conflict_ids)),
+                suggestion.uncertainty,
+                suggestion.model_hash,
+                suggestion.prompt_hash,
+                suggestion.run_id,
+                suggestion.trace_id,
+                suggestion.domain_pack_id,
+                suggestion.domain_pack_version,
+                suggestion.template_id,
+                suggestion.template_version,
+                suggestion.rule_pack_id,
+                suggestion.rule_pack_version,
+                suggestion.record_version,
+                "proposed",
+                0,
+                suggestion.suggestion_hash,
+                suggestion.created_at,
+            ),
+        )
+
+    @staticmethod
+    def _decode_suggestion(row: sqlite3.Row) -> AssistanceSuggestion[object]:
+        try:
+            evidence_pack_ids = _strict_json(row["evidence_pack_ids_json"], "evidence packs")
+            payload = _strict_json(row["payload_json"], "suggestion payload")
+            evidence_ids = _strict_json(row["evidence_ids_json"], "evidence IDs")
+            conflict_ids = _strict_json(row["conflict_ids_json"], "conflict IDs")
+            if not all(isinstance(value, list) for value in (evidence_pack_ids, evidence_ids, conflict_ids)):
+                raise ValueError("invalid ID arrays")
+            suggestion = AssistanceSuggestion(
+                suggestion_id=row["suggestion_id"],
+                kind=AssistanceKind(row["kind"]),
+                workspace_id=row["workspace_id"],
+                target_type=row["target_type"],
+                target_id=row["target_id"],
+                target_record_version=row["target_record_version"],
+                evidence_pack_ids=tuple(cast(list[str], evidence_pack_ids)),
+                payload=payload,
+                evidence_ids=tuple(cast(list[str], evidence_ids)),
+                conflict_ids=tuple(cast(list[str], conflict_ids)),
+                uncertainty=row["uncertainty"],
+                model_hash=row["model_hash"],
+                prompt_hash=row["prompt_hash"],
+                run_id=row["run_id"],
+                trace_id=row["trace_id"],
+                domain_pack_id=row["domain_pack_id"],
+                domain_pack_version=row["domain_pack_version"],
+                template_id=row["template_id"],
+                template_version=row["template_version"],
+                rule_pack_id=row["rule_pack_id"],
+                rule_pack_version=row["rule_pack_version"],
+                record_version=row["suggestion_record_version"],
+                created_at=row["created_at"],
+                applied=bool(row["applied"]),
+                suggestion_hash=row["suggestion_hash"],
+            )
+            if row["status"] != "proposed" or int(row["applied"]) != 0:
+                raise ValueError("invalid suggestion state")
+            return suggestion
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
+
+    def get_suggestion(self, suggestion_id: str, workspace_id: str) -> AssistanceSuggestion[object] | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                f"SELECT {_SUGGESTION_COLUMNS} FROM fmea_assistance_suggestions "
+                "WHERE suggestion_id=? AND workspace_id=?",
+                (suggestion_id, workspace_id),
+            ).fetchone()
+            return None if row is None else self._decode_suggestion(row)
+        finally:
+            connection.close()
+
+    def save_suggestion(  # noqa: C901
+        self, prepared: PreparedAssistanceSuggestion
+    ) -> AssistanceSuggestion[object]:
+        if not isinstance(prepared, PreparedAssistanceSuggestion):
+            raise _safe_error("FMEA_REVIEW_REQUEST_INVALID", "Prepared assistance suggestion is invalid.")
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay_id = self._check_replay_row(
+                self._idempotency_row(connection, prepared.scope), prepared.payload_hash, "assistance_suggestion"
+            )
+            if replay_id is not None:
+                row = connection.execute(
+                    f"SELECT {_SUGGESTION_COLUMNS} FROM fmea_assistance_suggestions "
+                    "WHERE suggestion_id=? AND workspace_id=?",
+                    (replay_id, prepared.suggestion.workspace_id),
+                ).fetchone()
+                if row is None:
+                    raise _storage_error()
+                result = self._decode_suggestion(row)
+                if assistance_suggestion_payload_hash(prepared.scope, result) != prepared.payload_hash:
+                    raise _storage_error()
+                connection.execute("COMMIT")
+                return result
+            self._validate_suggestion_source(connection, prepared.suggestion)
+            self._reserve_idempotency(
+                connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
+            )
+            self._insert_suggestion(connection, prepared.suggestion)
+            self._insert_audit(connection, prepared.audit)
+            self._complete_idempotency(
+                connection,
+                prepared.scope,
+                prepared.payload_hash,
+                "assistance_suggestion",
+                prepared.suggestion.suggestion_id,
+                prepared.audit.occurred_at_server,
+            )
+            connection.execute("COMMIT")
+            return prepared.suggestion
+        except ReviewError:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        except sqlite3.IntegrityError as exc:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise _safe_error("FMEA_MODEL_SUGGESTION_INVALID", "Assistance suggestion conflicts with stored state.") from exc
+        except sqlite3.Error as exc:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True) from exc
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _insert_decision(
+        connection: sqlite3.Connection,
+        prepared: PreparedAssistanceDecision,
+    ) -> None:
+        decision = prepared.decision
+        identity = decision.resulting_resource_identity
+        connection.execute(
+            "INSERT INTO fmea_assistance_decisions ("
+            + _DECISION_COLUMNS
+            + ") VALUES ("
+            + ",".join("?" for _ in range(18))
+            + ")",
+            (
+                decision.decision_id,
+                prepared.suggestion.workspace_id,
+                decision.suggestion_id,
+                decision.suggestion_hash,
+                decision.suggestion_record_version,
+                decision.target_record_version,
+                decision.action.value,
+                decision.actor_id,
+                decision.actor_type.value,
+                canonical_json([[field, _plain(value)] for field, value in decision.edits]),
+                canonical_json(_decision_body(decision)),
+                decision.reason,
+                prepared.scope.scope_key,
+                prepared.payload_hash,
+                prepared.audit.event_id,
+                identity[0] if identity is not None else None,
+                identity[1] if identity is not None else None,
+                decision.created_at,
+            ),
+        )
+
+    @staticmethod
+    def _decode_decision(row: sqlite3.Row, connection: sqlite3.Connection) -> AssistanceDecision:
+        try:
+            body = _strict_json(row["decision_json"], "assistance decision")
+            edits = _strict_json(row["edits_json"], "assistance edits")
+            expected_keys = {
+                "decision_id",
+                "suggestion_id",
+                "suggestion_hash",
+                "suggestion_record_version",
+                "target_record_version",
+                "action",
+                "actor_id",
+                "actor_type",
+                "edits",
+                "reason",
+                "idempotency_key",
+                "resulting_resource_identity",
+                "created_at",
+            }
+            if not isinstance(body, dict) or set(body) != expected_keys or body["edits"] != edits:
+                raise ValueError("invalid decision body")
+            identity = body["resulting_resource_identity"]
+            decision = AssistanceDecision(
+                decision_id=cast(str, body["decision_id"]),
+                suggestion_id=cast(str, body["suggestion_id"]),
+                suggestion_hash=cast(str, body["suggestion_hash"]),
+                suggestion_record_version=cast(int, body["suggestion_record_version"]),
+                target_record_version=cast(int, body["target_record_version"]),
+                action=AssistanceDecisionAction(cast(str, body["action"])),
+                actor_id=cast(str, body["actor_id"]),
+                actor_type=ActorType(cast(str, body["actor_type"])),
+                edits=tuple((cast(str, item[0]), item[1]) for item in cast(list[list[object]], edits)),
+                reason=cast(str, body["reason"]),
+                idempotency_key=cast(str, body["idempotency_key"]),
+                resulting_resource_identity=(
+                    None if identity is None else (cast(list[str], identity)[0], cast(list[str], identity)[1])
+                ),
+                created_at=cast(str, body["created_at"]),
+            )
+            checks = (
+                decision.decision_id == row["decision_id"],
+                decision.suggestion_id == row["suggestion_id"],
+                decision.suggestion_hash == row["suggestion_hash"],
+                decision.suggestion_record_version == row["suggestion_record_version"],
+                decision.target_record_version == row["target_record_version"],
+                decision.action.value == row["action"],
+                decision.actor_id == row["actor_id"],
+                decision.actor_type.value == row["actor_type"],
+                decision.reason == row["reason"],
+                decision.created_at == row["created_at"],
+                canonical_json(_decision_body(decision)) == row["decision_json"],
+            )
+            if not all(checks):
+                raise ValueError("decision columns mismatch")
+            audit = connection.execute(
+                "SELECT workspace_id, decision_id, actor_id, actor_type, canonical_payload_hash "
+                "FROM audit_events WHERE event_id=?",
+                (row["audit_event_id"],),
+            ).fetchone()
+            if audit is None or (
+                audit["workspace_id"] != row["workspace_id"]
+                or audit["decision_id"] != decision.decision_id
+                or audit["actor_id"] != decision.actor_id
+                or audit["actor_type"] != decision.actor_type.value
+                or audit["canonical_payload_hash"] != row["payload_hash"]
+            ):
+                raise ValueError("decision audit mismatch")
+            return decision
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
+
+    def get_decision(self, decision_id: str, workspace_id: str) -> AssistanceDecision | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
+                "WHERE decision_id=? AND workspace_id=?",
+                (decision_id, workspace_id),
+            ).fetchone()
+            return None if row is None else self._decode_decision(row, connection)
+        finally:
+            connection.close()
+
+    def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> AssistanceDecision | None:
+        connection = self._connect()
+        try:
+            resource_id = self._check_replay_row(
+                self._idempotency_row(connection, scope), payload_hash, "assistance_decision"
+            )
+            if resource_id is None:
+                return None
+            row = connection.execute(
+                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
+                "WHERE decision_id=? AND workspace_id=?",
+                (resource_id, scope.workspace_id),
+            ).fetchone()
+            if row is None:
+                raise _storage_error()
+            decision = self._decode_decision(row, connection)
+            suggestion_row = connection.execute(
+                f"SELECT {_SUGGESTION_COLUMNS} FROM fmea_assistance_suggestions "
+                "WHERE suggestion_id=? AND workspace_id=?",
+                (decision.suggestion_id, scope.workspace_id),
+            ).fetchone()
+            if suggestion_row is None:
+                raise _storage_error()
+            suggestion = self._decode_suggestion(suggestion_row)
+            if assistance_decision_payload_hash(scope, suggestion, decision) != payload_hash:
+                raise _storage_error()
+            return decision
+        finally:
+            connection.close()
+
+    def append_decision(self, prepared: PreparedAssistanceDecision) -> AssistanceDecision:  # noqa: C901
+        if not isinstance(prepared, PreparedAssistanceDecision):
+            raise _safe_error("FMEA_REVIEW_REQUEST_INVALID", "Prepared assistance decision is invalid.")
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay_id = self._check_replay_row(
+                self._idempotency_row(connection, prepared.scope), prepared.payload_hash, "assistance_decision"
+            )
+            if replay_id is not None:
+                row = connection.execute(
+                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
+                    "WHERE decision_id=? AND workspace_id=?",
+                    (replay_id, prepared.suggestion.workspace_id),
+                ).fetchone()
+                if row is None:
+                    raise _storage_error()
+                result = self._decode_decision(row, connection)
+                if (
+                    assistance_decision_payload_hash(prepared.scope, prepared.suggestion, result)
+                    != prepared.payload_hash
+                ):
+                    raise _storage_error()
+                connection.execute("COMMIT")
+                return result
+            source = connection.execute(
+                f"SELECT {_SUGGESTION_COLUMNS} FROM fmea_assistance_suggestions "
+                "WHERE suggestion_id=? AND workspace_id=?",
+                (prepared.suggestion.suggestion_id, prepared.suggestion.workspace_id),
+            ).fetchone()
+            if source is None:
+                raise _safe_error("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "Assistance suggestion was not found.")
+            authoritative = self._decode_suggestion(source)
+            if authoritative != prepared.suggestion:
+                raise _safe_error("FMEA_MODEL_SUGGESTION_INVALID", "Assistance suggestion binding is invalid.")
+            self._validate_suggestion_source(connection, authoritative)
+            if prepared.decision.actor_type is not ActorType.HUMAN:
+                raise _safe_error("FMEA_REVIEW_FORBIDDEN", "A human actor is required.")
+            self._reserve_idempotency(
+                connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
+            )
+            # The decision has an FK to its immutable audit row, so the audit is inserted first.
+            self._insert_audit(connection, prepared.audit)
+            self._insert_decision(connection, prepared)
+            self._complete_idempotency(
+                connection,
+                prepared.scope,
+                prepared.payload_hash,
+                "assistance_decision",
+                prepared.decision.decision_id,
+                prepared.audit.occurred_at_server,
+            )
+            connection.execute("COMMIT")
+            return prepared.decision
+        except ReviewError:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        except sqlite3.IntegrityError as exc:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise _safe_error("FMEA_REVIEW_ACTION_INVALID", "Assistance decision conflicts with stored state.") from exc
+        except sqlite3.Error as exc:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True) from exc
+        finally:
+            connection.close()
+
+
+__all__ = ["SqliteAssistanceRepository"]
