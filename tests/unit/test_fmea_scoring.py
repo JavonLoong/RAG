@@ -3,7 +3,14 @@ from __future__ import annotations
 import pytest
 
 from core_domain.fmea.errors import FmeaDomainError
-from core_domain.fmea.scoring import RiskAssessment, ScoringRulePack, calculate_risk
+from core_domain.fmea.scoring import (
+    RiskAssessment,
+    RiskProposal,
+    ScoreDimension,
+    ScoringRulePack,
+    calculate_risk,
+    validate_risk_confirmation,
+)
 
 
 def rules() -> ScoringRulePack:
@@ -199,3 +206,40 @@ def test_duplicate_consequence_classes_fail() -> None:
             reason="duplicate consequence",
             evidence_ids=(),
         )
+
+
+def test_scoring_rule_pack_requires_complete_dimension_anchors() -> None:
+    with pytest.raises(FmeaDomainError, match="dimension anchors"):
+        ScoringRulePack(
+            rule_pack_id="gas-turbine-risk",
+            version="1.0.0",
+            applicable_analysis_types=("fuel_system",),
+            severity_anchors=((1, "low"),),
+            occurrence_window="hours",
+            occurrence_denominator="1000_hours",
+            detection_positions=("sensor",),
+            score_min=1,
+            score_max=2,
+            rpn_formula_version="S*O*D-1",
+            risk_matrix_version="matrix-1",
+            decision_priority_version="priority-1",
+            high_priority_rpn=2,
+            dimension_anchors=(("severity", ((1, "low"),)),),
+        )
+
+
+def test_missing_required_dimension_never_produces_confirmed_rpn() -> None:
+    proposal = RiskProposal(
+        proposal_id="proposal-1",
+        workspace_id="ws-1",
+        row_id="row-1",
+        source_record_version=3,
+        evidence_pack_id="pack-1",
+        dimensions=(
+            ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+            ScoreDimension("occurrence", None, (), "unknown", "missing"),
+            ScoreDimension("detection", 6, ("ev-1",), "moderate", None),
+        ),
+    )
+    with pytest.raises(FmeaDomainError, match="required risk dimension"):
+        validate_risk_confirmation(proposal, required_dimensions=("severity", "occurrence", "detection"))

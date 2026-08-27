@@ -258,7 +258,16 @@ def _json_value(value: object) -> object:
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value):
-        return {field.name: _json_value(getattr(value, field.name)) for field in fields(value)}
+        result: dict[str, object] = {}
+        for field in fields(value):
+            field_value = getattr(value, field.name)
+            # These additive FmeaRow fields are absent from legacy persisted
+            # review responses. Keep empty defaults byte-compatible while
+            # retaining non-empty typed claims in new responses.
+            if field.name in {"extension_values", "field_claims"} and field_value == ():
+                continue
+            result[field.name] = _json_value(field_value)
+        return result
     if isinstance(value, tuple):
         return [_json_value(item) for item in value]
     if isinstance(value, list):

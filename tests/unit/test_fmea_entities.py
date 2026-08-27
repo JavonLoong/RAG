@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 from dataclasses import FrozenInstanceError, fields, replace
 
 import pytest
 
 from core_domain.fmea.codec import decode_analysis, decode_evidence_pack, decode_row, encode_json
-from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
+from core_domain.fmea.entities import FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.policies import (
     validate_publication_transition,
@@ -20,6 +21,7 @@ from core_domain.fmea.states import (
     PublicationStatus,
     ReviewStatus,
 )
+from fmea_application.review_contracts import ReviewDecisionResult, encode_review_json
 
 
 def test_known_row_requires_current_pack_evidence(fixture_pack, fixture_row) -> None:
@@ -147,7 +149,8 @@ def test_entities_are_frozen_and_slotted(fixture_analysis, fixture_row) -> None:
     assert hasattr(FmeaAnalysis, "__slots__")
     assert hasattr(FmeaRow, "__slots__")
     assert tuple(field.name for field in fields(FmeaAnalysis))[-1] == "record_version"
-    assert tuple(field.name for field in fields(FmeaRow))[-1] == "record_version"
+    row_field_names = tuple(field.name for field in fields(FmeaRow))
+    assert row_field_names[-3:] == ("record_version", "extension_values", "field_claims")
     with pytest.raises(FrozenInstanceError):
         fixture_analysis.analysis_id = "changed"
     with pytest.raises(FrozenInstanceError):
@@ -185,6 +188,43 @@ def test_codec_round_trips_non_null_risk_assessment(fixture_row) -> None:
     row = replace(fixture_row, risk_assessment=assessment)
 
     assert decode_row(encode_json(row)) == row
+
+
+def test_typed_extensions_round_trip(fixture_row) -> None:
+    row = replace(
+        fixture_row,
+        extension_values=(FieldValue("gas_turbine.fuel.wobbe_index", "decimal", "48.2"),),
+    )
+    validate_extension_values(row, {"extension_fields": {"gas_turbine.fuel.wobbe_index": "decimal"}})
+    assert decode_row(encode_json(row)) == row
+
+
+def test_legacy_row_json_keeps_old_canonical_bytes(fixture_row) -> None:
+    payload = json.loads(encode_json(fixture_row))
+    payload.pop("extension_values", None)
+    payload.pop("field_claims", None)
+    legacy_json = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    assert encode_json(decode_row(legacy_json)) == legacy_json
+
+
+def test_review_result_serializer_omits_empty_new_row_fields(fixture_row) -> None:
+    result = ReviewDecisionResult(
+        decision_id="decision-1",
+        row=fixture_row,
+        previous_record_version=1,
+        record_version=2,
+        review_status=ReviewStatus.ACCEPTED,
+        publication_status=PublicationStatus.UNPUBLISHED,
+        audit_event_id="audit-1",
+        suggestion_id=None,
+        evidence_requests=(),
+        persisted=True,
+        request_id="request-1",
+        trace_id="trace-1",
+    )
+    row_payload = json.loads(encode_review_json(result))["row"]
+    assert "extension_values" not in row_payload
+    assert "field_claims" not in row_payload
 
 
 def test_codec_is_canonical_and_rejects_nan() -> None:

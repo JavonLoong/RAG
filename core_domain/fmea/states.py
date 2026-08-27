@@ -41,6 +41,14 @@ class RunStatus(str, Enum):
     FAILED = "failed"
 
 
+class RiskStatus(str, Enum):
+    UNSCORED = "unscored"
+    PROPOSED = "proposed"
+    REVIEWED = "reviewed"
+    CONFIRMED = "confirmed"
+    INVALIDATED = "invalidated"
+
+
 class EvidenceSupportStatus(str, Enum):
     SUPPORTED = "supported"
     PARTIALLY_SUPPORTED = "partially_supported"

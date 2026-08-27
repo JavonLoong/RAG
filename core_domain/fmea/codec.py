@@ -18,7 +18,22 @@ def _encode(value: object) -> object:
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value):
-        return {field.name: _encode(getattr(value, field.name)) for field in fields(value)}
+        encoded: dict[str, object] = {}
+        for field in fields(value):
+            field_value = getattr(value, field.name)
+            if field.name in {"extension_values", "field_claims"} and field_value == ():
+                continue
+            if (
+                field.name == "parent_pack_refs"
+                and field_value == ()
+                and getattr(value, "lineage_reason", None) is None
+                and getattr(value, "lineage_schema_version", None) is None
+            ):
+                continue
+            if field.name in {"lineage_reason", "lineage_schema_version"} and getattr(value, "parent_pack_refs", ()) == ():
+                continue
+            encoded[field.name] = _encode(field_value)
+        return encoded
     if isinstance(value, tuple):
         return [_encode(item) for item in value]
     if isinstance(value, list):
@@ -61,6 +76,11 @@ def _decode_evidence_ref(payload: object) -> EvidenceRef:
 def _decode_evidence_pack_payload(payload: object) -> EvidencePack:
     data = _object_payload(payload, "EvidencePack")
     refs = tuple(_decode_evidence_ref(item) for item in _array_payload(data["refs"], "refs"))
+    raw_parent_refs = data.get("parent_pack_refs", [])
+    parent_refs = tuple(
+        (cast(str, pair[0]), cast(str, pair[1]))
+        for pair in (cast(list[object], item) for item in _array_payload(raw_parent_refs, "parent_pack_refs"))
+    )
     result = EvidencePack.build(
         pack_id=cast(str, data["pack_id"]),
         workspace_id=cast(str, data["workspace_id"]),
@@ -69,6 +89,9 @@ def _decode_evidence_pack_payload(payload: object) -> EvidencePack:
         refs=refs,
         created_at=cast(str, data["created_at"]),
         expires_at=cast(str | None, data["expires_at"]),
+        parent_pack_refs=parent_refs,
+        lineage_reason=cast(str | None, data.get("lineage_reason")),
+        lineage_schema_version=cast(str | None, data.get("lineage_schema_version")),
     )
     if data.get("pack_hash") != result.pack_hash:
         raise FmeaDomainError("EvidencePack pack_hash does not match contents")  # noqa: TRY003
@@ -120,10 +143,45 @@ def _decode_row_payload(payload: object) -> FmeaRow:
         for pair in (cast(list[object], item) for item in field_support)
     )
     data["risk_assessment"] = _decode_risk_assessment(data["risk_assessment"])
+    raw_extensions = data.get("extension_values", [])
+    data["extension_values"] = tuple(
+        _decode_field_value(item)
+        for item in _array_payload(raw_extensions, "extension_values")
+    )
+    raw_claims = data.get("field_claims", [])
+    data["field_claims"] = tuple(
+        _decode_field_claim(item)
+        for item in _array_payload(raw_claims, "field_claims")
+    )
     data["claim_status"] = ClaimStatus(cast(str, data["claim_status"]))
     data["review_status"] = ReviewStatus(cast(str, data["review_status"]))
     data["publication_status"] = PublicationStatus(cast(str, data["publication_status"]))
     return FmeaRow(**data)
+
+
+def _decode_field_value(payload: object):
+    from .entities import FieldValue
+
+    data = _object_payload(payload, "FieldValue")
+    return FieldValue(
+        field_key=cast(str, data["field_key"]),
+        value_type=cast(str, data["value_type"]),
+        value=data["value"],
+    )
+
+
+def _decode_field_claim(payload: object):
+    from .entities import FieldClaim
+
+    data = _object_payload(payload, "FieldClaim")
+    return FieldClaim(
+        field_key=cast(str, data["field_key"]),
+        claim_status=ClaimStatus(cast(str, data["claim_status"])),
+        support_status=EvidenceSupportStatus(cast(str, data["support_status"])),
+        evidence_ids=_tuple_strings(data["evidence_ids"], "field_claim evidence_ids"),
+        uncertainty=cast(str | None, data["uncertainty"]),
+        conflict_ids=_tuple_strings(data["conflict_ids"], "field_claim conflict_ids"),
+    )
 
 
 def _decode_propagation_edge_payload(payload: object) -> PropagationEdge:
