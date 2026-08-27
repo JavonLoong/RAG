@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.scoring import (
     RiskAssessment,
+    RiskAssessmentRecord,
     RiskProposal,
     ScoreDimension,
     ScoringRulePack,
     calculate_risk,
     validate_risk_confirmation,
 )
+from core_domain.fmea.states import FMEA_SCHEMA_ID, RiskStatus
+from core_domain.fmea.value_objects import EvidencePack, EvidenceRef, VersionSet
 
 
 def rules() -> ScoringRulePack:
@@ -240,6 +245,284 @@ def test_missing_required_dimension_never_produces_confirmed_rpn() -> None:
             ScoreDimension("occurrence", None, (), "unknown", "missing"),
             ScoreDimension("detection", 6, ("ev-1",), "moderate", None),
         ),
+        domain_pack_id="fuel-combustion",
+        domain_pack_version="1.0.0",
+        rule_pack_id="gas-turbine-risk",
+        rule_pack_version="1.0.0",
+        reason="reviewed operating data",
+        created_at="2026-08-23T00:00:00Z",
     )
     with pytest.raises(FmeaDomainError, match="required risk dimension"):
-        validate_risk_confirmation(proposal, required_dimensions=("severity", "occurrence", "detection"))
+        validate_risk_confirmation(proposal, rule_pack=rules(), evidence_pack=_evidence_pack())
+
+
+def _evidence_pack(*, pack_id: str = "pack-1", workspace_id: str = "ws-1") -> EvidencePack:
+    versions = VersionSet(
+        schema_id=FMEA_SCHEMA_ID,
+        data_version="data-1",
+        graph_version="graph-1",
+        evidence_pack_version="evidence-1",
+        profile_version="profile-1",
+        template_version="template-1",
+        scoring_version="score-1",
+        prompt_version="prompt-0",
+        model_version="model-0",
+        input_snapshot_hash="d" * 64,
+    )
+    ref = EvidenceRef(
+        evidence_id="ev-1",
+        workspace_id=workspace_id,
+        document_id="doc-1",
+        document_version="doc-v1",
+        content_hash="e" * 64,
+        locator="page:1#span:1",
+        quote="pressure is low",
+        normalized_quote="pressure is low",
+        evidence_hash="f" * 64,
+        acl_scope=("engineering",),
+        source_type="primary_document",
+        source_trust="reviewed",
+        is_primary=True,
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+    return EvidencePack.build(
+        pack_id=pack_id,
+        workspace_id=workspace_id,
+        acl_scope=("engineering",),
+        versions=versions,
+        refs=(ref,),
+        created_at="2026-08-23T00:00:00Z",
+        expires_at=None,
+    )
+
+
+def _proposal(*dimensions: ScoreDimension) -> RiskProposal:
+    return RiskProposal(
+        proposal_id="proposal-1",
+        workspace_id="ws-1",
+        row_id="row-1",
+        source_record_version=3,
+        evidence_pack_id="pack-1",
+        dimensions=dimensions,
+        domain_pack_id="fuel-combustion",
+        domain_pack_version="1.0.0",
+        rule_pack_id="gas-turbine-risk",
+        rule_pack_version="1.0.0",
+        reason="reviewed operating data",
+        created_at="2026-08-23T00:00:00Z",
+    )
+
+
+def _assessment() -> RiskAssessment:
+    return calculate_risk(
+        rule_pack=rules(),
+        severity_by_consequence_class=(("decision", 9),),
+        occurrence=3,
+        detection=4,
+        inherent_risk=None,
+        current_risk=None,
+        target_residual_risk=None,
+        verified_residual_risk=None,
+        uncertainty=None,
+        reason="reviewed operating data",
+        evidence_ids=("ev-1",),
+    )
+
+
+def _record(**overrides: object) -> RiskAssessmentRecord:
+    values: dict[str, object] = {
+        "assessment_id": "assessment-1",
+        "workspace_id": "ws-1",
+        "row_id": "row-1",
+        "source_record_version": 3,
+        "evidence_pack_id": "pack-1",
+        "domain_pack_id": "fuel-combustion",
+        "domain_pack_version": "1.0.0",
+        "rule_pack_id": "gas-turbine-risk",
+        "rule_pack_version": "1.0.0",
+        "status": RiskStatus.PROPOSED,
+        "dimensions": (
+            ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+            ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+            ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+        ),
+        "derived": None,
+        "proposal_id": None,
+        "assistance_suggestion_id": None,
+        "confirmer_actor_id": None,
+        "invalidated_reason": None,
+        "record_version": 1,
+        "created_at": "2026-08-23T00:00:00Z",
+        "updated_at": "2026-08-23T00:00:00Z",
+    }
+    values.update(overrides)
+    return RiskAssessmentRecord(**values)
+
+
+def test_risk_proposal_requires_explicit_dimensions_and_identities() -> None:
+    with pytest.raises(TypeError):
+        RiskProposal()
+
+    dimensions = (ScoreDimension("severity", 9, ("ev-1",), "severe", None),)
+    for field_name in (
+        "proposal_id",
+        "workspace_id",
+        "row_id",
+        "evidence_pack_id",
+        "domain_pack_id",
+        "domain_pack_version",
+        "rule_pack_id",
+        "rule_pack_version",
+        "reason",
+        "created_at",
+    ):
+        values = {
+            "proposal_id": "proposal-1",
+            "workspace_id": "ws-1",
+            "row_id": "row-1",
+            "source_record_version": 3,
+            "evidence_pack_id": "pack-1",
+            "dimensions": dimensions,
+            "domain_pack_id": "fuel-combustion",
+            "domain_pack_version": "1.0.0",
+            "rule_pack_id": "gas-turbine-risk",
+            "rule_pack_version": "1.0.0",
+            "reason": "reviewed operating data",
+            "created_at": "2026-08-23T00:00:00Z",
+        }
+        values[field_name] = ""
+        with pytest.raises(FmeaDomainError, match=field_name):
+            RiskProposal(**values)
+
+
+def test_confirmation_requires_explicit_rule_and_evidence_packs() -> None:
+    proposal = _proposal(
+        ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+        ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+        ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+    )
+    with pytest.raises(FmeaDomainError, match="rule pack is required"):
+        validate_risk_confirmation(proposal, evidence_pack=_evidence_pack())
+    with pytest.raises(FmeaDomainError, match="EvidencePack is required"):
+        validate_risk_confirmation(proposal, rule_pack=rules())
+
+
+def test_confirmation_binds_proposal_to_workspace_packs_and_known_evidence() -> None:
+    proposal = _proposal(
+        ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+        ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+        ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+    )
+    pack = _evidence_pack()
+    with pytest.raises(FmeaDomainError, match="pack ID"):
+        validate_risk_confirmation(proposal, rule_pack=rules(), evidence_pack=_evidence_pack(pack_id="pack-2"))
+    with pytest.raises(FmeaDomainError, match="workspace"):
+        validate_risk_confirmation(proposal, rule_pack=rules(), evidence_pack=_evidence_pack(workspace_id="ws-2"))
+    with pytest.raises(FmeaDomainError, match="known evidence"):
+        validate_risk_confirmation(
+            _proposal(
+                ScoreDimension("severity", 9, (), "severe", None),
+                ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+                ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+            ),
+            rule_pack=rules(),
+            evidence_pack=pack,
+        )
+
+
+def test_confirmation_rejects_alternative_and_extra_dimensions_and_checks_all_ranges() -> None:
+    proposal = _proposal(
+        ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+        ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+        ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+        ScoreDimension("extra", 99, ("ev-1",), "unexpected", None),
+    )
+    with pytest.raises(FmeaDomainError, match="not declared"):
+        validate_risk_confirmation(proposal, rule_pack=rules(), evidence_pack=_evidence_pack())
+
+    alternative = ScoringRulePack(
+        rule_pack_id="alternative-risk",
+        version="1.0.0",
+        applicable_analysis_types=("fuel_system",),
+        severity_anchors=(),
+        occurrence_window="hours",
+        occurrence_denominator="1000_hours",
+        detection_positions=(),
+        score_min=1,
+        score_max=10,
+        rpn_formula_version="S*O*D",
+        risk_matrix_version="matrix-1",
+        decision_priority_version="priority-1",
+        high_priority_rpn=200,
+        required_dimensions=("severity", "likelihood", "detection"),
+    )
+    with pytest.raises(FmeaDomainError, match="required dimensions"):
+        validate_risk_confirmation(proposal, rule_pack=alternative, evidence_pack=_evidence_pack())
+
+    with pytest.raises(FmeaDomainError, match="score must be between 1 and 10"):
+        validate_risk_confirmation(
+            _proposal(
+                ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+                ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+                ScoreDimension("detection", 11, ("ev-1",), "unbounded", None),
+            ),
+            rule_pack=rules(),
+            evidence_pack=_evidence_pack(),
+        )
+
+
+@pytest.mark.parametrize("status", (RiskStatus.UNSCORED, RiskStatus.PROPOSED, RiskStatus.REVIEWED))
+def test_non_confirmed_risk_record_cannot_carry_derived_assessment(status: RiskStatus) -> None:
+    with pytest.raises(FmeaDomainError, match="derived assessment"):
+        _record(status=status, derived=_assessment())
+
+
+def test_risk_record_rejects_duplicate_dimensions() -> None:
+    dimensions = (
+        ScoreDimension("severity", 9, ("ev-1",), "severe", None),
+        ScoreDimension("severity", 8, ("ev-1",), "high", None),
+    )
+    with pytest.raises(FmeaDomainError, match="duplicate risk dimension"):
+        _record(dimensions=dimensions)
+
+
+def test_confirmed_risk_record_requires_complete_identity_and_derived_consistency() -> None:
+    with pytest.raises(FmeaDomainError, match="proposal_id"):
+        _record(status=RiskStatus.CONFIRMED, derived=_assessment(), confirmer_actor_id="actor-1")
+    with pytest.raises(FmeaDomainError, match="confirmer_actor_id"):
+        _record(status=RiskStatus.CONFIRMED, derived=_assessment(), proposal_id="proposal-1")
+    with pytest.raises(FmeaDomainError, match="confirmed risk dimension"):
+        _record(
+            status=RiskStatus.CONFIRMED,
+            derived=_assessment(),
+            proposal_id="proposal-1",
+            confirmer_actor_id="actor-1",
+            dimensions=(
+                ScoreDimension("severity", None, (), "unknown", "missing"),
+                ScoreDimension("occurrence", 3, ("ev-1",), "occasional", None),
+                ScoreDimension("detection", 4, ("ev-1",), "moderate", None),
+            ),
+        )
+    with pytest.raises(FmeaDomainError, match="rule identity"):
+        altered_assessment = replace(_assessment(), scoring_rule_pack_id="other-risk")
+        _record(
+            status=RiskStatus.CONFIRMED,
+            derived=altered_assessment,
+            proposal_id="proposal-1",
+            confirmer_actor_id="actor-1",
+        )
+
+    confirmed = _record(
+        status=RiskStatus.CONFIRMED,
+        derived=_assessment(),
+        proposal_id="proposal-1",
+        confirmer_actor_id="actor-1",
+    )
+    assert confirmed.derived is not None
+    assert confirmed.derived.rpn == 108
+
+
+def test_invalidated_risk_record_requires_reason() -> None:
+    with pytest.raises(FmeaDomainError, match="invalidated reason"):
+        _record(status=RiskStatus.INVALIDATED)
