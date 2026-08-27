@@ -212,6 +212,65 @@ def _resolved_parent_map(
     return result
 
 
+def _resolve_lineage_parent(
+    candidate: EvidencePack,
+    resolved: Mapping[str, EvidencePack],
+    parent_id: str,
+) -> EvidencePack:
+    parent = candidate if parent_id == candidate.pack_id else resolved.get(parent_id)
+    if parent is None:
+        raise FmeaDomainError(f"unknown parent pack: {parent_id}")  # noqa: TRY003
+    return parent
+
+
+def _validate_lineage_parent_binding(
+    candidate: EvidencePack,
+    parent: EvidencePack,
+    parent_id: str,
+    parent_hash: str,
+    visiting: set[str],
+) -> None:
+    if parent.pack_id in visiting:
+        raise FmeaDomainError("EvidencePack lineage contains a cycle")  # noqa: TRY003
+    if parent.workspace_id != candidate.workspace_id:
+        raise FmeaDomainError("parent pack workspace does not match candidate workspace")  # noqa: TRY003
+    if parent_hash != parent.pack_hash:
+        raise FmeaDomainError(f"parent pack hash mismatch: {parent_id}")  # noqa: TRY003
+
+
+def _visit_lineage_pack(
+    candidate: EvidencePack,
+    resolved: Mapping[str, EvidencePack],
+    pack: EvidencePack,
+    visiting: set[str],
+    visited: set[str],
+) -> None:
+    if pack.pack_id in visiting:
+        raise FmeaDomainError("EvidencePack lineage contains a cycle")  # noqa: TRY003
+    if pack.pack_id in visited:
+        return
+    visiting.add(pack.pack_id)
+    for parent_id, parent_hash in pack.parent_pack_refs:
+        parent = _resolve_lineage_parent(candidate, resolved, parent_id)
+        _validate_lineage_parent_binding(candidate, parent, parent_id, parent_hash, visiting)
+        _visit_lineage_pack(candidate, resolved, parent, visiting, visited)
+    visiting.remove(pack.pack_id)
+    visited.add(pack.pack_id)
+
+
+def _validate_candidate_self_hash(candidate: EvidencePack) -> None:
+    if (
+        _evidence_pack_hash(
+            candidate.refs,
+            candidate.parent_pack_refs,
+            candidate.lineage_reason,
+            candidate.lineage_schema_version,
+        )
+        != candidate.pack_hash
+    ):
+        raise FmeaDomainError("candidate pack_hash does not match contents")  # noqa: TRY003
+
+
 def validate_evidence_lineage(
     candidate: EvidencePack,
     parent_packs: Mapping[str, EvidencePack] | Iterable[EvidencePack],
@@ -225,40 +284,5 @@ def validate_evidence_lineage(
         raise FmeaDomainError("silent parent pack replacement is not allowed")  # noqa: TRY003
     visiting: set[str] = set()
     visited: set[str] = set()
-
-    def visit(pack: EvidencePack) -> None:
-        if pack.pack_id in visiting:
-            raise FmeaDomainError("EvidencePack lineage contains a cycle")  # noqa: TRY003
-        if pack.pack_id in visited:
-            return
-        visiting.add(pack.pack_id)
-        for parent_id, parent_hash in pack.parent_pack_refs:
-            if parent_id == candidate.pack_id and pack is not candidate:
-                # The target is checked before the hash so an actual cycle is
-                # reported as a cycle even when its fixture hash is stale.
-                if candidate.pack_id in visiting:
-                    raise FmeaDomainError("EvidencePack lineage contains a cycle")  # noqa: TRY003
-            parent = candidate if parent_id == candidate.pack_id else resolved.get(parent_id)
-            if parent is None:
-                raise FmeaDomainError(f"unknown parent pack: {parent_id}")  # noqa: TRY003
-            if parent.pack_id in visiting:
-                raise FmeaDomainError("EvidencePack lineage contains a cycle")  # noqa: TRY003
-            if parent.workspace_id != candidate.workspace_id:
-                raise FmeaDomainError("parent pack workspace does not match candidate workspace")  # noqa: TRY003
-            if parent_hash != parent.pack_hash:
-                raise FmeaDomainError(f"parent pack hash mismatch: {parent_id}")  # noqa: TRY003
-            visit(parent)
-        visiting.remove(pack.pack_id)
-        visited.add(pack.pack_id)
-
-    visit(candidate)
-    if (
-        _evidence_pack_hash(
-            candidate.refs,
-            candidate.parent_pack_refs,
-            candidate.lineage_reason,
-            candidate.lineage_schema_version,
-        )
-        != candidate.pack_hash
-    ):
-        raise FmeaDomainError("candidate pack_hash does not match contents")  # noqa: TRY003
+    _visit_lineage_pack(candidate, resolved, candidate, visiting, visited)
+    _validate_candidate_self_hash(candidate)
