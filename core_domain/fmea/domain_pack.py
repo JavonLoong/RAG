@@ -8,14 +8,15 @@ from dataclasses import dataclass
 from .errors import FmeaDomainError
 
 _IDENTITY = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+_SEMVER_CORE = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+_PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 _SEMVER = re.compile(
-    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+    rf"^{_SEMVER_CORE}"
+    rf"(?:-{_PRERELEASE_IDENTIFIER}(?:\.{_PRERELEASE_IDENTIFIER})*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_RANGE_PART = re.compile(
-    r"^(?:[<>=~^]{0,2})?(?:\*|(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))$"
-)
+_RANGE_PART = re.compile(rf"^(?P<operator>>=|<=|=|>|<)(?P<version>{_SEMVER_CORE})$")
 _DEFAULT_KERNEL_COMPATIBILITY_RANGE = ">=1.0.0,<2.0.0"
 
 
@@ -45,7 +46,7 @@ def _unique_texts(value: object, field_name: str) -> tuple[str, ...]:
     try:
         items = tuple(value)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise FmeaDomainError(f"{field_name} must be a sequence") from exc
+        raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
     normalized = tuple(_identity(item, field_name) for item in items)
     if not normalized:
         raise FmeaDomainError(f"{field_name} must not be empty")  # noqa: TRY003
@@ -60,7 +61,7 @@ def _identity_pairs(value: object, field_name: str, label: str) -> tuple[tuple[s
     try:
         raw_items = tuple(value)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise FmeaDomainError(f"{field_name} must be a sequence") from exc
+        raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
 
     normalized: list[tuple[str, str]] = []
     for item in raw_items:
@@ -79,7 +80,7 @@ def _extension_fields(value: object) -> tuple[tuple[str, str], ...]:
     try:
         raw_items = tuple(value)  # type: ignore[arg-type]
     except TypeError as exc:
-        raise FmeaDomainError("extension_fields must be a sequence") from exc
+        raise FmeaDomainError("extension_fields must be a sequence") from exc  # noqa: TRY003
 
     result: list[tuple[str, str]] = []
     for item in raw_items:
@@ -96,11 +97,59 @@ def _extension_fields(value: object) -> tuple[tuple[str, str], ...]:
     return normalized
 
 
+def _merge_lower_bound(
+    current: tuple[tuple[int, int, int], bool] | None,
+    version: tuple[int, int, int],
+    is_open: bool,
+) -> tuple[tuple[int, int, int], bool]:
+    if current is None or version > current[0]:
+        return version, is_open
+    if version == current[0]:
+        return version, current[1] or is_open
+    return current
+
+
+def _merge_upper_bound(
+    current: tuple[tuple[int, int, int], bool] | None,
+    version: tuple[int, int, int],
+    is_open: bool,
+) -> tuple[tuple[int, int, int], bool]:
+    if current is None or version < current[0]:
+        return version, is_open
+    if version == current[0]:
+        return version, current[1] or is_open
+    return current
+
+
 def _compatibility_range(value: object) -> str:
     normalized = _non_empty_text(value, "kernel_compatibility_range")
     parts = tuple(part.strip() for part in normalized.split(","))
-    if not parts or any(_RANGE_PART.fullmatch(part) is None for part in parts):
-        raise FmeaDomainError("kernel_compatibility_range is invalid")  # noqa: TRY003
+    lower: tuple[tuple[int, int, int], bool] | None = None
+    upper: tuple[tuple[int, int, int], bool] | None = None
+    for part in parts:
+        match = _RANGE_PART.fullmatch(part)
+        if match is None:
+            raise FmeaDomainError(  # noqa: TRY003
+                "kernel_compatibility_range is invalid; expected comma-separated stable-semver comparators",
+            )
+        major, minor, patch = (int(component) for component in match.group("version").split("."))
+        version = (major, minor, patch)
+        operator = match.group("operator")
+        is_open = operator in (">", "<")
+        if operator in (">", ">="):
+            lower = _merge_lower_bound(lower, version, is_open)
+        elif operator in ("<", "<="):
+            upper = _merge_upper_bound(upper, version, is_open)
+        else:
+            lower = _merge_lower_bound(lower, version, False)
+            upper = _merge_upper_bound(upper, version, False)
+
+    if lower is not None and upper is not None and (
+        lower[0] > upper[0] or (lower[0] == upper[0] and (lower[1] or upper[1]))
+    ):
+        raise FmeaDomainError(  # noqa: TRY003
+            "kernel_compatibility_range is invalid; comparator intersection is empty",
+        )
     return ",".join(parts)
 
 

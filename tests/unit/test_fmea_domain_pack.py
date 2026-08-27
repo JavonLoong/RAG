@@ -42,6 +42,56 @@ def test_domain_pack_rejects_invalid_hash_and_version() -> None:
         _manifest(version="1")
 
 
+def test_domain_pack_accepts_valid_prerelease_and_build_metadata() -> None:
+    manifest = _manifest(version="1.2.3-alpha.1+build.7")
+    assert manifest.version == "1.2.3-alpha.1+build.7"
+
+
+def test_domain_pack_rejects_numeric_prerelease_leading_zero() -> None:
+    with pytest.raises(FmeaDomainError, match="semantic version"):
+        _manifest(version="1.0.0-01")
+
+
+@pytest.mark.parametrize(
+    "kernel_compatibility_range",
+    (
+        ">>1.0.0",
+        "~^1.0.0",
+        "1.0.0,<2.0.0",
+        ">=1.0.0-01,<2.0.0",
+    ),
+)
+def test_domain_pack_rejects_invalid_kernel_compatibility_comparators(
+    kernel_compatibility_range: str,
+) -> None:
+    with pytest.raises(FmeaDomainError, match="kernel_compatibility_range"):
+        _manifest(kernel_compatibility_range=kernel_compatibility_range)
+
+
+@pytest.mark.parametrize(
+    "kernel_compatibility_range",
+    (
+        ">=2.0.0,<1.0.0",
+        ">1.0.0,<=1.0.0",
+    ),
+)
+def test_domain_pack_rejects_empty_kernel_compatibility_intersection(
+    kernel_compatibility_range: str,
+) -> None:
+    with pytest.raises(FmeaDomainError, match="kernel_compatibility_range"):
+        _manifest(kernel_compatibility_range=kernel_compatibility_range)
+
+
+def test_domain_pack_accepts_closed_equal_kernel_compatibility_boundary() -> None:
+    manifest = _manifest(kernel_compatibility_range=">=1.0.0,<=1.0.0")
+    assert manifest.kernel_compatibility_range == ">=1.0.0,<=1.0.0"
+
+
+def test_domain_pack_accepts_exact_kernel_compatibility_comparator() -> None:
+    manifest = _manifest(kernel_compatibility_range="=1.0.0")
+    assert manifest.kernel_compatibility_range == "=1.0.0"
+
+
 def test_extension_values_use_structural_template_contract() -> None:
     row = SimpleNamespace(
         extension_values=(FieldValue("gas_turbine.fuel.wobbe_index", "decimal", "48.2"),),
