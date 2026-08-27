@@ -972,25 +972,7 @@ class SqliteRiskRepository:
             if row is None:
                 return None
             assessment = self._decode_assessment(row)
-            if assessment.status is not RiskStatus.UNSCORED:
-                if assessment.status is RiskStatus.PROPOSED:
-                    outbox_row = connection.execute(
-                        f"SELECT {_OUTBOX_COLUMNS} FROM fmea_outbox_events "
-                        "WHERE aggregate_id=? AND workspace_id=? AND event_type='risk.proposed'",
-                        (assessment.assessment_id, workspace_id),
-                    ).fetchone()
-                else:
-                    outbox_row = connection.execute(
-                        f"SELECT {', '.join('outbox.' + item.strip() for item in _OUTBOX_COLUMNS.split(','))} "
-                        "FROM fmea_outbox_events AS outbox JOIN fmea_risk_decisions AS decision "
-                        "ON decision.outbox_event_id=outbox.event_id AND decision.workspace_id=outbox.workspace_id "
-                        "WHERE decision.resulting_assessment_id=? AND decision.workspace_id=? "
-                        "AND decision.applied_assessment_version=?",
-                        (assessment.assessment_id, workspace_id, assessment.record_version),
-                    ).fetchone()
-                if outbox_row is None:
-                    raise _storage_error()
-                self._validate_outbox_chain(connection, self._decode_outbox(outbox_row))
+            self._validate_assessment_lifecycle(connection, assessment)
             return assessment
         except ReviewError:
             raise
@@ -1090,8 +1072,43 @@ class SqliteRiskRepository:
         linked = self._decode_assessment(linked_row)
         if not _assessment_identity_matches(linked, initial):
             raise _storage_error()
+        self._validate_assessment_lifecycle(connection, linked, initial=initial)
         self._validate_outbox_chain(connection, outbox)
         return initial
+
+    def _validate_assessment_lifecycle(
+        self,
+        connection: sqlite3.Connection,
+        assessment: RiskAssessmentRecord,
+        *,
+        initial: RiskAssessmentRecord | None = None,
+    ) -> None:
+        if assessment.status is RiskStatus.UNSCORED:
+            return
+        if assessment.status is RiskStatus.PROPOSED:
+            if initial is not None and assessment != initial:
+                raise _storage_error()
+            outbox_row = connection.execute(
+                f"SELECT {_OUTBOX_COLUMNS} FROM fmea_outbox_events "
+                "WHERE aggregate_id=? AND workspace_id=? AND event_type='risk.proposed'",
+                (assessment.assessment_id, assessment.workspace_id),
+            ).fetchone()
+        else:
+            outbox_row = connection.execute(
+                f"SELECT {', '.join('outbox.' + item.strip() for item in _OUTBOX_COLUMNS.split(','))} "
+                "FROM fmea_outbox_events AS outbox JOIN fmea_risk_decisions AS decision "
+                "ON decision.outbox_event_id=outbox.event_id AND decision.workspace_id=outbox.workspace_id "
+                "WHERE decision.resulting_assessment_id=? AND decision.workspace_id=? "
+                "AND decision.applied_assessment_version=?",
+                (assessment.assessment_id, assessment.workspace_id, assessment.record_version),
+            ).fetchone()
+        if outbox_row is None:
+            raise _storage_error()
+        outbox = self._decode_outbox(outbox_row)
+        persisted_payload = outbox.payload.get("assessment")
+        if persisted_payload is None or _decode_assessment_value(_json_value(persisted_payload)) != assessment:
+            raise _storage_error()
+        self._validate_outbox_chain(connection, outbox)
 
     def _validate_sources(
         self,

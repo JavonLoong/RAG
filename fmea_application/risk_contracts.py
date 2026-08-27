@@ -648,6 +648,7 @@ class PreparedAssistanceDecision:
     suggestion: AssistanceSuggestion[object]
     decision: AssistanceDecision
     audit: AuditEvent
+    reservation_hash: str | None = None
 
     def __post_init__(self) -> None:  # noqa: C901
         if not isinstance(self.scope, IdempotencyScope):
@@ -660,6 +661,8 @@ class PreparedAssistanceDecision:
             raise ValueError("decision must be an AssistanceDecision")
         if self.audit.command != self.scope.command:
             raise ValueError("audit command does not match scope")
+        if self.reservation_hash is not None:
+            object.__setattr__(self, "reservation_hash", _hash(self.reservation_hash, "reservation_hash"))
         if self.decision.suggestion_id != self.suggestion.suggestion_id:
             raise ValueError("decision suggestion identity does not match suggestion")
         if self.decision.suggestion_hash != self.suggestion.suggestion_hash:

@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from core_domain.fmea.states import FMEA_SCHEMA_ID, ActorType
@@ -17,7 +18,14 @@ from .assistance_contracts import (
     AssistanceSuggestion,
 )
 from .ports import AssistanceRepository
-from .review_contracts import ActorContext, AuditEvent, IdempotencyScope, VersionSet, idempotency_key_hash
+from .review_contracts import (
+    ActorContext,
+    AuditEvent,
+    IdempotencyScope,
+    VersionSet,
+    encode_review_json,
+    idempotency_key_hash,
+)
 from .review_errors import ReviewError
 from .risk_contracts import PreparedAssistanceDecision, assistance_decision_payload_hash
 
@@ -124,9 +132,12 @@ class DecideAssistanceCommand:
 
 @dataclass(frozen=True, slots=True)
 class AssistanceHandlerRequest:
+    """A durably reserved command; handlers must upsert canonically by its UUID."""
+
     suggestion: AssistanceSuggestion[object]
     command: DecideAssistanceCommand
     actor: ActorContext
+    reservation_hash: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +174,49 @@ def _is_adoption(action: AssistanceDecisionAction) -> bool:
         AssistanceDecisionAction.PARTIAL_ADOPT,
         AssistanceDecisionAction.EDIT_AND_ADOPT,
     }
+
+
+def _reservation_hash(
+    scope: IdempotencyScope,
+    suggestion: AssistanceSuggestion[object],
+    command: DecideAssistanceCommand,
+    actor: ActorContext,
+) -> str:
+    payload = {
+        "contract": "fmea.assistance.decision.reservation.v1",
+        "scope_key": scope.scope_key,
+        "suggestion_id": suggestion.suggestion_id,
+        "suggestion_hash": suggestion.suggestion_hash,
+        "suggestion_record_version": suggestion.record_version,
+        "target_record_version": suggestion.target_record_version,
+        "action": command.action.value,
+        "reason": command.reason,
+        "edits": command.edits,
+        "actor_id": actor.actor_id,
+        "actor_type": actor.actor_type.value,
+        "actor_roles": tuple(sorted(actor.roles)),
+        "workspace_id": actor.workspace_id,
+    }
+    return "sha256:" + sha256(encode_review_json(payload).encode("utf-8")).hexdigest()
+
+
+def _validate_existing_decision(
+    existing: AssistanceDecision,
+    suggestion: AssistanceSuggestion[object],
+    command: DecideAssistanceCommand,
+    actor: ActorContext,
+) -> AssistanceDecision:
+    if (
+        existing.suggestion_id != suggestion.suggestion_id
+        or existing.suggestion_hash != suggestion.suggestion_hash
+        or existing.action is not command.action
+        or existing.actor_id != actor.actor_id
+        or existing.idempotency_key != command.idempotency_key
+        or existing.reason != command.reason
+        or existing.edits != tuple(command.edits)
+    ):
+        raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "assistance decision key is already bound")
+    return existing
 
 
 class AssistanceDecisionService:
@@ -210,19 +264,27 @@ class AssistanceDecisionService:
         decision_id = stable_id("assistance-decision", command.idempotency_key)
         existing = self._repository.get_decision(decision_id, actor.workspace_id)
         if existing is not None:
-            if (
-                existing.suggestion_id != suggestion.suggestion_id
-                or existing.suggestion_hash != suggestion.suggestion_hash
-                or existing.action is not command.action
-                or existing.actor_id != actor.actor_id
-                or existing.idempotency_key != command.idempotency_key
-                or existing.reason != command.reason
-                or existing.edits != tuple(command.edits)
-            ):
-                raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "assistance decision key is already bound")
-            return existing
+            return _validate_existing_decision(existing, suggestion, command, actor)
 
-        handler_request = AssistanceHandlerRequest(suggestion, command, actor)
+        scope = IdempotencyScope(
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            command="fmea.assistance.decide",
+            resource_path=f"/assistance/suggestions/{suggestion.suggestion_id}",
+            key_hash=idempotency_key_hash(command.idempotency_key),
+        )
+        created_at = self._clock()
+        reservation_hash = _reservation_hash(scope, suggestion, command, actor)
+        raced = self._repository.reserve_decision(
+            scope,
+            reservation_hash,
+            decision_id,
+            created_at,
+        )
+        if raced is not None:
+            return _validate_existing_decision(raced, suggestion, command, actor)
+
+        handler_request = AssistanceHandlerRequest(suggestion, command, actor, reservation_hash)
         try:
             resulting_identity = self._handlers[command.action](handler_request)
         except KeyError as exc:
@@ -244,7 +306,6 @@ class AssistanceDecisionService:
             resource_identity = None
             applied_record_version = None
 
-        created_at = self._clock()
         decision = AssistanceDecision(
             decision_id=decision_id,
             suggestion_id=suggestion.suggestion_id,
@@ -260,17 +321,7 @@ class AssistanceDecisionService:
             resulting_resource_identity=resource_identity,
             created_at=created_at,
         )
-        scope = IdempotencyScope(
-            workspace_id=actor.workspace_id,
-            actor_id=actor.actor_id,
-            command="fmea.assistance.decide",
-            resource_path=f"/assistance/suggestions/{suggestion.suggestion_id}",
-            key_hash=idempotency_key_hash(command.idempotency_key),
-        )
         payload_hash = assistance_decision_payload_hash(scope, suggestion, decision)
-        replayed = self._repository.replay_decision(scope, payload_hash)
-        if replayed is not None:
-            return replayed
         audit = make_audit(
             actor=actor,
             scope=scope,
@@ -298,6 +349,7 @@ class AssistanceDecisionService:
             suggestion=suggestion,
             decision=decision,
             audit=audit,
+            reservation_hash=reservation_hash,
         )
         return self._repository.append_decision(prepared)
 

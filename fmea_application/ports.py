@@ -261,6 +261,14 @@ class AssistanceRepository(Protocol):
 
     def get_decision(self, decision_id: str, workspace_id: str) -> AssistanceDecision | None: ...
 
+    def reserve_decision(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+        created_at: str,
+    ) -> AssistanceDecision | None: ...
+
     def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> AssistanceDecision | None: ...
 
 

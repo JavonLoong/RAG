@@ -15,7 +15,7 @@ from fmea_application.risk_contracts import (
     risk_proposal_payload_hash,
 )
 from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
-from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
+from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository, _object_hash
 from tests.integration.test_fmea_assistance_sqlite import _prepared_suggestion, _suggestion
 from tests.integration.test_fmea_risk_lifecycle_sqlite import (
     _confirmation,
@@ -138,6 +138,36 @@ def test_get_proposal_validates_linked_assistance_suggestion_chain(
 
     with pytest.raises(ReviewError):
         risk_repository.get_proposal(proposal.proposal_id, proposal.workspace_id)
+
+
+def test_get_proposal_rejects_a_rehashed_assessment_without_a_decision_chain(
+    risk_repository: SqliteRiskRepository,
+) -> None:
+    prepared = prepared_proposal()
+    risk_repository.save_proposal(prepared)
+    forged = replace(
+        prepared.assessment,
+        status=RiskStatus.REVIEWED,
+        record_version=2,
+        updated_at="2026-01-01T00:00:01Z",
+    )
+    with sqlite3.connect(risk_repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_risk_assessments_transition_guard")
+        connection.execute("DROP TRIGGER fmea_risk_assessments_requires_decision")
+        connection.execute(
+            "UPDATE fmea_risk_assessments SET status=?, record_version=?, updated_at=?, assessment_hash=? "
+            "WHERE assessment_id=?",
+            (
+                forged.status.value,
+                forged.record_version,
+                forged.updated_at,
+                _object_hash(forged),
+                forged.assessment_id,
+            ),
+        )
+
+    with pytest.raises(ReviewError):
+        risk_repository.get_proposal(prepared.proposal.proposal_id, prepared.proposal.workspace_id)
 
 
 def test_replay_rejection_returns_typed_assessment_and_validates_transition_chain(

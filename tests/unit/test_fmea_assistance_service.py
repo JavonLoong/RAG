@@ -38,6 +38,7 @@ class _Repository:
     def __init__(self, suggestion: AssistanceSuggestion[object]) -> None:
         self.suggestion = suggestion
         self.decisions = []
+        self.reservations = {}
 
     def get_suggestion(self, suggestion_id: str, workspace_id: str):
         if suggestion_id == self.suggestion.suggestion_id and workspace_id == self.suggestion.workspace_id:
@@ -45,6 +46,10 @@ class _Repository:
         return None
 
     def append_decision(self, prepared):
+        assert self.reservations[prepared.scope.scope_key] == (
+            prepared.reservation_hash,
+            prepared.decision.decision_id,
+        )
         self.decisions.append(prepared)
         return prepared.decision
 
@@ -53,6 +58,14 @@ class _Repository:
             if prepared.decision.decision_id == decision_id and workspace_id == self.suggestion.workspace_id:
                 return prepared.decision
         return None
+
+    def reserve_decision(self, scope, reservation_hash, decision_id, created_at):
+        assert created_at
+        existing = self.reservations.get(scope.scope_key)
+        if existing is not None and existing != (reservation_hash, decision_id):
+            raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "reservation key is already bound")
+        self.reservations[scope.scope_key] = (reservation_hash, decision_id)
+        return self.get_decision(decision_id, scope.workspace_id)
 
     def replay_decision(self, scope, payload_hash):
         for prepared in self.decisions:
@@ -407,9 +420,11 @@ def test_retry_after_append_failure_reuses_the_same_handler_idempotency_uuid() -
     suggestion = _suggestion()
     repository = _FailOnceRepository(suggestion)
     handler_keys = []
+    canonical_resources = set()
 
     def handler(request):
         handler_keys.append(request.command.idempotency_key)
+        canonical_resources.add(request.command.idempotency_key)
         return result_type(
             target_type=request.suggestion.target_type,
             target_id=request.suggestion.target_id,
@@ -444,5 +459,45 @@ def test_retry_after_append_failure_reuses_the_same_handler_idempotency_uuid() -
     decision = service.decide(command, actor)
 
     assert handler_keys == [command.idempotency_key, command.idempotency_key]
+    assert canonical_resources == {command.idempotency_key}
     assert decision.resulting_resource_identity == (suggestion.target_type, suggestion.target_id)
     assert len(repository.decisions) == 1
+
+
+def test_decision_reservation_is_durable_before_the_adoption_handler_runs() -> None:
+    service_type, command_type, result_type = _types()
+    suggestion = _suggestion()
+    repository = _Repository(suggestion)
+    command = command_type(
+        suggestion_id=suggestion.suggestion_id,
+        expected_suggestion_version=suggestion.record_version,
+        expected_target_record_version=suggestion.target_record_version,
+        action=AssistanceDecisionAction.ADOPT,
+        idempotency_key="00000000-0000-4000-8000-000000000298",
+        reason="reserve before canonical write",
+    )
+
+    def handler(request):
+        assert repository.reservations
+        return result_type(
+            target_type=request.suggestion.target_type,
+            target_id=request.suggestion.target_id,
+            idempotency_key=request.command.idempotency_key,
+            applied_record_version=4,
+        )
+
+    service = service_type(
+        repository,
+        handlers={
+            AssistanceDecisionAction.ADOPT: handler,
+            AssistanceDecisionAction.PARTIAL_ADOPT: handler,
+            AssistanceDecisionAction.EDIT_AND_ADOPT: handler,
+            AssistanceDecisionAction.REJECT: lambda _request: None,
+            AssistanceDecisionAction.DEFER: lambda _request: None,
+            AssistanceDecisionAction.REQUEST_EVIDENCE: lambda _request: None,
+        },
+    )
+
+    service.decide(command, ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1"))
+
+    assert len(repository.reservations) == 1

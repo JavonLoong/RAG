@@ -14,7 +14,12 @@ from fmea_application.assistance_contracts import (
     AssistanceKind,
     AssistanceSuggestion,
 )
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope, idempotency_key_hash
+from fmea_application.assistance_service import (
+    AssistanceDecisionService,
+    AssistanceHandlerResult,
+    DecideAssistanceCommand,
+)
+from fmea_application.review_contracts import ActorContext, AuditEvent, IdempotencyScope, idempotency_key_hash
 from fmea_application.review_errors import ReviewError
 from fmea_application.risk_contracts import (
     PreparedAssistanceDecision,
@@ -201,6 +206,69 @@ def test_suggestion_round_trips_canonically_and_replays_once(assistance_reposito
         assert connection.execute(
             "SELECT COUNT(*) FROM fmea_assistance_audit_events WHERE event_id='audit-suggestion-1'"
         ).fetchone() == (1,)
+
+
+def test_decision_reservation_is_durable_and_completed_by_the_same_uuid(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    base = _prepared_decision(suggestion)
+    reservation_hash = "sha256:" + "d" * 64
+
+    assert assistance_repository.reserve_decision(
+        base.scope,
+        reservation_hash,
+        base.decision.decision_id,
+        base.audit.occurred_at_server,
+    ) is None
+    with sqlite3.connect(assistance_repository.database_path) as connection:
+        assert connection.execute(
+            "SELECT payload_hash, state, resource_id FROM idempotency_records WHERE scope_key=?",
+            (base.scope.scope_key,),
+        ).fetchone() == (reservation_hash, "reserved", base.decision.decision_id)
+
+    prepared = replace(base, reservation_hash=reservation_hash)
+    saved = assistance_repository.append_decision(prepared)
+
+    assert saved == prepared.decision
+    assert assistance_repository.replay_decision(prepared.scope, prepared.payload_hash) == saved
+
+
+def test_assistance_service_reserves_applies_and_replays_once_through_sqlite(assistance_repository) -> None:
+    suggestion = assistance_repository.save_suggestion(_prepared_suggestion())
+    calls = []
+
+    def adopt(request):
+        calls.append(request.reservation_hash)
+        return AssistanceHandlerResult(
+            target_type=request.suggestion.target_type,
+            target_id=request.suggestion.target_id,
+            idempotency_key=request.command.idempotency_key,
+            applied_record_version=request.suggestion.target_record_version + 1,
+        )
+
+    handlers = {
+        action: (adopt if action is AssistanceDecisionAction.ADOPT else lambda _request: None)
+        for action in AssistanceDecisionAction
+    }
+    service = AssistanceDecisionService(
+        assistance_repository,
+        handlers=handlers,
+        clock=lambda: "2026-01-01T00:00:01Z",
+    )
+    command = DecideAssistanceCommand(
+        suggestion_id=suggestion.suggestion_id,
+        expected_suggestion_version=suggestion.record_version,
+        expected_target_record_version=suggestion.target_record_version,
+        action=AssistanceDecisionAction.ADOPT,
+        idempotency_key=UUID_KEY,
+        reason="adopt through reserved sqlite flow",
+    )
+    actor = ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1")
+
+    first = service.decide(command, actor)
+    replay = service.decide(command, actor)
+
+    assert replay == first
+    assert len(calls) == 1
 
 
 def test_non_row_scope_suggestion_persists_without_borrowing_an_fmea_row(tmp_path, fixture_pack) -> None:

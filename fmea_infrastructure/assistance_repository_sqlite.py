@@ -749,15 +749,85 @@ class SqliteAssistanceRepository:
         finally:
             connection.close()
 
+    def reserve_decision(
+        self,
+        scope: IdempotencyScope,
+        reservation_hash: str,
+        decision_id: str,
+        created_at: str,
+    ) -> AssistanceDecision | None:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = self._idempotency_row(connection, scope)
+            if row is None:
+                connection.execute(
+                    "INSERT INTO idempotency_records "
+                    "(scope_key, payload_hash, state, status_code, resource_id, response_json, created_at, completed_at) "
+                    "VALUES (?, ?, 'reserved', NULL, ?, NULL, ?, NULL)",
+                    (scope.scope_key, reservation_hash, decision_id, created_at),
+                )
+                connection.execute("COMMIT")
+                return None
+            if row["state"] == "completed":
+                stored_id = str(row["resource_id"])
+                decision_row = connection.execute(
+                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
+                    "WHERE decision_id=? AND workspace_id=?",
+                    (stored_id, scope.workspace_id),
+                ).fetchone()
+                if stored_id != decision_id or decision_row is None:
+                    raise _storage_error()
+                decision = self._decode_decision(decision_row, connection)
+                connection.execute("COMMIT")
+                return decision
+            if (
+                row["state"] != "reserved"
+                or row["payload_hash"] != reservation_hash
+                or row["resource_id"] != decision_id
+                or row["response_json"] is not None
+            ):
+                _conflict()
+            connection.execute("COMMIT")
+            return None
+        except ReviewError:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        except sqlite3.Error as exc:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise _safe_error(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                "Assistance storage is unavailable.",
+                retryable=True,
+            ) from exc
+        finally:
+            connection.close()
+
     def append_decision(self, prepared: PreparedAssistanceDecision) -> AssistanceDecision:  # noqa: C901
         if not isinstance(prepared, PreparedAssistanceDecision):
             raise _safe_error("FMEA_REVIEW_REQUEST_INVALID", "Prepared assistance decision is invalid.")
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            replay_id = self._check_replay_row(
-                self._idempotency_row(connection, prepared.scope), prepared.payload_hash, "assistance_decision"
-            )
+            idempotency_row = self._idempotency_row(connection, prepared.scope)
+            if prepared.reservation_hash is None or (
+                idempotency_row is not None and idempotency_row["state"] == "completed"
+            ):
+                replay_id = self._check_replay_row(
+                    idempotency_row, prepared.payload_hash, "assistance_decision"
+                )
+            else:
+                if (
+                    idempotency_row is None
+                    or idempotency_row["state"] != "reserved"
+                    or idempotency_row["payload_hash"] != prepared.reservation_hash
+                    or idempotency_row["resource_id"] != prepared.decision.decision_id
+                    or idempotency_row["response_json"] is not None
+                ):
+                    raise _storage_error()
+                replay_id = None
             if replay_id is not None:
                 row = connection.execute(
                     f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
@@ -787,9 +857,23 @@ class SqliteAssistanceRepository:
             self._validate_suggestion_source(connection, authoritative)
             if prepared.decision.actor_type is not ActorType.HUMAN:
                 raise _safe_error("FMEA_REVIEW_FORBIDDEN", "A human actor is required.")
-            self._reserve_idempotency(
-                connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
-            )
+            if prepared.reservation_hash is None:
+                self._reserve_idempotency(
+                    connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server
+                )
+            else:
+                rebound = connection.execute(
+                    "UPDATE idempotency_records SET payload_hash=? WHERE scope_key=? AND payload_hash=? "
+                    "AND state='reserved' AND resource_id=?",
+                    (
+                        prepared.payload_hash,
+                        prepared.scope.scope_key,
+                        prepared.reservation_hash,
+                        prepared.decision.decision_id,
+                    ),
+                )
+                if rebound.rowcount != 1:
+                    raise _storage_error()
             # The decision has an FK to its immutable audit row, so the audit is inserted first.
             self._insert_audit(
                 connection,
@@ -799,14 +883,36 @@ class SqliteAssistanceRepository:
                 scope=prepared.scope,
             )
             self._insert_decision(connection, prepared)
-            self._complete_idempotency(
-                connection,
-                prepared.scope,
-                prepared.payload_hash,
-                "assistance_decision",
-                prepared.decision.decision_id,
-                prepared.audit.occurred_at_server,
-            )
+            if prepared.reservation_hash is None:
+                self._complete_idempotency(
+                    connection,
+                    prepared.scope,
+                    prepared.payload_hash,
+                    "assistance_decision",
+                    prepared.decision.decision_id,
+                    prepared.audit.occurred_at_server,
+                )
+            else:
+                response_json = canonical_json(
+                    {
+                        "resource_id": prepared.decision.decision_id,
+                        "resource_type": "assistance_decision",
+                    }
+                )
+                cursor = connection.execute(
+                    "UPDATE idempotency_records SET state='completed', status_code=201, "
+                    "response_json=?, completed_at=? WHERE scope_key=? AND payload_hash=? AND state='reserved' "
+                    "AND resource_id=?",
+                    (
+                        response_json,
+                        prepared.audit.occurred_at_server,
+                        prepared.scope.scope_key,
+                        prepared.payload_hash,
+                        prepared.decision.decision_id,
+                    ),
+                )
+                if cursor.rowcount != 1:
+                    raise _storage_error()
             connection.execute("COMMIT")
             return prepared.decision
         except ReviewError:
