@@ -13,6 +13,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Final, Literal, NoReturn, cast
 from uuid import uuid4
 
@@ -33,6 +34,7 @@ ReviewSuggestionRun = Any
 FMEA_REVIEW_COMMANDS: Final = frozenset(
     {"context", "suggest", "suggestion-status", "decide", "decisions"}
 )
+FMEA_PROPAGATION_COMMANDS: Final = frozenset({"start", "status", "show", "paths", "review"})
 SUGGESTION_POLL_INTERVAL_SECONDS: Final = 0.2
 SUGGESTION_DEADLINE_SECONDS: Final = 360.0
 DECISION_REQUEST_MAX_BYTES: Final = 256 * 1024
@@ -71,6 +73,10 @@ _ASSIST_DECISION_KEYS: Final = frozenset(
 )
 _RISK_CONFIRM_KEYS: Final = frozenset({"row_id", "proposal_id", "expected_assessment_version", "idempotency_key"})
 _RISK_REJECT_KEYS: Final = _RISK_CONFIRM_KEYS | {"reason"}
+_PROPAGATION_REVIEW_KEYS: Final = frozenset(
+    {"graph_revision_id", "expected_graph_record_version", "edge_decisions", "acknowledgements", "idempotency_key"}
+)
+_PROPAGATION_EDGE_DECISION_KEYS: Final = frozenset({"edge_id", "action", "reason"})
 
 _EXIT_CODES: Final = {
     "request": 2,
@@ -87,6 +93,29 @@ _ERROR_EXIT_GROUPS: Final = {
     **dict.fromkeys(("FMEA_AUTH_REQUIRED", "FMEA_REVIEW_FORBIDDEN"), _EXIT_CODES["auth"]),
     **dict.fromkeys(("FMEA_IDEMPOTENCY_CONFLICT", "FMEA_REVIEW_TERMINAL", "FMEA_REVIEW_SUGGESTION_STALE", "FMEA_VERSION_CONFLICT", "FMEA_RISK_VERSION_CONFLICT", "FMEA_PRECONDITION_REQUIRED", "FMEA_REVIEW_RATE_LIMITED"), _EXIT_CODES["conflict"]),
     **dict.fromkeys(("FMEA_MODEL_SUGGESTION_INVALID", "FMEA_MODEL_SUGGESTION_UNAVAILABLE", "FMEA_REVIEW_RUN_INTERRUPTED"), _EXIT_CODES["model"]),
+    **dict.fromkeys((
+        "FMEA_ANALYSIS_NOT_FOUND",
+        "FMEA_EVIDENCE_INVALID",
+        "FMEA_PROPAGATION_RISK_INVALID",
+        "FMEA_PROPAGATION_REGISTRY_INVALID",
+        "FMEA_PROPAGATION_TOPOLOGY_INVALID",
+        "FMEA_PROPAGATION_DEPTH_INVALID",
+        "FMEA_PROPAGATION_BUDGET_INVALID",
+        "FMEA_PROPAGATION_SUGGESTION_INVALID",
+        "FMEA_PROPAGATION_EDGE_INVALID",
+        "FMEA_PROPAGATION_GRAPH_INVALID",
+        "FMEA_PROPAGATION_REVIEW_INCOMPLETE",
+        "FMEA_PROPAGATION_ACKNOWLEDGEMENT_REQUIRED",
+        "FMEA_PROPAGATION_ACKNOWLEDGEMENT_INVALID",
+        "FMEA_PROPAGATION_FAILED",
+    ), _EXIT_CODES["request"]),
+    **dict.fromkeys((
+        "FMEA_ANALYSIS_VERSION_CONFLICT",
+        "FMEA_PROPAGATION_REVIEW_TERMINAL",
+        "FMEA_PROPAGATION_VERSION_CONFLICT",
+    ), _EXIT_CODES["conflict"]),
+    **dict.fromkeys(("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "FMEA_PROPAGATION_GRAPH_NOT_FOUND", "FMEA_PROPAGATION_RUN_NOT_FOUND"), _EXIT_CODES["auth"]),
+    "FMEA_PROPAGATION_PERSISTENCE_INVALID": _EXIT_CODES["storage"],
     "FMEA_REVIEW_STORAGE_UNAVAILABLE": _EXIT_CODES["storage"],
 }
 _SAFE_ERROR_DETAILS: Final = {
@@ -148,6 +177,8 @@ class CliRuntime:
     decision_service: Any | None = None
     risk_service: Any | None = None
     model_actor: ActorContext | None = None
+    propagation_service: Any | None = None
+    propagation_start_defaults: Mapping[str, object] | None = None
 
 
 def _positive_int(value: str) -> int:
@@ -229,6 +260,29 @@ def build_parser() -> argparse.ArgumentParser:
         transition.add_argument("--request-file", required=True)
         transition.add_argument("--confirm-human-risk-review", action="store_true")
         _add_pretty(transition)
+
+    propagation = commands.add_parser("propagation")
+    propagation_commands = propagation.add_subparsers(
+        dest="propagation_command", required=True, parser_class=_CliArgumentParser
+    )
+    propagation_start = propagation_commands.add_parser("start")
+    propagation_start.add_argument("--analysis-id", required=True)
+    propagation_start.add_argument("--record-version", required=True, type=_positive_int)
+    propagation_start.add_argument("--idempotency-key", required=True)
+    _add_pretty(propagation_start)
+    propagation_status = propagation_commands.add_parser("status")
+    propagation_status.add_argument("--run-id", required=True)
+    _add_pretty(propagation_status)
+    propagation_show = propagation_commands.add_parser("show")
+    propagation_show.add_argument("--graph-id", required=True)
+    _add_pretty(propagation_show)
+    propagation_paths = propagation_commands.add_parser("paths")
+    propagation_paths.add_argument("--graph-id", required=True)
+    _add_pretty(propagation_paths)
+    propagation_review = propagation_commands.add_parser("review")
+    propagation_review.add_argument("--request-file", required=True)
+    propagation_review.add_argument("--confirm-human-propagation-review", action="store_true")
+    _add_pretty(propagation_review)
     return parser
 
 
@@ -471,6 +525,14 @@ def build_cli_runtime() -> CliRuntime:
         workspace,
         context_provider=runtime.service,
     )
+    propagation_runtime = None
+    propagation_start_defaults: Mapping[str, object] | None = None
+    if os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ROOT"):
+        propagation_runtime, propagation_start_defaults = _build_cli_propagation_runtime(
+            workspace,
+            risk_runtime,
+            runtime.template_registry_root,
+        )
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -498,7 +560,86 @@ def build_cli_runtime() -> CliRuntime:
         decision_service=risk_runtime.decision_service,
         risk_service=risk_runtime.risk_service,
         model_actor=model_actor,
+        propagation_service=None if propagation_runtime is None else propagation_runtime.service,
+        propagation_start_defaults=propagation_start_defaults,
     )
+
+
+def _build_cli_propagation_runtime(
+    workspace: Any,
+    risk_runtime: Any,
+    template_registry_root: Path,
+) -> tuple[Any, Mapping[str, object]]:
+    """Compose propagation only when an operator pins a topology source.
+
+    The command surface exposes a compact analysis/version/key tuple.  All
+    other identifiers come from this server-side environment configuration.
+    A missing or incomplete pin fails closed during runtime construction.
+    """
+
+    topology_root_value = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ROOT")
+    topology_id = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ID")
+    topology_version = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_VERSION")
+    topology_sha256 = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_SHA256")
+    source_rows = tuple(
+        item.strip()
+        for item in os.environ.get("FMEA_PROPAGATION_SOURCE_ROW_IDS", "").split(",")
+        if item.strip()
+    )
+    defaults = {
+        "source_row_ids": source_rows,
+        "evidence_pack_id": os.environ.get("FMEA_PROPAGATION_EVIDENCE_PACK_ID", ""),
+        "topology_id": topology_id or "",
+        "topology_version": topology_version or "",
+        "domain_pack_id": os.environ.get("FMEA_PROPAGATION_DOMAIN_PACK_ID", ""),
+        "domain_pack_version": os.environ.get("FMEA_PROPAGATION_DOMAIN_PACK_VERSION", ""),
+        "rule_pack_id": os.environ.get("FMEA_PROPAGATION_RULE_PACK_ID", ""),
+        "rule_pack_version": os.environ.get("FMEA_PROPAGATION_RULE_PACK_VERSION", ""),
+    }
+    if not topology_root_value or not topology_id or not topology_version or not topology_sha256:
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation topology pin is incomplete",
+        )
+    if any(not isinstance(value, str) or not value.strip() for key, value in defaults.items() if key != "source_row_ids"):
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server defaults are incomplete",
+        )
+    if not source_rows:
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation source rows are not configured",
+        )
+
+    from fmea_infrastructure.domain_pack_registry import FileDomainPackRegistry, load_domain_pack_manifest
+    from fmea_infrastructure.propagation_rule_registry import (
+        FilePropagationRuleRegistry,
+        load_propagation_rule_pack,
+    )
+    from fmea_infrastructure.topology_json import JsonTopologyRepository
+
+    domain_registry = FileDomainPackRegistry(template_registry_root / "domain-packs")
+    for manifest_path in sorted((REPO_ROOT / "domain_packs").glob("*/manifest.yaml")):
+        source = manifest_path.read_bytes()
+        domain_registry.register(load_domain_pack_manifest(source), source)
+    rule_registry = FilePropagationRuleRegistry(template_registry_root / "propagation-rules")
+    for rule_path in sorted((REPO_ROOT / "domain_packs").glob("*/propagation/*.yaml")):
+        source = rule_path.read_bytes()
+        rule_registry.register(load_propagation_rule_pack(source), source)
+    topology_port = JsonTopologyRepository(
+        Path(topology_root_value),
+        source_hashes={(topology_id, topology_version): topology_sha256},
+    )
+    composition = import_module("fmea_infrastructure.composition")
+    propagation_runtime = composition.build_workspace_propagation_runtime(
+        workspace,
+        topology_port=topology_port,
+        domain_pack_registry=domain_registry,
+        propagation_rule_registry=rule_registry,
+        risk_repository=risk_runtime.risk_repository,
+    )
+    return propagation_runtime, defaults
 
 
 def build_workspace_review_runtime(workspace: Any) -> Any:
@@ -894,7 +1035,7 @@ def _review_error(code: str, detail: str) -> Exception:
 def _task5_service(runtime: CliRuntime, name: str) -> Any:
     service = getattr(runtime, name, None)
     if service is None:
-        raise _review_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA risk runtime is not configured")
+        raise _review_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "requested FMEA service is not configured")
     return service
 
 
@@ -1063,11 +1204,188 @@ def _dispatch_risk(
     raise CliUsageError
 
 
+def _propagation_start_command(args: argparse.Namespace, runtime: CliRuntime) -> Any:
+    """Build the full service command from server-owned CLI runtime defaults.
+
+    The public CLI intentionally exposes only the analysis/version/key tuple.
+    Resource identities are supplied by the configured runtime, so callers
+    cannot replace topology, model, provider, template, or rule selection.
+    The small namespace fallback keeps injected service doubles useful for the
+    transport contract tests; a concrete runtime must provide the defaults.
+    """
+
+    defaults = getattr(runtime, "propagation_start_defaults", None)
+    if not isinstance(defaults, Mapping):
+        return SimpleNamespace(
+            analysis_id=args.analysis_id,
+            expected_analysis_record_version=args.record_version,
+            idempotency_key=args.idempotency_key,
+        )
+    required = (
+        "source_row_ids",
+        "evidence_pack_id",
+        "topology_id",
+        "topology_version",
+        "domain_pack_id",
+        "domain_pack_version",
+        "rule_pack_id",
+        "rule_pack_version",
+    )
+    if any(key not in defaults for key in required):
+        raise _review_error("FMEA_REVIEW_REQUEST_INVALID", "propagation CLI defaults are incomplete")
+    try:
+        contracts = import_module("fmea_application.propagation_service")
+        return contracts.StartPropagationCommand(
+            analysis_id=args.analysis_id,
+            expected_analysis_record_version=args.record_version,
+            source_row_ids=tuple(cast(Sequence[str], defaults["source_row_ids"])),
+            evidence_pack_id=cast(str, defaults["evidence_pack_id"]),
+            topology_id=cast(str, defaults["topology_id"]),
+            topology_version=cast(str, defaults["topology_version"]),
+            domain_pack_id=cast(str, defaults["domain_pack_id"]),
+            domain_pack_version=cast(str, defaults["domain_pack_version"]),
+            rule_pack_id=cast(str, defaults["rule_pack_id"]),
+            rule_pack_version=cast(str, defaults["rule_pack_version"]),
+            idempotency_key=args.idempotency_key,
+        )
+    except (TypeError, ValueError) as exc:
+        raise _review_error("FMEA_REVIEW_REQUEST_INVALID", "propagation CLI defaults are invalid") from exc
+
+
+def _propagation_review_command(request: Mapping[str, object]) -> Any:
+    data = _require_exact_keys(request, _PROPAGATION_REVIEW_KEYS)
+    raw_decisions = data["edge_decisions"]
+    raw_acknowledgements = data["acknowledgements"]
+    expected_version = data["expected_graph_record_version"]
+    idempotency_key = data["idempotency_key"]
+    if (
+        not isinstance(raw_decisions, list)
+        or not isinstance(raw_acknowledgements, list)
+        or isinstance(expected_version, bool)
+        or not isinstance(expected_version, int)
+        or expected_version < 1
+        or not isinstance(idempotency_key, str)
+    ):
+        raise _invalid_request_file()
+    try:
+        from fmea_application.propagation_service import (
+            ConfirmPropagationCommand,
+            PropagationDecisionAction,
+            PropagationEdgeDecision,
+        )
+        decisions = []
+        for item in raw_decisions:
+            decision = _require_exact_keys(item, _PROPAGATION_EDGE_DECISION_KEYS)
+            if not all(isinstance(decision[key], str) for key in _PROPAGATION_EDGE_DECISION_KEYS):
+                raise _invalid_request_file()
+            decisions.append(
+                PropagationEdgeDecision(
+                    edge_id=cast(str, decision["edge_id"]),
+                    action=PropagationDecisionAction(cast(str, decision["action"])),
+                    reason=cast(str, decision["reason"]),
+                )
+            )
+        acknowledgements = _string_tuple(raw_acknowledgements)
+        if not isinstance(data["graph_revision_id"], str) or not isinstance(idempotency_key, str):
+            raise _invalid_request_file()
+        return ConfirmPropagationCommand(
+            graph_revision_id=cast(str, data["graph_revision_id"]),
+            expected_graph_record_version=expected_version,
+            edge_decisions=tuple(decisions),
+            acknowledgements=acknowledgements,
+            idempotency_key=idempotency_key,
+        )
+    except CliUsageError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise _invalid_request_file() from exc
+
+
+def _dispatch_propagation(  # noqa: C901
+    args: argparse.Namespace,
+    runtime: CliRuntime,
+    request: dict[str, object] | None,
+) -> int:
+    service = _task5_service(runtime, "propagation_service")
+    pretty = bool(args.pretty)
+    if args.propagation_command == "start":
+        run = service.start_analysis(_propagation_start_command(args, runtime), runtime.actor)
+        _emit_resource(
+            "propagation_run",
+            _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "run_data", run),
+            request_id=run.run_id,
+            trace_id=run.run_id,
+            pretty=pretty,
+        )
+        return 0
+    if args.propagation_command == "status":
+        run = service.get_run(args.run_id, runtime.actor)
+        _emit_resource(
+            "propagation_run",
+            _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "run_data", run),
+            request_id=run.run_id,
+            trace_id=run.run_id,
+            pretty=pretty,
+        )
+        return 0
+    if args.propagation_command == "show":
+        graph = service.get_graph(args.graph_id, runtime.actor)
+        if graph is None:
+            raise _review_error("FMEA_PROPAGATION_GRAPH_NOT_FOUND", "propagation graph revision was not found")
+        _emit_resource(
+            "propagation_graph",
+            _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "graph_data", graph),
+            request_id=graph.graph_revision_id,
+            trace_id=graph.graph_revision_id,
+            pretty=pretty,
+        )
+        return 0
+    if args.propagation_command == "paths":
+        graph = service.get_graph(args.graph_id, runtime.actor)
+        if graph is None:
+            raise _review_error("FMEA_PROPAGATION_GRAPH_NOT_FOUND", "propagation graph revision was not found")
+        paths = tuple(sorted(graph.paths, key=lambda item: item.path_id))
+        _emit_resource(
+            "propagation_path_history",
+            {
+                "items": [
+                    _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "path_data", item)
+                    for item in paths
+                ],
+                "next_cursor": None,
+                "limit": len(paths),
+            },
+            request_id=graph.graph_revision_id,
+            trace_id=graph.graph_revision_id,
+            pretty=pretty,
+        )
+        return 0
+    if args.propagation_command == "review":
+        if request is None:
+            raise _invalid_request_file()
+        if getattr(runtime.actor, "actor_type", None) is not import_module("core_domain.fmea.states").ActorType.HUMAN:
+            raise _review_error("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "a human propagation reviewer is required")
+        if "propagation_reviewer" not in getattr(runtime.actor, "roles", ()):
+            raise _review_error("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "the propagation_reviewer role is required")
+        result = service.confirm_graph(_propagation_review_command(request), runtime.actor)
+        _emit_resource(
+            "propagation_review",
+            _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "review_result_data", result),
+            request_id=result.decision_id,
+            trace_id=result.decision_id,
+            pretty=pretty,
+        )
+        return 0
+    raise CliUsageError
+
+
 def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:  # noqa: C901
     if args.command == "assist":
         return _dispatch_assist(args, runtime, request)
     if args.command == "risk":
         return _dispatch_risk(args, runtime, request)
+    if args.command == "propagation":
+        return _dispatch_propagation(args, runtime, request)
     if args.command != "review":
         raise CliUsageError
     service = runtime.service
@@ -1164,6 +1482,12 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
             "explicit human risk review confirmation is required",
             pretty=bool(args.pretty),
         )
+    if args.command == "propagation" and args.propagation_command == "review" and not args.confirm_human_propagation_review:
+        return _emit_error(
+            "FMEA_REVIEW_CONFIRMATION_REQUIRED",
+            "explicit human propagation review confirmation is required",
+            pretty=bool(args.pretty),
+        )
 
     request: dict[str, object] | None = None
     if args.command == "review" and args.review_command == "decide":
@@ -1175,7 +1499,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
                 "invalid review request file",
                 pretty=bool(args.pretty),
             )
-    elif args.command == "assist" or (args.command == "risk" and args.risk_command in {"confirm", "reject"}):
+    elif args.command == "assist" or (args.command == "risk" and args.risk_command in {"confirm", "reject"}) or (args.command == "propagation" and args.propagation_command == "review"):
         try:
             request = load_json_request(args.request_file)
         except CliUsageError:

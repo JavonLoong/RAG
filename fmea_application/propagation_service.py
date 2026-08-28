@@ -497,7 +497,7 @@ class PropagationRepository(Protocol):
 
     def get_run(self, run_id: str, workspace_id: str) -> PropagationRun | None: ...
 
-    def get_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+    def get_graph(self, graph_revision_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
 
     def get_current_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
 
@@ -1628,8 +1628,13 @@ class PropagationAnalysisService:
             raise PropagationError("FMEA_PROPAGATION_RUN_NOT_FOUND", "propagation run was not found")
         return run
 
-    def get_graph(self, analysis_id: str, actor: ActorContext) -> PropagationGraphRevision | None:
-        return self._repository.get_current_graph(analysis_id, actor.workspace_id)
+    def get_graph(self, graph_revision_id: str, actor: ActorContext) -> PropagationGraphRevision | None:
+        """Return one immutable graph revision by its public revision identity."""
+
+        getter = getattr(self._repository, "get_graph_revision", None)
+        if callable(getter):
+            return getter(graph_revision_id, actor.workspace_id)
+        return self._repository.get_graph(graph_revision_id, actor.workspace_id)
 
 
 class PropagationReviewService(PropagationAnalysisService):

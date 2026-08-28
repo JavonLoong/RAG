@@ -395,6 +395,7 @@ def create_app(
     *,
     review_runtime_factory: Callable[[WorkspaceConfig], ReviewRuntime] = build_workspace_review_runtime,
     risk_runtime_factory: Callable[[WorkspaceConfig], RiskRuntime] | None = None,
+    propagation_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
     review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
@@ -433,6 +434,9 @@ def create_app(
     app.state.risk_runtime_factory = risk_runtime_factory
     app.state.risk_runtimes = {}
     app.state.risk_runtime_lock = Lock()
+    app.state.propagation_runtime_factory = propagation_runtime_factory
+    app.state.propagation_runtimes = {}
+    app.state.propagation_runtime_lock = Lock()
     app.state.review_cursor_secret = secrets.token_bytes(32)
     app.state.review_auth_error = None
     if review_auth_provider is not None:
@@ -445,6 +449,7 @@ def create_app(
             app.state.review_auth_error = exc
 
     from .routes_fmea_assistance_v1 import router as fmea_assistance_v1_router
+    from .routes_fmea_propagation_v1 import router as fmea_propagation_v1_router
     from .routes_fmea_review_v1 import (
         fmea_validation_error_response,
         review_error_response,
@@ -470,6 +475,7 @@ def create_app(
     app.include_router(fmea_review_v1_router)
     app.include_router(fmea_assistance_v1_router)
     app.include_router(fmea_risk_v1_router)
+    app.include_router(fmea_propagation_v1_router)
 
     async def close_review_runtimes() -> None:
         runtimes = tuple(cast(dict[str, ReviewRuntime], app.state.review_runtimes).values())
