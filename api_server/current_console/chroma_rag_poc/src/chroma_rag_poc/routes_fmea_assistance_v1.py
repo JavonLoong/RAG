@@ -26,7 +26,7 @@ from .fmea_assistance_contracts import (
     AssistanceSuggestionData,
 )
 from .fmea_review_contracts import FmeaEnvelope
-from .routes_fmea_review_v1 import parse_idempotency_key, parse_if_match
+from .routes_fmea_review_v1 import parse_idempotency_key, parse_if_match, review_runtime_for
 from .workspace_registry import WorkspaceConfig, WorkspaceNotFoundError
 
 router = APIRouter(prefix="/api/v1/fmea", tags=["fmea-assistance-v1"])
@@ -55,10 +55,17 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> Any:
         if existing is not None:
             return existing
         factory = cast(Callable[[WorkspaceConfig], Any] | None, request.app.state.risk_runtime_factory)
-        if factory is None:
-            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA risk runtime is not configured")
         try:
-            runtime = factory(workspace)
+            if factory is None:
+                from fmea_infrastructure.composition import build_default_workspace_risk_runtime
+
+                review_runtime = review_runtime_for(request, workspace)
+                runtime = build_default_workspace_risk_runtime(
+                    workspace,
+                    context_provider=review_runtime.service,
+                )
+            else:
+                runtime = factory(workspace)
         except ReviewError:
             raise
         except Exception as exc:

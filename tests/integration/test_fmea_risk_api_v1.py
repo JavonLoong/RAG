@@ -178,6 +178,27 @@ def _client(actor_type: ActorType = ActorType.HUMAN) -> tuple[TestClient, Simple
     return TestClient(app, client=("127.0.0.1", 50000)), runtime
 
 
+def test_default_api_runtime_reaches_the_workspace_risk_repository(tmp_path: Path) -> None:
+    workspace = SimpleNamespace(
+        workspace_id="ws-1",
+        chroma_persist_dir=tmp_path / "chroma",
+        fmea_db_path=tmp_path / "fmea" / "fmea.sqlite3",
+        fmea_template_registry_path=tmp_path / "fmea" / "templates",
+        graph_db_path=tmp_path / "graph.sqlite3",
+    )
+    app = create_app(review_auth_provider=FakeAuth())
+    app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: workspace)
+
+    with TestClient(app, client=("127.0.0.1", 50000)) as client:
+        response = client.get(
+            "/api/v1/fmea/rows/missing-row/risk",
+            headers={"Authorization": f"Bearer {TOKEN}"},
+        )
+
+    assert response.status_code == 404
+    assert response.json()["code"] == "FMEA_ROW_NOT_FOUND"
+
+
 def _headers(*, version: int | None = None) -> dict[str, str]:
     headers = {"Authorization": f"Bearer {TOKEN}", "Idempotency-Key": UUID1}
     if version is not None:

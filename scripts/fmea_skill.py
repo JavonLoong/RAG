@@ -466,6 +466,17 @@ def build_cli_runtime() -> CliRuntime:
     actor = provider.authenticate(os.environ.get("FMEA_REVIEW_TOKEN"), "127.0.0.1")
     workspace = registry.get(actor.workspace_id)
     runtime = build_workspace_review_runtime(workspace)
+    composition = import_module("fmea_infrastructure.composition")
+    risk_runtime = composition.build_default_workspace_risk_runtime(
+        workspace,
+        context_provider=runtime.service,
+    )
+    model_actor = dependencies.review_contracts.ActorContext(
+        actor_id="fmea-model-assistant",
+        actor_type=dependencies.states.ActorType.MODEL,
+        roles=frozenset(),
+        workspace_id=actor.workspace_id,
+    )
     closed = False
 
     def close() -> None:
@@ -479,7 +490,15 @@ def build_cli_runtime() -> CliRuntime:
         else:
             runtime.executor.close()
 
-    return CliRuntime(service=runtime.service, actor=actor, close=close)
+    return CliRuntime(
+        service=runtime.service,
+        actor=actor,
+        close=close,
+        analysis_service=risk_runtime.analysis_service,
+        decision_service=risk_runtime.decision_service,
+        risk_service=risk_runtime.risk_service,
+        model_actor=model_actor,
+    )
 
 
 def build_workspace_review_runtime(workspace: Any) -> Any:

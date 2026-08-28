@@ -1,0 +1,41 @@
+{
+  "schema_version": "graphrag.fmea.risk.fixture.v1",
+  "workspace_id": "fuel-combustion-acceptance",
+  "analysis_id": "analysis-fuel-combustion-1",
+  "row_id": "row-fuel-filter-1",
+  "evidence": {
+    "ev-primary": {
+      "document_id": "fuel-train-design-basis",
+      "locator": "section:2.1",
+      "quote": "The fuel train shall deliver stable pressure to the burner manifold, and low fuel pressure protection shall isolate the train before unsafe combustion develops.",
+      "source_type": "primary_document"
+    },
+    "ev-community": {
+      "document_id": "community-fuel-train",
+      "locator": "community:fuel-train-maintenance",
+      "quote": "A community-level maintenance pattern links high filter differential pressure, low downstream fuel pressure, inspection of the filter element, and verification of trip readiness.",
+      "source_type": "graphrag_community"
+    },
+    "ev-graph": {
+      "document_id": "graph-fuel-combustion",
+      "locator": "relation:path-17",
+      "quote": "Filter restriction can lower burner-manifold fuel pressure; the resulting lean fuel-air condition can reduce combustion stability and increase flame fluctuation.",
+      "source_type": "graphrag_relation"
+    },
+    "ev-local": {
+      "document_id": "maintenance-fuel-filter",
+      "locator": "section:3.2",
+      "quote": "Particulate accumulation can increase filter differential pressure and reduce downstream pressure during high demand; transmitters provide alarms and inspection triggers.",
+      "source_type": "rag_text"
+    }
+  },
+  "modes": {
+    "auto": ["ev-primary", "ev-local", "ev-graph", "ev-community"],
+    "combined": ["ev-primary", "ev-local", "ev-graph", "ev-community"],
+    "custom": ["ev-primary", "ev-local", "ev-graph"],
+    "graphrag_global": ["ev-primary", "ev-community"],
+    "graphrag_local": ["ev-primary", "ev-graph"],
+    "graphrag_only": ["ev-primary", "ev-graph", "ev-community"],
+    "rag_only": ["ev-primary", "ev-local"]
+  }
+}

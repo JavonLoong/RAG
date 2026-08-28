@@ -278,6 +278,12 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> ReviewRuntime:
         return runtime
 
 
+def review_runtime_for(request: Request, workspace: WorkspaceConfig) -> ReviewRuntime:
+    """Return the workspace-owned review runtime for sibling FMEA adapters."""
+
+    return _runtime_for(request, workspace)
+
+
 def get_review_access(request: Request) -> ReviewAccess:
     configured_error = cast(ReviewError | None, request.app.state.review_auth_error)
     if configured_error is not None:
@@ -859,5 +865,6 @@ __all__ = [
     "parse_idempotency_key",
     "parse_if_match",
     "review_error_response",
+    "review_runtime_for",
     "router",
 ]

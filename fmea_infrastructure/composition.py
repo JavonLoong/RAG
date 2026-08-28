@@ -27,6 +27,7 @@ from fmea_application.ports import (
     RiskSuggestionGenerator,
     ScoringRuleRegistry,
 )
+from fmea_application.review_errors import ReviewError
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
 from fmea_application.service_factory import (
     build_analysis_assistance_service,
@@ -35,6 +36,12 @@ from fmea_application.service_factory import (
 )
 from fmea_infrastructure.analysis_assistance_generator import EnvironmentAnalysisAssistanceGenerator
 from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
+from fmea_infrastructure.domain_pack_registry import (
+    FileDomainPackRegistry,
+    FileScoringRuleRegistry,
+    load_domain_pack_manifest,
+    load_scoring_rule_pack,
+)
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
 from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
@@ -49,6 +56,12 @@ if TYPE_CHECKING:
 _TEMPLATE_ID = "fmea-row-review"
 _TEMPLATE_VERSION = "1.0.0"
 _TEMPLATE_SOURCE = Path(__file__).resolve().parents[1] / "templates" / "examples" / "fmea-row-review.yaml"
+_BUNDLED_DOMAIN_PACK_ROOT = Path(__file__).resolve().parents[1] / "domain_packs"
+_ADOPTION_ACTIONS = {
+    AssistanceDecisionAction.ADOPT,
+    AssistanceDecisionAction.PARTIAL_ADOPT,
+    AssistanceDecisionAction.EDIT_AND_ADOPT,
+}
 
 
 def utc_now() -> str:
@@ -221,9 +234,53 @@ def build_workspace_risk_runtime(
     )
 
 
+def _default_assistance_handler(request: object) -> None:
+    command = getattr(request, "command", None)
+    if getattr(command, "action", None) in _ADOPTION_ACTIONS:
+        raise ReviewError(
+            "FMEA_REVIEW_ACTION_INVALID",
+            "assistance adoption requires a configured domain write handler",
+        )
+    return None
+
+
+def _register_bundled_domain_packs(
+    domain_registry: FileDomainPackRegistry,
+    scoring_registry: FileScoringRuleRegistry,
+) -> None:
+    for manifest_path in sorted(_BUNDLED_DOMAIN_PACK_ROOT.glob("*/manifest.yaml")):
+        source = manifest_path.read_bytes()
+        domain_registry.register(load_domain_pack_manifest(source), source)
+    for scoring_path in sorted(_BUNDLED_DOMAIN_PACK_ROOT.glob("*/scoring/*.yaml")):
+        source = scoring_path.read_bytes()
+        scoring_registry.register(load_scoring_rule_pack(source), source)
+
+
+def build_default_workspace_risk_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    context_provider: RiskContextProvider,
+) -> RiskRuntime:
+    """Compose the provider-neutral risk runtime and register bundled immutable packs."""
+
+    _, template_registry_root = _workspace_review_paths(workspace)
+    domain_registry = FileDomainPackRegistry(template_registry_root / "domain-packs")
+    scoring_registry = FileScoringRuleRegistry(template_registry_root / "scoring-rules")
+    _register_bundled_domain_packs(domain_registry, scoring_registry)
+    handlers = dict.fromkeys(AssistanceDecisionAction, _default_assistance_handler)
+    return build_workspace_risk_runtime(
+        workspace,
+        domain_pack_registry=domain_registry,
+        scoring_rule_registry=scoring_registry,
+        context_provider=context_provider,
+        assistance_handlers=handlers,
+    )
+
+
 __all__ = [
     "ReviewRuntime",
     "RiskRuntime",
+    "build_default_workspace_risk_runtime",
     "build_workspace_review_runtime",
     "build_workspace_risk_runtime",
     "new_prefixed_uuid",

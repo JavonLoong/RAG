@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -137,3 +138,41 @@ def test_task5_cli_never_accepts_model_or_provider_override(capsys: pytest.Captu
     payload = json.loads(capsys.readouterr().out)
     assert payload["error"]["code"] == "FMEA_REVIEW_REQUEST_INVALID"
     assert "attacker" not in json.dumps(payload)
+
+
+def test_default_cli_runtime_reaches_the_workspace_risk_repository(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    registry_path = tmp_path / "workspaces.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "allowed_root": str(tmp_path),
+                "workspaces": {
+                    "ws-1": {
+                        "chroma_persist_dir": str(tmp_path / "chroma"),
+                        "chroma_collection": "documents",
+                        "graph_db_path": str(tmp_path / "graph.sqlite3"),
+                        "fmea_db_path": str(tmp_path / "fmea" / "fmea.sqlite3"),
+                        "fmea_template_registry_path": str(tmp_path / "fmea" / "templates"),
+                        "supported_modes": ["vector"],
+                        "default_mode": "vector",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("RAG_WORKSPACE_CONFIG", str(registry_path))
+    monkeypatch.setenv("FMEA_LOCAL_AUTH_ENABLED", "true")
+    monkeypatch.setenv("FMEA_REVIEW_TOKEN", "a" * 32)
+    monkeypatch.setenv("FMEA_REVIEW_ACTOR_ID", "reviewer-1")
+    monkeypatch.setenv("FMEA_REVIEW_WORKSPACE_ID", "ws-1")
+
+    exit_code = fmea_skill.main(["risk", "show", "--row-id", "missing-row"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 3
+    assert payload["error"]["code"] == "FMEA_ROW_NOT_FOUND"
