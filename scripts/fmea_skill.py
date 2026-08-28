@@ -59,6 +59,18 @@ _EVIDENCE_REQUEST_KEYS: Final = frozenset(
     {"target_field", "question", "preferred_source_types", "priority"}
 )
 _ACKNOWLEDGEMENT_KEYS: Final = frozenset({"target_field", "claim_status", "reason"})
+_SCOPE_REQUEST_KEYS: Final = frozenset(
+    {
+        "target_id", "target_record_version", "evidence_pack_ids", "payload",
+        "domain_pack_id", "domain_pack_version", "template_id", "template_version",
+        "rule_pack_id", "rule_pack_version", "idempotency_key",
+    }
+)
+_ASSIST_DECISION_KEYS: Final = frozenset(
+    {"suggestion_id", "suggestion_record_version", "target_record_version", "action", "idempotency_key", "reason", "edits"}
+)
+_RISK_CONFIRM_KEYS: Final = frozenset({"row_id", "proposal_id", "expected_assessment_version", "idempotency_key"})
+_RISK_REJECT_KEYS: Final = _RISK_CONFIRM_KEYS | {"reason"}
 
 _EXIT_CODES: Final = {
     "request": 2,
@@ -70,10 +82,10 @@ _EXIT_CODES: Final = {
     "internal": 10,
 }
 _ERROR_EXIT_GROUPS: Final = {
-    **dict.fromkeys(("FMEA_REVIEW_REQUEST_INVALID", "FMEA_REVIEW_CONFIRMATION_REQUIRED", "FMEA_REVIEW_ACTION_INVALID", "FMEA_REVIEW_FIELD_INVALID", "FMEA_EVIDENCE_INVALID", "FMEA_UNRESOLVED_ACK_REQUIRED", "FMEA_REVIEW_SOURCE_MISSING"), _EXIT_CODES["request"]),
+    **dict.fromkeys(("FMEA_REVIEW_REQUEST_INVALID", "FMEA_REVIEW_CONFIRMATION_REQUIRED", "FMEA_RISK_HUMAN_CONFIRMATION_REQUIRED", "FMEA_REVIEW_ACTION_INVALID", "FMEA_REVIEW_FIELD_INVALID", "FMEA_EVIDENCE_INVALID", "FMEA_UNRESOLVED_ACK_REQUIRED", "FMEA_REVIEW_SOURCE_MISSING"), _EXIT_CODES["request"]),
     **dict.fromkeys(("FMEA_WORKSPACE_CONFIGURATION_INVALID", "FMEA_WORKSPACE_NOT_FOUND", "FMEA_ROW_NOT_FOUND", "FMEA_REVIEW_SUGGESTION_NOT_FOUND", "FMEA_AUTH_CONFIGURATION_INVALID"), _EXIT_CODES["configuration"]),
     **dict.fromkeys(("FMEA_AUTH_REQUIRED", "FMEA_REVIEW_FORBIDDEN"), _EXIT_CODES["auth"]),
-    **dict.fromkeys(("FMEA_IDEMPOTENCY_CONFLICT", "FMEA_REVIEW_TERMINAL", "FMEA_REVIEW_SUGGESTION_STALE", "FMEA_VERSION_CONFLICT", "FMEA_PRECONDITION_REQUIRED", "FMEA_REVIEW_RATE_LIMITED"), _EXIT_CODES["conflict"]),
+    **dict.fromkeys(("FMEA_IDEMPOTENCY_CONFLICT", "FMEA_REVIEW_TERMINAL", "FMEA_REVIEW_SUGGESTION_STALE", "FMEA_VERSION_CONFLICT", "FMEA_RISK_VERSION_CONFLICT", "FMEA_PRECONDITION_REQUIRED", "FMEA_REVIEW_RATE_LIMITED"), _EXIT_CODES["conflict"]),
     **dict.fromkeys(("FMEA_MODEL_SUGGESTION_INVALID", "FMEA_MODEL_SUGGESTION_UNAVAILABLE", "FMEA_REVIEW_RUN_INTERRUPTED"), _EXIT_CODES["model"]),
     "FMEA_REVIEW_STORAGE_UNAVAILABLE": _EXIT_CODES["storage"],
 }
@@ -132,6 +144,10 @@ class CliRuntime:
     service: Any
     actor: ActorContext
     close: Callable[[], None]
+    analysis_service: Any | None = None
+    decision_service: Any | None = None
+    risk_service: Any | None = None
+    model_actor: ActorContext | None = None
 
 
 def _positive_int(value: str) -> int:
@@ -177,6 +193,42 @@ def build_parser() -> argparse.ArgumentParser:
     decisions = review_commands.add_parser("decisions")
     decisions.add_argument("--row-id", required=True)
     _add_pretty(decisions)
+
+    assist = commands.add_parser("assist")
+    assist_commands = assist.add_subparsers(dest="assist_command", required=True, parser_class=_CliArgumentParser)
+    assist_scope = assist_commands.add_parser("scope")
+    assist_scope.add_argument("--request-file", required=True)
+    _add_pretty(assist_scope)
+    assist_decide = assist_commands.add_parser("decide")
+    assist_decide.add_argument("--request-file", required=True)
+    assist_decide.add_argument("--confirm-human-assistance-decision", action="store_true")
+    _add_pretty(assist_decide)
+
+    risk = commands.add_parser("risk")
+    risk_commands = risk.add_subparsers(dest="risk_command", required=True, parser_class=_CliArgumentParser)
+    risk_show = risk_commands.add_parser("show")
+    risk_show.add_argument("--row-id", required=True)
+    _add_pretty(risk_show)
+    risk_propose = risk_commands.add_parser("propose")
+    risk_propose.add_argument("--row-id", required=True)
+    risk_propose.add_argument("--record-version", required=True, type=_positive_int)
+    risk_propose.add_argument("--evidence-pack-id", required=True)
+    risk_propose.add_argument("--domain-pack-id", required=True)
+    risk_propose.add_argument("--domain-pack-version", required=True)
+    risk_propose.add_argument("--template-id", required=True)
+    risk_propose.add_argument("--template-version", required=True)
+    risk_propose.add_argument("--rule-pack-id", required=True)
+    risk_propose.add_argument("--rule-pack-version", required=True)
+    risk_propose.add_argument("--idempotency-key", required=True)
+    _add_pretty(risk_propose)
+    risk_status = risk_commands.add_parser("proposal-status")
+    risk_status.add_argument("--run-id", required=True)
+    _add_pretty(risk_status)
+    for name in ("confirm", "reject"):
+        transition = risk_commands.add_parser(name)
+        transition.add_argument("--request-file", required=True)
+        transition.add_argument("--confirm-human-risk-review", action="store_true")
+        _add_pretty(transition)
     return parser
 
 
@@ -292,6 +344,25 @@ def load_decision_request(path: str | Path) -> dict[str, object]:
             parse_constant=_reject_json_constant,
         )
         return _require_exact_keys(decoded, _DECISION_REQUEST_KEYS)
+    except CliUsageError:
+        raise
+    except (OSError, TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError, RecursionError, MemoryError, OverflowError) as exc:
+        raise _invalid_request_file() from exc
+
+
+def load_json_request(path: str | Path) -> dict[str, object]:
+    """Read one bounded strict JSON object for Task 5 CLI commands."""
+
+    try:
+        raw = _read_bounded_request_file(Path(path))
+        decoded = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_strict_object_pairs,
+            parse_constant=_reject_json_constant,
+        )
+        if not isinstance(decoded, dict) or not all(isinstance(key, str) for key in decoded):
+            raise _invalid_request_file()
+        return cast(dict[str, object], decoded)
     except CliUsageError:
         raise
     except (OSError, TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError, RecursionError, MemoryError, OverflowError) as exc:
@@ -790,7 +861,196 @@ def _await_suggestion(service: Any, actor: ActorContext, run: ReviewSuggestionRu
     return _run_status_exit_code(latest)
 
 
-def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:
+def _task5_data(module_name: str, function_name: str, value: Any) -> dict[str, object]:
+    module = import_module(module_name)
+    model = getattr(module, function_name)(value)
+    return cast(dict[str, object], model.model_dump(mode="json"))
+
+
+def _review_error(code: str, detail: str) -> Exception:
+    module = import_module("fmea_application.review_errors")
+    return cast(Exception, module.ReviewError(code, detail))
+
+
+def _task5_service(runtime: CliRuntime, name: str) -> Any:
+    service = getattr(runtime, name, None)
+    if service is None:
+        raise _review_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA risk runtime is not configured")
+    return service
+
+
+def _task5_model_actor(runtime: CliRuntime) -> ActorContext:
+    actor = getattr(runtime, "model_actor", None)
+    if actor is None:
+        raise _review_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA model actor is not configured")
+    return actor
+
+
+def _dispatch_assist(
+    args: argparse.Namespace,
+    runtime: CliRuntime,
+    request: dict[str, object] | None,
+) -> int:
+    if request is None:
+        raise _invalid_request_file()
+    pretty = bool(args.pretty)
+    if args.assist_command == "scope":
+        data = _require_exact_keys(request, _SCOPE_REQUEST_KEYS)
+        contracts = import_module("fmea_application.assistance_contracts")
+        command = contracts.AssistanceRequest(
+            request_id=str(uuid4()),
+            kind=contracts.AssistanceKind.ANALYSIS_SCOPE_DRAFT,
+            workspace_id=runtime.actor.workspace_id,
+            target_type="fmea_analysis",
+            target_id=cast(str, data["target_id"]),
+            target_record_version=cast(int, data["target_record_version"]),
+            evidence_pack_ids=_string_tuple(data["evidence_pack_ids"]),
+            payload=data["payload"],
+            domain_pack_id=cast(str, data["domain_pack_id"]),
+            domain_pack_version=cast(str, data["domain_pack_version"]),
+            template_id=cast(str, data["template_id"]),
+            template_version=cast(str, data["template_version"]),
+            rule_pack_id=cast(str, data["rule_pack_id"]),
+            rule_pack_version=cast(str, data["rule_pack_version"]),
+            idempotency_key=cast(str, data["idempotency_key"]),
+        )
+        suggestion = _task5_service(runtime, "analysis_service").suggest_scope(
+            command,
+            _task5_model_actor(runtime),
+        )
+        _emit_resource(
+            "assistance_suggestion",
+            _task5_data("chroma_rag_poc.routes_fmea_assistance_v1", "suggestion_data", suggestion),
+            request_id=command.request_id,
+            trace_id=suggestion.trace_id,
+            pretty=pretty,
+        )
+        return 0
+    if args.assist_command == "decide":
+        data = _require_exact_keys(request, _ASSIST_DECISION_KEYS)
+        raw_edits = data["edits"]
+        if not isinstance(raw_edits, list):
+            raise _invalid_request_file()
+        edits: list[tuple[str, object]] = []
+        for item in raw_edits:
+            edit = _require_exact_keys(item, frozenset({"field", "value"}))
+            edits.append((cast(str, edit["field"]), edit["value"]))
+        contracts = import_module("fmea_application.assistance_contracts")
+        service_contracts = import_module("fmea_application.assistance_service")
+        command = service_contracts.DecideAssistanceCommand(
+            suggestion_id=cast(str, data["suggestion_id"]),
+            expected_suggestion_version=cast(int, data["suggestion_record_version"]),
+            expected_target_record_version=cast(int, data["target_record_version"]),
+            action=contracts.AssistanceDecisionAction(cast(str, data["action"])),
+            idempotency_key=cast(str, data["idempotency_key"]),
+            reason=cast(str, data["reason"]),
+            edits=tuple(edits),
+        )
+        decision = _task5_service(runtime, "decision_service").decide(command, runtime.actor)
+        _emit_resource(
+            "assistance_decision",
+            _task5_data("chroma_rag_poc.routes_fmea_assistance_v1", "decision_data", decision),
+            pretty=pretty,
+        )
+        return 0
+    raise CliUsageError
+
+
+def _dispatch_risk(
+    args: argparse.Namespace,
+    runtime: CliRuntime,
+    request: dict[str, object] | None,
+) -> int:
+    service = _task5_service(runtime, "risk_service")
+    pretty = bool(args.pretty)
+    if args.risk_command == "show":
+        assessment = service.get(args.row_id, runtime.actor)
+        if assessment is None:
+            raise _review_error("FMEA_ROW_NOT_FOUND", "risk assessment was not found")
+        _emit_resource(
+            "risk_assessment",
+            _task5_data("chroma_rag_poc.routes_fmea_risk_v1", "assessment_data", assessment),
+            pretty=pretty,
+        )
+        return 0
+    if args.risk_command == "propose":
+        contracts = import_module("fmea_application.risk_contracts")
+        command = contracts.StartRiskProposalCommand(
+            row_id=args.row_id,
+            expected_record_version=args.record_version,
+            evidence_pack_id=args.evidence_pack_id,
+            domain_pack_id=args.domain_pack_id,
+            domain_pack_version=args.domain_pack_version,
+            template_id=args.template_id,
+            template_version=args.template_version,
+            rule_pack_id=args.rule_pack_id,
+            rule_pack_version=args.rule_pack_version,
+            idempotency_key=args.idempotency_key,
+        )
+        assessment = service.propose(command, _task5_model_actor(runtime))
+        run_id = assessment.assistance_suggestion_id
+        if not isinstance(run_id, str) or not run_id:
+            raise _review_error("FMEA_MODEL_SUGGESTION_INVALID", "risk proposal run identity is unavailable")
+        assessment_payload = _task5_data("chroma_rag_poc.routes_fmea_risk_v1", "assessment_data", assessment)
+        _emit_resource(
+            "risk_proposal_run",
+            {"run_id": run_id, "status": "succeeded", "assessment": assessment_payload},
+            pretty=pretty,
+        )
+        return 0
+    if args.risk_command == "proposal-status":
+        assessment = service.get_proposal_run(args.run_id, runtime.actor)
+        assessment_payload = _task5_data("chroma_rag_poc.routes_fmea_risk_v1", "assessment_data", assessment)
+        _emit_resource(
+            "risk_proposal_run",
+            {"run_id": args.run_id, "status": "succeeded", "assessment": assessment_payload},
+            pretty=pretty,
+        )
+        return 0
+    if request is None:
+        raise _invalid_request_file()
+    contracts = import_module("fmea_application.risk_contracts")
+    if args.risk_command == "confirm":
+        data = _require_exact_keys(request, _RISK_CONFIRM_KEYS)
+        command = contracts.ConfirmRiskCommand(
+            row_id=cast(str, data["row_id"]),
+            proposal_id=cast(str, data["proposal_id"]),
+            expected_assessment_version=cast(int, data["expected_assessment_version"]),
+            idempotency_key=cast(str, data["idempotency_key"]),
+        )
+        result = service.confirm(command, runtime.actor)
+        _emit_resource(
+            "risk_confirmation",
+            _task5_data("chroma_rag_poc.routes_fmea_risk_v1", "confirmation_data", result),
+            pretty=pretty,
+        )
+        return 0
+    if args.risk_command == "reject":
+        data = _require_exact_keys(request, _RISK_REJECT_KEYS)
+        command = contracts.RejectRiskCommand(
+            row_id=cast(str, data["row_id"]),
+            proposal_id=cast(str, data["proposal_id"]),
+            expected_assessment_version=cast(int, data["expected_assessment_version"]),
+            idempotency_key=cast(str, data["idempotency_key"]),
+            reason=cast(str, data["reason"]),
+        )
+        assessment = service.reject(command, runtime.actor)
+        _emit_resource(
+            "risk_assessment",
+            _task5_data("chroma_rag_poc.routes_fmea_risk_v1", "assessment_data", assessment),
+            pretty=pretty,
+        )
+        return 0
+    raise CliUsageError
+
+
+def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:  # noqa: C901
+    if args.command == "assist":
+        return _dispatch_assist(args, runtime, request)
+    if args.command == "risk":
+        return _dispatch_risk(args, runtime, request)
+    if args.command != "review":
+        raise CliUsageError
     service = runtime.service
     actor = runtime.actor
     pretty = bool(args.pretty)
@@ -853,7 +1113,7 @@ def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, 
     raise CliUsageError
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
     """Run one CLI operation and emit exactly one JSON object."""
 
     pretty = _pretty_requested(argv)
@@ -866,21 +1126,43 @@ def main(argv: Sequence[str] | None = None) -> int:
             pretty=pretty,
         )
 
-    if args.review_command == "decide" and not args.confirm_human_review:
+    if args.command == "review" and args.review_command == "decide" and not args.confirm_human_review:
         return _emit_error(
             "FMEA_REVIEW_CONFIRMATION_REQUIRED",
             "explicit human review confirmation is required",
             pretty=bool(args.pretty),
         )
 
+    if args.command == "assist" and args.assist_command == "decide" and not args.confirm_human_assistance_decision:
+        return _emit_error(
+            "FMEA_REVIEW_CONFIRMATION_REQUIRED",
+            "explicit human assistance decision confirmation is required",
+            pretty=bool(args.pretty),
+        )
+    if args.command == "risk" and args.risk_command in {"confirm", "reject"} and not args.confirm_human_risk_review:
+        return _emit_error(
+            "FMEA_RISK_HUMAN_CONFIRMATION_REQUIRED",
+            "explicit human risk review confirmation is required",
+            pretty=bool(args.pretty),
+        )
+
     request: dict[str, object] | None = None
-    if args.review_command == "decide":
+    if args.command == "review" and args.review_command == "decide":
         try:
             request = load_decision_request(args.request_file)
         except CliUsageError:
             return _emit_error(
                 "FMEA_REVIEW_REQUEST_INVALID",
                 "invalid review request file",
+                pretty=bool(args.pretty),
+            )
+    elif args.command == "assist" or (args.command == "risk" and args.risk_command in {"confirm", "reject"}):
+        try:
+            request = load_json_request(args.request_file)
+        except CliUsageError:
+            return _emit_error(
+                "FMEA_REVIEW_REQUEST_INVALID",
+                "invalid FMEA request file",
                 pretty=bool(args.pretty),
             )
 

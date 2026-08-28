@@ -54,6 +54,12 @@ class _AssistanceRepository:
         self.saved.append(prepared)
         return prepared.suggestion
 
+    def get_suggestion(self, suggestion_id: str, workspace_id: str):
+        for prepared in self.saved:
+            if prepared.suggestion.suggestion_id == suggestion_id and prepared.suggestion.workspace_id == workspace_id:
+                return prepared.suggestion
+        return None
+
 
 class _MismatchingSuggestionGenerator(_SuggestionGenerator):
     def generate(self, request):
@@ -131,3 +137,15 @@ def test_scope_suggestion_rejects_derived_risk_fields() -> None:
         service.suggest_scope(_request(), _model_actor())
 
     assert getattr(captured.value, "code", None) == "FMEA_MODEL_SUGGESTION_INVALID"
+
+
+def test_authenticated_workspace_can_read_persisted_scope_suggestion() -> None:
+    repository = _AssistanceRepository()
+    service = _service_type()(_SuggestionGenerator(), repository)
+    suggestion = service.suggest_scope(_request(), _model_actor())
+    human = ActorContext("reviewer-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1")
+
+    assert service.get(suggestion.suggestion_id, human) is suggestion
+    with pytest.raises(Exception) as captured:
+        service.get(suggestion.suggestion_id, ActorContext("other", ActorType.HUMAN, frozenset(), "ws-2"))
+    assert getattr(captured.value, "code", None) == "FMEA_REVIEW_SUGGESTION_NOT_FOUND"

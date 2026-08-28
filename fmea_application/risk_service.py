@@ -256,12 +256,12 @@ class RiskAssessmentService:
             return replayed
         row = self._repository.get_row(command.row_id, actor.workspace_id)
         if row is None:
-            raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk row was not found")
+            raise ReviewError("FMEA_ROW_NOT_FOUND", "risk row was not found")
         if row.record_version != command.expected_record_version:
             raise ReviewError("FMEA_VERSION_CONFLICT", "risk row version is stale")
         evidence_pack = self._repository.get_evidence_pack(command.evidence_pack_id, actor.workspace_id)
         if evidence_pack is None:
-            raise ReviewError("FMEA_REVIEW_EVIDENCE_NOT_FOUND", "risk EvidencePack was not found")
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "risk EvidencePack was not found")
         domain_pack = self._domain_packs.get(command.domain_pack_id, command.domain_pack_version)
         rule_pack = self._rule_packs.get(command.rule_pack_id, command.rule_pack_version)
         if (command.template_id, command.template_version) not in domain_pack.template_identities:
@@ -437,6 +437,17 @@ class RiskAssessmentService:
     def get(self, row_id: str, actor: ActorContext) -> RiskAssessmentRecord | None:
         return self._repository.get_current_assessment(row_id, actor.workspace_id)
 
+    def get_proposal_run(self, run_id: str, actor: ActorContext) -> RiskAssessmentRecord:
+        if not isinstance(run_id, str) or not run_id.strip():
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "risk proposal run identity is invalid")
+        suggestion = self._assistance.get_suggestion(run_id, actor.workspace_id)
+        if suggestion is None:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "risk proposal run was not found")
+        assessment = self._repository.get_current_assessment(suggestion.target_id, actor.workspace_id)
+        if assessment is None or assessment.assistance_suggestion_id != suggestion.suggestion_id:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "risk proposal run was not found")
+        return assessment
+
     def _proposal_for_command(
         self,
         command: ConfirmRiskCommand | RejectRiskCommand,
@@ -451,7 +462,7 @@ class RiskAssessmentService:
     ]:
         current = self._repository.get_current_assessment(command.row_id, actor.workspace_id)
         if current is None:
-            raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk assessment was not found")
+            raise ReviewError("FMEA_ROW_NOT_FOUND", "risk assessment was not found")
         if current.record_version != command.expected_assessment_version:
             raise ReviewError("FMEA_VERSION_CONFLICT", "risk assessment version is stale")
         proposal = self._repository.get_proposal(command.proposal_id, actor.workspace_id)
@@ -461,14 +472,14 @@ class RiskAssessmentService:
             raise ReviewError("FMEA_VERSION_CONFLICT", "risk proposal does not match current assessment")
         evidence_pack = self._repository.get_evidence_pack(proposal.evidence_pack_id, actor.workspace_id)
         if evidence_pack is None:
-            raise ReviewError("FMEA_REVIEW_EVIDENCE_NOT_FOUND", "risk EvidencePack was not found")
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "risk EvidencePack was not found")
         rule_pack = self._rule_packs.get(proposal.rule_pack_id, proposal.rule_pack_version)
         suggestion = self._assistance.get_suggestion(proposal.assistance_suggestion_id or "", actor.workspace_id)
         if suggestion is None:
             raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "risk suggestion was not found")
         row = self._repository.get_row(proposal.row_id, actor.workspace_id)
         if row is None:
-            raise ReviewError("FMEA_REVIEW_ROW_NOT_FOUND", "risk row was not found")
+            raise ReviewError("FMEA_ROW_NOT_FOUND", "risk row was not found")
         context = self._contexts.get_context(proposal.row_id, actor)
         domain_pack = self._domain_packs.get(proposal.domain_pack_id, proposal.domain_pack_version)
         binding = _binding(suggestion)

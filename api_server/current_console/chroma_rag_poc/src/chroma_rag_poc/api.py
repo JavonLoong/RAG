@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 
 from core_domain.query_contracts import QueryMode
 from fmea_application.review_errors import ReviewError
-from fmea_infrastructure.composition import ReviewRuntime, build_workspace_review_runtime
+from fmea_infrastructure.composition import ReviewRuntime, RiskRuntime, build_workspace_review_runtime
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
 
 from .benchmark import run_synthetic_benchmark
@@ -394,6 +394,7 @@ def create_app(
     log_dir: Path | None = None,
     *,
     review_runtime_factory: Callable[[WorkspaceConfig], ReviewRuntime] = build_workspace_review_runtime,
+    risk_runtime_factory: Callable[[WorkspaceConfig], RiskRuntime] | None = None,
     review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
@@ -429,6 +430,9 @@ def create_app(
     app.state.review_runtime_factory = review_runtime_factory
     app.state.review_runtimes = {}
     app.state.review_runtime_lock = Lock()
+    app.state.risk_runtime_factory = risk_runtime_factory
+    app.state.risk_runtimes = {}
+    app.state.risk_runtime_lock = Lock()
     app.state.review_cursor_secret = secrets.token_bytes(32)
     app.state.review_auth_error = None
     if review_auth_provider is not None:
@@ -440,6 +444,7 @@ def create_app(
             app.state.review_auth_provider = None
             app.state.review_auth_error = exc
 
+    from .routes_fmea_assistance_v1 import router as fmea_assistance_v1_router
     from .routes_fmea_review_v1 import (
         fmea_validation_error_response,
         review_error_response,
@@ -447,6 +452,7 @@ def create_app(
     from .routes_fmea_review_v1 import (
         router as fmea_review_v1_router,
     )
+    from .routes_fmea_risk_v1 import router as fmea_risk_v1_router
     from .routes_query_v1 import router as query_v1_router
     from .routes_query_v1 import validation_error_response
 
@@ -462,6 +468,8 @@ def create_app(
 
     app.include_router(query_v1_router)
     app.include_router(fmea_review_v1_router)
+    app.include_router(fmea_assistance_v1_router)
+    app.include_router(fmea_risk_v1_router)
 
     async def close_review_runtimes() -> None:
         runtimes = tuple(cast(dict[str, ReviewRuntime], app.state.review_runtimes).values())

@@ -78,6 +78,7 @@ _ERROR_STATUS = {
     "FMEA_REVIEW_TERMINAL": 409,
     "FMEA_REVIEW_SUGGESTION_STALE": 409,
     "FMEA_VERSION_CONFLICT": 412,
+    "FMEA_RISK_VERSION_CONFLICT": 412,
     "FMEA_REVIEW_ACTION_INVALID": 422,
     "FMEA_REVIEW_FIELD_INVALID": 422,
     "FMEA_EVIDENCE_INVALID": 422,
@@ -90,6 +91,7 @@ _ERROR_STATUS = {
     "FMEA_REVIEW_STORAGE_UNAVAILABLE": 503,
     "FMEA_AUTH_CONFIGURATION_INVALID": 503,
     "FMEA_REVIEW_CONFIRMATION_REQUIRED": 422,
+    "FMEA_RISK_HUMAN_CONFIRMATION_REQUIRED": 422,
 }
 _ERROR_TITLES = {
     "FMEA_AUTH_REQUIRED": "Review authentication required.",
@@ -854,6 +856,8 @@ __all__ = [
     "FmeaRequestBodyLimitMiddleware",
     "fmea_validation_error_response",
     "get_review_access",
+    "parse_idempotency_key",
+    "parse_if_match",
     "review_error_response",
     "router",
 ]

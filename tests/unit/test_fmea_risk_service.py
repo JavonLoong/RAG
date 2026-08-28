@@ -280,6 +280,32 @@ def test_model_proposal_is_proposed_only_and_cannot_confirm(
         )
 
 
+def test_proposal_run_is_durably_resolved_by_persisted_suggestion_identity(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, _, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+    proposal = service.propose(_start(), _model())
+
+    assert service.get_proposal_run("risk-suggestion-1", _reviewer()) is proposal
+    with pytest.raises(ReviewError) as captured:
+        service.get_proposal_run("missing-run", _reviewer())
+    assert captured.value.code == "FMEA_REVIEW_SUGGESTION_NOT_FOUND"
+
+
+def test_missing_row_and_evidence_use_declared_transport_safe_error_codes(
+    fixture_review_row, fixture_pack, fixture_review_context
+) -> None:
+    service, _, _ = _service(fixture_review_row, fixture_pack, fixture_review_context)
+
+    with pytest.raises(ReviewError) as missing_row:
+        service.propose(replace(_start(), row_id="missing-row"), _model())
+    assert missing_row.value.code == "FMEA_ROW_NOT_FOUND"
+
+    with pytest.raises(ReviewError) as missing_evidence:
+        service.propose(replace(_start(), evidence_pack_id="missing-pack"), _model())
+    assert missing_evidence.value.code == "FMEA_EVIDENCE_INVALID"
+
+
 def test_human_confirmation_uses_deterministic_calculation_and_versions(
     fixture_review_row, fixture_pack, fixture_review_context
 ) -> None:

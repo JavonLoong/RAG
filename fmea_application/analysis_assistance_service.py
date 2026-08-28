@@ -28,6 +28,14 @@ class AnalysisAssistanceService:
         self._clock = clock
         self._id_factory = id_factory
 
+    def get(self, suggestion_id: str, actor: ActorContext) -> AssistanceSuggestion[object]:
+        if not isinstance(suggestion_id, str) or not suggestion_id.strip():
+            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "assistance suggestion identity is invalid")
+        suggestion = self._repository.get_suggestion(suggestion_id, actor.workspace_id)
+        if suggestion is None:
+            raise ReviewError("FMEA_REVIEW_SUGGESTION_NOT_FOUND", "assistance suggestion was not found")
+        return suggestion
+
     def suggest_scope(
         self,
         request: AssistanceRequest[object],
