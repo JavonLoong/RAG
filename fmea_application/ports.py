@@ -16,6 +16,7 @@ from core_domain.fmea.contracts import (
     VersionSet,
 )
 from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.propagation import PropagationRulePack, TopologyInterface, TopologySnapshot
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
@@ -130,6 +131,16 @@ class ScoringRuleRegistry(Protocol):
     def register(self, rule_pack: ScoringRulePack, source_bytes: bytes) -> ScoringRulePack: ...
 
     def get(self, rule_pack_id: str, version: str) -> ScoringRulePack: ...
+
+
+class PropagationRuleRegistry(Protocol):
+    def get(self, rule_pack_id: str, version: str) -> PropagationRulePack: ...
+
+
+class SystemTopologyPort(Protocol):
+    def load_snapshot(self, topology_id: str, version: str) -> TopologySnapshot: ...
+
+    def neighbors(self, snapshot: TopologySnapshot, entity_id: str) -> tuple[TopologyInterface, ...]: ...
 
 
 class FmeaRepository(Protocol):
@@ -355,10 +366,12 @@ __all__ = [
     "FmeaRepository",
     "PropagationEvidenceProvider",
     "PropagationRequest",
+    "PropagationRuleRegistry",
     "ReviewRepository",
     "ReviewRunExecutor",
     "ReviewSuggestionGenerator",
     "RiskRepository",
     "RiskSuggestionGenerator",
     "ScoringRuleRegistry",
+    "SystemTopologyPort",
 ]

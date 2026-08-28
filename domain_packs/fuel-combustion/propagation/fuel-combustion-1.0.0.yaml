@@ -1,0 +1,47 @@
+rule_pack:
+  id: fuel-combustion-propagation
+  version: 1.0.0
+  applicable_analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  relation_types:
+    - propagation
+    - common_cause
+    - dependency
+    - feedback
+  interface_variables:
+    - fuel_pressure
+    - fuel_flow
+    - atomization_quality
+    - flame_stability
+    - pressure_signal
+    - trip_command
+  units:
+    - kPa
+    - kg_per_s
+    - quality_index
+    - stability_index
+    - signal
+    - boolean
+  directions:
+    - fuel_to_combustion
+    - combustion_to_control
+    - feedback
+    - control_to_fuel
+  max_automatic_depth: 2
+  mandatory_review_conditions:
+    - long_path
+    - cyclic
+    - high_risk
+    - external
+    - evidence_gap
+    - barrier_crossing
+    - timing_violation
+  barrier_semantics: explicit_barriers
+  timing_constraints:
+    delay_ms: non_negative
+    response_time_ms: non_negative
+    fault_tolerance_time_ms: non_negative
+  risk_escalation: high_and_critical_require_review
+  prohibit_silent_fallback: true
