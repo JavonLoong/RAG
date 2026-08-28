@@ -16,10 +16,8 @@ from fmea_review_fixtures import (
 from core_domain.fmea.states import ActorType, RunStatus
 from fmea_application.review_errors import ReviewError
 from fmea_application.review_service import ReviewService
-from fmea_infrastructure.repository_sqlite import (
-    SqliteFmeaRepository,
-    _decode_audit_event,
-)
+from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+from fmea_infrastructure.sqlite_codec import decode_audit_event
 
 
 class SeededReviewDatabase:
@@ -78,7 +76,7 @@ def test_interrupted_run_is_recovered_as_safe_failure(tmp_path, seeded_review_re
     assert payload["request_hash"] == "sha256:" + "b" * 64
     assert event["command"] == "review.suggestion.fail"
     assert event["canonical_payload_hash"] == "sha256:" + "b" * 64
-    decoded = _decode_audit_event(event["event_json"])
+    decoded = decode_audit_event(event["event_json"])
     assert decoded.event_id == event["event_id"]
     assert decoded.command == "review.suggestion.fail"
     assert decoded.error_code == "FMEA_REVIEW_RUN_INTERRUPTED"
@@ -125,7 +123,7 @@ def test_success_and_failure_runs_have_one_terminal_audit_and_no_decision(
     ]
     assert decisions == 0
     payloads = [json.loads(row["event_json"]) for row in events]
-    decoded_events = [_decode_audit_event(row["event_json"]) for row in events]
+    decoded_events = [decode_audit_event(row["event_json"]) for row in events]
     assert all(row["created_at"] == payload["occurred_at_server"] for row, payload in zip(events, payloads, strict=True))
     assert all(row["command"] == payload["command"] for row, payload in zip(events, payloads, strict=True))
     assert all(

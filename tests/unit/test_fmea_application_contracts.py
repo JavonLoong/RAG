@@ -343,6 +343,7 @@ def test_review_error_exposes_only_stable_codes_and_public_message() -> None:
         "FMEA_REVIEW_TERMINAL",
         "FMEA_REVIEW_SUGGESTION_STALE",
         "FMEA_VERSION_CONFLICT",
+        "FMEA_RISK_VERSION_CONFLICT",
         "FMEA_REVIEW_ACTION_INVALID",
         "FMEA_REVIEW_FIELD_INVALID",
         "FMEA_EVIDENCE_INVALID",
@@ -355,6 +356,7 @@ def test_review_error_exposes_only_stable_codes_and_public_message() -> None:
         "FMEA_REVIEW_STORAGE_UNAVAILABLE",
         "FMEA_REVIEW_RUN_INTERRUPTED",
         "FMEA_REVIEW_CONFIRMATION_REQUIRED",
+        "FMEA_RISK_HUMAN_CONFIRMATION_REQUIRED",
     }) == REVIEW_ERROR_CODES
     error = ReviewError("FMEA_ROW_NOT_FOUND", "row not found")
     assert str(error) == "row not found"
