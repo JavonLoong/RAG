@@ -3,10 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Protocol
 
 from .errors import FmeaDomainError
-from .states import ActorType, ClaimStatus, EvidenceSupportStatus, PropagationStatus, PublicationStatus, ReviewStatus
+from .states import ClaimStatus, EvidenceSupportStatus, PropagationStatus, PublicationStatus, ReviewStatus
 from .value_objects import EvidencePack
 
 
@@ -368,74 +367,6 @@ class PropagationEvidenceResolution:
         return self.packs
 
 
-@dataclass(frozen=True, slots=True)
-class PropagationReviewReceipt:
-    """Contract-level proof that a human reviewed the exact graph revision."""
-
-    graph_revision_id: str
-    graph_record_version: int
-    decision_id: str
-    actor_id: str
-    actor_type: ActorType
-    reviewed_edge_ids: tuple[str, ...]
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "graph_revision_id", _text(self.graph_revision_id, "graph_revision_id"))
-        object.__setattr__(
-            self,
-            "graph_record_version",
-            _positive_integer(self.graph_record_version, "graph_record_version"),
-        )
-        object.__setattr__(self, "decision_id", _text(self.decision_id, "decision_id"))
-        object.__setattr__(self, "actor_id", _text(self.actor_id, "actor_id"))
-        if not isinstance(self.actor_type, ActorType):
-            raise FmeaDomainError("review receipt actor_type must be an ActorType")  # noqa: TRY003
-        object.__setattr__(self, "reviewed_edge_ids", _strings(self.reviewed_edge_ids, "reviewed_edge_ids"))
-
-
-@dataclass(frozen=True, slots=True)
-class PropagationDecisionResolution:
-    """Authoritative human decision resolved by the later review service."""
-
-    workspace_id: str
-    graph_revision_id: str
-    graph_record_version: int
-    decision_id: str
-    actor_id: str
-    actor_type: ActorType
-    actor_roles: tuple[str, ...]
-    accepted_edge_ids: tuple[str, ...]
-
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "workspace_id", _text(self.workspace_id, "workspace_id"))
-        object.__setattr__(self, "graph_revision_id", _text(self.graph_revision_id, "graph_revision_id"))
-        object.__setattr__(
-            self,
-            "graph_record_version",
-            _positive_integer(self.graph_record_version, "graph_record_version"),
-        )
-        object.__setattr__(self, "decision_id", _text(self.decision_id, "decision_id"))
-        object.__setattr__(self, "actor_id", _text(self.actor_id, "actor_id"))
-        if not isinstance(self.actor_type, ActorType):
-            raise FmeaDomainError("decision resolution actor_type must be an ActorType")  # noqa: TRY003
-        object.__setattr__(self, "actor_roles", _strings(self.actor_roles, "actor_roles"))
-        object.__setattr__(self, "accepted_edge_ids", _strings(self.accepted_edge_ids, "accepted_edge_ids"))
-
-
-class PropagationDecisionAuthorizationPort(Protocol):
-    """Trusted seam for resolving persisted human propagation decisions."""
-
-    def resolve(
-        self,
-        receipt: PropagationReviewReceipt,
-        *,
-        workspace_id: str,
-        graph_revision_id: str,
-        graph_record_version: int,
-        edge_ids: tuple[str, ...],
-    ) -> PropagationDecisionResolution | None: ...
-
-
 def _require_unique(items: Iterable[str], field_name: str) -> None:
     values = tuple(items)
     if len(values) != len(set(values)):
@@ -592,52 +523,13 @@ def validate_graph_revision(
     topology: TopologySnapshot,
     rule_pack: PropagationRulePack,
     evidence_packs: PropagationEvidenceResolution | Iterable[EvidencePack] | None = None,
-    review_receipt: PropagationReviewReceipt | None = None,
 ) -> None:
-    _validate_graph_revision_contract(graph_revision, topology, rule_pack, evidence_packs)
+    if not isinstance(graph_revision, PropagationGraphRevision):
+        raise FmeaDomainError("propagation graph revision is invalid")  # noqa: TRY003
     if graph_revision.status is PropagationStatus.CONFIRMED:
         raise FmeaDomainError(  # noqa: TRY003
-            "confirmed graph requires trusted decision authorization; a human review receipt alone is insufficient"
+            "authoritative human confirmation is unavailable until the propagation review service"
         )
-
-
-def validate_confirmed_graph_revision(
-    graph_revision: PropagationGraphRevision,
-    topology: TopologySnapshot,
-    rule_pack: PropagationRulePack,
-    evidence_packs: PropagationEvidenceResolution | Iterable[EvidencePack] | None = None,
-    review_receipt: PropagationReviewReceipt | None = None,
-    *,
-    decision_port: PropagationDecisionAuthorizationPort,
-) -> None:
-    if not isinstance(graph_revision, PropagationGraphRevision):
-        raise FmeaDomainError("propagation graph revision is invalid")  # noqa: TRY003
-    if graph_revision.status is not PropagationStatus.CONFIRMED:
-        raise FmeaDomainError("trusted confirmation validation requires a CONFIRMED graph")  # noqa: TRY003
-    _validate_graph_revision_contract(graph_revision, topology, rule_pack, evidence_packs)
-    if not isinstance(review_receipt, PropagationReviewReceipt):
-        raise FmeaDomainError("confirmed graph requires an authoritative human decision")  # noqa: TRY003
-    resolve = getattr(decision_port, "resolve", None)
-    if not callable(resolve):
-        raise FmeaDomainError("confirmed graph requires an authoritative human decision resolver")  # noqa: TRY003
-    decision = resolve(
-        review_receipt,
-        workspace_id=graph_revision.workspace_id,
-        graph_revision_id=graph_revision.graph_revision_id,
-        graph_record_version=graph_revision.record_version,
-        edge_ids=tuple(edge.edge_id for edge in graph_revision.edges),
-    )
-    _validate_confirmation_authority(graph_revision, review_receipt, decision)
-
-
-def _validate_graph_revision_contract(
-    graph_revision: PropagationGraphRevision,
-    topology: TopologySnapshot,
-    rule_pack: PropagationRulePack,
-    evidence_packs: PropagationEvidenceResolution | Iterable[EvidencePack] | None,
-) -> None:
-    if not isinstance(graph_revision, PropagationGraphRevision):
-        raise FmeaDomainError("propagation graph revision is invalid")  # noqa: TRY003
     validate_topology_snapshot(topology)
     validate_propagation_rule_pack(rule_pack)
     _validate_graph_bindings(graph_revision, topology, rule_pack)
@@ -695,8 +587,6 @@ def _validate_graph_edge(
     _validate_edge_against_topology(edge, topology, rule_pack)
     if not edge.evidence_ids:
         raise FmeaDomainError("edge evidence is required for every graph edge")  # noqa: TRY003
-    if graph_revision.status is PropagationStatus.CONFIRMED and edge.review_status is not ReviewStatus.ACCEPTED:
-        raise FmeaDomainError("confirmed graph requires human review of every edge")  # noqa: TRY003
 
 
 def _resolve_graph_evidence(
@@ -741,32 +631,6 @@ def _validate_graph_edge_evidence(edge: PropagationEdge, resolved_packs: dict[st
     if pack is None:
         raise FmeaDomainError(f"declared evidence pack {edge.evidence_pack_id} is missing")  # noqa: TRY003
     validate_propagation_edge(edge, pack)
-
-
-def _validate_confirmation_authority(
-    graph_revision: PropagationGraphRevision,
-    review_receipt: PropagationReviewReceipt,
-    decision: PropagationDecisionResolution | None,
-) -> None:
-    graph_edge_ids = tuple(edge.edge_id for edge in graph_revision.edges)
-    if review_receipt.reviewed_edge_ids != graph_edge_ids:
-        raise FmeaDomainError("review receipt must cover every graph edge")  # noqa: TRY003
-    if not isinstance(decision, PropagationDecisionResolution):
-        raise FmeaDomainError("confirmed graph requires an authoritative human decision")  # noqa: TRY003
-    if decision.workspace_id != graph_revision.workspace_id:
-        raise FmeaDomainError("authoritative decision workspace_id does not match graph")  # noqa: TRY003
-    if decision.graph_revision_id != graph_revision.graph_revision_id:
-        raise FmeaDomainError("authoritative decision graph_revision_id does not match graph")  # noqa: TRY003
-    if decision.graph_record_version != graph_revision.record_version:
-        raise FmeaDomainError("authoritative decision graph_record_version does not match graph")  # noqa: TRY003
-    if decision.decision_id != review_receipt.decision_id or decision.actor_id != review_receipt.actor_id:
-        raise FmeaDomainError("authoritative decision does not match review receipt")  # noqa: TRY003
-    if decision.actor_type is not ActorType.HUMAN or review_receipt.actor_type is not ActorType.HUMAN:
-        raise FmeaDomainError("authoritative decision requires a human actor")  # noqa: TRY003
-    if "propagation_reviewer" not in decision.actor_roles:
-        raise FmeaDomainError("authoritative decision requires the propagation_reviewer role")  # noqa: TRY003
-    if decision.accepted_edge_ids != graph_edge_ids:
-        raise FmeaDomainError("authoritative decision must accept every graph edge")  # noqa: TRY003
 
 
 def _validate_graph_path(

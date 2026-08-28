@@ -4,25 +4,22 @@ from dataclasses import FrozenInstanceError, fields, replace
 
 import pytest
 
+import core_domain.fmea.propagation as propagation_module
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.propagation import (
-    PropagationDecisionResolution,
     PropagationEdge,
     PropagationEvidenceResolution,
     PropagationGraphRevision,
     PropagationPath,
-    PropagationReviewReceipt,
     PropagationRulePack,
     TopologyInterface,
     TopologyNode,
     TopologySnapshot,
-    validate_confirmed_graph_revision,
     validate_graph_revision,
     validate_path,
 )
 from core_domain.fmea.states import (
     FMEA_SCHEMA_ID,
-    ActorType,
     ClaimStatus,
     EvidenceSupportStatus,
     PropagationStatus,
@@ -428,73 +425,7 @@ def test_rule_pack_rejects_automatic_depth_other_than_locked_two(depth: int) -> 
         propagation_rules(max_automatic_depth=depth)
 
 
-def test_confirmed_graph_requires_human_review_receipt() -> None:
-    edge = replace(propagation_edge(), review_status=ReviewStatus.ACCEPTED)
-    topology = topology_snapshot(
-        nodes=(node("pump"), node("manifold")),
-        interfaces=(interface("pump", "manifold"),),
-    )
-    graph = graph_revision(edges=(edge,), status=PropagationStatus.CONFIRMED)
-    resolution = PropagationEvidenceResolution(packs=(evidence_pack("E1"),))
-    with pytest.raises(FmeaDomainError, match="human review receipt"):
-        validate_graph_revision(graph, topology, propagation_rules(), evidence_packs=resolution)
-
-    model_receipt = PropagationReviewReceipt(
-        graph_revision_id=graph.graph_revision_id,
-        graph_record_version=graph.record_version,
-        decision_id="decision-1",
-        actor_id="model-1",
-        actor_type=ActorType.MODEL,
-        reviewed_edge_ids=(edge.edge_id,),
-    )
-    with pytest.raises(FmeaDomainError, match="human"):
-        validate_graph_revision(
-            graph,
-            topology,
-            propagation_rules(),
-            evidence_packs=resolution,
-            review_receipt=model_receipt,
-        )
-
-    human_receipt = replace(model_receipt, actor_id="reviewer-1", actor_type=ActorType.HUMAN)
-    authorized = PropagationDecisionResolution(
-        workspace_id=graph.workspace_id,
-        graph_revision_id=graph.graph_revision_id,
-        graph_record_version=graph.record_version,
-        decision_id=human_receipt.decision_id,
-        actor_id=human_receipt.actor_id,
-        actor_type=ActorType.HUMAN,
-        actor_roles=("propagation_reviewer",),
-        accepted_edge_ids=(edge.edge_id,),
-    )
-    validate_confirmed_graph_revision(
-        graph,
-        topology,
-        propagation_rules(),
-        evidence_packs=resolution,
-        review_receipt=human_receipt,
-        decision_port=StaticDecisionAuthorizationPort(authorized),
-    )
-
-
-class StaticDecisionAuthorizationPort:
-    def __init__(self, resolution: PropagationDecisionResolution | None) -> None:
-        self.resolution = resolution
-
-    def resolve(
-        self,
-        receipt: PropagationReviewReceipt,
-        *,
-        workspace_id: str,
-        graph_revision_id: str,
-        graph_record_version: int,
-        edge_ids: tuple[str, ...],
-    ) -> PropagationDecisionResolution | None:
-        del receipt, workspace_id, graph_revision_id, graph_record_version, edge_ids
-        return self.resolution
-
-
-def test_freely_constructed_human_receipt_requires_authoritative_resolution() -> None:
+def test_task1_cannot_confirm_graph_from_caller_supplied_human_like_data() -> None:
     edge = replace(propagation_edge(), review_status=ReviewStatus.ACCEPTED)
     topology = topology_snapshot(
         nodes=(node("pump"), node("manifold")),
@@ -502,48 +433,15 @@ def test_freely_constructed_human_receipt_requires_authoritative_resolution() ->
     )
     graph = graph_revision(edges=(edge,), status=PropagationStatus.CONFIRMED)
     evidence = PropagationEvidenceResolution(packs=(evidence_pack("E1"),))
-    forged_receipt = PropagationReviewReceipt(
-        graph_revision_id=graph.graph_revision_id,
-        graph_record_version=graph.record_version,
-        decision_id="forged-decision",
-        actor_id="reviewer-1",
-        actor_type=ActorType.HUMAN,
-        reviewed_edge_ids=(edge.edge_id,),
-    )
-
-    with pytest.raises(FmeaDomainError, match="trusted decision authorization"):
-        validate_graph_revision(
-            graph, topology, propagation_rules(), evidence_packs=evidence, review_receipt=forged_receipt
-        )
-
-    with pytest.raises(FmeaDomainError, match="authoritative human decision"):
-        validate_confirmed_graph_revision(
-            graph,
-            topology,
-            propagation_rules(),
-            evidence_packs=evidence,
-            review_receipt=forged_receipt,
-            decision_port=StaticDecisionAuthorizationPort(None),
-        )
-
-    authorized = PropagationDecisionResolution(
-        workspace_id=graph.workspace_id,
-        graph_revision_id=graph.graph_revision_id,
-        graph_record_version=graph.record_version,
-        decision_id=forged_receipt.decision_id,
-        actor_id=forged_receipt.actor_id,
-        actor_type=ActorType.HUMAN,
-        actor_roles=("propagation_reviewer",),
-        accepted_edge_ids=(edge.edge_id,),
-    )
-    validate_confirmed_graph_revision(
-        graph,
-        topology,
-        propagation_rules(),
-        evidence_packs=evidence,
-        review_receipt=forged_receipt,
-        decision_port=StaticDecisionAuthorizationPort(authorized),
-    )
+    assert not hasattr(propagation_module, "PropagationReviewReceipt")
+    assert not hasattr(propagation_module, "PropagationDecisionResolution")
+    assert not hasattr(propagation_module, "PropagationDecisionAuthorizationPort")
+    assert not hasattr(propagation_module, "validate_confirmed_graph_revision")
+    with pytest.raises(
+        FmeaDomainError,
+        match="authoritative human confirmation is unavailable until the propagation review service",
+    ):
+        validate_graph_revision(graph, topology, propagation_rules(), evidence_packs=evidence)
 
 
 def test_graph_requires_declared_workspace_bound_evidence_packs() -> None:
@@ -587,7 +485,10 @@ def test_confirmed_graph_rejects_unreviewed_long_edge() -> None:
         nodes=(node("pump"), node("manifold")),
         interfaces=(interface("pump", "manifold"),),
     )
-    with pytest.raises(FmeaDomainError, match="human review"):
+    with pytest.raises(
+        FmeaDomainError,
+        match="authoritative human confirmation is unavailable until the propagation review service",
+    ):
         validate_graph_revision(
             graph_revision(edges=(edge,), status=PropagationStatus.CONFIRMED),
             topology,

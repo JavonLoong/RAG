@@ -6,17 +6,13 @@ source of truth for topology-constrained propagation graphs.
 """
 
 from core_domain.fmea.propagation import (
-    PropagationDecisionAuthorizationPort,
-    PropagationDecisionResolution,
     PropagationEvidenceResolution,
     PropagationGraphRevision,
     PropagationPath,
-    PropagationReviewReceipt,
     PropagationRulePack,
     TopologyInterface,
     TopologyNode,
     TopologySnapshot,
-    validate_confirmed_graph_revision,
     validate_graph_revision,
     validate_path,
     validate_propagation_rule_pack,
@@ -25,18 +21,14 @@ from core_domain.fmea.propagation import (
 from core_domain.fmea.states import PropagationStatus
 
 __all__ = [
-    "PropagationDecisionAuthorizationPort",
-    "PropagationDecisionResolution",
     "PropagationEvidenceResolution",
     "PropagationGraphRevision",
     "PropagationPath",
-    "PropagationReviewReceipt",
     "PropagationRulePack",
     "PropagationStatus",
     "TopologyInterface",
     "TopologyNode",
     "TopologySnapshot",
-    "validate_confirmed_graph_revision",
     "validate_graph_revision",
     "validate_path",
     "validate_propagation_rule_pack",
