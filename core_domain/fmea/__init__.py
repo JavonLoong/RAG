@@ -2,9 +2,11 @@ from .domain_pack import DomainPackManifest
 from .entities import FieldClaim, FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
 from .propagation import (
     PropagationEdge,
+    PropagationEvidenceResolution,
     PropagationGraphRevision,
     PropagationPath,
     PropagationRelation,
+    PropagationReviewReceipt,
     PropagationRulePack,
     TopologyInterface,
     TopologyNode,
@@ -57,9 +59,11 @@ __all__ = [
     "FmeaAnalysis",
     "FmeaRow",
     "PropagationEdge",
+    "PropagationEvidenceResolution",
     "PropagationGraphRevision",
     "PropagationPath",
     "PropagationRelation",
+    "PropagationReviewReceipt",
     "PropagationRulePack",
     "PropagationStatus",
     "PublicationStatus",

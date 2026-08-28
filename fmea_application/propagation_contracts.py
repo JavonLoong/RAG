@@ -6,8 +6,10 @@ source of truth for topology-constrained propagation graphs.
 """
 
 from core_domain.fmea.propagation import (
+    PropagationEvidenceResolution,
     PropagationGraphRevision,
     PropagationPath,
+    PropagationReviewReceipt,
     PropagationRulePack,
     TopologyInterface,
     TopologyNode,
@@ -20,8 +22,10 @@ from core_domain.fmea.propagation import (
 from core_domain.fmea.states import PropagationStatus
 
 __all__ = [
+    "PropagationEvidenceResolution",
     "PropagationGraphRevision",
     "PropagationPath",
+    "PropagationReviewReceipt",
     "PropagationRulePack",
     "PropagationStatus",
     "TopologyInterface",

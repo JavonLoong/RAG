@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 
 import pytest
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.propagation import (
     PropagationEdge,
+    PropagationEvidenceResolution,
     PropagationGraphRevision,
     PropagationPath,
+    PropagationReviewReceipt,
     PropagationRulePack,
     TopologyInterface,
     TopologyNode,
@@ -18,6 +20,7 @@ from core_domain.fmea.propagation import (
 )
 from core_domain.fmea.states import (
     FMEA_SCHEMA_ID,
+    ActorType,
     ClaimStatus,
     EvidenceSupportStatus,
     PropagationStatus,
@@ -184,7 +187,7 @@ def graph_revision(
     return PropagationGraphRevision(**values)
 
 
-def evidence_pack(*evidence_ids: str) -> EvidencePack:
+def evidence_pack(*evidence_ids: str, workspace_id: str = "ws-1", pack_id: str = "pack-1") -> EvidencePack:
     versions = VersionSet(
         schema_id=FMEA_SCHEMA_ID,
         data_version="data-1",
@@ -200,7 +203,7 @@ def evidence_pack(*evidence_ids: str) -> EvidencePack:
     refs = tuple(
         EvidenceRef(
             evidence_id=evidence_id,
-            workspace_id="ws-1",
+            workspace_id=workspace_id,
             document_id=f"doc-{evidence_id}",
             document_version="doc-v1",
             content_hash="e" * 64,
@@ -218,8 +221,8 @@ def evidence_pack(*evidence_ids: str) -> EvidencePack:
         for index, evidence_id in enumerate(evidence_ids)
     )
     return EvidencePack.build(
-        pack_id="pack-1",
-        workspace_id="ws-1",
+        pack_id=pack_id,
+        workspace_id=workspace_id,
         acl_scope=("engineering",),
         versions=versions,
         refs=refs,
@@ -279,6 +282,7 @@ def test_graph_validates_interface_variable_unit_direction_and_mode() -> None:
         graph_revision(edges=(propagation_edge(),)),
         topology,
         propagation_rules(),
+        evidence_packs=PropagationEvidenceResolution(packs=(evidence_pack("E1"),)),
     )
 
     with pytest.raises(FmeaDomainError, match="interface_variable"):
@@ -397,6 +401,102 @@ def test_graph_rejects_path_edge_not_present_in_graph_revision() -> None:
     path = propagation_path(edges=(first, second))
     with pytest.raises(FmeaDomainError, match="graph edge"):
         validate_graph_revision(graph_revision(edges=(first,), paths=(path,)), topology, propagation_rules())
+
+
+def test_graph_rejects_path_edge_with_same_id_but_different_contents() -> None:
+    canonical = propagation_edge()
+    substituted = replace(canonical, target_entity_id="nozzle")
+    topology = topology_snapshot(
+        nodes=(node("pump"), node("manifold"), node("nozzle")),
+        interfaces=(interface("pump", "manifold"), interface("pump", "nozzle")),
+    )
+    path = propagation_path(edges=(substituted,))
+    with pytest.raises(FmeaDomainError, match="canonical graph edge"):
+        validate_graph_revision(
+            graph_revision(edges=(canonical,), paths=(path,)),
+            topology,
+            propagation_rules(),
+            evidence_packs=PropagationEvidenceResolution(packs=(evidence_pack("E1"),)),
+        )
+
+
+@pytest.mark.parametrize("depth", (1, 3))
+def test_rule_pack_rejects_automatic_depth_other_than_locked_two(depth: int) -> None:
+    with pytest.raises(FmeaDomainError, match="max_automatic_depth.*2"):
+        propagation_rules(max_automatic_depth=depth)
+
+
+def test_confirmed_graph_requires_human_review_receipt() -> None:
+    edge = replace(propagation_edge(), review_status=ReviewStatus.ACCEPTED)
+    topology = topology_snapshot(
+        nodes=(node("pump"), node("manifold")),
+        interfaces=(interface("pump", "manifold"),),
+    )
+    graph = graph_revision(edges=(edge,), status=PropagationStatus.CONFIRMED)
+    resolution = PropagationEvidenceResolution(packs=(evidence_pack("E1"),))
+    with pytest.raises(FmeaDomainError, match="human review receipt"):
+        validate_graph_revision(graph, topology, propagation_rules(), evidence_packs=resolution)
+
+    model_receipt = PropagationReviewReceipt(
+        graph_revision_id=graph.graph_revision_id,
+        graph_record_version=graph.record_version,
+        decision_id="decision-1",
+        actor_id="model-1",
+        actor_type=ActorType.MODEL,
+        reviewed_edge_ids=(edge.edge_id,),
+    )
+    with pytest.raises(FmeaDomainError, match="human"):
+        validate_graph_revision(
+            graph,
+            topology,
+            propagation_rules(),
+            evidence_packs=resolution,
+            review_receipt=model_receipt,
+        )
+
+    human_receipt = replace(model_receipt, actor_id="reviewer-1", actor_type=ActorType.HUMAN)
+    validate_graph_revision(
+        graph,
+        topology,
+        propagation_rules(),
+        evidence_packs=resolution,
+        review_receipt=human_receipt,
+    )
+
+
+def test_graph_requires_declared_workspace_bound_evidence_packs() -> None:
+    topology = topology_snapshot(
+        nodes=(node("pump"), node("manifold")),
+        interfaces=(interface("pump", "manifold"),),
+    )
+    graph = graph_revision(edges=(propagation_edge(),))
+    rules = propagation_rules()
+    with pytest.raises(FmeaDomainError, match="declared evidence pack"):
+        validate_graph_revision(graph, topology, rules, evidence_packs=PropagationEvidenceResolution(packs=()))
+
+    foreign_pack = evidence_pack("E1", workspace_id="ws-foreign")
+    with pytest.raises(FmeaDomainError, match="workspace"):
+        validate_graph_revision(
+            graph,
+            topology,
+            rules,
+            evidence_packs=PropagationEvidenceResolution(packs=(foreign_pack,)),
+        )
+
+
+def test_graph_preserves_per_edge_evidence_membership() -> None:
+    topology = topology_snapshot(
+        nodes=(node("pump"), node("manifold")),
+        interfaces=(interface("pump", "manifold"),),
+    )
+    graph = graph_revision(edges=(propagation_edge(evidence_ids=("E2",)),))
+    with pytest.raises(FmeaDomainError, match="evidence ID E2.*EvidencePack"):
+        validate_graph_revision(
+            graph,
+            topology,
+            propagation_rules(),
+            evidence_packs=PropagationEvidenceResolution(packs=(evidence_pack("E1"),)),
+        )
 
 
 def test_confirmed_graph_rejects_unreviewed_long_edge() -> None:

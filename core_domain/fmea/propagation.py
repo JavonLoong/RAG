@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .errors import FmeaDomainError
-from .states import ClaimStatus, EvidenceSupportStatus, PropagationStatus, PublicationStatus, ReviewStatus
+from .states import ActorType, ClaimStatus, EvidenceSupportStatus, PropagationStatus, PublicationStatus, ReviewStatus
 from .value_objects import EvidencePack
 
 
@@ -18,6 +18,7 @@ class PropagationRelation(str, Enum):
 
 RISK_PRIORITIES = frozenset({"normal", "medium", "high", "critical"})
 AUTO_ACCEPT_RISK_PRIORITIES = frozenset({"normal", "medium"})
+LOCKED_AUTOMATIC_DEPTH = 2
 
 
 def _text(value: object, field_name: str) -> str:
@@ -160,6 +161,11 @@ class PropagationRulePack:
             "max_automatic_depth",
             _positive_integer(self.max_automatic_depth, "max_automatic_depth"),
         )
+        if self.max_automatic_depth != LOCKED_AUTOMATIC_DEPTH:
+            raise FmeaDomainError(  # noqa: TRY003
+                "max_automatic_depth must be exactly 2 because the approved propagation contract locks "
+                "automatic search to two hops"
+            )
         object.__setattr__(self, "barrier_semantics", _text(self.barrier_semantics, "barrier_semantics"))
         object.__setattr__(self, "risk_escalation", _text(self.risk_escalation, "risk_escalation"))
         if not isinstance(self.prohibit_silent_fallback, bool):
@@ -223,7 +229,7 @@ class PropagationEdge:
     @property
     def auto_accept_allowed(self) -> bool:
         return (
-            self.path_length in {1, 2}
+            self.path_length in range(1, LOCKED_AUTOMATIC_DEPTH + 1)
             and not self.is_cyclic
             and not self.is_unprocessed
             and not self.is_external
@@ -268,7 +274,7 @@ class PropagationPath:
         if not isinstance(self.requires_human_review, bool):
             raise FmeaDomainError("requires_human_review must be a boolean")  # noqa: TRY003
         requires_review = (
-            self.path_length > 2
+            self.path_length > LOCKED_AUTOMATIC_DEPTH
             or self.is_cyclic
             or any(
                 edge.is_cyclic or edge.is_unprocessed or edge.is_external or not edge.auto_accept_allowed
@@ -341,6 +347,51 @@ class PropagationGraphRevision:
             )
 
 
+@dataclass(frozen=True, slots=True)
+class PropagationEvidenceResolution:
+    """Graph-level resolution of every EvidencePack declared by a graph."""
+
+    packs: tuple[EvidencePack, ...]
+
+    def __post_init__(self) -> None:
+        packs = tuple(self.packs)
+        if any(not isinstance(pack, EvidencePack) for pack in packs):
+            raise FmeaDomainError("evidence resolution packs must contain EvidencePack objects")  # noqa: TRY003
+        pack_ids = tuple(pack.pack_id for pack in packs)
+        if len(pack_ids) != len(set(pack_ids)):
+            raise FmeaDomainError("evidence resolution pack IDs must be unique")  # noqa: TRY003
+        object.__setattr__(self, "packs", packs)
+
+    @property
+    def evidence_packs(self) -> tuple[EvidencePack, ...]:
+        return self.packs
+
+
+@dataclass(frozen=True, slots=True)
+class PropagationReviewReceipt:
+    """Contract-level proof that a human reviewed the exact graph revision."""
+
+    graph_revision_id: str
+    graph_record_version: int
+    decision_id: str
+    actor_id: str
+    actor_type: ActorType
+    reviewed_edge_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "graph_revision_id", _text(self.graph_revision_id, "graph_revision_id"))
+        object.__setattr__(
+            self,
+            "graph_record_version",
+            _positive_integer(self.graph_record_version, "graph_record_version"),
+        )
+        object.__setattr__(self, "decision_id", _text(self.decision_id, "decision_id"))
+        object.__setattr__(self, "actor_id", _text(self.actor_id, "actor_id"))
+        if not isinstance(self.actor_type, ActorType):
+            raise FmeaDomainError("review receipt actor_type must be an ActorType")  # noqa: TRY003
+        object.__setattr__(self, "reviewed_edge_ids", _strings(self.reviewed_edge_ids, "reviewed_edge_ids"))
+
+
 def _require_unique(items: Iterable[str], field_name: str) -> None:
     values = tuple(items)
     if len(values) != len(set(values)):
@@ -371,6 +422,11 @@ def validate_propagation_rule_pack(rule_pack: PropagationRulePack) -> None:
         raise FmeaDomainError("rule pack units must not be empty")  # noqa: TRY003
     if not rule_pack.directions:
         raise FmeaDomainError("rule pack directions must not be empty")  # noqa: TRY003
+    if rule_pack.max_automatic_depth != LOCKED_AUTOMATIC_DEPTH:
+        raise FmeaDomainError(  # noqa: TRY003
+            "max_automatic_depth must be exactly 2 because the approved propagation contract locks "
+            "automatic search to two hops"
+        )
     if rule_pack.prohibit_silent_fallback is not True:
         raise FmeaDomainError("rule pack must prohibit silent fallback")  # noqa: TRY003
 
@@ -491,6 +547,8 @@ def validate_graph_revision(
     graph_revision: PropagationGraphRevision,
     topology: TopologySnapshot,
     rule_pack: PropagationRulePack,
+    evidence_packs: PropagationEvidenceResolution | Iterable[EvidencePack] | None = None,
+    review_receipt: PropagationReviewReceipt | None = None,
 ) -> None:
     if not isinstance(graph_revision, PropagationGraphRevision):
         raise FmeaDomainError("propagation graph revision is invalid")  # noqa: TRY003
@@ -502,11 +560,15 @@ def validate_graph_revision(
     for node in graph_revision.nodes:
         if node.node_id not in topology_node_ids:
             raise FmeaDomainError("graph node is outside topology")  # noqa: TRY003
-    graph_edge_ids = {edge.edge_id for edge in graph_revision.edges}
+    graph_edges_by_id = {edge.edge_id: edge for edge in graph_revision.edges}
     for edge in graph_revision.edges:
         _validate_graph_edge(edge, graph_revision, topology, rule_pack)
     for path in graph_revision.paths:
-        _validate_graph_path(path, graph_revision, graph_edge_ids, rule_pack)
+        _validate_graph_path(path, graph_revision, graph_edges_by_id, rule_pack)
+    resolved_packs = _resolve_graph_evidence(graph_revision, evidence_packs)
+    for edge in graph_revision.edges:
+        _validate_graph_edge_evidence(edge, resolved_packs)
+    _validate_confirmation_authority(graph_revision, review_receipt)
 
 
 def _validate_graph_bindings(
@@ -552,14 +614,81 @@ def _validate_graph_edge(
         raise FmeaDomainError("confirmed graph requires human review of every edge")  # noqa: TRY003
 
 
+def _resolve_graph_evidence(
+    graph_revision: PropagationGraphRevision,
+    evidence_packs: PropagationEvidenceResolution | Iterable[EvidencePack] | None,
+) -> dict[str, EvidencePack]:
+    if evidence_packs is None:
+        packs: tuple[EvidencePack, ...] = ()
+    elif isinstance(evidence_packs, PropagationEvidenceResolution):
+        packs = evidence_packs.packs
+    else:
+        try:
+            packs = tuple(evidence_packs)
+        except TypeError as exc:
+            raise FmeaDomainError(  # noqa: TRY003
+                "evidence_packs must be a resolution or sequence of EvidencePack objects"
+            ) from exc
+    if any(not isinstance(pack, EvidencePack) for pack in packs):
+        raise FmeaDomainError("evidence_packs must contain EvidencePack objects")  # noqa: TRY003
+    resolved = {pack.pack_id: pack for pack in packs}
+    if len(resolved) != len(packs):
+        raise FmeaDomainError("evidence_packs must contain unique pack IDs")  # noqa: TRY003
+    for pack in packs:
+        if pack.workspace_id != graph_revision.workspace_id:
+            raise FmeaDomainError("EvidencePack workspace_id does not match graph workspace_id")  # noqa: TRY003
+
+    declared_ids = set(graph_revision.evidence_pack_ids)
+    resolved_ids = set(resolved)
+    missing_ids = declared_ids - resolved_ids
+    if missing_ids:
+        missing_id = next(iter(sorted(missing_ids)))
+        raise FmeaDomainError(f"declared evidence pack {missing_id} is missing")  # noqa: TRY003
+    extra_ids = resolved_ids - declared_ids
+    if extra_ids:
+        extra_id = next(iter(sorted(extra_ids)))
+        raise FmeaDomainError(f"evidence pack {extra_id} is not declared by graph")  # noqa: TRY003
+    return resolved
+
+
+def _validate_graph_edge_evidence(edge: PropagationEdge, resolved_packs: dict[str, EvidencePack]) -> None:
+    pack = resolved_packs.get(edge.evidence_pack_id)
+    if pack is None:
+        raise FmeaDomainError(f"declared evidence pack {edge.evidence_pack_id} is missing")  # noqa: TRY003
+    validate_propagation_edge(edge, pack)
+
+
+def _validate_confirmation_authority(
+    graph_revision: PropagationGraphRevision,
+    review_receipt: PropagationReviewReceipt | None,
+) -> None:
+    if graph_revision.status is not PropagationStatus.CONFIRMED:
+        return
+    if not isinstance(review_receipt, PropagationReviewReceipt):
+        raise FmeaDomainError("confirmed graph requires a human review receipt")  # noqa: TRY003
+    if review_receipt.actor_type is not ActorType.HUMAN:
+        raise FmeaDomainError("confirmed graph requires a human review receipt")  # noqa: TRY003
+    if review_receipt.graph_revision_id != graph_revision.graph_revision_id:
+        raise FmeaDomainError("review receipt graph_revision_id does not match graph")  # noqa: TRY003
+    if review_receipt.graph_record_version != graph_revision.record_version:
+        raise FmeaDomainError("review receipt graph_record_version does not match graph")  # noqa: TRY003
+    graph_edge_ids = tuple(edge.edge_id for edge in graph_revision.edges)
+    if review_receipt.reviewed_edge_ids != graph_edge_ids:
+        raise FmeaDomainError("review receipt must cover every graph edge")  # noqa: TRY003
+
+
 def _validate_graph_path(
     path: PropagationPath,
     graph_revision: PropagationGraphRevision,
-    graph_edge_ids: set[str],
+    graph_edges_by_id: dict[str, PropagationEdge],
     rule_pack: PropagationRulePack,
 ) -> None:
     if path.analysis_id != graph_revision.analysis_id:
         raise FmeaDomainError("path analysis_id does not match graph")  # noqa: TRY003
-    if any(edge.edge_id not in graph_edge_ids for edge in path.edges):
-        raise FmeaDomainError("path references a graph edge outside the graph revision")  # noqa: TRY003
+    for edge in path.edges:
+        canonical_edge = graph_edges_by_id.get(edge.edge_id)
+        if canonical_edge is None:
+            raise FmeaDomainError("path references a graph edge outside the graph revision")  # noqa: TRY003
+        if canonical_edge != edge:
+            raise FmeaDomainError("path edge does not match the canonical graph edge")  # noqa: TRY003
     validate_path(path, None, rule_pack)
