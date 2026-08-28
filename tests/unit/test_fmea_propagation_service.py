@@ -22,9 +22,11 @@ from fmea_application.assistance_contracts import AssistanceKind, AssistanceSugg
 from fmea_application.propagation_service import (
     PropagationAnalysisService,
     PropagationModelRequest,
+    PropagationReviewResult,
     StartPropagationCommand,
 )
 from fmea_application.review_contracts import ActorContext
+from fmea_application.review_errors import ReviewError
 from tests.unit.test_fmea_risk_repository_contract import assessment as risk_assessment
 
 
@@ -66,6 +68,9 @@ class _Repository:
         self.pack_workspace_id = pack_workspace_id
         self.read_calls = []
         self.saved = None
+        self.replay_result = None
+        self.replay_calls = []
+        self.assistance_repository = None
 
     def get_analysis(self, analysis_id, workspace_id):
         self.read_calls.append(("get_analysis", analysis_id, workspace_id))
@@ -85,7 +90,13 @@ class _Repository:
 
     def save_run_and_proposal(self, prepared):
         self.saved = prepared
+        if self.assistance_repository is not None:
+            self.assistance_repository.saved.append(prepared.assistance)
         return prepared.run
+
+    def replay_propagation_start(self, scope, payload_hash):
+        self.replay_calls.append((scope, payload_hash))
+        return self.replay_result
 
     def get_run(self, run_id, workspace_id):
         if self.saved and self.saved.run.run_id == run_id and self.saved.run.workspace_id == workspace_id:
@@ -261,8 +272,8 @@ def _suggestion(
         evidence_ids=tuple(
             dict.fromkeys(evidence_id for item in tuple(edges or (edge,)) for evidence_id in item["evidence_ids"])
         ),
-        model_hash="c" * 64,
-        prompt_hash="d" * 64,
+        model_hash="sha256:" + "c" * 64,
+        prompt_hash="sha256:" + "d" * 64,
         run_id=request.run_id,
         trace_id="trace-propagation-1",
         domain_pack_id=request.domain_pack.pack_id,
@@ -292,6 +303,7 @@ def _service(
     )
     repository = repository or _Repository(analysis, row, fixture_pack)
     assistance = _AssistanceRepository()
+    repository.assistance_repository = assistance
     generator = generator or _Generator(lambda request: _suggestion(request, target=target))
     service = PropagationAnalysisService(
         repository,
@@ -304,6 +316,48 @@ def _service(
         clock=lambda: "2026-08-28T00:00:01Z",
     )
     return service, repository, assistance, generator
+
+
+def test_start_analysis_replays_before_any_dependency_or_generation(
+    fixture_analysis, fixture_row, fixture_pack
+) -> None:
+    service, repository, assistance, generator = _service(fixture_analysis, fixture_row, fixture_pack)
+    replay = PropagationReviewResult(
+        graph=None,  # type: ignore[arg-type]
+        decision_id="replayed-decision",
+        audit_event_id="replayed-audit",
+        outbox_event_id="replayed-outbox",
+    )
+    repository.replay_result = replay
+    repository.get_analysis = lambda *_args: (_ for _ in ()).throw(AssertionError("analysis loaded before replay"))
+    repository.get_evidence_pack = lambda *_args: (_ for _ in ()).throw(AssertionError("evidence loaded before replay"))
+    generator.generate = lambda *_args: (_ for _ in ()).throw(AssertionError("generator invoked on replay"))
+
+    result = service.start_analysis(_command(), _actor())
+
+    assert result is replay
+    assert len(repository.replay_calls) == 1
+    assert assistance.saved == []
+    assert generator.requests == []
+
+
+def test_start_analysis_conflicting_replay_is_returned_as_failure_without_dependencies(
+    fixture_analysis, fixture_row, fixture_pack
+) -> None:
+    service, repository, assistance, generator = _service(fixture_analysis, fixture_row, fixture_pack)
+
+    def conflict(*_args):
+        raise ReviewError("FMEA_IDEMPOTENCY_CONFLICT", "different payload")
+
+    repository.replay_propagation_start = conflict
+    repository.get_analysis = lambda *_args: (_ for _ in ()).throw(AssertionError("analysis loaded before conflict"))
+    generator.generate = lambda *_args: (_ for _ in ()).throw(AssertionError("generator invoked on conflict"))
+
+    with pytest.raises(ReviewError, match="different payload"):
+        service.start_analysis(_command(), _actor())
+
+    assert assistance.saved == []
+    assert generator.requests == []
 
 
 def test_service_enumerates_deterministic_two_hop_candidates_before_generation(

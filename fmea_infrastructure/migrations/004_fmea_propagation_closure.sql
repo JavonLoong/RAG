@@ -78,6 +78,31 @@ CREATE TABLE IF NOT EXISTS fmea_propagation_edges (
         REFERENCES fmea_propagation_graph_revisions(workspace_id, graph_revision_id)
 );
 
+CREATE TABLE IF NOT EXISTS fmea_propagation_evidence_snapshots (
+    workspace_id TEXT NOT NULL,
+    pack_id TEXT NOT NULL,
+    pack_hash TEXT NOT NULL,
+    pack_json TEXT NOT NULL CHECK (length(pack_json) > 0),
+    snapshot_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (workspace_id, pack_id),
+    UNIQUE (workspace_id, pack_id, pack_hash),
+    CHECK (length(snapshot_hash) = 71 AND substr(snapshot_hash, 1, 7) = 'sha256:'),
+    FOREIGN KEY (workspace_id, pack_id) REFERENCES evidence_packs(workspace_id, pack_id)
+);
+
+CREATE TABLE IF NOT EXISTS fmea_propagation_rule_snapshots (
+    workspace_id TEXT NOT NULL,
+    rule_pack_id TEXT NOT NULL,
+    rule_pack_version TEXT NOT NULL,
+    rule_hash TEXT NOT NULL,
+    rule_json TEXT NOT NULL CHECK (length(rule_json) > 0),
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (workspace_id, rule_pack_id, rule_pack_version),
+    UNIQUE (workspace_id, rule_pack_id, rule_pack_version, rule_hash),
+    CHECK (length(rule_hash) = 71 AND substr(rule_hash, 1, 7) = 'sha256:')
+);
+
 CREATE TABLE IF NOT EXISTS fmea_propagation_paths (
     workspace_id TEXT NOT NULL,
     graph_revision_id TEXT NOT NULL,
@@ -123,7 +148,9 @@ CREATE TABLE IF NOT EXISTS fmea_propagation_edge_decisions (
     UNIQUE (workspace_id, decision_id, edge_id),
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
     FOREIGN KEY (workspace_id, graph_revision_id)
-        REFERENCES fmea_propagation_graph_revisions(workspace_id, graph_revision_id)
+        REFERENCES fmea_propagation_graph_revisions(workspace_id, graph_revision_id),
+    FOREIGN KEY (workspace_id, graph_revision_id, edge_id)
+        REFERENCES fmea_propagation_edges(workspace_id, graph_revision_id, edge_id)
 );
 
 CREATE TABLE IF NOT EXISTS fmea_propagation_graph_decisions (
@@ -132,8 +159,8 @@ CREATE TABLE IF NOT EXISTS fmea_propagation_graph_decisions (
     previous_graph_revision_id TEXT NOT NULL,
     resulting_graph_revision_id TEXT NOT NULL,
     decision_type TEXT NOT NULL CHECK (decision_type IN ('confirm','invalidate')),
-    from_status TEXT NOT NULL CHECK (from_status IN ('not_analyzed','proposed','reviewed','confirmed','invalidated')),
-    to_status TEXT NOT NULL CHECK (to_status IN ('not_analyzed','proposed','reviewed','confirmed','invalidated')),
+    from_status TEXT NOT NULL CHECK (from_status IN ('proposed','reviewed','confirmed')),
+    to_status TEXT NOT NULL CHECK (to_status IN ('confirmed','invalidated')),
     expected_graph_version INTEGER NOT NULL CHECK (expected_graph_version > 0),
     applied_graph_version INTEGER NOT NULL CHECK (applied_graph_version = expected_graph_version + 1),
     actor_id TEXT NOT NULL,
@@ -147,6 +174,12 @@ CREATE TABLE IF NOT EXISTS fmea_propagation_graph_decisions (
     created_at TEXT NOT NULL,
     PRIMARY KEY (workspace_id, decision_id),
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
+    CHECK (
+        (decision_type = 'confirm' AND from_status IN ('proposed','reviewed')
+            AND to_status = 'confirmed' AND actor_type = 'human')
+        OR (decision_type = 'invalidate' AND from_status IN ('proposed','reviewed','confirmed')
+            AND to_status = 'invalidated' AND actor_type IN ('human','system'))
+    ),
     FOREIGN KEY (workspace_id, previous_graph_revision_id)
         REFERENCES fmea_propagation_graph_revisions(workspace_id, graph_revision_id),
     FOREIGN KEY (workspace_id, resulting_graph_revision_id)
@@ -154,8 +187,8 @@ CREATE TABLE IF NOT EXISTS fmea_propagation_graph_decisions (
         DEFERRABLE INITIALLY DEFERRED,
     FOREIGN KEY (workspace_id, audit_event_id)
         REFERENCES audit_events(workspace_id, event_id),
-    FOREIGN KEY (outbox_event_id)
-        REFERENCES fmea_outbox_events(event_id)
+    FOREIGN KEY (workspace_id, outbox_event_id)
+        REFERENCES fmea_outbox_events(workspace_id, event_id)
         DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -169,6 +202,8 @@ CREATE INDEX IF NOT EXISTS idx_fmea_propagation_paths_workspace_graph
     ON fmea_propagation_paths(workspace_id, graph_revision_id, path_order);
 CREATE INDEX IF NOT EXISTS idx_fmea_propagation_decisions_workspace_graph
     ON fmea_propagation_graph_decisions(workspace_id, previous_graph_revision_id, created_at, decision_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_fmea_outbox_workspace_event
+    ON fmea_outbox_events(workspace_id, event_id);
 
 CREATE TRIGGER IF NOT EXISTS fmea_propagation_topology_snapshots_no_update
 BEFORE UPDATE ON fmea_propagation_topology_snapshots
@@ -176,6 +211,18 @@ BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_topology_snapshots'); END;
 CREATE TRIGGER IF NOT EXISTS fmea_propagation_topology_snapshots_no_delete
 BEFORE DELETE ON fmea_propagation_topology_snapshots
 BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_topology_snapshots'); END;
+CREATE TRIGGER IF NOT EXISTS fmea_propagation_evidence_snapshots_no_update
+BEFORE UPDATE ON fmea_propagation_evidence_snapshots
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_evidence_snapshots'); END;
+CREATE TRIGGER IF NOT EXISTS fmea_propagation_evidence_snapshots_no_delete
+BEFORE DELETE ON fmea_propagation_evidence_snapshots
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_evidence_snapshots'); END;
+CREATE TRIGGER IF NOT EXISTS fmea_propagation_rule_snapshots_no_update
+BEFORE UPDATE ON fmea_propagation_rule_snapshots
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_rule_snapshots'); END;
+CREATE TRIGGER IF NOT EXISTS fmea_propagation_rule_snapshots_no_delete
+BEFORE DELETE ON fmea_propagation_rule_snapshots
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_rule_snapshots'); END;
 CREATE TRIGGER IF NOT EXISTS fmea_propagation_runs_no_update
 BEFORE UPDATE ON fmea_propagation_runs
 BEGIN SELECT RAISE(ABORT, 'immutable fmea_propagation_runs'); END;

@@ -156,6 +156,7 @@ class _CaptureRepository:
         self.topology = topology
         self.pack = pack
         self.prepared = None
+        self.invalidation_prepared = None
 
     def get_graph_revision(self, graph_revision_id: str, workspace_id: str):
         if graph_revision_id == self.parent.graph_revision_id and workspace_id == self.parent.workspace_id:
@@ -174,10 +175,13 @@ class _CaptureRepository:
 
     def get_graph_source_row_ids(self, graph_revision_id: str, workspace_id: str):
         if graph_revision_id == self.parent.graph_revision_id and workspace_id == self.parent.workspace_id:
-            return ("row-1",) if workspace_id == "ws-1" else ("row-foreign",)
+            return ("row-1",)
         return ()
 
     def replay_graph_review(self, scope, payload_hash):
+        return None
+
+    def replay_invalidation(self, scope, payload_hash):
         return None
 
     def commit_graph_review(self, prepared):
@@ -188,6 +192,10 @@ class _CaptureRepository:
             audit_event_id=prepared.audit.event_id,
             outbox_event_id=prepared.outbox.event_id,
         )
+
+    def invalidate(self, prepared):
+        self.invalidation_prepared = prepared
+        return prepared.graph
 
 
 @pytest.fixture
@@ -217,6 +225,8 @@ def prepared_graph_confirmation(repository, fixture_pack):
             try:
                 connection.execute("BEGIN IMMEDIATE")
                 target._insert_topology(connection, topology)
+                target._insert_evidence_snapshot(connection, fixture_pack)
+                target._insert_rule_snapshot(connection, _rule_pack(), workspace_id, parent.created_at)
                 target._insert_graph(connection, parent, ("row-1",))
                 connection.execute("COMMIT")
             except Exception:
@@ -259,4 +269,36 @@ def prepared_graph_confirmation(repository, fixture_pack):
     return build
 
 
-__all__ = ["prepared_graph_confirmation", "repository"]
+@pytest.fixture
+def prepared_graph_invalidation(repository, prepared_graph_confirmation, fixture_pack):
+    confirmed = repository.commit_graph_review(prepared_graph_confirmation(repository=repository))
+    parent = confirmed.graph
+    topology = _topology("ws-1")
+    capture = _CaptureRepository(parent, topology, fixture_pack)
+    actor = __import__("fmea_application.review_contracts", fromlist=["ActorContext"]).ActorContext(
+        "system", ActorType.SYSTEM, frozenset(), "ws-1"
+    )
+    command = __import__(
+        "fmea_application.propagation_service", fromlist=["InvalidatePropagationCommand"]
+    ).InvalidatePropagationCommand(
+        graph_revision_id=parent.graph_revision_id,
+        expected_graph_record_version=parent.record_version,
+        changed_evidence_hash="sha256:" + "9" * 64,
+        reason="evidence superseded",
+        idempotency_key="00000000-0000-4000-8000-000000000405",
+    )
+    service = PropagationReviewService(
+        capture,
+        assistance_repository=object(),
+        topology_port=object(),
+        domain_pack_registry=object(),
+        propagation_rule_registry=type("Registry", (), {"get": lambda _self, _id, _version: _rule_pack()})(),
+        generator=object(),
+        clock=lambda: "2026-08-28T00:00:01Z",
+    )
+    service.invalidate(command, actor)
+    assert capture.invalidation_prepared is not None
+    return capture.invalidation_prepared
+
+
+__all__ = ["prepared_graph_confirmation", "prepared_graph_invalidation", "repository"]

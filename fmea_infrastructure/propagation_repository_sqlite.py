@@ -7,12 +7,15 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from collections.abc import Mapping
 from dataclasses import replace
 from hashlib import sha256
 from typing import cast
 
+from core_domain.fmea.codec import decode_evidence_pack
+from core_domain.fmea.codec import encode_json as encode_evidence_json
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.propagation import (
     PropagationEdge,
@@ -41,17 +44,26 @@ from fmea_application.propagation_service import (
     PreparedPropagationInvalidation,
     PreparedPropagationProposal,
     PreparedPropagationReview,
+    PropagationAnalysisService,
+    PropagationDecisionAction,
     PropagationEdgeDecision,
     PropagationReviewResult,
     PropagationRun,
     propagation_invalidation_payload_hash,
     propagation_review_payload_hash,
+    propagation_start_payload_hash,
     stable_id,
 )
 from fmea_application.review_contracts import IdempotencyScope, encode_review_json
 from fmea_application.review_errors import ReviewError
-from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
+from fmea_application.risk_contracts import (
+    OutboxEvent,
+    assistance_suggestion_payload_hash,
+    canonical_json,
+    outbox_payload_hash,
+)
 
+from .assistance_repository_sqlite import SqliteAssistanceRepository
 from .repository_sqlite import SqliteFmeaRepository
 from .sqlite_codec import audit_event_json_matches, decode_audit_event
 
@@ -119,6 +131,46 @@ def _string_array(value: object, kind: str) -> tuple[str, ...]:
 def _encode(value: object) -> tuple[str, str]:
     payload = encode_review_json(value)
     return payload, _hash_json(payload)
+
+
+def _encode_rule_pack(rule_pack: PropagationRulePack) -> tuple[str, str]:
+    payload = encode_review_json(rule_pack)
+    return payload, _hash_json(payload)
+
+
+def _decode_rule_pack(payload: object) -> PropagationRulePack:
+    data = _object(
+        payload,
+        {
+            "rule_pack_id",
+            "version",
+            "applicable_analysis_types",
+            "relation_types",
+            "interface_variables",
+            "units",
+            "directions",
+            "max_automatic_depth",
+            "mandatory_review_conditions",
+            "barrier_semantics",
+            "risk_escalation",
+            "prohibit_silent_fallback",
+        },
+        "propagation rule pack",
+    )
+    return PropagationRulePack(
+        rule_pack_id=cast(str, data["rule_pack_id"]),
+        version=cast(str, data["version"]),
+        applicable_analysis_types=_string_array(data["applicable_analysis_types"], "rule applicable analysis types"),
+        relation_types=_string_array(data["relation_types"], "rule relation types"),
+        interface_variables=_string_array(data["interface_variables"], "rule interface variables"),
+        units=_string_array(data["units"], "rule units"),
+        directions=_string_array(data["directions"], "rule directions"),
+        max_automatic_depth=cast(int, data["max_automatic_depth"]),
+        mandatory_review_conditions=_string_array(data["mandatory_review_conditions"], "rule review conditions"),
+        barrier_semantics=cast(str, data["barrier_semantics"]),
+        risk_escalation=cast(str, data["risk_escalation"]),
+        prohibit_silent_fallback=cast(bool, data["prohibit_silent_fallback"]),
+    )
 
 
 def _decode_topology_node(value: object) -> TopologyNode:
@@ -488,16 +540,11 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         finally:
             connection.close()
 
-    def get_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None:
+    def get_graph(self, graph_revision_id: str, workspace_id: str) -> PropagationGraphRevision | None:
         workspace = self._workspace(workspace_id)
         connection = self._connect()
         try:
-            row = connection.execute(
-                "SELECT * FROM fmea_propagation_graph_revisions "
-                "WHERE workspace_id = ? AND (graph_revision_id = ? OR analysis_id = ?) "
-                "ORDER BY CASE WHEN graph_revision_id = ? THEN 0 ELSE 1 END, record_version DESC, graph_revision_id DESC LIMIT 1",
-                (workspace, analysis_id, analysis_id, analysis_id),
-            ).fetchone()
+            row = self._graph_row(connection, graph_revision_id, workspace)
             return None if row is None else self._decode_graph_row(connection, row, workspace)
         except ReviewError:
             raise
@@ -507,7 +554,22 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             connection.close()
 
     def get_current_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None:
-        return self.get_graph(analysis_id, workspace_id)
+        workspace = self._workspace(workspace_id)
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT * FROM fmea_propagation_graph_revisions "
+                "WHERE workspace_id = ? AND analysis_id = ? "
+                "ORDER BY record_version DESC, graph_revision_id DESC LIMIT 1",
+                (workspace, analysis_id),
+            ).fetchone()
+            return None if row is None else self._decode_graph_row(connection, row, workspace)
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
+        finally:
+            connection.close()
 
     def get_topology_snapshot(self, topology_snapshot_id: str, workspace_id: str) -> TopologySnapshot | None:
         workspace = self._workspace(workspace_id)
@@ -594,6 +656,61 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         )
         if cursor.rowcount != 1:
             raise _storage_error("Propagation idempotency reservation could not be completed.")
+
+    def _run_from_row(self, connection: sqlite3.Connection, row: sqlite3.Row, workspace_id: str) -> PropagationRun:
+        graph = None
+        if row["graph_revision_id"] is not None:
+            graph_row = self._graph_row(connection, cast(str, row["graph_revision_id"]), workspace_id)
+            if graph_row is None:
+                raise _storage_error()
+            graph = self._decode_graph_row(connection, graph_row, workspace_id)
+        suggestions = _string_array(
+            _strict_json(row["assistance_suggestion_ids_json"], "propagation run suggestions"),
+            "propagation run suggestions",
+        )
+        if not suggestions or graph is None or tuple(graph.assistance_suggestion_ids) != suggestions:
+            raise _storage_error()
+        return PropagationRun(
+            run_id=row["run_id"],
+            workspace_id=row["workspace_id"],
+            analysis_id=row["analysis_id"],
+            status=RunStatus(row["status"]),
+            graph=graph,
+            error_code=row["error_code"],
+            error_message=row["error_message"],
+            assistance_suggestion_ids=suggestions,
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
+            record_version=row["record_version"],
+        )
+
+    @staticmethod
+    def _decode_start_response(row: sqlite3.Row, payload_hash: str) -> Mapping[str, object] | None:
+        if row is None:
+            return None
+        if row["payload_hash"] != payload_hash:
+            _conflict()
+        if row["state"] != "completed" or row["status_code"] != 201 or row["response_json"] is None:
+            raise _storage_error()
+        response = _strict_json(row["response_json"], "propagation start idempotency response")
+        expected = {
+            "workspace_id",
+            "resource_type",
+            "run_id",
+            "graph_revision_id",
+            "suggestion_id",
+            "audit_event_id",
+            "outbox_event_id",
+        }
+        if (
+            not isinstance(response, dict)
+            or set(response) != expected
+            or response["resource_type"] != "propagation_run"
+        ):
+            raise _storage_error()
+        if response["run_id"] != row["resource_id"]:
+            raise _storage_error()
+        return response
 
     @staticmethod
     def _decode_response(row: sqlite3.Row, payload_hash: str, resource_type: str) -> Mapping[str, object] | None:
@@ -697,6 +814,177 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             ),
         )
 
+    @staticmethod
+    def _insert_evidence_snapshot(connection: sqlite3.Connection, pack: EvidencePack) -> None:
+        payload = encode_evidence_json(pack)
+        decoded = decode_evidence_pack(payload)
+        if decoded != pack:
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Evidence snapshot does not round-trip canonically.")
+        snapshot_hash = _hash_json(payload)
+        existing = connection.execute(
+            "SELECT pack_hash, pack_json, snapshot_hash FROM fmea_propagation_evidence_snapshots "
+            "WHERE workspace_id = ? AND pack_id = ?",
+            (pack.workspace_id, pack.pack_id),
+        ).fetchone()
+        if existing is not None:
+            if (
+                existing["pack_hash"] != pack.pack_hash
+                or existing["pack_json"] != payload
+                or existing["snapshot_hash"] != snapshot_hash
+            ):
+                raise ReviewError(
+                    "FMEA_REVIEW_ACTION_INVALID", "Evidence snapshot identity is already bound differently."
+                )
+            return
+        connection.execute(
+            "INSERT INTO fmea_propagation_evidence_snapshots "
+            "(workspace_id, pack_id, pack_hash, pack_json, snapshot_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (pack.workspace_id, pack.pack_id, pack.pack_hash, payload, snapshot_hash, pack.created_at),
+        )
+
+    @staticmethod
+    def _insert_rule_snapshot(
+        connection: sqlite3.Connection, rule_pack: PropagationRulePack, workspace_id: str, created_at: str
+    ) -> None:
+        payload, rule_hash = _encode_rule_pack(rule_pack)
+        decoded = _decode_rule_pack(_strict_json(payload, "propagation rule pack"))
+        if decoded != rule_pack:
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Rule snapshot does not round-trip canonically.")
+        existing = connection.execute(
+            "SELECT rule_hash, rule_json FROM fmea_propagation_rule_snapshots "
+            "WHERE workspace_id = ? AND rule_pack_id = ? AND rule_pack_version = ?",
+            (workspace_id, rule_pack.rule_pack_id, rule_pack.version),
+        ).fetchone()
+        if existing is not None:
+            if existing["rule_hash"] != rule_hash or existing["rule_json"] != payload:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Rule snapshot identity is already bound differently.")
+            return
+        connection.execute(
+            "INSERT INTO fmea_propagation_rule_snapshots "
+            "(workspace_id, rule_pack_id, rule_pack_version, rule_hash, rule_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (workspace_id, rule_pack.rule_pack_id, rule_pack.version, rule_hash, payload, created_at),
+        )
+
+    @classmethod
+    def _validate_snapshots(
+        cls,
+        connection: sqlite3.Connection,
+        workspace_id: str,
+        graph: PropagationGraphRevision,
+        rule_pack: PropagationRulePack,
+        evidence_packs: tuple[EvidencePack, ...],
+    ) -> None:
+        rule_row = connection.execute(
+            "SELECT rule_hash, rule_json FROM fmea_propagation_rule_snapshots "
+            "WHERE workspace_id = ? AND rule_pack_id = ? AND rule_pack_version = ?",
+            (workspace_id, graph.rule_pack_id, graph.rule_pack_version),
+        ).fetchone()
+        if rule_row is None:
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation rule snapshot is missing.")
+        rule_json = cast(str, rule_row["rule_json"])
+        if rule_row["rule_hash"] != _hash_json(rule_json):
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation rule snapshot hash is invalid.")
+        stored_rule = _decode_rule_pack(_strict_json(rule_json, "propagation rule pack"))
+        if (
+            stored_rule != rule_pack
+            or stored_rule.rule_pack_id != graph.rule_pack_id
+            or stored_rule.version != graph.rule_pack_version
+        ):
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation rule snapshot does not match the graph.")
+        if tuple(pack.pack_id for pack in evidence_packs) != graph.evidence_pack_ids:
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence snapshot binding is invalid.")
+        for pack in evidence_packs:
+            row = connection.execute(
+                "SELECT pack_hash, pack_json, snapshot_hash FROM fmea_propagation_evidence_snapshots "
+                "WHERE workspace_id = ? AND pack_id = ?",
+                (workspace_id, pack.pack_id),
+            ).fetchone()
+            if row is None or pack.workspace_id != workspace_id or row["pack_hash"] != pack.pack_hash:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence snapshot is missing or drifted.")
+            pack_json = cast(str, row["pack_json"])
+            if row["snapshot_hash"] != _hash_json(pack_json):
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence snapshot hash is invalid.")
+            try:
+                stored_pack = decode_evidence_pack(pack_json)
+            except Exception as exc:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence snapshot is invalid.") from exc
+            if encode_evidence_json(stored_pack) != pack_json or stored_pack != pack:
+                raise ReviewError(
+                    "FMEA_REVIEW_ACTION_INVALID", "Propagation evidence snapshot does not match the graph."
+                )
+
+    @classmethod
+    def _validate_persisted_bindings(
+        cls, connection: sqlite3.Connection, workspace_id: str, graph: PropagationGraphRevision
+    ) -> None:
+        topology_row = connection.execute(
+            "SELECT topology_hash, snapshot_hash, snapshot_json FROM fmea_propagation_topology_snapshots "
+            "WHERE workspace_id = ? AND topology_snapshot_id = ?",
+            (workspace_id, graph.topology_snapshot_id),
+        ).fetchone()
+        if topology_row is None or topology_row["topology_hash"] != graph.topology_hash:
+            raise _storage_error()
+        topology_json = cast(str, topology_row["snapshot_json"])
+        if topology_row["snapshot_hash"] != _hash_json(topology_json):
+            raise _storage_error()
+        topology = _decode_topology(_strict_json(topology_json, "topology snapshot"))
+        if (
+            topology.workspace_id != workspace_id
+            or topology.topology_snapshot_id != graph.topology_snapshot_id
+            or topology.analysis_id != graph.analysis_id
+            or topology.topology_hash != graph.topology_hash
+        ):
+            raise _storage_error()
+        evidence: list[EvidencePack] = []
+        for pack_id in graph.evidence_pack_ids:
+            row = connection.execute(
+                "SELECT pack_hash, pack_json, snapshot_hash FROM fmea_propagation_evidence_snapshots "
+                "WHERE workspace_id = ? AND pack_id = ?",
+                (workspace_id, pack_id),
+            ).fetchone()
+            if row is None or row["snapshot_hash"] != _hash_json(cast(str, row["pack_json"])):
+                raise _storage_error()
+            pack_json = cast(str, row["pack_json"])
+            try:
+                pack = decode_evidence_pack(pack_json)
+            except Exception as exc:
+                raise _storage_error() from exc
+            if (
+                pack.workspace_id != workspace_id
+                or pack.pack_id != pack_id
+                or encode_evidence_json(pack) != pack_json
+                or pack.pack_hash != row["pack_hash"]
+            ):
+                raise _storage_error()
+            evidence.append(pack)
+        rule_row = connection.execute(
+            "SELECT rule_hash, rule_json FROM fmea_propagation_rule_snapshots "
+            "WHERE workspace_id = ? AND rule_pack_id = ? AND rule_pack_version = ?",
+            (workspace_id, graph.rule_pack_id, graph.rule_pack_version),
+        ).fetchone()
+        if rule_row is None or rule_row["rule_hash"] != _hash_json(cast(str, rule_row["rule_json"])):
+            raise _storage_error()
+        rule = _decode_rule_pack(_strict_json(rule_row["rule_json"], "propagation rule pack"))
+        if rule.rule_pack_id != graph.rule_pack_id or rule.version != graph.rule_pack_version:
+            raise _storage_error()
+        cls._validate_snapshots(connection, workspace_id, graph, rule, tuple(evidence))
+        cls._validate_source_rows(
+            connection,
+            workspace_id,
+            graph.analysis_id,
+            _string_array(
+                _strict_json(
+                    connection.execute(
+                        "SELECT source_row_ids_json FROM fmea_propagation_graph_revisions "
+                        "WHERE workspace_id = ? AND graph_revision_id = ?",
+                        (workspace_id, graph.graph_revision_id),
+                    ).fetchone()["source_row_ids_json"],
+                    "graph source row IDs",
+                ),
+                "graph source row IDs",
+            ),
+        )
+
     @classmethod
     def _insert_graph(
         cls,
@@ -788,6 +1076,52 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                 raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation source row binding is invalid.")
 
     @classmethod
+    def _expected_confirmed_child(
+        cls,
+        parent: PropagationGraphRevision,
+        prepared: PreparedPropagationReview,
+    ) -> PropagationGraphRevision:
+        decisions = {item.edge_id: item for item in prepared.edge_decisions}
+        if set(decisions) != {edge.edge_id for edge in parent.edges}:
+            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation edge decision coverage is invalid.")
+        accepted = tuple(
+            replace(edge, review_status=ReviewStatus.ACCEPTED)
+            for edge in parent.edges
+            if decisions[edge.edge_id].action is PropagationDecisionAction.ACCEPT
+        )
+        retained_issues = {issue for edge in accepted for issue in PropagationAnalysisService._review_issue_codes(edge)}
+        if set(prepared.command.acknowledgements) != retained_issues:
+            raise ReviewError(
+                "FMEA_REVIEW_ACTION_INVALID", "Propagation acknowledgements do not match retained issues."
+            )
+        return replace(
+            parent,
+            graph_revision_id=stable_id("propagation-confirmed-graph", prepared.scope.scope_key),
+            status=PropagationStatus.CONFIRMED,
+            edges=accepted,
+            paths=PropagationAnalysisService._paths(accepted, parent.analysis_id),
+            unresolved_issue_codes=tuple(sorted(retained_issues)),
+            parent_graph_revision_id=parent.graph_revision_id,
+            record_version=parent.record_version + 1,
+            created_at=prepared.graph.created_at,
+        )
+
+    @staticmethod
+    def _expected_invalidated_child(
+        parent: PropagationGraphRevision,
+        prepared: PreparedPropagationInvalidation,
+    ) -> PropagationGraphRevision:
+        return replace(
+            parent,
+            graph_revision_id=stable_id("propagation-invalidated-graph", prepared.scope.scope_key),
+            status=PropagationStatus.INVALIDATED,
+            unresolved_issue_codes=tuple(sorted(set(parent.unresolved_issue_codes) | {"stale_evidence"})),
+            parent_graph_revision_id=parent.graph_revision_id,
+            record_version=parent.record_version + 1,
+            created_at=prepared.graph.created_at,
+        )
+
+    @classmethod
     def _validate_dependencies(
         cls,
         connection: sqlite3.Connection,
@@ -823,11 +1157,12 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             if pack.workspace_id != workspace_id:
                 raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence binding is invalid.")
             row = connection.execute(
-                "SELECT pack_id FROM evidence_packs WHERE pack_id = ? AND workspace_id = ?",
+                "SELECT pack_id, pack_hash, pack_json FROM evidence_packs WHERE pack_id = ? AND workspace_id = ?",
                 (pack.pack_id, workspace_id),
             ).fetchone()
-            if row is None:
+            if row is None or row["pack_hash"] != pack.pack_hash or row["pack_json"] != encode_evidence_json(pack):
                 raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation evidence binding is invalid.")
+        cls._validate_snapshots(connection, workspace_id, graph, rule_pack, evidence_packs)
         cls._validate_source_rows(connection, workspace_id, graph.analysis_id, source_row_ids)
 
     @classmethod
@@ -837,6 +1172,7 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or prepared.scope.resource_path
             != f"/fmea/propagation-graphs/{prepared.previous_graph.graph_revision_id}/reviews"
             or prepared.graph.status is not PropagationStatus.CONFIRMED
+            or prepared.previous_graph.status not in {PropagationStatus.PROPOSED, PropagationStatus.REVIEWED}
             or prepared.previous_graph.workspace_id != prepared.scope.workspace_id
             or prepared.graph.workspace_id != prepared.scope.workspace_id
             or prepared.graph.parent_graph_revision_id != prepared.previous_graph.graph_revision_id
@@ -848,7 +1184,8 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or prepared.audit.row_id not in prepared.source_row_ids
             or prepared.audit.suggestion_id
             != (prepared.graph.assistance_suggestion_ids[0] if prepared.graph.assistance_suggestion_ids else None)
-            or prepared.audit.event_id != stable_id("propagation-audit", prepared.decision_id)
+            or prepared.decision_id != stable_id("propagation-review", prepared.scope.scope_key)
+            or prepared.audit.event_id != stable_id("propagation-audit", prepared.scope.scope_key)
             or prepared.audit.idempotency_key_hash != prepared.scope.key_hash
         ):
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation review binding is invalid.")
@@ -857,13 +1194,7 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             edge.edge_id for edge in prepared.previous_graph.edges
         }:
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation edge decision binding is invalid.")
-        expected_hash = propagation_review_payload_hash(
-            prepared.scope,
-            prepared.command,
-            prepared.previous_graph,
-            prepared.graph,
-            decisions,
-        )
+        expected_hash = propagation_review_payload_hash(prepared.scope, prepared.command, edge_decisions=decisions)
         if prepared.payload_hash != expected_hash:
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation review payload binding is invalid.")
         if (
@@ -879,7 +1210,7 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             prepared.outbox.event_type != "propagation.confirmed"
             or prepared.outbox.workspace_id != prepared.scope.workspace_id
             or prepared.outbox.aggregate_id != prepared.graph.graph_revision_id
-            or prepared.outbox.event_id != f"outbox-{prepared.decision_id}"
+            or prepared.outbox.event_id != stable_id("propagation-outbox", prepared.scope.scope_key)
             or prepared.outbox.scope_key != prepared.scope.scope_key
         ):
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation review outbox binding is invalid.")
@@ -893,6 +1224,14 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or prepared.scope.resource_path
             != f"/fmea/propagation-graphs/{prepared.previous_graph.graph_revision_id}/invalidations"
             or prepared.graph.status is not PropagationStatus.INVALIDATED
+            or prepared.previous_graph.status
+            not in {
+                PropagationStatus.PROPOSED,
+                PropagationStatus.REVIEWED,
+                PropagationStatus.CONFIRMED,
+            }
+            or prepared.previous_graph.workspace_id != prepared.scope.workspace_id
+            or prepared.graph.workspace_id != prepared.scope.workspace_id
             or prepared.graph.parent_graph_revision_id != prepared.previous_graph.graph_revision_id
             or prepared.graph.record_version != prepared.previous_graph.record_version + 1
             or prepared.command.graph_revision_id != prepared.previous_graph.graph_revision_id
@@ -903,22 +1242,21 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or prepared.audit.row_id not in prepared.source_row_ids
             or prepared.audit.suggestion_id
             != (prepared.graph.assistance_suggestion_ids[0] if prepared.graph.assistance_suggestion_ids else None)
-            or prepared.audit.event_id != stable_id("propagation-audit", prepared.decision_id)
+            or prepared.decision_id != stable_id("propagation-invalidation", prepared.scope.scope_key)
+            or prepared.audit.event_id != stable_id("propagation-audit", prepared.scope.scope_key)
             or prepared.audit.idempotency_key_hash != prepared.scope.key_hash
             or prepared.audit.decision_id != prepared.decision_id
             or prepared.audit.canonical_payload_hash != prepared.payload_hash
         ):
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation invalidation binding is invalid.")
-        expected_hash = propagation_invalidation_payload_hash(
-            prepared.scope, prepared.command, prepared.previous_graph, prepared.graph
-        )
+        expected_hash = propagation_invalidation_payload_hash(prepared.scope, prepared.command)
         if prepared.payload_hash != expected_hash:
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation invalidation payload binding is invalid.")
         if (
             prepared.outbox.event_type != "propagation.invalidated"
             or prepared.outbox.workspace_id != prepared.scope.workspace_id
             or prepared.outbox.aggregate_id != prepared.graph.graph_revision_id
-            or prepared.outbox.event_id != f"outbox-{prepared.decision_id}"
+            or prepared.outbox.event_id != stable_id("propagation-outbox", prepared.scope.scope_key)
             or prepared.outbox.scope_key != prepared.scope.scope_key
         ):
             raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation invalidation outbox binding is invalid.")
@@ -937,62 +1275,124 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             "acknowledgements": acknowledgements,
         })
 
+    @classmethod
+    def _persist_assistance_suggestion(
+        cls, connection: sqlite3.Connection, prepared: PreparedPropagationProposal
+    ) -> None:
+        assistance = prepared.assistance
+        replay_id = SqliteAssistanceRepository._check_replay_row(
+            SqliteAssistanceRepository._idempotency_row(connection, assistance.scope),
+            assistance.payload_hash,
+            "assistance_suggestion",
+        )
+        if replay_id is not None:
+            if replay_id != assistance.suggestion.suggestion_id:
+                raise _storage_error()
+            row = connection.execute(
+                "SELECT * FROM fmea_assistance_suggestions WHERE suggestion_id = ? AND workspace_id = ?",
+                (replay_id, assistance.suggestion.workspace_id),
+            ).fetchone()
+            if row is None:
+                raise _storage_error()
+            decoded = SqliteAssistanceRepository._decode_suggestion(row, connection)
+            if decoded != assistance.suggestion:
+                raise _storage_error()
+            return
+        SqliteAssistanceRepository._validate_suggestion_source(connection, assistance.suggestion)
+        SqliteAssistanceRepository._reserve_idempotency(
+            connection, assistance.scope, assistance.payload_hash, assistance.audit.occurred_at_server
+        )
+        SqliteAssistanceRepository._insert_audit(
+            connection,
+            assistance.audit,
+            target_type=assistance.suggestion.target_type,
+            target_id=assistance.suggestion.target_id,
+            scope=assistance.scope,
+        )
+        SqliteAssistanceRepository._insert_suggestion(
+            connection,
+            assistance.suggestion,
+            assistance.payload_hash,
+            assistance.audit.event_id,
+        )
+        SqliteAssistanceRepository._complete_idempotency(
+            connection,
+            assistance.scope,
+            assistance.payload_hash,
+            "assistance_suggestion",
+            assistance.suggestion.suggestion_id,
+            assistance.audit.occurred_at_server,
+        )
+
     def save_run_and_proposal(self, prepared: PreparedPropagationProposal) -> PropagationRun:
         if not isinstance(prepared, PreparedPropagationProposal):
             raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "Prepared propagation proposal is invalid.")
         graph = prepared.graph
         run = prepared.run
-        if (
-            not prepared.source_row_ids
-            or len(prepared.source_row_ids) != len(set(prepared.source_row_ids))
-            or graph.workspace_id != run.workspace_id
-            or graph.analysis_id != run.analysis_id
-            or graph.graph_revision_id != run.graph.graph_revision_id
-            or prepared.topology.workspace_id != graph.workspace_id
-            or prepared.evidence_pack.workspace_id != graph.workspace_id
-            or prepared.assistance.scope.workspace_id != graph.workspace_id
-            or prepared.assistance.suggestion.workspace_id != graph.workspace_id
-            or prepared.assistance.suggestion.suggestion_id not in graph.assistance_suggestion_ids
-            or prepared.assistance.audit.workspace_id != graph.workspace_id
-            or prepared.assistance.audit.actor_type is ActorType.MODEL
-            or prepared.assistance.audit.row_id != prepared.assistance.suggestion.target_id
-            or prepared.assistance.audit.analysis_id != graph.analysis_id
-            or prepared.assistance.audit.suggestion_id != prepared.assistance.suggestion.suggestion_id
-            or prepared.assistance.audit.canonical_payload_hash != prepared.assistance.payload_hash
-        ):
-            raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation proposal binding is invalid.")
+        binding_checks = (
+            ("source_row_ids", bool(prepared.source_row_ids)),
+            ("source_row_ids_unique", len(prepared.source_row_ids) == len(set(prepared.source_row_ids))),
+            ("graph_run_workspace", graph.workspace_id == run.workspace_id),
+            ("graph_run_analysis", graph.analysis_id == run.analysis_id),
+            ("graph_run_revision", graph.graph_revision_id == run.graph.graph_revision_id),
+            ("topology_workspace", prepared.topology.workspace_id == graph.workspace_id),
+            ("evidence_workspace", prepared.evidence_pack.workspace_id == graph.workspace_id),
+            ("assistance_scope_workspace", prepared.assistance.scope.workspace_id == graph.workspace_id),
+            ("assistance_suggestion_workspace", prepared.assistance.suggestion.workspace_id == graph.workspace_id),
+            ("suggestion_bound", prepared.assistance.suggestion.suggestion_id in graph.assistance_suggestion_ids),
+            ("assistance_audit_workspace", prepared.assistance.audit.workspace_id == graph.workspace_id),
+            ("assistance_audit_actor", prepared.assistance.audit.actor_type is not ActorType.MODEL),
+            ("assistance_audit_row", prepared.assistance.audit.row_id == prepared.assistance.suggestion.target_id),
+            ("assistance_audit_analysis", prepared.assistance.audit.analysis_id == graph.analysis_id),
+            (
+                "assistance_audit_suggestion",
+                prepared.assistance.audit.suggestion_id == prepared.assistance.suggestion.suggestion_id,
+            ),
+            (
+                "assistance_audit_hash",
+                prepared.assistance.audit.canonical_payload_hash == prepared.assistance.payload_hash,
+            ),
+            ("request_workspace", prepared.request_scope.workspace_id == graph.workspace_id),
+            ("request_actor", prepared.request_scope.actor_id == prepared.assistance.scope.actor_id),
+            ("request_command", prepared.request_scope.command == "fmea.propagation.start"),
+            (
+                "request_resource",
+                prepared.request_scope.resource_path == f"/fmea/analyses/{graph.analysis_id}/propagation",
+            ),
+            ("request_key", prepared.request_scope.key_hash == prepared.assistance.scope.key_hash),
+            ("command_analysis", prepared.command.analysis_id == graph.analysis_id),
+            (
+                "command_record_version",
+                prepared.command.expected_analysis_record_version == graph.analysis_record_version,
+            ),
+            ("command_source_rows", prepared.command.source_row_ids == prepared.source_row_ids),
+            ("command_evidence_pack", prepared.command.evidence_pack_id == prepared.evidence_pack.pack_id),
+            ("command_domain_pack", prepared.command.domain_pack_id == graph.domain_pack_id),
+            ("command_domain_version", prepared.command.domain_pack_version == graph.domain_pack_version),
+            ("command_rule_pack", prepared.command.rule_pack_id == graph.rule_pack_id),
+            ("command_rule_version", prepared.command.rule_pack_version == graph.rule_pack_version),
+            (
+                "request_hash",
+                prepared.request_hash == propagation_start_payload_hash(prepared.request_scope, prepared.command),
+            ),
+        )
+        failed_bindings = tuple(name for name, passed in binding_checks if not passed)
+        if failed_bindings:
+            raise ReviewError(
+                "FMEA_REVIEW_ACTION_INVALID",
+                "Propagation proposal binding is invalid.",
+            )
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            existing = connection.execute(
-                "SELECT * FROM fmea_propagation_runs WHERE workspace_id = ? AND idempotency_scope = ?",
-                (run.workspace_id, prepared.assistance.scope.scope_key),
-            ).fetchone()
-            if existing is not None:
-                if existing["request_hash"] != prepared.assistance.payload_hash:
-                    _conflict()
-                existing_graph = self._graph_row(connection, cast(str, existing["graph_revision_id"]), run.workspace_id)
-                if existing_graph is None:
-                    raise _storage_error()
-                existing_value = self._decode_graph_row(connection, existing_graph, run.workspace_id)
+            replayed = self._replay_propagation_start(connection, prepared.request_scope, prepared.request_hash)
+            if replayed is not None:
                 connection.execute("COMMIT")
-                return PropagationRun(
-                    run_id=existing["run_id"],
-                    workspace_id=existing["workspace_id"],
-                    analysis_id=existing["analysis_id"],
-                    status=RunStatus(existing["status"]),
-                    graph=existing_value,
-                    error_code=existing["error_code"],
-                    error_message=existing["error_message"],
-                    assistance_suggestion_ids=_string_array(
-                        _strict_json(existing["assistance_suggestion_ids_json"], "propagation run suggestions"),
-                        "propagation run suggestions",
-                    ),
-                    created_at=existing["created_at"],
-                    updated_at=existing["updated_at"],
-                    record_version=existing["record_version"],
-                )
+                return replayed
+            self._reserve(connection, prepared.request_scope, prepared.request_hash, run.created_at)
             self._insert_topology(connection, prepared.topology)
+            self._insert_evidence_snapshot(connection, prepared.evidence_pack)
+            self._insert_rule_snapshot(connection, prepared.rule_pack, graph.workspace_id, run.created_at)
             self._validate_dependencies(
                 connection,
                 graph.workspace_id,
@@ -1018,8 +1418,8 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                     encode_review_json(run.assistance_suggestion_ids),
                     run.error_code,
                     run.error_message,
-                    prepared.assistance.payload_hash,
-                    prepared.assistance.scope.scope_key,
+                    prepared.request_hash,
+                    prepared.request_scope.scope_key,
                     run.record_version,
                     run.created_at,
                     run.updated_at,
@@ -1027,9 +1427,10 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             )
             graph_audit = replace(
                 prepared.assistance.audit,
-                event_id=stable_id("propagation-proposal-audit", graph.graph_revision_id),
+                event_id=stable_id("propagation-proposal-audit", prepared.request_scope.scope_key),
                 row_id=prepared.source_row_ids[0],
             )
+            self._persist_assistance_suggestion(connection, prepared)
             self._insert_audit(connection, graph_audit)
             payload = {
                 "graph": json.loads(encode_review_json(graph)),
@@ -1037,7 +1438,7 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                 "source_row_ids": list(prepared.source_row_ids),
             }
             outbox = OutboxEvent(
-                event_id=f"outbox-{graph.graph_revision_id}",
+                event_id=stable_id("propagation-proposal-outbox", prepared.request_scope.scope_key),
                 workspace_id=graph.workspace_id,
                 aggregate_type="propagation_graph",
                 aggregate_id=graph.graph_revision_id,
@@ -1045,9 +1446,26 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                 payload=payload,
                 payload_hash=outbox_payload_hash(payload),
                 created_at=graph_audit.occurred_at_server,
-                scope_key=prepared.assistance.scope.scope_key,
+                scope_key=prepared.request_scope.scope_key,
             )
             self._insert_outbox(connection, outbox)
+            response = {
+                "workspace_id": run.workspace_id,
+                "resource_type": "propagation_run",
+                "run_id": run.run_id,
+                "graph_revision_id": graph.graph_revision_id,
+                "suggestion_id": prepared.suggestion.suggestion_id,
+                "audit_event_id": graph_audit.event_id,
+                "outbox_event_id": outbox.event_id,
+            }
+            self._complete(
+                connection,
+                prepared.request_scope,
+                prepared.request_hash,
+                response,
+                run.run_id,
+                run.updated_at,
+            )
             connection.execute("COMMIT")
             return run
         except ReviewError:
@@ -1060,6 +1478,108 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             raise ReviewError(
                 "FMEA_REVIEW_ACTION_INVALID", "Propagation proposal conflicts with stored state."
             ) from exc
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def _replay_propagation_start(  # noqa: C901
+        self, connection: sqlite3.Connection, scope: IdempotencyScope, payload_hash: str
+    ) -> PropagationRun | None:
+        row = self._idempotency_row(connection, scope)
+        response = self._decode_start_response(row, payload_hash)
+        if response is None:
+            return None
+        if response["workspace_id"] != scope.workspace_id:
+            raise _storage_error()
+        run_row = connection.execute(
+            "SELECT * FROM fmea_propagation_runs WHERE run_id = ? AND workspace_id = ?",
+            (response["run_id"], scope.workspace_id),
+        ).fetchone()
+        if (
+            run_row is None
+            or run_row["idempotency_scope"] != scope.scope_key
+            or run_row["request_hash"] != payload_hash
+        ):
+            raise _storage_error()
+        run = self._run_from_row(connection, run_row, scope.workspace_id)
+        if run.status is not RunStatus.SUCCEEDED or response["graph_revision_id"] != run.graph.graph_revision_id:
+            raise _storage_error()
+        if response["suggestion_id"] not in run.assistance_suggestion_ids:
+            raise _storage_error()
+        graph_source_row = connection.execute(
+            "SELECT source_row_ids_json FROM fmea_propagation_graph_revisions WHERE graph_revision_id = ? AND workspace_id = ?",
+            (run.graph.graph_revision_id, scope.workspace_id),
+        ).fetchone()
+        if graph_source_row is None:
+            raise _storage_error()
+        source_row_ids = _string_array(
+            _strict_json(graph_source_row["source_row_ids_json"], "graph source row IDs"), "graph source row IDs"
+        )
+        suggestion_row = connection.execute(
+            "SELECT * FROM fmea_assistance_suggestions WHERE suggestion_id = ? AND workspace_id = ?",
+            (response["suggestion_id"], scope.workspace_id),
+        ).fetchone()
+        if suggestion_row is None:
+            raise _storage_error()
+        suggestion = SqliteAssistanceRepository._decode_suggestion(suggestion_row, connection)
+        suggestion_scope = IdempotencyScope(
+            scope.workspace_id,
+            scope.actor_id,
+            "fmea.propagation.suggestion",
+            f"/fmea/propagation-runs/{run.run_id}/suggestion",
+            scope.key_hash,
+        )
+        if (
+            suggestion.run_id != run.run_id
+            or suggestion.workspace_id != scope.workspace_id
+            or suggestion_row["payload_hash"] != assistance_suggestion_payload_hash(suggestion_scope, suggestion)
+            or suggestion_row["suggestion_hash"] != suggestion.suggestion_hash
+        ):
+            raise _storage_error()
+        audit_row = connection.execute(
+            "SELECT * FROM audit_events WHERE event_id = ? AND workspace_id = ?",
+            (response["audit_event_id"], scope.workspace_id),
+        ).fetchone()
+        if audit_row is None:
+            raise _storage_error()
+        audit = decode_audit_event(audit_row["event_json"])
+        if (
+            not audit_event_json_matches(audit_row["event_json"], audit)
+            or audit.event_id != response["audit_event_id"]
+            or audit.workspace_id != scope.workspace_id
+            or audit.suggestion_id != suggestion.suggestion_id
+            or audit.run_id != run.run_id
+            or audit.canonical_payload_hash != suggestion_row["payload_hash"]
+        ):
+            raise _storage_error()
+        event = self._decode_outbox(connection, cast(str, response["outbox_event_id"]), scope.workspace_id)
+        expected_payload = {
+            "graph": json.loads(encode_review_json(run.graph)),
+            "audit_event_id": audit.event_id,
+            "source_row_ids": list(source_row_ids),
+        }
+        if (
+            event.workspace_id != scope.workspace_id
+            or event.event_type != "propagation.proposed"
+            or event.aggregate_id != run.graph.graph_revision_id
+            or event.scope_key != scope.scope_key
+            or event.payload_hash != outbox_payload_hash(event.payload)
+            or canonical_json(event.payload) != canonical_json(expected_payload)
+        ):
+            raise _storage_error()
+        return run
+
+    def replay_propagation_start(self, scope: IdempotencyScope, payload_hash: str) -> PropagationRun | None:
+        connection = self._connect()
+        try:
+            return self._replay_propagation_start(connection, scope, payload_hash)
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise _storage_error() from exc
         finally:
             connection.close()
 
@@ -1121,13 +1641,29 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         ).fetchone()
         if decision is None:
             raise _storage_error()
+        previous_row = self._graph_row(
+            connection, cast(str, decision["previous_graph_revision_id"]), scope.workspace_id
+        )
+        if previous_row is None:
+            raise _storage_error()
+        previous_graph = self._decode_graph_row(connection, previous_row, scope.workspace_id)
         if (
-            decision["resulting_graph_revision_id"] != graph.graph_revision_id
+            decision["decision_id"] != stable_id("propagation-review", scope.scope_key)
+            or decision["workspace_id"] != scope.workspace_id
+            or decision["resulting_graph_revision_id"] != graph.graph_revision_id
             or decision["decision_type"] != "confirm"
+            or decision["from_status"] != previous_graph.status.value
+            or decision["from_status"] not in {PropagationStatus.PROPOSED.value, PropagationStatus.REVIEWED.value}
+            or decision["to_status"] != PropagationStatus.CONFIRMED.value
+            or decision["expected_graph_version"] != previous_graph.record_version
+            or decision["applied_graph_version"] != graph.record_version
             or decision["payload_hash"] != payload_hash
             or decision["idempotency_scope"] != scope.scope_key
             or decision["audit_event_id"] != response["audit_event_id"]
             or decision["outbox_event_id"] != response["outbox_event_id"]
+            or response["decision_id"] != decision["decision_id"]
+            or response["audit_event_id"] != decision["audit_event_id"]
+            or response["outbox_event_id"] != decision["outbox_event_id"]
         ):
             raise _storage_error()
         audit_row = connection.execute(
@@ -1137,7 +1673,18 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         if audit_row is None:
             raise _storage_error()
         audit = decode_audit_event(audit_row["event_json"])
-        if not audit_event_json_matches(audit_row["event_json"], audit) or audit.canonical_payload_hash != payload_hash:
+        if (
+            not audit_event_json_matches(audit_row["event_json"], audit)
+            or audit.event_id != response["audit_event_id"]
+            or audit.workspace_id != scope.workspace_id
+            or audit.actor_type is not ActorType.HUMAN
+            or "propagation_reviewer" not in audit.actor_roles
+            or audit.actor_id != decision["actor_id"]
+            or audit.command != scope.command
+            or audit.idempotency_key_hash != scope.key_hash
+            or audit.decision_id != decision["decision_id"]
+            or audit.canonical_payload_hash != payload_hash
+        ):
             raise _storage_error()
         event = self._decode_outbox(connection, cast(str, response["outbox_event_id"]), scope.workspace_id)
         decision_body = _object(
@@ -1153,6 +1700,8 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         }
         if (
             event.event_type != "propagation.confirmed"
+            or event.workspace_id != scope.workspace_id
+            or event.aggregate_type != "propagation_graph"
             or event.aggregate_id != graph.graph_revision_id
             or event.scope_key != scope.scope_key
             or event.payload_hash != outbox_payload_hash(event.payload)
@@ -1167,9 +1716,11 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         ).fetchall()
         if any(
             row["decision_id"] != decision["decision_id"]
-            or row["graph_revision_id"] != graph.graph_revision_id
+            or row["graph_revision_id"] != previous_graph.graph_revision_id
             or row["actor_type"] != "human"
+            or row["actor_id"] != decision["actor_id"]
             or row["idempotency_scope"] != scope.scope_key
+            or row["payload_hash"] != payload_hash
             or _strict_json(row["decision_json"], "propagation edge decision")
             != {
                 "edge_id": row["edge_id"],
@@ -1179,12 +1730,6 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             for row in edge_rows
         ):
             raise _storage_error()
-        previous_row = self._graph_row(
-            connection, cast(str, decision["previous_graph_revision_id"]), scope.workspace_id
-        )
-        if previous_row is None:
-            raise _storage_error()
-        previous_graph = self._decode_graph_row(connection, previous_row, scope.workspace_id)
         stored_edge_decisions = [
             {"edge_id": row["edge_id"], "action": row["action"], "reason": row["reason"]} for row in edge_rows
         ]
@@ -1192,6 +1737,14 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             cast(list[dict[str, object]], decision_body["edge_decisions"]),
             key=lambda item: str(item.get("edge_id")),
         )
+        parent_edge_ids = {edge.edge_id for edge in previous_graph.edges}
+        if {item.get("edge_id") for item in expected_edge_decisions} != parent_edge_ids or any(
+            not isinstance(item.get("edge_id"), str)
+            or item.get("action") not in {"accept", "reject"}
+            or not isinstance(item.get("reason"), str)
+            for item in expected_edge_decisions
+        ):
+            raise _storage_error()
         if (
             decision_body["previous_graph"] != json.loads(encode_review_json(previous_graph))
             or decision_body["graph"] != json.loads(encode_review_json(graph))
@@ -1202,6 +1755,26 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or decision["actor_type"] != audit.actor_type.value
         ):
             raise _storage_error()
+        expected_edges = tuple(
+            replace(edge, review_status=ReviewStatus.ACCEPTED)
+            for edge in previous_graph.edges
+            if any(item["edge_id"] == edge.edge_id and item["action"] == "accept" for item in expected_edge_decisions)
+        )
+        expected_child = replace(
+            previous_graph,
+            graph_revision_id=stable_id("propagation-confirmed-graph", scope.scope_key),
+            status=PropagationStatus.CONFIRMED,
+            edges=expected_edges,
+            paths=PropagationAnalysisService._paths(expected_edges, previous_graph.analysis_id),
+            unresolved_issue_codes=tuple(sorted(cast(list[str], decision_body["acknowledgements"]))),
+            parent_graph_revision_id=previous_graph.graph_revision_id,
+            record_version=previous_graph.record_version + 1,
+            created_at=graph.created_at,
+        )
+        if graph != expected_child:
+            raise _storage_error()
+        self._validate_persisted_bindings(connection, scope.workspace_id, previous_graph)
+        self._validate_persisted_bindings(connection, scope.workspace_id, graph)
         return PropagationReviewResult(
             graph=graph,
             decision_id=cast(str, response["decision_id"]),
@@ -1266,6 +1839,27 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                 or current.record_version != prepared.command.expected_graph_record_version
             ):
                 raise ReviewError("FMEA_VERSION_CONFLICT", "Propagation graph revision is stale.")
+            expected_child = self._expected_confirmed_child(current, prepared)
+            if prepared.graph != expected_child:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Prepared propagation child is not semantically valid.")
+            self._validate_dependencies(
+                connection,
+                prepared.scope.workspace_id,
+                current,
+                prepared.topology,
+                prepared.rule_pack,
+                prepared.evidence_packs,
+                prepared.source_row_ids,
+            )
+            self._validate_dependencies(
+                connection,
+                prepared.scope.workspace_id,
+                replace(expected_child, status=PropagationStatus.REVIEWED),
+                prepared.topology,
+                prepared.rule_pack,
+                prepared.evidence_packs,
+                prepared.source_row_ids,
+            )
             if self._graph_row(connection, prepared.graph.graph_revision_id, prepared.scope.workspace_id) is not None:
                 raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Propagation child revision already exists.")
             self._validate_source_rows(
@@ -1287,7 +1881,7 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                     (
                         prepared.scope.workspace_id,
                         f"{prepared.decision_id}:{edge_decision.edge_id}",
-                        prepared.graph.graph_revision_id,
+                        prepared.previous_graph.graph_revision_id,
                         prepared.decision_id,
                         edge_decision.edge_id,
                         edge_decision.action.value,
@@ -1386,13 +1980,15 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         finally:
             connection.close()
 
-    def _replay_invalidation(
+    def _replay_invalidation(  # noqa: C901
         self, connection: sqlite3.Connection, scope: IdempotencyScope, payload_hash: str
     ) -> PropagationGraphRevision | None:
         row = self._idempotency_row(connection, scope)
         response = self._decode_response(row, payload_hash, "propagation_invalidation")
         if response is None:
             return None
+        if response["workspace_id"] != scope.workspace_id:
+            raise _storage_error()
         graph_row = self._graph_row(connection, cast(str, response["graph_revision_id"]), scope.workspace_id)
         if graph_row is None:
             raise _storage_error()
@@ -1402,12 +1998,18 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             (response["decision_id"], scope.workspace_id),
         ).fetchone()
         if decision is None or (
-            decision["resulting_graph_revision_id"] != graph.graph_revision_id
+            decision["decision_id"] != stable_id("propagation-invalidation", scope.scope_key)
+            or decision["workspace_id"] != scope.workspace_id
+            or decision["resulting_graph_revision_id"] != graph.graph_revision_id
             or decision["decision_type"] != "invalidate"
             or decision["payload_hash"] != payload_hash
             or decision["idempotency_scope"] != scope.scope_key
             or decision["audit_event_id"] != response["audit_event_id"]
             or decision["outbox_event_id"] != response["outbox_event_id"]
+            or response["workspace_id"] != scope.workspace_id
+            or response["decision_id"] != decision["decision_id"]
+            or response["audit_event_id"] != decision["audit_event_id"]
+            or response["outbox_event_id"] != decision["outbox_event_id"]
         ):
             raise _storage_error()
         audit_row = connection.execute(
@@ -1424,6 +2026,8 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             or audit.actor_type.value != decision["actor_type"]
             or audit.canonical_payload_hash != payload_hash
             or audit.decision_id != decision["decision_id"]
+            or audit.command != scope.command
+            or audit.idempotency_key_hash != scope.key_hash
         ):
             raise _storage_error()
         event = self._decode_outbox(connection, cast(str, response["outbox_event_id"]), scope.workspace_id)
@@ -1446,6 +2050,8 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
         }
         if (
             event.event_type != "propagation.invalidated"
+            or event.workspace_id != scope.workspace_id
+            or event.aggregate_type != "propagation_graph"
             or event.aggregate_id != graph.graph_revision_id
             or event.scope_key != scope.scope_key
             or event.payload_hash != outbox_payload_hash(event.payload)
@@ -1463,9 +2069,25 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
             != json.loads(encode_review_json(graph.unresolved_issue_codes))
         ):
             raise _storage_error()
+        changed_hash = decision_body["changed_evidence_hash"]
+        if not isinstance(changed_hash, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", changed_hash):
+            raise _storage_error()
+        expected_graph = replace(
+            previous_graph,
+            graph_revision_id=stable_id("propagation-invalidated-graph", scope.scope_key),
+            status=PropagationStatus.INVALIDATED,
+            unresolved_issue_codes=tuple(sorted(set(previous_graph.unresolved_issue_codes) | {"stale_evidence"})),
+            parent_graph_revision_id=previous_graph.graph_revision_id,
+            record_version=previous_graph.record_version + 1,
+            created_at=graph.created_at,
+        )
+        if graph != expected_graph:
+            raise _storage_error()
+        self._validate_persisted_bindings(connection, scope.workspace_id, previous_graph)
+        self._validate_persisted_bindings(connection, scope.workspace_id, graph)
         return graph
 
-    def invalidate(self, prepared: PreparedPropagationInvalidation) -> PropagationGraphRevision:
+    def invalidate(self, prepared: PreparedPropagationInvalidation) -> PropagationGraphRevision:  # noqa: C901
         if not isinstance(prepared, PreparedPropagationInvalidation):
             raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "Prepared propagation invalidation is invalid.")
         connection = self._connect()
@@ -1497,6 +2119,27 @@ class SqlitePropagationRepository(SqliteFmeaRepository):
                 or current.record_version != prepared.command.expected_graph_record_version
             ):
                 raise ReviewError("FMEA_VERSION_CONFLICT", "Propagation graph revision is stale.")
+            expected_child = self._expected_invalidated_child(current, prepared)
+            if prepared.graph != expected_child:
+                raise ReviewError("FMEA_REVIEW_ACTION_INVALID", "Prepared invalidated child is not semantically valid.")
+            self._validate_dependencies(
+                connection,
+                prepared.scope.workspace_id,
+                current,
+                prepared.topology,
+                prepared.rule_pack,
+                prepared.evidence_packs,
+                prepared.source_row_ids,
+            )
+            self._validate_dependencies(
+                connection,
+                prepared.scope.workspace_id,
+                replace(expected_child, status=PropagationStatus.REVIEWED),
+                prepared.topology,
+                prepared.rule_pack,
+                prepared.evidence_packs,
+                prepared.source_row_ids,
+            )
             self._insert_graph(connection, prepared.graph, prepared.source_row_ids)
             self._reserve(connection, prepared.scope, prepared.payload_hash, prepared.audit.occurred_at_server)
             self._insert_audit(connection, prepared.audit)

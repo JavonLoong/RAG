@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from core_domain.fmea.propagation import (
@@ -151,11 +153,22 @@ class _Repository:
         self.pack = pack
         self.review_prepared = None
         self.invalidation_prepared = None
+        self.review_replay = None
+        self.invalidation_replay = None
+        self.replay_calls = []
 
     def get_graph(self, graph_revision_id: str, workspace_id: str):
         if graph_revision_id == self.graph.graph_revision_id and workspace_id == self.graph.workspace_id:
             return self.graph
         return None
+
+    def replay_graph_review(self, scope, payload_hash):
+        self.replay_calls.append(("review", scope, payload_hash))
+        return self.review_replay
+
+    def replay_invalidation(self, scope, payload_hash):
+        self.replay_calls.append(("invalidation", scope, payload_hash))
+        return self.invalidation_replay
 
     def get_current_graph(self, analysis_id: str, workspace_id: str):
         if analysis_id == self.graph.analysis_id and workspace_id == self.graph.workspace_id:
@@ -223,6 +236,24 @@ def test_confirm_graph_creates_confirmed_child_from_exact_edge_decisions(fixture
     assert repository.review_prepared.graph.status is PropagationStatus.CONFIRMED
 
 
+def test_confirm_graph_replays_before_parent_or_dependency_load(fixture_pack) -> None:
+    repository = _Repository(_graph(), fixture_pack)
+    replay = PropagationReviewResult(
+        graph=_graph(status=PropagationStatus.CONFIRMED),
+        decision_id="replayed-decision",
+        audit_event_id="replayed-audit",
+        outbox_event_id="replayed-outbox",
+        replayed=True,
+    )
+    repository.review_replay = replay
+    repository.get_graph = lambda *_args: (_ for _ in ()).throw(AssertionError("parent loaded before replay"))
+
+    result = _service(repository).confirm_graph(_command(), _reviewer())
+
+    assert result is replay
+    assert repository.replay_calls[0][0] == "review"
+
+
 def test_confirm_graph_requires_one_decision_for_every_edge(fixture_pack) -> None:
     repository = _Repository(_graph(), fixture_pack)
     command = _command(decisions=(PropagationEdgeDecision("edge-1", PropagationDecisionAction.ACCEPT, "accepted"),))
@@ -232,6 +263,15 @@ def test_confirm_graph_requires_one_decision_for_every_edge(fixture_pack) -> Non
 
     assert captured.value.code == "FMEA_PROPAGATION_REVIEW_INCOMPLETE"
     assert repository.review_prepared is None
+
+
+def test_confirm_graph_rejects_unrelated_acknowledgement(fixture_pack) -> None:
+    repository = _Repository(_graph(), fixture_pack)
+
+    with pytest.raises(PropagationError) as captured:
+        _service(repository).confirm_graph(_command(acknowledgements=("high_risk",)), _reviewer())
+
+    assert captured.value.code == "FMEA_PROPAGATION_ACKNOWLEDGEMENT_INVALID"
 
 
 def test_confirm_graph_requires_human_propagation_reviewer(fixture_pack) -> None:
@@ -266,6 +306,41 @@ def test_invalidate_if_stale_creates_additive_invalidated_child(fixture_pack) ->
     assert result.parent_graph_revision_id == parent.graph_revision_id
     assert result.graph_revision_id != parent.graph_revision_id
     assert repository.invalidation_prepared is not None
+
+
+def test_invalidate_replays_before_parent_or_dependency_load(fixture_pack) -> None:
+    parent = _graph(status=PropagationStatus.CONFIRMED)
+    repository = _Repository(parent, fixture_pack)
+    replay = replace(parent, status=PropagationStatus.INVALIDATED, parent_graph_revision_id=parent.graph_revision_id)
+    repository.invalidation_replay = replay
+    repository.get_graph = lambda *_args: (_ for _ in ()).throw(AssertionError("parent loaded before replay"))
+    command = __import__(
+        "fmea_application.propagation_service", fromlist=["InvalidatePropagationCommand"]
+    ).InvalidatePropagationCommand(
+        graph_revision_id=parent.graph_revision_id,
+        expected_graph_record_version=parent.record_version,
+        changed_evidence_hash="sha256:" + "2" * 64,
+        reason="evidence superseded",
+        idempotency_key="00000000-0000-4000-8000-000000000402",
+    )
+
+    result = _service(repository).invalidate(command, ActorContext("system", ActorType.SYSTEM, frozenset(), "ws-1"))
+
+    assert result is replay
+    assert repository.replay_calls[0][0] == "invalidation"
+
+
+def test_invalidate_requires_sha256_changed_evidence_hash() -> None:
+    from fmea_application.propagation_service import InvalidatePropagationCommand
+
+    with pytest.raises(ValueError, match="sha256"):
+        InvalidatePropagationCommand(
+            graph_revision_id="graph-1",
+            expected_graph_record_version=1,
+            changed_evidence_hash="not-a-hash",
+            reason="evidence superseded",
+            idempotency_key="00000000-0000-4000-8000-000000000403",
+        )
 
 
 def test_invalidate_if_stale_does_not_cross_workspace(fixture_pack) -> None:

@@ -258,10 +258,7 @@ class SqliteAssistanceRepository:
         expected_actor_id = str(audit["actor_id"]) if actor_id is None else actor_id
         expected_actor_type = str(audit["actor_type"]) if actor_type is None else actor_type
         event_key_hash = event.idempotency_key_hash
-        if (
-            idempotency_key_hash_value is not None
-            and event_key_hash != idempotency_key_hash_value
-        ):
+        if idempotency_key_hash_value is not None and event_key_hash != idempotency_key_hash_value:
             raise _storage_error()
         reconstructed_scope = IdempotencyScope(
             workspace_id,
@@ -362,18 +359,20 @@ class SqliteAssistanceRepository:
             raise _storage_error() from exc
         return pack
 
+    @staticmethod
     def _validate_suggestion_source(
-        self,
         connection: sqlite3.Connection,
         suggestion: AssistanceSuggestion[object],
     ) -> None:
         if suggestion.target_type == "fmea_row":
-            row = self._authoritative_row(connection, suggestion.target_id, suggestion.workspace_id)
+            row = SqliteAssistanceRepository._authoritative_row(
+                connection, suggestion.target_id, suggestion.workspace_id
+            )
             if row.record_version != suggestion.target_record_version:
                 raise _safe_error("FMEA_REVIEW_SUGGESTION_STALE", "Assistance suggestion is stale.")
         available: set[str] = set()
         for pack_id in suggestion.evidence_pack_ids:
-            pack = self._authoritative_evidence(connection, pack_id, suggestion.workspace_id)
+            pack = SqliteAssistanceRepository._authoritative_evidence(connection, pack_id, suggestion.workspace_id)
             available.update(ref.evidence_id for ref in pack.refs)
         if not set(suggestion.evidence_ids).issubset(available):
             raise _safe_error("FMEA_EVIDENCE_INVALID", "Assistance evidence is invalid.")
@@ -558,11 +557,15 @@ class SqliteAssistanceRepository:
         except sqlite3.IntegrityError as exc:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
-            raise _safe_error("FMEA_MODEL_SUGGESTION_INVALID", "Assistance suggestion conflicts with stored state.") from exc
+            raise _safe_error(
+                "FMEA_MODEL_SUGGESTION_INVALID", "Assistance suggestion conflicts with stored state."
+            ) from exc
         except sqlite3.Error as exc:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
-            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True) from exc
+            raise _safe_error(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True
+            ) from exc
         finally:
             connection.close()
 
@@ -712,8 +715,7 @@ class SqliteAssistanceRepository:
         connection = self._connect()
         try:
             row = connection.execute(
-                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
-                "WHERE decision_id=? AND workspace_id=?",
+                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions WHERE decision_id=? AND workspace_id=?",
                 (decision_id, workspace_id),
             ).fetchone()
             return None if row is None else self._decode_decision(row, connection)
@@ -729,8 +731,7 @@ class SqliteAssistanceRepository:
             if resource_id is None:
                 return None
             row = connection.execute(
-                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
-                "WHERE decision_id=? AND workspace_id=?",
+                f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions WHERE decision_id=? AND workspace_id=?",
                 (resource_id, scope.workspace_id),
             ).fetchone()
             if row is None:
@@ -773,8 +774,7 @@ class SqliteAssistanceRepository:
             if row["state"] == "completed":
                 stored_id = str(row["resource_id"])
                 decision_row = connection.execute(
-                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
-                    "WHERE decision_id=? AND workspace_id=?",
+                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions WHERE decision_id=? AND workspace_id=?",
                     (stored_id, scope.workspace_id),
                 ).fetchone()
                 if stored_id != decision_id or decision_row is None:
@@ -812,11 +812,7 @@ class SqliteAssistanceRepository:
         reservation_hash: str,
         decision_id: str,
     ) -> AssistanceHandlerCheckpoint | None:
-        if (
-            row["state"] != "reserved"
-            or row["payload_hash"] != reservation_hash
-            or row["resource_id"] != decision_id
-        ):
+        if row["state"] != "reserved" or row["payload_hash"] != reservation_hash or row["resource_id"] != decision_id:
             raise _storage_error()
         if row["response_json"] is None:
             return None
@@ -900,15 +896,13 @@ class SqliteAssistanceRepository:
         checkpoint: AssistanceHandlerCheckpoint,
     ) -> None:
         identity = checkpoint.resulting_resource_identity
-        completed = canonical_json(
-            {
-                "applied_record_version": checkpoint.applied_record_version,
-                "decision_id": checkpoint.decision_id,
-                "handler_state": "completed",
-                "reservation_hash": checkpoint.reservation_hash,
-                "resulting_resource_identity": None if identity is None else list(identity),
-            }
-        )
+        completed = canonical_json({
+            "applied_record_version": checkpoint.applied_record_version,
+            "decision_id": checkpoint.decision_id,
+            "handler_state": "completed",
+            "reservation_hash": checkpoint.reservation_hash,
+            "resulting_resource_identity": None if identity is None else list(identity),
+        })
         started = canonical_json({"handler_state": "started"})
         connection = self._connect()
         try:
@@ -944,9 +938,7 @@ class SqliteAssistanceRepository:
             if prepared.reservation_hash is None or (
                 idempotency_row is not None and idempotency_row["state"] == "completed"
             ):
-                replay_id = self._check_replay_row(
-                    idempotency_row, prepared.payload_hash, "assistance_decision"
-                )
+                replay_id = self._check_replay_row(idempotency_row, prepared.payload_hash, "assistance_decision")
             else:
                 if idempotency_row is None:
                     raise _storage_error()
@@ -957,16 +949,14 @@ class SqliteAssistanceRepository:
                 )
                 if (
                     checkpoint is None
-                    or checkpoint.resulting_resource_identity
-                    != prepared.decision.resulting_resource_identity
+                    or checkpoint.resulting_resource_identity != prepared.decision.resulting_resource_identity
                     or checkpoint.applied_record_version != prepared.audit.applied_record_version
                 ):
                     raise _storage_error()
                 replay_id = None
             if replay_id is not None:
                 row = connection.execute(
-                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions "
-                    "WHERE decision_id=? AND workspace_id=?",
+                    f"SELECT {_DECISION_COLUMNS} FROM fmea_assistance_decisions WHERE decision_id=? AND workspace_id=?",
                     (replay_id, prepared.suggestion.workspace_id),
                 ).fetchone()
                 if row is None:
@@ -1028,12 +1018,10 @@ class SqliteAssistanceRepository:
                     prepared.audit.occurred_at_server,
                 )
             else:
-                response_json = canonical_json(
-                    {
-                        "resource_id": prepared.decision.decision_id,
-                        "resource_type": "assistance_decision",
-                    }
-                )
+                response_json = canonical_json({
+                    "resource_id": prepared.decision.decision_id,
+                    "resource_type": "assistance_decision",
+                })
                 cursor = connection.execute(
                     "UPDATE idempotency_records SET state='completed', status_code=201, "
                     "response_json=?, completed_at=? WHERE scope_key=? AND payload_hash=? AND state='reserved' "
@@ -1061,7 +1049,9 @@ class SqliteAssistanceRepository:
         except sqlite3.Error as exc:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
-            raise _safe_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True) from exc
+            raise _safe_error(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "Assistance storage is unavailable.", retryable=True
+            ) from exc
         finally:
             connection.close()
 
