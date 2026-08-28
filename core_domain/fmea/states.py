@@ -49,6 +49,14 @@ class RiskStatus(str, Enum):
     INVALIDATED = "invalidated"
 
 
+class PropagationStatus(str, Enum):
+    NOT_ANALYZED = "not_analyzed"
+    PROPOSED = "proposed"
+    REVIEWED = "reviewed"
+    CONFIRMED = "confirmed"
+    INVALIDATED = "invalidated"
+
+
 class EvidenceSupportStatus(str, Enum):
     SUPPORTED = "supported"
     PARTIALLY_SUPPORTED = "partially_supported"
