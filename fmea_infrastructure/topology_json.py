@@ -254,8 +254,42 @@ def topology_snapshot_hash(snapshot: TopologySnapshot) -> str:
 class JsonTopologyRepository:
     """Load immutable JSON snapshots from a directory without link traversal."""
 
-    def __init__(self, root: str | Path) -> None:
+    def __init__(
+        self,
+        root: str | Path,
+        *,
+        source_hashes: Mapping[tuple[str, str], str] | None = None,
+    ) -> None:
         self._root = Path(root).absolute()
+        if source_hashes is not None and not isinstance(source_hashes, Mapping):
+            _topology_error("TOPOLOGY_SOURCE_PIN_INVALID", "source_hashes must be a mapping")
+        self._source_hashes = self._validate_source_hashes(source_hashes)
+
+    @staticmethod
+    def _validate_source_hashes(
+        source_hashes: Mapping[tuple[str, str], str] | None,
+    ) -> dict[tuple[str, str], str] | None:
+        if source_hashes is None:
+            return None
+        validated: dict[tuple[str, str], str] = {}
+        for identity, source_hash in source_hashes.items():
+            if not isinstance(identity, tuple) or len(identity) != 2:
+                _topology_error("TOPOLOGY_SOURCE_PIN_INVALID", "source hash identity must be an id/version pair")
+            topology_id = _registry_identity_segment(
+                identity[0], version=False, path_code="TOPOLOGY_SOURCE_PIN_INVALID"
+            )
+            version = _registry_identity_segment(
+                identity[1], version=True, path_code="TOPOLOGY_SOURCE_PIN_INVALID"
+            )
+            if (
+                not isinstance(source_hash, str)
+                or len(source_hash) != hashlib.sha256().digest_size * 2
+                or source_hash != source_hash.lower()
+                or any(character not in "0123456789abcdef" for character in source_hash)
+            ):
+                _topology_error("TOPOLOGY_SOURCE_PIN_INVALID", "source hash must be lowercase SHA-256")
+            validated[(topology_id, version)] = source_hash
+        return validated
 
     @property
     def root(self) -> Path:
@@ -284,31 +318,56 @@ class JsonTopologyRepository:
                 _topology_error("TOPOLOGY_PATH_OUTSIDE_ROOT", "topology path crosses a non-directory")
         return info
 
-    def _candidate_paths(self, topology_id: str, version: str) -> tuple[Path, ...]:
-        _registry_identity_segment(topology_id, version=False, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT")
-        _registry_identity_segment(version, version=True, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT")
-        if topology_id.endswith(".json"):
-            return (self._root / topology_id,)
-        return (
-            self._root / f"{topology_id}-{version}.json",
-            self._root / topology_id / f"{version}.json",
+    def _canonical_path(self, topology_id: str, version: str) -> Path:
+        topology_id = _registry_identity_segment(
+            topology_id, version=False, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT"
         )
+        _registry_identity_segment(version, version=True, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT")
+        if topology_id.casefold().endswith(".json"):
+            _topology_error(
+                "TOPOLOGY_IDENTITY_AMBIGUOUS",
+                "topology_id must be an identity, not a snapshot filename",
+            )
+        return self._root / f"{topology_id}-{version}.json"
 
     def load_snapshot(self, topology_id: str, version: str) -> TopologySnapshot:
-        for path in self._candidate_paths(topology_id, version):
-            info = self._safe_path_info(path)
-            if info is None:
-                continue
-            try:
-                raw = _read_bounded_path(path, _MAX_TOPOLOGY_BYTES, expected_info=info)
-            except _BoundedReadLimitExceeded as exc:
-                _topology_error("TOPOLOGY_LIMIT_EXCEEDED", "topology source exceeds 1 MiB", exc)
-            except _UnsafeFilePath as exc:
-                _topology_error("TOPOLOGY_PATH_OUTSIDE_ROOT", "topology path changed during read", exc)
-            except OSError as exc:
-                _topology_error("TOPOLOGY_SOURCE_INVALID", "topology source cannot be read", exc)
-            return load_topology_snapshot(raw)
-        _topology_error("TOPOLOGY_NOT_FOUND", "topology snapshot was not found")
+        topology_id = _registry_identity_segment(
+            topology_id, version=False, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT"
+        )
+        _registry_identity_segment(version, version=True, path_code="TOPOLOGY_PATH_OUTSIDE_ROOT")
+        path = self._canonical_path(topology_id, version)
+        info = self._safe_path_info(path)
+        fallback_path = self._root / topology_id / f"{version}.json"
+        fallback_info = self._safe_path_info(fallback_path)
+        if fallback_info is not None:
+            _topology_error(
+                "TOPOLOGY_PATH_AMBIGUOUS",
+                "legacy nested topology layout is not a permitted fallback",
+            )
+        if info is None:
+            _topology_error("TOPOLOGY_NOT_FOUND", "topology snapshot was not found")
+        if self._source_hashes is None:
+            _topology_error("TOPOLOGY_SOURCE_PIN_REQUIRED", "an external source hash pin is required")
+        expected_source_hash = self._source_hashes.get((topology_id, version))
+        if expected_source_hash is None:
+            _topology_error("TOPOLOGY_SOURCE_PIN_MISSING", "no source hash pin exists for this identity/version")
+        try:
+            raw = _read_bounded_path(path, _MAX_TOPOLOGY_BYTES, expected_info=info)
+        except _BoundedReadLimitExceeded as exc:
+            _topology_error("TOPOLOGY_LIMIT_EXCEEDED", "topology source exceeds 1 MiB", exc)
+        except _UnsafeFilePath as exc:
+            _topology_error("TOPOLOGY_PATH_OUTSIDE_ROOT", "topology path changed during read", exc)
+        except OSError as exc:
+            _topology_error("TOPOLOGY_SOURCE_INVALID", "topology source cannot be read", exc)
+        if hashlib.sha256(raw).hexdigest() != expected_source_hash:
+            _topology_error("TOPOLOGY_SOURCE_HASH_MISMATCH", "topology source hash does not match its external pin")
+        snapshot = load_topology_snapshot(raw)
+        if snapshot.topology_snapshot_id != topology_id:
+            _topology_error(
+                "TOPOLOGY_IDENTITY_MISMATCH",
+                "requested topology identity does not match the decoded snapshot identity",
+            )
+        return snapshot
 
     def neighbors(self, snapshot: TopologySnapshot, entity_id: str) -> tuple[TopologyInterface, ...]:
         """Return all incident interfaces while preserving their declared direction."""

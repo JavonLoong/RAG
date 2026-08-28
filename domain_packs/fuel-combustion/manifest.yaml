@@ -1,7 +1,7 @@
 domain_pack:
   id: fuel-combustion
   version: 1.0.0
-  content_hash: c447f9a295a6e59553f02b06ba43109af774a28c62d791656ff8cd0bbe3a36ad
+  content_hash: 560ab4fb9ff287b7ce43458707e8f1d768c17c3678d0513a1c5e54905d086e0c
   kernel_compatibility_range: ">=1.0.0,<2.0.0"
   compatible_schema_ids:
     - graphrag.fmea.v1
@@ -15,7 +15,9 @@ domain_pack:
   scoring_rules:
     - id: fuel-sod-rpn
       version: 1.0.0
-  propagation_rules: []
+  propagation_rules:
+    - id: fuel-combustion-propagation
+      version: 1.0.0
   extension_fields:
     - key: fuel.composition
       type: string

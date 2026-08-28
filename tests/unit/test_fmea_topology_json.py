@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
+import subprocess
 from dataclasses import FrozenInstanceError, fields
 from pathlib import Path
 
@@ -19,10 +21,33 @@ from fmea_infrastructure.topology_json import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOPOLOGY_ROOT = REPO_ROOT / "domain_packs" / "fuel-combustion" / "topology"
 TOPOLOGY_PATH = TOPOLOGY_ROOT / "demo-1.0.0.json"
+EXPECTED_TOPOLOGY_SOURCE_HASH = "53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 
 
 def _source() -> bytes:
     return TOPOLOGY_PATH.read_bytes()
+
+
+def _repository(root: Path = TOPOLOGY_ROOT, source: bytes | None = None) -> JsonTopologyRepository:
+    source_hash = EXPECTED_TOPOLOGY_SOURCE_HASH if source is None else hashlib.sha256(source).hexdigest()
+    return JsonTopologyRepository(
+        root,
+        source_hashes={("demo", "1.0.0"): source_hash},
+    )
+
+
+def _rehashed_source(*, topology_id: str | None = None, node_type: str | None = None) -> bytes:
+    payload = json.loads(_source())
+    snapshot = payload["topology_snapshot"]
+    if topology_id is not None:
+        snapshot["id"] = topology_id
+    if node_type is not None:
+        snapshot["nodes"][0]["type"] = node_type
+    body = {key: value for key, value in snapshot.items() if key != "topology_hash"}
+    snapshot["topology_hash"] = hashlib.sha256(
+        json.dumps(body, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
 def _interface(snapshot, source: str, target: str):
@@ -34,9 +59,9 @@ def _interface(snapshot, source: str, target: str):
 
 
 def test_fuel_to_combustion_fixture_has_explicit_interfaces() -> None:
-    snapshot = JsonTopologyRepository(TOPOLOGY_ROOT).load_snapshot("demo", "1.0.0")
+    snapshot = _repository().load_snapshot("demo", "1.0.0")
 
-    assert snapshot.topology_snapshot_id == "fuel-combustion-demo"
+    assert snapshot.topology_snapshot_id == "demo"
     assert snapshot.workspace_id == "fuel-combustion"
     assert snapshot.analysis_id is None
     assert {node.node_id for node in snapshot.nodes} == {
@@ -55,7 +80,7 @@ def test_fuel_to_combustion_fixture_has_explicit_interfaces() -> None:
 
 
 def test_topology_neighbors_return_incident_immutable_interfaces() -> None:
-    repository = JsonTopologyRepository(TOPOLOGY_ROOT)
+    repository = _repository()
     snapshot = repository.load_snapshot("demo", "1.0.0")
 
     neighbors = repository.neighbors(snapshot, "fuel_manifold")
@@ -71,7 +96,7 @@ def test_topology_neighbors_return_incident_immutable_interfaces() -> None:
 
 def test_topology_loader_rejects_path_traversal(tmp_path: Path) -> None:
     with pytest.raises(FmeaDomainError, match="TOPOLOGY_PATH_OUTSIDE_ROOT"):
-        JsonTopologyRepository(tmp_path).load_snapshot("..\\outside", "1.0.0")
+        _repository(tmp_path).load_snapshot("..\\outside", "1.0.0")
 
 
 def test_topology_loader_rejects_symlink_escape(tmp_path: Path) -> None:
@@ -84,7 +109,64 @@ def test_topology_loader_rejects_symlink_escape(tmp_path: Path) -> None:
         pytest.skip(f"symlink creation unavailable: {exc}")
 
     with pytest.raises(FmeaDomainError, match="TOPOLOGY_PATH_OUTSIDE_ROOT"):
-        JsonTopologyRepository(tmp_path).load_snapshot("escape", "1.0.0")
+        _repository(tmp_path).load_snapshot("escape", "1.0.0")
+
+
+def test_topology_fixture_is_tracked_despite_global_json_ignore() -> None:
+    relative_path = TOPOLOGY_PATH.relative_to(REPO_ROOT).as_posix()
+    git_executable = shutil.which("git")
+    assert git_executable is not None
+    result = subprocess.run(  # noqa: S603
+        [git_executable, "ls-files", "--error-unmatch", "--", relative_path],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == relative_path
+
+
+def test_topology_repository_rejects_wrong_version_without_fallback() -> None:
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_NOT_FOUND"):
+        _repository().load_snapshot("demo", "9.9.9")
+
+
+def test_topology_repository_fails_closed_without_external_source_pin() -> None:
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_SOURCE_PIN_REQUIRED"):
+        JsonTopologyRepository(TOPOLOGY_ROOT).load_snapshot("demo", "1.0.0")
+
+
+def test_topology_repository_rejects_filename_identity_trick() -> None:
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_IDENTITY_AMBIGUOUS"):
+        _repository().load_snapshot("demo-1.0.0.json", "9.9.9")
+
+
+def test_topology_repository_rejects_fallback_layout_collision(tmp_path: Path) -> None:
+    (tmp_path / "demo-1.0.0.json").write_bytes(_source())
+    nested = tmp_path / "demo"
+    nested.mkdir()
+    (nested / "1.0.0.json").write_bytes(_source())
+
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_PATH_AMBIGUOUS"):
+        _repository(tmp_path).load_snapshot("demo", "1.0.0")
+
+
+def test_topology_repository_binds_requested_identity_to_snapshot_identity(tmp_path: Path) -> None:
+    source = _rehashed_source(topology_id="other")
+    (tmp_path / "demo-1.0.0.json").write_bytes(source)
+
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_IDENTITY_MISMATCH"):
+        _repository(tmp_path, source).load_snapshot("demo", "1.0.0")
+
+
+def test_topology_repository_rejects_changed_content_even_when_self_hash_recomputed(tmp_path: Path) -> None:
+    source = _rehashed_source(node_type="tampered")
+    (tmp_path / "demo-1.0.0.json").write_bytes(source)
+
+    with pytest.raises(FmeaDomainError, match="TOPOLOGY_SOURCE_HASH_MISMATCH"):
+        _repository(tmp_path).load_snapshot("demo", "1.0.0")
 
 
 def test_topology_loader_rejects_duplicate_json_keys() -> None:

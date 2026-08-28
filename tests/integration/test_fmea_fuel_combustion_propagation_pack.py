@@ -15,16 +15,21 @@ PACK_ROOT = REPO_ROOT / "domain_packs" / "fuel-combustion"
 MANIFEST_PATH = PACK_ROOT / "manifest.yaml"
 RULE_PATH = PACK_ROOT / "propagation" / "fuel-combustion-1.0.0.yaml"
 TOPOLOGY_ROOT = PACK_ROOT / "topology"
+EXPECTED_TOPOLOGY_SOURCE_HASH = "53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 
 
 def test_fuel_combustion_propagation_pack_binds_manifest_topology_and_rules(tmp_path: Path) -> None:
     manifest = load_domain_pack_manifest(MANIFEST_PATH.read_bytes())
     rule_source = RULE_PATH.read_bytes()
     rule_pack = load_propagation_rule_pack(rule_source)
-    topology = JsonTopologyRepository(TOPOLOGY_ROOT).load_snapshot("demo", "1.0.0")
+    topology = JsonTopologyRepository(
+        TOPOLOGY_ROOT,
+        source_hashes={("demo", "1.0.0"): EXPECTED_TOPOLOGY_SOURCE_HASH},
+    ).load_snapshot("demo", "1.0.0")
 
     assert manifest.pack_id == "fuel-combustion"
     assert manifest.version == "1.0.0"
+    assert manifest.propagation_rule_identities == ((rule_pack.rule_pack_id, rule_pack.version),)
     assert rule_pack.applicable_analysis_types == manifest.analysis_types
     assert {item.interface_variable for item in topology.interfaces} <= set(rule_pack.interface_variables)
     assert {item.unit for item in topology.interfaces} <= set(rule_pack.units)

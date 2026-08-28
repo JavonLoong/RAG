@@ -1,0 +1,121 @@
+{
+  "topology_snapshot": {
+    "id": "demo",
+    "workspace_id": "fuel-combustion",
+    "analysis_id": null,
+    "topology_hash": "79ee5dd873536019a1baa9cffe1990f97d18c3b6fa14b8e80b5fedd50ed910d1",
+    "nodes": [
+      {
+        "id": "fuel_pump",
+        "type": "pump",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_filter",
+        "type": "filter",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_manifold",
+        "type": "manifold",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_nozzle",
+        "type": "nozzle",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "combustor_flame",
+        "type": "flame",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "pressure_sensor",
+        "type": "sensor",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "controller",
+        "type": "controller",
+        "operating_modes": ["startup", "steady_state"]
+      }
+    ],
+    "interfaces": [
+      {
+        "id": "fuel_pump-to-fuel_filter",
+        "source_node_id": "fuel_pump",
+        "target_node_id": "fuel_filter",
+        "interface_variable": "fuel_pressure",
+        "unit": "kPa",
+        "direction": "fuel_to_combustion",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_filter-to-fuel_manifold",
+        "source_node_id": "fuel_filter",
+        "target_node_id": "fuel_manifold",
+        "interface_variable": "fuel_pressure",
+        "unit": "kPa",
+        "direction": "fuel_to_combustion",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_pump-to-fuel_manifold",
+        "source_node_id": "fuel_pump",
+        "target_node_id": "fuel_manifold",
+        "interface_variable": "fuel_pressure",
+        "unit": "kPa",
+        "direction": "fuel_to_combustion",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_manifold-to-fuel_nozzle",
+        "source_node_id": "fuel_manifold",
+        "target_node_id": "fuel_nozzle",
+        "interface_variable": "fuel_flow",
+        "unit": "kg_per_s",
+        "direction": "fuel_to_combustion",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "fuel_nozzle-to-combustor_flame",
+        "source_node_id": "fuel_nozzle",
+        "target_node_id": "combustor_flame",
+        "interface_variable": "atomization_quality",
+        "unit": "quality_index",
+        "direction": "fuel_to_combustion",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "combustor_flame-to-pressure_sensor",
+        "source_node_id": "combustor_flame",
+        "target_node_id": "pressure_sensor",
+        "interface_variable": "flame_stability",
+        "unit": "stability_index",
+        "direction": "combustion_to_control",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "pressure_sensor-to-controller",
+        "source_node_id": "pressure_sensor",
+        "target_node_id": "controller",
+        "interface_variable": "pressure_signal",
+        "unit": "signal",
+        "direction": "feedback",
+        "operating_modes": ["startup", "steady_state"]
+      },
+      {
+        "id": "controller-to-fuel_pump",
+        "source_node_id": "controller",
+        "target_node_id": "fuel_pump",
+        "interface_variable": "trip_command",
+        "unit": "boolean",
+        "direction": "control_to_fuel",
+        "operating_modes": ["startup", "steady_state"]
+      }
+    ],
+    "record_version": 1,
+    "created_at": "2026-08-28T00:00:00Z"
+  }
+}

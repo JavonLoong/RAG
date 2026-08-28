@@ -19,7 +19,7 @@ from fmea_infrastructure.domain_pack_registry import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "domain_packs" / "fuel-combustion" / "manifest.yaml"
 SCORING_PATH = REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml"
-EXPECTED_MANIFEST_HASH = "c447f9a295a6e59553f02b06ba43109af774a28c62d791656ff8cd0bbe3a36ad"
+EXPECTED_MANIFEST_HASH = "560ab4fb9ff287b7ce43458707e8f1d768c17c3678d0513a1c5e54905d086e0c"
 
 
 def _source(path: Path) -> bytes:
@@ -36,7 +36,7 @@ def test_fuel_manifest_loads_with_identity_hash_and_complete_scope() -> None:
     assert manifest.analysis_types == ("design_fmea", "process_fmea", "system_fmea")
     assert manifest.template_identities == (("fuel-combustion-fmea", "1.0.0"),)
     assert manifest.scoring_rule_identities == (("fuel-sod-rpn", "1.0.0"),)
-    assert manifest.propagation_rule_identities == ()
+    assert manifest.propagation_rule_identities == (("fuel-combustion-propagation", "1.0.0"),)
     assert len(manifest.extension_fields) == 14
     assert len({key for key, _ in manifest.extension_fields}) == 14
     assert all("." in key for key, _ in manifest.extension_fields)
