@@ -1,11 +1,14 @@
 """Bounded, proposal-only FMEA propagation analysis."""
 
-# ruff: noqa: TRY003
+# ruff: noqa: TRY003, TRY004
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from enum import Enum
+from hashlib import sha256
 from typing import Any, Protocol, cast
 
 from core_domain.fmea.domain_pack import DomainPackManifest
@@ -26,6 +29,7 @@ from core_domain.fmea.propagation import (
 )
 from core_domain.fmea.scoring import RiskAssessmentRecord
 from core_domain.fmea.states import (
+    ActorType,
     ClaimStatus,
     EvidenceSupportStatus,
     PropagationStatus,
@@ -39,8 +43,19 @@ from core_domain.fmea.value_objects import EvidencePack
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .assistance_service import make_audit, stable_id, utc_now
 from .ports import AssistanceRepository, RiskRepository
-from .review_contracts import ActorContext, IdempotencyScope, idempotency_key_hash
-from .risk_contracts import PreparedAssistanceSuggestion, assistance_suggestion_payload_hash
+from .review_contracts import (
+    ActorContext,
+    AuditEvent,
+    IdempotencyScope,
+    encode_review_json,
+    idempotency_key_hash,
+)
+from .risk_contracts import (
+    OutboxEvent,
+    PreparedAssistanceSuggestion,
+    assistance_suggestion_payload_hash,
+    outbox_payload_hash,
+)
 
 _MAX_MODEL_EVIDENCE_REFS = 20
 PROPAGATION_TEMPLATE_ID = "fmea-propagation-hypothesis"
@@ -53,6 +68,95 @@ class PropagationError(ValueError):
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
         self.code = code
+
+
+class PropagationDecisionAction(str, Enum):
+    ACCEPT = "accept"
+    REJECT = "reject"
+
+
+@dataclass(frozen=True, slots=True)
+class PropagationEdgeDecision:
+    edge_id: str
+    action: PropagationDecisionAction
+    reason: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.edge_id, str) or not self.edge_id.strip():
+            raise ValueError("edge_id must not be empty")
+        object.__setattr__(self, "edge_id", self.edge_id.strip())
+        if not isinstance(self.action, PropagationDecisionAction):
+            try:
+                object.__setattr__(self, "action", PropagationDecisionAction(self.action))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("propagation edge decision action is invalid") from exc
+        if not isinstance(self.reason, str) or not self.reason.strip():
+            raise ValueError("decision reason must not be empty")
+        object.__setattr__(self, "reason", self.reason.strip())
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmPropagationCommand:
+    graph_revision_id: str
+    expected_graph_record_version: int
+    edge_decisions: tuple[PropagationEdgeDecision, ...]
+    acknowledgements: tuple[str, ...]
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.graph_revision_id, str) or not self.graph_revision_id.strip():
+            raise ValueError("graph_revision_id must not be empty")
+        object.__setattr__(self, "graph_revision_id", self.graph_revision_id.strip())
+        if (
+            isinstance(self.expected_graph_record_version, bool)
+            or not isinstance(self.expected_graph_record_version, int)
+            or self.expected_graph_record_version < 1
+        ):
+            raise ValueError("expected_graph_record_version must be positive")
+        decisions = tuple(self.edge_decisions)
+        if any(not isinstance(item, PropagationEdgeDecision) for item in decisions):
+            raise ValueError("edge_decisions must contain PropagationEdgeDecision objects")
+        if len({item.edge_id for item in decisions}) != len(decisions):
+            raise ValueError("edge_decisions must contain one decision per edge")
+        object.__setattr__(self, "edge_decisions", decisions)
+        acknowledgements = tuple(item.strip() if isinstance(item, str) else item for item in self.acknowledgements)
+        if any(not isinstance(item, str) or not item.strip() for item in acknowledgements):
+            raise ValueError("acknowledgements must contain non-empty issue codes")
+        if len(set(acknowledgements)) != len(acknowledgements):
+            raise ValueError("acknowledgements must not contain duplicates")
+        object.__setattr__(self, "acknowledgements", tuple(sorted(acknowledgements)))
+        idempotency_key_hash(self.idempotency_key)
+
+    @property
+    def acknowledged_issue_codes(self) -> tuple[str, ...]:
+        return self.acknowledgements
+
+
+@dataclass(frozen=True, slots=True)
+class InvalidatePropagationCommand:
+    graph_revision_id: str
+    expected_graph_record_version: int
+    changed_evidence_hash: str
+    reason: str
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.graph_revision_id, str) or not self.graph_revision_id.strip():
+            raise ValueError("graph_revision_id must not be empty")
+        object.__setattr__(self, "graph_revision_id", self.graph_revision_id.strip())
+        if (
+            isinstance(self.expected_graph_record_version, bool)
+            or not isinstance(self.expected_graph_record_version, int)
+            or self.expected_graph_record_version < 1
+        ):
+            raise ValueError("expected_graph_record_version must be positive")
+        if not isinstance(self.changed_evidence_hash, str) or not self.changed_evidence_hash.strip():
+            raise ValueError("changed_evidence_hash must not be empty")
+        object.__setattr__(self, "changed_evidence_hash", self.changed_evidence_hash.strip())
+        if not isinstance(self.reason, str) or not self.reason.strip():
+            raise ValueError("invalidation reason must not be empty")
+        object.__setattr__(self, "reason", self.reason.strip())
+        idempotency_key_hash(self.idempotency_key)
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,6 +325,152 @@ class PreparedPropagationProposal:
         object.__setattr__(self, "source_row_ids", tuple(self.source_row_ids))
 
 
+@dataclass(frozen=True, slots=True)
+class PropagationReviewResult:
+    graph: PropagationGraphRevision
+    decision_id: str
+    audit_event_id: str
+    outbox_event_id: str
+    replayed: bool = False
+    persisted: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedPropagationReview:
+    scope: IdempotencyScope
+    payload_hash: str
+    command: ConfirmPropagationCommand
+    previous_graph: PropagationGraphRevision
+    graph: PropagationGraphRevision
+    edge_decisions: tuple[PropagationEdgeDecision, ...]
+    decision_id: str
+    audit: AuditEvent
+    outbox: OutboxEvent
+    topology: TopologySnapshot
+    rule_pack: PropagationRulePack
+    evidence_packs: tuple[EvidencePack, ...]
+    source_row_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:  # noqa: C901
+        if not isinstance(self.scope, IdempotencyScope):
+            raise ValueError("scope must be an IdempotencyScope")
+        if not isinstance(self.command, ConfirmPropagationCommand):
+            raise ValueError("command must be a ConfirmPropagationCommand")
+        if not isinstance(self.previous_graph, PropagationGraphRevision):
+            raise ValueError("previous_graph must be a PropagationGraphRevision")
+        if not isinstance(self.graph, PropagationGraphRevision):
+            raise ValueError("graph must be a PropagationGraphRevision")
+        if not isinstance(self.audit, AuditEvent):
+            raise ValueError("audit must be an AuditEvent")
+        if not isinstance(self.outbox, OutboxEvent):
+            raise ValueError("outbox must be an OutboxEvent")
+        object.__setattr__(self, "edge_decisions", tuple(self.edge_decisions))
+        object.__setattr__(self, "evidence_packs", tuple(self.evidence_packs))
+        object.__setattr__(self, "source_row_ids", tuple(self.source_row_ids))
+        if not self.source_row_ids:
+            raise ValueError("source_row_ids must not be empty")
+        expected = propagation_review_payload_hash(
+            self.scope, self.command, self.previous_graph, self.graph, self.edge_decisions
+        )
+        if self.payload_hash != expected:
+            raise ValueError("propagation review payload hash does not match canonical payload")
+        if (
+            self.scope.workspace_id != self.previous_graph.workspace_id
+            or self.graph.workspace_id != self.scope.workspace_id
+            or self.scope.command != "fmea.propagation.review"
+            or self.scope.resource_path != f"/fmea/propagation-graphs/{self.previous_graph.graph_revision_id}/reviews"
+            or self.command.graph_revision_id != self.previous_graph.graph_revision_id
+            or self.command.expected_graph_record_version != self.previous_graph.record_version
+            or idempotency_key_hash(self.command.idempotency_key) != self.scope.key_hash
+            or self.decision_id != stable_id("propagation-review", self.command.idempotency_key)
+            or self.graph.graph_revision_id != stable_id("propagation-confirmed-graph", self.decision_id)
+            or self.graph.status is not PropagationStatus.CONFIRMED
+            or self.graph.record_version != self.previous_graph.record_version + 1
+            or self.audit.workspace_id != self.scope.workspace_id
+            or self.audit.actor_id != self.scope.actor_id
+            or self.audit.actor_type is not ActorType.HUMAN
+            or "propagation_reviewer" not in self.audit.actor_roles
+        ):
+            raise ValueError("propagation review workspace binding is invalid")
+        if self.graph.parent_graph_revision_id != self.previous_graph.graph_revision_id:
+            raise ValueError("confirmed graph must link to its parent revision")
+        if (
+            self.outbox.workspace_id != self.scope.workspace_id
+            or self.outbox.aggregate_id != self.graph.graph_revision_id
+            or self.outbox.scope_key != self.scope.scope_key
+            or self.outbox.event_type != "propagation.confirmed"
+        ):
+            raise ValueError("propagation review outbox binding is invalid")
+
+    @property
+    def outbox_event(self) -> OutboxEvent:
+        return self.outbox
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedPropagationInvalidation:
+    scope: IdempotencyScope
+    payload_hash: str
+    command: InvalidatePropagationCommand
+    previous_graph: PropagationGraphRevision
+    graph: PropagationGraphRevision
+    decision_id: str
+    audit: AuditEvent
+    outbox: OutboxEvent
+    topology: TopologySnapshot
+    rule_pack: PropagationRulePack
+    evidence_packs: tuple[EvidencePack, ...]
+    source_row_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:  # noqa: C901
+        if not isinstance(self.scope, IdempotencyScope):
+            raise ValueError("scope must be an IdempotencyScope")
+        if not isinstance(self.command, InvalidatePropagationCommand):
+            raise ValueError("command must be an InvalidatePropagationCommand")
+        if not isinstance(self.previous_graph, PropagationGraphRevision):
+            raise ValueError("previous_graph must be a PropagationGraphRevision")
+        if not isinstance(self.graph, PropagationGraphRevision):
+            raise ValueError("graph must be a PropagationGraphRevision")
+        if not isinstance(self.audit, AuditEvent):
+            raise ValueError("audit must be an AuditEvent")
+        if not isinstance(self.outbox, OutboxEvent):
+            raise ValueError("outbox must be an OutboxEvent")
+        object.__setattr__(self, "evidence_packs", tuple(self.evidence_packs))
+        object.__setattr__(self, "source_row_ids", tuple(self.source_row_ids))
+        if not self.source_row_ids:
+            raise ValueError("source_row_ids must not be empty")
+        expected = propagation_invalidation_payload_hash(self.scope, self.command, self.previous_graph, self.graph)
+        if self.payload_hash != expected:
+            raise ValueError("propagation invalidation payload hash does not match canonical payload")
+        if (
+            self.scope.workspace_id != self.previous_graph.workspace_id
+            or self.graph.workspace_id != self.scope.workspace_id
+            or self.scope.command != "fmea.propagation.invalidate"
+            or self.scope.resource_path
+            != f"/fmea/propagation-graphs/{self.previous_graph.graph_revision_id}/invalidations"
+            or self.command.graph_revision_id != self.previous_graph.graph_revision_id
+            or self.command.expected_graph_record_version != self.previous_graph.record_version
+            or idempotency_key_hash(self.command.idempotency_key) != self.scope.key_hash
+            or self.decision_id != stable_id("propagation-invalidation", self.command.idempotency_key)
+            or self.graph.graph_revision_id != stable_id("propagation-invalidated-graph", self.decision_id)
+            or self.graph.status is not PropagationStatus.INVALIDATED
+            or self.graph.record_version != self.previous_graph.record_version + 1
+            or self.audit.workspace_id != self.scope.workspace_id
+            or self.audit.actor_id != self.scope.actor_id
+            or self.audit.actor_type is ActorType.MODEL
+        ):
+            raise ValueError("propagation invalidation workspace binding is invalid")
+        if self.graph.parent_graph_revision_id != self.previous_graph.graph_revision_id:
+            raise ValueError("invalidated graph must link to its parent revision")
+        if (
+            self.outbox.workspace_id != self.scope.workspace_id
+            or self.outbox.aggregate_id != self.graph.graph_revision_id
+            or self.outbox.scope_key != self.scope.scope_key
+            or self.outbox.event_type != "propagation.invalidated"
+        ):
+            raise ValueError("propagation invalidation outbox binding is invalid")
+
+
 class PropagationRepository(Protocol):
     """Workspace-scoped reads; entities without workspace fields rely on this port boundary."""
 
@@ -235,6 +485,103 @@ class PropagationRepository(Protocol):
     def get_run(self, run_id: str, workspace_id: str) -> PropagationRun | None: ...
 
     def get_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+
+    def get_current_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+
+    def get_topology_snapshot(self, topology_snapshot_id: str, workspace_id: str) -> TopologySnapshot | None: ...
+
+    def get_graph_source_row_ids(self, graph_revision_id: str, workspace_id: str) -> tuple[str, ...]: ...
+
+    def replay_graph_review(self, scope: IdempotencyScope, payload_hash: str) -> PropagationReviewResult | None: ...
+
+    def replay_invalidation(self, scope: IdempotencyScope, payload_hash: str) -> PropagationGraphRevision | None: ...
+
+    def commit_graph_review(self, prepared: PreparedPropagationReview) -> PropagationReviewResult: ...
+
+    def invalidate(self, prepared: PreparedPropagationInvalidation) -> PropagationGraphRevision: ...
+
+
+def _propagation_scope_payload(scope: IdempotencyScope) -> dict[str, str]:
+    return {
+        "workspace_id": scope.workspace_id,
+        "actor_id": scope.actor_id,
+        "command": scope.command,
+        "resource_path": scope.resource_path,
+    }
+
+
+def _propagation_payload_hash(payload: object) -> str:
+    return "sha256:" + sha256(encode_review_json(payload).encode("utf-8")).hexdigest()
+
+
+def _revision_for_payload(graph: PropagationGraphRevision) -> Mapping[str, object]:
+    """Exclude server-assigned time from retry identity while retaining it in storage."""
+
+    value = json.loads(encode_review_json(graph))
+    if not isinstance(value, dict):
+        raise ValueError("propagation graph canonical projection is invalid")
+    value.pop("created_at", None)
+    return value
+
+
+def propagation_review_payload(
+    scope: IdempotencyScope,
+    command: ConfirmPropagationCommand,
+    previous_graph: PropagationGraphRevision,
+    graph: PropagationGraphRevision,
+    edge_decisions: tuple[PropagationEdgeDecision, ...],
+) -> Mapping[str, object]:
+    return {
+        "operation": "propagation.review",
+        "scope": _propagation_scope_payload(scope),
+        "command": {
+            "graph_revision_id": command.graph_revision_id,
+            "expected_graph_record_version": command.expected_graph_record_version,
+            "acknowledgements": command.acknowledgements,
+        },
+        "edge_decisions": edge_decisions,
+        "previous_graph": _revision_for_payload(previous_graph),
+        "graph": _revision_for_payload(graph),
+    }
+
+
+def propagation_review_payload_hash(
+    scope: IdempotencyScope,
+    command: ConfirmPropagationCommand,
+    previous_graph: PropagationGraphRevision,
+    graph: PropagationGraphRevision,
+    edge_decisions: tuple[PropagationEdgeDecision, ...],
+) -> str:
+    return _propagation_payload_hash(propagation_review_payload(scope, command, previous_graph, graph, edge_decisions))
+
+
+def propagation_invalidation_payload(
+    scope: IdempotencyScope,
+    command: InvalidatePropagationCommand,
+    previous_graph: PropagationGraphRevision,
+    graph: PropagationGraphRevision,
+) -> Mapping[str, object]:
+    return {
+        "operation": "propagation.invalidation",
+        "scope": _propagation_scope_payload(scope),
+        "command": {
+            "graph_revision_id": command.graph_revision_id,
+            "expected_graph_record_version": command.expected_graph_record_version,
+            "changed_evidence_hash": command.changed_evidence_hash,
+            "reason": command.reason,
+        },
+        "previous_graph": _revision_for_payload(previous_graph),
+        "graph": _revision_for_payload(graph),
+    }
+
+
+def propagation_invalidation_payload_hash(
+    scope: IdempotencyScope,
+    command: InvalidatePropagationCommand,
+    previous_graph: PropagationGraphRevision,
+    graph: PropagationGraphRevision,
+) -> str:
+    return _propagation_payload_hash(propagation_invalidation_payload(scope, command, previous_graph, graph))
 
 
 def _failed_run(run_id: str, workspace_id: str, analysis_id: str, code: str, message: str, now: str) -> PropagationRun:
@@ -867,6 +1214,359 @@ class PropagationAnalysisService:
                 now,
             )
 
+    @staticmethod
+    def _review_issue_codes(edge: PropagationEdge) -> tuple[str, ...]:
+        issues: list[str] = []
+        if edge.path_length > LOCKED_AUTOMATIC_DEPTH:
+            issues.append("long_path")
+        if edge.is_cyclic:
+            issues.append("cyclic")
+        if edge.risk_priority in {"high", "critical"}:
+            issues.append("high_risk")
+        if edge.is_external:
+            issues.append("external")
+        if edge.is_unprocessed:
+            issues.append("unprocessed")
+        if edge.claim_status is ClaimStatus.CONFLICT:
+            issues.append("conflicting")
+        if not edge.evidence_ids or edge.evidence_support in {
+            EvidenceSupportStatus.CONTRADICTED,
+            EvidenceSupportStatus.NOT_SUPPORTED,
+        }:
+            issues.append("evidence_gap")
+        return tuple(issues)
+
+    def _graph_dependencies(
+        self, graph: PropagationGraphRevision, actor: ActorContext
+    ) -> tuple[TopologySnapshot, PropagationRulePack, tuple[EvidencePack, ...], tuple[str, ...]]:
+        get_topology = getattr(self._repository, "get_topology_snapshot", None)
+        topology = get_topology(graph.topology_snapshot_id, actor.workspace_id) if callable(get_topology) else None
+        if not isinstance(topology, TopologySnapshot) or topology.workspace_id != actor.workspace_id:
+            raise PropagationError("FMEA_PROPAGATION_TOPOLOGY_INVALID", "persisted topology snapshot is unavailable")
+
+        rule_pack = self._propagation_rule_registry.get(graph.rule_pack_id, graph.rule_pack_version)
+        if not isinstance(rule_pack, PropagationRulePack):
+            raise PropagationError("FMEA_PROPAGATION_REGISTRY_INVALID", "persisted propagation rule pack is invalid")
+
+        evidence_packs: list[EvidencePack] = []
+        for pack_id in graph.evidence_pack_ids:
+            pack = self._repository.get_evidence_pack(pack_id, actor.workspace_id)
+            if not isinstance(pack, EvidencePack) or pack.workspace_id != actor.workspace_id:
+                raise PropagationError(
+                    "FMEA_PROPAGATION_EVIDENCE_INVALID", "persisted graph EvidencePack is unavailable"
+                )
+            evidence_packs.append(pack)
+
+        get_source_rows = getattr(self._repository, "get_graph_source_row_ids", None)
+        source_row_ids = (
+            tuple(get_source_rows(graph.graph_revision_id, actor.workspace_id))
+            if callable(get_source_rows)
+            else (graph.analysis_id,)
+        )
+        if not source_row_ids:
+            raise PropagationError("FMEA_PROPAGATION_PERSISTENCE_INVALID", "graph source row binding is unavailable")
+        return topology, rule_pack, tuple(evidence_packs), source_row_ids
+
+    def _graph_by_revision(self, graph_revision_id: str, actor: ActorContext) -> PropagationGraphRevision:
+        getter = getattr(self._repository, "get_graph_revision", None)
+        graph = (
+            getter(graph_revision_id, actor.workspace_id)
+            if callable(getter)
+            else self._repository.get_graph(graph_revision_id, actor.workspace_id)
+        )
+        if not isinstance(graph, PropagationGraphRevision):
+            raise PropagationError("FMEA_PROPAGATION_GRAPH_NOT_FOUND", "propagation graph revision was not found")
+        return graph
+
+    @staticmethod
+    def _require_propagation_reviewer(actor: ActorContext) -> None:
+        if actor.actor_type is not ActorType.HUMAN:
+            raise PropagationError(
+                "FMEA_PROPAGATION_REVIEW_FORBIDDEN",
+                "propagation confirmation requires a human actor",
+            )
+        if "propagation_reviewer" not in actor.roles:
+            raise PropagationError(
+                "FMEA_PROPAGATION_REVIEW_FORBIDDEN",
+                "the propagation_reviewer role is required",
+            )
+
+    def _review_audit_and_outbox(
+        self,
+        *,
+        actor: ActorContext,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        decision_id: str,
+        graph: PropagationGraphRevision,
+        source_row_ids: tuple[str, ...],
+        evidence_ids: tuple[str, ...],
+        reason: str,
+        event_type: str,
+        request_id: str,
+        trace_id: str,
+        occurred_at: str,
+        edge_decisions: tuple[PropagationEdgeDecision, ...] = (),
+    ) -> tuple[AuditEvent, OutboxEvent]:
+        audit = make_audit(
+            actor=actor,
+            scope=scope,
+            payload_hash=payload_hash,
+            command=scope.command,
+            reason=reason,
+            row_id=source_row_ids[0],
+            analysis_id=graph.analysis_id,
+            suggestion_id=graph.assistance_suggestion_ids[0] if graph.assistance_suggestion_ids else None,
+            decision_id=decision_id,
+            expected_record_version=graph.record_version - 1,
+            applied_record_version=graph.record_version,
+            evidence_ids=evidence_ids,
+            template_id=PROPAGATION_TEMPLATE_ID,
+            template_version=PROPAGATION_TEMPLATE_VERSION,
+            scoring_version=graph.rule_pack_version,
+            occurred_at=occurred_at,
+            event_id=stable_id("propagation-audit", decision_id),
+            request_id=request_id,
+            trace_id=trace_id,
+            run_id=None,
+        )
+        payload = {
+            "graph": json.loads(encode_review_json(graph)),
+            "audit_event_id": audit.event_id,
+            "decision_id": decision_id,
+            "edge_decisions": json.loads(encode_review_json(edge_decisions)),
+        }
+        outbox = OutboxEvent(
+            event_id=f"outbox-{decision_id}",
+            workspace_id=actor.workspace_id,
+            aggregate_type="propagation_graph",
+            aggregate_id=graph.graph_revision_id,
+            event_type=event_type,
+            payload=payload,
+            payload_hash=outbox_payload_hash(payload),
+            created_at=occurred_at,
+            scope_key=scope.scope_key,
+        )
+        return audit, outbox
+
+    def _confirm_graph(self, command: ConfirmPropagationCommand, actor: ActorContext) -> PropagationReviewResult:
+        self._require_propagation_reviewer(actor)
+        parent = self._graph_by_revision(command.graph_revision_id, actor)
+        if parent.status not in {PropagationStatus.PROPOSED, PropagationStatus.REVIEWED}:
+            raise PropagationError("FMEA_PROPAGATION_REVIEW_TERMINAL", "propagation graph is not confirmable")
+        if parent.record_version != command.expected_graph_record_version:
+            raise PropagationError("FMEA_PROPAGATION_VERSION_CONFLICT", "propagation graph revision is stale")
+        decision_by_edge = {item.edge_id: item for item in command.edge_decisions}
+        edge_ids = {edge.edge_id for edge in parent.edges}
+        if set(decision_by_edge) != edge_ids:
+            raise PropagationError(
+                "FMEA_PROPAGATION_REVIEW_INCOMPLETE",
+                "one decision is required for every graph edge",
+            )
+        retained_issues = {
+            issue
+            for edge in parent.edges
+            if decision_by_edge[edge.edge_id].action is PropagationDecisionAction.ACCEPT
+            for issue in self._review_issue_codes(edge)
+        }
+        if not retained_issues.issubset(set(command.acknowledgements)):
+            missing = sorted(retained_issues - set(command.acknowledgements))
+            raise PropagationError(
+                "FMEA_PROPAGATION_ACKNOWLEDGEMENT_REQUIRED",
+                "explicit acknowledgements are required for retained graph issues: " + ", ".join(missing),
+            )
+        allowed_acknowledgements = {
+            "long_path",
+            "cyclic",
+            "high_risk",
+            "external",
+            "unprocessed",
+            "conflicting",
+            "evidence_gap",
+        }
+        if not set(command.acknowledgements).issubset(allowed_acknowledgements):
+            raise PropagationError(
+                "FMEA_PROPAGATION_ACKNOWLEDGEMENT_INVALID",
+                "acknowledgements contain an unknown propagation issue code",
+            )
+
+        accepted_edges = tuple(
+            replace(edge, review_status=ReviewStatus.ACCEPTED)
+            for edge in parent.edges
+            if decision_by_edge[edge.edge_id].action is PropagationDecisionAction.ACCEPT
+        )
+        decision_id = stable_id("propagation-review", command.idempotency_key)
+        child = replace(
+            parent,
+            graph_revision_id=stable_id("propagation-confirmed-graph", decision_id),
+            status=PropagationStatus.CONFIRMED,
+            edges=accepted_edges,
+            paths=self._paths(accepted_edges, parent.analysis_id),
+            unresolved_issue_codes=tuple(sorted(command.acknowledgements)),
+            parent_graph_revision_id=parent.graph_revision_id,
+            record_version=parent.record_version + 1,
+            created_at=self._clock(),
+        )
+        scope = IdempotencyScope(
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            command="fmea.propagation.review",
+            resource_path=f"/fmea/propagation-graphs/{parent.graph_revision_id}/reviews",
+            key_hash=idempotency_key_hash(command.idempotency_key),
+        )
+        edge_decisions = tuple(sorted(command.edge_decisions, key=lambda item: item.edge_id))
+        payload_hash = propagation_review_payload_hash(scope, command, parent, child, edge_decisions)
+        replay = getattr(self._repository, "replay_graph_review", None)
+        if callable(replay):
+            replayed = replay(scope, payload_hash)
+            if replayed is not None:
+                return replayed
+        topology, rule_pack, evidence_packs, source_row_ids = self._graph_dependencies(parent, actor)
+        try:
+            validate_graph_revision(parent, topology, rule_pack, PropagationEvidenceResolution(evidence_packs))
+            # The generic domain validator intentionally rejects CONFIRMED.
+            # Validate the exact same child as a proposed revision, then apply
+            # the separate persistence-backed human authority below.
+            validate_graph_revision(
+                replace(child, status=PropagationStatus.REVIEWED),
+                topology,
+                rule_pack,
+                PropagationEvidenceResolution(evidence_packs),
+            )
+        except FmeaDomainError as exc:
+            raise PropagationError("FMEA_PROPAGATION_GRAPH_INVALID", "propagation graph failed validation") from exc
+        evidence_ids = tuple(sorted({item for edge in accepted_edges for item in edge.evidence_ids}))
+        audit, outbox = self._review_audit_and_outbox(
+            actor=actor,
+            scope=scope,
+            payload_hash=payload_hash,
+            decision_id=decision_id,
+            graph=child,
+            source_row_ids=source_row_ids,
+            evidence_ids=evidence_ids,
+            reason="human propagation graph confirmation",
+            event_type="propagation.confirmed",
+            request_id=decision_id,
+            trace_id=decision_id,
+            occurred_at=child.created_at,
+            edge_decisions=edge_decisions,
+        )
+        return self._repository.commit_graph_review(
+            PreparedPropagationReview(
+                scope=scope,
+                payload_hash=payload_hash,
+                command=command,
+                previous_graph=parent,
+                graph=child,
+                edge_decisions=edge_decisions,
+                decision_id=decision_id,
+                audit=audit,
+                outbox=outbox,
+                topology=topology,
+                rule_pack=rule_pack,
+                evidence_packs=evidence_packs,
+                source_row_ids=source_row_ids,
+            )
+        )
+
+    def _invalidate(self, command: InvalidatePropagationCommand, actor: ActorContext) -> PropagationGraphRevision:
+        if actor.actor_type is ActorType.MODEL:
+            raise PropagationError("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "a model actor cannot invalidate propagation")
+        parent = self._graph_by_revision(command.graph_revision_id, actor)
+        if parent.record_version != command.expected_graph_record_version:
+            raise PropagationError("FMEA_PROPAGATION_VERSION_CONFLICT", "propagation graph revision is stale")
+        if parent.status is PropagationStatus.INVALIDATED:
+            return parent
+        decision_id = stable_id("propagation-invalidation", command.idempotency_key)
+        child = replace(
+            parent,
+            graph_revision_id=stable_id("propagation-invalidated-graph", decision_id),
+            status=PropagationStatus.INVALIDATED,
+            unresolved_issue_codes=tuple(sorted(set(parent.unresolved_issue_codes) | {"stale_evidence"})),
+            parent_graph_revision_id=parent.graph_revision_id,
+            record_version=parent.record_version + 1,
+            created_at=self._clock(),
+        )
+        scope = IdempotencyScope(
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            command="fmea.propagation.invalidate",
+            resource_path=f"/fmea/propagation-graphs/{parent.graph_revision_id}/invalidations",
+            key_hash=idempotency_key_hash(command.idempotency_key),
+        )
+        payload_hash = propagation_invalidation_payload_hash(scope, command, parent, child)
+        replay = getattr(self._repository, "replay_invalidation", None)
+        if callable(replay):
+            replayed = replay(scope, payload_hash)
+            if replayed is not None:
+                return replayed
+        topology, rule_pack, evidence_packs, source_row_ids = self._graph_dependencies(parent, actor)
+        evidence_ids = tuple(
+            sorted({item for pack in evidence_packs for item in (ref.evidence_id for ref in pack.refs)})
+        )
+        audit, outbox = self._review_audit_and_outbox(
+            actor=actor,
+            scope=scope,
+            payload_hash=payload_hash,
+            decision_id=decision_id,
+            graph=child,
+            source_row_ids=source_row_ids,
+            evidence_ids=evidence_ids,
+            reason=command.reason,
+            event_type="propagation.invalidated",
+            request_id=decision_id,
+            trace_id=decision_id,
+            occurred_at=child.created_at,
+        )
+        return self._repository.invalidate(
+            PreparedPropagationInvalidation(
+                scope=scope,
+                payload_hash=payload_hash,
+                command=command,
+                previous_graph=parent,
+                graph=child,
+                decision_id=decision_id,
+                audit=audit,
+                outbox=outbox,
+                topology=topology,
+                rule_pack=rule_pack,
+                evidence_packs=evidence_packs,
+                source_row_ids=source_row_ids,
+            )
+        )
+
+    def _invalidate_if_stale(
+        self, analysis_id: str, changed_evidence_hash: str, actor: ActorContext, idempotency_key: str | None = None
+    ) -> PropagationGraphRevision | None:
+        if actor.actor_type is ActorType.MODEL:
+            raise PropagationError("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "a model actor cannot invalidate propagation")
+        getter = getattr(self._repository, "get_current_graph", None)
+        parent = (
+            getter(analysis_id, actor.workspace_id)
+            if callable(getter)
+            else self._repository.get_graph(analysis_id, actor.workspace_id)
+        )
+        if parent is None or parent.status is PropagationStatus.INVALIDATED:
+            return parent
+        evidence_hashes: set[str] = set()
+        for pack_id in parent.evidence_pack_ids:
+            pack = self._repository.get_evidence_pack(pack_id, actor.workspace_id)
+            if isinstance(pack, EvidencePack):
+                evidence_hashes.add(pack.pack_hash)
+        if changed_evidence_hash in evidence_hashes:
+            return parent
+        raw_key = idempotency_key or stable_id(
+            "propagation-invalidation-key", actor.workspace_id, parent.graph_revision_id, changed_evidence_hash
+        ).removeprefix("propagation-invalidation-key-")
+        command = InvalidatePropagationCommand(
+            graph_revision_id=parent.graph_revision_id,
+            expected_graph_record_version=parent.record_version,
+            changed_evidence_hash=changed_evidence_hash,
+            reason="bound evidence hash changed",
+            idempotency_key=raw_key,
+        )
+        return self._invalidate(command, actor)
+
     def get_run(self, run_id: str, actor: ActorContext) -> PropagationRun:
         run = self._repository.get_run(run_id, actor.workspace_id)
         if run is None:
@@ -877,17 +1577,44 @@ class PropagationAnalysisService:
         return self._repository.get_graph(analysis_id, actor.workspace_id)
 
 
+class PropagationReviewService(PropagationAnalysisService):
+    """Persistence-backed human authority kept separate from proposal generation."""
+
+    def confirm_graph(self, command: ConfirmPropagationCommand, actor: ActorContext) -> PropagationReviewResult:
+        return self._confirm_graph(command, actor)
+
+    def invalidate(self, command: InvalidatePropagationCommand, actor: ActorContext) -> PropagationGraphRevision:
+        return self._invalidate(command, actor)
+
+    def invalidate_if_stale(
+        self, analysis_id: str, changed_evidence_hash: str, actor: ActorContext, idempotency_key: str | None = None
+    ) -> PropagationGraphRevision | None:
+        return self._invalidate_if_stale(analysis_id, changed_evidence_hash, actor, idempotency_key)
+
+
 __all__ = [
     "PROPAGATION_TEMPLATE_ID",
     "PROPAGATION_TEMPLATE_VERSION",
+    "ConfirmPropagationCommand",
+    "InvalidatePropagationCommand",
+    "PreparedPropagationInvalidation",
     "PreparedPropagationProposal",
+    "PreparedPropagationReview",
     "PropagationAnalysisService",
     "PropagationCandidateInterface",
+    "PropagationDecisionAction",
+    "PropagationEdgeDecision",
     "PropagationEdgeProposal",
     "PropagationError",
     "PropagationModelRequest",
     "PropagationRepository",
+    "PropagationReviewResult",
+    "PropagationReviewService",
     "PropagationRun",
     "PropagationSuggestionGenerator",
     "StartPropagationCommand",
+    "propagation_invalidation_payload",
+    "propagation_invalidation_payload_hash",
+    "propagation_review_payload",
+    "propagation_review_payload_hash",
 ]

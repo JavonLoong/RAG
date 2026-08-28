@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import TYPE_CHECKING, Literal, Protocol
 
 from core_domain.fmea.contracts import (
     ActorType,
@@ -16,7 +16,12 @@ from core_domain.fmea.contracts import (
     VersionSet,
 )
 from core_domain.fmea.domain_pack import DomainPackManifest
-from core_domain.fmea.propagation import PropagationRulePack, TopologyInterface, TopologySnapshot
+from core_domain.fmea.propagation import (
+    PropagationGraphRevision,
+    PropagationRulePack,
+    TopologyInterface,
+    TopologySnapshot,
+)
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
@@ -54,6 +59,15 @@ from .risk_contracts import (
     RiskConfirmationResult,
     RiskModelRequest,
 )
+
+if TYPE_CHECKING:
+    from .propagation_service import (
+        PreparedPropagationInvalidation,
+        PreparedPropagationProposal,
+        PreparedPropagationReview,
+        PropagationReviewResult,
+        PropagationRun,
+    )
 
 ReviewHistoryPosition = tuple[str, str]
 
@@ -119,6 +133,24 @@ class EvidenceProvider(Protocol):
 
 class PropagationEvidenceProvider(Protocol):
     def find_propagation_edges(self, request: PropagationRequest) -> tuple[PropagationEdge, ...]: ...
+
+
+class PropagationRepository(Protocol):
+    """Workspace-scoped persistence boundary for graph revisions and reviews."""
+
+    def save_run_and_proposal(self, prepared: PreparedPropagationProposal) -> PropagationRun: ...
+
+    def get_graph(self, graph_revision_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+
+    def get_current_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+
+    def replay_graph_review(self, scope: IdempotencyScope, payload_hash: str) -> PropagationReviewResult | None: ...
+
+    def replay_invalidation(self, scope: IdempotencyScope, payload_hash: str) -> PropagationGraphRevision | None: ...
+
+    def commit_graph_review(self, prepared: PreparedPropagationReview) -> PropagationReviewResult: ...
+
+    def invalidate(self, prepared: PreparedPropagationInvalidation) -> PropagationGraphRevision: ...
 
 
 class DomainPackRegistry(Protocol):
@@ -365,6 +397,7 @@ __all__ = [
     "EvidenceSnapshot",
     "FmeaRepository",
     "PropagationEvidenceProvider",
+    "PropagationRepository",
     "PropagationRequest",
     "PropagationRuleRegistry",
     "ReviewRepository",

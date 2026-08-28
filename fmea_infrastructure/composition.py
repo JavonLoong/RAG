@@ -24,8 +24,14 @@ from fmea_application.assistance_service import AssistanceDecisionService, Assis
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
+    PropagationRuleRegistry,
     RiskSuggestionGenerator,
     ScoringRuleRegistry,
+    SystemTopologyPort,
+)
+from fmea_application.propagation_service import (
+    PropagationReviewService,
+    PropagationSuggestionGenerator,
 )
 from fmea_application.review_errors import ReviewError
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
@@ -42,6 +48,8 @@ from fmea_infrastructure.domain_pack_registry import (
     load_domain_pack_manifest,
     load_scoring_rule_pack,
 )
+from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
+from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
 from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
@@ -87,6 +95,15 @@ class RiskRuntime:
     risk_service: RiskAssessmentService
     assistance_repository: SqliteAssistanceRepository
     risk_repository: SqliteRiskRepository
+    template_registry_root: Path
+
+
+@dataclass(frozen=True, slots=True)
+class PropagationRuntime:
+    service: PropagationReviewService
+    repository: SqlitePropagationRepository
+    assistance_repository: SqliteAssistanceRepository
+    risk_repository: SqliteRiskRepository | None
     template_registry_root: Path
 
 
@@ -157,8 +174,10 @@ def build_workspace_review_runtime(
     repository.initialize()
     _register_review_template(template_registry_root)
 
-    review_generator = generator if generator is not None else EnvironmentReviewSuggestionGenerator(
-        registry_root=template_registry_root
+    review_generator = (
+        generator
+        if generator is not None
+        else EnvironmentReviewSuggestionGenerator(registry_root=template_registry_root)
     )
     review_executor = executor if executor is not None else ThreadPoolReviewRunExecutor()
     service = build_review_service(
@@ -234,6 +253,45 @@ def build_workspace_risk_runtime(
     )
 
 
+def build_workspace_propagation_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    topology_port: SystemTopologyPort,
+    domain_pack_registry: DomainPackRegistry,
+    propagation_rule_registry: PropagationRuleRegistry,
+    generator: PropagationSuggestionGenerator | None = None,
+    risk_repository: SqliteRiskRepository | None = None,
+    clock: Callable[[], str] = utc_now,
+) -> PropagationRuntime:
+    """Compose the workspace-scoped proposal and human-review propagation path."""
+
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    repository = SqlitePropagationRepository(database_path)
+    assistance_repository = SqliteAssistanceRepository(database_path)
+    repository.initialize()
+    assistance_repository.initialize()
+    if risk_repository is not None:
+        risk_repository.initialize()
+    resolved_generator = generator or EnvironmentPropagationSuggestionGenerator(clock=clock)
+    service = PropagationReviewService(
+        repository,
+        assistance_repository=assistance_repository,
+        topology_port=topology_port,
+        domain_pack_registry=domain_pack_registry,
+        propagation_rule_registry=propagation_rule_registry,
+        generator=resolved_generator,
+        risk_repository=risk_repository,
+        clock=clock,
+    )
+    return PropagationRuntime(
+        service=service,
+        repository=repository,
+        assistance_repository=assistance_repository,
+        risk_repository=risk_repository,
+        template_registry_root=template_registry_root,
+    )
+
+
 def _default_assistance_handler(request: object) -> None:
     command = getattr(request, "command", None)
     if getattr(command, "action", None) in _ADOPTION_ACTIONS:
@@ -278,9 +336,11 @@ def build_default_workspace_risk_runtime(
 
 
 __all__ = [
+    "PropagationRuntime",
     "ReviewRuntime",
     "RiskRuntime",
     "build_default_workspace_risk_runtime",
+    "build_workspace_propagation_runtime",
     "build_workspace_review_runtime",
     "build_workspace_risk_runtime",
     "new_prefixed_uuid",

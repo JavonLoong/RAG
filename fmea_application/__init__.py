@@ -6,10 +6,21 @@ from .ports import (
     EvidenceSnapshot,
     FmeaRepository,
     PropagationEvidenceProvider,
+    PropagationRepository,
     PropagationRequest,
     ReviewRepository,
     ReviewRunExecutor,
     ReviewSuggestionGenerator,
+)
+from .propagation_service import (
+    ConfirmPropagationCommand,
+    InvalidatePropagationCommand,
+    PropagationAnalysisService,
+    PropagationDecisionAction,
+    PropagationEdgeDecision,
+    PropagationError,
+    PropagationReviewResult,
+    PropagationReviewService,
 )
 from .review_contracts import (
     EDITABLE_REVIEW_FIELDS,
@@ -51,7 +62,7 @@ from .review_contracts import (
 from .review_errors import REVIEW_ERROR_CODES, ReviewError
 from .review_projection import build_review_context
 from .review_service import ReviewService
-from .service_factory import build_review_service
+from .service_factory import build_propagation_analysis_service, build_review_service
 from .structured_candidate_adapter import (
     FmeaAdaptationResult,
     FmeaTemplateProfile,
@@ -63,6 +74,7 @@ __all__ = [
     "REVIEW_ERROR_CODES",
     "ActorContext",
     "AuditEvent",
+    "ConfirmPropagationCommand",
     "ConflictItem",
     "EvidenceProvider",
     "EvidenceRequest",
@@ -75,11 +87,19 @@ __all__ = [
     "FmeaRepository",
     "FmeaTemplateProfile",
     "IdempotencyScope",
+    "InvalidatePropagationCommand",
     "MissingEvidenceItem",
     "PreparedReviewDecision",
     "PreparedSuggestionRun",
+    "PropagationAnalysisService",
+    "PropagationDecisionAction",
+    "PropagationEdgeDecision",
+    "PropagationError",
     "PropagationEvidenceProvider",
+    "PropagationRepository",
     "PropagationRequest",
+    "PropagationReviewResult",
+    "PropagationReviewService",
     "RetrievalProvenance",
     "ReviewAction",
     "ReviewCandidateBundle",
@@ -107,6 +127,7 @@ __all__ = [
     "StructuredCandidateFmeaAdapter",
     "SuggestionRunReservation",
     "UnresolvedAcknowledgement",
+    "build_propagation_analysis_service",
     "build_review_context",
     "build_review_service",
     "canonical_payload_hash",
