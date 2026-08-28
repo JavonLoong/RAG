@@ -24,23 +24,27 @@ from core_domain.fmea.propagation import (
     validate_propagation_rule_pack,
     validate_topology_snapshot,
 )
+from core_domain.fmea.scoring import RiskAssessmentRecord
 from core_domain.fmea.states import (
     ClaimStatus,
     EvidenceSupportStatus,
     PropagationStatus,
     PublicationStatus,
     ReviewStatus,
+    RiskStatus,
     RunStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack
 
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .assistance_service import make_audit, stable_id, utc_now
-from .ports import AssistanceRepository
+from .ports import AssistanceRepository, RiskRepository
 from .review_contracts import ActorContext, IdempotencyScope, idempotency_key_hash
 from .risk_contracts import PreparedAssistanceSuggestion, assistance_suggestion_payload_hash
 
 _MAX_MODEL_EVIDENCE_REFS = 20
+PROPAGATION_TEMPLATE_ID = "fmea-propagation-hypothesis"
+PROPAGATION_TEMPLATE_VERSION = "1.0.0"
 
 
 class PropagationError(ValueError):
@@ -153,6 +157,7 @@ class PropagationModelRequest:
 PropagationEdgeProposal = Mapping[str, object]
 
 PROPAGATION_EDGE_PROPOSAL_KEYS = frozenset({
+    "interface_id",
     "source_entity_id",
     "target_entity_id",
     "relation_type",
@@ -217,11 +222,13 @@ class PreparedPropagationProposal:
 
 
 class PropagationRepository(Protocol):
-    def get_analysis(self, analysis_id: str) -> FmeaAnalysis | None: ...
+    """Workspace-scoped reads; entities without workspace fields rely on this port boundary."""
 
-    def get_row(self, row_id: str) -> FmeaRow | None: ...
+    def get_analysis(self, analysis_id: str, workspace_id: str) -> FmeaAnalysis | None: ...
 
-    def get_evidence_pack(self, pack_id: str) -> EvidencePack | None: ...
+    def get_row(self, row_id: str, workspace_id: str) -> FmeaRow | None: ...
+
+    def get_evidence_pack(self, pack_id: str, workspace_id: str) -> EvidencePack | None: ...
 
     def save_run_and_proposal(self, prepared: PreparedPropagationProposal) -> PropagationRun: ...
 
@@ -257,6 +264,41 @@ def _sorted_interface_key(interface: TopologyInterface) -> tuple[object, ...]:
     )
 
 
+def find_propagation_candidate(
+    candidate_interfaces: Sequence[PropagationCandidateInterface],
+    proposal: Mapping[str, object],
+) -> PropagationCandidateInterface | None:
+    """Return the exact server-enumerated interface represented by a proposal."""
+
+    interface_id = proposal.get("interface_id")
+    path_length = proposal.get("path_length")
+    source = proposal.get("source_entity_id")
+    target = proposal.get("target_entity_id")
+    variable = proposal.get("interface_variable")
+    unit = proposal.get("unit")
+    direction = proposal.get("direction")
+    if (
+        not all(isinstance(value, str) for value in (interface_id, source, target, variable, unit, direction))
+        or not isinstance(path_length, int)
+        or isinstance(path_length, bool)
+    ):
+        return None
+    return next(
+        (
+            candidate
+            for candidate in candidate_interfaces
+            if candidate.interface_id == interface_id
+            and candidate.path_length == path_length
+            and candidate.source_node_id == source
+            and candidate.target_node_id == target
+            and candidate.interface_variable == variable
+            and candidate.unit == unit
+            and candidate.direction == direction
+        ),
+        None,
+    )
+
+
 class PropagationAnalysisService:
     """Enumerate a bounded topology closure, then persist model proposals only."""
 
@@ -269,6 +311,7 @@ class PropagationAnalysisService:
         domain_pack_registry: Any,
         propagation_rule_registry: Any,
         generator: PropagationSuggestionGenerator,
+        risk_repository: RiskRepository | None = None,
         clock: Callable[[], str] = utc_now,
     ) -> None:
         self._repository = repository
@@ -277,29 +320,15 @@ class PropagationAnalysisService:
         self._domain_pack_registry = domain_pack_registry
         self._propagation_rule_registry = propagation_rule_registry
         self._generator = generator
+        self._risk_repository = risk_repository
         self._clock = clock
-
-    @staticmethod
-    def _get(repository: Any, method_name: str, *args: object, workspace_id: str) -> object:
-        method = getattr(repository, method_name)
-        try:
-            return method(*args)
-        except TypeError as first_error:
-            # Review repositories historically include workspace in their read ports;
-            # propagation repositories may use the narrower Task 3 contract.
-            if len(args) == 1:
-                try:
-                    return method(*args, workspace_id)
-                except TypeError:
-                    raise first_error from None
-            raise
 
     def _load_inputs(  # noqa: C901
         self, command: StartPropagationCommand, actor: ActorContext
     ) -> tuple[
         FmeaAnalysis, tuple[FmeaRow, ...], EvidencePack, DomainPackManifest, PropagationRulePack, TopologySnapshot
     ]:
-        analysis = self._get(self._repository, "get_analysis", command.analysis_id, workspace_id=actor.workspace_id)
+        analysis = self._repository.get_analysis(command.analysis_id, actor.workspace_id)
         if not isinstance(analysis, FmeaAnalysis):
             raise PropagationError("FMEA_ANALYSIS_NOT_FOUND", "FMEA analysis was not found")
         if analysis.record_version != command.expected_analysis_record_version:
@@ -307,26 +336,35 @@ class PropagationAnalysisService:
 
         rows: list[FmeaRow] = []
         for row_id in command.source_row_ids:
-            row = self._get(self._repository, "get_row", row_id, workspace_id=actor.workspace_id)
+            row = self._repository.get_row(row_id, actor.workspace_id)
             if not isinstance(row, FmeaRow) or row.analysis_id != analysis.analysis_id:
                 raise PropagationError("FMEA_ROW_NOT_FOUND", "an accepted FMEA source row was not found")
             if row.review_status is not ReviewStatus.ACCEPTED:
                 raise PropagationError(
                     "FMEA_PROPAGATION_SOURCE_INVALID", "propagation sources must be accepted FMEA rows"
                 )
-            if command.require_confirmed_risk:
-                risk_status = getattr(row.risk_assessment, "status", None)
-                if getattr(risk_status, "value", risk_status) != "confirmed":
-                    raise PropagationError("FMEA_PROPAGATION_RISK_INVALID", "a confirmed risk assessment is required")
             rows.append(row)
 
-        evidence_pack = self._get(
-            self._repository, "get_evidence_pack", command.evidence_pack_id, workspace_id=actor.workspace_id
-        )
+        evidence_pack = self._repository.get_evidence_pack(command.evidence_pack_id, actor.workspace_id)
         if not isinstance(evidence_pack, EvidencePack) or evidence_pack.workspace_id != actor.workspace_id:
             raise PropagationError("FMEA_EVIDENCE_INVALID", "the EvidencePack is unavailable for this workspace")
         if any(row.evidence_pack_id != evidence_pack.pack_id for row in rows):
             raise PropagationError("FMEA_EVIDENCE_INVALID", "source rows and EvidencePack are not bound")
+        if command.require_confirmed_risk:
+            if self._risk_repository is None:
+                raise PropagationError("FMEA_PROPAGATION_RISK_INVALID", "a confirmed risk assessment is required")
+            for row in rows:
+                record = self._risk_repository.get_current_assessment(row.row_id, actor.workspace_id)
+                if not isinstance(record, RiskAssessmentRecord) or (
+                    record.workspace_id != actor.workspace_id
+                    or record.row_id != row.row_id
+                    or record.source_record_version != row.record_version
+                    or record.evidence_pack_id != evidence_pack.pack_id
+                    or record.status is not RiskStatus.CONFIRMED
+                ):
+                    raise PropagationError(
+                        "FMEA_PROPAGATION_RISK_INVALID", "a confirmed risk assessment bound to the row is required"
+                    )
 
         domain_pack = self._domain_pack_registry.get(command.domain_pack_id, command.domain_pack_version)
         rule_pack = self._propagation_rule_registry.get(command.rule_pack_id, command.rule_pack_version)
@@ -338,6 +376,10 @@ class PropagationAnalysisService:
         ):
             raise PropagationError(
                 "FMEA_PROPAGATION_REGISTRY_INVALID", "propagation packs do not apply to this analysis"
+            )
+        if (PROPAGATION_TEMPLATE_ID, PROPAGATION_TEMPLATE_VERSION) not in domain_pack.template_identities:
+            raise PropagationError(
+                "FMEA_PROPAGATION_REGISTRY_INVALID", "domain pack does not authorize the propagation template"
             )
         if (rule_pack.rule_pack_id, rule_pack.version) not in domain_pack.propagation_rule_identities:
             raise PropagationError(
@@ -443,6 +485,8 @@ class PropagationAnalysisService:
             or suggestion.domain_pack_version != request.domain_pack.version
             or suggestion.rule_pack_id != request.rule_pack.rule_pack_id
             or suggestion.rule_pack_version != request.rule_pack.version
+            or suggestion.template_id != PROPAGATION_TEMPLATE_ID
+            or suggestion.template_version != PROPAGATION_TEMPLATE_VERSION
         ):
             raise PropagationError(
                 "FMEA_PROPAGATION_SUGGESTION_INVALID", "suggestion identity is not bound to the request"
@@ -456,19 +500,18 @@ class PropagationAnalysisService:
     def _edge_from_proposal(  # noqa: C901
         proposal: Mapping[str, object],
         request: PropagationModelRequest,
-        index: int,
     ) -> PropagationEdge:
         if set(proposal) != PROPAGATION_EDGE_PROPOSAL_KEYS:
             raise PropagationError(
                 "FMEA_PROPAGATION_SUGGESTION_INVALID", "model edge contains unknown or missing fields"
             )
-        candidate_interfaces = request.candidate_interfaces
         source = proposal.get("source_entity_id")
         target = proposal.get("target_entity_id")
         variable = proposal.get("interface_variable")
         unit = proposal.get("unit")
         direction = proposal.get("direction")
         path_length = proposal.get("path_length")
+        interface_id = proposal.get("interface_id")
         if (
             not isinstance(source, str)
             or not isinstance(target, str)
@@ -478,25 +521,18 @@ class PropagationAnalysisService:
             raise PropagationError(
                 "FMEA_PROPAGATION_ENDPOINT_INVALID", "model endpoint is outside enumerated candidates"
             )
-        if not all(isinstance(value, str) for value in (variable, unit, direction)):
+        if not all(isinstance(value, str) for value in (interface_id, variable, unit, direction)):
             raise PropagationError("FMEA_PROPAGATION_SUGGESTION_INVALID", "model interface metadata is invalid")
-        if not any(
-            item.source_node_id == source
-            and item.target_node_id == target
-            and item.interface_variable == variable
-            and item.unit == unit
-            and item.direction == direction
-            for item in candidate_interfaces
-        ):
-            raise PropagationError(
-                "FMEA_PROPAGATION_ENDPOINT_INVALID", "model edge is not an enumerated topology interface"
-            )
         if (
             not isinstance(path_length, int)
             or isinstance(path_length, bool)
             or not 1 <= path_length <= request.max_depth
         ):
             raise PropagationError("FMEA_PROPAGATION_DEPTH_INVALID", "model path length exceeds the bounded depth")
+        if find_propagation_candidate(request.candidate_interfaces, proposal) is None:
+            raise PropagationError(
+                "FMEA_PROPAGATION_ENDPOINT_INVALID", "model edge is not an enumerated topology interface"
+            )
         relation_type = proposal.get("relation_type")
         if not isinstance(relation_type, str) or relation_type not in request.allowed_relation_types:
             raise PropagationError("FMEA_PROPAGATION_RELATION_INVALID", "model relation is outside the rule pack")
@@ -552,7 +588,19 @@ class PropagationAnalysisService:
             name: cast(bool, proposal[name]) for name in ("is_cyclic", "is_unprocessed", "is_external", "is_terminal")
         }
         return PropagationEdge(
-            edge_id=stable_id("propagation-edge", request.run_id, index, source, target, variable, direction),
+            edge_id=stable_id(
+                "propagation-edge",
+                request.run_id,
+                interface_id,
+                path_length,
+                source,
+                target,
+                variable,
+                unit,
+                direction,
+                relation_type,
+                evidence_ids_tuple,
+            ),
             analysis_id=request.analysis.analysis_id,
             source_entity_id=source,
             target_entity_id=target,
@@ -685,9 +733,19 @@ class PropagationAnalysisService:
             if len(proposals) > command.max_edges:
                 raise PropagationError("FMEA_PROPAGATION_BUDGET_INVALID", "model edge proposals exceed the edge budget")  # noqa: TRY301
             edges = tuple(
-                self._edge_from_proposal(item, request, index)
-                for index, item in enumerate(proposals)
-                if isinstance(item, Mapping)
+                sorted(
+                    (self._edge_from_proposal(item, request) for item in proposals if isinstance(item, Mapping)),
+                    key=lambda edge: (
+                        edge.path_length,
+                        edge.source_entity_id,
+                        edge.target_entity_id,
+                        edge.interface_variable,
+                        edge.unit,
+                        edge.direction,
+                        edge.relation_type,
+                        edge.edge_id,
+                    ),
+                )
             )
             if len(edges) != len(proposals):
                 raise PropagationError("FMEA_PROPAGATION_SUGGESTION_INVALID", "model edge proposals must be objects")  # noqa: TRY301
@@ -820,6 +878,8 @@ class PropagationAnalysisService:
 
 
 __all__ = [
+    "PROPAGATION_TEMPLATE_ID",
+    "PROPAGATION_TEMPLATE_VERSION",
     "PreparedPropagationProposal",
     "PropagationAnalysisService",
     "PropagationCandidateInterface",

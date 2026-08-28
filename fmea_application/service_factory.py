@@ -91,6 +91,7 @@ def build_propagation_analysis_service(
     domain_pack_registry: DomainPackRegistry,
     propagation_rule_registry: PropagationRuleRegistry,
     generator: PropagationSuggestionGenerator,
+    risk_repository: RiskRepository | None = None,
     clock: Callable[[], str],
 ) -> PropagationAnalysisService:
     return PropagationAnalysisService(
@@ -100,6 +101,7 @@ def build_propagation_analysis_service(
         domain_pack_registry=domain_pack_registry,
         propagation_rule_registry=propagation_rule_registry,
         generator=generator,
+        risk_repository=risk_repository,
         clock=clock,
     )
 

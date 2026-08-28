@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
 
@@ -20,7 +20,7 @@ from core_domain.structured_generation import (
     StructuredModelResponse,
 )
 from fmea_application.assistance_contracts import AssistanceKind
-from fmea_application.propagation_service import PropagationModelRequest
+from fmea_application.propagation_service import PropagationCandidateInterface, PropagationModelRequest
 from fmea_infrastructure.propagation_generator import (
     PropagationGenerationError,
 )
@@ -228,6 +228,7 @@ def _ref():
 
 def _edge(**overrides):
     edge = {
+        "interface_id": "i-1",
         "source_entity_id": "fuel_pump",
         "target_entity_id": "fuel_filter",
         "relation_type": "propagation",
@@ -283,6 +284,113 @@ def test_generator_rejects_values_outside_the_server_bound_request(field, value,
         generator.generate(request)
 
     assert captured.value.code == code
+
+
+def test_generator_rejects_depth_two_candidate_labeled_as_depth_one() -> None:
+    request = replace(
+        _request(),
+        candidate_interfaces=(
+            PropagationCandidateInterface(
+                interface_id="i-2",
+                source_node_id="fuel_filter",
+                target_node_id="fuel_manifold",
+                interface_variable="fuel_pressure",
+                unit="kPa",
+                direction="fuel_to_combustion",
+                operating_modes=("steady_state",),
+                path_length=2,
+            ),
+        ),
+        candidate_endpoint_ids=("fuel_filter", "fuel_manifold", "fuel_pump"),
+    )
+    generator = ConcretePropagationSuggestionGenerator(
+        _Pipeline({
+            "edges": [
+                _edge(
+                    interface_id="i-2",
+                    source_entity_id="fuel_filter",
+                    target_entity_id="fuel_manifold",
+                    path_length=1,
+                )
+            ]
+        })
+    )
+
+    with pytest.raises(PropagationGenerationError) as captured:
+        generator.generate(request)
+
+    assert captured.value.code == "FMEA_PROPAGATION_ENDPOINT_INVALID"
+
+
+def test_generator_rejects_interface_substitution_even_when_endpoints_are_allowed() -> None:
+    request = _request()
+    generator = ConcretePropagationSuggestionGenerator(
+        _Pipeline({
+            "edges": [
+                _edge(
+                    interface_id="i-1",
+                    source_entity_id="fuel_pump",
+                    target_entity_id="fuel_pump",
+                )
+            ]
+        })
+    )
+
+    with pytest.raises(PropagationGenerationError) as captured:
+        generator.generate(request)
+
+    assert captured.value.code == "FMEA_PROPAGATION_ENDPOINT_INVALID"
+
+
+def test_generator_orders_edges_by_bound_candidate_before_building_suggestion() -> None:
+    request = replace(
+        _request(),
+        candidate_interfaces=(
+            PropagationCandidateInterface(
+                interface_id="i-2",
+                source_node_id="fuel_pump",
+                target_node_id="fuel_filter",
+                interface_variable="fuel_pressure",
+                unit="kPa",
+                direction="fuel_to_combustion",
+                operating_modes=("steady_state",),
+                path_length=1,
+            ),
+            PropagationCandidateInterface(
+                interface_id="i-1",
+                source_node_id="fuel_filter",
+                target_node_id="fuel_manifold",
+                interface_variable="fuel_pressure",
+                unit="kPa",
+                direction="fuel_to_combustion",
+                operating_modes=("steady_state",),
+                path_length=2,
+            ),
+        ),
+        candidate_endpoint_ids=("fuel_filter", "fuel_manifold", "fuel_pump"),
+    )
+    generator = ConcretePropagationSuggestionGenerator(
+        _Pipeline({
+            "edges": [
+                _edge(
+                    interface_id="i-1",
+                    source_entity_id="fuel_filter",
+                    target_entity_id="fuel_manifold",
+                    path_length=2,
+                ),
+                _edge(
+                    interface_id="i-2",
+                    source_entity_id="fuel_pump",
+                    target_entity_id="fuel_filter",
+                    path_length=1,
+                ),
+            ]
+        })
+    )
+
+    suggestion = generator.generate(request)
+
+    assert [edge["interface_id"] for edge in suggestion.payload] == ["i-2", "i-1"]
 
 
 def test_generator_rejects_root_budget_override() -> None:

@@ -15,11 +15,15 @@ from fmea_infrastructure.domain_pack_registry import (
     load_domain_pack_manifest,
     load_scoring_rule_pack,
 )
+from structured_output_application import TemplateCompiler
+from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "domain_packs" / "fuel-combustion" / "manifest.yaml"
 SCORING_PATH = REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml"
-EXPECTED_MANIFEST_HASH = "560ab4fb9ff287b7ce43458707e8f1d768c17c3678d0513a1c5e54905d086e0c"
+TEMPLATE_PATH = REPO_ROOT / "domain_packs" / "fuel-combustion" / "templates" / "fmea-propagation-hypothesis-1.0.0.yaml"
+EXPECTED_MANIFEST_HASH = "1b5453082ee1cf09657a69e93fc4aee02651c93348454578539a72c8f0908fac"
+EXPECTED_TEMPLATE_HASH = "45fc92509650e7de5f85cad0d0b930fa8b6c5c41688c6533323da00278b10680"
 
 
 def _source(path: Path) -> bytes:
@@ -34,7 +38,10 @@ def test_fuel_manifest_loads_with_identity_hash_and_complete_scope() -> None:
     assert manifest.version == "1.0.0"
     assert manifest.compatible_schema_ids == ("graphrag.fmea.v1",)
     assert manifest.analysis_types == ("design_fmea", "process_fmea", "system_fmea")
-    assert manifest.template_identities == (("fuel-combustion-fmea", "1.0.0"),)
+    assert manifest.template_identities == (
+        ("fuel-combustion-fmea", "1.0.0"),
+        ("fmea-propagation-hypothesis", "1.0.0"),
+    )
     assert manifest.scoring_rule_identities == (("fuel-sod-rpn", "1.0.0"),)
     assert manifest.propagation_rule_identities == (("fuel-combustion-propagation", "1.0.0"),)
     assert len(manifest.extension_fields) == 14
@@ -44,6 +51,24 @@ def test_fuel_manifest_loads_with_identity_hash_and_complete_scope() -> None:
     canonical = canonical_domain_pack_body(manifest).encode("utf-8")
     assert hashlib.sha256(canonical).hexdigest() == EXPECTED_MANIFEST_HASH
     assert manifest.content_hash == EXPECTED_MANIFEST_HASH
+
+
+def test_fuel_manifest_authorizes_and_registers_propagation_template(tmp_path: Path) -> None:
+    manifest = load_domain_pack_manifest(_source(MANIFEST_PATH))
+    template = TemplateCompiler(
+        schema_validator=Draft202012SchemaAdapter(),
+        source_loader=load_template_source,
+    ).compile_path(TEMPLATE_PATH)
+    registry = FileTemplateRegistry(tmp_path)
+
+    assert (template.metadata.template_id, template.metadata.version) == (
+        "fmea-propagation-hypothesis",
+        "1.0.0",
+    )
+    assert template.template_hash == EXPECTED_TEMPLATE_HASH
+    assert (template.metadata.template_id, template.metadata.version) in manifest.template_identities
+    assert registry.register(template, TEMPLATE_PATH.read_bytes(), TEMPLATE_PATH.suffix) == template
+    assert registry.get("fmea-propagation-hypothesis", "1.0.0") == template
 
 
 def test_fuel_manifest_hash_is_stable_when_yaml_key_order_changes() -> None:
@@ -73,9 +98,9 @@ def test_fuel_registries_register_get_and_replay_source(tmp_path: Path) -> None:
     assert scoring_registry.register(rule_pack, scoring_source) == rule_pack
     assert scoring_registry.get("fuel-sod-rpn", "1.0.0") == rule_pack
 
-    reordered_manifest = yaml.safe_dump(
-        yaml.safe_load(manifest_source), sort_keys=True, allow_unicode=True
-    ).encode("utf-8")
+    reordered_manifest = yaml.safe_dump(yaml.safe_load(manifest_source), sort_keys=True, allow_unicode=True).encode(
+        "utf-8"
+    )
     assert domain_registry.register(load_domain_pack_manifest(reordered_manifest), reordered_manifest) == manifest
     assert (tmp_path / "domain-registry" / "fuel-combustion" / "1.0.0" / "source.yaml").read_bytes() == manifest_source
 
@@ -171,7 +196,8 @@ def test_fuel_registry_stores_canonical_body_and_source_hashes(tmp_path: Path) -
     stored_manifest = json.loads(
         (tmp_path / manifest.pack_id / manifest.version / "manifest.json").read_text(encoding="utf-8")
     )
-    assert stored_manifest["body_hash"] == hashlib.sha256(
-        (tmp_path / manifest.pack_id / manifest.version / "body.json").read_bytes()
-    ).hexdigest()
+    assert (
+        stored_manifest["body_hash"]
+        == hashlib.sha256((tmp_path / manifest.pack_id / manifest.version / "body.json").read_bytes()).hexdigest()
+    )
     assert stored_manifest["source_hash"] == hashlib.sha256(source).hexdigest()

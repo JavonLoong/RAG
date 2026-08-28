@@ -1,7 +1,7 @@
 domain_pack:
   id: fuel-combustion
   version: 1.0.0
-  content_hash: 560ab4fb9ff287b7ce43458707e8f1d768c17c3678d0513a1c5e54905d086e0c
+  content_hash: 1b5453082ee1cf09657a69e93fc4aee02651c93348454578539a72c8f0908fac
   kernel_compatibility_range: ">=1.0.0,<2.0.0"
   compatible_schema_ids:
     - graphrag.fmea.v1
@@ -11,6 +11,8 @@ domain_pack:
     - system_fmea
   templates:
     - id: fuel-combustion-fmea
+      version: 1.0.0
+    - id: fmea-propagation-hypothesis
       version: 1.0.0
   scoring_rules:
     - id: fuel-sod-rpn

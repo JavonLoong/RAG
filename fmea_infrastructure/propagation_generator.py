@@ -16,12 +16,22 @@ from fmea_application.assistance_contracts import AssistanceKind, AssistanceSugg
 from fmea_application.assistance_service import stable_id, utc_now
 from fmea_application.propagation_service import (
     PROPAGATION_EDGE_PROPOSAL_KEYS,
+    PROPAGATION_TEMPLATE_ID,
+    PROPAGATION_TEMPLATE_VERSION,
     PropagationError,
     PropagationModelRequest,
+    find_propagation_candidate,
 )
 
-_TEMPLATE_ID = "fmea-propagation-hypothesis"
-_TEMPLATE_VERSION = "1.0.0"
+_TEMPLATE_ID = PROPAGATION_TEMPLATE_ID
+_TEMPLATE_VERSION = PROPAGATION_TEMPLATE_VERSION
+_TEMPLATE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "domain_packs"
+    / "fuel-combustion"
+    / "templates"
+    / "fmea-propagation-hypothesis-1.0.0.yaml"
+)
 _EDGE_KEYS = PROPAGATION_EDGE_PROPOSAL_KEYS
 
 
@@ -34,80 +44,9 @@ def _invalid(message: str, code: str = "FMEA_PROPAGATION_SUGGESTION_INVALID") ->
 
 
 def _template_source() -> dict[str, JsonValue]:
-    edge_properties = {
-        "source_entity_id": {"type": "string", "minLength": 1, "maxLength": 256},
-        "target_entity_id": {"type": "string", "minLength": 1, "maxLength": 256},
-        "relation_type": {"type": "string", "minLength": 1, "maxLength": 64},
-        "interface_variable": {"type": "string", "minLength": 1, "maxLength": 128},
-        "unit": {"type": "string", "minLength": 1, "maxLength": 64},
-        "direction": {"type": "string", "minLength": 1, "maxLength": 128},
-        "threshold": {"type": ["string", "null"], "maxLength": 256},
-        "operating_modes": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 32,
-            "uniqueItems": True,
-            "items": {"type": "string", "minLength": 1, "maxLength": 128},
-        },
-        "delay_ms": {"type": ["integer", "null"], "minimum": 0},
-        "response_time_ms": {"type": ["integer", "null"], "minimum": 0},
-        "fault_tolerance_time_ms": {"type": ["integer", "null"], "minimum": 0},
-        "barrier_ids": {
-            "type": "array",
-            "maxItems": 64,
-            "uniqueItems": True,
-            "items": {"type": "string", "minLength": 1, "maxLength": 256},
-        },
-        "evidence_ids": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 32,
-            "uniqueItems": True,
-            "items": {"type": "string", "minLength": 1, "maxLength": 128},
-        },
-        "evidence_support": {
-            "type": "string",
-            "enum": [item.value for item in EvidenceSupportStatus],
-        },
-        "claim_status": {"type": "string", "enum": [item.value for item in ClaimStatus]},
-        "path_length": {"type": "integer", "minimum": 1, "maximum": 2},
-        "is_cyclic": {"type": "boolean"},
-        "is_unprocessed": {"type": "boolean"},
-        "is_external": {"type": "boolean"},
-        "is_terminal": {"type": "boolean"},
-        "risk_priority": {"type": ["string", "null"], "maxLength": 64},
-    }
-    return cast(
-        dict[str, JsonValue],
-        {
-            "template": {
-                "id": _TEMPLATE_ID,
-                "version": _TEMPLATE_VERSION,
-                "title": "Bounded FMEA propagation hypothesis",
-                "description": "Propose topology-bounded propagation edges only; deterministic code and human review own acceptance.",
-                "domain_tags": ["fmea", "propagation", "proposal"],
-                "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
-            },
-            "output_schema": {
-                "type": "object",
-                "additionalProperties": False,
-                "required": ["edges"],
-                "properties": {
-                    "edges": {
-                        "type": "array",
-                        "maxItems": 40,
-                        "items": {
-                            "type": "object",
-                            "additionalProperties": False,
-                            "required": sorted(_EDGE_KEYS),
-                            "properties": edge_properties,
-                        },
-                    }
-                },
-            },
-            "evidence_bindings": [],
-        },
-    )
+    from structured_output_infrastructure import load_template_source
+
+    return load_template_source(_TEMPLATE_PATH)
 
 
 class _SingleTemplateRegistry:
@@ -272,15 +211,6 @@ class PropagationSuggestionGenerator:
             or target not in request.candidate_endpoint_ids
         ):
             raise _invalid("model endpoint is outside enumerated candidates", "FMEA_PROPAGATION_ENDPOINT_INVALID")
-        if not any(
-            candidate.source_node_id == source
-            and candidate.target_node_id == target
-            and candidate.interface_variable == edge["interface_variable"]
-            and candidate.unit == edge["unit"]
-            and candidate.direction == edge["direction"]
-            for candidate in request.candidate_interfaces
-        ):
-            raise _invalid("model edge is not an enumerated topology interface", "FMEA_PROPAGATION_ENDPOINT_INVALID")
         relation = edge["relation_type"]
         if not isinstance(relation, str) or relation not in request.allowed_relation_types:
             raise _invalid("model relation is outside the rule pack", "FMEA_PROPAGATION_RELATION_INVALID")
@@ -291,6 +221,8 @@ class PropagationSuggestionGenerator:
             or not 1 <= path_length <= request.max_depth
         ):
             raise _invalid("model path length exceeds the bounded depth", "FMEA_PROPAGATION_DEPTH_INVALID")
+        if find_propagation_candidate(request.candidate_interfaces, edge) is None:
+            raise _invalid("model edge is not an enumerated topology interface", "FMEA_PROPAGATION_ENDPOINT_INVALID")
         evidence_ids = edge["evidence_ids"]
         if isinstance(evidence_ids, str | bytes) or not isinstance(evidence_ids, Sequence) or not evidence_ids:
             raise _invalid("model evidence IDs are invalid", "FMEA_PROPAGATION_EVIDENCE_INVALID")
@@ -320,6 +252,21 @@ class PropagationSuggestionGenerator:
             raise _invalid("model risk priority is invalid")
         return edge
 
+    @staticmethod
+    def _edge_sort_key(edge: Mapping[str, object]) -> tuple[object, ...]:
+        return (
+            cast(int, edge["path_length"]),
+            cast(str, edge["interface_id"]),
+            cast(str, edge["source_entity_id"]),
+            cast(str, edge["target_entity_id"]),
+            cast(str, edge["interface_variable"]),
+            cast(str, edge["unit"]),
+            cast(str, edge["direction"]),
+            cast(str, edge["relation_type"]),
+            tuple(cast(Sequence[str], edge["evidence_ids"])),
+            json.dumps(edge, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        )
+
     def generate(self, request: PropagationModelRequest) -> AssistanceSuggestion[tuple[Mapping[str, object], ...]]:
         if not isinstance(request, PropagationModelRequest):
             raise _invalid("propagation model request is invalid")
@@ -347,7 +294,12 @@ class PropagationSuggestionGenerator:
                 or len(raw_edges) > request.max_edges
             ):
                 raise _invalid("model edge proposals exceed the edge budget", "FMEA_PROPAGATION_BUDGET_INVALID")
-            edges = tuple(self._validate_edge(raw, request) for raw in raw_edges)
+            edges = tuple(
+                sorted(
+                    (self._validate_edge(raw, request) for raw in raw_edges),
+                    key=self._edge_sort_key,
+                )
+            )
             evidence_ids_list: list[str] = []
             for edge in edges:
                 for evidence_id in cast(Sequence[str], edge["evidence_ids"]):
