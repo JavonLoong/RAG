@@ -1,6 +1,8 @@
 from .domain_pack import DomainPackManifest
 from .entities import FieldClaim, FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
 from .propagation import (
+    PropagationDecisionAuthorizationPort,
+    PropagationDecisionResolution,
     PropagationEdge,
     PropagationEvidenceResolution,
     PropagationGraphRevision,
@@ -11,6 +13,7 @@ from .propagation import (
     TopologyInterface,
     TopologyNode,
     TopologySnapshot,
+    validate_confirmed_graph_revision,
     validate_graph_revision,
     validate_path,
     validate_propagation_edge,
@@ -58,6 +61,8 @@ __all__ = [
     "FieldValue",
     "FmeaAnalysis",
     "FmeaRow",
+    "PropagationDecisionAuthorizationPort",
+    "PropagationDecisionResolution",
     "PropagationEdge",
     "PropagationEvidenceResolution",
     "PropagationGraphRevision",
@@ -80,6 +85,7 @@ __all__ = [
     "TopologySnapshot",
     "VersionSet",
     "calculate_risk",
+    "validate_confirmed_graph_revision",
     "validate_evidence_lineage",
     "validate_extension_values",
     "validate_graph_revision",
