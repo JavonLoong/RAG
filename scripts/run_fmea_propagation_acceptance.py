@@ -81,8 +81,34 @@ _RULE_PATH = ROOT / "domain_packs" / "fuel-combustion" / "propagation" / "fuel-c
 _DOMAIN_MANIFEST_PATH = ROOT / "domain_packs" / "fuel-combustion" / "manifest.yaml"
 _FIXTURE_PATH = ROOT / "examples" / "fmea" / "propagation" / "fuel-combustion" / "fixtures.json"
 _TOPOLOGY_SOURCE_HASH = "53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
+_TOPOLOGY_SOURCE_CANONICAL_HASH = "d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
 _RULE_SOURCE_HASH = "a7d3c2299d977698fba37f0c4a5c5950fba3fc2bc8bc1b9ed0b651a0caefbf15"
 _MANIFEST_SOURCE_HASH = "ae0badff0ed70914a6c989580998d2e06a3e05c8d6a42e2763e775cff6d81570"
+_PROFILE_RESOLUTION = {
+    "rag_only": "rag_only",
+    "graphrag_local_only": "graphrag_local_only",
+    "graphrag_global_only": "graphrag_global_only",
+    "graphrag_only": "graphrag_only",
+    "combined": "combined",
+    "auto": "combined",
+    "custom": "custom",
+}
+_OFFLINE_GENERATION_CONSTRAINTS = {
+    "execution_mode": "deterministic_offline",
+    "network_allowed": False,
+    "paid_model_allowed": False,
+    "budget": {
+        "max_input_tokens": 2048,
+        "max_output_tokens": 1024,
+        "max_total_tokens": 3072,
+    },
+    "caps": {
+        "max_cases": 5,
+        "max_edges": 14,
+        "max_path_depth": 2,
+        "max_evidence_refs_per_edge": 3,
+    },
+}
 
 
 class AcceptanceRunError(ValueError):
@@ -216,6 +242,10 @@ def _version_payload(profile: str) -> dict[str, object]:
     }
 
 
+def _generation_constraints() -> dict[str, object]:
+    return json.loads(json.dumps(_OFFLINE_GENERATION_CONSTRAINTS, sort_keys=True))
+
+
 def _evidence_ref(raw: Mapping[str, object]) -> EvidenceRef:
     evidence_id = raw.get("evidence_id")
     source_type = raw.get("source_type")
@@ -313,6 +343,8 @@ def _build_evidence_packs(fixture: Mapping[str, object]) -> tuple[dict[str, Evid
         raw = raw_profiles.get(profile)
         if not isinstance(raw, dict):
             raise AcceptanceRunError("FIXTURE_INVALID")
+        if raw.get("resolved_profile") != _PROFILE_RESOLUTION[profile]:
+            raise AcceptanceRunError("FIXTURE_INVALID")
         pack_id = raw.get("pack_id")
         if not isinstance(pack_id, str) or (pack_id, profile) not in unique_pack_profiles:
             if not isinstance(pack_id, str):
@@ -326,6 +358,9 @@ def _build_evidence_packs(fixture: Mapping[str, object]) -> tuple[dict[str, Evid
         parents = raw.get("parents")
         if not isinstance(evidence_types, list) or not isinstance(parents, list):
             raise AcceptanceRunError("FIXTURE_INVALID")
+        resolved_profile = _PROFILE_RESOLUTION.get(profile)
+        if resolved_profile is None:
+            raise AcceptanceRunError("FIXTURE_INVALID")
         try:
             refs = tuple(refs_by_type[str(item)] for item in evidence_types)
             parent_refs = tuple((str(parent), packs[str(parent)].pack_hash) for parent in parents)
@@ -333,7 +368,7 @@ def _build_evidence_packs(fixture: Mapping[str, object]) -> tuple[dict[str, Evid
                 pack_id=pack_id,
                 workspace_id="fuel-combustion",
                 acl_scope=("acceptance",),
-                versions=VersionSet(**_version_payload(profile)),
+                versions=VersionSet(**_version_payload(resolved_profile)),
                 refs=refs,
                 created_at=_UTC,
                 expires_at=None,
@@ -353,6 +388,8 @@ def _build_evidence_packs(fixture: Mapping[str, object]) -> tuple[dict[str, Evid
             "evidence_pack_id": str(raw_profiles[profile]["pack_id"]),
             "evidence_pack_hash": packs[str(raw_profiles[profile]["pack_id"])].pack_hash,
             "retrieval_incomplete": False,
+            "version_set": _version_payload(_PROFILE_RESOLUTION[profile]),
+            "generation_constraints": _generation_constraints(),
         }
         for profile in EVIDENCE_PROFILES
     }
@@ -687,7 +724,11 @@ def _build_artifacts() -> dict[str, object]:  # noqa: C901
                 "actor_id": "deterministic-offline-model",
                 "actor_type": "model",
                 "case_id": case_id,
+                "resource_type": "propagation_path",
                 "resource_id": f"path-{case_id}",
+                "decision_id": f"decision-{case_id}",
+                "action": "propose",
+                "graph_revision_id": "graph-reviewed-1",
             }
         )
         decision = next(item for item in decision_payloads if item["case_id"] == case_id)
@@ -698,13 +739,26 @@ def _build_artifacts() -> dict[str, object]:  # noqa: C901
                 "actor_id": "propagation-reviewer-1",
                 "actor_type": "human",
                 "case_id": case_id,
+                "resource_type": "propagation_decision",
                 "resource_id": decision["decision_id"],
+                "decision_id": decision["decision_id"],
+                "action": decision["action"],
+                "graph_revision_id": "graph-reviewed-1",
             }
         )
+    chained_events: list[dict[str, object]] = []
+    previous_event_hash: str | None = None
+    for event in events:
+        chained_event = {**event, "previous_event_hash": previous_event_hash}
+        event_hash = _hash_json(chained_event)
+        chained_event["event_hash"] = event_hash
+        chained_events.append(chained_event)
+        previous_event_hash = event_hash
     audit = {
         "schema_version": SCHEMA_VERSION,
         "resource_type": "propagation_audit_summary",
-        "events": [{**event, "event_hash": _hash_json(event)} for event in events],
+        "events": chained_events,
+        "chain_head": previous_event_hash,
         "model_proposal_count": len(CASE_IDS),
         "model_confirmation_count": 0,
         "human_confirmation_count": 2,
@@ -717,6 +771,9 @@ def _build_artifacts() -> dict[str, object]:  # noqa: C901
         "analysis_id": analysis_id,
         "domain_pack": domain,
         "topology_source_hash": _hash_bytes(topology_source),
+        "topology_source_canonical_hash": _hash_bytes(
+            _canonical_bytes(json.loads(topology_source.decode("utf-8")))
+        ),
         "topology_snapshot": _topology_payload(topology),
         "rule_pack": _rule_payload(rule_pack),
         "rule_pack_hash": propagation_rule_content_hash(rule_pack),
@@ -751,6 +808,33 @@ def _safe_existing_components(path: Path) -> bool:
     return True
 
 
+def _prepare_safe_parent(path: Path) -> None:
+    """Create missing components only after each existing prefix is safe."""
+
+    absolute = path.absolute()
+    anchor_parts = Path(absolute.anchor).parts if absolute.anchor else ()
+    current = Path(absolute.anchor) if absolute.anchor else Path()
+    for part in absolute.parts[len(anchor_parts) :]:
+        current /= part
+        try:
+            info = current.lstat()
+        except FileNotFoundError:
+            try:
+                current.mkdir()
+            except FileExistsError:
+                pass
+            except OSError as exc:
+                raise AcceptanceRunError("OUTPUT_ROOT_INVALID") from exc
+            try:
+                info = current.lstat()
+            except OSError as exc:
+                raise AcceptanceRunError("OUTPUT_ROOT_INVALID") from exc
+        except OSError as exc:
+            raise AcceptanceRunError("OUTPUT_ROOT_INVALID") from exc
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0) or not stat.S_ISDIR(info.st_mode):
+            raise AcceptanceRunError("OUTPUT_ROOT_INVALID")
+
+
 def _require_artifact_mappings(artifacts: Mapping[str, object]) -> None:
     if not all(isinstance(artifacts[name], dict) for name in ARTIFACT_NAMES[:-1]):
         raise AcceptanceRunError("ARTIFACT_BUILD_INVALID")
@@ -758,16 +842,23 @@ def _require_artifact_mappings(artifacts: Mapping[str, object]) -> None:
 
 def _safe_output_directory(output_root: str | Path) -> Path:
     final = Path(output_root).expanduser().absolute()
-    if final.exists() or final.is_symlink():
-        raise AcceptanceRunError("OUTPUT_EXISTS")
-    parent = final.parent
     try:
-        parent.mkdir(parents=True, exist_ok=True)
+        final.lstat()
+    except FileNotFoundError:
+        pass
     except OSError as exc:
         raise AcceptanceRunError("OUTPUT_ROOT_INVALID") from exc
-    if not _safe_existing_components(parent):
-        raise AcceptanceRunError("OUTPUT_ROOT_INVALID")
-    return final
+    else:
+        raise AcceptanceRunError("OUTPUT_EXISTS")
+    parent = final.parent
+    _prepare_safe_parent(parent)
+    try:
+        final.lstat()
+    except FileNotFoundError:
+        return final
+    except OSError as exc:
+        raise AcceptanceRunError("OUTPUT_ROOT_INVALID") from exc
+    raise AcceptanceRunError("OUTPUT_EXISTS")
 
 
 def run_acceptance(output_root: str | Path | None = None) -> AcceptanceRun:
@@ -816,12 +907,18 @@ def run_acceptance(output_root: str | Path | None = None) -> AcceptanceRun:
             },
         }
         (temporary / "acceptance-summary.json").write_bytes(_canonical_bytes(summary))
+        try:
+            from scripts.verify_fmea_propagation_acceptance import verify_acceptance_directory
+
+            verified_summary = verify_acceptance_directory(temporary)
+        except Exception as exc:
+            raise AcceptanceRunError("ARTIFACT_VERIFICATION_FAILED") from exc
         os.replace(temporary, final)
     except Exception:
         shutil.rmtree(temporary, ignore_errors=True)
         raise
     artifact_bytes = tuple((final / name).read_bytes() for name in ARTIFACT_NAMES)
-    return AcceptanceRun(final, summary, artifact_bytes)
+    return AcceptanceRun(final, verified_summary, artifact_bytes)
 
 
 def _timestamp() -> str:

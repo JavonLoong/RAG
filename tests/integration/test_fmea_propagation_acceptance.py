@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
@@ -134,3 +135,22 @@ def test_acceptance_failure_does_not_publish_partial_output(tmp_path: Path, monk
 
     assert (latest / "sentinel").read_text(encoding="utf-8") == "keep"
     assert not [path for path in output_root.iterdir() if path.name.startswith(".")]
+
+
+def test_runner_rejects_invalid_complete_artifact_before_publish(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import scripts.run_fmea_propagation_acceptance as runner
+
+    output_root = tmp_path / "runs"
+    output_root.mkdir()
+    latest = output_root / "latest"
+    latest.mkdir()
+    (latest / "sentinel").write_text("keep", encoding="utf-8")
+    invalid = copy.deepcopy(runner._build_artifacts())
+    invalid["reviewed-graph.json"]["graph_hash"] = "sha256:" + "0" * 64
+    monkeypatch.setattr(runner, "_build_artifacts", lambda: invalid)
+
+    with pytest.raises(runner.AcceptanceRunError):
+        runner.run_acceptance(output_root)
+
+    assert (latest / "sentinel").read_text(encoding="utf-8") == "keep"
+    assert [path for path in output_root.iterdir() if path.name != "latest"] == []

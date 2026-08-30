@@ -17,11 +17,18 @@ EvidencePack lineage fixture；模型部分是确定性的 offline fixture，不
 ```
 
 runner 先在目标 artifact 的同一父目录创建唯一临时目录，写入并完成全部
-canonical/hash/语义检查后才用原子 rename 发布。失败会清理临时目录，不创建
-半成品，也不修改已有目录。verifier 不调用 runner 的验证函数，而是从每个
+canonical/hash/语义检查，并调用独立 verifier 验证完整 artifact 后，才用原子
+rename 发布。失败会清理临时目录，不创建半成品，也不修改已有目录。runner
+不会在尚未完成 component-wise containment/reparse 检查前创建输出父目录。
+verifier 不调用 runner 的验证函数，而是从每个
 JSON 文件的 bytes 重新检查 UTF-8、重复 key、canonical JSON、文件集合、hash
 manifest、topology/rule/graph identity、lineage、路径连续性、逐 edge evidence、
 深度、cycle、risk、external、conflict、incomplete 和 actor policy。
+
+topology identity 还绑定到仓库中固定 source-pinned 的
+`domain_packs/fuel-combustion/topology/demo-1.0.0.json`：verifier 重新读取其
+raw/canonical hash，并将规范化 snapshot 与 artifact 对比，因此不能通过同时
+重写 artifact hash、graph hash 和 manifest 来制造自洽的伪 topology。
 
 固定 artifact 集合及语义为：
 
@@ -33,7 +40,7 @@ manifest、topology/rule/graph identity、lineage、路径连续性、逐 edge e
 | `paths.json` | 五类 path 的 edge 快照；每个 edge 必须有自己的 evidence IDs |
 | `decisions.json` | 每个 case 一个决定；只有 human `propagation_reviewer` 能 confirm |
 | `issues.json` | long/cyclic/high-risk/external/conflicting/incomplete/evidence-gap 问题 |
-| `audit-summary.json` | proposal、human confirmation、human review-required 的事件及 hash |
+| `audit-summary.json` | 按顺序连接的 proposal/review 事件、`previous_event_hash`、chain head 及 hash |
 | `acceptance-summary.json` | manifest 与可重算计数；`invented_endpoint_count=0`、`model_confirmation_count=0` |
 
 artifact schema 固定为
@@ -42,6 +49,12 @@ artifact schema 固定为
 long/cycle/high-risk/external/conflict/incomplete/evidence-gap 永远进入人工
 review，不能被 model actor 确认。当前 fixture 中 forward/reverse 是两条可
 确认的短路径，其余三类明确保留人工 review。
+
+每个 evidence profile 都绑定完整 VersionSet（包括 data/graph/template/
+scoring/prompt/model/input snapshot identity）以及 deterministic offline
+model、network/paid-model 禁止项、token budget 和 edge/path/evidence caps。
+`auto` 的 resolved profile 必须是 `combined`；`paid-live-model` 或
+`pack-combined` 的 `profile_version=auto` 均不能通过 verifier。
 
 ## REST、CLI 与人工复审
 

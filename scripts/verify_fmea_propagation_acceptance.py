@@ -38,9 +38,41 @@ ARTIFACT_NAMES = {
 _MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
+_PATH_PATTERNS = (
+    re.compile(rb"(?<![A-Za-z0-9_])/(?![/\s])[^\"'\r\n,}\]]+"),
+    re.compile(rb"(?<![A-Za-z0-9_])[A-Za-z]:[\\/]"),
+    re.compile(rb"(?<![A-Za-z0-9_])\\\\[^\\/\s]+[\\/]"),
+    re.compile(rb"(?<![A-Za-z0-9_])\\(?!\\)[A-Za-z0-9_.-]+[\\/]"),
+)
 _TOPOLOGY_SOURCE_HASH = "sha256:53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
+_TOPOLOGY_SOURCE_CANONICAL_HASH = "sha256:d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
+_TOPOLOGY_PATH = Path(__file__).resolve().parents[1] / "domain_packs" / "fuel-combustion" / "topology" / "demo-1.0.0.json"
 _DOMAIN_CONTENT_HASH = "1b5453082ee1cf09657a69e93fc4aee02651c93348454578539a72c8f0908fac"
 _RULE_PACK_HASH = "e9e7768be8e78836b6fab019400950a87c9ddc25ca4fc5cf8cde796a770a48d6"
+_PROFILE_PACK_PROFILES = {
+    "pack-rag-only": "rag_only",
+    "pack-graphrag-local-only": "graphrag_local_only",
+    "pack-graphrag-global-only": "graphrag_global_only",
+    "pack-graphrag-only": "graphrag_only",
+    "pack-combined": "combined",
+    "pack-custom": "custom",
+}
+_OFFLINE_GENERATION_CONSTRAINTS = {
+    "execution_mode": "deterministic_offline",
+    "network_allowed": False,
+    "paid_model_allowed": False,
+    "budget": {
+        "max_input_tokens": 2048,
+        "max_output_tokens": 1024,
+        "max_total_tokens": 3072,
+    },
+    "caps": {
+        "max_cases": 5,
+        "max_edges": 14,
+        "max_path_depth": 2,
+        "max_evidence_refs_per_edge": 3,
+    },
+}
 _PROFILE_TYPES = {
     "rag_only": ["text"],
     "graphrag_local_only": ["graph"],
@@ -247,6 +279,25 @@ def _sha256_hash(value: object, code: str) -> str:
     return value
 
 
+def _version_payload(profile: str) -> dict[str, object]:
+    return {
+        "schema_id": "graphrag.fmea.v1",
+        "data_version": "propagation-fixture-v1",
+        "graph_version": "fuel-combustion-propagation-v1",
+        "evidence_pack_version": "1.0.0",
+        "profile_version": profile,
+        "template_version": "fmea-propagation-hypothesis@1.0.0",
+        "scoring_version": "fuel-sod-rpn@1.0.0",
+        "prompt_version": "offline-fixture-v1",
+        "model_version": "deterministic-offline-model-v1",
+        "input_snapshot_hash": sha256((profile + "|propagation-fixture-v1").encode("utf-8")).hexdigest(),
+    }
+
+
+def _generation_constraints() -> dict[str, object]:
+    return json.loads(json.dumps(_OFFLINE_GENERATION_CONSTRAINTS, sort_keys=True))
+
+
 def _load(path: Path) -> tuple[dict[str, object], bytes]:
     if not _safe_file(path):
         _fail("FMEA_PROPAGATION_ARTIFACT_SET_INVALID")
@@ -274,7 +325,7 @@ def _load(path: Path) -> tuple[dict[str, object], bytes]:
     )
     if any(pattern in raw for pattern in private_patterns):
         _fail("FMEA_PROPAGATION_PRIVATE_MARKER")
-    if re.search(rb"(?:[A-Za-z]:[\\/]|/(?:tmp|home|Users|var)/|\\\\[^\\]+[\\/])", raw):
+    if any(pattern.search(raw) for pattern in _PATH_PATTERNS):
         _fail("FMEA_PROPAGATION_PRIVATE_MARKER")
     try:
         value = json.loads(
@@ -298,6 +349,59 @@ def _schema(value: dict[str, object]) -> None:
         _fail("FMEA_PROPAGATION_SCHEMA_INVALID")
 
 
+def _authoritative_topology_source() -> tuple[str, str, dict[str, object]]:
+    if not _safe_file(_TOPOLOGY_PATH):
+        _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+    try:
+        raw = _TOPOLOGY_PATH.read_bytes()
+        source = json.loads(
+            raw.decode("utf-8", errors="strict"),
+            object_pairs_hook=_strict_pairs,
+            parse_constant=_reject_constant,
+        )
+    except AcceptanceVerificationError:
+        raise
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError, TypeError, ValueError):
+        _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+    if _hash_bytes(raw) != _TOPOLOGY_SOURCE_HASH or _hash_bytes(_canonical_bytes(source)) != _TOPOLOGY_SOURCE_CANONICAL_HASH:
+        _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+    root = _exact(source, {"topology_snapshot"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+    source_snapshot = _exact(
+        root["topology_snapshot"],
+        {"id", "workspace_id", "analysis_id", "topology_hash", "nodes", "interfaces", "record_version", "created_at"},
+        "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID",
+    )
+    normalized = {
+        "id": source_snapshot["id"],
+        "workspace_id": source_snapshot["workspace_id"],
+        "analysis_id": source_snapshot["analysis_id"],
+        "topology_hash": source_snapshot["topology_hash"],
+        "nodes": [
+            {
+                "node_id": _exact(node, {"id", "type", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["id"],
+                "node_type": _exact(node, {"id", "type", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["type"],
+                "operating_modes": _exact(node, {"id", "type", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["operating_modes"],
+            }
+            for node in _list(source_snapshot["nodes"], "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+        ],
+        "interfaces": [
+            {
+                "interface_id": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["id"],
+                "source_node_id": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["source_node_id"],
+                "target_node_id": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["target_node_id"],
+                "interface_variable": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["interface_variable"],
+                "unit": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["unit"],
+                "direction": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["direction"],
+                "operating_modes": _exact(interface, {"id", "source_node_id", "target_node_id", "interface_variable", "unit", "direction", "operating_modes"}, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")["operating_modes"],
+            }
+            for interface in _list(source_snapshot["interfaces"], "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+        ],
+        "record_version": source_snapshot["record_version"],
+        "created_at": source_snapshot["created_at"],
+    }
+    return _hash_bytes(raw), _hash_bytes(_canonical_bytes(source)), normalized
+
+
 def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C901
     expected = {
         "schema_version",
@@ -306,6 +410,7 @@ def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C9
         "analysis_id",
         "domain_pack",
         "topology_source_hash",
+        "topology_source_canonical_hash",
         "topology_snapshot",
         "rule_pack",
         "rule_pack_hash",
@@ -315,7 +420,8 @@ def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C9
     _exact(value, expected, "FMEA_PROPAGATION_TOPOLOGY_INVALID")
     if value["resource_type"] != "propagation_topology" or value["workspace_id"] != "fuel-combustion" or value["analysis_id"] != "analysis-fuel-combustion-1":
         _fail("FMEA_PROPAGATION_TOPOLOGY_INVALID")
-    if value["topology_source_hash"] != _TOPOLOGY_SOURCE_HASH:
+    source_hash, source_canonical_hash, source_snapshot = _authoritative_topology_source()
+    if value["topology_source_hash"] != source_hash or value["topology_source_canonical_hash"] != source_canonical_hash:
         _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
     domain = _exact(value["domain_pack"], {"id", "version", "content_hash"}, "FMEA_PROPAGATION_DOMAIN_IDENTITY_INVALID")
     if domain != {"id": "fuel-combustion", "version": "1.0.0", "content_hash": _DOMAIN_CONTENT_HASH}:
@@ -383,6 +489,8 @@ def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C9
     }
     if sha256(_canonical_json(body)).hexdigest() != topology_hash:
         _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+    if snapshot != source_snapshot:
+        _fail("FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
     rule = _exact(
         value["rule_pack"],
         {
@@ -413,12 +521,14 @@ def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C9
     for profile in EVIDENCE_PROFILES:
         item = _exact(
             profiles[profile],
-            {"requested_profile", "resolved_profile", "evidence_types", "evidence_pack_id", "evidence_pack_hash", "retrieval_incomplete"},
+            {"requested_profile", "resolved_profile", "evidence_types", "evidence_pack_id", "evidence_pack_hash", "retrieval_incomplete", "version_set", "generation_constraints"},
             "FMEA_PROPAGATION_PROFILE_MATRIX_INVALID",
         )
         if item["requested_profile"] != profile or item["resolved_profile"] != _PROFILE_RESOLUTION[profile] or item["evidence_types"] != _PROFILE_TYPES[profile] or item["evidence_pack_id"] != _PROFILE_PACKS[profile] or item["retrieval_incomplete"] is not False:
             _fail("FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
         _hex64(item["evidence_pack_hash"], "FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
+        if item["version_set"] != _version_payload(_PROFILE_RESOLUTION[profile]) or item["generation_constraints"] != _generation_constraints():
+            _fail("FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
     packs = _list(value["evidence_packs"], "FMEA_PROPAGATION_EVIDENCE_INVALID")
     packs_by_id: dict[str, dict[str, object]] = {}
     for raw in packs:
@@ -435,6 +545,8 @@ def _verify_topology(value: dict[str, object]) -> dict[str, object]:  # noqa: C9
         pack = packs_by_id[_PROFILE_PACKS[profile]]
         if pack["pack_hash"] != profiles[profile]["evidence_pack_hash"]:
             _fail("FMEA_PROPAGATION_EVIDENCE_INVALID")
+        if pack["versions"] != profiles[profile]["version_set"]:
+            _fail("FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
         source_types = [_EVIDENCE_SOURCE_TYPES[cast(str, ref["source_type"])] for ref in _list(pack["refs"], "FMEA_PROPAGATION_EVIDENCE_INVALID")]
         if source_types != _PROFILE_TYPES[profile] and profile != "auto":
             _fail("FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
@@ -452,6 +564,8 @@ def _verify_pack(pack: dict[str, object], pack_id: str, packs: dict[str, dict[st
     if versions["schema_id"] != "graphrag.fmea.v1":
         _fail("FMEA_PROPAGATION_EVIDENCE_INVALID")
     _hex64(versions["input_snapshot_hash"], "FMEA_PROPAGATION_EVIDENCE_INVALID")
+    if pack_id not in _PROFILE_PACK_PROFILES or versions != _version_payload(_PROFILE_PACK_PROFILES[pack_id]):
+        _fail("FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
     refs = _list(pack["refs"], "FMEA_PROPAGATION_EVIDENCE_INVALID")
     if not refs:
         _fail("FMEA_PROPAGATION_EVIDENCE_INVALID")
@@ -739,26 +853,57 @@ def _verify_issues(value: dict[str, object], paths: dict[str, dict[str, object]]
     return [cast(dict[str, object], item) for item in issues]
 
 
-def _verify_audit(value: dict[str, object], decisions: list[dict[str, object]]) -> dict[str, int]:
-    _exact(value, {"schema_version", "resource_type", "events", "model_proposal_count", "model_confirmation_count", "human_confirmation_count", "human_review_required_count"}, "FMEA_PROPAGATION_AUDIT_INVALID")
+def _verify_audit(value: dict[str, object], decisions: list[dict[str, object]]) -> dict[str, int]:  # noqa: C901
+    _exact(value, {"schema_version", "resource_type", "events", "chain_head", "model_proposal_count", "model_confirmation_count", "human_confirmation_count", "human_review_required_count"}, "FMEA_PROPAGATION_AUDIT_INVALID")
     if value["resource_type"] != "propagation_audit_summary":
         _fail("FMEA_PROPAGATION_AUDIT_INVALID")
     events = _list(value["events"], "FMEA_PROPAGATION_AUDIT_INVALID")
     if len(events) != 10:
         _fail("FMEA_PROPAGATION_AUDIT_INVALID")
     event_ids: set[str] = set()
-    for raw in events:
-        event = _mapping(raw, "FMEA_PROPAGATION_AUDIT_INVALID")
-        event_id = _text(event.get("event_id"), "FMEA_PROPAGATION_AUDIT_INVALID")
+    previous_event_hash: str | None = None
+    by_case: dict[str, dict[str, object]] = {}
+    decisions_by_case = {str(item["case_id"]): item for item in decisions}
+    if set(decisions_by_case) != set(CASE_IDS):
+        _fail("FMEA_PROPAGATION_AUDIT_INVALID")
+    event_fields = {"event_id", "event_type", "actor_id", "actor_type", "case_id", "resource_type", "resource_id", "decision_id", "action", "graph_revision_id", "previous_event_hash", "event_hash"}
+    for index, raw in enumerate(events):
+        event = _exact(raw, event_fields, "FMEA_PROPAGATION_AUDIT_INVALID")
+        event_id = _text(event["event_id"], "FMEA_PROPAGATION_AUDIT_INVALID")
         if event_id in event_ids:
             _fail("FMEA_PROPAGATION_DUPLICATE_ID")
         event_ids.add(event_id)
-        event_hash = event.get("event_hash")
+        case_id = _text(event["case_id"], "FMEA_PROPAGATION_AUDIT_INVALID")
+        if case_id not in CASE_IDS or index // 2 >= len(CASE_IDS) or case_id != CASE_IDS[index // 2]:
+            _fail("FMEA_PROPAGATION_AUDIT_INVALID")
+        expected_decision_id = f"decision-{case_id}"
+        expected_review = index % 2 == 1
+        expected = {
+            "event_id": f"event-review-{case_id}" if expected_review else f"event-proposal-{case_id}",
+            "event_type": ("propagation.confirmed" if decisions_by_case[case_id]["confirmed"] else "propagation.review_required") if expected_review else "propagation.proposed",
+            "actor_id": "propagation-reviewer-1" if expected_review else "deterministic-offline-model",
+            "actor_type": "human" if expected_review else "model",
+            "case_id": case_id,
+            "resource_type": "propagation_decision" if expected_review else "propagation_path",
+            "resource_id": expected_decision_id if expected_review else f"path-{case_id}",
+            "decision_id": expected_decision_id,
+            "action": decisions_by_case[case_id]["action"] if expected_review else "propose",
+            "graph_revision_id": "graph-reviewed-1",
+        }
+        if {key: event[key] for key in expected} != expected or event["previous_event_hash"] != previous_event_hash:
+            _fail("FMEA_PROPAGATION_AUDIT_INVALID")
+        if event["actor_type"] == "model" and event["event_type"] != "propagation.proposed":
+            _fail("FMEA_PROPAGATION_MODEL_AUTHORITY_INVALID")
+        event_hash = event["event_hash"]
         body = {key: item for key, item in event.items() if key != "event_hash"}
         if event_hash != _hash_json(body):
             _fail("FMEA_PROPAGATION_AUDIT_INVALID")
-        if event.get("actor_type") == "model" and event.get("event_type") != "propagation.proposed":
-            _fail("FMEA_PROPAGATION_MODEL_AUTHORITY_INVALID")
+        _sha256_hash(event_hash, "FMEA_PROPAGATION_AUDIT_INVALID")
+        previous_event_hash = event_hash
+        if expected_review:
+            by_case[case_id] = event
+    if value["chain_head"] != previous_event_hash or set(by_case) != set(CASE_IDS):
+        _fail("FMEA_PROPAGATION_AUDIT_INVALID")
     expected = {"model_proposal_count": 5, "model_confirmation_count": 0, "human_confirmation_count": 2, "human_review_required_count": 3}
     if {key: value.get(key) for key in expected} != expected:
         _fail("FMEA_PROPAGATION_AUDIT_INVALID")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
 from hashlib import sha256
@@ -18,6 +19,10 @@ def _canonical(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
 
+def _hash_json(value: object) -> str:
+    return "sha256:" + sha256(_canonical(value)).hexdigest()
+
+
 def _rewrite(output: Path, name: str, mutate) -> None:
     value = json.loads((output / name).read_text(encoding="utf-8"))
     mutate(value)
@@ -27,6 +32,14 @@ def _rewrite(output: Path, name: str, mutate) -> None:
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         summary["artifact_hashes"][name] = "sha256:" + sha256((output / name).read_bytes()).hexdigest()
         summary_path.write_bytes(_canonical(summary))
+
+
+def _refresh_manifest(output: Path, names: tuple[str, ...]) -> None:
+    summary_path = output / "acceptance-summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    for name in names:
+        summary["artifact_hashes"][name] = "sha256:" + sha256((output / name).read_bytes()).hexdigest()
+    summary_path.write_bytes(_canonical(summary))
 
 
 def _assert_rejected(output: Path, code: str) -> None:
@@ -125,11 +138,125 @@ def test_verifier_rejects_semantic_tamper_classes(acceptance_pack: Path, name: s
     _assert_rejected(acceptance_pack, code)
 
 
-def test_verifier_rejects_private_markers_absolute_paths_secrets_and_raw_provider_response(acceptance_pack: Path) -> None:
+def test_verifier_rejects_coordinated_topology_tamper(acceptance_pack: Path) -> None:
+    topology = json.loads((acceptance_pack / "topology.json").read_text(encoding="utf-8"))
+    snapshot = topology["topology_snapshot"]
+    snapshot["nodes"][0]["node_type"] = "tampered-pump"
+    snapshot["topology_hash"] = sha256(
+        json.dumps(
+            {
+                "id": snapshot["id"],
+                "workspace_id": snapshot["workspace_id"],
+                "analysis_id": snapshot["analysis_id"],
+                "nodes": [
+                    {"id": node["node_id"], "type": node["node_type"], "operating_modes": node["operating_modes"]}
+                    for node in snapshot["nodes"]
+                ],
+                "interfaces": [
+                    {
+                        "id": interface["interface_id"],
+                        "source_node_id": interface["source_node_id"],
+                        "target_node_id": interface["target_node_id"],
+                        "interface_variable": interface["interface_variable"],
+                        "unit": interface["unit"],
+                        "direction": interface["direction"],
+                        "operating_modes": interface["operating_modes"],
+                    }
+                    for interface in snapshot["interfaces"]
+                ],
+                "record_version": snapshot["record_version"],
+                "created_at": snapshot["created_at"],
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    (acceptance_pack / "topology.json").write_bytes(_canonical(topology))
+
+    proposal = json.loads((acceptance_pack / "proposal.json").read_text(encoding="utf-8"))
+    proposal["lineage"]["topology_hash"] = snapshot["topology_hash"]
+    (acceptance_pack / "proposal.json").write_bytes(_canonical(proposal))
+
+    graph = json.loads((acceptance_pack / "reviewed-graph.json").read_text(encoding="utf-8"))
+    graph["topology_hash"] = snapshot["topology_hash"]
+    graph["nodes"] = copy.deepcopy(snapshot["nodes"])
+    graph["graph_hash"] = _hash_json({key: item for key, item in graph.items() if key != "graph_hash"})
+    (acceptance_pack / "reviewed-graph.json").write_bytes(_canonical(graph))
+
+    summary = json.loads((acceptance_pack / "acceptance-summary.json").read_text(encoding="utf-8"))
+    summary["topology_hash"] = snapshot["topology_hash"]
+    summary["graph_hash"] = graph["graph_hash"]
+    (acceptance_pack / "acceptance-summary.json").write_bytes(_canonical(summary))
+    _refresh_manifest(acceptance_pack, ("topology.json", "proposal.json", "reviewed-graph.json"))
+
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_TOPOLOGY_IDENTITY_INVALID")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("profile_version", "auto"), ("model_version", "paid-live-model")],
+)
+def test_verifier_rejects_non_deterministic_profile_version_contract(acceptance_pack: Path, field: str, value: str) -> None:
+    def mutate(topology: dict[str, object]) -> None:
+        packs = topology["evidence_packs"]
+        assert isinstance(packs, list)
+        combined = next(pack for pack in packs if pack["pack_id"] == "pack-combined")
+        combined["versions"][field] = value
+
+    _rewrite(acceptance_pack, "topology.json", mutate)
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PROFILE_MATRIX_INVALID")
+
+
+def test_verifier_rejects_forged_audit_event_rehashed_with_valid_event_hash(acceptance_pack: Path) -> None:
+    def forge(value: dict[str, object]) -> None:
+        events = value["events"]
+        assert isinstance(events, list)
+        event = events[1]
+        event["resource_id"] = "decision-cycle"
+        event["event_hash"] = _hash_json({key: item for key, item in event.items() if key != "event_hash"})
+
+    _rewrite(acceptance_pack, "audit-summary.json", forge)
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_AUDIT_INVALID")
+
+
+@pytest.mark.parametrize(
+    "forbidden_path",
+    [
+        "/workspace/sensitive-data",
+        r"C:\workspace\sensitive-data",
+        r"\\server\share\sensitive-data",
+        r"\workspace\sensitive-data",
+    ],
+)
+def test_verifier_rejects_forbidden_absolute_path_forms(acceptance_pack: Path, forbidden_path: str) -> None:
+    def forge(value: dict[str, object]) -> None:
+        events = value["events"]
+        assert isinstance(events, list)
+        event = events[0]
+        event["resource_id"] = forbidden_path
+        event["event_hash"] = _hash_json({key: item for key, item in event.items() if key != "event_hash"})
+
     _rewrite(
         acceptance_pack,
         "audit-summary.json",
-        lambda value: value.update({"note": "C:\\private\\prompt REQUEST_PRIVATE_MARKER sk-secret raw provider response"}),
+        forge,
+    )
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
+
+
+def test_verifier_rejects_private_markers_secrets_and_raw_provider_response(acceptance_pack: Path) -> None:
+    def forge(value: dict[str, object]) -> None:
+        events = value["events"]
+        assert isinstance(events, list)
+        event = events[0]
+        event["resource_id"] = "prompt REQUEST_PRIVATE_MARKER sk-secret raw provider response"
+        event["event_hash"] = _hash_json({key: item for key, item in event.items() if key != "event_hash"})
+
+    _rewrite(
+        acceptance_pack,
+        "audit-summary.json",
+        forge,
     )
     _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
 
@@ -151,16 +278,24 @@ def test_verifier_rejects_symlink_artifact_directory_without_following_it(tmp_pa
     _assert_rejected(link, "FMEA_PROPAGATION_ARTIFACT_SET_INVALID")
 
 
-def test_verifier_checks_each_path_component_for_reparse_objects(tmp_path: Path) -> None:
+def test_verifier_accepts_regular_artifact_directory_without_privilege(tmp_path: Path) -> None:
     from scripts.verify_fmea_propagation_acceptance import _safe_artifact_directory
 
     regular = tmp_path / "regular" / "pack"
     regular.mkdir(parents=True)
     assert _safe_artifact_directory(regular) is True
 
+
+def test_verifier_rejects_file_component_without_privilege(tmp_path: Path) -> None:
+    from scripts.verify_fmea_propagation_acceptance import _safe_artifact_directory
+
     file_component = tmp_path / "file-component"
     file_component.write_text("not a directory", encoding="utf-8")
     assert _safe_artifact_directory(file_component / "pack") is False
+
+
+def test_verifier_rejects_symlink_component_when_platform_allows_creation(tmp_path: Path) -> None:
+    from scripts.verify_fmea_propagation_acceptance import _safe_artifact_directory
 
     component = tmp_path / "component"
     component.mkdir()
@@ -171,6 +306,23 @@ def test_verifier_checks_each_path_component_for_reparse_objects(tmp_path: Path)
         pytest.skip(f"symlink creation unavailable on this platform: {exc}")
 
     assert _safe_artifact_directory(linked / "pack") is False
+
+
+def test_runner_never_creates_through_symlinked_output_prefix(tmp_path: Path) -> None:
+    import scripts.run_fmea_propagation_acceptance as runner
+
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    linked = tmp_path / "linked"
+    try:
+        linked.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError, PermissionError) as exc:
+        pytest.skip(f"symlink creation unavailable on this platform: {exc}")
+
+    with pytest.raises(runner.AcceptanceRunError):
+        runner.run_acceptance(linked / "created" / "run")
+
+    assert not (outside / "created").exists()
 
 
 def test_verifier_does_not_require_or_import_retrieval_backend(acceptance_pack: Path) -> None:
