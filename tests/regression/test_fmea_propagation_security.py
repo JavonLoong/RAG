@@ -337,6 +337,7 @@ def test_verifier_rejects_punctuation_adjacent_local_paths(
         "https://example.com/a/b|/workspace/file",
         r"https://example.com/a/b)/workspace/file",
         r"https://example.com/a/b]C:\workspace\file",
+        r"https://user:pass@[::1]:443/a]C:\workspace\file",
         r"https://example.com/a/b}/workspace/file",
         "https://example.com/a/b\"/workspace/file",
     ],
@@ -371,6 +372,8 @@ def test_verifier_rejects_local_paths_after_terminated_http_url_span(
         "https://:443/a",
         "https://example.com:notaport/a",
         "https://example.com:65536/a",
+        "https://user:pass@[::1/a",
+        "https://user:pass@[[::1]]/a",
     ],
 )
 def test_verifier_rejects_malformed_http_url_candidates_before_masking(
@@ -392,6 +395,7 @@ def test_verifier_rejects_malformed_http_url_candidates_before_masking(
         r"https://example.com:/C:\workspace\file",
         "https://example.com:/a",
         "https://[2001:db8::1]:/a",
+        "https://user:pass@[::1]:/a",
     ],
 )
 def test_verifier_rejects_empty_explicit_http_url_ports_before_masking(
@@ -442,6 +446,26 @@ def test_verifier_masks_only_valid_http_url_candidates(
     ],
 )
 def test_verifier_preserves_bracketed_ipv6_http_url_authority_spans(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
+        "https://user:pass@[::1]/a",
+        "https://user:pass@[::1]:443/a",
+    ],
+)
+def test_verifier_preserves_userinfo_bracketed_ipv6_authority_spans(
     acceptance_pack: Path,
     candidate: str,
 ) -> None:

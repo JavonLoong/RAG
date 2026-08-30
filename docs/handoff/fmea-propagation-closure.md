@@ -142,6 +142,8 @@ policy 的环境补跑真实 reparse 覆盖。
 
 HTTP/HTTPS 例外只遮罩通过窄 authority 校验的显式 URL span：scheme、起始边界、
 netloc、hostname、反斜杠和端口都必须有效，显式空端口也会拒绝。仅当 authority
-在 `://` 后以 `[` 开始时，scanner 才把匹配的 `]` 视为 bracketed IPv6 host 的
-一部分；URL path 中或 authority 关闭后的 `]` 仍是安全 terminator，因此紧邻的
-本机路径继续被检测。该策略不执行 DNS、网络或完整 RFC URL 验证。
+起始或 `@` 后立即出现 `[` 时，scanner 才进入 bracketed IPv6 host 状态并消费
+匹配的 `]`；authority 在 host brackets 外遇到 `/`、`?` 或 `#` 后结束。URL
+path/query/fragment 中的 `[` 没有 host 语义，任何 host brackets 外的 `]` 仍是
+安全 terminator，因此紧邻的本机路径继续被检测。该策略不执行 DNS、网络或
+完整 RFC URL 验证。

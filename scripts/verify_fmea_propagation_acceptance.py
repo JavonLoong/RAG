@@ -331,14 +331,22 @@ def _valid_http_url_candidate(candidate: str) -> bool:
 
 def _http_url_span_end(value: str, authority_start: int) -> int:
     end = authority_start
-    bracketed_authority = end < len(value) and value[end] == "["
+    in_authority = True
+    in_bracketed_host = False
     while end < len(value) and not value[end].isspace():
-        if bracketed_authority and value[end] == "]":
-            bracketed_authority = False
+        character = value[end]
+        if in_bracketed_host:
+            if character == "]":
+                in_bracketed_host = False
             end += 1
             continue
-        if value[end] in _HTTP_URL_TERMINATORS:
+        if character in _HTTP_URL_TERMINATORS:
             break
+        if in_authority:
+            if character in "/?#":
+                in_authority = False
+            elif character == "[" and (end == authority_start or value[end - 1] == "@"):
+                in_bracketed_host = True
         end += 1
     return end
 
