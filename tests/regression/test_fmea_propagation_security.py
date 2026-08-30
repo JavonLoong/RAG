@@ -389,6 +389,27 @@ def test_verifier_rejects_malformed_http_url_candidates_before_masking(
 @pytest.mark.parametrize(
     "candidate",
     [
+        r"https://example.com:/C:\workspace\file",
+        "https://example.com:/a",
+        "https://[2001:db8::1]:/a",
+    ],
+)
+def test_verifier_rejects_empty_explicit_http_url_ports_before_masking(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
         "HtTpS://Example.com/a?x=1#fragment",
         "https://example.com:0/a",
         "https://example.com:443/a",
@@ -401,6 +422,26 @@ def test_verifier_rejects_malformed_http_url_candidates_before_masking(
     ],
 )
 def test_verifier_masks_only_valid_http_url_candidates(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
+        "https://[2001:db8::1]:443/a",
+        "https://[::1]/a",
+    ],
+)
+def test_verifier_preserves_bracketed_ipv6_http_url_authority_spans(
     acceptance_pack: Path,
     candidate: str,
 ) -> None:

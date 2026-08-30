@@ -324,17 +324,30 @@ def _valid_http_url_candidate(candidate: str) -> bool:
         and bool(parsed.netloc)
         and bool(hostname)
         and "\\" not in parsed.netloc
+        and not parsed.netloc.endswith(":")
         and (port is None or 0 <= port <= 65535)
     )
+
+
+def _http_url_span_end(value: str, authority_start: int) -> int:
+    end = authority_start
+    bracketed_authority = end < len(value) and value[end] == "["
+    while end < len(value) and not value[end].isspace():
+        if bracketed_authority and value[end] == "]":
+            bracketed_authority = False
+            end += 1
+            continue
+        if value[end] in _HTTP_URL_TERMINATORS:
+            break
+        end += 1
+    return end
 
 
 def _mask_http_url_spans(value: str) -> str | None:
     masked = list(value)
     for candidate_match in _HTTP_URL_CANDIDATE.finditer(value):
         start = candidate_match.start()
-        end = candidate_match.end()
-        while end < len(value) and not value[end].isspace() and value[end] not in _HTTP_URL_TERMINATORS:
-            end += 1
+        end = _http_url_span_end(value, candidate_match.end())
         if not _valid_http_url_start(value, start) or not _valid_http_url_candidate(value[start:end]):
             return None
         masked[start:end] = " " * (end - start)

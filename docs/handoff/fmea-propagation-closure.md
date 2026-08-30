@@ -139,3 +139,9 @@ drive absolute、UNC 和 root-relative path；普通 prose 中不构成本机绝
 token 的斜杠及 multiline 文本不受影响。whole-value `/ foo/bar` 和精确单反斜杠
 root 仍按本机绝对/root-relative 路径拒绝。生产部署仍应在具备相应 Windows
 policy 的环境补跑真实 reparse 覆盖。
+
+HTTP/HTTPS 例外只遮罩通过窄 authority 校验的显式 URL span：scheme、起始边界、
+netloc、hostname、反斜杠和端口都必须有效，显式空端口也会拒绝。仅当 authority
+在 `://` 后以 `[` 开始时，scanner 才把匹配的 `]` 视为 bracketed IPv6 host 的
+一部分；URL path 中或 authority 关闭后的 `]` 仍是安全 terminator，因此紧邻的
+本机路径继续被检测。该策略不执行 DNS、网络或完整 RFC URL 验证。
