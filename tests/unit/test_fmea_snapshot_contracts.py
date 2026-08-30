@@ -99,6 +99,27 @@ def test_normalized_snapshot_rejects_duplicate_keys_after_strip() -> None:
         make_normalized_snapshot_input(row_payload={"row_id": "row-1", " row_id ": "row-2"})
 
 
+@pytest.mark.parametrize(
+    ("field_name", "identity_field"),
+    (
+        ("rows", "row_id"),
+        ("risk_records", "assessment_id"),
+        ("evidence_summary", "pack_id"),
+        ("decision_summary", "decision_id"),
+    ),
+)
+def test_normalized_snapshot_rejects_duplicate_stable_identities(
+    field_name: str,
+    identity_field: str,
+) -> None:
+    duplicate_items = (
+        {identity_field: "duplicate-1", "value": 1},
+        {identity_field: "duplicate-1", "value": 2},
+    )
+    with pytest.raises(FmeaDomainError, match=f"{field_name} must not contain duplicate identities"):
+        make_normalized_snapshot_input(**{field_name: duplicate_items})
+
+
 def test_normalized_snapshot_is_immutable_and_pages_are_bounded() -> None:
     snapshot = make_normalized_snapshot(rows=5)
     assert isinstance(snapshot, NormalizedFmeaSnapshot)

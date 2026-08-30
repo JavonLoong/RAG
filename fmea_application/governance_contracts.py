@@ -315,6 +315,8 @@ class PreparedRevision:
             raise ValueError("expected analysis version does not match command")
         if self.command.request.analysis_id != self.revision.analysis_id:
             raise ValueError("revision analysis binding is invalid")
+        if self.revision.analysis_record_version != self.expected_analysis_version:
+            raise ValueError("revision analysis version binding is invalid")
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -332,6 +334,7 @@ class PreparedApprovalSubmission:
     scope: IdempotencyScope
     payload_hash: str
     command: SubmitApprovalCommand
+    revision_record_version: int
     submission: ApprovalSubmission
     audit: AuditEvent
     outbox: OutboxEvent
@@ -343,12 +346,13 @@ class PreparedApprovalSubmission:
     def __post_init__(self) -> None:
         if not isinstance(self.command, SubmitApprovalCommand) or not isinstance(self.submission, ApprovalSubmission):
             raise ValueError("approval submission prepared contract types are invalid")
+        object.__setattr__(self, "revision_record_version", _positive(self.revision_record_version, "revision_record_version"))
         if (
             self.command.revision_id != self.submission.revision_id
             or self.command.revision_hash != self.submission.revision_hash
-            or self.command.expected_revision_version != self.submission.record_version
+            or self.command.expected_revision_version != self.revision_record_version
         ):
-            raise ValueError("approval submission revision binding is invalid")
+            raise ValueError("approval submission revision version binding is invalid")
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -448,6 +452,7 @@ class PreparedPublication:
     scope: IdempotencyScope
     payload_hash: str
     command: PublishCommand
+    revision_record_version: int
     revision: FmeaRevision
     approval: ApprovalDecision
     submission: ApprovalSubmission
@@ -479,10 +484,13 @@ class PreparedPublication:
             raise ValueError("publication submission type is invalid")
         if not isinstance(self.publication, PublishedRevision) or not isinstance(self.snapshot, NormalizedFmeaSnapshot):
             raise ValueError("publication/snapshot types are invalid")
+        object.__setattr__(self, "revision_record_version", _positive(self.revision_record_version, "revision_record_version"))
         if self.approval.status is not ApprovalStatus.APPROVED:
             raise ValueError("publication requires an approved revision")
         if self.command.revision_id != self.revision.revision_id or self.command.revision_hash != self.revision.revision_hash:
             raise ValueError("publication revision binding is invalid")
+        if self.command.expected_revision_version != self.revision_record_version:
+            raise ValueError("publication revision version binding is invalid")
         if (
             self.submission.workspace_id != self.revision.workspace_id
             or self.submission.revision_id != self.revision.revision_id
@@ -501,6 +509,8 @@ class PreparedPublication:
             raise ValueError("publication snapshot analysis binding is invalid")
         if self.publication.publisher_actor_id != self.scope.actor_id:
             raise ValueError("publication actor binding is invalid")
+        if self.publication.approval_id != self.approval.approval_id:
+            raise ValueError("publication approval binding is invalid")
         if (
             self.command.approval_id != self.approval.approval_id
             or self.manifest.revision_id != self.revision.revision_id
@@ -552,6 +562,8 @@ class PreparedPublicationWithdrawal:
             raise ValueError("withdrawal must be a PublicationWithdrawalRecord")
         if self.command.publication_id != self.publication.publication_id or self.withdrawal.publication_id != self.publication.publication_id:
             raise ValueError("publication withdrawal binding is invalid")
+        if self.command.expected_publication_version != self.publication.record_version:
+            raise ValueError("publication withdrawal version binding is invalid")
         if self.command.replacement_publication_id != self.withdrawal.replacement_publication_id:
             raise ValueError("publication replacement binding is invalid")
         _validate_prepared_bindings(
@@ -607,6 +619,11 @@ class PreparedSupersession:
             or self.supersession.new_publication_id != self.replacement_publication.publication_id
         ):
             raise ValueError("supersession publication binding is invalid")
+        if (
+            self.command.expected_publication_version != self.old_publication.record_version
+            or self.command.expected_replacement_version != self.replacement_publication.record_version
+        ):
+            raise ValueError("supersession publication version binding is invalid")
         if self.old_publication.workspace_id != self.replacement_publication.workspace_id:
             raise ValueError("supersession workspace binding is invalid")
         if self.supersession.actor_id != self.scope.actor_id:

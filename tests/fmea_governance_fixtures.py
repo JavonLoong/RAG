@@ -411,7 +411,15 @@ def prepared_approval_submission(**overrides: Any):
     payload = canonical_governance_payload("approval.submit", command, submission=submission)
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, submission.submission_id)
-    return PreparedApprovalSubmission(scope, payload_hash, command, submission, audit, outbox)
+    return PreparedApprovalSubmission(
+        scope=scope,
+        payload_hash=payload_hash,
+        command=command,
+        revision_record_version=1,
+        submission=submission,
+        audit=audit,
+        outbox=outbox,
+    )
 
 
 def prepared_approval(**overrides: Any) -> PreparedApproval:
@@ -493,6 +501,7 @@ def prepared_publication(**overrides: Any):
         "scope": scope,
         "payload_hash": payload_hash,
         "command": command,
+        "revision_record_version": 1,
         "revision": revision,
         "approval": approval,
         "submission": submission,

@@ -33,8 +33,10 @@ from core_domain.fmea.states import PublicationStatus
 from fmea_application.governance_contracts import (
     ApprovalCommand,
     PreparedApproval,
+    PreparedApprovalSubmission,
     PreparedApprovalWithdrawal,
     PreparedPublication,
+    PreparedPublicationWithdrawal,
     PreparedRevision,
     PreparedSupersession,
     canonical_governance_payload,
@@ -68,13 +70,16 @@ def _rebind_prepared_publication(
     publication: object,
     snapshot: object,
     submission: object | None = None,
+    command: object | None = None,
+    revision_record_version: int | None = None,
     audit: object | None = None,
     outbox: object | None = None,
 ) -> PreparedPublication:
     submission_value = prepared.submission if submission is None else submission
+    command_value = prepared.command if command is None else command
     payload = canonical_governance_payload(
         "publication.publish",
-        prepared.command,
+        command_value,
         revision=prepared.revision,
         approval=prepared.approval,
         submission=submission_value,
@@ -88,7 +93,8 @@ def _rebind_prepared_publication(
     return PreparedPublication(
         scope=prepared.scope,
         payload_hash=payload_hash,
-        command=prepared.command,
+        command=command_value,  # type: ignore[arg-type]
+        revision_record_version=prepared.revision_record_version if revision_record_version is None else revision_record_version,
         revision=prepared.revision,
         approval=prepared.approval,
         submission=submission_value,  # type: ignore[arg-type]
@@ -121,6 +127,30 @@ def _rebind_prepared_approval_withdrawal(
         command=command_value,  # type: ignore[arg-type]
         approval=approval,  # type: ignore[arg-type]
         withdrawal=withdrawal,  # type: ignore[arg-type]
+        audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
+        outbox=replace(prepared.outbox, payload=payload, payload_hash=outbox_payload_hash(payload)),
+    )
+
+
+def _rebind_prepared_publication_withdrawal(
+    prepared: PreparedPublicationWithdrawal,
+    *,
+    command: object | None = None,
+) -> PreparedPublicationWithdrawal:
+    command_value = prepared.command if command is None else command
+    payload = canonical_governance_payload(
+        "publication.withdraw",
+        command_value,
+        publication=prepared.publication,
+        withdrawal=prepared.withdrawal,
+    )
+    payload_hash = governance_payload_hash(payload)
+    return PreparedPublicationWithdrawal(
+        scope=prepared.scope,
+        payload_hash=payload_hash,
+        command=command_value,  # type: ignore[arg-type]
+        publication=prepared.publication,
+        withdrawal=prepared.withdrawal,
         audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
         outbox=replace(prepared.outbox, payload=payload, payload_hash=outbox_payload_hash(payload)),
     )
@@ -229,6 +259,30 @@ def test_prepared_publication_requires_explicit_approval_submission_lineage() ->
     assert "submission" in {field.name for field in fields(PreparedPublication)}
 
 
+def test_prepared_publication_requires_explicit_revision_record_version_evidence() -> None:
+    assert "revision_record_version" in {field.name for field in fields(PreparedPublication)}
+
+
+def test_prepared_publication_rejects_publication_approval_id_mismatch_after_event_rebinding() -> None:
+    prepared = prepared_publication()
+    mismatched_publication = replace(prepared.publication, approval_id="approval-2")
+    with pytest.raises(ValueError, match="publication approval binding is invalid"):
+        _rebind_prepared_publication(prepared, publication=mismatched_publication, snapshot=prepared.snapshot)
+
+
+def test_prepared_publication_rejects_stale_revision_record_version_after_event_rebinding() -> None:
+    prepared = prepared_publication()
+    mismatched_command = replace(prepared.command, expected_revision_version=2)
+    with pytest.raises(ValueError, match="publication revision version binding is invalid"):
+        _rebind_prepared_publication(
+            prepared,
+            publication=prepared.publication,
+            snapshot=prepared.snapshot,
+            command=mismatched_command,
+            revision_record_version=1,
+        )
+
+
 def test_prepared_publication_rejects_cross_analysis_publication() -> None:
     prepared = prepared_publication()
     mismatched_publication = replace(prepared.publication, analysis_id="analysis-2")
@@ -296,7 +350,9 @@ def _rebind_prepared_supersession(
     prepared: PreparedSupersession,
     *,
     replacement_revision: object,
+    command: object | None = None,
 ) -> PreparedSupersession:
+    command_value = prepared.command if command is None else command
     replacement_publication = replace(
         prepared.replacement_publication,
         analysis_id=replacement_revision.analysis_id,  # type: ignore[union-attr]
@@ -304,7 +360,7 @@ def _rebind_prepared_supersession(
     )
     payload = canonical_governance_payload(
         "publication.supersede",
-        prepared.command,
+        command_value,
         old=prepared.old_publication,
         replacement=replacement_publication,
         old_revision=prepared.old_revision,
@@ -315,7 +371,7 @@ def _rebind_prepared_supersession(
     return PreparedSupersession(
         scope=prepared.scope,
         payload_hash=payload_hash,
-        command=prepared.command,
+        command=command_value,  # type: ignore[arg-type]
         old_publication=prepared.old_publication,
         replacement_publication=replacement_publication,
         old_revision=prepared.old_revision,
@@ -324,6 +380,18 @@ def _rebind_prepared_supersession(
         audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
         outbox=replace(prepared.outbox, payload=payload, payload_hash=outbox_payload_hash(payload)),
     )
+
+
+@pytest.mark.parametrize("field_name", ("expected_publication_version", "expected_replacement_version"))
+def test_prepared_supersession_rejects_stale_publication_versions_after_event_rebinding(field_name: str) -> None:
+    prepared = prepared_supersession()
+    mismatched_command = replace(prepared.command, **{field_name: 2})
+    with pytest.raises(ValueError, match="supersession publication version binding is invalid"):
+        _rebind_prepared_supersession(
+            prepared,
+            replacement_revision=prepared.replacement_revision,
+            command=mismatched_command,
+        )
 
 
 @pytest.mark.parametrize("replacement_revision", ("cross_analysis", "non_child", "wrong_parent_hash"))
@@ -351,6 +419,45 @@ def test_prepared_supersession_rejects_invalid_revision_lineage(replacement_revi
 def test_revision_rejects_valid_format_but_wrong_content_hash() -> None:
     with pytest.raises(FmeaDomainError, match="revision hash"):
         make_fmea_revision(revision_hash="b" * 64)
+
+
+def test_prepared_revision_rejects_analysis_version_mismatch_after_event_rebinding() -> None:
+    prepared = prepared_revision()
+    mismatched_revision = make_fmea_revision(analysis_record_version=2)
+    payload = canonical_governance_payload("revision.assemble", prepared.command, revision=mismatched_revision)
+    payload_hash = governance_payload_hash(payload)
+    with pytest.raises(ValueError, match="revision analysis version binding is invalid"):
+        PreparedRevision(
+            scope=prepared.scope,
+            payload_hash=payload_hash,
+            command=prepared.command,
+            expected_analysis_version=prepared.expected_analysis_version,
+            revision=mismatched_revision,
+            audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
+            outbox=replace(prepared.outbox, payload=payload, payload_hash=outbox_payload_hash(payload)),
+        )
+
+
+def test_prepared_approval_submission_requires_explicit_revision_record_version_evidence() -> None:
+    assert "revision_record_version" in {field.name for field in fields(PreparedApprovalSubmission)}
+
+
+def test_prepared_approval_submission_rejects_stale_revision_version_after_event_rebinding() -> None:
+    prepared = prepared_approval_submission()
+    submission = replace(prepared.submission, record_version=2)
+    command = replace(prepared.command, expected_revision_version=2)
+    payload = canonical_governance_payload("approval.submit", command, submission=submission)
+    payload_hash = governance_payload_hash(payload)
+    with pytest.raises(ValueError, match="approval submission revision version binding is invalid"):
+        PreparedApprovalSubmission(
+            scope=prepared.scope,
+            payload_hash=payload_hash,
+            command=command,
+            revision_record_version=1,
+            submission=submission,
+            audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
+            outbox=replace(prepared.outbox, payload=payload, payload_hash=outbox_payload_hash(payload)),
+        )
 
 
 def test_revision_factory_uses_the_real_content_hash() -> None:
@@ -383,6 +490,13 @@ def test_approval_withdrawal_rejects_expected_version_mismatch() -> None:
             withdrawal=prepared.withdrawal,
             command=mismatched_command,
         )
+
+
+def test_publication_withdrawal_rejects_stale_publication_version_after_event_rebinding() -> None:
+    prepared = prepared_publication_withdrawal()
+    mismatched_command = replace(prepared.command, expected_publication_version=2)
+    with pytest.raises(ValueError, match="publication withdrawal version binding is invalid"):
+        _rebind_prepared_publication_withdrawal(prepared, command=mismatched_command)
 
 
 def test_approval_command_keeps_exact_revision_precondition() -> None:
