@@ -1,6 +1,6 @@
 # Phase 3 FMEA Governance Closure — Task 2 Report
 
-日期：2026-08-30
+日期：2026-08-31
 基线：`64d023f1`（Task 1 accepted）
 范围：仅实现 Task 2，未进入 Task 3+，未 push/PR。
 
@@ -9,6 +9,8 @@
 Status: DONE
 
 本地 commits：`0573812b`（implementation/tests）、`8d6fb19a` 与 `783c80ac`（本报告及格式修复）。
+
+以下“Fix round 1”记录覆盖独立复审 round 1 的 NEEDS_FIXES；以其最新结果为准。
 
 Task 2 已提供：
 
@@ -92,3 +94,78 @@ Task 2 已提供：
 
 Task 3 handoff：实现 server-owned `GovernanceSourcePort` 的 authoritative query/persistence 接入，并消费本报告中的 readiness blockers；保留客户端不能选择 DomainPack/template/rule/evidence/graph identity 的边界。
 Task 4 handoff：在 readiness 已确定后接 publication/export/UI；model checklist 仍只能作为 immutable explanation，不能改变 deterministic readiness 或 legacy publication status。
+
+## Fix round 1 — independent review response
+
+日期：2026-08-31
+
+### 结果
+
+Status: DONE
+
+实现 commit：`16bd811a`；本报告单独作为 documentation commit 保存。
+
+本轮只处理 Task 2，没有进入 Task 3+，没有 push/PR，也没有创建子智能体。
+
+### RED
+
+先新增最小反向测试，再改生产代码。首轮 focused 命令：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_assistance.py tests/unit/test_fmea_governance_source.py -q
+```
+
+结果：`15 failed, 15 passed`。失败分别复现了 mapping/coerce 输入、弱类型 policy、缺失 graph 无条件 blocker、零/伪 identity、foreign parent、phantom evidence、空 acknowledgement wildcard、model forged mapping/private path、以及 callback source seam。
+
+### GREEN 与设计裁定
+
+- `GovernanceDomainPolicy` 是 frozen typed policy；required risk/propagation/template/scoring/propagation-rule/evidence 与 acknowledgement 开关独立表达，所有 bool 使用 exact `bool` 检查，unknown mapping field 拒绝，`"false"` 不会被转换为 true。缺失 graph 不由 assembler 添加 blocker，只由 policy 的 `required_propagation` 决定；retrieval profile 只进入 provenance。
+- `ResolvedArtifactIdentity` 与 `GovernanceArtifactSet` 强制 server registry verified、非零 hash、manifest id/version/hash 绑定。`RegistryGovernanceArtifactProvider` 逐一调用现有 DomainPack/template/scoring/propagation registries，交叉验证返回对象身份和 canonical content hash；graph 的实际 rule pack 必须匹配 domain pack 与 resolved propagation rule。
+- `GovernanceInputs` 现在只接收 typed `FmeaAnalysis`、`DomainPackManifest`、resolved identities、typed rows/risk/graph/evidence/acknowledgements；删除 `Mapping`/`coerce`、caller `analysis_hash`、deterministic placeholder。analysis hash 始终从 authoritative analysis canonical helper 计算。`RevisionAssemblyRequest` 增加 `parent_revision_hash` precondition，parent id/hash/workspace/analysis 全绑定。
+- assembler 对 row field claims、risk dimensions、graph edges 和 paths 逐引用调用既有 evidence validators，并检查 pack self-hash/lineage/workspace/ACL/timestamps/expiry；phantom ref 和失效 pack 都生成 blocking issue。acknowledgement 只接受 exact typed `HumanAcknowledgementReference`（HUMAN、decision/scope/issue/revision/version/evidence 全匹配）；没有在 `FmeaRevision` 重复添加字段，沿用既有 `ReadinessIssue.acknowledgement_decision_id` 对 canonical revision hash 的覆盖。
+- assistance 只接受 typed `PublicationReadinessReport`；发送 generator 前构造不含 workspace/analysis/private path/URI/raw provider output 的 bounded allowlisted `ReadinessChecklistProjection`。generator mapping 采用 exact schema、严格 bool、长度上限和 identifier 校验；任何 ready/blocker/revision identity 改写拒绝，generator unavailable 回退 offline，`AssistanceSuggestion.applied` 始终 false。
+- `RepositoryGovernanceSource`/`ServerGovernanceSourceAdapter` 由 `GovernanceRepositoryProviders` 的 typed analysis/review/risk/propagation/evidence/artifact/run/ack query ports 组成。`load_inputs` 只接收 analysis/workspace scope，实体与 identity 全部 server lookup；移除 `WorkspaceGovernanceSource` arbitrary callable seam，不增加 SQLite migration/repository 或 governance mutation。
+
+### 测试与工具结果
+
+最终指定 focused、计划 compatibility、Task 1 governance/review 最小兼容组合：`159 passed`。
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_assistance.py tests/unit/test_fmea_governance_source.py tests/unit/test_fmea_risk_service.py tests/unit/test_fmea_propagation_review.py tests/unit/test_fmea_review_service.py tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_review_composition.py tests/unit/test_fmea_review_contracts.py tests/unit/test_fmea_propagation_graph.py tests/unit/test_fmea_risk_repository_contract.py -q
+```
+
+结果：`159 passed in 0.86s`。
+
+```text
+.venv\Scripts\ruff.exe check <Task 2 changed production/test files>
+.venv\Scripts\ruff.exe format --check <Task 2 changed production/test files>
+.venv\Scripts\python.exe -m compileall -q fmea_application fmea_infrastructure tests
+git diff --check
+```
+
+结果：ruff check passed；除保持仓库既有格式的 `governance_contracts.py` 外，其余 10 个改动文件 format check passed；compileall passed；diff check passed。未运行全量 pytest。`governance_contracts.py` 只保留 parent hash 的 8 行必要契约变更。
+
+### Fix round 1 文件与迁移
+
+生产/port/composition：
+
+- `fmea_application/revision_assembler.py`
+- `fmea_application/governance_assistance_service.py`
+- `fmea_application/governance_contracts.py`（仅 parent hash precondition）
+- `fmea_application/ports.py`
+- `fmea_infrastructure/governance_assistance_generator.py`
+- `fmea_infrastructure/composition.py`
+
+测试/fixtures：
+
+- `tests/unit/test_fmea_revision_assembler.py`
+- `tests/unit/test_fmea_publication_readiness.py`
+- `tests/unit/test_fmea_governance_assistance.py`
+- `tests/unit/test_fmea_governance_source.py`
+- `tests/fmea_governance_fixtures.py`（typed fixture migration）
+
+### Concerns / Task 3/4 handoff
+
+1. Task 3 需要为 `GovernanceRepositoryProviders` 提供现有 review/risk/propagation/analysis/evidence/decision repositories 的 typed query wrappers；不能恢复 callback/mapping loader，也不能让 transport/client 提供治理实体或 identities。
+2. Task 3 继续从 persistence 读取真实 `revision_record_version`，并保持 Task 1 `PreparedApprovalSubmission`/`PreparedPublication` 的 version evidence；不得把 submission/publication version 写入 `FmeaRevision` content hash。
+3. Task 4 可消费 `PublicationReadinessReport` 和 immutable assistance suggestion，但不得让模型、ack reference 或 UI 改写 deterministic blockers、revision identity、ack lineage 或 legacy `PublicationStatus`。
