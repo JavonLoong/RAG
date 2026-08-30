@@ -1,0 +1,281 @@
+{
+  "schema_version": "graphrag.fmea.propagation.fixture.v1",
+  "workspace_id": "fuel-combustion",
+  "analysis_id": "analysis-fuel-combustion-1",
+  "profiles": {
+    "rag_only": {
+      "resolved_profile": "rag_only",
+      "evidence_types": ["text"],
+      "pack_id": "pack-rag-only",
+      "parents": []
+    },
+    "graphrag_local_only": {
+      "resolved_profile": "graphrag_local_only",
+      "evidence_types": ["graph"],
+      "pack_id": "pack-graphrag-local-only",
+      "parents": ["pack-rag-only"]
+    },
+    "graphrag_global_only": {
+      "resolved_profile": "graphrag_global_only",
+      "evidence_types": ["community"],
+      "pack_id": "pack-graphrag-global-only",
+      "parents": ["pack-rag-only"]
+    },
+    "graphrag_only": {
+      "resolved_profile": "graphrag_only",
+      "evidence_types": ["graph", "community"],
+      "pack_id": "pack-graphrag-only",
+      "parents": ["pack-graphrag-local-only", "pack-graphrag-global-only"]
+    },
+    "combined": {
+      "resolved_profile": "combined",
+      "evidence_types": ["text", "graph", "community"],
+      "pack_id": "pack-combined",
+      "parents": ["pack-rag-only", "pack-graphrag-local-only", "pack-graphrag-global-only"]
+    },
+    "auto": {
+      "resolved_profile": "combined",
+      "evidence_types": ["text", "graph", "community"],
+      "pack_id": "pack-combined",
+      "parents": ["pack-rag-only", "pack-graphrag-local-only", "pack-graphrag-global-only"]
+    },
+    "custom": {
+      "resolved_profile": "custom",
+      "evidence_types": ["text", "graph"],
+      "pack_id": "pack-custom",
+      "parents": ["pack-rag-only", "pack-graphrag-local-only"]
+    }
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-text",
+      "source_type": "text",
+      "document_id": "fuel-procedure",
+      "locator": "page:4#span:12",
+      "quote": "Fuel pressure remains within the operating envelope during steady state."
+    },
+    {
+      "evidence_id": "ev-graph",
+      "source_type": "graph",
+      "document_id": "fuel-topology-graph",
+      "locator": "edge:fuel-filter-to-fuel-manifold",
+      "quote": "The filter feeds the manifold through the fuel-pressure interface."
+    },
+    {
+      "evidence_id": "ev-community",
+      "source_type": "community",
+      "document_id": "combustion-community-7",
+      "locator": "community:7#claim:3",
+      "quote": "Fuel delivery restrictions can reduce flame stability downstream."
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "forward",
+      "edges": [
+        {
+          "edge_id": "edge-forward-1",
+          "source_entity_id": "fuel_pump",
+          "target_entity_id": "fuel_filter",
+          "evidence_ids": ["ev-text"],
+          "risk_priority": "normal",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-forward-2",
+          "source_entity_id": "fuel_filter",
+          "target_entity_id": "fuel_manifold",
+          "evidence_ids": ["ev-graph"],
+          "risk_priority": "normal",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        }
+      ]
+    },
+    {
+      "case_id": "reverse",
+      "edges": [
+        {
+          "edge_id": "edge-reverse-1",
+          "source_entity_id": "controller",
+          "target_entity_id": "fuel_pump",
+          "evidence_ids": ["ev-community"],
+          "risk_priority": "normal",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-reverse-2",
+          "source_entity_id": "fuel_pump",
+          "target_entity_id": "fuel_manifold",
+          "evidence_ids": ["ev-text"],
+          "risk_priority": "normal",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        }
+      ]
+    },
+    {
+      "case_id": "cycle",
+      "edges": [
+        {
+          "edge_id": "edge-cycle-1",
+          "source_entity_id": "fuel_pump",
+          "target_entity_id": "fuel_manifold",
+          "evidence_ids": ["ev-text"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-cycle-2",
+          "source_entity_id": "fuel_manifold",
+          "target_entity_id": "fuel_nozzle",
+          "evidence_ids": ["ev-graph"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-cycle-3",
+          "source_entity_id": "fuel_nozzle",
+          "target_entity_id": "combustor_flame",
+          "evidence_ids": ["ev-community"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-cycle-4",
+          "source_entity_id": "combustor_flame",
+          "target_entity_id": "pressure_sensor",
+          "evidence_ids": ["ev-text"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-cycle-5",
+          "source_entity_id": "pressure_sensor",
+          "target_entity_id": "controller",
+          "evidence_ids": ["ev-graph"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-cycle-6",
+          "source_entity_id": "controller",
+          "target_entity_id": "fuel_pump",
+          "evidence_ids": ["ev-community"],
+          "risk_priority": "medium",
+          "is_cyclic": true,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": true,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        }
+      ]
+    },
+    {
+      "case_id": "conflict",
+      "edges": [
+        {
+          "edge_id": "edge-conflict-1",
+          "source_entity_id": "fuel_nozzle",
+          "target_entity_id": "combustor_flame",
+          "evidence_ids": ["ev-community"],
+          "risk_priority": "critical",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": true,
+          "is_terminal": true,
+          "claim_status": "conflict",
+          "evidence_support": "contradicted"
+        }
+      ]
+    },
+    {
+      "case_id": "long_path",
+      "edges": [
+        {
+          "edge_id": "edge-long-1",
+          "source_entity_id": "fuel_pump",
+          "target_entity_id": "fuel_filter",
+          "evidence_ids": ["ev-text"],
+          "risk_priority": "medium",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-long-2",
+          "source_entity_id": "fuel_filter",
+          "target_entity_id": "fuel_manifold",
+          "evidence_ids": ["ev-graph"],
+          "risk_priority": "medium",
+          "is_cyclic": false,
+          "is_unprocessed": false,
+          "is_external": false,
+          "is_terminal": false,
+          "claim_status": "known",
+          "evidence_support": "supported"
+        },
+        {
+          "edge_id": "edge-long-3",
+          "source_entity_id": "fuel_manifold",
+          "target_entity_id": "fuel_nozzle",
+          "evidence_ids": ["ev-community"],
+          "risk_priority": "medium",
+          "is_cyclic": false,
+          "is_unprocessed": true,
+          "is_external": false,
+          "is_terminal": true,
+          "claim_status": "known",
+          "evidence_support": "partially_supported"
+        }
+      ]
+    }
+  ]
+}
