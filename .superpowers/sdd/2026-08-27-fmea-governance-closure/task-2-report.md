@@ -215,3 +215,104 @@ git diff --check
 1. Task 3 需要为 `GovernanceRepositoryProviders` 提供现有 review/risk/propagation/analysis/evidence/decision repositories 的 typed query wrappers；不能恢复 callback/mapping loader，也不能让 transport/client 提供治理实体或 identities。
 2. Task 3 继续从 persistence 读取真实 `revision_record_version`，并保持 Task 1 `PreparedApprovalSubmission`/`PreparedPublication` 的 version evidence；不得把 submission/publication version 写入 `FmeaRevision` content hash。
 3. Task 4 可消费 `PublicationReadinessReport` 和 immutable assistance suggestion，但不得让模型、ack reference 或 UI 改写 deterministic blockers、revision identity、ack lineage 或 legacy `PublicationStatus`。
+
+## Fix round 3 — authority-proof and payload-safety re-review response
+
+日期：2026-08-31
+
+### 结果
+
+Status: DONE_WITH_CONCERNS
+
+实现 commit：`324dfc8e`。本轮报告随后单独提交；未 push/PR，未创建子智能体，未进入 Task 3+。
+
+本轮只处理 authority proof、artifact/source authenticity、parent scope、propagation declaration、assistance payload safety 和 test-count truthfulness。
+
+### RED
+
+先添加最小反向测试，再改生产代码。首轮 fix round 3 RED：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py::test_revision_assembler_requires_a_runtime_bound_verifier tests/unit/test_fmea_revision_assembler.py::test_legacy_module_level_resolver_issuance_helpers_are_not_importable tests/unit/test_fmea_revision_assembler.py::test_governance_inputs_rejects_missing_declared_propagation_identity_even_when_optional tests/unit/test_fmea_governance_assistance.py::test_suggestion_payload_does_not_echo_unsafe_report_identifiers -q
+```
+
+结果：`4 failed in 0.19s`。失败复现了裸 assembler 接受未验证 inputs、旧 module-level resolver helper 仍存在、声明的 propagation identity 可省略、以及 assistance payload 回显不安全 identifier；失败原因是缺实现而非测试环境故障。
+
+随后补充的反向测试也先失败：typed registry ports 没有 source-byte 能力；registry 返回与 typed template 不一致的 source bytes 时原实现 false-green；foreign parent 可以在 source 签名前进入 inputs；registry source 被篡改后 getter 仍会返回 bytes。
+
+### GREEN 与设计裁定
+
+- 删除 `fmea_application.revision_assembler` 中 module-level resolver capability、signer/issuance helper 和 per-record proof constructors。`ResolvedArtifactIdentity`/`ResolvedAnalysisRecord` 是严格 typed records，authority 不由公开 `registry_verified` bool、格式合法 hash 或 caller-settable proof 表示。`HumanAcknowledgementReference` 的普通 constructor 永远拒绝；reference 只由 source 从实际查询的 `GovernanceAcknowledgementRecord` 内部解析。
+- `RepositoryGovernanceSource` 在实例闭包内持有随机 HMAC secret 与 issuance nonce，只生成 opaque digest/signature proof，不暴露 module-level signer、可导入 token 或公开 production issuance API。签名覆盖完整 canonical `GovernanceInputs` body：workspace/analysis、scoped analysis record version/canonical/source hash、domain/template/scoring/propagation exact identities、rows/risk/graph/evidence packs、unresolved issues、实际 HUMAN acknowledgement decision fields、active runs、retrieval provenance 与 parent revision。验证使用 `hmac.compare_digest`；替换 inputs、artifact、analysis、ack 或 active-run state 均不能通过。
+- `build_workspace_governance_runtime` 创建同一个 source，并把 source-bound verifier 接入该 runtime 的 assembler/readiness policy；裸 `RevisionAssembler` 没有 verifier 时拒绝 production inputs。transport/source boundary 仍只接受 `analysis_id`/`workspace_id`，不能传 rows、evidence、identities、ack 或治理 inputs；fixtures 通过 typed providers + runtime source 获取 attested inputs，不调用 production issuance helper。
+- `GovernanceDomainPolicy` 继续 exact-typed bool/unknown-field rejection，并独立表达 required risk、propagation、template、scoring rule、propagation rule、evidence。assembler 对缺失 graph 不无条件添加 blocker；graph 存在时只记录非法/失效问题，缺失 required artifact/graph 由 readiness policy 决定。propagation declaration 在 `GovernanceArtifactSet` 和 `GovernanceInputs` 两侧均做 bidirectional exact equality，None、omission、extra identity 都 fail closed。
+- registry provider 现在要求 typed registry `get_source_bytes(id, version)` port，并对 raw source 重新解析/编译后 exact compare typed registry record 的 id/version/content。具体 file registries 的 source getter 也会重新验证已存 manifest/self-hash；template manifest 增加独立 `source_hash`，不再只依赖 compiled `template_hash`。domain pack declared artifact set 与 resolved identities exact，graph rule pair 必须与 resolved propagation rule exact 绑定。
+- source adapter 对 query 返回的 `ResolvedAnalysisRecord` 做 workspace/analysis/version/hash 验证；parent provider 返回值在签名前做 typed scope 校验，assembler 仍要求 request 的 parent id/hash 精确匹配。retrieval 使用 typed `RetrievalProvenanceQueryPort` 的 server lookup，保留 `rag_only`/`graphrag_only`/`hybrid` provenance，不与 propagation requirement 耦合。
+- assistance generator 只收到 bounded sanitized projection；source/evidence/blocker identifiers 经过 allowlist 或稳定 redaction，private Windows/POSIX path、URI、secret-like content 不进入 generator 或最终 suggestion payload。Mapping 输出继续 exact-schema、strict bool、bounded-size、authority-field exact comparison；ack 删除/替换失败，canonical reorder 允许，unavailable generator offline fallback，`AssistanceSuggestion.applied` 恒为 `False`。
+
+### 字段/port 迁移与兼容影响
+
+- `DomainPackRegistry`、`ScoringRuleRegistry`、`PropagationRuleRegistry` 增加 typed `get_source_bytes(id, version)` port；具体 file registries 提供 bounded integrity-checked implementation。`FileTemplateRegistry` manifest 增加 `source_hash`，旧 manifest 缺少该字段会 fail closed，需要后续显式 re-register/migration；本轮不实现 migration，避免进入 Task 3+。
+- `GovernanceRepositoryProviders` 保持按 concern 分解的 typed query ports，并新增可选 typed parent revision provider；没有恢复万能 `Callable[[], Mapping]` seam。analysis query 必须返回 `ResolvedAnalysisRecord`，ack query 必须返回持久化 `GovernanceAcknowledgementRecord`，retrieval query 必须返回 scoped `GovernanceRetrievalProvenance`。
+- `GovernanceInputs` 增加 source-owned opaque attestation precondition；`RevisionAssembler`/readiness runtime 使用 source-bound verifier。`FmeaRevision` 未重复添加 acknowledgement 字段，仍只通过 `ReadinessIssue.acknowledgement_decision_id` 覆盖 canonical revision hash；Task 1 `revision_record_version` persistence evidence 仍不进入 revision content hash。
+- 仅修改 Task 2 所需的 registry source verification seam、application ports/composition、Task 2 implementation/tests/fixtures；未写 SQLite migration/repository、governance service、REST/CLI/export/UI，未改变 legacy row/edge `PublicationStatus`。
+
+### 测试与工具结果
+
+#### 用户要求的完整 matrix（fix round 3 最终 fresh 成功运行）
+
+命令：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_assistance.py tests/unit/test_fmea_governance_source.py tests/unit/test_fmea_risk_service.py tests/unit/test_fmea_propagation_review.py tests/unit/test_fmea_review_service.py tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_review_composition.py tests/unit/test_fmea_review_contracts.py tests/unit/test_fmea_propagation_graph.py tests/unit/test_fmea_risk_repository_contract.py -q
+```
+
+fresh stdout：
+
+```text
+........................................................................ [ 37%]
+........................................................................ [ 75%]
+..............................................                           [100%]
+190 passed in 0.73s
+```
+
+`179 passed` 是上一轮报告中的历史结果，当前 checkout fresh 重跑不可复现；re-review 提到的 `158` 也不是本轮最终 matrix 的 fresh 结果。round 3 新增/纳入的 reverse tests 以及 parent/registry checks 使当前完整 matrix 的唯一 fresh 记录为 `190 passed`，因此不再使用 `179`。
+
+额外 registry/source compatibility：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_domain_pack_registry.py tests/unit/test_fmea_propagation_rule_registry.py tests/unit/test_structured_output_file_registry.py -q
+......................................................ssssss............ [ 92%]
+......                                                                   [100%]
+72 passed, 6 skipped in 1.23s
+```
+
+TDD 后的 Task 2 focused：`78 passed in 0.31s`；后续 parent/source integrity 反向测试通过，最终 matrix 上述 `190 passed` 已包含这些测试。
+
+静态/编译/差异检查：
+
+```text
+.venv\Scripts\ruff.exe check <16 个 Task 2 改动代码/测试文件>
+All checks passed!
+
+.venv\Scripts\ruff.exe format --check <16 个 Task 2 改动代码/测试文件>
+16 files already formatted
+
+.venv\Scripts\python.exe -m compileall -q fmea_application fmea_infrastructure structured_output_infrastructure tests
+passed
+
+git diff --check
+passed（仅 Git 的 LF/CRLF warning，无 diff whitespace error）
+```
+
+未运行全量 pytest，符合用户的范围要求。
+
+### Concerns / Task 3/4 handoff
+
+1. `FileTemplateRegistry` 的 source authenticity 需要独立 `source_hash`，所以旧 manifest 会 fail closed；后续如需保留旧 registry data，必须由明确的 migration/re-registration 任务处理，不能在 transport 或 readiness 中放宽兼容路径。本轮已用 compatibility tests 覆盖新布局与篡改拒绝。
+2. Task 3 必须通过 runtime-bound `RepositoryGovernanceSource` 提供真实 typed providers：analysis scope attestation、registry source bytes/typed records、rows/risk/graph/evidence query、实际 ack decision records、active-run query、retrieval provenance 和 parent query；不得构造 signer/verifier、伪造 attestation 或从 transport 传入治理 state。
+3. Task 3 继续从 persistence 读取真实 `revision_record_version` 作为 prepared approval/publication precondition；不得用 submission/publication record version 替代，也不得把它加入 `FmeaRevision` content hash。Task 4 只能消费 deterministic readiness report 与 immutable assistance suggestion。
+
+Task 3 handoff：组合现有 review/risk/propagation/evidence/decision/run/retrieval repositories 为本报告列出的 typed query providers，并让 runtime source 负责签发一次完整-input attestation；不恢复 callback/mapping seam，不实现 transport。
+
+Task 4 handoff：在 deterministic readiness 已完成且 blocker/ack identity 已验证后接入 governance lifecycle；保持模型 offline fallback、`applied=False`、ack exact binding 与 legacy `PublicationStatus` 不变。
