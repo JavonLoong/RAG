@@ -168,6 +168,17 @@ def _encode_propagation_path_cursor(
     return f"{payload.decode('ascii')}.{base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')}"
 
 
+def _decode_canonical_cursor_part(value: str) -> bytes:
+    try:
+        decoded = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+        canonical = base64.urlsafe_b64encode(decoded).rstrip(b"=").decode("ascii")
+    except (ValueError, TypeError, UnicodeDecodeError) as exc:
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid") from exc
+    if not hmac.compare_digest(canonical, value):
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    return decoded
+
+
 def _decode_propagation_path_cursor(
     request: Request,
     value: str | None,
@@ -182,17 +193,13 @@ def _decode_propagation_path_cursor(
     payload_text, signature_text = value.split(".")
     if not _CURSOR_PART.fullmatch(payload_text) or not _CURSOR_PART.fullmatch(signature_text):
         raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
-    try:
-        payload = payload_text.encode("ascii")
-        expected = hmac.new(_propagation_cursor_secret(request), payload, hashlib.sha256).digest()
-        actual = base64.urlsafe_b64decode(signature_text + "=" * (-len(signature_text) % 4))
-    except (ValueError, TypeError) as exc:
-        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid") from exc
+    payload = _decode_canonical_cursor_part(payload_text)
+    actual = _decode_canonical_cursor_part(signature_text)
+    expected = hmac.new(_propagation_cursor_secret(request), payload_text.encode("ascii"), hashlib.sha256).digest()
     if not hmac.compare_digest(actual, expected):
         raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
     try:
-        raw = base64.urlsafe_b64decode(payload_text + "=" * (-len(payload_text) % 4)).decode("ascii")
-        decoded = json.loads(raw)
+        decoded = json.loads(payload.decode("ascii"))
     except (ValueError, UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
         raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid") from exc
     if (
@@ -252,7 +259,6 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> Any:
             ) from exc
         if getattr(runtime, "service", None) is None:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA propagation service is unavailable")
-        _validated_start_defaults(getattr(runtime, "start_defaults", None))
         cache[workspace.workspace_id] = runtime
         return runtime
 

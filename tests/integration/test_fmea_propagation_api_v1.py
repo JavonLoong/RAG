@@ -164,6 +164,20 @@ def _legacy_review_cursor(client: TestClient, graph_revision_id: str, path_id: s
     return f"{payload.decode('ascii')}.{encoded_signature.decode('ascii')}"
 
 
+def _noncanonical_same_bytes_alias(value: str) -> str:
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    decoded = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+    canonical = base64.urlsafe_b64encode(decoded).rstrip(b"=").decode("ascii")
+    assert canonical == value
+    assert len(value) % 4 == 3
+    canonical_index = alphabet.index(value[-1])
+    assert canonical_index % 4 == 0
+    alias = value[:-1] + alphabet[canonical_index + 1]
+    assert alias != value
+    assert base64.urlsafe_b64decode(alias + "=") == decoded
+    return alias
+
+
 def _workspace(tmp_path: Path) -> WorkspaceConfig:
     return WorkspaceConfig(
         workspace_id="fuel-combustion",
@@ -402,7 +416,8 @@ def test_paths_cursor_rejects_signature_tampering(
         headers=_headers(),
     )
     cursor = first.json()["data"]["next_cursor"]
-    tampered = cursor[:-1] + ("A" if cursor[-1] != "A" else "B")
+    payload, signature = cursor.split(".")
+    tampered = f"{payload}.{_noncanonical_same_bytes_alias(signature)}"
 
     response = client.get(
         "/api/v1/fmea/propagation-graphs/graph-1/paths?limit=1&cursor=" + tampered,
@@ -411,6 +426,44 @@ def test_paths_cursor_rejects_signature_tampering(
 
     assert response.status_code == 400
     assert response.json()["code"] == "FMEA_REVIEW_REQUEST_INVALID"
+
+
+def test_service_only_explicit_runtime_supports_non_start_endpoint() -> None:
+    service = FakePropagationService(_graph("ws-1"))
+    runtime = SimpleNamespace(service=service)
+    app = create_app(
+        review_auth_provider=FakeAuth(),
+        propagation_runtime_factory=lambda _workspace: runtime,
+    )
+    app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: SimpleNamespace(workspace_id=workspace_id))
+    client = TestClient(app, client=("127.0.0.1", 50000), raise_server_exceptions=False)
+
+    response = client.get("/api/v1/fmea/propagation-runs/run-1", headers=_headers())
+
+    assert response.status_code == 200
+    assert response.json()["data"]["run_id"] == "run-1"
+    assert service.calls == ["get_run"]
+
+
+def test_service_only_explicit_runtime_start_fails_before_service_call() -> None:
+    service = FakePropagationService(_graph("ws-1"))
+    runtime = SimpleNamespace(service=service)
+    app = create_app(
+        review_auth_provider=FakeAuth(),
+        propagation_runtime_factory=lambda _workspace: runtime,
+    )
+    app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: SimpleNamespace(workspace_id=workspace_id))
+    client = TestClient(app, client=("127.0.0.1", 50000), raise_server_exceptions=False)
+
+    response = client.post(
+        "/api/v1/fmea/analyses/analysis-1/propagation-runs",
+        headers=_headers(version=1),
+        json=_start_body(),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["code"] == "FMEA_WORKSPACE_CONFIGURATION_INVALID"
+    assert service.calls == []
 
 
 def test_review_replay_response_is_identical_for_same_request(
