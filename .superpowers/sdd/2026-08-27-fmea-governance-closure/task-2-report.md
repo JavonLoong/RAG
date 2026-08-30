@@ -95,6 +95,52 @@ Task 2 已提供：
 Task 3 handoff：实现 server-owned `GovernanceSourcePort` 的 authoritative query/persistence 接入，并消费本报告中的 readiness blockers；保留客户端不能选择 DomainPack/template/rule/evidence/graph identity 的边界。
 Task 4 handoff：在 readiness 已确定后接 publication/export/UI；model checklist 仍只能作为 immutable explanation，不能改变 deterministic readiness 或 legacy publication status。
 
+## Fix round 2 — re-review OPEN/NEW response
+
+日期：2026-08-31
+
+### 结果
+
+Status: DONE
+
+实现 commit：`a05cf595`；本轮仍只处理 Task 2，没有进入 Task 3+，没有 push/PR，也没有创建子智能体。
+
+### RED
+
+先新增最小反向测试并运行 Task 2 focused 组。首轮结果为 `7 failed, 32 passed`，失败复现公开 `registry_verified=True`、artifact declaration subset、公开 acknowledgement reference、model acknowledgement replacement/duplicate、缺少 scoped analysis record、以及缺少 retrieval provenance port。随后补充的 `required=false` declared-template 漏洞测试先以 `True` 失败，确认 readiness 会漏掉 declared artifact；source 错 hash fixture 先被修正为真正篡改持久化 record 后再验证。
+
+### GREEN 与设计裁定
+
+- artifact identity 不再暴露 caller-settable `registry_verified`。`RegistryArtifactRecord` 是 typed registry 数据，`RegistryGovernanceArtifactProvider` 重新核对 registry 返回对象的 id/version 与现有 canonical/source content hash，再由模块内部 capability 签发 attestation；`ResolvedArtifactIdentity`、`GovernanceArtifactSet`、`GovernanceInputs` 和 readiness context 都重新验证 attestation。declared template/scoring identity 使用 exact set，propagation rule 也必须与 graph 实际 rule pack id/version 精确绑定；缺失、额外、全零、错 registry hash 或非零伪 identity 均 fail closed。
+- legacy `FmeaAnalysis` 不再作为 scope proof。`ResolvedAnalysisRecord` 携带 workspace、typed analysis、record version、canonical/source hash 和 resolver attestation；analysis query port/source/assembler/readiness 精确绑定这些字段。普通 caller 只构造 `FmeaAnalysis + workspace_id` 或伪 hash 不能进入 governance inputs。
+- acknowledgement query port 改为返回 typed `GovernanceAcknowledgementRecord`，source 逐条验证 accepted status、decision hash/version、HUMAN actor、workspace/analysis、issue identity、revision/version/evidence binding，再内部签发 `HumanAcknowledgementReference`。公开 reference 无 resolver proof 不能构造；provider omission、foreign scope、错 status/hash/version 都不能清 blocker。`ReadinessIssue.acknowledgement_decision_id` 仍是唯一 revision 侧字段，未重复加入 revision contract。
+- model checklist 的 authority fields（code、severity、source、evidence、acknowledgement）与安全 projection 做 canonical exact comparison；删改、替换或重复 item 拒绝，canonical reorder 可接受。ready、blockers、revision identity 仍不可改，unavailable generator 继续 offline fallback，suggestion 永远 `applied=False`。
+- 新增 typed `RetrievalProvenanceQueryPort`。source 不再默认 combined/空值，而是 server lookup bounded `GovernanceRetrievalProvenance`，严格检查 scope、allowed profile、identifier、warning 安全字符和大小；`rag_only`/`graphrag_only`/hybrid provenance 原样进入 revision canonical hash，仍不决定 propagation 是否 required。
+- `RepositoryGovernanceSource` 的 test 使用完整有效 providers 后再调用 `load_inputs` 验证 client rows/evidence/identity override 被签名边界拒绝；risk、graph、evidence、analysis、acknowledgement、provenance mixed scope 和 active-run provider 均有实际 source 负测。没有恢复 callback/mapping runtime seam，也没有新增 SQLite migration/repository 或 governance mutation。
+
+### 字段/port 迁移与兼容影响
+
+- `GovernanceRepositoryProviders` 新增必填 `retrieval: RetrievalProvenanceQueryPort`；analysis provider 必须返回 `ResolvedAnalysisRecord`，ack provider 必须返回 `GovernanceAcknowledgementRecord`，artifact provider 必须返回 registry-attested `GovernanceArtifactSet`。
+- `GovernanceInputs.analysis` 从裸 `FmeaAnalysis` 迁移为 `ResolvedAnalysisRecord`，并新增必填 `retrieval_provenance`；旧的 caller profile 默认值、裸 analysis hash、公开 verified bool 和公开 ack reference 构造路径均按设计拒绝。
+- `PublicationReadinessContext` 新增 server-resolved analysis/artifact authority binding；required=false 只控制 readiness 是否要求该 artifact，不能使 revision 漏掉 DomainPack 已声明的 artifact。
+- 这些是 fail-closed 的 application/port contract 变更；Task 3 需要用现有 repositories/query adapters 生成上述 typed records，不应通过 transport/client 传入实体或 identity。
+
+### 测试与工具结果
+
+最终指定 combined focused/compatibility matrix：`179 passed in 0.78s`。
+
+运行的 pytest matrix 为：
+
+`tests/unit/test_fmea_revision_assembler.py`、`test_fmea_publication_readiness.py`、`test_fmea_governance_assistance.py`、`test_fmea_governance_source.py`、`test_fmea_risk_service.py`、`test_fmea_propagation_review.py`、`test_fmea_review_service.py`、`test_fmea_governance_contracts.py`、`test_fmea_review_composition.py`、`test_fmea_review_contracts.py`、`test_fmea_propagation_graph.py`、`test_fmea_risk_repository_contract.py`。
+
+结果：`179 passed`；scoped `ruff check` passed；Task 2 改动文件 `ruff format --check`（10 files，未机械重排既有 `governance_contracts.py`）passed；`python -m compileall -q fmea_application fmea_infrastructure tests` passed；`git diff --check` passed。未运行全量 pytest。
+
+### Concerns / Task 3/4 handoff
+
+1. Task 3 必须让现有 analysis/review/risk/propagation/evidence/decision/run/retrieval repositories 通过 typed query wrappers 提供 resolver-attested records；不能直接构造或重新暴露旧裸对象、mapping/callback loader，也不能让 transport/client 选择 artifact/provenance/graph identity。
+2. Task 3 继续使用真实 `revision_record_version` 作为 persistence precondition evidence；不得用 submission/publication version 替代，也不得把它加入 `FmeaRevision` content hash。当前 round 2 没有改 Task 1 prepared contracts 或 legacy `PublicationStatus`。
+3. Task 4 可消费 `PublicationReadinessReport` 与 immutable assistance suggestion；模型/ack/UI 不能改 deterministic readiness、authority fields、ack lineage 或 revision identity。Task 2 无未解决 blocker。
+
 ## Fix round 1 — independent review response
 
 日期：2026-08-31
