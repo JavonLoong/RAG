@@ -10,8 +10,9 @@ supplied hash, or a retrieval profile as governance authority.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from types import MappingProxyType
@@ -27,6 +28,7 @@ from core_domain.fmea.governance import (
     canonical_hash,
     canonical_json_value,
 )
+from core_domain.fmea.governance import canonical_hash as _canonical_hash
 from core_domain.fmea.policies import validate_evidence_ids, validate_propagation_edge, validate_row_evidence
 from core_domain.fmea.propagation import PropagationGraphRevision
 from core_domain.fmea.scoring import RiskAssessmentRecord
@@ -43,6 +45,26 @@ _HASH_LENGTH: Final = 64
 _ACTIVE_RUN_BLOCKER: Final = "ACTIVE_MUTATION_RUN"
 _SEVERITY_ORDER: Final = {"info": 0, "warning": 1, "blocking": 2, "critical": 3}
 _ARTIFACT_TYPES: Final = {"domain_pack", "template", "scoring_rule", "propagation_rule"}
+
+
+class _ResolverCapability:
+    __slots__ = ()
+
+
+_RESOLVER_CAPABILITY = _ResolverCapability()
+
+
+class _ResolverAttestation:
+    __slots__ = ("_kind", "_payload_hash")
+
+    def __init__(self, capability: object, kind: str, payload: object) -> None:
+        if capability is not _RESOLVER_CAPABILITY:
+            raise TypeError("resolver attestation can only be issued by a server resolver")
+        self._kind = kind
+        self._payload_hash = canonical_hash(payload)
+
+    def matches(self, kind: str, payload: object) -> bool:
+        return self._kind == kind and self._payload_hash == canonical_hash(payload)
 
 
 def _utc_now() -> str:
@@ -139,15 +161,14 @@ def _issue_tuple(value: object) -> tuple[ReadinessIssue, ...]:
 
 
 @dataclass(frozen=True, slots=True)
-class ResolvedArtifactIdentity:
-    """An identity proven by a server registry lookup."""
+class RegistryArtifactRecord:
+    """Typed data returned by a server registry before an identity is issued."""
 
     artifact_type: str
     artifact_id: str
     version: str
     content_hash: str
-    registry_verified: bool
-    registry_source: str = "server_registry"
+    source_hash: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "artifact_type", _text(self.artifact_type, "artifact_type"))
@@ -158,20 +179,201 @@ class ResolvedArtifactIdentity:
         object.__setattr__(
             self, "content_hash", _strict_hash(self.content_hash, "content_hash", nonzero=True).removeprefix("sha256:")
         )
-        if type(self.registry_verified) is not bool or not self.registry_verified:
-            raise ValueError("artifact identity must be verified by a server registry")
-        object.__setattr__(self, "registry_source", _text(self.registry_source, "registry_source"))
+        object.__setattr__(
+            self, "source_hash", _strict_hash(self.source_hash, "source_hash", nonzero=True).removeprefix("sha256:")
+        )
 
     @property
     def identity(self) -> Identity:
         return self.artifact_id, self.version, self.content_hash
 
+    @property
+    def attestation_payload(self) -> Mapping[str, object]:
+        return {
+            "artifact_type": self.artifact_type,
+            "artifact_id": self.artifact_id,
+            "version": self.version,
+            "content_hash": self.content_hash,
+            "source_hash": self.source_hash,
+        }
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ResolvedArtifactIdentity:
+    """An identity issued only after a server registry attestation."""
+
+    artifact_type: str
+    artifact_id: str
+    version: str
+    content_hash: str
+    source_hash: str
+    _attestation: _ResolverAttestation = field(repr=False, compare=False)
+
+    def __init__(
+        self,
+        artifact_type: str,
+        artifact_id: str,
+        version: str,
+        content_hash: str,
+        *,
+        source_hash: str,
+        _attestation: _ResolverAttestation,
+    ) -> None:
+        object.__setattr__(self, "artifact_type", _text(artifact_type, "artifact_type"))
+        if self.artifact_type not in _ARTIFACT_TYPES:
+            raise ValueError("artifact_type is unsupported")
+        object.__setattr__(self, "artifact_id", _text(artifact_id, "artifact_id"))
+        object.__setattr__(self, "version", _text(version, "version"))
+        object.__setattr__(
+            self, "content_hash", _strict_hash(content_hash, "content_hash", nonzero=True).removeprefix("sha256:")
+        )
+        object.__setattr__(
+            self, "source_hash", _strict_hash(source_hash, "source_hash", nonzero=True).removeprefix("sha256:")
+        )
+        expected = {
+            "artifact_type": self.artifact_type,
+            "artifact_id": self.artifact_id,
+            "version": self.version,
+            "content_hash": self.content_hash,
+            "source_hash": self.source_hash,
+        }
+        if not isinstance(_attestation, _ResolverAttestation) or not _attestation.matches(
+            "registry_artifact", expected
+        ):
+            raise TypeError("artifact identity requires a matching server registry attestation")
+        object.__setattr__(self, "_attestation", _attestation)
+
+    @property
+    def identity(self) -> Identity:
+        return self.artifact_id, self.version, self.content_hash
+
+    def verify(self) -> None:
+        expected = {
+            "artifact_type": self.artifact_type,
+            "artifact_id": self.artifact_id,
+            "version": self.version,
+            "content_hash": self.content_hash,
+            "source_hash": self.source_hash,
+        }
+        if not self._attestation.matches("registry_artifact", expected):
+            raise ValueError("artifact registry attestation is invalid")
+
+
+def _resolve_registry_artifact(record: RegistryArtifactRecord) -> ResolvedArtifactIdentity:
+    if not isinstance(record, RegistryArtifactRecord):
+        raise TypeError("registry artifact record is invalid")
+    if record.source_hash != record.content_hash:
+        raise ValueError("registry artifact source hash does not match content hash")
+    attestation = _ResolverAttestation(_RESOLVER_CAPABILITY, "registry_artifact", record.attestation_payload)
+    return ResolvedArtifactIdentity(
+        record.artifact_type,
+        record.artifact_id,
+        record.version,
+        record.content_hash,
+        source_hash=record.source_hash,
+        _attestation=attestation,
+    )
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ResolvedAnalysisRecord:
+    """Workspace-scoped analysis returned by an authoritative query adapter."""
+
+    workspace_id: str
+    analysis: FmeaAnalysis
+    record_version: int
+    canonical_hash: str
+    source_hash: str
+    _attestation: _ResolverAttestation = field(repr=False, compare=False)
+
+    def __init__(
+        self,
+        workspace_id: str,
+        analysis: FmeaAnalysis,
+        record_version: int,
+        canonical_hash: str,
+        source_hash: str,
+        *,
+        _attestation: _ResolverAttestation,
+    ) -> None:
+        workspace_id = _text(workspace_id, "workspace_id")
+        if not isinstance(analysis, FmeaAnalysis):
+            raise TypeError("analysis must be a FmeaAnalysis")
+        record_version = _positive(record_version, "record_version")
+        canonical_hash = _strict_hash(canonical_hash, "canonical_hash", nonzero=True).removeprefix("sha256:")
+        source_hash = _strict_hash(source_hash, "source_hash", nonzero=True).removeprefix("sha256:")
+        expected = {
+            "workspace_id": workspace_id,
+            "analysis_id": analysis.analysis_id,
+            "record_version": record_version,
+            "canonical_hash": canonical_hash,
+            "source_hash": source_hash,
+        }
+        if canonical_hash != _canonical_hash(analysis) or source_hash != canonical_hash:
+            raise ValueError("analysis canonical/source hash does not match the authoritative object")
+        if not isinstance(_attestation, _ResolverAttestation) or not _attestation.matches("analysis_record", expected):
+            raise TypeError("analysis requires a matching server resolver attestation")
+        object.__setattr__(self, "workspace_id", workspace_id)
+        object.__setattr__(self, "analysis", analysis)
+        object.__setattr__(self, "record_version", record_version)
+        object.__setattr__(self, "canonical_hash", canonical_hash)
+        object.__setattr__(self, "source_hash", source_hash)
+        object.__setattr__(self, "_attestation", _attestation)
+
+    @property
+    def analysis_id(self) -> str:
+        return self.analysis.analysis_id
+
+    @property
+    def analysis_type(self) -> str:
+        return self.analysis.analysis_type
+
+    @property
+    def analysis_hash(self) -> str:
+        return self.canonical_hash
+
+    def verify(self) -> None:
+        expected = {
+            "workspace_id": self.workspace_id,
+            "analysis_id": self.analysis_id,
+            "record_version": self.record_version,
+            "canonical_hash": self.canonical_hash,
+            "source_hash": self.source_hash,
+        }
+        if self.canonical_hash != _canonical_hash(self.analysis) or self.source_hash != self.canonical_hash:
+            raise ValueError("analysis canonical/source hash does not match the authoritative object")
+        if not self._attestation.matches("analysis_record", expected):
+            raise ValueError("analysis resolver attestation is invalid")
+
+
+def _resolve_analysis_record(workspace_id: str, analysis: FmeaAnalysis) -> ResolvedAnalysisRecord:
+    canonical = _canonical_hash(analysis)
+    payload = {
+        "workspace_id": workspace_id,
+        "analysis_id": analysis.analysis_id,
+        "record_version": analysis.record_version,
+        "canonical_hash": canonical,
+        "source_hash": canonical,
+    }
+    attestation = _ResolverAttestation(_RESOLVER_CAPABILITY, "analysis_record", payload)
+    return ResolvedAnalysisRecord(
+        workspace_id,
+        analysis,
+        analysis.record_version,
+        canonical,
+        canonical,
+        _attestation=attestation,
+    )
+
 
 @dataclass(frozen=True, slots=True)
-class HumanAcknowledgementReference:
-    """Server-resolved human decision reference for one exact issue."""
+class GovernanceAcknowledgementRecord:
+    """Typed persisted decision record supplied by an acknowledgement query port."""
 
     decision_id: str
+    decision_hash: str
+    decision_record_version: int
+    status: str
     workspace_id: str
     analysis_id: str
     issue_code: str
@@ -182,11 +384,11 @@ class HumanAcknowledgementReference:
     revision_id: str
     revision_record_version: int
     evidence_ids: tuple[str, ...]
-    decision_record_version: int = 1
 
     def __post_init__(self) -> None:
         for field_name in (
             "decision_id",
+            "status",
             "workspace_id",
             "analysis_id",
             "issue_code",
@@ -196,19 +398,132 @@ class HumanAcknowledgementReference:
             "revision_id",
         ):
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
-        if self.actor_type is not ActorType.HUMAN:
-            raise ValueError("acknowledgement actor must be HUMAN")
         object.__setattr__(
-            self, "revision_record_version", _positive(self.revision_record_version, "revision_record_version")
+            self,
+            "decision_hash",
+            _strict_hash(self.decision_hash, "decision_hash", nonzero=True).removeprefix("sha256:"),
         )
         object.__setattr__(
             self, "decision_record_version", _positive(self.decision_record_version, "decision_record_version")
         )
+        object.__setattr__(
+            self, "revision_record_version", _positive(self.revision_record_version, "revision_record_version")
+        )
         object.__setattr__(self, "evidence_ids", _sorted_texts(self.evidence_ids, "evidence_id"))
+        if not isinstance(self.actor_type, ActorType):
+            raise TypeError("acknowledgement actor_type must be an ActorType")
+
+    @property
+    def attestation_payload(self) -> Mapping[str, object]:
+        return {
+            "decision_id": self.decision_id,
+            "decision_record_version": self.decision_record_version,
+            "status": self.status,
+            "workspace_id": self.workspace_id,
+            "analysis_id": self.analysis_id,
+            "issue_code": self.issue_code,
+            "issue_source_type": self.issue_source_type,
+            "issue_source_id": self.issue_source_id,
+            "actor_id": self.actor_id,
+            "actor_type": self.actor_type.value,
+            "revision_id": self.revision_id,
+            "revision_record_version": self.revision_record_version,
+            "evidence_ids": self.evidence_ids,
+        }
+
+
+def _acknowledgement_record_hash(record: GovernanceAcknowledgementRecord) -> str:
+    return canonical_hash(record.attestation_payload)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class HumanAcknowledgementReference:
+    """Resolver-issued reference for one exact human decision and issue."""
+
+    decision_id: str
+    decision_hash: str
+    decision_record_version: int
+    decision_status: str
+    workspace_id: str
+    analysis_id: str
+    issue_code: str
+    issue_source_type: str
+    issue_source_id: str
+    actor_id: str
+    actor_type: ActorType
+    revision_id: str
+    revision_record_version: int
+    evidence_ids: tuple[str, ...]
+    _attestation: _ResolverAttestation = field(repr=False, compare=False)
+
+    def __init__(
+        self,
+        decision_id: str,
+        workspace_id: str,
+        analysis_id: str,
+        issue_code: str,
+        issue_source_type: str,
+        issue_source_id: str,
+        actor_id: str,
+        actor_type: ActorType,
+        revision_id: str,
+        revision_record_version: int,
+        evidence_ids: tuple[str, ...],
+        decision_record_version: int = 1,
+        *,
+        decision_hash: str = "",
+        decision_status: str = "accepted",
+        _attestation: _ResolverAttestation | None = None,
+    ) -> None:
+        if actor_type is not ActorType.HUMAN:
+            raise ValueError("acknowledgement actor must be HUMAN")
+        if _attestation is None:
+            raise TypeError("acknowledgement reference requires a server decision attestation")
+        values = {
+            "decision_id": _text(decision_id, "decision_id"),
+            "decision_hash": _strict_hash(decision_hash, "decision_hash", nonzero=True).removeprefix("sha256:"),
+            "decision_record_version": _positive(decision_record_version, "decision_record_version"),
+            "decision_status": _text(decision_status, "decision_status"),
+            "workspace_id": _text(workspace_id, "workspace_id"),
+            "analysis_id": _text(analysis_id, "analysis_id"),
+            "issue_code": _text(issue_code, "issue_code"),
+            "issue_source_type": _text(issue_source_type, "issue_source_type"),
+            "issue_source_id": _text(issue_source_id, "issue_source_id"),
+            "actor_id": _text(actor_id, "actor_id"),
+            "actor_type": actor_type,
+            "revision_id": _text(revision_id, "revision_id"),
+            "revision_record_version": _positive(revision_record_version, "revision_record_version"),
+            "evidence_ids": _sorted_texts(evidence_ids, "evidence_id"),
+        }
+        expected = {
+            "decision_id": values["decision_id"],
+            "decision_record_version": values["decision_record_version"],
+            "status": values["decision_status"],
+            "workspace_id": values["workspace_id"],
+            "analysis_id": values["analysis_id"],
+            "issue_code": values["issue_code"],
+            "issue_source_type": values["issue_source_type"],
+            "issue_source_id": values["issue_source_id"],
+            "actor_id": values["actor_id"],
+            "actor_type": actor_type.value,
+            "revision_id": values["revision_id"],
+            "revision_record_version": values["revision_record_version"],
+            "evidence_ids": values["evidence_ids"],
+        }
+        expected["decision_hash"] = values["decision_hash"]
+        if not isinstance(_attestation, _ResolverAttestation) or not _attestation.matches(
+            "acknowledgement_record", expected
+        ):
+            raise TypeError("acknowledgement reference requires a matching server decision attestation")
+        for field_name, value in values.items():
+            object.__setattr__(self, field_name, value)
+        object.__setattr__(self, "_attestation", _attestation)
 
     def matches(self, revision: FmeaRevision, issue: ReadinessIssue) -> bool:
+        self.verify()
         return (
             self.decision_id == issue.acknowledgement_decision_id
+            and self.decision_status == "accepted"
             and self.workspace_id == revision.workspace_id
             and self.analysis_id == revision.analysis_id
             and self.issue_code == issue.code
@@ -219,6 +534,56 @@ class HumanAcknowledgementReference:
             and self.evidence_ids == issue.evidence_ids
             and self.actor_type is ActorType.HUMAN
         )
+
+    def verify(self) -> None:
+        payload = {
+            "decision_id": self.decision_id,
+            "decision_record_version": self.decision_record_version,
+            "status": self.decision_status,
+            "workspace_id": self.workspace_id,
+            "analysis_id": self.analysis_id,
+            "issue_code": self.issue_code,
+            "issue_source_type": self.issue_source_type,
+            "issue_source_id": self.issue_source_id,
+            "actor_id": self.actor_id,
+            "actor_type": self.actor_type.value,
+            "revision_id": self.revision_id,
+            "revision_record_version": self.revision_record_version,
+            "evidence_ids": self.evidence_ids,
+            "decision_hash": self.decision_hash,
+        }
+        if not self._attestation.matches("acknowledgement_record", payload):
+            raise ValueError("acknowledgement resolver attestation is invalid")
+
+
+def _resolve_acknowledgement_record(record: GovernanceAcknowledgementRecord) -> HumanAcknowledgementReference:
+    if not isinstance(record, GovernanceAcknowledgementRecord):
+        raise TypeError("acknowledgement provider returned an invalid decision record")
+    if record.status != "accepted":
+        raise ValueError("acknowledgement decision is not accepted")
+    if record.actor_type is not ActorType.HUMAN:
+        raise ValueError("acknowledgement decision actor must be HUMAN")
+    if record.decision_hash != _acknowledgement_record_hash(record):
+        raise ValueError("acknowledgement decision hash does not match its record")
+    payload = {**record.attestation_payload, "decision_hash": record.decision_hash}
+    attestation = _ResolverAttestation(_RESOLVER_CAPABILITY, "acknowledgement_record", payload)
+    return HumanAcknowledgementReference(
+        record.decision_id,
+        record.workspace_id,
+        record.analysis_id,
+        record.issue_code,
+        record.issue_source_type,
+        record.issue_source_id,
+        record.actor_id,
+        record.actor_type,
+        record.revision_id,
+        record.revision_record_version,
+        record.evidence_ids,
+        record.decision_record_version,
+        decision_hash=record.decision_hash,
+        decision_status=record.status,
+        _attestation=attestation,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -280,10 +645,15 @@ class GovernanceArtifactSet:
         self._check_identities(
             self.scoring_rule_identities, "scoring_rule", set(self.domain_pack.scoring_rule_identities)
         )
+        declared_propagation = set(self.domain_pack.propagation_rule_identities)
+        if len(declared_propagation) > 1:
+            raise ValueError("multiple declared propagation rules require a plural propagation identity contract")
+        if declared_propagation and self.propagation_rule_identity is None:
+            raise ValueError("propagation rule identities must exactly match the domain pack declarations")
+        if not declared_propagation and self.propagation_rule_identity is not None:
+            raise ValueError("propagation rule identities must exactly match the domain pack declarations")
         if self.propagation_rule_identity is not None:
-            self._check_identity(
-                self.propagation_rule_identity, "propagation_rule", set(self.domain_pack.propagation_rule_identities)
-            )
+            self._check_identity(self.propagation_rule_identity, "propagation_rule", declared_propagation)
 
     @staticmethod
     def _check_identity(
@@ -294,6 +664,7 @@ class GovernanceArtifactSet:
     ) -> None:
         if not isinstance(identity, ResolvedArtifactIdentity) or identity.artifact_type != expected_type:
             raise ValueError(f"{expected_type} identity has the wrong type")
+        identity.verify()
         pair = (identity.artifact_id, identity.version)
         valid = pair in expected_pair if isinstance(expected_pair, set) else pair == expected_pair
         if not valid:
@@ -313,8 +684,84 @@ class GovernanceArtifactSet:
         pairs = {(item.artifact_id, item.version) for item in identities}
         if len(pairs) != len(identities):
             raise ValueError(f"duplicate {expected_type} identity")
+        if pairs != expected_pairs:
+            raise ValueError(f"{expected_type} identities must exactly match the domain pack declarations")
         for item in identities:
             cls._check_identity(item, expected_type, expected_pairs)
+
+
+_RETRIEVAL_PROFILES: Final = {
+    "rag_only",
+    "graphrag_local_only",
+    "graphrag_global_only",
+    "graphrag_only",
+    "hybrid",
+    "combined",
+    "custom",
+    "auto",
+}
+_SAFE_METADATA_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
+_SAFE_WARNING = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._:-]{0,255}$")
+
+
+@dataclass(frozen=True, slots=True)
+class GovernanceRetrievalProvenance:
+    """Server-resolved, bounded retrieval provenance for one analysis scope."""
+
+    workspace_id: str
+    analysis_id: str
+    requested_profile: str
+    resolved_profile: str
+    evidence_types: tuple[str, ...]
+    source_counts: tuple[tuple[str, int], ...]
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "workspace_id", _text(self.workspace_id, "workspace_id"))
+        object.__setattr__(self, "analysis_id", _text(self.analysis_id, "analysis_id"))
+        requested = _text(self.requested_profile, "requested_profile")
+        resolved = _text(self.resolved_profile, "resolved_profile")
+        if requested not in _RETRIEVAL_PROFILES or resolved not in _RETRIEVAL_PROFILES:
+            raise ValueError("retrieval profile is unknown")
+        object.__setattr__(self, "requested_profile", requested)
+        object.__setattr__(self, "resolved_profile", resolved)
+        evidence_types = _sorted_texts(self.evidence_types, "evidence_type")
+        if len(evidence_types) > 32 or any(
+            _SAFE_METADATA_IDENTIFIER.fullmatch(item) is None for item in evidence_types
+        ):
+            raise ValueError("evidence_types are too large")
+        object.__setattr__(self, "evidence_types", evidence_types)
+        counts: list[tuple[str, int]] = []
+        for source_type, count in _sequence(self.source_counts, "source_counts"):
+            source_type = _text(source_type, "source_type")
+            if (
+                _SAFE_METADATA_IDENTIFIER.fullmatch(source_type) is None
+                or isinstance(count, bool)
+                or not isinstance(count, int)
+                or count < 0
+                or count > 1_000_000_000
+            ):
+                raise ValueError("source_counts are invalid")
+            counts.append((source_type, count))
+        if len(counts) > 32 or len({source_type for source_type, _ in counts}) != len(counts):
+            raise ValueError("source_counts are invalid or too large")
+        object.__setattr__(self, "source_counts", tuple(sorted(counts)))
+        warnings = _sequence(self.warnings, "retrieval_warnings")
+        if len(warnings) > 64 or any(
+            not isinstance(item, str) or _SAFE_WARNING.fullmatch(item) is None for item in warnings
+        ):
+            raise ValueError("retrieval warnings are unsafe or too large")
+        object.__setattr__(self, "warnings", tuple(sorted(set(warnings))))
+
+    @property
+    def snapshot(self) -> RetrievalProvenanceSnapshot:
+        return RetrievalProvenanceSnapshot(
+            requested_profile=self.requested_profile,
+            resolved_profile=self.resolved_profile,
+            evidence_types=self.evidence_types,
+            source_counts=self.source_counts,
+            warnings=self.warnings,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,9 +770,10 @@ class GovernanceInputs:
 
     workspace_id: str
     analysis_id: str
-    analysis: FmeaAnalysis
+    analysis: ResolvedAnalysisRecord
     domain_pack: DomainPackManifest
     domain_pack_identity: ResolvedArtifactIdentity
+    retrieval_provenance: GovernanceRetrievalProvenance
     rows: tuple[FmeaRow, ...] = ()
     risk_records: tuple[RiskAssessmentRecord, ...] = ()
     propagation_graph_revision: PropagationGraphRevision | None = None
@@ -333,11 +781,6 @@ class GovernanceInputs:
     template_identities: tuple[ResolvedArtifactIdentity, ...] = ()
     scoring_rule_identities: tuple[ResolvedArtifactIdentity, ...] = ()
     propagation_rule_identity: ResolvedArtifactIdentity | None = None
-    requested_profile: str = "combined"
-    resolved_profile: str = "combined"
-    evidence_types: tuple[str, ...] = ()
-    source_counts: tuple[tuple[str, int], ...] = ()
-    retrieval_warnings: tuple[str, ...] = ()
     unresolved_items: tuple[ReadinessIssue, ...] = ()
     acknowledgement_references: tuple[HumanAcknowledgementReference, ...] = ()
     active_run_ids: tuple[str, ...] = ()
@@ -347,16 +790,24 @@ class GovernanceInputs:
     def __post_init__(self) -> None:  # noqa: C901
         object.__setattr__(self, "workspace_id", _text(self.workspace_id, "workspace_id"))
         object.__setattr__(self, "analysis_id", _text(self.analysis_id, "analysis_id"))
-        if not isinstance(self.analysis, FmeaAnalysis):
-            raise TypeError("analysis must be a FmeaAnalysis")
-        if self.analysis.analysis_id != self.analysis_id:
-            raise ValueError("analysis_id does not match the authoritative analysis object")
-        if hasattr(self.analysis, "workspace_id") and self.analysis.workspace_id != self.workspace_id:
-            raise ValueError("analysis workspace_id does not match governance workspace")
+        if not isinstance(self.analysis, ResolvedAnalysisRecord):
+            raise TypeError("analysis must be a ResolvedAnalysisRecord")
+        self.analysis.verify()
+        if self.analysis.analysis_id != self.analysis_id or self.analysis.workspace_id != self.workspace_id:
+            raise ValueError("analysis scope does not match governance scope")
+        if self.analysis.record_version != self.analysis.analysis.record_version:
+            raise ValueError("analysis record version does not match the authoritative analysis object")
         if not isinstance(self.domain_pack, DomainPackManifest):
             raise TypeError("domain_pack must be a DomainPackManifest")
         if self.analysis.analysis_type not in self.domain_pack.analysis_types:
             raise ValueError("domain pack does not support the authoritative analysis type")
+        if not isinstance(self.retrieval_provenance, GovernanceRetrievalProvenance):
+            raise TypeError("retrieval_provenance must be a GovernanceRetrievalProvenance")
+        if (
+            self.retrieval_provenance.workspace_id != self.workspace_id
+            or self.retrieval_provenance.analysis_id != self.analysis_id
+        ):
+            raise ValueError("retrieval provenance scope does not match governance scope")
         if not isinstance(self.domain_pack_identity, ResolvedArtifactIdentity):
             raise TypeError("domain_pack_identity must be a ResolvedArtifactIdentity")
         GovernanceArtifactSet._check_identity(
@@ -390,18 +841,6 @@ class GovernanceInputs:
             GovernanceArtifactSet._check_identity(
                 self.propagation_rule_identity, "propagation_rule", set(self.domain_pack.propagation_rule_identities)
             )
-        object.__setattr__(self, "requested_profile", _text(self.requested_profile, "requested_profile"))
-        object.__setattr__(self, "resolved_profile", _text(self.resolved_profile, "resolved_profile"))
-        object.__setattr__(self, "evidence_types", _sorted_texts(self.evidence_types, "evidence_type"))
-        counts: list[tuple[str, int]] = []
-        for source_type, count in _sequence(self.source_counts, "source_counts"):
-            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-                raise ValueError("source_counts values must be non-negative integers")
-            counts.append((_text(source_type, "source_type"), count))
-        if len({source_type for source_type, _ in counts}) != len(counts):
-            raise ValueError("source_counts must not contain duplicate source types")
-        object.__setattr__(self, "source_counts", tuple(sorted(counts)))
-        object.__setattr__(self, "retrieval_warnings", _sorted_texts(self.retrieval_warnings, "retrieval_warning"))
         object.__setattr__(self, "unresolved_items", _issue_tuple(self.unresolved_items))
         acknowledgements = tuple(self.acknowledgement_references)
         if any(not isinstance(item, HumanAcknowledgementReference) for item in acknowledgements):
@@ -418,6 +857,26 @@ class GovernanceInputs:
         object.__setattr__(self, "active_run_ids", _sorted_texts(self.active_run_ids, "active_run_id"))
         if self.parent_revision is not None and not isinstance(self.parent_revision, FmeaRevision):
             raise TypeError("parent_revision must be an FmeaRevision")
+
+    @property
+    def requested_profile(self) -> str:
+        return self.retrieval_provenance.requested_profile
+
+    @property
+    def resolved_profile(self) -> str:
+        return self.retrieval_provenance.resolved_profile
+
+    @property
+    def evidence_types(self) -> tuple[str, ...]:
+        return self.retrieval_provenance.evidence_types
+
+    @property
+    def source_counts(self) -> tuple[tuple[str, int], ...]:
+        return self.retrieval_provenance.source_counts
+
+    @property
+    def retrieval_warnings(self) -> tuple[str, ...]:
+        return self.retrieval_provenance.warnings
 
 
 def _row_evidence_ids(row: FmeaRow) -> tuple[str, ...]:
@@ -448,7 +907,7 @@ class RevisionAssembler:
         analysis_version = inputs.analysis.record_version
         if analysis_version != request.expected_analysis_version:
             raise ValueError("expected analysis version does not match authoritative analysis")
-        analysis_hash = canonical_hash(inputs.analysis)
+        analysis_hash = inputs.analysis.canonical_hash
         issues: list[ReadinessIssue] = list(inputs.unresolved_items)
         self._validate_source_scope(inputs)
         packs = self._validate_evidence(inputs, issues)
@@ -470,13 +929,7 @@ class RevisionAssembler:
                     ),
                 )
         parent_id, parent_hash = self._parent_identity(request, inputs)
-        provenance = RetrievalProvenanceSnapshot(
-            requested_profile=inputs.requested_profile,
-            resolved_profile=inputs.resolved_profile,
-            evidence_types=inputs.evidence_types,
-            source_counts=inputs.source_counts,
-            warnings=inputs.retrieval_warnings,
-        )
+        provenance = inputs.retrieval_provenance.snapshot
         domain_identity = inputs.domain_pack_identity.identity
         templates = tuple(sorted(item.identity for item in inputs.template_identities))
         scoring = tuple(sorted(item.identity for item in inputs.scoring_rule_identities))
@@ -891,6 +1344,8 @@ class PublicationReadinessContext:
     propagation_confirmed: bool = True
     required_evidence_present: bool = True
     acknowledgement_references: tuple[HumanAcknowledgementReference, ...] = ()
+    authoritative_analysis: ResolvedAnalysisRecord | None = None
+    authoritative_artifacts: GovernanceArtifactSet | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "active_run_ids", _sorted_texts(self.active_run_ids, "active_run_id"))
@@ -917,6 +1372,14 @@ class PublicationReadinessContext:
         object.__setattr__(
             self, "acknowledgement_references", tuple(sorted(acknowledgements, key=lambda item: item.decision_id))
         )
+        if self.authoritative_analysis is not None:
+            if not isinstance(self.authoritative_analysis, ResolvedAnalysisRecord):
+                raise TypeError("authoritative_analysis must be a ResolvedAnalysisRecord")
+            self.authoritative_analysis.verify()
+        if self.authoritative_artifacts is not None and not isinstance(
+            self.authoritative_artifacts, GovernanceArtifactSet
+        ):
+            raise TypeError("authoritative_artifacts must be a GovernanceArtifactSet")
 
 
 @dataclass(frozen=True, slots=True)
@@ -987,6 +1450,17 @@ class PublicationReadinessPolicy:
             )
         if revision.analysis_record_version != context.current_analysis_version:
             issues.append(_issue("STALE_ANALYSIS_VERSION", source_type="analysis", source_id=revision.analysis_id))
+        if context.authoritative_analysis is None:
+            issues.append(
+                _issue("UNRESOLVED_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id)
+            )
+        elif (
+            context.authoritative_analysis.workspace_id != revision.workspace_id
+            or context.authoritative_analysis.analysis_id != revision.analysis_id
+            or context.authoritative_analysis.record_version != revision.analysis_record_version
+            or context.authoritative_analysis.canonical_hash != revision.analysis_hash
+        ):
+            issues.append(_issue("STALE_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id))
         actual_children = self._revision_children(revision)
         for child_id, expected_hash in context.current_child_hashes:
             if actual_children.get(child_id) != expected_hash:
@@ -995,7 +1469,7 @@ class PublicationReadinessPolicy:
             issues.append(
                 _issue("REQUIRED_FIELDS_NOT_ACCEPTED", source_type="analysis", source_id=revision.analysis_id)
             )
-        self._artifact_readiness_issues(revision, policy, issues)
+        self._artifact_readiness_issues(revision, policy, issues, context.authoritative_artifacts)
         if policy.required_risk and (not context.required_risk_confirmed or not revision.risk_versions):
             issues.append(_issue("REQUIRED_RISK_NOT_CONFIRMED", source_type="risk", source_id=revision.analysis_id))
         if policy.required_propagation and (
@@ -1038,7 +1512,10 @@ class PublicationReadinessPolicy:
 
     @staticmethod
     def _artifact_readiness_issues(
-        revision: FmeaRevision, policy: GovernanceDomainPolicy, issues: list[ReadinessIssue]
+        revision: FmeaRevision,
+        policy: GovernanceDomainPolicy,
+        issues: list[ReadinessIssue],
+        authoritative_artifacts: GovernanceArtifactSet | None,
     ) -> None:
         identities: tuple[tuple[str, object, bool], ...] = (
             ("domain_pack", revision.domain_pack_identity, True),
@@ -1046,6 +1523,10 @@ class PublicationReadinessPolicy:
             ("scoring_rule", revision.scoring_rule_identities, policy.required_scoring_rule),
             ("propagation_rule", revision.propagation_rule_identity, policy.required_propagation_rule),
         )
+        if authoritative_artifacts is None:
+            issues.append(
+                _issue("UNRESOLVED_ARTIFACT_IDENTITY", source_type="artifact", source_id=revision.analysis_id)
+            )
         for artifact_type, raw_values, required in identities:
             if artifact_type == "propagation_rule":
                 values = () if raw_values is None else (raw_values,)
@@ -1053,6 +1534,16 @@ class PublicationReadinessPolicy:
                 values = (raw_values,)
             else:
                 values = raw_values
+            if authoritative_artifacts is not None:
+                expected_values = PublicationReadinessPolicy._authority_values(artifact_type, authoritative_artifacts)
+                if set(values) != set(expected_values):
+                    issues.append(
+                        _issue(
+                            "UNRESOLVED_ARTIFACT_IDENTITY",
+                            source_type=artifact_type,
+                            source_id=revision.analysis_id,
+                        )
+                    )
             if required and not values:
                 issues.append(
                     _issue(
@@ -1062,12 +1553,56 @@ class PublicationReadinessPolicy:
                     )
                 )
             for identity in values:
-                if not _identity_hash_is_resolved(identity):
+                if (
+                    authoritative_artifacts is None
+                    or not _identity_hash_is_resolved(identity)
+                    or not PublicationReadinessPolicy._identity_matches_authority(
+                        artifact_type, identity, authoritative_artifacts
+                    )
+                ):
                     issues.append(
                         _issue(
                             "UNRESOLVED_ARTIFACT_IDENTITY", source_type=artifact_type, source_id=revision.analysis_id
                         )
                     )
+
+    @staticmethod
+    def _identity_matches_authority(
+        artifact_type: str, identity: object, authoritative_artifacts: GovernanceArtifactSet
+    ) -> bool:
+        if artifact_type == "domain_pack":
+            expected = authoritative_artifacts.domain_pack_identity.identity
+        elif artifact_type == "template":
+            return isinstance(identity, tuple) and identity in {
+                item.identity for item in authoritative_artifacts.template_identities
+            }
+        elif artifact_type == "scoring_rule":
+            return isinstance(identity, tuple) and identity in {
+                item.identity for item in authoritative_artifacts.scoring_rule_identities
+            }
+        elif artifact_type == "propagation_rule":
+            if authoritative_artifacts.propagation_rule_identity is None:
+                return False
+            expected = authoritative_artifacts.propagation_rule_identity.identity
+        else:
+            return False
+        return identity == expected
+
+    @staticmethod
+    def _authority_values(artifact_type: str, authoritative_artifacts: GovernanceArtifactSet) -> tuple[Identity, ...]:
+        if artifact_type == "domain_pack":
+            return (authoritative_artifacts.domain_pack_identity.identity,)
+        if artifact_type == "template":
+            return tuple(item.identity for item in authoritative_artifacts.template_identities)
+        if artifact_type == "scoring_rule":
+            return tuple(item.identity for item in authoritative_artifacts.scoring_rule_identities)
+        if artifact_type == "propagation_rule":
+            return (
+                ()
+                if authoritative_artifacts.propagation_rule_identity is None
+                else (authoritative_artifacts.propagation_rule_identity.identity,)
+            )
+        return ()
 
     @staticmethod
     def _revision_children(revision: FmeaRevision) -> dict[str, str]:
@@ -1151,9 +1686,11 @@ class ReadinessChecklistDraft:
 
 
 __all__ = [
+    "GovernanceAcknowledgementRecord",
     "GovernanceArtifactSet",
     "GovernanceDomainPolicy",
     "GovernanceInputs",
+    "GovernanceRetrievalProvenance",
     "HumanAcknowledgementReference",
     "PublicationReadinessContext",
     "PublicationReadinessPolicy",
@@ -1161,6 +1698,8 @@ __all__ = [
     "ReadinessChecklistDraft",
     "ReadinessChecklistProjection",
     "ReadinessIssueProjection",
+    "RegistryArtifactRecord",
+    "ResolvedAnalysisRecord",
     "ResolvedArtifactIdentity",
     "RevisionAssembler",
 ]

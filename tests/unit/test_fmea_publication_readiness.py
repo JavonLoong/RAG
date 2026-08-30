@@ -7,6 +7,7 @@ from fmea_governance_fixtures import (
     make_blocked_readiness_report,
     make_domain_policy,
     make_fmea_revision,
+    make_human_acknowledgement_reference,
     make_readiness_context,
     make_readiness_issue,
 )
@@ -125,6 +126,8 @@ def test_assembler_does_not_invent_a_missing_graph_blocker_when_not_required(fix
 
 
 def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixture_pack, fixture_row):
+    from fmea_governance_fixtures import _artifacts_for_inputs, make_governance_inputs
+
     from core_domain.fmea.states import ReviewStatus
     from fmea_application.revision_assembler import (
         GovernanceDomainPolicy,
@@ -133,17 +136,18 @@ def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixtu
     )
 
     row = replace(fixture_row, review_status=ReviewStatus.ACCEPTED)
+    inputs = make_governance_inputs(
+        rows=(row,),
+        evidence_packs=(fixture_pack,),
+        propagation_graph_revision=None,
+    )
     revision = RevisionAssembler().assemble(
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
-        __import__("fmea_governance_fixtures", fromlist=["make_governance_inputs"]).make_governance_inputs(
-            rows=(row,),
-            evidence_packs=(fixture_pack,),
-            propagation_graph_revision=None,
-        ),
+        inputs,
     )
     report = PublicationReadinessPolicy(
         GovernanceDomainPolicy(required_risk=False, required_propagation=False),
-    ).evaluate(revision, make_readiness_context())
+    ).evaluate(revision, make_readiness_context(authoritative_artifacts=_artifacts_for_inputs(inputs)))
     assert report.ready is True
     assert "REQUIRED_PROPAGATION_NOT_CONFIRMED" not in report.blocking_codes
 
@@ -177,9 +181,19 @@ def test_domain_policy_rejects_unknown_fields():
         GovernanceDomainPolicy.from_mapping({"required_propagation": False, "client_override": True})
 
 
+def test_required_false_does_not_allow_omitting_a_declared_template():
+    from fmea_application.revision_assembler import GovernanceDomainPolicy, PublicationReadinessPolicy
+
+    revision = make_fmea_revision(template_identities=())
+    report = PublicationReadinessPolicy(
+        GovernanceDomainPolicy(required_template=False),
+    ).evaluate(revision, make_readiness_context())
+    assert report.ready is False
+    assert "UNRESOLVED_ARTIFACT_IDENTITY" in report.blocking_codes
+
+
 def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
-    from core_domain.fmea.states import ActorType
-    from fmea_application.revision_assembler import HumanAcknowledgementReference, PublicationReadinessPolicy
+    from fmea_application.revision_assembler import PublicationReadinessPolicy
 
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
@@ -187,15 +201,10 @@ def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
         acknowledgement_decision_id="decision-1",
     )
     revision = make_fmea_revision(unresolved_items=(issue,))
-    reference = HumanAcknowledgementReference(
-        decision_id="decision-1",
-        workspace_id="ws-1",
-        analysis_id="analysis-1",
+    reference = make_human_acknowledgement_reference(
         issue_code=issue.code,
         issue_source_type=issue.source_type,
         issue_source_id=issue.source_id,
-        actor_id="reviewer-1",
-        actor_type=ActorType.HUMAN,
         revision_id=revision.revision_id,
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,
@@ -216,8 +225,7 @@ def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
     ),
 )
 def test_foreign_acknowledgement_scope_or_issue_cannot_clear_blocker(workspace_id, analysis_id, issue_source_id):
-    from core_domain.fmea.states import ActorType
-    from fmea_application.revision_assembler import HumanAcknowledgementReference, PublicationReadinessPolicy
+    from fmea_application.revision_assembler import PublicationReadinessPolicy
 
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
@@ -225,15 +233,12 @@ def test_foreign_acknowledgement_scope_or_issue_cannot_clear_blocker(workspace_i
         acknowledgement_decision_id="decision-1",
     )
     revision = make_fmea_revision(unresolved_items=(issue,))
-    reference = HumanAcknowledgementReference(
-        decision_id="decision-1",
+    reference = make_human_acknowledgement_reference(
         workspace_id=workspace_id,
         analysis_id=analysis_id,
         issue_code=issue.code,
         issue_source_type=issue.source_type,
         issue_source_id=issue_source_id,
-        actor_id="reviewer-1",
-        actor_type=ActorType.HUMAN,
         revision_id=revision.revision_id,
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,
@@ -247,8 +252,7 @@ def test_foreign_acknowledgement_scope_or_issue_cannot_clear_blocker(workspace_i
 
 
 def test_unknown_acknowledgement_decision_cannot_clear_blocker():
-    from core_domain.fmea.states import ActorType
-    from fmea_application.revision_assembler import HumanAcknowledgementReference, PublicationReadinessPolicy
+    from fmea_application.revision_assembler import PublicationReadinessPolicy
 
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
@@ -256,15 +260,11 @@ def test_unknown_acknowledgement_decision_cannot_clear_blocker():
         acknowledgement_decision_id="decision-1",
     )
     revision = make_fmea_revision(unresolved_items=(issue,))
-    reference = HumanAcknowledgementReference(
+    reference = make_human_acknowledgement_reference(
         decision_id="decision-unknown",
-        workspace_id="ws-1",
-        analysis_id="analysis-1",
         issue_code=issue.code,
         issue_source_type=issue.source_type,
         issue_source_id=issue.source_id,
-        actor_id="reviewer-1",
-        actor_type=ActorType.HUMAN,
         revision_id=revision.revision_id,
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,

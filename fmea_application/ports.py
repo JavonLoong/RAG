@@ -69,11 +69,13 @@ if TYPE_CHECKING:
         PropagationRun,
     )
     from .revision_assembler import (
+        GovernanceAcknowledgementRecord,
         GovernanceArtifactSet,
         GovernanceInputs,
-        HumanAcknowledgementReference,
+        GovernanceRetrievalProvenance,
         ReadinessChecklistDraft,
         ReadinessChecklistProjection,
+        ResolvedAnalysisRecord,
     )
 
 ReviewHistoryPosition = tuple[str, str]
@@ -312,7 +314,7 @@ class GovernanceSourcePort(Protocol):
 
 
 class GovernanceAnalysisQueryPort(Protocol):
-    def get_analysis(self, analysis_id: str, workspace_id: str) -> FmeaAnalysis | None: ...
+    def get_analysis(self, analysis_id: str, workspace_id: str) -> ResolvedAnalysisRecord | None: ...
 
 
 class GovernanceReviewQueryPort(Protocol):
@@ -332,7 +334,9 @@ class GovernanceEvidenceQueryPort(Protocol):
 
 
 class GovernanceArtifactQueryPort(Protocol):
-    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: FmeaAnalysis) -> GovernanceArtifactSet: ...
+    def get_artifacts(
+        self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
+    ) -> GovernanceArtifactSet: ...
 
 
 class GovernanceRunQueryPort(Protocol):
@@ -342,7 +346,11 @@ class GovernanceRunQueryPort(Protocol):
 class GovernanceAcknowledgementQueryPort(Protocol):
     def list_human_acknowledgements(
         self, analysis_id: str, workspace_id: str
-    ) -> tuple[HumanAcknowledgementReference, ...]: ...
+    ) -> tuple[GovernanceAcknowledgementRecord, ...]: ...
+
+
+class RetrievalProvenanceQueryPort(Protocol):
+    def get_provenance(self, analysis_id: str, workspace_id: str) -> GovernanceRetrievalProvenance: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -362,6 +370,7 @@ class GovernanceRepositoryProviders:
     artifacts: GovernanceArtifactQueryPort
     runs: GovernanceRunQueryPort
     acknowledgements: GovernanceAcknowledgementQueryPort
+    retrieval: RetrievalProvenanceQueryPort
 
     def __post_init__(self) -> None:
         required_methods = {
@@ -373,6 +382,7 @@ class GovernanceRepositoryProviders:
             "artifacts": ("get_artifacts",),
             "runs": ("list_active_run_ids",),
             "acknowledgements": ("list_human_acknowledgements",),
+            "retrieval": ("get_provenance",),
         }
         for provider_name, method_names in required_methods.items():
             provider = getattr(self, provider_name)
@@ -501,6 +511,7 @@ __all__ = [
     "PropagationRepository",
     "PropagationRequest",
     "PropagationRuleRegistry",
+    "RetrievalProvenanceQueryPort",
     "ReviewRepository",
     "ReviewRunExecutor",
     "ReviewSuggestionGenerator",

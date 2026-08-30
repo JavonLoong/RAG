@@ -154,12 +154,42 @@ def test_row_phantom_evidence_reference_fails_closed(fixture_pack, fixture_row):
 
 
 def test_resolved_identity_rejects_zero_hash_and_unverified_identity():
-    from fmea_application.revision_assembler import ResolvedArtifactIdentity
+    from fmea_application.revision_assembler import RegistryArtifactRecord
 
     with pytest.raises(ValueError):
-        ResolvedArtifactIdentity("domain_pack", "domain", "1.0.0", "0" * 64, registry_verified=True)
-    with pytest.raises(ValueError):
-        ResolvedArtifactIdentity("domain_pack", "domain", "1.0.0", "a" * 64, registry_verified=False)
+        RegistryArtifactRecord("domain_pack", "domain", "1.0.0", "0" * 64, "0" * 64)
+
+
+def test_registry_verified_bool_is_not_a_public_identity_proof():
+    from fmea_application.revision_assembler import ResolvedArtifactIdentity
+
+    with pytest.raises(TypeError):
+        ResolvedArtifactIdentity("domain_pack", "domain", "1.0.0", "a" * 64, registry_verified=True)
+
+
+def test_domain_artifact_identity_set_is_exact_not_a_subset():
+    from fmea_governance_fixtures import _identity, make_governance_inputs
+
+    from fmea_application.revision_assembler import GovernanceArtifactSet
+
+    base = make_governance_inputs()
+    with pytest.raises(ValueError, match="template"):
+        GovernanceArtifactSet(
+            domain_pack=base.domain_pack,
+            domain_pack_identity=base.domain_pack_identity,
+            template_identities=(),
+            scoring_rule_identities=base.scoring_rule_identities,
+            propagation_rule_identity=base.propagation_rule_identity,
+        )
+    extra = _identity("template", "extra-template", "1.0.0", "e" * 64)
+    with pytest.raises(ValueError, match="template"):
+        GovernanceArtifactSet(
+            domain_pack=base.domain_pack,
+            domain_pack_identity=base.domain_pack_identity,
+            template_identities=(*base.template_identities, extra),
+            scoring_rule_identities=base.scoring_rule_identities,
+            propagation_rule_identity=base.propagation_rule_identity,
+        )
 
 
 def test_human_acknowledgement_reference_requires_human_and_exact_scope():
@@ -176,6 +206,26 @@ def test_human_acknowledgement_reference_requires_human_and_exact_scope():
             issue_source_id="row-1",
             actor_id="model-1",
             actor_type=ActorType.MODEL,
+            revision_id="revision-1",
+            revision_record_version=1,
+            evidence_ids=(),
+        )
+
+
+def test_human_acknowledgement_reference_cannot_be_forged_without_resolver_proof():
+    from core_domain.fmea.states import ActorType
+    from fmea_application.revision_assembler import HumanAcknowledgementReference
+
+    with pytest.raises(TypeError):
+        HumanAcknowledgementReference(
+            decision_id="decision-1",
+            workspace_id="ws-1",
+            analysis_id="analysis-1",
+            issue_code="BLOCKED",
+            issue_source_type="row",
+            issue_source_id="row-1",
+            actor_id="reviewer-1",
+            actor_type=ActorType.HUMAN,
             revision_id="revision-1",
             revision_record_version=1,
             evidence_ids=(),
@@ -246,7 +296,6 @@ def test_graph_edge_phantom_evidence_reference_fails_closed(fixture_pack):
 
     from fmea_application.revision_assembler import (
         GovernanceInputs,
-        ResolvedArtifactIdentity,
         RevisionAssembler,
     )
 
@@ -265,13 +314,16 @@ def test_graph_edge_phantom_evidence_reference_fails_closed(fixture_pack):
         analysis_id=base.analysis_id,
         analysis=base.analysis,
         domain_pack=domain,
-        domain_pack_identity=ResolvedArtifactIdentity("domain_pack", "fuel-combustion", "1.0.0", "a" * 64, True),
+        domain_pack_identity=__import__("fmea_governance_fixtures", fromlist=["_identity"])._identity(
+            "domain_pack", "fuel-combustion", "1.0.0", "a" * 64
+        ),
+        retrieval_provenance=base.retrieval_provenance,
         rows=(),
         evidence_packs=(fixture_pack,),
         template_identities=base.template_identities,
         scoring_rule_identities=base.scoring_rule_identities,
-        propagation_rule_identity=ResolvedArtifactIdentity(
-            "propagation_rule", "fuel-propagation", "1.0.0", "d" * 64, True
+        propagation_rule_identity=__import__("fmea_governance_fixtures", fromlist=["_identity"])._identity(
+            "propagation_rule", "fuel-propagation", "1.0.0", "d" * 64
         ),
         propagation_graph_revision=graph,
     )

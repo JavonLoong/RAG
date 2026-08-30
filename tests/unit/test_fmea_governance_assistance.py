@@ -150,6 +150,95 @@ def test_assistance_rejects_generator_authority_changes_and_unknown_fields():
         GovernanceAssistanceService(MaliciousGenerator()).suggest_readiness_checklist(report, actor)
 
 
+def test_assistance_rejects_generator_acknowledgement_replacement():
+    from fmea_application.revision_assembler import PublicationReadinessReport
+
+    class MaliciousGenerator:
+        def generate(self, _projection):
+            return {
+                "ready": False,
+                "blocking_codes": ("ACK_REQUIRED",),
+                "checklist": (
+                    {
+                        "code": "ACK_REQUIRED",
+                        "severity": "critical",
+                        "source_type": "row",
+                        "source_id": "row-1",
+                        "evidence_ids": ("ev-1",),
+                        "acknowledgement_decision_id": "forged-decision",
+                    },
+                ),
+                "revision_id": "revision-1",
+                "revision_hash": "a" * 64,
+            }
+
+    _, _, GovernanceAssistanceService = _implementation()
+    actor = make_governance_actor(actor_type=ActorType.MODEL, roles=frozenset())
+    issue = {
+        "code": "ACK_REQUIRED",
+        "severity": "critical",
+        "source_type": "row",
+        "source_id": "row-1",
+        "evidence_ids": ("ev-1",),
+        "acknowledgement_decision_id": "decision-1",
+    }
+    from core_domain.fmea.governance import ReadinessIssue
+
+    report = PublicationReadinessReport(
+        revision_id="revision-1",
+        workspace_id="ws-1",
+        analysis_id="analysis-1",
+        revision_hash="a" * 64,
+        target_record_version=1,
+        evidence_pack_ids=("pack-1",),
+        ready=False,
+        issues=(ReadinessIssue(**issue),),
+        blocking_codes=("ACK_REQUIRED",),
+    )
+    with pytest.raises(ValueError, match="acknowledgement"):
+        GovernanceAssistanceService(MaliciousGenerator()).suggest_readiness_checklist(report, actor)
+
+
+def test_assistance_rejects_duplicate_checklist_items():
+    from fmea_application.revision_assembler import PublicationReadinessReport
+
+    class MaliciousGenerator:
+        def generate(self, _projection):
+            item = {
+                "code": "BLOCKED",
+                "severity": "blocking",
+                "source_type": "row",
+                "source_id": "row-1",
+                "evidence_ids": (),
+                "acknowledgement_decision_id": None,
+            }
+            return {
+                "ready": False,
+                "blocking_codes": ("BLOCKED",),
+                "checklist": (item, item),
+                "revision_id": "revision-1",
+                "revision_hash": "a" * 64,
+            }
+
+    _, _, GovernanceAssistanceService = _implementation()
+    actor = make_governance_actor(actor_type=ActorType.MODEL, roles=frozenset())
+    from core_domain.fmea.governance import ReadinessIssue
+
+    report = PublicationReadinessReport(
+        revision_id="revision-1",
+        workspace_id="ws-1",
+        analysis_id="analysis-1",
+        revision_hash="a" * 64,
+        target_record_version=1,
+        evidence_pack_ids=("pack-1",),
+        ready=False,
+        issues=(ReadinessIssue("BLOCKED", "blocking", "row", "row-1", (), None),),
+        blocking_codes=("BLOCKED",),
+    )
+    with pytest.raises(ValueError, match="checklist"):
+        GovernanceAssistanceService(MaliciousGenerator()).suggest_readiness_checklist(report, actor)
+
+
 def test_unavailable_generator_degrades_to_offline_without_changing_readiness():
     from fmea_application.governance_assistance_service import GovernanceAssistanceUnavailable
 

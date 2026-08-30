@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from hashlib import sha256
 from typing import Any
 
@@ -28,11 +29,20 @@ from fmea_application.governance_contracts import (
 )
 from fmea_application.review_contracts import ActorContext, AuditEvent, IdempotencyScope, idempotency_key_hash
 from fmea_application.revision_assembler import (
+    GovernanceAcknowledgementRecord,
+    GovernanceArtifactSet,
     GovernanceDomainPolicy,
     GovernanceInputs,
+    GovernanceRetrievalProvenance,
+    HumanAcknowledgementReference,
     PublicationReadinessContext,
     PublicationReadinessReport,
+    RegistryArtifactRecord,
     ResolvedArtifactIdentity,
+    _acknowledgement_record_hash,
+    _resolve_acknowledgement_record,
+    _resolve_analysis_record,
+    _resolve_registry_artifact,
 )
 from fmea_application.risk_contracts import OutboxEvent, outbox_payload_hash
 
@@ -43,6 +53,49 @@ TIMESTAMP = "2026-08-30T00:00:00Z"
 
 def _record_hash(seed: str) -> str:
     return sha256(seed.encode("utf-8")).hexdigest()
+
+
+def _governance_analysis() -> FmeaAnalysis:
+    return FmeaAnalysis(
+        analysis_id="analysis-1",
+        project_id="project-1",
+        analysis_type="fuel_system",
+        lifecycle_stage="draft",
+        scope="generic system",
+        system_boundary="generic boundary",
+        exclusions=(),
+        equipment_configuration="configuration-1",
+        control_software_version="control-1",
+        fuel_type="generic",
+        operating_modes=("steady",),
+        assumptions=(),
+        limitations=(),
+        unanalysed_parts=(),
+        versions=VersionSet(
+            "graphrag.fmea.v1",
+            "data-1",
+            "graph-1",
+            "evidence-1",
+            "profile-1",
+            "template-1",
+            "score-1",
+            "prompt-0",
+            "model-0",
+            "d" * 64,
+        ),
+        owner_actor_id="analyst-1",
+        reviewer_actor_ids=("reviewer-1",),
+        approver_actor_id=None,
+        approved_at=None,
+        parent_revision_id=None,
+        current_revision_id="revision-1",
+    )
+
+
+def _identity(artifact_type: str, artifact_id: str, version: str, content_hash: str) -> ResolvedArtifactIdentity:
+    return _resolve_registry_artifact(
+        RegistryArtifactRecord(artifact_type, artifact_id, version, content_hash, content_hash)
+    )
 
 
 def make_readiness_issue(**overrides: Any) -> ReadinessIssue:
@@ -76,7 +129,7 @@ def make_fmea_revision(**overrides: Any) -> FmeaRevision:
         "workspace_id": "ws-1",
         "analysis_id": "analysis-1",
         "analysis_record_version": 1,
-        "analysis_hash": HASH,
+        "analysis_hash": canonical_hash(_governance_analysis()),
         "parent_revision_id": None,
         "parent_revision_hash": None,
         "row_versions": (("row-1", 1, HASH),),
@@ -126,6 +179,65 @@ def make_blocked_readiness_report(**overrides: Any) -> PublicationReadinessRepor
     }
     values.update(overrides)
     return PublicationReadinessReport(**values)
+
+
+def _readiness_artifacts() -> GovernanceArtifactSet:
+    revision = make_fmea_revision()
+    domain = DomainPackManifest(
+        pack_id=revision.domain_pack_identity[0],
+        version=revision.domain_pack_identity[1],
+        content_hash=revision.domain_pack_identity[2],
+        compatible_schema_ids=("graphrag.fmea.v1",),
+        analysis_types=("fuel_system",),
+        template_identities=((revision.template_identities[0][0], revision.template_identities[0][1]),),
+        scoring_rule_identities=((revision.scoring_rule_identities[0][0], revision.scoring_rule_identities[0][1]),),
+        propagation_rule_identities=((revision.propagation_rule_identity[0], revision.propagation_rule_identity[1]),),
+        extension_fields=(),
+    )
+    return GovernanceArtifactSet(
+        domain_pack=domain,
+        domain_pack_identity=_identity("domain_pack", *revision.domain_pack_identity),
+        template_identities=(_identity("template", *revision.template_identities[0]),),
+        scoring_rule_identities=(_identity("scoring_rule", *revision.scoring_rule_identities[0]),),
+        propagation_rule_identity=_identity("propagation_rule", *revision.propagation_rule_identity),
+    )
+
+
+def _artifacts_for_inputs(inputs: GovernanceInputs) -> GovernanceArtifactSet:
+    return GovernanceArtifactSet(
+        domain_pack=inputs.domain_pack,
+        domain_pack_identity=inputs.domain_pack_identity,
+        template_identities=inputs.template_identities,
+        scoring_rule_identities=inputs.scoring_rule_identities,
+        propagation_rule_identity=inputs.propagation_rule_identity,
+    )
+
+
+def make_governance_acknowledgement_record(**overrides: Any) -> GovernanceAcknowledgementRecord:
+    values: dict[str, Any] = {
+        "decision_id": "decision-1",
+        "decision_hash": HASH,
+        "decision_record_version": 1,
+        "status": "accepted",
+        "workspace_id": "ws-1",
+        "analysis_id": "analysis-1",
+        "issue_code": "ACK_REQUIRED",
+        "issue_source_type": "row",
+        "issue_source_id": "row-1",
+        "actor_id": "reviewer-1",
+        "actor_type": ActorType.HUMAN,
+        "revision_id": "revision-1",
+        "revision_record_version": 1,
+        "evidence_ids": ("ev-1",),
+    }
+    values.update(overrides)
+    record = GovernanceAcknowledgementRecord(**values)
+    record = replace(record, decision_hash=_acknowledgement_record_hash(record))
+    return record
+
+
+def make_human_acknowledgement_reference(**overrides: Any) -> HumanAcknowledgementReference:
+    return _resolve_acknowledgement_record(make_governance_acknowledgement_record(**overrides))
 
 
 def make_approval_submission(**overrides: Any) -> ApprovalSubmission:
@@ -269,59 +381,48 @@ def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
         propagation_rule_identities=(("generic-propagation", "1.0.0"),),
         extension_fields=(),
     )
-    analysis = FmeaAnalysis(
-        analysis_id="analysis-1",
-        project_id="project-1",
-        analysis_type="fuel_system",
-        lifecycle_stage="draft",
-        scope="generic system",
-        system_boundary="generic boundary",
-        exclusions=(),
-        equipment_configuration="configuration-1",
-        control_software_version="control-1",
-        fuel_type="generic",
-        operating_modes=("steady",),
-        assumptions=(),
-        limitations=(),
-        unanalysed_parts=(),
-        versions=VersionSet(
-            "graphrag.fmea.v1",
-            "data-1",
-            "graph-1",
-            "evidence-1",
-            "profile-1",
-            "template-1",
-            "score-1",
-            "prompt-0",
-            "model-0",
-            "d" * 64,
-        ),
-        owner_actor_id="analyst-1",
-        reviewer_actor_ids=("reviewer-1",),
-        approver_actor_id=None,
-        approved_at=None,
-        parent_revision_id=None,
-        current_revision_id="revision-1",
-    )
+    analysis = _governance_analysis()
     values: dict[str, Any] = {
         "workspace_id": "ws-1",
         "analysis_id": "analysis-1",
-        "analysis": analysis,
+        "analysis": _resolve_analysis_record("ws-1", analysis),
         "rows": (),
         "risk_records": (),
         "propagation_graph_revision": None,
         "evidence_packs": (),
         "domain_pack": domain_pack,
-        "domain_pack_identity": ResolvedArtifactIdentity("domain_pack", "generic-domain", "1.0.0", "a" * 64, True),
-        "template_identities": (ResolvedArtifactIdentity("template", "generic-template", "1.0.0", "b" * 64, True),),
-        "scoring_rule_identities": (
-            ResolvedArtifactIdentity("scoring_rule", "generic-scoring", "1.0.0", "c" * 64, True),
-        ),
-        "propagation_rule_identity": ResolvedArtifactIdentity(
-            "propagation_rule", "generic-propagation", "1.0.0", "d" * 64, True
+        "domain_pack_identity": _identity("domain_pack", "generic-domain", "1.0.0", "a" * 64),
+        "template_identities": (_identity("template", "generic-template", "1.0.0", "b" * 64),),
+        "scoring_rule_identities": (_identity("scoring_rule", "generic-scoring", "1.0.0", "c" * 64),),
+        "propagation_rule_identity": _identity("propagation_rule", "generic-propagation", "1.0.0", "d" * 64),
+        "retrieval_provenance": GovernanceRetrievalProvenance(
+            workspace_id="ws-1",
+            analysis_id="analysis-1",
+            requested_profile="combined",
+            resolved_profile="combined",
+            evidence_types=("text", "graph"),
+            source_counts=(("text", 1), ("graph", 1)),
+            warnings=(),
         ),
     }
+    supplied_provenance = overrides.pop("retrieval_provenance", None)
+    provenance_values = {
+        "requested_profile": values["retrieval_provenance"].requested_profile,
+        "resolved_profile": values["retrieval_provenance"].resolved_profile,
+        "evidence_types": values["retrieval_provenance"].evidence_types,
+        "source_counts": values["retrieval_provenance"].source_counts,
+        "warnings": values["retrieval_provenance"].warnings,
+    }
+    for key in tuple(provenance_values):
+        if key in overrides:
+            provenance_values[key] = overrides.pop(key)
     values.update(overrides)
+    if supplied_provenance is not None:
+        values["retrieval_provenance"] = supplied_provenance
+    else:
+        values["retrieval_provenance"] = GovernanceRetrievalProvenance(
+            workspace_id=values["workspace_id"], analysis_id=values["analysis_id"], **provenance_values
+        )
     return GovernanceInputs(**values)
 
 
@@ -332,10 +433,13 @@ def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
 
 
 def make_readiness_context(**overrides: Any) -> PublicationReadinessContext:
+    overrides = dict(overrides)
     values: dict[str, Any] = {
         "required_fields_accepted": True,
         "required_risk_confirmed": True,
         "propagation_confirmed": True,
+        "authoritative_analysis": _resolve_analysis_record("ws-1", _governance_analysis()),
+        "authoritative_artifacts": _readiness_artifacts(),
     }
     values.update(overrides)
     return PublicationReadinessContext(**values)

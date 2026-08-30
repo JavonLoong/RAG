@@ -137,6 +137,17 @@ def _validate_checklist_item(item: object) -> Mapping[str, object]:
     }
 
 
+def _checklist_authority_key(item: Mapping[str, object]) -> tuple[object, ...]:
+    return (
+        item["code"],
+        item["severity"],
+        item["source_type"],
+        item["source_id"],
+        tuple(item["evidence_ids"]),
+        item["acknowledgement_decision_id"],
+    )
+
+
 def _draft_from_mapping(
     value: Mapping[str, object], projection: ReadinessChecklistProjection
 ) -> ReadinessChecklistDraft:
@@ -170,8 +181,10 @@ def _validate_draft(draft: ReadinessChecklistDraft, projection: ReadinessCheckli
         or draft.revision_hash != projection.revision_hash
     ):
         raise ValueError("model assistance cannot change deterministic readiness")
-    for item in draft.checklist:
-        _validate_checklist_item(item)
+    actual_items = tuple(_validate_checklist_item(item) for item in draft.checklist)
+    expected_items = tuple(_validate_checklist_item(item) for item in _issue_checklist(projection))
+    if sorted(actual_items, key=_checklist_authority_key) != sorted(expected_items, key=_checklist_authority_key):
+        raise ValueError("model assistance cannot change checklist acknowledgement or authority fields")
 
 
 class GovernanceAssistanceService:

@@ -44,9 +44,14 @@ from fmea_application.revision_assembler import (
     GovernanceArtifactSet,
     GovernanceDomainPolicy,
     GovernanceInputs,
+    GovernanceRetrievalProvenance,
     PublicationReadinessPolicy,
+    RegistryArtifactRecord,
+    ResolvedAnalysisRecord,
     ResolvedArtifactIdentity,
     RevisionAssembler,
+    _resolve_acknowledgement_record,
+    _resolve_registry_artifact,
 )
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
 from fmea_application.service_factory import (
@@ -173,10 +178,15 @@ class RegistryGovernanceArtifactProvider:
         self._scoring_registry = scoring_rule_registry
         self._propagation_registry = propagation_rule_registry
 
-    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: object) -> GovernanceArtifactSet:
-        if getattr(analysis, "analysis_id", None) != analysis_id:
+    def get_artifacts(  # noqa: C901
+        self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
+    ) -> GovernanceArtifactSet:
+        if not isinstance(analysis, ResolvedAnalysisRecord):
+            raise TypeError("artifact lookup requires a ResolvedAnalysisRecord")
+        analysis.verify()
+        if analysis.analysis_id != analysis_id or analysis.workspace_id != workspace_id:
             raise ValueError("artifact lookup analysis scope is invalid")
-        if getattr(analysis, "analysis_type", None) not in self._domain_pack.analysis_types:
+        if analysis.analysis_type not in self._domain_pack.analysis_types:
             raise ValueError("domain pack does not support the authoritative analysis type")
         registered_domain = self._domain_registry.get(self._domain_pack.pack_id, self._domain_pack.version)
         if (
@@ -190,7 +200,11 @@ class RegistryGovernanceArtifactProvider:
             if template.metadata.template_id != template_id or template.metadata.version != version:
                 raise ValueError("template registry identity does not match the domain pack")
             templates_list.append(
-                ResolvedArtifactIdentity("template", template_id, version, template.template_hash, True)
+                _resolve_registry_artifact(
+                    RegistryArtifactRecord(
+                        "template", template_id, version, template.template_hash, template.template_hash
+                    )
+                )
             )
         templates = tuple(templates_list)
         scoring_list: list[ResolvedArtifactIdentity] = []
@@ -198,8 +212,11 @@ class RegistryGovernanceArtifactProvider:
             rule = self._scoring_registry.get(rule_id, version)
             if rule.rule_pack_id != rule_id or rule.version != version:
                 raise ValueError("scoring rule registry identity does not match the domain pack")
+            scoring_hash = scoring_rule_content_hash(rule)
             scoring_list.append(
-                ResolvedArtifactIdentity("scoring_rule", rule_id, version, scoring_rule_content_hash(rule), True)
+                _resolve_registry_artifact(
+                    RegistryArtifactRecord("scoring_rule", rule_id, version, scoring_hash, scoring_hash)
+                )
             )
         scoring = tuple(scoring_list)
         propagation = None
@@ -208,21 +225,17 @@ class RegistryGovernanceArtifactProvider:
             rule = self._propagation_registry.get(rule_id, version)
             if rule.rule_pack_id != rule_id or rule.version != version:
                 raise ValueError("propagation rule registry identity does not match the domain pack")
-            propagation = ResolvedArtifactIdentity(
-                "propagation_rule",
-                rule_id,
-                version,
-                propagation_rule_content_hash(rule),
-                True,
+            propagation_hash = propagation_rule_content_hash(rule)
+            propagation = _resolve_registry_artifact(
+                RegistryArtifactRecord("propagation_rule", rule_id, version, propagation_hash, propagation_hash)
             )
+        domain_hash = registered_domain.content_hash
         return GovernanceArtifactSet(
             domain_pack=registered_domain,
-            domain_pack_identity=ResolvedArtifactIdentity(
-                "domain_pack",
-                registered_domain.pack_id,
-                registered_domain.version,
-                registered_domain.content_hash,
-                True,
+            domain_pack_identity=_resolve_registry_artifact(
+                RegistryArtifactRecord(
+                    "domain_pack", registered_domain.pack_id, registered_domain.version, domain_hash, domain_hash
+                )
             ),
             template_identities=templates,
             scoring_rule_identities=scoring,
@@ -249,25 +262,35 @@ class RepositoryGovernanceSource:
         analysis_id = analysis_id.strip()
         workspace_id = workspace_id.strip()
         analysis = self._providers.analysis.get_analysis(analysis_id, workspace_id)
-        if analysis is None or analysis.analysis_id != analysis_id:
+        if analysis is None or not isinstance(analysis, ResolvedAnalysisRecord):
+            raise TypeError("analysis provider must return a ResolvedAnalysisRecord")
+        analysis.verify()
+        if analysis.analysis_id != analysis_id or analysis.workspace_id != workspace_id:
             raise ValueError("analysis was not found in the requested workspace")
         rows = tuple(self._providers.review.list_rows(analysis_id, workspace_id))
         risks = tuple(self._providers.risk.list_risk_records(analysis_id, workspace_id))
         graph = self._providers.propagation.get_current_graph(analysis_id, workspace_id)
         packs = tuple(self._providers.evidence.list_evidence_packs(analysis_id, workspace_id))
         artifacts = self._providers.artifacts.get_artifacts(analysis_id, workspace_id, analysis)
-        acknowledgements = tuple(
+        raw_acknowledgements = tuple(
             self._providers.acknowledgements.list_human_acknowledgements(analysis_id, workspace_id)
         )
+        acknowledgements = tuple(_resolve_acknowledgement_record(record) for record in raw_acknowledgements)
         for reference in acknowledgements:
             if reference.workspace_id != workspace_id or reference.analysis_id != analysis_id:
                 raise ValueError("acknowledgement reference is outside the requested scope")
+        provenance = self._providers.retrieval.get_provenance(analysis_id, workspace_id)
+        if not isinstance(provenance, GovernanceRetrievalProvenance):
+            raise TypeError("retrieval provider must return GovernanceRetrievalProvenance")
+        if provenance.workspace_id != workspace_id or provenance.analysis_id != analysis_id:
+            raise ValueError("retrieval provenance is outside the requested scope")
         inputs = GovernanceInputs(
             workspace_id=workspace_id,
             analysis_id=analysis_id,
             analysis=analysis,
             domain_pack=artifacts.domain_pack,
             domain_pack_identity=artifacts.domain_pack_identity,
+            retrieval_provenance=provenance,
             rows=rows,
             risk_records=risks,
             propagation_graph_revision=graph,
