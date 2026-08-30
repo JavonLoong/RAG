@@ -23,7 +23,10 @@ rename 发布。失败会清理临时目录，不创建半成品，也不修改�
 verifier 不调用 runner 的验证函数，而是从每个
 JSON 文件的 bytes 重新检查 UTF-8、重复 key、canonical JSON、文件集合、hash
 manifest、topology/rule/graph identity、lineage、路径连续性、逐 edge evidence、
-深度、cycle、risk、external、conflict、incomplete 和 actor policy。
+深度、cycle、risk、external、conflict、incomplete 和 actor policy。文件大小、
+secret/private marker 和 raw-provider marker 保持 bytes-first 检查；本机路径则在
+strict JSON parse 后递归检查 decoded string values，避免把 `\n` 等 JSON escape
+误判成 Windows 路径。
 
 topology identity 还绑定到仓库中固定 source-pinned 的
 `domain_packs/fuel-combustion/topology/demo-1.0.0.json`：verifier 重新读取其
@@ -122,5 +125,6 @@ component-wise 路径检查仍会验证：普通目录可接受、普通文件�
 组件均拒绝；其中 Windows `FILE_ATTRIBUTE_REPARSE_POINT` 分支通过确定性 seam
 常驻验证。artifact 中还会拒绝精确 POSIX root、任意 POSIX absolute、Windows
 drive absolute、UNC 和 root-relative path；普通 prose 中不构成本机绝对路径
-token 的斜杠不受影响。生产部署仍应在具备相应 Windows policy 的环境补跑真实
-reparse 覆盖。
+token 的斜杠及 multiline 文本不受影响。whole-value `/ foo/bar` 和精确单反斜杠
+root 仍按本机绝对/root-relative 路径拒绝。生产部署仍应在具备相应 Windows
+policy 的环境补跑真实 reparse 覆盖。

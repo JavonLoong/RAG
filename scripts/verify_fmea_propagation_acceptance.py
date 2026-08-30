@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import ntpath
 import os
+import posixpath
 import re
 import stat
 import sys
@@ -38,12 +40,7 @@ ARTIFACT_NAMES = {
 _MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
-_PATH_PATTERNS = (
-    re.compile(rb"(?<![A-Za-z0-9_:/])/(?:[\"']|(?![/\s])[^\"'\r\n,}\]\s]+)"),
-    re.compile(rb"(?<![A-Za-z0-9_])[A-Za-z]:[\\/]"),
-    re.compile(rb"(?<![A-Za-z0-9_])\\\\[^\\/\s]+[\\/]"),
-    re.compile(rb"(?<![A-Za-z0-9_])\\(?!\\)[A-Za-z0-9_.-]+"),
-)
+_PATH_WRAPPER_CHARS = "\"'()[]{}<>,.;:!?"
 _TOPOLOGY_SOURCE_HASH = "sha256:53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 _TOPOLOGY_SOURCE_CANONICAL_HASH = "sha256:d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
 _TOPOLOGY_PATH = Path(__file__).resolve().parents[1] / "domain_packs" / "fuel-combustion" / "topology" / "demo-1.0.0.json"
@@ -298,6 +295,31 @@ def _generation_constraints() -> dict[str, object]:
     return json.loads(json.dumps(_OFFLINE_GENERATION_CONSTRAINTS, sort_keys=True))
 
 
+def _is_absolute_local_path(value: str) -> bool:
+    return posixpath.isabs(value) or ntpath.isabs(value) or value.startswith("\\")
+
+
+def _contains_forbidden_local_path(value: object) -> bool:
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return False
+        if _is_absolute_local_path(stripped):
+            return True
+        for raw_token in re.findall(r"\S+", value):
+            token = raw_token.strip(_PATH_WRAPPER_CHARS)
+            if not token or token in {"/", "\\"}:
+                continue
+            if _is_absolute_local_path(token):
+                return True
+        return False
+    if isinstance(value, dict):
+        return any(_contains_forbidden_local_path(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_forbidden_local_path(item) for item in value)
+    return False
+
+
 def _load(path: Path) -> tuple[dict[str, object], bytes]:
     if not _safe_file(path):
         _fail("FMEA_PROPAGATION_ARTIFACT_SET_INVALID")
@@ -325,8 +347,6 @@ def _load(path: Path) -> tuple[dict[str, object], bytes]:
     )
     if any(pattern in raw for pattern in private_patterns):
         _fail("FMEA_PROPAGATION_PRIVATE_MARKER")
-    if any(pattern.search(raw) for pattern in _PATH_PATTERNS):
-        _fail("FMEA_PROPAGATION_PRIVATE_MARKER")
     try:
         value = json.loads(
             raw.decode("utf-8", errors="strict"),
@@ -339,6 +359,8 @@ def _load(path: Path) -> tuple[dict[str, object], bytes]:
         _fail("FMEA_PROPAGATION_JSON_INVALID")
     if not isinstance(value, dict):
         _fail("FMEA_PROPAGATION_JSON_SHAPE_INVALID")
+    if _contains_forbidden_local_path(value):
+        _fail("FMEA_PROPAGATION_PRIVATE_MARKER")
     if _canonical_bytes(value) != raw:
         _fail("FMEA_PROPAGATION_JSON_NOT_CANONICAL")
     return value, raw

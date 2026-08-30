@@ -272,9 +272,12 @@ def test_verifier_rejects_coordinated_decision_and_audit_actor_tamper(acceptance
     "forbidden_path",
     [
         "/",
+        "/ foo/bar",
         "/workspace/sensitive-data",
+        "source /workspace/file",
         r"C:\workspace\sensitive-data",
         r"\\server\share\sensitive-data",
+        "\\",
         r"\workspace",
         r"\workspace\sensitive-data",
     ],
@@ -300,7 +303,19 @@ def test_verifier_allows_harmless_slash_and_backslash_prose(acceptance_pack: Pat
         acceptance_pack,
         "decisions.json",
         lambda value: value["decisions"][0].update(
-            {"reason": r"The ratio a/b is ordinary prose; slash \ delimiter is not a local path."}
+            {"reason": r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless."}
+        ),
+    )
+
+    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
+
+
+def test_verifier_allows_ordinary_multiline_prose(acceptance_pack: Path) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update(
+            {"reason": "ordinary prose sentence.\nSecond ordinary sentence."}
         ),
     )
 
