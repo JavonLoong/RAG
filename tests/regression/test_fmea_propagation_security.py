@@ -357,6 +357,65 @@ def test_verifier_rejects_local_paths_after_terminated_http_url_span(
 @pytest.mark.parametrize(
     "candidate",
     [
+        "https:///workspace",
+        r"https://\workspace",
+        r"https://C:\workspace",
+        "https://",
+        "https://example.com/a https:///workspace",
+        "identifierhttps://example.com/a",
+        "identifierhttps://",
+        "identifier.https://example.com/a",
+        "identifier-https://example.com/a",
+        "identifier+https://example.com/a",
+        "HTTPS://",
+        "https://:443/a",
+        "https://example.com:notaport/a",
+        "https://example.com:65536/a",
+    ],
+)
+def test_verifier_rejects_malformed_http_url_candidates_before_masking(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
+        "HtTpS://Example.com/a?x=1#fragment",
+        "https://example.com:0/a",
+        "https://example.com:443/a",
+        r"https://example.com/C:\workspace",
+        "https://example.com/a//server/share",
+        "https://example.com/a HTTPS://example.org/b?x=1#fragment",
+        "https://example.com/a;HTTP://example.org/b",
+        "source=https://example.com/a",
+        "(https://example.com/a)",
+    ],
+)
+def test_verifier_masks_only_valid_http_url_candidates(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
         "ordinary prose sentence.\nSecond ordinary sentence.",
         r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless.",
         "source = / delimiter",

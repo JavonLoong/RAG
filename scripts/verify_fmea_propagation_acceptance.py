@@ -14,6 +14,7 @@ from hashlib import sha256
 from itertools import pairwise
 from pathlib import Path
 from typing import NoReturn, cast
+from urllib.parse import urlsplit
 
 SCHEMA_VERSION = "graphrag.fmea.propagation.acceptance.v1"
 CASE_IDS = ["forward", "reverse", "cycle", "conflict", "long_path"]
@@ -47,7 +48,7 @@ _EMBEDDED_ABSOLUTE_PATH_PATTERNS = (
     re.compile(_PATH_START_BOUNDARY + r"\\\\(?=[^\\/\s])"),
     re.compile(_PATH_START_BOUNDARY + r"\\(?![\\\s])"),
 )
-_HTTP_URL_SCHEME = re.compile(r"\bhttps?://", re.IGNORECASE)
+_HTTP_URL_CANDIDATE = re.compile(r"https?://", re.IGNORECASE)
 _HTTP_URL_TERMINATORS = frozenset(";,|)]}>'\"")
 _TOPOLOGY_SOURCE_HASH = "sha256:53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 _TOPOLOGY_SOURCE_CANONICAL_HASH = "sha256:d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
@@ -307,13 +308,36 @@ def _is_absolute_local_path(value: str) -> bool:
     return posixpath.isabs(value) or ntpath.isabs(value) or value.startswith("\\")
 
 
-def _mask_http_url_spans(value: str) -> str:
+def _valid_http_url_start(value: str, start: int) -> bool:
+    return start == 0 or not (value[start - 1].isalnum() or value[start - 1] in "_+.-")
+
+
+def _valid_http_url_candidate(candidate: str) -> bool:
+    try:
+        parsed = urlsplit(candidate)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return False
+    return (
+        parsed.scheme.lower() in {"http", "https"}
+        and bool(parsed.netloc)
+        and bool(hostname)
+        and "\\" not in parsed.netloc
+        and (port is None or 0 <= port <= 65535)
+    )
+
+
+def _mask_http_url_spans(value: str) -> str | None:
     masked = list(value)
-    for scheme_match in _HTTP_URL_SCHEME.finditer(value):
-        end = scheme_match.end()
+    for candidate_match in _HTTP_URL_CANDIDATE.finditer(value):
+        start = candidate_match.start()
+        end = candidate_match.end()
         while end < len(value) and not value[end].isspace() and value[end] not in _HTTP_URL_TERMINATORS:
             end += 1
-        masked[scheme_match.start() : end] = " " * (end - scheme_match.start())
+        if not _valid_http_url_start(value, start) or not _valid_http_url_candidate(value[start:end]):
+            return None
+        masked[start:end] = " " * (end - start)
     return "".join(masked)
 
 
@@ -325,6 +349,8 @@ def _contains_forbidden_local_path(value: object) -> bool:
         if _is_absolute_local_path(stripped):
             return True
         path_scan = _mask_http_url_spans(value)
+        if path_scan is None:
+            return True
         return any(
             pattern.search(path_scan) is not None
             for pattern in _EMBEDDED_ABSOLUTE_PATH_PATTERNS
