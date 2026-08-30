@@ -8,6 +8,8 @@
 
 Status: DONE
 
+本地 commits：`0573812b`（implementation/tests）、`8d6fb19a` 与 `783c80ac`（本报告及格式修复）。
+
 Task 2 已提供：
 
 - server-owned `GovernanceInputs`、canonical `RevisionAssembler`；
