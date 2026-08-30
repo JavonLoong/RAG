@@ -22,9 +22,12 @@ from fmea_application import (
 from fmea_application.analysis_assistance_service import AnalysisAssistanceService
 from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
+from fmea_application.governance_assistance_service import GovernanceAssistanceService
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
+    GovernanceAssistanceGenerator,
+    GovernanceSourcePort,
     PropagationRuleRegistry,
     RiskSuggestionGenerator,
     ScoringRuleRegistry,
@@ -35,6 +38,12 @@ from fmea_application.propagation_service import (
     PropagationSuggestionGenerator,
 )
 from fmea_application.review_errors import ReviewError
+from fmea_application.revision_assembler import (
+    GovernanceInputs,
+    PublicationReadinessPolicy,
+    RevisionAssembler,
+    coerce_governance_inputs,
+)
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
 from fmea_application.service_factory import (
     build_analysis_assistance_service,
@@ -49,6 +58,7 @@ from fmea_infrastructure.domain_pack_registry import (
     load_domain_pack_manifest,
     load_scoring_rule_pack,
 )
+from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
 from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
 from fmea_infrastructure.propagation_rule_registry import (
@@ -128,6 +138,39 @@ class PropagationRuntime:
     start_defaults: Mapping[str, object] | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class GovernanceRuntime:
+    source: GovernanceSourcePort
+    assembler: RevisionAssembler
+    readiness_policy: PublicationReadinessPolicy
+    assistance_service: GovernanceAssistanceService
+
+
+class WorkspaceGovernanceSource:
+    """Bind a server-owned loader to one requested workspace/analysis scope."""
+
+    def __init__(self, loader: Callable[[str, str], GovernanceInputs | Mapping[str, object]]) -> None:
+        if not callable(loader):
+            raise TypeError("governance loader must be callable")
+        self._loader = loader
+
+    def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
+        normalized_analysis_id = str(analysis_id).strip()
+        normalized_workspace_id = str(workspace_id).strip()
+        if not normalized_analysis_id or not normalized_workspace_id:
+            raise ValueError("analysis_id and workspace_id must not be empty")
+        inputs = coerce_governance_inputs(self._loader(normalized_analysis_id, normalized_workspace_id))
+        if inputs.analysis_id != normalized_analysis_id:
+            raise ValueError("governance source returned a different analysis scope")
+        if inputs.workspace_id != normalized_workspace_id:
+            raise ValueError("governance source returned a different workspace scope")
+        RevisionAssembler._validate_source_scope(inputs)
+        return inputs
+
+
+ServerGovernanceSourceAdapter = WorkspaceGovernanceSource
+
+
 def _resolved_path(path: Path) -> Path:
     return Path(path).expanduser().resolve()
 
@@ -180,6 +223,49 @@ def _register_review_template(template_registry_root: Path) -> None:
         raise ValueError("built-in FMEA review template identity is invalid")
     registry = FileTemplateRegistry(template_registry_root)
     registry.register(compiled, _TEMPLATE_SOURCE.read_bytes(), _TEMPLATE_SOURCE.suffix.lower())
+
+
+def build_workspace_governance_runtime(
+    source: GovernanceSourcePort | Callable[[str, str], GovernanceInputs | Mapping[str, object]],
+    *,
+    domain_policy: Mapping[str, object] | None = None,
+    assistance_generator: GovernanceAssistanceGenerator | None = None,
+    clock: Callable[[], str] = utc_now,
+) -> GovernanceRuntime:
+    """Compose Task 2's pure governance pipeline around a server-owned source.
+
+    This seam intentionally does not open a database or accept resource
+    identities from callers.  Repository-backed loading is introduced by the
+    later governance service task.
+    """
+
+    resolved_source: GovernanceSourcePort = (
+        source if hasattr(source, "load_inputs") else WorkspaceGovernanceSource(source)  # type: ignore[arg-type]
+    )
+    generator = assistance_generator or OfflineGovernanceAssistanceGenerator()
+    return GovernanceRuntime(
+        source=resolved_source,
+        assembler=RevisionAssembler(clock=clock),
+        readiness_policy=PublicationReadinessPolicy(domain_policy),
+        assistance_service=GovernanceAssistanceService(generator=generator, clock=clock),
+    )
+
+
+def build_governance_runtime(
+    source: GovernanceSourcePort | Callable[[str, str], GovernanceInputs | Mapping[str, object]],
+    *,
+    domain_policy: Mapping[str, object] | None = None,
+    assistance_generator: GovernanceAssistanceGenerator | None = None,
+    clock: Callable[[], str] = utc_now,
+) -> GovernanceRuntime:
+    """Compatibility alias for callers that do not use workspace in the name."""
+
+    return build_workspace_governance_runtime(
+        source,
+        domain_policy=domain_policy,
+        assistance_generator=assistance_generator,
+        clock=clock,
+    )
 
 
 def build_workspace_review_runtime(
@@ -465,11 +551,16 @@ def build_default_workspace_risk_runtime(
 
 
 __all__ = [
+    "GovernanceRuntime",
     "PropagationRuntime",
     "ReviewRuntime",
     "RiskRuntime",
+    "ServerGovernanceSourceAdapter",
+    "WorkspaceGovernanceSource",
     "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
+    "build_governance_runtime",
+    "build_workspace_governance_runtime",
     "build_workspace_propagation_runtime",
     "build_workspace_review_runtime",
     "build_workspace_risk_runtime",

@@ -61,6 +61,7 @@ from .risk_contracts import (
 )
 
 if TYPE_CHECKING:
+    from .governance_assistance_service import ReadinessChecklistDraft
     from .propagation_service import (
         PreparedPropagationInvalidation,
         PreparedPropagationProposal,
@@ -68,6 +69,7 @@ if TYPE_CHECKING:
         PropagationReviewResult,
         PropagationRun,
     )
+    from .revision_assembler import GovernanceInputs, PublicationReadinessReport
 
 ReviewHistoryPosition = tuple[str, str]
 
@@ -298,6 +300,18 @@ class RiskSuggestionGenerator(Protocol):
     def generate(self, request: RiskModelRequest) -> AssistanceSuggestion[object]: ...
 
 
+class GovernanceSourcePort(Protocol):
+    """Read server-owned accepted/confirmed governance state for one scope."""
+
+    def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs: ...
+
+
+class GovernanceAssistanceGenerator(Protocol):
+    """Provider-neutral bounded checklist generation; never an authority port."""
+
+    def generate(self, report: PublicationReadinessReport) -> ReadinessChecklistDraft: ...
+
+
 class AssistanceRepository(Protocol):
     """Persistence boundary for immutable model suggestions and human decisions."""
 
@@ -398,6 +412,8 @@ __all__ = [
     "EvidenceRequest",
     "EvidenceSnapshot",
     "FmeaRepository",
+    "GovernanceAssistanceGenerator",
+    "GovernanceSourcePort",
     "PropagationEvidenceProvider",
     "PropagationRepository",
     "PropagationRequest",
