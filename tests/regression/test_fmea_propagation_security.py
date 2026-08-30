@@ -332,12 +332,39 @@ def test_verifier_rejects_punctuation_adjacent_local_paths(
 @pytest.mark.parametrize(
     "candidate",
     [
+        r"https://example.com/a/b;C:\workspace\file",
+        "https://example.com/a/b,source=//server/share",
+        "https://example.com/a/b|/workspace/file",
+        r"https://example.com/a/b)/workspace/file",
+        r"https://example.com/a/b]C:\workspace\file",
+        r"https://example.com/a/b}/workspace/file",
+        "https://example.com/a/b\"/workspace/file",
+    ],
+)
+def test_verifier_rejects_local_paths_after_terminated_http_url_span(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update({"reason": candidate}),
+    )
+
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
+
+
+@pytest.mark.parametrize(
+    "candidate",
+    [
         "ordinary prose sentence.\nSecond ordinary sentence.",
         r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless.",
         "source = / delimiter",
         r"source = \ delimiter",
         "http://example.com/a/b",
         "https://example.com/a/b",
+        "https://example.com/a//server/share",
+        r"https://example.com/C:\workspace\file",
         "user.name+tag@example.com",
         "scope.identifier/path-segment",
     ],

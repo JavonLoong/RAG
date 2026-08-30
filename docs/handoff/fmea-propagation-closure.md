@@ -28,8 +28,12 @@ secret/private marker 和 raw-provider marker 保持 bytes-first 检查；本机
 strict JSON parse 后递归检查 decoded string values，避免把 `\n` 等 JSON escape
 误判成 Windows 路径。embedded path 可从字符串起点或任意非 path-body 字符后
 开始；path-body 固定为 alphanumeric、underscore、dot、slash 和 backslash，
-不维护 delimiter 枚举。HTTP/HTTPS URL span 内的 path-like 片段被排除，但同一
-字符串在 URL span 外出现的本机路径仍会被拒绝。
+不维护 delimiter 枚举。HTTP/HTTPS URL 只由 scheme-boundary lexer 识别到空白、
+;、,、| 或明确的 closing wrapper 为止；识别到的 span 在同长度 mask 中排除，
+generic path matcher 继续检查剩余字符。因此 URL 内部的 path-like 片段
+（包括 https://example.com/a//server/share 和
+https://example.com/C:\workspace\file）保持允许，而 URL 终止符后紧邻的本机
+路径仍会被拒绝。
 
 topology identity 还绑定到仓库中固定 source-pinned 的
 `domain_packs/fuel-combustion/topology/demo-1.0.0.json`：verifier 重新读取其
