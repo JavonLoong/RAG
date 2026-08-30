@@ -298,25 +298,50 @@ def test_verifier_rejects_forbidden_absolute_path_forms(acceptance_pack: Path, f
     _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
 
 
-def test_verifier_allows_harmless_slash_and_backslash_prose(acceptance_pack: Path) -> None:
+@pytest.mark.parametrize(
+    "candidate",
+    [
+        "source=/workspace/file",
+        "source:/workspace/file",
+        "source->/workspace/file",
+        "source=(/workspace/file)",
+        r"prefix=C:\workspace\file",
+        r"prefix=[C:\workspace\file]",
+        r"prefix=\\server\share\file",
+        r"prefix=\workspace\file",
+    ],
+)
+def test_verifier_rejects_punctuation_adjacent_local_paths(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
     _rewrite(
         acceptance_pack,
         "decisions.json",
-        lambda value: value["decisions"][0].update(
-            {"reason": r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless."}
-        ),
+        lambda value: value["decisions"][0].update({"reason": candidate}),
     )
 
-    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
 
 
-def test_verifier_allows_ordinary_multiline_prose(acceptance_pack: Path) -> None:
+@pytest.mark.parametrize(
+    "candidate",
+    [
+        "ordinary prose sentence.\nSecond ordinary sentence.",
+        r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless.",
+        "source = / delimiter",
+        r"source = \ delimiter",
+        "https://example.com/a/b",
+    ],
+)
+def test_verifier_allows_non_path_decoded_strings(
+    acceptance_pack: Path,
+    candidate: str,
+) -> None:
     _rewrite(
         acceptance_pack,
         "decisions.json",
-        lambda value: value["decisions"][0].update(
-            {"reason": "ordinary prose sentence.\nSecond ordinary sentence."}
-        ),
+        lambda value: value["decisions"][0].update({"reason": candidate}),
     )
 
     assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"

@@ -40,7 +40,13 @@ ARTIFACT_NAMES = {
 _MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
-_PATH_WRAPPER_CHARS = "\"'()[]{}<>,.;:!?"
+_PATH_BOUNDARY = r"(?:^|[\s=:>,;(\[{'\"<])"
+_EMBEDDED_ABSOLUTE_PATH_PATTERNS = (
+    re.compile(_PATH_BOUNDARY + r"/(?![/\s])"),
+    re.compile(_PATH_BOUNDARY + r"[A-Za-z]:[\\/]"),
+    re.compile(_PATH_BOUNDARY + r"\\\\(?=[^\\/\s])"),
+    re.compile(_PATH_BOUNDARY + r"\\(?![\\\s])"),
+)
 _TOPOLOGY_SOURCE_HASH = "sha256:53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 _TOPOLOGY_SOURCE_CANONICAL_HASH = "sha256:d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
 _TOPOLOGY_PATH = Path(__file__).resolve().parents[1] / "domain_packs" / "fuel-combustion" / "topology" / "demo-1.0.0.json"
@@ -306,13 +312,7 @@ def _contains_forbidden_local_path(value: object) -> bool:
             return False
         if _is_absolute_local_path(stripped):
             return True
-        for raw_token in re.findall(r"\S+", value):
-            token = raw_token.strip(_PATH_WRAPPER_CHARS)
-            if not token or token in {"/", "\\"}:
-                continue
-            if _is_absolute_local_path(token):
-                return True
-        return False
+        return any(pattern.search(value) for pattern in _EMBEDDED_ABSOLUTE_PATH_PATTERNS)
     if isinstance(value, dict):
         return any(_contains_forbidden_local_path(item) for item in value.values())
     if isinstance(value, list):
