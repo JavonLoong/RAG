@@ -33,16 +33,10 @@ class _StrictRequest(BaseModel):
 
 
 class PropagationStartBody(_StrictRequest):
-    """References to server-owned propagation inputs, never model payloads."""
+    """Client-owned row and evidence references; resource packs stay server-owned."""
 
     source_row_ids: list[StrictStr] = Field(min_length=1, max_length=_MAX_EDGES)
     evidence_pack_id: StrictStr = Field(min_length=1, max_length=_ID_MAX)
-    topology_id: StrictStr = Field(min_length=1, max_length=_ID_MAX)
-    topology_version: StrictStr = Field(min_length=1, max_length=_VERSION_MAX)
-    domain_pack_id: StrictStr = Field(min_length=1, max_length=_ID_MAX)
-    domain_pack_version: StrictStr = Field(min_length=1, max_length=_VERSION_MAX)
-    rule_pack_id: StrictStr = Field(min_length=1, max_length=_ID_MAX)
-    rule_pack_version: StrictStr = Field(min_length=1, max_length=_VERSION_MAX)
 
     @property
     def record_version(self) -> int:

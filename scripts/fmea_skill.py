@@ -13,7 +13,6 @@ from contextlib import suppress
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any, Final, Literal, NoReturn, cast
 from uuid import uuid4
 
@@ -102,6 +101,10 @@ _ERROR_EXIT_GROUPS: Final = {
         "FMEA_PROPAGATION_DEPTH_INVALID",
         "FMEA_PROPAGATION_BUDGET_INVALID",
         "FMEA_PROPAGATION_SUGGESTION_INVALID",
+        "FMEA_PROPAGATION_ENDPOINT_INVALID",
+        "FMEA_PROPAGATION_RELATION_INVALID",
+        "FMEA_PROPAGATION_EVIDENCE_INVALID",
+        "FMEA_PROPAGATION_SOURCE_INVALID",
         "FMEA_PROPAGATION_EDGE_INVALID",
         "FMEA_PROPAGATION_GRAPH_INVALID",
         "FMEA_PROPAGATION_REVIEW_INCOMPLETE",
@@ -122,6 +125,10 @@ _SAFE_ERROR_DETAILS: Final = {
     "FMEA_MODEL_SUGGESTION_INVALID": "review suggestion is invalid",
     "FMEA_MODEL_SUGGESTION_UNAVAILABLE": "review suggestion generation is unavailable",
     "FMEA_REVIEW_RUN_INTERRUPTED": "review suggestion run was interrupted",
+    "FMEA_PROPAGATION_ENDPOINT_INVALID": "propagation endpoint is invalid",
+    "FMEA_PROPAGATION_RELATION_INVALID": "propagation relation is invalid",
+    "FMEA_PROPAGATION_EVIDENCE_INVALID": "propagation evidence is invalid",
+    "FMEA_PROPAGATION_SOURCE_INVALID": "propagation source is invalid",
 }
 
 
@@ -527,12 +534,12 @@ def build_cli_runtime() -> CliRuntime:
     )
     propagation_runtime = None
     propagation_start_defaults: Mapping[str, object] | None = None
-    if os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ROOT"):
-        propagation_runtime, propagation_start_defaults = _build_cli_propagation_runtime(
+    if composition.propagation_server_environment_present():
+        propagation_runtime = composition.build_default_workspace_propagation_runtime(
             workspace,
-            risk_runtime,
-            runtime.template_registry_root,
+            risk_repository=risk_runtime.risk_repository,
         )
+        propagation_start_defaults = propagation_runtime.start_defaults
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -563,83 +570,6 @@ def build_cli_runtime() -> CliRuntime:
         propagation_service=None if propagation_runtime is None else propagation_runtime.service,
         propagation_start_defaults=propagation_start_defaults,
     )
-
-
-def _build_cli_propagation_runtime(
-    workspace: Any,
-    risk_runtime: Any,
-    template_registry_root: Path,
-) -> tuple[Any, Mapping[str, object]]:
-    """Compose propagation only when an operator pins a topology source.
-
-    The command surface exposes a compact analysis/version/key tuple.  All
-    other identifiers come from this server-side environment configuration.
-    A missing or incomplete pin fails closed during runtime construction.
-    """
-
-    topology_root_value = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ROOT")
-    topology_id = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_ID")
-    topology_version = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_VERSION")
-    topology_sha256 = os.environ.get("FMEA_PROPAGATION_TOPOLOGY_SHA256")
-    source_rows = tuple(
-        item.strip()
-        for item in os.environ.get("FMEA_PROPAGATION_SOURCE_ROW_IDS", "").split(",")
-        if item.strip()
-    )
-    defaults = {
-        "source_row_ids": source_rows,
-        "evidence_pack_id": os.environ.get("FMEA_PROPAGATION_EVIDENCE_PACK_ID", ""),
-        "topology_id": topology_id or "",
-        "topology_version": topology_version or "",
-        "domain_pack_id": os.environ.get("FMEA_PROPAGATION_DOMAIN_PACK_ID", ""),
-        "domain_pack_version": os.environ.get("FMEA_PROPAGATION_DOMAIN_PACK_VERSION", ""),
-        "rule_pack_id": os.environ.get("FMEA_PROPAGATION_RULE_PACK_ID", ""),
-        "rule_pack_version": os.environ.get("FMEA_PROPAGATION_RULE_PACK_VERSION", ""),
-    }
-    if not topology_root_value or not topology_id or not topology_version or not topology_sha256:
-        raise _review_error(
-            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
-            "FMEA propagation topology pin is incomplete",
-        )
-    if any(not isinstance(value, str) or not value.strip() for key, value in defaults.items() if key != "source_row_ids"):
-        raise _review_error(
-            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
-            "FMEA propagation server defaults are incomplete",
-        )
-    if not source_rows:
-        raise _review_error(
-            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
-            "FMEA propagation source rows are not configured",
-        )
-
-    from fmea_infrastructure.domain_pack_registry import FileDomainPackRegistry, load_domain_pack_manifest
-    from fmea_infrastructure.propagation_rule_registry import (
-        FilePropagationRuleRegistry,
-        load_propagation_rule_pack,
-    )
-    from fmea_infrastructure.topology_json import JsonTopologyRepository
-
-    domain_registry = FileDomainPackRegistry(template_registry_root / "domain-packs")
-    for manifest_path in sorted((REPO_ROOT / "domain_packs").glob("*/manifest.yaml")):
-        source = manifest_path.read_bytes()
-        domain_registry.register(load_domain_pack_manifest(source), source)
-    rule_registry = FilePropagationRuleRegistry(template_registry_root / "propagation-rules")
-    for rule_path in sorted((REPO_ROOT / "domain_packs").glob("*/propagation/*.yaml")):
-        source = rule_path.read_bytes()
-        rule_registry.register(load_propagation_rule_pack(source), source)
-    topology_port = JsonTopologyRepository(
-        Path(topology_root_value),
-        source_hashes={(topology_id, topology_version): topology_sha256},
-    )
-    composition = import_module("fmea_infrastructure.composition")
-    propagation_runtime = composition.build_workspace_propagation_runtime(
-        workspace,
-        topology_port=topology_port,
-        domain_pack_registry=domain_registry,
-        propagation_rule_registry=rule_registry,
-        risk_repository=risk_runtime.risk_repository,
-    )
-    return propagation_runtime, defaults
 
 
 def build_workspace_review_runtime(workspace: Any) -> Any:
@@ -994,6 +924,22 @@ def _emit_failed_suggestion(run: ReviewSuggestionRun, *, pretty: bool) -> int:
     )
 
 
+def _emit_failed_propagation_run(run: Any, *, pretty: bool) -> int:
+    candidate_code = run.error_code
+    code = (
+        candidate_code
+        if isinstance(candidate_code, str) and candidate_code in _ERROR_EXIT_GROUPS
+        else "FMEA_PROPAGATION_FAILED"
+    )
+    return _emit_error(
+        code,
+        _SAFE_ERROR_DETAILS.get(code, "propagation analysis failed"),
+        pretty=pretty,
+        data=_task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "run_data", run),
+        resource_type="propagation_run",
+    )
+
+
 def _await_suggestion(service: Any, actor: ActorContext, run: ReviewSuggestionRun, *, pretty: bool) -> int:
     deadline = time.monotonic() + SUGGESTION_DEADLINE_SECONDS
     latest = run
@@ -1210,16 +1156,14 @@ def _propagation_start_command(args: argparse.Namespace, runtime: CliRuntime) ->
     The public CLI intentionally exposes only the analysis/version/key tuple.
     Resource identities are supplied by the configured runtime, so callers
     cannot replace topology, model, provider, template, or rule selection.
-    The small namespace fallback keeps injected service doubles useful for the
-    transport contract tests; a concrete runtime must provide the defaults.
+    Injected and concrete runtimes must both provide the same bound defaults.
     """
 
     defaults = getattr(runtime, "propagation_start_defaults", None)
     if not isinstance(defaults, Mapping):
-        return SimpleNamespace(
-            analysis_id=args.analysis_id,
-            expected_analysis_record_version=args.record_version,
-            idempotency_key=args.idempotency_key,
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server defaults are unavailable",
         )
     required = (
         "source_row_ids",
@@ -1232,13 +1176,32 @@ def _propagation_start_command(args: argparse.Namespace, runtime: CliRuntime) ->
         "rule_pack_version",
     )
     if any(key not in defaults for key in required):
-        raise _review_error("FMEA_REVIEW_REQUEST_INVALID", "propagation CLI defaults are incomplete")
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server defaults are incomplete",
+        )
+    source_row_ids = defaults["source_row_ids"]
+    string_default_keys = tuple(key for key in required if key != "source_row_ids")
+    if (
+        not isinstance(source_row_ids, Sequence)
+        or isinstance(source_row_ids, str | bytes)
+        or not source_row_ids
+        or any(not isinstance(item, str) or not item.strip() for item in source_row_ids)
+        or any(
+            not isinstance(defaults[key], str) or not cast(str, defaults[key]).strip()
+            for key in string_default_keys
+        )
+    ):
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server defaults are invalid",
+        )
     try:
         contracts = import_module("fmea_application.propagation_service")
         return contracts.StartPropagationCommand(
             analysis_id=args.analysis_id,
             expected_analysis_record_version=args.record_version,
-            source_row_ids=tuple(cast(Sequence[str], defaults["source_row_ids"])),
+            source_row_ids=tuple(cast(Sequence[str], source_row_ids)),
             evidence_pack_id=cast(str, defaults["evidence_pack_id"]),
             topology_id=cast(str, defaults["topology_id"]),
             topology_version=cast(str, defaults["topology_version"]),
@@ -1306,10 +1269,17 @@ def _dispatch_propagation(  # noqa: C901
     runtime: CliRuntime,
     request: dict[str, object] | None,
 ) -> int:
-    service = _task5_service(runtime, "propagation_service")
+    service = getattr(runtime, "propagation_service", None)
+    if service is None:
+        raise _review_error(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server configuration is unavailable",
+        )
     pretty = bool(args.pretty)
     if args.propagation_command == "start":
         run = service.start_analysis(_propagation_start_command(args, runtime), runtime.actor)
+        if _enum_value(run.status) == "failed":
+            return _emit_failed_propagation_run(run, pretty=pretty)
         _emit_resource(
             "propagation_run",
             _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "run_data", run),
@@ -1320,6 +1290,8 @@ def _dispatch_propagation(  # noqa: C901
         return 0
     if args.propagation_command == "status":
         run = service.get_run(args.run_id, runtime.actor)
+        if _enum_value(run.status) == "failed":
+            return _emit_failed_propagation_run(run, pretty=pretty)
         _emit_resource(
             "propagation_run",
             _task5_data("chroma_rag_poc.routes_fmea_propagation_v1", "run_data", run),

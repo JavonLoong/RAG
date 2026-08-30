@@ -1,25 +1,18 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from chroma_rag_poc.fmea_propagation_contracts import (
     PropagationEdgeDecisionBody,
     PropagationReviewBody,
     PropagationStartBody,
 )
+from pydantic import ValidationError
 
 
 def valid_start_body() -> dict[str, object]:
     return {
         "source_row_ids": ["row-1"],
         "evidence_pack_id": "pack-1",
-        "topology_id": "topology-1",
-        "topology_version": "1.0.0",
-        "domain_pack_id": "fuel-combustion",
-        "domain_pack_version": "1.0.0",
-        "rule_pack_id": "fuel-combustion-propagation",
-        "rule_pack_version": "1.0.0",
     }
 
 
@@ -34,6 +27,25 @@ def test_propagation_start_contract_is_strict_and_bounded() -> None:
         PropagationStartBody.model_validate({**valid_start_body(), "source_row_ids": ["row-1", "row-1"]})
     with pytest.raises(ValidationError):
         PropagationStartBody.model_validate({**valid_start_body(), "analysis_id": "client-override"})
+
+
+@pytest.mark.parametrize(
+    ("field_name", "value"),
+    [
+        ("topology_id", "client-topology"),
+        ("topology_version", "9.9.9"),
+        ("domain_pack_id", "client-domain"),
+        ("domain_pack_version", "9.9.9"),
+        ("rule_pack_id", "client-rule"),
+        ("rule_pack_version", "9.9.9"),
+    ],
+)
+def test_propagation_start_contract_rejects_server_resource_overrides(
+    field_name: str,
+    value: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        PropagationStartBody.model_validate({**valid_start_body(), field_name: value})
 
 
 def test_propagation_review_contract_rejects_unknown_fields_and_unbounded_reason() -> None:
@@ -53,7 +65,7 @@ def test_propagation_review_contract_rejects_unknown_fields_and_unbounded_reason
 
 def test_propagation_request_models_reject_coercion() -> None:
     with pytest.raises(ValidationError):
-        PropagationStartBody.model_validate({**valid_start_body(), "topology_id": 1})
+        PropagationStartBody.model_validate({**valid_start_body(), "evidence_pack_id": 1})
     with pytest.raises(ValidationError):
         PropagationReviewBody.model_validate(
             {"edge_decisions": [{"edge_id": "edge-1", "action": "accept", "reason": "ok"}], "acknowledgements": "x"}

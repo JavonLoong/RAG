@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -50,11 +51,16 @@ from fmea_infrastructure.domain_pack_registry import (
 )
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
 from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
+from fmea_infrastructure.propagation_rule_registry import (
+    FilePropagationRuleRegistry,
+    load_propagation_rule_pack,
+)
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
 from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
 from fmea_infrastructure.risk_generator import EnvironmentRiskSuggestionGenerator
 from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
+from fmea_infrastructure.topology_json import JsonTopologyRepository
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
 
@@ -65,6 +71,20 @@ _TEMPLATE_ID = "fmea-row-review"
 _TEMPLATE_VERSION = "1.0.0"
 _TEMPLATE_SOURCE = Path(__file__).resolve().parents[1] / "templates" / "examples" / "fmea-row-review.yaml"
 _BUNDLED_DOMAIN_PACK_ROOT = Path(__file__).resolve().parents[1] / "domain_packs"
+_PROPAGATION_REQUIRED_ENV = (
+    "FMEA_PROPAGATION_TOPOLOGY_ROOT",
+    "FMEA_PROPAGATION_TOPOLOGY_ID",
+    "FMEA_PROPAGATION_TOPOLOGY_VERSION",
+    "FMEA_PROPAGATION_TOPOLOGY_SHA256",
+    "FMEA_PROPAGATION_DOMAIN_PACK_ID",
+    "FMEA_PROPAGATION_DOMAIN_PACK_VERSION",
+    "FMEA_PROPAGATION_RULE_PACK_ID",
+    "FMEA_PROPAGATION_RULE_PACK_VERSION",
+)
+_PROPAGATION_OPTIONAL_ENV = (
+    "FMEA_PROPAGATION_SOURCE_ROW_IDS",
+    "FMEA_PROPAGATION_EVIDENCE_PACK_ID",
+)
 _ADOPTION_ACTIONS = {
     AssistanceDecisionAction.ADOPT,
     AssistanceDecisionAction.PARTIAL_ADOPT,
@@ -105,6 +125,7 @@ class PropagationRuntime:
     assistance_repository: SqliteAssistanceRepository
     risk_repository: SqliteRiskRepository | None
     template_registry_root: Path
+    start_defaults: Mapping[str, object] | None = None
 
 
 def _resolved_path(path: Path) -> Path:
@@ -261,6 +282,7 @@ def build_workspace_propagation_runtime(
     propagation_rule_registry: PropagationRuleRegistry,
     generator: PropagationSuggestionGenerator | None = None,
     risk_repository: SqliteRiskRepository | None = None,
+    start_defaults: Mapping[str, object] | None = None,
     clock: Callable[[], str] = utc_now,
 ) -> PropagationRuntime:
     """Compose the workspace-scoped proposal and human-review propagation path."""
@@ -289,6 +311,113 @@ def build_workspace_propagation_runtime(
         assistance_repository=assistance_repository,
         risk_repository=risk_repository,
         template_registry_root=template_registry_root,
+        start_defaults=start_defaults,
+    )
+
+
+def propagation_server_environment_present(environ: Mapping[str, str] | None = None) -> bool:
+    """Return whether an operator supplied any propagation server configuration."""
+
+    source = os.environ if environ is None else environ
+    return any(source.get(key) for key in (*_PROPAGATION_REQUIRED_ENV, *_PROPAGATION_OPTIONAL_ENV))
+
+
+def _propagation_server_defaults(environ: Mapping[str, str]) -> tuple[Path, str, Mapping[str, object]]:
+    configured: dict[str, str] = {}
+    for key in _PROPAGATION_REQUIRED_ENV:
+        value = environ.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ReviewError(
+                "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+                "FMEA propagation server configuration is incomplete",
+            )
+        configured[key] = value.strip()
+    source_rows = tuple(
+        item.strip()
+        for item in environ.get("FMEA_PROPAGATION_SOURCE_ROW_IDS", "").split(",")
+        if item.strip()
+    )
+    if len(source_rows) != len(set(source_rows)):
+        raise ReviewError(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation source-row configuration is invalid",
+        )
+    defaults: Mapping[str, object] = {
+        "source_row_ids": source_rows,
+        "evidence_pack_id": environ.get("FMEA_PROPAGATION_EVIDENCE_PACK_ID", "").strip(),
+        "topology_id": configured["FMEA_PROPAGATION_TOPOLOGY_ID"],
+        "topology_version": configured["FMEA_PROPAGATION_TOPOLOGY_VERSION"],
+        "domain_pack_id": configured["FMEA_PROPAGATION_DOMAIN_PACK_ID"],
+        "domain_pack_version": configured["FMEA_PROPAGATION_DOMAIN_PACK_VERSION"],
+        "rule_pack_id": configured["FMEA_PROPAGATION_RULE_PACK_ID"],
+        "rule_pack_version": configured["FMEA_PROPAGATION_RULE_PACK_VERSION"],
+    }
+    return (
+        Path(configured["FMEA_PROPAGATION_TOPOLOGY_ROOT"]),
+        configured["FMEA_PROPAGATION_TOPOLOGY_SHA256"],
+        defaults,
+    )
+
+
+def build_default_workspace_propagation_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    risk_repository: SqliteRiskRepository | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> PropagationRuntime:
+    """Compose propagation from server-owned environment pins for one workspace."""
+
+    source = os.environ if environ is None else environ
+    topology_root, topology_sha256, defaults = _propagation_server_defaults(source)
+    _, template_registry_root = _workspace_review_paths(workspace)
+    domain_registry = FileDomainPackRegistry(template_registry_root / "domain-packs")
+    for manifest_path in sorted(_BUNDLED_DOMAIN_PACK_ROOT.glob("*/manifest.yaml")):
+        manifest_source = manifest_path.read_bytes()
+        domain_registry.register(load_domain_pack_manifest(manifest_source), manifest_source)
+    rule_registry = FilePropagationRuleRegistry(template_registry_root / "propagation-rules")
+    for rule_path in sorted(_BUNDLED_DOMAIN_PACK_ROOT.glob("*/propagation/*.yaml")):
+        rule_source = rule_path.read_bytes()
+        rule_registry.register(load_propagation_rule_pack(rule_source), rule_source)
+    topology_port = JsonTopologyRepository(
+        topology_root,
+        source_hashes={
+            (str(defaults["topology_id"]), str(defaults["topology_version"])): topology_sha256,
+        },
+    )
+    try:
+        snapshot = topology_port.load_snapshot(
+            str(defaults["topology_id"]),
+            str(defaults["topology_version"]),
+        )
+        domain_pack = domain_registry.get(
+            str(defaults["domain_pack_id"]),
+            str(defaults["domain_pack_version"]),
+        )
+        rule_pack = rule_registry.get(
+            str(defaults["rule_pack_id"]),
+            str(defaults["rule_pack_version"]),
+        )
+    except Exception as exc:
+        raise ReviewError(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server configuration is invalid",
+        ) from exc
+    if snapshot.workspace_id != workspace.workspace_id or domain_pack is None or rule_pack is None:
+        raise ReviewError(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation resources are not bound to the workspace",
+        )
+    resolved_risk_repository = risk_repository
+    if resolved_risk_repository is None:
+        database_path, _ = _workspace_review_paths(workspace)
+        resolved_risk_repository = SqliteRiskRepository(database_path)
+    return build_workspace_propagation_runtime(
+        workspace,
+        topology_port=topology_port,
+        domain_pack_registry=domain_registry,
+        propagation_rule_registry=rule_registry,
+        risk_repository=resolved_risk_repository,
+        start_defaults=defaults,
     )
 
 
@@ -339,10 +468,12 @@ __all__ = [
     "PropagationRuntime",
     "ReviewRuntime",
     "RiskRuntime",
+    "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
     "build_workspace_propagation_runtime",
     "build_workspace_review_runtime",
     "build_workspace_risk_runtime",
     "new_prefixed_uuid",
+    "propagation_server_environment_present",
     "utc_now",
 ]

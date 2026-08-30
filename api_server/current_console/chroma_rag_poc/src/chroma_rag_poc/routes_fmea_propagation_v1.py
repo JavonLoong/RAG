@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
+import json
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
@@ -36,8 +40,6 @@ from .fmea_propagation_contracts import (
 )
 from .fmea_review_contracts import FmeaEnvelope
 from .routes_fmea_review_v1 import (
-    _decode_cursor,
-    _encode_cursor,
     parse_idempotency_key,
     parse_if_match,
 )
@@ -45,7 +47,18 @@ from .workspace_registry import WorkspaceConfig, WorkspaceNotFoundError
 
 router = APIRouter(prefix="/api/v1/fmea", tags=["fmea-propagation-v1"])
 _BEARER = re.compile(r"^Bearer ([^\s]+)$")
+_CURSOR_PART = re.compile(r"^[A-Za-z0-9_-]+$")
 _MAX_PATH_PAGE = 100
+_PROPAGATION_PATH_CURSOR_RESOURCE = "fmea.propagation.paths.v1"
+_PROPAGATION_CURSOR_KEYS = frozenset({"workspace_id", "resource_type", "graph_revision_id", "path_id"})
+_START_DEFAULT_KEYS = (
+    "topology_id",
+    "topology_version",
+    "domain_pack_id",
+    "domain_pack_version",
+    "rule_pack_id",
+    "rule_pack_version",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,11 +138,93 @@ def _authorization_token(request: Request) -> str:
     return match.group(1)
 
 
+def _propagation_cursor_secret(request: Request) -> bytes:
+    secret = request.app.state.review_cursor_secret
+    if not isinstance(secret, bytes) or len(secret) < 32:
+        raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "cursor signing is unavailable")
+    return secret
+
+
+def _encode_propagation_path_cursor(
+    request: Request,
+    *,
+    workspace_id: str,
+    graph_revision_id: str,
+    path_id: str,
+) -> str:
+    raw = json.dumps(
+        {
+            "workspace_id": workspace_id,
+            "resource_type": _PROPAGATION_PATH_CURSOR_RESOURCE,
+            "graph_revision_id": graph_revision_id,
+            "path_id": path_id,
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    payload = base64.urlsafe_b64encode(raw).rstrip(b"=")
+    signature = hmac.new(_propagation_cursor_secret(request), payload, hashlib.sha256).digest()
+    return f"{payload.decode('ascii')}.{base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')}"
+
+
+def _decode_propagation_path_cursor(
+    request: Request,
+    value: str | None,
+    *,
+    workspace_id: str,
+    graph_revision_id: str,
+) -> str | None:
+    if value is None:
+        return None
+    if len(value) > 512 or value.count(".") != 1:
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    payload_text, signature_text = value.split(".")
+    if not _CURSOR_PART.fullmatch(payload_text) or not _CURSOR_PART.fullmatch(signature_text):
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    try:
+        payload = payload_text.encode("ascii")
+        expected = hmac.new(_propagation_cursor_secret(request), payload, hashlib.sha256).digest()
+        actual = base64.urlsafe_b64decode(signature_text + "=" * (-len(signature_text) % 4))
+    except (ValueError, TypeError) as exc:
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid") from exc
+    if not hmac.compare_digest(actual, expected):
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    try:
+        raw = base64.urlsafe_b64decode(payload_text + "=" * (-len(payload_text) % 4)).decode("ascii")
+        decoded = json.loads(raw)
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid") from exc
+    if (
+        not isinstance(decoded, dict)
+        or set(decoded) != _PROPAGATION_CURSOR_KEYS
+        or decoded.get("workspace_id") != workspace_id
+        or decoded.get("resource_type") != _PROPAGATION_PATH_CURSOR_RESOURCE
+        or decoded.get("graph_revision_id") != graph_revision_id
+        or not isinstance(decoded.get("path_id"), str)
+        or not decoded["path_id"]
+    ):
+        raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    return cast(str, decoded["path_id"])
+
+
 def _require_human_propagation_reviewer(actor: ActorContext) -> None:
     if actor.actor_type is not ActorType.HUMAN:
         raise ReviewError("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "a human propagation reviewer is required")
     if "propagation_reviewer" not in actor.roles:
         raise ReviewError("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "the propagation_reviewer role is required")
+
+
+def _validated_start_defaults(value: object) -> Mapping[str, object]:
+    if not isinstance(value, Mapping) or any(
+        not isinstance(value.get(key), str) or not cast(str, value[key]).strip()
+        for key in _START_DEFAULT_KEYS
+    ):
+        raise ReviewError(
+            "FMEA_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA propagation server defaults are unavailable",
+        )
+    return value
 
 
 def _runtime_for(request: Request, workspace: WorkspaceConfig) -> Any:
@@ -140,10 +235,13 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> Any:
         if existing is not None:
             return existing
         factory = cast(Callable[[WorkspaceConfig], Any] | None, request.app.state.propagation_runtime_factory)
-        if factory is None:
-            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA propagation runtime is not configured")
         try:
-            runtime = factory(workspace)
+            if factory is None:
+                from fmea_infrastructure.composition import build_default_workspace_propagation_runtime
+
+                runtime = build_default_workspace_propagation_runtime(workspace)
+            else:
+                runtime = factory(workspace)
         except ReviewError:
             raise
         except Exception as exc:
@@ -154,6 +252,7 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> Any:
             ) from exc
         if getattr(runtime, "service", None) is None:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA propagation service is unavailable")
+        _validated_start_defaults(getattr(runtime, "start_defaults", None))
         cache[workspace.workspace_id] = runtime
         return runtime
 
@@ -192,19 +291,24 @@ def _service_call(operation: Callable[[], Any]) -> Any:
         ) from exc
 
 
-def _start_command(analysis_id: str, body: PropagationStartBody, request: Request) -> StartPropagationCommand:
+def _start_command(
+    analysis_id: str,
+    body: PropagationStartBody,
+    request: Request,
+    defaults: Mapping[str, object],
+) -> StartPropagationCommand:
     try:
         return StartPropagationCommand(
             analysis_id=analysis_id,
             expected_analysis_record_version=parse_if_match(request),
             source_row_ids=tuple(body.source_row_ids),
             evidence_pack_id=body.evidence_pack_id,
-            topology_id=body.topology_id,
-            topology_version=body.topology_version,
-            domain_pack_id=body.domain_pack_id,
-            domain_pack_version=body.domain_pack_version,
-            rule_pack_id=body.rule_pack_id,
-            rule_pack_version=body.rule_pack_version,
+            topology_id=cast(str, defaults["topology_id"]),
+            topology_version=cast(str, defaults["topology_version"]),
+            domain_pack_id=cast(str, defaults["domain_pack_id"]),
+            domain_pack_version=cast(str, defaults["domain_pack_version"]),
+            rule_pack_id=cast(str, defaults["rule_pack_id"]),
+            rule_pack_version=cast(str, defaults["rule_pack_version"]),
             idempotency_key=parse_idempotency_key(request),
         )
     except ReviewError:
@@ -243,7 +347,8 @@ def start_propagation_run(
     request: Request,
     access: PropagationAccess = Depends(get_propagation_access),  # noqa: B008
 ) -> Response:
-    command = _start_command(analysis_id, body, request)
+    defaults = _validated_start_defaults(getattr(access.runtime, "start_defaults", None))
+    command = _start_command(analysis_id, body, request, defaults)
     run = _service_call(lambda: access.runtime.service.start_analysis(command, access.actor))
     return _json_response(
         status_code=202,
@@ -303,13 +408,15 @@ def list_propagation_paths(
     graph = _service_call(lambda: access.runtime.service.get_graph(graph_revision_id, access.actor))
     if graph is None:
         raise ReviewError("FMEA_PROPAGATION_GRAPH_NOT_FOUND", "propagation graph revision was not found")
-    position = _decode_cursor(request, cursor)
+    cursor_path_id = _decode_propagation_path_cursor(
+        request,
+        cursor,
+        workspace_id=access.workspace.workspace_id,
+        graph_revision_id=graph_revision_id,
+    )
     paths = tuple(sorted(graph.paths, key=lambda item: item.path_id))
     start = 0
-    if position is not None:
-        cursor_graph_id, cursor_path_id = position
-        if cursor_graph_id != graph_revision_id:
-            raise ReviewError("FMEA_REVIEW_REQUEST_INVALID", "cursor is invalid")
+    if cursor_path_id is not None:
         for index, path in enumerate(paths):
             if path.path_id == cursor_path_id:
                 start = index + 1
@@ -319,7 +426,12 @@ def list_propagation_paths(
     page = paths[start : start + limit]
     next_cursor = None
     if start + len(page) < len(paths) and page:
-        next_cursor = _encode_cursor(request, graph_revision_id, page[-1].path_id)
+        next_cursor = _encode_propagation_path_cursor(
+            request,
+            workspace_id=access.workspace.workspace_id,
+            graph_revision_id=graph_revision_id,
+            path_id=page[-1].path_id,
+        )
     data = PropagationPathPage(
         items=[path_data(item) for item in page],
         next_cursor=next_cursor,
