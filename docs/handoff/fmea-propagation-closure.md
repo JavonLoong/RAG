@@ -38,9 +38,9 @@ raw/canonical hash，并将规范化 snapshot 与 artifact 对比，因此不能
 | `proposal.json` | deterministic model proposal；endpoint/relation/evidence 均绑定公开 topology/rule/pack |
 | `reviewed-graph.json` | review 后的 immutable graph revision；safe forward/reverse 可由 human reviewer confirm，其余保留 `in_review` |
 | `paths.json` | 五类 path 的 edge 快照；每个 edge 必须有自己的 evidence IDs |
-| `decisions.json` | 每个 case 一个决定；只有 human `propagation_reviewer` 能 confirm |
+| `decisions.json` | 每个 case 一个决定；actor identity/type/role 固定绑定 authoritative human `propagation_reviewer` |
 | `issues.json` | long/cyclic/high-risk/external/conflicting/incomplete/evidence-gap 问题 |
-| `audit-summary.json` | 按顺序连接的 proposal/review 事件、`previous_event_hash`、chain head 及 hash |
+| `audit-summary.json` | 按顺序连接的 proposal/review 事件；review actor 必须匹配对应 decision actor，并校验 `previous_event_hash`、chain head 及 hash |
 | `acceptance-summary.json` | manifest 与可重算计数；`invented_endpoint_count=0`、`model_confirmation_count=0` |
 
 artifact schema 固定为
@@ -119,5 +119,8 @@ acceptance gate 只消费这些公开/application/composition interfaces，不�
 Windows 上 symlink/reparse 创建可能因开发者模式、管理员权限或策略而失败；
 测试会对该平台动作做精确 skip，不声称特权 symlink 已验证。无特权的
 component-wise 路径检查仍会验证：普通目录可接受、普通文件组件和 link/reparse
-组件均拒绝。生产部署仍应在具备相应 Windows policy 的环境补跑真实 reparse
-覆盖。
+组件均拒绝；其中 Windows `FILE_ATTRIBUTE_REPARSE_POINT` 分支通过确定性 seam
+常驻验证。artifact 中还会拒绝精确 POSIX root、任意 POSIX absolute、Windows
+drive absolute、UNC 和 root-relative path；普通 prose 中不构成本机绝对路径
+token 的斜杠不受影响。生产部署仍应在具备相应 Windows policy 的环境补跑真实
+reparse 覆盖。

@@ -5,6 +5,7 @@ import json
 import os
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -40,6 +41,17 @@ def _refresh_manifest(output: Path, names: tuple[str, ...]) -> None:
     for name in names:
         summary["artifact_hashes"][name] = "sha256:" + sha256((output / name).read_bytes()).hexdigest()
     summary_path.write_bytes(_canonical(summary))
+
+
+def _rehash_audit_chain(value: dict[str, object]) -> None:
+    events = value["events"]
+    assert isinstance(events, list)
+    previous_event_hash: str | None = None
+    for event in events:
+        event["previous_event_hash"] = previous_event_hash
+        event["event_hash"] = _hash_json({key: item for key, item in event.items() if key != "event_hash"})
+        previous_event_hash = event["event_hash"]
+    value["chain_head"] = previous_event_hash
 
 
 def _assert_rejected(output: Path, code: str) -> None:
@@ -221,11 +233,49 @@ def test_verifier_rejects_forged_audit_event_rehashed_with_valid_event_hash(acce
 
 
 @pytest.mark.parametrize(
+    ("case_id", "actor_patch"),
+    [
+        ("forward", {"actor_id": "different-human"}),
+        ("cycle", {"actor_id": "different-human"}),
+        ("cycle", {"actor_type": "service"}),
+    ],
+)
+def test_verifier_rejects_non_authoritative_decision_actor_for_all_outcomes(
+    acceptance_pack: Path,
+    case_id: str,
+    actor_patch: dict[str, str],
+) -> None:
+    def tamper(value: dict[str, object]) -> None:
+        decision = next(item for item in value["decisions"] if item["case_id"] == case_id)
+        decision["actor"].update(actor_patch)
+
+    _rewrite(acceptance_pack, "decisions.json", tamper)
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
+
+
+def test_verifier_rejects_coordinated_decision_and_audit_actor_tamper(acceptance_pack: Path) -> None:
+    def tamper_decision(value: dict[str, object]) -> None:
+        decision = next(item for item in value["decisions"] if item["case_id"] == "forward")
+        decision["actor"]["actor_id"] = "different-human"
+
+    def tamper_audit(value: dict[str, object]) -> None:
+        event = next(item for item in value["events"] if item["event_id"] == "event-review-forward")
+        event["actor_id"] = "different-human"
+        _rehash_audit_chain(value)
+
+    _rewrite(acceptance_pack, "decisions.json", tamper_decision)
+    _rewrite(acceptance_pack, "audit-summary.json", tamper_audit)
+    _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
+
+
+@pytest.mark.parametrize(
     "forbidden_path",
     [
+        "/",
         "/workspace/sensitive-data",
         r"C:\workspace\sensitive-data",
         r"\\server\share\sensitive-data",
+        r"\workspace",
         r"\workspace\sensitive-data",
     ],
 )
@@ -243,6 +293,18 @@ def test_verifier_rejects_forbidden_absolute_path_forms(acceptance_pack: Path, f
         forge,
     )
     _assert_rejected(acceptance_pack, "FMEA_PROPAGATION_PRIVATE_MARKER")
+
+
+def test_verifier_allows_harmless_slash_and_backslash_prose(acceptance_pack: Path) -> None:
+    _rewrite(
+        acceptance_pack,
+        "decisions.json",
+        lambda value: value["decisions"][0].update(
+            {"reason": r"The ratio a/b is ordinary prose; slash \ delimiter is not a local path."}
+        ),
+    )
+
+    assert verify_acceptance_directory(acceptance_pack)["status"] == "passed"
 
 
 def test_verifier_rejects_private_markers_secrets_and_raw_provider_response(acceptance_pack: Path) -> None:
@@ -292,6 +354,30 @@ def test_verifier_rejects_file_component_without_privilege(tmp_path: Path) -> No
     file_component = tmp_path / "file-component"
     file_component.write_text("not a directory", encoding="utf-8")
     assert _safe_artifact_directory(file_component / "pack") is False
+
+
+def test_verifier_rejects_file_attribute_reparse_component_without_privilege(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.verify_fmea_propagation_acceptance as verifier
+
+    artifact_dir = tmp_path / "regular" / "pack"
+    artifact_dir.mkdir(parents=True)
+    reparse_component = artifact_dir.parent
+    real_lstat = Path.lstat
+    reparse_flag = 0x400
+
+    def lstat_with_reparse(path: Path):
+        info = real_lstat(path)
+        if path == reparse_component:
+            return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=reparse_flag)
+        return info
+
+    monkeypatch.setattr(verifier.stat, "FILE_ATTRIBUTE_REPARSE_POINT", reparse_flag, raising=False)
+    monkeypatch.setattr(Path, "lstat", lstat_with_reparse)
+
+    assert verifier._safe_artifact_directory(artifact_dir) is False
 
 
 def test_verifier_rejects_symlink_component_when_platform_allows_creation(tmp_path: Path) -> None:

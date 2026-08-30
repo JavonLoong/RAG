@@ -39,10 +39,10 @@ _MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 _PATH_PATTERNS = (
-    re.compile(rb"(?<![A-Za-z0-9_])/(?![/\s])[^\"'\r\n,}\]]+"),
+    re.compile(rb"(?<![A-Za-z0-9_:/])/(?:[\"']|(?![/\s])[^\"'\r\n,}\]\s]+)"),
     re.compile(rb"(?<![A-Za-z0-9_])[A-Za-z]:[\\/]"),
     re.compile(rb"(?<![A-Za-z0-9_])\\\\[^\\/\s]+[\\/]"),
-    re.compile(rb"(?<![A-Za-z0-9_])\\(?!\\)[A-Za-z0-9_.-]+[\\/]"),
+    re.compile(rb"(?<![A-Za-z0-9_])\\(?!\\)[A-Za-z0-9_.-]+"),
 )
 _TOPOLOGY_SOURCE_HASH = "sha256:53559c5c6ed45e1a9e787a5452268cc5c1fc8259d0694459546162af418304e5"
 _TOPOLOGY_SOURCE_CANONICAL_HASH = "sha256:d698f66f461367a468de0ed100a344bf1c29caf1223b7c2a66d8a91b5a50fc18"
@@ -808,9 +808,11 @@ def _verify_decisions(value: dict[str, object], paths: dict[str, dict[str, objec
         if decision["confirmed"] is True and actor_value.get("actor_type") == "model":
             _fail("FMEA_PROPAGATION_MODEL_AUTHORITY_INVALID")
         actor = _exact(actor_value, {"actor_id", "actor_type", "roles"}, "FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
-        if not isinstance(actor["roles"], list) or any(not isinstance(role, str) for role in actor["roles"]):
-            _fail("FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
-        if decision["confirmed"] is True and (actor["actor_type"] != "human" or "propagation_reviewer" not in actor["roles"]):
+        if actor != {
+            "actor_id": "propagation-reviewer-1",
+            "actor_type": "human",
+            "roles": ["propagation_reviewer"],
+        }:
             _fail("FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
         if not isinstance(decision["confirmed"], bool) or decision["expected_graph_record_version"] != 1 or decision["decision_id"] != f"decision-{case_id}":
             _fail("FMEA_PROPAGATION_REVIEW_POLICY_INVALID")
@@ -878,11 +880,12 @@ def _verify_audit(value: dict[str, object], decisions: list[dict[str, object]]) 
             _fail("FMEA_PROPAGATION_AUDIT_INVALID")
         expected_decision_id = f"decision-{case_id}"
         expected_review = index % 2 == 1
+        decision_actor = _mapping(decisions_by_case[case_id]["actor"], "FMEA_PROPAGATION_AUDIT_INVALID")
         expected = {
             "event_id": f"event-review-{case_id}" if expected_review else f"event-proposal-{case_id}",
             "event_type": ("propagation.confirmed" if decisions_by_case[case_id]["confirmed"] else "propagation.review_required") if expected_review else "propagation.proposed",
-            "actor_id": "propagation-reviewer-1" if expected_review else "deterministic-offline-model",
-            "actor_type": "human" if expected_review else "model",
+            "actor_id": decision_actor["actor_id"] if expected_review else "deterministic-offline-model",
+            "actor_type": decision_actor["actor_type"] if expected_review else "model",
             "case_id": case_id,
             "resource_type": "propagation_decision" if expected_review else "propagation_path",
             "resource_id": expected_decision_id if expected_review else f"path-{case_id}",
