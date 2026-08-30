@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Protocol
 
@@ -61,7 +61,6 @@ from .risk_contracts import (
 )
 
 if TYPE_CHECKING:
-    from .governance_assistance_service import ReadinessChecklistDraft
     from .propagation_service import (
         PreparedPropagationInvalidation,
         PreparedPropagationProposal,
@@ -69,7 +68,13 @@ if TYPE_CHECKING:
         PropagationReviewResult,
         PropagationRun,
     )
-    from .revision_assembler import GovernanceInputs, PublicationReadinessReport
+    from .revision_assembler import (
+        GovernanceArtifactSet,
+        GovernanceInputs,
+        HumanAcknowledgementReference,
+        ReadinessChecklistDraft,
+        ReadinessChecklistProjection,
+    )
 
 ReviewHistoryPosition = tuple[str, str]
 
@@ -306,10 +311,79 @@ class GovernanceSourcePort(Protocol):
     def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs: ...
 
 
+class GovernanceAnalysisQueryPort(Protocol):
+    def get_analysis(self, analysis_id: str, workspace_id: str) -> FmeaAnalysis | None: ...
+
+
+class GovernanceReviewQueryPort(Protocol):
+    def list_rows(self, analysis_id: str, workspace_id: str) -> tuple[FmeaRow, ...]: ...
+
+
+class GovernanceRiskQueryPort(Protocol):
+    def list_risk_records(self, analysis_id: str, workspace_id: str) -> tuple[RiskAssessmentRecord, ...]: ...
+
+
+class GovernancePropagationQueryPort(Protocol):
+    def get_current_graph(self, analysis_id: str, workspace_id: str) -> PropagationGraphRevision | None: ...
+
+
+class GovernanceEvidenceQueryPort(Protocol):
+    def list_evidence_packs(self, analysis_id: str, workspace_id: str) -> tuple[EvidencePack, ...]: ...
+
+
+class GovernanceArtifactQueryPort(Protocol):
+    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: FmeaAnalysis) -> GovernanceArtifactSet: ...
+
+
+class GovernanceRunQueryPort(Protocol):
+    def list_active_run_ids(self, analysis_id: str, workspace_id: str) -> tuple[str, ...]: ...
+
+
+class GovernanceAcknowledgementQueryPort(Protocol):
+    def list_human_acknowledgements(
+        self, analysis_id: str, workspace_id: str
+    ) -> tuple[HumanAcknowledgementReference, ...]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class GovernanceRepositoryProviders:
+    """Typed composition of the existing read/query repositories.
+
+    Each provider owns one query concern. There is intentionally no generic
+    callable or mapping loader through which a client can inject governance
+    state.
+    """
+
+    analysis: GovernanceAnalysisQueryPort
+    review: GovernanceReviewQueryPort
+    risk: GovernanceRiskQueryPort
+    propagation: GovernancePropagationQueryPort
+    evidence: GovernanceEvidenceQueryPort
+    artifacts: GovernanceArtifactQueryPort
+    runs: GovernanceRunQueryPort
+    acknowledgements: GovernanceAcknowledgementQueryPort
+
+    def __post_init__(self) -> None:
+        required_methods = {
+            "analysis": ("get_analysis",),
+            "review": ("list_rows",),
+            "risk": ("list_risk_records",),
+            "propagation": ("get_current_graph",),
+            "evidence": ("list_evidence_packs",),
+            "artifacts": ("get_artifacts",),
+            "runs": ("list_active_run_ids",),
+            "acknowledgements": ("list_human_acknowledgements",),
+        }
+        for provider_name, method_names in required_methods.items():
+            provider = getattr(self, provider_name)
+            if any(not callable(getattr(provider, method_name, None)) for method_name in method_names):
+                raise TypeError(f"{provider_name} provider does not implement its typed query port")  # noqa: TRY003
+
+
 class GovernanceAssistanceGenerator(Protocol):
     """Provider-neutral bounded checklist generation; never an authority port."""
 
-    def generate(self, report: PublicationReadinessReport) -> ReadinessChecklistDraft: ...
+    def generate(self, projection: ReadinessChecklistProjection) -> ReadinessChecklistDraft | Mapping[str, object]: ...
 
 
 class AssistanceRepository(Protocol):
@@ -412,7 +486,16 @@ __all__ = [
     "EvidenceRequest",
     "EvidenceSnapshot",
     "FmeaRepository",
+    "GovernanceAcknowledgementQueryPort",
+    "GovernanceAnalysisQueryPort",
+    "GovernanceArtifactQueryPort",
     "GovernanceAssistanceGenerator",
+    "GovernanceEvidenceQueryPort",
+    "GovernancePropagationQueryPort",
+    "GovernanceRepositoryProviders",
+    "GovernanceReviewQueryPort",
+    "GovernanceRiskQueryPort",
+    "GovernanceRunQueryPort",
     "GovernanceSourcePort",
     "PropagationEvidenceProvider",
     "PropagationRepository",

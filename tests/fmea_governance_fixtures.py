@@ -3,6 +3,8 @@ from __future__ import annotations
 from hashlib import sha256
 from typing import Any
 
+from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.entities import FmeaAnalysis
 from core_domain.fmea.governance import (
     ApprovalDecision,
     ApprovalStatus,
@@ -25,6 +27,13 @@ from fmea_application.governance_contracts import (
     governance_payload_hash,
 )
 from fmea_application.review_contracts import ActorContext, AuditEvent, IdempotencyScope, idempotency_key_hash
+from fmea_application.revision_assembler import (
+    GovernanceDomainPolicy,
+    GovernanceInputs,
+    PublicationReadinessContext,
+    PublicationReadinessReport,
+    ResolvedArtifactIdentity,
+)
 from fmea_application.risk_contracts import OutboxEvent, outbox_payload_hash
 
 HASH = "a" * 64
@@ -102,10 +111,21 @@ def make_large_revision(row_count: int = 10_000, **overrides: Any) -> FmeaRevisi
     return make_fmea_revision(**values)
 
 
-def make_blocked_readiness_report(**overrides: Any) -> dict[str, Any]:
-    result: dict[str, Any] = {"ready": False, "issues": (make_readiness_issue(),)}
-    result.update(overrides)
-    return result
+def make_blocked_readiness_report(**overrides: Any) -> PublicationReadinessReport:
+    issue = make_readiness_issue()
+    values: dict[str, Any] = {
+        "revision_id": "revision-1",
+        "workspace_id": "ws-1",
+        "analysis_id": "analysis-1",
+        "revision_hash": HASH,
+        "target_record_version": 1,
+        "evidence_pack_ids": ("pack-1",),
+        "ready": False,
+        "issues": (issue,),
+        "blocking_codes": (issue.code,),
+    }
+    values.update(overrides)
+    return PublicationReadinessReport(**values)
 
 
 def make_approval_submission(**overrides: Any) -> ApprovalSubmission:
@@ -175,15 +195,9 @@ def make_normalized_snapshot_input(**overrides: Any):
     row_payload = overrides.pop("row_payload", None)
     rows = overrides.pop("rows", None)
     if isinstance(rows, int):
-        rows = tuple(
-            {"row_id": f"row-{index}", "failure_mode": "low pressure"}
-            for index in range(rows)
-        )
+        rows = tuple({"row_id": f"row-{index}", "failure_mode": "low pressure"} for index in range(rows))
     elif rows is None and len(revision.row_versions) > 1:
-        rows = tuple(
-            {"row_id": row_id, "failure_mode": "low pressure"}
-            for row_id, _, _ in revision.row_versions
-        )
+        rows = tuple({"row_id": row_id, "failure_mode": "low pressure"} for row_id, _, _ in revision.row_versions)
     values: dict[str, Any] = {
         "revision": revision,
         "publication_id": "publication-1",
@@ -243,19 +257,72 @@ def make_governance_actor(**overrides: Any) -> ActorContext:
     return ActorContext(**values)
 
 
-def make_governance_inputs(**overrides: Any) -> dict[str, Any]:
+def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
+    domain_pack = DomainPackManifest(
+        pack_id="generic-domain",
+        version="1.0.0",
+        content_hash="a" * 64,
+        compatible_schema_ids=("graphrag.fmea.v1",),
+        analysis_types=("fuel_system",),
+        template_identities=(("generic-template", "1.0.0"),),
+        scoring_rule_identities=(("generic-scoring", "1.0.0"),),
+        propagation_rule_identities=(("generic-propagation", "1.0.0"),),
+        extension_fields=(),
+    )
+    analysis = FmeaAnalysis(
+        analysis_id="analysis-1",
+        project_id="project-1",
+        analysis_type="fuel_system",
+        lifecycle_stage="draft",
+        scope="generic system",
+        system_boundary="generic boundary",
+        exclusions=(),
+        equipment_configuration="configuration-1",
+        control_software_version="control-1",
+        fuel_type="generic",
+        operating_modes=("steady",),
+        assumptions=(),
+        limitations=(),
+        unanalysed_parts=(),
+        versions=VersionSet(
+            "graphrag.fmea.v1",
+            "data-1",
+            "graph-1",
+            "evidence-1",
+            "profile-1",
+            "template-1",
+            "score-1",
+            "prompt-0",
+            "model-0",
+            "d" * 64,
+        ),
+        owner_actor_id="analyst-1",
+        reviewer_actor_ids=("reviewer-1",),
+        approver_actor_id=None,
+        approved_at=None,
+        parent_revision_id=None,
+        current_revision_id="revision-1",
+    )
     values: dict[str, Any] = {
         "workspace_id": "ws-1",
         "analysis_id": "analysis-1",
+        "analysis": analysis,
         "rows": (),
         "risk_records": (),
         "propagation_graph_revision": None,
         "evidence_packs": (),
-        "domain_pack": make_domain_policy(),
-        "version_identities": (),
+        "domain_pack": domain_pack,
+        "domain_pack_identity": ResolvedArtifactIdentity("domain_pack", "generic-domain", "1.0.0", "a" * 64, True),
+        "template_identities": (ResolvedArtifactIdentity("template", "generic-template", "1.0.0", "b" * 64, True),),
+        "scoring_rule_identities": (
+            ResolvedArtifactIdentity("scoring_rule", "generic-scoring", "1.0.0", "c" * 64, True),
+        ),
+        "propagation_rule_identity": ResolvedArtifactIdentity(
+            "propagation_rule", "generic-propagation", "1.0.0", "d" * 64, True
+        ),
     }
     values.update(overrides)
-    return values
+    return GovernanceInputs(**values)
 
 
 def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
@@ -264,16 +331,20 @@ def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
     return RevisionAssemblyRequest(**values)
 
 
-def make_readiness_context(**overrides: Any) -> dict[str, Any]:
-    values: dict[str, Any] = {"required_fields_accepted": True, "required_risk_confirmed": True, "propagation_confirmed": True}
+def make_readiness_context(**overrides: Any) -> PublicationReadinessContext:
+    values: dict[str, Any] = {
+        "required_fields_accepted": True,
+        "required_risk_confirmed": True,
+        "propagation_confirmed": True,
+    }
     values.update(overrides)
-    return values
+    return PublicationReadinessContext(**values)
 
 
-def make_domain_policy(**overrides: Any) -> dict[str, Any]:
+def make_domain_policy(**overrides: Any) -> GovernanceDomainPolicy:
     values: dict[str, Any] = {"allow_acknowledged_blocking": True, "required_risk": True, "required_propagation": True}
     values.update(overrides)
-    return values
+    return GovernanceDomainPolicy(**values)
 
 
 def make_approval_command(**overrides: Any) -> ApprovalCommand:
@@ -322,7 +393,9 @@ def _scope(actor: ActorContext, command: str, resource_path: str, key: str) -> I
     return IdempotencyScope(actor.workspace_id, actor.actor_id, command, resource_path, idempotency_key_hash(key))
 
 
-def _audit(scope: IdempotencyScope, payload_hash: str, *, aggregate_id: str, analysis_id: str = "analysis-1") -> AuditEvent:
+def _audit(
+    scope: IdempotencyScope, payload_hash: str, *, aggregate_id: str, analysis_id: str = "analysis-1"
+) -> AuditEvent:
     versions = VersionSet("graphrag.fmea.v1", "1", "1", "1", "1", "1", "1", "1", "1", HASH)
     return AuditEvent(
         event_id=f"audit-{aggregate_id}",
@@ -360,7 +433,9 @@ def _audit(scope: IdempotencyScope, payload_hash: str, *, aggregate_id: str, ana
     )
 
 
-def _prepared_events(scope: IdempotencyScope, payload_hash: str, payload: dict[str, Any], aggregate_id: str) -> tuple[AuditEvent, OutboxEvent]:
+def _prepared_events(
+    scope: IdempotencyScope, payload_hash: str, payload: dict[str, Any], aggregate_id: str
+) -> tuple[AuditEvent, OutboxEvent]:
     audit = _audit(scope, payload_hash, aggregate_id=aggregate_id)
     outbox = OutboxEvent(
         event_id=f"outbox-{aggregate_id}",
@@ -379,9 +454,9 @@ def _prepared_events(scope: IdempotencyScope, payload_hash: str, payload: dict[s
 def prepared_revision(**overrides: Any) -> PreparedRevision:
     actor = make_governance_actor(actor_id="assembler-1", roles=frozenset({"assembler"}))
     key = "00000000-0000-4000-8000-000000000705"
-    command = __import__("fmea_application.governance_contracts", fromlist=["AssembleRevisionCommand"]).AssembleRevisionCommand(
-        request=make_assemble_request(), idempotency_key=key
-    )
+    command = __import__(
+        "fmea_application.governance_contracts", fromlist=["AssembleRevisionCommand"]
+    ).AssembleRevisionCommand(request=make_assemble_request(), idempotency_key=key)
     revision = make_fmea_revision()
     scope = _scope(actor, "fmea.revision.assemble", f"/fmea/analyses/{revision.analysis_id}/revisions", key)
     payload = canonical_governance_payload("revision.assemble", command, revision=revision)
@@ -432,7 +507,15 @@ def prepared_approval(**overrides: Any) -> PreparedApproval:
     payload = canonical_governance_payload("approval.decide", command, submission=submission, decision=decision)
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, decision.approval_id)
-    values = {"scope": scope, "payload_hash": payload_hash, "command": command, "submission": submission, "decision": decision, "audit": audit, "outbox": outbox}
+    values = {
+        "scope": scope,
+        "payload_hash": payload_hash,
+        "command": command,
+        "submission": submission,
+        "decision": decision,
+        "audit": audit,
+        "outbox": outbox,
+    }
     values.update(overrides)
     return PreparedApproval(**values)
 
@@ -444,7 +527,9 @@ def prepared_approval_withdrawal(**overrides: Any):
     key = "00000000-0000-4000-8000-000000000708"
     command = WithdrawApprovalCommand("approval-1", HASH, 2, "approval withdrawn", key)
     decision = make_approval_decision()
-    withdrawal = __import__("core_domain.fmea.governance", fromlist=["ApprovalWithdrawalRecord"]).ApprovalWithdrawalRecord(
+    withdrawal = __import__(
+        "core_domain.fmea.governance", fromlist=["ApprovalWithdrawalRecord"]
+    ).ApprovalWithdrawalRecord(
         "approval-withdrawal-1", "approval-1", "revision-1", HASH, actor.actor_id, command.reason, TIMESTAMP
     )
     scope = _scope(actor, "fmea.approval.withdraw", "/fmea/approvals/approval-1/withdrawal", key)
@@ -521,11 +606,17 @@ def prepared_publication_withdrawal(**overrides: Any):
     actor = make_governance_actor(actor_id="publisher-1", roles=frozenset({"publisher"}))
     command = WithdrawPublicationCommand("publication-1", 1, "withdrawn", None, "00000000-0000-4000-8000-000000000709")
     publication = make_published_revision()
-    withdrawal = __import__("core_domain.fmea.governance", fromlist=["PublicationWithdrawalRecord"]).PublicationWithdrawalRecord(
+    withdrawal = __import__(
+        "core_domain.fmea.governance", fromlist=["PublicationWithdrawalRecord"]
+    ).PublicationWithdrawalRecord(
         "publication-withdrawal-1", "publication-1", None, actor.actor_id, command.reason, TIMESTAMP
     )
-    scope = _scope(actor, "fmea.publication.withdraw", "/fmea/publications/publication-1/withdrawal", command.idempotency_key)
-    payload = canonical_governance_payload("publication.withdraw", command, publication=publication, withdrawal=withdrawal)
+    scope = _scope(
+        actor, "fmea.publication.withdraw", "/fmea/publications/publication-1/withdrawal", command.idempotency_key
+    )
+    payload = canonical_governance_payload(
+        "publication.withdraw", command, publication=publication, withdrawal=withdrawal
+    )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, withdrawal.withdrawal_id)
     return PreparedPublicationWithdrawal(scope, payload_hash, command, publication, withdrawal, audit, outbox)
@@ -535,7 +626,9 @@ def prepared_supersession(**overrides: Any):
     from fmea_application.governance_contracts import PreparedSupersession, SupersedePublicationCommand
 
     actor = make_governance_actor(actor_id="publisher-1", roles=frozenset({"publisher"}))
-    command = SupersedePublicationCommand("pub-old", "pub-new", 1, 1, "replacement", "00000000-0000-4000-8000-000000000710")
+    command = SupersedePublicationCommand(
+        "pub-old", "pub-new", 1, 1, "replacement", "00000000-0000-4000-8000-000000000710"
+    )
     old_revision = make_fmea_revision()
     replacement_revision = make_fmea_revision(
         revision_id="revision-2",
@@ -543,9 +636,13 @@ def prepared_supersession(**overrides: Any):
         parent_revision_hash=old_revision.revision_hash,
     )
     old = make_published_revision(publication_id="pub-old", revision_hash=old_revision.revision_hash)
-    replacement = make_published_revision(publication_id="pub-new", revision_id="revision-2", revision_hash=replacement_revision.revision_hash)
+    replacement = make_published_revision(
+        publication_id="pub-new", revision_id="revision-2", revision_hash=replacement_revision.revision_hash
+    )
     link = make_supersession_record(old_publication_id="pub-old", new_publication_id="pub-new")
-    scope = _scope(actor, "fmea.publication.supersede", "/fmea/publications/pub-old/supersession", command.idempotency_key)
+    scope = _scope(
+        actor, "fmea.publication.supersede", "/fmea/publications/pub-old/supersession", command.idempotency_key
+    )
     payload = canonical_governance_payload(
         "publication.supersede",
         command,
@@ -574,6 +671,9 @@ def prepared_supersession(**overrides: Any):
 
 
 def persisted_publication_pair(**overrides: Any):
-    result = {"old": make_published_revision(publication_id="pub-old"), "new": make_published_revision(publication_id="pub-new")}
+    result = {
+        "old": make_published_revision(publication_id="pub-old"),
+        "new": make_published_revision(publication_id="pub-new"),
+    }
     result.update(overrides)
     return result

@@ -12,17 +12,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from fmea_application.revision_assembler import (
-    PublicationReadinessReport,
     ReadinessChecklistDraft,
+    ReadinessChecklistProjection,
 )
 
 
 class OfflineGovernanceAssistanceGenerator:
     """Return a bounded checklist projection of a deterministic report."""
 
-    def generate(self, report: PublicationReadinessReport) -> ReadinessChecklistDraft:
-        if not isinstance(report, PublicationReadinessReport):
-            raise TypeError("report must be a PublicationReadinessReport")
+    def generate(self, projection: ReadinessChecklistProjection) -> ReadinessChecklistDraft:
+        if not isinstance(projection, ReadinessChecklistProjection):
+            raise TypeError("projection must be a ReadinessChecklistProjection")
         checklist: tuple[Mapping[str, object], ...] = tuple(
             {
                 "code": issue.code,
@@ -30,15 +30,16 @@ class OfflineGovernanceAssistanceGenerator:
                 "source_type": issue.source_type,
                 "source_id": issue.source_id,
                 "evidence_ids": list(issue.evidence_ids),
+                "acknowledgement_decision_id": issue.acknowledgement_decision_id,
             }
-            for issue in report.issues
+            for issue in projection.issues
         )
         return ReadinessChecklistDraft(
-            ready=report.ready,
-            blocking_codes=report.blocking_codes,
+            ready=projection.ready,
+            blocking_codes=projection.blocking_codes,
             checklist=checklist,
-            revision_id=report.revision_id,
-            revision_hash=report.revision_hash,
+            revision_id=projection.revision_id,
+            revision_hash=projection.revision_hash,
         )
 
 

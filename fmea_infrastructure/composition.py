@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from core_domain.fmea.domain_pack import DomainPackManifest
 from fmea_application import (
     ReviewRunExecutor,
     ReviewService,
@@ -27,6 +28,7 @@ from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
     GovernanceAssistanceGenerator,
+    GovernanceRepositoryProviders,
     GovernanceSourcePort,
     PropagationRuleRegistry,
     RiskSuggestionGenerator,
@@ -39,10 +41,12 @@ from fmea_application.propagation_service import (
 )
 from fmea_application.review_errors import ReviewError
 from fmea_application.revision_assembler import (
+    GovernanceArtifactSet,
+    GovernanceDomainPolicy,
     GovernanceInputs,
     PublicationReadinessPolicy,
+    ResolvedArtifactIdentity,
     RevisionAssembler,
-    coerce_governance_inputs,
 )
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
 from fmea_application.service_factory import (
@@ -55,8 +59,10 @@ from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRep
 from fmea_infrastructure.domain_pack_registry import (
     FileDomainPackRegistry,
     FileScoringRuleRegistry,
+    domain_pack_content_hash,
     load_domain_pack_manifest,
     load_scoring_rule_pack,
+    scoring_rule_content_hash,
 )
 from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
@@ -64,6 +70,7 @@ from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationR
 from fmea_infrastructure.propagation_rule_registry import (
     FilePropagationRuleRegistry,
     load_propagation_rule_pack,
+    propagation_rule_content_hash,
 )
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
@@ -146,29 +153,136 @@ class GovernanceRuntime:
     assistance_service: GovernanceAssistanceService
 
 
-class WorkspaceGovernanceSource:
-    """Bind a server-owned loader to one requested workspace/analysis scope."""
+class RegistryGovernanceArtifactProvider:
+    """Resolve domain/template/scoring/propagation artifacts through registries."""
 
-    def __init__(self, loader: Callable[[str, str], GovernanceInputs | Mapping[str, object]]) -> None:
-        if not callable(loader):
-            raise TypeError("governance loader must be callable")
-        self._loader = loader
+    def __init__(
+        self,
+        *,
+        domain_pack: DomainPackManifest,
+        domain_pack_registry: DomainPackRegistry,
+        template_registry: FileTemplateRegistry,
+        scoring_rule_registry: ScoringRuleRegistry,
+        propagation_rule_registry: PropagationRuleRegistry,
+    ) -> None:
+        if not isinstance(domain_pack, DomainPackManifest):
+            raise TypeError("domain_pack must be a server-owned DomainPackManifest")
+        self._domain_pack = domain_pack
+        self._domain_registry = domain_pack_registry
+        self._template_registry = template_registry
+        self._scoring_registry = scoring_rule_registry
+        self._propagation_registry = propagation_rule_registry
+
+    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: object) -> GovernanceArtifactSet:
+        if getattr(analysis, "analysis_id", None) != analysis_id:
+            raise ValueError("artifact lookup analysis scope is invalid")
+        if getattr(analysis, "analysis_type", None) not in self._domain_pack.analysis_types:
+            raise ValueError("domain pack does not support the authoritative analysis type")
+        registered_domain = self._domain_registry.get(self._domain_pack.pack_id, self._domain_pack.version)
+        if (
+            registered_domain != self._domain_pack
+            or domain_pack_content_hash(registered_domain) != registered_domain.content_hash
+        ):
+            raise ValueError("domain pack registry identity does not match the server manifest")
+        templates_list: list[ResolvedArtifactIdentity] = []
+        for template_id, version in self._domain_pack.template_identities:
+            template = self._template_registry.get(template_id, version)
+            if template.metadata.template_id != template_id or template.metadata.version != version:
+                raise ValueError("template registry identity does not match the domain pack")
+            templates_list.append(
+                ResolvedArtifactIdentity("template", template_id, version, template.template_hash, True)
+            )
+        templates = tuple(templates_list)
+        scoring_list: list[ResolvedArtifactIdentity] = []
+        for rule_id, version in self._domain_pack.scoring_rule_identities:
+            rule = self._scoring_registry.get(rule_id, version)
+            if rule.rule_pack_id != rule_id or rule.version != version:
+                raise ValueError("scoring rule registry identity does not match the domain pack")
+            scoring_list.append(
+                ResolvedArtifactIdentity("scoring_rule", rule_id, version, scoring_rule_content_hash(rule), True)
+            )
+        scoring = tuple(scoring_list)
+        propagation = None
+        if self._domain_pack.propagation_rule_identities:
+            rule_id, version = self._domain_pack.propagation_rule_identities[0]
+            rule = self._propagation_registry.get(rule_id, version)
+            if rule.rule_pack_id != rule_id or rule.version != version:
+                raise ValueError("propagation rule registry identity does not match the domain pack")
+            propagation = ResolvedArtifactIdentity(
+                "propagation_rule",
+                rule_id,
+                version,
+                propagation_rule_content_hash(rule),
+                True,
+            )
+        return GovernanceArtifactSet(
+            domain_pack=registered_domain,
+            domain_pack_identity=ResolvedArtifactIdentity(
+                "domain_pack",
+                registered_domain.pack_id,
+                registered_domain.version,
+                registered_domain.content_hash,
+                True,
+            ),
+            template_identities=templates,
+            scoring_rule_identities=scoring,
+            propagation_rule_identity=propagation,
+        )
+
+
+class RepositoryGovernanceSource:
+    """Compose existing query repositories behind the server-owned source port."""
+
+    def __init__(self, providers: GovernanceRepositoryProviders) -> None:
+        if not isinstance(providers, GovernanceRepositoryProviders):
+            raise TypeError("providers must be GovernanceRepositoryProviders")
+        self._providers = providers
 
     def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
-        normalized_analysis_id = str(analysis_id).strip()
-        normalized_workspace_id = str(workspace_id).strip()
-        if not normalized_analysis_id or not normalized_workspace_id:
-            raise ValueError("analysis_id and workspace_id must not be empty")
-        inputs = coerce_governance_inputs(self._loader(normalized_analysis_id, normalized_workspace_id))
-        if inputs.analysis_id != normalized_analysis_id:
-            raise ValueError("governance source returned a different analysis scope")
-        if inputs.workspace_id != normalized_workspace_id:
-            raise ValueError("governance source returned a different workspace scope")
+        if (
+            not isinstance(analysis_id, str)
+            or not analysis_id.strip()
+            or not isinstance(workspace_id, str)
+            or not workspace_id.strip()
+        ):
+            raise ValueError("analysis_id and workspace_id must be non-empty strings")
+        analysis_id = analysis_id.strip()
+        workspace_id = workspace_id.strip()
+        analysis = self._providers.analysis.get_analysis(analysis_id, workspace_id)
+        if analysis is None or analysis.analysis_id != analysis_id:
+            raise ValueError("analysis was not found in the requested workspace")
+        rows = tuple(self._providers.review.list_rows(analysis_id, workspace_id))
+        risks = tuple(self._providers.risk.list_risk_records(analysis_id, workspace_id))
+        graph = self._providers.propagation.get_current_graph(analysis_id, workspace_id)
+        packs = tuple(self._providers.evidence.list_evidence_packs(analysis_id, workspace_id))
+        artifacts = self._providers.artifacts.get_artifacts(analysis_id, workspace_id, analysis)
+        acknowledgements = tuple(
+            self._providers.acknowledgements.list_human_acknowledgements(analysis_id, workspace_id)
+        )
+        for reference in acknowledgements:
+            if reference.workspace_id != workspace_id or reference.analysis_id != analysis_id:
+                raise ValueError("acknowledgement reference is outside the requested scope")
+        inputs = GovernanceInputs(
+            workspace_id=workspace_id,
+            analysis_id=analysis_id,
+            analysis=analysis,
+            domain_pack=artifacts.domain_pack,
+            domain_pack_identity=artifacts.domain_pack_identity,
+            rows=rows,
+            risk_records=risks,
+            propagation_graph_revision=graph,
+            evidence_packs=packs,
+            template_identities=artifacts.template_identities,
+            scoring_rule_identities=artifacts.scoring_rule_identities,
+            propagation_rule_identity=artifacts.propagation_rule_identity,
+            acknowledgement_references=acknowledgements,
+            active_run_ids=tuple(self._providers.runs.list_active_run_ids(analysis_id, workspace_id)),
+        )
         RevisionAssembler._validate_source_scope(inputs)
         return inputs
 
 
-ServerGovernanceSourceAdapter = WorkspaceGovernanceSource
+ServerGovernanceSourceAdapter = RepositoryGovernanceSource
 
 
 def _resolved_path(path: Path) -> Path:
@@ -226,22 +340,15 @@ def _register_review_template(template_registry_root: Path) -> None:
 
 
 def build_workspace_governance_runtime(
-    source: GovernanceSourcePort | Callable[[str, str], GovernanceInputs | Mapping[str, object]],
+    providers: GovernanceRepositoryProviders,
     *,
-    domain_policy: Mapping[str, object] | None = None,
+    domain_policy: GovernanceDomainPolicy | None = None,
     assistance_generator: GovernanceAssistanceGenerator | None = None,
     clock: Callable[[], str] = utc_now,
 ) -> GovernanceRuntime:
-    """Compose Task 2's pure governance pipeline around a server-owned source.
+    """Compose Task 2 around typed repository query providers."""
 
-    This seam intentionally does not open a database or accept resource
-    identities from callers.  Repository-backed loading is introduced by the
-    later governance service task.
-    """
-
-    resolved_source: GovernanceSourcePort = (
-        source if hasattr(source, "load_inputs") else WorkspaceGovernanceSource(source)  # type: ignore[arg-type]
-    )
+    resolved_source: GovernanceSourcePort = RepositoryGovernanceSource(providers)
     generator = assistance_generator or OfflineGovernanceAssistanceGenerator()
     return GovernanceRuntime(
         source=resolved_source,
@@ -252,16 +359,16 @@ def build_workspace_governance_runtime(
 
 
 def build_governance_runtime(
-    source: GovernanceSourcePort | Callable[[str, str], GovernanceInputs | Mapping[str, object]],
+    providers: GovernanceRepositoryProviders,
     *,
-    domain_policy: Mapping[str, object] | None = None,
+    domain_policy: GovernanceDomainPolicy | None = None,
     assistance_generator: GovernanceAssistanceGenerator | None = None,
     clock: Callable[[], str] = utc_now,
 ) -> GovernanceRuntime:
     """Compatibility alias for callers that do not use workspace in the name."""
 
     return build_workspace_governance_runtime(
-        source,
+        providers,
         domain_policy=domain_policy,
         assistance_generator=assistance_generator,
         clock=clock,
@@ -419,9 +526,7 @@ def _propagation_server_defaults(environ: Mapping[str, str]) -> tuple[Path, str,
             )
         configured[key] = value.strip()
     source_rows = tuple(
-        item.strip()
-        for item in environ.get("FMEA_PROPAGATION_SOURCE_ROW_IDS", "").split(",")
-        if item.strip()
+        item.strip() for item in environ.get("FMEA_PROPAGATION_SOURCE_ROW_IDS", "").split(",") if item.strip()
     )
     if len(source_rows) != len(set(source_rows)):
         raise ReviewError(
@@ -553,10 +658,11 @@ def build_default_workspace_risk_runtime(
 __all__ = [
     "GovernanceRuntime",
     "PropagationRuntime",
+    "RegistryGovernanceArtifactProvider",
+    "RepositoryGovernanceSource",
     "ReviewRuntime",
     "RiskRuntime",
     "ServerGovernanceSourceAdapter",
-    "WorkspaceGovernanceSource",
     "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
     "build_governance_runtime",

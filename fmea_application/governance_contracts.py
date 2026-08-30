@@ -149,11 +149,19 @@ class RevisionAssemblyRequest:
     analysis_id: str
     parent_revision_id: str | None
     expected_analysis_version: int
+    parent_revision_hash: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "analysis_id", _text(self.analysis_id, "analysis_id"))
         object.__setattr__(self, "parent_revision_id", _optional_text(self.parent_revision_id, "parent_revision_id"))
         object.__setattr__(self, "expected_analysis_version", _positive(self.expected_analysis_version, "expected_analysis_version"))
+        object.__setattr__(
+            self,
+            "parent_revision_hash",
+            None if self.parent_revision_hash is None else _hash(self.parent_revision_hash, "parent_revision_hash"),
+        )
+        if self.parent_revision_id is None and self.parent_revision_hash is not None:
+            raise ValueError("parent_revision_hash requires parent_revision_id")
 
 
 @dataclass(frozen=True, slots=True)
