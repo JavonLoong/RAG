@@ -1,7 +1,7 @@
 # Phase 3 FMEA Governance Closure — Task 2 Report
 
-日期：2026-08-30  
-基线：`64d023f1`（Task 1 accepted）  
+日期：2026-08-30
+基线：`64d023f1`（Task 1 accepted）
 范围：仅实现 Task 2，未进入 Task 3+，未 push/PR。
 
 ## 结果
@@ -88,5 +88,5 @@ Task 2 已提供：
 2. `DomainPackManifest` 当前只携带 nested template/rule 的 id/version。若 source 没有传真实 `version_identities` hash，assembler 会使用 deterministic placeholder 同时产生 identity-hash blocker；Task 3 的 authoritative source 必须提供真实 identity evidence，不能把 placeholder 当作 ready。
 3. 后续 approval/publication preparation 必须继续从 persistence 读取并传递真实 `revision_record_version`，不可用 submission/publication record version 替换。
 
-Task 3 handoff：实现 server-owned `GovernanceSourcePort` 的 authoritative query/persistence 接入，并消费本报告中的 readiness blockers；保留客户端不能选择 DomainPack/template/rule/evidence/graph identity 的边界。  
+Task 3 handoff：实现 server-owned `GovernanceSourcePort` 的 authoritative query/persistence 接入，并消费本报告中的 readiness blockers；保留客户端不能选择 DomainPack/template/rule/evidence/graph identity 的边界。
 Task 4 handoff：在 readiness 已确定后接 publication/export/UI；model checklist 仍只能作为 immutable explanation，不能改变 deterministic readiness 或 legacy publication status。
