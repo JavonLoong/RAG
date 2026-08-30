@@ -423,6 +423,8 @@ class PreparedApprovalWithdrawal:
             raise ValueError("withdrawal must be an ApprovalWithdrawalRecord")
         if self.approval.status is not ApprovalStatus.APPROVED:
             raise ValueError("approval withdrawal requires an approved decision")
+        if self.command.expected_approval_version != self.approval.record_version:
+            raise ValueError("approval withdrawal version binding is invalid")
         if self.command.approval_id != self.approval.approval_id or self.command.revision_hash != self.approval.revision_hash:
             raise ValueError("approval withdrawal binding is invalid")
         if self.withdrawal.approval_id != self.approval.approval_id or self.withdrawal.revision_hash != self.approval.revision_hash:

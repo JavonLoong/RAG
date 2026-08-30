@@ -105,10 +105,12 @@ def _rebind_prepared_approval_withdrawal(
     *,
     approval: object,
     withdrawal: object,
+    command: object | None = None,
 ) -> PreparedApprovalWithdrawal:
+    command_value = prepared.command if command is None else command
     payload = canonical_governance_payload(
         "approval.withdraw",
-        prepared.command,
+        command_value,
         approval=approval,
         withdrawal=withdrawal,
     )
@@ -116,7 +118,7 @@ def _rebind_prepared_approval_withdrawal(
     return PreparedApprovalWithdrawal(
         scope=prepared.scope,
         payload_hash=payload_hash,
-        command=prepared.command,
+        command=command_value,  # type: ignore[arg-type]
         approval=approval,  # type: ignore[arg-type]
         withdrawal=withdrawal,  # type: ignore[arg-type]
         audit=replace(prepared.audit, canonical_payload_hash=payload_hash),
@@ -369,6 +371,18 @@ def test_approval_withdrawal_rejects_revision_identity_mismatch() -> None:
     mismatched_withdrawal = replace(prepared.withdrawal, revision_id="revision-2")
     with pytest.raises(ValueError, match="approval withdrawal revision binding is invalid"):
         _rebind_prepared_approval_withdrawal(prepared, approval=prepared.approval, withdrawal=mismatched_withdrawal)
+
+
+def test_approval_withdrawal_rejects_expected_version_mismatch() -> None:
+    prepared = prepared_approval_withdrawal()
+    mismatched_command = replace(prepared.command, expected_approval_version=1)
+    with pytest.raises(ValueError, match="approval withdrawal version binding is invalid"):
+        _rebind_prepared_approval_withdrawal(
+            prepared,
+            approval=prepared.approval,
+            withdrawal=prepared.withdrawal,
+            command=mismatched_command,
+        )
 
 
 def test_approval_command_keeps_exact_revision_precondition() -> None:
