@@ -24,6 +24,7 @@ from core_domain.fmea.governance import (
     canonical_hash,
     canonical_json_value,
     validate_approval_binding,
+    validate_supersession_binding,
 )
 from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
@@ -80,6 +81,8 @@ def _validate_prepared_bindings(  # noqa: C901
     outbox: OutboxEvent,
     workspace_id: str,
     aggregate_id: str,
+    analysis_id: str | None = None,
+    resource_actor_id: str | None = None,
 ) -> None:
     if not isinstance(scope, IdempotencyScope):
         raise ValueError("scope must be an IdempotencyScope")
@@ -92,6 +95,12 @@ def _validate_prepared_bindings(  # noqa: C901
         raise ValueError("scope workspace does not match resource workspace")
     if audit.workspace_id != workspace_id or audit.actor_id != scope.actor_id:
         raise ValueError("audit actor binding is invalid")
+    if analysis_id is not None and audit.analysis_id != analysis_id:
+        raise ValueError("audit analysis binding is invalid")
+    if audit.row_id != aggregate_id:
+        raise ValueError("audit aggregate binding is invalid")
+    if resource_actor_id is not None and resource_actor_id != scope.actor_id:
+        raise ValueError("resource actor binding is invalid")
     if audit.command != scope.command or audit.idempotency_key_hash != scope.key_hash:
         raise ValueError("audit command binding is invalid")
     if audit.canonical_payload_hash != normalized:
@@ -314,6 +323,7 @@ class PreparedRevision:
             outbox=self.outbox,
             workspace_id=self.revision.workspace_id,
             aggregate_id=self.revision.revision_id,
+            analysis_id=self.revision.analysis_id,
         )
 
 
@@ -347,6 +357,7 @@ class PreparedApprovalSubmission:
             outbox=self.outbox,
             workspace_id=self.submission.workspace_id,
             aggregate_id=self.submission.submission_id,
+            resource_actor_id=self.submission.submitter_actor_id,
         )
 
 
@@ -372,11 +383,13 @@ class PreparedApproval:
         if self.command.submission_id != self.submission.submission_id or self.command.expected_submission_version != self.submission.record_version:
             raise ValueError("approval submission binding is invalid")
         if (
-            self.decision.submission_id != self.submission.submission_id
-            or self.decision.revision_id != self.command.revision_id
-            or self.decision.revision_hash != self.command.revision_hash
+            self.command.revision_id != self.submission.revision_id
+            or self.command.revision_hash != self.submission.revision_hash
+            or self.decision.submission_id != self.submission.submission_id
+            or self.decision.revision_id != self.submission.revision_id
+            or self.decision.revision_hash != self.submission.revision_hash
         ):
-            raise ValueError("approval decision revision binding is invalid")
+            raise ValueError("approval revision binding is invalid")
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -385,6 +398,7 @@ class PreparedApproval:
             outbox=self.outbox,
             workspace_id=self.submission.workspace_id,
             aggregate_id=self.decision.approval_id,
+            resource_actor_id=self.decision.approver_actor_id,
         )
 
 
@@ -407,10 +421,14 @@ class PreparedApprovalWithdrawal:
             raise ValueError("approval withdrawal contract types are invalid")
         if not isinstance(self.withdrawal, ApprovalWithdrawalRecord):
             raise ValueError("withdrawal must be an ApprovalWithdrawalRecord")
+        if self.approval.status is not ApprovalStatus.APPROVED:
+            raise ValueError("approval withdrawal requires an approved decision")
         if self.command.approval_id != self.approval.approval_id or self.command.revision_hash != self.approval.revision_hash:
             raise ValueError("approval withdrawal binding is invalid")
         if self.withdrawal.approval_id != self.approval.approval_id or self.withdrawal.revision_hash != self.approval.revision_hash:
             raise ValueError("approval withdrawal record binding is invalid")
+        if self.withdrawal.revision_id != self.approval.revision_id:
+            raise ValueError("approval withdrawal revision binding is invalid")
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -419,6 +437,7 @@ class PreparedApprovalWithdrawal:
             outbox=self.outbox,
             workspace_id=self.scope.workspace_id,
             aggregate_id=self.withdrawal.withdrawal_id,
+            resource_actor_id=self.withdrawal.actor_id,
         )
 
 
@@ -429,6 +448,7 @@ class PreparedPublication:
     command: PublishCommand
     revision: FmeaRevision
     approval: ApprovalDecision
+    submission: ApprovalSubmission
     manifest: PublicationManifest
     publication: PublishedRevision
     snapshot: NormalizedFmeaSnapshot
@@ -442,23 +462,43 @@ class PreparedPublication:
             self.command,
             revision=self.revision,
             approval=self.approval,
+            submission=self.submission,
             manifest=self.manifest,
             publication=self.publication,
             snapshot=self.snapshot,
         )
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # noqa: C901
         if not isinstance(self.command, PublishCommand) or not isinstance(self.revision, FmeaRevision):
             raise ValueError("publication prepared contract types are invalid")
         if not isinstance(self.approval, ApprovalDecision) or not isinstance(self.manifest, PublicationManifest):
             raise ValueError("publication approval/manifest types are invalid")
+        if not isinstance(self.submission, ApprovalSubmission):
+            raise ValueError("publication submission type is invalid")
         if not isinstance(self.publication, PublishedRevision) or not isinstance(self.snapshot, NormalizedFmeaSnapshot):
             raise ValueError("publication/snapshot types are invalid")
         if self.approval.status is not ApprovalStatus.APPROVED:
             raise ValueError("publication requires an approved revision")
         if self.command.revision_id != self.revision.revision_id or self.command.revision_hash != self.revision.revision_hash:
             raise ValueError("publication revision binding is invalid")
+        if (
+            self.submission.workspace_id != self.revision.workspace_id
+            or self.submission.revision_id != self.revision.revision_id
+            or self.submission.revision_hash != self.revision.revision_hash
+            or self.approval.submission_id != self.submission.submission_id
+        ):
+            raise ValueError("publication approval submission binding is invalid")
         validate_approval_binding(self.approval, self.revision)
+        if self.publication.workspace_id != self.revision.workspace_id:
+            raise ValueError("publication workspace binding is invalid")
+        if self.publication.analysis_id != self.revision.analysis_id:
+            raise ValueError("publication analysis binding is invalid")
+        if self.snapshot.workspace_id != self.revision.workspace_id:
+            raise ValueError("publication snapshot workspace binding is invalid")
+        if self.snapshot.analysis_id != self.revision.analysis_id:
+            raise ValueError("publication snapshot analysis binding is invalid")
+        if self.publication.publisher_actor_id != self.scope.actor_id:
+            raise ValueError("publication actor binding is invalid")
         if (
             self.command.approval_id != self.approval.approval_id
             or self.manifest.revision_id != self.revision.revision_id
@@ -473,8 +513,10 @@ class PreparedPublication:
             or self.snapshot.revision_id != self.revision.revision_id
             or self.snapshot.revision_hash != self.revision.revision_hash
             or self.snapshot.snapshot_id != self.manifest.snapshot_id
+            or self.snapshot.publication_id != self.publication.publication_id
+            or self.snapshot.manifest_id != self.manifest.manifest_id
         ):
-            raise ValueError("publication snapshot binding is invalid")
+            raise ValueError("publication snapshot lineage binding is invalid")
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -483,6 +525,7 @@ class PreparedPublication:
             outbox=self.outbox,
             workspace_id=self.publication.workspace_id,
             aggregate_id=self.publication.publication_id,
+            analysis_id=self.revision.analysis_id,
         )
 
 
@@ -517,6 +560,7 @@ class PreparedPublicationWithdrawal:
             outbox=self.outbox,
             workspace_id=self.publication.workspace_id,
             aggregate_id=self.withdrawal.withdrawal_id,
+            resource_actor_id=self.withdrawal.actor_id,
         )
 
 
@@ -527,6 +571,8 @@ class PreparedSupersession:
     command: SupersedePublicationCommand
     old_publication: PublishedRevision
     replacement_publication: PublishedRevision
+    old_revision: FmeaRevision
+    replacement_revision: FmeaRevision
     supersession: SupersessionRecord
     audit: AuditEvent
     outbox: OutboxEvent
@@ -538,6 +584,8 @@ class PreparedSupersession:
             self.command,
             old=self.old_publication,
             replacement=self.replacement_publication,
+            old_revision=self.old_revision,
+            replacement_revision=self.replacement_revision,
             supersession=self.supersession,
         )
 
@@ -546,6 +594,8 @@ class PreparedSupersession:
             raise ValueError("command must be a SupersedePublicationCommand")
         if not isinstance(self.old_publication, PublishedRevision) or not isinstance(self.replacement_publication, PublishedRevision):
             raise ValueError("supersession publications are invalid")
+        if not isinstance(self.old_revision, FmeaRevision) or not isinstance(self.replacement_revision, FmeaRevision):
+            raise ValueError("supersession revisions are invalid")
         if not isinstance(self.supersession, SupersessionRecord):
             raise ValueError("supersession must be a SupersessionRecord")
         if (
@@ -557,6 +607,15 @@ class PreparedSupersession:
             raise ValueError("supersession publication binding is invalid")
         if self.old_publication.workspace_id != self.replacement_publication.workspace_id:
             raise ValueError("supersession workspace binding is invalid")
+        if self.supersession.actor_id != self.scope.actor_id:
+            raise ValueError("supersession actor binding is invalid")
+        validate_supersession_binding(
+            self.supersession,
+            old=self.old_publication,
+            replacement=self.replacement_publication,
+            old_revision=self.old_revision,
+            replacement_revision=self.replacement_revision,
+        )
         _validate_prepared_bindings(
             scope=self.scope,
             payload_hash=self.payload_hash,
@@ -565,6 +624,8 @@ class PreparedSupersession:
             outbox=self.outbox,
             workspace_id=self.old_publication.workspace_id,
             aggregate_id=self.supersession.supersession_id,
+            analysis_id=self.old_publication.analysis_id,
+            resource_actor_id=self.supersession.actor_id,
         )
 
 

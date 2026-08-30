@@ -11,6 +11,8 @@ from hashlib import sha256
 from typing import Literal
 
 from core_domain.structured_output.canonical import canonical_json
+from core_domain.structured_output.contracts import StructuredOutputError
+from core_domain.structured_output.policies import TemplateLimits
 
 from .errors import FmeaDomainError
 
@@ -144,13 +146,19 @@ def _canonical_value(value: object, *, exclude_fields: frozenset[str] = frozense
     raise FmeaDomainError("canonical payload contains an unsupported value")  # noqa: TRY003
 
 
-def canonical_json_bytes(value: object, *, exclude_fields: Iterable[str] = ()) -> bytes:
+def canonical_json_bytes(
+    value: object,
+    *,
+    exclude_fields: Iterable[str] = (),
+    max_array_items: int | None = None,
+) -> bytes:
     """Encode a supported contract through the existing strict JSON codec."""
 
     projected = _canonical_value(value, exclude_fields=frozenset(exclude_fields))
     try:
-        return canonical_json(projected).encode("utf-8")
-    except ValueError as exc:
+        limits = None if max_array_items is None else TemplateLimits(max_array_items=max_array_items)
+        return canonical_json(projected, limits=limits).encode("utf-8")
+    except (ValueError, StructuredOutputError) as exc:
         raise FmeaDomainError("canonical payload cannot be encoded") from exc  # noqa: TRY003
 
 
@@ -160,8 +168,14 @@ def canonical_json_value(value: object, *, exclude_fields: Iterable[str] = ()) -
     return _canonical_value(value, exclude_fields=frozenset(exclude_fields))
 
 
-def canonical_hash(value: object, *, prefixed: bool = False, exclude_fields: Iterable[str] = ()) -> str:
-    digest = sha256(canonical_json_bytes(value, exclude_fields=exclude_fields)).hexdigest()
+def canonical_hash(
+    value: object,
+    *,
+    prefixed: bool = False,
+    exclude_fields: Iterable[str] = (),
+    max_array_items: int | None = None,
+) -> str:
+    digest = sha256(canonical_json_bytes(value, exclude_fields=exclude_fields, max_array_items=max_array_items)).hexdigest()
     return f"sha256:{digest}" if prefixed else digest
 
 
@@ -172,7 +186,7 @@ def canonical_revision_body(revision: FmeaRevision) -> Mapping[str, object]:
 
 
 def revision_content_hash(revision: FmeaRevision) -> str:
-    return canonical_hash(canonical_revision_body(revision))
+    return canonical_hash(canonical_revision_body(revision), max_array_items=10_000)
 
 
 class ApprovalStatus(str, Enum):
@@ -296,6 +310,8 @@ class FmeaRevision:
         object.__setattr__(self, "unresolved_items", tuple(sorted(unresolved, key=lambda item: (item.code, item.source_type, item.source_id))))
         object.__setattr__(self, "revision_hash", _hash(self.revision_hash, "revision_hash"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
+        if self.revision_hash.removeprefix("sha256:") != revision_content_hash(self):
+            raise FmeaDomainError("revision hash does not match revision content")  # noqa: TRY003
 
     @staticmethod
     def _one_identity(value: object, field_name: str) -> tuple[str, str, str]:
@@ -511,8 +527,12 @@ def validate_supersession_binding(  # noqa: C901
         raise FmeaDomainError("supersession workspace binding is invalid")  # noqa: TRY003
     if old.analysis_id != replacement.analysis_id:
         raise FmeaDomainError("supersession analysis binding is invalid")  # noqa: TRY003
+    if old_revision.analysis_id != old.analysis_id or replacement_revision.analysis_id != replacement.analysis_id:
+        raise FmeaDomainError("supersession analysis binding is invalid")  # noqa: TRY003
     if old.revision_id != old_revision.revision_id or replacement.revision_id != replacement_revision.revision_id:
         raise FmeaDomainError("supersession revision binding is invalid")  # noqa: TRY003
+    if old.revision_hash != old_revision.revision_hash or replacement.revision_hash != replacement_revision.revision_hash:
+        raise FmeaDomainError("supersession revision hash binding is invalid")  # noqa: TRY003
     if replacement_revision.parent_revision_id != old_revision.revision_id:
         raise FmeaDomainError("supersession parent revision binding is invalid")  # noqa: TRY003
     if replacement_revision.parent_revision_hash != old_revision.revision_hash:

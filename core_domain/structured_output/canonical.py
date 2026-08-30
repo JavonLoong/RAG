@@ -7,13 +7,13 @@ import hashlib
 import orjson
 
 from .contracts import JsonValue, StructuredOutputError
-from .policies import validate_json_value
+from .policies import TemplateLimits, validate_json_value
 
 
-def canonical_json(value: object) -> str:
+def canonical_json(value: object, *, limits: TemplateLimits | None = None) -> str:
     """Serialize a JSON value with stable object-key ordering and no whitespace."""
 
-    validate_json_value(value)
+    validate_json_value(value, limits)
     try:
         return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
     except (TypeError, ValueError, OverflowError) as exc:

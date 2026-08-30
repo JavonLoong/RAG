@@ -6,19 +6,19 @@ import re
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from hashlib import sha256
 from types import MappingProxyType
 from typing import Literal
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import (
     FmeaRevision,
+    canonical_hash,
     canonical_json_bytes,
 )
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
-_URL = re.compile(r"https?://", re.IGNORECASE)
-_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\|/(?:Users|home|private|var)/)")
+_URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+_ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\|/)")
 _FORBIDDEN_KEY_PARTS = frozenset(
     {
         "access_token",
@@ -39,6 +39,7 @@ _FORBIDDEN_KEY_PARTS = frozenset(
 _MAX_DEPTH = 8
 _MAX_ITEMS = 500
 _MAX_STRING_LENGTH = 65_536
+_MAX_CANONICAL_ARRAY_ITEMS = 10_000
 
 
 def _text(value: object, field_name: str) -> str:
@@ -83,7 +84,7 @@ def _freeze_export_value(value: object, *, depth: int = 0) -> object:  # noqa: C
     if isinstance(value, str):
         if len(value) > _MAX_STRING_LENGTH:
             raise FmeaDomainError("snapshot string exceeds maximum length")  # noqa: TRY003
-        if _URL.search(value) or _PATH.search(value):
+        if _URI_SCHEME.match(value) or _ABSOLUTE_PATH.match(value):
             raise FmeaDomainError("snapshot contains non-export-safe value")  # noqa: TRY003
         return value
     if isinstance(value, Mapping):
@@ -95,6 +96,8 @@ def _freeze_export_value(value: object, *, depth: int = 0) -> object:  # noqa: C
                 raise FmeaDomainError("snapshot object keys must be non-empty strings")  # noqa: TRY003
             normalized_key = key.strip()
             _reject_unsafe_key(normalized_key)
+            if normalized_key in items:
+                raise FmeaDomainError("snapshot contains duplicate object keys")  # noqa: TRY003
             items[normalized_key] = _freeze_export_value(item, depth=depth + 1)
         return MappingProxyType(dict(sorted(items.items())))
     if isinstance(value, tuple | list):
@@ -113,14 +116,30 @@ def _mapping(value: object, field_name: str) -> Mapping[str, object]:
     return frozen
 
 
-def _mapping_tuple(value: object, field_name: str) -> tuple[Mapping[str, object], ...]:
+def _mapping_tuple(
+    value: object,
+    field_name: str,
+    *,
+    identity_field: str | None = None,
+) -> tuple[Mapping[str, object], ...]:
     if isinstance(value, str | bytes) or value is None:
         raise FmeaDomainError(f"{field_name} must be a sequence")  # noqa: TRY003
     try:
         items = tuple(value)  # type: ignore[arg-type]
     except TypeError as exc:
         raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
-    return tuple(_mapping(item, field_name) for item in items)
+    normalized = tuple(_mapping(item, field_name) for item in items)
+    if identity_field is None:
+        return normalized
+    identities: list[str] = []
+    for item in normalized:
+        identity = item.get(identity_field)
+        if not isinstance(identity, str) or not identity.strip():
+            raise FmeaDomainError(f"{field_name} items must contain {identity_field}")  # noqa: TRY003
+        identities.append(identity.strip())
+    if len(identities) != len(set(identities)):
+        raise FmeaDomainError(f"{field_name} must not contain duplicate identities")  # noqa: TRY003
+    return tuple(item for _, item in sorted(zip(identities, normalized, strict=True), key=lambda pair: pair[0]))
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,11 +177,11 @@ class NormalizedFmeaSnapshot:
         ):
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
         object.__setattr__(self, "revision_hash", _hash(self.revision_hash, "revision_hash"))
-        object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows"))
-        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records"))
+        object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows", identity_field="row_id"))
+        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id"))
         object.__setattr__(self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation"))
-        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary"))
-        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary"))
+        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"))
+        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"))
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
         object.__setattr__(self, "unresolved_items", _mapping_tuple(self.unresolved_items, "unresolved_items"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
@@ -172,6 +191,8 @@ class NormalizedFmeaSnapshot:
             raise FmeaDomainError("row_count does not match rows")  # noqa: TRY003
         object.__setattr__(self, "snapshot_hash", _hash(self.snapshot_hash, "snapshot_hash"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
+        if self.snapshot_hash.removeprefix("sha256:") != snapshot_content_hash(self):
+            raise FmeaDomainError("snapshot hash does not match snapshot content")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,6 +213,10 @@ class NormalizedSnapshotInput:
     revision: FmeaRevision
     publication_id: str
     manifest_id: str
+    publication_revision_id: str
+    publication_revision_hash: str
+    publication_workspace_id: str
+    publication_analysis_id: str
     rows: tuple[Mapping[str, object], ...]
     risk_records: tuple[Mapping[str, object], ...]
     propagation: Mapping[str, object] | None
@@ -206,24 +231,37 @@ class NormalizedSnapshotInput:
             raise FmeaDomainError("revision must be an FmeaRevision")  # noqa: TRY003
         object.__setattr__(self, "publication_id", _text(self.publication_id, "publication_id"))
         object.__setattr__(self, "manifest_id", _text(self.manifest_id, "manifest_id"))
-        object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows"))
-        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records"))
+        object.__setattr__(self, "publication_revision_id", _text(self.publication_revision_id, "publication_revision_id"))
+        object.__setattr__(self, "publication_revision_hash", _hash(self.publication_revision_hash, "publication_revision_hash"))
+        object.__setattr__(self, "publication_workspace_id", _text(self.publication_workspace_id, "publication_workspace_id"))
+        object.__setattr__(self, "publication_analysis_id", _text(self.publication_analysis_id, "publication_analysis_id"))
+        object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows", identity_field="row_id"))
+        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id"))
         object.__setattr__(self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation"))
-        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary"))
-        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary"))
+        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"))
+        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"))
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
 
 
-def validate_snapshot_publication_binding(revision_id: str, publication_revision_id: str) -> None:
-    if revision_id != publication_revision_id:
+def validate_snapshot_publication_binding(source: NormalizedSnapshotInput) -> None:
+    if (
+        source.publication_revision_id != source.revision.revision_id
+        or source.publication_revision_hash != source.revision.revision_hash
+    ):
         raise FmeaDomainError("snapshot publication binding does not match revision")  # noqa: TRY003
+    if (
+        source.publication_workspace_id != source.revision.workspace_id
+        or source.publication_analysis_id != source.revision.analysis_id
+    ):
+        raise FmeaDomainError("snapshot publication workspace/analysis binding is invalid")  # noqa: TRY003
 
 
 def canonical_normalized_snapshot_body(source: NormalizedSnapshotInput) -> Mapping[str, object]:
     if not isinstance(source, NormalizedSnapshotInput):
         raise FmeaDomainError("source must be a NormalizedSnapshotInput")  # noqa: TRY003
+    validate_snapshot_publication_binding(source)
     snapshot_id = f"snapshot:{source.revision.revision_id}:{source.publication_id}"
     unresolved_items = tuple(
         {
@@ -258,9 +296,39 @@ def canonical_normalized_snapshot_body(source: NormalizedSnapshotInput) -> Mappi
     }
 
 
+def _canonical_snapshot_body(snapshot: NormalizedFmeaSnapshot) -> Mapping[str, object]:
+    return {
+        "schema_version": snapshot.schema_version,
+        "snapshot_id": snapshot.snapshot_id,
+        "workspace_id": snapshot.workspace_id,
+        "analysis_id": snapshot.analysis_id,
+        "revision_id": snapshot.revision_id,
+        "revision_hash": snapshot.revision_hash,
+        "publication_id": snapshot.publication_id,
+        "manifest_id": snapshot.manifest_id,
+        "rows": snapshot.rows,
+        "risk_records": snapshot.risk_records,
+        "propagation": snapshot.propagation,
+        "evidence_summary": snapshot.evidence_summary,
+        "decision_summary": snapshot.decision_summary,
+        "version_manifest": snapshot.version_manifest,
+        "unresolved_items": snapshot.unresolved_items,
+        "audit_summary": snapshot.audit_summary,
+        "row_count": snapshot.row_count,
+        "created_at": snapshot.created_at,
+    }
+
+
+def snapshot_content_hash(snapshot: NormalizedFmeaSnapshot) -> str:
+    if not isinstance(snapshot, NormalizedFmeaSnapshot):
+        raise FmeaDomainError("snapshot must be a NormalizedFmeaSnapshot")  # noqa: TRY003
+    return canonical_hash(_canonical_snapshot_body(snapshot), max_array_items=_MAX_CANONICAL_ARRAY_ITEMS)
+
+
 def build_normalized_snapshot(source: NormalizedSnapshotInput) -> NormalizedFmeaSnapshot:
+    validate_snapshot_publication_binding(source)
     body = canonical_normalized_snapshot_body(source)
-    snapshot_hash = sha256(canonical_json_bytes(body)).hexdigest()
+    snapshot_hash = canonical_hash(body, max_array_items=_MAX_CANONICAL_ARRAY_ITEMS)
     return NormalizedFmeaSnapshot(**body, snapshot_hash=snapshot_hash)  # type: ignore[arg-type]
 
 
@@ -288,5 +356,6 @@ __all__ = [
     "canonical_json_bytes",
     "canonical_normalized_snapshot_body",
     "iter_normalized_snapshot_pages",
+    "snapshot_content_hash",
     "validate_snapshot_publication_binding",
 ]

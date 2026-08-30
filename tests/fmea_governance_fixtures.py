@@ -11,6 +11,8 @@ from core_domain.fmea.governance import (
     ReadinessIssue,
     RetrievalProvenanceSnapshot,
     SupersessionRecord,
+    canonical_hash,
+    canonical_json_value,
 )
 from core_domain.fmea.states import ActorType
 from core_domain.fmea.value_objects import VersionSet
@@ -85,12 +87,15 @@ def make_fmea_revision(**overrides: Any) -> FmeaRevision:
     values.update(overrides)
     if values.get("parent_revision_id") is not None and "parent_revision_hash" not in overrides:
         values["parent_revision_hash"] = HASH
+    if "revision_hash" not in overrides:
+        content = {key: value for key, value in values.items() if key not in {"revision_hash", "created_at"}}
+        values["revision_hash"] = canonical_hash(canonical_json_value(content), max_array_items=10_000)
     return FmeaRevision(**values)
 
 
 def make_large_revision(row_count: int = 10_000, **overrides: Any) -> FmeaRevision:
     values = {
-        "row_versions": tuple((f"row-{index}", 1, _record_hash(f"row-{index}")) for index in range(row_count)),
+        "row_versions": tuple(sorted((f"row-{index}", 1, _record_hash(f"row-{index}")) for index in range(row_count))),
         "risk_versions": (),
     }
     values.update(overrides)
@@ -154,6 +159,12 @@ def make_published_revision(**overrides: Any):
         "created_at": TIMESTAMP,
     }
     values.update(overrides)
+    if "revision_hash" not in overrides:
+        values["revision_hash"] = make_fmea_revision(
+            revision_id=values["revision_id"],
+            workspace_id=values["workspace_id"],
+            analysis_id=values["analysis_id"],
+        ).revision_hash
     return PublishedRevision(**values)
 
 
@@ -177,6 +188,10 @@ def make_normalized_snapshot_input(**overrides: Any):
         "revision": revision,
         "publication_id": "publication-1",
         "manifest_id": "manifest-1",
+        "publication_revision_id": revision.revision_id,
+        "publication_revision_hash": revision.revision_hash,
+        "publication_workspace_id": revision.workspace_id,
+        "publication_analysis_id": revision.analysis_id,
         "rows": tuple(rows if rows is not None else ({"row_id": "row-1", "failure_mode": "low pressure"},)),
         "risk_records": ({"assessment_id": "assessment-1", "status": "confirmed"},),
         "propagation": {"graph_revision_id": "graph-1"},
@@ -193,13 +208,13 @@ def make_normalized_snapshot_input(**overrides: Any):
 
 
 def make_normalized_snapshot(**overrides: Any):
-    from fmea_application.snapshot_contracts import build_normalized_snapshot, validate_snapshot_publication_binding
+    from fmea_application.snapshot_contracts import build_normalized_snapshot
 
     publication_revision_id = overrides.pop("publication_revision_id", None)
-    revision_id = overrides.get("revision_id", "revision-1")
+    revision_id = overrides.pop("revision_id", "revision-1")
     revision = overrides.pop("revision", make_fmea_revision(revision_id=revision_id))
     if publication_revision_id is not None:
-        validate_snapshot_publication_binding(revision.revision_id, publication_revision_id)
+        overrides["publication_revision_id"] = publication_revision_id
     source = make_normalized_snapshot_input(revision=revision, **overrides)
     return build_normalized_snapshot(source)
 
@@ -435,14 +450,15 @@ def prepared_publication(**overrides: Any):
     from fmea_application.governance_contracts import PreparedPublication
 
     actor = make_governance_actor(actor_id="publisher-1", roles=frozenset({"publisher"}))
-    command = make_publish_command()
     revision = make_fmea_revision()
-    approval = make_approval_decision()
+    command = make_publish_command(revision_hash=revision.revision_hash)
+    approval = make_approval_decision(revision_hash=revision.revision_hash)
+    submission = make_approval_submission(revision_hash=revision.revision_hash)
     snapshot = make_normalized_snapshot()
     manifest = __import__("core_domain.fmea.governance", fromlist=["PublicationManifest"]).PublicationManifest(
         "manifest-1",
         "revision-1",
-        HASH,
+        revision.revision_hash,
         "approval-1",
         snapshot.snapshot_id,
         snapshot.snapshot_hash,
@@ -454,16 +470,38 @@ def prepared_publication(**overrides: Any):
     )
     publication = make_published_revision(
         publisher_actor_id=actor.actor_id,
+        revision_hash=revision.revision_hash,
         manifest_hash=manifest.manifest_hash,
         snapshot_id=snapshot.snapshot_id,
         snapshot_hash=snapshot.snapshot_hash,
     )
     key = command.idempotency_key
     scope = _scope(actor, "fmea.publication.publish", "/fmea/revisions/revision-1/publications", key)
-    payload = canonical_governance_payload("publication.publish", command, revision=revision, approval=approval, manifest=manifest, publication=publication, snapshot=snapshot)
+    payload = canonical_governance_payload(
+        "publication.publish",
+        command,
+        revision=revision,
+        approval=approval,
+        submission=submission,
+        manifest=manifest,
+        publication=publication,
+        snapshot=snapshot,
+    )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, publication.publication_id)
-    values = {"scope": scope, "payload_hash": payload_hash, "command": command, "revision": revision, "approval": approval, "manifest": manifest, "publication": publication, "snapshot": snapshot, "audit": audit, "outbox": outbox}
+    values = {
+        "scope": scope,
+        "payload_hash": payload_hash,
+        "command": command,
+        "revision": revision,
+        "approval": approval,
+        "submission": submission,
+        "manifest": manifest,
+        "publication": publication,
+        "snapshot": snapshot,
+        "audit": audit,
+        "outbox": outbox,
+    }
     values.update(overrides)
     return PreparedPublication(**values)
 
@@ -489,14 +527,39 @@ def prepared_supersession(**overrides: Any):
 
     actor = make_governance_actor(actor_id="publisher-1", roles=frozenset({"publisher"}))
     command = SupersedePublicationCommand("pub-old", "pub-new", 1, 1, "replacement", "00000000-0000-4000-8000-000000000710")
-    old = make_published_revision(publication_id="pub-old")
-    replacement = make_published_revision(publication_id="pub-new")
+    old_revision = make_fmea_revision()
+    replacement_revision = make_fmea_revision(
+        revision_id="revision-2",
+        parent_revision_id=old_revision.revision_id,
+        parent_revision_hash=old_revision.revision_hash,
+    )
+    old = make_published_revision(publication_id="pub-old", revision_hash=old_revision.revision_hash)
+    replacement = make_published_revision(publication_id="pub-new", revision_id="revision-2", revision_hash=replacement_revision.revision_hash)
     link = make_supersession_record(old_publication_id="pub-old", new_publication_id="pub-new")
     scope = _scope(actor, "fmea.publication.supersede", "/fmea/publications/pub-old/supersession", command.idempotency_key)
-    payload = canonical_governance_payload("publication.supersede", command, old=old, replacement=replacement, supersession=link)
+    payload = canonical_governance_payload(
+        "publication.supersede",
+        command,
+        old=old,
+        replacement=replacement,
+        old_revision=old_revision,
+        replacement_revision=replacement_revision,
+        supersession=link,
+    )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, link.supersession_id)
-    values = {"scope": scope, "payload_hash": payload_hash, "command": command, "old_publication": old, "replacement_publication": replacement, "supersession": link, "audit": audit, "outbox": outbox}
+    values = {
+        "scope": scope,
+        "payload_hash": payload_hash,
+        "command": command,
+        "old_publication": old,
+        "replacement_publication": replacement,
+        "old_revision": old_revision,
+        "replacement_revision": replacement_revision,
+        "supersession": link,
+        "audit": audit,
+        "outbox": outbox,
+    }
     values.update(overrides)
     return PreparedSupersession(**values)
 
