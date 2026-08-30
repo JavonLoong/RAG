@@ -119,6 +119,58 @@ def test_assistance_generator_receives_safe_bounded_projection():
     assert "C:\\private\\secret" not in repr(generator.projection)
 
 
+def test_suggestion_payload_does_not_echo_unsafe_report_identifiers():
+    from core_domain.fmea.governance import ReadinessIssue
+    from fmea_application.revision_assembler import PublicationReadinessReport
+
+    class CaptureGenerator:
+        def generate(self, projection):
+            return {
+                "ready": False,
+                "blocking_codes": projection.blocking_codes,
+                "checklist": tuple(
+                    {
+                        "code": issue.code,
+                        "severity": issue.severity,
+                        "source_type": issue.source_type,
+                        "source_id": issue.source_id,
+                        "evidence_ids": issue.evidence_ids,
+                        "acknowledgement_decision_id": issue.acknowledgement_decision_id,
+                    }
+                    for issue in projection.issues
+                ),
+                "revision_id": projection.revision_id,
+                "revision_hash": projection.revision_hash,
+            }
+
+    unsafe = ("C:\\private\\secret", "https://example.invalid/token")
+    issue = ReadinessIssue(
+        code=unsafe[1],
+        severity="critical",
+        source_type="row",
+        source_id="/var/private/row",
+        evidence_ids=("TOKEN=do-not-echo",),
+        acknowledgement_decision_id=None,
+    )
+    report = PublicationReadinessReport(
+        revision_id="revision-1",
+        workspace_id="ws-1",
+        analysis_id="analysis-1",
+        revision_hash="a" * 64,
+        target_record_version=1,
+        evidence_pack_ids=unsafe,
+        ready=False,
+        issues=(issue,),
+        blocking_codes=unsafe,
+    )
+    actor = make_governance_actor(actor_type=ActorType.MODEL, roles=frozenset())
+    _, _, GovernanceAssistanceService = _implementation()
+    suggestion = GovernanceAssistanceService(CaptureGenerator()).suggest_readiness_checklist(report, actor)
+    payload = repr(suggestion.payload)
+    assert all(value not in payload for value in unsafe)
+    assert "TOKEN=do-not-echo" not in payload
+
+
 def test_assistance_rejects_generator_authority_changes_and_unknown_fields():
     from fmea_application.revision_assembler import PublicationReadinessReport
 

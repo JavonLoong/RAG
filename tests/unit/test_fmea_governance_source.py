@@ -61,6 +61,14 @@ def test_retrieval_provenance_is_a_server_query_port():
     assert RetrievalProvenanceQueryPort is not None
 
 
+def test_registry_ports_require_source_bytes_for_manifest_verification():
+    from fmea_application.ports import DomainPackRegistry, PropagationRuleRegistry, ScoringRuleRegistry
+
+    assert callable(DomainPackRegistry.get_source_bytes)
+    assert callable(ScoringRuleRegistry.get_source_bytes)
+    assert callable(PropagationRuleRegistry.get_source_bytes)
+
+
 def test_client_cannot_override_registry_identity_or_active_run_state():
     GovernanceRepositoryProviders, RepositoryGovernanceSource = _implementation()
     assert "domain_pack" not in inspect.signature(RepositoryGovernanceSource.load_inputs).parameters
@@ -151,6 +159,7 @@ def _source(
     run_ids=(),
     acknowledgements=(),
     provenance=None,
+    parent=None,
 ):
     GovernanceRepositoryProviders, RepositoryGovernanceSource = _implementation()
     providers = GovernanceRepositoryProviders(
@@ -171,6 +180,15 @@ def _source(
         runs=_RunProvider(run_ids),
         acknowledgements=_AcknowledgementProvider(acknowledgements),
         retrieval=_RetrievalProvider(provenance or base.retrieval_provenance),
+        parent=(
+            type(
+                "ParentProvider",
+                (),
+                {"get_parent_revision": lambda _self, _analysis_id, _workspace_id: parent},
+            )()
+            if parent is not None
+            else None
+        ),
     )
     return RepositoryGovernanceSource(providers)
 
@@ -186,6 +204,75 @@ def test_source_reads_active_runs_server_side_and_returns_typed_inputs():
     assert inputs.active_run_ids == ("run-1",)
 
 
+def test_source_attestation_binds_replaced_input_components():
+    from dataclasses import replace
+
+    from fmea_governance_fixtures import _identity, make_governance_inputs
+
+    from fmea_application.revision_assembler import RevisionAssembler
+
+    base = make_governance_inputs()
+    source = _source(base)
+    inputs = source.load_inputs("analysis-1", "ws-1")
+    assembler = RevisionAssembler(verifier=source._verifier)
+    request = __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request()
+    tampered_values = (
+        replace(inputs, active_run_ids=("forged-run",)),
+        replace(
+            inputs,
+            template_identities=(_identity("template", "generic-template", "1.0.0", "e" * 64),),
+        ),
+        replace(
+            inputs,
+            analysis=replace(
+                inputs.analysis,
+                analysis=replace(inputs.analysis.analysis, record_version=2),
+                record_version=2,
+                canonical_hash=__import__("core_domain.fmea.governance", fromlist=["canonical_hash"]).canonical_hash(
+                    replace(inputs.analysis.analysis, record_version=2)
+                ),
+                source_hash=__import__("core_domain.fmea.governance", fromlist=["canonical_hash"]).canonical_hash(
+                    replace(inputs.analysis.analysis, record_version=2)
+                ),
+            ),
+        ),
+    )
+    for tampered in tampered_values:
+        with pytest.raises(ValueError, match="attestation"):
+            assembler.assemble(request, tampered)
+
+
+def test_source_attestation_binds_acknowledgement_records():
+    from dataclasses import replace
+
+    from fmea_governance_fixtures import make_governance_acknowledgement_record, make_governance_inputs
+
+    from fmea_application.revision_assembler import RevisionAssembler
+
+    base = make_governance_inputs()
+    source = _source(base, acknowledgements=(make_governance_acknowledgement_record(),))
+    inputs = source.load_inputs("analysis-1", "ws-1")
+    tampered = replace(inputs, acknowledgement_references=())
+    with pytest.raises(ValueError, match="attestation"):
+        RevisionAssembler(verifier=source._verifier).assemble(
+            __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
+            tampered,
+        )
+
+
+def test_source_attestation_has_no_public_constructor_or_module_signer():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    import fmea_application.revision_assembler as revision_assembler
+
+    inputs = make_governance_inputs()
+    proof_type = type(inputs._source_attestation)
+    with pytest.raises(TypeError):
+        proof_type(object(), "a" * 64, "b" * 64)
+    assert not hasattr(revision_assembler, "_ResolverCapability")
+    assert not hasattr(revision_assembler, "_RESOLVER_CAPABILITY")
+
+
 def test_source_rejects_provider_records_from_a_mixed_analysis_scope(fixture_row):
     from fmea_governance_fixtures import make_governance_inputs
 
@@ -198,21 +285,27 @@ def test_source_rejects_provider_records_from_a_mixed_analysis_scope(fixture_row
 def test_source_rejects_same_analysis_id_with_foreign_analysis_workspace():
     from fmea_governance_fixtures import make_governance_inputs
 
-    from fmea_application.revision_assembler import _resolve_analysis_record
+    from fmea_application.revision_assembler import ResolvedAnalysisRecord
 
     base = make_governance_inputs()
-    foreign_analysis = _resolve_analysis_record("ws-foreign", base.analysis.analysis)
+    foreign_analysis = ResolvedAnalysisRecord(
+        "ws-foreign",
+        base.analysis.analysis,
+        base.analysis.record_version,
+        base.analysis.canonical_hash,
+        base.analysis.source_hash,
+    )
     with pytest.raises(ValueError, match="workspace"):
         _source(base, analysis=foreign_analysis).load_inputs("analysis-1", "ws-1")
 
 
-def test_scoped_analysis_record_cannot_be_forged_with_only_hashes():
+def test_scoped_analysis_record_rejects_forged_hashes():
     from fmea_governance_fixtures import make_governance_inputs
 
     from fmea_application.revision_assembler import ResolvedAnalysisRecord
 
     base = make_governance_inputs()
-    with pytest.raises(TypeError, match="attestation"):
+    with pytest.raises(ValueError, match="canonical/source hash"):
         ResolvedAnalysisRecord(
             "ws-1",
             base.analysis.analysis,
@@ -236,6 +329,15 @@ def test_source_rejects_foreign_acknowledgement_scope():
     )
     with pytest.raises(ValueError, match="scope"):
         _source(base, acknowledgements=(reference,)).load_inputs("analysis-1", "ws-1")
+
+
+def test_source_rejects_foreign_parent_scope_before_attestation():
+    from fmea_governance_fixtures import make_fmea_revision, make_governance_inputs
+
+    base = make_governance_inputs()
+    foreign_parent = make_fmea_revision(workspace_id="ws-foreign", analysis_id="analysis-foreign")
+    with pytest.raises(ValueError, match="parent"):
+        _source(base, parent=foreign_parent).load_inputs("analysis-1", "ws-1")
 
 
 @pytest.mark.parametrize(
@@ -386,4 +488,64 @@ def test_registry_adapter_rejects_registry_manifest_hash_mismatch():
             template_registry=object(),
             scoring_rule_registry=object(),
             propagation_rule_registry=object(),
+        ).get_artifacts("analysis-1", "ws-1", base.analysis)
+
+
+def test_registry_adapter_rejects_source_bytes_not_matching_typed_artifact():
+    from pathlib import Path
+
+    from fmea_governance_fixtures import make_governance_inputs
+
+    from core_domain.fmea.domain_pack import DomainPackManifest
+    from fmea_infrastructure.composition import RegistryGovernanceArtifactProvider
+    from fmea_infrastructure.domain_pack_registry import domain_pack_content_hash
+    from structured_output_application import TemplateCompiler
+    from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
+
+    base = make_governance_inputs()
+    template = TemplateCompiler(
+        schema_validator=Draft202012SchemaAdapter(),
+        source_loader=load_template_source,
+    ).compile_path(Path(__file__).parents[2] / "templates" / "examples" / "fmea-row-review.yaml")
+    domain = DomainPackManifest(
+        pack_id="generic-domain",
+        version="1.0.0",
+        content_hash="0" * 64,
+        compatible_schema_ids=("graphrag.fmea.v1",),
+        analysis_types=("fuel_system",),
+        template_identities=((template.metadata.template_id, template.metadata.version),),
+        scoring_rule_identities=(),
+        propagation_rule_identities=(),
+        extension_fields=(),
+    )
+    domain = replace(domain, content_hash=domain_pack_content_hash(domain))
+
+    class DomainRegistry:
+        def get(self, _object_id, _version):
+            return domain
+
+        def get_source_bytes(self, _object_id, _version):
+            return b"domain-source"
+
+    class TemplateRegistry:
+        def get(self, _object_id, _version):
+            return template
+
+        def get_source_bytes(self, _object_id, _version):
+            return b"not-the-registered-template"
+
+    class EmptyRegistry:
+        def get(self, _object_id, _version):
+            raise AssertionError("undeclared registry must not be queried")  # noqa: TRY003
+
+        def get_source_bytes(self, _object_id, _version):
+            raise AssertionError("undeclared registry must not be queried")  # noqa: TRY003
+
+    with pytest.raises(ValueError, match="source"):
+        RegistryGovernanceArtifactProvider(
+            domain_pack=domain,
+            domain_pack_registry=DomainRegistry(),
+            template_registry=TemplateRegistry(),
+            scoring_rule_registry=EmptyRegistry(),
+            propagation_rule_registry=EmptyRegistry(),
         ).get_artifacts("analysis-1", "ws-1", base.analysis)

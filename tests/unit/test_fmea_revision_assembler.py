@@ -4,7 +4,12 @@ from dataclasses import replace
 from inspect import signature
 
 import pytest
-from fmea_governance_fixtures import make_assemble_request, make_fmea_revision, make_governance_inputs
+from fmea_governance_fixtures import (
+    make_assemble_request,
+    make_fmea_revision,
+    make_governance_assembler,
+    make_governance_inputs,
+)
 
 from core_domain.fmea.entities import FmeaRow
 from core_domain.fmea.states import ReviewStatus
@@ -37,49 +42,61 @@ def _inputs(*, rows: tuple[FmeaRow, ...] = (), **overrides: object):
 
 
 def test_revision_assembler_is_order_independent(fixture_row: FmeaRow):
-    assembler = _implementation()()
+    first_inputs = _inputs(rows=(_row(fixture_row, "row-b"), _row(fixture_row, "row-a")))
+    second_inputs = _inputs(rows=(_row(fixture_row, "row-a"), _row(fixture_row, "row-b")))
+    assembler = make_governance_assembler(first_inputs)
     first = assembler.assemble(
         make_assemble_request(),
-        _inputs(rows=(_row(fixture_row, "row-b"), _row(fixture_row, "row-a"))),
+        first_inputs,
     )
-    second = assembler.assemble(
+    second = make_governance_assembler(second_inputs).assemble(
         make_assemble_request(),
-        _inputs(rows=(_row(fixture_row, "row-a"), _row(fixture_row, "row-b"))),
+        second_inputs,
     )
     assert first.revision_hash == second.revision_hash
 
 
 def test_revision_assembler_constructor_has_no_retrieval_dependency():
     RevisionAssembler = _implementation()
-    assert set(signature(RevisionAssembler).parameters) <= {"self", "clock", "id_factory"}
+    assert set(signature(RevisionAssembler).parameters) <= {"self", "clock", "id_factory", "verifier"}
+
+
+def test_revision_assembler_requires_a_runtime_bound_verifier():
+    RevisionAssembler = _implementation()
+    inputs = make_governance_inputs()
+    with pytest.raises(TypeError, match="trusted governance verifier"):
+        RevisionAssembler().assemble(make_assemble_request(), inputs)
+
+
+def test_legacy_module_level_resolver_issuance_helpers_are_not_importable():
+    import fmea_application.revision_assembler as revision_assembler
+
+    assert not hasattr(revision_assembler, "_resolve_registry_artifact")
+    assert not hasattr(revision_assembler, "_resolve_analysis_record")
+    assert not hasattr(revision_assembler, "_resolve_acknowledgement_record")
 
 
 def test_assembler_preserves_retrieval_provenance_without_retrieval_dependency():
-    RevisionAssembler = _implementation()
     inputs = _inputs(
         requested_profile="graphrag_only",
         resolved_profile="graphrag_only",
         evidence_types=("graph", "community"),
     )
-    revision = RevisionAssembler().assemble(make_assemble_request(), inputs)
+    revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
     assert revision.retrieval_provenance.resolved_profile == "graphrag_only"
     assert revision.retrieval_provenance.evidence_types == ("community", "graph")
 
 
 def test_assembler_rejects_mixed_workspace_records(fixture_row: FmeaRow):
-    RevisionAssembler = _implementation()
     foreign_row = replace(_row(fixture_row, "row-foreign"), analysis_id="analysis-2")
     with pytest.raises(ValueError, match="analysis"):
-        RevisionAssembler().assemble(make_assemble_request(), _inputs(rows=(foreign_row,)))
+        _inputs(rows=(foreign_row,))
 
 
 def test_assembler_does_not_accept_client_resource_overrides():
-    RevisionAssembler = _implementation()
+    inputs = _inputs()
     with pytest.raises(TypeError):
-        RevisionAssembler().assemble(
-            make_assemble_request(),
-            _inputs(domain_pack_id="client-selected-pack"),
-        )
+        make_governance_assembler(inputs).assemble(make_assemble_request(), {"workspace_id": "ws-1"})
 
 
 def test_assembler_rejects_mapping_governance_inputs():
@@ -100,28 +117,22 @@ def test_caller_supplied_analysis_hash_is_not_an_authority():
 
 
 def test_foreign_parent_workspace_and_analysis_cannot_be_assembled():
-    RevisionAssembler = _implementation()
     foreign_parent = make_fmea_revision(
         revision_id="foreign-parent",
         workspace_id="ws-foreign",
         analysis_id="analysis-foreign",
     )
     with pytest.raises(ValueError, match="parent revision"):
-        RevisionAssembler().assemble(
-            make_assemble_request(
-                parent_revision_id=foreign_parent.revision_id, parent_revision_hash=foreign_parent.revision_hash
-            ),
-            _inputs(parent_revision=foreign_parent),
-        )
+        _inputs(parent_revision=foreign_parent)
 
 
 def test_requested_parent_hash_is_a_required_exact_precondition():
-    RevisionAssembler = _implementation()
     parent = make_fmea_revision(revision_id="parent-1")
+    inputs = _inputs(parent_revision=parent)
     with pytest.raises(ValueError, match="parent revision hash"):
-        RevisionAssembler().assemble(
+        make_governance_assembler(inputs).assemble(
             make_assemble_request(parent_revision_id=parent.revision_id, parent_revision_hash="b" * 64),
-            _inputs(parent_revision=parent),
+            inputs,
         )
 
 
@@ -141,14 +152,14 @@ def test_zero_artifact_hash_cannot_be_ready():
 def test_row_phantom_evidence_reference_fails_closed(fixture_pack, fixture_row):
     from dataclasses import replace
 
-    RevisionAssembler = _implementation()
     row = replace(
         _row(fixture_row, "row-phantom"),
         field_evidence=(("failure_mode", ("phantom-evidence",)),),
     )
-    revision = RevisionAssembler().assemble(
+    inputs = _inputs(rows=(row,), evidence_packs=(fixture_pack,))
+    revision = make_governance_assembler(inputs).assemble(
         make_assemble_request(),
-        _inputs(rows=(row,), evidence_packs=(fixture_pack,)),
+        inputs,
     )
     assert any(issue.code == "INVALID_EVIDENCE_REFERENCE" for issue in revision.unresolved_items)
 
@@ -192,11 +203,35 @@ def test_domain_artifact_identity_set_is_exact_not_a_subset():
         )
 
 
+def test_artifact_set_rejects_omitted_declared_propagation_identity():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    from fmea_application.revision_assembler import GovernanceArtifactSet
+
+    base = make_governance_inputs()
+    with pytest.raises(ValueError, match="propagation rule identities"):
+        GovernanceArtifactSet(
+            domain_pack=base.domain_pack,
+            domain_pack_identity=base.domain_pack_identity,
+            template_identities=base.template_identities,
+            scoring_rule_identities=base.scoring_rule_identities,
+            propagation_rule_identity=None,
+        )
+
+
+def test_governance_inputs_rejects_missing_declared_propagation_identity_even_when_optional():
+    from dataclasses import replace
+
+    base = make_governance_inputs()
+    with pytest.raises(ValueError, match="propagation rule identities"):
+        replace(base, propagation_rule_identity=None)
+
+
 def test_human_acknowledgement_reference_requires_human_and_exact_scope():
     from core_domain.fmea.states import ActorType
     from fmea_application.revision_assembler import HumanAcknowledgementReference
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         HumanAcknowledgementReference(
             decision_id="decision-1",
             workspace_id="ws-1",
@@ -235,7 +270,6 @@ def test_human_acknowledgement_reference_cannot_be_forged_without_resolver_proof
 def test_risk_dimension_phantom_evidence_reference_fails_closed(fixture_pack, fixture_row):
     from core_domain.fmea.scoring import RiskAssessment, RiskAssessmentRecord, ScoreDimension
     from core_domain.fmea.states import RiskStatus
-    from fmea_application.revision_assembler import RevisionAssembler
 
     dimensions = tuple(
         ScoreDimension(name, 1, ("phantom-risk-evidence",), "confirmed", None)
@@ -279,9 +313,10 @@ def test_risk_dimension_phantom_evidence_reference_fails_closed(fixture_pack, fi
         created_at="2026-08-23T00:00:00Z",
         updated_at="2026-08-23T00:00:00Z",
     )
-    revision = RevisionAssembler().assemble(
+    inputs = _inputs(rows=(_row(fixture_row, "row-1"),), evidence_packs=(fixture_pack,), risk_records=(risk,))
+    revision = make_governance_assembler(inputs).assemble(
         make_assemble_request(),
-        _inputs(rows=(_row(fixture_row, "row-1"),), evidence_packs=(fixture_pack,), risk_records=(risk,)),
+        inputs,
     )
     assert any(
         issue.code == "INVALID_EVIDENCE_REFERENCE" and issue.source_type == "risk"
@@ -292,12 +327,8 @@ def test_risk_dimension_phantom_evidence_reference_fails_closed(fixture_pack, fi
 def test_graph_edge_phantom_evidence_reference_fails_closed(fixture_pack):
     from dataclasses import replace
 
+    from fmea_governance_fixtures import _identity, make_governance_assembler
     from fmea_propagation_fixtures import _graph
-
-    from fmea_application.revision_assembler import (
-        GovernanceInputs,
-        RevisionAssembler,
-    )
 
     base = make_governance_inputs(evidence_packs=(fixture_pack,))
     domain = replace(
@@ -309,25 +340,14 @@ def test_graph_edge_phantom_evidence_reference_fails_closed(fixture_pack):
     bad_edge = replace(graph.edges[0], evidence_ids=("phantom-graph-evidence",))
     bad_path = replace(graph.paths[0], edges=(bad_edge,))
     graph = replace(graph, edges=(bad_edge, graph.edges[1]), paths=(bad_path, graph.paths[1]))
-    inputs = GovernanceInputs(
-        workspace_id=base.workspace_id,
-        analysis_id=base.analysis_id,
-        analysis=base.analysis,
+    inputs = make_governance_inputs(
         domain_pack=domain,
-        domain_pack_identity=__import__("fmea_governance_fixtures", fromlist=["_identity"])._identity(
-            "domain_pack", "fuel-combustion", "1.0.0", "a" * 64
-        ),
-        retrieval_provenance=base.retrieval_provenance,
-        rows=(),
-        evidence_packs=(fixture_pack,),
-        template_identities=base.template_identities,
-        scoring_rule_identities=base.scoring_rule_identities,
-        propagation_rule_identity=__import__("fmea_governance_fixtures", fromlist=["_identity"])._identity(
-            "propagation_rule", "fuel-propagation", "1.0.0", "d" * 64
-        ),
+        domain_pack_identity=_identity("domain_pack", "fuel-combustion", "1.0.0", "a" * 64),
+        propagation_rule_identity=_identity("propagation_rule", "fuel-propagation", "1.0.0", "d" * 64),
         propagation_graph_revision=graph,
+        evidence_packs=(fixture_pack,),
     )
-    revision = RevisionAssembler().assemble(make_assemble_request(), inputs)
+    revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
     assert any(
         issue.code == "INVALID_EVIDENCE_REFERENCE" and issue.source_type == "propagation_edge"
         for issue in revision.unresolved_items
@@ -337,11 +357,10 @@ def test_graph_edge_phantom_evidence_reference_fails_closed(fixture_pack):
 def test_expired_evidence_pack_is_not_publishable(fixture_pack, fixture_row):
     from dataclasses import replace
 
-    from fmea_application.revision_assembler import RevisionAssembler
-
     expired_pack = replace(fixture_pack, expires_at="2026-08-30T00:00:00Z")
-    revision = RevisionAssembler(clock=lambda: "2026-08-31T00:00:00Z").assemble(
+    inputs = _inputs(rows=(_row(fixture_row, "row-1"),), evidence_packs=(expired_pack,))
+    revision = make_governance_assembler(inputs, clock=lambda: "2026-08-31T00:00:00Z").assemble(
         make_assemble_request(),
-        _inputs(rows=(_row(fixture_row, "row-1"),), evidence_packs=(expired_pack,)),
+        inputs,
     )
     assert any(issue.code == "EXPIRED_EVIDENCE" for issue in revision.unresolved_items)

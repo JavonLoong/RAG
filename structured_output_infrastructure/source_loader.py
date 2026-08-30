@@ -26,8 +26,7 @@ def _load_yaml(text: str) -> object:
         if sum(isinstance(event, yaml.events.DocumentStartEvent) for event in events) > 1:
             raise _source_error()
         if any(
-            isinstance(event, yaml.events.AliasEvent) or getattr(event, "anchor", None) is not None
-            for event in events
+            isinstance(event, yaml.events.AliasEvent) or getattr(event, "anchor", None) is not None for event in events
         ):
             raise _source_error()
         return yaml.safe_load(text)
@@ -83,4 +82,36 @@ def load_template_source(  # noqa: C901 - staged safety checks retain distinct e
     return cast("dict[str, JsonValue]", loaded)
 
 
-__all__ = ["load_template_source"]
+def load_template_source_bytes(
+    raw: bytes,
+    limits: TemplateLimits | None = None,
+) -> dict[str, JsonValue]:
+    """Load one bounded JSON/YAML object from already-resolved registry bytes."""
+
+    active_limits = limits or TemplateLimits()
+    if type(raw) is not bytes:
+        raise _source_error()
+    if len(raw) > active_limits.max_source_bytes:
+        raise StructuredOutputError(
+            "TEMPLATE_LIMIT_EXCEEDED",
+            "Template source exceeds the configured byte limit.",
+        )
+    try:
+        text = raw.decode("utf-8", errors="strict")
+        loaded = _load_yaml(text)
+    except (UnicodeDecodeError, StructuredOutputError):
+        raise
+    except (TypeError, ValueError) as exc:
+        raise _source_error() from exc
+    if not isinstance(loaded, dict):
+        raise _source_error()
+    try:
+        validate_json_value(loaded, active_limits)
+    except StructuredOutputError as exc:
+        if exc.code == "TEMPLATE_LIMIT_EXCEEDED":
+            raise
+        raise _source_error() from exc
+    return cast("dict[str, JsonValue]", loaded)
+
+
+__all__ = ["load_template_source", "load_template_source_bytes"]

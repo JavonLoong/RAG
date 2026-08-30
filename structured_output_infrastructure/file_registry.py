@@ -25,9 +25,14 @@ from core_domain.structured_output import (
 _ID = re.compile(r"^[a-z0-9._-]{1,128}$")
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 _SUFFIXES = frozenset({".json", ".yaml", ".yml"})
-_MANIFEST_KEYS = frozenset(
-    {"template_id", "version", "template_hash", "source_suffix", "schema_dialect"}
-)
+_MANIFEST_KEYS = frozenset({
+    "template_id",
+    "version",
+    "template_hash",
+    "source_hash",
+    "source_suffix",
+    "schema_dialect",
+})
 
 
 def _error(code: str, message: str) -> StructuredOutputError:
@@ -77,11 +82,12 @@ class FileTemplateRegistry:
             stream.flush()
             os.fsync(stream.fileno())
 
-    def _manifest(self, template: CompiledTemplate, source_suffix: str) -> dict[str, JsonValue]:
+    def _manifest(self, template: CompiledTemplate, source_bytes: bytes, source_suffix: str) -> dict[str, JsonValue]:
         return {
             "template_id": template.metadata.template_id,
             "version": template.metadata.version,
             "template_hash": template.template_hash,
+            "source_hash": sha256(source_bytes).hexdigest(),
             "source_suffix": source_suffix,
             "schema_dialect": template.metadata.schema_dialect,
         }
@@ -132,15 +138,13 @@ class FileTemplateRegistry:
         try:
             self._root.mkdir(parents=True, exist_ok=True)
             identity_dir.mkdir(parents=True, exist_ok=True)
-            temp_dir = self._validated_temp(
-                Path(tempfile.mkdtemp(prefix=f".{version}.tmp-", dir=identity_dir))
-            )
+            temp_dir = self._validated_temp(Path(tempfile.mkdtemp(prefix=f".{version}.tmp-", dir=identity_dir)))
         except OSError as exc:
             raise _error("TEMPLATE_REGISTRY_ERROR", "Template registry setup failed.") from exc
         try:
             self._write_file(temp_dir / f"source{source_suffix}", source_bytes)
             self._write_file(temp_dir / "compiled.json", template.canonical_json.encode("utf-8"))
-            manifest_bytes = canonical_json(self._manifest(template, source_suffix)).encode("utf-8")
+            manifest_bytes = canonical_json(self._manifest(template, source_bytes, source_suffix)).encode("utf-8")
             self._write_file(temp_dir / "manifest.json", manifest_bytes)
             temp_dir.rename(final_dir)
         except FileExistsError:
@@ -177,15 +181,38 @@ class FileTemplateRegistry:
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template integrity check failed.") from exc
         if not isinstance(manifest, dict) or set(manifest) != _MANIFEST_KEYS:
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template manifest is invalid.")
-        expected = self._manifest(template, cast("str", manifest.get("source_suffix")))
-        if manifest != expected:
-            raise _error("TEMPLATE_HASH_MISMATCH", "Stored template manifest does not match.")
         if template.metadata.template_id != template_id or template.metadata.version != version:
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template identity does not match its directory.")
         source_suffix = cast("str", manifest["source_suffix"])
         if source_suffix not in _SUFFIXES or not (version_dir / f"source{source_suffix}").is_file():
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.")
+        source_bytes = (version_dir / f"source{source_suffix}").read_bytes()
+        if len(source_bytes) > self._limits.max_source_bytes:
+            raise _error("TEMPLATE_LIMIT_EXCEEDED", "Template source exceeds the configured byte limit.")
+        expected = self._manifest(template, source_bytes, source_suffix)
+        if manifest != expected:
+            raise _error("TEMPLATE_HASH_MISMATCH", "Stored template manifest does not match.")
         return template
+
+    def get_source_bytes(self, template_id: str, version: str) -> bytes:
+        """Return the source bytes bound to a stored compiled template."""
+
+        self._validate_identity(template_id, version)
+        version_dir = self._safe_path(template_id, version)
+        if not version_dir.is_dir():
+            raise _error("TEMPLATE_NOT_FOUND", "Template version was not found.")
+        self.get(template_id, version)
+        try:
+            manifest = orjson.loads((version_dir / "manifest.json").read_bytes())
+            source_suffix = manifest["source_suffix"]
+            if source_suffix not in _SUFFIXES:
+                raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.")
+            source = (version_dir / f"source{source_suffix}").read_bytes()
+        except (OSError, TypeError, ValueError, KeyError, orjson.JSONDecodeError) as exc:
+            raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.") from exc
+        if len(source) > self._limits.max_source_bytes:
+            raise _error("TEMPLATE_LIMIT_EXCEEDED", "Template source exceeds the configured byte limit.")
+        return source
 
     @staticmethod
     def _reconstruct(compiled_object: object, compiled_text: str) -> CompiledTemplate:

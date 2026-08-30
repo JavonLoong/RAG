@@ -38,10 +38,13 @@ def test_registry_writes_only_the_immutable_version_layout_and_round_trips(tmp_p
         "manifest.json",
         "source.yaml",
     ]
-    assert FileTemplateRegistry(tmp_path).get(
-        template.metadata.template_id,
-        template.metadata.version,
-    ) == template
+    assert (
+        FileTemplateRegistry(tmp_path).get(
+            template.metadata.template_id,
+            template.metadata.version,
+        )
+        == template
+    )
 
 
 def test_same_hash_registration_is_idempotent_without_mtime_changes(tmp_path: Path) -> None:
@@ -133,6 +136,19 @@ def test_compiled_or_manifest_tampering_is_detected(tmp_path: Path, filename: st
 
     with pytest.raises(StructuredOutputError) as raised:
         FileTemplateRegistry(tmp_path).get(template.metadata.template_id, template.metadata.version)
+
+    assert raised.value.code == "TEMPLATE_HASH_MISMATCH"
+
+
+def test_source_bytes_tampering_is_detected(tmp_path: Path) -> None:
+    template = compiled()
+    registry = FileTemplateRegistry(tmp_path)
+    registry.register(template, FIXTURE.read_bytes(), FIXTURE.suffix)
+    source_path = tmp_path / template.metadata.template_id / template.metadata.version / "source.yaml"
+    source_path.write_bytes(b"tampered-source")
+
+    with pytest.raises(StructuredOutputError) as raised:
+        FileTemplateRegistry(tmp_path).get_source_bytes(template.metadata.template_id, template.metadata.version)
 
     assert raised.value.code == "TEMPLATE_HASH_MISMATCH"
 

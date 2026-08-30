@@ -61,6 +61,8 @@ from .risk_contracts import (
 )
 
 if TYPE_CHECKING:
+    from core_domain.fmea.governance import FmeaRevision
+
     from .propagation_service import (
         PreparedPropagationInvalidation,
         PreparedPropagationProposal,
@@ -169,15 +171,21 @@ class DomainPackRegistry(Protocol):
 
     def get(self, pack_id: str, version: str) -> DomainPackManifest: ...
 
+    def get_source_bytes(self, pack_id: str, version: str) -> bytes: ...
+
 
 class ScoringRuleRegistry(Protocol):
     def register(self, rule_pack: ScoringRulePack, source_bytes: bytes) -> ScoringRulePack: ...
 
     def get(self, rule_pack_id: str, version: str) -> ScoringRulePack: ...
 
+    def get_source_bytes(self, rule_pack_id: str, version: str) -> bytes: ...
+
 
 class PropagationRuleRegistry(Protocol):
     def get(self, rule_pack_id: str, version: str) -> PropagationRulePack: ...
+
+    def get_source_bytes(self, rule_pack_id: str, version: str) -> bytes: ...
 
 
 class SystemTopologyPort(Protocol):
@@ -333,6 +341,10 @@ class GovernanceEvidenceQueryPort(Protocol):
     def list_evidence_packs(self, analysis_id: str, workspace_id: str) -> tuple[EvidencePack, ...]: ...
 
 
+class GovernanceParentRevisionQueryPort(Protocol):
+    def get_parent_revision(self, analysis_id: str, workspace_id: str) -> FmeaRevision | None: ...
+
+
 class GovernanceArtifactQueryPort(Protocol):
     def get_artifacts(
         self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
@@ -371,6 +383,7 @@ class GovernanceRepositoryProviders:
     runs: GovernanceRunQueryPort
     acknowledgements: GovernanceAcknowledgementQueryPort
     retrieval: RetrievalProvenanceQueryPort
+    parent: GovernanceParentRevisionQueryPort | None = None
 
     def __post_init__(self) -> None:
         required_methods = {
@@ -388,6 +401,8 @@ class GovernanceRepositoryProviders:
             provider = getattr(self, provider_name)
             if any(not callable(getattr(provider, method_name, None)) for method_name in method_names):
                 raise TypeError(f"{provider_name} provider does not implement its typed query port")  # noqa: TRY003
+        if self.parent is not None and not callable(getattr(self.parent, "get_parent_revision", None)):
+            raise TypeError("parent provider does not implement its typed query port")  # noqa: TRY003
 
 
 class GovernanceAssistanceGenerator(Protocol):

@@ -71,9 +71,14 @@ _MAX_YAML_NODES = 4096
 _MAX_READ_CHUNK_BYTES = 64 * 1024
 _MAX_STORED_BODY_BYTES = 256 * 1024
 _MAX_STORED_MANIFEST_BYTES = 64 * 1024
-_WINDOWS_RESERVED_NAMES = frozenset(
-    {"CON", "PRN", "AUX", "NUL", *(f"COM{index}" for index in range(1, 10)), *(f"LPT{index}" for index in range(1, 10))}
-)
+_WINDOWS_RESERVED_NAMES = frozenset({
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{index}" for index in range(1, 10)),
+    *(f"LPT{index}" for index in range(1, 10)),
+})
 
 _ModelT = TypeVar("_ModelT")
 
@@ -637,9 +642,7 @@ def _same_file_identity(first: os.stat_result, second: os.stat_result) -> bool:
 def _verify_read_handle(path: Path, expected_info: os.stat_result, descriptor: int) -> None:
     descriptor_info = os.fstat(descriptor)
     current_info = _checked_regular_lstat(path)
-    if not _same_file_identity(expected_info, descriptor_info) or not _same_file_identity(
-        expected_info, current_info
-    ):
+    if not _same_file_identity(expected_info, descriptor_info) or not _same_file_identity(expected_info, current_info):
         raise _UnsafeFilePath
 
 
@@ -767,9 +770,11 @@ def _verify_written_file(
     final_parent_info = _checked_directory_lstat(path.parent)
     final_path_info = _checked_regular_lstat(path)
     final_descriptor_info = os.fstat(descriptor)
-    if not _same_file_identity(parent_info, final_parent_info) or not _same_file_identity(
-        descriptor_info, final_path_info
-    ) or not _same_file_identity(descriptor_info, final_descriptor_info):
+    if (
+        not _same_file_identity(parent_info, final_parent_info)
+        or not _same_file_identity(descriptor_info, final_path_info)
+        or not _same_file_identity(descriptor_info, final_descriptor_info)
+    ):
         raise _UnsafeFilePath
     if final_descriptor_info.st_size != expected_size:
         raise OSError(errno.EIO, "short registry write")
@@ -1081,6 +1086,18 @@ class _FileImmutableRegistry(Generic[_ModelT]):
             self._raise_integrity()
         return loaded
 
+    def get_source_bytes(self, object_id: str, version: str) -> bytes:
+        """Return the bounded, integrity-checked source used by ``get``."""
+
+        _, version_dir = self._safe_identity_path(object_id, version)
+        self._validate_root_components(allow_missing=True)
+        if not _path_lexists(self._root) or not _path_lexists(version_dir):
+            self._raise_not_found()
+        self._validate_existing_path(version_dir, expected_directory=True, allow_missing=False)
+        self._stored_model(object_id, version, version_dir)
+        source_path, _, _ = self._stored_paths(version_dir)
+        return self._read_bytes(source_path, max_bytes=self._max_source_bytes)
+
     def _ensure_identity_directory(self, identity_dir: Path) -> None:
         self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=True)
         if not _path_lexists(identity_dir):
@@ -1092,9 +1109,7 @@ class _FileImmutableRegistry(Generic[_ModelT]):
                 self._raise_io(exc)
             self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=False)
 
-    def _existing_model(
-        self, object_id: str, version: str, final_dir: Path, candidate: _ModelT
-    ) -> _ModelT | None:
+    def _existing_model(self, object_id: str, version: str, final_dir: Path, candidate: _ModelT) -> _ModelT | None:
         if not _path_lexists(final_dir):
             return None
         self._validate_existing_path(final_dir, expected_directory=True, allow_missing=False)
@@ -1126,7 +1141,9 @@ class _FileImmutableRegistry(Generic[_ModelT]):
                 self._raise_path()
             temp_dir = Path(tempfile.mkdtemp(prefix=f".{version}.tmp-", dir=str(identity_dir)))
             self._validate_existing_path(temp_dir, expected_directory=True, allow_missing=False)
-            current_parent_info = self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=False)
+            current_parent_info = self._validate_existing_path(
+                identity_dir, expected_directory=True, allow_missing=False
+            )
             if current_parent_info is None or not _same_file_identity(parent_info, current_parent_info):
                 self._raise_path()
             self._write_file(temp_dir / f"source{self._source_suffix}", source_bytes)

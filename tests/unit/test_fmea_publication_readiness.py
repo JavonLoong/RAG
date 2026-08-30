@@ -112,27 +112,27 @@ def test_empty_acknowledgement_set_is_not_a_wildcard():
 
 
 def test_assembler_does_not_invent_a_missing_graph_blocker_when_not_required(fixture_row):
-    from fmea_application.revision_assembler import RevisionAssembler
+    from fmea_governance_fixtures import make_governance_assembler, make_governance_inputs
 
-    revision = RevisionAssembler().assemble(
+    inputs = make_governance_inputs(
+        rows=(fixture_row,),
+        propagation_graph_revision=None,
+        evidence_packs=(),
+    )
+    revision = make_governance_assembler(inputs).assemble(
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
-        __import__("fmea_governance_fixtures", fromlist=["make_governance_inputs"]).make_governance_inputs(
-            rows=(fixture_row,),
-            propagation_graph_revision=None,
-            evidence_packs=(),
-        ),
+        inputs,
     )
     assert not any(issue.code == "PROPAGATION_NOT_CONFIRMED" for issue in revision.unresolved_items)
 
 
 def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixture_pack, fixture_row):
-    from fmea_governance_fixtures import _artifacts_for_inputs, make_governance_inputs
+    from fmea_governance_fixtures import _artifacts_for_inputs, make_governance_assembler, make_governance_inputs
 
     from core_domain.fmea.states import ReviewStatus
     from fmea_application.revision_assembler import (
         GovernanceDomainPolicy,
         PublicationReadinessPolicy,
-        RevisionAssembler,
     )
 
     row = replace(fixture_row, review_status=ReviewStatus.ACCEPTED)
@@ -141,7 +141,7 @@ def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixtu
         evidence_packs=(fixture_pack,),
         propagation_graph_revision=None,
     )
-    revision = RevisionAssembler().assemble(
+    revision = make_governance_assembler(inputs).assemble(
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
         inputs,
     )
@@ -153,19 +153,18 @@ def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixtu
 
 
 def test_missing_graph_blocks_when_domain_policy_requires_it(fixture_pack, fixture_row):
-    from core_domain.fmea.states import ReviewStatus
-    from fmea_application.revision_assembler import (
-        GovernanceDomainPolicy,
-        PublicationReadinessPolicy,
-        RevisionAssembler,
-    )
+    from fmea_governance_fixtures import make_governance_assembler, make_governance_inputs
 
-    revision = RevisionAssembler().assemble(
+    from core_domain.fmea.states import ReviewStatus
+    from fmea_application.revision_assembler import GovernanceDomainPolicy, PublicationReadinessPolicy
+
+    inputs = make_governance_inputs(
+        rows=(replace(fixture_row, review_status=ReviewStatus.ACCEPTED),),
+        evidence_packs=(fixture_pack,),
+    )
+    revision = make_governance_assembler(inputs).assemble(
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
-        __import__("fmea_governance_fixtures", fromlist=["make_governance_inputs"]).make_governance_inputs(
-            rows=(replace(fixture_row, review_status=ReviewStatus.ACCEPTED),),
-            evidence_packs=(fixture_pack,),
-        ),
+        inputs,
     )
     report = PublicationReadinessPolicy(
         GovernanceDomainPolicy(required_risk=False, required_propagation=True),

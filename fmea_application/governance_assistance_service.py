@@ -28,6 +28,16 @@ _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 _DRAFT_FIELDS = {"ready", "blocking_codes", "checklist", "revision_id", "revision_hash"}
 _CHECKLIST_FIELDS = {"code", "severity", "source_type", "source_id", "evidence_ids", "acknowledgement_decision_id"}
 _SEVERITIES = {"info", "warning", "blocking", "critical"}
+_SENSITIVE_IDENTIFIER_MARKERS = (
+    "secret",
+    "password",
+    "passwd",
+    "token",
+    "authorization",
+    "apikey",
+    "private",
+    "bearer",
+)
 
 
 def _utc_now() -> str:
@@ -39,7 +49,16 @@ def _new_id(prefix: str) -> str:
 
 
 def _safe_identifier(value: str) -> str:
-    if _SAFE_IDENTIFIER.fullmatch(value):
+    normalized = value.casefold()
+    is_private_path = (
+        normalized.startswith(("/", "\\\\"))
+        or re.match(r"^[a-z]:[\\/].*", normalized) is not None
+        or "://" in normalized
+        or "\\" in normalized
+    )
+    compact = re.sub(r"[^a-z0-9]", "", normalized)
+    is_secret_like = any(marker in compact for marker in _SENSITIVE_IDENTIFIER_MARKERS)
+    if _SAFE_IDENTIFIER.fullmatch(value) and not is_private_path and not is_secret_like:
         return value
     return f"redacted-{canonical_hash(value)[:16]}"
 
@@ -222,15 +241,15 @@ class GovernanceAssistanceService:
             except (GovernanceAssistanceUnavailable, ConnectionError, TimeoutError, OSError):
                 draft = _offline_draft(projection)
         payload: Mapping[str, object] = {
-            "ready": report.ready,
-            "blocking_codes": list(report.blocking_codes),
+            "ready": projection.ready,
+            "blocking_codes": list(projection.blocking_codes),
             "checklist": [dict(item) for item in draft.checklist],
         }
         prompt_hash = canonical_hash({
             "kind": AssistanceKind.APPROVAL_READINESS_CHECKLIST.value,
-            "revision_id": report.revision_id,
-            "revision_hash": report.revision_hash,
-            "blocking_codes": report.blocking_codes,
+            "revision_id": projection.revision_id,
+            "revision_hash": projection.revision_hash,
+            "blocking_codes": projection.blocking_codes,
         })
         model_hash = canonical_hash({"mode": "offline", "kind": AssistanceKind.APPROVAL_READINESS_CHECKLIST.value})
         evidence_ids = tuple(sorted({evidence_id for issue in projection.issues for evidence_id in issue.evidence_ids}))

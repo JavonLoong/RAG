@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 from hashlib import sha256
 from typing import Any
 
@@ -27,6 +27,7 @@ from fmea_application.governance_contracts import (
     canonical_governance_payload,
     governance_payload_hash,
 )
+from fmea_application.ports import GovernanceRepositoryProviders
 from fmea_application.review_contracts import ActorContext, AuditEvent, IdempotencyScope, idempotency_key_hash
 from fmea_application.revision_assembler import (
     GovernanceAcknowledgementRecord,
@@ -37,18 +38,17 @@ from fmea_application.revision_assembler import (
     HumanAcknowledgementReference,
     PublicationReadinessContext,
     PublicationReadinessReport,
-    RegistryArtifactRecord,
+    ResolvedAnalysisRecord,
     ResolvedArtifactIdentity,
-    _acknowledgement_record_hash,
-    _resolve_acknowledgement_record,
-    _resolve_analysis_record,
-    _resolve_registry_artifact,
+    RevisionAssembler,
 )
 from fmea_application.risk_contracts import OutboxEvent, outbox_payload_hash
+from fmea_infrastructure.composition import build_workspace_governance_runtime
 
 HASH = "a" * 64
 PREFIXED_HASH = "sha256:" + HASH
 TIMESTAMP = "2026-08-30T00:00:00Z"
+_INPUT_VERIFIERS: dict[int, object] = {}
 
 
 def _record_hash(seed: str) -> str:
@@ -93,8 +93,23 @@ def _governance_analysis() -> FmeaAnalysis:
 
 
 def _identity(artifact_type: str, artifact_id: str, version: str, content_hash: str) -> ResolvedArtifactIdentity:
-    return _resolve_registry_artifact(
-        RegistryArtifactRecord(artifact_type, artifact_id, version, content_hash, content_hash)
+    return ResolvedArtifactIdentity(
+        artifact_type,
+        artifact_id,
+        version,
+        content_hash,
+        content_hash,
+    )
+
+
+def _resolved_analysis(workspace_id: str, analysis: FmeaAnalysis) -> ResolvedAnalysisRecord:
+    content_hash = canonical_hash(analysis)
+    return ResolvedAnalysisRecord(
+        workspace_id=workspace_id,
+        analysis=analysis,
+        record_version=analysis.record_version,
+        canonical_hash=content_hash,
+        source_hash=content_hash,
     )
 
 
@@ -232,12 +247,25 @@ def make_governance_acknowledgement_record(**overrides: Any) -> GovernanceAcknow
     }
     values.update(overrides)
     record = GovernanceAcknowledgementRecord(**values)
-    record = replace(record, decision_hash=_acknowledgement_record_hash(record))
+    record = replace(record, decision_hash=record.canonical_hash)
     return record
 
 
 def make_human_acknowledgement_reference(**overrides: Any) -> HumanAcknowledgementReference:
-    return _resolve_acknowledgement_record(make_governance_acknowledgement_record(**overrides))
+    values = dict(overrides)
+    foreign_scope = {
+        key: values.pop(key) for key in ("workspace_id", "analysis_id", "issue_source_id") if key in values
+    }
+    record = make_governance_acknowledgement_record(**values)
+    reference = make_governance_inputs(acknowledgement_records=(record,)).acknowledgement_references[0]
+    if not foreign_scope:
+        return reference
+    forged = object.__new__(HumanAcknowledgementReference)
+    for item in fields(reference):
+        object.__setattr__(forged, item.name, getattr(reference, item.name))
+    for field_name, value in foreign_scope.items():
+        object.__setattr__(forged, field_name, value)
+    return forged
 
 
 def make_approval_submission(**overrides: Any) -> ApprovalSubmission:
@@ -369,7 +397,7 @@ def make_governance_actor(**overrides: Any) -> ActorContext:
     return ActorContext(**values)
 
 
-def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
+def make_governance_inputs(**overrides: Any) -> GovernanceInputs:  # noqa: C901
     domain_pack = DomainPackManifest(
         pack_id="generic-domain",
         version="1.0.0",
@@ -385,7 +413,7 @@ def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
     values: dict[str, Any] = {
         "workspace_id": "ws-1",
         "analysis_id": "analysis-1",
-        "analysis": _resolve_analysis_record("ws-1", analysis),
+        "analysis": _resolved_analysis("ws-1", analysis),
         "rows": (),
         "risk_records": (),
         "propagation_graph_revision": None,
@@ -405,6 +433,8 @@ def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
             warnings=(),
         ),
     }
+    acknowledgement_records = tuple(overrides.pop("acknowledgement_records", ()))
+    parent_revision = overrides.get("parent_revision")
     supplied_provenance = overrides.pop("retrieval_provenance", None)
     provenance_values = {
         "requested_profile": values["retrieval_provenance"].requested_profile,
@@ -423,7 +453,76 @@ def make_governance_inputs(**overrides: Any) -> GovernanceInputs:
         values["retrieval_provenance"] = GovernanceRetrievalProvenance(
             workspace_id=values["workspace_id"], analysis_id=values["analysis_id"], **provenance_values
         )
-    return GovernanceInputs(**values)
+
+    class AnalysisProvider:
+        def get_analysis(self, _analysis_id: str, _workspace_id: str) -> ResolvedAnalysisRecord:
+            return values["analysis"]
+
+    class ReviewProvider:
+        def list_rows(self, _analysis_id: str, _workspace_id: str) -> tuple[Any, ...]:
+            return tuple(values["rows"])
+
+    class RiskProvider:
+        def list_risk_records(self, _analysis_id: str, _workspace_id: str) -> tuple[Any, ...]:
+            return tuple(values["risk_records"])
+
+    class PropagationProvider:
+        def get_current_graph(self, _analysis_id: str, _workspace_id: str) -> Any:
+            return values["propagation_graph_revision"]
+
+    class EvidenceProvider:
+        def list_evidence_packs(self, _analysis_id: str, _workspace_id: str) -> tuple[Any, ...]:
+            return tuple(values["evidence_packs"])
+
+    class ArtifactProvider:
+        def get_artifacts(self, _analysis_id: str, _workspace_id: str, _analysis: Any) -> GovernanceArtifactSet:
+            return GovernanceArtifactSet(
+                domain_pack=values["domain_pack"],
+                domain_pack_identity=values["domain_pack_identity"],
+                template_identities=tuple(values["template_identities"]),
+                scoring_rule_identities=tuple(values["scoring_rule_identities"]),
+                propagation_rule_identity=values["propagation_rule_identity"],
+            )
+
+    class RunProvider:
+        def list_active_run_ids(self, _analysis_id: str, _workspace_id: str) -> tuple[str, ...]:
+            return tuple(values.get("active_run_ids", ()))
+
+    class AcknowledgementProvider:
+        def list_human_acknowledgements(self, _analysis_id: str, _workspace_id: str) -> tuple[Any, ...]:
+            return acknowledgement_records
+
+    class RetrievalProvider:
+        def get_provenance(self, _analysis_id: str, _workspace_id: str) -> GovernanceRetrievalProvenance:
+            return values["retrieval_provenance"]
+
+    class ParentProvider:
+        def get_parent_revision(self, _analysis_id: str, _workspace_id: str) -> FmeaRevision | None:
+            return parent_revision
+
+    providers = GovernanceRepositoryProviders(
+        analysis=AnalysisProvider(),
+        review=ReviewProvider(),
+        risk=RiskProvider(),
+        propagation=PropagationProvider(),
+        evidence=EvidenceProvider(),
+        artifacts=ArtifactProvider(),
+        runs=RunProvider(),
+        acknowledgements=AcknowledgementProvider(),
+        retrieval=RetrievalProvider(),
+        parent=ParentProvider() if parent_revision is not None else None,
+    )
+    runtime = build_workspace_governance_runtime(providers)
+    inputs = runtime.source.load_inputs(values["analysis_id"], values["workspace_id"])
+    _INPUT_VERIFIERS[id(inputs._source_attestation)] = runtime.assembler._verifier
+    return inputs
+
+
+def make_governance_assembler(inputs: GovernanceInputs, **overrides: Any) -> RevisionAssembler:
+    verifier = _INPUT_VERIFIERS.get(id(inputs._source_attestation))
+    if verifier is None:
+        raise TypeError("fixture inputs are not associated with a governance runtime")  # noqa: TRY003
+    return RevisionAssembler(verifier=verifier, **overrides)
 
 
 def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
@@ -438,7 +537,7 @@ def make_readiness_context(**overrides: Any) -> PublicationReadinessContext:
         "required_fields_accepted": True,
         "required_risk_confirmed": True,
         "propagation_confirmed": True,
-        "authoritative_analysis": _resolve_analysis_record("ws-1", _governance_analysis()),
+        "authoritative_analysis": _resolved_analysis("ws-1", _governance_analysis()),
         "authoritative_artifacts": _readiness_artifacts(),
     }
     values.update(overrides)

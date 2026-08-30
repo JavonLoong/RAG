@@ -324,9 +324,9 @@ def test_same_domain_identity_same_body_replay_preserves_first_raw_source(tmp_pa
     version_dir = tmp_path / manifest.pack_id / manifest.version
     before = {path.name: path.stat().st_mtime_ns for path in version_dir.iterdir()}
 
-    reformatted = yaml.safe_dump(
-        yaml.safe_load(first_source), sort_keys=True, allow_unicode=True, indent=4
-    ).encode("utf-8")
+    reformatted = yaml.safe_dump(yaml.safe_load(first_source), sort_keys=True, allow_unicode=True, indent=4).encode(
+        "utf-8"
+    )
     assert registry.register(load_domain_pack_manifest(reformatted), reformatted) == manifest
 
     assert (version_dir / "source.yaml").read_bytes() == first_source
@@ -396,6 +396,11 @@ def test_registry_manifest_binds_raw_and_canonical_hashes(tmp_path: Path, regist
     assert manifest["source_hash"] == hashlib.sha256(source).hexdigest()
     assert manifest["source_suffix"] == ".yaml"
     assert set(manifest) == {"kind", "id", "version", "body_hash", "source_hash", "source_suffix"}
+    assert registry.get_source_bytes(object_id, model.version) == source
+
+    (version_dir / "source.yaml").write_bytes(b"tampered-source")
+    with pytest.raises(FmeaDomainError):
+        registry.get_source_bytes(object_id, model.version)
 
 
 def test_registry_get_does_not_auto_discover_authored_source(tmp_path: Path) -> None:
@@ -433,7 +438,7 @@ def test_domain_registry_rejects_single_file_tampering(tmp_path: Path, filename:
     if filename == "source.yaml":
         target.write_bytes(_domain_source({**_domain_body(), "analysis_types": ["process_fmea"]}))
     elif filename == "body.json":
-        target.write_bytes(b"{\"tampered\":true}")
+        target.write_bytes(b'{"tampered":true}')
     else:
         payload = json.loads(target.read_text(encoding="utf-8"))
         payload["body_hash"] = "0" * 64
@@ -526,9 +531,7 @@ def test_registry_rejects_file_replaced_after_validation(tmp_path: Path, monkeyp
     original_validate = registry._validate_existing_path
     injected = False
 
-    def replace_after_validation(
-        path: Path, *, expected_directory: bool, allow_missing: bool
-    ) -> object:
+    def replace_after_validation(path: Path, *, expected_directory: bool, allow_missing: bool) -> object:
         nonlocal injected
         result = original_validate(path, expected_directory=expected_directory, allow_missing=allow_missing)
         if path == source_path and not injected:
