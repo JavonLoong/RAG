@@ -304,11 +304,16 @@ def test_verifier_rejects_forbidden_absolute_path_forms(acceptance_pack: Path, f
         "source=/workspace/file",
         "source:/workspace/file",
         "source->/workspace/file",
+        "source|/workspace/file",
+        "source+/workspace/file",
+        "source-/workspace/file",
+        "source=//server/share/file",
         "source=(/workspace/file)",
         r"prefix=C:\workspace\file",
         r"prefix=[C:\workspace\file]",
         r"prefix=\\server\share\file",
         r"prefix=\workspace\file",
+        "https://example.com/a/b source=/workspace/file",
     ],
 )
 def test_verifier_rejects_punctuation_adjacent_local_paths(
@@ -331,7 +336,10 @@ def test_verifier_rejects_punctuation_adjacent_local_paths(
         r"The ratio a/b is ordinary prose; slash / delimiter and backslash \ delimiter are harmless.",
         "source = / delimiter",
         r"source = \ delimiter",
+        "http://example.com/a/b",
         "https://example.com/a/b",
+        "user.name+tag@example.com",
+        "scope.identifier/path-segment",
     ],
 )
 def test_verifier_allows_non_path_decoded_strings(

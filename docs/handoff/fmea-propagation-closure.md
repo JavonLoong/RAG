@@ -26,9 +26,10 @@ manifest、topology/rule/graph identity、lineage、路径连续性、逐 edge e
 深度、cycle、risk、external、conflict、incomplete 和 actor policy。文件大小、
 secret/private marker 和 raw-provider marker 保持 bytes-first 检查；本机路径则在
 strict JSON parse 后递归检查 decoded string values，避免把 `\n` 等 JSON escape
-误判成 Windows 路径。embedded path start 只接受字符串起点、空白或明确 delimiter
-（如 `=`、`:`、`>` 和 opening punctuation）作为边界，因此能拒绝 punctuation-
-adjacent 本机路径，同时不会把 `https://example.com/a/b` 当成 POSIX path。
+误判成 Windows 路径。embedded path 可从字符串起点或任意非 path-body 字符后
+开始；path-body 固定为 alphanumeric、underscore、dot、slash 和 backslash，
+不维护 delimiter 枚举。HTTP/HTTPS URL span 内的 path-like 片段被排除，但同一
+字符串在 URL span 外出现的本机路径仍会被拒绝。
 
 topology identity 还绑定到仓库中固定 source-pinned 的
 `domain_packs/fuel-combustion/topology/demo-1.0.0.json`：verifier 重新读取其
