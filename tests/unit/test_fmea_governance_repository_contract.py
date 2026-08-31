@@ -8,6 +8,9 @@ EXPECTED_METHODS = {
     "replay_revision",
     "commit_revision",
     "get_revision",
+    "replay_readiness",
+    "commit_readiness",
+    "get_readiness",
     "replay_approval_submission",
     "commit_approval_submission",
     "replay_approval_decision",
@@ -22,6 +25,7 @@ EXPECTED_METHODS = {
     "commit_supersession",
     "get_publication",
     "get_snapshot",
+    "get_export_eligibility",
     "list_approval_events",
     "list_publication_events",
 }

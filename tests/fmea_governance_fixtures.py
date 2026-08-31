@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import fields, replace
 from hashlib import sha256
 from typing import Any
 
+from core_domain.fmea.codec import encode_json
 from core_domain.fmea.domain_pack import DomainPackManifest
 from core_domain.fmea.entities import FmeaAnalysis
 from core_domain.fmea.governance import (
@@ -21,6 +23,7 @@ from core_domain.fmea.states import ActorType
 from core_domain.fmea.value_objects import VersionSet
 from fmea_application.governance_contracts import (
     ApprovalCommand,
+    ExportEligibilityRecord,
     PreparedApproval,
     PreparedRevision,
     RevisionAssemblyRequest,
@@ -50,6 +53,36 @@ PREFIXED_HASH = "sha256:" + HASH
 TIMESTAMP = "2026-08-30T00:00:00Z"
 _INPUT_RUNTIMES: dict[int, object] = {}
 _INPUT_PROVIDERS: dict[int, GovernanceRepositoryProviders] = {}
+
+
+def _export_eligibility(*, publication, manifest, revision, snapshot) -> ExportEligibilityRecord:
+    source_hashes = (
+        ("manifest", manifest.manifest_hash),
+        ("revision", revision.revision_hash),
+        ("snapshot", snapshot.snapshot_hash),
+    )
+    eligibility_id = f"eligibility:{publication.publication_id}"
+    eligibility_hash = canonical_hash(
+        {
+            "eligibility_id": eligibility_id,
+            "workspace_id": publication.workspace_id,
+            "publication_id": publication.publication_id,
+            "manifest_id": manifest.manifest_id,
+            "eligible": manifest.export_eligible,
+            "source_hashes": source_hashes,
+        },
+        prefixed=True,
+    )
+    return ExportEligibilityRecord(
+        eligibility_id,
+        publication.workspace_id,
+        publication.publication_id,
+        manifest.manifest_id,
+        manifest.export_eligible,
+        source_hashes,
+        eligibility_hash,
+        TIMESTAMP,
+    )
 
 
 def _record_hash(seed: str) -> str:
@@ -91,6 +124,24 @@ def _governance_analysis() -> FmeaAnalysis:
         parent_revision_id=None,
         current_revision_id="revision-1",
     )
+
+
+def seed_authoritative_analysis(database_path: object, workspace_id: str = "ws-1") -> None:
+    analysis = _governance_analysis()
+    analysis_json = encode_json(analysis)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO fmea_analyses(analysis_id,workspace_id,analysis_hash,analysis_json,created_at,updated_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (
+                analysis.analysis_id,
+                workspace_id,
+                "sha256:" + sha256(analysis_json.encode("utf-8")).hexdigest(),
+                analysis_json,
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
+        )
 
 
 def _identity(artifact_type: str, artifact_id: str, version: str, content_hash: str) -> ResolvedArtifactIdentity:
@@ -789,6 +840,12 @@ def prepared_publication(**overrides: Any):
         snapshot_id=snapshot.snapshot_id,
         snapshot_hash=snapshot.snapshot_hash,
     )
+    export_eligibility = _export_eligibility(
+        publication=publication,
+        manifest=manifest,
+        revision=revision,
+        snapshot=snapshot,
+    )
     key = command.idempotency_key
     scope = _scope(actor, "fmea.publication.publish", "/fmea/revisions/revision-1/publications", key)
     payload = canonical_governance_payload(
@@ -800,6 +857,7 @@ def prepared_publication(**overrides: Any):
         manifest=manifest,
         publication=publication,
         snapshot=snapshot,
+        export_eligibility=export_eligibility,
     )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, publication.publication_id)
@@ -814,6 +872,7 @@ def prepared_publication(**overrides: Any):
         "manifest": manifest,
         "publication": publication,
         "snapshot": snapshot,
+        "export_eligibility": export_eligibility,
         "audit": audit,
         "outbox": outbox,
     }

@@ -28,6 +28,7 @@ from core_domain.fmea.governance import (
     ReadinessIssue,
     RetrievalProvenanceSnapshot,
     SupersessionRecord,
+    canonical_hash,
     canonical_json_bytes,
     validate_approval_binding,
     validate_supersession_binding,
@@ -37,16 +38,20 @@ from fmea_application.governance_contracts import (
     ApprovalRejectionCommand,
     ApprovalResult,
     ApprovalSubmissionResult,
+    ExportEligibilityRecord,
     GovernanceHistoryQuery,
     PreparedApproval,
     PreparedApprovalSubmission,
     PreparedApprovalWithdrawal,
     PreparedPublication,
     PreparedPublicationWithdrawal,
+    PreparedReadinessReport,
     PreparedRevision,
     PreparedSupersession,
     PublicationResult,
     PublicationWithdrawalResult,
+    ReadinessReportRecord,
+    ReadinessResult,
     RevisionResult,
     SupersessionResult,
     canonical_governance_payload,
@@ -55,6 +60,7 @@ from fmea_application.governance_contracts import (
 from fmea_application.ports import ApprovalWithdrawalResult, GovernanceHistoryPage
 from fmea_application.review_contracts import AuditEvent, IdempotencyScope, encode_review_json, idempotency_key_hash
 from fmea_application.review_errors import ReviewError
+from fmea_application.revision_assembler import PublicationReadinessReport
 from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
 
 from .repository_sqlite import SqliteFmeaRepository
@@ -63,6 +69,7 @@ from .sqlite_codec import decode_audit_event, load_strict_json
 _MAX_BUSY_TIMEOUT_MS = 60_000
 _KIND_TYPES: dict[str, type[object]] = {
     "revision": PreparedRevision,
+    "readiness": PreparedReadinessReport,
     "approval_submission": PreparedApprovalSubmission,
     "approval": PreparedApproval,
     "approval_withdrawal": PreparedApprovalWithdrawal,
@@ -72,6 +79,7 @@ _KIND_TYPES: dict[str, type[object]] = {
 }
 _RESULT_FIELDS: dict[str, set[str]] = {
     "revision": {"revision_id", "record_version", "audit_event_id", "outbox_event_id", "replayed"},
+    "readiness": {"readiness_id", "record_version", "audit_event_id", "outbox_event_id", "replayed"},
     "approval_submission": {"submission_id", "record_version", "audit_event_id", "outbox_event_id", "replayed"},
     "approval": {"approval_id", "record_version", "audit_event_id", "outbox_event_id", "replayed"},
     "publication": {
@@ -266,6 +274,83 @@ def _decode_manifest(payload: object) -> PublicationManifest:
     return value
 
 
+def _source_hashes_json(source_hashes: tuple[tuple[str, str], ...]) -> str:
+    return canonical_json(dict(source_hashes))
+
+
+def _decode_source_hashes(payload: object) -> tuple[tuple[str, str], ...]:
+    data = load_strict_json(payload, "source hashes")
+    if not isinstance(data, dict) or canonical_json(data) != payload:
+        raise ValueError("persisted source hashes are not canonical")
+    pairs = tuple(sorted((str(key), _hash(value, "source hash")) for key, value in data.items()))
+    if len({key for key, _ in pairs}) != len(pairs):
+        raise ValueError("persisted source hashes contain duplicate identities")
+    return pairs
+
+
+def _decode_readiness(payload: object) -> PublicationReadinessReport:
+    data = _strict_object(payload, "readiness report", {field.name for field in fields(PublicationReadinessReport)})
+    issues: list[ReadinessIssue] = []
+    for item in _sequence(data["issues"], "readiness issues"):
+        issue_data = _mapping(item, "readiness issue")
+        if set(issue_data) != {field.name for field in fields(ReadinessIssue)}:
+            raise ValueError("persisted readiness issue fields are invalid")
+        issues.append(
+            ReadinessIssue(
+                code=cast(str, issue_data["code"]),
+                severity=cast(str, issue_data["severity"]),
+                source_type=cast(str, issue_data["source_type"]),
+                source_id=cast(str, issue_data["source_id"]),
+                evidence_ids=tuple(cast(str, value) for value in _sequence(issue_data["evidence_ids"], "evidence_ids")),
+                acknowledgement_decision_id=cast(str | None, issue_data["acknowledgement_decision_id"]),
+            )
+        )
+    try:
+        value = PublicationReadinessReport(
+            revision_id=cast(str, data["revision_id"]),
+            workspace_id=cast(str, data["workspace_id"]),
+            analysis_id=cast(str, data["analysis_id"]),
+            revision_hash=cast(str, data["revision_hash"]),
+            target_record_version=cast(int, data["target_record_version"]),
+            evidence_pack_ids=tuple(
+                cast(str, value) for value in _sequence(data["evidence_pack_ids"], "evidence_pack_ids")
+            ),
+            ready=cast(bool, data["ready"]),
+            issues=tuple(issues),
+            blocking_codes=tuple(cast(str, value) for value in _sequence(data["blocking_codes"], "blocking_codes")),
+            deterministic=cast(bool, data["deterministic"]),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("persisted readiness report is invalid") from exc
+    if _object_json(value)[0] != payload:
+        raise ValueError("persisted readiness report is not canonical")
+    return value
+
+
+def _decode_export_eligibility(payload: object) -> ExportEligibilityRecord:
+    data = _strict_object(payload, "export eligibility", {field.name for field in fields(ExportEligibilityRecord)})
+    source_hashes = tuple(
+        tuple(cast(str, value) for value in _sequence(item, "source hash pair"))
+        for item in _sequence(data["source_hashes"], "source_hashes")
+    )
+    try:
+        value = ExportEligibilityRecord(
+            eligibility_id=cast(str, data["eligibility_id"]),
+            workspace_id=cast(str, data["workspace_id"]),
+            publication_id=cast(str, data["publication_id"]),
+            manifest_id=cast(str, data["manifest_id"]),
+            eligible=cast(bool, data["eligible"]),
+            source_hashes=source_hashes,
+            eligibility_hash=cast(str, data["eligibility_hash"]),
+            created_at=cast(str, data["created_at"]),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("persisted export eligibility is invalid") from exc
+    if _object_json(value)[0] != payload:
+        raise ValueError("persisted export eligibility is not canonical")
+    return value
+
+
 def _decode_publication(payload: object) -> PublishedRevision:
     data = _strict_object(payload, "publication", {field.name for field in fields(PublishedRevision)})
     value = PublishedRevision(**data)
@@ -350,6 +435,8 @@ class SqliteGovernanceRepository:
     def _expected_path(kind: str, prepared: Any) -> str:
         if kind == "revision":
             return f"/fmea/analyses/{prepared.revision.analysis_id}/revisions"
+        if kind == "readiness":
+            return f"/fmea/revisions/{prepared.revision.revision_id}/readiness"
         if kind == "approval_submission":
             return f"/fmea/revisions/{prepared.submission.revision_id}/approval-submissions"
         if kind == "approval":
@@ -374,6 +461,11 @@ class SqliteGovernanceRepository:
             obj = value.revision
             resource_id = obj.revision_id
             history_id = obj.revision_id
+            resource_type = "revision"
+        elif kind == "readiness":
+            obj = value.report
+            resource_id = value.readiness_id
+            history_id = value.revision.revision_id
             resource_type = "revision"
         elif kind == "approval_submission":
             obj = value.submission
@@ -419,7 +511,7 @@ class SqliteGovernanceRepository:
                 resource_workspace = value.scope.workspace_id
         if value.scope.workspace_id != resource_workspace:
             _error("FMEA_REVIEW_REQUEST_INVALID", "Governance workspace binding is invalid.")
-        if kind == "revision":
+        if kind in {"revision", "readiness"}:
             resource_actor = None
         elif kind == "approval_submission":
             resource_actor = value.submission.submitter_actor_id
@@ -461,6 +553,8 @@ class SqliteGovernanceRepository:
     def _lifecycle_event_type(kind: str, prepared: Any) -> str:
         if kind == "revision":
             return "revision.assembled"
+        if kind == "readiness":
+            return "revision.readiness"
         if kind == "approval_submission":
             return "approval.submitted"
         if kind == "approval":
@@ -533,6 +627,8 @@ class SqliteGovernanceRepository:
         try:
             if kind == "revision":
                 result: object = RevisionResult(**data)
+            elif kind == "readiness":
+                result = ReadinessResult(**data)
             elif kind == "approval_submission":
                 result = __import__(
                     "fmea_application.governance_contracts", fromlist=["ApprovalSubmissionResult"]
@@ -557,6 +653,23 @@ class SqliteGovernanceRepository:
 
     @classmethod
     def _verify_chain(cls, connection: sqlite3.Connection, meta: _PreparedMeta, prepared: Any, result: Any) -> None:
+        result_resource_id = (
+            result.readiness_id
+            if meta.kind == "readiness"
+            else result.revision_id
+            if meta.kind == "revision"
+            else result.submission_id
+            if meta.kind == "approval_submission"
+            else result.approval_id
+            if meta.kind == "approval"
+            else result.publication_id
+            if meta.kind == "publication"
+            else result.withdrawal_id
+            if meta.kind in {"approval_withdrawal", "publication_withdrawal"}
+            else result.supersession_id
+        )
+        if result_resource_id != meta.resource_id:
+            raise ValueError("persisted governance response resource does not match authority")
         audit_row = connection.execute(
             "SELECT * FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
             (meta.workspace_id, result.audit_event_id),
@@ -568,8 +681,17 @@ class SqliteGovernanceRepository:
             audit.workspace_id != meta.workspace_id
             or audit.command != prepared.scope.command
             or audit.row_id != meta.resource_id
+            or audit.actor_id != prepared.scope.actor_id
+            or audit.idempotency_key_hash != prepared.scope.key_hash
             or audit.canonical_payload_hash != prepared.payload_hash
+            or audit_row["actor_id"] != audit.actor_id
+            or audit_row["actor_type"] != audit.actor_type.value
+            or audit_row["command"] != audit.command
+            or audit_row["resource_type"] != meta.resource_type
             or audit_row["resource_id"] != meta.history_id
+            or audit_row["idempotency_scope"] != prepared.scope.scope_key
+            or audit_row["canonical_payload_hash"] != prepared.payload_hash
+            or _object_json(audit)[0] != audit_row["event_json"]
         ):
             raise ValueError("persisted governance audit binding is invalid")
         outbox_row = connection.execute(
@@ -581,10 +703,12 @@ class SqliteGovernanceRepository:
         outbox_payload = load_strict_json(outbox_row["payload_json"], "governance outbox")
         if (
             canonical_json(outbox_payload) != outbox_row["payload_json"]
+            or canonical_json(outbox_payload) != canonical_json(prepared.payload)
             or outbox_row["workspace_id"] != meta.workspace_id
             or outbox_row["aggregate_type"] != "fmea_governance"
             or outbox_row["aggregate_id"] != meta.resource_id
             or outbox_row["event_type"] != cls._lifecycle_event_type(meta.kind, prepared)
+            or outbox_row["payload_hash"] != prepared.payload_hash
         ):
             raise ValueError("persisted governance outbox is not canonical")
         if (
@@ -592,56 +716,69 @@ class SqliteGovernanceRepository:
             or outbox_row["idempotency_scope"] != prepared.scope.scope_key
         ):
             raise ValueError("persisted governance outbox binding is invalid")
+        cls._verify_event_binding(
+            connection,
+            meta.kind,
+            meta.workspace_id,
+            meta.resource_id,
+            result.audit_event_id,
+            result.outbox_event_id,
+        )
         if meta.kind == "revision":
-            cls._revision_from_connection(connection, meta.resource_id, meta.workspace_id)
+            revision = cls._revision_from_connection(connection, meta.resource_id, meta.workspace_id)
+            if revision != prepared.revision or result.record_version != 1:
+                raise ValueError("persisted revision result binding is invalid")
+        elif meta.kind == "readiness":
+            record = cls._readiness_from_connection(connection, meta.resource_id, meta.workspace_id)
+            if (
+                record.report != prepared.report
+                or record.source_hashes != prepared.source_hashes
+                or result.record_version != 1
+            ):
+                raise ValueError("persisted readiness result binding is invalid")
         elif meta.kind == "approval_submission":
-            cls._submission_from_connection(connection, meta.resource_id, meta.workspace_id)
+            if cls._submission_from_connection(connection, meta.resource_id, meta.workspace_id) != prepared.submission:
+                raise ValueError("persisted approval submission result binding is invalid")
         elif meta.kind == "approval":
-            cls._approval_from_connection(connection, meta.resource_id, meta.workspace_id)
+            if cls._approval_from_connection(connection, meta.resource_id, meta.workspace_id) != prepared.decision:
+                raise ValueError("persisted approval result binding is invalid")
         elif meta.kind == "publication":
-            cls._publication_from_connection(connection, meta.resource_id, meta.workspace_id)
+            publication = cls._publication_from_connection(connection, meta.resource_id, meta.workspace_id)
+            manifest = cls._manifest_from_connection(connection, result.manifest_id, meta.workspace_id)
+            snapshot = cls._snapshot_from_connection(connection, result.snapshot_id, meta.workspace_id)
+            eligibility = cls._eligibility_from_connection(connection, meta.resource_id, meta.workspace_id)
             if (
-                connection.execute(
-                    "SELECT 1 FROM fmea_publication_manifests WHERE workspace_id=? AND manifest_id=?",
-                    (meta.workspace_id, result.manifest_id),
-                ).fetchone()
-                is None
+                publication != prepared.publication
+                or manifest != prepared.manifest
+                or snapshot != prepared.snapshot
+                or eligibility != prepared.export_eligibility
+                or result.manifest_id != publication.manifest_id
+                or result.snapshot_id != publication.snapshot_id
+                or result.record_version != publication.record_version
             ):
-                raise ValueError("persisted publication manifest is missing")
-            if (
-                connection.execute(
-                    "SELECT 1 FROM fmea_normalized_snapshots WHERE workspace_id=? AND snapshot_id=?",
-                    (meta.workspace_id, result.snapshot_id),
-                ).fetchone()
-                is None
-            ):
-                raise ValueError("persisted normalized snapshot is missing")
+                raise ValueError("persisted publication result binding is invalid")
         elif meta.kind == "approval_withdrawal":
-            if (
-                connection.execute(
-                    "SELECT 1 FROM fmea_approval_withdrawals WHERE workspace_id=? AND withdrawal_id=?",
-                    (meta.workspace_id, meta.resource_id),
-                ).fetchone()
-                is None
-            ):
-                raise ValueError("persisted approval withdrawal is missing")
-        elif meta.kind == "publication_withdrawal":
-            if (
-                connection.execute(
-                    "SELECT 1 FROM fmea_publication_withdrawals WHERE workspace_id=? AND withdrawal_id=?",
-                    (meta.workspace_id, meta.resource_id),
-                ).fetchone()
-                is None
-            ):
-                raise ValueError("persisted publication withdrawal is missing")
-        elif (
-            connection.execute(
-                "SELECT 1 FROM fmea_supersessions WHERE workspace_id=? AND supersession_id=?",
+            row = connection.execute(
+                "SELECT withdrawal_json,canonical_json_hash FROM fmea_approval_withdrawals "
+                "WHERE workspace_id=? AND withdrawal_id=?",
                 (meta.workspace_id, meta.resource_id),
             ).fetchone()
-            is None
-        ):
-            raise ValueError("persisted supersession is missing")
+            if row is None or _decode_approval_withdrawal(row["withdrawal_json"]) != prepared.withdrawal:
+                raise ValueError("persisted approval withdrawal result binding is invalid")
+        elif meta.kind == "publication_withdrawal":
+            row = connection.execute(
+                "SELECT withdrawal_json FROM fmea_publication_withdrawals WHERE workspace_id=? AND withdrawal_id=?",
+                (meta.workspace_id, meta.resource_id),
+            ).fetchone()
+            if row is None or _decode_publication_withdrawal(row["withdrawal_json"]) != prepared.withdrawal:
+                raise ValueError("persisted publication withdrawal result binding is invalid")
+        else:
+            row = connection.execute(
+                "SELECT supersession_json FROM fmea_supersessions WHERE workspace_id=? AND supersession_id=?",
+                (meta.workspace_id, meta.resource_id),
+            ).fetchone()
+            if row is None or _decode_supersession(row["supersession_json"]) != prepared.supersession:
+                raise ValueError("persisted supersession result binding is invalid")
 
     @classmethod
     def _verify_replay_chain(
@@ -654,32 +791,40 @@ class SqliteGovernanceRepository:
     ) -> None:
         if kind == "revision":
             resource_id = result.revision_id
-            table = "fmea_revisions"
-            identifier = "revision_id"
+        elif kind == "readiness":
+            resource_id = result.readiness_id
         elif kind == "approval_submission":
             resource_id = result.submission_id
-            table = "fmea_approval_submissions"
-            identifier = "submission_id"
         elif kind == "approval":
             resource_id = result.approval_id
-            table = "fmea_approval_decisions"
-            identifier = "approval_id"
-        elif kind == "approval_withdrawal":
+        elif kind in {"approval_withdrawal", "publication_withdrawal"}:
             resource_id = result.withdrawal_id
-            table = "fmea_approval_withdrawals"
-            identifier = "withdrawal_id"
         elif kind == "publication":
             resource_id = result.publication_id
-            table = "fmea_publications"
-            identifier = "publication_id"
-        elif kind == "publication_withdrawal":
-            resource_id = result.withdrawal_id
-            table = "fmea_publication_withdrawals"
-            identifier = "withdrawal_id"
         else:
             resource_id = result.supersession_id
-            table = "fmea_supersessions"
-            identifier = "supersession_id"
+        table, identifier = cls._authority_table(kind)
+        authority_row = connection.execute(
+            f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",
+            (scope.workspace_id, resource_id),
+        ).fetchone()
+        if authority_row is None:
+            raise ValueError(f"persisted {kind} is missing")
+        if kind == "readiness":
+            history_id = authority_row["revision_id"]
+            expected_resource_type = "revision"
+        elif kind in {"revision"}:
+            history_id = resource_id
+            expected_resource_type = "revision"
+        elif kind in {"approval_submission", "approval", "approval_withdrawal"}:
+            history_id = authority_row["revision_id"]
+            expected_resource_type = "approval"
+        elif kind in {"publication", "publication_withdrawal"}:
+            history_id = authority_row["publication_id"]
+            expected_resource_type = "publication"
+        else:
+            history_id = authority_row["old_publication_id"]
+            expected_resource_type = "publication"
         audit_row = connection.execute(
             "SELECT * FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
             (scope.workspace_id, result.audit_event_id),
@@ -691,22 +836,31 @@ class SqliteGovernanceRepository:
             audit.workspace_id != scope.workspace_id
             or audit.command != scope.command
             or audit.row_id != resource_id
+            or audit.actor_id != scope.actor_id
             or audit.idempotency_key_hash != scope.key_hash
             or audit.canonical_payload_hash != payload_hash
+            or audit_row["actor_id"] != audit.actor_id
+            or audit_row["actor_type"] != audit.actor_type.value
+            or audit_row["command"] != audit.command
+            or audit_row["resource_type"] != expected_resource_type
+            or audit_row["resource_id"] != history_id
             or audit_row["idempotency_scope"] != scope.scope_key
+            or audit_row["canonical_payload_hash"] != payload_hash
             or _object_json(audit)[0] != audit_row["event_json"]
         ):
             raise ValueError("persisted governance audit binding is invalid")
-        authority_row = connection.execute(
-            f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",
-            (scope.workspace_id, resource_id),
-        ).fetchone()
-        if authority_row is None:
-            raise ValueError(f"persisted {kind} is missing")
-        if kind not in {"revision", "publication"} and (
+        if kind not in {"revision", "readiness", "publication"} and (
             authority_row["idempotency_scope"] != scope.scope_key or authority_row["payload_hash"] != payload_hash
         ):
             raise ValueError(f"persisted {kind} idempotency binding is invalid")
+        cls._verify_event_binding(
+            connection,
+            kind,
+            scope.workspace_id,
+            resource_id,
+            result.audit_event_id,
+            result.outbox_event_id,
+        )
         outbox_row = connection.execute(
             "SELECT * FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
             (scope.workspace_id, result.outbox_event_id),
@@ -716,6 +870,7 @@ class SqliteGovernanceRepository:
         outbox_payload = load_strict_json(outbox_row["payload_json"], "governance outbox")
         expected_event_type = {
             "revision": "revision.assembled",
+            "readiness": "revision.readiness",
             "approval_submission": "approval.submitted",
             "approval_withdrawal": "approval.withdrawn",
             "publication": "publication.published",
@@ -731,23 +886,51 @@ class SqliteGovernanceRepository:
             or outbox_row["event_type"] != expected_event_type
             or outbox_row["idempotency_scope"] != scope.scope_key
             or outbox_row["payload_hash"] != outbox_payload_hash(outbox_payload)
+            or outbox_row["payload_hash"] != payload_hash
         ):
             raise ValueError("persisted governance outbox binding is invalid")
         if kind == "revision":
-            cls._revision_from_connection(connection, resource_id, scope.workspace_id)
+            if (
+                result.record_version != 1
+                or cls._revision_from_connection(connection, resource_id, scope.workspace_id).revision_id != resource_id
+            ):
+                raise ValueError("persisted revision result binding is invalid")
+        elif kind == "readiness":
+            if (
+                result.record_version != 1
+                or cls._readiness_from_connection(connection, resource_id, scope.workspace_id).readiness_id
+                != resource_id
+            ):
+                raise ValueError("persisted readiness result binding is invalid")
         elif kind == "approval_submission":
             cls._submission_from_connection(connection, resource_id, scope.workspace_id)
         elif kind == "approval":
             cls._approval_from_connection(connection, resource_id, scope.workspace_id)
         elif kind == "publication":
-            cls._publication_from_connection(connection, resource_id, scope.workspace_id)
-            cls._manifest_from_connection(connection, result.manifest_id, scope.workspace_id)
-            snapshot_row = connection.execute(
-                "SELECT snapshot_id FROM fmea_normalized_snapshots WHERE workspace_id=? AND snapshot_id=? AND publication_id=?",
-                (scope.workspace_id, result.snapshot_id, resource_id),
-            ).fetchone()
-            if snapshot_row is None:
-                raise ValueError("persisted normalized snapshot is missing")
+            publication = cls._publication_from_connection(connection, resource_id, scope.workspace_id)
+            manifest = cls._manifest_from_connection(connection, result.manifest_id, scope.workspace_id)
+            snapshot = cls._snapshot_from_connection(connection, result.snapshot_id, scope.workspace_id)
+            eligibility = cls._eligibility_from_connection(connection, resource_id, scope.workspace_id)
+            revision = cls._revision_from_connection(connection, publication.revision_id, scope.workspace_id)
+            if (
+                result.record_version != publication.record_version
+                or result.manifest_id != publication.manifest_id
+                or result.snapshot_id != publication.snapshot_id
+                or manifest.revision_id != revision.revision_id
+                or manifest.revision_hash != revision.revision_hash
+                or manifest.approval_id != publication.approval_id
+                or manifest.snapshot_id != snapshot.snapshot_id
+                or manifest.snapshot_hash != snapshot.snapshot_hash
+                or snapshot.publication_id != publication.publication_id
+                or snapshot.manifest_id != manifest.manifest_id
+                or eligibility.publication_id != publication.publication_id
+                or eligibility.manifest_id != manifest.manifest_id
+                or eligibility.eligible is not manifest.export_eligible
+                or dict(eligibility.source_hashes).get("revision") != revision.revision_hash
+                or dict(eligibility.source_hashes).get("manifest") != manifest.manifest_hash
+                or dict(eligibility.source_hashes).get("snapshot") != snapshot.snapshot_hash
+            ):
+                raise ValueError("persisted publication lineage is invalid")
         elif kind == "approval_withdrawal":
             value = _decode_approval_withdrawal(authority_row["withdrawal_json"])
             if (
@@ -831,6 +1014,211 @@ class SqliteGovernanceRepository:
             ),
         )
 
+    @staticmethod
+    def _authority_table(kind: str) -> tuple[str, str]:
+        return {
+            "revision": ("fmea_revisions", "revision_id"),
+            "readiness": ("fmea_revision_readiness_reports", "readiness_id"),
+            "approval_submission": ("fmea_approval_submissions", "submission_id"),
+            "approval": ("fmea_approval_decisions", "approval_id"),
+            "approval_withdrawal": ("fmea_approval_withdrawals", "withdrawal_id"),
+            "publication": ("fmea_publications", "publication_id"),
+            "publication_withdrawal": ("fmea_publication_withdrawals", "withdrawal_id"),
+            "supersession": ("fmea_supersessions", "supersession_id"),
+        }[kind]
+
+    @classmethod
+    def _insert_event_binding(cls, connection: sqlite3.Connection, meta: _PreparedMeta, result: Any) -> None:
+        connection.execute(
+            "INSERT INTO fmea_governance_event_bindings "
+            "(workspace_id,resource_type,resource_id,audit_event_id,outbox_event_id) VALUES (?,?,?,?,?)",
+            (
+                meta.workspace_id,
+                meta.kind,
+                meta.resource_id,
+                result.audit_event_id,
+                result.outbox_event_id,
+            ),
+        )
+
+    @classmethod
+    def _verify_event_binding(
+        cls,
+        connection: sqlite3.Connection,
+        kind: str,
+        workspace_id: str,
+        resource_id: str,
+        audit_event_id: str,
+        outbox_event_id: str,
+    ) -> None:
+        binding = connection.execute(
+            "SELECT audit_event_id,outbox_event_id FROM fmea_governance_event_bindings "
+            "WHERE workspace_id=? AND resource_type=? AND resource_id=?",
+            (workspace_id, kind, resource_id),
+        ).fetchone()
+        if binding is None or (
+            binding["audit_event_id"] != audit_event_id or binding["outbox_event_id"] != outbox_event_id
+        ):
+            raise ValueError("persisted governance authority event binding is invalid")
+        table, identifier = cls._authority_table(kind)
+        authority = connection.execute(
+            f"SELECT audit_event_id,outbox_event_id FROM {table} WHERE workspace_id=? AND {identifier}=?",
+            (workspace_id, resource_id),
+        ).fetchone()
+        if authority is None or (
+            authority["audit_event_id"] != audit_event_id or authority["outbox_event_id"] != outbox_event_id
+        ):
+            raise ValueError("persisted governance authority row is not bound to its result chain")
+
+    @classmethod
+    def _validate_authoritative_analysis(cls, connection: sqlite3.Connection, revision: FmeaRevision) -> None:
+        row = connection.execute("SELECT * FROM fmea_analyses WHERE analysis_id=?", (revision.analysis_id,)).fetchone()
+        if row is None:
+            _error("FMEA_VERSION_CONFLICT", "Authoritative analysis is missing.")
+        try:
+            analysis = SqliteFmeaRepository._decode_analysis_record(row)
+        except (TypeError, ValueError):
+            _error("FMEA_VERSION_CONFLICT", "Authoritative analysis payload is invalid.")
+        if (
+            row["workspace_id"] != revision.workspace_id
+            or analysis.analysis_id != revision.analysis_id
+            or analysis.record_version != revision.analysis_record_version
+            or str(row["analysis_hash"]).removeprefix("sha256:") != revision.analysis_hash.removeprefix("sha256:")
+        ):
+            _error("FMEA_VERSION_CONFLICT", "Authoritative analysis state is stale or cross-workspace.")
+
+    @classmethod
+    def _snapshot_from_connection(cls, connection: sqlite3.Connection, snapshot_id: str, workspace_id: str) -> Any:
+        from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
+
+        row = connection.execute(
+            "SELECT * FROM fmea_normalized_snapshots WHERE workspace_id=? AND snapshot_id=?",
+            (workspace_id, snapshot_id),
+        ).fetchone()
+        if row is None:
+            raise ValueError("persisted normalized snapshot is missing")
+        data = _strict_object(
+            row["snapshot_json"], "normalized snapshot", {field.name for field in fields(NormalizedFmeaSnapshot)}
+        )
+        try:
+            value = NormalizedFmeaSnapshot(
+                schema_version=cast(Any, data["schema_version"]),
+                snapshot_id=cast(str, data["snapshot_id"]),
+                workspace_id=cast(str, data["workspace_id"]),
+                analysis_id=cast(str, data["analysis_id"]),
+                revision_id=cast(str, data["revision_id"]),
+                revision_hash=cast(str, data["revision_hash"]),
+                publication_id=cast(str, data["publication_id"]),
+                manifest_id=cast(str, data["manifest_id"]),
+                rows=tuple(_mapping(item, "snapshot row") for item in _sequence(data["rows"], "snapshot rows")),
+                risk_records=tuple(
+                    _mapping(item, "snapshot risk") for item in _sequence(data["risk_records"], "snapshot risks")
+                ),
+                propagation=None
+                if data["propagation"] is None
+                else _mapping(data["propagation"], "snapshot propagation"),
+                evidence_summary=tuple(
+                    _mapping(item, "snapshot evidence")
+                    for item in _sequence(data["evidence_summary"], "snapshot evidence")
+                ),
+                decision_summary=tuple(
+                    _mapping(item, "snapshot decision")
+                    for item in _sequence(data["decision_summary"], "snapshot decisions")
+                ),
+                version_manifest=_mapping(data["version_manifest"], "snapshot version manifest"),
+                unresolved_items=tuple(
+                    _mapping(item, "snapshot unresolved")
+                    for item in _sequence(data["unresolved_items"], "snapshot unresolved")
+                ),
+                audit_summary=_mapping(data["audit_summary"], "snapshot audit"),
+                row_count=cast(int, data["row_count"]),
+                snapshot_hash=cast(str, data["snapshot_hash"]),
+                created_at=cast(str, data["created_at"]),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("persisted normalized snapshot is invalid") from exc
+        if (
+            value.workspace_id != workspace_id
+            or value.snapshot_id != row["snapshot_id"]
+            or value.publication_id != row["publication_id"]
+            or value.manifest_id != row["manifest_id"]
+            or value.revision_id != row["revision_id"]
+            or value.analysis_id != row["analysis_id"]
+            or value.revision_hash != row["revision_hash"]
+            or value.snapshot_hash != row["snapshot_hash"]
+            or row["canonical_json_hash"] != _json_hash(row["snapshot_json"])
+            or _object_json(value)[0] != row["snapshot_json"]
+        ):
+            raise ValueError("persisted normalized snapshot identity or hash is invalid")
+        return value
+
+    @classmethod
+    def _readiness_from_connection(
+        cls, connection: sqlite3.Connection, readiness_id: str, workspace_id: str
+    ) -> ReadinessReportRecord:
+        row = connection.execute(
+            "SELECT * FROM fmea_revision_readiness_reports WHERE workspace_id=? AND readiness_id=?",
+            (workspace_id, readiness_id),
+        ).fetchone()
+        if row is None:
+            raise ValueError("persisted readiness report is missing")
+        report = _decode_readiness(row["report_json"])
+        source_json = row["source_hashes_json"]
+        if source_json is None:
+            raise ValueError("persisted readiness source hashes are missing")
+        source_hashes = _decode_source_hashes(source_json)
+        blocking_codes_json = canonical_json(report.blocking_codes)
+        record = ReadinessReportRecord(
+            readiness_id=readiness_id,
+            report=report,
+            source_hashes=source_hashes,
+            report_hash=cast(str, row["report_hash"]),
+            canonical_json_hash=cast(str, row["canonical_json_hash"]),
+            created_at=cast(str, row["created_at"]),
+        )
+        if (
+            row["workspace_id"] != workspace_id
+            or row["revision_id"] != report.revision_id
+            or row["revision_hash"] != report.revision_hash
+            or row["target_record_version"] != report.target_record_version
+            or bool(row["ready"]) is not report.ready
+            or row["blocking_codes_json"] != blocking_codes_json
+            or row["report_hash"] != canonical_hash(report, prefixed=True)
+            or row["canonical_json_hash"] != record.canonical_json_hash
+            or row["report_json"] != _object_json(report)[0]
+            or row["idempotency_scope"] is None
+            or row["payload_hash"] is None
+            or row["audit_event_id"] is None
+            or row["outbox_event_id"] is None
+        ):
+            raise ValueError("persisted readiness report identity or hash is invalid")
+        return record
+
+    @classmethod
+    def _eligibility_from_connection(
+        cls, connection: sqlite3.Connection, publication_id: str, workspace_id: str
+    ) -> ExportEligibilityRecord:
+        row = connection.execute(
+            "SELECT * FROM fmea_export_eligibility WHERE workspace_id=? AND publication_id=?",
+            (workspace_id, publication_id),
+        ).fetchone()
+        if row is None:
+            raise ValueError("persisted export eligibility is missing")
+        value = _decode_export_eligibility(row["eligibility_json"])
+        source_json = row["source_hashes_json"]
+        if source_json is None or _decode_source_hashes(source_json) != value.source_hashes:
+            raise ValueError("persisted export eligibility source hashes are invalid")
+        if (
+            value.workspace_id != workspace_id
+            or value.publication_id != publication_id
+            or value.manifest_id != row["manifest_id"]
+            or value.eligible is not bool(row["eligible"])
+            or value.eligibility_hash != row["eligibility_hash"]
+            or row["canonical_json_hash"] != _object_json(value)[1]
+        ):
+            raise ValueError("persisted export eligibility identity or hash is invalid")
+        return value
+
     @classmethod
     def _revision_from_connection(
         cls, connection: sqlite3.Connection, revision_id: str, workspace_id: str
@@ -845,10 +1233,13 @@ class SqliteGovernanceRepository:
         if (
             value.workspace_id != workspace_id
             or value.revision_id != revision_id
+            or value.analysis_id != row["analysis_id"]
+            or value.parent_revision_id != row["parent_revision_id"]
+            or value.parent_revision_hash != row["parent_revision_hash"]
             or value.revision_hash != row["revision_hash"]
             or row["canonical_json_hash"] != _json_hash(payload)
             or value.analysis_record_version != row["analysis_record_version"]
-            or row["record_version"] < 1
+            or row["record_version"] != 1
         ):
             raise ValueError("persisted revision identity or hash is invalid")
         return value
@@ -868,7 +1259,11 @@ class SqliteGovernanceRepository:
         if (
             value.workspace_id != workspace_id
             or value.submission_id != submission_id
+            or value.revision_id != row["revision_id"]
             or value.revision_hash != row["revision_hash"]
+            or value.status.value != row["status"]
+            or value.submitter_actor_id != row["submitter_actor_id"]
+            or value.record_version != row["record_version"]
             or row["canonical_json_hash"] != _json_hash(payload)
         ):
             raise ValueError("persisted approval submission identity or hash is invalid")
@@ -887,7 +1282,13 @@ class SqliteGovernanceRepository:
         value = _decode_approval(payload)
         if (
             value.approval_id != approval_id
+            or value.submission_id != row["submission_id"]
+            or value.revision_id != row["revision_id"]
             or value.revision_hash != row["revision_hash"]
+            or value.status.value != row["status"]
+            or value.approver_actor_id != row["approver_actor_id"]
+            or value.reason != row["reason"]
+            or value.record_version != row["record_version"]
             or row["canonical_json_hash"] != _json_hash(payload)
         ):
             raise ValueError("persisted approval decision identity or hash is invalid")
@@ -907,7 +1308,12 @@ class SqliteGovernanceRepository:
         value = _decode_manifest(payload)
         if (
             value.manifest_id != manifest_id
+            or value.revision_id != row["revision_id"]
             or value.revision_hash != row["revision_hash"]
+            or value.approval_id != row["approval_id"]
+            or value.snapshot_id != row["snapshot_id"]
+            or value.snapshot_hash != row["snapshot_hash"]
+            or value.manifest_hash != row["manifest_hash"]
             or row["canonical_json_hash"] != _json_hash(payload)
         ):
             raise ValueError("persisted publication manifest identity or hash is invalid")
@@ -930,18 +1336,30 @@ class SqliteGovernanceRepository:
             or value.revision_hash != row["revision_hash"]
             or value.manifest_hash != row["manifest_hash"]
             or value.snapshot_hash != row["snapshot_hash"]
+            or value.analysis_id != row["analysis_id"]
+            or value.revision_id != row["revision_id"]
+            or value.approval_id != row["approval_id"]
+            or value.manifest_id != row["manifest_id"]
+            or value.snapshot_id != row["snapshot_id"]
+            or value.record_version != row["record_version"]
             or row["canonical_json_hash"] != _json_hash(payload)
         ):
             raise ValueError("persisted publication identity or hash is invalid")
         return value
 
     @classmethod
-    def _insert_revision_row(cls, connection: sqlite3.Connection, revision: FmeaRevision) -> None:
+    def _insert_revision_row(
+        cls,
+        connection: sqlite3.Connection,
+        revision: FmeaRevision,
+        audit_event_id: str | None = None,
+        outbox_event_id: str | None = None,
+    ) -> None:
         payload, payload_hash = _object_json(revision)
         connection.execute(
             "INSERT INTO fmea_revisions "
-            "(workspace_id,revision_id,analysis_id,analysis_record_version,parent_revision_id,parent_revision_hash,revision_hash,revision_json,record_version,canonical_json_hash,created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "(workspace_id,revision_id,analysis_id,analysis_record_version,parent_revision_id,parent_revision_hash,revision_hash,revision_json,record_version,canonical_json_hash,audit_event_id,outbox_event_id,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 revision.workspace_id,
                 revision.revision_id,
@@ -953,14 +1371,23 @@ class SqliteGovernanceRepository:
                 payload,
                 1,
                 payload_hash,
+                audit_event_id,
+                outbox_event_id,
                 revision.created_at,
             ),
         )
 
     @classmethod
-    def _ensure_revision(cls, connection: sqlite3.Connection, revision: FmeaRevision) -> None:
+    def _ensure_revision(
+        cls,
+        connection: sqlite3.Connection,
+        revision: FmeaRevision,
+        audit_event_id: str | None = None,
+        outbox_event_id: str | None = None,
+    ) -> bool:
         row = connection.execute(
-            "SELECT revision_json FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            "SELECT revision_json,audit_event_id,outbox_event_id FROM fmea_revisions "
+            "WHERE workspace_id=? AND revision_id=?",
             (revision.workspace_id, revision.revision_id),
         ).fetchone()
         if row is None:
@@ -968,10 +1395,15 @@ class SqliteGovernanceRepository:
                 parent = cls._revision_from_connection(connection, revision.parent_revision_id, revision.workspace_id)
                 if parent.revision_hash != revision.parent_revision_hash:
                     _error("FMEA_REVIEW_REQUEST_INVALID", "Parent revision binding is invalid.")
-            cls._insert_revision_row(connection, revision)
-            return
-        if _decode_revision(row["revision_json"]) != revision:
+            cls._insert_revision_row(connection, revision, audit_event_id, outbox_event_id)
+            return True
+        if (
+            _decode_revision(row["revision_json"]) != revision
+            or (audit_event_id is not None and row["audit_event_id"] != audit_event_id)
+            or (outbox_event_id is not None and row["outbox_event_id"] != outbox_event_id)
+        ):
             _error("FMEA_IDEMPOTENCY_CONFLICT", "Revision identity is already bound to a different payload.")
+        return False
 
     @classmethod
     def _insert_submission_row(
@@ -1092,8 +1524,14 @@ class SqliteGovernanceRepository:
         )
 
     @classmethod
-    def _persist_publication_dependencies(cls, connection: sqlite3.Connection, prepared: PreparedPublication) -> None:
-        cls._ensure_revision(connection, prepared.revision)
+    def _persist_publication_dependencies(
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedPublication,
+        fail: Callable[[str], None],
+    ) -> None:
+        if cls._ensure_revision(connection, prepared.revision):
+            fail("publication.revision")
         submission_row = connection.execute(
             "SELECT * FROM fmea_approval_submissions WHERE workspace_id=? AND submission_id=?",
             (prepared.scope.workspace_id, prepared.submission.submission_id),
@@ -1135,6 +1573,16 @@ class SqliteGovernanceRepository:
                 connection, prepared.submission, payload_hash, scope.scope_key, audit.event_id, outbox.event_id
             )
             cls._insert_outbox(connection, outbox, scope, dependency_meta, "approval.submitted")
+            cls._insert_event_binding(
+                connection,
+                dependency_meta,
+                ApprovalSubmissionResult(
+                    prepared.submission.submission_id,
+                    prepared.submission.record_version,
+                    audit.event_id,
+                    outbox.event_id,
+                ),
+            )
             cls._complete_idempotency(
                 connection,
                 scope,
@@ -1214,12 +1662,20 @@ class SqliteGovernanceRepository:
                 audit.event_id,
                 outbox.event_id,
             )
+            fail("publication.decision")
             cls._insert_outbox(
                 connection,
                 outbox,
                 scope,
                 dependency_meta,
                 "approval.approved" if prepared.approval.status is ApprovalStatus.APPROVED else "approval.rejected",
+            )
+            cls._insert_event_binding(
+                connection,
+                dependency_meta,
+                ApprovalResult(
+                    prepared.approval.approval_id, prepared.approval.record_version, audit.event_id, outbox.event_id
+                ),
             )
             cls._complete_idempotency(
                 connection,
@@ -1235,12 +1691,24 @@ class SqliteGovernanceRepository:
             _error("FMEA_IDEMPOTENCY_CONFLICT", "Approval decision identity is already bound to a different payload.")
 
     @classmethod
-    def _write_revision(cls, connection: sqlite3.Connection, prepared: PreparedRevision, meta: _PreparedMeta) -> None:
-        cls._ensure_revision(connection, prepared.revision)
+    def _write_revision(
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedRevision,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
+    ) -> None:
+        cls._validate_authoritative_analysis(connection, prepared.revision)
+        cls._ensure_revision(connection, prepared.revision, prepared.audit.event_id, prepared.outbox.event_id)
+        fail("revision.record")
 
     @classmethod
     def _write_submission(
-        cls, connection: sqlite3.Connection, prepared: PreparedApprovalSubmission, meta: _PreparedMeta
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedApprovalSubmission,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
     ) -> None:
         revision = cls._revision_from_connection(connection, prepared.submission.revision_id, meta.workspace_id)
         record_version = int(
@@ -1262,9 +1730,16 @@ class SqliteGovernanceRepository:
             prepared.audit.event_id,
             prepared.outbox.event_id,
         )
+        fail("approval.submission")
 
     @classmethod
-    def _write_approval(cls, connection: sqlite3.Connection, prepared: PreparedApproval, meta: _PreparedMeta) -> None:
+    def _write_approval(
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedApproval,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
+    ) -> None:
         submission = cls._submission_from_connection(connection, prepared.submission.submission_id, meta.workspace_id)
         if submission != prepared.submission:
             _error("FMEA_VERSION_CONFLICT", "Approval submission binding is stale.")
@@ -1280,10 +1755,15 @@ class SqliteGovernanceRepository:
             prepared.audit.event_id,
             prepared.outbox.event_id,
         )
+        fail("approval.decision")
 
     @classmethod
     def _write_approval_withdrawal(
-        cls, connection: sqlite3.Connection, prepared: PreparedApprovalWithdrawal, meta: _PreparedMeta
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedApprovalWithdrawal,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
     ) -> None:
         approval = cls._approval_from_connection(connection, prepared.approval.approval_id, meta.workspace_id)
         if approval != prepared.approval or approval.status is not ApprovalStatus.APPROVED:
@@ -1308,6 +1788,7 @@ class SqliteGovernanceRepository:
                 prepared.withdrawal.created_at,
             ),
         )
+        fail("approval.withdrawal")
 
     @classmethod
     def _insert_manifest(cls, connection: sqlite3.Connection, manifest: PublicationManifest, workspace_id: str) -> None:
@@ -1334,10 +1815,26 @@ class SqliteGovernanceRepository:
 
     @classmethod
     def _write_publication(
-        cls, connection: sqlite3.Connection, prepared: PreparedPublication, meta: _PreparedMeta
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedPublication,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
     ) -> None:
-        cls._persist_publication_dependencies(connection, prepared)
+        cls._persist_publication_dependencies(connection, prepared, fail)
         validate_approval_binding(prepared.approval, prepared.revision)
+        persisted_revision = cls._revision_from_connection(connection, prepared.revision.revision_id, meta.workspace_id)
+        persisted_submission = cls._submission_from_connection(
+            connection, prepared.submission.submission_id, meta.workspace_id
+        )
+        persisted_approval = cls._approval_from_connection(connection, prepared.approval.approval_id, meta.workspace_id)
+        if (
+            persisted_revision != prepared.revision
+            or persisted_submission != prepared.submission
+            or persisted_approval != prepared.approval
+            or persisted_approval.status is not ApprovalStatus.APPROVED
+        ):
+            _error("FMEA_VERSION_CONFLICT", "Publication governance dependency is stale.")
         revision_row = connection.execute(
             "SELECT revision_hash,record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
             (meta.workspace_id, prepared.revision.revision_id),
@@ -1348,12 +1845,56 @@ class SqliteGovernanceRepository:
             or revision_row["record_version"] != prepared.revision_record_version
         ):
             _error("FMEA_VERSION_CONFLICT", "Publication revision binding is stale.")
-        cls._manifest_from_connection(
-            connection, prepared.manifest.manifest_id, meta.workspace_id
-        ) if connection.execute(
-            "SELECT 1 FROM fmea_publication_manifests WHERE workspace_id=? AND manifest_id=?",
+        manifest_row = connection.execute(
+            "SELECT * FROM fmea_publication_manifests WHERE workspace_id=? AND manifest_id=?",
             (meta.workspace_id, prepared.manifest.manifest_id),
-        ).fetchone() is not None else cls._insert_manifest(connection, prepared.manifest, meta.workspace_id)
+        ).fetchone()
+        if manifest_row is None:
+            cls._insert_manifest(connection, prepared.manifest, meta.workspace_id)
+            persisted_manifest = prepared.manifest
+            fail("publication.manifest")
+        else:
+            persisted_manifest = cls._manifest_from_connection(
+                connection, prepared.manifest.manifest_id, meta.workspace_id
+            )
+            if persisted_manifest != prepared.manifest:
+                _error("FMEA_IDEMPOTENCY_CONFLICT", "Publication manifest identity is already bound differently.")
+        if (
+            persisted_manifest.revision_id != persisted_revision.revision_id
+            or persisted_manifest.revision_hash != persisted_revision.revision_hash
+            or persisted_manifest.approval_id != persisted_approval.approval_id
+            or persisted_manifest.snapshot_id != prepared.snapshot.snapshot_id
+            or persisted_manifest.snapshot_hash != prepared.snapshot.snapshot_hash
+            or prepared.publication.revision_id != persisted_revision.revision_id
+            or prepared.publication.revision_hash != persisted_revision.revision_hash
+            or prepared.publication.analysis_id != persisted_revision.analysis_id
+            or prepared.publication.approval_id != persisted_approval.approval_id
+            or prepared.publication.manifest_id != persisted_manifest.manifest_id
+            or prepared.publication.manifest_hash != persisted_manifest.manifest_hash
+            or prepared.publication.snapshot_id != persisted_manifest.snapshot_id
+            or prepared.publication.snapshot_hash != persisted_manifest.snapshot_hash
+            or prepared.snapshot.revision_id != persisted_revision.revision_id
+            or prepared.snapshot.revision_hash != persisted_revision.revision_hash
+            or prepared.snapshot.analysis_id != persisted_revision.analysis_id
+            or prepared.snapshot.manifest_id != persisted_manifest.manifest_id
+            or prepared.snapshot.publication_id != prepared.publication.publication_id
+        ):
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Publication manifest lineage binding is invalid.")
+        snapshot_row = connection.execute(
+            "SELECT * FROM fmea_normalized_snapshots WHERE workspace_id=? AND snapshot_id=?",
+            (meta.workspace_id, prepared.snapshot.snapshot_id),
+        ).fetchone()
+        if snapshot_row is not None:
+            snapshot_payload, snapshot_json_hash = _object_json(prepared.snapshot)
+            if (
+                snapshot_row["snapshot_json"] != snapshot_payload
+                or snapshot_row["canonical_json_hash"] != snapshot_json_hash
+                or snapshot_row["snapshot_hash"] != prepared.snapshot.snapshot_hash
+                or snapshot_row["publication_id"] != prepared.publication.publication_id
+                or snapshot_row["manifest_id"] != persisted_manifest.manifest_id
+                or snapshot_row["revision_id"] != persisted_revision.revision_id
+            ):
+                _error("FMEA_IDEMPOTENCY_CONFLICT", "Normalized snapshot identity is already bound differently.")
         snapshot_payload, snapshot_json_hash = _object_json(prepared.snapshot)
         connection.execute(
             "INSERT INTO fmea_normalized_snapshots (workspace_id,snapshot_id,publication_id,manifest_id,revision_id,revision_hash,analysis_id,snapshot_hash,snapshot_json,canonical_json_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -1371,9 +1912,10 @@ class SqliteGovernanceRepository:
                 prepared.snapshot.created_at,
             ),
         )
+        fail("publication.snapshot")
         publication_payload, publication_json_hash = _object_json(prepared.publication)
         connection.execute(
-            "INSERT INTO fmea_publications (workspace_id,publication_id,analysis_id,revision_id,revision_hash,approval_id,manifest_id,manifest_hash,snapshot_id,snapshot_hash,audit_chain_head,publisher_actor_id,record_version,publication_json,canonical_json_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO fmea_publications (workspace_id,publication_id,analysis_id,revision_id,revision_hash,approval_id,manifest_id,manifest_hash,snapshot_id,snapshot_hash,audit_chain_head,publisher_actor_id,record_version,publication_json,canonical_json_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 meta.workspace_id,
                 prepared.publication.publication_id,
@@ -1390,32 +1932,37 @@ class SqliteGovernanceRepository:
                 prepared.publication.record_version,
                 publication_payload,
                 publication_json_hash,
+                prepared.audit.event_id,
+                prepared.outbox.event_id,
                 prepared.publication.created_at,
             ),
         )
-        eligibility = {
-            "eligible": prepared.manifest.export_eligible,
-            "manifest_id": prepared.manifest.manifest_id,
-            "publication_id": prepared.publication.publication_id,
-        }
-        eligibility_json = canonical_json(eligibility)
+        fail("publication.record")
+        eligibility_json, eligibility_json_hash = _object_json(prepared.export_eligibility)
+        source_hashes_json = _source_hashes_json(prepared.export_eligibility.source_hashes)
         connection.execute(
-            "INSERT INTO fmea_export_eligibility (workspace_id,eligibility_id,publication_id,manifest_id,eligible,eligibility_hash,eligibility_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO fmea_export_eligibility (workspace_id,eligibility_id,publication_id,manifest_id,eligible,eligibility_hash,eligibility_json,source_hashes_json,canonical_json_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (
                 meta.workspace_id,
-                f"eligibility:{prepared.publication.publication_id}",
+                prepared.export_eligibility.eligibility_id,
                 prepared.publication.publication_id,
                 prepared.manifest.manifest_id,
                 int(prepared.manifest.export_eligible),
-                _json_hash(eligibility_json),
+                prepared.export_eligibility.eligibility_hash,
                 eligibility_json,
+                source_hashes_json,
+                eligibility_json_hash,
                 prepared.publication.created_at,
             ),
         )
 
     @classmethod
     def _write_publication_withdrawal(
-        cls, connection: sqlite3.Connection, prepared: PreparedPublicationWithdrawal, meta: _PreparedMeta
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedPublicationWithdrawal,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
     ) -> None:
         publication = cls._publication_from_connection(
             connection, prepared.publication.publication_id, meta.workspace_id
@@ -1444,6 +1991,7 @@ class SqliteGovernanceRepository:
                 prepared.withdrawal.created_at,
             ),
         )
+        fail("publication.withdrawal")
 
     @classmethod
     def _would_cycle(cls, connection: sqlite3.Connection, workspace_id: str, old_id: str, new_id: str) -> bool:
@@ -1467,7 +2015,11 @@ class SqliteGovernanceRepository:
 
     @classmethod
     def _write_supersession(
-        cls, connection: sqlite3.Connection, prepared: PreparedSupersession, meta: _PreparedMeta
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedSupersession,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
     ) -> None:
         old_revision = cls._revision_from_connection(connection, prepared.old_revision.revision_id, meta.workspace_id)
         replacement_revision = cls._revision_from_connection(
@@ -1517,14 +2069,88 @@ class SqliteGovernanceRepository:
                 prepared.supersession.created_at,
             ),
         )
+        fail("supersession.record")
 
     @classmethod
-    def _writer(cls, connection: sqlite3.Connection, prepared: Any, meta: _PreparedMeta) -> object:
+    def _write_readiness(
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedReadinessReport,
+        meta: _PreparedMeta,
+        fail: Callable[[str], None],
+    ) -> ReadinessReportRecord:
+        cls._validate_authoritative_analysis(connection, prepared.revision)
+        persisted_revision = cls._revision_from_connection(connection, prepared.revision.revision_id, meta.workspace_id)
+        revision_row = connection.execute(
+            "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            (meta.workspace_id, prepared.revision.revision_id),
+        ).fetchone()
+        if (
+            persisted_revision != prepared.revision
+            or revision_row is None
+            or revision_row["record_version"] != prepared.revision_record_version
+        ):
+            _error("FMEA_VERSION_CONFLICT", "Readiness revision binding is stale.")
+        source_hashes = dict(prepared.source_hashes)
+        if (
+            source_hashes.get("analysis") != prepared.revision.analysis_hash
+            or source_hashes.get("revision") != prepared.revision.revision_hash
+        ):
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Readiness source hash binding is invalid.")
+        record = ReadinessReportRecord(
+            readiness_id=prepared.readiness_id,
+            report=prepared.report,
+            source_hashes=prepared.source_hashes,
+            report_hash=canonical_hash(prepared.report, prefixed=True),
+            canonical_json_hash=canonical_hash(
+                {
+                    "readiness_id": prepared.readiness_id,
+                    "report": prepared.report,
+                    "source_hashes": prepared.source_hashes,
+                },
+                prefixed=True,
+            ),
+            created_at=prepared.audit.occurred_at_server,
+        )
+        report_json, _ = _object_json(record.report)
+        connection.execute(
+            "INSERT INTO fmea_revision_readiness_reports "
+            "(workspace_id,readiness_id,revision_id,revision_hash,target_record_version,ready,blocking_codes_json,report_hash,report_json,created_at,source_hashes_json,canonical_json_hash,idempotency_scope,payload_hash,audit_event_id,outbox_event_id) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                meta.workspace_id,
+                record.readiness_id,
+                prepared.revision.revision_id,
+                prepared.revision.revision_hash,
+                prepared.report.target_record_version,
+                int(prepared.report.ready),
+                canonical_json(prepared.report.blocking_codes),
+                record.report_hash,
+                report_json,
+                record.created_at,
+                _source_hashes_json(record.source_hashes),
+                record.canonical_json_hash,
+                prepared.scope.scope_key,
+                prepared.payload_hash,
+                prepared.audit.event_id,
+                prepared.outbox.event_id,
+            ),
+        )
+        fail("revision.readiness")
+        return record
+
+    @classmethod
+    def _writer(
+        cls, connection: sqlite3.Connection, prepared: Any, meta: _PreparedMeta, fail: Callable[[str], None]
+    ) -> object:
+        if meta.kind == "readiness":
+            cls._write_readiness(connection, prepared, meta, fail)
+            return ReadinessResult(prepared.readiness_id, 1, prepared.audit.event_id, prepared.outbox.event_id)
         if meta.kind == "revision":
-            cls._write_revision(connection, prepared, meta)
+            cls._write_revision(connection, prepared, meta, fail)
             return RevisionResult(prepared.revision.revision_id, 1, prepared.audit.event_id, prepared.outbox.event_id)
         if meta.kind == "approval_submission":
-            cls._write_submission(connection, prepared, meta)
+            cls._write_submission(connection, prepared, meta, fail)
             return __import__(
                 "fmea_application.governance_contracts", fromlist=["ApprovalSubmissionResult"]
             ).ApprovalSubmissionResult(
@@ -1534,7 +2160,7 @@ class SqliteGovernanceRepository:
                 prepared.outbox.event_id,
             )
         if meta.kind == "approval":
-            cls._write_approval(connection, prepared, meta)
+            cls._write_approval(connection, prepared, meta, fail)
             return __import__("fmea_application.governance_contracts", fromlist=["ApprovalResult"]).ApprovalResult(
                 prepared.decision.approval_id,
                 prepared.decision.record_version,
@@ -1542,7 +2168,7 @@ class SqliteGovernanceRepository:
                 prepared.outbox.event_id,
             )
         if meta.kind == "approval_withdrawal":
-            cls._write_approval_withdrawal(connection, prepared, meta)
+            cls._write_approval_withdrawal(connection, prepared, meta, fail)
             return ApprovalWithdrawalResult(
                 prepared.withdrawal.withdrawal_id,
                 prepared.withdrawal.approval_id,
@@ -1550,7 +2176,7 @@ class SqliteGovernanceRepository:
                 prepared.outbox.event_id,
             )
         if meta.kind == "publication":
-            cls._write_publication(connection, prepared, meta)
+            cls._write_publication(connection, prepared, meta, fail)
             return PublicationResult(
                 prepared.publication.publication_id,
                 prepared.manifest.manifest_id,
@@ -1560,14 +2186,14 @@ class SqliteGovernanceRepository:
                 prepared.outbox.event_id,
             )
         if meta.kind == "publication_withdrawal":
-            cls._write_publication_withdrawal(connection, prepared, meta)
+            cls._write_publication_withdrawal(connection, prepared, meta, fail)
             return PublicationWithdrawalResult(
                 prepared.withdrawal.withdrawal_id,
                 prepared.withdrawal.publication_id,
                 prepared.audit.event_id,
                 prepared.outbox.event_id,
             )
-        cls._write_supersession(connection, prepared, meta)
+        cls._write_supersession(connection, prepared, meta, fail)
         return SupersessionResult(
             prepared.supersession.supersession_id,
             prepared.supersession.old_publication_id,
@@ -1590,25 +2216,9 @@ class SqliteGovernanceRepository:
             self._fail("idempotency.reserve")
             self._insert_audit(connection, value.audit, value.scope, value.payload_hash, meta)
             self._fail("audit")
-            result = self._writer(connection, value, meta)
-            for step in {
-                "revision": ("revision.record",),
-                "approval_submission": ("approval.submission",),
-                "approval": ("approval.decision",),
-                "approval_withdrawal": ("approval.withdrawal",),
-                "publication": (
-                    "publication.revision",
-                    "publication.decision",
-                    "publication.manifest",
-                    "publication.snapshot",
-                    "publication.record",
-                ),
-                "publication_withdrawal": ("publication.withdrawal",),
-                "supersession": ("supersession.record",),
-            }[kind]:
-                self._fail(step)
-            self._fail(f"{kind}.record")
+            result = self._writer(connection, value, meta, self._fail)
             self._insert_outbox(connection, value.outbox, value.scope, meta, self._lifecycle_event_type(kind, value))
+            self._insert_event_binding(connection, meta, result)
             self._fail("outbox")
             self._complete_idempotency(
                 connection, value.scope, value.payload_hash, meta.resource_id, result, value.audit.occurred_at_server
@@ -1647,6 +2257,8 @@ class SqliteGovernanceRepository:
             result = self._decode_result(kind, row["response_json"])
             if kind == "revision":
                 resource_id = result.revision_id
+            elif kind == "readiness":
+                resource_id = result.readiness_id
             elif kind == "approval_submission":
                 resource_id = result.submission_id
             elif kind == "approval":
@@ -1669,6 +2281,12 @@ class SqliteGovernanceRepository:
 
     def replay_revision(self, scope: IdempotencyScope, payload_hash: str) -> RevisionResult | None:
         return cast(RevisionResult | None, self._replay("revision", scope, payload_hash))
+
+    def commit_readiness(self, prepared: PreparedReadinessReport) -> ReadinessResult:
+        return cast(ReadinessResult, self._commit("readiness", prepared))
+
+    def replay_readiness(self, scope: IdempotencyScope, payload_hash: str) -> ReadinessResult | None:
+        return cast(ReadinessResult | None, self._replay("readiness", scope, payload_hash))
 
     def commit_approval_submission(self, prepared: PreparedApprovalSubmission):
         return self._commit("approval_submission", prepared)
@@ -1737,56 +2355,29 @@ class SqliteGovernanceRepository:
             ).fetchone()
             if row is None:
                 return None
-            from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
+            return self._snapshot_from_connection(connection, row["snapshot_id"], workspace_id)
+        finally:
+            connection.close()
 
-            data = _strict_object(
-                row["snapshot_json"], "normalized snapshot", {field.name for field in fields(NormalizedFmeaSnapshot)}
-            )
-            value = NormalizedFmeaSnapshot(
-                schema_version=cast(Any, data["schema_version"]),
-                snapshot_id=cast(str, data["snapshot_id"]),
-                workspace_id=cast(str, data["workspace_id"]),
-                analysis_id=cast(str, data["analysis_id"]),
-                revision_id=cast(str, data["revision_id"]),
-                revision_hash=cast(str, data["revision_hash"]),
-                publication_id=cast(str, data["publication_id"]),
-                manifest_id=cast(str, data["manifest_id"]),
-                rows=tuple(_mapping(item, "snapshot row") for item in _sequence(data["rows"], "snapshot rows")),
-                risk_records=tuple(
-                    _mapping(item, "snapshot risk") for item in _sequence(data["risk_records"], "snapshot risks")
-                ),
-                propagation=None
-                if data["propagation"] is None
-                else _mapping(data["propagation"], "snapshot propagation"),
-                evidence_summary=tuple(
-                    _mapping(item, "snapshot evidence")
-                    for item in _sequence(data["evidence_summary"], "snapshot evidence")
-                ),
-                decision_summary=tuple(
-                    _mapping(item, "snapshot decision")
-                    for item in _sequence(data["decision_summary"], "snapshot decisions")
-                ),
-                version_manifest=_mapping(data["version_manifest"], "snapshot version manifest"),
-                unresolved_items=tuple(
-                    _mapping(item, "snapshot unresolved")
-                    for item in _sequence(data["unresolved_items"], "snapshot unresolved")
-                ),
-                audit_summary=_mapping(data["audit_summary"], "snapshot audit"),
-                row_count=cast(int, data["row_count"]),
-                snapshot_hash=cast(str, data["snapshot_hash"]),
-                created_at=cast(str, data["created_at"]),
-            )
-            if (
-                value.workspace_id != workspace_id
-                or value.snapshot_id != row["snapshot_id"]
-                or value.publication_id != row["publication_id"]
-                or value.revision_hash != row["revision_hash"]
-                or value.snapshot_hash != row["snapshot_hash"]
-                or row["canonical_json_hash"] != _json_hash(row["snapshot_json"])
-                or _object_json(value)[0] != row["snapshot_json"]
-            ):
-                raise ValueError("persisted normalized snapshot is not canonical")
-            return value
+    def get_readiness(self, readiness_id: str, workspace_id: str) -> ReadinessReportRecord | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT readiness_id FROM fmea_revision_readiness_reports WHERE workspace_id=? AND readiness_id=?",
+                (_text(workspace_id, "workspace_id"), _text(readiness_id, "readiness_id")),
+            ).fetchone()
+            return None if row is None else self._readiness_from_connection(connection, readiness_id, workspace_id)
+        finally:
+            connection.close()
+
+    def get_export_eligibility(self, publication_id: str, workspace_id: str) -> ExportEligibilityRecord | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT publication_id FROM fmea_export_eligibility WHERE workspace_id=? AND publication_id=?",
+                (_text(workspace_id, "workspace_id"), _text(publication_id, "publication_id")),
+            ).fetchone()
+            return None if row is None else self._eligibility_from_connection(connection, publication_id, workspace_id)
         finally:
             connection.close()
 

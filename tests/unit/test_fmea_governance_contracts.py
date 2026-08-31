@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError, fields, replace
 
 import pytest
 from fmea_governance_fixtures import (
+    _export_eligibility,
     make_approval_decision,
     make_approval_submission,
     make_fmea_revision,
@@ -77,6 +78,12 @@ def _rebind_prepared_publication(
 ) -> PreparedPublication:
     submission_value = prepared.submission if submission is None else submission
     command_value = prepared.command if command is None else command
+    export_eligibility = _export_eligibility(
+        publication=publication,
+        manifest=prepared.manifest,
+        revision=prepared.revision,
+        snapshot=snapshot,
+    )
     payload = canonical_governance_payload(
         "publication.publish",
         command_value,
@@ -86,6 +93,7 @@ def _rebind_prepared_publication(
         manifest=prepared.manifest,
         publication=publication,
         snapshot=snapshot,
+        export_eligibility=export_eligibility,
     )
     payload_hash = governance_payload_hash(payload)
     audit_value = prepared.audit if audit is None else audit
@@ -94,13 +102,16 @@ def _rebind_prepared_publication(
         scope=prepared.scope,
         payload_hash=payload_hash,
         command=command_value,  # type: ignore[arg-type]
-        revision_record_version=prepared.revision_record_version if revision_record_version is None else revision_record_version,
+        revision_record_version=prepared.revision_record_version
+        if revision_record_version is None
+        else revision_record_version,
         revision=prepared.revision,
         approval=prepared.approval,
         submission=submission_value,  # type: ignore[arg-type]
         manifest=prepared.manifest,
         publication=publication,  # type: ignore[arg-type]
         snapshot=snapshot,  # type: ignore[arg-type]
+        export_eligibility=export_eligibility,
         audit=replace(audit_value, canonical_payload_hash=payload_hash),  # type: ignore[arg-type]
         outbox=replace(outbox_value, payload=payload, payload_hash=outbox_payload_hash(payload)),  # type: ignore[arg-type]
     )
@@ -292,9 +303,9 @@ def test_prepared_publication_rejects_cross_analysis_publication() -> None:
 
 def test_prepared_publication_rejects_cross_workspace_snapshot() -> None:
     prepared = prepared_publication()
-    mismatched_snapshot = __import__("fmea_governance_fixtures", fromlist=["make_normalized_snapshot"]).make_normalized_snapshot(
-        revision=make_fmea_revision(workspace_id="ws-2")
-    )
+    mismatched_snapshot = __import__(
+        "fmea_governance_fixtures", fromlist=["make_normalized_snapshot"]
+    ).make_normalized_snapshot(revision=make_fmea_revision(workspace_id="ws-2"))
     with pytest.raises(ValueError, match="publication snapshot workspace binding is invalid"):
         _rebind_prepared_publication(prepared, publication=prepared.publication, snapshot=mismatched_snapshot)
 

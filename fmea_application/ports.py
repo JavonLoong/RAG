@@ -34,16 +34,20 @@ from .assistance_contracts import (
 from .governance_contracts import (
     ApprovalResult,
     ApprovalSubmissionResult,
+    ExportEligibilityRecord,
     GovernanceHistoryQuery,
     PreparedApproval,
     PreparedApprovalSubmission,
     PreparedApprovalWithdrawal,
     PreparedPublication,
     PreparedPublicationWithdrawal,
+    PreparedReadinessReport,
     PreparedRevision,
     PreparedSupersession,
     PublicationResult,
     PublicationWithdrawalResult,
+    ReadinessReportRecord,
+    ReadinessResult,
     RevisionResult,
     SupersessionResult,
 )
@@ -555,6 +559,12 @@ class GovernanceRepository(Protocol):
 
     def get_revision(self, revision_id: str, workspace_id: str) -> FmeaRevision | None: ...
 
+    def replay_readiness(self, scope: IdempotencyScope, payload_hash: str) -> ReadinessResult | None: ...
+
+    def commit_readiness(self, prepared: PreparedReadinessReport) -> ReadinessResult: ...
+
+    def get_readiness(self, readiness_id: str, workspace_id: str) -> ReadinessReportRecord | None: ...
+
     def replay_approval_submission(
         self, scope: IdempotencyScope, payload_hash: str
     ) -> ApprovalSubmissionResult | None: ...
@@ -588,6 +598,8 @@ class GovernanceRepository(Protocol):
     def get_publication(self, publication_id: str, workspace_id: str) -> PublishedRevision | None: ...
 
     def get_snapshot(self, publication_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None: ...
+
+    def get_export_eligibility(self, publication_id: str, workspace_id: str) -> ExportEligibilityRecord | None: ...
 
     def list_approval_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
 

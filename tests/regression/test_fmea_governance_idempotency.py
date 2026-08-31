@@ -4,7 +4,12 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from fmea_governance_fixtures import _prepared_events, prepared_approval_submission, prepared_revision
+from fmea_governance_fixtures import (
+    _prepared_events,
+    prepared_approval_submission,
+    prepared_revision,
+    seed_authoritative_analysis,
+)
 
 from fmea_application.governance_contracts import (
     PreparedApprovalSubmission,
@@ -20,6 +25,7 @@ from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRep
 def repository(tmp_path: Path) -> SqliteGovernanceRepository:
     value = SqliteGovernanceRepository(tmp_path / "fmea.sqlite3")
     value.initialize()
+    seed_authoritative_analysis(value.database_path)
     return value
 
 

@@ -430,11 +430,13 @@ class SqliteFmeaRepository:
         try:
             connection.execute("BEGIN IMMEDIATE")
             existing_analysis = connection.execute(
-                "SELECT analysis_hash, analysis_json FROM fmea_analyses WHERE analysis_id = ?",
+                "SELECT workspace_id, analysis_hash, analysis_json FROM fmea_analyses WHERE analysis_id = ?",
                 (bundle.analysis.analysis_id,),
             ).fetchone()
             if existing_analysis is not None and (
-                existing_analysis["analysis_hash"] != analysis_hash or existing_analysis["analysis_json"] != analysis_json
+                existing_analysis["workspace_id"] != actor_workspace_id
+                or existing_analysis["analysis_hash"] != analysis_hash
+                or existing_analysis["analysis_json"] != analysis_json
             ):
                 self._conflict("analysis ID already contains a different canonical payload")
 
@@ -487,9 +489,16 @@ class SqliteFmeaRepository:
 
             if existing_analysis is None:
                 connection.execute(
-                    "INSERT INTO fmea_analyses(analysis_id, analysis_hash, analysis_json, created_at, updated_at) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (bundle.analysis.analysis_id, analysis_hash, analysis_json, created_at, created_at),
+                    "INSERT INTO fmea_analyses(analysis_id, workspace_id, analysis_hash, analysis_json, created_at, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        bundle.analysis.analysis_id,
+                        actor_workspace_id,
+                        analysis_hash,
+                        analysis_json,
+                        created_at,
+                        created_at,
+                    ),
                 )
             if existing_pack is None:
                 connection.execute(
@@ -505,7 +514,10 @@ class SqliteFmeaRepository:
                     ),
                 )
             for final_row, row_json, row_hash, source, source_json in values:
-                if connection.execute("SELECT 1 FROM fmea_rows WHERE row_id = ?", (final_row.row_id,)).fetchone() is None:
+                if (
+                    connection.execute("SELECT 1 FROM fmea_rows WHERE row_id = ?", (final_row.row_id,)).fetchone()
+                    is None
+                ):
                     connection.execute(
                         "INSERT INTO fmea_rows "
                         "(row_id, workspace_id, analysis_id, evidence_pack_id, review_status, publication_status, "
@@ -525,14 +537,24 @@ class SqliteFmeaRepository:
                             created_at,
                         ),
                     )
-                if connection.execute(
-                    "SELECT 1 FROM review_source_snapshots WHERE row_id = ?", (source.row_id,)
-                ).fetchone() is None:
+                if (
+                    connection.execute(
+                        "SELECT 1 FROM review_source_snapshots WHERE row_id = ?", (source.row_id,)
+                    ).fetchone()
+                    is None
+                ):
                     connection.execute(
                         "INSERT INTO review_source_snapshots "
                         "(row_id, workspace_id, source_record_version, source_hash, snapshot_json, created_at) "
                         "VALUES (?, ?, ?, ?, ?, ?)",
-                        (source.row_id, actor_workspace_id, source.source_record_version, source.source_hash, source_json, created_at),
+                        (
+                            source.row_id,
+                            actor_workspace_id,
+                            source.source_record_version,
+                            source.source_hash,
+                            source_json,
+                            created_at,
+                        ),
                     )
             connection.execute("COMMIT")
         except Exception:
@@ -555,7 +577,9 @@ class SqliteFmeaRepository:
     @staticmethod
     def _decode_analysis_record(row: sqlite3.Row) -> FmeaAnalysis:
         decoded = cast(FmeaAnalysis, _decode_fmea_json(row["analysis_json"], decode_analysis, "analysis"))
-        if decoded.analysis_id != row["analysis_id"] or row["analysis_hash"] != _json_hash(cast(str, row["analysis_json"])):
+        if decoded.analysis_id != row["analysis_id"] or row["analysis_hash"] != _json_hash(
+            cast(str, row["analysis_json"])
+        ):
             raise ValueError("persisted analysis hash or identity does not match its JSON")
         return decoded
 
@@ -641,22 +665,20 @@ class SqliteFmeaRepository:
 
     @staticmethod
     def _run_response_json(run: ReviewSuggestionRun) -> str:
-        return encode_review_json(
-            {
-                "run_id": run.run_id,
-                "row_id": run.row_id,
-                "source_record_version": run.source_record_version,
-                "status": run.status.value,
-                "suggestion_id": run.suggestion_id,
-                "error_code": run.error_code,
-                "retryable": run.retryable,
-                "request_id": run.request_id,
-                "trace_id": run.trace_id,
-                "created_at": run.created_at,
-                "started_at": run.started_at,
-                "finished_at": run.finished_at,
-            }
-        )
+        return encode_review_json({
+            "run_id": run.run_id,
+            "row_id": run.row_id,
+            "source_record_version": run.source_record_version,
+            "status": run.status.value,
+            "suggestion_id": run.suggestion_id,
+            "error_code": run.error_code,
+            "retryable": run.retryable,
+            "request_id": run.request_id,
+            "trace_id": run.trace_id,
+            "created_at": run.created_at,
+            "started_at": run.started_at,
+            "finished_at": run.finished_at,
+        })
 
     @staticmethod
     def _decode_run_response_json(payload: object) -> ReviewSuggestionRun:
@@ -935,7 +957,9 @@ class SqliteFmeaRepository:
                     raise ValueError("failure_mode edit value is invalid")
             elif not isinstance(edit.value, tuple) or not all(isinstance(item, str) for item in edit.value):
                 raise ValueError("review edit value is invalid")
-            if not isinstance(edit.claim_status, ClaimStatus) or not isinstance(edit.support_status, EvidenceSupportStatus):
+            if not isinstance(edit.claim_status, ClaimStatus) or not isinstance(
+                edit.support_status, EvidenceSupportStatus
+            ):
                 raise ValueError("review edit statuses are invalid")
             if edit.target_field not in field_evidence or edit.target_field not in field_support:
                 raise ValueError("review edit field is not present on the row")
@@ -1003,7 +1027,9 @@ class SqliteFmeaRepository:
         if audit.before_hash != self._row_json(previous)[1] or audit.after_hash != self._row_json(next_row)[1]:
             self._binding_error("review decision row hash binding is invalid")
         expected_changed_fields = tuple(sorted(edit.target_field for edit in decision.edits))
-        expected_evidence_ids = tuple(sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids}))
+        expected_evidence_ids = tuple(
+            sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids})
+        )
         expected_request_targets = tuple(sorted(item.target_field for item in decision.evidence_requests))
         if (
             audit.changed_fields != expected_changed_fields
@@ -1038,7 +1064,9 @@ class SqliteFmeaRepository:
             raise ValueError("persisted review decision action is invalid") from exc
         row_hash = _json_hash(encode_json(result.row))
         expected_changed_fields = tuple(sorted(edit.target_field for edit in decision.edits))
-        expected_evidence_ids = tuple(sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids}))
+        expected_evidence_ids = tuple(
+            sorted({evidence_id for edit in decision.edits for evidence_id in edit.evidence_ids})
+        )
         expected_request_targets = tuple(sorted(item.target_field for item in decision.evidence_requests))
         if (
             existing["payload_hash"] != payload_hash
@@ -1122,7 +1150,9 @@ class SqliteFmeaRepository:
         if existing["payload_hash"] != payload_hash:
             cls._conflict("idempotency key already has a different payload")
         if existing["state"] != "completed" or not isinstance(existing["response_json"], str):
-            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True)
+            raise ReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True
+            )
         try:
             result = _decode_decision_result(existing["response_json"])
             decision_row = connection.execute(
@@ -1148,7 +1178,9 @@ class SqliteFmeaRepository:
                 payload_hash=payload_hash,
             )
         except (AttributeError, TypeError, ValueError) as exc:
-            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True) from exc
+            raise ReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision replay is unavailable", retryable=True
+            ) from exc
         return result
 
     def replay_decision(self, scope: IdempotencyScope, payload_hash: str) -> ReviewDecisionResult | None:
@@ -1204,8 +1236,7 @@ class SqliteFmeaRepository:
                 raise ReviewError("FMEA_ROW_NOT_FOUND", "review row was not found")
             authoritative_pack = self._decode_pack_record(pack_record)
             source_record = connection.execute(
-                "SELECT snapshot_json FROM review_source_snapshots "
-                "WHERE row_id = ? AND workspace_id = ?",
+                "SELECT snapshot_json FROM review_source_snapshots WHERE row_id = ? AND workspace_id = ?",
                 (current_row.row_id, prepared.scope.workspace_id),
             ).fetchone()
             authoritative_source = (
@@ -1220,9 +1251,7 @@ class SqliteFmeaRepository:
                     resolved_profile=None
                     if authoritative_source is None
                     else authoritative_source.resolved_evidence_profile,
-                    evidence_types=None
-                    if authoritative_source is None
-                    else authoritative_source.evidence_types,
+                    evidence_types=None if authoritative_source is None else authoritative_source.evidence_types,
                     retrieval_incomplete=False
                     if authoritative_source is None
                     else authoritative_source.retrieval_incomplete,
@@ -1304,7 +1333,11 @@ class SqliteFmeaRepository:
                 ),
             )
             if completed.rowcount != 1:
-                raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review decision idempotency could not be completed", retryable=True)
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "review decision idempotency could not be completed",
+                    retryable=True,
+                )
             connection.execute("COMMIT")
             return result
         except Exception:
@@ -1358,7 +1391,9 @@ class SqliteFmeaRepository:
             if row["source_record_version"] is None:
                 raise ReviewError("FMEA_REVIEW_SOURCE_MISSING", "review source snapshot was not found")
             if row["analysis_id"] is None:
-                raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "review row analysis binding is unavailable", retryable=True)
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "review row analysis binding is unavailable", retryable=True
+                )
 
             workspace_active = connection.execute(
                 "SELECT COUNT(*) AS count FROM review_suggestion_runs "
@@ -1474,8 +1509,7 @@ class SqliteFmeaRepository:
                 if run.suggestion_id != suggestion.suggestion_id:
                     self._binding_error("persisted review run suggestion binding is invalid")
                 stored_row = connection.execute(
-                    "SELECT suggestion_json FROM review_suggestions "
-                    "WHERE run_id = ? AND workspace_id = ?",
+                    "SELECT suggestion_json FROM review_suggestions WHERE run_id = ? AND workspace_id = ?",
                     (run_id, workspace),
                 ).fetchone()
                 if stored_row is None:
@@ -1491,8 +1525,7 @@ class SqliteFmeaRepository:
                 self._transition_error("review run is not running")
             self._validate_complete_binding(run, run_row, workspace, suggestion, audit)
             row = connection.execute(
-                "SELECT record_version, workspace_id, analysis_id FROM fmea_rows "
-                "WHERE row_id = ? AND workspace_id = ?",
+                "SELECT record_version, workspace_id, analysis_id FROM fmea_rows WHERE row_id = ? AND workspace_id = ?",
                 (run.row_id, workspace),
             ).fetchone()
             if row is None:
@@ -1635,11 +1668,15 @@ class SqliteFmeaRepository:
         if limit < 1:
             raise ValueError("history page limit must be positive")
         workspace = self._workspace(workspace_id)
-        cursor_parameters = (None, None, None, None) if after is None else (
-            after[0],
-            after[0],
-            after[0],
-            after[1],
+        cursor_parameters = (
+            (None, None, None, None)
+            if after is None
+            else (
+                after[0],
+                after[0],
+                after[0],
+                after[1],
+            )
         )
         connection = self._connect()
         try:
@@ -1712,11 +1749,15 @@ class SqliteFmeaRepository:
         if limit < 1:
             raise ValueError("history page limit must be positive")
         workspace = self._workspace(workspace_id)
-        cursor_parameters = (None, None, None, None) if after is None else (
-            after[0],
-            after[0],
-            after[0],
-            after[1],
+        cursor_parameters = (
+            (None, None, None, None)
+            if after is None
+            else (
+                after[0],
+                after[0],
+                after[0],
+                after[1],
+            )
         )
         connection = self._connect()
         try:

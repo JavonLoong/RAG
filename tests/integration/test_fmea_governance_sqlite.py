@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
 from fmea_governance_fixtures import (
+    _export_eligibility,
     _prepared_events,
     make_approval_decision,
     make_approval_submission,
@@ -20,18 +23,24 @@ from fmea_governance_fixtures import (
     prepared_publication,
     prepared_revision,
     prepared_supersession,
+    seed_authoritative_analysis,
 )
 
+from core_domain.fmea.codec import encode_json
 from core_domain.fmea.governance import PublicationManifest
 from fmea_application.governance_contracts import (
     ApprovalCommand,
+    ExportEligibilityRecord,
     GovernanceHistoryQuery,
+    PersistReadinessCommand,
     PreparedApproval,
     PreparedApprovalSubmission,
     PreparedApprovalWithdrawal,
     PreparedPublication,
+    PreparedReadinessReport,
     PreparedSupersession,
     PublishCommand,
+    ReadinessReportRecord,
     SubmitApprovalCommand,
     SupersedePublicationCommand,
     WithdrawApprovalCommand,
@@ -47,6 +56,7 @@ from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRep
 def repository(tmp_path: Path) -> SqliteGovernanceRepository:
     value = SqliteGovernanceRepository(tmp_path / "fmea.sqlite3")
     value.initialize()
+    seed_authoritative_analysis(value.database_path)
     return value
 
 
@@ -156,6 +166,12 @@ def _prepared_publication_bundle(revision, publication_id: str, suffix: str, key
         snapshot_id=snapshot.snapshot_id,
         snapshot_hash=snapshot.snapshot_hash,
     )
+    export_eligibility = _export_eligibility(
+        publication=publication,
+        manifest=manifest,
+        revision=revision,
+        snapshot=snapshot,
+    )
     command = PublishCommand(
         revision.revision_id,
         revision.revision_hash,
@@ -180,6 +196,7 @@ def _prepared_publication_bundle(revision, publication_id: str, suffix: str, key
         manifest=manifest,
         publication=publication,
         snapshot=snapshot,
+        export_eligibility=export_eligibility,
     )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, dict(payload), publication.publication_id)
@@ -194,6 +211,172 @@ def _prepared_publication_bundle(revision, publication_id: str, suffix: str, key
         manifest,
         publication,
         snapshot,
+        audit,
+        outbox,
+        export_eligibility,
+    )
+
+
+def _prepared_publication_reusing_manifest_id() -> PreparedPublication:
+    revision = make_fmea_revision(revision_id="revision-collision")
+    base = _prepared_publication_bundle(
+        revision,
+        "publication-collision",
+        "collision",
+        "00000000-0000-4000-8000-000000000714",
+    )
+    snapshot = make_normalized_snapshot(
+        revision=revision,
+        publication_id=base.publication.publication_id,
+        manifest_id="manifest-1",
+    )
+    manifest = PublicationManifest(
+        "manifest-1",
+        revision.revision_id,
+        revision.revision_hash,
+        base.approval.approval_id,
+        snapshot.snapshot_id,
+        snapshot.snapshot_hash,
+        "b" * 64,
+        None,
+        False,
+        "b" * 64,
+        "2026-08-30T00:00:00Z",
+    )
+    publication = replace(
+        base.publication,
+        revision_id=revision.revision_id,
+        revision_hash=revision.revision_hash,
+        approval_id=base.approval.approval_id,
+        manifest_id=manifest.manifest_id,
+        manifest_hash=manifest.manifest_hash,
+        snapshot_id=snapshot.snapshot_id,
+        snapshot_hash=snapshot.snapshot_hash,
+    )
+    export_eligibility = _export_eligibility(
+        publication=publication,
+        manifest=manifest,
+        revision=revision,
+        snapshot=snapshot,
+    )
+    payload = canonical_governance_payload(
+        "publication.publish",
+        base.command,
+        revision=revision,
+        approval=base.approval,
+        submission=base.submission,
+        manifest=manifest,
+        publication=publication,
+        snapshot=snapshot,
+        export_eligibility=export_eligibility,
+    )
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(base.scope, payload_hash, dict(payload), publication.publication_id)
+    return PreparedPublication(
+        base.scope,
+        payload_hash,
+        base.command,
+        1,
+        revision,
+        base.approval,
+        base.submission,
+        manifest,
+        publication,
+        snapshot,
+        audit,
+        outbox,
+        export_eligibility,
+    )
+
+
+def _prepared_supersession_for_publications(old: PreparedPublication, replacement: PreparedPublication):
+    base = prepared_supersession()
+    link = make_supersession_record(
+        old_publication_id=old.publication.publication_id,
+        new_publication_id=replacement.publication.publication_id,
+    )
+    command = SupersedePublicationCommand(
+        old.publication.publication_id,
+        replacement.publication.publication_id,
+        old.publication.record_version,
+        replacement.publication.record_version,
+        link.reason,
+        base.command.idempotency_key,
+    )
+    scope = IdempotencyScope(
+        old.scope.workspace_id,
+        base.scope.actor_id,
+        base.scope.command,
+        f"/fmea/publications/{old.publication.publication_id}/supersession",
+        idempotency_key_hash(command.idempotency_key),
+    )
+    payload = canonical_governance_payload(
+        "publication.supersede",
+        command,
+        old=old.publication,
+        replacement=replacement.publication,
+        old_revision=old.revision,
+        replacement_revision=replacement.revision,
+        supersession=link,
+    )
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), link.supersession_id)
+    return type(base)(
+        scope,
+        payload_hash,
+        command,
+        old.publication,
+        replacement.publication,
+        old.revision,
+        replacement.revision,
+        link,
+        audit,
+        outbox,
+    )
+
+
+def _prepared_readiness() -> PreparedReadinessReport:
+    revision = prepared_revision()
+    report = __import__(
+        "fmea_governance_fixtures", fromlist=["make_blocked_readiness_report"]
+    ).make_blocked_readiness_report(
+        revision_hash=revision.revision.revision_hash,
+    )
+    command = PersistReadinessCommand(
+        revision.revision.revision_id,
+        revision.revision.revision_hash,
+        1,
+        "readiness-1",
+        "00000000-0000-4000-8000-000000000715",
+    )
+    scope = IdempotencyScope(
+        revision.scope.workspace_id,
+        revision.scope.actor_id,
+        "fmea.revision.readiness",
+        f"/fmea/revisions/{revision.revision.revision_id}/readiness",
+        idempotency_key_hash(command.idempotency_key),
+    )
+    source_hashes = (
+        ("analysis", revision.revision.analysis_hash),
+        ("revision", revision.revision.revision_hash),
+    )
+    payload = canonical_governance_payload(
+        "revision.readiness",
+        command,
+        report=report,
+        source_hashes=source_hashes,
+    )
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), command.readiness_id)
+    return PreparedReadinessReport(
+        scope,
+        payload_hash,
+        command,
+        1,
+        command.readiness_id,
+        revision.revision,
+        report,
+        source_hashes,
         audit,
         outbox,
     )
@@ -216,6 +399,363 @@ def test_publication_commits_manifest_snapshot_audit_and_outbox_atomically(
     assert result.manifest_id == prepared.manifest.manifest_id
     assert result.snapshot_id == prepared.snapshot.snapshot_id
     assert repository.replay_publication(prepared.scope, prepared.payload_hash) == replace(result, replayed=True)
+
+
+def test_publication_persists_typed_export_eligibility_and_replays_it(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    prepared = prepared_publication()
+
+    result = repository.commit_publication(prepared)
+
+    eligibility = repository.get_export_eligibility(result.publication_id, prepared.scope.workspace_id)
+    assert isinstance(eligibility, ExportEligibilityRecord)
+    assert eligibility.publication_id == result.publication_id
+    assert eligibility.manifest_id == prepared.manifest.manifest_id
+    assert eligibility.eligible is prepared.manifest.export_eligible
+    assert ("manifest", prepared.manifest.manifest_hash) in eligibility.source_hashes
+    assert repository.replay_publication(prepared.scope, prepared.payload_hash) == replace(result, replayed=True)
+
+
+def test_readiness_report_is_immutable_and_exactly_replayable(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    prepared = _prepared_readiness()
+
+    repository.commit_revision(prepared_revision())
+    result = repository.commit_readiness(prepared)
+
+    record = repository.get_readiness(prepared.readiness_id, prepared.scope.workspace_id)
+    assert isinstance(record, ReadinessReportRecord)
+    assert record.report == prepared.report
+    assert record.source_hashes == prepared.source_hashes
+    assert repository.replay_readiness(prepared.scope, prepared.payload_hash) == replace(result, replayed=True)
+    with (
+        pytest.raises(sqlite3.IntegrityError, match="immutable fmea_revision_readiness_reports"),
+        sqlite3.connect(repository.database_path) as connection,
+    ):
+        connection.execute(
+            "UPDATE fmea_revision_readiness_reports SET ready=1 WHERE workspace_id=? AND readiness_id=?",
+            (prepared.scope.workspace_id, prepared.readiness_id),
+        )
+    with (
+        pytest.raises(sqlite3.IntegrityError, match="immutable fmea_revision_readiness_reports"),
+        sqlite3.connect(repository.database_path) as connection,
+    ):
+        connection.execute(
+            "DELETE FROM fmea_revision_readiness_reports WHERE workspace_id=? AND readiness_id=?",
+            (prepared.scope.workspace_id, prepared.readiness_id),
+        )
+
+
+def test_publication_rejects_manifest_id_reuse_with_different_lineage(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    first = prepared_publication()
+    repository.commit_publication(first)
+    collision = _prepared_publication_reusing_manifest_id()
+
+    with pytest.raises((ReviewError, ValueError)):
+        repository.commit_publication(collision)
+
+    assert repository.get_publication(collision.publication.publication_id, collision.scope.workspace_id) is None
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_publication_manifests").fetchone() == (1,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_normalized_snapshots").fetchone() == (1,)
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    (
+        "authority_audit",
+        "authority_outbox",
+        "audit_scope",
+        "audit_hash",
+        "audit_payload",
+        "outbox_scope",
+        "outbox_hash",
+        "outbox_payload",
+        "eligibility",
+        "response_publication",
+        "response_manifest",
+        "response_snapshot",
+        "response_version",
+    ),
+)
+def test_publication_replay_rejects_tampered_authority_chain_and_response(  # noqa: C901
+    repository: SqliteGovernanceRepository,
+    tamper: str,
+) -> None:
+    prepared = prepared_publication()
+    result = repository.commit_publication(prepared)
+
+    with sqlite3.connect(repository.database_path) as connection:
+        if tamper in {"authority_audit", "authority_outbox"}:
+            connection.execute("DROP TRIGGER fmea_publications_no_update")
+            column = "audit_event_id" if tamper == "authority_audit" else "outbox_event_id"
+            connection.execute(
+                f"UPDATE fmea_publications SET {column}=? WHERE workspace_id=? AND publication_id=?",  # noqa: S608
+                (f"tampered-{column}", prepared.scope.workspace_id, result.publication_id),
+            )
+        elif tamper == "audit_scope":
+            connection.execute("DROP TRIGGER fmea_audit_events_no_update")
+            connection.execute(
+                "UPDATE fmea_audit_events SET idempotency_scope=? WHERE workspace_id=? AND event_id=?",
+                ("tampered-audit-scope", prepared.scope.workspace_id, result.audit_event_id),
+            )
+        elif tamper == "audit_hash":
+            connection.execute("DROP TRIGGER fmea_audit_events_no_update")
+            connection.execute(
+                "UPDATE fmea_audit_events SET canonical_payload_hash=? WHERE workspace_id=? AND event_id=?",
+                ("sha256:" + "b" * 64, prepared.scope.workspace_id, result.audit_event_id),
+            )
+        elif tamper == "audit_payload":
+            connection.execute("DROP TRIGGER fmea_audit_events_no_update")
+            event_json = connection.execute(
+                "SELECT event_json FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+                (prepared.scope.workspace_id, result.audit_event_id),
+            ).fetchone()[0]
+            event = json.loads(event_json)
+            event["canonical_payload_hash"] = "sha256:" + "c" * 64
+            connection.execute(
+                "UPDATE fmea_audit_events SET event_json=? WHERE workspace_id=? AND event_id=?",
+                (
+                    json.dumps(event, sort_keys=True, separators=(",", ":")),
+                    prepared.scope.workspace_id,
+                    result.audit_event_id,
+                ),
+            )
+        elif tamper in {"outbox_scope", "outbox_hash", "outbox_payload"}:
+            connection.execute("DROP TRIGGER fmea_outbox_events_no_update")
+            column = {
+                "outbox_scope": "idempotency_scope",
+                "outbox_hash": "payload_hash",
+                "outbox_payload": "payload_json",
+            }[tamper]
+            value = "tampered-outbox-scope" if tamper == "outbox_scope" else "sha256:" + "d" * 64
+            if tamper == "outbox_payload":
+                value = (
+                    connection.execute(  # noqa: S608
+                        "SELECT payload_json FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+                        (prepared.scope.workspace_id, result.outbox_event_id),
+                    ).fetchone()[0]
+                    + " "
+                )
+            connection.execute(
+                f"UPDATE fmea_outbox_events SET {column}=? WHERE workspace_id=? AND event_id=?",  # noqa: S608
+                (value, prepared.scope.workspace_id, result.outbox_event_id),
+            )
+        elif tamper == "eligibility":
+            connection.execute("DROP TRIGGER fmea_export_eligibility_no_update")
+            connection.execute(
+                "UPDATE fmea_export_eligibility SET eligible=0 WHERE workspace_id=? AND publication_id=?",
+                (prepared.scope.workspace_id, result.publication_id),
+            )
+        else:
+            response_json = connection.execute(
+                "SELECT response_json FROM idempotency_records WHERE scope_key=?", (prepared.scope.scope_key,)
+            ).fetchone()[0]
+            response = json.loads(response_json)
+            if tamper == "response_publication":
+                response["publication_id"] = "publication-tampered"
+            elif tamper == "response_manifest":
+                response["manifest_id"] = "manifest-tampered"
+            elif tamper == "response_snapshot":
+                response["snapshot_id"] = "snapshot-tampered"
+            else:
+                response["record_version"] = 99
+            connection.execute(
+                "UPDATE idempotency_records SET response_json=? WHERE scope_key=?",
+                (json.dumps(response, sort_keys=True, separators=(",", ":")), prepared.scope.scope_key),
+            )
+
+    restarted = SqliteGovernanceRepository(repository.database_path)
+    restarted.initialize()
+    with pytest.raises((ReviewError, ValueError)):
+        restarted.replay_publication(prepared.scope, prepared.payload_hash)
+
+
+@pytest.mark.parametrize("mutation", ("hash", "version", "workspace"))
+def test_commit_revision_rejects_stale_or_cross_workspace_analysis_state(
+    repository: SqliteGovernanceRepository,
+    mutation: str,
+) -> None:
+    from fmea_governance_fixtures import _governance_analysis
+
+    prepared = prepared_revision()
+    with sqlite3.connect(repository.database_path) as connection:
+        if mutation == "hash":
+            connection.execute(
+                "UPDATE fmea_analyses SET analysis_hash=? WHERE analysis_id=?",
+                ("b" * 64, "analysis-1"),
+            )
+        elif mutation == "version":
+            analysis = _governance_analysis()
+            stale_analysis = replace(analysis, record_version=2)
+            stale_json = encode_json(stale_analysis)
+            connection.execute(
+                "UPDATE fmea_analyses SET analysis_hash=?, analysis_json=? WHERE analysis_id=?",
+                ("sha256:" + sha256(stale_json.encode("utf-8")).hexdigest(), stale_json, "analysis-1"),
+            )
+        else:
+            connection.execute(
+                "UPDATE fmea_analyses SET workspace_id=? WHERE analysis_id=?",
+                ("other-workspace", "analysis-1"),
+            )
+
+    with pytest.raises((ReviewError, ValueError)):
+        repository.commit_revision(prepared)
+
+
+def _governance_counts(path: Path) -> dict[str, int]:
+    tables = (
+        "fmea_revisions",
+        "fmea_approval_submissions",
+        "fmea_approval_decisions",
+        "fmea_approval_withdrawals",
+        "fmea_publication_manifests",
+        "fmea_normalized_snapshots",
+        "fmea_publications",
+        "fmea_publication_withdrawals",
+        "fmea_supersessions",
+        "fmea_export_eligibility",
+        "fmea_audit_events",
+        "fmea_outbox_events",
+        "fmea_governance_event_bindings",
+        "idempotency_records",
+    )
+    with sqlite3.connect(path) as connection:
+        return {
+            table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
+            for table in tables
+        }
+
+
+def test_revision_fault_rolls_back_shared_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "revision.record"))
+    repository.initialize()
+    seed_authoritative_analysis(path)
+
+    with pytest.raises(RuntimeError, match="injected revision.record failure"):
+        repository.commit_revision(prepared_revision())
+
+    assert all(value == 0 for value in _governance_counts(path).values())
+
+
+def _raise_at(step: str, expected: str) -> None:
+    if step == expected:
+        raise RuntimeError(f"injected {expected} failure")  # noqa: TRY003
+
+
+def test_approval_submission_fault_preserves_prior_revision_and_rolls_back_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    base = SqliteGovernanceRepository(path)
+    base.initialize()
+    seed_authoritative_analysis(path)
+    base.commit_revision(prepared_revision())
+    publication = prepared_publication()
+    submission = _prepared_submission_for(publication)
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "approval.submission"))
+
+    with pytest.raises(RuntimeError, match="injected approval.submission failure"):
+        repository.commit_approval_submission(submission)
+
+    counts = _governance_counts(path)
+    assert counts["fmea_revisions"] == 1
+    assert counts["fmea_approval_submissions"] == 0
+    assert counts["fmea_audit_events"] == 1
+    assert counts["fmea_outbox_events"] == 1
+    assert counts["idempotency_records"] == 1
+
+
+def test_approval_decision_fault_preserves_prior_state_and_rolls_back_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    base = SqliteGovernanceRepository(path)
+    base.initialize()
+    seed_authoritative_analysis(path)
+    base.commit_revision(prepared_revision())
+    publication = prepared_publication()
+    submission = _prepared_submission_for(publication)
+    base.commit_approval_submission(submission)
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "approval.decision"))
+
+    with pytest.raises(RuntimeError, match="injected approval.decision failure"):
+        repository.commit_approval(_prepared_approval_for(publication, submission))
+
+    counts = _governance_counts(path)
+    assert counts["fmea_approval_submissions"] == 1
+    assert counts["fmea_approval_decisions"] == 0
+    assert counts["fmea_audit_events"] == 2
+    assert counts["fmea_outbox_events"] == 2
+    assert counts["idempotency_records"] == 2
+
+
+def test_approval_withdrawal_fault_preserves_prior_state_and_rolls_back_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    base = SqliteGovernanceRepository(path)
+    base.initialize()
+    publication = prepared_publication()
+    base.commit_publication(publication)
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "approval.withdrawal"))
+
+    with pytest.raises(RuntimeError, match="injected approval.withdrawal failure"):
+        repository.commit_approval_withdrawal(_prepared_approval_withdrawal_for(publication))
+
+    counts = _governance_counts(path)
+    assert counts["fmea_approval_decisions"] == 1
+    assert counts["fmea_approval_withdrawals"] == 0
+    assert counts["fmea_audit_events"] == 3
+    assert counts["fmea_outbox_events"] == 3
+    assert counts["idempotency_records"] == 3
+
+
+def test_publication_withdrawal_fault_preserves_publication_and_rolls_back_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    base = SqliteGovernanceRepository(path)
+    base.initialize()
+    publication = prepared_publication()
+    base.commit_publication(publication)
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "publication.withdrawal"))
+
+    with pytest.raises(RuntimeError, match="injected publication.withdrawal failure"):
+        repository.commit_publication_withdrawal(_prepared_publication_withdrawal_for(publication))
+
+    counts = _governance_counts(path)
+    assert counts["fmea_publications"] == 1
+    assert counts["fmea_publication_withdrawals"] == 0
+    assert counts["fmea_audit_events"] == 3
+    assert counts["fmea_outbox_events"] == 3
+    assert counts["idempotency_records"] == 3
+
+
+def test_supersession_fault_preserves_both_publications_and_rolls_back_chain(tmp_path: Path) -> None:
+    path = tmp_path / "fmea.sqlite3"
+    base = SqliteGovernanceRepository(path)
+    base.initialize()
+    old_revision = make_fmea_revision()
+    replacement_revision = make_fmea_revision(
+        revision_id="revision-2",
+        parent_revision_id=old_revision.revision_id,
+        parent_revision_hash=old_revision.revision_hash,
+    )
+    old = _prepared_publication_bundle(old_revision, "pub-old", "old", "00000000-0000-4000-8000-000000000711")
+    replacement = _prepared_publication_bundle(
+        replacement_revision, "pub-new", "new", "00000000-0000-4000-8000-000000000712"
+    )
+    base.commit_publication(old)
+    base.commit_publication(replacement)
+    repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "supersession.record"))
+
+    with pytest.raises(RuntimeError, match="injected supersession.record failure"):
+        repository.commit_supersession(_prepared_supersession_for_publications(old, replacement))
+
+    counts = _governance_counts(path)
+    assert counts["fmea_publications"] == 2
+    assert counts["fmea_supersessions"] == 0
+    assert counts["fmea_audit_events"] == 2 * 3
+    assert counts["fmea_outbox_events"] == 2 * 3
+    assert counts["idempotency_records"] == 2 * 3
 
 
 def test_published_payload_cannot_be_updated_or_deleted(
@@ -276,6 +816,7 @@ def test_fault_injected_publication_rolls_back_every_shared_write(tmp_path: Path
         "SELECT COUNT(*) FROM fmea_normalized_snapshots",
         "SELECT COUNT(*) FROM fmea_audit_events",
         "SELECT COUNT(*) FROM fmea_outbox_events",
+        "SELECT COUNT(*) FROM fmea_governance_event_bindings",
         "SELECT COUNT(*) FROM idempotency_records",
     )
     with sqlite3.connect(path) as connection:
