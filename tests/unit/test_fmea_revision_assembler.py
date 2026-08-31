@@ -58,13 +58,20 @@ def test_revision_assembler_is_order_independent(fixture_row: FmeaRow):
 
 def test_revision_assembler_constructor_has_no_retrieval_dependency():
     RevisionAssembler = _implementation()
-    assert set(signature(RevisionAssembler).parameters) <= {"self", "clock", "id_factory", "verifier"}
+    assert set(signature(RevisionAssembler).parameters) <= {"self"}
+    assert "verifier" not in signature(RevisionAssembler).parameters
+
+
+def test_revision_assembler_rejects_callable_authority_injection():
+    RevisionAssembler = _implementation()
+    with pytest.raises(TypeError):
+        RevisionAssembler(verifier=lambda _inputs: None)  # type: ignore[call-arg]
 
 
 def test_revision_assembler_requires_a_runtime_bound_verifier():
     RevisionAssembler = _implementation()
     inputs = make_governance_inputs()
-    with pytest.raises(TypeError, match="trusted governance verifier"):
+    with pytest.raises(TypeError, match="trusted governance runtime authority"):
         RevisionAssembler().assemble(make_assemble_request(), inputs)
 
 

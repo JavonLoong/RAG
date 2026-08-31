@@ -403,6 +403,69 @@ def test_registry_manifest_binds_raw_and_canonical_hashes(tmp_path: Path, regist
         registry.get_source_bytes(object_id, model.version)
 
 
+@pytest.mark.parametrize("registry_kind", ["domain", "scoring"])
+def test_registry_get_source_bytes_reads_source_once_and_returns_verified_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, registry_kind: str
+) -> None:
+    if registry_kind == "domain":
+        source = _domain_source()
+        model = load_domain_pack_manifest(source)
+        registry = FileDomainPackRegistry(tmp_path)
+        object_id = model.pack_id
+    else:
+        source = _scoring_source()
+        model = load_scoring_rule_pack(source)
+        registry = FileScoringRuleRegistry(tmp_path)
+        object_id = model.rule_pack_id
+    registry.register(model, source)
+    source_path = tmp_path / object_id / model.version / "source.yaml"
+    original_read_bytes = registry._read_bytes
+    reads = 0
+
+    def counting_read_bytes(path: Path, *, max_bytes: int) -> bytes:
+        nonlocal reads
+        if path == source_path:
+            reads += 1
+        return original_read_bytes(path, max_bytes=max_bytes)
+
+    monkeypatch.setattr(registry, "_read_bytes", counting_read_bytes)
+    assert registry.get_source_bytes(object_id, model.version) == source
+    assert reads == 1
+
+
+@pytest.mark.parametrize("registry_kind", ["domain", "scoring"])
+def test_registry_get_source_bytes_does_not_reread_after_source_swap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, registry_kind: str
+) -> None:
+    if registry_kind == "domain":
+        source = _domain_source()
+        model = load_domain_pack_manifest(source)
+        registry = FileDomainPackRegistry(tmp_path)
+        object_id = model.pack_id
+    else:
+        source = _scoring_source()
+        model = load_scoring_rule_pack(source)
+        registry = FileScoringRuleRegistry(tmp_path)
+        object_id = model.rule_pack_id
+    registry.register(model, source)
+    source_path = tmp_path / object_id / model.version / "source.yaml"
+    original_read_bytes = registry._read_bytes
+    reads = 0
+
+    def swap_after_first_read(path: Path, *, max_bytes: int) -> bytes:
+        nonlocal reads
+        result = original_read_bytes(path, max_bytes=max_bytes)
+        if path == source_path:
+            reads += 1
+            if reads == 1:
+                path.write_bytes(b"replacement-after-verification")
+        return result
+
+    monkeypatch.setattr(registry, "_read_bytes", swap_after_first_read)
+    assert registry.get_source_bytes(object_id, model.version) == source
+    assert reads == 1
+
+
 def test_registry_get_does_not_auto_discover_authored_source(tmp_path: Path) -> None:
     authored = tmp_path / "authored.yaml"
     authored.write_bytes(_domain_source())

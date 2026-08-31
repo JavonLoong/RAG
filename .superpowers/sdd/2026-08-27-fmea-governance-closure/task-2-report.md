@@ -316,3 +316,101 @@ passed（仅 Git 的 LF/CRLF warning，无 diff whitespace error）
 Task 3 handoff：组合现有 review/risk/propagation/evidence/decision/run/retrieval repositories 为本报告列出的 typed query providers，并让 runtime source 负责签发一次完整-input attestation；不恢复 callback/mapping seam，不实现 transport。
 
 Task 4 handoff：在 deterministic readiness 已完成且 blocker/ack identity 已验证后接入 governance lifecycle；保持模型 offline fallback、`applied=False`、ack exact binding 与 legacy `PublicationStatus` 不变。
+
+## Fix round 4 — runtime authority and registry TOCTOU closure
+
+日期：2026-08-31
+
+### 结果
+
+Status: DONE_WITH_CONCERNS
+
+基线：`217cfea0`。本轮只处理 round 3 reviewer 账本中的 runtime authority API、完整 provenance attestation body 与 registry 单次受保护读取；未进入 Task 3+，未实现 persistence/service/transport/export/UI，未 push/PR，未创建子智能体。
+
+### RED
+
+中断前已先写最小反向测试并确认缺实现导致失败。authority/provenance/TOCTOU 首轮 RED 命令：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py::test_revision_assembler_constructor_has_no_retrieval_dependency tests/unit/test_fmea_revision_assembler.py::test_revision_assembler_rejects_callable_authority_injection tests/unit/test_fmea_publication_readiness.py::test_bare_readiness_policy_fails_closed_without_runtime_authority tests/unit/test_fmea_publication_readiness.py::test_readiness_policy_rejects_callable_authority_injection tests/unit/test_fmea_governance_source.py::test_source_exposes_no_issuer_or_verifier_instance_seam tests/unit/test_fmea_governance_source.py::test_cross_runtime_attestation_cannot_be_reused tests/unit/test_fmea_governance_source.py::test_source_attestation_binds_every_retrieval_provenance_field tests/unit/test_structured_output_file_registry.py::test_get_source_bytes_reads_source_once_and_returns_verified_bytes tests/unit/test_structured_output_file_registry.py::test_get_source_bytes_does_not_reread_after_source_swap tests/unit/test_fmea_domain_pack_registry.py::test_registry_get_source_bytes_reads_source_once_and_returns_verified_bytes tests/unit/test_fmea_domain_pack_registry.py::test_registry_get_source_bytes_does_not_reread_after_source_swap -q
+```
+
+fresh-at-RED stdout：`17 failed in 0.58s`。失败分别证明 public verifier constructor 仍可注入、裸 readiness 可 ready、source 暴露 verifier/issuer seam、cross-runtime/provenance 篡改未被同一 authority 拒绝，以及 template/generic registry getter 对 source 做二次读取并可返回 swap 后 bytes。
+
+registry adapter 的独立 RED：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_source.py::test_registry_adapter_uses_one_verified_source_load_without_get_fallback -q
+```
+
+结果：`1 failed in 0.15s`，原 provider 先调用 `get()`，随后再次读取 source。
+
+template protected-reader 探针 RED：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_structured_output_file_registry.py::test_get_source_bytes_reads_source_once_and_returns_verified_bytes tests/unit/test_structured_output_file_registry.py::test_get_source_bytes_does_not_reread_after_source_swap -q
+```
+
+结果：`2 failed in 0.18s`，原 getter 没有复用单次受保护 source 读取。
+
+### GREEN 与设计裁定
+
+- `RevisionAssembler()` 与 `PublicationReadinessPolicy()` 的公共 constructor 不再接受 verifier/callable authority。裸实例保留类型/API 存在，但 assembler 直接 fail closed，readiness 只返回 `UNVERIFIED_GOVERNANCE_INPUTS`，不能让伪 identity ready。
+- `RepositoryGovernanceSource` 的公共行为只有 `load_inputs(analysis_id, workspace_id)`；裸 source fail closed，实例不保存或暴露 issuer、signer、verifier callback。`build_workspace_governance_runtime` 在函数局部创建随机 HMAC secret、nonce、opaque proof class 及 sign/verify closure，并用同一 closure 绑定 runtime source、assembler、readiness policy。签名验证使用 `hmac.compare_digest`；cross-runtime proof 和 `dataclasses.replace` 后的输入均失败。
+- attestation canonical body 现在显式覆盖 `GovernanceRetrievalProvenance` 的 workspace、analysis、requested/resolved profile、evidence types、source counts 与 warnings。任一字段替换都会改变 digest 并被拒绝。合法 provenance 仍进入 canonical revision；retrieval profile 不参与 propagation-required policy 判定。
+- `FileTemplateRegistry` 用 `_verified_entry()` 在同一次受保护读取中取得 compiled/manifest/source，校验 path containment、parent lstat、打开后 fstat/lstat identity、文件类型、size、manifest/source hash 与重新 compile 的 typed template；`get()`/`get_source_bytes()` 分别返回同一 verified loader 的 model/同一 source bytes，不在验证后第二读。
+- domain/scoring/propagation generic file registry 用 `_verified_stored_model()` 一次读取 source/body/manifest，校验 typed model、canonical body 与 raw source hash后返回 `(model, same_source_bytes)`；`get()` 与 `get_source_bytes()` 复用该 loader。source 在首次读取后被替换时只返回已验证旧 bytes 或 fail closed，semantic-equivalent raw source 也不能绕过 manifest `source_hash`。
+- `RegistryGovernanceArtifactProvider` 只消费 registry 的 integrity-checked source getter，再解析并精确核对 id/version/content/source hash 与 DomainPack declarations；不恢复 `get()` 后二次读的 TOCTOU 路径。
+
+### 字段/port 兼容影响
+
+- `GovernanceInputs.attestation_body` 增加完整 typed retrieval provenance；`FmeaRevision`、Task 1 `revision_record_version` evidence、legacy row/edge `PublicationStatus` 均未改变。
+- `GovernanceRuntime` 仍是 Task 3/4 唯一应消费的组合结果。Task 3 只应提供真实 typed repository/query/registry providers 并持有 runtime 服务；不得裸构造 assembler/policy/source，不得向 transport 暴露 factory 内 sign/verify closure 或 attestation。
+- registry manifest/source integrity 继续 fail closed。旧 template manifest 缺 `source_hash` 时仍需未来明确 re-registration/migration；本轮没有添加兼容放宽或 migration。
+
+### 最终 fresh 验证
+
+Task 2 focused + risk/propagation/review + Task 1 governance/review composition compatibility exact matrix：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_assistance.py tests/unit/test_fmea_governance_source.py tests/unit/test_fmea_risk_service.py tests/unit/test_fmea_propagation_review.py tests/unit/test_fmea_review_service.py tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_review_composition.py tests/unit/test_fmea_review_contracts.py tests/unit/test_fmea_propagation_graph.py tests/unit/test_fmea_risk_repository_contract.py -q
+........................................................................ [ 35%]
+........................................................................ [ 71%]
+.........................................................                [100%]
+201 passed in 0.92s
+```
+
+registry/source compatibility：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_domain_pack_registry.py tests/unit/test_fmea_propagation_rule_registry.py tests/unit/test_structured_output_file_registry.py -q
+..........................................................ssssss........ [ 85%]
+............                                                             [100%]
+78 passed, 6 skipped in 1.50s
+```
+
+focused authority/provenance/TOCTOU（上述 RED 同一 11 个 node ids）：`17 passed in 0.30s`。focused source/registry combined：`113 passed, 6 skipped in 1.92s`。
+
+静态、格式、编译与差异检查：
+
+```text
+.venv\Scripts\ruff.exe check <本轮 10 个受控 Python 文件>
+All checks passed!
+
+.venv\Scripts\ruff.exe format --check <本轮 10 个受控 Python 文件>
+10 files already formatted
+
+.venv\Scripts\python.exe -m compileall -q fmea_application fmea_infrastructure structured_output_infrastructure tests/fmea_governance_fixtures.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_source.py tests/unit/test_fmea_domain_pack_registry.py tests/unit/test_structured_output_file_registry.py
+exit 0
+
+git diff --check
+exit 0（只有 Git 的 LF/CRLF warning，无 whitespace error）
+```
+
+未运行全量 pytest。
+
+### Concerns / Task 3/4 handoff
+
+1. 旧 `FileTemplateRegistry` manifest 没有独立 `source_hash` 时按设计 fail closed；后续需要可信 re-registration/migration，而不是在 Task 3 transport 或 readiness 中降级校验。
+2. Task 3 composition 必须只分发 factory 返回的 `GovernanceRuntime`，并由 server-owned typed providers 提供 analysis/artifact/row/risk/graph/evidence/ack/run/retrieval/parent state；不得把 factory-local authority 变成可注入 callback 或 transport API。
+3. Task 4 只能消费 runtime-bound deterministic readiness 和 immutable assistance suggestion；不得让模型或客户端改变 blockers、ack、revision identity、propagation requirement 或 Task 1 persistence preconditions。

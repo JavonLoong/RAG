@@ -10,6 +10,7 @@ from fmea_governance_fixtures import (
     make_human_acknowledgement_reference,
     make_readiness_context,
     make_readiness_issue,
+    make_runtime_readiness,
 )
 
 
@@ -25,40 +26,48 @@ def _implementation():
 
 
 def test_high_risk_unresolved_propagation_blocks_approval():
-    _, PublicationReadinessPolicy = _implementation()
     revision = make_fmea_revision(
         unresolved_items=(make_readiness_issue(code="PROPAGATION_HIGH_RISK_UNRESOLVED", severity="critical"),)
     )
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(revision, make_readiness_context())
+    policy, context = make_runtime_readiness()
+    report = policy.evaluate(revision, context)
     assert not report.ready
     assert report.blocking_codes == ("PROPAGATION_HIGH_RISK_UNRESOLVED",)
 
 
 def test_active_mutating_run_blocks_readiness():
-    _, PublicationReadinessPolicy = _implementation()
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        make_fmea_revision(),
-        make_readiness_context(active_run_ids=("propagation-run-1",)),
-    )
+    policy, context = make_runtime_readiness(active_run_ids=("propagation-run-1",))
+    report = policy.evaluate(make_fmea_revision(), context)
     assert report.blocking_codes == ("ACTIVE_MUTATION_RUN",)
 
 
+def test_bare_readiness_policy_fails_closed_without_runtime_authority():
+    _, PublicationReadinessPolicy = _implementation()
+    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(make_fmea_revision(), make_readiness_context())
+    assert report.ready is False
+    assert "UNVERIFIED_GOVERNANCE_INPUTS" in report.blocking_codes
+
+
+def test_readiness_policy_rejects_callable_authority_injection():
+    _, PublicationReadinessPolicy = _implementation()
+    with pytest.raises(TypeError):
+        PublicationReadinessPolicy(make_domain_policy(), verifier=lambda _inputs: None)  # type: ignore[call-arg]
+
+
 def test_stale_child_hash_blocks_readiness():
-    PublicationReadinessContext, PublicationReadinessPolicy = _implementation()
     revision = make_fmea_revision()
-    context = PublicationReadinessContext(
-        active_run_ids=(),
+    policy, context = make_runtime_readiness(
         current_analysis_version=revision.analysis_record_version,
         current_child_hashes=(("row-1", "b" * 64),),
     )
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(revision, context)
+    report = policy.evaluate(revision, context)
     assert "STALE_CHILD_VERSION" in report.blocking_codes
 
 
 def test_unacknowledged_critical_issue_blocks_even_when_other_gates_pass():
-    _, PublicationReadinessPolicy = _implementation()
     revision = make_fmea_revision(unresolved_items=(make_readiness_issue(code="CRITICAL_GAP", severity="critical"),))
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(revision, make_readiness_context())
+    policy, context = make_runtime_readiness()
+    report = policy.evaluate(revision, context)
     assert report.ready is False
     assert report.blocking_codes == ("CRITICAL_GAP",)
 
@@ -76,13 +85,10 @@ def test_policy_accepts_a_frozen_context_and_returns_a_frozen_report():
 
 
 def test_mapping_report_shape_is_stable_for_blocked_inputs():
-    _, PublicationReadinessPolicy = _implementation()
     issue = make_readiness_issue(code="MISSING_EVIDENCE", severity="blocking")
     revision = make_fmea_revision(unresolved_items=(issue,))
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        revision,
-        make_readiness_context(required_fields_accepted=True),
-    )
+    policy, context = make_runtime_readiness(required_fields_accepted=True)
+    report = policy.evaluate(revision, context)
     expected = make_blocked_readiness_report()
     assert report.ready is expected.ready
     assert issue in report.issues
@@ -96,17 +102,14 @@ def test_policy_rejects_weakly_typed_domain_policy_values():
 
 
 def test_empty_acknowledgement_set_is_not_a_wildcard():
-    _, PublicationReadinessPolicy = _implementation()
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
         severity="critical",
         acknowledgement_decision_id="decision-1",
     )
     revision = make_fmea_revision(unresolved_items=(issue,))
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        revision,
-        make_readiness_context(),
-    )
+    policy, context = make_runtime_readiness()
+    report = policy.evaluate(revision, context)
     assert report.ready is False
     assert "ACK_REQUIRED" in report.blocking_codes
 
@@ -132,7 +135,6 @@ def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixtu
     from core_domain.fmea.states import ReviewStatus
     from fmea_application.revision_assembler import (
         GovernanceDomainPolicy,
-        PublicationReadinessPolicy,
     )
 
     row = replace(fixture_row, review_status=ReviewStatus.ACCEPTED)
@@ -145,9 +147,12 @@ def test_missing_graph_can_be_ready_when_domain_policy_does_not_require_it(fixtu
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
         inputs,
     )
-    report = PublicationReadinessPolicy(
-        GovernanceDomainPolicy(required_risk=False, required_propagation=False),
-    ).evaluate(revision, make_readiness_context(authoritative_artifacts=_artifacts_for_inputs(inputs)))
+    policy, context = make_runtime_readiness(
+        domain_policy=GovernanceDomainPolicy(required_risk=False, required_propagation=False),
+        governance_inputs=inputs,
+        authoritative_artifacts=_artifacts_for_inputs(inputs),
+    )
+    report = policy.evaluate(revision, context)
     assert report.ready is True
     assert "REQUIRED_PROPAGATION_NOT_CONFIRMED" not in report.blocking_codes
 
@@ -156,7 +161,7 @@ def test_missing_graph_blocks_when_domain_policy_requires_it(fixture_pack, fixtu
     from fmea_governance_fixtures import make_governance_assembler, make_governance_inputs
 
     from core_domain.fmea.states import ReviewStatus
-    from fmea_application.revision_assembler import GovernanceDomainPolicy, PublicationReadinessPolicy
+    from fmea_application.revision_assembler import GovernanceDomainPolicy
 
     inputs = make_governance_inputs(
         rows=(replace(fixture_row, review_status=ReviewStatus.ACCEPTED),),
@@ -166,9 +171,11 @@ def test_missing_graph_blocks_when_domain_policy_requires_it(fixture_pack, fixtu
         __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
         inputs,
     )
-    report = PublicationReadinessPolicy(
-        GovernanceDomainPolicy(required_risk=False, required_propagation=True),
-    ).evaluate(revision, make_readiness_context())
+    policy, context = make_runtime_readiness(
+        domain_policy=GovernanceDomainPolicy(required_risk=False, required_propagation=True),
+        governance_inputs=inputs,
+    )
+    report = policy.evaluate(revision, context)
     assert report.ready is False
     assert "REQUIRED_PROPAGATION_NOT_CONFIRMED" in report.blocking_codes
 
@@ -181,19 +188,16 @@ def test_domain_policy_rejects_unknown_fields():
 
 
 def test_required_false_does_not_allow_omitting_a_declared_template():
-    from fmea_application.revision_assembler import GovernanceDomainPolicy, PublicationReadinessPolicy
+    from fmea_application.revision_assembler import GovernanceDomainPolicy
 
     revision = make_fmea_revision(template_identities=())
-    report = PublicationReadinessPolicy(
-        GovernanceDomainPolicy(required_template=False),
-    ).evaluate(revision, make_readiness_context())
+    policy, context = make_runtime_readiness(domain_policy=GovernanceDomainPolicy(required_template=False))
+    report = policy.evaluate(revision, context)
     assert report.ready is False
     assert "UNRESOLVED_ARTIFACT_IDENTITY" in report.blocking_codes
 
 
 def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
-    from fmea_application.revision_assembler import PublicationReadinessPolicy
-
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
         severity="critical",
@@ -208,10 +212,8 @@ def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,
     )
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        revision,
-        make_readiness_context(acknowledgement_references=(reference,)),
-    )
+    policy, context = make_runtime_readiness(acknowledgement_references=(reference,))
+    report = policy.evaluate(revision, context)
     assert report.ready is True
 
 
@@ -224,8 +226,6 @@ def test_only_exact_server_resolved_human_acknowledgement_can_clear_issue():
     ),
 )
 def test_foreign_acknowledgement_scope_or_issue_cannot_clear_blocker(workspace_id, analysis_id, issue_source_id):
-    from fmea_application.revision_assembler import PublicationReadinessPolicy
-
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
         severity="critical",
@@ -242,17 +242,13 @@ def test_foreign_acknowledgement_scope_or_issue_cannot_clear_blocker(workspace_i
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,
     )
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        revision,
-        make_readiness_context(acknowledgement_references=(reference,)),
-    )
+    policy, context = make_runtime_readiness(acknowledgement_references=(reference,))
+    report = policy.evaluate(revision, context)
     assert report.ready is False
     assert "ACK_REQUIRED" in report.blocking_codes
 
 
 def test_unknown_acknowledgement_decision_cannot_clear_blocker():
-    from fmea_application.revision_assembler import PublicationReadinessPolicy
-
     issue = make_readiness_issue(
         code="ACK_REQUIRED",
         severity="critical",
@@ -268,8 +264,6 @@ def test_unknown_acknowledgement_decision_cannot_clear_blocker():
         revision_record_version=revision.analysis_record_version,
         evidence_ids=issue.evidence_ids,
     )
-    report = PublicationReadinessPolicy(make_domain_policy()).evaluate(
-        revision,
-        make_readiness_context(acknowledgement_references=(reference,)),
-    )
+    policy, context = make_runtime_readiness(acknowledgement_references=(reference,))
+    report = policy.evaluate(revision, context)
     assert report.ready is False

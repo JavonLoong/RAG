@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import stat
 import tempfile
 from hashlib import sha256
 from pathlib import Path
@@ -33,10 +34,104 @@ _MANIFEST_KEYS = frozenset({
     "source_suffix",
     "schema_dialect",
 })
+_MAX_STORED_MANIFEST_BYTES = 64 * 1024
+_MAX_STORED_COMPILED_BYTES = 256 * 1024
 
 
 def _error(code: str, message: str) -> StructuredOutputError:
     return StructuredOutputError(code, message)
+
+
+class _UnsafeStoredTemplatePath(Exception):
+    pass
+
+
+class _StoredTemplateReadLimit(Exception):
+    pass
+
+
+def _template_file_identity(info: os.stat_result) -> tuple[int, int]:
+    return int(getattr(info, "st_dev", 0)), int(getattr(info, "st_ino", 0))
+
+
+def _same_template_file(first: os.stat_result, second: os.stat_result) -> bool:
+    first_identity = _template_file_identity(first)
+    second_identity = _template_file_identity(second)
+    if first_identity != (0, 0) and second_identity != (0, 0):
+        return first_identity == second_identity
+    return (
+        first.st_mode,
+        first.st_size,
+        getattr(first, "st_mtime_ns", 0),
+        getattr(first, "st_ctime_ns", 0),
+    ) == (
+        second.st_mode,
+        second.st_size,
+        getattr(second, "st_mtime_ns", 0),
+        getattr(second, "st_ctime_ns", 0),
+    )
+
+
+def _template_reparse(info: os.stat_result) -> bool:
+    return stat.S_ISLNK(info.st_mode) or bool(
+        getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    )
+
+
+def _read_verified_template_file(  # noqa: C901 - one guarded read is intentionally linear
+    path: Path, max_bytes: int, root: Path
+) -> bytes:
+    try:
+        relative = path.relative_to(root)
+        current = root
+        for component in relative.parts[:-1]:
+            current /= component
+            directory_info = current.lstat()
+            if _template_reparse(directory_info) or not stat.S_ISDIR(directory_info.st_mode):
+                raise _UnsafeStoredTemplatePath
+        initial_info = path.lstat()
+    except (FileNotFoundError, OSError, ValueError) as exc:
+        raise _UnsafeStoredTemplatePath from exc
+    if _template_reparse(initial_info) or not stat.S_ISREG(initial_info.st_mode):
+        raise _UnsafeStoredTemplatePath
+    if initial_info.st_size > max_bytes:
+        raise _StoredTemplateReadLimit
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_CLOEXEC", 0)
+    if os.name != "nt":
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(str(path), flags)
+    except OSError as exc:
+        raise _UnsafeStoredTemplatePath from exc
+    try:
+        opened_info = os.fstat(descriptor)
+        current_info = path.lstat()
+        if not _same_template_file(initial_info, opened_info) or not _same_template_file(initial_info, current_info):
+            raise _UnsafeStoredTemplatePath
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            remaining = max_bytes + 1 - total
+            if remaining <= 0:
+                raise _StoredTemplateReadLimit
+            chunk = os.read(descriptor, min(64 * 1024, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > max_bytes:
+                raise _StoredTemplateReadLimit
+        final_opened_info = os.fstat(descriptor)
+        final_path_info = path.lstat()
+        if not _same_template_file(initial_info, final_opened_info) or not _same_template_file(
+            initial_info, final_path_info
+        ):
+            raise _UnsafeStoredTemplatePath
+        if final_opened_info.st_size != initial_info.st_size or final_opened_info.st_size != total:
+            raise _UnsafeStoredTemplatePath
+        return b"".join(chunks)
+    finally:
+        os.close(descriptor)
 
 
 class FileTemplateRegistry:
@@ -109,6 +204,14 @@ class FileTemplateRegistry:
         ):
             raise _error("TEMPLATE_HASH_MISMATCH", "Compiled template contract does not match its content.")
 
+    def _read_entry_bytes(self, path: Path, *, max_bytes: int) -> bytes:
+        try:
+            return _read_verified_template_file(path, max_bytes, self._root)
+        except _StoredTemplateReadLimit as exc:
+            raise _error("TEMPLATE_LIMIT_EXCEEDED", "Stored template entry exceeds its byte limit.") from exc
+        except _UnsafeStoredTemplatePath as exc:
+            raise _error("TEMPLATE_HASH_MISMATCH", "Stored template entry integrity check failed.") from exc
+
     def register(  # noqa: C901 - atomic write and race handling stay in one transaction
         self,
         template: CompiledTemplate,
@@ -165,14 +268,14 @@ class FileTemplateRegistry:
                 shutil.rmtree(validated)
         return template
 
-    def get(self, template_id: str, version: str) -> CompiledTemplate:
+    def _verified_entry(self, template_id: str, version: str) -> tuple[CompiledTemplate, bytes]:
         self._validate_identity(template_id, version)
         version_dir = self._safe_path(template_id, version)
         if not version_dir.is_dir():
             raise _error("TEMPLATE_NOT_FOUND", "Template version was not found.")
         try:
-            compiled_bytes = (version_dir / "compiled.json").read_bytes()
-            manifest_bytes = (version_dir / "manifest.json").read_bytes()
+            compiled_bytes = self._read_entry_bytes(version_dir / "compiled.json", max_bytes=_MAX_STORED_COMPILED_BYTES)
+            manifest_bytes = self._read_entry_bytes(version_dir / "manifest.json", max_bytes=_MAX_STORED_MANIFEST_BYTES)
             compiled_text = compiled_bytes.decode("utf-8", errors="strict")
             compiled_object = orjson.loads(compiled_bytes)
             manifest = orjson.loads(manifest_bytes)
@@ -186,33 +289,23 @@ class FileTemplateRegistry:
         source_suffix = cast("str", manifest["source_suffix"])
         if source_suffix not in _SUFFIXES or not (version_dir / f"source{source_suffix}").is_file():
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.")
-        source_bytes = (version_dir / f"source{source_suffix}").read_bytes()
+        source_bytes = self._read_entry_bytes(
+            version_dir / f"source{source_suffix}", max_bytes=self._limits.max_source_bytes
+        )
         if len(source_bytes) > self._limits.max_source_bytes:
             raise _error("TEMPLATE_LIMIT_EXCEEDED", "Template source exceeds the configured byte limit.")
         expected = self._manifest(template, source_bytes, source_suffix)
         if manifest != expected:
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored template manifest does not match.")
-        return template
+        return template, source_bytes
+
+    def get(self, template_id: str, version: str) -> CompiledTemplate:
+        return self._verified_entry(template_id, version)[0]
 
     def get_source_bytes(self, template_id: str, version: str) -> bytes:
         """Return the source bytes bound to a stored compiled template."""
 
-        self._validate_identity(template_id, version)
-        version_dir = self._safe_path(template_id, version)
-        if not version_dir.is_dir():
-            raise _error("TEMPLATE_NOT_FOUND", "Template version was not found.")
-        self.get(template_id, version)
-        try:
-            manifest = orjson.loads((version_dir / "manifest.json").read_bytes())
-            source_suffix = manifest["source_suffix"]
-            if source_suffix not in _SUFFIXES:
-                raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.")
-            source = (version_dir / f"source{source_suffix}").read_bytes()
-        except (OSError, TypeError, ValueError, KeyError, orjson.JSONDecodeError) as exc:
-            raise _error("TEMPLATE_HASH_MISMATCH", "Stored template source entry is invalid.") from exc
-        if len(source) > self._limits.max_source_bytes:
-            raise _error("TEMPLATE_LIMIT_EXCEEDED", "Template source exceeds the configured byte limit.")
-        return source
+        return self._verified_entry(template_id, version)[1]
 
     @staticmethod
     def _reconstruct(compiled_object: object, compiled_text: str) -> CompiledTemplate:

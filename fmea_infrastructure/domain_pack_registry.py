@@ -1062,7 +1062,7 @@ class _FileImmutableRegistry(Generic[_ModelT]):
         if manifest_object != expected_manifest:
             self._raise_integrity()
 
-    def _stored_model(self, object_id: str, version: str, version_dir: Path) -> _ModelT:
+    def _verified_stored_model(self, object_id: str, version: str, version_dir: Path) -> tuple[_ModelT, bytes]:
         source_path, body_path, manifest_path = self._stored_paths(version_dir)
         source_bytes = self._read_bytes(source_path, max_bytes=self._max_source_bytes)
         body_bytes = self._read_bytes(body_path, max_bytes=_MAX_STORED_BODY_BYTES)
@@ -1084,7 +1084,10 @@ class _FileImmutableRegistry(Generic[_ModelT]):
             self._raise_integrity(exc)
         if (loaded_id, loaded_version) != (object_id, version) or loaded_body != body_bytes:
             self._raise_integrity()
-        return loaded
+        return loaded, source_bytes
+
+    def _stored_model(self, object_id: str, version: str, version_dir: Path) -> _ModelT:
+        return self._verified_stored_model(object_id, version, version_dir)[0]
 
     def get_source_bytes(self, object_id: str, version: str) -> bytes:
         """Return the bounded, integrity-checked source used by ``get``."""
@@ -1094,9 +1097,7 @@ class _FileImmutableRegistry(Generic[_ModelT]):
         if not _path_lexists(self._root) or not _path_lexists(version_dir):
             self._raise_not_found()
         self._validate_existing_path(version_dir, expected_directory=True, allow_missing=False)
-        self._stored_model(object_id, version, version_dir)
-        source_path, _, _ = self._stored_paths(version_dir)
-        return self._read_bytes(source_path, max_bytes=self._max_source_bytes)
+        return self._verified_stored_model(object_id, version, version_dir)[1]
 
     def _ensure_identity_directory(self, identity_dir: Path) -> None:
         self._validate_existing_path(identity_dir, expected_directory=True, allow_missing=True)

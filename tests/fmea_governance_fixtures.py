@@ -48,7 +48,8 @@ from fmea_infrastructure.composition import build_workspace_governance_runtime
 HASH = "a" * 64
 PREFIXED_HASH = "sha256:" + HASH
 TIMESTAMP = "2026-08-30T00:00:00Z"
-_INPUT_VERIFIERS: dict[int, object] = {}
+_INPUT_RUNTIMES: dict[int, object] = {}
+_INPUT_PROVIDERS: dict[int, GovernanceRepositoryProviders] = {}
 
 
 def _record_hash(seed: str) -> str:
@@ -514,15 +515,20 @@ def make_governance_inputs(**overrides: Any) -> GovernanceInputs:  # noqa: C901
     )
     runtime = build_workspace_governance_runtime(providers)
     inputs = runtime.source.load_inputs(values["analysis_id"], values["workspace_id"])
-    _INPUT_VERIFIERS[id(inputs._source_attestation)] = runtime.assembler._verifier
+    _INPUT_RUNTIMES[id(inputs._source_attestation)] = runtime
+    _INPUT_PROVIDERS[id(inputs._source_attestation)] = providers
     return inputs
 
 
 def make_governance_assembler(inputs: GovernanceInputs, **overrides: Any) -> RevisionAssembler:
-    verifier = _INPUT_VERIFIERS.get(id(inputs._source_attestation))
-    if verifier is None:
+    runtime = _INPUT_RUNTIMES.get(id(inputs._source_attestation))
+    if runtime is None:
         raise TypeError("fixture inputs are not associated with a governance runtime")  # noqa: TRY003
-    return RevisionAssembler(verifier=verifier, **overrides)
+    if overrides:
+        unexpected = set(overrides) - {"clock", "id_factory"}
+        if unexpected:
+            raise TypeError(f"unsupported fixture assembler overrides: {sorted(unexpected)}")  # noqa: TRY003
+    return runtime.assembler
 
 
 def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
@@ -542,6 +548,18 @@ def make_readiness_context(**overrides: Any) -> PublicationReadinessContext:
     }
     values.update(overrides)
     return PublicationReadinessContext(**values)
+
+
+def make_runtime_readiness(**overrides: Any) -> tuple[Any, PublicationReadinessContext]:
+    domain_policy = overrides.pop("domain_policy", None) or make_domain_policy()
+    inputs = overrides.pop("governance_inputs", None) or make_governance_inputs()
+    providers = _INPUT_PROVIDERS.get(id(inputs._source_attestation))
+    if providers is None:
+        raise TypeError("fixture inputs are not associated with a governance runtime")  # noqa: TRY003
+    runtime = build_workspace_governance_runtime(providers, domain_policy=domain_policy)
+    inputs = runtime.source.load_inputs(inputs.analysis_id, inputs.workspace_id)
+    context = make_readiness_context(governance_inputs=inputs, **overrides)
+    return runtime.readiness_policy, context
 
 
 def make_domain_policy(**overrides: Any) -> GovernanceDomainPolicy:

@@ -11,13 +11,12 @@ supplied hash, or a retrieval profile as governance authority.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from types import MappingProxyType
 from typing import Final, Literal
-from uuid import uuid4
 
 from core_domain.fmea.domain_pack import DomainPackManifest
 from core_domain.fmea.entities import FmeaAnalysis, FmeaRow
@@ -38,10 +37,6 @@ from fmea_application.governance_contracts import RevisionAssemblyRequest
 
 Identity = tuple[str, str, str]
 RecordVersion = tuple[str, int, str]
-Clock = Callable[[], str]
-IdFactory = Callable[[], str]
-GovernanceInputsVerifier = Callable[[object], None]
-
 _HASH_LENGTH: Final = 64
 _ACTIVE_RUN_BLOCKER: Final = "ACTIVE_MUTATION_RUN"
 _SEVERITY_ORDER: Final = {"info": 0, "warning": 1, "blocking": 2, "critical": 3}
@@ -50,10 +45,6 @@ _ARTIFACT_TYPES: Final = {"domain_pack", "template", "scoring_rule", "propagatio
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _stable_id() -> str:
-    return f"revision-{uuid4().hex}"
 
 
 def _text(value: object, label: str) -> str:
@@ -725,6 +716,15 @@ class GovernanceInputs:
             "propagation_rule_identity": (
                 None if self.propagation_rule_identity is None else artifact(self.propagation_rule_identity)
             ),
+            "retrieval_provenance": {
+                "workspace_id": self.retrieval_provenance.workspace_id,
+                "analysis_id": self.retrieval_provenance.analysis_id,
+                "requested_profile": self.retrieval_provenance.requested_profile,
+                "resolved_profile": self.retrieval_provenance.resolved_profile,
+                "evidence_types": self.retrieval_provenance.evidence_types,
+                "source_counts": self.retrieval_provenance.source_counts,
+                "warnings": self.retrieval_provenance.warnings,
+            },
             "rows": tuple(sorted(self.rows, key=lambda item: item.row_id)),
             "risk_records": tuple(sorted(self.risk_records, key=lambda item: (item.row_id, item.assessment_id))),
             "propagation_graph_revision": self.propagation_graph_revision,
@@ -773,25 +773,19 @@ def _append_issue(issues: list[ReadinessIssue], issue: ReadinessIssue) -> None:
 class RevisionAssembler:
     """Assemble one immutable, canonical FMEA revision from typed state."""
 
-    def __init__(
-        self,
-        clock: Clock = _utc_now,
-        id_factory: IdFactory | None = None,
-        *,
-        verifier: GovernanceInputsVerifier | None = None,
-    ) -> None:
-        self._clock = clock
-        self._id_factory = id_factory or _stable_id
-        self._verifier = verifier
+    __slots__ = ("_clock", "_runtime_marker")
+
+    def __init__(self) -> None:
+        self._clock = _utc_now
+        self._runtime_marker: object | None = None
 
     def assemble(self, request: RevisionAssemblyRequest, inputs: GovernanceInputs) -> FmeaRevision:
         if not isinstance(request, RevisionAssemblyRequest):
             raise TypeError("request must be a RevisionAssemblyRequest")
         if not isinstance(inputs, GovernanceInputs):
             raise TypeError("inputs must be a GovernanceInputs")
-        if self._verifier is None:
-            raise TypeError("trusted governance verifier is required")
-        self._verifier(inputs)
+        if self._runtime_marker is None:
+            raise TypeError("trusted governance runtime authority is required")
         if inputs.analysis_id != request.analysis_id:
             raise ValueError("request analysis_id does not match governance inputs")
         analysis_version = inputs.analysis.record_version
@@ -1325,36 +1319,30 @@ def _identity_hash_is_resolved(identity: object) -> bool:
 class PublicationReadinessPolicy:
     """Evaluate readiness deterministically from a typed domain policy."""
 
-    def __init__(
-        self,
-        domain_policy: GovernanceDomainPolicy | None = None,
-        *,
-        verifier: GovernanceInputsVerifier | None = None,
-    ) -> None:
+    __slots__ = ("_domain_policy", "_runtime_marker")
+
+    def __init__(self, domain_policy: GovernanceDomainPolicy | None = None) -> None:
         if domain_policy is not None and not isinstance(domain_policy, GovernanceDomainPolicy):
             raise TypeError("domain_policy must be a GovernanceDomainPolicy")
         self._domain_policy = domain_policy or GovernanceDomainPolicy()
-        self._verifier = verifier
+        self._runtime_marker: object | None = None
 
-    def evaluate(self, revision: FmeaRevision, context: PublicationReadinessContext) -> PublicationReadinessReport:  # noqa: C901
+    def evaluate(self, revision: FmeaRevision, context: PublicationReadinessContext) -> PublicationReadinessReport:
         if not isinstance(revision, FmeaRevision):
             raise TypeError("revision must be an FmeaRevision")
         if not isinstance(context, PublicationReadinessContext):
             raise TypeError("context must be a PublicationReadinessContext")
+        if self._runtime_marker is None:
+            return self._unverified_report(revision)
+        return self._evaluate_authoritative(revision, context)
+
+    def _evaluate_authoritative(  # noqa: C901 - explicit fail-closed policy matrix
+        self, revision: FmeaRevision, context: PublicationReadinessContext
+    ) -> PublicationReadinessReport:
+        if self._runtime_marker is None:
+            raise TypeError("trusted governance runtime authority is required")
         issues = list(revision.unresolved_items)
         policy = self._domain_policy
-        if self._verifier is not None:
-            if context.governance_inputs is None:
-                issues.append(
-                    _issue("UNVERIFIED_GOVERNANCE_INPUTS", source_type="governance", source_id=revision.analysis_id)
-                )
-            else:
-                try:
-                    self._verifier(context.governance_inputs)
-                except (TypeError, ValueError):
-                    issues.append(
-                        _issue("UNVERIFIED_GOVERNANCE_INPUTS", source_type="governance", source_id=revision.analysis_id)
-                    )
         if context.active_run_ids:
             issues.extend(
                 _issue(_ACTIVE_RUN_BLOCKER, source_type="run", source_id=run_id) for run_id in context.active_run_ids
@@ -1425,6 +1413,27 @@ class PublicationReadinessPolicy:
             ready=not blockers,
             issues=ordered,
             blocking_codes=tuple(sorted(blockers)),
+        )
+
+    @staticmethod
+    def _unverified_report(revision: FmeaRevision) -> PublicationReadinessReport:
+        issues = list(revision.unresolved_items)
+        _append_issue(
+            issues, _issue("UNVERIFIED_GOVERNANCE_INPUTS", source_type="governance", source_id=revision.analysis_id)
+        )
+        blockers = tuple(
+            sorted({issue.code for issue in issues if _SEVERITY_ORDER[issue.severity] >= _SEVERITY_ORDER["blocking"]})
+        )
+        return PublicationReadinessReport(
+            revision_id=revision.revision_id,
+            workspace_id=revision.workspace_id,
+            analysis_id=revision.analysis_id,
+            revision_hash=revision.revision_hash,
+            target_record_version=revision.analysis_record_version,
+            evidence_pack_ids=tuple(pack_id for pack_id, _ in revision.evidence_pack_hashes),
+            ready=False,
+            issues=tuple(issues),
+            blocking_codes=blockers,
         )
 
     @staticmethod

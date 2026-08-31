@@ -197,12 +197,6 @@ class RegistryGovernanceArtifactProvider:
             raise ValueError("artifact lookup analysis scope is invalid")
         if analysis.analysis_type not in self._domain_pack.analysis_types:
             raise ValueError("domain pack does not support the authoritative analysis type")
-        registered_domain = self._domain_registry.get(self._domain_pack.pack_id, self._domain_pack.version)
-        if (
-            registered_domain != self._domain_pack
-            or domain_pack_content_hash(registered_domain) != registered_domain.content_hash
-        ):
-            raise ValueError("domain pack registry identity does not match the server manifest")
 
         def source_bytes(registry: object, artifact_type: str, artifact_id: str, version: str) -> bytes:
             getter = getattr(registry, "get_source_bytes", None)
@@ -213,96 +207,96 @@ class RegistryGovernanceArtifactProvider:
                 raise ValueError(f"{artifact_type} registry source bytes are invalid")
             return raw
 
-        def identity(
+        def resolved_identity(
             artifact_type: str,
             artifact_id: str,
             version: str,
-            content_hash: str,
             registry: object,
             source_loader: Callable[[bytes], object],
-            expected_model: object,
-        ) -> ResolvedArtifactIdentity:
+            content_hash: Callable[[object], str],
+        ) -> tuple[ResolvedArtifactIdentity, object]:
             raw = source_bytes(registry, artifact_type, artifact_id, version)
             try:
                 resolved_model = source_loader(raw)
             except Exception as exc:
                 raise ValueError(f"{artifact_type} registry source is invalid") from exc
-            if resolved_model != expected_model:
-                raise ValueError(f"{artifact_type} registry source does not match its typed record")
+            if (
+                getattr(resolved_model, "__class__", None) is object
+                or getattr(resolved_model, "version", None) != version
+                or getattr(resolved_model, "pack_id", getattr(resolved_model, "rule_pack_id", None)) != artifact_id
+            ) and artifact_type != "template":
+                raise ValueError(f"{artifact_type} registry source identity is invalid")
             source_hash = sha256(raw).hexdigest()
-            return ResolvedArtifactIdentity(artifact_type, artifact_id, version, content_hash, source_hash)
+            return (
+                ResolvedArtifactIdentity(
+                    artifact_type, artifact_id, version, content_hash(resolved_model), source_hash
+                ),
+                resolved_model,
+            )
 
         template_compiler = TemplateCompiler(
             schema_validator=Draft202012SchemaAdapter(),
             source_loader=load_template_source,
         )
 
+        domain_identity, registered_domain = resolved_identity(
+            "domain_pack",
+            self._domain_pack.pack_id,
+            self._domain_pack.version,
+            self._domain_registry,
+            load_domain_pack_manifest,
+            lambda model: domain_pack_content_hash(model),
+        )
+        if registered_domain != self._domain_pack or domain_identity.content_hash != registered_domain.content_hash:
+            raise ValueError("domain pack registry identity does not match the server manifest")
+
         templates_list: list[ResolvedArtifactIdentity] = []
         for template_id, version in self._domain_pack.template_identities:
-            template = self._template_registry.get(template_id, version)
+            template_identity, template = resolved_identity(
+                "template",
+                template_id,
+                version,
+                self._template_registry,
+                lambda raw: template_compiler.compile(load_template_source_bytes(raw)),
+                lambda model: sha256(model.canonical_json.encode("utf-8")).hexdigest(),
+            )
             if template.metadata.template_id != template_id or template.metadata.version != version:
                 raise ValueError("template registry identity does not match the domain pack")
-            calculated_template_hash = sha256(template.canonical_json.encode("utf-8")).hexdigest()
-            if calculated_template_hash != template.template_hash:
+            if template_identity.content_hash != template.template_hash:
                 raise ValueError("template registry content hash does not match its source")
-            templates_list.append(
-                identity(
-                    "template",
-                    template_id,
-                    version,
-                    calculated_template_hash,
-                    self._template_registry,
-                    lambda raw: template_compiler.compile(load_template_source_bytes(raw)),
-                    template,
-                )
-            )
+            templates_list.append(template_identity)
         templates = tuple(templates_list)
         scoring_list: list[ResolvedArtifactIdentity] = []
         for rule_id, version in self._domain_pack.scoring_rule_identities:
-            rule = self._scoring_registry.get(rule_id, version)
+            scoring_identity, rule = resolved_identity(
+                "scoring_rule",
+                rule_id,
+                version,
+                self._scoring_registry,
+                load_scoring_rule_pack,
+                scoring_rule_content_hash,
+            )
             if rule.rule_pack_id != rule_id or rule.version != version:
                 raise ValueError("scoring rule registry identity does not match the domain pack")
-            scoring_hash = scoring_rule_content_hash(rule)
-            scoring_list.append(
-                identity(
-                    "scoring_rule",
-                    rule_id,
-                    version,
-                    scoring_hash,
-                    self._scoring_registry,
-                    load_scoring_rule_pack,
-                    rule,
-                )
-            )
+            scoring_list.append(scoring_identity)
         scoring = tuple(scoring_list)
         propagation = None
         if self._domain_pack.propagation_rule_identities:
             rule_id, version = self._domain_pack.propagation_rule_identities[0]
-            rule = self._propagation_registry.get(rule_id, version)
-            if rule.rule_pack_id != rule_id or rule.version != version:
-                raise ValueError("propagation rule registry identity does not match the domain pack")
-            propagation_hash = propagation_rule_content_hash(rule)
-            propagation = identity(
+            propagation_identity, rule = resolved_identity(
                 "propagation_rule",
                 rule_id,
                 version,
-                propagation_hash,
                 self._propagation_registry,
                 load_propagation_rule_pack,
-                rule,
+                propagation_rule_content_hash,
             )
-        domain_hash = registered_domain.content_hash
+            if rule.rule_pack_id != rule_id or rule.version != version:
+                raise ValueError("propagation rule registry identity does not match the domain pack")
+            propagation = propagation_identity
         return GovernanceArtifactSet(
             domain_pack=registered_domain,
-            domain_pack_identity=identity(
-                "domain_pack",
-                registered_domain.pack_id,
-                registered_domain.version,
-                domain_hash,
-                self._domain_registry,
-                load_domain_pack_manifest,
-                registered_domain,
-            ),
+            domain_pack_identity=domain_identity,
             template_identities=templates,
             scoring_rule_identities=scoring,
             propagation_rule_identity=propagation,
@@ -312,56 +306,17 @@ class RegistryGovernanceArtifactProvider:
 class RepositoryGovernanceSource:
     """Compose existing query repositories behind the server-owned source port."""
 
-    def __init__(self, providers: GovernanceRepositoryProviders) -> None:  # noqa: C901
+    __slots__ = ("_providers",)
+
+    def __init__(self, providers: GovernanceRepositoryProviders) -> None:
         if not isinstance(providers, GovernanceRepositoryProviders):
             raise TypeError("providers must be GovernanceRepositoryProviders")
         self._providers = providers
 
-        signing_secret = secrets.token_bytes(32)
-        issuance_nonce = object()
+    def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
+        raise TypeError("RepositoryGovernanceSource must be obtained from build_workspace_governance_runtime")
 
-        class OpaqueGovernanceAttestation:
-            __slots__ = ("_digest", "_signature")
-
-            def __init__(self, nonce: object, digest: str, signature: str) -> None:
-                if nonce is not issuance_nonce:
-                    raise TypeError("governance attestation can only be issued by its source")
-                object.__setattr__(self, "_digest", digest)
-                object.__setattr__(self, "_signature", signature)
-
-            @property
-            def digest(self) -> str:
-                return self._digest
-
-            @property
-            def signature(self) -> str:
-                return self._signature
-
-            def __setattr__(self, _name: str, _value: object) -> None:
-                raise AttributeError("governance attestations are immutable")
-
-        def issue(inputs: GovernanceInputs) -> OpaqueGovernanceAttestation:
-            digest = canonical_hash(inputs.attestation_body, max_array_items=10_000)
-            signature = hmac.new(signing_secret, digest.encode("ascii"), sha256).hexdigest()
-            return OpaqueGovernanceAttestation(issuance_nonce, digest, signature)
-
-        def verify(inputs: object) -> None:
-            if not isinstance(inputs, GovernanceInputs):
-                raise TypeError("trusted governance verifier requires GovernanceInputs")
-            proof = getattr(inputs, "_source_attestation", None)
-            if not isinstance(proof, OpaqueGovernanceAttestation):
-                raise TypeError("governance inputs do not have a source attestation")
-            digest = canonical_hash(inputs.attestation_body, max_array_items=10_000)
-            expected_signature = hmac.new(signing_secret, digest.encode("ascii"), sha256).hexdigest()
-            if not hmac.compare_digest(proof.digest, digest) or not hmac.compare_digest(
-                proof.signature, expected_signature
-            ):
-                raise ValueError("governance inputs source attestation is invalid")
-
-        self._issue_inputs_attestation = issue
-        self._verifier = verify
-
-    def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:  # noqa: C901
+    def _load_unattested_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:  # noqa: C901
         if (
             not isinstance(analysis_id, str)
             or not analysis_id.strip()
@@ -454,7 +409,7 @@ class RepositoryGovernanceSource:
             _source_attestation=object(),
         )
         RevisionAssembler._validate_source_scope(inputs)
-        return replace(inputs, _source_attestation=self._issue_inputs_attestation(inputs))
+        return inputs
 
 
 ServerGovernanceSourceAdapter = RepositoryGovernanceSource
@@ -514,7 +469,7 @@ def _register_review_template(template_registry_root: Path) -> None:
     registry.register(compiled, _TEMPLATE_SOURCE.read_bytes(), _TEMPLATE_SOURCE.suffix.lower())
 
 
-def build_workspace_governance_runtime(
+def build_workspace_governance_runtime(  # noqa: C901 - authority remains factory-local
     providers: GovernanceRepositoryProviders,
     *,
     domain_policy: GovernanceDomainPolicy | None = None,
@@ -523,12 +478,91 @@ def build_workspace_governance_runtime(
 ) -> GovernanceRuntime:
     """Compose Task 2 around typed repository query providers."""
 
-    resolved_source = RepositoryGovernanceSource(providers)
+    signing_secret = secrets.token_bytes(32)
+    issuance_nonce = object()
+    runtime_marker = object()
+
+    class OpaqueGovernanceAttestation:
+        __slots__ = ("_digest", "_signature")
+
+        def __init__(self, nonce: object, digest: str, signature: str) -> None:
+            if nonce is not issuance_nonce:
+                raise TypeError("governance attestation can only be issued by its runtime")
+            object.__setattr__(self, "_digest", digest)
+            object.__setattr__(self, "_signature", signature)
+
+        @property
+        def digest(self) -> str:
+            return self._digest
+
+        @property
+        def signature(self) -> str:
+            return self._signature
+
+        def __setattr__(self, _name: str, _value: object) -> None:
+            raise AttributeError("governance attestations are immutable")
+
+    def issue(inputs: GovernanceInputs) -> OpaqueGovernanceAttestation:
+        digest = canonical_hash(inputs.attestation_body, max_array_items=10_000)
+        signature = hmac.new(signing_secret, digest.encode("ascii"), sha256).hexdigest()
+        return OpaqueGovernanceAttestation(issuance_nonce, digest, signature)
+
+    def verify(inputs: object) -> None:
+        if not isinstance(inputs, GovernanceInputs):
+            raise TypeError("trusted governance authority requires GovernanceInputs")
+        proof = getattr(inputs, "_source_attestation", None)
+        if not isinstance(proof, OpaqueGovernanceAttestation):
+            raise ValueError(  # noqa: TRY004 - object type is valid; authority is not
+                "governance inputs do not have a runtime attestation"
+            )
+        digest = canonical_hash(inputs.attestation_body, max_array_items=10_000)
+        expected_signature = hmac.new(signing_secret, digest.encode("ascii"), sha256).hexdigest()
+        if not hmac.compare_digest(proof.digest, digest) or not hmac.compare_digest(
+            proof.signature, expected_signature
+        ):
+            raise ValueError("governance inputs source attestation is invalid")
+
+    class RuntimeGovernanceSource(RepositoryGovernanceSource):
+        __slots__ = ()
+
+        def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
+            inputs = self._load_unattested_inputs(analysis_id, workspace_id)
+            return replace(inputs, _source_attestation=issue(inputs))
+
+    class RuntimeRevisionAssembler(RevisionAssembler):
+        __slots__ = ()
+
+        def __init__(self) -> None:
+            super().__init__()
+            object.__setattr__(self, "_clock", clock)
+            object.__setattr__(self, "_runtime_marker", runtime_marker)
+
+        def assemble(self, request, inputs):  # type: ignore[no-untyped-def]
+            verify(inputs)
+            return super().assemble(request, inputs)
+
+    class RuntimePublicationReadinessPolicy(PublicationReadinessPolicy):
+        __slots__ = ()
+
+        def __init__(self) -> None:
+            super().__init__(domain_policy)
+            object.__setattr__(self, "_runtime_marker", runtime_marker)
+
+        def evaluate(self, revision, context):  # type: ignore[no-untyped-def]
+            if context.governance_inputs is None:
+                return self._unverified_report(revision)
+            try:
+                verify(context.governance_inputs)
+            except (TypeError, ValueError):
+                return self._unverified_report(revision)
+            return self._evaluate_authoritative(revision, context)
+
+    resolved_source = RuntimeGovernanceSource(providers)
     generator = assistance_generator or OfflineGovernanceAssistanceGenerator()
     return GovernanceRuntime(
         source=resolved_source,
-        assembler=RevisionAssembler(clock=clock, verifier=resolved_source._verifier),
-        readiness_policy=PublicationReadinessPolicy(domain_policy, verifier=resolved_source._verifier),
+        assembler=RuntimeRevisionAssembler(),
+        readiness_policy=RuntimePublicationReadinessPolicy(),
         assistance_service=GovernanceAssistanceService(generator=generator, clock=clock),
     )
 

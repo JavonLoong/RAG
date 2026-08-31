@@ -33,6 +33,15 @@ def test_source_adapter_load_inputs_only_accepts_server_scope():
         )
 
 
+def test_source_exposes_no_issuer_or_verifier_instance_seam():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    source = _source(make_governance_inputs())
+    assert not hasattr(source, "_verifier")
+    assert not hasattr(source, "_issue_inputs_attestation")
+    assert not any("issue" in name or "verif" in name for name in dir(source))
+
+
 def test_valid_source_rejects_client_state_overrides_at_load_boundary():
     from fmea_governance_fixtures import make_governance_inputs
 
@@ -160,6 +169,7 @@ def _source(
     acknowledgements=(),
     provenance=None,
     parent=None,
+    return_runtime=False,
 ):
     GovernanceRepositoryProviders, RepositoryGovernanceSource = _implementation()
     providers = GovernanceRepositoryProviders(
@@ -190,7 +200,10 @@ def _source(
             else None
         ),
     )
-    return RepositoryGovernanceSource(providers)
+    from fmea_infrastructure.composition import build_workspace_governance_runtime
+
+    runtime = build_workspace_governance_runtime(providers)
+    return runtime if return_runtime else runtime.source
 
 
 def test_source_reads_active_runs_server_side_and_returns_typed_inputs():
@@ -209,12 +222,10 @@ def test_source_attestation_binds_replaced_input_components():
 
     from fmea_governance_fixtures import _identity, make_governance_inputs
 
-    from fmea_application.revision_assembler import RevisionAssembler
-
     base = make_governance_inputs()
-    source = _source(base)
-    inputs = source.load_inputs("analysis-1", "ws-1")
-    assembler = RevisionAssembler(verifier=source._verifier)
+    runtime = _source(base, return_runtime=True)
+    inputs = runtime.source.load_inputs("analysis-1", "ws-1")
+    assembler = runtime.assembler
     request = __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request()
     tampered_values = (
         replace(inputs, active_run_ids=("forged-run",)),
@@ -247,14 +258,12 @@ def test_source_attestation_binds_acknowledgement_records():
 
     from fmea_governance_fixtures import make_governance_acknowledgement_record, make_governance_inputs
 
-    from fmea_application.revision_assembler import RevisionAssembler
-
     base = make_governance_inputs()
-    source = _source(base, acknowledgements=(make_governance_acknowledgement_record(),))
-    inputs = source.load_inputs("analysis-1", "ws-1")
+    runtime = _source(base, acknowledgements=(make_governance_acknowledgement_record(),), return_runtime=True)
+    inputs = runtime.source.load_inputs("analysis-1", "ws-1")
     tampered = replace(inputs, acknowledgement_references=())
     with pytest.raises(ValueError, match="attestation"):
-        RevisionAssembler(verifier=source._verifier).assemble(
+        runtime.assembler.assemble(
             __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
             tampered,
         )
@@ -271,6 +280,43 @@ def test_source_attestation_has_no_public_constructor_or_module_signer():
         proof_type(object(), "a" * 64, "b" * 64)
     assert not hasattr(revision_assembler, "_ResolverCapability")
     assert not hasattr(revision_assembler, "_RESOLVER_CAPABILITY")
+
+
+def test_cross_runtime_attestation_cannot_be_reused():
+    from fmea_governance_fixtures import make_assemble_request, make_governance_inputs
+
+    first = make_governance_inputs()
+    second = make_governance_inputs()
+    with pytest.raises(ValueError, match="attestation"):
+        __import__("fmea_governance_fixtures", fromlist=["make_governance_assembler"]).make_governance_assembler(
+            second
+        ).assemble(make_assemble_request(), first)
+
+
+@pytest.mark.parametrize(
+    "field",
+    ("requested_profile", "resolved_profile", "evidence_types", "source_counts", "warnings"),
+)
+def test_source_attestation_binds_every_retrieval_provenance_field(field):
+    from fmea_governance_fixtures import make_governance_inputs
+
+    base = make_governance_inputs()
+    replacement = {
+        "requested_profile": "rag_only",
+        "resolved_profile": "rag_only",
+        "evidence_types": ("text",),
+        "source_counts": (("text", 2),),
+        "warnings": ("changed-warning",),
+    }
+    tampered_provenance = replace(base.retrieval_provenance, **{field: replacement[field]})
+    tampered = replace(base, retrieval_provenance=tampered_provenance)
+    with pytest.raises(ValueError, match="attestation"):
+        __import__("fmea_governance_fixtures", fromlist=["make_governance_assembler"]).make_governance_assembler(
+            base
+        ).assemble(
+            __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
+            tampered,
+        )
 
 
 def test_source_rejects_provider_records_from_a_mixed_analysis_scope(fixture_row):
@@ -481,10 +527,34 @@ def test_registry_adapter_rejects_registry_manifest_hash_mismatch():
         def get(self, _pack_id, _version):
             return replace(base.domain_pack, content_hash="b" * 64)
 
-    with pytest.raises(ValueError, match="domain pack registry"):
+    with pytest.raises((TypeError, ValueError), match="domain[_ ]pack registry"):
         RegistryGovernanceArtifactProvider(
             domain_pack=base.domain_pack,
             domain_pack_registry=BadDomainRegistry(),
+            template_registry=object(),
+            scoring_rule_registry=object(),
+            propagation_rule_registry=object(),
+        ).get_artifacts("analysis-1", "ws-1", base.analysis)
+
+
+def test_registry_adapter_uses_one_verified_source_load_without_get_fallback():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    from fmea_infrastructure.composition import RegistryGovernanceArtifactProvider
+
+    base = make_governance_inputs()
+
+    class SourceOnlyDomainRegistry:
+        def get(self, _pack_id, _version):
+            raise AssertionError("registry model must come from the verified source load")  # noqa: TRY003
+
+        def get_source_bytes(self, _pack_id, _version):
+            return b"invalid-domain-source"
+
+    with pytest.raises(ValueError, match="domain_pack registry source"):
+        RegistryGovernanceArtifactProvider(
+            domain_pack=base.domain_pack,
+            domain_pack_registry=SourceOnlyDomainRegistry(),
             template_registry=object(),
             scoring_rule_registry=object(),
             propagation_rule_registry=object(),

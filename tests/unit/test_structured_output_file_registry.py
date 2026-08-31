@@ -153,6 +153,54 @@ def test_source_bytes_tampering_is_detected(tmp_path: Path) -> None:
     assert raised.value.code == "TEMPLATE_HASH_MISMATCH"
 
 
+def test_get_source_bytes_reads_source_once_and_returns_verified_bytes(tmp_path: Path, monkeypatch):
+    template = compiled()
+    registry = FileTemplateRegistry(tmp_path)
+    source = FIXTURE.read_bytes()
+    registry.register(template, source, FIXTURE.suffix)
+    source_path = tmp_path / template.metadata.template_id / template.metadata.version / "source.yaml"
+    original_read_entry = getattr(registry, "_read_entry_bytes", None)
+    reads = 0
+
+    def counting_read_bytes(path: Path, *, max_bytes: int) -> bytes:
+        nonlocal reads
+        if path == source_path:
+            reads += 1
+        if original_read_entry is not None:
+            return original_read_entry(path, max_bytes=max_bytes)
+        return Path.read_bytes(path)
+
+    monkeypatch.setattr(registry, "_read_entry_bytes", counting_read_bytes, raising=False)
+    assert registry.get_source_bytes(template.metadata.template_id, template.metadata.version) == source
+    assert reads == 1
+
+
+def test_get_source_bytes_does_not_reread_after_source_swap(tmp_path: Path, monkeypatch):
+    template = compiled()
+    registry = FileTemplateRegistry(tmp_path)
+    source = FIXTURE.read_bytes()
+    registry.register(template, source, FIXTURE.suffix)
+    source_path = tmp_path / template.metadata.template_id / template.metadata.version / "source.yaml"
+    original_read_entry = getattr(registry, "_read_entry_bytes", None)
+    reads = 0
+
+    def swap_after_first_read(path: Path, *, max_bytes: int) -> bytes:
+        nonlocal reads
+        if original_read_entry is not None:
+            result = original_read_entry(path, max_bytes=max_bytes)
+        else:
+            result = Path.read_bytes(path)
+        if path == source_path:
+            reads += 1
+            if reads == 1:
+                path.write_bytes(b"replacement-after-verification")
+        return result
+
+    monkeypatch.setattr(registry, "_read_entry_bytes", swap_after_first_read, raising=False)
+    assert registry.get_source_bytes(template.metadata.template_id, template.metadata.version) == source
+    assert reads == 1
+
+
 def test_noncanonical_compiled_contract_is_rejected_before_write(tmp_path: Path) -> None:
     template = compiled()
     noncanonical = f" {template.canonical_json}"
