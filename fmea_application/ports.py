@@ -31,6 +31,22 @@ from .assistance_contracts import (
     AssistanceRequest,
     AssistanceSuggestion,
 )
+from .governance_contracts import (
+    ApprovalResult,
+    ApprovalSubmissionResult,
+    GovernanceHistoryQuery,
+    PreparedApproval,
+    PreparedApprovalSubmission,
+    PreparedApprovalWithdrawal,
+    PreparedPublication,
+    PreparedPublicationWithdrawal,
+    PreparedRevision,
+    PreparedSupersession,
+    PublicationResult,
+    PublicationWithdrawalResult,
+    RevisionResult,
+    SupersessionResult,
+)
 from .review_contracts import (
     ActorContext,
     AuditEvent,
@@ -61,7 +77,8 @@ from .risk_contracts import (
 )
 
 if TYPE_CHECKING:
-    from core_domain.fmea.governance import FmeaRevision
+    from core_domain.fmea.governance import FmeaRevision, PublishedRevision
+    from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
     from .propagation_service import (
         PreparedPropagationInvalidation,
@@ -81,6 +98,38 @@ if TYPE_CHECKING:
     )
 
 ReviewHistoryPosition = tuple[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class GovernanceHistoryPage:
+    """A bounded immutable page of persisted governance audit events."""
+
+    events: tuple[AuditEvent, ...]
+    next_cursor: str | None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "events", tuple(self.events))
+        if self.next_cursor is not None and (not isinstance(self.next_cursor, str) or not self.next_cursor.strip()):
+            raise ValueError("next_cursor must be non-empty when supplied")  # noqa: TRY003
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalWithdrawalResult:
+    """Result shape for the append-only withdrawal of an approval decision."""
+
+    withdrawal_id: str
+    approval_id: str
+    audit_event_id: str
+    outbox_event_id: str
+    replayed: bool = False
+
+    def __post_init__(self) -> None:
+        for field_name in ("withdrawal_id", "approval_id", "audit_event_id", "outbox_event_id"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be non-empty")  # noqa: TRY003
+        if not isinstance(self.replayed, bool):
+            raise ValueError("replayed must be a boolean")  # noqa: TRY003, TRY004
 
 
 @dataclass(frozen=True, slots=True)
@@ -497,6 +546,54 @@ class RiskRepository(Protocol):
     def list_outbox_events(self, aggregate_id: str, workspace_id: str) -> tuple[OutboxEvent, ...]: ...
 
 
+class GovernanceRepository(Protocol):
+    """Workspace-qualified persistence boundary for immutable FMEA governance."""
+
+    def replay_revision(self, scope: IdempotencyScope, payload_hash: str) -> RevisionResult | None: ...
+
+    def commit_revision(self, prepared: PreparedRevision) -> RevisionResult: ...
+
+    def get_revision(self, revision_id: str, workspace_id: str) -> FmeaRevision | None: ...
+
+    def replay_approval_submission(
+        self, scope: IdempotencyScope, payload_hash: str
+    ) -> ApprovalSubmissionResult | None: ...
+
+    def commit_approval_submission(self, prepared: PreparedApprovalSubmission) -> ApprovalSubmissionResult: ...
+
+    def replay_approval_decision(self, scope: IdempotencyScope, payload_hash: str) -> ApprovalResult | None: ...
+
+    def commit_approval(self, prepared: PreparedApproval) -> ApprovalResult: ...
+
+    def replay_approval_withdrawal(
+        self, scope: IdempotencyScope, payload_hash: str
+    ) -> ApprovalWithdrawalResult | None: ...
+
+    def commit_approval_withdrawal(self, prepared: PreparedApprovalWithdrawal) -> ApprovalWithdrawalResult: ...
+
+    def replay_publication(self, scope: IdempotencyScope, payload_hash: str) -> PublicationResult | None: ...
+
+    def commit_publication(self, prepared: PreparedPublication) -> PublicationResult: ...
+
+    def replay_publication_withdrawal(
+        self, scope: IdempotencyScope, payload_hash: str
+    ) -> PublicationWithdrawalResult | None: ...
+
+    def commit_publication_withdrawal(self, prepared: PreparedPublicationWithdrawal) -> PublicationWithdrawalResult: ...
+
+    def replay_supersession(self, scope: IdempotencyScope, payload_hash: str) -> SupersessionResult | None: ...
+
+    def commit_supersession(self, prepared: PreparedSupersession) -> SupersessionResult: ...
+
+    def get_publication(self, publication_id: str, workspace_id: str) -> PublishedRevision | None: ...
+
+    def get_snapshot(self, publication_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None: ...
+
+    def list_approval_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
+
+    def list_publication_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
+
+
 class ReviewRunExecutor(Protocol):
     def submit(self, run_id: str, operation: Callable[[], None]) -> None: ...
 
@@ -505,6 +602,7 @@ class ReviewRunExecutor(Protocol):
 
 __all__ = [
     "AnalysisAssistanceGenerator",
+    "ApprovalWithdrawalResult",
     "AssistanceRepository",
     "DomainPackRegistry",
     "EvidenceProvider",
@@ -516,7 +614,9 @@ __all__ = [
     "GovernanceArtifactQueryPort",
     "GovernanceAssistanceGenerator",
     "GovernanceEvidenceQueryPort",
+    "GovernanceHistoryPage",
     "GovernancePropagationQueryPort",
+    "GovernanceRepository",
     "GovernanceRepositoryProviders",
     "GovernanceReviewQueryPort",
     "GovernanceRiskQueryPort",
