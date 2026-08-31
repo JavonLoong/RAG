@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import replace
 
 import pytest
@@ -46,6 +47,23 @@ def test_bare_readiness_policy_fails_closed_without_runtime_authority():
     report = PublicationReadinessPolicy(make_domain_policy()).evaluate(make_fmea_revision(), make_readiness_context())
     assert report.ready is False
     assert "UNVERIFIED_GOVERNANCE_INPUTS" in report.blocking_codes
+
+
+def test_caller_writable_runtime_marker_cannot_authorize_bare_readiness_policy():
+    _, PublicationReadinessPolicy = _implementation()
+    policy = PublicationReadinessPolicy(make_domain_policy())
+    with suppress(AttributeError):
+        policy._runtime_marker = object()  # type: ignore[attr-defined]
+
+    report = policy.evaluate(make_fmea_revision(), make_readiness_context())
+    assert report.ready is False
+    assert "UNVERIFIED_GOVERNANCE_INPUTS" in report.blocking_codes
+
+
+def test_public_readiness_policy_has_no_direct_authoritative_entrypoint():
+    _, PublicationReadinessPolicy = _implementation()
+    policy = PublicationReadinessPolicy(make_domain_policy())
+    assert not hasattr(policy, "_evaluate_authoritative")
 
 
 def test_readiness_policy_rejects_callable_authority_injection():

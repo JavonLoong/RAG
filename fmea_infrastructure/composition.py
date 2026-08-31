@@ -56,6 +56,8 @@ from fmea_application.revision_assembler import (
     ResolvedAnalysisRecord,
     ResolvedArtifactIdentity,
     RevisionAssembler,
+    _assemble_revision,
+    _evaluate_readiness,
 )
 from fmea_application.risk_service import RiskAssessmentService, RiskContextProvider
 from fmea_application.service_factory import (
@@ -480,7 +482,6 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
 
     signing_secret = secrets.token_bytes(32)
     issuance_nonce = object()
-    runtime_marker = object()
 
     class OpaqueGovernanceAttestation:
         __slots__ = ("_digest", "_signature")
@@ -535,18 +536,16 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
         def __init__(self) -> None:
             super().__init__()
             object.__setattr__(self, "_clock", clock)
-            object.__setattr__(self, "_runtime_marker", runtime_marker)
 
         def assemble(self, request, inputs):  # type: ignore[no-untyped-def]
             verify(inputs)
-            return super().assemble(request, inputs)
+            return _assemble_revision(self, request, inputs)
 
     class RuntimePublicationReadinessPolicy(PublicationReadinessPolicy):
         __slots__ = ()
 
         def __init__(self) -> None:
             super().__init__(domain_policy)
-            object.__setattr__(self, "_runtime_marker", runtime_marker)
 
         def evaluate(self, revision, context):  # type: ignore[no-untyped-def]
             if context.governance_inputs is None:
@@ -555,7 +554,7 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
                 verify(context.governance_inputs)
             except (TypeError, ValueError):
                 return self._unverified_report(revision)
-            return self._evaluate_authoritative(revision, context)
+            return _evaluate_readiness(self, revision, context)
 
     resolved_source = RuntimeGovernanceSource(providers)
     generator = assistance_generator or OfflineGovernanceAssistanceGenerator()

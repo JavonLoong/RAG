@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from dataclasses import replace
 from inspect import signature
 
@@ -73,6 +74,16 @@ def test_revision_assembler_requires_a_runtime_bound_verifier():
     inputs = make_governance_inputs()
     with pytest.raises(TypeError, match="trusted governance runtime authority"):
         RevisionAssembler().assemble(make_assemble_request(), inputs)
+
+
+def test_caller_writable_runtime_marker_cannot_authorize_bare_assembler():
+    RevisionAssembler = _implementation()
+    assembler = RevisionAssembler()
+    with suppress(AttributeError):
+        assembler._runtime_marker = object()  # type: ignore[attr-defined]
+
+    with pytest.raises(TypeError, match="trusted governance runtime authority"):
+        assembler.assemble(make_assemble_request(), make_governance_inputs())
 
 
 def test_legacy_module_level_resolver_issuance_helpers_are_not_importable():

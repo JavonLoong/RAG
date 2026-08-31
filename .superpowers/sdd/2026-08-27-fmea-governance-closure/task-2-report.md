@@ -414,3 +414,81 @@ exit 0（只有 Git 的 LF/CRLF warning，无 whitespace error）
 1. 旧 `FileTemplateRegistry` manifest 没有独立 `source_hash` 时按设计 fail closed；后续需要可信 re-registration/migration，而不是在 Task 3 transport 或 readiness 中降级校验。
 2. Task 3 composition 必须只分发 factory 返回的 `GovernanceRuntime`，并由 server-owned typed providers 提供 analysis/artifact/row/risk/graph/evidence/ack/run/retrieval/parent state；不得把 factory-local authority 变成可注入 callback 或 transport API。
 3. Task 4 只能消费 runtime-bound deterministic readiness 和 immutable assistance suggestion；不得让模型或客户端改变 blockers、ack、revision identity、propagation requirement 或 Task 1 persistence preconditions。
+
+## Fix round 5 — public governance APIs fail closed
+
+日期：2026-08-31
+
+结果：DONE_WITH_CONCERNS
+
+基线：`5cf8cf57818a964a42c364ba0128f1aa91198978`。本轮只修复 scoped re-review 的最后一项 Important authority bypass；未进入 Task 3+，未修改 registry、provenance HMAC 或 TOCTOU 路径，未 push/PR，未创建子智能体。
+
+### 根因
+
+round 4 的 `RevisionAssembler` 与 `PublicationReadinessPolicy` 仍在公开 base 的 `__slots__` 中保存可写的 `_runtime_marker`。公共 `assemble()`/`evaluate()` 只检查 marker 是否为 `None`，因此普通调用者可直接写入任意 `object()`，绕过 runtime HMAC：裸 assembler 可产生 revision，裸 policy 可返回 `ready=True`。`PublicationReadinessPolicy` 还保留了可从 base 实例直接调用的 `_evaluate_authoritative` 方法。
+
+### RED
+
+先添加真实行为/API 测试：尝试给裸 assembler/policy 写入任意 `_runtime_marker`，再实际调用 `assemble()`/`evaluate()`；同时断言 base 实例没有 direct authoritative entrypoint。
+
+命令：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_revision_assembler.py::test_caller_writable_runtime_marker_cannot_authorize_bare_assembler tests/unit/test_fmea_publication_readiness.py::test_caller_writable_runtime_marker_cannot_authorize_bare_readiness_policy tests/unit/test_fmea_publication_readiness.py::test_public_readiness_policy_has_no_direct_authoritative_entrypoint -q
+```
+
+真实失败：
+
+```text
+FFF                                                                      [100%]
+3 failed in 0.17s
+```
+
+其中 assembler marker 测试 `DID NOT RAISE`，policy marker 测试观察到 `ready=True`，base API 测试观察到 `_evaluate_authoritative` 仍存在；失败来自目标行为缺失，不是测试环境错误。
+
+### GREEN 设计
+
+- `RevisionAssembler.__slots__` 只保留 `_clock`，`PublicationReadinessPolicy.__slots__` 只保留 `_domain_policy`；两个公开 base 的公共入口都不能由 caller-writable marker/flag/callable/secret 参数授权。assembler 对合法输入无条件抛出 `trusted governance runtime authority is required`；policy 只返回包含 `UNVERIFIED_GOVERNANCE_INPUTS` 的不可 ready 报告。
+- 原 deterministic assembly/readiness 逻辑移入模块私有 core function；factory-local runtime subclass 先用 closure-private HMAC 验证同一 runtime 的 attested `GovernanceInputs`，再调用 core。删除 runtime marker 与 base `_evaluate_authoritative`，没有暴露 signer/verifier/issuer 构造参数、属性或 source method。
+- 新测试继续实际调用 production object；若尝试设置 `_runtime_marker` 在新 slots 下失败，也继续验证该裸入口不能 assemble/ready。round 4 已通过的 cross-runtime、tampered-input、provenance binding、registry TOCTOU 行为未改动。
+
+### Fresh 验证
+
+authority-bypass nodes：
+
+```text
+...                                                                      [100%]
+3 passed in 0.06s
+```
+
+Task 2 exact matrix（沿用 round 4 的 12 个测试文件）：
+
+```text
+........................................................................ [ 35%]
+........................................................................ [ 70%]
+............................................................             [100%]
+204 passed in 0.79s
+```
+
+本轮改动文件静态/编译/差异检查：
+
+```text
+.venv\Scripts\ruff.exe check fmea_application\revision_assembler.py fmea_infrastructure\composition.py tests\unit\test_fmea_revision_assembler.py tests\unit\test_fmea_publication_readiness.py
+All checks passed!
+
+.venv\Scripts\ruff.exe format --check fmea_application\revision_assembler.py fmea_infrastructure\composition.py tests\unit\test_fmea_revision_assembler.py tests\unit\test_fmea_publication_readiness.py
+4 files already formatted
+
+.venv\Scripts\python.exe -m compileall -q fmea_application fmea_infrastructure tests\fmea_governance_fixtures.py tests\unit\test_fmea_revision_assembler.py tests\unit\test_fmea_publication_readiness.py
+exit 0
+
+git diff --check
+exit 0（仅 Git 的 LF/CRLF warning，无 whitespace error）
+```
+
+未运行全量 pytest。registry/source compatibility 未重跑：本轮未触及 registry 路径，round 4 的 `78 passed, 6 skipped` 证据仍对应未修改的 registry/source 代码。
+
+### 兼容影响与 concern
+
+1. 公开 base assembler 仍保留类型/API 入口，但现在只能 fail closed；只有 factory 返回的 runtime-local assembler/policy 可执行 authoritative assembly/readiness。Task 3/4 必须继续消费 factory runtime，不得直接构造 base 或恢复 marker/callback seam。
+2. round 4 已记录的旧 `FileTemplateRegistry` manifest 缺独立 `source_hash` 时 fail closed、需可信 re-registration/migration 的 concern unchanged；本轮没有放宽它，也没有引入新的 registry compatibility 风险。

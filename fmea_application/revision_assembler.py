@@ -773,96 +773,17 @@ def _append_issue(issues: list[ReadinessIssue], issue: ReadinessIssue) -> None:
 class RevisionAssembler:
     """Assemble one immutable, canonical FMEA revision from typed state."""
 
-    __slots__ = ("_clock", "_runtime_marker")
+    __slots__ = ("_clock",)
 
     def __init__(self) -> None:
         self._clock = _utc_now
-        self._runtime_marker: object | None = None
 
     def assemble(self, request: RevisionAssemblyRequest, inputs: GovernanceInputs) -> FmeaRevision:
         if not isinstance(request, RevisionAssemblyRequest):
             raise TypeError("request must be a RevisionAssemblyRequest")
         if not isinstance(inputs, GovernanceInputs):
             raise TypeError("inputs must be a GovernanceInputs")
-        if self._runtime_marker is None:
-            raise TypeError("trusted governance runtime authority is required")
-        if inputs.analysis_id != request.analysis_id:
-            raise ValueError("request analysis_id does not match governance inputs")
-        analysis_version = inputs.analysis.record_version
-        if analysis_version != request.expected_analysis_version:
-            raise ValueError("expected analysis version does not match authoritative analysis")
-        analysis_hash = inputs.analysis.canonical_hash
-        issues: list[ReadinessIssue] = list(inputs.unresolved_items)
-        self._validate_source_scope(inputs)
-        packs = self._validate_evidence(inputs, issues)
-        rows = self._assemble_rows(inputs.rows, packs, issues)
-        risks = self._assemble_risks(inputs.risk_records, inputs, packs, issues)
-        graph_id, graph_hash = self._assemble_graph(inputs, analysis_version, packs, issues)
-        for run_id in inputs.active_run_ids:
-            _append_issue(issues, _issue(_ACTIVE_RUN_BLOCKER, source_type="run", source_id=run_id))
-        for item in tuple(issues):
-            if item.acknowledgement_decision_id is not None and not any(
-                ref.decision_id == item.acknowledgement_decision_id for ref in inputs.acknowledgement_references
-            ):
-                _append_issue(
-                    issues,
-                    _issue(
-                        "ACKNOWLEDGEMENT_REFERENCE_UNRESOLVED",
-                        source_type="acknowledgement",
-                        source_id=item.acknowledgement_decision_id,
-                    ),
-                )
-        parent_id, parent_hash = self._parent_identity(request, inputs)
-        provenance = inputs.retrieval_provenance.snapshot
-        domain_identity = inputs.domain_pack_identity.identity
-        templates = tuple(sorted(item.identity for item in inputs.template_identities))
-        scoring = tuple(sorted(item.identity for item in inputs.scoring_rule_identities))
-        propagation_rule = (
-            None if inputs.propagation_rule_identity is None else inputs.propagation_rule_identity.identity
-        )
-        revision_id = self._revision_id(
-            analysis_id=inputs.analysis_id,
-            analysis_version=analysis_version,
-            analysis_hash=analysis_hash,
-            parent_id=parent_id,
-            parent_hash=parent_hash,
-            row_versions=rows,
-            risk_versions=risks,
-            graph_id=graph_id,
-            graph_hash=graph_hash,
-            pack_hashes=tuple((pack.pack_id, pack.pack_hash) for pack in packs),
-            provenance=provenance,
-            domain_identity=domain_identity,
-            templates=templates,
-            scoring=scoring,
-            propagation_rule=propagation_rule,
-            issues=_issue_tuple(issues),
-        )
-        body = {
-            "revision_id": revision_id,
-            "workspace_id": inputs.workspace_id,
-            "analysis_id": inputs.analysis_id,
-            "analysis_record_version": analysis_version,
-            "analysis_hash": analysis_hash,
-            "parent_revision_id": parent_id,
-            "parent_revision_hash": parent_hash,
-            "row_versions": rows,
-            "risk_versions": risks,
-            "propagation_graph_revision_id": graph_id,
-            "propagation_graph_hash": graph_hash,
-            "evidence_pack_hashes": tuple((pack.pack_id, pack.pack_hash) for pack in packs),
-            "retrieval_provenance": provenance,
-            "domain_pack_identity": domain_identity,
-            "template_identities": templates,
-            "scoring_rule_identities": scoring,
-            "propagation_rule_identity": propagation_rule,
-            "unresolved_items": _issue_tuple(issues),
-        }
-        return FmeaRevision(
-            **body,
-            revision_hash=canonical_hash(canonical_json_value(body), max_array_items=10_000),
-            created_at=inputs.created_at or self._clock(),
-        )
+        raise TypeError("trusted governance runtime authority is required")
 
     @staticmethod
     def _validate_source_scope(source: GovernanceInputs) -> None:  # noqa: C901
@@ -1218,6 +1139,90 @@ class RevisionAssembler:
         return f"revision-{canonical_hash(canonical_json_value(values))[:32]}"
 
 
+def _assemble_revision(
+    assembler: RevisionAssembler, request: RevisionAssemblyRequest, inputs: GovernanceInputs
+) -> FmeaRevision:
+    if not isinstance(request, RevisionAssemblyRequest):
+        raise TypeError("request must be a RevisionAssemblyRequest")
+    if not isinstance(inputs, GovernanceInputs):
+        raise TypeError("inputs must be a GovernanceInputs")
+    if inputs.analysis_id != request.analysis_id:
+        raise ValueError("request analysis_id does not match governance inputs")
+    analysis_version = inputs.analysis.record_version
+    if analysis_version != request.expected_analysis_version:
+        raise ValueError("expected analysis version does not match authoritative analysis")
+    analysis_hash = inputs.analysis.canonical_hash
+    issues: list[ReadinessIssue] = list(inputs.unresolved_items)
+    assembler._validate_source_scope(inputs)
+    packs = assembler._validate_evidence(inputs, issues)
+    rows = assembler._assemble_rows(inputs.rows, packs, issues)
+    risks = assembler._assemble_risks(inputs.risk_records, inputs, packs, issues)
+    graph_id, graph_hash = assembler._assemble_graph(inputs, analysis_version, packs, issues)
+    for run_id in inputs.active_run_ids:
+        _append_issue(issues, _issue(_ACTIVE_RUN_BLOCKER, source_type="run", source_id=run_id))
+    for item in tuple(issues):
+        if item.acknowledgement_decision_id is not None and not any(
+            ref.decision_id == item.acknowledgement_decision_id for ref in inputs.acknowledgement_references
+        ):
+            _append_issue(
+                issues,
+                _issue(
+                    "ACKNOWLEDGEMENT_REFERENCE_UNRESOLVED",
+                    source_type="acknowledgement",
+                    source_id=item.acknowledgement_decision_id,
+                ),
+            )
+    parent_id, parent_hash = assembler._parent_identity(request, inputs)
+    provenance = inputs.retrieval_provenance.snapshot
+    domain_identity = inputs.domain_pack_identity.identity
+    templates = tuple(sorted(item.identity for item in inputs.template_identities))
+    scoring = tuple(sorted(item.identity for item in inputs.scoring_rule_identities))
+    propagation_rule = None if inputs.propagation_rule_identity is None else inputs.propagation_rule_identity.identity
+    revision_id = assembler._revision_id(
+        analysis_id=inputs.analysis_id,
+        analysis_version=analysis_version,
+        analysis_hash=analysis_hash,
+        parent_id=parent_id,
+        parent_hash=parent_hash,
+        row_versions=rows,
+        risk_versions=risks,
+        graph_id=graph_id,
+        graph_hash=graph_hash,
+        pack_hashes=tuple((pack.pack_id, pack.pack_hash) for pack in packs),
+        provenance=provenance,
+        domain_identity=domain_identity,
+        templates=templates,
+        scoring=scoring,
+        propagation_rule=propagation_rule,
+        issues=_issue_tuple(issues),
+    )
+    body = {
+        "revision_id": revision_id,
+        "workspace_id": inputs.workspace_id,
+        "analysis_id": inputs.analysis_id,
+        "analysis_record_version": analysis_version,
+        "analysis_hash": analysis_hash,
+        "parent_revision_id": parent_id,
+        "parent_revision_hash": parent_hash,
+        "row_versions": rows,
+        "risk_versions": risks,
+        "propagation_graph_revision_id": graph_id,
+        "propagation_graph_hash": graph_hash,
+        "evidence_pack_hashes": tuple((pack.pack_id, pack.pack_hash) for pack in packs),
+        "retrieval_provenance": provenance,
+        "domain_pack_identity": domain_identity,
+        "template_identities": templates,
+        "scoring_rule_identities": scoring,
+        "propagation_rule_identity": propagation_rule,
+        "unresolved_items": _issue_tuple(issues),
+    }
+    return FmeaRevision(
+        **body,
+        revision_hash=canonical_hash(canonical_json_value(body), max_array_items=10_000),
+        created_at=inputs.created_at or assembler._clock(),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class PublicationReadinessContext:
     active_run_ids: tuple[str, ...] = ()
@@ -1319,101 +1324,19 @@ def _identity_hash_is_resolved(identity: object) -> bool:
 class PublicationReadinessPolicy:
     """Evaluate readiness deterministically from a typed domain policy."""
 
-    __slots__ = ("_domain_policy", "_runtime_marker")
+    __slots__ = ("_domain_policy",)
 
     def __init__(self, domain_policy: GovernanceDomainPolicy | None = None) -> None:
         if domain_policy is not None and not isinstance(domain_policy, GovernanceDomainPolicy):
             raise TypeError("domain_policy must be a GovernanceDomainPolicy")
         self._domain_policy = domain_policy or GovernanceDomainPolicy()
-        self._runtime_marker: object | None = None
 
     def evaluate(self, revision: FmeaRevision, context: PublicationReadinessContext) -> PublicationReadinessReport:
         if not isinstance(revision, FmeaRevision):
             raise TypeError("revision must be an FmeaRevision")
         if not isinstance(context, PublicationReadinessContext):
             raise TypeError("context must be a PublicationReadinessContext")
-        if self._runtime_marker is None:
-            return self._unverified_report(revision)
-        return self._evaluate_authoritative(revision, context)
-
-    def _evaluate_authoritative(  # noqa: C901 - explicit fail-closed policy matrix
-        self, revision: FmeaRevision, context: PublicationReadinessContext
-    ) -> PublicationReadinessReport:
-        if self._runtime_marker is None:
-            raise TypeError("trusted governance runtime authority is required")
-        issues = list(revision.unresolved_items)
-        policy = self._domain_policy
-        if context.active_run_ids:
-            issues.extend(
-                _issue(_ACTIVE_RUN_BLOCKER, source_type="run", source_id=run_id) for run_id in context.active_run_ids
-            )
-        if revision.analysis_record_version != context.current_analysis_version:
-            issues.append(_issue("STALE_ANALYSIS_VERSION", source_type="analysis", source_id=revision.analysis_id))
-        if context.authoritative_analysis is None:
-            issues.append(
-                _issue("UNRESOLVED_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id)
-            )
-        elif (
-            context.authoritative_analysis.workspace_id != revision.workspace_id
-            or context.authoritative_analysis.analysis_id != revision.analysis_id
-            or context.authoritative_analysis.record_version != revision.analysis_record_version
-            or context.authoritative_analysis.canonical_hash != revision.analysis_hash
-        ):
-            issues.append(_issue("STALE_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id))
-        actual_children = self._revision_children(revision)
-        for child_id, expected_hash in context.current_child_hashes:
-            if actual_children.get(child_id) != expected_hash:
-                issues.append(_issue("STALE_CHILD_VERSION", source_type="child", source_id=child_id))
-        if not context.required_fields_accepted:
-            issues.append(
-                _issue("REQUIRED_FIELDS_NOT_ACCEPTED", source_type="analysis", source_id=revision.analysis_id)
-            )
-        self._artifact_readiness_issues(revision, policy, issues, context.authoritative_artifacts)
-        if policy.required_risk and (not context.required_risk_confirmed or not revision.risk_versions):
-            issues.append(_issue("REQUIRED_RISK_NOT_CONFIRMED", source_type="risk", source_id=revision.analysis_id))
-        if policy.required_propagation and (
-            not context.propagation_confirmed or revision.propagation_graph_revision_id is None
-        ):
-            issues.append(
-                _issue(
-                    "REQUIRED_PROPAGATION_NOT_CONFIRMED",
-                    source_type="propagation_graph",
-                    source_id=revision.analysis_id,
-                )
-            )
-        if policy.required_evidence and (not context.required_evidence_present or not revision.evidence_pack_hashes):
-            issues.append(_issue("MISSING_REQUIRED_EVIDENCE", source_type="evidence", source_id=revision.analysis_id))
-        deduplicated = {_readiness_issue_key(issue): issue for issue in issues}
-        ordered = tuple(
-            sorted(deduplicated.values(), key=lambda item: (_SEVERITY_ORDER[item.severity], _readiness_issue_key(item)))
-        )
-        blockers: set[str] = set()
-        for issue in ordered:
-            if _SEVERITY_ORDER[issue.severity] < _SEVERITY_ORDER["blocking"]:
-                continue
-            acknowledged = False
-            for reference in context.acknowledgement_references:
-                try:
-                    if reference.matches(revision, issue):
-                        acknowledged = True
-                        break
-                except (AttributeError, TypeError, ValueError):
-                    continue
-            if not (
-                policy.allow_acknowledged_blocking and issue.acknowledgement_decision_id is not None and acknowledged
-            ):
-                blockers.add(issue.code)
-        return PublicationReadinessReport(
-            revision_id=revision.revision_id,
-            workspace_id=revision.workspace_id,
-            analysis_id=revision.analysis_id,
-            revision_hash=revision.revision_hash,
-            target_record_version=revision.analysis_record_version,
-            evidence_pack_ids=tuple(pack_id for pack_id, _ in revision.evidence_pack_hashes),
-            ready=not blockers,
-            issues=ordered,
-            blocking_codes=tuple(sorted(blockers)),
-        )
+        return self._unverified_report(revision)
 
     @staticmethod
     def _unverified_report(revision: FmeaRevision) -> PublicationReadinessReport:
@@ -1538,6 +1461,83 @@ class PublicationReadinessPolicy:
             children[revision.propagation_graph_revision_id] = revision.propagation_graph_hash
         children.update(dict(revision.evidence_pack_hashes))
         return children
+
+
+def _evaluate_readiness(  # noqa: C901 - explicit fail-closed policy matrix
+    policy: PublicationReadinessPolicy, revision: FmeaRevision, context: PublicationReadinessContext
+) -> PublicationReadinessReport:
+    issues = list(revision.unresolved_items)
+    if context.active_run_ids:
+        issues.extend(
+            _issue(_ACTIVE_RUN_BLOCKER, source_type="run", source_id=run_id) for run_id in context.active_run_ids
+        )
+    if revision.analysis_record_version != context.current_analysis_version:
+        issues.append(_issue("STALE_ANALYSIS_VERSION", source_type="analysis", source_id=revision.analysis_id))
+    if context.authoritative_analysis is None:
+        issues.append(_issue("UNRESOLVED_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id))
+    elif (
+        context.authoritative_analysis.workspace_id != revision.workspace_id
+        or context.authoritative_analysis.analysis_id != revision.analysis_id
+        or context.authoritative_analysis.record_version != revision.analysis_record_version
+        or context.authoritative_analysis.canonical_hash != revision.analysis_hash
+    ):
+        issues.append(_issue("STALE_ANALYSIS_IDENTITY", source_type="analysis", source_id=revision.analysis_id))
+    actual_children = policy._revision_children(revision)
+    for child_id, expected_hash in context.current_child_hashes:
+        if actual_children.get(child_id) != expected_hash:
+            issues.append(_issue("STALE_CHILD_VERSION", source_type="child", source_id=child_id))
+    if not context.required_fields_accepted:
+        issues.append(_issue("REQUIRED_FIELDS_NOT_ACCEPTED", source_type="analysis", source_id=revision.analysis_id))
+    policy._artifact_readiness_issues(revision, policy._domain_policy, issues, context.authoritative_artifacts)
+    if policy._domain_policy.required_risk and (not context.required_risk_confirmed or not revision.risk_versions):
+        issues.append(_issue("REQUIRED_RISK_NOT_CONFIRMED", source_type="risk", source_id=revision.analysis_id))
+    if policy._domain_policy.required_propagation and (
+        not context.propagation_confirmed or revision.propagation_graph_revision_id is None
+    ):
+        issues.append(
+            _issue(
+                "REQUIRED_PROPAGATION_NOT_CONFIRMED",
+                source_type="propagation_graph",
+                source_id=revision.analysis_id,
+            )
+        )
+    if policy._domain_policy.required_evidence and (
+        not context.required_evidence_present or not revision.evidence_pack_hashes
+    ):
+        issues.append(_issue("MISSING_REQUIRED_EVIDENCE", source_type="evidence", source_id=revision.analysis_id))
+    deduplicated = {_readiness_issue_key(issue): issue for issue in issues}
+    ordered = tuple(
+        sorted(deduplicated.values(), key=lambda item: (_SEVERITY_ORDER[item.severity], _readiness_issue_key(item)))
+    )
+    blockers: set[str] = set()
+    for issue in ordered:
+        if _SEVERITY_ORDER[issue.severity] < _SEVERITY_ORDER["blocking"]:
+            continue
+        acknowledged = False
+        for reference in context.acknowledgement_references:
+            try:
+                if reference.matches(revision, issue):
+                    acknowledged = True
+                    break
+            except (AttributeError, TypeError, ValueError):
+                continue
+        if not (
+            policy._domain_policy.allow_acknowledged_blocking
+            and issue.acknowledgement_decision_id is not None
+            and acknowledged
+        ):
+            blockers.add(issue.code)
+    return PublicationReadinessReport(
+        revision_id=revision.revision_id,
+        workspace_id=revision.workspace_id,
+        analysis_id=revision.analysis_id,
+        revision_hash=revision.revision_hash,
+        target_record_version=revision.analysis_record_version,
+        evidence_pack_ids=tuple(pack_id for pack_id, _ in revision.evidence_pack_hashes),
+        ready=not blockers,
+        issues=ordered,
+        blocking_codes=tuple(sorted(blockers)),
+    )
 
 
 @dataclass(frozen=True, slots=True)
