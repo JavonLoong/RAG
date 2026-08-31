@@ -62,7 +62,7 @@ Brief-specified final matrix:
 .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
 ```
 
-Result: **24 passed, 1 failed**. The only failure is the pre-existing propagation migration assertion expecting schema versions `[1, 2, 3, 4]`; additive migration 005 makes the actual versions `[1, 2, 3, 4, 5]`. The non-Task-3 test was not modified or staged per the task instruction to stage only controlled Task 3 files and the report.
+Result at the initial implementation checkpoint: **24 passed, 1 failed**. The only failure was the pre-existing propagation migration assertion expecting schema versions `[1, 2, 3, 4]`; additive migration 005 makes the actual versions `[1, 2, 3, 4, 5]`. The compatibility correction and its fresh green rerun are recorded in the follow-up below.
 
 ## Static / compile / diff checks
 
@@ -83,6 +83,41 @@ Migration 005 is additive and leaves the legacy row publication-status CHECK and
 
 ## Concerns
 
-1. The final brief matrix has one failure because `tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema` hardcodes the old migration list and is outside the controlled Task 3 file set. Updating that expectation to include migration 005 is required for a completely green repository matrix.
-2. BASE does not actually contain an `fmea_audit_events` table although the handoff says it is existing/shared. Because legacy `audit_events` is row-FK-bound to `fmea_rows`, reusing it for revision/publication aggregate IDs would violate the existing schema; migration 005 therefore creates the named governance audit shape. This should be reconciled by the owner if BASE was expected to include a prior Task 1/2 audit migration.
-3. `ApprovalWithdrawalResult` was absent from the existing governance contract module; the Task 3 port supplies the minimal immutable result shape needed by the specified protocol.
+1. `ApprovalWithdrawalResult` was absent from the existing governance contract module; the Task 3 port supplies the minimal immutable result shape needed by the specified protocol.
+
+## Follow-up: controller compatibility ruling
+
+The controller reproduced the initial final-matrix failure at `tests/integration/test_fmea_propagation_sqlite.py:25`. The compatibility test now asserts the exact additive migration set `[1, 2, 3, 4, 5]`; it remains selected and passes in the fresh final matrix.
+
+Controller ruling: BASE has no `fmea_audit_events`. The legacy `audit_events` table has a `row_id` foreign key to `fmea_rows`, so it cannot serve revision/publication governance aggregate IDs. Creating the shared governance `fmea_audit_events` table in migration 005 is therefore the minimal correct implementation. The repository continues to reuse the existing `fmea_outbox_events` and `idempotency_records` authority chain. This is resolved for Task 3; the reviewer must verify the migration schema and the shared outbox/idempotency chain interpretation during review.
+
+After this authorized compatibility correction, the fresh brief-specified final matrix result is **25 passed**.
+
+## Follow-up: fresh verification commands
+
+Compatibility node:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Result: **1 passed**.
+
+Brief-specified complete matrix, with all six requested files selected and no deselection:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
+```
+
+Result: **25 passed**.
+
+Fresh controlled-file checks, including the modified compatibility test:
+
+```powershell
+.venv\Scripts\python.exe -m ruff check fmea_application/ports.py fmea_infrastructure/governance_repository_sqlite.py tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m ruff format --check fmea_application/ports.py fmea_infrastructure/governance_repository_sqlite.py tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m compileall -q fmea_application/ports.py fmea_infrastructure/governance_repository_sqlite.py tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py
+git diff --check
+```
+
+Results: Ruff check passed; Ruff format check passed for **6 files**; compileall exited 0 with no output; git diff --check exited 0 with no whitespace errors.

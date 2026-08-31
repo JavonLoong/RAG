@@ -22,7 +22,7 @@ def test_propagation_migration_is_additive_and_creates_required_schema(tmp_path:
     finally:
         connection.close()
 
-    assert [row[0] for row in versions] == [1, 2, 3, 4]
+    assert [row[0] for row in versions] == [1, 2, 3, 4, 5]
     assert {
         "fmea_propagation_topology_snapshots",
         "fmea_propagation_runs",
