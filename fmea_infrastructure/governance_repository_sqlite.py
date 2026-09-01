@@ -38,6 +38,7 @@ from fmea_application.governance_contracts import (
     ApprovalRejectionCommand,
     ApprovalResult,
     ApprovalSubmissionResult,
+    AssembleRevisionCommand,
     ExportEligibilityRecord,
     GovernanceHistoryQuery,
     PreparedApproval,
@@ -52,6 +53,7 @@ from fmea_application.governance_contracts import (
     PublicationWithdrawalResult,
     ReadinessReportRecord,
     ReadinessResult,
+    RevisionAssemblyRequest,
     RevisionResult,
     SupersessionResult,
     canonical_governance_payload,
@@ -670,6 +672,20 @@ class SqliteGovernanceRepository:
         )
         if result_resource_id != meta.resource_id:
             raise ValueError("persisted governance response resource does not match authority")
+        authority_table, authority_identifier = cls._authority_table(meta.kind)
+        authority_row = connection.execute(
+            f"SELECT * FROM {authority_table} WHERE workspace_id=? AND {authority_identifier}=?",
+            (meta.workspace_id, meta.resource_id),
+        ).fetchone()
+        if authority_row is None:
+            raise ValueError(f"persisted {meta.kind} is missing")
+        cls._verify_authority_result_binding(
+            meta.kind,
+            authority_row,
+            prepared.scope,
+            prepared.payload_hash,
+            result,
+        )
         audit_row = connection.execute(
             "SELECT * FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
             (meta.workspace_id, result.audit_event_id),
@@ -757,6 +773,24 @@ class SqliteGovernanceRepository:
                 or result.record_version != publication.record_version
             ):
                 raise ValueError("persisted publication result binding is invalid")
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "revision",
+                meta.workspace_id,
+                prepared.revision.revision_id,
+            )
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "approval_submission",
+                meta.workspace_id,
+                prepared.submission.submission_id,
+            )
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "approval",
+                meta.workspace_id,
+                prepared.approval.approval_id,
+            )
         elif meta.kind == "approval_withdrawal":
             row = connection.execute(
                 "SELECT withdrawal_json,canonical_json_hash FROM fmea_approval_withdrawals "
@@ -810,6 +844,7 @@ class SqliteGovernanceRepository:
         ).fetchone()
         if authority_row is None:
             raise ValueError(f"persisted {kind} is missing")
+        cls._verify_authority_result_binding(kind, authority_row, scope, payload_hash, result)
         if kind == "readiness":
             history_id = authority_row["revision_id"]
             expected_resource_type = "revision"
@@ -832,8 +867,27 @@ class SqliteGovernanceRepository:
         if audit_row is None:
             raise ValueError("persisted governance audit event is missing")
         audit = decode_audit_event(audit_row["event_json"])
+        expected_command = {
+            "revision": "fmea.revision.assemble",
+            "readiness": "fmea.revision.readiness",
+            "approval_submission": "fmea.approval.submit",
+            "approval": "fmea.approval.decide",
+            "approval_withdrawal": "fmea.approval.withdraw",
+            "publication": "fmea.publication.publish",
+            "publication_withdrawal": "fmea.publication.withdraw",
+            "supersession": "fmea.publication.supersede",
+        }[kind]
+        actor_column = {
+            "approval_submission": "submitter_actor_id",
+            "approval": "approver_actor_id",
+            "approval_withdrawal": "actor_id",
+            "publication": "publisher_actor_id",
+            "publication_withdrawal": "actor_id",
+            "supersession": "actor_id",
+        }.get(kind)
         if (
-            audit.workspace_id != scope.workspace_id
+            scope.command != expected_command
+            or audit.workspace_id != scope.workspace_id
             or audit.command != scope.command
             or audit.row_id != resource_id
             or audit.actor_id != scope.actor_id
@@ -847,12 +901,9 @@ class SqliteGovernanceRepository:
             or audit_row["idempotency_scope"] != scope.scope_key
             or audit_row["canonical_payload_hash"] != payload_hash
             or _object_json(audit)[0] != audit_row["event_json"]
+            or (actor_column is not None and authority_row[actor_column] != audit.actor_id)
         ):
             raise ValueError("persisted governance audit binding is invalid")
-        if kind not in {"revision", "readiness", "publication"} and (
-            authority_row["idempotency_scope"] != scope.scope_key or authority_row["payload_hash"] != payload_hash
-        ):
-            raise ValueError(f"persisted {kind} idempotency binding is invalid")
         cls._verify_event_binding(
             connection,
             kind,
@@ -881,6 +932,7 @@ class SqliteGovernanceRepository:
             expected_event_type = "approval." + str(authority_row["status"])
         if (
             canonical_json(outbox_payload) != outbox_row["payload_json"]
+            or outbox_row["workspace_id"] != scope.workspace_id
             or outbox_row["aggregate_type"] != "fmea_governance"
             or outbox_row["aggregate_id"] != resource_id
             or outbox_row["event_type"] != expected_event_type
@@ -912,6 +964,8 @@ class SqliteGovernanceRepository:
             snapshot = cls._snapshot_from_connection(connection, result.snapshot_id, scope.workspace_id)
             eligibility = cls._eligibility_from_connection(connection, resource_id, scope.workspace_id)
             revision = cls._revision_from_connection(connection, publication.revision_id, scope.workspace_id)
+            approval = cls._approval_from_connection(connection, publication.approval_id, scope.workspace_id)
+            submission = cls._submission_from_connection(connection, approval.submission_id, scope.workspace_id)
             if (
                 result.record_version != publication.record_version
                 or result.manifest_id != publication.manifest_id
@@ -929,8 +983,31 @@ class SqliteGovernanceRepository:
                 or dict(eligibility.source_hashes).get("revision") != revision.revision_hash
                 or dict(eligibility.source_hashes).get("manifest") != manifest.manifest_hash
                 or dict(eligibility.source_hashes).get("snapshot") != snapshot.snapshot_hash
+                or approval.revision_id != revision.revision_id
+                or approval.revision_hash != revision.revision_hash
+                or submission.submission_id != approval.submission_id
+                or submission.revision_id != revision.revision_id
+                or submission.revision_hash != revision.revision_hash
             ):
                 raise ValueError("persisted publication lineage is invalid")
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "revision",
+                scope.workspace_id,
+                revision.revision_id,
+            )
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "approval_submission",
+                scope.workspace_id,
+                submission.submission_id,
+            )
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "approval",
+                scope.workspace_id,
+                approval.approval_id,
+            )
         elif kind == "approval_withdrawal":
             value = _decode_approval_withdrawal(authority_row["withdrawal_json"])
             if (
@@ -957,6 +1034,54 @@ class SqliteGovernanceRepository:
             or authority_row["outbox_event_id"] != result.outbox_event_id
         ):
             raise ValueError("persisted supersession binding is invalid")
+
+    @classmethod
+    def _verify_persisted_dependency_chain(
+        cls,
+        connection: sqlite3.Connection,
+        kind: str,
+        workspace_id: str,
+        resource_id: str,
+    ) -> None:
+        table, identifier = cls._authority_table(kind)
+        authority_row = connection.execute(
+            f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",
+            (workspace_id, resource_id),
+        ).fetchone()
+        if authority_row is None:
+            raise ValueError(f"persisted publication {kind} dependency is missing")
+        audit_row = connection.execute(
+            "SELECT event_json FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            (workspace_id, authority_row["audit_event_id"]),
+        ).fetchone()
+        if audit_row is None:
+            raise ValueError(f"persisted publication {kind} dependency audit is missing")
+        audit = decode_audit_event(audit_row["event_json"])
+        if kind == "revision":
+            path = f"/fmea/analyses/{authority_row['analysis_id']}/revisions"
+        elif kind == "approval_submission":
+            path = f"/fmea/revisions/{authority_row['revision_id']}/approval-submissions"
+        else:
+            path = f"/fmea/approval-submissions/{authority_row['submission_id']}/decision"
+        dependency_scope = IdempotencyScope(
+            workspace_id,
+            audit.actor_id,
+            audit.command,
+            path,
+            audit.idempotency_key_hash,
+        )
+        payload_hash = _hash(authority_row["payload_hash"], f"{kind} payload_hash")
+        idempotency = cls._idempotency_row(connection, dependency_scope)
+        if (
+            authority_row["idempotency_scope"] != dependency_scope.scope_key
+            or idempotency is None
+            or idempotency["payload_hash"] != payload_hash
+            or idempotency["state"] != "completed"
+            or idempotency["resource_id"] != resource_id
+        ):
+            raise ValueError(f"persisted publication {kind} dependency idempotency is invalid")
+        result = cls._decode_result(kind, idempotency["response_json"])
+        cls._verify_replay_chain(connection, kind, dependency_scope, payload_hash, result)
 
     @classmethod
     def _insert_audit(
@@ -1028,6 +1153,66 @@ class SqliteGovernanceRepository:
         }[kind]
 
     @classmethod
+    def _verify_authority_result_binding(
+        cls,
+        kind: str,
+        authority_row: sqlite3.Row,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        result: Any,
+    ) -> None:
+        if (
+            authority_row["idempotency_scope"] != scope.scope_key
+            or authority_row["payload_hash"] != payload_hash
+            or authority_row["audit_event_id"] != result.audit_event_id
+            or authority_row["outbox_event_id"] != result.outbox_event_id
+        ):
+            raise ValueError(f"persisted {kind} authority chain is invalid")
+        valid = False
+        if kind == "revision":
+            valid = (
+                result.revision_id == authority_row["revision_id"]
+                and result.record_version == authority_row["record_version"]
+            )
+        elif kind == "readiness":
+            valid = result.readiness_id == authority_row["readiness_id"] and result.record_version == 1
+        elif kind == "approval_submission":
+            valid = (
+                result.submission_id == authority_row["submission_id"]
+                and result.record_version == authority_row["record_version"]
+            )
+        elif kind == "approval":
+            valid = (
+                result.approval_id == authority_row["approval_id"]
+                and result.record_version == authority_row["record_version"]
+            )
+        elif kind == "approval_withdrawal":
+            valid = (
+                result.withdrawal_id == authority_row["withdrawal_id"]
+                and result.approval_id == authority_row["approval_id"]
+            )
+        elif kind == "publication":
+            valid = (
+                result.publication_id == authority_row["publication_id"]
+                and result.manifest_id == authority_row["manifest_id"]
+                and result.snapshot_id == authority_row["snapshot_id"]
+                and result.record_version == authority_row["record_version"]
+            )
+        elif kind == "publication_withdrawal":
+            valid = (
+                result.withdrawal_id == authority_row["withdrawal_id"]
+                and result.publication_id == authority_row["publication_id"]
+            )
+        else:
+            valid = (
+                result.supersession_id == authority_row["supersession_id"]
+                and result.old_publication_id == authority_row["old_publication_id"]
+                and result.new_publication_id == authority_row["new_publication_id"]
+            )
+        if not valid:
+            raise ValueError(f"persisted {kind} result binding is invalid")
+
+    @classmethod
     def _insert_event_binding(cls, connection: sqlite3.Connection, meta: _PreparedMeta, result: Any) -> None:
         connection.execute(
             "INSERT INTO fmea_governance_event_bindings "
@@ -1086,6 +1271,74 @@ class SqliteGovernanceRepository:
             or str(row["analysis_hash"]).removeprefix("sha256:") != revision.analysis_hash.removeprefix("sha256:")
         ):
             _error("FMEA_VERSION_CONFLICT", "Authoritative analysis state is stale or cross-workspace.")
+
+    @classmethod
+    def _insert_revision_analysis_binding(cls, connection: sqlite3.Connection, revision: FmeaRevision) -> None:
+        connection.execute(
+            "INSERT INTO fmea_revision_analysis_bindings "
+            "(workspace_id,revision_id,analysis_id,analysis_record_version,analysis_hash) VALUES (?,?,?,?,?)",
+            (
+                revision.workspace_id,
+                revision.revision_id,
+                revision.analysis_id,
+                revision.analysis_record_version,
+                revision.analysis_hash,
+            ),
+        )
+
+    @classmethod
+    def _verify_revision_analysis_binding(cls, connection: sqlite3.Connection, revision: FmeaRevision) -> None:
+        row = connection.execute(
+            "SELECT analysis_id,analysis_record_version,analysis_hash "
+            "FROM fmea_revision_analysis_bindings WHERE workspace_id=? AND revision_id=?",
+            (revision.workspace_id, revision.revision_id),
+        ).fetchone()
+        if row is None or (
+            row["analysis_id"] != revision.analysis_id
+            or row["analysis_record_version"] != revision.analysis_record_version
+            or str(row["analysis_hash"]).removeprefix("sha256:") != revision.analysis_hash.removeprefix("sha256:")
+        ):
+            raise ValueError("persisted revision analysis lineage binding is invalid")
+
+    @classmethod
+    def _insert_publication_lineage_binding(cls, connection: sqlite3.Connection, prepared: PreparedPublication) -> None:
+        connection.execute(
+            "INSERT INTO fmea_publication_lineage_bindings "
+            "(workspace_id,publication_id,manifest_id,snapshot_id,revision_id,analysis_id,revision_hash,manifest_hash,snapshot_hash) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                prepared.scope.workspace_id,
+                prepared.publication.publication_id,
+                prepared.manifest.manifest_id,
+                prepared.snapshot.snapshot_id,
+                prepared.revision.revision_id,
+                prepared.revision.analysis_id,
+                prepared.revision.revision_hash,
+                prepared.manifest.manifest_hash,
+                prepared.snapshot.snapshot_hash,
+            ),
+        )
+
+    @classmethod
+    def _verify_publication_lineage_binding(
+        cls, connection: sqlite3.Connection, publication: PublishedRevision
+    ) -> None:
+        row = connection.execute(
+            "SELECT manifest_id,snapshot_id,revision_id,analysis_id,revision_hash,manifest_hash,snapshot_hash "
+            "FROM fmea_publication_lineage_bindings WHERE workspace_id=? AND publication_id=?",
+            (publication.workspace_id, publication.publication_id),
+        ).fetchone()
+        expected = (
+            publication.manifest_id,
+            publication.snapshot_id,
+            publication.revision_id,
+            publication.analysis_id,
+            publication.revision_hash,
+            publication.manifest_hash,
+            publication.snapshot_hash,
+        )
+        if row is None or tuple(row) != expected:
+            raise ValueError("persisted publication manifest snapshot lineage binding is invalid")
 
     @classmethod
     def _snapshot_from_connection(cls, connection: sqlite3.Connection, snapshot_id: str, workspace_id: str) -> Any:
@@ -1242,6 +1495,7 @@ class SqliteGovernanceRepository:
             or row["record_version"] != 1
         ):
             raise ValueError("persisted revision identity or hash is invalid")
+        cls._verify_revision_analysis_binding(connection, value)
         return value
 
     @classmethod
@@ -1345,6 +1599,7 @@ class SqliteGovernanceRepository:
             or row["canonical_json_hash"] != _json_hash(payload)
         ):
             raise ValueError("persisted publication identity or hash is invalid")
+        cls._verify_publication_lineage_binding(connection, value)
         return value
 
     @classmethod
@@ -1354,12 +1609,14 @@ class SqliteGovernanceRepository:
         revision: FmeaRevision,
         audit_event_id: str | None = None,
         outbox_event_id: str | None = None,
+        idempotency_scope: str | None = None,
+        governance_payload_hash: str | None = None,
     ) -> None:
         payload, payload_hash = _object_json(revision)
         connection.execute(
             "INSERT INTO fmea_revisions "
-            "(workspace_id,revision_id,analysis_id,analysis_record_version,parent_revision_id,parent_revision_hash,revision_hash,revision_json,record_version,canonical_json_hash,audit_event_id,outbox_event_id,created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "(workspace_id,revision_id,analysis_id,analysis_record_version,parent_revision_id,parent_revision_hash,revision_hash,revision_json,record_version,canonical_json_hash,audit_event_id,outbox_event_id,idempotency_scope,payload_hash,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 revision.workspace_id,
                 revision.revision_id,
@@ -1373,6 +1630,8 @@ class SqliteGovernanceRepository:
                 payload_hash,
                 audit_event_id,
                 outbox_event_id,
+                idempotency_scope,
+                governance_payload_hash,
                 revision.created_at,
             ),
         )
@@ -1384,9 +1643,11 @@ class SqliteGovernanceRepository:
         revision: FmeaRevision,
         audit_event_id: str | None = None,
         outbox_event_id: str | None = None,
+        idempotency_scope: str | None = None,
+        governance_payload_hash: str | None = None,
     ) -> bool:
         row = connection.execute(
-            "SELECT revision_json,audit_event_id,outbox_event_id FROM fmea_revisions "
+            "SELECT revision_json,audit_event_id,outbox_event_id,idempotency_scope,payload_hash FROM fmea_revisions "
             "WHERE workspace_id=? AND revision_id=?",
             (revision.workspace_id, revision.revision_id),
         ).fetchone()
@@ -1395,12 +1656,21 @@ class SqliteGovernanceRepository:
                 parent = cls._revision_from_connection(connection, revision.parent_revision_id, revision.workspace_id)
                 if parent.revision_hash != revision.parent_revision_hash:
                     _error("FMEA_REVIEW_REQUEST_INVALID", "Parent revision binding is invalid.")
-            cls._insert_revision_row(connection, revision, audit_event_id, outbox_event_id)
+            cls._insert_revision_row(
+                connection,
+                revision,
+                audit_event_id,
+                outbox_event_id,
+                idempotency_scope,
+                governance_payload_hash,
+            )
             return True
         if (
             _decode_revision(row["revision_json"]) != revision
             or (audit_event_id is not None and row["audit_event_id"] != audit_event_id)
             or (outbox_event_id is not None and row["outbox_event_id"] != outbox_event_id)
+            or (idempotency_scope is not None and row["idempotency_scope"] != idempotency_scope)
+            or (governance_payload_hash is not None and row["payload_hash"] != governance_payload_hash)
         ):
             _error("FMEA_IDEMPOTENCY_CONFLICT", "Revision identity is already bound to a different payload.")
         return False
@@ -1476,10 +1746,15 @@ class SqliteGovernanceRepository:
 
     @classmethod
     def _dependency_scope(
-        cls, workspace_id: str, actor_id: str, command: str, path: str, seed: str
+        cls, workspace_id: str, actor_id: str, command: str, path: str, idempotency_key: str
     ) -> IdempotencyScope:
-        key = str(uuid5(NAMESPACE_URL, f"fmea-governance:{seed}"))
-        return IdempotencyScope(workspace_id, actor_id, command, path, idempotency_key_hash(key))
+        return IdempotencyScope(
+            workspace_id,
+            actor_id,
+            command,
+            path,
+            idempotency_key_hash(idempotency_key),
+        )
 
     @classmethod
     def _dependency_audit(
@@ -1530,8 +1805,111 @@ class SqliteGovernanceRepository:
         prepared: PreparedPublication,
         fail: Callable[[str], None],
     ) -> None:
-        if cls._ensure_revision(connection, prepared.revision):
+        cls._validate_authoritative_analysis(connection, prepared.revision)
+        revision_row = connection.execute(
+            "SELECT revision_id FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            (prepared.scope.workspace_id, prepared.revision.revision_id),
+        ).fetchone()
+        if revision_row is None:
+            revision_key = str(uuid5(NAMESPACE_URL, f"revision:{prepared.publication.publication_id}"))
+            revision_command = AssembleRevisionCommand(
+                RevisionAssemblyRequest(
+                    prepared.revision.analysis_id,
+                    prepared.revision.parent_revision_id,
+                    prepared.revision.analysis_record_version,
+                    prepared.revision.parent_revision_hash,
+                ),
+                revision_key,
+            )
+            revision_scope = cls._dependency_scope(
+                prepared.scope.workspace_id,
+                prepared.scope.actor_id,
+                "fmea.revision.assemble",
+                f"/fmea/analyses/{prepared.revision.analysis_id}/revisions",
+                revision_key,
+            )
+            revision_payload = canonical_governance_payload(
+                "revision.assemble", revision_command, revision=prepared.revision
+            )
+            revision_payload_hash = governance_payload_hash(revision_payload)
+            revision_audit = cls._dependency_audit(
+                prepared.audit,
+                revision_scope,
+                revision_payload_hash,
+                prepared.revision.revision_id,
+            )
+            revision_outbox = cls._dependency_outbox(
+                prepared.outbox,
+                revision_scope,
+                revision_payload,
+                prepared.revision.revision_id,
+                "revision.assembled",
+            )
+            revision_meta = _PreparedMeta(
+                "revision",
+                prepared.scope.workspace_id,
+                prepared.revision.revision_id,
+                prepared.revision.revision_id,
+                "revision",
+                revision_scope.command,
+                revision_payload,
+            )
+            cls._insert_idempotency(
+                connection,
+                revision_scope,
+                revision_payload_hash,
+                prepared.revision.created_at,
+            )
+            cls._insert_audit(
+                connection,
+                revision_audit,
+                revision_scope,
+                revision_payload_hash,
+                revision_meta,
+            )
+            cls._ensure_revision(
+                connection,
+                prepared.revision,
+                revision_audit.event_id,
+                revision_outbox.event_id,
+                revision_scope.scope_key,
+                revision_payload_hash,
+            )
+            cls._insert_revision_analysis_binding(connection, prepared.revision)
             fail("publication.revision")
+            cls._insert_outbox(
+                connection,
+                revision_outbox,
+                revision_scope,
+                revision_meta,
+                "revision.assembled",
+            )
+            revision_result = RevisionResult(
+                prepared.revision.revision_id,
+                1,
+                revision_audit.event_id,
+                revision_outbox.event_id,
+            )
+            cls._insert_event_binding(connection, revision_meta, revision_result)
+            cls._complete_idempotency(
+                connection,
+                revision_scope,
+                revision_payload_hash,
+                prepared.revision.revision_id,
+                revision_result,
+                prepared.revision.created_at,
+            )
+        else:
+            persisted_revision = cls._revision_from_connection(
+                connection,
+                prepared.revision.revision_id,
+                prepared.scope.workspace_id,
+            )
+            if persisted_revision != prepared.revision:
+                _error(
+                    "FMEA_IDEMPOTENCY_CONFLICT",
+                    "Revision identity is already bound to a different payload.",
+                )
         submission_row = connection.execute(
             "SELECT * FROM fmea_approval_submissions WHERE workspace_id=? AND submission_id=?",
             (prepared.scope.workspace_id, prepared.submission.submission_id),
@@ -1699,7 +2077,18 @@ class SqliteGovernanceRepository:
         fail: Callable[[str], None],
     ) -> None:
         cls._validate_authoritative_analysis(connection, prepared.revision)
-        cls._ensure_revision(connection, prepared.revision, prepared.audit.event_id, prepared.outbox.event_id)
+        inserted = cls._ensure_revision(
+            connection,
+            prepared.revision,
+            prepared.audit.event_id,
+            prepared.outbox.event_id,
+            prepared.scope.scope_key,
+            prepared.payload_hash,
+        )
+        if inserted:
+            cls._insert_revision_analysis_binding(connection, prepared.revision)
+        else:
+            cls._verify_revision_analysis_binding(connection, prepared.revision)
         fail("revision.record")
 
     @classmethod
@@ -1915,7 +2304,7 @@ class SqliteGovernanceRepository:
         fail("publication.snapshot")
         publication_payload, publication_json_hash = _object_json(prepared.publication)
         connection.execute(
-            "INSERT INTO fmea_publications (workspace_id,publication_id,analysis_id,revision_id,revision_hash,approval_id,manifest_id,manifest_hash,snapshot_id,snapshot_hash,audit_chain_head,publisher_actor_id,record_version,publication_json,canonical_json_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO fmea_publications (workspace_id,publication_id,analysis_id,revision_id,revision_hash,approval_id,manifest_id,manifest_hash,snapshot_id,snapshot_hash,audit_chain_head,publisher_actor_id,record_version,publication_json,canonical_json_hash,audit_event_id,outbox_event_id,idempotency_scope,payload_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 meta.workspace_id,
                 prepared.publication.publication_id,
@@ -1934,6 +2323,8 @@ class SqliteGovernanceRepository:
                 publication_json_hash,
                 prepared.audit.event_id,
                 prepared.outbox.event_id,
+                prepared.scope.scope_key,
+                prepared.payload_hash,
                 prepared.publication.created_at,
             ),
         )
@@ -1955,6 +2346,7 @@ class SqliteGovernanceRepository:
                 prepared.publication.created_at,
             ),
         )
+        cls._insert_publication_lineage_binding(connection, prepared)
 
     @classmethod
     def _write_publication_withdrawal(

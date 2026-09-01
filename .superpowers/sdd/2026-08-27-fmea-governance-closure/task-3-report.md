@@ -232,3 +232,102 @@ Fresh `ruff check` over all 10 controlled files: **passed**. Fresh `ruff format 
 The only schema compatibility change is additive migration 006. It leaves the legacy `fmea_rows.publication_status` CHECK, review/risk/propagation APIs, migration 005 checksum, and shared outbox/idempotency tables intact. Existing analysis rows are backfilled to a workspace when that information is available from `fmea_rows`; unbound legacy analysis rows are rejected by governance revision commits until explicitly workspace-qualified by the owning persistence flow. No source-hash migration or FileTemplateRegistry manifest migration was added.
 
 No Important finding remains unresolved. The previously ledgered minor placement concern for `ApprovalWithdrawalResult` remains intentionally outside this fix round and is the only reported concern.
+
+## Task 3 fix round 2
+
+### Scope
+
+This round addresses only the six Important findings assigned against reviewed head `939de37b`: database-enforced manifest/snapshot/publication lineage, complete replay-chain validation, readiness cut-point rollback coverage, ambiguous migration-006 workspace backfill rejection, database-enforced revision/analysis lineage, and a distinct publication dependency-revision authority chain. Migration 007 is additive; migrations 005 and 006 remain byte/checksum stable. No Task 4+, service/transport/auth/UI work, plan/ledger change, subagent dispatch, push, or PR was performed.
+
+### RED evidence
+
+The preserved new SQLite tests were run before migration 007 or repository production edits:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_007_enforces_workspace_qualified_publication_and_revision_lineage tests/integration/test_fmea_governance_sqlite.py::test_migration_007_rejects_ambiguous_legacy_analysis_workspaces tests/integration/test_fmea_governance_sqlite.py::test_publication_dependency_revision_has_its_own_authority_chain_and_replay_requires_it tests/integration/test_fmea_governance_sqlite.py::test_readiness_fault_at_actual_write_cut_point_rolls_back_every_readiness_dependency tests/integration/test_fmea_governance_sqlite.py::test_replay_rejects_tampered_result_record_and_dependency_ids tests/integration/test_fmea_governance_sqlite.py::test_publication_replay_recursively_rejects_tampered_dependency_chain -q
+```
+
+Actual: **10 failed, 4 passed**. Expected failure evidence:
+
+- `fmea_publication_lineage_bindings` did not exist (`sqlite3.OperationalError`), so no mandatory database lineage could be written or consumed.
+- Reinitializing a version-6 database containing the same `analysis_id` in two `fmea_rows.workspace_id` values did not raise.
+- A publication-created revision had `(audit_event_id, outbox_event_id) = (NULL, NULL)` and no revision event binding.
+- Tampered submission result versions and approval/publication-withdrawal/supersession result IDs replayed without raising.
+- Tampered revision/submission/approval dependency authority IDs did not invalidate publication replay.
+
+The readiness write-cut rollback test was one of the four passing cases because round 1 had already moved `fail("revision.readiness")` immediately after the actual readiness insert; this round adds the missing durable residue assertions rather than manufacturing a false production regression.
+
+A focused lineage node was also rerun before migration 007 and failed **1 failed** with `no such table: fmea_publication_lineage_bindings`, including the direct mismatched-parent case in its test body.
+
+### GREEN implementation by finding
+
+1. Migration 007 creates immutable `fmea_publication_lineage_bindings` with workspace-qualified deferrable FKs to publication, manifest, snapshot, revision, and the exact `(workspace_id, revision_id, analysis_id)` revision-analysis binding. Its insert trigger requires the exact publication/manifest/snapshot/revision/analysis IDs and hashes to agree. Repository publication writes insert this binding in the publication transaction, and publication reads/replays require it. Direct SQLite tests reject valid-parent mismatches, cross-workspace references, orphans, and duplicate reuse.
+2. Replay now compares every result resource ID and record version represented by its authority row, plus exact authority `idempotency_scope`, `payload_hash`, audit/outbox IDs, actor, command, canonical audit JSON/hash, outbox workspace/scope/type/canonical payload/hash, and immutable event binding. Publication replay recursively verifies its persisted revision, approval-submission, and approval idempotency/audit/outbox/event-binding chains and verifies manifest, snapshot, publication lineage, and export eligibility.
+3. The readiness fault test injects at `revision.readiness`, immediately after the readiness insert, and proves the previous revision chain survives while readiness authority/audit/outbox/idempotency/event-binding residue remains absent.
+4. Migration 007 begins with an ambiguity guard over legacy `fmea_rows`, rejecting any `analysis_id` sourced from more than one workspace. Because repository initialization applies migrations inside `BEGIN EXCLUSIVE`, the failing guard rolls back all version-7 DDL and leaves schema version 6 and source rows intact.
+5. Migration 007 adds the non-partial `(workspace_id, analysis_id)` parent key required by SQLite and immutable `fmea_revision_analysis_bindings` with deferrable FKs to both `fmea_analyses` and `fmea_revisions`. Its trigger verifies analysis ID/version/hash against the revision and authoritative analysis. Revision writes insert the binding atomically, and revision reads/replays require it.
+6. A publication-created revision now receives its own deterministic dependency idempotency scope, audit event, `revision.assembled` outbox event, event binding, completed response, and authority IDs. These IDs are distinct from publication IDs. The `publication.revision` injector fires after the revision and revision-analysis binding writes; rollback tests verify the complete dependency chain is removed.
+
+Migration 007 also backfills both binding tables only from exact existing joins and fails the migration transaction if any existing revision or publication cannot receive its mandatory binding. It adds authority scope/payload columns to revisions and publications so exact replay does not treat those records as unchecked derived data.
+
+### Fresh GREEN commands and exact counts
+
+Focused round-2 behavior matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_007_enforces_workspace_qualified_publication_and_revision_lineage tests/integration/test_fmea_governance_sqlite.py::test_migration_007_rejects_ambiguous_legacy_analysis_workspaces tests/integration/test_fmea_governance_sqlite.py::test_publication_dependency_revision_has_its_own_authority_chain_and_replay_requires_it tests/integration/test_fmea_governance_sqlite.py::test_readiness_fault_at_actual_write_cut_point_rolls_back_every_readiness_dependency tests/integration/test_fmea_governance_sqlite.py::test_replay_rejects_tampered_result_record_and_dependency_ids tests/integration/test_fmea_governance_sqlite.py::test_nonpublication_replay_rejects_tampered_exact_authority_chain tests/integration/test_fmea_governance_sqlite.py::test_publication_replay_recursively_rejects_tampered_dependency_chain tests/integration/test_fmea_governance_sqlite.py::test_publication_replay_rejects_tampered_authority_chain_and_response tests/integration/test_fmea_governance_sqlite.py::test_fault_injected_publication_rolls_back_every_shared_write -q
+```
+
+Result: **48 passed**.
+
+Brief-specified Task 3 three-file matrix, no deselection:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py -q
+```
+
+Result: **70 passed**.
+
+Brief-specified six-file persistence matrix, no deselection:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
+```
+
+Result: **76 passed**.
+
+Relevant governance/snapshot contract matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_source.py -q
+```
+
+Result: **142 passed**.
+
+Additive migration compatibility node:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Result: **1 passed**; it asserts the exact additive set `[1, 2, 3, 4, 5, 6, 7]`.
+
+### Static, compile, migration, and diff checks
+
+```powershell
+.venv\Scripts\python.exe -m ruff check fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m ruff format --check fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m compileall -q fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+git diff --check
+git diff --exit-code -- fmea_infrastructure/migrations/005_fmea_governance_closure.sql fmea_infrastructure/migrations/006_fmea_governance_integrity.sql
+```
+
+Results: Ruff check **passed**; Ruff format check reported **3 files already formatted**; compileall exited **0** with no output; `git diff --check` exited **0**; the 005/006 diff check exited **0**, proving both checksum-stable migrations are unchanged.
+
+### Self-review, compatibility, and concerns
+
+- The schema remains additive. Legacy `fmea_rows.publication_status`, review/risk/propagation APIs, and the existing shared `fmea_outbox_events`/`idempotency_records` authorities are unchanged. Migration 007 creates no parallel audit, outbox, or idempotency table.
+- Binding inserts occur only inside the existing governance transaction. Published payloads and all new bindings remain immutable; publication withdrawal and supersession stay append-only.
+- Publication dependency scopes now derive from their actual command idempotency keys; dependency audit/outbox/event IDs remain unique and cannot reuse the publication authority pair.
+- Direct SQL and restart replay tests exercise behavior rather than source-text assertions.
+- No Important finding remains open. The previously ledgered minor `ApprovalWithdrawalResult` placement concern remains outside this round and is unchanged.
