@@ -510,6 +510,21 @@ def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: d
             or publication.get("revision_id") in publications_by_revision
         ):
             raise _VerificationFailure("FMEA_PUBLICATION_BINDING_INVALID")
+        try:
+            manifest_snapshot_hash_matches = _same_hash(manifest.get("snapshot_hash"), snapshot.get("snapshot_hash"))
+            publication_manifest_hash_matches = _same_hash(
+                publication.get("snapshot_hash"), manifest.get("snapshot_hash")
+            )
+        except _VerificationFailure:
+            manifest_snapshot_hash_matches = False
+            publication_manifest_hash_matches = False
+        if (
+            manifest.get("snapshot_id") != snapshot.get("snapshot_id")
+            or not manifest_snapshot_hash_matches
+            or publication.get("snapshot_id") != manifest.get("snapshot_id")
+            or not publication_manifest_hash_matches
+        ):
+            raise _VerificationFailure("FMEA_MANIFEST_BINDING_INVALID")
         if (
             publication.get("record_version") != 1
             or publication.get("revision_hash") != revision.get("revision_hash")
@@ -1034,200 +1049,6 @@ def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: d
     for key, expected in derived_summary.items():
         if summary.get(key) != expected:
             raise _VerificationFailure("FMEA_SUMMARY_MISMATCH")
-
-
-def _verify_bindings(payloads: dict[str, dict[str, object]], summary: dict[str, object]) -> None:
-    revisions = _items(payloads, "revisions.json")
-    submissions = _items(payloads, "approval-submissions.json")
-    approvals = _items(payloads, "approvals.json")
-    manifests = _items(payloads, "manifests.json")
-    publications = _items(payloads, "publications.json")
-    snapshots = _items(payloads, "snapshots.json")
-    withdrawals = _items(payloads, "publication-withdrawals.json")
-    supersessions = _items(payloads, "supersessions.json")
-    lifecycle = _items(payloads, "lifecycle.json")
-    if len(revisions) != 2 or len(publications) != 2 or len(snapshots) != 2:
-        raise _VerificationFailure("FMEA_LIFECYCLE_INCOMPLETE")
-    revisions_by_id = {item.get("revision_id"): item for item in revisions}
-    if len(revisions_by_id) != len(revisions):
-        raise _VerificationFailure("FMEA_DUPLICATE_ID")
-    child = next((item for item in revisions if item.get("parent_revision_id") is not None), None)
-    if child is None or child.get("parent_revision_id") not in revisions_by_id:
-        raise _VerificationFailure("FMEA_PARENT_BINDING_INVALID")
-    for revision in revisions:
-        _server_id(revision.get("revision_id"))
-        if revision.get("analysis_record_version") != 1:
-            raise _VerificationFailure("FMEA_ETAG_INVALID")
-    if len(submissions) != 2 or len(approvals) != 2 or len(manifests) != 2:
-        raise _VerificationFailure("FMEA_LIFECYCLE_INCOMPLETE")
-    approval_ids = {item.get("approval_id") for item in approvals}
-    for withdrawal in _items(payloads, "approval-withdrawals.json"):
-        _server_id(withdrawal.get("withdrawal_id"))
-        if withdrawal.get("approval_id") not in approval_ids:
-            raise _VerificationFailure("FMEA_APPROVAL_BINDING_INVALID")
-    for submission in submissions:
-        if (
-            submission.get("status") != "pending"
-            or submission.get("revision_id") not in revisions_by_id
-            or submission.get("record_version") != 1
-        ):
-            raise _VerificationFailure("FMEA_APPROVAL_BINDING_INVALID")
-        _server_id(submission.get("submission_id"))
-    submission_ids = {item.get("submission_id") for item in submissions}
-    for approval in approvals:
-        if (
-            approval.get("status") != "approved"
-            or approval.get("submission_id") not in submission_ids
-            or approval.get("record_version") != 2
-        ):
-            raise _VerificationFailure("FMEA_APPROVAL_BINDING_INVALID")
-        _server_id(approval.get("approval_id"))
-        matching = next(item for item in submissions if item.get("submission_id") == approval.get("submission_id"))
-        if approval.get("revision_id") != matching.get("revision_id") or approval.get(
-            "approver_actor_id"
-        ) == matching.get("submitter_actor_id"):
-            raise _VerificationFailure("FMEA_ACTOR_SEPARATION_INVALID")
-    for manifest in manifests:
-        if manifest.get("revision_id") not in revisions_by_id or manifest.get("approval_id") not in approval_ids:
-            raise _VerificationFailure("FMEA_MANIFEST_BINDING_INVALID")
-        _server_id(manifest.get("manifest_id"))
-    publication_ids = {item.get("publication_id") for item in publications}
-    for publication in publications:
-        _server_id(publication.get("publication_id"))
-        if publication.get("record_version") != 1:
-            raise _VerificationFailure("FMEA_ETAG_INVALID")
-        manifest = next((item for item in manifests if item.get("manifest_id") == publication.get("manifest_id")), None)
-        snapshot = next((item for item in snapshots if item.get("snapshot_id") == publication.get("snapshot_id")), None)
-        if manifest is None or snapshot is None:
-            raise _VerificationFailure("FMEA_PUBLICATION_BINDING_INVALID")
-        if publication.get("revision_hash") != manifest.get("revision_hash") or publication.get(
-            "snapshot_hash"
-        ) != snapshot.get("snapshot_hash"):
-            raise _VerificationFailure("FMEA_PUBLICATION_BINDING_INVALID")
-    for withdrawal in withdrawals:
-        if withdrawal.get("publication_id") not in publication_ids:
-            raise _VerificationFailure("FMEA_WITHDRAWAL_BINDING_INVALID")
-        _server_id(withdrawal.get("withdrawal_id"))
-    if (
-        len(supersessions) != 1
-        or supersessions[0].get("old_publication_id") not in publication_ids
-        or supersessions[0].get("new_publication_id") not in publication_ids
-    ):
-        raise _VerificationFailure("FMEA_SUPERSESSION_BINDING_INVALID")
-    _server_id(supersessions[0].get("supersession_id"))
-    if supersessions[0].get("old_publication_id") == supersessions[0].get("new_publication_id"):
-        raise _VerificationFailure("FMEA_SUPERSESSION_CYCLE")
-    statuses = {item.get("effective_status") for item in lifecycle}
-    if statuses != {"superseded", "withdrawn"}:
-        raise _VerificationFailure("FMEA_LIFECYCLE_STATUS_INVALID")
-    audits = _items(payloads, "audits.json")
-    expected_order = [
-        "fmea.revision.assemble",
-        "fmea.approval.submit",
-        "fmea.approval.decide",
-        "fmea.publication.publish",
-        "fmea.revision.assemble",
-        "fmea.approval.submit",
-        "fmea.approval.decide",
-        "fmea.publication.publish",
-        "fmea.publication.supersede",
-        "fmea.approval.withdraw",
-        "fmea.publication.withdraw",
-    ]
-    if [item.get("command") for item in audits] != expected_order:
-        raise _VerificationFailure("FMEA_AUDIT_ORDER_INVALID")
-    for item in audits:
-        _server_id(item.get("event_id"))
-        if item.get("actor_type") != "human":
-            raise _VerificationFailure("FMEA_NON_HUMAN_AUTHORITY")
-        event = item.get("event")
-        if (
-            not isinstance(event, dict)
-            or event.get("actor_type") != "human"
-            or event.get("canonical_payload_hash") != item.get("canonical_payload_hash")
-            or item.get("event_hash") != canonical_hash(event, prefixed=True)
-            or event.get("model_manifest") is not None
-        ):
-            raise _VerificationFailure("FMEA_AUDIT_HASH_MISMATCH")
-    if (
-        summary.get("approval_actor_type") != "human"
-        or summary.get("publisher_actor_type") != "human"
-        or summary.get("model_publication_count") != 0
-    ):
-        raise _VerificationFailure("FMEA_ACTOR_SEPARATION_INVALID")
-    if summary.get("replay_checks") != {"approve": True, "publish": True, "withdraw_publication": True}:
-        raise _VerificationFailure("FMEA_REPLAY_INCOMPLETE")
-    if summary.get("stale_child_approval_code") != "FMEA_GOVERNANCE_APPROVAL_STALE":
-        raise _VerificationFailure("FMEA_APPROVAL_STALENESS_UNPROVEN")
-    if summary.get("withdrawn_publication_retained") is not True:
-        raise _VerificationFailure("FMEA_IMMUTABLE_PAYLOAD_LOST")
-    expected_profiles = {
-        "rag_only": ["text"],
-        "graphrag_only": ["graph", "community"],
-        "combined": ["text", "graph", "community"],
-        "auto": ["text", "graph", "community"],
-    }
-    if summary.get("profile_cases") != expected_profiles or summary.get("retrieval_call_count") != 0:
-        raise _VerificationFailure("FMEA_PROVENANCE_INVALID")
-    expected_records = {
-        "rag_only": {
-            "requested_profile": "rag_only",
-            "resolved_profile": "rag_only",
-            "evidence_types": ["text"],
-            "source_counts": [["text", 1]],
-            "warnings": [],
-        },
-        "graphrag_only": {
-            "requested_profile": "graphrag_only",
-            "resolved_profile": "graphrag_only",
-            "evidence_types": ["graph", "community"],
-            "source_counts": [["community", 1], ["graph", 1]],
-            "warnings": [],
-        },
-        "combined": {
-            "requested_profile": "combined",
-            "resolved_profile": "combined",
-            "evidence_types": ["text", "graph", "community"],
-            "source_counts": [["community", 1], ["graph", 1], ["text", 1]],
-            "warnings": [],
-        },
-        "auto": {
-            "requested_profile": "auto",
-            "resolved_profile": "combined",
-            "evidence_types": ["text", "graph", "community"],
-            "source_counts": [["community", 1], ["graph", 1], ["text", 1]],
-            "warnings": [],
-        },
-    }
-    if summary.get("profile_records") != expected_records:
-        raise _VerificationFailure("FMEA_PROVENANCE_INVALID")
-    profile_records = _items(payloads, "provenance-profiles.json")
-    if len(profile_records) != 4:
-        raise _VerificationFailure("FMEA_PROVENANCE_INVALID")
-    for record in profile_records:
-        requested = record.get("requested_profile")
-        expected_resolved = "combined" if requested == "auto" else requested
-        if (
-            requested not in expected_profiles
-            or record.get("resolved_profile") != expected_resolved
-            or record.get("evidence_types") != expected_profiles[requested]
-            or record.get("source_counts") != expected_records[requested]["source_counts"]
-            or record.get("warnings") != []
-        ):
-            raise _VerificationFailure("FMEA_PROVENANCE_INVALID")
-    for item in _items(payloads, "outbox.json"):
-        _server_id(item.get("event_id"))
-        payload = item.get("payload")
-        if not isinstance(payload, dict) or _normal_hash(item.get("payload_hash")) != _normal_hash(
-            canonical_hash(payload, prefixed=True)
-        ):
-            raise _VerificationFailure("FMEA_OUTBOX_HASH_MISMATCH")
-    for item in _items(payloads, "idempotency.json"):
-        if item.get("state") != "completed" or not item.get("scope_key") or not isinstance(item.get("response"), dict):
-            raise _VerificationFailure("FMEA_IDEMPOTENCY_INVALID")
-        resource_id = item.get("resource_id")
-        if resource_id is not None:
-            _server_id(resource_id)
 
 
 def verify_acceptance_directory(directory: str | Path) -> VerificationResult:

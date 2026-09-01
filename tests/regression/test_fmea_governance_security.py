@@ -151,6 +151,171 @@ def test_verifier_rejects_snapshot_revision_detached_from_publication(tmp_path: 
     assert verification.error_code == "FMEA_SNAPSHOT_BINDING_INVALID"
 
 
+def _rebind_manifest_snapshot_probe(result: object) -> None:
+    artifact_dir = result.artifact_dir
+
+    def manifest_hash(manifest: dict[str, object]) -> str:
+        return canonical_hash(
+            {
+                key: manifest.get(key)
+                for key in (
+                    "manifest_id",
+                    "revision_id",
+                    "revision_hash",
+                    "approval_id",
+                    "snapshot_id",
+                    "snapshot_hash",
+                    "version_manifest_hash",
+                    "previous_audit_chain_head",
+                    "export_eligible",
+                )
+            },
+            prefixed=True,
+        )
+
+    def audit_chain_head(
+        manifest: dict[str, object],
+        snapshot: dict[str, object],
+        revision: dict[str, object],
+        approval: dict[str, object],
+    ) -> str:
+        return canonical_hash(
+            {
+                "previous_audit_chain_head": manifest.get("previous_audit_chain_head"),
+                "revision_hash": revision.get("revision_hash"),
+                "approval_hash": canonical_hash(approval, prefixed=True),
+                "snapshot_hash": snapshot.get("snapshot_hash"),
+                "manifest_hash": manifest.get("manifest_hash"),
+            },
+            prefixed=True,
+        )
+
+    def rebind_event(
+        command: str,
+        payload: dict[str, object],
+        *,
+        audit_items: list[dict[str, object]],
+        outbox_items: list[dict[str, object]],
+        idempotency_items: list[dict[str, object]],
+    ) -> None:
+        event_type = {
+            "fmea.publication.publish": "publication.published",
+            "fmea.publication.supersede": "publication.superseded",
+            "fmea.publication.withdraw": "publication.withdrawn",
+        }[command]
+        outbox = next(item for item in outbox_items if item["payload"] is payload)
+        assert outbox["event_type"] == event_type
+        outbox["payload_hash"] = canonical_hash(outbox["payload"], prefixed=True)
+        audit = next(item for item in audit_items if item["idempotency_scope"] == outbox["idempotency_scope"])
+        payload_hash = outbox["payload_hash"]
+        audit["canonical_payload_hash"] = payload_hash
+        event = audit["event"]
+        event["canonical_payload_hash"] = payload_hash
+        event["request_hash"] = payload_hash
+        event["versions"]["input_snapshot_hash"] = payload_hash.removeprefix("sha256:")
+        if command == "fmea.publication.publish":
+            event["after_hash"] = payload["publication"]["audit_chain_head"]
+        audit["event_hash"] = canonical_hash(event, prefixed=True)
+        idempotency = next(item for item in idempotency_items if item["scope_key"] == outbox["idempotency_scope"])
+        idempotency["payload_hash"] = payload_hash
+
+    manifests_path = artifact_dir / "manifests.json"
+    manifests = _json(manifests_path)
+    manifest = manifests["items"][1]
+    manifest["snapshot_id"] = "snapshot:forged:detached"
+    manifest["snapshot_hash"] = "f" * 64
+    manifest["manifest_hash"] = manifest_hash(manifest)
+
+    snapshots = _json(artifact_dir / "snapshots.json")["items"]
+    publications_path = artifact_dir / "publications.json"
+    publications = _json(publications_path)
+    child_publication = publications["items"][1]
+    child_snapshot = snapshots[1]
+    revisions = _json(artifact_dir / "revisions.json")["items"]
+    approvals = _json(artifact_dir / "approvals.json")["items"]
+    child_revision = revisions[1]
+    child_approval = next(item for item in approvals if item["revision_id"] == child_revision["revision_id"])
+    child_publication["manifest_hash"] = manifest["manifest_hash"]
+    child_publication["audit_chain_head"] = audit_chain_head(manifest, child_snapshot, child_revision, child_approval)
+
+    lifecycle_path = artifact_dir / "lifecycle.json"
+    lifecycle = _json(lifecycle_path)
+    lifecycle["items"][1]["publication"] = child_publication
+    audits_path = artifact_dir / "audits.json"
+    audits = _json(audits_path)
+    outbox_path = artifact_dir / "outbox.json"
+    outbox = _json(outbox_path)
+    idempotency_path = artifact_dir / "idempotency.json"
+    idempotency = _json(idempotency_path)
+    child_publish = next(
+        item
+        for item in outbox["items"]
+        if item["event_type"] == "publication.published"
+        and item["payload"]["publication"]["publication_id"] == child_publication["publication_id"]
+    )
+    child_publish["payload"]["manifest"] = manifest
+    child_publish["payload"]["publication"] = child_publication
+    eligibility = child_publish["payload"]["export_eligibility"]
+    eligibility["source_hashes"] = [
+        ["manifest", manifest["manifest_hash"]],
+        ["revision", child_revision["revision_hash"]],
+        ["snapshot", child_snapshot["snapshot_hash"]],
+    ]
+    eligibility["eligibility_hash"] = canonical_hash(
+        {
+            "eligibility_id": eligibility["eligibility_id"],
+            "workspace_id": eligibility["workspace_id"],
+            "publication_id": eligibility["publication_id"],
+            "manifest_id": eligibility["manifest_id"],
+            "eligible": eligibility["eligible"],
+            "source_hashes": eligibility["source_hashes"],
+        },
+        prefixed=True,
+    )
+    rebind_event(
+        "fmea.publication.publish",
+        child_publish["payload"],
+        audit_items=audits["items"],
+        outbox_items=outbox["items"],
+        idempotency_items=idempotency["items"],
+    )
+    supersede = next(item for item in outbox["items"] if item["event_type"] == "publication.superseded")
+    supersede["payload"]["replacement"] = child_publication
+    rebind_event(
+        "fmea.publication.supersede",
+        supersede["payload"],
+        audit_items=audits["items"],
+        outbox_items=outbox["items"],
+        idempotency_items=idempotency["items"],
+    )
+    withdraw = next(item for item in outbox["items"] if item["event_type"] == "publication.withdrawn")
+    withdraw["payload"]["publication"] = child_publication
+    rebind_event(
+        "fmea.publication.withdraw",
+        withdraw["payload"],
+        audit_items=audits["items"],
+        outbox_items=outbox["items"],
+        idempotency_items=idempotency["items"],
+    )
+
+    _write_json(manifests_path, manifests)
+    _write_json(publications_path, publications)
+    _write_json(lifecycle_path, lifecycle)
+    _write_json(audits_path, audits)
+    _write_json(outbox_path, outbox)
+    _write_json(idempotency_path, idempotency)
+    _refresh_summary(artifact_dir)
+
+
+def test_verifier_rejects_manifest_snapshot_identity_detached_from_published_snapshot(tmp_path: Path) -> None:
+    result = run_acceptance(output_root=tmp_path / "acceptance")
+    _rebind_manifest_snapshot_probe(result)
+
+    verification = verify(result.artifact_dir)
+
+    assert verification.error_code == "FMEA_MANIFEST_BINDING_INVALID"
+
+
 def test_verifier_requires_durable_authority_evidence_and_withdrawals(tmp_path: Path) -> None:
     result = run_acceptance(output_root=tmp_path / "acceptance")
     for name in (
