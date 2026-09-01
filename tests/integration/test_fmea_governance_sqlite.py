@@ -840,6 +840,23 @@ def _governance_counts(path: Path) -> dict[str, int]:
         }
 
 
+def _supersession_endpoint_snapshot(path: Path) -> tuple[tuple[tuple[object, ...], ...], ...]:
+    with sqlite3.connect(path) as connection:
+        return (
+            tuple(connection.execute("SELECT * FROM fmea_publications ORDER BY workspace_id,publication_id")),
+            tuple(connection.execute("SELECT * FROM fmea_publication_withdrawals ORDER BY workspace_id,withdrawal_id")),
+            tuple(connection.execute("SELECT * FROM fmea_supersessions ORDER BY workspace_id,supersession_id")),
+            tuple(connection.execute("SELECT * FROM fmea_audit_events ORDER BY workspace_id,event_id")),
+            tuple(connection.execute("SELECT * FROM fmea_outbox_events ORDER BY workspace_id,event_id")),
+            tuple(
+                connection.execute(
+                    "SELECT * FROM fmea_governance_event_bindings ORDER BY workspace_id,resource_type,resource_id"
+                )
+            ),
+            tuple(connection.execute("SELECT * FROM idempotency_records ORDER BY scope_key")),
+        )
+
+
 def test_revision_fault_rolls_back_shared_chain(tmp_path: Path) -> None:
     path = tmp_path / "fmea.sqlite3"
     repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "revision.record"))
@@ -1223,6 +1240,73 @@ def test_transaction_guard_rejects_second_outgoing_supersession_atomically(
     assert captured.value.code == "FMEA_GOVERNANCE_SUPERSESSION_INVALID"
     with sqlite3.connect(repository.database_path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM fmea_supersessions").fetchone() == (1,)
+
+
+@pytest.mark.parametrize("withdrawn_endpoint", ["old", "replacement"])
+def test_transaction_guard_rejects_supersession_with_withdrawn_endpoint_atomically(
+    repository: SqliteGovernanceRepository,
+    withdrawn_endpoint: str,
+) -> None:
+    old_revision = make_fmea_revision()
+    replacement_revision = make_fmea_revision(
+        revision_id="revision-2",
+        parent_revision_id=old_revision.revision_id,
+        parent_revision_hash=old_revision.revision_hash,
+    )
+    old_id = "publication-1" if withdrawn_endpoint == "old" else "pub-old"
+    replacement_id = "publication-1" if withdrawn_endpoint == "replacement" else "pub-new"
+    old = _prepared_publication_bundle(
+        old_revision,
+        old_id,
+        "old-withdrawal-guard",
+        "00000000-0000-4000-8000-000000000760",
+    )
+    replacement = _prepared_publication_bundle(
+        replacement_revision,
+        replacement_id,
+        "replacement-withdrawal-guard",
+        "00000000-0000-4000-8000-000000000761",
+        previous_audit_chain_head=old.publication.audit_chain_head,
+    )
+    repository.commit_publication(old)
+    repository.commit_publication(replacement)
+    withdrawn = old if withdrawn_endpoint == "old" else replacement
+    repository.commit_publication_withdrawal(_prepared_publication_withdrawal_for(withdrawn))
+    prepared = _prepared_supersession_for_publications(old, replacement)
+    before = _supersession_endpoint_snapshot(repository.database_path)
+    old_lifecycle = repository.get_publication_lifecycle(old_id, "ws-1")
+    replacement_lifecycle = repository.get_publication_lifecycle(replacement_id, "ws-1")
+
+    restarted = SqliteGovernanceRepository(repository.database_path)
+    with pytest.raises(ReviewError) as captured:
+        restarted.commit_supersession(prepared)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_SUPERSESSION_INVALID"
+    assert _supersession_endpoint_snapshot(repository.database_path) == before
+    assert restarted.get_publication_lifecycle(old_id, "ws-1") == old_lifecycle
+    assert restarted.get_publication_lifecycle(replacement_id, "ws-1") == replacement_lifecycle
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_supersessions WHERE workspace_id=? AND supersession_id=?",
+            ("ws-1", prepared.supersession.supersession_id),
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            ("ws-1", prepared.audit.event_id),
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            ("ws-1", prepared.outbox.event_id),
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_governance_event_bindings "
+            "WHERE workspace_id=? AND resource_type='supersession' AND resource_id=?",
+            ("ws-1", prepared.supersession.supersession_id),
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM idempotency_records WHERE scope_key=?",
+            (prepared.scope.scope_key,),
+        ).fetchone() == (0,)
 
 
 def test_supersession_preserves_both_publications_and_rejects_a_cycle(
