@@ -57,6 +57,58 @@ def test_projection_safe_json_rejects_recursive_private_or_unbounded_values(unsa
         projection_safe_json(unsafe_value)
 
 
+@pytest.mark.parametrize(
+    "unsafe_value",
+    [
+        {"domain_extension": {"private_evidence": "hidden"}},
+        {"domain_extension": {"reference": r"\\server\share\evidence.json"}},
+        {"domain_extension": {"reference": r"\Windows\system.ini"}},
+        {"domain_extension": {"reference": "../private/evidence.json"}},
+        {"domain_extension": {"reference": "safe/../../private/evidence.json"}},
+        {"domain_extension": {"reference": "file:/private/evidence.json"}},
+        {"domain_extension": {"reference": "mailto:private@example.test"}},
+        {"domain_extension": {"reference": "evidence+archive:item-1"}},
+    ],
+)
+def test_projection_safe_json_rejects_private_tokens_paths_and_any_uri_scheme(unsafe_value: object) -> None:
+    from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
+
+    with pytest.raises(ValueError):
+        projection_safe_json(unsafe_value)
+
+
+@pytest.mark.parametrize("unsafe_number", [float("nan"), float("inf"), float("-inf")])
+def test_projection_safe_json_rejects_nonfinite_numbers(unsafe_number: float) -> None:
+    from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
+
+    with pytest.raises(ValueError, match="non-finite"):
+        projection_safe_json({"domain_extension": {"measurement": unsafe_number}})
+
+
+def test_projection_safe_json_rejects_recursive_cycles() -> None:
+    from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
+
+    cycle: dict[str, object] = {}
+    cycle["domain_extension"] = cycle
+
+    with pytest.raises(ValueError, match="cycle"):
+        projection_safe_json(cycle)
+
+
+def test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text() -> None:
+    from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
+
+    payload = {
+        "medical_template": {
+            "content_hash": "sha256:" + "a" * 64,
+            "observed_at": "2026-09-01T12:34:56Z",
+            "summary": "Cross-domain pump and patient monitoring text",
+        }
+    }
+
+    assert projection_safe_json(payload) == payload
+
+
 def test_snapshot_lifecycle_and_event_share_recursive_projection_boundary() -> None:
     from chroma_rag_poc.fmea_governance_contracts import event_data, publication_data, snapshot_data
 

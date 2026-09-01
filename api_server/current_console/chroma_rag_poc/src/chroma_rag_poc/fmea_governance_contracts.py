@@ -37,6 +37,7 @@ _PRIVATE_KEY_MARKERS = frozenset({
     "databasepath",
     "password",
     "passwd",
+    "private",
     "privatekey",
     "privatepath",
     "prompt",
@@ -46,7 +47,9 @@ _PRIVATE_KEY_MARKERS = frozenset({
     "secret",
     "sql",
 })
-_URI_OR_ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*://|[A-Za-z]:[\\/]|/)")
+_IMMUTABLE_HASH = re.compile(r"^sha256:[0-9a-fA-F]{64}$")
+_URI_OR_ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|[A-Za-z]:[\\/]|[\\/])")
+_PATH_TRAVERSAL = re.compile(r"(?:^|[\\/])\.\.(?:[\\/]|$)")
 
 
 def derive_governance_cursor_secret(configured: str | None) -> bytes:
@@ -315,7 +318,9 @@ def projection_safe_json(value: object) -> object:
         if isinstance(item, str):
             if len(item) > _PROJECTION_MAX_STRING_CHARS:
                 raise ValueError("governance projection string is too long")
-            if _URI_OR_ABSOLUTE_PATH.match(item):
+            if not _IMMUTABLE_HASH.fullmatch(item) and (
+                _URI_OR_ABSOLUTE_PATH.match(item) or _PATH_TRAVERSAL.search(item)
+            ):
                 raise ValueError("governance projection contains a private location")
             return item
         if not isinstance(item, dict | list | tuple):

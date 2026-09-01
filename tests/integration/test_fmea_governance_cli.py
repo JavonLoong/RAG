@@ -280,6 +280,43 @@ def _runtime(service: FakeGovernanceService, *, cursor_secret: bytes | None = b"
     )
 
 
+def _configure_real_cli_runtime(monkeypatch: pytest.MonkeyPatch, service: FakeGovernanceService) -> None:
+    import core_domain.fmea.states as states
+    import fmea_application.review_contracts as review_contracts
+    import fmea_infrastructure.composition as composition
+
+    workspace = SimpleNamespace(workspace_id="ws-1")
+    actor = ActorContext("human-1", ActorType.HUMAN, frozenset({"reviewer", "approver", "publisher"}), "ws-1")
+    registry = SimpleNamespace(get=lambda workspace_id: workspace)
+    auth = SimpleNamespace(authenticate=lambda _token, _remote: actor)
+    dependencies = SimpleNamespace(
+        workspace_registry=SimpleNamespace(WorkspaceRegistry=SimpleNamespace(from_env=lambda: registry)),
+        local_auth=SimpleNamespace(LocalReviewAuthProvider=SimpleNamespace(from_env=lambda: auth)),
+        review_contracts=review_contracts,
+        states=states,
+    )
+    review_runtime = SimpleNamespace(
+        service=object(),
+        executor=SimpleNamespace(close_nonblocking=lambda: None),
+    )
+    risk_runtime = SimpleNamespace(
+        analysis_service=object(), decision_service=object(), risk_service=object(), risk_repository=object()
+    )
+    governance_runtime = SimpleNamespace(
+        service=service,
+        assistance_service=_runtime(service).governance_assistance_service,
+    )
+    monkeypatch.setattr(fmea_skill, "_load_project_dependencies", lambda: dependencies)
+    monkeypatch.setattr(fmea_skill, "build_workspace_review_runtime", lambda _workspace: review_runtime)
+    monkeypatch.setattr(composition, "build_default_workspace_risk_runtime", lambda _workspace, **_kwargs: risk_runtime)
+    monkeypatch.setattr(composition, "propagation_server_environment_present", lambda: False)
+    monkeypatch.setattr(
+        composition,
+        "build_default_workspace_governance_runtime",
+        lambda _workspace: governance_runtime,
+    )
+
+
 def test_cli_snapshot_emits_one_bounded_json_object(capsys, monkeypatch) -> None:
     service = FakeGovernanceService()
     monkeypatch.setattr(fmea_skill, "build_cli_runtime", lambda: _runtime(service))
@@ -295,6 +332,35 @@ def test_cli_snapshot_emits_one_bounded_json_object(capsys, monkeypatch) -> None
     assert payload["resource_type"] == "publication_snapshot"
     assert payload["data"]["publication_id"] == "publication-1"
     assert service.calls == ["get_snapshot"]
+
+
+def test_cli_snapshot_budgets_the_final_pretty_stdout_bytes_without_partial_payload(capsys, monkeypatch) -> None:
+    service = FakeGovernanceService()
+    service.snapshot.rows = tuple({"domain_note": "x" * 1285} for _ in range(200))
+    service.snapshot.row_count = 200
+    monkeypatch.setattr(fmea_skill, "build_cli_runtime", lambda: _runtime(service))
+
+    compact_exit = fmea_skill.main(["publication", "snapshot", "--publication-id", "publication-1"])
+    compact = capsys.readouterr().out
+    assert compact_exit == 0
+    assert len(compact.encode("utf-8")) < 256 * 1024
+
+    pretty_exit = fmea_skill.main([
+        "publication",
+        "snapshot",
+        "--publication-id",
+        "publication-1",
+        "--pretty",
+    ])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert pretty_exit == 7
+    assert captured.err == ""
+    assert len(captured.out.encode("utf-8")) <= 256 * 1024
+    assert payload["resource_type"] == "error"
+    assert payload["error"]["code"] == "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE"
+    assert "domain_note" not in captured.out
 
 
 def test_cli_snapshot_projection_rejects_nested_private_output_as_single_safe_json(capsys, monkeypatch) -> None:
@@ -327,8 +393,8 @@ def test_rest_and_cli_snapshot_history_parity_and_cursor_interoperability(capsys
     service = FakeGovernanceService()
     cursor_configuration = "task5-shared-cross-transport-cursor-secret"
     monkeypatch.setenv("FMEA_GOVERNANCE_CURSOR_SECRET", cursor_configuration)
-    secret = derive_governance_cursor_secret(cursor_configuration)
-    cli_runtime = _runtime(service, cursor_secret=secret)
+    _configure_real_cli_runtime(monkeypatch, service)
+    cli_runtime = fmea_skill.build_cli_runtime()
     rest_runtime = SimpleNamespace(
         service=service,
         assistance_service=cli_runtime.governance_assistance_service,
@@ -337,9 +403,8 @@ def test_rest_and_cli_snapshot_history_parity_and_cursor_interoperability(capsys
     app = create_app(review_auth_provider=FakeAuth())
     app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: SimpleNamespace(workspace_id=workspace_id))
     app.state.governance_runtime_factory = lambda _workspace: rest_runtime
-    assert app.state.governance_cursor_secret == secret
     client = TestClient(app, client=("127.0.0.1", 50000))
-    monkeypatch.setattr(fmea_skill, "build_cli_runtime", lambda: cli_runtime)
+    cli_runtime.close()
 
     with client:
         rest_snapshot = client.get(
@@ -1124,43 +1189,40 @@ def test_cli_default_runtime_missing_source_providers_maps_to_configuration(caps
 
 
 def test_cli_runtime_acquires_the_governance_application_service(monkeypatch) -> None:
-    import core_domain.fmea.states as states
-    import fmea_application.review_contracts as review_contracts
-
-    workspace = SimpleNamespace(workspace_id="ws-1")
-    actor = ActorContext("human-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1")
-    registry = SimpleNamespace(get=lambda workspace_id: workspace)
-    auth = SimpleNamespace(authenticate=lambda _token, _remote: actor)
-    dependencies = SimpleNamespace(
-        workspace_registry=SimpleNamespace(WorkspaceRegistry=SimpleNamespace(from_env=lambda: registry)),
-        local_auth=SimpleNamespace(LocalReviewAuthProvider=SimpleNamespace(from_env=lambda: auth)),
-        review_contracts=review_contracts,
-        states=states,
-    )
-    review_runtime = SimpleNamespace(
-        service=object(),
-        executor=SimpleNamespace(close_nonblocking=lambda: None),
-    )
-    risk_runtime = SimpleNamespace(
-        analysis_service=object(), decision_service=object(), risk_service=object(), risk_repository=object()
-    )
-    governance_service = object()
-    governance_runtime = SimpleNamespace(service=governance_service, assistance_service=object())
-    import fmea_infrastructure.composition as composition
-
+    service = FakeGovernanceService()
     monkeypatch.setenv("FMEA_GOVERNANCE_CURSOR_SECRET", "task5-runtime-acquisition-cursor-secret")
-    monkeypatch.setattr(fmea_skill, "_load_project_dependencies", lambda: dependencies)
-    monkeypatch.setattr(fmea_skill, "build_workspace_review_runtime", lambda _workspace: review_runtime)
-    monkeypatch.setattr(composition, "build_default_workspace_risk_runtime", lambda _workspace, **_kwargs: risk_runtime)
-    monkeypatch.setattr(composition, "propagation_server_environment_present", lambda: False)
-    monkeypatch.setattr(
-        composition,
-        "build_default_workspace_governance_runtime",
-        lambda _workspace: governance_runtime,
-    )
+    _configure_real_cli_runtime(monkeypatch, service)
 
     runtime = fmea_skill.build_cli_runtime()
 
-    assert runtime.governance_service is governance_service
-    assert runtime.service is review_runtime.service
+    assert runtime.governance_service is service
+    assert runtime.governance_cursor_secret == derive_governance_cursor_secret(
+        "task5-runtime-acquisition-cursor-secret"
+    )
     runtime.close()
+
+
+def test_cli_runtime_without_cursor_secret_keeps_non_history_governance_available(capsys, monkeypatch) -> None:
+    service = FakeGovernanceService()
+    monkeypatch.delenv("FMEA_GOVERNANCE_CURSOR_SECRET", raising=False)
+    _configure_real_cli_runtime(monkeypatch, service)
+
+    runtime = fmea_skill.build_cli_runtime()
+
+    assert runtime.governance_cursor_secret is None
+    assert runtime.service is not None
+    assert runtime.analysis_service is not None
+    assert runtime.decision_service is not None
+    assert runtime.risk_service is not None
+    runtime.close()
+    assert fmea_skill.main(["publication", "snapshot", "--publication-id", "publication-1"]) == 0
+    assert json.loads(capsys.readouterr().out)["resource_type"] == "publication_snapshot"
+
+    for history_args in (
+        ["approval", "history", "--revision-id", "revision-1", "--limit", "1"],
+        ["publication", "history", "--publication-id", "publication-1", "--limit", "1"],
+    ):
+        assert fmea_skill.main(history_args) == 3
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["error"]["code"] == "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID"
+    assert service.history_queries == []

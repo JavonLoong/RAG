@@ -38,6 +38,7 @@ FMEA_GOVERNANCE_COMMANDS: Final = frozenset({"revision", "approval", "publicatio
 SUGGESTION_POLL_INTERVAL_SECONDS: Final = 0.2
 SUGGESTION_DEADLINE_SECONDS: Final = 360.0
 DECISION_REQUEST_MAX_BYTES: Final = 256 * 1024
+GOVERNANCE_RESPONSE_MAX_BYTES: Final = 256 * 1024
 _SCHEMA_VERSION: Final = "graphrag.fmea.v1"
 _RESOURCE_VERSION: Final = "1.0.0"
 _DECISION_REQUEST_KEYS: Final = frozenset(
@@ -667,15 +668,12 @@ def build_cli_runtime() -> CliRuntime:
         propagation_start_defaults = propagation_runtime.start_defaults
     governance_runtime = composition.build_default_workspace_governance_runtime(workspace)
     governance_contracts = import_module("chroma_rag_poc.fmea_governance_contracts")
-    try:
+    configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
+    governance_cursor_secret = None
+    if isinstance(configured_cursor_secret, str) and configured_cursor_secret.strip():
         governance_cursor_secret = governance_contracts.derive_governance_cursor_secret(
-            os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
+            configured_cursor_secret
         )
-    except ValueError as exc:
-        raise _governance_error(
-            "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
-            "FMEA governance cursor signing is not configured",
-        ) from exc
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -1186,7 +1184,17 @@ def _emit_governance_resource(resource_type: str, data: object, *, pretty: bool)
             "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
             "FMEA governance response projection is unavailable",
         ) from exc
-    _write_json(envelope, pretty=pretty)
+    if pretty:
+        encoded = json.dumps(envelope, ensure_ascii=False, indent=2)
+    else:
+        encoded = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
+    output = encoded + "\n"
+    if len(output.encode("utf-8")) > GOVERNANCE_RESPONSE_MAX_BYTES:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+            "FMEA governance response projection is unavailable",
+        )
+    sys.stdout.write(output)
 
 
 def _governance_command(function_name: str, *args: Any, **kwargs: Any) -> Any:

@@ -128,3 +128,62 @@ All mutations were temporary and restored immediately.
 2. Deployment must set the same nonblank `FMEA_GOVERNANCE_CURSOR_SECRET` for REST and CLI history interoperability. Rotation invalidates outstanding cursors; no multi-key rotation scheme is in Task 5 scope.
 3. The sanitizer is intentionally conservative (including recursive private-key markers and path/URL rejection). Future domain/template extensions must remain projection-safe JSON and within depth/container/node/string/256 KiB budgets.
 4. Legacy `api.py` and non-governance portions of `scripts/fmea_skill.py` were not globally reformatted; scoped Ruff passed, and unrelated legacy cleanup remains outside Task 5.
+
+## Fix round 2/5 — governance transport review closure
+
+### Scope and findings closed
+
+- Fix base: `7a01b79f22a39fba1d43c7b5ab632b466c9ac1f8`; the worktree was clean at that base.
+- Applied all four fixed findings in `task-5-review-round-2.md` and the latest two Task 5 rulings: cursor-secret resolution remains command-scoped, and generic URI rejection preserves an explicitly validated canonical `sha256:<hex>` hash.
+- No Task 6, migration, RAG/GraphRAG, export/UI, plugin, subagent, push, or PR work was performed.
+
+| Finding | Minimal fix | Covering behavior tests |
+| --- | --- | --- |
+| Critical: recursive sanitizer gaps | Added generic recursive rejection for private key markers, UNC/root-relative/drive paths, traversal segments, and every URI scheme. Canonical SHA-256 lineage hashes are validated before URI rejection. Existing nonfinite/cycle/depth/container/node/string/total-byte checks remain shared by snapshot, lifecycle, event, and envelope projections. | `test_projection_safe_json_rejects_private_tokens_paths_and_any_uri_scheme`; `test_projection_safe_json_rejects_nonfinite_numbers`; `test_projection_safe_json_rejects_recursive_cycles`; `test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text`; existing shared snapshot/lifecycle/event boundary tests. |
+| Important: false CLI secret derivation evidence | Reworked the cross-transport test so CLI calls use the real `build_cli_runtime` dependency composition, environment read, and domain-separated derivation. REST-issued cursors are consumed by CLI and CLI-issued cursors by REST. | `test_rest_and_cli_snapshot_history_parity_and_cursor_interoperability`; `test_cli_runtime_acquires_the_governance_application_service`. |
+| Important: pretty output exceeds budget | Governance CLI output is fully serialized first, including pretty whitespace and final newline, then its UTF-8 bytes are checked against 256 KiB before one atomic stdout write. Oversize output maps to one bounded stable storage error with no payload prefix. | `test_cli_snapshot_budgets_the_final_pretty_stdout_bytes_without_partial_payload` uses a compact `261619`-byte-class fixture whose pretty form exceeds 256 KiB. |
+| Important: missing secret breaks all CLI commands | `CliRuntime.governance_cursor_secret` remains optional. `build_cli_runtime` derives it only when the dedicated environment value is nonblank; only approval/publication history calls the existing secret requirement. Non-history governance and the review/risk services remain acquired without the variable. | `test_cli_runtime_without_cursor_secret_keeps_non_history_governance_available`; existing dedicated-secret history test; review/risk/propagation CLI compatibility matrix. |
+
+### RED and mutation evidence
+
+Every production mutation below was temporary and restored immediately. The initial system-Python attempt failed during collection because it lacked project dependencies and was not counted as RED evidence; all recorded commands use `.venv/Scripts/python.exe`.
+
+| RED command | Observed output and diagnosed gap |
+| --- | --- |
+| `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_rejects_private_tokens_paths_and_any_uri_scheme -q` | `8 failed in 0.17s`; every new private-key/path/URI case was accepted by the old sanitizer. |
+| After temporarily bypassing `math.isfinite` and active-cycle checks: `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_rejects_nonfinite_numbers tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_rejects_recursive_cycles -q` | `4 failed in 0.33s`; nonfinite values reached JSON encoding with the wrong failure and a cycle reached depth/cleanup failure instead of the cycle guard. |
+| After temporarily removing the immutable-hash exemption: `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text -q` | `1 failed`; canonical `sha256:<64 hex>` was rejected as a URI, proving the positive case kills overbroad sanitization. |
+| `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_governance_cli.py::test_cli_runtime_without_cursor_secret_keeps_non_history_governance_available -q` | `1 failed in 1.24s`; real `build_cli_runtime` raised `FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID` before dispatch. |
+| After temporarily suffixing the CLI derivation input: `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_governance_cli.py::test_rest_and_cli_snapshot_history_parity_and_cursor_interoperability -q` | `1 failed in 1.15s`; CLI returned exit `2` / `FMEA_GOVERNANCE_CURSOR_INVALID` while consuming the REST cursor. |
+| `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_governance_cli.py::test_cli_snapshot_budgets_the_final_pretty_stdout_bytes_without_partial_payload -q` | `1 failed in 1.14s`; old code returned exit `0` and wrote the over-budget pretty payload. |
+
+### GREEN commands and outputs
+
+- Sanitizer focused: `13 passed in 0.08s`; restored nonfinite/cycle guards: `4 passed in 0.07s`.
+- Real runtime/secret/history focused: `3 passed in 0.97s`; restored cross-transport derivation: `1 passed in 0.93s`.
+- Final-byte focused: `1 passed in 0.90s`.
+- Three Task 5 files: `136 passed in 4.12s`.
+- Six-file Task 5 plus prior REST transport matrix: `191 passed in 12.03s`.
+- Review/risk/propagation CLI compatibility matrix with no inherited cursor secret: `36 passed in 0.92s`.
+- Governance service/source/composition focused suite: `201 passed in 1.72s`.
+- Scoped Ruff check over the changed contract/CLI/tests plus the Task 5 API test: `All checks passed!`.
+- Ruff format check over the safely format-scoped contract and three Task 5 test files: `4 files already formatted`.
+- `python -m compileall -q api_server/current_console/chroma_rag_poc/src fmea_application fmea_infrastructure scripts tests`: exit `0`.
+- `git diff --check`: exit `0`; only expected LF-to-CRLF working-copy warnings were emitted.
+
+The final GREEN pytest commands were the exact three-file and six-file commands from `task-5-brief.md`, plus `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_review_cli.py tests/integration/test_fmea_risk_cli.py tests/integration/test_fmea_propagation_cli.py -q` and `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_source.py tests/unit/test_fmea_governance_authority.py tests/unit/test_fmea_governance_assistance.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_governance_api_contracts.py tests/integration/test_fmea_governance_lifecycle.py -q`.
+
+### Fix-round changed files and necessity
+
+- `fmea_governance_contracts.py`: closes the generic recursive private/path/URI boundary while retaining validated hashes and ordinary cross-domain data.
+- `scripts/fmea_skill.py`: makes cursor configuration optional outside history and enforces the actual final stdout-byte budget before writing.
+- `test_fmea_governance_api_contracts.py`: direct sanitizer positive/negative and mutation-killing coverage.
+- `test_fmea_governance_cli.py`: minimal shared real-runtime fixture, actual env derivation/cursor interoperability, missing-secret compatibility, and final-byte regression.
+- This report: required round-2 evidence. No additional production/test file was needed.
+
+### Open concerns after fix round 2
+
+1. No Critical/Important round-2 finding remains open. Deployment still must provide the same dedicated cursor secret to REST and CLI for history; rotation invalidates outstanding cursors.
+2. The sanitizer intentionally rejects locator-shaped values under any URI scheme and path traversal at every depth. New domains should expose reviewed semantic text or validated immutable hashes, not live locators.
+3. Missing trusted source providers remains intentionally fail-closed as decided in round 1; deployment wiring is outside Task 5.
+4. `scripts/fmea_skill.py` contains inherited formatting outside the Task 5 hunks. Whole-file formatting would create a large unrelated diff, so Ruff check covers it while format check remains restricted to safely format-scoped contract/test files.
