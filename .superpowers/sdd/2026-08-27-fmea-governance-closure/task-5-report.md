@@ -187,3 +187,39 @@ The final GREEN pytest commands were the exact three-file and six-file commands 
 2. The sanitizer intentionally rejects locator-shaped values under any URI scheme and path traversal at every depth. New domains should expose reviewed semantic text or validated immutable hashes, not live locators.
 3. Missing trusted source providers remains intentionally fail-closed as decided in round 1; deployment wiring is outside Task 5.
 4. `scripts/fmea_skill.py` contains inherited formatting outside the Task 5 hunks. Whole-file formatting would create a large unrelated diff, so Ruff check covers it while format check remains restricted to safely format-scoped contract/test files.
+
+## Fix round 3/5 — token-aware governance locator classification
+
+### Scope and finding closed
+
+- Fix base: `bea659c8d0dbdb0f913292d5c68c99d086eea473`; the worktree was clean at that base.
+- Closed the single Critical finding in `task-5-review-round-3.md` under the latest ruling: scan embedded locator tokens across the whole string without treating ordinary `label: prose` or every custom no-slash identifier as a URI.
+- The sanitizer now rejects embedded arbitrary `scheme://` tokens; embedded `file:`, `mailto:`, and `data:` locators when the colon is followed immediately by locator content; token-bounded drive, UNC, POSIX/Windows root-relative paths; and embedded traversal segments.
+- Canonical SHA-256 hashes, ISO timestamps, `Risk: nominal after inspection`, ordinary cross-domain template text, and `evidence+archive:item-1` remain valid projection data.
+- No REST/CLI nested test adjustment was necessary because both transports already consume this shared sanitizer. No other production file, Task 6 work, migration, refactor, subagent, push, or PR was involved.
+
+### RED evidence and covering tests
+
+- Added/updated `test_projection_safe_json_rejects_private_tokens_and_embedded_locators` with the concrete embedded HTTPS example, an arbitrary `archive+v1://` token, embedded UNC, Windows/POSIX root-relative and traversal paths, plus embedded `file:`, `mailto:`, and `data:` locators.
+- Extended `test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text` with the concrete `Risk: nominal after inspection` prose and a custom no-slash colon identifier while retaining canonical hash, timestamp, and ordinary template text positives.
+- RED command: `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_rejects_private_tokens_and_embedded_locators tests/unit/test_fmea_governance_api_contracts.py::test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text -q`.
+- RED output: `10 failed, 2 passed in 0.22s`. The old start-anchored regex leaked nine embedded locators and rejected the valid `Risk: ...` positive.
+- The tests kill both realistic regressions: changing whole-string locator scans back to start-only matching leaks the embedded negatives; restoring blanket `scheme:` classification rejects the two valid colon-bearing positives.
+
+### GREEN commands and outputs
+
+- Same focused RED command after the minimal fix: `12 passed in 0.07s`.
+- Focused sanitizer matrix: `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_governance_api_contracts.py -k projection_safe_json -q` -> `23 passed, 11 deselected in 0.07s`.
+- Three Task 5 files: `139 passed in 5.68s`.
+- Six-file Task 5 plus prior REST transport matrix: `194 passed in 10.77s`.
+- Scoped Ruff check: `All checks passed!`.
+- Scoped Ruff format check: `2 files already formatted`.
+- `python -m compileall -q api_server/current_console/chroma_rag_poc/src fmea_application fmea_infrastructure scripts tests`: exit `0`.
+- `git diff --check`: exit `0`; only expected LF-to-CRLF working-copy warnings were emitted.
+
+### Changed files and open concerns
+
+- `fmea_governance_contracts.py`: replaces the start-anchored blanket scheme matcher with four narrow whole-string token classifiers.
+- `test_fmea_governance_api_contracts.py`: adds the required positive/negative behavior matrix.
+- This report: records round-3 RED/GREEN and scope evidence.
+- No round-3 Critical/Important item remains open. Per the ruling, obscure custom no-slash schemes are not classified as locators unless they use `://` or one of the known locator schemes; a future trusted schema may explicitly constrain such values if needed.

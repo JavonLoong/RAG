@@ -61,16 +61,19 @@ def test_projection_safe_json_rejects_recursive_private_or_unbounded_values(unsa
     "unsafe_value",
     [
         {"domain_extension": {"private_evidence": "hidden"}},
-        {"domain_extension": {"reference": r"\\server\share\evidence.json"}},
-        {"domain_extension": {"reference": r"\Windows\system.ini"}},
-        {"domain_extension": {"reference": "../private/evidence.json"}},
+        {"domain_extension": {"reference": "Evidence is at https://private.example/item"}},
+        {"domain_extension": {"reference": "Evidence uses archive+v1://private/item"}},
+        {"domain_extension": {"reference": r"Evidence is at \\server\share\evidence.json"}},
+        {"domain_extension": {"reference": r"Evidence is at \Windows\system.ini"}},
+        {"domain_extension": {"reference": "Evidence is at /private/evidence.json"}},
+        {"domain_extension": {"reference": "Evidence is at ../private/evidence.json"}},
         {"domain_extension": {"reference": "safe/../../private/evidence.json"}},
-        {"domain_extension": {"reference": "file:/private/evidence.json"}},
-        {"domain_extension": {"reference": "mailto:private@example.test"}},
-        {"domain_extension": {"reference": "evidence+archive:item-1"}},
+        {"domain_extension": {"reference": "Evidence is at file:/private/evidence.json"}},
+        {"domain_extension": {"reference": "Contact mailto:private@example.test"}},
+        {"domain_extension": {"reference": "Payload data:text/plain,private"}},
     ],
 )
-def test_projection_safe_json_rejects_private_tokens_paths_and_any_uri_scheme(unsafe_value: object) -> None:
+def test_projection_safe_json_rejects_private_tokens_and_embedded_locators(unsafe_value: object) -> None:
     from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
 
     with pytest.raises(ValueError):
@@ -102,7 +105,9 @@ def test_projection_safe_json_preserves_hash_timestamp_and_cross_domain_text() -
         "medical_template": {
             "content_hash": "sha256:" + "a" * 64,
             "observed_at": "2026-09-01T12:34:56Z",
+            "risk_label": "Risk: nominal after inspection",
             "summary": "Cross-domain pump and patient monitoring text",
+            "external_identifier": "evidence+archive:item-1",
         }
     }
 

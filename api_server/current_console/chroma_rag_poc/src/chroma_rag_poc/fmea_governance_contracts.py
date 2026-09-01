@@ -48,8 +48,10 @@ _PRIVATE_KEY_MARKERS = frozenset({
     "sql",
 })
 _IMMUTABLE_HASH = re.compile(r"^sha256:[0-9a-fA-F]{64}$")
-_URI_OR_ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|[A-Za-z]:[\\/]|[\\/])")
-_PATH_TRAVERSAL = re.compile(r"(?:^|[\\/])\.\.(?:[\\/]|$)")
+_SCHEME_WITH_AUTHORITY = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://")
+_KNOWN_LOCATOR_SCHEME = re.compile(r"(?i)(?<![A-Za-z0-9+.-])(?:file|mailto|data):(?=\S)")
+_ABSOLUTE_PATH_TOKEN = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/](?=\S)|\\\\(?=\S)|[\\/](?=[^\s\\/]))")
+_PATH_TRAVERSAL = re.compile(r"(?<![A-Za-z0-9.])\.\.(?:[\\/]|$)")
 
 
 def derive_governance_cursor_secret(configured: str | None) -> bytes:
@@ -319,7 +321,10 @@ def projection_safe_json(value: object) -> object:
             if len(item) > _PROJECTION_MAX_STRING_CHARS:
                 raise ValueError("governance projection string is too long")
             if not _IMMUTABLE_HASH.fullmatch(item) and (
-                _URI_OR_ABSOLUTE_PATH.match(item) or _PATH_TRAVERSAL.search(item)
+                _SCHEME_WITH_AUTHORITY.search(item)
+                or _KNOWN_LOCATOR_SCHEME.search(item)
+                or _ABSOLUTE_PATH_TOKEN.search(item)
+                or _PATH_TRAVERSAL.search(item)
             ):
                 raise ValueError("governance projection contains a private location")
             return item
