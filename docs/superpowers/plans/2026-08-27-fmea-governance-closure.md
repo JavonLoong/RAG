@@ -672,15 +672,31 @@ Task 3 reached its five-round review breaker with one real, load-bearing issue: 
 **Files:**
 - Create: `fmea_application/governance_service.py`
 - Modify: `fmea_application/service_factory.py`
+- Modify: `fmea_application/ports.py`
+- Modify: `fmea_application/review_errors.py`
 - Modify: `fmea_infrastructure/composition.py`
+- Modify: `fmea_infrastructure/governance_repository_sqlite.py`
 - Modify: `fmea_infrastructure/local_auth.py`
+- Test: `tests/unit/test_fmea_application_contracts.py`
+- Test: `tests/unit/test_fmea_governance_repository_contract.py`
 - Test: `tests/unit/test_fmea_governance_service.py`
 - Test: `tests/unit/test_fmea_governance_authority.py`
+- Test: `tests/integration/test_fmea_governance_sqlite.py`
 - Test: `tests/integration/test_fmea_governance_lifecycle.py`
 
 **Interfaces:**
 - Consumes: assembler, readiness policy, governance repository, and existing actor context.
 - Produces: assemble, approve, reject, publish, withdraw, supersede, and query methods.
+
+- [ ] **Step 0: Close the public read-port and transaction-authority prerequisites**
+
+Task 3 intentionally exposed immutable write/replay methods but not every current-state read required by the Task 4 service. Extend `GovernanceRepository` and `SqliteGovernanceRepository` with workspace-qualified, canonical-hash-verifying reads for the revision persistence version, approval submission, approval decision by ID, current decision by submission, approval withdrawal, and projected publication lifecycle. The application service must use these public ports; it may not call SQLite, repository-private decoders, or connection helpers.
+
+Register every required `FMEA_GOVERNANCE_*` code and the four transport-confirmation codes in the existing stable `ReviewError` registry, and update its exact-set characterization test. This is an application-boundary extension, not a new error envelope.
+
+Because service prechecks can race, strengthen the existing `BEGIN IMMEDIATE` repository writers with transaction-local state guards: one terminal decision per approval submission, one withdrawal per approval, publication only from a non-withdrawn approval, one withdrawal per publication, and at most one outgoing supersession whose old and replacement publications are not withdrawn. Keep the existing cycle, workspace, revision-lineage, record-version, canonical-payload, outbox, and replay checks. Do not alter migrations 005–009 or add a migration; the existing serialized transaction and target tables are sufficient for fail-closed guards.
+
+Add repository contract and real-SQLite tests for workspace isolation, canonical corruption rejection, lifecycle projection, and concurrent/stale duplicate target attempts before implementing the service. The repository remains the authoritative race-closing boundary; service checks provide stable governance-specific errors before commit when possible.
 
 - [ ] **Step 1: Write authority and stale-binding tests**
 
@@ -749,16 +765,16 @@ Publication construction has a non-circular hash order: derive stable publicatio
 
 Required stable codes are: `FMEA_GOVERNANCE_REVISION_NOT_FOUND`, `FMEA_GOVERNANCE_REVISION_STALE`, `FMEA_GOVERNANCE_NOT_READY`, `FMEA_GOVERNANCE_ACTIVE_RUN`, `FMEA_GOVERNANCE_APPROVAL_NOT_FOUND`, `FMEA_GOVERNANCE_APPROVAL_STATE_INVALID`, `FMEA_GOVERNANCE_APPROVAL_STALE`, `FMEA_GOVERNANCE_APPROVAL_FORBIDDEN`, `FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN`, `FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID`, `FMEA_GOVERNANCE_SUPERSESSION_INVALID`, `FMEA_GOVERNANCE_VERSION_CONFLICT`, `FMEA_GOVERNANCE_IDEMPOTENCY_CONFLICT`, `FMEA_GOVERNANCE_CURSOR_INVALID`, `FMEA_GOVERNANCE_STORAGE_UNAVAILABLE`, and `FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID`. Transport confirmation failures add `FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED`, `FMEA_GOVERNANCE_PUBLICATION_CONFIRMATION_REQUIRED`, `FMEA_GOVERNANCE_WITHDRAWAL_CONFIRMATION_REQUIRED`, and `FMEA_GOVERNANCE_SUPERSESSION_CONFIRMATION_REQUIRED`. They map through the existing stable problem envelope and never expose local paths, SQL, private evidence, prompts, raw model output, or provider errors.
 
-- [ ] **Step 4: Run lifecycle and existing authority regressions**
+- [ ] **Step 4: Run lifecycle, repository-authority, and existing authority regressions**
 
-Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py tests/unit/test_fmea_review_service.py tests/unit/test_fmea_risk_service.py tests/unit/test_fmea_propagation_review.py -q`
+Run: `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_application_contracts.py tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py tests/unit/test_fmea_review_service.py tests/unit/test_fmea_risk_service.py tests/unit/test_fmea_propagation_review.py -q`
 
 Expected: PASS.
 
 - [ ] **Step 5: Commit governance service**
 
 ```powershell
-git add fmea_application/governance_service.py fmea_application/service_factory.py fmea_infrastructure/composition.py fmea_infrastructure/local_auth.py tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py
+git add fmea_application/governance_service.py fmea_application/service_factory.py fmea_application/ports.py fmea_application/review_errors.py fmea_infrastructure/composition.py fmea_infrastructure/governance_repository_sqlite.py fmea_infrastructure/local_auth.py tests/unit/test_fmea_application_contracts.py tests/unit/test_fmea_governance_repository_contract.py tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py
 git commit -m "feat(fmea): govern approval and publication"
 ```
 
