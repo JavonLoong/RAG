@@ -133,3 +133,33 @@ Documentation-only follow-up:
 Code commit: `1a85410cab76f15f00503bf094679b6877e43a8a` (`fix(fmea): harden governance replay authority`).
 
 The fixed supersession traversal limit deliberately fails closed beyond 64 lifecycle links; unusually deep valid histories therefore require an explicit future contract change rather than an unbounded read. First-attempt event IDs and timestamps remain server-generated as authorized, while aggregate IDs and exact retry outcomes are stable. No unresolved Task 4 blocker remains.
+
+## Fix round 2 — withdrawn supersession endpoints
+
+Round 2 adds real-SQLite persistence coverage only; production code and shared fixtures were not changed. The parameterized test publishes an old revision and its descendant replacement, withdraws one endpoint, then uses a new `SqliteGovernanceRepository` instance to attempt supersession.
+
+Mutation RED temporarily reduced the transaction-local supersession guard to `existing_outgoing` only:
+
+```text
+.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py -k "withdrawn_endpoint_atomically" -q
+2 failed, 121 deselected in 0.70s
+```
+
+Both old-withdrawn and replacement-withdrawn cases failed because the mutated repository incorrectly committed instead of raising. The original guard was then restored exactly, with no production diff.
+
+Focused GREEN and updated verification:
+
+- withdrawn endpoint atomicity: `2 passed, 121 deselected in 0.49s`;
+- complete governance SQLite integration: `123 passed in 20.12s`;
+- revised 10-file Task 4 scoped matrix: `224 passed in 25.68s`;
+- test-file Ruff check and format check: passed;
+- test-file `compileall`: passed;
+- `git diff --check`: passed;
+- migrations 005–009 diff: empty;
+- production, fixture, plan, `progress.md`, and Task 5 diff: empty.
+
+Each case snapshots `fmea_publications`, `fmea_publication_withdrawals`, `fmea_supersessions`, `fmea_audit_events`, `fmea_outbox_events`, `fmea_governance_event_bindings`, and `idempotency_records` before the rejected command and compares the complete rows afterward. It also asserts that the attempted supersession ID, audit event, outbox event, event binding, and idempotency scope have no row, while both persisted publication lifecycle projections remain unchanged.
+
+Round 2 test commit: `d2d72de048951c5273764578380107ed3996a3f2` (`test(fmea): cover withdrawn supersession endpoints`).
+
+Round 2 changed files are limited to `tests/integration/test_fmea_governance_sqlite.py` and this report. No unresolved Task 4 blocker was introduced.
