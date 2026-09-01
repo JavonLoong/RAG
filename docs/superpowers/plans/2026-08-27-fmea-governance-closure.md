@@ -52,7 +52,7 @@
 
 ## Task dependency and review gates
 
-Task 1 freezes contracts. Task 2 depends only on Task 1 and existing Phase 1/2 query ports. Task 3 depends on Task 1 and may use fake prepared transactions before the orchestration service exists. Task 4 integrates Tasks 2 and 3. Task 5 exposes only Task 4 application services. Task 6 consumes the entire Phase 3 surface and must not compensate for missing lower-layer validation inside the acceptance scripts.
+Task 1 freezes contracts. Task 2 depends only on Task 1 and existing Phase 1/2 query ports. Task 3 depends on Task 1 and may use fake prepared transactions before the orchestration service exists. Task 3R (`docs/superpowers/plans/2026-09-01-fmea-migration-authority-remediation.md`) is a breaker remediation gate that must pass before Task 3 is complete. Task 4 integrates Tasks 2 and 3 only after Task 3R's scoped review is clean. Task 5 exposes only Task 4 application services. Task 6 consumes the entire Phase 3 surface and must not compensate for missing lower-layer validation inside the acceptance scripts.
 
 Each Task is one independently reviewable commit group. After its focused GREEN run, dispatch a read-only scoped review against that Task's fixed commit range; resolve Critical and Important findings before starting the next Task. Minor findings are either fixed in the same Task or recorded with an explicit deferral reason and owner. Task 6 completion additionally requires one final review of the whole Phase 3 range and fresh main-session execution of the exact Phase 3 gate.
 
@@ -662,6 +662,10 @@ Expected: PASS.
 git add fmea_infrastructure/migrations/005_fmea_governance_closure.sql fmea_infrastructure/governance_repository_sqlite.py fmea_application/ports.py tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py
 git commit -m "feat(fmea): persist immutable governance lifecycle"
 ```
+
+### Task 3R gate: Close migrated publication dependency authority replay
+
+Task 3 reached its five-round review breaker with one real, load-bearing issue: migration acceptance did not recursively enforce the revision, approval-submission, and approval-decision authority chains required by runtime publication replay. Execute and independently review `docs/superpowers/plans/2026-09-01-fmea-migration-authority-remediation.md`. Do not start Task 4 until that plan is review-clean and the Task 3 ledger is marked complete.
 
 ### Task 4: Implement human submission, approval, publication, withdrawal, and supersession service
 
