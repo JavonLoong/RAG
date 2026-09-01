@@ -28,6 +28,11 @@ The run executes and records:
 - a new child approval, child publication, parent supersession, approval
   withdrawal, and publication withdrawal while retaining the immutable
   publication payloads;
+- model and system probes for every authority command, each with a stable
+  denial code and database count evidence proving no write;
+- independent replay evidence for approval, publication, and withdrawal,
+  plus the complete revision, approval, manifest, snapshot, publication,
+  eligibility, lifecycle, audit, outbox, and idempotency lineage;
 - bounded normalized snapshot pages, including a 10,000-row in-memory contract
   exercised at page size 250.
 
@@ -40,18 +45,22 @@ all other files. `latest` is a one-line artifact ID and is switched only after
 the independent verifier accepts the temporary directory.
 
 `verify_fmea_governance_acceptance.py` independently performs component-wise
-path/reparse checks, exact file-set checks, size bounds, private-marker checks,
+reparse checks for both artifact leaves and `latest`, exact file-set and
+cardinality checks, size bounds, decoded component-aware private-path checks,
 duplicate-key and non-finite-number rejection, canonical-byte checks, hash
-recomputation, cross-artifact binding checks, actor separation, lifecycle order
-and status checks, provenance checks, outbox hash checks, idempotency checks,
-and immutable payload retention checks. It intentionally does not import the
-runner or reuse runner validation functions.
+recomputation, raw cross-artifact identity/version/workspace/analysis binding,
+audit-chain binding, actor separation, lifecycle order and status checks,
+independently derived summary claims, provenance checks, outbox/idempotency
+and withdrawal evidence checks, and immutable payload retention checks. It
+intentionally does not import the runner or reuse runner validation functions.
 
 A write, directory replacement, pointer replacement, or independent
 verification failure leaves the previous `latest` selection unchanged and
-cleans the temporary directory. On Windows, existing path components are
-checked with `lstat`; symlinks and reparse points are rejected. The regression
-suite includes an unprivileged non-directory component test.
+cleans both temporary and already-promoted orphan directories. On Windows,
+existing path components and artifact/pointer leaves are checked with
+`lstat`; symlinks and reparse points are rejected. The regression suite
+includes unprivileged non-directory, deterministic reparse-leaf, and
+stateful second-replace failure coverage.
 
 ## Operational commands
 

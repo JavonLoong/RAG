@@ -20,7 +20,7 @@ import sqlite3
 import stat
 import sys
 import tempfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -53,6 +53,7 @@ from core_domain.fmea.states import (
 from core_domain.fmea.value_objects import EvidencePack, EvidenceRef, VersionSet
 from fmea_application.governance_contracts import (
     ApprovalCommand,
+    ApprovalRejectionCommand,
     AssembleRevisionCommand,
     PublishCommand,
     RevisionAssemblyRequest,
@@ -100,6 +101,8 @@ ARTIFACT_NAMES = (
     "audits.json",
     "outbox.json",
     "idempotency.json",
+    "authority-denials.json",
+    "replay-evidence.json",
     "provenance-profiles.json",
     "lifecycle.json",
     "acceptance-summary.json",
@@ -110,6 +113,21 @@ _PROFILE_EXPECTATIONS = {
     "combined": ("combined", ("text", "graph", "community"), (("community", 1), ("graph", 1), ("text", 1))),
     "auto": ("combined", ("text", "graph", "community"), (("community", 1), ("graph", 1), ("text", 1))),
 }
+_GOVERNANCE_COUNT_TABLES = (
+    "fmea_revisions",
+    "fmea_approval_submissions",
+    "fmea_approval_decisions",
+    "fmea_approval_withdrawals",
+    "fmea_publication_manifests",
+    "fmea_normalized_snapshots",
+    "fmea_publications",
+    "fmea_export_eligibility",
+    "fmea_publication_withdrawals",
+    "fmea_supersessions",
+    "fmea_audit_events",
+    "fmea_outbox_events",
+    "idempotency_records",
+)
 
 
 class AcceptanceRunError(RuntimeError):
@@ -156,7 +174,9 @@ class _FixtureProviders:
         _require_scope(analysis_id, workspace_id)
         return (self.pack,)
 
-    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord) -> GovernanceArtifactSet:
+    def get_artifacts(
+        self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
+    ) -> GovernanceArtifactSet:
         _require_scope(analysis_id, workspace_id)
         if analysis.analysis_id != ANALYSIS_ID:
             raise ValueError("fixture analysis is outside the acceptance scope")
@@ -403,9 +423,7 @@ def _fixture_artifacts() -> tuple[DomainPackManifest, GovernanceArtifactSet]:
     propagation_source = (
         _REPO_ROOT / "domain_packs" / "fuel-combustion" / "propagation" / "fuel-combustion-1.0.0.yaml"
     ).read_bytes()
-    scoring_source = (
-        _REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml"
-    ).read_bytes()
+    scoring_source = (_REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml").read_bytes()
     templates = tuple(
         _artifact_identity("template", artifact_id, version, template_source)
         for artifact_id, version in domain.template_identities
@@ -424,7 +442,10 @@ def _fixture_artifacts() -> tuple[DomainPackManifest, GovernanceArtifactSet]:
             None
             if not domain.propagation_rule_identities
             else _artifact_identity(
-                "propagation_rule", domain.propagation_rule_identities[0][0], domain.propagation_rule_identities[0][1], propagation_source
+                "propagation_rule",
+                domain.propagation_rule_identities[0][0],
+                domain.propagation_rule_identities[0][1],
+                propagation_source,
             )
         ),
     )
@@ -437,7 +458,14 @@ def _seed_analysis(database_path: Path, analysis: FmeaAnalysis) -> None:
     try:
         connection.execute(
             "INSERT INTO fmea_analyses(analysis_id,workspace_id,analysis_hash,analysis_json,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-            (analysis.analysis_id, WORKSPACE_ID, "sha256:" + sha256(analysis_json.encode("utf-8")).hexdigest(), analysis_json, TIMESTAMP, TIMESTAMP),
+            (
+                analysis.analysis_id,
+                WORKSPACE_ID,
+                "sha256:" + sha256(analysis_json.encode("utf-8")).hexdigest(),
+                analysis_json,
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
         )
         connection.commit()
     finally:
@@ -446,6 +474,10 @@ def _seed_analysis(database_path: Path, analysis: FmeaAnalysis) -> None:
 
 def _actor(actor_id: str, role: str) -> ActorContext:
     return ActorContext(actor_id, ActorType.HUMAN, frozenset({role}), WORKSPACE_ID)
+
+
+def _typed_actor(actor_id: str, actor_type: ActorType, role: str) -> ActorContext:
+    return ActorContext(actor_id, actor_type, frozenset({role}), WORKSPACE_ID)
 
 
 def _key(number: int) -> str:
@@ -480,6 +512,58 @@ def _readiness_item(report: object) -> object:
     return _json(report)
 
 
+def _governance_counts(database_path: Path) -> dict[str, int]:
+    connection = sqlite3.connect(database_path)
+    try:
+        return {
+            table: int(connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+            for table in _GOVERNANCE_COUNT_TABLES
+        }
+    finally:
+        connection.close()
+
+
+def _expected_denial(
+    database_path: Path,
+    *,
+    probe: str,
+    actor: ActorContext,
+    command: str,
+    expected_code: str,
+    action: Callable[[], object],
+) -> dict[str, object]:
+    before = _governance_counts(database_path)
+    try:
+        action()
+    except Exception as error:
+        actual_code = getattr(error, "code", None)
+    else:
+        raise AcceptanceRunError("AUTHORITY_DENIAL_ACCEPTED")
+    after = _governance_counts(database_path)
+    if actual_code != expected_code:
+        raise AcceptanceRunError("AUTHORITY_DENIAL_CODE_INVALID")
+    return {
+        "probe": probe,
+        "actor_id": actor.actor_id,
+        "actor_type": actor.actor_type.value,
+        "command": command,
+        "error_code": actual_code,
+        "before_counts": before,
+        "after_counts": after,
+    }
+
+
+def _replay_evidence(command: str, result: object, resource_id: str) -> dict[str, object]:
+    return {
+        "command": command,
+        "resource_id": resource_id,
+        "record_version": getattr(result, "record_version", None),
+        "audit_event_id": result.audit_event_id,
+        "outbox_event_id": result.outbox_event_id,
+        "replayed": result.replayed,
+    }
+
+
 def make_large_revision(row_count: int = 10_000) -> FmeaRevision:
     if not isinstance(row_count, int) or isinstance(row_count, bool) or not 0 <= row_count <= 10_000:
         raise ValueError("row_count must be between zero and 10000")
@@ -502,7 +586,9 @@ def make_large_revision(row_count: int = 10_000) -> FmeaRevision:
         "propagation_graph_revision_id": None,
         "propagation_graph_hash": None,
         "evidence_pack_hashes": (),
-        "retrieval_provenance": RetrievalProvenanceSnapshot("combined", "combined", ("graph", "text"), (("graph", 1), ("text", 1)), ()),
+        "retrieval_provenance": RetrievalProvenanceSnapshot(
+            "combined", "combined", ("graph", "text"), (("graph", 1), ("text", 1)), ()
+        ),
         "domain_pack_identity": ("fuel-combustion", "1.0.0", "a" * 64),
         "template_identities": (("fuel-combustion-fmea", "1.0.0", "b" * 64),),
         "scoring_rule_identities": (("fuel-sod-rpn", "1.0.0", "c" * 64),),
@@ -517,7 +603,9 @@ def make_large_revision(row_count: int = 10_000) -> FmeaRevision:
     return FmeaRevision(**values)  # type: ignore[arg-type]
 
 
-def make_normalized_snapshot_input(*, revision: FmeaRevision, rows: int | Sequence[Mapping[str, object]]) -> NormalizedSnapshotInput:
+def make_normalized_snapshot_input(
+    *, revision: FmeaRevision, rows: int | Sequence[Mapping[str, object]]
+) -> NormalizedSnapshotInput:
     if isinstance(rows, int):
         row_values = tuple({"row_id": f"row-{index}", "failure_mode": "low pressure"} for index in range(rows))
     else:
@@ -575,7 +663,7 @@ def _write_canonical(path: Path, payload: object) -> None:
     _write_artifact(path, canonical_json_bytes(payload) + b"\n")
 
 
-def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dict[str, object]:
+def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dict[str, object]:  # noqa: C901
     repository = SqliteGovernanceRepository(database_path)
     repository.initialize()
     _seed_analysis(database_path, providers.analysis)
@@ -608,15 +696,23 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
     parent_readiness = service.readiness(parent.revision_id, reviewer)
     if not parent_readiness.ready:
         raise AcceptanceRunError("READINESS_FAILED")
-    submitted = service.submit_for_approval(
-        SubmitApprovalCommand(parent.revision_id, parent.revision_hash, assembled.record_version, _key(742)), reviewer
+    submitted_command = SubmitApprovalCommand(
+        parent.revision_id, parent.revision_hash, assembled.record_version, _key(742)
     )
+    submitted = service.submit_for_approval(submitted_command, reviewer)
     approval_command = ApprovalCommand(
-        submitted.submission_id, parent.revision_id, parent.revision_hash, submitted.record_version, "approved by human", _key(743)
+        submitted.submission_id,
+        parent.revision_id,
+        parent.revision_hash,
+        submitted.record_version,
+        "approved by human",
+        _key(743),
     )
     approved = service.approve(approval_command, approver)
     approved_replay = service.approve(approval_command, approver)
-    publish_command = PublishCommand(parent.revision_id, parent.revision_hash, approved.approval_id, assembled.record_version, _key(744))
+    publish_command = PublishCommand(
+        parent.revision_id, parent.revision_hash, approved.approval_id, assembled.record_version, _key(744)
+    )
     published_parent = service.publish(publish_command, publisher)
     published_parent_replay = service.publish(publish_command, publisher)
 
@@ -630,7 +726,8 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
     if not child_readiness.ready:
         raise AcceptanceRunError("CHILD_READINESS_FAILED")
     child_submitted = service.submit_for_approval(
-        SubmitApprovalCommand(child.revision_id, child.revision_hash, child_assembled.record_version, _key(746)), reviewer
+        SubmitApprovalCommand(child.revision_id, child.revision_hash, child_assembled.record_version, _key(746)),
+        reviewer,
     )
     child_approved = service.approve(
         ApprovalCommand(
@@ -644,9 +741,12 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
         approver,
     )
     stale_approval_code = ""
+    stale_before_counts = _governance_counts(database_path)
     try:
         service.publish(
-            PublishCommand(child.revision_id, child.revision_hash, approved.approval_id, child_assembled.record_version, _key(748)),
+            PublishCommand(
+                child.revision_id, child.revision_hash, approved.approval_id, child_assembled.record_version, _key(748)
+            ),
             publisher,
         )
     except Exception as error:
@@ -656,6 +756,7 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
         stale_approval_code = stale_code
     else:
         raise AcceptanceRunError("STALE_APPROVAL_ACCEPTED")
+    stale_after_counts = _governance_counts(database_path)
     child_publish_command = PublishCommand(
         child.revision_id, child.revision_hash, child_approved.approval_id, child_assembled.record_version, _key(749)
     )
@@ -669,15 +770,109 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
         _key(750),
     )
     service.supersede(supersede_command, publisher)
-    parent_approval_withdrawal = service.withdraw_approval(
-        WithdrawApprovalCommand(approved.approval_id, parent.revision_hash, approved.record_version, "approval withdrawn after correction", _key(751)),
-        approver,
+    parent_approval_withdrawal_command = WithdrawApprovalCommand(
+        approved.approval_id,
+        parent.revision_hash,
+        approved.record_version,
+        "approval withdrawn after correction",
+        _key(751),
     )
+    parent_approval_withdrawal = service.withdraw_approval(parent_approval_withdrawal_command, approver)
     publication_withdrawal_command = WithdrawPublicationCommand(
         published_child.publication_id, 1, "withdraw corrected publication for closure test", None, _key(752)
     )
     publication_withdrawal = service.withdraw_publication(publication_withdrawal_command, publisher)
     publication_withdrawal_replay = service.withdraw_publication(publication_withdrawal_command, publisher)
+    stale_probe = {
+        "probe": "stale_approval",
+        "actor_id": publisher.actor_id,
+        "actor_type": publisher.actor_type.value,
+        "command": "fmea.publication.publish",
+        "error_code": stale_approval_code,
+        "before_counts": stale_before_counts,
+        "after_counts": stale_after_counts,
+    }
+    authority_denials = [stale_probe]
+    negative_commands = (
+        (
+            "assemble",
+            "fmea.revision.assemble",
+            "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+            lambda actor: service.assemble(assemble, actor),
+        ),
+        (
+            "submit",
+            "fmea.approval.submit",
+            "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+            lambda actor: service.submit_for_approval(submitted_command, actor),
+        ),
+        (
+            "approve",
+            "fmea.approval.decide",
+            "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+            lambda actor: service.approve(approval_command, actor),
+        ),
+        (
+            "reject",
+            "fmea.approval.decide",
+            "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+            lambda actor: service.reject(
+                ApprovalRejectionCommand(
+                    submitted.submission_id,
+                    parent.revision_id,
+                    parent.revision_hash,
+                    submitted.record_version,
+                    "rejection authority probe",
+                    _key(760),
+                ),
+                actor,
+            ),
+        ),
+        (
+            "withdraw_approval",
+            "fmea.approval.withdraw",
+            "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+            lambda actor: service.withdraw_approval(parent_approval_withdrawal_command, actor),
+        ),
+        (
+            "publish",
+            "fmea.publication.publish",
+            "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
+            lambda actor: service.publish(publish_command, actor),
+        ),
+        (
+            "withdraw_publication",
+            "fmea.publication.withdraw",
+            "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
+            lambda actor: service.withdraw_publication(publication_withdrawal_command, actor),
+        ),
+        (
+            "supersede",
+            "fmea.publication.supersede",
+            "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
+            lambda actor: service.supersede(supersede_command, actor),
+        ),
+    )
+    for actor_type in (ActorType.MODEL, ActorType.SYSTEM):
+        actor = _typed_actor(f"{actor_type.value}-authority-probe", actor_type, "publisher")
+        for probe, command, expected_code, action in negative_commands:
+            authority_denials.append(
+                _expected_denial(
+                    database_path,
+                    probe=probe,
+                    actor=actor,
+                    command=command,
+                    expected_code=expected_code,
+                    action=lambda actor=actor, action=action: action(actor),
+                )
+            )
+    replay_evidence = [
+        _replay_evidence("fmea.approval.decide", approved_replay, approved.approval_id),
+        _replay_evidence("fmea.publication.publish", published_parent_replay, published_parent.publication_id),
+        _replay_evidence(
+            "fmea.publication.withdraw", publication_withdrawal_replay, publication_withdrawal.withdrawal_id
+        ),
+    ]
 
     # Profile probes exercise the same source/assembler authority without adding
     # retrieval calls, network access, REST pages, or governance rows.
@@ -713,16 +908,36 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
 
     revisions = [parent, child]
     readiness = [parent_readiness, child_readiness]
-    submissions = [repository.get_approval_submission(submitted.submission_id, WORKSPACE_ID), repository.get_approval_submission(child_submitted.submission_id, WORKSPACE_ID)]
-    approvals = [repository.get_approval_decision(approved.approval_id, WORKSPACE_ID), repository.get_approval_decision(child_approved.approval_id, WORKSPACE_ID)]
+    submissions = [
+        repository.get_approval_submission(submitted.submission_id, WORKSPACE_ID),
+        repository.get_approval_submission(child_submitted.submission_id, WORKSPACE_ID),
+    ]
+    approvals = [
+        repository.get_approval_decision(approved.approval_id, WORKSPACE_ID),
+        repository.get_approval_decision(child_approved.approval_id, WORKSPACE_ID),
+    ]
     approval_withdrawals = [repository.get_approval_withdrawal(approved.approval_id, WORKSPACE_ID)]
     parent_lifecycle = service.get_publication(published_parent.publication_id, publisher)
     child_lifecycle = service.get_publication(published_child.publication_id, publisher)
     publications = [parent_lifecycle.publication, child_lifecycle.publication]
-    snapshots = [service.get_snapshot(published_parent.publication_id, publisher), service.get_snapshot(published_child.publication_id, publisher)]
+    snapshots = [
+        service.get_snapshot(published_parent.publication_id, publisher),
+        service.get_snapshot(published_child.publication_id, publisher),
+    ]
     lifecycle = [parent_lifecycle, child_lifecycle]
-    if any(item is None for item in submissions + approvals + approval_withdrawals):
+    if (
+        any(item is None for item in submissions + approvals + approval_withdrawals)
+        or child_lifecycle.withdrawal is None
+    ):
         raise AcceptanceRunError("PERSISTED_LIFECYCLE_INCOMPLETE")
+    publication_withdrawal_export = _json(child_lifecycle.withdrawal)
+    if not isinstance(publication_withdrawal_export, dict):
+        raise AcceptanceRunError("PERSISTED_LIFECYCLE_INCOMPLETE")
+    publication_withdrawal_export.update({
+        "audit_event_id": publication_withdrawal.audit_event_id,
+        "outbox_event_id": publication_withdrawal.outbox_event_id,
+        "replayed": False,
+    })
     return {
         "revisions": revisions,
         "readiness": readiness,
@@ -732,7 +947,9 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
         "publications": publications,
         "snapshots": snapshots,
         "lifecycle": lifecycle,
-        "publication_withdrawals": [publication_withdrawal],
+        "publication_withdrawals": [publication_withdrawal_export],
+        "authority_denials": authority_denials,
+        "replay_evidence": replay_evidence,
         "profile_cases": profile_cases,
         "profile_records": profile_records,
         "retrieval_call_count": providers.retrieval_calls,
@@ -740,7 +957,8 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
             "approval_actor_type": approver.actor_type.value,
             "publisher_actor_type": publisher.actor_type.value,
             "model_publication_count": 0,
-            "withdrawn_publication_retained": child_lifecycle.withdrawal is not None and child_lifecycle.publication.publication_id == published_child.publication_id,
+            "withdrawn_publication_retained": child_lifecycle.withdrawal is not None
+            and child_lifecycle.publication.publication_id == published_child.publication_id,
             "replay_checks": {
                 "approve": approved_replay.replayed,
                 "publish": published_parent_replay.replayed,
@@ -771,6 +989,8 @@ def _artifact_payloads(database_path: Path, lifecycle: dict[str, object], artifa
         audits.append(item)
     outbox = _read_table(database_path, "fmea_outbox_events", json_column="payload_json")
     idempotency = _read_table(database_path, "idempotency_records", json_column="response_json")
+    provenance_profiles = _collection("provenance_profiles", lifecycle["profile_records"].values())
+    provenance_profiles["retrieval_call_count"] = lifecycle["retrieval_call_count"]
     revisions = lifecycle["revisions"]
     readiness = lifecycle["readiness"]
     publications = lifecycle["publications"]
@@ -785,14 +1005,15 @@ def _artifact_payloads(database_path: Path, lifecycle: dict[str, object], artifa
         "publications.json": _collection("publications", publications),
         "snapshots.json": _collection("snapshots", snapshots),
         "publication-withdrawals.json": _collection("publication_withdrawals", lifecycle["publication_withdrawals"]),
-        "supersessions.json": _collection("supersessions", [item.supersession for item in lifecycle["lifecycle"] if item.supersession is not None]),
+        "supersessions.json": _collection(
+            "supersessions", [item.supersession for item in lifecycle["lifecycle"] if item.supersession is not None]
+        ),
         "audits.json": _collection("audits", audits),
         "outbox.json": _collection("outbox", outbox),
         "idempotency.json": _collection("idempotency", idempotency),
-        "provenance-profiles.json": _collection(
-            "provenance_profiles",
-            lifecycle["profile_records"].values(),
-        ),
+        "authority-denials.json": _collection("authority_denials", lifecycle["authority_denials"]),
+        "replay-evidence.json": _collection("replay_evidence", lifecycle["replay_evidence"]),
+        "provenance-profiles.json": provenance_profiles,
         "lifecycle.json": _collection("lifecycle", lifecycle["lifecycle"]),
     }
     return payloads
@@ -814,6 +1035,7 @@ def run_acceptance(*, output_root: str | Path | None = None) -> AcceptanceRun:
     root = _safe_output_root(output_root or (_REPO_ROOT / ".local" / "fmea-governance-acceptance"))
     artifact_id = f"acceptance-{uuid4()}"
     temp_dir: Path | None = None
+    final_dir: Path | None = None
     database_dir: Path | None = None
     pointer_temp: Path | None = None
     try:
@@ -854,6 +1076,8 @@ def run_acceptance(*, output_root: str | Path | None = None) -> AcceptanceRun:
             pointer_temp.unlink(missing_ok=True)
         if temp_dir is not None:
             shutil.rmtree(temp_dir, ignore_errors=True)
+        if final_dir is not None:
+            shutil.rmtree(final_dir, ignore_errors=True)
         raise
     finally:
         if database_dir is not None:
@@ -867,7 +1091,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result = run_acceptance(output_root=args.output_root)
     except Exception:
-        print(json.dumps({"status": "failed", "error": {"code": "FMEA_GOVERNANCE_ACCEPTANCE_FAILED"}}, separators=(",", ":")))
+        print(
+            json.dumps(
+                {"status": "failed", "error": {"code": "FMEA_GOVERNANCE_ACCEPTANCE_FAILED"}}, separators=(",", ":")
+            )
+        )
         return 2
     print(json.dumps({"status": "passed", "artifact_id": result.summary["artifact_id"]}, separators=(",", ":")))
     return 0

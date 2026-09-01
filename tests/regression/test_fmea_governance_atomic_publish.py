@@ -46,9 +46,7 @@ def test_failure_after_partial_write_cleans_temporary_artifact(monkeypatch: pyte
     assert not root.exists() or not tuple(root.iterdir())
 
 
-def test_latest_switch_waits_for_independent_verification(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_latest_switch_waits_for_independent_verification(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     root = tmp_path / "acceptance"
 
     def reject(_directory: Path):
@@ -59,3 +57,27 @@ def test_latest_switch_waits_for_independent_verification(
         run_acceptance(output_root=root)
 
     assert not root.exists() or not tuple(root.iterdir())
+
+
+def test_pointer_replace_failure_removes_moved_final_and_preserves_previous_latest(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "acceptance"
+    previous = run_acceptance(output_root=root)
+    original_replace = runner.os.replace
+    calls = 0
+
+    def fail_pointer_replace(source: object, destination: object) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("pointer replace failed")  # noqa: TRY003
+        original_replace(source, destination)
+
+    monkeypatch.setattr(runner.os, "replace", fail_pointer_replace)
+    with pytest.raises(OSError, match="pointer replace failed"):
+        run_acceptance(output_root=root)
+
+    assert calls == 2
+    assert verify_latest(root).artifact_id == previous.artifact_id
+    assert {path.name for path in root.iterdir() if path.is_dir()} == {previous.artifact_id}
