@@ -5,6 +5,7 @@ import sqlite3
 from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
 
 import pytest
 from fmea_governance_fixtures import (
@@ -38,6 +39,7 @@ from fmea_application.governance_contracts import (
     ApprovalCommand,
     ApprovalRejectionCommand,
     ApprovalResult,
+    AssembleRevisionCommand,
     ExportEligibilityRecord,
     GovernanceHistoryQuery,
     PersistReadinessCommand,
@@ -50,6 +52,7 @@ from fmea_application.governance_contracts import (
     PreparedSupersession,
     PublishCommand,
     ReadinessReportRecord,
+    RevisionAssemblyRequest,
     SubmitApprovalCommand,
     SupersedePublicationCommand,
     WithdrawApprovalCommand,
@@ -98,40 +101,115 @@ def _initialize_through(database_path: Path, maximum_version: int) -> None:
         connection.close()
 
 
+def _scope(actor, command: str, resource_path: str, key: str) -> IdempotencyScope:
+    return IdempotencyScope(actor.workspace_id, actor.actor_id, command, resource_path, idempotency_key_hash(key))
+
+
+def _prepared_revision_for(prepared_publication_value):
+    base = prepared_revision()
+    revision = prepared_publication_value.revision
+    if revision == base.revision:
+        return base
+    key = str(uuid5(NAMESPACE_URL, f"fmea-test-revision:{revision.revision_id}"))
+    command = AssembleRevisionCommand(
+        RevisionAssemblyRequest(
+            revision.analysis_id,
+            revision.parent_revision_id,
+            revision.analysis_record_version,
+            revision.parent_revision_hash,
+        ),
+        key,
+    )
+    actor = make_governance_actor(actor_id="assembler-1", roles=frozenset({"assembler"}))
+    scope = _scope(actor, "fmea.revision.assemble", f"/fmea/analyses/{revision.analysis_id}/revisions", key)
+    payload = canonical_governance_payload("revision.assemble", command, revision=revision)
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), revision.revision_id)
+    return type(base)(scope, payload_hash, command, revision.analysis_record_version, revision, audit, outbox)
+
+
 def _prepared_submission_for(prepared_publication_value) -> PreparedApprovalSubmission:
     base = prepared_approval_submission()
-    submission = replace(base.submission, revision_hash=prepared_publication_value.revision.revision_hash)
+    submission = replace(
+        base.submission,
+        workspace_id=prepared_publication_value.revision.workspace_id,
+        revision_id=prepared_publication_value.revision.revision_id,
+        revision_hash=prepared_publication_value.revision.revision_hash,
+        submission_id=prepared_publication_value.submission.submission_id,
+        submitter_actor_id=prepared_publication_value.submission.submitter_actor_id,
+    )
+    key = str(uuid5(NAMESPACE_URL, f"fmea-test-submission:{submission.submission_id}"))
     command = SubmitApprovalCommand(
         submission.revision_id,
         submission.revision_hash,
-        base.revision_record_version,
-        base.command.idempotency_key,
+        prepared_publication_value.revision_record_version,
+        key,
+    )
+    actor = make_governance_actor(actor_id=submission.submitter_actor_id, roles=frozenset({"reviewer"}))
+    scope = _scope(
+        actor,
+        "fmea.approval.submit",
+        f"/fmea/revisions/{submission.revision_id}/approval-submissions",
+        key,
     )
     payload = canonical_governance_payload("approval.submit", command, submission=submission)
     payload_hash = governance_payload_hash(payload)
-    audit, outbox = _prepared_events(base.scope, payload_hash, dict(payload), submission.submission_id)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), submission.submission_id)
     return PreparedApprovalSubmission(
-        base.scope, payload_hash, command, base.revision_record_version, submission, audit, outbox
+        scope,
+        payload_hash,
+        command,
+        prepared_publication_value.revision_record_version,
+        submission,
+        audit,
+        outbox,
     )
 
 
 def _prepared_approval_for(prepared_publication_value, submission: PreparedApprovalSubmission) -> PreparedApproval:
     base = prepared_approval()
-    decision = replace(base.decision, revision_hash=prepared_publication_value.revision.revision_hash)
+    decision = replace(
+        base.decision,
+        approval_id=prepared_publication_value.approval.approval_id,
+        submission_id=submission.submission.submission_id,
+        revision_id=prepared_publication_value.revision.revision_id,
+        revision_hash=prepared_publication_value.revision.revision_hash,
+        approver_actor_id=prepared_publication_value.approval.approver_actor_id,
+    )
+    key = str(uuid5(NAMESPACE_URL, f"fmea-test-approval:{decision.approval_id}"))
     command = ApprovalCommand(
         submission.submission.submission_id,
         submission.submission.revision_id,
         submission.submission.revision_hash,
         submission.submission.record_version,
         decision.reason,
-        base.command.idempotency_key,
+        key,
+    )
+    actor = make_governance_actor(actor_id=decision.approver_actor_id, roles=frozenset({"approver"}))
+    scope = _scope(
+        actor,
+        "fmea.approval.decide",
+        f"/fmea/approval-submissions/{submission.submission.submission_id}/decision",
+        key,
     )
     payload = canonical_governance_payload(
         "approval.decide", command, submission=submission.submission, decision=decision
     )
     payload_hash = governance_payload_hash(payload)
-    audit, outbox = _prepared_events(base.scope, payload_hash, dict(payload), decision.approval_id)
-    return PreparedApproval(base.scope, payload_hash, command, submission.submission, decision, audit, outbox)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), decision.approval_id)
+    return PreparedApproval(scope, payload_hash, command, submission.submission, decision, audit, outbox)
+
+
+def _persist_publication_authority_chain(repository: SqliteGovernanceRepository, prepared: PreparedPublication):
+    repository.commit_revision(_prepared_revision_for(prepared))
+    submission = _prepared_submission_for(prepared)
+    repository.commit_approval_submission(submission)
+    repository.commit_approval(_prepared_approval_for(prepared, submission))
+
+
+def _commit_publication_with_authority_chain(repository: SqliteGovernanceRepository, prepared: PreparedPublication):
+    _persist_publication_authority_chain(repository, prepared)
+    return repository.commit_publication(prepared)
 
 
 def _prepared_approval_withdrawal_for(prepared_publication_value) -> PreparedApprovalWithdrawal:
@@ -415,6 +493,100 @@ def _prepared_supersession_for_publications(old: PreparedPublication, replacemen
     )
 
 
+def test_publication_requires_persisted_authority_chain_without_auto_minting(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    prepared = prepared_publication()
+
+    with pytest.raises(ReviewError) as captured:
+        repository.commit_publication(prepared)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        for table in (
+            "fmea_revisions",
+            "fmea_approval_submissions",
+            "fmea_approval_decisions",
+            "fmea_publication_manifests",
+            "fmea_normalized_snapshots",
+            "fmea_publications",
+            "fmea_audit_events",
+            "fmea_outbox_events",
+            "fmea_governance_event_bindings",
+            "idempotency_records",
+        ):
+            assert connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone() == (0,)  # noqa: S608
+
+
+def test_supersession_repository_bounds_depth_and_visited_nodes_before_unbounded_growth(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    old = _prepared_publication_bundle(
+        make_fmea_revision(),
+        "pub-old",
+        "bounded-old",
+        "00000000-0000-4000-8000-000000000801",
+    )
+    replacement = _prepared_publication_bundle(
+        make_fmea_revision(
+            revision_id="revision-2",
+            parent_revision_id=old.revision.revision_id,
+            parent_revision_hash=old.revision.revision_hash,
+        ),
+        "pub-new",
+        "bounded-new",
+        "00000000-0000-4000-8000-000000000802",
+        previous_audit_chain_head=old.publication.audit_chain_head,
+    )
+    _commit_publication_with_authority_chain(repository, old)
+    _commit_publication_with_authority_chain(repository, replacement)
+
+    chain_nodes = ["pub-new", *[f"bounded-chain-{index}" for index in range(65)]]
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = OFF")
+        for index in range(len(chain_nodes) - 1):
+            connection.execute(
+                "INSERT INTO fmea_supersessions "
+                "(workspace_id,supersession_id,old_publication_id,new_publication_id,actor_id,reason,"
+                "supersession_json,canonical_json_hash,idempotency_scope,payload_hash,audit_event_id,outbox_event_id,created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    "ws-1",
+                    f"bounded-forged-{index}",
+                    chain_nodes[index],
+                    chain_nodes[index + 1],
+                    "publisher-1",
+                    "bounded traversal fixture",
+                    "{}",
+                    "sha256:" + "a" * 64,
+                    f"bounded-forged-scope-{index}",
+                    "sha256:" + "b" * 64,
+                    f"bounded-forged-audit-{index}",
+                    f"bounded-forged-outbox-{index}",
+                    "2026-08-30T00:00:00Z",
+                ),
+            )
+
+    traversal_queries: list[str] = []
+
+    class TracedRepository(SqliteGovernanceRepository):
+        def _connect(self):
+            connection = super()._connect()
+            connection.set_trace_callback(
+                lambda statement: traversal_queries.append(statement)
+                if "SELECT new_publication_id FROM fmea_supersessions" in statement
+                else None
+            )
+            return connection
+
+    prepared = _prepared_supersession_for_publications(old, replacement)
+    with pytest.raises(ReviewError) as captured:
+        TracedRepository(repository.database_path).commit_supersession(prepared)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_SUPERSESSION_INVALID"
+    assert len(traversal_queries) <= 64
+
+
 def _rekey_approval(prepared: PreparedApproval, approval_id: str, key: str) -> PreparedApproval:
     command = ApprovalCommand(
         prepared.submission.submission_id,
@@ -586,7 +758,7 @@ def test_publication_commits_manifest_snapshot_audit_and_outbox_atomically(
 ) -> None:
     prepared = prepared_publication()
 
-    result = repository.commit_publication(prepared)
+    result = _commit_publication_with_authority_chain(repository, prepared)
 
     assert repository.get_revision(prepared.revision.revision_id, prepared.scope.workspace_id) == prepared.revision
     assert (
@@ -605,7 +777,7 @@ def test_publication_persists_typed_export_eligibility_and_replays_it(
 ) -> None:
     prepared = prepared_publication()
 
-    result = repository.commit_publication(prepared)
+    result = _commit_publication_with_authority_chain(repository, prepared)
 
     eligibility = repository.get_export_eligibility(result.publication_id, prepared.scope.workspace_id)
     assert isinstance(eligibility, ExportEligibilityRecord)
@@ -651,11 +823,11 @@ def test_publication_rejects_manifest_id_reuse_with_different_lineage(
     repository: SqliteGovernanceRepository,
 ) -> None:
     first = prepared_publication()
-    repository.commit_publication(first)
+    _commit_publication_with_authority_chain(repository, first)
     collision = _prepared_publication_reusing_manifest_id()
 
     with pytest.raises((ReviewError, ValueError)):
-        repository.commit_publication(collision)
+        _commit_publication_with_authority_chain(repository, collision)
 
     assert repository.get_publication(collision.publication.publication_id, collision.scope.workspace_id) is None
     with sqlite3.connect(repository.database_path) as connection:
@@ -687,7 +859,7 @@ def test_publication_replay_rejects_tampered_authority_chain_and_response(  # no
     tamper: str,
 ) -> None:
     prepared = prepared_publication()
-    result = repository.commit_publication(prepared)
+    result = _commit_publication_with_authority_chain(repository, prepared)
 
     with sqlite3.connect(repository.database_path) as connection:
         if tamper in {"authority_audit", "authority_outbox"}:
@@ -923,7 +1095,7 @@ def test_approval_withdrawal_fault_preserves_prior_state_and_rolls_back_chain(tm
     base.initialize()
     seed_authoritative_analysis(path)
     publication = prepared_publication()
-    base.commit_publication(publication)
+    _commit_publication_with_authority_chain(base, publication)
     repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "approval.withdrawal"))
 
     with pytest.raises(RuntimeError, match="injected approval.withdrawal failure"):
@@ -943,7 +1115,7 @@ def test_publication_withdrawal_fault_preserves_publication_and_rolls_back_chain
     base.initialize()
     seed_authoritative_analysis(path)
     publication = prepared_publication()
-    base.commit_publication(publication)
+    _commit_publication_with_authority_chain(base, publication)
     repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "publication.withdrawal"))
 
     with pytest.raises(RuntimeError, match="injected publication.withdrawal failure"):
@@ -976,8 +1148,8 @@ def test_supersession_fault_preserves_both_publications_and_rolls_back_chain(tmp
         "00000000-0000-4000-8000-000000000712",
         previous_audit_chain_head=old.publication.audit_chain_head,
     )
-    base.commit_publication(old)
-    base.commit_publication(replacement)
+    _commit_publication_with_authority_chain(base, old)
+    _commit_publication_with_authority_chain(base, replacement)
     repository = SqliteGovernanceRepository(path, fault_injector=lambda step: _raise_at(step, "supersession.record"))
 
     with pytest.raises(RuntimeError, match="injected supersession.record failure"):
@@ -994,7 +1166,7 @@ def test_supersession_fault_preserves_both_publications_and_rolls_back_chain(tmp
 def test_published_payload_cannot_be_updated_or_deleted(
     repository: SqliteGovernanceRepository,
 ) -> None:
-    result = repository.commit_publication(prepared_publication())
+    result = _commit_publication_with_authority_chain(repository, prepared_publication())
 
     with (
         pytest.raises(sqlite3.IntegrityError, match="immutable fmea_publications"),
@@ -1019,8 +1191,6 @@ def test_published_payload_cannot_be_updated_or_deleted(
     (
         "idempotency.reserve",
         "audit",
-        "publication.revision",
-        "publication.decision",
         "publication.manifest",
         "publication.snapshot",
         "publication.record",
@@ -1035,36 +1205,41 @@ def test_fault_injected_publication_rolls_back_every_shared_write(tmp_path: Path
         if step == failure_step:
             raise RuntimeError("injected publication failure")  # noqa: TRY003
 
-    repository = SqliteGovernanceRepository(path, fault_injector=fail)
+    repository = SqliteGovernanceRepository(path)
     repository.initialize()
     seed_authoritative_analysis(path)
+    prepared = prepared_publication()
+    _persist_publication_authority_chain(repository, prepared)
+    repository = SqliteGovernanceRepository(path, fault_injector=fail)
     with pytest.raises(RuntimeError, match="injected publication failure"):
-        repository.commit_publication(prepared_publication())
+        repository.commit_publication(prepared)
 
-    count_queries = (
-        "SELECT COUNT(*) FROM fmea_revisions",
-        "SELECT COUNT(*) FROM fmea_approval_submissions",
-        "SELECT COUNT(*) FROM fmea_approval_decisions",
-        "SELECT COUNT(*) FROM fmea_publication_manifests",
-        "SELECT COUNT(*) FROM fmea_publications",
-        "SELECT COUNT(*) FROM fmea_normalized_snapshots",
-        "SELECT COUNT(*) FROM fmea_revision_analysis_bindings",
-        "SELECT COUNT(*) FROM fmea_publication_lineage_bindings",
-        "SELECT COUNT(*) FROM fmea_audit_events",
-        "SELECT COUNT(*) FROM fmea_outbox_events",
-        "SELECT COUNT(*) FROM fmea_governance_event_bindings",
-        "SELECT COUNT(*) FROM idempotency_records",
-    )
-    with sqlite3.connect(path) as connection:
-        for query in count_queries:
-            assert connection.execute(query).fetchone() == (0,)
+    assert _governance_counts(path) == {
+        "fmea_revisions": 1,
+        "fmea_revision_readiness_reports": 0,
+        "fmea_approval_submissions": 1,
+        "fmea_approval_decisions": 1,
+        "fmea_approval_withdrawals": 0,
+        "fmea_publication_manifests": 0,
+        "fmea_normalized_snapshots": 0,
+        "fmea_publications": 0,
+        "fmea_publication_withdrawals": 0,
+        "fmea_supersessions": 0,
+        "fmea_export_eligibility": 0,
+        "fmea_revision_analysis_bindings": 1,
+        "fmea_publication_lineage_bindings": 0,
+        "fmea_audit_events": 3,
+        "fmea_outbox_events": 3,
+        "fmea_governance_event_bindings": 3,
+        "idempotency_records": 3,
+    }
 
 
 def test_tampered_hash_or_noncanonical_json_is_rejected_on_read(
     repository: SqliteGovernanceRepository,
 ) -> None:
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
 
     with sqlite3.connect(repository.database_path) as connection:
         connection.execute("DROP TRIGGER fmea_revisions_no_update")
@@ -1117,7 +1292,7 @@ def test_publication_withdrawal_is_append_only_and_workspace_qualified(
     repository: SqliteGovernanceRepository,
 ) -> None:
     publication = prepared_publication()
-    repository.commit_publication(publication)
+    _commit_publication_with_authority_chain(repository, publication)
     withdrawal = _prepared_publication_withdrawal_for(publication)
 
     result = repository.commit_publication_withdrawal(withdrawal)
@@ -1158,7 +1333,7 @@ def test_transaction_guard_rejects_second_approval_withdrawal_atomically(
     repository: SqliteGovernanceRepository,
 ) -> None:
     publication = prepared_publication()
-    repository.commit_publication(publication)
+    _commit_publication_with_authority_chain(repository, publication)
     first = _prepared_approval_withdrawal_for(publication)
     repository.commit_approval_withdrawal(first)
     second = _rekey_approval_withdrawal(first, "approval-withdrawal-duplicate", "00000000-0000-4000-8000-000000000734")
@@ -1196,7 +1371,7 @@ def test_transaction_guard_rejects_second_publication_withdrawal_atomically(
     repository: SqliteGovernanceRepository,
 ) -> None:
     publication = prepared_publication()
-    repository.commit_publication(publication)
+    _commit_publication_with_authority_chain(repository, publication)
     first = _prepared_publication_withdrawal_for(publication)
     repository.commit_publication_withdrawal(first)
     second = _rekey_publication_withdrawal(
@@ -1228,8 +1403,8 @@ def test_transaction_guard_rejects_second_outgoing_supersession_atomically(
         "00000000-0000-4000-8000-000000000737",
         previous_audit_chain_head=old.publication.audit_chain_head,
     )
-    repository.commit_publication(old)
-    repository.commit_publication(replacement)
+    _commit_publication_with_authority_chain(repository, old)
+    _commit_publication_with_authority_chain(repository, replacement)
     first = _prepared_supersession_for_publications(old, replacement)
     repository.commit_supersession(first)
     second = _rekey_supersession(first, "supersession-duplicate", "00000000-0000-4000-8000-000000000738")
@@ -1268,8 +1443,8 @@ def test_transaction_guard_rejects_supersession_with_withdrawn_endpoint_atomical
         "00000000-0000-4000-8000-000000000761",
         previous_audit_chain_head=old.publication.audit_chain_head,
     )
-    repository.commit_publication(old)
-    repository.commit_publication(replacement)
+    _commit_publication_with_authority_chain(repository, old)
+    _commit_publication_with_authority_chain(repository, replacement)
     withdrawn = old if withdrawn_endpoint == "old" else replacement
     repository.commit_publication_withdrawal(_prepared_publication_withdrawal_for(withdrawn))
     prepared = _prepared_supersession_for_publications(old, replacement)
@@ -1328,8 +1503,8 @@ def test_supersession_preserves_both_publications_and_rejects_a_cycle(
         "00000000-0000-4000-8000-000000000712",
         previous_audit_chain_head=old_publication.publication.audit_chain_head,
     )
-    repository.commit_publication(old_publication)
-    repository.commit_publication(replacement_publication)
+    _commit_publication_with_authority_chain(repository, old_publication)
+    _commit_publication_with_authority_chain(repository, replacement_publication)
     base = prepared_supersession()
     link = make_supersession_record(
         supersession_id="supersession-1",
@@ -1442,7 +1617,7 @@ def test_supersession_preserves_both_publications_and_rejects_a_cycle(
     )
     with pytest.raises(ReviewError) as captured:
         repository.commit_supersession(cycle)
-    assert captured.value.code == "FMEA_REVIEW_REQUEST_INVALID"
+    assert captured.value.code == "FMEA_GOVERNANCE_SUPERSESSION_INVALID"
 
 
 def test_history_is_workspace_scoped_and_survives_restart(
@@ -1450,7 +1625,7 @@ def test_history_is_workspace_scoped_and_survives_restart(
     tmp_path: Path,
 ) -> None:
     prepared = prepared_publication()
-    result = repository.commit_publication(prepared)
+    result = _commit_publication_with_authority_chain(repository, prepared)
 
     restarted = SqliteGovernanceRepository(tmp_path / "fmea.sqlite3")
     restarted.initialize()
@@ -1473,7 +1648,7 @@ def test_migration_007_enforces_workspace_qualified_publication_and_revision_lin
     repository: SqliteGovernanceRepository,
 ) -> None:
     first = prepared_publication()
-    repository.commit_publication(first)
+    _commit_publication_with_authority_chain(repository, first)
     second_revision = make_fmea_revision(revision_id="revision-2")
     second = _prepared_publication_bundle(
         second_revision,
@@ -1482,7 +1657,7 @@ def test_migration_007_enforces_workspace_qualified_publication_and_revision_lin
         "00000000-0000-4000-8000-000000000720",
         previous_audit_chain_head=first.publication.audit_chain_head,
     )
-    repository.commit_publication(second)
+    _commit_publication_with_authority_chain(repository, second)
 
     with sqlite3.connect(repository.database_path) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
@@ -1624,7 +1799,7 @@ def test_publication_dependency_revision_has_its_own_authority_chain_and_replay_
     repository: SqliteGovernanceRepository,
 ) -> None:
     prepared = prepared_publication()
-    result = repository.commit_publication(prepared)
+    result = _commit_publication_with_authority_chain(repository, prepared)
 
     with sqlite3.connect(repository.database_path) as connection:
         revision = connection.execute(
@@ -1699,13 +1874,13 @@ def _commit_replay_case(repository: SqliteGovernanceRepository, kind: str):
         prepared = _prepared_approval_for(publication, submission)
         return prepared, repository.commit_approval(prepared)
     if kind == "approval_withdrawal":
-        repository.commit_publication(publication)
+        _commit_publication_with_authority_chain(repository, publication)
         prepared = _prepared_approval_withdrawal_for(publication)
         return prepared, repository.commit_approval_withdrawal(prepared)
     if kind == "publication":
-        return publication, repository.commit_publication(publication)
+        return publication, _commit_publication_with_authority_chain(repository, publication)
     if kind == "publication_withdrawal":
-        repository.commit_publication(publication)
+        _commit_publication_with_authority_chain(repository, publication)
         prepared = _prepared_publication_withdrawal_for(publication)
         return prepared, repository.commit_publication_withdrawal(prepared)
     old = _prepared_publication_bundle(make_fmea_revision(), "pub-old", "old", "00000000-0000-4000-8000-000000000721")
@@ -1721,8 +1896,8 @@ def _commit_replay_case(repository: SqliteGovernanceRepository, kind: str):
         "00000000-0000-4000-8000-000000000722",
         previous_audit_chain_head=old.publication.audit_chain_head,
     )
-    repository.commit_publication(old)
-    repository.commit_publication(replacement)
+    _commit_publication_with_authority_chain(repository, old)
+    _commit_publication_with_authority_chain(repository, replacement)
     prepared = _prepared_supersession_for_publications(old, replacement)
     return prepared, repository.commit_supersession(prepared)
 
@@ -1948,7 +2123,7 @@ def test_publication_replay_recursively_rejects_tampered_dependency_chain(
     repository: SqliteGovernanceRepository, dependency: str
 ) -> None:
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
     table = {
         "revision": "fmea_revisions",
         "submission": "fmea_approval_submissions",
@@ -1988,7 +2163,7 @@ def test_migration_008_requires_total_publication_lineage_binding(
     operation: str,
 ) -> None:
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
 
     with sqlite3.connect(repository.database_path) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
@@ -2140,7 +2315,7 @@ def test_replay_cross_binds_authority_dto_to_canonical_outbox_payload(
 ) -> None:
     if kind == "publication":
         prepared = prepared_publication()
-        repository.commit_publication(prepared)
+        _commit_publication_with_authority_chain(repository, prepared)
     else:
         prepared, _ = _commit_replay_case(repository, kind)
 
@@ -2269,7 +2444,7 @@ def test_migration_008_backfills_reconstructable_v7_authority_and_preserves_repl
     revision = prepared_revision()
     revision_result = repository.commit_revision(revision)
     publication = prepared_publication()
-    publication_result = repository.commit_publication(publication)
+    publication_result = _commit_publication_with_authority_chain(repository, publication)
 
     with sqlite3.connect(path) as connection:
         connection.execute("DROP TRIGGER fmea_revisions_no_update")
@@ -2308,7 +2483,7 @@ def test_migration_008_rejects_unreconstructable_v7_authority_atomically(tmp_pat
     repository = SqliteGovernanceRepository(path)
     seed_authoritative_analysis(path)
     publication = prepared_publication()
-    repository.commit_publication(publication)
+    _commit_publication_with_authority_chain(repository, publication)
 
     with sqlite3.connect(path) as connection:
         revision = connection.execute(
@@ -2355,7 +2530,7 @@ def test_migration_009_rejects_direct_manifest_without_lineage_binding(
     repository: SqliteGovernanceRepository,
 ) -> None:
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
     orphan = replace(prepared.manifest, manifest_id="manifest-without-lineage")
     manifest_json = encode_review_json(orphan)
     manifest_json_hash = "sha256:" + sha256(manifest_json.encode("utf-8")).hexdigest()
@@ -2412,7 +2587,7 @@ def test_public_current_reads_are_workspace_qualified_and_project_lifecycle(
     assert repository.get_revision_record_version("revision-1", "ws-other") is None
 
     publication_prepared = prepared_publication()
-    repository.commit_publication(publication_prepared)
+    _commit_publication_with_authority_chain(repository, publication_prepared)
     assert repository.get_approval_submission("submission-1", "ws-1") is not None
     assert repository.get_approval_submission("submission-1", "ws-other") is None
     approval = repository.get_approval_decision("approval-1", "ws-1")
@@ -2475,7 +2650,7 @@ def _persist_publication_migration_fixture(path: Path) -> PreparedPublication:
     repository = SqliteGovernanceRepository(path)
     seed_authoritative_analysis(path)
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
     return prepared
 
 
@@ -2694,7 +2869,7 @@ def test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically(tmp
     repository = SqliteGovernanceRepository(path)
     seed_authoritative_analysis(path)
     prepared = prepared_publication()
-    repository.commit_publication(prepared)
+    _commit_publication_with_authority_chain(repository, prepared)
 
     with sqlite3.connect(path) as connection:
         revision_row = connection.execute(
@@ -2936,7 +3111,7 @@ def test_command_bound_replay_restores_publication_and_rejects_result_type_misma
     repository: SqliteGovernanceRepository,
 ) -> None:
     prepared = prepared_publication()
-    committed = repository.commit_publication(prepared)
+    committed = _commit_publication_with_authority_chain(repository, prepared)
 
     assert repository.replay_governance_command("publish", prepared.scope, prepared.command) == replace(
         committed,
@@ -2958,7 +3133,7 @@ def test_publication_audit_head_survives_repository_restart_and_advances_linearl
 ) -> None:
     assert repository.get_current_publication_audit_head("ws-1") is None
     first = prepared_publication()
-    repository.commit_publication(first)
+    _commit_publication_with_authority_chain(repository, first)
     assert repository.get_current_publication_audit_head("ws-1") == first.publication.audit_chain_head
 
     second_revision = make_fmea_revision(revision_id="revision-2")
@@ -2969,7 +3144,7 @@ def test_publication_audit_head_survives_repository_restart_and_advances_linearl
         "00000000-0000-4000-8000-000000000758",
         previous_audit_chain_head=first.publication.audit_chain_head,
     )
-    SqliteGovernanceRepository(repository.database_path).commit_publication(second)
+    _commit_publication_with_authority_chain(SqliteGovernanceRepository(repository.database_path), second)
 
     restarted = SqliteGovernanceRepository(repository.database_path)
     assert restarted.get_current_publication_audit_head("ws-1") == second.publication.audit_chain_head
@@ -2986,7 +3161,7 @@ def test_stale_publication_predecessor_is_rejected_atomically_between_repository
         "00000000-0000-4000-8000-000000000759",
         previous_audit_chain_head=None,
     )
-    repository.commit_publication(first)
+    _commit_publication_with_authority_chain(repository, first)
 
     competing = SqliteGovernanceRepository(repository.database_path)
     with pytest.raises(ReviewError) as captured:

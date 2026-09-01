@@ -18,6 +18,7 @@ from .errors import FmeaDomainError
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _SEVERITIES = frozenset({"info", "warning", "blocking", "critical"})
+MAX_SUPERSESSION_TRAVERSAL = 64
 
 
 def _text(value: object, field_name: str) -> str:
@@ -175,7 +176,9 @@ def canonical_hash(
     exclude_fields: Iterable[str] = (),
     max_array_items: int | None = None,
 ) -> str:
-    digest = sha256(canonical_json_bytes(value, exclude_fields=exclude_fields, max_array_items=max_array_items)).hexdigest()
+    digest = sha256(
+        canonical_json_bytes(value, exclude_fields=exclude_fields, max_array_items=max_array_items)
+    ).hexdigest()
     return f"sha256:{digest}" if prefixed else digest
 
 
@@ -275,7 +278,9 @@ class FmeaRevision:
     def __post_init__(self) -> None:
         for field_name in ("revision_id", "workspace_id", "analysis_id"):
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
-        object.__setattr__(self, "analysis_record_version", _positive(self.analysis_record_version, "analysis_record_version"))
+        object.__setattr__(
+            self, "analysis_record_version", _positive(self.analysis_record_version, "analysis_record_version")
+        )
         object.__setattr__(self, "analysis_hash", _hash(self.analysis_hash, "analysis_hash"))
         parent_id = _optional_text(self.parent_revision_id, "parent_revision_id")
         parent_hash = _optional_hash(self.parent_revision_hash, "parent_revision_hash")
@@ -291,14 +296,26 @@ class FmeaRevision:
             raise FmeaDomainError("propagation graph identity and hash must be supplied together")  # noqa: TRY003
         object.__setattr__(self, "propagation_graph_revision_id", graph_id)
         object.__setattr__(self, "propagation_graph_hash", graph_hash)
-        object.__setattr__(self, "evidence_pack_hashes", _pairs(self.evidence_pack_hashes, "evidence_pack_hashes", values_are_hashes=True))
+        object.__setattr__(
+            self,
+            "evidence_pack_hashes",
+            _pairs(self.evidence_pack_hashes, "evidence_pack_hashes", values_are_hashes=True),
+        )
         if not isinstance(self.retrieval_provenance, RetrievalProvenanceSnapshot):
             raise FmeaDomainError("retrieval_provenance must be a RetrievalProvenanceSnapshot")  # noqa: TRY003
-        object.__setattr__(self, "domain_pack_identity", self._one_identity(self.domain_pack_identity, "domain_pack_identity"))
-        object.__setattr__(self, "template_identities", _identity_triples(self.template_identities, "template_identities"))
-        object.__setattr__(self, "scoring_rule_identities", _identity_triples(self.scoring_rule_identities, "scoring_rule_identities"))
-        propagation_identity = None if self.propagation_rule_identity is None else self._one_identity(
-            self.propagation_rule_identity, "propagation_rule_identity"
+        object.__setattr__(
+            self, "domain_pack_identity", self._one_identity(self.domain_pack_identity, "domain_pack_identity")
+        )
+        object.__setattr__(
+            self, "template_identities", _identity_triples(self.template_identities, "template_identities")
+        )
+        object.__setattr__(
+            self, "scoring_rule_identities", _identity_triples(self.scoring_rule_identities, "scoring_rule_identities")
+        )
+        propagation_identity = (
+            None
+            if self.propagation_rule_identity is None
+            else self._one_identity(self.propagation_rule_identity, "propagation_rule_identity")
         )
         object.__setattr__(self, "propagation_rule_identity", propagation_identity)
         unresolved = tuple(self.unresolved_items)
@@ -307,7 +324,11 @@ class FmeaRevision:
         issue_keys = tuple((item.code, item.source_type, item.source_id) for item in unresolved)
         if len(issue_keys) != len(set(issue_keys)):
             raise FmeaDomainError("unresolved_items must not contain duplicate identities")  # noqa: TRY003
-        object.__setattr__(self, "unresolved_items", tuple(sorted(unresolved, key=lambda item: (item.code, item.source_type, item.source_id))))
+        object.__setattr__(
+            self,
+            "unresolved_items",
+            tuple(sorted(unresolved, key=lambda item: (item.code, item.source_type, item.source_id))),
+        )
         object.__setattr__(self, "revision_hash", _hash(self.revision_hash, "revision_hash"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
         if self.revision_hash.removeprefix("sha256:") != revision_content_hash(self):
@@ -398,7 +419,11 @@ class PublicationManifest:
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
         for field_name in ("revision_hash", "snapshot_hash", "version_manifest_hash", "manifest_hash"):
             object.__setattr__(self, field_name, _hash(getattr(self, field_name), field_name))
-        object.__setattr__(self, "previous_audit_chain_head", _optional_hash(self.previous_audit_chain_head, "previous_audit_chain_head"))
+        object.__setattr__(
+            self,
+            "previous_audit_chain_head",
+            _optional_hash(self.previous_audit_chain_head, "previous_audit_chain_head"),
+        )
         if not isinstance(self.export_eligible, bool):
             raise FmeaDomainError("export_eligible must be a boolean")  # noqa: TRY003
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
@@ -451,7 +476,11 @@ class PublicationWithdrawalRecord:
     def __post_init__(self) -> None:
         for field_name in ("withdrawal_id", "publication_id", "actor_id", "reason"):
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
-        object.__setattr__(self, "replacement_publication_id", _optional_text(self.replacement_publication_id, "replacement_publication_id"))
+        object.__setattr__(
+            self,
+            "replacement_publication_id",
+            _optional_text(self.replacement_publication_id, "replacement_publication_id"),
+        )
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
 
 
@@ -531,7 +560,10 @@ def validate_supersession_binding(  # noqa: C901
         raise FmeaDomainError("supersession analysis binding is invalid")  # noqa: TRY003
     if old.revision_id != old_revision.revision_id or replacement.revision_id != replacement_revision.revision_id:
         raise FmeaDomainError("supersession revision binding is invalid")  # noqa: TRY003
-    if old.revision_hash != old_revision.revision_hash or replacement.revision_hash != replacement_revision.revision_hash:
+    if (
+        old.revision_hash != old_revision.revision_hash
+        or replacement.revision_hash != replacement_revision.revision_hash
+    ):
         raise FmeaDomainError("supersession revision hash binding is invalid")  # noqa: TRY003
     if replacement_revision.parent_revision_id != old_revision.revision_id:
         raise FmeaDomainError("supersession parent revision binding is invalid")  # noqa: TRY003

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from uuid import NAMESPACE_URL, uuid5
 
 from core_domain.fmea.governance import (
+    MAX_SUPERSESSION_TRAVERSAL,
     ApprovalDecision,
     ApprovalStatus,
     ApprovalSubmission,
@@ -110,7 +111,7 @@ _GOVERNANCE_CODES = frozenset({
     "FMEA_PRECONDITION_REQUIRED",
 })
 _ROLE_QUERY = frozenset({"reviewer", "approver", "publisher"})
-_MAX_SUPERSESSION_DEPTH = 64
+_MAX_SUPERSESSION_DEPTH = MAX_SUPERSESSION_TRAVERSAL
 
 
 class GovernanceServiceError(ReviewError):

@@ -14,9 +14,9 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, NoReturn, cast
-from uuid import NAMESPACE_URL, uuid5
 
 from core_domain.fmea.governance import (
+    MAX_SUPERSESSION_TRAVERSAL,
     ApprovalDecision,
     ApprovalStatus,
     ApprovalSubmission,
@@ -35,6 +35,7 @@ from core_domain.fmea.governance import (
     validate_approval_binding,
     validate_supersession_binding,
 )
+from core_domain.fmea.states import ActorType
 from fmea_application.governance_contracts import (
     ApprovalCommand,
     ApprovalRejectionCommand,
@@ -2060,336 +2061,6 @@ class SqliteGovernanceRepository:
         )
 
     @classmethod
-    def _dependency_scope(
-        cls, workspace_id: str, actor_id: str, command: str, path: str, idempotency_key: str
-    ) -> IdempotencyScope:
-        return IdempotencyScope(
-            workspace_id,
-            actor_id,
-            command,
-            path,
-            idempotency_key_hash(idempotency_key),
-        )
-
-    @classmethod
-    def _dependency_audit(
-        cls,
-        source: AuditEvent,
-        scope: IdempotencyScope,
-        payload_hash: str,
-        aggregate_id: str,
-        *,
-        decision_id: str | None = None,
-    ) -> AuditEvent:
-        return replace(
-            source,
-            event_id=f"dependency-audit-{scope.scope_key}",
-            actor_id=scope.actor_id,
-            command=scope.command,
-            row_id=aggregate_id,
-            decision_id=decision_id,
-            idempotency_key_hash=scope.key_hash,
-            canonical_payload_hash=payload_hash,
-        )
-
-    @classmethod
-    def _dependency_outbox(
-        cls,
-        source: OutboxEvent,
-        scope: IdempotencyScope,
-        payload: Mapping[str, object],
-        aggregate_id: str,
-        event_type: str,
-    ) -> OutboxEvent:
-        return OutboxEvent(
-            event_id=f"dependency-outbox-{scope.scope_key}",
-            workspace_id=scope.workspace_id,
-            aggregate_type="fmea_governance",
-            aggregate_id=aggregate_id,
-            event_type=event_type,
-            payload=payload,
-            payload_hash=outbox_payload_hash(payload),
-            created_at=source.created_at,
-            scope_key=scope.scope_key,
-        )
-
-    @classmethod
-    def _persist_publication_dependencies(
-        cls,
-        connection: sqlite3.Connection,
-        prepared: PreparedPublication,
-        fail: Callable[[str], None],
-    ) -> None:
-        cls._validate_authoritative_analysis(connection, prepared.revision)
-        revision_row = connection.execute(
-            "SELECT revision_id FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
-            (prepared.scope.workspace_id, prepared.revision.revision_id),
-        ).fetchone()
-        if revision_row is None:
-            revision_key = str(uuid5(NAMESPACE_URL, f"revision:{prepared.publication.publication_id}"))
-            revision_command = AssembleRevisionCommand(
-                RevisionAssemblyRequest(
-                    prepared.revision.analysis_id,
-                    prepared.revision.parent_revision_id,
-                    prepared.revision.analysis_record_version,
-                    prepared.revision.parent_revision_hash,
-                ),
-                revision_key,
-            )
-            revision_scope = cls._dependency_scope(
-                prepared.scope.workspace_id,
-                prepared.scope.actor_id,
-                "fmea.revision.assemble",
-                f"/fmea/analyses/{prepared.revision.analysis_id}/revisions",
-                revision_key,
-            )
-            revision_payload = canonical_governance_payload(
-                "revision.assemble", revision_command, revision=prepared.revision
-            )
-            revision_payload_hash = governance_payload_hash(revision_payload)
-            revision_audit = cls._dependency_audit(
-                prepared.audit,
-                revision_scope,
-                revision_payload_hash,
-                prepared.revision.revision_id,
-            )
-            revision_outbox = cls._dependency_outbox(
-                prepared.outbox,
-                revision_scope,
-                revision_payload,
-                prepared.revision.revision_id,
-                "revision.assembled",
-            )
-            revision_meta = _PreparedMeta(
-                "revision",
-                prepared.scope.workspace_id,
-                prepared.revision.revision_id,
-                prepared.revision.revision_id,
-                "revision",
-                revision_scope.command,
-                revision_payload,
-            )
-            cls._insert_idempotency(
-                connection,
-                revision_scope,
-                revision_payload_hash,
-                prepared.revision.created_at,
-            )
-            cls._insert_audit(
-                connection,
-                revision_audit,
-                revision_scope,
-                revision_payload_hash,
-                revision_meta,
-            )
-            cls._ensure_revision(
-                connection,
-                prepared.revision,
-                revision_audit.event_id,
-                revision_outbox.event_id,
-                revision_scope.scope_key,
-                revision_payload_hash,
-            )
-            cls._insert_revision_analysis_binding(connection, prepared.revision)
-            fail("publication.revision")
-            cls._insert_outbox(
-                connection,
-                revision_outbox,
-                revision_scope,
-                revision_meta,
-                "revision.assembled",
-            )
-            revision_result = RevisionResult(
-                prepared.revision.revision_id,
-                1,
-                revision_audit.event_id,
-                revision_outbox.event_id,
-            )
-            cls._insert_event_binding(connection, revision_meta, revision_result)
-            cls._complete_idempotency(
-                connection,
-                revision_scope,
-                revision_payload_hash,
-                prepared.revision.revision_id,
-                revision_result,
-                prepared.revision.created_at,
-            )
-        else:
-            persisted_revision = cls._revision_from_connection(
-                connection,
-                prepared.revision.revision_id,
-                prepared.scope.workspace_id,
-            )
-            if persisted_revision != prepared.revision:
-                _error(
-                    "FMEA_IDEMPOTENCY_CONFLICT",
-                    "Revision identity is already bound to a different payload.",
-                )
-            cls._verify_persisted_dependency_chain(
-                connection,
-                "revision",
-                prepared.scope.workspace_id,
-                prepared.revision.revision_id,
-            )
-        submission_row = connection.execute(
-            "SELECT * FROM fmea_approval_submissions WHERE workspace_id=? AND submission_id=?",
-            (prepared.scope.workspace_id, prepared.submission.submission_id),
-        ).fetchone()
-        if submission_row is None:
-            command = __import__(
-                "fmea_application.governance_contracts", fromlist=["SubmitApprovalCommand"]
-            ).SubmitApprovalCommand(
-                prepared.submission.revision_id,
-                prepared.submission.revision_hash,
-                prepared.revision_record_version,
-                str(uuid5(NAMESPACE_URL, f"submission:{prepared.publication.publication_id}")),
-            )
-            scope = cls._dependency_scope(
-                prepared.scope.workspace_id,
-                prepared.submission.submitter_actor_id,
-                "fmea.approval.submit",
-                f"/fmea/revisions/{prepared.submission.revision_id}/approval-submissions",
-                command.idempotency_key,
-            )
-            payload = canonical_governance_payload("approval.submit", command, submission=prepared.submission)
-            payload_hash = governance_payload_hash(payload)
-            audit = cls._dependency_audit(prepared.audit, scope, payload_hash, prepared.submission.submission_id)
-            outbox = cls._dependency_outbox(
-                prepared.outbox, scope, payload, prepared.submission.submission_id, "approval.submitted"
-            )
-            cls._insert_idempotency(connection, scope, payload_hash, prepared.submission.created_at)
-            dependency_meta = _PreparedMeta(
-                "approval_submission",
-                prepared.scope.workspace_id,
-                prepared.submission.submission_id,
-                prepared.submission.revision_id,
-                "approval",
-                scope.command,
-                payload,
-            )
-            cls._insert_audit(connection, audit, scope, payload_hash, dependency_meta)
-            cls._insert_submission_row(
-                connection, prepared.submission, payload_hash, scope.scope_key, audit.event_id, outbox.event_id
-            )
-            cls._insert_outbox(connection, outbox, scope, dependency_meta, "approval.submitted")
-            cls._insert_event_binding(
-                connection,
-                dependency_meta,
-                ApprovalSubmissionResult(
-                    prepared.submission.submission_id,
-                    prepared.submission.record_version,
-                    audit.event_id,
-                    outbox.event_id,
-                ),
-            )
-            cls._complete_idempotency(
-                connection,
-                scope,
-                payload_hash,
-                prepared.submission.submission_id,
-                ApprovalSubmissionResult(
-                    prepared.submission.submission_id,
-                    prepared.submission.record_version,
-                    audit.event_id,
-                    outbox.event_id,
-                ),
-                prepared.submission.created_at,
-            )
-        else:
-            if _decode_submission(submission_row["submission_json"]) != prepared.submission:
-                _error(
-                    "FMEA_IDEMPOTENCY_CONFLICT", "Approval submission identity is already bound to a different payload."
-                )
-        approval_row = connection.execute(
-            "SELECT * FROM fmea_approval_decisions WHERE workspace_id=? AND approval_id=?",
-            (prepared.scope.workspace_id, prepared.approval.approval_id),
-        ).fetchone()
-        if approval_row is None:
-            command_type = (
-                ApprovalRejectionCommand if prepared.approval.status is ApprovalStatus.REJECTED else ApprovalCommand
-            )
-            command = command_type(
-                prepared.approval.submission_id,
-                prepared.approval.revision_id,
-                prepared.approval.revision_hash,
-                prepared.submission.record_version,
-                prepared.approval.reason,
-                str(uuid5(NAMESPACE_URL, f"approval:{prepared.publication.publication_id}")),
-            )
-            scope = cls._dependency_scope(
-                prepared.scope.workspace_id,
-                prepared.approval.approver_actor_id,
-                "fmea.approval.decide",
-                f"/fmea/approval-submissions/{prepared.approval.submission_id}/decision",
-                command.idempotency_key,
-            )
-            payload = canonical_governance_payload(
-                "approval.decide", command, submission=prepared.submission, decision=prepared.approval
-            )
-            payload_hash = governance_payload_hash(payload)
-            audit = cls._dependency_audit(
-                prepared.audit,
-                scope,
-                payload_hash,
-                prepared.approval.approval_id,
-                decision_id=prepared.approval.approval_id,
-            )
-            outbox = cls._dependency_outbox(
-                prepared.outbox,
-                scope,
-                payload,
-                prepared.approval.approval_id,
-                "approval.approved" if prepared.approval.status is ApprovalStatus.APPROVED else "approval.rejected",
-            )
-            cls._insert_idempotency(connection, scope, payload_hash, prepared.approval.created_at)
-            dependency_meta = _PreparedMeta(
-                "approval",
-                prepared.scope.workspace_id,
-                prepared.approval.approval_id,
-                prepared.approval.revision_id,
-                "approval",
-                scope.command,
-                payload,
-            )
-            cls._insert_audit(connection, audit, scope, payload_hash, dependency_meta)
-            cls._insert_approval_row(
-                connection,
-                prepared.scope.workspace_id,
-                prepared.approval,
-                payload_hash,
-                scope.scope_key,
-                audit.event_id,
-                outbox.event_id,
-            )
-            fail("publication.decision")
-            cls._insert_outbox(
-                connection,
-                outbox,
-                scope,
-                dependency_meta,
-                "approval.approved" if prepared.approval.status is ApprovalStatus.APPROVED else "approval.rejected",
-            )
-            cls._insert_event_binding(
-                connection,
-                dependency_meta,
-                ApprovalResult(
-                    prepared.approval.approval_id, prepared.approval.record_version, audit.event_id, outbox.event_id
-                ),
-            )
-            cls._complete_idempotency(
-                connection,
-                scope,
-                payload_hash,
-                prepared.approval.approval_id,
-                ApprovalResult(
-                    prepared.approval.approval_id, prepared.approval.record_version, audit.event_id, outbox.event_id
-                ),
-                prepared.approval.created_at,
-            )
-        elif _decode_approval(approval_row["decision_json"]) != prepared.approval:
-            _error("FMEA_IDEMPOTENCY_CONFLICT", "Approval decision identity is already bound to a different payload.")
-
-    @classmethod
     def _write_revision(
         cls,
         connection: sqlite3.Connection,
@@ -2622,6 +2293,83 @@ class SqliteGovernanceRepository:
         return head
 
     @classmethod
+    def _require_persisted_publication_dependencies(
+        cls,
+        connection: sqlite3.Connection,
+        prepared: PreparedPublication,
+    ) -> None:
+        def invalid_persisted_authority(message: str) -> NoReturn:
+            raise ValueError(message)
+
+        try:
+            validate_approval_binding(prepared.approval, prepared.revision)
+            persisted_revision = cls._revision_from_connection(
+                connection, prepared.revision.revision_id, prepared.scope.workspace_id
+            )
+            persisted_submission = cls._submission_from_connection(
+                connection, prepared.submission.submission_id, prepared.scope.workspace_id
+            )
+            persisted_approval = cls._approval_from_connection(
+                connection, prepared.approval.approval_id, prepared.scope.workspace_id
+            )
+        except (TypeError, ValueError, ReviewError):
+            _error(
+                "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                "Publication authority chain is missing or invalid.",
+            )
+        if (
+            persisted_revision != prepared.revision
+            or persisted_submission != prepared.submission
+            or persisted_approval != prepared.approval
+            or persisted_approval.status is not ApprovalStatus.APPROVED
+            or persisted_submission.status is not ApprovalStatus.PENDING
+        ):
+            _error(
+                "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                "Publication authority chain is missing or invalid.",
+            )
+
+        for kind, resource_id in (
+            ("revision", prepared.revision.revision_id),
+            ("approval_submission", prepared.submission.submission_id),
+            ("approval", prepared.approval.approval_id),
+        ):
+            try:
+                cls._verify_persisted_dependency_chain(
+                    connection,
+                    kind,
+                    prepared.scope.workspace_id,
+                    resource_id,
+                )
+                table, identifier = cls._authority_table(kind)
+                authority_row = connection.execute(
+                    f"SELECT audit_event_id FROM {table} WHERE workspace_id=? AND {identifier}=?",
+                    (prepared.scope.workspace_id, resource_id),
+                ).fetchone()
+                if authority_row is None:
+                    invalid_persisted_authority("persisted publication authority row is missing")
+                audit_row = connection.execute(
+                    "SELECT event_json FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+                    (prepared.scope.workspace_id, authority_row["audit_event_id"]),
+                ).fetchone()
+                if audit_row is None:
+                    invalid_persisted_authority("persisted publication authority audit is missing")
+                audit = decode_audit_event(audit_row["event_json"])
+                expected_actor_id = {
+                    "approval_submission": prepared.submission.submitter_actor_id,
+                    "approval": prepared.approval.approver_actor_id,
+                }.get(kind)
+                if audit.actor_type is not ActorType.HUMAN or (
+                    expected_actor_id is not None and audit.actor_id != expected_actor_id
+                ):
+                    invalid_persisted_authority("persisted publication authority actor is not human-bound")
+            except (TypeError, ValueError, ReviewError):
+                _error(
+                    "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                    "Publication authority chain is missing or invalid.",
+                )
+
+    @classmethod
     def _write_publication(
         cls,
         connection: sqlite3.Connection,
@@ -2687,20 +2435,9 @@ class SqliteGovernanceRepository:
             or prepared.export_eligibility.eligibility_hash != expected_eligibility_hash
         ):
             _error("FMEA_REVIEW_REQUEST_INVALID", "Publication hash chain is invalid.")
-        cls._persist_publication_dependencies(connection, prepared, fail)
-        validate_approval_binding(prepared.approval, prepared.revision)
-        persisted_revision = cls._revision_from_connection(connection, prepared.revision.revision_id, meta.workspace_id)
-        persisted_submission = cls._submission_from_connection(
-            connection, prepared.submission.submission_id, meta.workspace_id
-        )
-        persisted_approval = cls._approval_from_connection(connection, prepared.approval.approval_id, meta.workspace_id)
-        if (
-            persisted_revision != prepared.revision
-            or persisted_submission != prepared.submission
-            or persisted_approval != prepared.approval
-            or persisted_approval.status is not ApprovalStatus.APPROVED
-        ):
-            _error("FMEA_VERSION_CONFLICT", "Publication governance dependency is stale.")
+        cls._require_persisted_publication_dependencies(connection, prepared)
+        persisted_revision = prepared.revision
+        persisted_approval = prepared.approval
         approval_withdrawal = connection.execute(
             "SELECT withdrawal_id FROM fmea_approval_withdrawals WHERE workspace_id=? AND approval_id=?",
             (meta.workspace_id, prepared.approval.approval_id),
@@ -2892,21 +2629,41 @@ class SqliteGovernanceRepository:
     @classmethod
     def _would_cycle(cls, connection: sqlite3.Connection, workspace_id: str, old_id: str, new_id: str) -> bool:
         seen: set[str] = set()
-        frontier = [new_id]
+        frontier = [(new_id, 0)]
         while frontier:
-            current = frontier.pop()
+            current, depth = frontier.pop()
             if current == old_id:
                 return True
             if current in seen:
-                continue
+                _error(
+                    "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                    "Publication supersession lineage is cyclic.",
+                )
+            if depth >= MAX_SUPERSESSION_TRAVERSAL or len(seen) >= MAX_SUPERSESSION_TRAVERSAL:
+                _error(
+                    "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                    "Publication supersession lineage exceeds traversal bounds.",
+                )
             seen.add(current)
-            frontier.extend(
-                str(row[0])
-                for row in connection.execute(
-                    "SELECT new_publication_id FROM fmea_supersessions WHERE workspace_id=? AND old_publication_id=?",
-                    (workspace_id, current),
-                ).fetchall()
-            )
+            next_nodes = connection.execute(
+                "SELECT new_publication_id FROM fmea_supersessions WHERE workspace_id=? AND old_publication_id=?",
+                (workspace_id, current),
+            ).fetchall()
+            for row in next_nodes:
+                next_id = str(row[0])
+                if next_id == old_id:
+                    return True
+                if next_id in seen:
+                    _error(
+                        "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                        "Publication supersession lineage is cyclic.",
+                    )
+                if depth + 1 >= MAX_SUPERSESSION_TRAVERSAL:
+                    _error(
+                        "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                        "Publication supersession lineage exceeds traversal bounds.",
+                    )
+                frontier.append((next_id, depth + 1))
         return False
 
     @classmethod
@@ -2945,7 +2702,7 @@ class SqliteGovernanceRepository:
             prepared.supersession.old_publication_id,
             prepared.supersession.new_publication_id,
         ):
-            _error("FMEA_REVIEW_REQUEST_INVALID", "Publication supersession would create a cycle.")
+            _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "Publication supersession would create a cycle.")
         old_withdrawal = connection.execute(
             "SELECT withdrawal_id FROM fmea_publication_withdrawals WHERE workspace_id=? AND publication_id=?",
             (meta.workspace_id, prepared.old_publication.publication_id),
