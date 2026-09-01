@@ -919,6 +919,7 @@ class SqliteGovernanceRepository:
         if outbox_row is None:
             raise ValueError("persisted governance outbox event is missing")
         outbox_payload = load_strict_json(outbox_row["payload_json"], "governance outbox")
+        expected_outbox_payload = cls._expected_persisted_event_payload(connection, kind, authority_row)
         expected_event_type = {
             "revision": "revision.assembled",
             "readiness": "revision.readiness",
@@ -932,6 +933,8 @@ class SqliteGovernanceRepository:
             expected_event_type = "approval." + str(authority_row["status"])
         if (
             canonical_json(outbox_payload) != outbox_row["payload_json"]
+            or canonical_json(outbox_payload) != canonical_json(expected_outbox_payload)
+            or governance_payload_hash(expected_outbox_payload) != payload_hash
             or outbox_row["workspace_id"] != scope.workspace_id
             or outbox_row["aggregate_type"] != "fmea_governance"
             or outbox_row["aggregate_id"] != resource_id
@@ -1082,6 +1085,223 @@ class SqliteGovernanceRepository:
             raise ValueError(f"persisted publication {kind} dependency idempotency is invalid")
         result = cls._decode_result(kind, idempotency["response_json"])
         cls._verify_replay_chain(connection, kind, dependency_scope, payload_hash, result)
+
+    @classmethod
+    def _expected_persisted_event_payload(
+        cls,
+        connection: sqlite3.Connection,
+        kind: str,
+        authority_row: sqlite3.Row,
+    ) -> Mapping[str, object]:
+        if kind == "revision":
+            revision = cls._revision_from_connection(
+                connection,
+                authority_row["revision_id"],
+                authority_row["workspace_id"],
+            )
+            command = {
+                "request": {
+                    "analysis_id": revision.analysis_id,
+                    "parent_revision_id": revision.parent_revision_id,
+                    "expected_analysis_version": revision.analysis_record_version,
+                    "parent_revision_hash": revision.parent_revision_hash,
+                }
+            }
+            return canonical_governance_payload("revision.assemble", command, revision=revision)
+        if kind == "readiness":
+            record = cls._readiness_from_connection(
+                connection,
+                authority_row["readiness_id"],
+                authority_row["workspace_id"],
+            )
+            command = {
+                "revision_id": authority_row["revision_id"],
+                "revision_hash": authority_row["revision_hash"],
+                "expected_revision_version": authority_row["target_record_version"],
+                "readiness_id": authority_row["readiness_id"],
+            }
+            return canonical_governance_payload(
+                "revision.readiness",
+                command,
+                report=record.report,
+                source_hashes=record.source_hashes,
+            )
+        if kind == "approval_submission":
+            submission = cls._submission_from_connection(
+                connection,
+                authority_row["submission_id"],
+                authority_row["workspace_id"],
+            )
+            revision_row = connection.execute(
+                "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+                (authority_row["workspace_id"], submission.revision_id),
+            ).fetchone()
+            if revision_row is None:
+                raise ValueError("persisted submission revision is missing")
+            command = {
+                "revision_id": submission.revision_id,
+                "revision_hash": submission.revision_hash,
+                "expected_revision_version": revision_row["record_version"],
+            }
+            return canonical_governance_payload("approval.submit", command, submission=submission)
+        if kind == "approval":
+            decision = cls._approval_from_connection(
+                connection,
+                authority_row["approval_id"],
+                authority_row["workspace_id"],
+            )
+            submission = cls._submission_from_connection(
+                connection,
+                decision.submission_id,
+                authority_row["workspace_id"],
+            )
+            command = {
+                "submission_id": decision.submission_id,
+                "revision_id": decision.revision_id,
+                "revision_hash": decision.revision_hash,
+                "expected_submission_version": submission.record_version,
+                "reason": decision.reason,
+            }
+            return canonical_governance_payload(
+                "approval.decide",
+                command,
+                submission=submission,
+                decision=decision,
+            )
+        if kind == "approval_withdrawal":
+            withdrawal = _decode_approval_withdrawal(authority_row["withdrawal_json"])
+            approval = cls._approval_from_connection(
+                connection,
+                withdrawal.approval_id,
+                authority_row["workspace_id"],
+            )
+            command = {
+                "approval_id": approval.approval_id,
+                "revision_hash": approval.revision_hash,
+                "expected_approval_version": approval.record_version,
+                "reason": withdrawal.reason,
+            }
+            return canonical_governance_payload(
+                "approval.withdraw",
+                command,
+                approval=approval,
+                withdrawal=withdrawal,
+            )
+        if kind == "publication":
+            publication = cls._publication_from_connection(
+                connection,
+                authority_row["publication_id"],
+                authority_row["workspace_id"],
+            )
+            revision = cls._revision_from_connection(
+                connection,
+                publication.revision_id,
+                authority_row["workspace_id"],
+            )
+            revision_row = connection.execute(
+                "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+                (authority_row["workspace_id"], revision.revision_id),
+            ).fetchone()
+            if revision_row is None:
+                raise ValueError("persisted publication revision is missing")
+            approval = cls._approval_from_connection(
+                connection,
+                publication.approval_id,
+                authority_row["workspace_id"],
+            )
+            submission = cls._submission_from_connection(
+                connection,
+                approval.submission_id,
+                authority_row["workspace_id"],
+            )
+            manifest = cls._manifest_from_connection(
+                connection,
+                publication.manifest_id,
+                authority_row["workspace_id"],
+            )
+            snapshot = cls._snapshot_from_connection(
+                connection,
+                publication.snapshot_id,
+                authority_row["workspace_id"],
+            )
+            eligibility = cls._eligibility_from_connection(
+                connection,
+                publication.publication_id,
+                authority_row["workspace_id"],
+            )
+            command = {
+                "revision_id": revision.revision_id,
+                "revision_hash": revision.revision_hash,
+                "approval_id": approval.approval_id,
+                "expected_revision_version": revision_row["record_version"],
+            }
+            return canonical_governance_payload(
+                "publication.publish",
+                command,
+                revision=revision,
+                approval=approval,
+                submission=submission,
+                manifest=manifest,
+                publication=publication,
+                snapshot=snapshot,
+                export_eligibility=eligibility,
+            )
+        if kind == "publication_withdrawal":
+            withdrawal = _decode_publication_withdrawal(authority_row["withdrawal_json"])
+            publication = cls._publication_from_connection(
+                connection,
+                withdrawal.publication_id,
+                authority_row["workspace_id"],
+            )
+            command = {
+                "publication_id": publication.publication_id,
+                "expected_publication_version": publication.record_version,
+                "reason": withdrawal.reason,
+                "replacement_publication_id": withdrawal.replacement_publication_id,
+            }
+            return canonical_governance_payload(
+                "publication.withdraw",
+                command,
+                publication=publication,
+                withdrawal=withdrawal,
+            )
+        supersession = _decode_supersession(authority_row["supersession_json"])
+        old = cls._publication_from_connection(
+            connection,
+            supersession.old_publication_id,
+            authority_row["workspace_id"],
+        )
+        replacement_publication = cls._publication_from_connection(
+            connection,
+            supersession.new_publication_id,
+            authority_row["workspace_id"],
+        )
+        old_revision = cls._revision_from_connection(
+            connection,
+            old.revision_id,
+            authority_row["workspace_id"],
+        )
+        replacement_revision = cls._revision_from_connection(
+            connection,
+            replacement_publication.revision_id,
+            authority_row["workspace_id"],
+        )
+        command = {
+            "publication_id": old.publication_id,
+            "replacement_publication_id": replacement_publication.publication_id,
+            "expected_publication_version": old.record_version,
+            "expected_replacement_version": replacement_publication.record_version,
+            "reason": supersession.reason,
+        }
+        return canonical_governance_payload(
+            "publication.supersede",
+            command,
+            old=old,
+            replacement=replacement_publication,
+            old_revision=old_revision,
+            replacement_revision=replacement_revision,
+            supersession=supersession,
+        )
 
     @classmethod
     def _insert_audit(
@@ -1910,6 +2130,12 @@ class SqliteGovernanceRepository:
                     "FMEA_IDEMPOTENCY_CONFLICT",
                     "Revision identity is already bound to a different payload.",
                 )
+            cls._verify_persisted_dependency_chain(
+                connection,
+                "revision",
+                prepared.scope.workspace_id,
+                prepared.revision.revision_id,
+            )
         submission_row = connection.execute(
             "SELECT * FROM fmea_approval_submissions WHERE workspace_id=? AND submission_id=?",
             (prepared.scope.workspace_id, prepared.submission.submission_id),

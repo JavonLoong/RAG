@@ -331,3 +331,94 @@ Results: Ruff check **passed**; Ruff format check reported **3 files already for
 - Publication dependency scopes now derive from their actual command idempotency keys; dependency audit/outbox/event IDs remain unique and cannot reuse the publication authority pair.
 - Direct SQL and restart replay tests exercise behavior rather than source-text assertions.
 - No Important finding remains open. The previously ledgered minor `ApprovalWithdrawalResult` placement concern remains outside this round and is unchanged.
+
+## Task 3 fix round 3
+
+### Scope
+
+This round fixes only the five scoped Important findings against reviewed head `383df3dd`: mandatory publication-lineage totality, persisted-authority-to-outbox-payload cross-binding, mandatory revision-analysis totality and analysis-hash lineage, exact authority validation before publication reuses an existing revision, and safe version-7 authority-metadata repair. It adds migration `008_fmea_governance_totality.sql`; committed migrations 005, 006, and 007 are unchanged. No Task 4+, service/transport/auth/UI work, plan/ledger modification, subagent dispatch, push, or PR was performed.
+
+### RED evidence
+
+The real-SQLite tests were added before migration 008 or repository production changes, then run as one focused matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_008_requires_total_publication_lineage_binding tests/integration/test_fmea_governance_sqlite.py::test_migration_008_requires_total_revision_analysis_binding tests/integration/test_fmea_governance_sqlite.py::test_migration_008_revision_binding_checks_authoritative_and_revision_json_hash tests/integration/test_fmea_governance_sqlite.py::test_replay_cross_binds_authority_dto_to_canonical_outbox_payload tests/integration/test_fmea_governance_sqlite.py::test_publication_rejects_existing_revision_without_exact_authority_chain tests/integration/test_fmea_governance_sqlite.py::test_migration_008_backfills_reconstructable_v7_authority_and_preserves_replay tests/integration/test_fmea_governance_sqlite.py::test_migration_008_rejects_unreconstructable_v7_authority_atomically tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Actual RED: **17 failed in 2.47s**. The direct parent inserts/deletes committed because no reverse FK made either binding mandatory; a binding could not validate `revision_json.analysis_hash`; all eight compound authority-DTO/outbox tamper cases replayed; publication accepted two corrupted existing-revision chains; version 8 did not exist, so the reconstructable fixture remained at version 7 and the unreconstructable fixture did not attempt a fail-closed upgrade; and the compatibility node still expected schema versions through 7.
+
+### GREEN design and implementation
+
+1. Migration 008 rebuilds `fmea_revisions` and `fmea_publications` with workspace-qualified, deferrable reverse FKs to their exact migration-007 binding rows. The existing forward FKs remain, so the relation is total in both directions: a parent cannot commit without a binding and a binding cannot survive without its parent. Existing checks, primary/unique keys, query indexes, immutable no-update/no-delete triggers, and parent/dependency FKs are recreated. Authority metadata is mandatory for all new parent inserts through database triggers.
+2. The revision-analysis binding trigger now normalizes and compares the binding hash with both authoritative `fmea_analyses.analysis_hash` and `revision_json.analysis_hash`, in addition to workspace, analysis ID, revision ID, and authoritative record version.
+3. Migration 008 reconstructs nullable version-7 revision/publication `idempotency_scope` and `payload_hash` only from an exact shared event-binding/audit/outbox/completed-idempotency chain. A guard rejects missing or inconsistent lineage, resource IDs, event IDs, scope, payload hash, event type/command, result IDs, versions, or replay state. Failure occurs inside the migration transaction, leaving schema/data at version 7 with no partial version-8 object. A final `pragma_foreign_key_check` guard validates the rebuilt graph before clearing SQLite's transient deferred-FK counter caused by parent-table replacement.
+4. Replay now reconstructs the expected canonical event payload from the decoded persisted authority DTO and its persisted dependencies for revision, readiness, approval submission, approval decision, approval withdrawal, publication, publication withdrawal, and supersession. It requires exact canonical equality with the shared outbox payload and requires the reconstructed governance payload hash to equal the authority hash. Publication replay continues recursively through revision/submission/approval plus manifest/snapshot/export-eligibility lineage.
+5. Publication dependency reuse now calls the same exact persisted revision-chain verifier used by restart replay before accepting an existing revision. Missing event bindings or internally corrupted outbox payloads fail the publication transaction closed.
+6. Direct SQLite tests isolate reverse-FK totality from the independent authority-required triggers, prove deletion cannot leave a valid parent, prove the three-way analysis-hash check, and exercise both reconstructable and unreconstructable real version-7 fixtures. The prior migration-007 lineage test restores the binding it temporarily removes so its transaction remains valid under the new mandatory reverse FK.
+
+### Fresh GREEN commands and exact counts
+
+Focused round-3 behavior matrix (same command as RED): **17 passed in 2.47s**.
+
+The migration-007 compatibility node affected by mandatory binding was rerun directly:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_007_enforces_workspace_qualified_publication_and_revision_lineage -q
+```
+
+Result: **1 passed in 0.21s**.
+
+Brief-specified Task 3 three-file matrix, with no deselection:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py -q
+```
+
+Final fresh result: **86 passed in 13.14s**.
+
+Brief-specified six-file persistence matrix, with no deselection:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
+```
+
+Final fresh result: **92 passed in 13.10s**.
+
+Relevant governance/snapshot contract matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_source.py -q
+```
+
+Result: **142 passed in 0.79s**.
+
+Exact additive migration compatibility node:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Result: **1 passed in 0.09s**; it asserts the meaningful exact set `[1, 2, 3, 4, 5, 6, 7, 8]`.
+
+### Static, compile, migration, and diff checks
+
+Controlled Python files were `fmea_infrastructure/governance_repository_sqlite.py`, `tests/integration/test_fmea_governance_sqlite.py`, and `tests/integration/test_fmea_propagation_sqlite.py`.
+
+```powershell
+.venv\Scripts\python.exe -m ruff check fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m ruff format --check fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+.venv\Scripts\python.exe -m compileall -q fmea_infrastructure/governance_repository_sqlite.py fmea_application core_domain/fmea tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py tests/regression/test_fmea_governance_idempotency.py
+git diff --check
+git diff --exit-code -- fmea_infrastructure/migrations/005_fmea_governance_closure.sql fmea_infrastructure/migrations/006_fmea_governance_integrity.sql fmea_infrastructure/migrations/007_fmea_governance_lineage.sql
+```
+
+Final results: Ruff check **passed**; Ruff format check reported **3 files already formatted**; compileall exited **0** without errors; `git diff --check` exited **0**; and the 005/006/007 diff check exited **0**, proving all three committed migration files are byte/diff unchanged.
+
+### Self-review, compatibility impact, and concerns
+
+- The migration preserves the legacy `fmea_rows.publication_status` CHECK and the review/risk/propagation persistence APIs. It creates no parallel audit, outbox, or idempotency authority and continues to use `fmea_audit_events`, `fmea_outbox_events`, `idempotency_records`, and `fmea_governance_event_bindings`.
+- Reverse FKs are deferrable, so repository insertion order remains atomic while transaction commit enforces totality. The migration's final FK guard proves no orphan is hidden when SQLite's transient rebuild counter is cleared.
+- Published payloads and both binding relations remain immutable. Withdrawal and supersession remain append-only.
+- Replay does not accept independent self-consistent hashes: the canonical outbox payload must now be exactly derivable from persisted typed authority state and dependencies.
+- No scoped Important finding remains open. Previously ledgered minor findings, including `ApprovalWithdrawalResult` placement, remain intentionally unchanged and outside this fix round.
