@@ -8,7 +8,6 @@ FastAPI 后端 — 合并两版
 """
 from __future__ import annotations
 
-import hashlib
 import io
 import os
 import re
@@ -43,6 +42,7 @@ from fmea_infrastructure.composition import (
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
 
 from .benchmark import run_synthetic_benchmark
+from .fmea_governance_contracts import derive_governance_cursor_secret
 from .observability import OperationLogger
 from .parsing import get_source_kind, is_supported_source, supported_source_extensions
 from .pipeline import (
@@ -449,11 +449,10 @@ def create_app(
     app.state.governance_runtimes = {}
     app.state.governance_runtime_lock = Lock()
     configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
-    app.state.governance_cursor_secret = (
-        hashlib.sha256(configured_cursor_secret.encode("utf-8")).digest()
-        if configured_cursor_secret
-        else secrets.token_bytes(32)
-    )
+    try:
+        app.state.governance_cursor_secret = derive_governance_cursor_secret(configured_cursor_secret)
+    except ValueError:
+        app.state.governance_cursor_secret = None
     app.state.review_cursor_secret = secrets.token_bytes(32)
     app.state.review_auth_error = None
     if review_auth_provider is not None:

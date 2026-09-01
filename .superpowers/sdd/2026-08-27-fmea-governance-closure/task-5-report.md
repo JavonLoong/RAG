@@ -62,5 +62,69 @@ The two existing production files outside the original interface-file list are n
 
 1. Full default Ruff on the inherited mixed legacy `api.py` remains non-clean (`69` existing findings), and a broad `--select F,E,I,UP` check also surfaces pre-existing E501 findings in `api.py` and `scripts/fmea_skill.py`. Cleaning those unrelated findings would violate the Task 5 scope; the Task 5-scoped default check and new-file format check pass.
 2. The default composition intentionally fails closed for assembly/readiness when deployment-owned typed source providers are absent. This prevents the interface from inventing source state or reaching RAG/GraphRAG, but a deployment must provide those providers before those operations can succeed.
-3. REST/CLI cursor interoperability across processes requires the same configured `FMEA_GOVERNANCE_CURSOR_SECRET`; an unset secret remains process-local on REST by design. The shared codec, binding, and inner-cursor confidentiality are covered.
+3. REST/CLI cursor interoperability across processes requires the same configured `FMEA_GOVERNANCE_CURSOR_SECRET`; an unset secret now fails with `FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID` and never falls back to a review token, an empty-derived key, or a process-local governance secret. The shared codec, binding, and inner-cursor confidentiality are covered.
 4. The interface tests use an application-service fake for command forwarding and a real SQLite-backed composition check for runtime acquisition. They do not claim a deployed external provider configuration or full end-to-end production data fixture.
+
+## Fix round 1/5 — governance transport hardening
+
+### Scope and plan
+
+- Fix base: `e1cd2ae6eb3dc9f02a52993f2a287c0593a1b10a`; the worktree was clean at that base.
+- Read and applied every Critical/Important finding in `task-5-review-round-1.md` plus the latest two Task 5 rulings in `progress.md`.
+- Work order was recursive projection/budgets, pre-runtime confirmation, dedicated cursor secret plus real cross-transport parity, typed provider injection/fail-closed mapping, then matrices/static checks/self-review.
+- No Task 6 file, migration, RAG/GraphRAG, export/UI, plugin import, subagent, push, or PR work was performed.
+
+### Finding closure and covering tests
+
+| Finding | Minimal fix | Covering behavior tests |
+| --- | --- | --- |
+| Critical 1: recursive projection leak | Replaced permissive dataclass/mapping traversal with one generic recursive JSON sanitizer: string keys only; private/sensitive markers rejected at every depth; opaque objects, cycles, non-finite numbers, absolute paths/URLs, depth >8, strings >4096 chars, containers >500 items, >10,000 nodes, and envelopes >256 KiB rejected. Snapshot, lifecycle, suggestion, history/event, REST envelopes, and CLI governance envelopes share the boundary. Fixed domain/template fields remain data-driven rather than allowlisted. | `test_projection_safe_json_rejects_recursive_private_or_unbounded_values`; `test_snapshot_lifecycle_and_event_share_recursive_projection_boundary`; REST/CLI nested-private snapshot rejection tests. |
+| Important 2: REST confirmation after runtime | Split authenticated workspace access from runtime acquisition. Every authority handler calls its confirmation gate before `_runtime_for`; path IDs are also bounded before runtime acquisition. | Seven-case `test_rest_authority_confirmation_blocks_service_call` now counts the runtime factory; `test_rest_governance_path_ids_use_shared_bound_before_runtime_creation`. |
+| Important 3: cursor secret fallback/divergence | Added one domain-separated `derive_governance_cursor_secret`; REST and CLI use only `FMEA_GOVERNANCE_CURSOR_SECRET`. Missing/blank configuration maps to `FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID`; review token and empty/process-local fallback paths were removed. | `test_governance_cursor_secret_uses_one_dedicated_required_derivation`; REST and CLI missing-secret tests; actual cross-transport parity/interoperability test. |
+| Important 4: missing provider typed seam/error | `build_default_workspace_governance_runtime(..., providers=GovernanceRepositoryProviders)` is the explicit typed seam. The default sentinel raises the stable workspace-configuration error; REST maps it to 503 and CLI to configuration exit 3. No dynamic/plugin loader was added. | Two unit composition tests plus `test_rest_default_runtime_missing_source_providers_maps_to_503_configuration` and `test_cli_default_runtime_missing_source_providers_maps_to_configuration`. |
+| Important 5: unbounded requests/responses | `PublicationBody.revision_hash` is required; REST bodies and application commands use 256-char IDs/500-char reasons; REST path IDs are bounded; existing 256 KiB POST middleware remains authoritative; every governance response uses the 256 KiB recursive envelope budget. | strict/bounded request contract test; CLI ID/reason dispatch test; total envelope budget test; REST path-ID pre-runtime test. |
+| Important 6: false REST parity | Added a single test using the same fake application service and configured secret through actual FastAPI `TestClient` and actual CLI `main`. It compares snapshot data and history item ordering, sends a REST cursor to CLI, then sends the CLI-issued cursor back to REST. | `test_rest_and_cli_snapshot_history_parity_and_cursor_interoperability`. |
+
+### RED and mutation evidence
+
+All mutations were temporary and restored immediately.
+
+| RED command/failure | Evidence that the test detects the finding |
+| --- | --- |
+| Unit projection/request focused run | `9 failed, 5 deselected`: missing required publication hash, absent recursive sanitizer, nested lifecycle/snapshot/event leaks, and absent total response budget. |
+| REST confirmation focused run | `1 failed, 42 deselected`: runtime factory count was `1`, expected `0`. |
+| Dedicated-secret REST/CLI/unit focused run | `3 failed`: derivation import absent; REST returned 400 instead of 503; CLI used review-token fallback and exited 0 instead of config exit 3. |
+| Typed-provider focused run | explicit `providers=` seam raised unexpected-keyword `TypeError`; the valid fail-closed mutation later made REST emit `FMEA_GOVERNANCE_STORAGE_UNAVAILABLE` and CLI exit 7 (`2 failed`). |
+| REST/CLI unsafe snapshot focused run | `2 failed`: REST leaked an uncaught projection `ValueError`; CLI mapped it to generic workspace config exit 3 instead of governance storage exit 7. |
+| CLI ID/reason bounds focused run | `1 failed, 48 deselected`: a 501-char reason dispatched successfully instead of failing request validation. |
+| REST path-ID bounds focused run | `1 failed`: a 257-char revision ID acquired runtime and returned 503 instead of request-invalid 400. |
+| Cursor interoperability mutation | Temporarily returned a different CLI signing key; the actual REST-to-CLI cursor test failed (`1 failed`) with CLI exit 2 / `FMEA_GOVERNANCE_CURSOR_INVALID`; production key handling was restored. |
+| Missing-provider mutation | Temporarily restored the generic `ValueError`; REST kept HTTP 503 but wrong storage code, while CLI exited 7 instead of 3 (`2 failed`); typed configuration error was restored. |
+
+### GREEN commands and outputs
+
+- Three Task 5 files: `121 passed in 4.09s`.
+- Six-file transport matrix from the Task 5 brief: `176 passed in 11.77s`.
+- Governance service/source/SQLite focused suite: `191 passed in 25.62s`.
+- Scoped Ruff check across the eight changed Task 5 implementation/test files excluding legacy `api.py`: `All checks passed!`.
+- Ruff format check on seven safely format-scoped governance/application/composition/test files: `7 files already formatted`.
+- `python -m compileall -q api_server/current_console/chroma_rag_poc/src fmea_application fmea_infrastructure scripts tests`: exit `0`.
+- `git diff --check`: exit `0`; only expected LF-to-CRLF working-copy warnings were emitted.
+
+### Fix-round changed files and necessity
+
+- `fmea_governance_contracts.py`: required recursive sanitizer, shared byte budget, bounded bodies, required publication revision hash, and shared secret derivation.
+- `routes_fmea_governance_v1.py`: required pre-runtime confirmation/path validation, safe projection error mapping, runtime acquisition split, and missing-secret mapping.
+- `api.py`: necessary production REST secret configuration seam; removes random governance fallback.
+- `fmea_application/governance_contracts.py`: necessary transport-neutral ID/reason bounds so CLI and REST commands share conventions.
+- `fmea_infrastructure/composition.py`: necessary typed provider injection seam and fail-closed configuration error.
+- `scripts/fmea_skill.py`: necessary dedicated-secret use, safe governance envelope/output mapping, and no review-token fallback.
+- The three existing Task 5 test files: direct behavior, RED, cross-transport, and regression coverage. No new test file or shared fake module was needed.
+- This report: required round evidence and acceptance record. No migration file was changed or added.
+
+### Open concerns after fix round 1
+
+1. Deployment must explicitly provide typed source query providers before assemble/readiness can succeed; absence intentionally returns REST 503 / CLI configuration exit 3.
+2. Deployment must set the same nonblank `FMEA_GOVERNANCE_CURSOR_SECRET` for REST and CLI history interoperability. Rotation invalidates outstanding cursors; no multi-key rotation scheme is in Task 5 scope.
+3. The sanitizer is intentionally conservative (including recursive private-key markers and path/URL rejection). Future domain/template extensions must remain projection-safe JSON and within depth/container/node/string/256 KiB budgets.
+4. Legacy `api.py` and non-governance portions of `scripts/fmea_skill.py` were not globally reformatted; scoped Ruff passed, and unrelated legacy cleanup remains outside Task 5.

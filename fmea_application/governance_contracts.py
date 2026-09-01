@@ -35,12 +35,18 @@ if TYPE_CHECKING:
     from .revision_assembler import PublicationReadinessReport
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
+_MAX_ID_LENGTH = 256
+_MAX_REASON_LENGTH = 500
 
 
 def _text(value: object, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} must not be empty")
-    return value.strip()
+    normalized = value.strip()
+    maximum = _MAX_REASON_LENGTH if field_name == "reason" else _MAX_ID_LENGTH
+    if len(normalized) > maximum:
+        raise ValueError(f"{field_name} is too long")
+    return normalized
 
 
 def _hash(value: object, field_name: str) -> str:

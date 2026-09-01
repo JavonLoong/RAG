@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from chroma_rag_poc.api import create_app
-from chroma_rag_poc.fmea_governance_contracts import encode_history_cursor
+from chroma_rag_poc.fmea_governance_contracts import derive_governance_cursor_secret, encode_history_cursor
 from chroma_rag_poc.workspace_registry import WorkspaceNotFoundError
 from fastapi.testclient import TestClient
 
@@ -293,6 +293,7 @@ def _client() -> tuple[TestClient, FakeGovernanceService, FakeGovernanceAssistan
     app = create_app(review_auth_provider=FakeAuth())
     app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: SimpleNamespace(workspace_id=workspace_id))
     app.state.governance_runtime_factory = lambda _workspace: runtime
+    app.state.governance_cursor_secret = derive_governance_cursor_secret("task5-integration-cursor-secret")
     return TestClient(app, client=("127.0.0.1", 50000)), service, assistance
 
 
@@ -522,11 +523,21 @@ def test_rest_authority_commands_call_exact_application_commands(
 )
 def test_rest_authority_confirmation_blocks_service_call(path: str, body: dict[str, object], code: str) -> None:
     client, service, _ = _client()
+    runtime = client.app.state.governance_runtime_factory(SimpleNamespace(workspace_id="ws-1"))
+    factory_calls = 0
+
+    def counted_factory(_workspace: object) -> object:
+        nonlocal factory_calls
+        factory_calls += 1
+        return runtime
+
+    client.app.state.governance_runtime_factory = counted_factory
     with client:
         response = client.post(path, headers=_headers(), json=body)
     assert response.status_code == 422
     assert response.json()["error"]["code"] == code
     assert service.commands == {}
+    assert factory_calls == 0
 
 
 @pytest.mark.parametrize(
@@ -665,13 +676,26 @@ def test_rest_publication_reads_and_history_are_real_service_operations() -> Non
     assert service.calls == ["get_publication", "list_publication_events"]
 
 
+def test_rest_snapshot_projection_rejects_nested_private_output_without_leaking_it() -> None:
+    client, service, _ = _client()
+    service.snapshot.rows = ({"domain_extension": {"provider_output": "sensitive-provider-result"}},)
+    with client:
+        response = client.get(
+            "/api/v1/fmea/publications/publication-1/snapshot",
+            headers={"Authorization": f"Bearer {TOKEN}"},
+        )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE"
+    assert "sensitive-provider-result" not in response.text
+
+
 def test_publish_requires_explicit_confirmation_before_service_or_storage() -> None:
     client, service, _ = _client()
     with client:
         response = client.post(
             "/api/v1/fmea/revisions/revision-1/publications",
             headers=_headers(),
-            json={"approval_id": "approval-1", "confirm_publication": False},
+            json={"approval_id": "approval-1", "revision_hash": REVISION_HASH, "confirm_publication": False},
         )
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "FMEA_GOVERNANCE_PUBLICATION_CONFIRMATION_REQUIRED"
@@ -732,6 +756,27 @@ def test_rest_validation_uses_governance_problem_code_and_rejects_provider_overr
     assert response.status_code == 400
     assert response.json()["code"] == "FMEA_GOVERNANCE_REQUEST_INVALID"
     assert "attacker-controlled" not in response.text
+
+
+def test_rest_governance_path_ids_use_shared_bound_before_runtime_creation() -> None:
+    client, _, _ = _client()
+    runtime = client.app.state.governance_runtime_factory(SimpleNamespace(workspace_id="ws-1"))
+    factory_calls = 0
+
+    def counted_factory(_workspace: object) -> object:
+        nonlocal factory_calls
+        factory_calls += 1
+        return runtime
+
+    client.app.state.governance_runtime_factory = counted_factory
+    with client:
+        response = client.get(
+            f"/api/v1/fmea/revisions/{'r' * 257}",
+            headers={"Authorization": f"Bearer {TOKEN}"},
+        )
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "FMEA_GOVERNANCE_REQUEST_INVALID"
+    assert factory_calls == 0
 
 
 def test_revision_etag_uses_repository_backed_revision_version() -> None:
@@ -798,6 +843,26 @@ def test_history_uses_shared_projection_and_hides_repository_cursor() -> None:
     assert response.json()["data"]["next_cursor"]
     assert "internal|event-1" not in response.text
     assert service.history_calls == 1
+
+
+def test_rest_history_requires_dedicated_cursor_secret_before_service_call(monkeypatch) -> None:
+    service = FakeGovernanceService()
+    assistance = FakeGovernanceAssistanceService()
+    runtime = SimpleNamespace(service=service, assistance_service=assistance, repository=object())
+    monkeypatch.delenv("FMEA_GOVERNANCE_CURSOR_SECRET", raising=False)
+    app = create_app(review_auth_provider=FakeAuth(), governance_runtime_factory=lambda _workspace: runtime)
+    app.state.workspace_registry = SimpleNamespace(get=lambda workspace_id: SimpleNamespace(workspace_id=workspace_id))
+    client = TestClient(app, client=("127.0.0.1", 50000))
+    assert app.state.governance_cursor_secret is None
+    with client:
+        response = client.get(
+            "/api/v1/fmea/revisions/revision-1/approval-events",
+            headers={"Authorization": f"Bearer {TOKEN}"},
+            params={"limit": 1},
+        )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID"
+    assert service.history_calls == 0
 
 
 def test_history_cursor_is_bound_to_workspace_resource_direction_page_and_filter() -> None:
@@ -879,3 +944,33 @@ def test_rest_runtime_acquisition_delegates_to_the_application_service(monkeypat
     assert response.status_code == 200
     assert response.json()["data"]["revision_id"] == "revision-1"
     assert seen_workspaces == ["ws-1"]
+
+
+def test_rest_default_runtime_missing_source_providers_maps_to_503_configuration(tmp_path) -> None:
+    from chroma_rag_poc.workspace_registry import WorkspaceConfig
+
+    from core_domain.query_contracts import QueryMode
+
+    workspace = WorkspaceConfig(
+        workspace_id="ws-1",
+        chroma_persist_dir=tmp_path / "chroma",
+        chroma_collection="fmea",
+        graph_db_path=tmp_path / "graph.sqlite3",
+        fmea_db_path=tmp_path / "fmea.sqlite3",
+        fmea_template_registry_path=tmp_path / "templates",
+        supported_modes=frozenset({QueryMode.VECTOR}),
+        default_mode=QueryMode.VECTOR,
+    )
+    app = create_app(review_auth_provider=FakeAuth())
+    app.state.workspace_registry = SimpleNamespace(get=lambda _workspace_id: workspace)
+    client = TestClient(app, client=("127.0.0.1", 50000))
+
+    with client:
+        response = client.post(
+            "/api/v1/fmea/analyses/analysis-1/revisions",
+            headers=_headers(1),
+            json={"confirm_human_approval": True},
+        )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID"

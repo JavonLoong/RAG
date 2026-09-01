@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,12 +22,122 @@ def test_governance_requests_are_strict_and_bounded() -> None:
     with pytest.raises(ValidationError):
         PublicationBody.model_validate({"approval_id": "approval-1", "unexpected": "override"})
     with pytest.raises(ValidationError):
+        PublicationBody.model_validate({"approval_id": "approval-1", "confirm_publication": True})
+    with pytest.raises(ValidationError):
+        PublicationBody.model_validate({
+            "approval_id": "a" * 257,
+            "revision_hash": "sha256:" + "a" * 64,
+            "confirm_publication": True,
+        })
+    with pytest.raises(ValidationError):
         SupersessionBody.model_validate({
             "replacement_publication_id": "publication-2",
             "replacement_record_version": 0,
             "reason": "replace",
             "confirm_supersession": True,
         })
+
+
+@pytest.mark.parametrize(
+    "unsafe_value",
+    [
+        {"safe": {"provider_output": "raw provider response"}},
+        {"safe": {"_private": "hidden"}},
+        {"safe": object()},
+        {"safe": [[[[[[[[["too deep"]]]]]]]]]},
+        {"safe": "x" * 4097},
+        {"safe": list(range(501))},
+        {f"field_{index}": list(range(20)) for index in range(500)},
+    ],
+)
+def test_projection_safe_json_rejects_recursive_private_or_unbounded_values(unsafe_value: object) -> None:
+    from chroma_rag_poc.fmea_governance_contracts import projection_safe_json
+
+    with pytest.raises(ValueError):
+        projection_safe_json(unsafe_value)
+
+
+def test_snapshot_lifecycle_and_event_share_recursive_projection_boundary() -> None:
+    from chroma_rag_poc.fmea_governance_contracts import event_data, publication_data, snapshot_data
+
+    publication = SimpleNamespace(
+        publication_id="publication-1",
+        workspace_id="ws-1",
+        analysis_id="analysis-1",
+        revision_id="revision-1",
+        revision_hash="sha256:" + "a" * 64,
+        approval_id="approval-1",
+        manifest_id="manifest-1",
+        manifest_hash="sha256:" + "b" * 64,
+        snapshot_id="snapshot-1",
+        snapshot_hash="sha256:" + "c" * 64,
+        audit_chain_head="sha256:" + "d" * 64,
+        publisher_actor_id="human-1",
+        record_version=1,
+        created_at="2026-08-30T00:00:00Z",
+    )
+    lifecycle = SimpleNamespace(
+        publication=publication,
+        effective_status="withdrawn",
+        withdrawal={"nested": {"private_path": "C:/private/source.db"}},
+        supersession=None,
+    )
+    snapshot = SimpleNamespace(
+        schema_version="graphrag.fmea.normalized-snapshot.v1",
+        snapshot_id="snapshot-1",
+        workspace_id="ws-1",
+        analysis_id="analysis-1",
+        revision_id="revision-1",
+        revision_hash="sha256:" + "a" * 64,
+        publication_id="publication-1",
+        manifest_id="manifest-1",
+        rows=({"domain_extension": {"credential": "leak"}},),
+        risk_records=(),
+        propagation=None,
+        evidence_summary=(),
+        decision_summary=(),
+        version_manifest={},
+        unresolved_items=(),
+        audit_summary={},
+        row_count=1,
+        snapshot_hash="sha256:" + "c" * 64,
+        created_at="2026-08-30T00:00:00Z",
+    )
+    event = SimpleNamespace(
+        event_id="event-1",
+        occurred_at_server="2026-08-30T00:00:00Z",
+        workspace_id="ws-1",
+        actor_id="human-1",
+        actor_type="human",
+        actor_roles=("approver",),
+        command="fmea.approval.submit",
+        reason="x" * 4097,
+        analysis_id="analysis-1",
+        row_id="revision-1",
+        decision_id=None,
+        expected_record_version=1,
+        applied_record_version=2,
+        after_hash="sha256:" + "e" * 64,
+    )
+
+    with pytest.raises(ValueError):
+        publication_data(lifecycle)
+    with pytest.raises(ValueError):
+        snapshot_data(snapshot)
+    with pytest.raises(ValueError):
+        event_data(event)
+
+
+def test_governance_envelope_has_hard_total_byte_budget() -> None:
+    from chroma_rag_poc.fmea_governance_contracts import governance_envelope
+
+    with pytest.raises(ValueError):
+        governance_envelope(
+            "publication_snapshot",
+            {"rows": ["x" * 4096] * 65},
+            request_id="request-1",
+            trace_id="trace-1",
+        )
 
 
 def test_revision_projection_uses_repository_version_not_analysis_version() -> None:
@@ -118,6 +229,87 @@ def test_default_governance_runtime_acquires_the_application_service_from_sqlite
     assert runtime.service._repository is runtime.repository
 
 
+def test_default_governance_runtime_missing_providers_fails_closed_as_configuration(tmp_path) -> None:
+    from chroma_rag_poc.workspace_registry import WorkspaceConfig
+    from fmea_governance_fixtures import make_governance_actor
+
+    from core_domain.query_contracts import QueryMode
+    from fmea_application.governance_contracts import AssembleRevisionCommand, RevisionAssemblyRequest
+    from fmea_application.governance_service import GovernanceServiceError
+    from fmea_infrastructure.composition import build_default_workspace_governance_runtime
+
+    workspace = WorkspaceConfig(
+        workspace_id="ws-1",
+        chroma_persist_dir=tmp_path / "chroma",
+        chroma_collection="fmea",
+        graph_db_path=tmp_path / "graph.sqlite3",
+        fmea_db_path=tmp_path / "fmea.sqlite3",
+        fmea_template_registry_path=tmp_path / "templates",
+        supported_modes=frozenset({QueryMode.VECTOR}),
+        default_mode=QueryMode.VECTOR,
+    )
+    runtime = build_default_workspace_governance_runtime(workspace)
+    command = AssembleRevisionCommand(
+        RevisionAssemblyRequest("analysis-1", None, 1),
+        "00000000-0000-4000-8000-0000000005ab",
+    )
+
+    with pytest.raises(GovernanceServiceError) as raised:
+        runtime.service.assemble(command, make_governance_actor(roles=frozenset({"reviewer"})))
+    assert raised.value.code == "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID"
+
+
+def test_default_governance_runtime_accepts_only_explicit_typed_provider_injection(tmp_path) -> None:
+    from chroma_rag_poc.workspace_registry import WorkspaceConfig
+    from fmea_governance_fixtures import make_governance_actor
+
+    from core_domain.query_contracts import QueryMode
+    from fmea_application.governance_contracts import AssembleRevisionCommand, RevisionAssemblyRequest
+    from fmea_application.governance_service import GovernanceServiceError
+    from fmea_application.ports import GovernanceRepositoryProviders
+    from fmea_infrastructure.composition import build_default_workspace_governance_runtime
+
+    class InjectedProviders:
+        def get_analysis(self, _analysis_id: str, _workspace_id: str) -> object:
+            raise GovernanceServiceError(
+                "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID", "typed provider was invoked"
+            )
+
+        list_rows = list_risk_records = get_current_graph = list_evidence_packs = get_artifacts = get_analysis
+        list_active_run_ids = list_human_acknowledgements = get_provenance = get_analysis
+
+    provider = InjectedProviders()
+    providers = GovernanceRepositoryProviders(
+        analysis=provider,
+        review=provider,
+        risk=provider,
+        propagation=provider,
+        evidence=provider,
+        artifacts=provider,
+        runs=provider,
+        acknowledgements=provider,
+        retrieval=provider,
+    )
+    workspace = WorkspaceConfig(
+        workspace_id="ws-1",
+        chroma_persist_dir=tmp_path / "chroma",
+        chroma_collection="fmea",
+        graph_db_path=tmp_path / "graph.sqlite3",
+        fmea_db_path=tmp_path / "fmea.sqlite3",
+        fmea_template_registry_path=tmp_path / "templates",
+        supported_modes=frozenset({QueryMode.VECTOR}),
+        default_mode=QueryMode.VECTOR,
+    )
+    runtime = build_default_workspace_governance_runtime(workspace, providers=providers)
+    command = AssembleRevisionCommand(
+        RevisionAssemblyRequest("analysis-1", None, 1),
+        "00000000-0000-4000-8000-0000000005ab",
+    )
+
+    with pytest.raises(GovernanceServiceError, match="typed provider was invoked"):
+        runtime.service.assemble(command, make_governance_actor(roles=frozenset({"reviewer"})))
+
+
 def test_history_cursor_is_signed_bound_and_does_not_expose_inner_cursor() -> None:
     from chroma_rag_poc.fmea_governance_contracts import decode_history_cursor, encode_history_cursor
 
@@ -182,6 +374,17 @@ def test_history_cursor_is_signed_bound_and_does_not_expose_inner_cursor() -> No
             page_size=25,
             filter_hash=filter_hash,
         )
+
+
+def test_governance_cursor_secret_uses_one_dedicated_required_derivation() -> None:
+    from chroma_rag_poc.fmea_governance_contracts import derive_governance_cursor_secret
+
+    configured = "task5-dedicated-cursor-secret-with-sufficient-entropy"
+    assert derive_governance_cursor_secret(configured) == derive_governance_cursor_secret(configured)
+    assert derive_governance_cursor_secret(configured) != hashlib.sha256(configured.encode("utf-8")).digest()
+    for missing in (None, "", "   "):
+        with pytest.raises(ValueError, match="FMEA_GOVERNANCE_CURSOR_SECRET"):
+            derive_governance_cursor_secret(missing)
 
 
 def test_success_envelope_has_shared_schema_and_trace_metadata() -> None:

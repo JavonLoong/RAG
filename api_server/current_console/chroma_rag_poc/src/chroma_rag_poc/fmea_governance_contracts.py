@@ -1,6 +1,6 @@
 """Shared, projection-safe contracts for the FMEA governance adapters."""
 
-# ruff: noqa: TRY003
+# ruff: noqa: C901, TRY003, TRY004
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ import binascii
 import hashlib
 import hmac
 import json
+import math
+import re
 import secrets
-from dataclasses import fields, is_dataclass
-from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
@@ -22,6 +22,37 @@ EMPTY_FILTER_HASH = hashlib.sha256(b"{}").hexdigest()
 _CURSOR_MAX_BYTES = 4096
 _CURSOR_FORMAT_VERSION = 1
 _CURSOR_NONCE_BYTES = 16
+_ID_MAX_CHARS = 256
+_REASON_MAX_CHARS = 500
+_PROJECTION_MAX_DEPTH = 8
+_PROJECTION_MAX_CONTAINER_ITEMS = 500
+_PROJECTION_MAX_NODES = 10_000
+_PROJECTION_MAX_STRING_CHARS = 4096
+_PROJECTION_MAX_BYTES = 256 * 1024
+_PRIVATE_KEY_MARKERS = frozenset({
+    "accesstoken",
+    "apikey",
+    "authorization",
+    "credential",
+    "databasepath",
+    "password",
+    "passwd",
+    "privatekey",
+    "privatepath",
+    "prompt",
+    "providererror",
+    "provideroutput",
+    "rawoutput",
+    "secret",
+    "sql",
+})
+_URI_OR_ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*://|[A-Za-z]:[\\/]|/)")
+
+
+def derive_governance_cursor_secret(configured: str | None) -> bytes:
+    if not isinstance(configured, str) or not configured.strip():
+        raise ValueError("FMEA_GOVERNANCE_CURSOR_SECRET is required")
+    return hashlib.sha256(b"fmea-governance-cursor-secret\x00" + configured.encode("utf-8")).digest()
 
 
 class _StrictRequest(BaseModel):
@@ -29,45 +60,45 @@ class _StrictRequest(BaseModel):
 
 
 class RevisionAssemblyBody(_StrictRequest):
-    parent_revision_id: StrictStr | None = None
-    parent_revision_hash: StrictStr | None = None
+    parent_revision_id: StrictStr | None = Field(default=None, min_length=1, max_length=_ID_MAX_CHARS)
+    parent_revision_hash: StrictStr | None = Field(default=None, min_length=1, max_length=_ID_MAX_CHARS)
     confirm_human_approval: StrictBool = False
 
 
 class ApprovalSubmissionBody(_StrictRequest):
-    revision_hash: StrictStr
+    revision_hash: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
     confirm_human_approval: StrictBool = False
 
 
 class ApprovalDecisionBody(_StrictRequest):
-    revision_id: StrictStr
-    revision_hash: StrictStr
-    reason: StrictStr
+    revision_id: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
+    revision_hash: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
+    reason: StrictStr = Field(min_length=1, max_length=_REASON_MAX_CHARS)
     confirm_human_approval: StrictBool = False
 
 
 class ApprovalWithdrawalBody(_StrictRequest):
-    revision_hash: StrictStr
-    reason: StrictStr
+    revision_hash: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
+    reason: StrictStr = Field(min_length=1, max_length=_REASON_MAX_CHARS)
     confirm_approval_withdrawal: StrictBool = False
 
 
 class PublicationBody(_StrictRequest):
-    approval_id: StrictStr
-    revision_hash: StrictStr | None = None
+    approval_id: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
+    revision_hash: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
     confirm_publication: StrictBool = False
 
 
 class PublicationWithdrawalBody(_StrictRequest):
-    reason: StrictStr
-    replacement_publication_id: StrictStr | None = None
+    reason: StrictStr = Field(min_length=1, max_length=_REASON_MAX_CHARS)
+    replacement_publication_id: StrictStr | None = Field(default=None, min_length=1, max_length=_ID_MAX_CHARS)
     confirm_publication_withdrawal: StrictBool = False
 
 
 class SupersessionBody(_StrictRequest):
-    replacement_publication_id: StrictStr
+    replacement_publication_id: StrictStr = Field(min_length=1, max_length=_ID_MAX_CHARS)
     replacement_record_version: StrictInt = Field(ge=1)
-    reason: StrictStr
+    reason: StrictStr = Field(min_length=1, max_length=_REASON_MAX_CHARS)
     confirm_supersession: StrictBool = False
 
 
@@ -262,18 +293,66 @@ class GovernanceEnvelope(BaseModel):
     data: Any
 
 
-def _jsonable(value: object) -> object:
-    if isinstance(value, Enum):
-        return value.value
-    if is_dataclass(value):
-        return {field.name: _jsonable(getattr(value, field.name)) for field in fields(value)}
-    if isinstance(value, dict):
-        return {str(key): _jsonable(item) for key, item in value.items()}
-    if hasattr(value, "items") and callable(value.items):
-        return {str(key): _jsonable(item) for key, item in value.items()}  # type: ignore[union-attr]
-    if isinstance(value, tuple | list):
-        return [_jsonable(item) for item in value]
-    return value
+def projection_safe_json(value: object) -> object:
+    """Normalize generic governance projection values through one bounded JSON boundary."""
+
+    nodes = 0
+    active: set[int] = set()
+
+    def visit(item: object, depth: int) -> object:
+        nonlocal nodes
+        nodes += 1
+        if nodes > _PROJECTION_MAX_NODES:
+            raise ValueError("governance projection has too many values")
+        if depth > _PROJECTION_MAX_DEPTH:
+            raise ValueError("governance projection is too deeply nested")
+        if item is None or isinstance(item, bool | int):
+            return item
+        if isinstance(item, float):
+            if not math.isfinite(item):
+                raise ValueError("governance projection contains a non-finite number")
+            return item
+        if isinstance(item, str):
+            if len(item) > _PROJECTION_MAX_STRING_CHARS:
+                raise ValueError("governance projection string is too long")
+            if _URI_OR_ABSOLUTE_PATH.match(item):
+                raise ValueError("governance projection contains a private location")
+            return item
+        if not isinstance(item, dict | list | tuple):
+            raise ValueError("governance projection contains a non-JSON value")
+        identity = id(item)
+        if identity in active:
+            raise ValueError("governance projection contains a cycle")
+        if len(item) > _PROJECTION_MAX_CONTAINER_ITEMS:
+            raise ValueError("governance projection container is too large")
+        active.add(identity)
+        try:
+            if isinstance(item, dict):
+                result: dict[str, object] = {}
+                for key, nested in item.items():
+                    if not isinstance(key, str) or not key or len(key) > _ID_MAX_CHARS:
+                        raise ValueError("governance projection key is invalid")
+                    normalized = "".join(character for character in key.lower() if character.isalnum())
+                    if key.startswith("_") or any(marker in normalized for marker in _PRIVATE_KEY_MARKERS):
+                        raise ValueError("governance projection contains a private key")
+                    result[key] = visit(nested, depth + 1)
+                return result
+            return [visit(nested, depth + 1) for nested in item]
+        finally:
+            active.remove(identity)
+
+    normalized = visit(value, 0)
+    encoded = json.dumps(normalized, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+    if len(encoded) > _PROJECTION_MAX_BYTES:
+        raise ValueError("governance projection exceeds the response byte budget")
+    return normalized
+
+
+def _safe_model(model_type: type[BaseModel], payload: dict[str, object]) -> BaseModel:
+    normalized = projection_safe_json(payload)
+    if not isinstance(normalized, dict):
+        raise ValueError("governance projection must be a JSON object")
+    return model_type.model_validate(normalized)
 
 
 def _revision_versions(value: object) -> list[RevisionVersionData]:
@@ -349,22 +428,28 @@ def readiness_data(value: object, *, record_version: int) -> ReadinessData:
 
 
 def readiness_suggestion_data(value: object) -> ReadinessSuggestionData:
-    payload = _jsonable(getattr(value, "payload", {}))
+    payload = projection_safe_json(getattr(value, "payload", {}))
     if not isinstance(payload, dict):
         payload = {}
     checklist = payload.get("checklist", getattr(value, "checklist", ()))
-    return ReadinessSuggestionData(
-        suggestion_id=value.suggestion_id,
-        run_id=value.run_id,
-        target_type=getattr(value, "target_type", "fmea_revision_readiness"),
-        target_id=getattr(value, "target_id", getattr(value, "target", "")),
-        target_record_version=value.target_record_version,
-        ready=payload.get("ready", getattr(value, "ready", False)),
-        blocking_codes=list(payload.get("blocking_codes", getattr(value, "blocking_codes", ()))),
-        checklist=[dict(item) for item in checklist],
-        applied=value.applied,
-        trace_id=value.trace_id,
-        created_at=getattr(value, "created_at", ""),
+    return cast(
+        ReadinessSuggestionData,
+        _safe_model(
+            ReadinessSuggestionData,
+            {
+                "suggestion_id": value.suggestion_id,
+                "run_id": value.run_id,
+                "target_type": getattr(value, "target_type", "fmea_revision_readiness"),
+                "target_id": getattr(value, "target_id", getattr(value, "target", "")),
+                "target_record_version": value.target_record_version,
+                "ready": payload.get("ready", getattr(value, "ready", False)),
+                "blocking_codes": list(payload.get("blocking_codes", getattr(value, "blocking_codes", ()))),
+                "checklist": [dict(item) for item in checklist],
+                "applied": value.applied,
+                "trace_id": value.trace_id,
+                "created_at": getattr(value, "created_at", ""),
+            },
+        ),
     )
 
 
@@ -422,97 +507,133 @@ def supersession_result_data(value: object) -> GovernanceMutationData:
 
 def publication_data(value: object) -> PublicationData:
     publication = value.publication
-    return PublicationData(
-        publication_id=publication.publication_id,
-        workspace_id=publication.workspace_id,
-        analysis_id=publication.analysis_id,
-        revision_id=publication.revision_id,
-        revision_hash=publication.revision_hash,
-        approval_id=publication.approval_id,
-        manifest_id=publication.manifest_id,
-        manifest_hash=publication.manifest_hash,
-        snapshot_id=publication.snapshot_id,
-        snapshot_hash=publication.snapshot_hash,
-        audit_chain_head=publication.audit_chain_head,
-        publisher_actor_id=publication.publisher_actor_id,
-        record_version=publication.record_version,
-        created_at=publication.created_at,
-        effective_status=getattr(value.effective_status, "value", value.effective_status),
-        withdrawal=None if value.withdrawal is None else dict(_jsonable(value.withdrawal)),
-        supersession=None if value.supersession is None else dict(_jsonable(value.supersession)),
+    withdrawal_fields = (
+        "withdrawal_id",
+        "publication_id",
+        "replacement_publication_id",
+        "actor_id",
+        "reason",
+        "created_at",
+    )
+    supersession_fields = (
+        "supersession_id",
+        "old_publication_id",
+        "new_publication_id",
+        "actor_id",
+        "reason",
+        "created_at",
+    )
+
+    def lifecycle_record(record: object | None, names: tuple[str, ...]) -> dict[str, object] | None:
+        if record is None:
+            return None
+        if isinstance(record, dict):
+            return record
+        return {name: getattr(record, name) for name in names}
+
+    return cast(
+        PublicationData,
+        _safe_model(
+            PublicationData,
+            {
+                "publication_id": publication.publication_id,
+                "workspace_id": publication.workspace_id,
+                "analysis_id": publication.analysis_id,
+                "revision_id": publication.revision_id,
+                "revision_hash": publication.revision_hash,
+                "approval_id": publication.approval_id,
+                "manifest_id": publication.manifest_id,
+                "manifest_hash": publication.manifest_hash,
+                "snapshot_id": publication.snapshot_id,
+                "snapshot_hash": publication.snapshot_hash,
+                "audit_chain_head": publication.audit_chain_head,
+                "publisher_actor_id": publication.publisher_actor_id,
+                "record_version": publication.record_version,
+                "created_at": publication.created_at,
+                "effective_status": getattr(value.effective_status, "value", value.effective_status),
+                "withdrawal": lifecycle_record(value.withdrawal, withdrawal_fields),
+                "supersession": lifecycle_record(value.supersession, supersession_fields),
+            },
+        ),
     )
 
 
 def snapshot_data(value: object) -> SnapshotData:
-    data = (
-        {
-            field.name: _jsonable(getattr(value, field.name))
-            for field in fields(value)
-            if field.name != "_source_attestation"
-        }
-        if is_dataclass(value)
-        else {
-            field: _jsonable(getattr(value, field))
-            for field in (
-                "schema_version",
-                "snapshot_id",
-                "workspace_id",
-                "analysis_id",
-                "revision_id",
-                "revision_hash",
-                "publication_id",
-                "manifest_id",
-                "rows",
-                "risk_records",
-                "propagation",
-                "evidence_summary",
-                "decision_summary",
-                "version_manifest",
-                "unresolved_items",
-                "audit_summary",
-                "row_count",
-                "snapshot_hash",
-                "created_at",
-            )
-        }
+    names = (
+        "schema_version",
+        "snapshot_id",
+        "workspace_id",
+        "analysis_id",
+        "revision_id",
+        "revision_hash",
+        "publication_id",
+        "manifest_id",
+        "rows",
+        "risk_records",
+        "propagation",
+        "evidence_summary",
+        "decision_summary",
+        "version_manifest",
+        "unresolved_items",
+        "audit_summary",
+        "row_count",
+        "snapshot_hash",
+        "created_at",
     )
-    return SnapshotData.model_validate(data)
+    data = {name: getattr(value, name) for name in names}
+    return cast(SnapshotData, _safe_model(SnapshotData, data))
 
 
 def event_data(value: object) -> GovernanceEventData:
-    return GovernanceEventData(
-        event_id=value.event_id,
-        occurred_at_server=value.occurred_at_server,
-        workspace_id=value.workspace_id,
-        actor_id=value.actor_id,
-        actor_type=getattr(value.actor_type, "value", value.actor_type),
-        actor_roles=list(value.actor_roles),
-        command=value.command,
-        reason=value.reason,
-        analysis_id=value.analysis_id,
-        row_id=value.row_id,
-        decision_id=value.decision_id,
-        expected_record_version=value.expected_record_version,
-        applied_record_version=value.applied_record_version,
-        after_hash=value.after_hash,
+    return cast(
+        GovernanceEventData,
+        _safe_model(
+            GovernanceEventData,
+            {
+                "event_id": value.event_id,
+                "occurred_at_server": value.occurred_at_server,
+                "workspace_id": value.workspace_id,
+                "actor_id": value.actor_id,
+                "actor_type": getattr(value.actor_type, "value", value.actor_type),
+                "actor_roles": list(value.actor_roles),
+                "command": value.command,
+                "reason": value.reason,
+                "analysis_id": value.analysis_id,
+                "row_id": value.row_id,
+                "decision_id": value.decision_id,
+                "expected_record_version": value.expected_record_version,
+                "applied_record_version": value.applied_record_version,
+                "after_hash": value.after_hash,
+            },
+        ),
     )
 
 
 def history_data(events: object, *, next_cursor: str | None, limit: int) -> GovernanceHistoryPageData:
-    return GovernanceHistoryPageData(
-        items=[event_data(item) for item in events],
-        next_cursor=next_cursor,
-        limit=limit,
+    return cast(
+        GovernanceHistoryPageData,
+        _safe_model(
+            GovernanceHistoryPageData,
+            {
+                "items": [event_data(item).model_dump(mode="json") for item in events],
+                "next_cursor": next_cursor,
+                "limit": limit,
+            },
+        ),
     )
 
 
 def governance_envelope(resource_type: str, data: object, *, request_id: str, trace_id: str) -> dict[str, object]:
-    return GovernanceEnvelope(
+    envelope = GovernanceEnvelope(
         resource_type=resource_type,
         request_id=request_id,
         trace_id=trace_id,
         data=data,
     ).model_dump(mode="json")
+    normalized = projection_safe_json(envelope)
+    if not isinstance(normalized, dict):
+        raise ValueError("governance envelope must be a JSON object")
+    return normalized
 
 
 def _b64decode(value: str) -> bytes:

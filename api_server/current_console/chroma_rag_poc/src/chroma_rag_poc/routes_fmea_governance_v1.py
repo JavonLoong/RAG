@@ -65,6 +65,7 @@ from .workspace_registry import WorkspaceConfig, WorkspaceNotFoundError
 router = APIRouter(prefix="/api/v1/fmea", tags=["fmea-governance-v1"])
 _BEARER = re.compile(r"^Bearer ([^\s]+)$")
 _ETAG = re.compile(r'^"([1-9][0-9]*)"$')
+_ID_MAX_CHARS = 256
 _MAX_HISTORY_PAGE_SIZE = 100
 
 _ERROR_STATUS = {
@@ -100,7 +101,6 @@ class GovernanceAccess:
     actor: ActorContext
     model_actor: ActorContext
     workspace: WorkspaceConfig
-    runtime: GovernanceRuntime
 
 
 def _problem_response(error: ReviewError, *, errors: list[dict[str, object]] | None = None) -> JSONResponse:
@@ -173,7 +173,11 @@ def _envelope(request: Request, resource_type: str, data: object) -> dict[str, o
 def _response(
     request: Request, resource_type: str, data: object, *, status: int = 200, headers: dict[str, str] | None = None
 ) -> JSONResponse:
-    return JSONResponse(status_code=status, content=_envelope(request, resource_type, data), headers=headers)
+    return JSONResponse(
+        status_code=status,
+        content=_projection_call(lambda: _envelope(request, resource_type, data)),
+        headers=headers,
+    )
 
 
 def _authorization_token(request: Request) -> str:
@@ -231,12 +235,17 @@ def get_governance_access(request: Request) -> GovernanceAccess:
         raise ReviewError("FMEA_AUTH_CONFIGURATION_INVALID", "review authentication is not configured")
     remote_host = request.client.host if request.client is not None else None
     actor = provider.authenticate(_authorization_token(request), remote_host)
+    if any(
+        not isinstance(value, str) or not value.strip() or len(value) > _ID_MAX_CHARS
+        for value in request.path_params.values()
+    ):
+        raise GovernanceServiceError("FMEA_GOVERNANCE_REQUEST_INVALID", "governance resource identifier is invalid")
     try:
         workspace = request.app.state.workspace_registry.get(actor.workspace_id)
     except WorkspaceNotFoundError as exc:
         raise ReviewError("FMEA_REVIEW_FORBIDDEN", "review workspace is not available") from exc
     model_actor = ActorContext("fmea-model-assistant", ActorType.MODEL, frozenset(), actor.workspace_id)
-    return GovernanceAccess(actor, model_actor, workspace, _runtime_for(request, workspace))
+    return GovernanceAccess(actor, model_actor, workspace)
 
 
 def _service_call(operation: Callable[[], Any]) -> Any:
@@ -249,6 +258,19 @@ def _service_call(operation: Callable[[], Any]) -> Any:
     except Exception as exc:
         raise GovernanceServiceError(
             "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "FMEA governance storage is unavailable", retryable=True
+        ) from exc
+
+
+def _projection_call(operation: Callable[[], Any]) -> Any:
+    try:
+        return operation()
+    except ReviewError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise GovernanceServiceError(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+            "FMEA governance response projection is unavailable",
+            retryable=True,
         ) from exc
 
 
@@ -304,7 +326,13 @@ def _history(
 ) -> JSONResponse:
     if limit < 1 or limit > _MAX_HISTORY_PAGE_SIZE:
         raise GovernanceServiceError("FMEA_GOVERNANCE_CURSOR_INVALID", "history page size is invalid")
-    secret = cast(bytes, request.app.state.governance_cursor_secret)
+    configured_secret = request.app.state.governance_cursor_secret
+    if not isinstance(configured_secret, bytes) or len(configured_secret) < 32:
+        raise GovernanceServiceError(
+            "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA governance cursor signing is not configured",
+        )
+    secret = configured_secret
     inner_cursor = None
     if cursor is not None:
         try:
@@ -348,7 +376,7 @@ def _history(
             raise GovernanceServiceError(
                 "FMEA_GOVERNANCE_CURSOR_INVALID", "governance history cursor is invalid"
             ) from exc
-    data = history_data(getattr(page, "events", ()), next_cursor=next_cursor, limit=limit)
+    data = _projection_call(lambda: history_data(getattr(page, "events", ()), next_cursor=next_cursor, limit=limit))
     return _response(request, f"{resource_type}_history", data)
 
 
@@ -360,13 +388,14 @@ def assemble_revision(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_human_approval, "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     expected = _if_match(request)
     key = _idempotency_key(request)
     command = AssembleRevisionCommand(
         RevisionAssemblyRequest(analysis_id, body.parent_revision_id, expected, body.parent_revision_hash), key
     )
-    result = _service_call(lambda: access.runtime.service.assemble(command, access.actor))
-    data = revision_result_data(result)
+    result = _service_call(lambda: runtime.service.assemble(command, access.actor))
+    data = _projection_call(lambda: revision_result_data(result))
     return _response(
         request,
         "revision",
@@ -380,10 +409,9 @@ def assemble_revision(
 def show_revision(
     revision_id: str, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
-    revision, record_version = _service_call(
-        lambda: access.runtime.service.get_revision_record(revision_id, access.actor)
-    )
-    data = revision_data(revision, record_version=record_version)
+    runtime = _runtime_for(request, access.workspace)
+    revision, record_version = _service_call(lambda: runtime.service.get_revision_record(revision_id, access.actor))
+    data = _projection_call(lambda: revision_data(revision, record_version=record_version))
     return _response(request, "revision", data, headers=_headers(record_version=record_version))
 
 
@@ -391,9 +419,10 @@ def show_revision(
 def show_readiness(
     revision_id: str, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
-    report = _service_call(lambda: access.runtime.service.readiness(revision_id, access.actor))
-    _, record_version = _service_call(lambda: access.runtime.service.get_revision_record(revision_id, access.actor))
-    data = readiness_data(report, record_version=record_version)
+    runtime = _runtime_for(request, access.workspace)
+    report = _service_call(lambda: runtime.service.readiness(revision_id, access.actor))
+    _, record_version = _service_call(lambda: runtime.service.get_revision_record(revision_id, access.actor))
+    data = _projection_call(lambda: readiness_data(report, record_version=record_version))
     return _response(request, "revision_readiness", data, headers=_headers(record_version=record_version))
 
 
@@ -401,11 +430,12 @@ def show_readiness(
 def suggest_readiness(
     revision_id: str, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
-    report = _service_call(lambda: access.runtime.service.readiness(revision_id, access.actor))
+    runtime = _runtime_for(request, access.workspace)
+    report = _service_call(lambda: runtime.service.readiness(revision_id, access.actor))
     suggestion = _service_call(
-        lambda: access.runtime.assistance_service.suggest_readiness_checklist(report, access.model_actor)
+        lambda: runtime.assistance_service.suggest_readiness_checklist(report, access.model_actor)
     )
-    data = readiness_suggestion_data(suggestion)
+    data = _projection_call(lambda: readiness_suggestion_data(suggestion))
     return _response(request, "readiness_suggestion", data, status=202)
 
 
@@ -417,9 +447,10 @@ def submit_approval(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_human_approval, "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     command = SubmitApprovalCommand(revision_id, body.revision_hash, _if_match(request), _idempotency_key(request))
-    result = _service_call(lambda: access.runtime.service.submit_for_approval(command, access.actor))
-    data = approval_submission_result_data(result)
+    result = _service_call(lambda: runtime.service.submit_for_approval(command, access.actor))
+    data = _projection_call(lambda: approval_submission_result_data(result))
     return _response(
         request,
         "approval_submission",
@@ -448,10 +479,11 @@ def approve(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_human_approval, "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     result = _service_call(
-        lambda: access.runtime.service.approve(_approval_command(submission_id, body, request), access.actor)
+        lambda: runtime.service.approve(_approval_command(submission_id, body, request), access.actor)
     )
-    data = approval_result_data(result)
+    data = _projection_call(lambda: approval_result_data(result))
     return _response(
         request,
         "approval",
@@ -469,10 +501,11 @@ def reject(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_human_approval, "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     result = _service_call(
-        lambda: access.runtime.service.reject(_approval_command(submission_id, body, request, True), access.actor)
+        lambda: runtime.service.reject(_approval_command(submission_id, body, request, True), access.actor)
     )
-    data = approval_result_data(result)
+    data = _projection_call(lambda: approval_result_data(result))
     return _response(
         request,
         "approval_rejection",
@@ -490,11 +523,12 @@ def withdraw_approval(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_approval_withdrawal, "FMEA_GOVERNANCE_APPROVAL_WITHDRAWAL_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     command = WithdrawApprovalCommand(
         approval_id, body.revision_hash, _if_match(request), body.reason, _idempotency_key(request)
     )
-    result = _service_call(lambda: access.runtime.service.withdraw_approval(command, access.actor))
-    data = approval_withdrawal_result_data(result)
+    result = _service_call(lambda: runtime.service.withdraw_approval(command, access.actor))
+    data = _projection_call(lambda: approval_withdrawal_result_data(result))
     return _response(
         request,
         "approval_withdrawal",
@@ -513,6 +547,7 @@ def approval_events(
     descending: bool = False,
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
+    runtime = _runtime_for(request, access.workspace)
     return _history(
         request,
         access,
@@ -521,7 +556,7 @@ def approval_events(
         cursor=cursor,
         limit=limit,
         descending=descending,
-        operation=lambda query: access.runtime.service.list_approval_events(query, access.actor),
+        operation=lambda query: runtime.service.list_approval_events(query, access.actor),
     )
 
 
@@ -530,13 +565,12 @@ def publish_revision(
     revision_id: str, body: PublicationBody, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
     _require_confirmation(body.confirm_publication, "FMEA_GOVERNANCE_PUBLICATION_CONFIRMATION_REQUIRED")
-    if body.revision_hash is None:
-        raise GovernanceServiceError("FMEA_GOVERNANCE_REQUEST_INVALID", "revision_hash is required")
+    runtime = _runtime_for(request, access.workspace)
     command = PublishCommand(
         revision_id, body.revision_hash, body.approval_id, _if_match(request), _idempotency_key(request)
     )
-    result = _service_call(lambda: access.runtime.service.publish(command, access.actor))
-    data = publication_result_data(result)
+    result = _service_call(lambda: runtime.service.publish(command, access.actor))
+    data = _projection_call(lambda: publication_result_data(result))
     return _response(
         request,
         "publication",
@@ -552,8 +586,9 @@ def publish_revision(
 def show_publication(
     publication_id: str, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
-    lifecycle = _service_call(lambda: access.runtime.service.get_publication(publication_id, access.actor))
-    data = publication_data(lifecycle)
+    runtime = _runtime_for(request, access.workspace)
+    lifecycle = _service_call(lambda: runtime.service.get_publication(publication_id, access.actor))
+    data = _projection_call(lambda: publication_data(lifecycle))
     return _response(request, "publication", data, headers=_headers(record_version=data.record_version))
 
 
@@ -561,8 +596,9 @@ def show_publication(
 def show_snapshot(
     publication_id: str, request: Request, access: GovernanceAccess = Depends(get_governance_access)
 ) -> JSONResponse:
-    snapshot = _service_call(lambda: access.runtime.service.get_snapshot(publication_id, access.actor))
-    return _response(request, "publication_snapshot", snapshot_data(snapshot))
+    runtime = _runtime_for(request, access.workspace)
+    snapshot = _service_call(lambda: runtime.service.get_snapshot(publication_id, access.actor))
+    return _response(request, "publication_snapshot", _projection_call(lambda: snapshot_data(snapshot)))
 
 
 @router.post("/publications/{publication_id}/withdrawals")
@@ -575,11 +611,12 @@ def withdraw_publication(
     _require_confirmation(
         body.confirm_publication_withdrawal, "FMEA_GOVERNANCE_PUBLICATION_WITHDRAWAL_CONFIRMATION_REQUIRED"
     )
+    runtime = _runtime_for(request, access.workspace)
     command = WithdrawPublicationCommand(
         publication_id, _if_match(request), body.reason, body.replacement_publication_id, _idempotency_key(request)
     )
-    result = _service_call(lambda: access.runtime.service.withdraw_publication(command, access.actor))
-    data = publication_withdrawal_result_data(result)
+    result = _service_call(lambda: runtime.service.withdraw_publication(command, access.actor))
+    data = _projection_call(lambda: publication_withdrawal_result_data(result))
     return _response(
         request,
         "publication_withdrawal",
@@ -597,6 +634,7 @@ def supersede_publication(
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
     _require_confirmation(body.confirm_supersession, "FMEA_GOVERNANCE_SUPERSESSION_CONFIRMATION_REQUIRED")
+    runtime = _runtime_for(request, access.workspace)
     command = SupersedePublicationCommand(
         publication_id,
         body.replacement_publication_id,
@@ -605,8 +643,8 @@ def supersede_publication(
         body.reason,
         _idempotency_key(request),
     )
-    result = _service_call(lambda: access.runtime.service.supersede(command, access.actor))
-    data = supersession_result_data(result)
+    result = _service_call(lambda: runtime.service.supersede(command, access.actor))
+    data = _projection_call(lambda: supersession_result_data(result))
     return _response(
         request,
         "publication_supersession",
@@ -625,6 +663,7 @@ def publication_events(
     descending: bool = False,
     access: GovernanceAccess = Depends(get_governance_access),
 ) -> JSONResponse:
+    runtime = _runtime_for(request, access.workspace)
     return _history(
         request,
         access,
@@ -633,7 +672,7 @@ def publication_events(
         cursor=cursor,
         limit=limit,
         descending=descending,
-        operation=lambda query: access.runtime.service.list_publication_events(query, access.actor),
+        operation=lambda query: runtime.service.list_publication_events(query, access.actor),
     )
 
 

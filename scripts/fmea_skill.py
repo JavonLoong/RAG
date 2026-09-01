@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import stat
@@ -667,8 +666,16 @@ def build_cli_runtime() -> CliRuntime:
         )
         propagation_start_defaults = propagation_runtime.start_defaults
     governance_runtime = composition.build_default_workspace_governance_runtime(workspace)
-    cursor_secret_value = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET") or os.environ.get("FMEA_REVIEW_TOKEN") or ""
-    governance_cursor_secret = hashlib.sha256(cursor_secret_value.encode("utf-8")).digest()
+    governance_contracts = import_module("chroma_rag_poc.fmea_governance_contracts")
+    try:
+        governance_cursor_secret = governance_contracts.derive_governance_cursor_secret(
+            os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
+        )
+    except ValueError as exc:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+            "FMEA governance cursor signing is not configured",
+        ) from exc
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -1147,14 +1154,39 @@ def _task5_governance_cursor_secret(runtime: CliRuntime) -> bytes:
     secret = getattr(runtime, "governance_cursor_secret", None)
     if isinstance(secret, bytes) and len(secret) >= 32:
         return secret
-    configured = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET") or os.environ.get("FMEA_REVIEW_TOKEN") or ""
-    return hashlib.sha256(configured.encode("utf-8")).digest()
+    raise _governance_error(
+        "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+        "FMEA governance cursor signing is not configured",
+    )
 
 
 def _governance_projection(function_name: str, value: Any, **kwargs: Any) -> dict[str, object]:
     module = import_module("chroma_rag_poc.fmea_governance_contracts")
-    model = getattr(module, function_name)(value, **kwargs)
+    try:
+        model = getattr(module, function_name)(value, **kwargs)
+    except (TypeError, ValueError) as exc:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+            "FMEA governance response projection is unavailable",
+        ) from exc
     return cast(dict[str, object], model.model_dump(mode="json"))
+
+
+def _emit_governance_resource(resource_type: str, data: object, *, pretty: bool) -> None:
+    module = import_module("chroma_rag_poc.fmea_governance_contracts")
+    try:
+        envelope = module.governance_envelope(
+            resource_type,
+            data,
+            request_id=str(uuid4()),
+            trace_id=str(uuid4()),
+        )
+    except (TypeError, ValueError) as exc:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+            "FMEA governance response projection is unavailable",
+        ) from exc
+    _write_json(envelope, pretty=pretty)
 
 
 def _governance_command(function_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -1180,18 +1212,18 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
             )
             command = _governance_command("AssembleRevisionCommand", request, args.idempotency_key)
             result = service.assemble(command, actor)
-            _emit_resource("revision", _governance_projection("revision_result_data", result), pretty=pretty)
+            _emit_governance_resource("revision", _governance_projection("revision_result_data", result), pretty=pretty)
             return 0
         revision, record_version = service.get_revision_record(args.revision_id, actor)
         if args.revision_command == "show":
-            _emit_resource(
+            _emit_governance_resource(
                 "revision",
                 _governance_projection("revision_data", revision, record_version=record_version),
                 pretty=pretty,
             )
             return 0
         report = service.readiness(args.revision_id, actor)
-        _emit_resource(
+        _emit_governance_resource(
             "revision_readiness",
             _governance_projection("readiness_data", report, record_version=record_version),
             pretty=pretty,
@@ -1207,7 +1239,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
                     "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "requested FMEA governance assistance is not configured"
                 )
             suggestion = assistance.suggest_readiness_checklist(report, _task5_model_actor(runtime))
-            _emit_resource(
+            _emit_governance_resource(
                 "readiness_suggestion",
                 _governance_projection("readiness_suggestion_data", suggestion),
                 pretty=pretty,
@@ -1222,7 +1254,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
                 args.idempotency_key,
             )
             result = service.submit_for_approval(command, actor)
-            _emit_resource("approval_submission", _governance_projection("approval_submission_result_data", result), pretty=pretty)
+            _emit_governance_resource("approval_submission", _governance_projection("approval_submission_result_data", result), pretty=pretty)
             return 0
         if args.approval_command in {"approve", "reject"}:
             command_type = "ApprovalRejectionCommand" if args.approval_command == "reject" else "ApprovalCommand"
@@ -1236,7 +1268,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
                 args.idempotency_key,
             )
             result = getattr(service, args.approval_command)(command, actor)
-            _emit_resource(
+            _emit_governance_resource(
                 "approval_rejection" if args.approval_command == "reject" else "approval",
                 _governance_projection("approval_result_data", result),
                 pretty=pretty,
@@ -1252,7 +1284,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
                 args.idempotency_key,
             )
             result = service.withdraw_approval(command, actor)
-            _emit_resource("approval_withdrawal", _governance_projection("approval_withdrawal_result_data", result), pretty=pretty)
+            _emit_governance_resource("approval_withdrawal", _governance_projection("approval_withdrawal_result_data", result), pretty=pretty)
             return 0
         return _dispatch_governance_history(args, runtime, service, actor, pretty, "revision", args.revision_id)
 
@@ -1266,15 +1298,15 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
             args.idempotency_key,
         )
         result = service.publish(command, actor)
-        _emit_resource("publication", _governance_projection("publication_result_data", result), pretty=pretty)
+        _emit_governance_resource("publication", _governance_projection("publication_result_data", result), pretty=pretty)
         return 0
     if args.publication_command == "show":
         lifecycle = service.get_publication(args.publication_id, actor)
-        _emit_resource("publication", _governance_projection("publication_data", lifecycle), pretty=pretty)
+        _emit_governance_resource("publication", _governance_projection("publication_data", lifecycle), pretty=pretty)
         return 0
     if args.publication_command == "snapshot":
         snapshot = service.get_snapshot(args.publication_id, actor)
-        _emit_resource("publication_snapshot", _governance_projection("snapshot_data", snapshot), pretty=pretty)
+        _emit_governance_resource("publication_snapshot", _governance_projection("snapshot_data", snapshot), pretty=pretty)
         return 0
     if args.publication_command == "withdraw":
         command = _governance_command(
@@ -1286,7 +1318,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
             args.idempotency_key,
         )
         result = service.withdraw_publication(command, actor)
-        _emit_resource("publication_withdrawal", _governance_projection("publication_withdrawal_result_data", result), pretty=pretty)
+        _emit_governance_resource("publication_withdrawal", _governance_projection("publication_withdrawal_result_data", result), pretty=pretty)
         return 0
     if args.publication_command == "supersede":
         command = _governance_command(
@@ -1299,7 +1331,7 @@ def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int: 
             args.idempotency_key,
         )
         result = service.supersede(command, actor)
-        _emit_resource("publication_supersession", _governance_projection("supersession_result_data", result), pretty=pretty)
+        _emit_governance_resource("publication_supersession", _governance_projection("supersession_result_data", result), pretty=pretty)
         return 0
     return _dispatch_governance_history(args, runtime, service, actor, pretty, "publication", args.publication_id)
 
@@ -1358,8 +1390,14 @@ def _dispatch_governance_history(
             )
         except (TypeError, ValueError) as exc:
             raise _governance_error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history cursor is invalid") from exc
-    data = projections.history_data(getattr(page, "events", ()), next_cursor=next_cursor, limit=args.limit)
-    _emit_resource(f"{resource_type}_history", data.model_dump(mode="json"), pretty=pretty)
+    try:
+        data = projections.history_data(getattr(page, "events", ()), next_cursor=next_cursor, limit=args.limit)
+    except (TypeError, ValueError) as exc:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+            "FMEA governance response projection is unavailable",
+        ) from exc
+    _emit_governance_resource(f"{resource_type}_history", data.model_dump(mode="json"), pretty=pretty)
     return 0
 
 

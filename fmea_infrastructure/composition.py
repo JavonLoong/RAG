@@ -29,7 +29,7 @@ from fmea_application.analysis_assistance_service import AnalysisAssistanceServi
 from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
 from fmea_application.governance_assistance_service import GovernanceAssistanceService
-from fmea_application.governance_service import RevisionGovernanceService
+from fmea_application.governance_service import GovernanceServiceError, RevisionGovernanceService
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
@@ -612,7 +612,10 @@ class _UnconfiguredGovernanceSourceProviders:
 
     @staticmethod
     def _unavailable() -> NoReturn:
-        raise ValueError("governance source query providers are not configured")
+        raise GovernanceServiceError(
+            "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+            "governance source query providers are not configured",
+        )
 
     def get_analysis(self, analysis_id: str, workspace_id: str):
         self._unavailable()
@@ -642,7 +645,11 @@ class _UnconfiguredGovernanceSourceProviders:
         self._unavailable()
 
 
-def build_default_workspace_governance_runtime(workspace: WorkspaceConfig) -> GovernanceRuntime:
+def build_default_workspace_governance_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    providers: GovernanceRepositoryProviders | None = None,
+) -> GovernanceRuntime:
     """Wire the public governance runtime to the workspace-owned SQLite boundary.
 
     The application still requires typed source providers for assembly/readiness;
@@ -653,19 +660,20 @@ def build_default_workspace_governance_runtime(workspace: WorkspaceConfig) -> Go
     database_path, _ = _workspace_review_paths(workspace)
     repository = SqliteGovernanceRepository(database_path)
     repository.initialize()
-    providers = _UnconfiguredGovernanceSourceProviders()
+    unavailable = _UnconfiguredGovernanceSourceProviders()
+    resolved_providers = providers or GovernanceRepositoryProviders(
+        analysis=unavailable,
+        review=unavailable,
+        risk=unavailable,
+        propagation=unavailable,
+        evidence=unavailable,
+        artifacts=unavailable,
+        runs=unavailable,
+        acknowledgements=unavailable,
+        retrieval=unavailable,
+    )
     return build_workspace_governance_runtime(
-        GovernanceRepositoryProviders(
-            analysis=providers,
-            review=providers,
-            risk=providers,
-            propagation=providers,
-            evidence=providers,
-            artifacts=providers,
-            runs=providers,
-            acknowledgements=providers,
-            retrieval=providers,
-        ),
+        resolved_providers,
         repository=repository,
     )
 
