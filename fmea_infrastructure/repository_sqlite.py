@@ -200,6 +200,9 @@ class SqliteFmeaRepository:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(f"PRAGMA busy_timeout = {self._busy_timeout_ms}")
         connection.execute("PRAGMA journal_mode = WAL")
+        from .governance_migration_validation import register_governance_migration_functions
+
+        register_governance_migration_functions(connection)
         return connection
 
     @staticmethod

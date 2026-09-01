@@ -422,3 +422,93 @@ Final results: Ruff check **passed**; Ruff format check reported **3 files alrea
 - Published payloads and both binding relations remain immutable. Withdrawal and supersession remain append-only.
 - Replay does not accept independent self-consistent hashes: the canonical outbox payload must now be exactly derivable from persisted typed authority state and dependencies.
 - No scoped Important finding remains open. Previously ledgered minor findings, including `ApprovalWithdrawalResult` placement, remain intentionally unchanged and outside this fix round.
+
+## Task 3 fix round 4
+
+### Scope and root-cause diagnosis
+
+This round addresses the two remaining Important findings against reviewed HEAD `972c3eef`. It adds only migration `009_fmea_governance_manifest_totality.sql`, the shared-runner migration validation hook, the focused SQLite regressions, and the migration-version compatibility assertion. Migrations 005, 006, 007, and 008 remain byte/diff unchanged. No Task 4+, service/transport/auth/REST/CLI/export/UI, RAG/GraphRAG, push, PR, or subagent work was performed.
+
+Finding A root cause: migration 008 added the publication-parent reverse FK to `fmea_publication_lineage_bindings`, but `fmea_publication_manifests` and `fmea_normalized_snapshots` retained only their forward references or no parent-side totality. A direct SQL insert could therefore commit a manifest with valid revision/approval/snapshot identifiers and no exact binding. Migration 009 rebuilds both parent tables with deferrable workspace-qualified reverse FKs to the binding table's unique `(workspace_id, manifest_id)` and `(workspace_id, snapshot_id)` keys, while preserving the existing columns, checks, keys, indexes, triggers, and FKs.
+
+Finding B root cause: migration 008 reconstructed nullable revision/publication scope and payload hashes from scalar audit/outbox/idempotency pointers, but did not decode or canonicalize `audit.event_json`, recompute outbox JSON/SHA, or rebuild the exact runtime authority DTO-to-outbox payload. A fully populated v7 chain could therefore have mutually consistent scalar hashes while its outbox payload diverged from the persisted authority DTO. The shared runner is already the transaction owner (`BEGIN EXCLUSIVE` around all pending migrations), so it now registers an application-defined SQLite function on every migration connection. Migration 009 invokes that function after 008; it strictly decodes the reconstructed revision/publication and all publication dependencies, recomputes canonical JSON/SHA, validates audit/outbox/idempotency/result bindings, and compares the exact runtime-equivalent revision/publication payload. A failed predicate raises a migration CHECK failure, rolling back both 008 and 009.
+
+### TDD RED evidence
+
+The focused real-SQLite tests were added before migration 009 and the shared validation hook:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_direct_manifest_without_lineage_binding tests/integration/test_fmea_governance_sqlite.py::test_migration_009_adds_snapshot_reverse_lineage_foreign_key tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically -q
+```
+
+Actual RED: **3 failed in 0.54s**. The direct SQL manifest insert reported `DID NOT RAISE`; the normalized snapshot reverse-FK assertion was false; and the internally consistent but authority-DTO/outbox-divergent v7 fixture initialized without raising instead of remaining at version 7.
+
+### GREEN design and implementation
+
+1. `SqliteFmeaRepository._connect()` registers `fmea_validate_governance_replay` for the shared migration runner. The hook is application-defined because SQLite SQL alone cannot recompute the repository's canonical JSON/SHA or instantiate the typed audit and authority DTOs. The function returns 0 on any malformed, non-canonical, hash-inconsistent, identity-inconsistent, or DTO/outbox-divergent input; migration 009 converts that result into a database CHECK failure.
+2. Migration 009 runs the replay guard after 008's reconstruction and before parent replacement. It validates every revision and publication row, including canonical authority JSON, canonical audit JSON, outbox canonical JSON and SHA, idempotency response, result identity, and the exact expected runtime payload. Publication validation additionally checks revision, submission, approval, manifest, normalized snapshot, and export-eligibility DTOs against their persisted row columns and canonical hashes.
+3. Migration 009 rebuilds only `fmea_publication_manifests` and `fmea_normalized_snapshots`, adding deferrable reverse FKs to the exact binding table. It temporarily removes and restores the existing binding insert trigger while those two parent table names are transiently absent. The final `pragma_foreign_key_check` guard clears the transient deferred-FK state only after the completed graph is valid.
+4. The new v7 divergence fixture changes the canonical outbox revision DTO, updates outbox/audit/idempotency scalar hashes and canonical audit JSON consistently, nulls the v7 revision replay metadata, and applies pending migrations through the normal runner. The 009 guard rejects it and the outer transaction leaves schema/data at v7. The existing exact reconstructable v7 fixture still upgrades to v9 and both revision/publication replays pass.
+
+### Fresh GREEN commands and exact counts
+
+Focused round-4 behavior matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_direct_manifest_without_lineage_binding tests/integration/test_fmea_governance_sqlite.py::test_migration_009_adds_snapshot_reverse_lineage_foreign_key tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically -q
+```
+
+Result: **3 passed in 0.39s**.
+
+Task 3 three-file matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py -q
+```
+
+Result: **89 passed in 13.78s**.
+
+Task 3 six-file persistence matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
+```
+
+Result: **95 passed in 14.59s**.
+
+Governance/snapshot contract matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_source.py -q
+```
+
+Result: **142 passed in 0.80s**.
+
+Exact additive migration node:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Result: **1 passed in 0.11s**; the exact schema migration set is `[1, 2, 3, 4, 5, 6, 7, 8, 9]`.
+
+The temporary real-SQLite v8-to-v9 schema comparison reported that both parent tables preserved columns, user indexes, immutable triggers, and every pre-existing FK; it reported only the expected new manifest and snapshot reverse FKs. The final `pragma_foreign_key_check` was empty and `schema_migrations` reached version 9. The exact reconstructable v7 fixture upgraded to version 9 and replayed both revision and publication successfully; the divergent fixture remained at version 7 with no v8/v9 staging tables.
+
+### Static, compile, migration, and diff checks
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m ruff check fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m ruff format --check fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m compileall -q fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py fmea_application core_domain/fmea tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py tests/regression/test_fmea_governance_idempotency.py
+git diff --check
+git diff --exit-code -- fmea_infrastructure/migrations/005_fmea_governance_closure.sql fmea_infrastructure/migrations/006_fmea_governance_integrity.sql fmea_infrastructure/migrations/007_fmea_governance_lineage.sql fmea_infrastructure/migrations/008_fmea_governance_totality.sql
+```
+
+Results: Ruff check passed; Ruff format check reported all 5 controlled files already formatted; compileall exited 0 with no output; `git diff --check` exited 0; and the committed 005–008 diff check exited 0.
+
+### Compatibility impact and concerns
+
+- The change is additive at migration version 009. Shared `fmea_audit_events`, `fmea_outbox_events`, `idempotency_records`, immutable published payloads, append-only withdrawal/supersession, legacy `fmea_rows.publication_status`, and existing migration history remain unchanged.
+- Exact v7 authority that is reconstructable by the same runtime-equivalent predicate remains supported and replays after upgrade. Unsafe v7 data fails closed before version 8/9 is recorded and is transactionally unchanged.
+- A database already advanced to the pre-acceptance v8 schema with unsafe replay contents is intentionally not silently repaired; migration 009 rejects it and leaves it at v8 for explicit repair. Running migration 009 outside the shared Python migration runner is also intentionally unsupported because the application-defined validation function is part of the runner's transaction boundary.
+- Previously deferred minor findings, including `ApprovalWithdrawalResult` placement, remain outside this round.

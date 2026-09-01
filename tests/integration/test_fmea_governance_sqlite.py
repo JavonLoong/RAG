@@ -1827,7 +1827,7 @@ def test_migration_008_backfills_reconstructable_v7_authority_and_preserves_repl
     restarted = SqliteGovernanceRepository(path)
     restarted.initialize()
     with sqlite3.connect(path) as connection:
-        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (8,)
+        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (9,)
         assert connection.execute(
             "SELECT idempotency_scope,payload_hash FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
             (revision.scope.workspace_id, revision.revision.revision_id),
@@ -1888,4 +1888,131 @@ def test_migration_008_rejects_unreconstructable_v7_authority_atomically(tmp_pat
         assert connection.execute("SELECT COUNT(*) FROM fmea_publications").fetchone() == (1,)
         assert (
             connection.execute("SELECT 1 FROM sqlite_master WHERE name LIKE 'fmea_migration_008%'").fetchone() is None
+        )
+
+
+def test_migration_009_rejects_direct_manifest_without_lineage_binding(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    prepared = prepared_publication()
+    repository.commit_publication(prepared)
+    orphan = replace(prepared.manifest, manifest_id="manifest-without-lineage")
+    manifest_json = encode_review_json(orphan)
+    manifest_json_hash = "sha256:" + sha256(manifest_json.encode("utf-8")).hexdigest()
+
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY|lineage"), connection:
+            connection.execute(
+                "INSERT INTO fmea_publication_manifests "
+                "(workspace_id,manifest_id,revision_id,revision_hash,approval_id,snapshot_id,snapshot_hash,"
+                "version_manifest_hash,previous_audit_chain_head,export_eligible,manifest_hash,manifest_json,"
+                "canonical_json_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    prepared.scope.workspace_id,
+                    orphan.manifest_id,
+                    orphan.revision_id,
+                    orphan.revision_hash,
+                    orphan.approval_id,
+                    orphan.snapshot_id,
+                    orphan.snapshot_hash,
+                    orphan.version_manifest_hash,
+                    orphan.previous_audit_chain_head,
+                    int(orphan.export_eligible),
+                    orphan.manifest_hash,
+                    manifest_json,
+                    manifest_json_hash,
+                    orphan.created_at,
+                ),
+            )
+
+
+def test_migration_009_adds_snapshot_reverse_lineage_foreign_key(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    with sqlite3.connect(repository.database_path) as connection:
+        foreign_keys = connection.execute("PRAGMA foreign_key_list(fmea_normalized_snapshots)").fetchall()
+
+    assert any(
+        row[2] == "fmea_publication_lineage_bindings" and row[3] == "workspace_id" and row[4] == "workspace_id"
+        for row in foreign_keys
+    )
+    assert any(
+        row[2] == "fmea_publication_lineage_bindings" and row[3] == "snapshot_id" and row[4] == "snapshot_id"
+        for row in foreign_keys
+    )
+
+
+def test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically(tmp_path: Path) -> None:
+    path = tmp_path / "divergent-v7.sqlite3"
+    _initialize_through(path, 7)
+    repository = SqliteGovernanceRepository(path)
+    seed_authoritative_analysis(path)
+    prepared = prepared_publication()
+    repository.commit_publication(prepared)
+
+    with sqlite3.connect(path) as connection:
+        revision_row = connection.execute(
+            "SELECT revision_json,audit_event_id,outbox_event_id,idempotency_scope "
+            "FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            (prepared.scope.workspace_id, prepared.revision.revision_id),
+        ).fetchone()
+        assert revision_row is not None
+        _, audit_event_id, outbox_event_id, idempotency_scope = revision_row
+        outbox_json = connection.execute(
+            "SELECT payload_json FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            (prepared.scope.workspace_id, outbox_event_id),
+        ).fetchone()[0]
+        divergent_payload = json.loads(outbox_json)
+        divergent_payload["revision"]["created_at"] = "2026-08-30T00:00:01Z"
+        divergent_outbox_json = json.dumps(
+            divergent_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        divergent_payload_hash = "sha256:" + sha256(divergent_outbox_json.encode("utf-8")).hexdigest()
+
+        audit_json = connection.execute(
+            "SELECT event_json FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            (prepared.scope.workspace_id, audit_event_id),
+        ).fetchone()[0]
+        audit_payload = json.loads(audit_json)
+        audit_payload["canonical_payload_hash"] = divergent_payload_hash
+        divergent_audit_json = encode_review_json(audit_payload)
+
+        connection.execute("DROP TRIGGER fmea_revisions_no_update")
+        connection.execute("DROP TRIGGER fmea_audit_events_no_update")
+        connection.execute("DROP TRIGGER fmea_outbox_events_no_update")
+        connection.execute(
+            "UPDATE fmea_revisions SET idempotency_scope=NULL,payload_hash=NULL WHERE workspace_id=? AND revision_id=?",
+            (prepared.scope.workspace_id, prepared.revision.revision_id),
+        )
+        connection.execute(
+            "UPDATE fmea_outbox_events SET payload_json=?,payload_hash=? WHERE workspace_id=? AND event_id=?",
+            (divergent_outbox_json, divergent_payload_hash, prepared.scope.workspace_id, outbox_event_id),
+        )
+        connection.execute(
+            "UPDATE fmea_audit_events SET event_json=?,canonical_payload_hash=? WHERE workspace_id=? AND event_id=?",
+            (divergent_audit_json, divergent_payload_hash, prepared.scope.workspace_id, audit_event_id),
+        )
+        connection.execute(
+            "UPDATE idempotency_records SET payload_hash=? WHERE scope_key=?",
+            (divergent_payload_hash, idempotency_scope),
+        )
+
+    with pytest.raises((sqlite3.IntegrityError, sqlite3.OperationalError), match="authority|replay|binding|CHECK"):
+        SqliteGovernanceRepository(path).initialize()
+
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (7,)
+        assert connection.execute(
+            "SELECT idempotency_scope,payload_hash FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            (prepared.scope.workspace_id, prepared.revision.revision_id),
+        ).fetchone() == (None, None)
+        assert (
+            connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE name IN ('fmea_revisions_v8','fmea_publications_v8')"
+            ).fetchone()
+            is None
         )
