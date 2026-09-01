@@ -2016,3 +2016,130 @@ def test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically(tmp
             ).fetchone()
             is None
         )
+
+
+def _tamper_revision_id_consistently(path: Path, *, clear_replay_metadata: bool) -> None:
+    divergent_revision_id = "revision-1-divergent"
+    with sqlite3.connect(path) as connection:
+        connection.execute("DROP TRIGGER fmea_revisions_no_update")
+        connection.execute("DROP TRIGGER fmea_audit_events_no_update")
+        connection.execute("DROP TRIGGER fmea_outbox_events_no_update")
+        revision_row = connection.execute(
+            "SELECT revision_id,audit_event_id,outbox_event_id,idempotency_scope,payload_hash "
+            "FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            ("ws-1", "revision-1"),
+        ).fetchone()
+        assert revision_row is not None
+        _, audit_event_id, outbox_event_id, idempotency_scope, _ = revision_row
+        divergent_revision = make_fmea_revision(revision_id=divergent_revision_id)
+        divergent_revision_json = encode_json(divergent_revision)
+        divergent_revision_hash = divergent_revision.revision_hash
+        divergent_revision_canonical_hash = "sha256:" + sha256(divergent_revision_json.encode("utf-8")).hexdigest()
+
+        outbox_json = connection.execute(
+            "SELECT payload_json FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            ("ws-1", outbox_event_id),
+        ).fetchone()[0]
+        divergent_payload = json.loads(outbox_json)
+        divergent_payload["revision"] = json.loads(divergent_revision_json)
+        divergent_outbox_json = json.dumps(divergent_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        divergent_payload_hash = "sha256:" + sha256(divergent_outbox_json.encode("utf-8")).hexdigest()
+
+        audit_json = connection.execute(
+            "SELECT event_json FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            ("ws-1", audit_event_id),
+        ).fetchone()[0]
+        divergent_audit = json.loads(audit_json)
+        divergent_audit["canonical_payload_hash"] = divergent_payload_hash
+        divergent_audit_json = encode_review_json(divergent_audit)
+
+        connection.execute(
+            "UPDATE fmea_revisions SET revision_hash=?,revision_json=?,canonical_json_hash=?,"
+            "idempotency_scope=?,payload_hash=? WHERE workspace_id=? AND revision_id=?",
+            (
+                divergent_revision_hash,
+                divergent_revision_json,
+                divergent_revision_canonical_hash,
+                None if clear_replay_metadata else idempotency_scope,
+                None if clear_replay_metadata else divergent_payload_hash,
+                "ws-1",
+                "revision-1",
+            ),
+        )
+        connection.execute(
+            "UPDATE fmea_outbox_events SET payload_json=?,payload_hash=? WHERE workspace_id=? AND event_id=?",
+            (divergent_outbox_json, divergent_payload_hash, "ws-1", outbox_event_id),
+        )
+        connection.execute(
+            "UPDATE fmea_audit_events SET event_json=?,canonical_payload_hash=? WHERE workspace_id=? AND event_id=?",
+            (divergent_audit_json, divergent_payload_hash, "ws-1", audit_event_id),
+        )
+        connection.execute(
+            "UPDATE idempotency_records SET payload_hash=? WHERE scope_key=?",
+            (divergent_payload_hash, idempotency_scope),
+        )
+
+
+def _migration_probe_state(path: Path) -> tuple[object, ...]:
+    with sqlite3.connect(path) as connection:
+        return (
+            connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone(),
+            connection.execute(
+                "SELECT revision_id,revision_hash,revision_json,canonical_json_hash,idempotency_scope,payload_hash "
+                "FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+                ("ws-1", "revision-1"),
+            ).fetchone(),
+            connection.execute(
+                "SELECT payload_json,payload_hash FROM fmea_outbox_events "
+                "WHERE workspace_id=? AND event_id=(SELECT outbox_event_id FROM fmea_revisions "
+                "WHERE workspace_id=? AND revision_id=?)",
+                ("ws-1", "ws-1", "revision-1"),
+            ).fetchone(),
+            connection.execute(
+                "SELECT event_json,canonical_payload_hash FROM fmea_audit_events "
+                "WHERE workspace_id=? AND event_id=(SELECT audit_event_id FROM fmea_revisions "
+                "WHERE workspace_id=? AND revision_id=?)",
+                ("ws-1", "ws-1", "revision-1"),
+            ).fetchone(),
+            connection.execute(
+                "SELECT scope_key,payload_hash FROM idempotency_records "
+                "WHERE scope_key=(SELECT idempotency_scope FROM fmea_revisions "
+                "WHERE workspace_id=? AND revision_id=?)",
+                ("ws-1", "revision-1"),
+            ).fetchone(),
+            tuple(
+                row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE name IN "
+                    "('fmea_migration_009_replay_guard','fmea_revisions_v8','fmea_publications_v8',"
+                    "'fmea_publication_manifests_v9','fmea_normalized_snapshots_v9') ORDER BY name"
+                )
+            ),
+        )
+
+
+def _assert_migration_009_rejects_revision_id_divergence_atomically(tmp_path: Path, maximum_version: int) -> None:
+    path = tmp_path / f"divergent-revision-v{maximum_version}.sqlite3"
+    _initialize_through(path, maximum_version)
+    repository = SqliteGovernanceRepository(path)
+    seed_authoritative_analysis(path)
+    repository.commit_revision(prepared_revision())
+
+    _tamper_revision_id_consistently(path, clear_replay_metadata=maximum_version == 7)
+    before = _migration_probe_state(path)
+
+    with pytest.raises((sqlite3.IntegrityError, sqlite3.OperationalError), match="authority|replay|binding|CHECK"):
+        SqliteGovernanceRepository(path).initialize()
+
+    after = _migration_probe_state(path)
+    assert after == before
+    assert after[0] == (maximum_version,)
+    assert after[-1] == ()
+
+
+def test_migration_009_rejects_unsafe_v7_revision_id_divergence_atomically(tmp_path: Path) -> None:
+    _assert_migration_009_rejects_revision_id_divergence_atomically(tmp_path, 7)
+
+
+def test_migration_009_rejects_unsafe_v8_revision_id_divergence_atomically(tmp_path: Path) -> None:
+    _assert_migration_009_rejects_revision_id_divergence_atomically(tmp_path, 8)

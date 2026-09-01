@@ -512,3 +512,93 @@ Results: Ruff check passed; Ruff format check reported all 5 controlled files al
 - Exact v7 authority that is reconstructable by the same runtime-equivalent predicate remains supported and replays after upgrade. Unsafe v7 data fails closed before version 8/9 is recorded and is transactionally unchanged.
 - A database already advanced to the pre-acceptance v8 schema with unsafe replay contents is intentionally not silently repaired; migration 009 rejects it and leaves it at v8 for explicit repair. Running migration 009 outside the shared Python migration runner is also intentionally unsupported because the application-defined validation function is part of the runner's transaction boundary.
 - Previously deferred minor findings, including `ApprovalWithdrawalResult` placement, remain outside this round.
+
+## Task 3 fix round 5
+
+### Scope and root-cause predicate comparison
+
+This breaker round addresses the remaining Important finding on reviewed HEAD `7933d3c8`. It changes only `fmea_infrastructure/governance_migration_validation.py`, adds the two focused real-SQLite regressions in `tests/integration/test_fmea_governance_sqlite.py`, and appends this report. Migrations 005–009, services, auth, transport, RAG/GraphRAG, push, PR, reset/clean, and subagents remain out of scope.
+
+The round-4 UDF already decoded canonical authority/dependency DTOs and checked most scalar event-chain bindings, but its acceptance predicate was still weaker than runtime replay. In particular, for a revision it compared `workspace_id`, `analysis_id`, `analysis_record_version`, parent identity, and `revision_hash`, but never compared the decoded DTO `revision_id` with the persisted row `resource_id`. The reviewer probe changed the v7 `revision_json` DTO to a different revision ID, rebuilt its revision hash, replaced the outbox revision DTO, and consistently rebuilt the outbox, audit, and idempotency payload hashes. Migration 008 repaired the nullable replay metadata and round-4 accepted the internally consistent-looking chain; runtime `_revision_from_connection` then queried the original row ID and rejected the DTO identity. The same construction against an already-v8 database bypassed 008 and was accepted by 009.
+
+The migration predicate is now checked against the runtime contracts in `governance_repository_sqlite.py` as follows:
+
+| Runtime contract | Runtime predicates traced | Migration-time coverage in round 5 |
+| --- | --- | --- |
+| Revision row decoder and analysis lineage (`:1696–1719`, `:1510–1521`) | Workspace-qualified row lookup; DTO/row `revision_id`, `analysis_id`, `analysis_record_version`, parent ID/hash, `revision_hash`, canonical JSON hash, fixed record version 1; required revision-analysis binding with matching analysis ID/version/hash. | `_validate_revision_runtime_row` performs the same row and binding checks on the migration connection, and the authority/result predicate explicitly binds DTO `revision_id` to `resource_id`. |
+| Publication row decoder and publication lineage (`:1797–1823`, `:1543–1561`) | Workspace-qualified publication lookup; publication ID, analysis ID, revision ID/hash, approval ID, manifest ID/hash, snapshot ID/hash, audit-chain head, publisher actor, record version, canonical JSON hash; exact seven-field publication lineage binding. | `_validate_publication_runtime_row` performs every row-field and exact lineage tuple check, plus the authority/result publication ID and all authority scalar bindings. |
+| Publication dependencies (`:1564–1794`) | Submission ID/workspace/revision ID/hash/status/submitter/version/canonical hash; approval ID/submission ID/revision ID/hash/status/approver/reason/version/canonical hash; manifest IDs/hashes and canonical hash; snapshot workspace/IDs/hashes/analysis ID and canonical hash; export eligibility ID/workspace/publication/manifest/boolean/eligibility hash, canonical source-hash JSON, and canonical JSON hash. | Six connection-local dependency row validators compare decoded DTOs to their actual persisted rows. The cross-table predicate also binds approval/submission/manifest/snapshot/publication IDs, analysis IDs, revision hashes, versions, export eligibility IDs/boolean, and all migration-009 dependency scalar columns rather than relying only on DTO-to-DTO equality. |
+| Publication dependency replay (`:964–1013`, `:1042–1087`) | Replays the revision, submission, and approval authority chains; checks dependency audit/idempotency scope, payload hash/state/resource ID, response identity, and recursively validates event chains. | Publication validation performs the dependency-row checks before rebuilding the exact `publication.publish` payload, verifies revision/approval/submission/manifest/snapshot/eligibility lineage, and requires eligibility source hashes for revision, manifest, and snapshot to equal the current dependency hashes. |
+| Shared event/replay chain (`:818–946`) | Authority result IDs and event IDs; audit JSON canonicality, event/workspace/actor/command/row/scope/payload bindings; outbox canonical JSON, workspace/aggregate/event/scope/payload bindings; completed idempotency state/resource/response identity; exact canonical authority-to-outbox payload hash. | Existing round-4 checks are retained. Round 5 additionally reconstructs the `IdempotencyScope` from the authority path and audit key hash, checks its scope key, checks decoded audit analysis identity, and runs all row/lineage checks through the same connection-local UDF before accepting the migration. |
+
+The UDF registration now closes over the migration runner's connection so it can inspect the actual revision-analysis and publication-lineage rows as runtime decoders do. It remains read-only and returns `0` for malformed/invalid data; migration 009's existing CHECK converts that into a transaction failure. No migration SQL was edited.
+
+### TDD RED evidence
+
+The unsafe-v7 and unsafe-v8 tests were written before the production validator change. At RED they were represented by the parameterized node below; the node was subsequently split into explicit unsafe-v7 and unsafe-v8 names without changing the probe behavior:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_revision_id_divergence_at_v7_and_v8_atomically -q
+```
+
+Actual RED: **2 failed in 0.48s**. Both v7 and v8 failed with `DID NOT RAISE`: the current validator accepted the internally consistent DTO/outbox/audit/idempotency divergence. The v7 test had cleared replay metadata so 008 would reconstruct it; the v8 test retained its existing scope and replaced its payload hash so 009 alone exercised the same unsafe state.
+
+### GREEN implementation and exact evidence
+
+The focused round-5 behavior command, including the safe reconstructable v7 fixture, existing unsafe v7 fixture, manifest/snapshot totality checks, prior outbox-created-at regression, and both new unsafe probes:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_governance_sqlite.py::test_migration_008_backfills_reconstructable_v7_authority_and_preserves_replay tests/integration/test_fmea_governance_sqlite.py::test_migration_008_rejects_unreconstructable_v7_authority_atomically tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_direct_manifest_without_lineage_binding tests/integration/test_fmea_governance_sqlite.py::test_migration_009_adds_snapshot_reverse_lineage_foreign_key tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_unsafe_v7_revision_id_divergence_atomically tests/integration/test_fmea_governance_sqlite.py::test_migration_009_rejects_unsafe_v8_revision_id_divergence_atomically -q
+```
+
+Result: **7 passed in 1.06s**.
+
+Task 3 three-file matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py -q
+```
+
+Result: **91 passed in 13.37s**.
+
+Task 3 six-file persistence matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/regression/test_fmea_governance_idempotency.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py -q
+```
+
+Result: **97 passed in 15.16s**.
+
+Governance/snapshot contract matrix:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/unit/test_fmea_governance_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_revision_assembler.py tests/unit/test_fmea_publication_readiness.py tests/unit/test_fmea_governance_source.py -q
+```
+
+Result: **142 passed in 0.74s**.
+
+Exact additive migration node:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m pytest tests/integration/test_fmea_propagation_sqlite.py::test_propagation_migration_is_additive_and_creates_required_schema -q
+```
+
+Result: **1 passed in 0.11s**; the migration set remains `[1, 2, 3, 4, 5, 6, 7, 8, 9]`.
+
+Static and integrity checks:
+
+```powershell
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m ruff check fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m ruff format --check fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py
+$env:PYTHONPATH='.;tests'; .venv\Scripts\python.exe -m compileall -q fmea_infrastructure/repository_sqlite.py fmea_infrastructure/governance_migration_validation.py fmea_infrastructure/governance_repository_sqlite.py fmea_application core_domain/fmea tests/unit/test_fmea_governance_repository_contract.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_propagation_sqlite.py tests/integration/test_fmea_risk_sqlite.py tests/integration/test_fmea_review_sqlite.py tests/regression/test_fmea_governance_idempotency.py
+git diff --check
+git diff --exit-code -- fmea_infrastructure/migrations/005_fmea_governance_closure.sql fmea_infrastructure/migrations/006_fmea_governance_integrity.sql fmea_infrastructure/migrations/007_fmea_governance_lineage.sql fmea_infrastructure/migrations/008_fmea_governance_totality.sql fmea_infrastructure/migrations/009_fmea_governance_manifest_totality.sql
+```
+
+Results: Ruff check passed; Ruff format reported **5 files already formatted**; compileall exited 0 with no output; `git diff --check` exited 0 with only the repository's LF-to-CRLF working-copy warnings; and the 005–009 diff check exited 0.
+
+### Compatibility impact and concerns
+
+- The safe reconstructable v7 fixture still upgrades to v9, restores replay metadata, and replays revision and publication successfully. The prior v7 outbox-created-at divergence remains rejected. The new internally consistent revision-ID divergence remains at v7 or v8 respectively, with no partial migration staging objects or changed shared chain state.
+- The change is migration-runner-only and additive; no migration 010 was added and migrations 005–009 are unchanged. Existing manifest/snapshot totality, immutable triggers, shared audit/outbox/idempotency tables, workspace isolation, and prior addressed findings remain covered by the six-file and focused matrices.
+- No scoped Important finding remains open. Operational concern: migration 009 must continue to run through the Python shared runner, because the application-defined UDF intentionally depends on the runner-owned connection; direct ad-hoc execution of SQL migration 009 remains unsupported. The added row-level reads are migration-time only and do not alter runtime service/transport behavior.
