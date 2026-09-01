@@ -8,6 +8,7 @@ FastAPI 后端 — 合并两版
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import os
 import re
@@ -31,8 +32,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from core_domain.query_contracts import QueryMode
+from fmea_application.governance_service import GovernanceServiceError
 from fmea_application.review_errors import ReviewError
-from fmea_infrastructure.composition import ReviewRuntime, RiskRuntime, build_workspace_review_runtime
+from fmea_infrastructure.composition import (
+    GovernanceRuntime,
+    ReviewRuntime,
+    RiskRuntime,
+    build_workspace_review_runtime,
+)
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
 
 from .benchmark import run_synthetic_benchmark
@@ -396,6 +403,7 @@ def create_app(
     review_runtime_factory: Callable[[WorkspaceConfig], ReviewRuntime] = build_workspace_review_runtime,
     risk_runtime_factory: Callable[[WorkspaceConfig], RiskRuntime] | None = None,
     propagation_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
+    governance_runtime_factory: Callable[[WorkspaceConfig], GovernanceRuntime] | None = None,
     review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
@@ -437,6 +445,15 @@ def create_app(
     app.state.propagation_runtime_factory = propagation_runtime_factory
     app.state.propagation_runtimes = {}
     app.state.propagation_runtime_lock = Lock()
+    app.state.governance_runtime_factory = governance_runtime_factory
+    app.state.governance_runtimes = {}
+    app.state.governance_runtime_lock = Lock()
+    configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
+    app.state.governance_cursor_secret = (
+        hashlib.sha256(configured_cursor_secret.encode("utf-8")).digest()
+        if configured_cursor_secret
+        else secrets.token_bytes(32)
+    )
     app.state.review_cursor_secret = secrets.token_bytes(32)
     app.state.review_auth_error = None
     if review_auth_provider is not None:
@@ -449,6 +466,14 @@ def create_app(
             app.state.review_auth_error = exc
 
     from .routes_fmea_assistance_v1 import router as fmea_assistance_v1_router
+    from .routes_fmea_governance_v1 import (
+        governance_error_response,
+        governance_validation_error_response,
+        is_governance_path,
+    )
+    from .routes_fmea_governance_v1 import (
+        router as fmea_governance_v1_router,
+    )
     from .routes_fmea_propagation_v1 import router as fmea_propagation_v1_router
     from .routes_fmea_review_v1 import (
         fmea_validation_error_response,
@@ -463,6 +488,8 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        if is_governance_path(request.url.path):
+            return governance_validation_error_response(request, exc)
         if request.url.path.startswith("/api/v1/fmea/"):
             return fmea_validation_error_response(request, exc)
         if request.url.path.startswith("/api/v1/"):
@@ -470,9 +497,11 @@ def create_app(
         return await request_validation_exception_handler(request, exc)
 
     app.add_exception_handler(ReviewError, review_error_response)
+    app.add_exception_handler(GovernanceServiceError, governance_error_response)
 
     app.include_router(query_v1_router)
     app.include_router(fmea_review_v1_router)
+    app.include_router(fmea_governance_v1_router)
     app.include_router(fmea_assistance_v1_router)
     app.include_router(fmea_risk_v1_router)
     app.include_router(fmea_propagation_v1_router)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import stat
@@ -34,6 +35,7 @@ FMEA_REVIEW_COMMANDS: Final = frozenset(
     {"context", "suggest", "suggestion-status", "decide", "decisions"}
 )
 FMEA_PROPAGATION_COMMANDS: Final = frozenset({"start", "status", "show", "paths", "review"})
+FMEA_GOVERNANCE_COMMANDS: Final = frozenset({"revision", "approval", "publication"})
 SUGGESTION_POLL_INTERVAL_SECONDS: Final = 0.2
 SUGGESTION_DEADLINE_SECONDS: Final = 360.0
 DECISION_REQUEST_MAX_BYTES: Final = 256 * 1024
@@ -120,6 +122,37 @@ _ERROR_EXIT_GROUPS: Final = {
     **dict.fromkeys(("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "FMEA_PROPAGATION_GRAPH_NOT_FOUND", "FMEA_PROPAGATION_RUN_NOT_FOUND"), _EXIT_CODES["auth"]),
     "FMEA_PROPAGATION_PERSISTENCE_INVALID": _EXIT_CODES["storage"],
     "FMEA_REVIEW_STORAGE_UNAVAILABLE": _EXIT_CODES["storage"],
+    **dict.fromkeys((
+        "FMEA_GOVERNANCE_REQUEST_INVALID",
+        "FMEA_GOVERNANCE_CURSOR_INVALID",
+        "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED",
+        "FMEA_GOVERNANCE_PUBLICATION_CONFIRMATION_REQUIRED",
+        "FMEA_GOVERNANCE_WITHDRAWAL_CONFIRMATION_REQUIRED",
+        "FMEA_GOVERNANCE_APPROVAL_WITHDRAWAL_CONFIRMATION_REQUIRED",
+        "FMEA_GOVERNANCE_PUBLICATION_WITHDRAWAL_CONFIRMATION_REQUIRED",
+        "FMEA_GOVERNANCE_SUPERSESSION_CONFIRMATION_REQUIRED",
+    ), _EXIT_CODES["request"]),
+    **dict.fromkeys((
+        "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+        "FMEA_GOVERNANCE_REVISION_NOT_FOUND",
+        "FMEA_GOVERNANCE_APPROVAL_NOT_FOUND",
+    ), _EXIT_CODES["configuration"]),
+    **dict.fromkeys((
+        "FMEA_GOVERNANCE_REVISION_STALE",
+        "FMEA_GOVERNANCE_NOT_READY",
+        "FMEA_GOVERNANCE_ACTIVE_RUN",
+        "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+        "FMEA_GOVERNANCE_APPROVAL_STALE",
+        "FMEA_GOVERNANCE_VERSION_CONFLICT",
+        "FMEA_GOVERNANCE_IDEMPOTENCY_CONFLICT",
+    ), _EXIT_CODES["conflict"]),
+    **dict.fromkeys((
+        "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+        "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
+        "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+        "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+    ), _EXIT_CODES["conflict"]),
+    "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE": _EXIT_CODES["storage"],
 }
 _SAFE_ERROR_DETAILS: Final = {
     "FMEA_MODEL_SUGGESTION_INVALID": "review suggestion is invalid",
@@ -186,6 +219,9 @@ class CliRuntime:
     model_actor: ActorContext | None = None
     propagation_service: Any | None = None
     propagation_start_defaults: Mapping[str, object] | None = None
+    governance_service: Any | None = None
+    governance_assistance_service: Any | None = None
+    governance_cursor_secret: bytes | None = None
 
 
 def _positive_int(value: str) -> int:
@@ -290,6 +326,96 @@ def build_parser() -> argparse.ArgumentParser:
     propagation_review.add_argument("--request-file", required=True)
     propagation_review.add_argument("--confirm-human-propagation-review", action="store_true")
     _add_pretty(propagation_review)
+
+    revision = commands.add_parser("revision")
+    revision_commands = revision.add_subparsers(dest="revision_command", required=True, parser_class=_CliArgumentParser)
+    revision_assemble = revision_commands.add_parser("assemble")
+    revision_assemble.add_argument("--analysis-id", required=True)
+    revision_assemble.add_argument("--record-version", required=True, type=_positive_int)
+    revision_assemble.add_argument("--idempotency-key", required=True)
+    revision_assemble.add_argument("--parent-revision-id")
+    revision_assemble.add_argument("--parent-revision-hash")
+    revision_assemble.add_argument("--confirm-human-approval", action="store_true")
+    _add_pretty(revision_assemble)
+    for name in ("show", "readiness"):
+        command = revision_commands.add_parser(name)
+        command.add_argument("--revision-id", required=True)
+        _add_pretty(command)
+
+    approval = commands.add_parser("approval")
+    approval_commands = approval.add_subparsers(dest="approval_command", required=True, parser_class=_CliArgumentParser)
+    approval_suggest = approval_commands.add_parser("readiness-suggest")
+    approval_suggest.add_argument("--revision-id", required=True)
+    _add_pretty(approval_suggest)
+    approval_submit = approval_commands.add_parser("submit")
+    approval_submit.add_argument("--revision-id", required=True)
+    approval_submit.add_argument("--revision-hash", required=True)
+    approval_submit.add_argument("--record-version", required=True, type=_positive_int)
+    approval_submit.add_argument("--idempotency-key", required=True)
+    approval_submit.add_argument("--confirm-human-approval", action="store_true")
+    _add_pretty(approval_submit)
+    for name in ("approve", "reject"):
+        command = approval_commands.add_parser(name)
+        command.add_argument("--submission-id", required=True)
+        command.add_argument("--revision-id", required=True)
+        command.add_argument("--revision-hash", required=True)
+        command.add_argument("--record-version", required=True, type=_positive_int)
+        command.add_argument("--reason", required=True)
+        command.add_argument("--idempotency-key", required=True)
+        command.add_argument("--confirm-human-approval", action="store_true")
+        _add_pretty(command)
+    approval_withdraw = approval_commands.add_parser("withdraw")
+    approval_withdraw.add_argument("--approval-id", required=True)
+    approval_withdraw.add_argument("--revision-hash", required=True)
+    approval_withdraw.add_argument("--record-version", required=True, type=_positive_int)
+    approval_withdraw.add_argument("--reason", required=True)
+    approval_withdraw.add_argument("--idempotency-key", required=True)
+    approval_withdraw.add_argument("--confirm-approval-withdrawal", action="store_true")
+    _add_pretty(approval_withdraw)
+    approval_history = approval_commands.add_parser("history")
+    approval_history.add_argument("--revision-id", required=True)
+    approval_history.add_argument("--limit", type=_positive_int, default=50)
+    approval_history.add_argument("--cursor")
+    approval_history.add_argument("--descending", action="store_true")
+    _add_pretty(approval_history)
+
+    publication = commands.add_parser("publication")
+    publication_commands = publication.add_subparsers(dest="publication_command", required=True, parser_class=_CliArgumentParser)
+    publication_publish = publication_commands.add_parser("publish")
+    publication_publish.add_argument("--revision-id", required=True)
+    publication_publish.add_argument("--revision-hash", required=True)
+    publication_publish.add_argument("--approval-id", required=True)
+    publication_publish.add_argument("--record-version", required=True, type=_positive_int)
+    publication_publish.add_argument("--idempotency-key", required=True)
+    publication_publish.add_argument("--confirm-publication", action="store_true")
+    _add_pretty(publication_publish)
+    for name in ("show", "snapshot"):
+        command = publication_commands.add_parser(name)
+        command.add_argument("--publication-id", required=True)
+        _add_pretty(command)
+    publication_withdraw = publication_commands.add_parser("withdraw")
+    publication_withdraw.add_argument("--publication-id", required=True)
+    publication_withdraw.add_argument("--record-version", required=True, type=_positive_int)
+    publication_withdraw.add_argument("--reason", required=True)
+    publication_withdraw.add_argument("--replacement-publication-id")
+    publication_withdraw.add_argument("--idempotency-key", required=True)
+    publication_withdraw.add_argument("--confirm-publication-withdrawal", action="store_true")
+    _add_pretty(publication_withdraw)
+    publication_supersede = publication_commands.add_parser("supersede")
+    publication_supersede.add_argument("--publication-id", required=True)
+    publication_supersede.add_argument("--replacement-publication-id", required=True)
+    publication_supersede.add_argument("--record-version", required=True, type=_positive_int)
+    publication_supersede.add_argument("--replacement-record-version", required=True, type=_positive_int)
+    publication_supersede.add_argument("--reason", required=True)
+    publication_supersede.add_argument("--idempotency-key", required=True)
+    publication_supersede.add_argument("--confirm-supersession", action="store_true")
+    _add_pretty(publication_supersede)
+    publication_history = publication_commands.add_parser("history")
+    publication_history.add_argument("--publication-id", required=True)
+    publication_history.add_argument("--limit", type=_positive_int, default=50)
+    publication_history.add_argument("--cursor")
+    publication_history.add_argument("--descending", action="store_true")
+    _add_pretty(publication_history)
     return parser
 
 
@@ -540,6 +666,9 @@ def build_cli_runtime() -> CliRuntime:
             risk_repository=risk_runtime.risk_repository,
         )
         propagation_start_defaults = propagation_runtime.start_defaults
+    governance_runtime = composition.build_default_workspace_governance_runtime(workspace)
+    cursor_secret_value = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET") or os.environ.get("FMEA_REVIEW_TOKEN") or ""
+    governance_cursor_secret = hashlib.sha256(cursor_secret_value.encode("utf-8")).digest()
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -569,6 +698,9 @@ def build_cli_runtime() -> CliRuntime:
         model_actor=model_actor,
         propagation_service=None if propagation_runtime is None else propagation_runtime.service,
         propagation_start_defaults=propagation_start_defaults,
+        governance_service=governance_runtime.service,
+        governance_assistance_service=governance_runtime.assistance_service,
+        governance_cursor_secret=governance_cursor_secret,
     )
 
 
@@ -816,6 +948,11 @@ def _pretty_requested(argv: Sequence[str] | None) -> bool:
     return "--pretty" in values
 
 
+def _is_governance_argv(argv: Sequence[str] | None) -> bool:
+    values = sys.argv[1:] if argv is None else argv
+    return bool(values) and values[0] in FMEA_GOVERNANCE_COMMANDS
+
+
 def _write_json(payload: Mapping[str, object], *, pretty: bool) -> None:
     if pretty:
         encoded = json.dumps(payload, ensure_ascii=False, indent=2)
@@ -990,6 +1127,240 @@ def _task5_model_actor(runtime: CliRuntime) -> ActorContext:
     if actor is None:
         raise _review_error("FMEA_REVIEW_STORAGE_UNAVAILABLE", "FMEA model actor is not configured")
     return actor
+
+
+def _governance_error(code: str, detail: str) -> Exception:
+    module = import_module("fmea_application.governance_service")
+    return cast(Exception, module.GovernanceServiceError(code, detail))
+
+
+def _task5_governance_service(runtime: CliRuntime) -> Any:
+    service = getattr(runtime, "governance_service", None)
+    if service is None:
+        raise _governance_error(
+            "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "requested FMEA governance service is not configured"
+        )
+    return service
+
+
+def _task5_governance_cursor_secret(runtime: CliRuntime) -> bytes:
+    secret = getattr(runtime, "governance_cursor_secret", None)
+    if isinstance(secret, bytes) and len(secret) >= 32:
+        return secret
+    configured = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET") or os.environ.get("FMEA_REVIEW_TOKEN") or ""
+    return hashlib.sha256(configured.encode("utf-8")).digest()
+
+
+def _governance_projection(function_name: str, value: Any, **kwargs: Any) -> dict[str, object]:
+    module = import_module("chroma_rag_poc.fmea_governance_contracts")
+    model = getattr(module, function_name)(value, **kwargs)
+    return cast(dict[str, object], model.model_dump(mode="json"))
+
+
+def _governance_command(function_name: str, *args: Any, **kwargs: Any) -> Any:
+    module = import_module("fmea_application.governance_contracts")
+    try:
+        return getattr(module, function_name)(*args, **kwargs)
+    except (TypeError, ValueError) as exc:
+        raise _governance_error("FMEA_GOVERNANCE_REQUEST_INVALID", "governance CLI request is invalid") from exc
+
+
+def _dispatch_governance(args: argparse.Namespace, runtime: CliRuntime) -> int:  # noqa: C901
+    service = _task5_governance_service(runtime)
+    pretty = bool(args.pretty)
+    actor = runtime.actor
+    if args.command == "revision":
+        if args.revision_command == "assemble":
+            request = _governance_command(
+                "RevisionAssemblyRequest",
+                args.analysis_id,
+                args.parent_revision_id,
+                args.record_version,
+                args.parent_revision_hash,
+            )
+            command = _governance_command("AssembleRevisionCommand", request, args.idempotency_key)
+            result = service.assemble(command, actor)
+            _emit_resource("revision", _governance_projection("revision_result_data", result), pretty=pretty)
+            return 0
+        revision, record_version = service.get_revision_record(args.revision_id, actor)
+        if args.revision_command == "show":
+            _emit_resource(
+                "revision",
+                _governance_projection("revision_data", revision, record_version=record_version),
+                pretty=pretty,
+            )
+            return 0
+        report = service.readiness(args.revision_id, actor)
+        _emit_resource(
+            "revision_readiness",
+            _governance_projection("readiness_data", report, record_version=record_version),
+            pretty=pretty,
+        )
+        return 0
+
+    if args.command == "approval":
+        if args.approval_command == "readiness-suggest":
+            report = service.readiness(args.revision_id, actor)
+            assistance = getattr(runtime, "governance_assistance_service", None)
+            if assistance is None:
+                raise _governance_error(
+                    "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "requested FMEA governance assistance is not configured"
+                )
+            suggestion = assistance.suggest_readiness_checklist(report, _task5_model_actor(runtime))
+            _emit_resource(
+                "readiness_suggestion",
+                _governance_projection("readiness_suggestion_data", suggestion),
+                pretty=pretty,
+            )
+            return 0
+        if args.approval_command == "submit":
+            command = _governance_command(
+                "SubmitApprovalCommand",
+                args.revision_id,
+                args.revision_hash,
+                args.record_version,
+                args.idempotency_key,
+            )
+            result = service.submit_for_approval(command, actor)
+            _emit_resource("approval_submission", _governance_projection("approval_submission_result_data", result), pretty=pretty)
+            return 0
+        if args.approval_command in {"approve", "reject"}:
+            command_type = "ApprovalRejectionCommand" if args.approval_command == "reject" else "ApprovalCommand"
+            command = _governance_command(
+                command_type,
+                args.submission_id,
+                args.revision_id,
+                args.revision_hash,
+                args.record_version,
+                args.reason,
+                args.idempotency_key,
+            )
+            result = getattr(service, args.approval_command)(command, actor)
+            _emit_resource(
+                "approval_rejection" if args.approval_command == "reject" else "approval",
+                _governance_projection("approval_result_data", result),
+                pretty=pretty,
+            )
+            return 0
+        if args.approval_command == "withdraw":
+            command = _governance_command(
+                "WithdrawApprovalCommand",
+                args.approval_id,
+                args.revision_hash,
+                args.record_version,
+                args.reason,
+                args.idempotency_key,
+            )
+            result = service.withdraw_approval(command, actor)
+            _emit_resource("approval_withdrawal", _governance_projection("approval_withdrawal_result_data", result), pretty=pretty)
+            return 0
+        return _dispatch_governance_history(args, runtime, service, actor, pretty, "revision", args.revision_id)
+
+    if args.publication_command == "publish":
+        command = _governance_command(
+            "PublishCommand",
+            args.revision_id,
+            args.revision_hash,
+            args.approval_id,
+            args.record_version,
+            args.idempotency_key,
+        )
+        result = service.publish(command, actor)
+        _emit_resource("publication", _governance_projection("publication_result_data", result), pretty=pretty)
+        return 0
+    if args.publication_command == "show":
+        lifecycle = service.get_publication(args.publication_id, actor)
+        _emit_resource("publication", _governance_projection("publication_data", lifecycle), pretty=pretty)
+        return 0
+    if args.publication_command == "snapshot":
+        snapshot = service.get_snapshot(args.publication_id, actor)
+        _emit_resource("publication_snapshot", _governance_projection("snapshot_data", snapshot), pretty=pretty)
+        return 0
+    if args.publication_command == "withdraw":
+        command = _governance_command(
+            "WithdrawPublicationCommand",
+            args.publication_id,
+            args.record_version,
+            args.reason,
+            args.replacement_publication_id,
+            args.idempotency_key,
+        )
+        result = service.withdraw_publication(command, actor)
+        _emit_resource("publication_withdrawal", _governance_projection("publication_withdrawal_result_data", result), pretty=pretty)
+        return 0
+    if args.publication_command == "supersede":
+        command = _governance_command(
+            "SupersedePublicationCommand",
+            args.publication_id,
+            args.replacement_publication_id,
+            args.record_version,
+            args.replacement_record_version,
+            args.reason,
+            args.idempotency_key,
+        )
+        result = service.supersede(command, actor)
+        _emit_resource("publication_supersession", _governance_projection("supersession_result_data", result), pretty=pretty)
+        return 0
+    return _dispatch_governance_history(args, runtime, service, actor, pretty, "publication", args.publication_id)
+
+
+def _dispatch_governance_history(
+    args: argparse.Namespace,
+    runtime: CliRuntime,
+    service: Any,
+    actor: ActorContext,
+    pretty: bool,
+    resource_type: str,
+    resource_id: str,
+) -> int:
+    if args.limit > 100:
+        raise _governance_error("FMEA_GOVERNANCE_CURSOR_INVALID", "history page size is invalid")
+    projections = import_module("chroma_rag_poc.fmea_governance_contracts")
+    secret = _task5_governance_cursor_secret(runtime)
+    inner_cursor = None
+    if args.cursor is not None:
+        try:
+            inner_cursor = projections.decode_history_cursor(
+                secret,
+                args.cursor,
+                workspace_id=actor.workspace_id,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                descending=args.descending,
+                page_size=args.limit,
+                filter_hash=projections.EMPTY_FILTER_HASH,
+            )
+        except (TypeError, ValueError) as exc:
+            raise _governance_error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history cursor is invalid") from exc
+    query = _governance_command(
+        "GovernanceHistoryQuery",
+        actor.workspace_id,
+        resource_type,
+        resource_id,
+        args.limit,
+        inner_cursor,
+        args.descending,
+    )
+    method = service.list_approval_events if resource_type == "revision" else service.list_publication_events
+    page = method(query, actor)
+    next_cursor = getattr(page, "next_cursor", None)
+    if next_cursor is not None:
+        try:
+            next_cursor = projections.encode_history_cursor(
+                secret,
+                workspace_id=actor.workspace_id,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                descending=args.descending,
+                page_size=args.limit,
+                filter_hash=projections.EMPTY_FILTER_HASH,
+                repository_cursor=next_cursor,
+            )
+        except (TypeError, ValueError) as exc:
+            raise _governance_error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history cursor is invalid") from exc
+    data = projections.history_data(getattr(page, "events", ()), next_cursor=next_cursor, limit=args.limit)
+    _emit_resource(f"{resource_type}_history", data.model_dump(mode="json"), pretty=pretty)
+    return 0
 
 
 def _dispatch_assist(
@@ -1352,6 +1723,8 @@ def _dispatch_propagation(  # noqa: C901
 
 
 def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:  # noqa: C901
+    if args.command in FMEA_GOVERNANCE_COMMANDS:
+        return _dispatch_governance(args, runtime)
     if args.command == "assist":
         return _dispatch_assist(args, runtime, request)
     if args.command == "risk":
@@ -1430,8 +1803,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
         args = parse_cli_args(argv)
     except CliUsageError:
         return _emit_error(
-            "FMEA_REVIEW_REQUEST_INVALID",
-            "invalid review CLI request",
+            "FMEA_GOVERNANCE_REQUEST_INVALID" if _is_governance_argv(argv) else "FMEA_REVIEW_REQUEST_INVALID",
+            "invalid governance CLI request" if _is_governance_argv(argv) else "invalid review CLI request",
             pretty=pretty,
         )
 
@@ -1460,6 +1833,35 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
             "explicit human propagation review confirmation is required",
             pretty=bool(args.pretty),
         )
+
+    governance_confirmation: tuple[str, str] | None = None
+    if (args.command == "revision" and args.revision_command == "assemble" and not args.confirm_human_approval) or (args.command == "approval" and args.approval_command in {"submit", "approve", "reject"} and not args.confirm_human_approval):
+        governance_confirmation = (
+            "FMEA_GOVERNANCE_APPROVAL_CONFIRMATION_REQUIRED",
+            "explicit human approval confirmation is required",
+        )
+    elif args.command == "approval" and args.approval_command == "withdraw" and not args.confirm_approval_withdrawal:
+        governance_confirmation = (
+            "FMEA_GOVERNANCE_APPROVAL_WITHDRAWAL_CONFIRMATION_REQUIRED",
+            "explicit approval withdrawal confirmation is required",
+        )
+    elif args.command == "publication" and args.publication_command == "publish" and not args.confirm_publication:
+        governance_confirmation = (
+            "FMEA_GOVERNANCE_PUBLICATION_CONFIRMATION_REQUIRED",
+            "explicit publication confirmation is required",
+        )
+    elif args.command == "publication" and args.publication_command == "withdraw" and not args.confirm_publication_withdrawal:
+        governance_confirmation = (
+            "FMEA_GOVERNANCE_PUBLICATION_WITHDRAWAL_CONFIRMATION_REQUIRED",
+            "explicit publication withdrawal confirmation is required",
+        )
+    elif args.command == "publication" and args.publication_command == "supersede" and not args.confirm_supersession:
+        governance_confirmation = (
+            "FMEA_GOVERNANCE_SUPERSESSION_CONFIRMATION_REQUIRED",
+            "explicit supersession confirmation is required",
+        )
+    if governance_confirmation is not None:
+        return _emit_error(governance_confirmation[0], governance_confirmation[1], pretty=bool(args.pretty))
 
     request: dict[str, object] | None = None
     if args.command == "review" and args.review_command == "decide":

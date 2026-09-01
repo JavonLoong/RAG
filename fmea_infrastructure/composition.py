@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 from uuid import uuid4
 
 from core_domain.fmea.domain_pack import DomainPackManifest
@@ -79,6 +79,7 @@ from fmea_infrastructure.domain_pack_registry import (
     scoring_rule_content_hash,
 )
 from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
+from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
 from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
 from fmea_infrastructure.propagation_rule_registry import (
@@ -606,6 +607,69 @@ def build_governance_runtime(
     )
 
 
+class _UnconfiguredGovernanceSourceProviders:
+    """Keep the default transport wiring safe until query providers are configured."""
+
+    @staticmethod
+    def _unavailable() -> NoReturn:
+        raise ValueError("governance source query providers are not configured")
+
+    def get_analysis(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def list_rows(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def list_risk_records(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def get_current_graph(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def list_evidence_packs(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def get_artifacts(self, analysis_id: str, workspace_id: str, analysis: object):
+        self._unavailable()
+
+    def list_active_run_ids(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def list_human_acknowledgements(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+    def get_provenance(self, analysis_id: str, workspace_id: str):
+        self._unavailable()
+
+
+def build_default_workspace_governance_runtime(workspace: WorkspaceConfig) -> GovernanceRuntime:
+    """Wire the public governance runtime to the workspace-owned SQLite boundary.
+
+    The application still requires typed source providers for assembly/readiness;
+    leaving those providers explicitly unavailable prevents the REST/CLI adapters
+    from inventing an analysis source or reaching the RAG backend.
+    """
+
+    database_path, _ = _workspace_review_paths(workspace)
+    repository = SqliteGovernanceRepository(database_path)
+    repository.initialize()
+    providers = _UnconfiguredGovernanceSourceProviders()
+    return build_workspace_governance_runtime(
+        GovernanceRepositoryProviders(
+            analysis=providers,
+            review=providers,
+            risk=providers,
+            propagation=providers,
+            evidence=providers,
+            artifacts=providers,
+            runs=providers,
+            acknowledgements=providers,
+            retrieval=providers,
+        ),
+        repository=repository,
+    )
+
+
 def build_workspace_review_runtime(
     workspace: WorkspaceConfig,
     *,
@@ -894,6 +958,7 @@ __all__ = [
     "ReviewRuntime",
     "RiskRuntime",
     "ServerGovernanceSourceAdapter",
+    "build_default_workspace_governance_runtime",
     "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
     "build_governance_runtime",

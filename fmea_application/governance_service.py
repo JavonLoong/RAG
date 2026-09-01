@@ -107,6 +107,7 @@ _GOVERNANCE_CODES = frozenset({
     "FMEA_GOVERNANCE_CURSOR_INVALID",
     "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
     "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+    "FMEA_PRECONDITION_REQUIRED",
 })
 _ROLE_QUERY = frozenset({"reviewer", "approver", "publisher"})
 _MAX_SUPERSESSION_DEPTH = 64
@@ -1245,6 +1246,15 @@ class RevisionGovernanceService:
         if state is None:
             raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
         return state.revision
+
+    def get_revision_record(self, revision_id: str, actor: ActorContext) -> tuple[FmeaRevision, int]:
+        """Return a revision together with its repository-backed aggregate version."""
+
+        self._authorize_query(actor)
+        state = self._revision_state(revision_id, actor.workspace_id)
+        if state is None:
+            raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
+        return state.revision, state.record_version
 
     def get_publication(self, publication_id: str, actor: ActorContext) -> PublicationLifecycleView:
         self._authorize_query(actor)
