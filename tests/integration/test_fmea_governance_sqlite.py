@@ -52,6 +52,9 @@ from fmea_application.review_errors import ReviewError
 from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
 from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
 
+DEPENDENCY_KINDS = ("revision", "approval_submission", "approval")
+STARTING_VERSIONS = (7, 8)
+
 
 @pytest.fixture
 def repository(tmp_path: Path) -> SqliteGovernanceRepository:
@@ -1941,6 +1944,223 @@ def test_migration_009_adds_snapshot_reverse_lineage_foreign_key(
         row[2] == "fmea_publication_lineage_bindings" and row[3] == "snapshot_id" and row[4] == "snapshot_id"
         for row in foreign_keys
     )
+
+
+def _persist_publication_migration_fixture(path: Path) -> PreparedPublication:
+    repository = SqliteGovernanceRepository(path)
+    seed_authoritative_analysis(path)
+    prepared = prepared_publication()
+    repository.commit_publication(prepared)
+    return prepared
+
+
+def _tamper_publication_dependency_chain_consistently(
+    path: Path,
+    persisted: PreparedPublication,
+    *,
+    dependency_kind: str,
+    clear_replay_metadata: bool,
+) -> None:
+    table, identifier, json_column, dto_key = {
+        "revision": ("fmea_revisions", "revision_id", "revision_json", "revision"),
+        "approval_submission": (
+            "fmea_approval_submissions",
+            "submission_id",
+            "submission_json",
+            "submission",
+        ),
+        "approval": ("fmea_approval_decisions", "approval_id", "decision_json", "decision"),
+    }[dependency_kind]
+    resource_id = {
+        "revision": persisted.revision.revision_id,
+        "approval_submission": persisted.submission.submission_id,
+        "approval": persisted.approval.approval_id,
+    }[dependency_kind]
+
+    with sqlite3.connect(path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute(f"DROP TRIGGER IF EXISTS {table}_no_update")
+        connection.execute("DROP TRIGGER IF EXISTS fmea_audit_events_no_update")
+        connection.execute("DROP TRIGGER IF EXISTS fmea_outbox_events_no_update")
+        dependency = connection.execute(
+            f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",  # noqa: S608
+            (persisted.scope.workspace_id, resource_id),
+        ).fetchone()
+        assert dependency is not None
+        outbox = connection.execute(
+            "SELECT payload_json FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            (persisted.scope.workspace_id, dependency["outbox_event_id"]),
+        ).fetchone()
+        assert outbox is not None
+
+        audit = connection.execute(
+            "SELECT event_json,actor_type FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            (persisted.scope.workspace_id, dependency["audit_event_id"]),
+        ).fetchone()
+        assert audit is not None
+        if dependency_kind == "revision":
+            # Migration 009 validates the revision DTO/outbox/hash bundle but
+            # does not compare the persisted audit actor_type column with the
+            # decoded event. Keep the bundle self-consistent and create the
+            # runtime-only chain drift.
+            divergent_actor_type = "system" if audit["actor_type"] != "system" else "human"
+            connection.execute(
+                "UPDATE fmea_audit_events SET actor_type=? WHERE workspace_id=? AND event_id=?",
+                (divergent_actor_type, persisted.scope.workspace_id, dependency["audit_event_id"]),
+            )
+        else:
+            divergent_payload = json.loads(outbox["payload_json"])
+            divergent_payload[dto_key]["created_at"] = "2026-08-30T00:00:01Z"
+            assert json.loads(dependency[json_column])["created_at"] != divergent_payload[dto_key]["created_at"]
+            divergent_outbox_json = json.dumps(
+                divergent_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            divergent_payload_hash = "sha256:" + sha256(divergent_outbox_json.encode("utf-8")).hexdigest()
+            divergent_audit = json.loads(audit["event_json"])
+            divergent_audit["canonical_payload_hash"] = divergent_payload_hash
+            divergent_audit_json = encode_review_json(divergent_audit)
+
+            connection.execute(
+                f"UPDATE {table} SET payload_hash=? WHERE workspace_id=? AND {identifier}=?",  # noqa: S608
+                (divergent_payload_hash, persisted.scope.workspace_id, resource_id),
+            )
+            connection.execute(
+                "UPDATE fmea_outbox_events SET payload_json=?,payload_hash=? WHERE workspace_id=? AND event_id=?",
+                (
+                    divergent_outbox_json,
+                    divergent_payload_hash,
+                    persisted.scope.workspace_id,
+                    dependency["outbox_event_id"],
+                ),
+            )
+            connection.execute(
+                "UPDATE fmea_audit_events SET event_json=?,canonical_payload_hash=? WHERE workspace_id=? AND event_id=?",
+                (
+                    divergent_audit_json,
+                    divergent_payload_hash,
+                    persisted.scope.workspace_id,
+                    dependency["audit_event_id"],
+                ),
+            )
+            connection.execute(
+                "UPDATE idempotency_records SET payload_hash=? WHERE resource_id=?",
+                (divergent_payload_hash, resource_id),
+            )
+
+        if clear_replay_metadata:
+            connection.execute("DROP TRIGGER IF EXISTS fmea_revisions_no_update")
+            connection.execute("DROP TRIGGER IF EXISTS fmea_publications_no_update")
+            connection.execute(
+                "UPDATE fmea_revisions SET idempotency_scope=NULL,payload_hash=NULL "
+                "WHERE workspace_id=? AND revision_id=?",
+                (persisted.scope.workspace_id, persisted.revision.revision_id),
+            )
+            connection.execute(
+                "UPDATE fmea_publications SET idempotency_scope=NULL,payload_hash=NULL "
+                "WHERE workspace_id=? AND publication_id=?",
+                (persisted.scope.workspace_id, persisted.publication.publication_id),
+            )
+
+
+def _publication_dependency_migration_probe_state(
+    path: Path,
+    persisted: PreparedPublication,
+    dependency_kind: str,
+) -> tuple[object, ...]:
+    table, identifier = {
+        "revision": ("fmea_revisions", "revision_id"),
+        "approval_submission": ("fmea_approval_submissions", "submission_id"),
+        "approval": ("fmea_approval_decisions", "approval_id"),
+    }[dependency_kind]
+    resource_id = {
+        "revision": persisted.revision.revision_id,
+        "approval_submission": persisted.submission.submission_id,
+        "approval": persisted.approval.approval_id,
+    }[dependency_kind]
+    with sqlite3.connect(path) as connection:
+        connection.row_factory = sqlite3.Row
+        dependency = connection.execute(
+            f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",  # noqa: S608
+            (persisted.scope.workspace_id, resource_id),
+        ).fetchone()
+        assert dependency is not None
+        audit = connection.execute(
+            "SELECT * FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            (persisted.scope.workspace_id, dependency["audit_event_id"]),
+        ).fetchone()
+        outbox = connection.execute(
+            "SELECT * FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            (persisted.scope.workspace_id, dependency["outbox_event_id"]),
+        ).fetchone()
+        binding = connection.execute(
+            "SELECT * FROM fmea_governance_event_bindings WHERE workspace_id=? AND resource_type=? AND resource_id=?",
+            (persisted.scope.workspace_id, dependency_kind, resource_id),
+        ).fetchone()
+        idempotency = connection.execute(
+            "SELECT * FROM idempotency_records WHERE resource_id=?",
+            (resource_id,),
+        ).fetchone()
+        publication = connection.execute(
+            "SELECT * FROM fmea_publications WHERE workspace_id=? AND publication_id=?",
+            (persisted.scope.workspace_id, persisted.publication.publication_id),
+        ).fetchone()
+        assert audit is not None
+        assert outbox is not None
+        assert binding is not None
+        assert idempotency is not None
+        assert publication is not None
+        staging_names = tuple(
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE "
+                "name LIKE 'fmea_migration_%' OR name IN "
+                "('fmea_revisions_v8','fmea_publications_v8','fmea_publication_manifests_v9',"
+                "'fmea_normalized_snapshots_v9') ORDER BY name"
+            ).fetchall()
+        )
+        return (
+            tuple(connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()),
+            tuple(dependency),
+            tuple(audit),
+            tuple(outbox),
+            tuple(binding),
+            tuple(idempotency),
+            tuple(publication),
+            staging_names,
+        )
+
+
+@pytest.mark.parametrize("starting_version", STARTING_VERSIONS)
+@pytest.mark.parametrize("dependency_kind", DEPENDENCY_KINDS)
+def test_migration_009_rejects_publication_dependency_chain_divergence_atomically(
+    tmp_path: Path,
+    starting_version: int,
+    dependency_kind: str,
+) -> None:
+    path = tmp_path / f"unsafe-{dependency_kind}-v{starting_version}.sqlite3"
+    _initialize_through(path, starting_version)
+    persisted = _persist_publication_migration_fixture(path)
+    _tamper_publication_dependency_chain_consistently(
+        path,
+        persisted,
+        dependency_kind=dependency_kind,
+        clear_replay_metadata=starting_version == 7,
+    )
+    before = _publication_dependency_migration_probe_state(path, persisted, dependency_kind)
+
+    with pytest.raises(
+        (sqlite3.IntegrityError, sqlite3.OperationalError),
+        match="authority|replay|binding|CHECK|user-defined function",
+    ):
+        SqliteGovernanceRepository(path).initialize()
+
+    after = _publication_dependency_migration_probe_state(path, persisted, dependency_kind)
+    assert after == before
+    assert after[0] == (starting_version,)
+    assert after[-1] == ()
 
 
 def test_migration_009_rejects_v7_authority_dto_outbox_divergence_atomically(tmp_path: Path) -> None:

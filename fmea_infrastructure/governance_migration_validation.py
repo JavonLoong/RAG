@@ -259,6 +259,30 @@ def _validate_eligibility_runtime_row(connection: Any, eligibility: object, work
         raise ValueError("persisted export eligibility identity or hash is invalid")
 
 
+def _verify_publication_dependency_authority_chains(
+    connection: sqlite3.Connection,
+    *,
+    workspace_id: str,
+    revision_id: str,
+    submission_id: str,
+    approval_id: str,
+) -> None:
+    # Late import is required: repository_sqlite imports this migration module.
+    from .governance_repository_sqlite import SqliteGovernanceRepository
+
+    for kind, resource_id in (
+        ("revision", revision_id),
+        ("approval_submission", submission_id),
+        ("approval", approval_id),
+    ):
+        SqliteGovernanceRepository._verify_persisted_dependency_chain(
+            connection,
+            kind,
+            workspace_id,
+            resource_id,
+        )
+
+
 def _validate_event_chain(connection: Any, kind: str, authority: object, bundle: dict[str, object]) -> None:
     resource_id = bundle["resource_id"]
     authority_scope = bundle["authority_scope"]
@@ -472,6 +496,13 @@ def _validate_event_chain(connection: Any, kind: str, authority: object, bundle:
             or dict(eligibility.source_hashes).get("snapshot") != snapshot.snapshot_hash
         ):
             raise ValueError("publication dependency binding is invalid")
+        _verify_publication_dependency_authority_chains(
+            connection,
+            workspace_id=bundle["workspace_id"],
+            revision_id=revision.revision_id,
+            submission_id=submission.submission_id,
+            approval_id=approval.approval_id,
+        )
         command = {
             "revision_id": revision.revision_id,
             "revision_hash": revision.revision_hash,
