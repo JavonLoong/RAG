@@ -683,6 +683,7 @@ Task 3 reached its five-round review breaker with one real, load-bearing issue: 
 - Test: `tests/unit/test_fmea_governance_authority.py`
 - Test: `tests/integration/test_fmea_governance_sqlite.py`
 - Test: `tests/integration/test_fmea_governance_lifecycle.py`
+- Test fixture: `tests/fmea_governance_fixtures.py`
 
 **Interfaces:**
 - Consumes: assembler, readiness policy, governance repository, and existing actor context.
@@ -697,6 +698,16 @@ Register every required `FMEA_GOVERNANCE_*` code and the four transport-confirma
 Because service prechecks can race, strengthen the existing `BEGIN IMMEDIATE` repository writers with transaction-local state guards: one terminal decision per approval submission, one withdrawal per approval, publication only from a non-withdrawn approval, one withdrawal per publication, and at most one outgoing supersession whose old and replacement publications are not withdrawn. Keep the existing cycle, workspace, revision-lineage, record-version, canonical-payload, outbox, and replay checks. Do not alter migrations 005–009 or add a migration; the existing serialized transaction and target tables are sufficient for fail-closed guards.
 
 Add repository contract and real-SQLite tests for workspace isolation, canonical corruption rejection, lifecycle projection, and concurrent/stale duplicate target attempts before implementing the service. The repository remains the authoritative race-closing boundary; service checks provide stable governance-specific errors before commit when possible.
+
+Independent review hardening is mandatory before Task 4 acceptance:
+
+- Treat every public authority read as required. The service must not use `getattr`, default a missing revision version to `1`, or fall back to process-local revision/submission/approval/publication/withdrawal/supersession caches.
+- Add one command-bound early-replay port that looks up the idempotency scope before mutable-state guards, compares the caller command projection (excluding the raw idempotency key) with the command reconstructed from the persisted authority chain, verifies exact replay, and returns the typed persisted result. Same scope plus a different command must remain an idempotency conflict.
+- Add a workspace-qualified current publication audit-head read. Service publication construction uses that persisted predecessor, and the repository transaction rechecks it immediately before insert so concurrent publishers cannot fork the chain.
+- Repository publication validation is unconditional for every `PreparedPublication`; `audit.after_hash` is a required equality, never a marker that switches validation on. Update shared direct-publication fixtures to construct the exact snapshot → manifest → audit-chain → outbox order.
+- Stable publication/manifest/snapshot/eligibility aggregate IDs are derived from the canonical idempotency scope. Early command replay must return before any retry-only clock or event-ID generation.
+- Supersession traversal repeatedly reads the public persisted lifecycle, uses a `seen` set, and has a fixed maximum depth. Process-local supersession state is not authority.
+- Add restart/multi-instance audit-chain tests, command retry-before-guard tests, marker-removal/forged-chain mutation tests, withdrawn-old/replacement supersession tests, and bounded lineage tests.
 
 - [ ] **Step 1: Write authority and stale-binding tests**
 
@@ -774,7 +785,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit governance service**
 
 ```powershell
-git add fmea_application/governance_service.py fmea_application/service_factory.py fmea_application/ports.py fmea_application/review_errors.py fmea_infrastructure/composition.py fmea_infrastructure/governance_repository_sqlite.py fmea_infrastructure/local_auth.py tests/unit/test_fmea_application_contracts.py tests/unit/test_fmea_governance_repository_contract.py tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py
+git add fmea_application/governance_service.py fmea_application/service_factory.py fmea_application/ports.py fmea_application/review_errors.py fmea_infrastructure/composition.py fmea_infrastructure/governance_repository_sqlite.py fmea_infrastructure/local_auth.py tests/fmea_governance_fixtures.py tests/unit/test_fmea_application_contracts.py tests/unit/test_fmea_governance_repository_contract.py tests/unit/test_fmea_governance_service.py tests/unit/test_fmea_governance_authority.py tests/integration/test_fmea_governance_sqlite.py tests/integration/test_fmea_governance_lifecycle.py tests/unit/test_fmea_local_auth.py
 git commit -m "feat(fmea): govern approval and publication"
 ```
 
