@@ -16,6 +16,8 @@ EXPECTED_METHODS = {
     "get_approval_decision",
     "get_approval_decision_for_submission",
     "get_approval_withdrawal",
+    "replay_governance_command",
+    "get_current_publication_audit_head",
     "replay_approval_submission",
     "commit_approval_submission",
     "replay_approval_decision",
@@ -51,6 +53,10 @@ def test_governance_repository_port_exposes_workspace_qualified_current_reads() 
         "get_approval_decision_for_submission": ("self", "submission_id", "workspace_id"),
         "get_approval_withdrawal": ("self", "approval_id", "workspace_id"),
         "get_publication_lifecycle": ("self", "publication_id", "workspace_id"),
+        "get_current_publication_audit_head": ("self", "workspace_id"),
+        "replay_governance_command": ("self", "kind", "scope", "command"),
     }
     for method_name, parameters in expected.items():
-        assert tuple(inspect.signature(getattr(GovernanceRepository, method_name)).parameters) == parameters
+        method = getattr(GovernanceRepository, method_name, None)
+        assert method is not None
+        assert tuple(inspect.signature(method).parameters) == parameters

@@ -23,7 +23,6 @@ from core_domain.fmea.governance import (
     RevisionPublicationStatus,
     SupersessionRecord,
     canonical_hash,
-    project_publication_lifecycle,
     validate_approval_binding,
     validate_supersession_binding,
 )
@@ -78,13 +77,8 @@ def _export_hash(value: str) -> str:
 
 
 def _content_hash(value: object) -> str:
-    for field_name in ("content_hash", "record_hash", "row_hash", "assessment_hash", "graph_hash"):
-        candidate = getattr(value, field_name, None)
-        if isinstance(candidate, str):
-            normalized = candidate.removeprefix("sha256:")
-            if len(normalized) == 64 and all(char in "0123456789abcdef" for char in normalized):
-                return candidate
     return canonical_hash(value)
+
 
 _COMMANDS = {
     "assemble": "fmea.revision.assemble",
@@ -96,27 +90,26 @@ _COMMANDS = {
     "publication_withdraw": "fmea.publication.withdraw",
     "supersede": "fmea.publication.supersede",
 }
-_GOVERNANCE_CODES = frozenset(
-    {
-        "FMEA_GOVERNANCE_REVISION_NOT_FOUND",
-        "FMEA_GOVERNANCE_REVISION_STALE",
-        "FMEA_GOVERNANCE_NOT_READY",
-        "FMEA_GOVERNANCE_ACTIVE_RUN",
-        "FMEA_GOVERNANCE_APPROVAL_NOT_FOUND",
-        "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
-        "FMEA_GOVERNANCE_APPROVAL_STALE",
-        "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
-        "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
-        "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
-        "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
-        "FMEA_GOVERNANCE_VERSION_CONFLICT",
-        "FMEA_GOVERNANCE_IDEMPOTENCY_CONFLICT",
-        "FMEA_GOVERNANCE_CURSOR_INVALID",
-        "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
-        "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
-    }
-)
+_GOVERNANCE_CODES = frozenset({
+    "FMEA_GOVERNANCE_REVISION_NOT_FOUND",
+    "FMEA_GOVERNANCE_REVISION_STALE",
+    "FMEA_GOVERNANCE_NOT_READY",
+    "FMEA_GOVERNANCE_ACTIVE_RUN",
+    "FMEA_GOVERNANCE_APPROVAL_NOT_FOUND",
+    "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+    "FMEA_GOVERNANCE_APPROVAL_STALE",
+    "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN",
+    "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN",
+    "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+    "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+    "FMEA_GOVERNANCE_VERSION_CONFLICT",
+    "FMEA_GOVERNANCE_IDEMPOTENCY_CONFLICT",
+    "FMEA_GOVERNANCE_CURSOR_INVALID",
+    "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
+    "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
+})
 _ROLE_QUERY = frozenset({"reviewer", "approver", "publisher"})
+_MAX_SUPERSESSION_DEPTH = 64
 
 
 class GovernanceServiceError(ReviewError):
@@ -142,7 +135,9 @@ def _error(code: str, message: str, *, retryable: bool = False) -> GovernanceSer
     return GovernanceServiceError(code, message, retryable=retryable)
 
 
-def _map_repository_error(exc: Exception, fallback: str = "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE") -> GovernanceServiceError:
+def _map_repository_error(
+    exc: Exception, fallback: str = "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE"
+) -> GovernanceServiceError:
     if isinstance(exc, GovernanceServiceError):
         return exc
     if isinstance(exc, ReviewError):
@@ -186,15 +181,6 @@ class RevisionGovernanceService:
         self._source = source
         self._clock = clock or self._default_clock
         self._id_factory = id_factory
-        self._revisions: dict[tuple[str, str], _RevisionState] = {}
-        self._submissions: dict[tuple[str, str], ApprovalSubmission] = {}
-        self._approvals: dict[tuple[str, str], ApprovalDecision] = {}
-        self._approval_withdrawals: dict[tuple[str, str], ApprovalWithdrawalRecord] = {}
-        self._publications: dict[tuple[str, str], PublishedRevision] = {}
-        self._publication_withdrawals: dict[tuple[str, str], PublicationWithdrawalRecord] = {}
-        self._supersessions: dict[tuple[str, str], SupersessionRecord] = {}
-        self._snapshots: dict[tuple[str, str], NormalizedFmeaSnapshot] = {}
-        self._audit_heads: dict[str, str] = {}
 
     @staticmethod
     def _default_clock() -> str:
@@ -215,11 +201,14 @@ class RevisionGovernanceService:
             raise _error("FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN", "actor is not authorized to query governance data")
 
     @staticmethod
-    def _stable_id(prefix: str, scope: IdempotencyScope, factory: IdFactory | None) -> str:
+    def _stable_id(prefix: str, scope: IdempotencyScope) -> str:
         seed = f"{prefix}:{scope.scope_key}"
-        if factory is not None:
-            return factory(f"{prefix}-{scope.key_hash.removeprefix('sha256:')[:24]}")
         return f"{prefix}-{uuid5(NAMESPACE_URL, seed)}"
+
+    def _event_id(self, prefix: str, scope: IdempotencyScope) -> str:
+        if self._id_factory is not None:
+            return self._id_factory(f"{prefix}-{scope.key_hash.removeprefix('sha256:')[:24]}")
+        return self._stable_id(prefix, scope)
 
     @staticmethod
     def _scope(actor: ActorContext, command: str, resource_path: str, key: str) -> IdempotencyScope:
@@ -261,7 +250,7 @@ class RevisionGovernanceService:
         applied_record_version: int | None = None,
         after_hash: str | None = None,
     ) -> AuditEvent:
-        event_id = self._stable_id("audit", scope, self._id_factory)
+        event_id = self._event_id("audit", scope)
         return AuditEvent(
             event_id=event_id,
             occurred_at_server=self._clock(),
@@ -299,7 +288,9 @@ class RevisionGovernanceService:
         )
 
     @staticmethod
-    def _outbox(scope: IdempotencyScope, payload: Mapping[str, object], aggregate_id: str, created_at: str) -> OutboxEvent:
+    def _outbox(
+        scope: IdempotencyScope, payload: Mapping[str, object], aggregate_id: str, created_at: str
+    ) -> OutboxEvent:
         return OutboxEvent(
             event_id=f"outbox-{scope.scope_key}",
             workspace_id=scope.workspace_id,
@@ -313,7 +304,7 @@ class RevisionGovernanceService:
         )
 
     def _inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
-        if self._source is None or not callable(getattr(self._source, "load_inputs", None)):
+        if self._source is None:
             raise _error(
                 "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
                 "governance source is not configured",
@@ -334,146 +325,110 @@ class RevisionGovernanceService:
         return inputs
 
     def _revision_state(self, revision_id: str, workspace_id: str) -> _RevisionState | None:
-        key = (workspace_id, revision_id)
-        cached = self._revisions.get(key)
         try:
             revision = self._repository.get_revision(revision_id, workspace_id)
+            version = self._repository.get_revision_record_version(revision_id, workspace_id)
         except Exception as exc:
             _raise_mapped(exc)
         if revision is None:
-            return cached
-        if not isinstance(revision, FmeaRevision) or revision.workspace_id != workspace_id:
+            if version is not None:
+                raise _error("FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "governance revision state is inconsistent")
+            return None
+        if (
+            not isinstance(revision, FmeaRevision)
+            or revision.revision_id != revision_id
+            or revision.workspace_id != workspace_id
+        ):
             raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
-        version = self._revisions.get(key, _RevisionState(revision, 1)).record_version
-        getter = getattr(self._repository, "get_revision_record_version", None)
-        if callable(getter):
-            try:
-                persisted_version = getter(revision_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-            if persisted_version is None:
-                return None
-            version = persisted_version
-        state = _RevisionState(revision, version)
-        self._revisions[key] = state
-        return state
+        if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+            raise _error("FMEA_GOVERNANCE_STORAGE_UNAVAILABLE", "governance revision version is invalid")
+        return _RevisionState(revision, version)
 
     def _submission(self, submission_id: str, workspace_id: str) -> ApprovalSubmission | None:
-        getter = getattr(self._repository, "get_approval_submission", None)
-        value = None
-        if callable(getter):
-            try:
-                value = getter(submission_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-        if value is None:
-            value = self._submissions.get((workspace_id, submission_id))
-        if value is not None:
-            if not isinstance(value, ApprovalSubmission) or value.workspace_id != workspace_id:
-                raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval submission was not found")
-            self._submissions[(workspace_id, submission_id)] = value
+        try:
+            value = self._repository.get_approval_submission(submission_id, workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if value is not None and (
+            not isinstance(value, ApprovalSubmission)
+            or value.submission_id != submission_id
+            or value.workspace_id != workspace_id
+        ):
+            raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval submission was not found")
         return value
 
     def _approval(self, approval_id: str, workspace_id: str) -> ApprovalDecision | None:
-        getter = getattr(self._repository, "get_approval_decision", None)
-        value = None
-        if callable(getter):
-            try:
-                value = getter(approval_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-        if value is None:
-            value = self._approvals.get((workspace_id, approval_id))
-        if value is not None:
-            if not isinstance(value, ApprovalDecision):
-                raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval decision was not found")
-            self._approvals[(workspace_id, approval_id)] = value
+        try:
+            value = self._repository.get_approval_decision(approval_id, workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if value is not None and (not isinstance(value, ApprovalDecision) or value.approval_id != approval_id):
+            raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval decision was not found")
         return value
 
     def _approval_for_submission(self, submission_id: str, workspace_id: str) -> ApprovalDecision | None:
-        getter = getattr(self._repository, "get_approval_decision_for_submission", None)
-        value = None
-        if callable(getter):
-            try:
-                value = getter(submission_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-        if value is None:
-            value = next(
-                (
-                    decision
-                    for (item_workspace, _), decision in self._approvals.items()
-                    if item_workspace == workspace_id and decision.submission_id == submission_id
-                ),
-                None,
-            )
-        if value is not None:
-            self._approvals[(workspace_id, value.approval_id)] = value
+        try:
+            value = self._repository.get_approval_decision_for_submission(submission_id, workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if value is not None and (not isinstance(value, ApprovalDecision) or value.submission_id != submission_id):
+            raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval decision state is invalid")
         return value
 
     def _approval_withdrawal(self, approval_id: str, workspace_id: str) -> ApprovalWithdrawalRecord | None:
-        getter = getattr(self._repository, "get_approval_withdrawal", None)
-        value = None
-        if callable(getter):
-            try:
-                value = getter(approval_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-        if value is None:
-            value = self._approval_withdrawals.get((workspace_id, approval_id))
-        if value is not None:
-            if not isinstance(value, ApprovalWithdrawalRecord) or value.approval_id != approval_id:
-                raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval withdrawal state is invalid")
-            self._approval_withdrawals[(workspace_id, approval_id)] = value
+        try:
+            value = self._repository.get_approval_withdrawal(approval_id, workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if value is not None and (not isinstance(value, ApprovalWithdrawalRecord) or value.approval_id != approval_id):
+            raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval withdrawal state is invalid")
         return value
 
-    def _lifecycle(self, publication_id: str, workspace_id: str):
-        getter = getattr(self._repository, "get_publication_lifecycle", None)
-        if callable(getter):
-            try:
-                value = getter(publication_id, workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-            if value is not None:
-                self._publications[(workspace_id, publication_id)] = value.publication
-                if value.withdrawal is not None:
-                    self._publication_withdrawals[(workspace_id, publication_id)] = value.withdrawal
-                if value.supersession is not None:
-                    self._supersessions[(workspace_id, publication_id)] = value.supersession
-            return value
-        publication = self._publications.get((workspace_id, publication_id))
-        if publication is None:
-            getter = getattr(self._repository, "get_publication", None)
-            if callable(getter):
-                try:
-                    publication = getter(publication_id, workspace_id)
-                except Exception as exc:
-                    _raise_mapped(exc)
-        if publication is None:
+    def _lifecycle(self, publication_id: str, workspace_id: str) -> PublicationLifecycleView | None:
+        try:
+            value = self._repository.get_publication_lifecycle(publication_id, workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if value is None:
             return None
-        return project_publication_lifecycle(
-            publication,
-            withdrawal=self._publication_withdrawals.get((workspace_id, publication_id)),
-            supersession=self._supersessions.get((workspace_id, publication_id)),
-        )
+        if (
+            not isinstance(value, PublicationLifecycleView)
+            or value.publication.publication_id != publication_id
+            or value.publication.workspace_id != workspace_id
+        ):
+            raise _error("FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID", "publication lifecycle is invalid")
+        return value
 
     def _commit(
         self,
-        replay_name: str,
-        commit_name: str,
-        scope: IdempotencyScope,
-        payload_hash: str,
+        commit: Callable[[object], object],
         prepared: object,
         *,
         fallback: str = "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
     ):
         try:
-            replay = getattr(self._repository, replay_name)(scope, payload_hash)
-            if replay is not None:
-                return replay
-            return getattr(self._repository, commit_name)(prepared)
+            return commit(prepared)
         except Exception as exc:
             _raise_mapped(exc, fallback)
+
+    def _early_replay(
+        self,
+        kind: str,
+        scope: IdempotencyScope,
+        command: object,
+        expected_type: type,
+        *,
+        fallback: str,
+    ):
+        try:
+            result = self._repository.replay_governance_command(kind, scope, command)
+        except Exception as exc:
+            _raise_mapped(exc, fallback)
+        if result is None:
+            return None
+        if type(result) is not expected_type or result.replayed is not True:
+            raise _error(fallback, "governance command replay result is invalid")
+        return result
 
     def _readiness_for(self, revision: FmeaRevision) -> PublicationReadinessReport:
         if self._readiness_policy is None:
@@ -486,12 +441,10 @@ class RevisionGovernanceService:
         current_children.extend((row.row_id, _content_hash(row)) for row in inputs.rows)
         current_children.extend((risk.assessment_id, _content_hash(risk)) for risk in inputs.risk_records)
         if inputs.propagation_graph_revision is not None:
-            current_children.append(
-                (
-                    inputs.propagation_graph_revision.graph_revision_id,
-                    _content_hash(inputs.propagation_graph_revision),
-                )
-            )
+            current_children.append((
+                inputs.propagation_graph_revision.graph_revision_id,
+                _content_hash(inputs.propagation_graph_revision),
+            ))
         current_children.extend((pack.pack_id, pack.pack_hash) for pack in inputs.evidence_packs)
         artifacts = GovernanceArtifactSet(
             domain_pack=inputs.domain_pack,
@@ -504,26 +457,19 @@ class RevisionGovernanceService:
             active_run_ids=inputs.active_run_ids,
             current_analysis_version=inputs.analysis.record_version,
             current_child_hashes=tuple(current_children),
-            required_fields_accepted=all(
-                getattr(row.review_status, "value", row.review_status) == "accepted" for row in inputs.rows
-            ),
+            required_fields_accepted=all(row.review_status.value == "accepted" for row in inputs.rows),
             required_risk_confirmed=bool(inputs.risk_records)
-            and all(getattr(risk.status, "value", risk.status) == "confirmed" for risk in inputs.risk_records),
+            and all(risk.status.value == "confirmed" for risk in inputs.risk_records),
             propagation_confirmed=inputs.propagation_graph_revision is not None
-            and getattr(inputs.propagation_graph_revision.status, "value", inputs.propagation_graph_revision.status)
-            == "confirmed",
+            and inputs.propagation_graph_revision.status.value == "confirmed",
             required_evidence_present=bool(inputs.evidence_packs),
             acknowledgement_references=inputs.acknowledgement_references,
             authoritative_analysis=inputs.analysis,
             authoritative_artifacts=artifacts,
             governance_inputs=inputs,
         )
-        expected_children = {
-            row_id: child_hash for row_id, _, child_hash in revision.row_versions
-        }
-        expected_children.update(
-            {assessment_id: child_hash for assessment_id, _, child_hash in revision.risk_versions}
-        )
+        expected_children = {row_id: child_hash for row_id, _, child_hash in revision.row_versions}
+        expected_children.update({assessment_id: child_hash for assessment_id, _, child_hash in revision.risk_versions})
         if revision.propagation_graph_revision_id is not None and revision.propagation_graph_hash is not None:
             expected_children[revision.propagation_graph_revision_id] = revision.propagation_graph_hash
         expected_children.update(dict(revision.evidence_pack_hashes))
@@ -574,6 +520,21 @@ class RevisionGovernanceService:
         self._authorize(actor, "reviewer", "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN")
         if not isinstance(command, AssembleRevisionCommand):
             raise _error("FMEA_GOVERNANCE_REVISION_STALE", "governance revision request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["assemble"],
+            f"/fmea/analyses/{command.request.analysis_id}/revisions",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "assemble",
+            scope,
+            command,
+            RevisionResult,
+            fallback="FMEA_GOVERNANCE_REVISION_STALE",
+        )
+        if replay is not None:
+            return replay
         inputs = self._inputs(command.request.analysis_id, actor.workspace_id)
         if inputs.analysis.record_version != command.request.expected_analysis_version:
             raise _error("FMEA_GOVERNANCE_REVISION_STALE", "governance analysis version is stale")
@@ -583,12 +544,6 @@ class RevisionGovernanceService:
             revision = self._assembler.assemble(command.request, inputs)
         except Exception as exc:
             _raise_mapped(exc, "FMEA_GOVERNANCE_REVISION_STALE")
-        scope = self._scope(
-            actor,
-            _COMMANDS["assemble"],
-            f"/fmea/analyses/{revision.analysis_id}/revisions",
-            command.idempotency_key,
-        )
         payload = canonical_governance_payload("revision.assemble", command, revision=revision)
         payload_hash = governance_payload_hash(payload)
         audit = self._audit(
@@ -612,11 +567,9 @@ class RevisionGovernanceService:
             outbox,
         )
         result = self._commit(
-            "replay_revision", "commit_revision", scope, payload_hash, prepared,
+            self._repository.commit_revision,
+            prepared,
             fallback="FMEA_GOVERNANCE_REVISION_STALE",
-        )
-        self._revisions[(actor.workspace_id, revision.revision_id)] = _RevisionState(
-            revision, result.record_version
         )
         return result
 
@@ -634,6 +587,21 @@ class RevisionGovernanceService:
         self._authorize(actor, "reviewer", "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN")
         if not isinstance(command, SubmitApprovalCommand):
             raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval submission request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["submit"],
+            f"/fmea/revisions/{command.revision_id}/approval-submissions",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "submit",
+            scope,
+            command,
+            ApprovalSubmissionResult,
+            fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+        )
+        if replay is not None:
+            return replay
         state = self._revision_state(command.revision_id, actor.workspace_id)
         if state is None:
             raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
@@ -641,14 +609,8 @@ class RevisionGovernanceService:
             raise _error("FMEA_GOVERNANCE_VERSION_CONFLICT", "governance revision version is stale")
         if state.revision.revision_hash != command.revision_hash:
             raise _error("FMEA_GOVERNANCE_REVISION_STALE", "governance revision hash is stale")
-        scope = self._scope(
-            actor,
-            _COMMANDS["submit"],
-            f"/fmea/revisions/{command.revision_id}/approval-submissions",
-            command.idempotency_key,
-        )
         submission = ApprovalSubmission(
-            self._stable_id("submission", scope, self._id_factory),
+            self._stable_id("submission", scope),
             actor.workspace_id,
             command.revision_id,
             command.revision_hash,
@@ -670,18 +632,35 @@ class RevisionGovernanceService:
             applied_record_version=1,
         )
         outbox = self._outbox(scope, payload, submission.submission_id, audit.occurred_at_server)
-        prepared = PreparedApprovalSubmission(scope, payload_hash, command, state.record_version, submission, audit, outbox)
+        prepared = PreparedApprovalSubmission(
+            scope, payload_hash, command, state.record_version, submission, audit, outbox
+        )
         result = self._commit(
-            "replay_approval_submission", "commit_approval_submission", scope, payload_hash, prepared,
+            self._repository.commit_approval_submission,
+            prepared,
             fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
         )
-        self._submissions[(actor.workspace_id, submission.submission_id)] = submission
         return result
 
     def _decide(self, command: ApprovalCommand, actor: ActorContext, status: ApprovalStatus) -> ApprovalResult:
         self._authorize(actor, "approver", "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN")
         if not isinstance(command, ApprovalCommand):
             raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval decision request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["decide"],
+            f"/fmea/approval-submissions/{command.submission_id}/decision",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "approve" if status is ApprovalStatus.APPROVED else "reject",
+            scope,
+            command,
+            ApprovalResult,
+            fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+        )
+        if replay is not None:
+            return replay
         submission = self._submission(command.submission_id, actor.workspace_id)
         if submission is None:
             raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval submission was not found")
@@ -696,14 +675,8 @@ class RevisionGovernanceService:
             raise _error("FMEA_GOVERNANCE_APPROVAL_STALE", "approval revision binding is stale")
         if command.expected_submission_version != submission.record_version:
             raise _error("FMEA_GOVERNANCE_VERSION_CONFLICT", "approval submission version is stale")
-        scope = self._scope(
-            actor,
-            _COMMANDS["decide"],
-            f"/fmea/approval-submissions/{submission.submission_id}/decision",
-            command.idempotency_key,
-        )
         decision = ApprovalDecision(
-            self._stable_id("approval", scope, self._id_factory),
+            self._stable_id("approval", scope),
             submission.submission_id,
             submission.revision_id,
             submission.revision_hash,
@@ -713,9 +686,7 @@ class RevisionGovernanceService:
             submission.record_version + 1,
             self._clock(),
         )
-        payload = canonical_governance_payload(
-            "approval.decide", command, submission=submission, decision=decision
-        )
+        payload = canonical_governance_payload("approval.decide", command, submission=submission, decision=decision)
         payload_hash = governance_payload_hash(payload)
         audit = self._audit(
             actor,
@@ -731,10 +702,10 @@ class RevisionGovernanceService:
         outbox = self._outbox(scope, payload, decision.approval_id, audit.occurred_at_server)
         prepared = PreparedApproval(scope, payload_hash, command, submission, decision, audit, outbox)
         result = self._commit(
-            "replay_approval_decision", "commit_approval", scope, payload_hash, prepared,
+            self._repository.commit_approval,
+            prepared,
             fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
         )
-        self._approvals[(actor.workspace_id, decision.approval_id)] = decision
         return result
 
     def approve(self, command: ApprovalCommand, actor: ActorContext) -> ApprovalResult:
@@ -749,6 +720,21 @@ class RevisionGovernanceService:
         self._authorize(actor, "approver", "FMEA_GOVERNANCE_APPROVAL_FORBIDDEN")
         if not isinstance(command, WithdrawApprovalCommand):
             raise _error("FMEA_GOVERNANCE_APPROVAL_STATE_INVALID", "approval withdrawal request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["approval_withdraw"],
+            f"/fmea/approvals/{command.approval_id}/withdrawal",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "withdraw_approval",
+            scope,
+            command,
+            ApprovalWithdrawalResult,
+            fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+        )
+        if replay is not None:
+            return replay
         approval = self._approval(command.approval_id, actor.workspace_id)
         if approval is None:
             raise _error("FMEA_GOVERNANCE_APPROVAL_NOT_FOUND", "approval decision was not found")
@@ -763,14 +749,8 @@ class RevisionGovernanceService:
         state = self._revision_state(approval.revision_id, actor.workspace_id)
         if state is None:
             raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
-        scope = self._scope(
-            actor,
-            _COMMANDS["approval_withdraw"],
-            f"/fmea/approvals/{approval.approval_id}/withdrawal",
-            command.idempotency_key,
-        )
         withdrawal = ApprovalWithdrawalRecord(
-            self._stable_id("approval-withdrawal", scope, self._id_factory),
+            self._stable_id("approval-withdrawal", scope),
             approval.approval_id,
             approval.revision_id,
             approval.revision_hash,
@@ -778,9 +758,7 @@ class RevisionGovernanceService:
             command.reason,
             self._clock(),
         )
-        payload = canonical_governance_payload(
-            "approval.withdraw", command, approval=approval, withdrawal=withdrawal
-        )
+        payload = canonical_governance_payload("approval.withdraw", command, approval=approval, withdrawal=withdrawal)
         payload_hash = governance_payload_hash(payload)
         audit = self._audit(
             actor,
@@ -796,10 +774,10 @@ class RevisionGovernanceService:
         outbox = self._outbox(scope, payload, withdrawal.withdrawal_id, audit.occurred_at_server)
         prepared = PreparedApprovalWithdrawal(scope, payload_hash, command, approval, withdrawal, audit, outbox)
         result = self._commit(
-            "replay_approval_withdrawal", "commit_approval_withdrawal", scope, payload_hash, prepared,
+            self._repository.commit_approval_withdrawal,
+            prepared,
             fallback="FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
         )
-        self._approval_withdrawals[(actor.workspace_id, approval.approval_id)] = withdrawal
         return result
 
     def _snapshot(
@@ -890,6 +868,21 @@ class RevisionGovernanceService:
         self._authorize(actor, "publisher", "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN")
         if not isinstance(command, PublishCommand):
             raise _error("FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID", "publication request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["publish"],
+            f"/fmea/revisions/{command.revision_id}/publications",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "publish",
+            scope,
+            command,
+            PublicationResult,
+            fallback="FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+        )
+        if replay is not None:
+            return replay
         state = self._revision_state(command.revision_id, actor.workspace_id)
         if state is None:
             raise _error("FMEA_GOVERNANCE_REVISION_NOT_FOUND", "governance revision was not found")
@@ -919,14 +912,8 @@ class RevisionGovernanceService:
             raise _error("FMEA_GOVERNANCE_ACTIVE_RUN", "an active governance run blocks publication")
         if not readiness.ready:
             raise _error("FMEA_GOVERNANCE_NOT_READY", "revision is not ready for publication")
-        scope = self._scope(
-            actor,
-            _COMMANDS["publish"],
-            f"/fmea/revisions/{command.revision_id}/publications",
-            command.idempotency_key,
-        )
-        publication_id = self._stable_id("publication", scope, self._id_factory)
-        manifest_id = self._stable_id("manifest", scope, self._id_factory)
+        publication_id = self._stable_id("publication", scope)
+        manifest_id = self._stable_id("manifest", scope)
         created_at = self._clock()
         snapshot = self._snapshot(state.revision, approval, publication_id, manifest_id, readiness, created_at)
         version_manifest = {
@@ -938,7 +925,17 @@ class RevisionGovernanceService:
             "propagation_rule_identity": state.revision.propagation_rule_identity,
         }
         version_manifest_hash = canonical_hash(version_manifest, prefixed=True)
-        previous_head = self._audit_heads.get(actor.workspace_id)
+        try:
+            previous_head = self._repository.get_current_publication_audit_head(actor.workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc, "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID")
+        if previous_head is not None:
+            normalized_head = previous_head.removeprefix("sha256:") if isinstance(previous_head, str) else ""
+            if len(normalized_head) != 64 or any(char not in "0123456789abcdef" for char in normalized_head):
+                raise _error(
+                    "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                    "publication audit predecessor is invalid",
+                )
         manifest_hash = canonical_hash(
             {
                 "manifest_id": manifest_id,
@@ -992,7 +989,7 @@ class RevisionGovernanceService:
             1,
             created_at,
         )
-        eligibility_id = self._stable_id("eligibility", scope, self._id_factory)
+        eligibility_id = self._stable_id("eligibility", scope)
         eligibility_body = {
             "eligibility_id": eligibility_id,
             "workspace_id": actor.workspace_id,
@@ -1058,18 +1055,33 @@ class RevisionGovernanceService:
             eligibility,
         )
         result = self._commit(
-            "replay_publication", "commit_publication", scope, payload_hash, prepared,
+            self._repository.commit_publication,
+            prepared,
             fallback="FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
         )
-        self._publications[(actor.workspace_id, publication.publication_id)] = publication
-        self._snapshots[(actor.workspace_id, publication.publication_id)] = snapshot
-        self._audit_heads[actor.workspace_id] = audit_chain_head
         return result
 
-    def withdraw_publication(self, command: WithdrawPublicationCommand, actor: ActorContext) -> PublicationWithdrawalResult:
+    def withdraw_publication(
+        self, command: WithdrawPublicationCommand, actor: ActorContext
+    ) -> PublicationWithdrawalResult:
         self._authorize(actor, "publisher", "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN")
         if not isinstance(command, WithdrawPublicationCommand):
             raise _error("FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID", "publication withdrawal request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["publication_withdraw"],
+            f"/fmea/publications/{command.publication_id}/withdrawal",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "withdraw_publication",
+            scope,
+            command,
+            PublicationWithdrawalResult,
+            fallback="FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+        )
+        if replay is not None:
+            return replay
         lifecycle = self._lifecycle(command.publication_id, actor.workspace_id)
         if lifecycle is None:
             raise _error("FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID", "publication was not found")
@@ -1078,14 +1090,8 @@ class RevisionGovernanceService:
         publication = lifecycle.publication
         if command.expected_publication_version != publication.record_version:
             raise _error("FMEA_GOVERNANCE_VERSION_CONFLICT", "publication version is stale")
-        scope = self._scope(
-            actor,
-            _COMMANDS["publication_withdraw"],
-            f"/fmea/publications/{publication.publication_id}/withdrawal",
-            command.idempotency_key,
-        )
         withdrawal = PublicationWithdrawalRecord(
-            self._stable_id("publication-withdrawal", scope, self._id_factory),
+            self._stable_id("publication-withdrawal", scope),
             publication.publication_id,
             command.replacement_publication_id,
             actor.actor_id,
@@ -1109,23 +1115,38 @@ class RevisionGovernanceService:
         outbox = self._outbox(scope, payload, withdrawal.withdrawal_id, audit.occurred_at_server)
         prepared = PreparedPublicationWithdrawal(scope, payload_hash, command, publication, withdrawal, audit, outbox)
         result = self._commit(
-            "replay_publication_withdrawal", "commit_publication_withdrawal", scope, payload_hash, prepared,
+            self._repository.commit_publication_withdrawal,
+            prepared,
             fallback="FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
         )
-        self._publication_withdrawals[(actor.workspace_id, publication.publication_id)] = withdrawal
         return result
 
     def supersede(self, command: SupersedePublicationCommand, actor: ActorContext) -> SupersessionResult:
         self._authorize(actor, "publisher", "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN")
         if not isinstance(command, SupersedePublicationCommand):
             raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession request is invalid")
+        scope = self._scope(
+            actor,
+            _COMMANDS["supersede"],
+            f"/fmea/publications/{command.publication_id}/supersession",
+            command.idempotency_key,
+        )
+        replay = self._early_replay(
+            "supersede",
+            scope,
+            command,
+            SupersessionResult,
+            fallback="FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+        )
+        if replay is not None:
+            return replay
         old_lifecycle = self._lifecycle(command.publication_id, actor.workspace_id)
         replacement_lifecycle = self._lifecycle(command.replacement_publication_id, actor.workspace_id)
         if old_lifecycle is None or replacement_lifecycle is None:
             raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession publications were not found")
         if (
             old_lifecycle.effective_status is not RevisionPublicationStatus.PUBLISHED
-            or replacement_lifecycle.effective_status is not RevisionPublicationStatus.PUBLISHED
+            or replacement_lifecycle.withdrawal is not None
         ):
             raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession publications are not current")
         old = old_lifecycle.publication
@@ -1139,14 +1160,8 @@ class RevisionGovernanceService:
         if old_state is None or replacement_state is None:
             raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession revisions were not found")
         try:
-            scope = self._scope(
-                actor,
-                _COMMANDS["supersede"],
-                f"/fmea/publications/{old.publication_id}/supersession",
-                command.idempotency_key,
-            )
             link = SupersessionRecord(
-                self._stable_id("supersession", scope, self._id_factory),
+                self._stable_id("supersession", scope),
                 old.publication_id,
                 replacement.publication_id,
                 actor.actor_id,
@@ -1162,18 +1177,28 @@ class RevisionGovernanceService:
             )
         except Exception:
             raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is invalid") from None
-        current = replacement.publication_id
+        current_lifecycle = replacement_lifecycle
         seen: set[str] = set()
-        while current in seen:
-            raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is cyclic")
-        while True:
+        for _depth in range(_MAX_SUPERSESSION_DEPTH):
+            current = current_lifecycle.publication.publication_id
             if current == old.publication_id:
                 raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is cyclic")
+            if current in seen:
+                raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is cyclic")
+            if current_lifecycle.withdrawal is not None:
+                raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is withdrawn")
             seen.add(current)
-            next_link = self._supersessions.get((actor.workspace_id, current))
+            next_link = current_lifecycle.supersession
             if next_link is None:
                 break
-            current = next_link.new_publication_id
+            current_lifecycle = self._lifecycle(next_link.new_publication_id, actor.workspace_id)
+            if current_lifecycle is None:
+                raise _error(
+                    "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                    "supersession lineage is incomplete",
+                )
+        else:
+            raise _error("FMEA_GOVERNANCE_SUPERSESSION_INVALID", "supersession lineage is too deep")
         payload = canonical_governance_payload(
             "publication.supersede",
             command,
@@ -1208,10 +1233,10 @@ class RevisionGovernanceService:
             outbox,
         )
         result = self._commit(
-            "replay_supersession", "commit_supersession", scope, payload_hash, prepared,
+            self._repository.commit_supersession,
+            prepared,
             fallback="FMEA_GOVERNANCE_SUPERSESSION_INVALID",
         )
-        self._supersessions[(actor.workspace_id, old.publication_id)] = link
         return result
 
     def get_revision(self, revision_id: str, actor: ActorContext) -> FmeaRevision:
@@ -1230,23 +1255,25 @@ class RevisionGovernanceService:
 
     def get_snapshot(self, publication_id: str, actor: ActorContext) -> NormalizedFmeaSnapshot:
         self._authorize_query(actor)
-        getter = getattr(self._repository, "get_snapshot", None)
-        value = None
-        if callable(getter):
-            try:
-                value = getter(publication_id, actor.workspace_id)
-            except Exception as exc:
-                _raise_mapped(exc)
-        if value is None:
-            value = self._snapshots.get((actor.workspace_id, publication_id))
-        if not isinstance(value, NormalizedFmeaSnapshot):
+        try:
+            value = self._repository.get_snapshot(publication_id, actor.workspace_id)
+        except Exception as exc:
+            _raise_mapped(exc)
+        if (
+            not isinstance(value, NormalizedFmeaSnapshot)
+            or value.publication_id != publication_id
+            or value.workspace_id != actor.workspace_id
+        ):
             raise _error("FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID", "publication snapshot was not found")
-        self._snapshots[(actor.workspace_id, publication_id)] = value
         return value
 
     def list_approval_events(self, query: GovernanceHistoryQuery, actor: ActorContext) -> GovernanceHistoryPage:
         self._authorize_query(actor)
-        if not isinstance(query, GovernanceHistoryQuery) or query.workspace_id != actor.workspace_id or query.resource_type != "revision":
+        if (
+            not isinstance(query, GovernanceHistoryQuery)
+            or query.workspace_id != actor.workspace_id
+            or query.resource_type != "revision"
+        ):
             raise _error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history query is invalid")
         try:
             return self._repository.list_approval_events(query)
@@ -1255,7 +1282,11 @@ class RevisionGovernanceService:
 
     def list_publication_events(self, query: GovernanceHistoryQuery, actor: ActorContext) -> GovernanceHistoryPage:
         self._authorize_query(actor)
-        if not isinstance(query, GovernanceHistoryQuery) or query.workspace_id != actor.workspace_id or query.resource_type != "publication":
+        if (
+            not isinstance(query, GovernanceHistoryQuery)
+            or query.workspace_id != actor.workspace_id
+            or query.resource_type != "publication"
+        ):
             raise _error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history query is invalid")
         try:
             return self._repository.list_publication_events(query)

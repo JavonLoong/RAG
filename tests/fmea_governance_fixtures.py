@@ -820,6 +820,29 @@ def prepared_publication(**overrides: Any):
     approval = make_approval_decision(revision_hash=revision.revision_hash)
     submission = make_approval_submission(revision_hash=revision.revision_hash)
     snapshot = make_normalized_snapshot()
+    version_manifest_hash = canonical_hash(
+        {
+            "revision_hash": revision.revision_hash,
+            "analysis_hash": revision.analysis_hash,
+            "domain_pack_identity": revision.domain_pack_identity,
+            "template_identities": revision.template_identities,
+            "scoring_rule_identities": revision.scoring_rule_identities,
+            "propagation_rule_identity": revision.propagation_rule_identity,
+        },
+        prefixed=True,
+    )
+    manifest_body = {
+        "manifest_id": "manifest-1",
+        "revision_id": revision.revision_id,
+        "revision_hash": revision.revision_hash,
+        "approval_id": approval.approval_id,
+        "snapshot_id": snapshot.snapshot_id,
+        "snapshot_hash": snapshot.snapshot_hash,
+        "version_manifest_hash": version_manifest_hash,
+        "previous_audit_chain_head": None,
+        "export_eligible": True,
+    }
+    manifest_hash = canonical_hash(manifest_body, prefixed=True)
     manifest = __import__("core_domain.fmea.governance", fromlist=["PublicationManifest"]).PublicationManifest(
         "manifest-1",
         "revision-1",
@@ -827,11 +850,21 @@ def prepared_publication(**overrides: Any):
         "approval-1",
         snapshot.snapshot_id,
         snapshot.snapshot_hash,
-        HASH,
+        version_manifest_hash,
         None,
         True,
-        HASH,
+        manifest_hash,
         TIMESTAMP,
+    )
+    audit_chain_head = canonical_hash(
+        {
+            "previous_audit_chain_head": None,
+            "revision_hash": revision.revision_hash,
+            "approval_hash": canonical_hash(approval, prefixed=True),
+            "snapshot_hash": snapshot.snapshot_hash,
+            "manifest_hash": manifest.manifest_hash,
+        },
+        prefixed=True,
     )
     publication = make_published_revision(
         publisher_actor_id=actor.actor_id,
@@ -839,6 +872,7 @@ def prepared_publication(**overrides: Any):
         manifest_hash=manifest.manifest_hash,
         snapshot_id=snapshot.snapshot_id,
         snapshot_hash=snapshot.snapshot_hash,
+        audit_chain_head=audit_chain_head,
     )
     export_eligibility = _export_eligibility(
         publication=publication,
@@ -861,6 +895,7 @@ def prepared_publication(**overrides: Any):
     )
     payload_hash = governance_payload_hash(payload)
     audit, outbox = _prepared_events(scope, payload_hash, payload, publication.publication_id)
+    audit = replace(audit, after_hash=audit_chain_head)
     values = {
         "scope": scope,
         "payload_hash": payload_hash,

@@ -53,11 +53,16 @@ from fmea_application.governance_contracts import (
     PreparedSupersession,
     PublicationResult,
     PublicationWithdrawalResult,
+    PublishCommand,
     ReadinessReportRecord,
     ReadinessResult,
     RevisionAssemblyRequest,
     RevisionResult,
+    SubmitApprovalCommand,
+    SupersedePublicationCommand,
     SupersessionResult,
+    WithdrawApprovalCommand,
+    WithdrawPublicationCommand,
     canonical_governance_payload,
     governance_payload_hash,
 )
@@ -66,6 +71,7 @@ from fmea_application.review_contracts import AuditEvent, IdempotencyScope, enco
 from fmea_application.review_errors import ReviewError
 from fmea_application.revision_assembler import PublicationReadinessReport
 from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
+from fmea_application.snapshot_contracts import snapshot_content_hash
 
 from .repository_sqlite import SqliteFmeaRepository
 from .sqlite_codec import decode_audit_event, load_strict_json
@@ -105,6 +111,20 @@ _RESULT_FIELDS: dict[str, set[str]] = {
         "outbox_event_id",
         "replayed",
     },
+}
+_COMMAND_REPLAY_KINDS: dict[str, tuple[str, type[object], str]] = {
+    "assemble": ("revision", AssembleRevisionCommand, "fmea.revision.assemble"),
+    "submit": ("approval_submission", SubmitApprovalCommand, "fmea.approval.submit"),
+    "approve": ("approval", ApprovalCommand, "fmea.approval.decide"),
+    "reject": ("approval", ApprovalRejectionCommand, "fmea.approval.decide"),
+    "withdraw_approval": ("approval_withdrawal", WithdrawApprovalCommand, "fmea.approval.withdraw"),
+    "publish": ("publication", PublishCommand, "fmea.publication.publish"),
+    "withdraw_publication": (
+        "publication_withdrawal",
+        WithdrawPublicationCommand,
+        "fmea.publication.withdraw",
+    ),
+    "supersede": ("supersession", SupersedePublicationCommand, "fmea.publication.supersede"),
 }
 
 
@@ -539,6 +559,7 @@ class SqliteGovernanceRepository:
             value.outbox.workspace_id != value.scope.workspace_id
             or value.outbox.aggregate_id != resource_id
             or value.outbox.scope_key != value.scope.scope_key
+            or value.outbox.event_type != value.scope.command
             or value.outbox.payload_hash != outbox_payload_hash(value.outbox.payload)
             or value.outbox.aggregate_type != "fmea_governance"
         ):
@@ -1304,6 +1325,78 @@ class SqliteGovernanceRepository:
             replacement_revision=replacement_revision,
             supersession=supersession,
         )
+
+    @staticmethod
+    def _replay_result_resource_id(kind: str, result: object) -> str:
+        if kind == "revision":
+            return cast(RevisionResult, result).revision_id
+        if kind == "approval_submission":
+            return cast(ApprovalSubmissionResult, result).submission_id
+        if kind == "approval":
+            return cast(ApprovalResult, result).approval_id
+        if kind == "approval_withdrawal":
+            return cast(ApprovalWithdrawalResult, result).withdrawal_id
+        if kind == "publication":
+            return cast(PublicationResult, result).publication_id
+        if kind == "publication_withdrawal":
+            return cast(PublicationWithdrawalResult, result).withdrawal_id
+        return cast(SupersessionResult, result).supersession_id
+
+    @staticmethod
+    def _reconstructed_command(kind: str, payload: Mapping[str, object], idempotency_key: str) -> object:
+        expected_fields = {
+            "assemble": {"request"},
+            "submit": {"revision_id", "revision_hash", "expected_revision_version"},
+            "approve": {"submission_id", "revision_id", "revision_hash", "expected_submission_version", "reason"},
+            "reject": {"submission_id", "revision_id", "revision_hash", "expected_submission_version", "reason"},
+            "withdraw_approval": {"approval_id", "revision_hash", "expected_approval_version", "reason"},
+            "publish": {"revision_id", "revision_hash", "approval_id", "expected_revision_version"},
+            "withdraw_publication": {
+                "publication_id",
+                "expected_publication_version",
+                "reason",
+                "replacement_publication_id",
+            },
+            "supersede": {
+                "publication_id",
+                "replacement_publication_id",
+                "expected_publication_version",
+                "expected_replacement_version",
+                "reason",
+            },
+        }[kind]
+        raw = _mapping(payload.get("command"), f"persisted {kind} command")
+        if set(raw) != expected_fields:
+            raise ValueError(f"persisted {kind} command fields are invalid")
+        if kind == "assemble":
+            request = _mapping(raw["request"], "persisted assemble request")
+            if set(request) != {
+                "analysis_id",
+                "parent_revision_id",
+                "expected_analysis_version",
+                "parent_revision_hash",
+            }:
+                raise ValueError("persisted assemble request fields are invalid")
+            return AssembleRevisionCommand(RevisionAssemblyRequest(**request), idempotency_key)
+        command_type = _COMMAND_REPLAY_KINDS[kind][1]
+        return command_type(**raw, idempotency_key=idempotency_key)
+
+    @staticmethod
+    def _command_resource_path(kind: str, command: object) -> str:
+        value = cast(Any, command)
+        if kind == "assemble":
+            return f"/fmea/analyses/{value.request.analysis_id}/revisions"
+        if kind == "submit":
+            return f"/fmea/revisions/{value.revision_id}/approval-submissions"
+        if kind in {"approve", "reject"}:
+            return f"/fmea/approval-submissions/{value.submission_id}/decision"
+        if kind == "withdraw_approval":
+            return f"/fmea/approvals/{value.approval_id}/withdrawal"
+        if kind == "publish":
+            return f"/fmea/revisions/{value.revision_id}/publications"
+        if kind == "withdraw_publication":
+            return f"/fmea/publications/{value.publication_id}/withdrawal"
+        return f"/fmea/publications/{value.publication_id}/supersession"
 
     @classmethod
     def _insert_audit(
@@ -2449,6 +2542,86 @@ class SqliteGovernanceRepository:
         )
 
     @classmethod
+    def _current_publication_audit_head_from_connection(
+        cls,
+        connection: sqlite3.Connection,
+        workspace_id: str,
+    ) -> str | None:
+        rows = connection.execute(
+            "SELECT publication_id FROM fmea_publications WHERE workspace_id=?",
+            (workspace_id,),
+        ).fetchall()
+        if not rows:
+            return None
+        predecessors: dict[str, str | None] = {}
+        for row in rows:
+            publication = cls._publication_from_connection(connection, row["publication_id"], workspace_id)
+            manifest = cls._manifest_from_connection(connection, publication.manifest_id, workspace_id)
+            snapshot = cls._snapshot_from_connection(connection, publication.snapshot_id, workspace_id)
+            approval = cls._approval_from_connection(connection, publication.approval_id, workspace_id)
+            revision = cls._revision_from_connection(connection, publication.revision_id, workspace_id)
+            expected_version_manifest_hash = canonical_hash(
+                {
+                    "revision_hash": revision.revision_hash,
+                    "analysis_hash": revision.analysis_hash,
+                    "domain_pack_identity": revision.domain_pack_identity,
+                    "template_identities": revision.template_identities,
+                    "scoring_rule_identities": revision.scoring_rule_identities,
+                    "propagation_rule_identity": revision.propagation_rule_identity,
+                },
+                prefixed=True,
+            )
+            expected_manifest_hash = canonical_hash(
+                {
+                    "manifest_id": manifest.manifest_id,
+                    "revision_id": manifest.revision_id,
+                    "revision_hash": manifest.revision_hash,
+                    "approval_id": manifest.approval_id,
+                    "snapshot_id": manifest.snapshot_id,
+                    "snapshot_hash": manifest.snapshot_hash,
+                    "version_manifest_hash": manifest.version_manifest_hash,
+                    "previous_audit_chain_head": manifest.previous_audit_chain_head,
+                    "export_eligible": manifest.export_eligible,
+                },
+                prefixed=True,
+            )
+            expected_head = canonical_hash(
+                {
+                    "previous_audit_chain_head": manifest.previous_audit_chain_head,
+                    "revision_hash": revision.revision_hash,
+                    "approval_hash": canonical_hash(approval, prefixed=True),
+                    "snapshot_hash": snapshot.snapshot_hash,
+                    "manifest_hash": expected_manifest_hash,
+                },
+                prefixed=True,
+            )
+            if (
+                manifest.version_manifest_hash != expected_version_manifest_hash
+                or manifest.manifest_hash != expected_manifest_hash
+                or publication.audit_chain_head != expected_head
+                or expected_head in predecessors
+            ):
+                raise ValueError("persisted publication audit chain is invalid")
+            predecessors[expected_head] = manifest.previous_audit_chain_head
+        referenced = tuple(value for value in predecessors.values() if value is not None)
+        if len(referenced) != len(set(referenced)) or any(value not in predecessors for value in referenced):
+            raise ValueError("persisted publication audit chain is forked or incomplete")
+        terminals = set(predecessors) - set(referenced)
+        if len(terminals) != 1:
+            raise ValueError("persisted publication audit chain has no unique head")
+        head = terminals.pop()
+        seen: set[str] = set()
+        current: str | None = head
+        while current is not None:
+            if current in seen:
+                raise ValueError("persisted publication audit chain is cyclic")
+            seen.add(current)
+            current = predecessors[current]
+        if len(seen) != len(predecessors):
+            raise ValueError("persisted publication audit chain is disconnected")
+        return head
+
+    @classmethod
     def _write_publication(
         cls,
         connection: sqlite3.Connection,
@@ -2456,42 +2629,64 @@ class SqliteGovernanceRepository:
         meta: _PreparedMeta,
         fail: Callable[[str], None],
     ) -> None:
-        # Service-created publications carry the final audit-chain hash in both
-        # the immutable publication and its audit event. Recompute that order
-        # in the same transaction before any dependency or publication row is
-        # inserted. Legacy prepared fixtures do not carry this marker and are
-        # still validated by their existing immutable/canonical contracts.
-        if prepared.audit.after_hash == prepared.publication.audit_chain_head:
-            expected_manifest_hash = canonical_hash(
-                {
-                    "manifest_id": prepared.manifest.manifest_id,
-                    "revision_id": prepared.manifest.revision_id,
-                    "revision_hash": prepared.manifest.revision_hash,
-                    "approval_id": prepared.manifest.approval_id,
-                    "snapshot_id": prepared.manifest.snapshot_id,
-                    "snapshot_hash": prepared.manifest.snapshot_hash,
-                    "version_manifest_hash": prepared.manifest.version_manifest_hash,
-                    "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
-                    "export_eligible": prepared.manifest.export_eligible,
-                },
-                prefixed=True,
-            )
-            expected_audit_chain_head = canonical_hash(
-                {
-                    "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
-                    "revision_hash": prepared.revision.revision_hash,
-                    "approval_hash": canonical_hash(prepared.approval, prefixed=True),
-                    "snapshot_hash": prepared.snapshot.snapshot_hash,
-                    "manifest_hash": expected_manifest_hash,
-                },
-                prefixed=True,
-            )
-            if (
-                prepared.manifest.manifest_hash != expected_manifest_hash
-                or prepared.publication.audit_chain_head != expected_audit_chain_head
-                or prepared.audit.after_hash != expected_audit_chain_head
-            ):
-                _error("FMEA_REVIEW_REQUEST_INVALID", "Publication hash chain is invalid.")
+        current_head = cls._current_publication_audit_head_from_connection(connection, meta.workspace_id)
+        if prepared.manifest.previous_audit_chain_head != current_head:
+            _error("FMEA_VERSION_CONFLICT", "Publication audit predecessor is stale.")
+        expected_version_manifest_hash = canonical_hash(
+            {
+                "revision_hash": prepared.revision.revision_hash,
+                "analysis_hash": prepared.revision.analysis_hash,
+                "domain_pack_identity": prepared.revision.domain_pack_identity,
+                "template_identities": prepared.revision.template_identities,
+                "scoring_rule_identities": prepared.revision.scoring_rule_identities,
+                "propagation_rule_identity": prepared.revision.propagation_rule_identity,
+            },
+            prefixed=True,
+        )
+        expected_manifest_hash = canonical_hash(
+            {
+                "manifest_id": prepared.manifest.manifest_id,
+                "revision_id": prepared.manifest.revision_id,
+                "revision_hash": prepared.manifest.revision_hash,
+                "approval_id": prepared.manifest.approval_id,
+                "snapshot_id": prepared.manifest.snapshot_id,
+                "snapshot_hash": prepared.manifest.snapshot_hash,
+                "version_manifest_hash": prepared.manifest.version_manifest_hash,
+                "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
+                "export_eligible": prepared.manifest.export_eligible,
+            },
+            prefixed=True,
+        )
+        expected_audit_chain_head = canonical_hash(
+            {
+                "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
+                "revision_hash": prepared.revision.revision_hash,
+                "approval_hash": canonical_hash(prepared.approval, prefixed=True),
+                "snapshot_hash": prepared.snapshot.snapshot_hash,
+                "manifest_hash": expected_manifest_hash,
+            },
+            prefixed=True,
+        )
+        expected_eligibility_hash = canonical_hash(
+            {
+                "eligibility_id": prepared.export_eligibility.eligibility_id,
+                "workspace_id": prepared.export_eligibility.workspace_id,
+                "publication_id": prepared.export_eligibility.publication_id,
+                "manifest_id": prepared.export_eligibility.manifest_id,
+                "eligible": prepared.export_eligibility.eligible,
+                "source_hashes": prepared.export_eligibility.source_hashes,
+            },
+            prefixed=True,
+        )
+        if (
+            prepared.snapshot.snapshot_hash.removeprefix("sha256:") != snapshot_content_hash(prepared.snapshot)
+            or prepared.manifest.version_manifest_hash != expected_version_manifest_hash
+            or prepared.manifest.manifest_hash != expected_manifest_hash
+            or prepared.publication.audit_chain_head != expected_audit_chain_head
+            or prepared.audit.after_hash != expected_audit_chain_head
+            or prepared.export_eligibility.eligibility_hash != expected_eligibility_hash
+        ):
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Publication hash chain is invalid.")
         cls._persist_publication_dependencies(connection, prepared, fail)
         validate_approval_binding(prepared.approval, prepared.revision)
         persisted_revision = cls._revision_from_connection(connection, prepared.revision.revision_id, meta.workspace_id)
@@ -2994,6 +3189,64 @@ class SqliteGovernanceRepository:
         finally:
             connection.close()
 
+    def replay_governance_command(self, kind: str, scope: IdempotencyScope, command: object) -> object | None:
+        replay_contract = _COMMAND_REPLAY_KINDS.get(kind)
+        if replay_contract is None:
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Governance command replay kind is invalid.")
+        persisted_kind, command_type, expected_scope_command = replay_contract
+        if type(command) is not command_type or not isinstance(scope, IdempotencyScope):
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Governance command replay contract is invalid.")
+        value = cast(Any, command)
+        if (
+            scope.command != expected_scope_command
+            or scope.resource_path != self._command_resource_path(kind, command)
+            or scope.key_hash != idempotency_key_hash(value.idempotency_key)
+        ):
+            _error("FMEA_REVIEW_REQUEST_INVALID", "Governance command replay scope is invalid.")
+
+        connection = self._connect()
+        try:
+            row = self._idempotency_row(connection, scope)
+            if row is None:
+                return None
+            if row["state"] != "completed":
+                _error(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "An incomplete governance transaction is present.",
+                    retryable=True,
+                )
+            result = self._decode_result(persisted_kind, row["response_json"])
+            resource_id = self._replay_result_resource_id(persisted_kind, result)
+            if row["resource_id"] != resource_id:
+                raise ValueError("persisted governance response resource is invalid")
+            table, identifier = self._authority_table(persisted_kind)
+            authority_row = connection.execute(
+                f"SELECT * FROM {table} WHERE workspace_id=? AND {identifier}=?",
+                (scope.workspace_id, resource_id),
+            ).fetchone()
+            if authority_row is None:
+                raise ValueError(f"persisted {persisted_kind} authority is missing")
+            if kind == "approve" and authority_row["status"] != ApprovalStatus.APPROVED.value:
+                raise ValueError("persisted approval operation does not match replay kind")
+            if kind == "reject" and authority_row["status"] != ApprovalStatus.REJECTED.value:
+                raise ValueError("persisted approval operation does not match replay kind")
+            expected_payload = self._expected_persisted_event_payload(connection, persisted_kind, authority_row)
+            expected_payload_hash = governance_payload_hash(expected_payload)
+            if row["payload_hash"] != expected_payload_hash:
+                raise ValueError("persisted governance command payload hash is invalid")
+            self._verify_replay_chain(connection, persisted_kind, scope, expected_payload_hash, result)
+            reconstructed = self._reconstructed_command(kind, expected_payload, value.idempotency_key)
+            incoming_projection = canonical_governance_payload("governance.command", command)["value"]
+            persisted_projection = canonical_governance_payload("governance.command", reconstructed)["value"]
+            if canonical_json(incoming_projection) != canonical_json(persisted_projection):
+                _error(
+                    "FMEA_IDEMPOTENCY_CONFLICT",
+                    "Idempotency key was already used with a different command.",
+                )
+            return replace(result, replayed=True)
+        finally:
+            connection.close()
+
     def commit_revision(self, prepared: PreparedRevision) -> RevisionResult:
         return cast(RevisionResult, self._commit("revision", prepared))
 
@@ -3050,6 +3303,16 @@ class SqliteGovernanceRepository:
                 (_text(workspace_id, "workspace_id"), _text(revision_id, "revision_id")),
             ).fetchone()
             return None if row is None else self._revision_from_connection(connection, revision_id, workspace_id)
+        finally:
+            connection.close()
+
+    def get_current_publication_audit_head(self, workspace_id: str) -> str | None:
+        connection = self._connect()
+        try:
+            return self._current_publication_audit_head_from_connection(
+                connection,
+                _text(workspace_id, "workspace_id"),
+            )
         finally:
             connection.close()
 
@@ -3122,9 +3385,7 @@ class SqliteGovernanceRepository:
         finally:
             connection.close()
 
-    def get_approval_decision_for_submission(
-        self, submission_id: str, workspace_id: str
-    ) -> ApprovalDecision | None:
+    def get_approval_decision_for_submission(self, submission_id: str, workspace_id: str) -> ApprovalDecision | None:
         connection = self._connect()
         try:
             workspace = _text(workspace_id, "workspace_id")
@@ -3142,9 +3403,7 @@ class SqliteGovernanceRepository:
         finally:
             connection.close()
 
-    def get_approval_withdrawal(
-        self, approval_id: str, workspace_id: str
-    ) -> ApprovalWithdrawalRecord | None:
+    def get_approval_withdrawal(self, approval_id: str, workspace_id: str) -> ApprovalWithdrawalRecord | None:
         connection = self._connect()
         try:
             workspace = _text(workspace_id, "workspace_id")
@@ -3202,9 +3461,7 @@ class SqliteGovernanceRepository:
             withdrawal = None
             if withdrawal_row is not None:
                 withdrawal = _decode_publication_withdrawal(withdrawal_row["withdrawal_json"])
-                self._verify_canonical_row(
-                    withdrawal_row, "withdrawal_json", withdrawal, "publication withdrawal"
-                )
+                self._verify_canonical_row(withdrawal_row, "withdrawal_json", withdrawal, "publication withdrawal")
                 if withdrawal.publication_id != publication_id:
                     raise ValueError("persisted publication withdrawal binding is invalid")
 
@@ -3218,9 +3475,7 @@ class SqliteGovernanceRepository:
             supersession = None
             if supersession_row is not None:
                 supersession = _decode_supersession(supersession_row["supersession_json"])
-                self._verify_canonical_row(
-                    supersession_row, "supersession_json", supersession, "supersession"
-                )
+                self._verify_canonical_row(supersession_row, "supersession_json", supersession, "supersession")
                 if supersession.old_publication_id != publication_id:
                     raise ValueError("persisted supersession binding is invalid")
             return project_publication_lifecycle(

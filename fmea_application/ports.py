@@ -560,6 +560,33 @@ class RiskRepository(Protocol):
 class GovernanceRepository(Protocol):
     """Workspace-qualified persistence boundary for immutable FMEA governance."""
 
+    def replay_governance_command(
+        self,
+        kind: Literal[
+            "assemble",
+            "submit",
+            "approve",
+            "reject",
+            "withdraw_approval",
+            "publish",
+            "withdraw_publication",
+            "supersede",
+        ],
+        scope: IdempotencyScope,
+        command: object,
+    ) -> (
+        RevisionResult
+        | ApprovalSubmissionResult
+        | ApprovalResult
+        | ApprovalWithdrawalResult
+        | PublicationResult
+        | PublicationWithdrawalResult
+        | SupersessionResult
+        | None
+    ): ...
+
+    def get_current_publication_audit_head(self, workspace_id: str) -> str | None: ...
+
     def replay_revision(self, scope: IdempotencyScope, payload_hash: str) -> RevisionResult | None: ...
 
     def commit_revision(self, prepared: PreparedRevision) -> RevisionResult: ...
