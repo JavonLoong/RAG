@@ -7,10 +7,13 @@ from collections.abc import Callable
 from .analysis_assistance_service import AnalysisAssistanceService
 from .assistance_contracts import AssistanceDecisionAction
 from .assistance_service import AssistanceDecisionService, AssistanceHandler
+from .governance_service import RevisionGovernanceService
 from .ports import (
     AnalysisAssistanceGenerator,
     AssistanceRepository,
     DomainPackRegistry,
+    GovernanceRepository,
+    GovernanceSourcePort,
     PropagationRuleRegistry,
     ReviewRepository,
     ReviewRunExecutor,
@@ -22,6 +25,7 @@ from .ports import (
 )
 from .propagation_service import PropagationAnalysisService, PropagationRepository, PropagationSuggestionGenerator
 from .review_service import ReviewService
+from .revision_assembler import PublicationReadinessPolicy, RevisionAssembler
 from .risk_service import RiskAssessmentService, RiskContextProvider
 
 
@@ -37,6 +41,25 @@ def build_review_service(
         repository,
         generator,
         executor,
+        clock=clock,
+        id_factory=id_factory,
+    )
+
+
+def build_governance_service(
+    repository: GovernanceRepository,
+    assembler: RevisionAssembler,
+    readiness_policy: PublicationReadinessPolicy,
+    source: GovernanceSourcePort,
+    *,
+    clock: Callable[[], str],
+    id_factory: Callable[[str], str] | None = None,
+) -> RevisionGovernanceService:
+    return RevisionGovernanceService(
+        repository,
+        assembler=assembler,
+        readiness_policy=readiness_policy,
+        source=source,
         clock=clock,
         id_factory=id_factory,
     )
@@ -109,6 +132,7 @@ def build_propagation_analysis_service(
 __all__ = [
     "build_analysis_assistance_service",
     "build_assistance_decision_service",
+    "build_governance_service",
     "build_propagation_analysis_service",
     "build_review_service",
     "build_risk_assessment_service",

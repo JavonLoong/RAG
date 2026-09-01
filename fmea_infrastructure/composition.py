@@ -29,10 +29,12 @@ from fmea_application.analysis_assistance_service import AnalysisAssistanceServi
 from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
 from fmea_application.governance_assistance_service import GovernanceAssistanceService
+from fmea_application.governance_service import RevisionGovernanceService
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
     GovernanceAssistanceGenerator,
+    GovernanceRepository,
     GovernanceRepositoryProviders,
     GovernanceSourcePort,
     PropagationRuleRegistry,
@@ -63,6 +65,7 @@ from fmea_application.risk_service import RiskAssessmentService, RiskContextProv
 from fmea_application.service_factory import (
     build_analysis_assistance_service,
     build_assistance_decision_service,
+    build_governance_service,
     build_risk_assessment_service,
 )
 from fmea_infrastructure.analysis_assistance_generator import EnvironmentAnalysisAssistanceGenerator
@@ -167,6 +170,8 @@ class GovernanceRuntime:
     assembler: RevisionAssembler
     readiness_policy: PublicationReadinessPolicy
     assistance_service: GovernanceAssistanceService
+    repository: GovernanceRepository | None = None
+    service: RevisionGovernanceService | None = None
 
 
 class RegistryGovernanceArtifactProvider:
@@ -474,6 +479,7 @@ def _register_review_template(template_registry_root: Path) -> None:
 def build_workspace_governance_runtime(  # noqa: C901 - authority remains factory-local
     providers: GovernanceRepositoryProviders,
     *,
+    repository: GovernanceRepository | None = None,
     domain_policy: GovernanceDomainPolicy | None = None,
     assistance_generator: GovernanceAssistanceGenerator | None = None,
     clock: Callable[[], str] = utc_now,
@@ -558,17 +564,33 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
 
     resolved_source = RuntimeGovernanceSource(providers)
     generator = assistance_generator or OfflineGovernanceAssistanceGenerator()
+    assembler = RuntimeRevisionAssembler()
+    readiness_policy = RuntimePublicationReadinessPolicy()
     return GovernanceRuntime(
         source=resolved_source,
-        assembler=RuntimeRevisionAssembler(),
-        readiness_policy=RuntimePublicationReadinessPolicy(),
+        assembler=assembler,
+        readiness_policy=readiness_policy,
         assistance_service=GovernanceAssistanceService(generator=generator, clock=clock),
+        repository=repository,
+        service=(
+            None
+            if repository is None
+            else build_governance_service(
+                repository,
+                assembler=assembler,
+                readiness_policy=readiness_policy,
+                source=resolved_source,
+                clock=clock,
+                id_factory=new_prefixed_uuid,
+            )
+        ),
     )
 
 
 def build_governance_runtime(
     providers: GovernanceRepositoryProviders,
     *,
+    repository: GovernanceRepository | None = None,
     domain_policy: GovernanceDomainPolicy | None = None,
     assistance_generator: GovernanceAssistanceGenerator | None = None,
     clock: Callable[[], str] = utc_now,
@@ -577,6 +599,7 @@ def build_governance_runtime(
 
     return build_workspace_governance_runtime(
         providers,
+        repository=repository,
         domain_policy=domain_policy,
         assistance_generator=assistance_generator,
         clock=clock,

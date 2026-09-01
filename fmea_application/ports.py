@@ -16,6 +16,14 @@ from core_domain.fmea.contracts import (
     VersionSet,
 )
 from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.governance import (
+    ApprovalDecision,
+    ApprovalSubmission,
+    ApprovalWithdrawalRecord,
+    FmeaRevision,
+    PublicationLifecycleView,
+    PublishedRevision,
+)
 from core_domain.fmea.propagation import (
     PropagationGraphRevision,
     PropagationRulePack,
@@ -81,7 +89,6 @@ from .risk_contracts import (
 )
 
 if TYPE_CHECKING:
-    from core_domain.fmea.governance import FmeaRevision, PublishedRevision
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
     from .propagation_service import (
@@ -559,11 +566,23 @@ class GovernanceRepository(Protocol):
 
     def get_revision(self, revision_id: str, workspace_id: str) -> FmeaRevision | None: ...
 
+    def get_revision_record_version(self, revision_id: str, workspace_id: str) -> int | None: ...
+
     def replay_readiness(self, scope: IdempotencyScope, payload_hash: str) -> ReadinessResult | None: ...
 
     def commit_readiness(self, prepared: PreparedReadinessReport) -> ReadinessResult: ...
 
     def get_readiness(self, readiness_id: str, workspace_id: str) -> ReadinessReportRecord | None: ...
+
+    def get_approval_submission(self, submission_id: str, workspace_id: str) -> ApprovalSubmission | None: ...
+
+    def get_approval_decision(self, approval_id: str, workspace_id: str) -> ApprovalDecision | None: ...
+
+    def get_approval_decision_for_submission(
+        self, submission_id: str, workspace_id: str
+    ) -> ApprovalDecision | None: ...
+
+    def get_approval_withdrawal(self, approval_id: str, workspace_id: str) -> ApprovalWithdrawalRecord | None: ...
 
     def replay_approval_submission(
         self, scope: IdempotencyScope, payload_hash: str
@@ -596,6 +615,8 @@ class GovernanceRepository(Protocol):
     def commit_supersession(self, prepared: PreparedSupersession) -> SupersessionResult: ...
 
     def get_publication(self, publication_id: str, workspace_id: str) -> PublishedRevision | None: ...
+
+    def get_publication_lifecycle(self, publication_id: str, workspace_id: str) -> PublicationLifecycleView | None: ...
 
     def get_snapshot(self, publication_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None: ...
 

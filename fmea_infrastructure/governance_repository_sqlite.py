@@ -22,6 +22,7 @@ from core_domain.fmea.governance import (
     ApprovalSubmission,
     ApprovalWithdrawalRecord,
     FmeaRevision,
+    PublicationLifecycleView,
     PublicationManifest,
     PublicationWithdrawalRecord,
     PublishedRevision,
@@ -30,6 +31,7 @@ from core_domain.fmea.governance import (
     SupersessionRecord,
     canonical_hash,
     canonical_json_bytes,
+    project_publication_lifecycle,
     validate_approval_binding,
     validate_supersession_binding,
 )
@@ -2361,6 +2363,15 @@ class SqliteGovernanceRepository:
         revision = cls._revision_from_connection(connection, submission.revision_id, meta.workspace_id)
         if revision.revision_hash != prepared.decision.revision_hash:
             _error("FMEA_VERSION_CONFLICT", "Approval revision binding is stale.")
+        existing_decisions = connection.execute(
+            "SELECT approval_id FROM fmea_approval_decisions WHERE workspace_id=? AND submission_id=?",
+            (meta.workspace_id, prepared.submission.submission_id),
+        ).fetchall()
+        if existing_decisions:
+            _error(
+                "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+                "Approval submission already has a terminal decision.",
+            )
         cls._insert_approval_row(
             connection,
             meta.workspace_id,
@@ -2383,6 +2394,15 @@ class SqliteGovernanceRepository:
         approval = cls._approval_from_connection(connection, prepared.approval.approval_id, meta.workspace_id)
         if approval != prepared.approval or approval.status is not ApprovalStatus.APPROVED:
             _error("FMEA_VERSION_CONFLICT", "Approval withdrawal binding is stale.")
+        existing_withdrawals = connection.execute(
+            "SELECT withdrawal_id FROM fmea_approval_withdrawals WHERE workspace_id=? AND approval_id=?",
+            (meta.workspace_id, prepared.approval.approval_id),
+        ).fetchall()
+        if existing_withdrawals:
+            _error(
+                "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID",
+                "Approval has already been withdrawn.",
+            )
         connection.execute(
             "INSERT INTO fmea_approval_withdrawals "
             "(workspace_id,withdrawal_id,approval_id,revision_id,revision_hash,actor_id,reason,withdrawal_json,canonical_json_hash,idempotency_scope,payload_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -2436,6 +2456,42 @@ class SqliteGovernanceRepository:
         meta: _PreparedMeta,
         fail: Callable[[str], None],
     ) -> None:
+        # Service-created publications carry the final audit-chain hash in both
+        # the immutable publication and its audit event. Recompute that order
+        # in the same transaction before any dependency or publication row is
+        # inserted. Legacy prepared fixtures do not carry this marker and are
+        # still validated by their existing immutable/canonical contracts.
+        if prepared.audit.after_hash == prepared.publication.audit_chain_head:
+            expected_manifest_hash = canonical_hash(
+                {
+                    "manifest_id": prepared.manifest.manifest_id,
+                    "revision_id": prepared.manifest.revision_id,
+                    "revision_hash": prepared.manifest.revision_hash,
+                    "approval_id": prepared.manifest.approval_id,
+                    "snapshot_id": prepared.manifest.snapshot_id,
+                    "snapshot_hash": prepared.manifest.snapshot_hash,
+                    "version_manifest_hash": prepared.manifest.version_manifest_hash,
+                    "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
+                    "export_eligible": prepared.manifest.export_eligible,
+                },
+                prefixed=True,
+            )
+            expected_audit_chain_head = canonical_hash(
+                {
+                    "previous_audit_chain_head": prepared.manifest.previous_audit_chain_head,
+                    "revision_hash": prepared.revision.revision_hash,
+                    "approval_hash": canonical_hash(prepared.approval, prefixed=True),
+                    "snapshot_hash": prepared.snapshot.snapshot_hash,
+                    "manifest_hash": expected_manifest_hash,
+                },
+                prefixed=True,
+            )
+            if (
+                prepared.manifest.manifest_hash != expected_manifest_hash
+                or prepared.publication.audit_chain_head != expected_audit_chain_head
+                or prepared.audit.after_hash != expected_audit_chain_head
+            ):
+                _error("FMEA_REVIEW_REQUEST_INVALID", "Publication hash chain is invalid.")
         cls._persist_publication_dependencies(connection, prepared, fail)
         validate_approval_binding(prepared.approval, prepared.revision)
         persisted_revision = cls._revision_from_connection(connection, prepared.revision.revision_id, meta.workspace_id)
@@ -2450,6 +2506,15 @@ class SqliteGovernanceRepository:
             or persisted_approval.status is not ApprovalStatus.APPROVED
         ):
             _error("FMEA_VERSION_CONFLICT", "Publication governance dependency is stale.")
+        approval_withdrawal = connection.execute(
+            "SELECT withdrawal_id FROM fmea_approval_withdrawals WHERE workspace_id=? AND approval_id=?",
+            (meta.workspace_id, prepared.approval.approval_id),
+        ).fetchone()
+        if approval_withdrawal is not None:
+            _error(
+                "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                "Publication cannot use a withdrawn approval.",
+            )
         revision_row = connection.execute(
             "SELECT revision_hash,record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
             (meta.workspace_id, prepared.revision.revision_id),
@@ -2590,6 +2655,24 @@ class SqliteGovernanceRepository:
             or publication.record_version != prepared.command.expected_publication_version
         ):
             _error("FMEA_VERSION_CONFLICT", "Publication withdrawal binding is stale.")
+        existing_withdrawals = connection.execute(
+            "SELECT withdrawal_id FROM fmea_publication_withdrawals WHERE workspace_id=? AND publication_id=?",
+            (meta.workspace_id, prepared.publication.publication_id),
+        ).fetchall()
+        if existing_withdrawals:
+            _error(
+                "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                "Publication has already been withdrawn.",
+            )
+        supersession = connection.execute(
+            "SELECT supersession_id FROM fmea_supersessions WHERE workspace_id=? AND old_publication_id=?",
+            (meta.workspace_id, prepared.publication.publication_id),
+        ).fetchone()
+        if supersession is not None:
+            _error(
+                "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID",
+                "Superseded publication cannot be withdrawn.",
+            )
         withdrawal_payload, withdrawal_json_hash = _object_json(prepared.withdrawal)
         connection.execute(
             "INSERT INTO fmea_publication_withdrawals (workspace_id,withdrawal_id,publication_id,replacement_publication_id,actor_id,reason,withdrawal_json,canonical_json_hash,idempotency_scope,payload_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -2668,6 +2751,23 @@ class SqliteGovernanceRepository:
             prepared.supersession.new_publication_id,
         ):
             _error("FMEA_REVIEW_REQUEST_INVALID", "Publication supersession would create a cycle.")
+        old_withdrawal = connection.execute(
+            "SELECT withdrawal_id FROM fmea_publication_withdrawals WHERE workspace_id=? AND publication_id=?",
+            (meta.workspace_id, prepared.old_publication.publication_id),
+        ).fetchone()
+        replacement_withdrawal = connection.execute(
+            "SELECT withdrawal_id FROM fmea_publication_withdrawals WHERE workspace_id=? AND publication_id=?",
+            (meta.workspace_id, prepared.replacement_publication.publication_id),
+        ).fetchone()
+        existing_outgoing = connection.execute(
+            "SELECT supersession_id FROM fmea_supersessions WHERE workspace_id=? AND old_publication_id=?",
+            (meta.workspace_id, prepared.old_publication.publication_id),
+        ).fetchall()
+        if old_withdrawal is not None or replacement_withdrawal is not None or existing_outgoing:
+            _error(
+                "FMEA_GOVERNANCE_SUPERSESSION_INVALID",
+                "Publication supersession state is no longer current.",
+            )
         payload, json_hash = _object_json(prepared.supersession)
         connection.execute(
             "INSERT INTO fmea_supersessions (workspace_id,supersession_id,old_publication_id,new_publication_id,actor_id,reason,supersession_json,canonical_json_hash,idempotency_scope,payload_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -2953,6 +3053,119 @@ class SqliteGovernanceRepository:
         finally:
             connection.close()
 
+    def get_revision_record_version(self, revision_id: str, workspace_id: str) -> int | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            revision = _text(revision_id, "revision_id")
+            row = connection.execute(
+                "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+                (workspace, revision),
+            ).fetchone()
+            if row is None:
+                return None
+            self._revision_from_connection(connection, revision, workspace)
+            return int(row["record_version"])
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _single_row(
+        connection: sqlite3.Connection,
+        sql: str,
+        parameters: tuple[object, ...],
+        description: str,
+    ) -> sqlite3.Row | None:
+        rows = connection.execute(sql, parameters).fetchall()
+        if len(rows) > 1:
+            raise ValueError(f"persisted {description} has duplicate effective rows")
+        return None if not rows else rows[0]
+
+    @staticmethod
+    def _verify_canonical_row(row: sqlite3.Row, json_column: str, value: object, description: str) -> None:
+        payload = row[json_column]
+        canonical_payload, canonical_hash_value = _object_json(value)
+        if payload != canonical_payload or row["canonical_json_hash"] != canonical_hash_value:
+            raise ValueError(f"persisted {description} is not canonical")
+
+    def get_approval_submission(self, submission_id: str, workspace_id: str) -> ApprovalSubmission | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            submission = _text(submission_id, "submission_id")
+            row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_approval_submissions WHERE workspace_id=? AND submission_id=?",
+                (workspace, submission),
+                "approval submission",
+            )
+            if row is None:
+                return None
+            return self._submission_from_connection(connection, submission, workspace)
+        finally:
+            connection.close()
+
+    def get_approval_decision(self, approval_id: str, workspace_id: str) -> ApprovalDecision | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            approval = _text(approval_id, "approval_id")
+            row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_approval_decisions WHERE workspace_id=? AND approval_id=?",
+                (workspace, approval),
+                "approval decision",
+            )
+            if row is None:
+                return None
+            return self._approval_from_connection(connection, approval, workspace)
+        finally:
+            connection.close()
+
+    def get_approval_decision_for_submission(
+        self, submission_id: str, workspace_id: str
+    ) -> ApprovalDecision | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            submission = _text(submission_id, "submission_id")
+            row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_approval_decisions WHERE workspace_id=? AND submission_id=? "
+                "ORDER BY created_at, approval_id",
+                (workspace, submission),
+                "approval decision",
+            )
+            if row is None:
+                return None
+            return self._approval_from_connection(connection, row["approval_id"], workspace)
+        finally:
+            connection.close()
+
+    def get_approval_withdrawal(
+        self, approval_id: str, workspace_id: str
+    ) -> ApprovalWithdrawalRecord | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            approval = _text(approval_id, "approval_id")
+            row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_approval_withdrawals WHERE workspace_id=? AND approval_id=? "
+                "ORDER BY created_at, withdrawal_id",
+                (workspace, approval),
+                "approval withdrawal",
+            )
+            if row is None:
+                return None
+            value = _decode_approval_withdrawal(row["withdrawal_json"])
+            self._verify_canonical_row(row, "withdrawal_json", value, "approval withdrawal")
+            if value.approval_id != approval or value.revision_id != row["revision_id"]:
+                raise ValueError("persisted approval withdrawal binding is invalid")
+            return value
+        finally:
+            connection.close()
+
     def get_publication(self, publication_id: str, workspace_id: str) -> PublishedRevision | None:
         connection = self._connect()
         try:
@@ -2961,6 +3174,60 @@ class SqliteGovernanceRepository:
                 (_text(workspace_id, "workspace_id"), _text(publication_id, "publication_id")),
             ).fetchone()
             return None if row is None else self._publication_from_connection(connection, publication_id, workspace_id)
+        finally:
+            connection.close()
+
+    def get_publication_lifecycle(self, publication_id: str, workspace_id: str) -> PublicationLifecycleView | None:
+        connection = self._connect()
+        try:
+            workspace = _text(workspace_id, "workspace_id")
+            publication_id = _text(publication_id, "publication_id")
+            publication_row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_publications WHERE workspace_id=? AND publication_id=?",
+                (workspace, publication_id),
+                "publication",
+            )
+            if publication_row is None:
+                return None
+            publication = self._publication_from_connection(connection, publication_id, workspace)
+
+            withdrawal_row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_publication_withdrawals WHERE workspace_id=? AND publication_id=? "
+                "ORDER BY created_at, withdrawal_id",
+                (workspace, publication_id),
+                "publication withdrawal",
+            )
+            withdrawal = None
+            if withdrawal_row is not None:
+                withdrawal = _decode_publication_withdrawal(withdrawal_row["withdrawal_json"])
+                self._verify_canonical_row(
+                    withdrawal_row, "withdrawal_json", withdrawal, "publication withdrawal"
+                )
+                if withdrawal.publication_id != publication_id:
+                    raise ValueError("persisted publication withdrawal binding is invalid")
+
+            supersession_row = self._single_row(
+                connection,
+                "SELECT * FROM fmea_supersessions WHERE workspace_id=? AND old_publication_id=? "
+                "ORDER BY created_at, supersession_id",
+                (workspace, publication_id),
+                "supersession",
+            )
+            supersession = None
+            if supersession_row is not None:
+                supersession = _decode_supersession(supersession_row["supersession_json"])
+                self._verify_canonical_row(
+                    supersession_row, "supersession_json", supersession, "supersession"
+                )
+                if supersession.old_publication_id != publication_id:
+                    raise ValueError("persisted supersession binding is invalid")
+            return project_publication_lifecycle(
+                publication,
+                withdrawal=withdrawal,
+                supersession=supersession,
+            )
         finally:
             connection.close()
 

@@ -21,13 +21,19 @@ from fmea_governance_fixtures import (
     prepared_approval_submission,
     prepared_approval_withdrawal,
     prepared_publication,
+    prepared_publication_withdrawal,
     prepared_revision,
     prepared_supersession,
     seed_authoritative_analysis,
 )
 
 from core_domain.fmea.codec import encode_json
-from core_domain.fmea.governance import PublicationManifest, canonical_hash
+from core_domain.fmea.governance import (
+    ApprovalStatus,
+    PublicationManifest,
+    RevisionPublicationStatus,
+    canonical_hash,
+)
 from fmea_application.governance_contracts import (
     ApprovalCommand,
     ExportEligibilityRecord,
@@ -37,6 +43,7 @@ from fmea_application.governance_contracts import (
     PreparedApprovalSubmission,
     PreparedApprovalWithdrawal,
     PreparedPublication,
+    PreparedPublicationWithdrawal,
     PreparedReadinessReport,
     PreparedSupersession,
     PublishCommand,
@@ -44,6 +51,7 @@ from fmea_application.governance_contracts import (
     SubmitApprovalCommand,
     SupersedePublicationCommand,
     WithdrawApprovalCommand,
+    WithdrawPublicationCommand,
     canonical_governance_payload,
     governance_payload_hash,
 )
@@ -358,6 +366,121 @@ def _prepared_supersession_for_publications(old: PreparedPublication, replacemen
         old.revision,
         replacement.revision,
         link,
+        audit,
+        outbox,
+    )
+
+
+def _rekey_approval(prepared: PreparedApproval, approval_id: str, key: str) -> PreparedApproval:
+    command = ApprovalCommand(
+        prepared.submission.submission_id,
+        prepared.submission.revision_id,
+        prepared.submission.revision_hash,
+        prepared.submission.record_version,
+        prepared.decision.reason,
+        key,
+    )
+    scope = IdempotencyScope(
+        prepared.scope.workspace_id,
+        prepared.scope.actor_id,
+        prepared.scope.command,
+        prepared.scope.resource_path,
+        idempotency_key_hash(key),
+    )
+    decision = replace(prepared.decision, approval_id=approval_id)
+    payload = canonical_governance_payload("approval.decide", command, submission=prepared.submission, decision=decision)
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), approval_id)
+    return PreparedApproval(scope, payload_hash, command, prepared.submission, decision, audit, outbox)
+
+
+def _rekey_approval_withdrawal(
+    prepared: PreparedApprovalWithdrawal, withdrawal_id: str, key: str
+) -> PreparedApprovalWithdrawal:
+    command = WithdrawApprovalCommand(
+        prepared.approval.approval_id,
+        prepared.approval.revision_hash,
+        prepared.approval.record_version,
+        prepared.withdrawal.reason,
+        key,
+    )
+    scope = IdempotencyScope(
+        prepared.scope.workspace_id,
+        prepared.scope.actor_id,
+        prepared.scope.command,
+        prepared.scope.resource_path,
+        idempotency_key_hash(key),
+    )
+    withdrawal = replace(prepared.withdrawal, withdrawal_id=withdrawal_id)
+    payload = canonical_governance_payload("approval.withdraw", command, approval=prepared.approval, withdrawal=withdrawal)
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), withdrawal_id)
+    return PreparedApprovalWithdrawal(scope, payload_hash, command, prepared.approval, withdrawal, audit, outbox)
+
+
+def _rekey_publication_withdrawal(
+    prepared: PreparedPublicationWithdrawal, withdrawal_id: str, key: str
+) -> PreparedPublicationWithdrawal:
+    command = WithdrawPublicationCommand(
+        prepared.publication.publication_id,
+        prepared.publication.record_version,
+        prepared.withdrawal.reason,
+        prepared.withdrawal.replacement_publication_id,
+        key,
+    )
+    scope = IdempotencyScope(
+        prepared.scope.workspace_id,
+        prepared.scope.actor_id,
+        prepared.scope.command,
+        prepared.scope.resource_path,
+        idempotency_key_hash(key),
+    )
+    withdrawal = replace(prepared.withdrawal, withdrawal_id=withdrawal_id)
+    payload = canonical_governance_payload(
+        "publication.withdraw", command, publication=prepared.publication, withdrawal=withdrawal
+    )
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), withdrawal_id)
+    return PreparedPublicationWithdrawal(scope, payload_hash, command, prepared.publication, withdrawal, audit, outbox)
+
+
+def _rekey_supersession(prepared: PreparedSupersession, supersession_id: str, key: str) -> PreparedSupersession:
+    command = SupersedePublicationCommand(
+        prepared.old_publication.publication_id,
+        prepared.replacement_publication.publication_id,
+        prepared.old_publication.record_version,
+        prepared.replacement_publication.record_version,
+        prepared.supersession.reason,
+        key,
+    )
+    scope = IdempotencyScope(
+        prepared.scope.workspace_id,
+        prepared.scope.actor_id,
+        prepared.scope.command,
+        prepared.scope.resource_path,
+        idempotency_key_hash(key),
+    )
+    supersession = replace(prepared.supersession, supersession_id=supersession_id)
+    payload = canonical_governance_payload(
+        "publication.supersede",
+        command,
+        old=prepared.old_publication,
+        replacement=prepared.replacement_publication,
+        old_revision=prepared.old_revision,
+        replacement_revision=prepared.replacement_revision,
+        supersession=supersession,
+    )
+    payload_hash = governance_payload_hash(payload)
+    audit, outbox = _prepared_events(scope, payload_hash, dict(payload), supersession_id)
+    return PreparedSupersession(
+        scope,
+        payload_hash,
+        command,
+        prepared.old_publication,
+        prepared.replacement_publication,
+        prepared.old_revision,
+        prepared.replacement_revision,
+        supersession,
         audit,
         outbox,
     )
@@ -939,6 +1062,113 @@ def test_publication_withdrawal_is_append_only_and_workspace_qualified(
             "SELECT COUNT(*) FROM fmea_publication_withdrawals WHERE workspace_id=? AND withdrawal_id=?",
             ("ws-1", result.withdrawal_id),
         ).fetchone() == (1,)
+
+
+def test_transaction_guard_rejects_second_decision_for_submission_atomically(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    publication = prepared_publication()
+    repository.commit_revision(prepared_revision())
+    submission = _prepared_submission_for(publication)
+    repository.commit_approval_submission(submission)
+    first = _prepared_approval_for(publication, submission)
+    repository.commit_approval(first)
+    second = _rekey_approval(first, "approval-duplicate", "00000000-0000-4000-8000-000000000733")
+
+    with pytest.raises(ReviewError) as captured:
+        SqliteGovernanceRepository(repository.database_path).commit_approval(second)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_approval_decisions").fetchone() == (1,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_audit_events").fetchone() == (3,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_outbox_events").fetchone() == (3,)
+
+
+def test_transaction_guard_rejects_second_approval_withdrawal_atomically(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    publication = prepared_publication()
+    repository.commit_publication(publication)
+    first = _prepared_approval_withdrawal_for(publication)
+    repository.commit_approval_withdrawal(first)
+    second = _rekey_approval_withdrawal(
+        first, "approval-withdrawal-duplicate", "00000000-0000-4000-8000-000000000734"
+    )
+
+    with pytest.raises(ReviewError) as captured:
+        SqliteGovernanceRepository(repository.database_path).commit_approval_withdrawal(second)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_APPROVAL_STATE_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_approval_withdrawals").fetchone() == (1,)
+
+
+def test_transaction_guard_rejects_publication_after_approval_withdrawal_atomically(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    publication = prepared_publication()
+    repository.commit_revision(prepared_revision())
+    submission = _prepared_submission_for(publication)
+    repository.commit_approval_submission(submission)
+    repository.commit_approval(_prepared_approval_for(publication, submission))
+    approval_withdrawal = _prepared_approval_withdrawal_for(publication)
+    repository.commit_approval_withdrawal(approval_withdrawal)
+
+    with pytest.raises(ReviewError) as captured:
+        SqliteGovernanceRepository(repository.database_path).commit_publication(publication)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_publications").fetchone() == (0,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_publication_manifests").fetchone() == (0,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_normalized_snapshots").fetchone() == (0,)
+
+
+def test_transaction_guard_rejects_second_publication_withdrawal_atomically(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    publication = prepared_publication()
+    repository.commit_publication(publication)
+    first = _prepared_publication_withdrawal_for(publication)
+    repository.commit_publication_withdrawal(first)
+    second = _rekey_publication_withdrawal(
+        first, "publication-withdrawal-duplicate", "00000000-0000-4000-8000-000000000735"
+    )
+
+    with pytest.raises(ReviewError) as captured:
+        SqliteGovernanceRepository(repository.database_path).commit_publication_withdrawal(second)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_PUBLICATION_STATE_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_publication_withdrawals").fetchone() == (1,)
+
+
+def test_transaction_guard_rejects_second_outgoing_supersession_atomically(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    old_revision = make_fmea_revision()
+    replacement_revision = make_fmea_revision(
+        revision_id="revision-2",
+        parent_revision_id=old_revision.revision_id,
+        parent_revision_hash=old_revision.revision_hash,
+    )
+    old = _prepared_publication_bundle(old_revision, "pub-old", "old", "00000000-0000-4000-8000-000000000736")
+    replacement = _prepared_publication_bundle(
+        replacement_revision, "pub-new", "new", "00000000-0000-4000-8000-000000000737"
+    )
+    repository.commit_publication(old)
+    repository.commit_publication(replacement)
+    first = _prepared_supersession_for_publications(old, replacement)
+    repository.commit_supersession(first)
+    second = _rekey_supersession(first, "supersession-duplicate", "00000000-0000-4000-8000-000000000738")
+
+    with pytest.raises(ReviewError) as captured:
+        SqliteGovernanceRepository(repository.database_path).commit_supersession(second)
+
+    assert captured.value.code == "FMEA_GOVERNANCE_SUPERSESSION_INVALID"
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_supersessions").fetchone() == (1,)
 
 
 def test_supersession_preserves_both_publications_and_rejects_a_cycle(
@@ -1944,6 +2174,71 @@ def test_migration_009_adds_snapshot_reverse_lineage_foreign_key(
         row[2] == "fmea_publication_lineage_bindings" and row[3] == "snapshot_id" and row[4] == "snapshot_id"
         for row in foreign_keys
     )
+
+
+def test_public_current_reads_are_workspace_qualified_and_project_lifecycle(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    revision_prepared = prepared_revision()
+    repository.commit_revision(revision_prepared)
+    assert repository.get_revision_record_version("revision-1", "ws-1") == 1
+    assert repository.get_revision_record_version("revision-1", "ws-other") is None
+
+    publication_prepared = prepared_publication()
+    repository.commit_publication(publication_prepared)
+    assert repository.get_approval_submission("submission-1", "ws-1") is not None
+    assert repository.get_approval_submission("submission-1", "ws-other") is None
+    approval = repository.get_approval_decision("approval-1", "ws-1")
+    assert approval is not None
+    assert approval.status is ApprovalStatus.APPROVED
+    assert repository.get_approval_decision("approval-1", "ws-other") is None
+    assert repository.get_approval_decision_for_submission("submission-1", "ws-1") == approval
+    assert repository.get_publication_lifecycle("publication-1", "ws-1").effective_status is RevisionPublicationStatus.PUBLISHED
+
+    base_withdrawal = prepared_publication_withdrawal()
+    withdrawal_payload = canonical_governance_payload(
+        "publication.withdraw",
+        base_withdrawal.command,
+        publication=publication_prepared.publication,
+        withdrawal=base_withdrawal.withdrawal,
+    )
+    withdrawal_payload_hash = governance_payload_hash(withdrawal_payload)
+    withdrawal_audit, withdrawal_outbox = _prepared_events(
+        base_withdrawal.scope,
+        withdrawal_payload_hash,
+        dict(withdrawal_payload),
+        base_withdrawal.withdrawal.withdrawal_id,
+    )
+    withdrawal_prepared = PreparedPublicationWithdrawal(
+        base_withdrawal.scope,
+        withdrawal_payload_hash,
+        base_withdrawal.command,
+        publication_prepared.publication,
+        base_withdrawal.withdrawal,
+        withdrawal_audit,
+        withdrawal_outbox,
+    )
+    repository.commit_publication_withdrawal(withdrawal_prepared)
+    lifecycle = repository.get_publication_lifecycle("publication-1", "ws-1")
+    assert lifecycle is not None
+    assert lifecycle.effective_status is RevisionPublicationStatus.WITHDRAWN
+    assert lifecycle.withdrawal == withdrawal_prepared.withdrawal
+
+
+def test_public_current_reads_fail_closed_on_canonical_corruption(
+    repository: SqliteGovernanceRepository,
+) -> None:
+    prepared = prepared_revision()
+    repository.commit_revision(prepared)
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_revisions_no_update")
+        connection.execute(
+            "UPDATE fmea_revisions SET canonical_json_hash=? WHERE workspace_id=? AND revision_id=?",
+            ("sha256:" + "b" * 64, prepared.scope.workspace_id, prepared.revision.revision_id),
+        )
+
+    with pytest.raises((ReviewError, ValueError)):
+        repository.get_revision_record_version(prepared.revision.revision_id, prepared.scope.workspace_id)
 
 
 def _persist_publication_migration_fixture(path: Path) -> PreparedPublication:
