@@ -1,0 +1,22 @@
+{
+  "schema_version": "graphrag.fmea.governance.fixture.v1",
+  "workspace_id": "fmea-governance-acceptance",
+  "analysis_id": "analysis-fuel-combustion",
+  "domain_pack": {
+    "id": "fuel-combustion",
+    "version": "1.0.0",
+    "template_id": "fuel-combustion-fmea",
+    "scoring_rule_id": "fuel-sod-rpn",
+    "propagation_rule_id": "fuel-combustion-propagation"
+  },
+  "evidence": {
+    "pack_id": "evidence-pack-fuel-combustion",
+    "evidence_ids": ["ev-pressure", "ev-flame"]
+  },
+  "retrieval_profiles": {
+    "rag_only": {"resolved_profile": "rag_only", "evidence_types": ["text"]},
+    "graphrag_only": {"resolved_profile": "graphrag_only", "evidence_types": ["graph", "community"]},
+    "combined": {"resolved_profile": "combined", "evidence_types": ["text", "graph", "community"]},
+    "auto": {"resolved_profile": "combined", "evidence_types": ["text", "graph", "community"]}
+  }
+}
