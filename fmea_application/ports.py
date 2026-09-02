@@ -31,6 +31,7 @@ from core_domain.fmea.propagation import (
     TopologySnapshot,
 )
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
+from core_domain.fmea.template_migration import TemplateDraft
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
 from .assistance_contracts import (
@@ -375,6 +376,88 @@ class RiskSuggestionGenerator(Protocol):
     def generate(self, request: RiskModelRequest) -> AssistanceSuggestion[object]: ...
 
 
+class TemplateImporter(Protocol):
+    """Safe, bounded source-to-draft boundary for one office format."""
+
+    def parse(self, raw_bytes: bytes, filename: str, *, workspace_id: str) -> TemplateDraft: ...
+
+
+@dataclass(frozen=True, slots=True)
+class TemplatePatchRequest:
+    """Bounded application request passed to a provider-neutral patch port."""
+
+    patch_id: str
+    draft: TemplateDraft
+    input_template_version: str
+    target_template_id: str
+    target_template_version: str
+    target_template_hash: str
+    domain_pack_id: str
+    domain_pack_version: str
+    domain_pack_hash: str
+    evidence_pack_id: str
+    evidence_pack_hash: str
+    run_id: str
+    trace_id: str
+    model_version: str
+    prompt_version: str
+    created_at: str = ""
+    target_record_version: int = 1
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.draft, TemplateDraft):
+            raise TypeError("draft must be a TemplateDraft")  # noqa: TRY003
+        for field_name in (
+            "patch_id",
+            "input_template_version",
+            "target_template_id",
+            "target_template_version",
+            "target_template_hash",
+            "domain_pack_id",
+            "domain_pack_version",
+            "domain_pack_hash",
+            "evidence_pack_id",
+            "evidence_pack_hash",
+            "run_id",
+            "trace_id",
+            "model_version",
+            "prompt_version",
+        ):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be non-empty")  # noqa: TRY003
+        if self.created_at and not isinstance(self.created_at, str):
+            raise TypeError("created_at must be a string when supplied")  # noqa: TRY003
+        if isinstance(self.target_record_version, bool) or not isinstance(self.target_record_version, int):
+            raise TypeError("target_record_version must be an integer")  # noqa: TRY003
+        if self.target_record_version < 1:
+            raise ValueError("target_record_version must be positive")  # noqa: TRY003
+
+
+class TemplatePatchGenerator(Protocol):
+    """Provider-neutral mapping suggestions; never a template authority."""
+
+    def suggest(self, request: object) -> AssistanceSuggestion[object]: ...
+
+
+class TemplateCompilerPort(Protocol):
+    """The existing structured-output compiler behind the FMEA service."""
+
+    def compile(self, source: Mapping[str, object]) -> object: ...
+
+
+class TemplateRegistryPort(Protocol):
+    """Immutable template registry boundary."""
+
+    def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object: ...
+
+
+class TemplateSourceBuilder(Protocol):
+    """Build a declarative compiler input from an accepted immutable draft."""
+
+    def build(self, draft: TemplateDraft, patch: object) -> Mapping[str, object]: ...
+
+
 class GovernanceSourcePort(Protocol):
     """Read server-owned accepted/confirmed governance state for one scope."""
 
@@ -694,4 +777,10 @@ __all__ = [
     "RiskSuggestionGenerator",
     "ScoringRuleRegistry",
     "SystemTopologyPort",
+    "TemplateCompilerPort",
+    "TemplateImporter",
+    "TemplatePatchGenerator",
+    "TemplatePatchRequest",
+    "TemplateRegistryPort",
+    "TemplateSourceBuilder",
 ]

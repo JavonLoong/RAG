@@ -23,6 +23,7 @@ dependencies = [
     "leidenalg>=0.10.2",
     "networkx>=3.0",
     "numpy>=2.3.4",
+    "openpyxl>=3.1.5,<4",
     "orjson>=3.11.8",
     "pydantic>=2.13.0",
     "pypdf>=6.10.1",
