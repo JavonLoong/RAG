@@ -163,3 +163,41 @@ ImportError: cannot import name 'ExportArtifactManifest' from 'fmea_application'
 3. Task 4 must verify artifact bytes against manifest `sha256` and `byte_length`, then atomically publish only verified output; this round intentionally performs no byte I/O.
 
 Fix-round implementation commit SHA: `190aa38a71eee2fd89979bf91128308c290aaf02`
+
+## Fix round 2 — round-2 review disposition
+
+### RED evidence
+
+先补 cancellation lifecycle、created-at chronology 和 multi-dot Windows device-name tests，再运行 focused command：
+
+```text
+.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py -q
+```
+
+结果：`13 failed, 67 passed in 0.35s`。失败集中且可重复：`RunStatus.CANCELLING`/`CANCELLED` 被旧 lifecycle 表拒绝、`created_at` 晚于 `started_at` 未被拒绝，以及 `CON.backup.xlsx`、`NUL.tar.json`、`CON .xlsx` 被旧 basename 推导接受；无 collection 或 fixture 错误。
+
+### GREEN implementation
+
+- I2：ExportRun lifecycle requirement table 现在沿用 canonical `RunStatus` 并支持 `cancelling` 与 `cancelled`；cancelling 要求 started、禁止 finished/artifact/error，cancelled 要求 started+finished、禁止 artifact/error；保留 queued/running/succeeded/failed 的 exact shapes。
+- I2：创建时间现在必须满足 `created_at <= started_at <= finished_at`（存在相应 timestamp 时），completed-run artifact binding 要求保持不变。
+- M1：共享 filename policy 以首个 period 前的 Windows device basename 判定，并按 Windows 规则去除 basename 尾随点/空格；普通合法多点文件名仍接受。
+
+### Fix-round-2 verification commands and exact results
+
+| Command | Actual result |
+| --- | --- |
+| `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py -q` | `80 passed in 0.10s` |
+| `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_domain_pack.py tests/unit/test_fmea_domain_pack_registry.py -q` | `73 passed, 6 skipped in 1.11s` |
+| `.venv\Scripts\python.exe -m pytest tests/unit/test_fmea_template_migration_contracts.py tests/unit/test_fmea_snapshot_contracts.py tests/unit/test_fmea_domain_pack.py tests/unit/test_fmea_domain_pack_registry.py -q` | `176 passed, 6 skipped in 1.57s` |
+| `.venv\Scripts\python.exe -m ruff check core_domain/fmea/filename_policy.py core_domain/fmea/template_migration.py core_domain/fmea/__init__.py fmea_application/delivery_contracts.py fmea_application/__init__.py tests/unit/test_fmea_template_migration_contracts.py` | `All checks passed!` |
+| `.venv\Scripts\python.exe -m ruff format --check core_domain/fmea/filename_policy.py core_domain/fmea/template_migration.py core_domain/fmea/__init__.py fmea_application/delivery_contracts.py fmea_application/__init__.py tests/unit/test_fmea_template_migration_contracts.py` | `6 files already formatted` |
+| `.venv\Scripts\python.exe -m compileall -q core_domain/fmea/filename_policy.py core_domain/fmea/template_migration.py core_domain/fmea/__init__.py fmea_application/delivery_contracts.py fmea_application/__init__.py tests/unit/test_fmea_template_migration_contracts.py` | exit code `0`, no output |
+| `git diff --check` | exit code `0`; only Git LF/CRLF warnings |
+
+### Fix-round-2 self-review and residual risks
+
+- Only the existing delivery/filename contracts and focused Task 1 test file changed in this round; no Task 2 files or importer/persistence/exporter/route/CLI/Skill/browser/DomainPack demo/migration SQL behavior was added.
+- Existing run-to-manifest binding still requires a completed/succeeded run and compares all previously covered shared identities; byte-content hash/length verification remains Task 4.
+- The canonical run vocabulary remains the existing `RunStatus` enum, including cooperative cancellation; no parallel status dialect was introduced.
+
+Fix-round-2 implementation commit SHA: `516203fe28d3db741d91893ca626733c9ee473ae`
