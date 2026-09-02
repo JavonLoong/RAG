@@ -162,4 +162,4 @@ ImportError: cannot import name 'ExportArtifactManifest' from 'fmea_application'
 2. Task 3 must prove child-revision creation, source immutability, atomic persistence and migration adapter execution; Task 1 only constrains the plan DTO.
 3. Task 4 must verify artifact bytes against manifest `sha256` and `byte_length`, then atomically publish only verified output; this round intentionally performs no byte I/O.
 
-Fix-round commit SHA: `PENDING_FINAL_SHA`
+Fix-round implementation commit SHA: `190aa38a71eee2fd89979bf91128308c290aaf02`
