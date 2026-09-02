@@ -41,7 +41,7 @@
 - `fmea_infrastructure/export_docx.py`: DOCX adapter.
 - `fmea_infrastructure/artifact_store.py`: contained atomic artifact publication.
 - `fmea_infrastructure/delivery_repository_sqlite.py`: draft/patch/migration/export-run persistence.
-- `fmea_infrastructure/migrations/006_fmea_migration_delivery.sql`: delivery schema.
+- `fmea_infrastructure/migrations/010_fmea_migration_delivery.sql`: additive delivery schema after the completed governance migration sequence `005`-`009`.
 - `domain_packs/electrical-demo/` and `domain_packs/software-demo/`: structurally distinct demonstration packs.
 - `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/fmea_delivery_contracts.py`: REST schemas.
 - `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/routes_fmea_delivery_v1.py`: DomainPack, migration, and export routes.
@@ -218,7 +218,7 @@ git commit -m "feat(fmea): import and review template drafts"
 ### Task 3: Persist delivery state and execute explicit dry-run migrations
 
 **Files:**
-- Create: `fmea_infrastructure/migrations/006_fmea_migration_delivery.sql`
+- Create: `fmea_infrastructure/migrations/010_fmea_migration_delivery.sql`
 - Create: `fmea_infrastructure/delivery_repository_sqlite.py`
 - Create: `fmea_infrastructure/migration_registry.py`
 - Create: `fmea_application/migration_service.py`
@@ -253,7 +253,7 @@ def test_failed_confirmed_migration_rolls_back_child_and_events(service, faultin
 
 Run: `.venv\Scripts\python.exe -m pytest tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py -q`
 
-Expected: FAIL because migration `006`, registry, repository, and service are absent.
+Expected: FAIL because migration `010`, registry, repository, and service are absent.
 
 - [ ] **Step 3: Implement explicit migration graph and atomic child creation**
 
@@ -270,7 +270,7 @@ class MigrationService:
     def confirm(self, command: ConfirmMigrationCommand, actor: ActorContext) -> MigrationResult: ...
 ```
 
-Migration `006` creates template drafts, patch candidates/decisions, migration runs/reports/confirmations, export runs/artifacts, and required indexes/triggers. The service resolves an exact allowlisted edge sequence, checks source hash, runs deterministic transformations, validates target template/DomainPack, reports every mapped/dropped/unresolved field, and on human confirmation creates child rows/revision with risk and propagation statuses `invalidated`.
+Migration `010` creates template drafts, patch candidates/decisions, migration runs/reports/confirmations, export runs/artifacts, and required indexes/triggers. It is strictly additive after migrations `005`-`009` and must not rewrite their bytes or historical behavior. The service resolves an exact allowlisted edge sequence, checks source hash, runs deterministic transformations, validates target template/DomainPack, reports every mapped/dropped/unresolved field, and on human confirmation creates child rows/revision with risk and propagation statuses `invalidated`.
 
 - [ ] **Step 4: Run migration, governance, and registry tests**
 
@@ -281,7 +281,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit migration workflow**
 
 ```powershell
-git add fmea_infrastructure/migrations/006_fmea_migration_delivery.sql fmea_infrastructure/delivery_repository_sqlite.py fmea_infrastructure/migration_registry.py fmea_application/migration_service.py fmea_application/ports.py fmea_infrastructure/composition.py tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py
+git add fmea_infrastructure/migrations/010_fmea_migration_delivery.sql fmea_infrastructure/delivery_repository_sqlite.py fmea_infrastructure/migration_registry.py fmea_application/migration_service.py fmea_application/ports.py fmea_infrastructure/composition.py tests/integration/test_fmea_delivery_sqlite.py tests/unit/test_fmea_migration_service.py tests/regression/test_fmea_migration_rollback.py
 git commit -m "feat(fmea): migrate domain packs through child revisions"
 ```
 
