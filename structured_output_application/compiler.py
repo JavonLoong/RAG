@@ -24,6 +24,7 @@ from .ports import SchemaValidatorPort, TemplateSourceLoader
 
 _DIALECT = "https://json-schema.org/draft/2020-12/schema"
 _ID = re.compile(r"^[a-z0-9._-]{1,128}$")
+_MAPPING_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 _BASE_ROOT_KEYS = frozenset({"template", "output_schema", "evidence_bindings"})
 _ROOT_KEYS_WITH_MAPPINGS = _BASE_ROOT_KEYS | {"source_mappings"}
@@ -146,9 +147,9 @@ def _parse_source_mappings(value: object, limits: TemplateLimits) -> dict[str, s
     for source, target in value.items():
         if (
             not isinstance(source, str)
-            or _ID.fullmatch(source) is None
+            or _MAPPING_KEY.fullmatch(source) is None
             or not isinstance(target, str)
-            or _ID.fullmatch(target) is None
+            or _MAPPING_KEY.fullmatch(target) is None
         ):
             raise _error("TEMPLATE_MAPPING_INVALID", "Source mapping identity is invalid.", "/source_mappings")
         mappings[source] = target

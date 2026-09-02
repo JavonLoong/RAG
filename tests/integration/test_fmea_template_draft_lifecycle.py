@@ -301,6 +301,60 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
         "legacy_criticality": "criticality",
     }
 
+    class _SecondGateway:
+        def generate(self, request: object) -> object:
+            return {
+                "diff": (
+                    {
+                        "op": "replace",
+                        "path": "/fields/criticality",
+                        "value": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                ),
+                "evidence_ids": (),
+            }
+
+    second_service = DomainPackService(
+        importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
+        patch_generator=TemplatePatchGenerator(_SecondGateway(), clock=lambda: TIMESTAMP),
+        evidence_provider=_EvidenceProvider(),
+        compiler=compiler,
+        registry=registry,
+        clock=lambda: TIMESTAMP,
+    )
+    second_draft = second_service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    second_suggest = replace(
+        _suggest_command(second_draft.draft_id),
+        patch_id="patch-2",
+        input_template_version="1.1.0",
+        target_template_version="1.1.0",
+        target_template_hash=stored.template_hash,
+        run_id="run-2",
+        trace_id="trace-2",
+    )
+    second_service.suggest_patch(
+        second_suggest,
+        _actor(roles=frozenset(), actor_type=ActorType.MODEL),
+    )
+    second_registered = second_service.accept_patch(
+        replace(
+            _accept_command(second_draft.draft_id, second_draft.source_sha256),
+            suggestion_id="template-patch-suggestion-patch-2",
+            patch_id="patch-2",
+            target_template_version="1.1.0",
+            target_template_hash=stored.template_hash,
+            new_template_version="1.2.0",
+        ),
+        _actor(roles=frozenset({"template_admin"})),
+    )
+
+    assert second_registered.metadata.version == "1.2.0"
+    assert second_registered.output_schema["properties"]["criticality"]["maximum"] == 10
+    assert second_registered.source_mappings == stored.source_mappings
+
 
 def test_accept_is_process_local_serialized_and_records_one_decision() -> None:
     service, compiler, registry = _service()

@@ -27,7 +27,11 @@ from .ports import (
 )
 from .review_contracts import ActorContext
 from .review_errors import ReviewError
-from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
+from .template_patch_contracts import (
+    TemplatePatchDecision,
+    TemplatePatchSuggestion,
+    normalize_source_mapping_key,
+)
 
 
 def _now() -> str:
@@ -118,7 +122,9 @@ def _base_source(compiled: object, candidate: TemplatePatchCandidate) -> dict[st
         source = json.loads(canonical_json)
     except (TypeError, ValueError) as exc:
         raise _conflict("base template source is invalid") from exc
-    if not isinstance(source, dict) or set(source) != {"template", "output_schema", "evidence_bindings"}:
+    required_keys = {"template", "output_schema", "evidence_bindings"}
+    allowed_keys = required_keys | {_SOURCE_MAPPINGS_KEY}
+    if not isinstance(source, dict) or not required_keys.issubset(source) or not set(source).issubset(allowed_keys):
         raise _conflict("base template source is invalid")
     metadata = source.get("template")
     if (
@@ -128,10 +134,6 @@ def _base_source(compiled: object, candidate: TemplatePatchCandidate) -> dict[st
     ):
         raise _conflict("base template identity does not match the patch candidate")
     return source
-
-
-def _mapping_key(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
 
 
 def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-closed branches
@@ -186,9 +188,9 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
                 raise _invalid("field patch values must be JSON Schema objects")
             properties[name] = dict(value)
 
-    source_keys = {_mapping_key(item.source_key) for item in draft.proposed_fields}
-    source_keys.update(_mapping_key(item) for item in draft.unknown_fields)
-    source_keys.update(_mapping_key(item) for item in draft.ambiguous_fields)
+    source_keys = {normalize_source_mapping_key(item.source_key) for item in draft.proposed_fields}
+    source_keys.update(normalize_source_mapping_key(item) for item in draft.unknown_fields)
+    source_keys.update(normalize_source_mapping_key(item) for item in draft.ambiguous_fields)
     raw_mappings = source.get(_SOURCE_MAPPINGS_KEY, {})
     if not isinstance(raw_mappings, dict) or len(raw_mappings) > 500:
         raise _invalid("base template source mappings are invalid")
@@ -202,7 +204,7 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
             raise _invalid("base template source mappings are invalid")
         resolved_mappings[source_key] = target_field
     for item in draft.proposed_fields:
-        source_key = _mapping_key(item.source_key)
+        source_key = normalize_source_mapping_key(item.source_key)
         existing_target = resolved_mappings.get(source_key)
         if existing_target is not None and existing_target != item.target_field:
             raise _conflict("base and imported source mappings conflict")

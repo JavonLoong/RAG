@@ -151,6 +151,16 @@ def test_source_mapping_must_target_a_top_level_output_property() -> None:
     assert raised.value.code == "TEMPLATE_MAPPING_INVALID"
 
 
+def test_source_mapping_identity_rejects_leading_digit_at_compiler_boundary() -> None:
+    source = minimal_source()
+    source["source_mappings"] = {"1legacy": "rows"}
+
+    with pytest.raises(StructuredOutputError) as raised:
+        compiler().compile(source)
+
+    assert raised.value.code == "TEMPLATE_MAPPING_INVALID"
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [

@@ -23,7 +23,11 @@ from core_domain.structured_output import StructuredOutputError
 from fmea_application.assistance_contracts import AssistanceKind, AssistanceSuggestion
 from fmea_application.ports import TemplatePatchRequest
 from fmea_application.review_errors import ReviewError
-from fmea_application.template_patch_contracts import TemplatePatchSuggestion, candidate_payload
+from fmea_application.template_patch_contracts import (
+    TemplatePatchSuggestion,
+    candidate_payload,
+    normalize_source_mapping_key,
+)
 
 
 class TemplatePatchModelGateway(Protocol):
@@ -198,6 +202,7 @@ def _projected_evidence(request: TemplatePatchRequest) -> tuple[tuple[str, Evide
         if (
             not isinstance(ref.evidence_id, str)
             or not ref.evidence_id.strip()
+            or ref.evidence_id != ref.evidence_id.strip()
             or len(ref.evidence_id) > _MAX_EVIDENCE_ID_LENGTH
             or _FORBIDDEN_TEXT.search(ref.evidence_id)
             or not isinstance(ref.source_type, str)
@@ -221,11 +226,24 @@ def _request_projection(request: TemplatePatchRequest) -> Mapping[str, object]:
             "delimiter": "BEGIN_UNTRUSTED_IMPORT_HEADERS/END_UNTRUSTED_IMPORT_HEADERS",
             "source_type": draft.source_type,
             "identified_fields": list(draft.identified_fields),
-            "unknown_headers": list(draft.unknown_fields),
-            "ambiguous_headers": list(draft.ambiguous_fields),
+            "unknown_headers": [
+                {
+                    "source_header": item,
+                    "normalized_source_key": normalize_source_mapping_key(item),
+                }
+                for item in draft.unknown_fields
+            ],
+            "ambiguous_headers": [
+                {
+                    "source_header": item,
+                    "normalized_source_key": normalize_source_mapping_key(item),
+                }
+                for item in draft.ambiguous_fields
+            ],
             "proposed_fields": [
                 {
                     "source_header": item.source_key,
+                    "normalized_source_key": normalize_source_mapping_key(item.source_key),
                     "target_field": item.target_field,
                 }
                 for item in draft.proposed_fields

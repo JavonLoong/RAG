@@ -5,14 +5,33 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Literal
 
 from core_domain.fmea.states import ActorType
 from core_domain.fmea.template_migration import TemplatePatchCandidate, TemplatePatchStatus
 
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
+
+_SOURCE_KEY = re.compile(r"[^a-z0-9]+")
+
+
+def normalize_source_mapping_key(value: str) -> str:
+    """Return a stable ASCII identity without dropping non-ASCII headers."""
+
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("source mapping header must not be empty")
+    canonical = unicodedata.normalize("NFKC", value).casefold().strip()
+    ascii_slug = _SOURCE_KEY.sub("_", canonical).strip("_")
+    if canonical.isascii() and ascii_slug:
+        return ascii_slug[:128]
+    digest = sha256(canonical.encode("utf-8")).hexdigest()[:24]
+    prefix = ascii_slug[:96].rstrip("_") or "source"
+    return f"{prefix}_{digest}"
 
 
 def candidate_payload(candidate: TemplatePatchCandidate) -> Mapping[str, object]:
@@ -157,4 +176,5 @@ __all__ = [
     "TemplatePatchSuggestion",
     "candidate_from_payload",
     "candidate_payload",
+    "normalize_source_mapping_key",
 ]
