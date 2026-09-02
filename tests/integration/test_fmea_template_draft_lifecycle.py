@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 
 import pytest
@@ -19,6 +20,7 @@ from fmea_infrastructure.template_patch_generator import TemplatePatchGenerator
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
 from tests.unit.test_fmea_template_import_excel import _xlsx
+from tests.unit.test_fmea_template_patch_generator import PACK
 
 HASH = "a" * 64
 TIMESTAMP = "2026-08-27T12:00:00Z"
@@ -93,16 +95,23 @@ class _Registry:
         return _Compiled()
 
 
+class _EvidenceProvider:
+    def load_pack(self, workspace_id: str, pack_id: str):
+        assert (workspace_id, pack_id) == (PACK.workspace_id, PACK.pack_id)
+        return PACK
+
+
 def _actor(*, roles: frozenset[str], actor_type: ActorType = ActorType.HUMAN) -> ActorContext:
     return ActorContext(actor_id="actor-1", actor_type=actor_type, roles=roles, workspace_id="ws-1")
 
 
-def _service() -> tuple[DomainPackService, _Compiler, _Registry]:
+def _service(gateway: object | None = None) -> tuple[DomainPackService, _Compiler, _Registry]:
     compiler = _Compiler()
     registry = _Registry()
     service = DomainPackService(
         importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
-        patch_generator=TemplatePatchGenerator(_FakeGateway(), clock=lambda: TIMESTAMP),
+        patch_generator=TemplatePatchGenerator(gateway or _FakeGateway(), clock=lambda: TIMESTAMP),
+        evidence_provider=_EvidenceProvider(),
         compiler=compiler,
         registry=registry,
         clock=lambda: TIMESTAMP,
@@ -122,7 +131,7 @@ def _suggest_command(draft_id: str) -> SuggestTemplatePatchCommand:
         domain_pack_version="1.0.0",
         domain_pack_hash=HASH,
         evidence_pack_id="evidence-pack-1",
-        evidence_pack_hash=HASH,
+        evidence_pack_hash=PACK.pack_hash,
         run_id="run-1",
         trace_id="trace-1",
         model_version="deterministic-fake",
@@ -140,7 +149,7 @@ def _accept_command(draft_id: str = "draft-1", draft_sha256: str = HASH) -> Acce
         target_template_hash=HASH,
         new_template_version="1.1.0",
         domain_pack_hash=HASH,
-        evidence_pack_hash=HASH,
+        evidence_pack_hash=PACK.pack_hash,
         confirm_template_change=True,
     )
 
@@ -157,6 +166,7 @@ def test_import_and_suggest_create_only_immutable_draft_and_patch_suggestion() -
 
     assert draft.status.value == "draft"
     assert suggestion.applied is False
+    assert suggestion.payload.patch_id == "patch-1"
     assert compiler.calls == 0
     assert registry.calls == 0
 
@@ -203,7 +213,9 @@ def test_stale_cross_workspace_and_rejected_candidates_fail_closed() -> None:
         ),
         _actor(roles=frozenset({"template_admin"})),
     )
-    assert rejected.status.value == "suggested"
+    assert rejected.action == "rejected"
+    assert rejected.reason == "ambiguous"
+    assert service.decision_for_patch("patch-1", _actor(roles=frozenset())) == rejected
     assert compiler.calls == registry.calls == 0
 
 
@@ -257,6 +269,7 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
     service = DomainPackService(
         importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
         patch_generator=TemplatePatchGenerator(_SemanticGateway(), clock=lambda: TIMESTAMP),
+        evidence_provider=_EvidenceProvider(),
         compiler=compiler,
         registry=registry,
         clock=lambda: TIMESTAMP,
@@ -284,3 +297,102 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
         "criticality": {"type": "integer", "minimum": 1, "maximum": 5},
     }
     assert "legacy_criticality" not in stored.output_schema["properties"]
+
+
+def test_accept_is_process_local_serialized_and_records_one_decision() -> None:
+    service, compiler, registry = _service()
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    service.suggest_patch(_suggest_command(draft.draft_id), _actor(roles=frozenset(), actor_type=ActorType.MODEL))
+    command = _accept_command(draft.draft_id, draft.source_sha256)
+    admin = _actor(roles=frozenset({"template_admin"}))
+
+    def accept_once() -> str:
+        try:
+            service.accept_patch(command, admin)
+        except ReviewError:
+            return "conflict"
+        return "accepted"
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = tuple(executor.map(lambda _index: accept_once(), range(4)))
+
+    assert results.count("accepted") == 1
+    assert (compiler.calls, registry.calls) == (1, 1)
+    decision = service.decision_for_patch("patch-1", admin)
+    assert decision is not None and decision.action == "accepted"
+    assert decision.new_template_version == "1.1.0"
+    assert decision.candidate.diff[0]["path"] == "/fields/failure_mode"
+
+
+def test_failed_registration_leaves_no_decision_and_allows_bounded_retry() -> None:
+    class _FailOnceRegistry(_Registry):
+        def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object:
+            self.calls += 1
+            if self.calls == 1:
+                raise OSError("temporary")
+            return template
+
+    compiler = _Compiler()
+    registry = _FailOnceRegistry()
+    service = DomainPackService(
+        importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
+        patch_generator=TemplatePatchGenerator(_FakeGateway(), clock=lambda: TIMESTAMP),
+        evidence_provider=_EvidenceProvider(),
+        compiler=compiler,
+        registry=registry,
+        clock=lambda: TIMESTAMP,
+    )
+    admin = _actor(roles=frozenset({"template_admin"}))
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    service.suggest_patch(_suggest_command(draft.draft_id), _actor(roles=frozenset(), actor_type=ActorType.MODEL))
+    command = _accept_command(draft.draft_id, draft.source_sha256)
+
+    with pytest.raises(ReviewError, match="storage|registration"):
+        service.accept_patch(command, admin)
+    assert service.decision_for_patch("patch-1", admin) is None
+    service.accept_patch(command, admin)
+    assert service.decision_for_patch("patch-1", admin).action == "accepted"  # type: ignore[union-attr]
+    assert registry.calls == 2
+
+
+def test_accept_rejects_non_higher_output_version_before_compilation() -> None:
+    service, compiler, registry = _service()
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    service.suggest_patch(_suggest_command(draft.draft_id), _actor(roles=frozenset(), actor_type=ActorType.MODEL))
+    with pytest.raises(ReviewError, match="higher"):
+        service.accept_patch(
+            replace(_accept_command(draft.draft_id, draft.source_sha256), new_template_version="1.0.0"),
+            _actor(roles=frozenset({"template_admin"})),
+        )
+    assert (compiler.calls, registry.calls) == (0, 0)
+
+
+def test_mapping_operations_use_imported_mapping_state_exactly() -> None:
+    class _MappingGateway:
+        def generate(self, request: object) -> object:
+            return {
+                "diff": ({"op": "add", "path": "/mappings/failure_mode", "value": "failure_mode"},),
+                "evidence_ids": (),
+            }
+
+    service, compiler, registry = _service(_MappingGateway())
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    service.suggest_patch(_suggest_command(draft.draft_id), _actor(roles=frozenset(), actor_type=ActorType.MODEL))
+    with pytest.raises(ReviewError, match="already exists"):
+        service.accept_patch(
+            _accept_command(draft.draft_id, draft.source_sha256),
+            _actor(roles=frozenset({"template_admin"})),
+        )
+    assert (compiler.calls, registry.calls) == (0, 0)

@@ -88,6 +88,7 @@ from .risk_contracts import (
     RiskConfirmationResult,
     RiskModelRequest,
 )
+from .template_patch_contracts import TemplatePatchSuggestion
 
 if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
@@ -382,12 +383,19 @@ class TemplateImporter(Protocol):
     def parse(self, raw_bytes: bytes, filename: str, *, workspace_id: str) -> TemplateDraft: ...
 
 
+class TemplateEvidenceProvider(Protocol):
+    """Resolve the exact server-owned EvidencePack used for mapping assistance."""
+
+    def load_pack(self, workspace_id: str, pack_id: str) -> EvidencePack: ...
+
+
 @dataclass(frozen=True, slots=True)
 class TemplatePatchRequest:
     """Bounded application request passed to a provider-neutral patch port."""
 
     patch_id: str
     draft: TemplateDraft
+    evidence_pack: EvidencePack
     input_template_version: str
     target_template_id: str
     target_template_version: str
@@ -407,6 +415,8 @@ class TemplatePatchRequest:
     def __post_init__(self) -> None:
         if not isinstance(self.draft, TemplateDraft):
             raise TypeError("draft must be a TemplateDraft")  # noqa: TRY003
+        if not isinstance(self.evidence_pack, EvidencePack):
+            raise TypeError("evidence_pack must be an EvidencePack")  # noqa: TRY003
         for field_name in (
             "patch_id",
             "input_template_version",
@@ -432,12 +442,18 @@ class TemplatePatchRequest:
             raise TypeError("target_record_version must be an integer")  # noqa: TRY003
         if self.target_record_version < 1:
             raise ValueError("target_record_version must be positive")  # noqa: TRY003
+        if (
+            self.evidence_pack.workspace_id != self.draft.workspace_id
+            or self.evidence_pack.pack_id != self.evidence_pack_id
+            or self.evidence_pack.pack_hash != self.evidence_pack_hash.removeprefix("sha256:")
+        ):
+            raise ValueError("evidence_pack identity does not match the template patch request")  # noqa: TRY003
 
 
 class TemplatePatchGenerator(Protocol):
     """Provider-neutral mapping suggestions; never a template authority."""
 
-    def suggest(self, request: object) -> AssistanceSuggestion[object]: ...
+    def suggest(self, request: object) -> TemplatePatchSuggestion: ...
 
 
 class TemplateCompilerPort(Protocol):
@@ -786,6 +802,7 @@ __all__ = [
     "ScoringRuleRegistry",
     "SystemTopologyPort",
     "TemplateCompilerPort",
+    "TemplateEvidenceProvider",
     "TemplateImporter",
     "TemplatePatchGenerator",
     "TemplatePatchRequest",

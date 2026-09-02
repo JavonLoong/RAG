@@ -10,6 +10,7 @@ import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from threading import RLock
 
 from core_domain.fmea.states import ActorType
 from core_domain.fmea.template_migration import TemplateDraft, TemplatePatchCandidate, TemplatePatchStatus
@@ -17,6 +18,7 @@ from core_domain.fmea.template_migration import TemplateDraft, TemplatePatchCand
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .ports import (
     TemplateCompilerPort,
+    TemplateEvidenceProvider,
     TemplateImporter,
     TemplatePatchGenerator,
     TemplatePatchRequest,
@@ -25,6 +27,7 @@ from .ports import (
 )
 from .review_contracts import ActorContext
 from .review_errors import ReviewError
+from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 
 def _now() -> str:
@@ -185,14 +188,16 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
     source_keys = {_mapping_key(item.source_key) for item in draft.proposed_fields}
     source_keys.update(_mapping_key(item) for item in draft.unknown_fields)
     source_keys.update(_mapping_key(item) for item in draft.ambiguous_fields)
-    resolved_mappings: dict[str, str] = {}
+    resolved_mappings = {_mapping_key(item.source_key): item.target_field for item in draft.proposed_fields}
     for operation in mapping_operations:
         name = str(operation["path"]).rsplit("/", 1)[-1]
         action = operation["op"]
         if name not in source_keys:
             raise _conflict("mapping patch source does not exist in the imported draft")
         if action == "remove":
-            resolved_mappings.pop(name, None)
+            if name not in resolved_mappings:
+                raise _conflict("template patch mapping target does not exist")
+            del resolved_mappings[name]
             continue
         target = operation.get("value")
         if not isinstance(target, str) or target not in properties:
@@ -200,68 +205,11 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
         if action == "add" and name in resolved_mappings:
             raise _conflict("mapping patch add target already exists")
         if action == "replace" and name not in resolved_mappings:
-            # Imported mappings are not part of the generic compiled schema. A replace
-            # establishes the reviewed mapping for this decision record.
-            resolved_mappings[name] = target
-        else:
-            resolved_mappings[name] = target
+            raise _conflict("template patch mapping target does not exist")
+        resolved_mappings[name] = target
 
     metadata["version"] = new_template_version
     return source
-
-
-def _candidate_from_payload(payload: object) -> TemplatePatchCandidate:
-    if not isinstance(payload, Mapping):
-        raise _invalid("template patch suggestion payload is invalid")
-    required = {
-        "patch_id",
-        "draft_id",
-        "input_template_version",
-        "target_template_id",
-        "target_template_version",
-        "target_template_hash",
-        "domain_pack_id",
-        "domain_pack_version",
-        "domain_pack_hash",
-        "evidence_pack_id",
-        "evidence_pack_hash",
-        "run_id",
-        "trace_id",
-        "model_version",
-        "prompt_version",
-        "diff",
-        "evidence_ids",
-        "status",
-        "created_at",
-        "applied",
-    }
-    if set(payload) != required:
-        raise _invalid("template patch suggestion payload has unknown or missing fields")
-    try:
-        return TemplatePatchCandidate(
-            patch_id=payload["patch_id"],
-            draft_id=payload["draft_id"],
-            input_template_version=payload["input_template_version"],
-            target_template_id=payload["target_template_id"],
-            target_template_version=payload["target_template_version"],
-            target_template_hash=payload["target_template_hash"],
-            domain_pack_id=payload["domain_pack_id"],
-            domain_pack_version=payload["domain_pack_version"],
-            domain_pack_hash=payload["domain_pack_hash"],
-            evidence_pack_id=payload["evidence_pack_id"],
-            evidence_pack_hash=payload["evidence_pack_hash"],
-            run_id=payload["run_id"],
-            trace_id=payload["trace_id"],
-            model_version=payload["model_version"],
-            prompt_version=payload["prompt_version"],
-            diff=payload["diff"],
-            evidence_ids=payload["evidence_ids"],
-            status=payload["status"],
-            created_at=payload["created_at"],
-            applied=payload["applied"],
-        )
-    except (TypeError, ValueError) as exc:
-        raise _invalid("template patch suggestion candidate is invalid") from exc
 
 
 class DomainPackService:
@@ -272,6 +220,7 @@ class DomainPackService:
         *,
         importers: Mapping[str, TemplateImporter],
         patch_generator: TemplatePatchGenerator,
+        evidence_provider: TemplateEvidenceProvider,
         compiler: TemplateCompilerPort,
         registry: TemplateRegistryPort,
         source_builder: TemplateSourceBuilder | None = None,
@@ -281,13 +230,15 @@ class DomainPackService:
             raise ValueError("at least one template importer is required")
         self._importers = dict(importers)
         self._patch_generator = patch_generator
+        self._evidence_provider = evidence_provider
         self._compiler = compiler
         self._registry = registry
         self._source_builder = source_builder
         self._clock = clock
         self._drafts: dict[str, TemplateDraft] = {}
-        self._suggestions: dict[str, tuple[AssistanceSuggestion[object], TemplatePatchCandidate]] = {}
-        self._decisions: dict[str, str] = {}
+        self._suggestions: dict[str, TemplatePatchSuggestion] = {}
+        self._decisions: dict[str, TemplatePatchDecision] = {}
+        self._decision_lock = RLock()
 
     def import_template(self, command: ImportTemplateCommand, actor: ActorContext) -> TemplateDraft:
         if not isinstance(command, ImportTemplateCommand) or not isinstance(actor, ActorContext):
@@ -309,7 +260,9 @@ class DomainPackService:
         self._drafts[draft.draft_id] = draft
         return draft
 
-    def suggest_patch(self, command: SuggestTemplatePatchCommand, actor: ActorContext) -> AssistanceSuggestion[object]:
+    def suggest_patch(  # noqa: C901 - provenance checks remain explicit at the authority boundary
+        self, command: SuggestTemplatePatchCommand, actor: ActorContext
+    ) -> TemplatePatchSuggestion:
         if not isinstance(command, SuggestTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch request is invalid")
         draft = self._drafts.get(command.draft_id)
@@ -318,13 +271,26 @@ class DomainPackService:
         if draft.workspace_id != actor.workspace_id:
             raise _forbidden("template draft belongs to another workspace")
         if command.patch_id in self._suggestions:
-            existing, _ = self._suggestions[command.patch_id]
-            if existing.workspace_id == actor.workspace_id:
+            existing = self._suggestions[command.patch_id]
+            if existing.envelope.workspace_id == actor.workspace_id:
                 raise _conflict("template patch suggestion already exists")
             raise _forbidden("template patch belongs to another workspace")
+        try:
+            evidence_pack = self._evidence_provider.load_pack(actor.workspace_id, command.evidence_pack_id)
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "template mapping EvidencePack was not found") from exc
+        if (
+            evidence_pack.workspace_id != actor.workspace_id
+            or evidence_pack.pack_id != command.evidence_pack_id
+            or evidence_pack.pack_hash != command.evidence_pack_hash.removeprefix("sha256:")
+        ):
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "template mapping EvidencePack identity is invalid")
         request = TemplatePatchRequest(
             patch_id=command.patch_id,
             draft=draft,
+            evidence_pack=evidence_pack,
             input_template_version=command.input_template_version,
             target_template_id=command.target_template_id,
             target_template_version=command.target_template_version,
@@ -342,18 +308,14 @@ class DomainPackService:
             target_record_version=command.target_record_version,
         )
         suggestion = self._patch_generator.suggest(request)
-        if (
-            not isinstance(suggestion, AssistanceSuggestion)
-            or suggestion.kind is not AssistanceKind.TEMPLATE_FIELD_MAPPING
-        ):
+        if not isinstance(suggestion, TemplatePatchSuggestion):
             raise _invalid("template patch generator returned an invalid suggestion")
-        if (
-            suggestion.workspace_id != actor.workspace_id
-            or suggestion.target_id != draft.draft_id
-            or suggestion.applied
-        ):
+        envelope = suggestion.envelope
+        if not isinstance(envelope, AssistanceSuggestion) or envelope.kind is not AssistanceKind.TEMPLATE_FIELD_MAPPING:
+            raise _invalid("template patch generator returned an invalid suggestion")
+        if envelope.workspace_id != actor.workspace_id or envelope.target_id != draft.draft_id or envelope.applied:
             raise _invalid("template patch suggestion identity is invalid")
-        candidate = _candidate_from_payload(suggestion.payload)
+        candidate = suggestion.candidate
         if (
             candidate.patch_id != command.patch_id
             or candidate.draft_id != draft.draft_id
@@ -371,20 +333,20 @@ class DomainPackService:
             or candidate.model_version != command.model_version
             or candidate.prompt_version != command.prompt_version
             or candidate.status is not TemplatePatchStatus.SUGGESTED
-            or suggestion.target_type != "template_draft"
-            or suggestion.target_record_version != command.target_record_version
-            or suggestion.evidence_pack_ids != (candidate.evidence_pack_id,)
-            or suggestion.evidence_ids != candidate.evidence_ids
-            or suggestion.run_id != candidate.run_id
-            or suggestion.trace_id != candidate.trace_id
-            or suggestion.domain_pack_id != candidate.domain_pack_id
-            or suggestion.domain_pack_version != candidate.domain_pack_version
-            or suggestion.template_id != candidate.target_template_id
-            or suggestion.template_version != candidate.target_template_version
-            or suggestion.created_at != candidate.created_at
+            or envelope.target_type != "template_draft"
+            or envelope.target_record_version != command.target_record_version
+            or envelope.evidence_pack_ids != (candidate.evidence_pack_id,)
+            or envelope.evidence_ids != candidate.evidence_ids
+            or envelope.run_id != candidate.run_id
+            or envelope.trace_id != candidate.trace_id
+            or envelope.domain_pack_id != candidate.domain_pack_id
+            or envelope.domain_pack_version != candidate.domain_pack_version
+            or envelope.template_id != candidate.target_template_id
+            or envelope.template_version != candidate.target_template_version
+            or envelope.created_at != candidate.created_at
         ):
             raise _invalid("template patch suggestion provenance does not match the request")
-        self._suggestions[candidate.patch_id] = (suggestion, candidate)
+        self._suggestions[candidate.patch_id] = suggestion
         return suggestion
 
     def _load_candidate(
@@ -393,13 +355,14 @@ class DomainPackService:
         item = self._suggestions.get(patch_id)
         if item is None:
             raise _invalid("template patch suggestion was not found")
-        suggestion, candidate = item
-        if suggestion.suggestion_id != suggestion_id:
+        candidate = item.candidate
+        envelope = item.envelope
+        if envelope.suggestion_id != suggestion_id:
             raise _conflict("template patch suggestion identity does not match")
         draft = self._drafts.get(candidate.draft_id)
         if draft is None:
             raise _invalid("template draft was not found")
-        if draft.workspace_id != actor.workspace_id or suggestion.workspace_id != actor.workspace_id:
+        if draft.workspace_id != actor.workspace_id or envelope.workspace_id != actor.workspace_id:
             raise _forbidden("template patch belongs to another workspace")
         if self._decisions.get(patch_id) is not None:
             raise _conflict("template patch suggestion was already decided")
@@ -411,6 +374,10 @@ class DomainPackService:
             raise _forbidden("FMEA_TEMPLATE_ADMIN_REQUIRED: only a human template_admin may decide a template patch")
 
     def accept_patch(self, command: AcceptTemplatePatchCommand, actor: ActorContext) -> object:
+        with self._decision_lock:
+            return self._accept_patch(command, actor)
+
+    def _accept_patch(self, command: AcceptTemplatePatchCommand, actor: ActorContext) -> object:
         if not isinstance(command, AcceptTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch acceptance request is invalid")
         self._require_template_admin(actor)
@@ -450,18 +417,62 @@ class DomainPackService:
             raise
         except Exception as exc:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "template compilation or registration failed") from exc
-        self._decisions[command.patch_id] = "accepted"
+        self._decisions[command.patch_id] = TemplatePatchDecision(
+            decision_id=f"template-patch-decision-{command.patch_id}",
+            suggestion_id=command.suggestion_id,
+            patch_id=command.patch_id,
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            actor_type=actor.actor_type,
+            action="accepted",
+            reason="accepted after explicit template change confirmation",
+            base_template_id=candidate.target_template_id,
+            base_template_version=candidate.target_template_version,
+            base_template_hash=candidate.target_template_hash,
+            candidate=candidate,
+            new_template_version=command.new_template_version,
+            created_at=self._clock(),
+        )
         return registered
 
-    def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchCandidate:
+    def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchDecision:
+        with self._decision_lock:
+            return self._reject_patch(command, actor)
+
+    def _reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchDecision:
         if not isinstance(command, RejectTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch rejection request is invalid")
         self._require_template_admin(actor)
         if not isinstance(command.reason, str) or not command.reason.strip():
             raise _invalid("template patch rejection reason is required")
         _, candidate = self._load_candidate(command.suggestion_id, command.patch_id, actor)
-        self._decisions[command.patch_id] = "rejected"
-        return candidate
+        decision = TemplatePatchDecision(
+            decision_id=f"template-patch-decision-{command.patch_id}",
+            suggestion_id=command.suggestion_id,
+            patch_id=command.patch_id,
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            actor_type=actor.actor_type,
+            action="rejected",
+            reason=command.reason.strip(),
+            base_template_id=candidate.target_template_id,
+            base_template_version=candidate.target_template_version,
+            base_template_hash=candidate.target_template_hash,
+            candidate=candidate,
+            new_template_version=None,
+            created_at=self._clock(),
+        )
+        self._decisions[command.patch_id] = decision
+        return decision
+
+    def decision_for_patch(self, patch_id: str, actor: ActorContext) -> TemplatePatchDecision | None:
+        if not isinstance(patch_id, str) or not isinstance(actor, ActorContext):
+            raise _invalid("template patch decision query is invalid")
+        with self._decision_lock:
+            decision = self._decisions.get(patch_id)
+            if decision is not None and decision.workspace_id != actor.workspace_id:
+                raise _forbidden("template patch decision belongs to another workspace")
+            return decision
 
 
 @dataclass(frozen=True, slots=True)

@@ -6,7 +6,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 
 from core_domain.fmea.template_migration import SourceStructureItem, TemplateDraftStatus
-from fmea_infrastructure.template_import_excel import ExcelTemplateImporter, TemplateImportError
+from fmea_infrastructure.template_import_excel import ExcelTemplateImporter, OfficePackageLimits, TemplateImportError
 
 
 def _xlsx(*, sheet_xml: str | None = None, extra: tuple[tuple[str, bytes], ...] = ()) -> bytes:
@@ -153,3 +153,94 @@ def test_excel_import_rejects_formula_defined_name_before_parser(monkeypatch) ->
     </workbook>"""
     with pytest.raises(TemplateImportError, match="formula|defined"):
         ExcelTemplateImporter().parse(_xlsx(extra=(("xl/workbook.xml", workbook),)), "fmea.xlsx", workspace_id="ws-1")
+
+
+def test_excel_import_marks_normalized_source_and_target_collisions_ambiguous() -> None:
+    sheet = """<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData><row r="1">
+        <c r="A1" t="inlineStr"><is><t>Failure Mode</t></is></c>
+        <c r="B1" t="inlineStr"><is><t> failure   mode </t></is></c>
+      </row></sheetData>
+    </worksheet>"""
+    draft = ExcelTemplateImporter().parse(_xlsx(sheet_xml=sheet), "fmea.xlsx", workspace_id="ws-1")
+    assert draft.proposed_fields == ()
+    assert len(draft.ambiguous_fields) == 2
+
+
+@pytest.mark.parametrize(
+    "limits",
+    (
+        OfficePackageLimits(max_members=4),
+        OfficePackageLimits(max_total_uncompressed_bytes=100),
+        OfficePackageLimits(max_relationships=1),
+        OfficePackageLimits(max_columns=2),
+        OfficePackageLimits(max_cells=2),
+    ),
+)
+def test_excel_import_enforces_package_and_worksheet_limits(limits: OfficePackageLimits) -> None:
+    with pytest.raises(TemplateImportError, match="limit|many|dimensions|size"):
+        ExcelTemplateImporter(limits=limits).parse(_xlsx(), "fmea.xlsx", workspace_id="ws-1")
+
+
+def test_excel_import_enforces_sheet_and_compression_ratio_limits() -> None:
+    second_row = """<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData><row r="2"><c r="A2" t="inlineStr"><is><t>Failure Mode</t></is></c></row></sheetData>
+    </worksheet>"""
+    with pytest.raises(TemplateImportError, match="dimensions|limit"):
+        ExcelTemplateImporter(limits=OfficePackageLimits(max_rows=1)).parse(
+            _xlsx(sheet_xml=second_row), "fmea.xlsx", workspace_id="ws-1"
+        )
+    workbook = b"""<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+      xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+      <sheets>
+        <sheet name="Sheet1" sheetId="1" r:id="rId1"/>
+        <sheet name="Sheet2" sheetId="2" r:id="rId2"/>
+      </sheets>
+    </workbook>"""
+    relationships = b"""<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+      <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+      <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+    </Relationships>"""
+    sheet = b"""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>"""
+    with pytest.raises(TemplateImportError, match="sheets|limit"):
+        ExcelTemplateImporter(limits=OfficePackageLimits(max_sheets=1)).parse(
+            _xlsx(
+                extra=(
+                    ("xl/workbook.xml", workbook),
+                    ("xl/_rels/workbook.xml.rels", relationships),
+                    ("xl/worksheets/sheet2.xml", sheet),
+                )
+            ),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )
+    with pytest.raises(TemplateImportError, match="compression|limit"):
+        ExcelTemplateImporter(limits=OfficePackageLimits(max_compression_ratio=2)).parse(
+            _xlsx(extra=(("xl/large.xml", b"x" * 70_000),)),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )
+
+
+def test_excel_import_rejects_duplicate_relationship_ids_and_bad_content_type_binding() -> None:
+    duplicate_relationships = b"""<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+      <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+      <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+    </Relationships>"""
+    with pytest.raises(TemplateImportError, match="relationship IDs"):
+        ExcelTemplateImporter().parse(
+            _xlsx(extra=(("xl/_rels/workbook.xml.rels", duplicate_relationships),)),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )
+    bad_content_types = b"""<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+      <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+      <Default Extension="xml" ContentType="application/xml"/>
+      <Override PartName="/xl/workbook.xml" ContentType="application/xml"/>
+    </Types>"""
+    with pytest.raises(TemplateImportError, match="content types|unsupported"):
+        ExcelTemplateImporter().parse(
+            _xlsx(extra=(("[Content_Types].xml", bad_content_types),)),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )

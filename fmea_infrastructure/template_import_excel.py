@@ -122,6 +122,11 @@ class ExcelTemplateImporter:
                 cell_count = 0
                 for row in worksheet.iter_rows():
                     for cell in row:
+                        if cell.row > self._limits.max_rows or cell.column > self._limits.max_columns:
+                            raise _error(
+                                "FMEA_TEMPLATE_LIMIT_EXCEEDED",
+                                "worksheet dimensions exceed the configured limit",
+                            )
                         if cell.value is None:
                             continue
                         cell_count += 1

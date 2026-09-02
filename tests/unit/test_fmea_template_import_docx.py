@@ -6,7 +6,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 
 from core_domain.fmea.template_migration import SourceStructureItem, TemplateDraftStatus
-from fmea_infrastructure.template_import_docx import DocxTemplateImporter, TemplateImportError
+from fmea_infrastructure.template_import_docx import DocxTemplateImporter, OfficePackageLimits, TemplateImportError
 
 
 def _docx(
@@ -132,3 +132,21 @@ def test_docx_import_rejects_fields_in_header_before_parser(monkeypatch) -> None
     </w:hdr>"""
     with pytest.raises(TemplateImportError, match="field"):
         DocxTemplateImporter().parse(_docx(extra=(("word/header1.xml", header),)), "fmea.docx", workspace_id="ws-1")
+
+
+def test_docx_import_enforces_paragraph_and_table_limits() -> None:
+    with pytest.raises(TemplateImportError, match="paragraphs|limit"):
+        DocxTemplateImporter(limits=OfficePackageLimits(max_paragraphs=1)).parse(
+            _docx(), "fmea.docx", workspace_id="ws-1"
+        )
+    two_tables = """<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+      <w:body>
+        <w:tbl><w:tr><w:tc><w:p><w:r><w:t>Function</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+        <w:tbl><w:tr><w:tc><w:p><w:r><w:t>Failure Mode</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+        <w:sectPr/>
+      </w:body>
+    </w:document>"""
+    with pytest.raises(TemplateImportError, match="tables|limit"):
+        DocxTemplateImporter(limits=OfficePackageLimits(max_tables=1)).parse(
+            _docx(document_xml=two_tables), "fmea.docx", workspace_id="ws-1"
+        )

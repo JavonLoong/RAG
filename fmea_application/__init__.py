@@ -75,6 +75,7 @@ from .structured_candidate_adapter import (
     FmeaTemplateProfile,
     StructuredCandidateFmeaAdapter,
 )
+from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 __all__ = [
     "EDITABLE_REVIEW_FIELDS",
@@ -136,6 +137,8 @@ __all__ = [
     "StartReviewSuggestionCommand",
     "StructuredCandidateFmeaAdapter",
     "SuggestionRunReservation",
+    "TemplatePatchDecision",
+    "TemplatePatchSuggestion",
     "UnresolvedAcknowledgement",
     "bind_export_artifact",
     "build_propagation_analysis_service",
