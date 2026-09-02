@@ -437,13 +437,48 @@ def test_export_run_lifecycle_accepts_pending_running_completed_and_failed_shape
     )
 
 
-def test_export_run_rejects_unsupported_status_and_backwards_timestamps() -> None:
+def test_export_run_lifecycle_accepts_cancelling_and_cancelled_shapes() -> None:
+    cancelling = _run(status="cancelling", finished_at=None, artifact_id=None, filename=None, error=None)
+    cancelled = _run(
+        status="cancelled",
+        finished_at="2026-08-27T12:01:00Z",
+        artifact_id=None,
+        filename=None,
+        error=None,
+    )
+    assert (cancelling.status, cancelled.status) == ("cancelling", "cancelled")
+
+
+def test_export_run_rejects_unsupported_status_and_impossible_timestamps() -> None:
     with pytest.raises(FmeaDomainError, match="status|lifecycle"):
-        _run(status="cancelled", started_at=None, finished_at=None, artifact_id=None, filename=None)
+        _run(status="unknown", started_at=None, finished_at=None, artifact_id=None, filename=None)
     with pytest.raises(FmeaDomainError, match="finished_at"):
         _run(started_at="2026-08-27T12:01:00Z", finished_at=TIMESTAMP)
     with pytest.raises(FmeaDomainError, match="lifecycle|started_at"):
         _run(status="failed", started_at=None, finished_at="2026-08-27T12:01:00Z", error="failed", artifact_id=None)
+    with pytest.raises(FmeaDomainError, match="created_at"):
+        _run(created_at="2026-08-27T12:01:00Z")
+
+
+@pytest.mark.parametrize(
+    ("status", "overrides"),
+    (
+        ("cancelling", {"started_at": None}),
+        ("cancelling", {"finished_at": "2026-08-27T12:01:00Z"}),
+        ("cancelling", {"artifact_id": "artifact-1"}),
+        ("cancelling", {"error": "cancelled"}),
+        ("cancelled", {"started_at": None}),
+        ("cancelled", {"finished_at": None}),
+        ("cancelled", {"artifact_id": "artifact-1"}),
+        ("cancelled", {"error": "cancelled"}),
+    ),
+)
+def test_export_run_rejects_cancellation_lifecycle_perturbations(
+    status: str,
+    overrides: dict[str, object],
+) -> None:
+    with pytest.raises(FmeaDomainError, match="lifecycle|cancelling|cancelled"):
+        _run(status=status, **overrides)
 
 
 @pytest.mark.parametrize(
@@ -539,13 +574,27 @@ def test_preview_artifact_has_no_publication_and_rejects_bad_filename_size_hash_
 
 @pytest.mark.parametrize(
     "filename",
-    ("CON.xlsx", "nul.docx", "bad\x01.xlsx", "trailing.xlsx ", "trailing.xlsx."),
+    (
+        "CON.xlsx",
+        "nul.docx",
+        "CON.backup.xlsx",
+        "NUL.tar.json",
+        "CON .xlsx",
+        "bad\x01.xlsx",
+        "trailing.xlsx ",
+        "trailing.xlsx.",
+    ),
 )
 def test_filename_policy_rejects_windows_unsafe_names_in_draft_and_delivery(filename: str) -> None:
     with pytest.raises(FmeaDomainError, match="filename"):
         _draft(source_filename=filename)
     with pytest.raises(FmeaDomainError, match="filename"):
         _manifest(filename=filename)
+
+
+def test_filename_policy_retains_valid_multi_dot_names() -> None:
+    assert _draft(source_filename="report.v1.xlsx").source_filename == "report.v1.xlsx"
+    assert _manifest(filename="report.v1.json").filename == "report.v1.json"
 
 
 @pytest.mark.parametrize(

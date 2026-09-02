@@ -32,6 +32,15 @@ _MEDIA_TYPES = {
     ExportFormat.DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 
+_LIFECYCLE_REQUIREMENTS: dict[RunStatus, tuple[str | None, ...]] = {
+    RunStatus.QUEUED: (None, None, None, None),
+    RunStatus.RUNNING: ("required", None, None, None),
+    RunStatus.SUCCEEDED: ("required", "required", "required", None),
+    RunStatus.CANCELLING: ("required", None, None, None),
+    RunStatus.CANCELLED: ("required", "required", None, None),
+    RunStatus.FAILED: ("required", "required", None, "required"),
+}
+
 
 def _text(value: object, field_name: str, *, limit: int = _MAX_TEXT_LENGTH) -> str:
     if not isinstance(value, str) or not value.strip():
@@ -102,21 +111,16 @@ def _publication_binding(
 def _validate_lifecycle(
     status: RunStatus,
     *,
+    created_at: str,
     started_at: str | None,
     finished_at: str | None,
     artifact_id: str | None,
     error: str | None,
 ) -> None:
-    if status is RunStatus.QUEUED:
-        expected = (None, None, None, None)
-    elif status is RunStatus.RUNNING:
-        expected = ("required", None, None, None)
-    elif status is RunStatus.SUCCEEDED:
-        expected = ("required", "required", "required", None)
-    elif status is RunStatus.FAILED:
-        expected = ("required", "required", None, "required")
-    else:
-        raise FmeaDomainError("export status must be queued (pending), running, succeeded (completed), or failed")  # noqa: TRY003
+    try:
+        expected = _LIFECYCLE_REQUIREMENTS[status]
+    except KeyError as exc:
+        raise FmeaDomainError("export status is not a supported lifecycle status") from exc  # noqa: TRY003
 
     fields = (started_at, finished_at, artifact_id, error)
     labels = ("started_at", "finished_at", "artifact_id", "error")
@@ -126,11 +130,15 @@ def _validate_lifecycle(
         if requirement is None and value is not None:
             raise FmeaDomainError(f"export lifecycle forbids {label} for {status.value}")  # noqa: TRY003
 
-    if started_at is not None and finished_at is not None:
+    created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    if started_at is not None:
         started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
-        finished = datetime.fromisoformat(finished_at.replace("Z", "+00:00"))
-        if finished < started:
-            raise FmeaDomainError("export lifecycle finished_at must not precede started_at")  # noqa: TRY003
+        if created > started:
+            raise FmeaDomainError("export lifecycle created_at must not follow started_at")  # noqa: TRY003
+        if finished_at is not None:
+            finished = datetime.fromisoformat(finished_at.replace("Z", "+00:00"))
+            if finished < started:
+                raise FmeaDomainError("export lifecycle finished_at must not precede started_at")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,6 +181,7 @@ class ExportRun:
             object.__setattr__(self, "error", _text(self.error, "error"))
         _validate_lifecycle(
             self.status,
+            created_at=self.created_at,
             started_at=self.started_at,
             finished_at=self.finished_at,
             artifact_id=self.artifact_id,

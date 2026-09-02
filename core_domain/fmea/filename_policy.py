@@ -46,7 +46,7 @@ def validate_filename(
     ):
         raise FmeaDomainError(f"{field_name} must be a contained filename")  # noqa: TRY003
 
-    basename = normalized.rsplit(".", 1)[0] if "." in normalized else normalized
+    basename = normalized.split(".", 1)[0].rstrip(" .")
     if basename.casefold() in _WINDOWS_RESERVED_BASENAMES:
         raise FmeaDomainError(f"{field_name} uses a Windows reserved basename")  # noqa: TRY003
 
