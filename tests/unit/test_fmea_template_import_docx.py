@@ -97,3 +97,38 @@ def test_docx_import_rejects_macro_enabled_extension_and_path_escape() -> None:
         )
     with pytest.raises(TemplateImportError):
         DocxTemplateImporter().parse(_docx(extra=(("../escape.xml", b"escape"),)), "fmea.docx", workspace_id="ws-1")
+
+
+@pytest.mark.parametrize(
+    "extra",
+    (
+        (("word/activeX/activeX1.bin", b"plugin"),),
+        (("WORD/document.xml", b"case collision"),),
+    ),
+)
+def test_docx_import_rejects_plugins_and_case_colliding_members_before_parser(extra) -> None:
+    with pytest.raises(TemplateImportError, match="executable|duplicate|collision"):
+        DocxTemplateImporter().parse(_docx(extra=extra), "fmea.docx", workspace_id="ws-1")
+
+
+def test_docx_import_rejects_broken_or_traversing_internal_relationships_before_parser(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "fmea_infrastructure.template_import_docx.Document", lambda *_args: pytest.fail("Office parser was called")
+    )
+    for target in ("../escape.xml", "missing.xml"):
+        relationships = f"""<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="{target}"/>
+        </Relationships>"""
+        with pytest.raises(TemplateImportError, match="relationship|path|target"):
+            DocxTemplateImporter().parse(_docx(rels_xml=relationships), "fmea.docx", workspace_id="ws-1")
+
+
+def test_docx_import_rejects_fields_in_header_before_parser(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "fmea_infrastructure.template_import_docx.Document", lambda *_args: pytest.fail("Office parser was called")
+    )
+    header = b"""<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+      <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r></w:p>
+    </w:hdr>"""
+    with pytest.raises(TemplateImportError, match="field"):
+        DocxTemplateImporter().parse(_docx(extra=(("word/header1.xml", header),)), "fmea.docx", workspace_id="ws-1")

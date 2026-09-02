@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -77,6 +78,7 @@ class AcceptTemplatePatchCommand:
     draft_sha256: str
     target_template_version: str
     target_template_hash: str
+    new_template_version: str
     domain_pack_hash: str
     evidence_pack_hash: str
     confirm_template_change: bool
@@ -89,34 +91,123 @@ class RejectTemplatePatchCommand:
     reason: str
 
 
-def _default_source_builder(draft: TemplateDraft, patch: TemplatePatchCandidate) -> Mapping[str, object]:
-    """Create a small declarative template source; no executable rule is accepted."""
+_SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+_FIELD_NAME = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 
-    properties: dict[str, object] = {mapping.target_field: {"type": "string"} for mapping in draft.proposed_fields}
+
+def _semver(value: object, field_name: str) -> tuple[int, int, int]:
+    if not isinstance(value, str):
+        raise _invalid(f"{field_name} is invalid")
+    matched = _SEMVER.fullmatch(value)
+    if matched is None:
+        raise _invalid(f"{field_name} is invalid")
+    return tuple(int(part) for part in matched.groups())  # type: ignore[return-value]
+
+
+def _base_source(compiled: object, candidate: TemplatePatchCandidate) -> dict[str, object]:
+    template_hash = getattr(compiled, "template_hash", None)
+    canonical_json = getattr(compiled, "canonical_json", None)
+    expected_hash = candidate.target_template_hash.removeprefix("sha256:")
+    if template_hash != expected_hash or not isinstance(canonical_json, str):
+        raise _conflict("base template hash does not match the patch candidate")
+    try:
+        source = json.loads(canonical_json)
+    except (TypeError, ValueError) as exc:
+        raise _conflict("base template source is invalid") from exc
+    if not isinstance(source, dict) or set(source) != {"template", "output_schema", "evidence_bindings"}:
+        raise _conflict("base template source is invalid")
+    metadata = source.get("template")
+    if (
+        not isinstance(metadata, dict)
+        or metadata.get("id") != candidate.target_template_id
+        or metadata.get("version") != candidate.target_template_version
+    ):
+        raise _conflict("base template identity does not match the patch candidate")
+    return source
+
+
+def _mapping_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
+
+
+def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-closed branches
+    base_source: Mapping[str, object],
+    draft: TemplateDraft,
+    patch: TemplatePatchCandidate,
+    new_template_version: str,
+) -> Mapping[str, object]:
+    """Apply an allowlisted patch to a verified base source without inventing fields."""
+
+    try:
+        source = json.loads(json.dumps(base_source, ensure_ascii=False, allow_nan=False))
+    except (TypeError, ValueError) as exc:
+        raise _invalid("base template source is not canonical JSON") from exc
+    if not isinstance(source, dict):
+        raise _invalid("base template source is invalid")
+    metadata = source.get("template")
+    schema = source.get("output_schema")
+    if not isinstance(metadata, dict) or not isinstance(schema, dict):
+        raise _invalid("base template source is invalid")
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        raise _invalid("base template properties are invalid")
+    if _semver(new_template_version, "new template version") <= _semver(
+        patch.target_template_version, "base template version"
+    ):
+        raise _conflict("new template version must be higher than the base template version")
+
+    mapping_operations: list[Mapping[str, object]] = []
     for operation in patch.diff:
         path = str(operation["path"])
-        field_name = path.rsplit("/", 1)[-1]
-        if operation["op"] == "remove":
-            properties.pop(field_name, None)
+        group, name = path.strip("/").split("/", 1)
+        if _FIELD_NAME.fullmatch(name) is None:
+            raise _invalid("template patch path is invalid")
+        if group == "mappings":
+            mapping_operations.append(operation)
+            continue
+        exists = name in properties
+        action = operation["op"]
+        if action == "add" and exists:
+            raise _conflict("template patch add target already exists")
+        if action in {"replace", "remove"} and not exists:
+            raise _conflict("template patch target does not exist")
+        if action == "remove":
+            del properties[name]
+            required = schema.get("required")
+            if isinstance(required, list):
+                schema["required"] = [item for item in required if item != name]
         else:
-            properties[field_name] = {"type": "string"}
-    return {
-        "template": {
-            "id": patch.target_template_id,
-            "version": patch.target_template_version,
-            "title": "Imported FMEA template",
-            "description": f"Imported from {draft.source_type} structural draft.",
-            "domain_tags": ["generic-fmea"],
-            "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
-        },
-        "output_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "properties": properties,
-            "additionalProperties": False,
-        },
-        "evidence_bindings": [],
-    }
+            value = operation.get("value")
+            if not isinstance(value, Mapping):
+                raise _invalid("field patch values must be JSON Schema objects")
+            properties[name] = dict(value)
+
+    source_keys = {_mapping_key(item.source_key) for item in draft.proposed_fields}
+    source_keys.update(_mapping_key(item) for item in draft.unknown_fields)
+    source_keys.update(_mapping_key(item) for item in draft.ambiguous_fields)
+    resolved_mappings: dict[str, str] = {}
+    for operation in mapping_operations:
+        name = str(operation["path"]).rsplit("/", 1)[-1]
+        action = operation["op"]
+        if name not in source_keys:
+            raise _conflict("mapping patch source does not exist in the imported draft")
+        if action == "remove":
+            resolved_mappings.pop(name, None)
+            continue
+        target = operation.get("value")
+        if not isinstance(target, str) or target not in properties:
+            raise _invalid("mapping patch target must reference a resulting template field")
+        if action == "add" and name in resolved_mappings:
+            raise _conflict("mapping patch add target already exists")
+        if action == "replace" and name not in resolved_mappings:
+            # Imported mappings are not part of the generic compiled schema. A replace
+            # establishes the reviewed mapping for this decision record.
+            resolved_mappings[name] = target
+        else:
+            resolved_mappings[name] = target
+
+    metadata["version"] = new_template_version
+    return source
 
 
 def _candidate_from_payload(payload: object) -> TemplatePatchCandidate:
@@ -337,15 +428,23 @@ class DomainPackService:
             or candidate.applied
         ):
             raise _conflict("template patch acceptance precondition is stale")
+        try:
+            base = self._registry.get(candidate.target_template_id, candidate.target_template_version)
+        except ReviewError:
+            raise
+        except Exception as exc:
+            raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "base template cannot be loaded") from exc
+        base_source = _base_source(base, candidate)
         builder = self._source_builder or _DefaultSourceBuilder()
-        source = builder.build(draft, candidate)
+        source = builder.build(base_source, draft, candidate, command.new_template_version)
         if not isinstance(source, Mapping):
             raise _invalid("template source builder returned an invalid source")
+        source_object = dict(source)
         source_bytes = json.dumps(
-            source, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+            source_object, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
         ).encode("utf-8")
         try:
-            compiled = self._compiler.compile(source)
+            compiled = self._compiler.compile(source_object)
             registered = self._registry.register(compiled, source_bytes, ".json")
         except ReviewError:
             raise
@@ -367,8 +466,14 @@ class DomainPackService:
 
 @dataclass(frozen=True, slots=True)
 class _DefaultSourceBuilder:
-    def build(self, draft: TemplateDraft, patch: TemplatePatchCandidate) -> Mapping[str, object]:
-        return _default_source_builder(draft, patch)
+    def build(
+        self,
+        base_source: Mapping[str, object],
+        draft: TemplateDraft,
+        patch: TemplatePatchCandidate,
+        new_template_version: str,
+    ) -> Mapping[str, object]:
+        return _default_source_builder(base_source, draft, patch, new_template_version)
 
 
 __all__ = [

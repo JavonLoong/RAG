@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, replace
 
 import pytest
@@ -15,6 +16,8 @@ from fmea_application.domain_pack_service import (
 )
 from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
 from fmea_infrastructure.template_patch_generator import TemplatePatchGenerator
+from structured_output_application import TemplateCompiler
+from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
 from tests.unit.test_fmea_template_import_excel import _xlsx
 
 HASH = "a" * 64
@@ -24,7 +27,13 @@ TIMESTAMP = "2026-08-27T12:00:00Z"
 class _FakeGateway:
     def generate(self, request: object) -> object:
         return {
-            "diff": ({"op": "replace", "path": "/fields/failure_mode", "value": "Failure Mode"},),
+            "diff": (
+                {
+                    "op": "replace",
+                    "path": "/fields/failure_mode",
+                    "value": {"type": "string", "title": "Failure Mode"},
+                },
+            ),
             "evidence_ids": (),
         }
 
@@ -33,6 +42,28 @@ class _FakeGateway:
 class _Compiled:
     template_id: str = "template-1"
     version: str = "1.0.0"
+    template_hash: str = HASH
+    canonical_json: str = json.dumps(
+        {
+            "template": {
+                "id": "template-1",
+                "version": "1.0.0",
+                "title": "Base",
+                "description": "",
+                "domain_tags": ["generic-fmea"],
+                "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+            },
+            "output_schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {"failure_mode": {"type": "string"}},
+                "additionalProperties": False,
+            },
+            "evidence_bindings": [],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 class _Compiler:
@@ -41,7 +72,12 @@ class _Compiler:
 
     def compile(self, source: object) -> _Compiled:
         self.calls += 1
-        return _Compiled()
+        assert isinstance(source, dict)
+        metadata = source["template"]
+        assert isinstance(metadata, dict)
+        return _Compiled(
+            version=str(metadata["version"]), canonical_json=json.dumps(source, sort_keys=True, separators=(",", ":"))
+        )
 
 
 class _Registry:
@@ -51,6 +87,10 @@ class _Registry:
     def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object:
         self.calls += 1
         return template
+
+    def get(self, template_id: str, version: str) -> _Compiled:
+        assert (template_id, version) == ("template-1", "1.0.0")
+        return _Compiled()
 
 
 def _actor(*, roles: frozenset[str], actor_type: ActorType = ActorType.HUMAN) -> ActorContext:
@@ -98,6 +138,7 @@ def _accept_command(draft_id: str = "draft-1", draft_sha256: str = HASH) -> Acce
         draft_sha256=draft_sha256,
         target_template_version="1.0.0",
         target_template_hash=HASH,
+        new_template_version="1.1.0",
         domain_pack_hash=HASH,
         evidence_pack_hash=HASH,
         confirm_template_change=True,
@@ -164,3 +205,82 @@ def test_stale_cross_workspace_and_rejected_candidates_fail_closed() -> None:
     )
     assert rejected.status.value == "suggested"
     assert compiler.calls == registry.calls == 0
+
+
+def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(tmp_path) -> None:
+    schema_adapter = Draft202012SchemaAdapter()
+    compiler = TemplateCompiler(schema_validator=schema_adapter, source_loader=load_template_source)
+    registry = FileTemplateRegistry(tmp_path / "registry")
+    base_source = {
+        "template": {
+            "id": "template-1",
+            "version": "1.0.0",
+            "title": "Base FMEA",
+            "description": "base",
+            "domain_tags": ["generic-fmea"],
+            "schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+        },
+        "output_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {"failure_mode": {"type": "string", "title": "Old"}},
+            "additionalProperties": False,
+        },
+        "evidence_bindings": [],
+    }
+    base_bytes = json.dumps(base_source, sort_keys=True, separators=(",", ":")).encode()
+    base = registry.register(compiler.compile(base_source), base_bytes, ".json")
+
+    class _SemanticGateway:
+        def generate(self, request: object) -> object:
+            return {
+                "diff": (
+                    {
+                        "op": "replace",
+                        "path": "/fields/failure_mode",
+                        "value": {"type": "string", "title": "Failure Mode"},
+                    },
+                    {
+                        "op": "add",
+                        "path": "/fields/criticality",
+                        "value": {"type": "integer", "minimum": 1, "maximum": 5},
+                    },
+                    {
+                        "op": "add",
+                        "path": "/mappings/legacy_criticality",
+                        "value": "criticality",
+                    },
+                ),
+                "evidence_ids": (),
+            }
+
+    service = DomainPackService(
+        importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
+        patch_generator=TemplatePatchGenerator(_SemanticGateway(), clock=lambda: TIMESTAMP),
+        compiler=compiler,
+        registry=registry,
+        clock=lambda: TIMESTAMP,
+    )
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    command = replace(_suggest_command(draft.draft_id), target_template_hash=base.template_hash)
+    service.suggest_patch(command, _actor(roles=frozenset(), actor_type=ActorType.MODEL))
+    registered = service.accept_patch(
+        replace(
+            _accept_command(draft.draft_id, draft.source_sha256),
+            target_template_hash=base.template_hash,
+            new_template_version="1.1.0",
+        ),
+        _actor(roles=frozenset({"template_admin"})),
+    )
+
+    assert registered.metadata.version == "1.1.0"
+    assert registry.get("template-1", "1.0.0").template_hash == base.template_hash
+    stored = registry.get("template-1", "1.1.0")
+    assert stored.output_schema["properties"] == {
+        "failure_mode": {"type": "string", "title": "Failure Mode"},
+        "criticality": {"type": "integer", "minimum": 1, "maximum": 5},
+    }
+    assert "legacy_criticality" not in stored.output_schema["properties"]

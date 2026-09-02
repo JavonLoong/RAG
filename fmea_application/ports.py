@@ -451,11 +451,19 @@ class TemplateRegistryPort(Protocol):
 
     def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object: ...
 
+    def get(self, template_id: str, version: str) -> object: ...
+
 
 class TemplateSourceBuilder(Protocol):
     """Build a declarative compiler input from an accepted immutable draft."""
 
-    def build(self, draft: TemplateDraft, patch: object) -> Mapping[str, object]: ...
+    def build(
+        self,
+        base_source: Mapping[str, object],
+        draft: TemplateDraft,
+        patch: object,
+        new_template_version: str,
+    ) -> Mapping[str, object]: ...
 
 
 class GovernanceSourcePort(Protocol):

@@ -116,3 +116,40 @@ def test_excel_import_rejects_external_relationships_before_office_parsing() -> 
             "fmea.xlsx",
             workspace_id="ws-1",
         )
+
+
+@pytest.mark.parametrize(
+    "extra",
+    (
+        (("xl/activeX/activeX1.bin", b"plugin"),),
+        (("XL/workbook.xml", b"case collision"),),
+    ),
+)
+def test_excel_import_rejects_plugins_and_case_colliding_members_before_parser(extra) -> None:
+    with pytest.raises(TemplateImportError, match="executable|duplicate|collision"):
+        ExcelTemplateImporter().parse(_xlsx(extra=extra), "fmea.xlsx", workspace_id="ws-1")
+
+
+def test_excel_import_rejects_broken_or_traversing_internal_relationships_before_parser(monkeypatch) -> None:
+    monkeypatch.setattr("openpyxl.load_workbook", lambda *_args, **_kwargs: pytest.fail("Office parser was called"))
+    for target in ("../escape.xml", "worksheets/missing.xml"):
+        relationships = f"""<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="{target}"/>
+        </Relationships>""".encode()
+        with pytest.raises(TemplateImportError, match="relationship|path|target"):
+            ExcelTemplateImporter().parse(
+                _xlsx(extra=(("xl/_rels/workbook.xml.rels", relationships),)),
+                "fmea.xlsx",
+                workspace_id="ws-1",
+            )
+
+
+def test_excel_import_rejects_formula_defined_name_before_parser(monkeypatch) -> None:
+    monkeypatch.setattr("openpyxl.load_workbook", lambda *_args, **_kwargs: pytest.fail("Office parser was called"))
+    workbook = b"""<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+      xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+      <sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>
+      <definedNames><definedName name="unsafe">SUM(Sheet1!A1:A2)</definedName></definedNames>
+    </workbook>"""
+    with pytest.raises(TemplateImportError, match="formula|defined"):
+        ExcelTemplateImporter().parse(_xlsx(extra=(("xl/workbook.xml", workbook),)), "fmea.xlsx", workspace_id="ws-1")

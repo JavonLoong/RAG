@@ -16,7 +16,7 @@ from docx import Document
 from core_domain.fmea.filename_policy import validate_filename
 from core_domain.fmea.template_migration import SourceStructureItem, TemplateDraft, TemplateDraftStatus
 
-from .template_import_excel import (
+from .office_package import (
     OfficePackageLimits,
     TemplateImportError,
     _error,
@@ -27,7 +27,6 @@ from .template_import_excel import (
 )
 
 _REL_NAMESPACE = "http://schemas.openxmlformats.org/package/2006/relationships"
-_EXECUTABLE_MARKERS = ("altchunk", "oleobject", "object", "embeddedpackage", "embeddedobject")
 
 
 def _clock_now() -> str:
@@ -36,15 +35,6 @@ def _clock_now() -> str:
 
 def _stable_draft_id(workspace_id: str, source_hash: str) -> str:
     return f"draft-{uuid5(NAMESPACE_URL, f'fmea-template:{workspace_id}:{source_hash}')}"
-
-
-def _relationship_count(raw: bytes) -> int:
-    root = _parse_xml(raw, label="relationship part")
-    return len(root.findall(f"{{{_REL_NAMESPACE}}}Relationship"))
-
-
-def _local_name(tag: object) -> str:
-    return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
 
 
 class DocxTemplateImporter:
@@ -66,19 +56,6 @@ class DocxTemplateImporter:
             raise _error("FMEA_TEMPLATE_IMPORT_INVALID", "source filename is invalid") from exc
         workspace = _text(workspace_id, "workspace_id")
         package = inspect_office_zip(raw_bytes, filename, kind="docx", limits=self._limits)
-        document_xml = package.members["word/document.xml"]
-        root = _parse_xml(document_xml, label="Word document")
-        if any(_local_name(element.tag).casefold() in _EXECUTABLE_MARKERS for element in root.iter()):
-            raise _error("FMEA_TEMPLATE_EXECUTABLE_CONTENT", "Word executable content is unsupported")
-        if any(tag in document_xml.lower() for tag in (b"fldsimple", b"fldchar", b"instrtext", b"doctext")):
-            raise _error("FMEA_TEMPLATE_FIELD_UNSUPPORTED", "Word fields are unsupported")
-        relationship_total = sum(
-            _relationship_count(payload)
-            for name, payload in package.members.items()
-            if name.casefold().endswith(".rels")
-        )
-        if relationship_total > self._limits.max_relationships:
-            raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "Word document has too many relationships")
 
         try:
             document = Document(io.BytesIO(raw_bytes))
