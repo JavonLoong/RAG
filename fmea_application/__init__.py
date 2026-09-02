@@ -1,5 +1,12 @@
 """Application-layer ports for the FMEA evidence handoff."""
 
+from .delivery_contracts import (
+    ExportArtifactManifest,
+    ExportFormat,
+    ExportRun,
+    bind_export_artifact,
+    validate_export_binding,
+)
 from .ports import (
     EvidenceProvider,
     EvidenceRequest,
@@ -80,6 +87,9 @@ __all__ = [
     "EvidenceRequest",
     "EvidenceRequestItem",
     "EvidenceSnapshot",
+    "ExportArtifactManifest",
+    "ExportFormat",
+    "ExportRun",
     "FieldFinding",
     "FieldReviewEdit",
     "FieldReviewState",
@@ -127,9 +137,11 @@ __all__ = [
     "StructuredCandidateFmeaAdapter",
     "SuggestionRunReservation",
     "UnresolvedAcknowledgement",
+    "bind_export_artifact",
     "build_propagation_analysis_service",
     "build_review_context",
     "build_review_service",
     "canonical_payload_hash",
     "idempotency_key_hash",
+    "validate_export_binding",
 ]

@@ -15,10 +15,10 @@ from typing import TypeVar
 from .domain_pack import _identity as _pack_identity
 from .domain_pack import _semver as _pack_semver
 from .errors import FmeaDomainError
+from .filename_policy import validate_filename
 from .governance import canonical_hash
 
 _SHA256 = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
-_SAFE_FILENAME = re.compile(r"^[^\\/:*?\"<>|]+$")
 _PATCH_PATH = re.compile(r"^/(?:[^/]+/)*[^/]+$")
 
 _MAX_COLLECTION_ITEMS = 512
@@ -154,15 +154,7 @@ def _identity(value: object, field_name: str) -> tuple[str, str]:
 
 
 def _filename(value: object, field_name: str) -> str:
-    normalized = _text(value, field_name, limit=_MAX_FILENAME_LENGTH)
-    if (
-        normalized in {".", ".."}
-        or ".." in normalized
-        or _SAFE_FILENAME.fullmatch(normalized) is None
-        or normalized.endswith(("/", "\\"))
-    ):
-        raise FmeaDomainError(f"{field_name} must be a contained filename")  # noqa: TRY003
-    return normalized
+    return validate_filename(value, field_name)
 
 
 def _patch_diff(value: object) -> tuple[Mapping[str, object], ...]:
@@ -253,6 +245,8 @@ class TemplateDraft:
         source_type = _text(self.source_type, "source_type", limit=32).casefold()
         if source_type not in {"xlsx", "docx"}:
             raise FmeaDomainError("source_type must be xlsx or docx")  # noqa: TRY003
+        if not self.source_filename.casefold().endswith(f".{source_type}"):
+            raise FmeaDomainError("source_filename extension must match source_type")  # noqa: TRY003
         object.__setattr__(self, "source_type", source_type)
 
         structure = _sequence(self.structure, "structure", limit=_MAX_STRUCTURE_ITEMS)
@@ -281,6 +275,16 @@ class TemplatePatchCandidate:
     patch_id: str
     draft_id: str
     input_template_version: str
+    target_template_id: str
+    target_template_version: str
+    target_template_hash: str
+    domain_pack_id: str
+    domain_pack_version: str
+    domain_pack_hash: str
+    evidence_pack_id: str
+    evidence_pack_hash: str
+    run_id: str
+    trace_id: str
     model_version: str
     prompt_version: str
     diff: tuple[Mapping[str, object], ...]
@@ -292,7 +296,25 @@ class TemplatePatchCandidate:
     def __post_init__(self) -> None:
         for field_name in ("patch_id", "draft_id"):
             object.__setattr__(self, field_name, _id(getattr(self, field_name), field_name))
-        for field_name in ("input_template_version", "model_version", "prompt_version"):
+        input_template_version = _pack_semver(self.input_template_version, "input_template_version")
+        object.__setattr__(self, "input_template_version", input_template_version)
+        object.__setattr__(self, "target_template_id", _pack_identity(self.target_template_id, "target_template_id"))
+        object.__setattr__(
+            self,
+            "target_template_version",
+            _pack_semver(self.target_template_version, "target_template_version"),
+        )
+        if self.input_template_version != self.target_template_version:
+            raise FmeaDomainError("input_template_version must match target_template_version")  # noqa: TRY003
+        object.__setattr__(self, "target_template_hash", _hash(self.target_template_hash, "target_template_hash"))
+        object.__setattr__(self, "domain_pack_id", _pack_identity(self.domain_pack_id, "domain_pack_id"))
+        object.__setattr__(self, "domain_pack_version", _pack_semver(self.domain_pack_version, "domain_pack_version"))
+        object.__setattr__(self, "domain_pack_hash", _hash(self.domain_pack_hash, "domain_pack_hash"))
+        object.__setattr__(self, "evidence_pack_id", _id(self.evidence_pack_id, "evidence_pack_id"))
+        object.__setattr__(self, "evidence_pack_hash", _hash(self.evidence_pack_hash, "evidence_pack_hash"))
+        object.__setattr__(self, "run_id", _id(self.run_id, "run_id"))
+        object.__setattr__(self, "trace_id", _id(self.trace_id, "trace_id"))
+        for field_name in ("model_version", "prompt_version"):
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name, limit=256))
         if not isinstance(self.applied, bool) or self.applied:
             raise FmeaDomainError("TemplatePatchCandidate applied must remain false")  # noqa: TRY003
@@ -332,6 +354,8 @@ class MigrationPlan:
         target = _identity(self.target, "migration target")
         if source[0] != target[0]:
             raise FmeaDomainError("migration source and target domain identities must match")  # noqa: TRY003
+        if source == target:
+            raise FmeaDomainError("migration source and target must differ")  # noqa: TRY003
         steps = _sequence(self.steps, "steps", limit=_MAX_MIGRATION_STEPS)
         if not steps:
             raise FmeaDomainError("migration path is not explicit")  # noqa: TRY003
@@ -344,6 +368,12 @@ class MigrationPlan:
             raise FmeaDomainError("migration path is not continuous")  # noqa: TRY003
         if any(step.source[0] != source[0] or step.target[0] != source[0] for step in step_items):
             raise FmeaDomainError("migration path domain identity does not match source and target")  # noqa: TRY003
+        edge_identities = tuple((step.source, step.target) for step in step_items)
+        if len(edge_identities) != len(set(edge_identities)):
+            raise FmeaDomainError("migration path must not contain duplicate edges")  # noqa: TRY003
+        nodes = (step_items[0].source, *(step.target for step in step_items))
+        if len(nodes) != len(set(nodes)):
+            raise FmeaDomainError("migration path must not repeat nodes or contain cycles")  # noqa: TRY003
         object.__setattr__(self, "source", source)
         object.__setattr__(self, "target", target)
         object.__setattr__(self, "steps", step_items)

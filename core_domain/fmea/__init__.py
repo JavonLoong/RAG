@@ -1,5 +1,6 @@
 from .domain_pack import DomainPackManifest
 from .entities import FieldClaim, FieldValue, FmeaAnalysis, FmeaRow, validate_extension_values
+from .filename_policy import validate_filename
 from .governance import (
     ApprovalDecision,
     ApprovalStatus,
@@ -149,6 +150,7 @@ __all__ = [
     "validate_approval_binding",
     "validate_evidence_lineage",
     "validate_extension_values",
+    "validate_filename",
     "validate_graph_revision",
     "validate_path",
     "validate_propagation_edge",

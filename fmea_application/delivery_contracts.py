@@ -9,10 +9,10 @@ from enum import Enum
 from typing import TypeVar
 
 from core_domain.fmea.errors import FmeaDomainError
+from core_domain.fmea.filename_policy import validate_filename
 from core_domain.fmea.states import RunStatus
 
 _SHA256 = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
-_SAFE_FILENAME = re.compile(r"^[^\\/:*?\"<>|]+$")
 _MAX_TEXT_LENGTH = 4096
 _MAX_ID_LENGTH = 256
 _MAX_FILENAME_LENGTH = 255
@@ -74,16 +74,8 @@ def _enum(value: object, expected: type[_E], field_name: str) -> _E:
         raise FmeaDomainError(f"{field_name} must be one of: {allowed}") from exc  # noqa: TRY003
 
 
-def _filename(value: object, field_name: str) -> str:
-    normalized = _text(value, field_name, limit=_MAX_FILENAME_LENGTH)
-    if (
-        normalized in {".", ".."}
-        or ".." in normalized
-        or _SAFE_FILENAME.fullmatch(normalized) is None
-        or normalized.endswith(("/", "\\"))
-    ):
-        raise FmeaDomainError(f"{field_name} must be a contained filename")  # noqa: TRY003
-    return normalized
+def _filename(value: object, field_name: str, *, expected_extension: str | None = None) -> str:
+    return validate_filename(value, field_name, expected_extension=expected_extension)
 
 
 def _format(value: object, field_name: str) -> ExportFormat:
@@ -107,6 +99,40 @@ def _publication_binding(
     return normalized
 
 
+def _validate_lifecycle(
+    status: RunStatus,
+    *,
+    started_at: str | None,
+    finished_at: str | None,
+    artifact_id: str | None,
+    error: str | None,
+) -> None:
+    if status is RunStatus.QUEUED:
+        expected = (None, None, None, None)
+    elif status is RunStatus.RUNNING:
+        expected = ("required", None, None, None)
+    elif status is RunStatus.SUCCEEDED:
+        expected = ("required", "required", "required", None)
+    elif status is RunStatus.FAILED:
+        expected = ("required", "required", None, "required")
+    else:
+        raise FmeaDomainError("export status must be queued (pending), running, succeeded (completed), or failed")  # noqa: TRY003
+
+    fields = (started_at, finished_at, artifact_id, error)
+    labels = ("started_at", "finished_at", "artifact_id", "error")
+    for label, value, requirement in zip(labels, fields, expected, strict=True):
+        if requirement == "required" and value is None:
+            raise FmeaDomainError(f"export lifecycle requires {label} for {status.value}")  # noqa: TRY003
+        if requirement is None and value is not None:
+            raise FmeaDomainError(f"export lifecycle forbids {label} for {status.value}")  # noqa: TRY003
+
+    if started_at is not None and finished_at is not None:
+        started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        finished = datetime.fromisoformat(finished_at.replace("Z", "+00:00"))
+        if finished < started:
+            raise FmeaDomainError("export lifecycle finished_at must not precede started_at")  # noqa: TRY003
+
+
 @dataclass(frozen=True, slots=True)
 class ExportRun:
     export_run_id: str
@@ -123,6 +149,7 @@ class ExportRun:
     artifact_id: str | None = None
     started_at: str | None = None
     finished_at: str | None = None
+    error: str | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("export_run_id", "workspace_id", "revision_id"):
@@ -136,10 +163,21 @@ class ExportRun:
             value = getattr(self, field_name)
             object.__setattr__(self, field_name, None if value is None else _id(value, field_name))
         if self.filename is not None:
-            object.__setattr__(self, "filename", _filename(self.filename, "filename"))
+            object.__setattr__(
+                self, "filename", _filename(self.filename, "filename", expected_extension=self.format.value)
+            )
         for field_name in ("started_at", "finished_at"):
             value = getattr(self, field_name)
             object.__setattr__(self, field_name, None if value is None else _timestamp(value, field_name))
+        if self.error is not None:
+            object.__setattr__(self, "error", _text(self.error, "error"))
+        _validate_lifecycle(
+            self.status,
+            started_at=self.started_at,
+            finished_at=self.finished_at,
+            artifact_id=self.artifact_id,
+            error=self.error,
+        )
 
     @property
     def run_id(self) -> str:
@@ -186,7 +224,45 @@ class ExportArtifactManifest:
         if self.snapshot_id is not None:
             object.__setattr__(self, "snapshot_id", _id(self.snapshot_id, "snapshot_id"))
         if self.filename is not None:
-            object.__setattr__(self, "filename", _filename(self.filename, "filename"))
+            object.__setattr__(
+                self, "filename", _filename(self.filename, "filename", expected_extension=self.format.value)
+            )
 
 
-__all__ = ["ExportArtifactManifest", "ExportFormat", "ExportRun"]
+def validate_export_binding(run: ExportRun, manifest: ExportArtifactManifest) -> None:
+    """Validate that a completed run and artifact manifest describe one export."""
+
+    if not isinstance(run, ExportRun) or not isinstance(manifest, ExportArtifactManifest):
+        raise FmeaDomainError("export binding requires ExportRun and ExportArtifactManifest")  # noqa: TRY003
+    if run.status is not RunStatus.SUCCEEDED:
+        raise FmeaDomainError("export binding requires a completed export run")  # noqa: TRY003
+    shared_fields = (
+        ("export_run_id", run.export_run_id, manifest.export_run_id),
+        ("revision_id", run.revision_id, manifest.revision_id),
+        ("snapshot_id", run.snapshot_id, manifest.snapshot_id),
+        ("snapshot_hash", run.snapshot_hash, manifest.snapshot_hash),
+        ("publication_id", run.publication_id, manifest.publication_id),
+        ("draft_preview", run.draft_preview, manifest.draft_preview),
+        ("format", run.format, manifest.format),
+        ("filename", run.filename, manifest.filename),
+        ("artifact_id", run.artifact_id, manifest.artifact_id),
+    )
+    for field_name, run_value, manifest_value in shared_fields:
+        if run_value != manifest_value:
+            raise FmeaDomainError(f"export binding mismatch for {field_name}")  # noqa: TRY003
+
+
+def bind_export_artifact(run: ExportRun, manifest: ExportArtifactManifest) -> ExportArtifactManifest:
+    """Return an immutable manifest after validating its completed-run binding."""
+
+    validate_export_binding(run, manifest)
+    return manifest
+
+
+__all__ = [
+    "ExportArtifactManifest",
+    "ExportFormat",
+    "ExportRun",
+    "bind_export_artifact",
+    "validate_export_binding",
+]
