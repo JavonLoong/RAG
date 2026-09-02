@@ -139,11 +139,15 @@ git commit -m "feat(fmea): define migration and delivery contracts"
 
 **Files:**
 - Modify: `pyproject.toml`
+- Modify: `uv.lock`
+- Create: `fmea_infrastructure/office_package.py`
 - Create: `fmea_infrastructure/template_import_excel.py`
 - Create: `fmea_infrastructure/template_import_docx.py`
 - Create: `fmea_infrastructure/template_patch_generator.py`
+- Create: `fmea_application/template_patch_contracts.py`
 - Create: `fmea_application/domain_pack_service.py`
 - Modify: `fmea_application/ports.py`
+- Create: `templates/examples/fmea-template-patch.yaml`
 - Test: `tests/unit/test_fmea_template_import_excel.py`
 - Test: `tests/unit/test_fmea_template_import_docx.py`
 - Test: `tests/unit/test_fmea_template_patch_generator.py`
@@ -188,19 +192,25 @@ class TemplateImporter(Protocol):
 
 
 class TemplatePatchGenerator(Protocol):
-    def suggest(self, request: TemplatePatchRequest) -> AssistanceSuggestion[TemplatePatchCandidate]: ...
+    def suggest(self, request: TemplatePatchRequest) -> TemplatePatchSuggestion: ...
 
 
 class DomainPackService:
     def import_template(self, command: ImportTemplateCommand, actor: ActorContext) -> TemplateDraft: ...
     def suggest_patch(
         self, command: SuggestTemplatePatchCommand, actor: ActorContext
-    ) -> AssistanceSuggestion[TemplatePatchCandidate]: ...
+    ) -> TemplatePatchSuggestion: ...
     def accept_patch(self, command: AcceptTemplatePatchCommand, actor: ActorContext) -> CompiledTemplate: ...
     def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchCandidate: ...
 ```
 
-XLSX import rejects macros, external links, malformed ZIPs, formulas requiring execution, excessive sheets/cells, and path escapes. DOCX import reads paragraphs/tables/relationships without executing fields, macros, or external links. Preserve source bytes hash and structural addresses. Model output is an `AssistanceSuggestion[TemplatePatchCandidate]` containing a bounded mapping diff; reuse Flash generation plus `deepseek-v4-pro` criticism through the provider-neutral pipeline. Only human `template_admin` acceptance invokes the existing compiler and immutable registry.
+XLSX import rejects macros, ActiveX/plugins, external or broken relationships, malformed ZIPs, formulas requiring execution, excessive sheets/cells, and path escapes. DOCX import reads bounded paragraphs/tables/relationships without executing fields, macros, plugins, or external links. A shared OPC safety adapter validates every relationship target and relevant XML part before either Office library opens the package. Preserve source bytes hash and structural addresses.
+
+`TemplatePatchCandidate.target_template_*` identifies the immutable server-owned base template being patched; `input_template_version` must match that base. The model cannot choose a registered output version. A human `template_admin` supplies an explicit higher `new_template_version` in the acceptance command. The service loads and hash-verifies the base source, applies the accepted declarative `/fields` and `/mappings` diff deterministically, compiles the resulting source, and registers the new immutable version. A real compiler/registry test must prove the canonical registered source changes exactly as the accepted patch specifies.
+
+The generic `AssistanceSuggestion` remains JSON-safe. FMEA returns a typed immutable `TemplatePatchSuggestion` containing both the validated `TemplatePatchCandidate` and its JSON-safe generic envelope; no mapping-to-dataclass type claim is made. Model-visible input is only a bounded canonical header/mapping projection with untrusted values delimited; workspace, ACL, EvidencePack IDs, hashes, private paths, and complete document content stay server-side. Reuse the existing Flash generation -> `deepseek-v4-pro` criticism -> at-most-one-repair pipeline behind the provider-neutral port; default tests use deterministic fakes and never call the network.
+
+Only human `template_admin` acceptance invokes the existing compiler and immutable registry. Task 2 uses a process-local reservation/lock and immutable decision record to prevent concurrent duplicate side effects; Task 3 replaces that scaffold with durable idempotency, checkpoints, audit, and replay. `uv.lock` must be regenerated and checked with the declared `openpyxl` dependency.
 
 - [ ] **Step 4: Run import, registry, and security tests**
 
@@ -211,7 +221,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit import and patch workflow**
 
 ```powershell
-git add pyproject.toml fmea_infrastructure/template_import_excel.py fmea_infrastructure/template_import_docx.py fmea_infrastructure/template_patch_generator.py fmea_application/domain_pack_service.py fmea_application/ports.py tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/integration/test_fmea_template_draft_lifecycle.py
+git add pyproject.toml uv.lock fmea_infrastructure/office_package.py fmea_infrastructure/template_import_excel.py fmea_infrastructure/template_import_docx.py fmea_infrastructure/template_patch_generator.py fmea_application/template_patch_contracts.py fmea_application/domain_pack_service.py fmea_application/ports.py templates/examples/fmea-template-patch.yaml tests/unit/test_fmea_template_import_excel.py tests/unit/test_fmea_template_import_docx.py tests/unit/test_fmea_template_patch_generator.py tests/integration/test_fmea_template_draft_lifecycle.py
 git commit -m "feat(fmea): import and review template drafts"
 ```
 
