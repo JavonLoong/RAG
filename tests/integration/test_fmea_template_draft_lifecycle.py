@@ -296,7 +296,10 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
         "failure_mode": {"type": "string", "title": "Failure Mode"},
         "criticality": {"type": "integer", "minimum": 1, "maximum": 5},
     }
-    assert "legacy_criticality" not in stored.output_schema["properties"]
+    assert stored.source_mappings == {
+        "failure_mode": "failure_mode",
+        "legacy_criticality": "criticality",
+    }
 
 
 def test_accept_is_process_local_serialized_and_records_one_decision() -> None:

@@ -25,13 +25,10 @@ from .ports import SchemaValidatorPort, TemplateSourceLoader
 _DIALECT = "https://json-schema.org/draft/2020-12/schema"
 _ID = re.compile(r"^[a-z0-9._-]{1,128}$")
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
-_ROOT_KEYS = frozenset({"template", "output_schema", "evidence_bindings"})
-_METADATA_KEYS = frozenset(
-    {"id", "version", "title", "description", "domain_tags", "schema_dialect"}
-)
-_BINDING_KEYS = frozenset(
-    {"target", "requirement", "min_refs", "max_refs", "allowed_source_types"}
-)
+_BASE_ROOT_KEYS = frozenset({"template", "output_schema", "evidence_bindings"})
+_ROOT_KEYS_WITH_MAPPINGS = _BASE_ROOT_KEYS | {"source_mappings"}
+_METADATA_KEYS = frozenset({"id", "version", "title", "description", "domain_tags", "schema_dialect"})
+_BINDING_KEYS = frozenset({"target", "requirement", "min_refs", "max_refs", "allowed_source_types"})
 
 
 def _error(code: str, message: str, pointer: str = "") -> StructuredOutputError:
@@ -63,11 +60,7 @@ def _parse_metadata(value: object) -> TemplateMetadata:
     description = metadata["description"]
     tags = metadata["domain_tags"]
     dialect = metadata["schema_dialect"]
-    if (
-        not isinstance(template_id, str)
-        or _ID.fullmatch(template_id) is None
-        or ".." in template_id
-    ):
+    if not isinstance(template_id, str) or _ID.fullmatch(template_id) is None or ".." in template_id:
         raise _error("TEMPLATE_METADATA_INVALID", "Template ID is invalid.", "/template/id")
     if not isinstance(version, str) or _SEMVER.fullmatch(version) is None:
         raise _error("TEMPLATE_METADATA_INVALID", "Template version is invalid.", "/template/version")
@@ -146,6 +139,22 @@ def _parse_bindings(value: object, limits: TemplateLimits) -> tuple[EvidenceBind
     return tuple(sorted(bindings, key=lambda binding: binding.target))
 
 
+def _parse_source_mappings(value: object, limits: TemplateLimits) -> dict[str, str]:
+    if not isinstance(value, dict) or len(value) > limits.max_properties:
+        raise _error("TEMPLATE_MAPPING_INVALID", "Source mappings must be a bounded object.", "/source_mappings")
+    mappings: dict[str, str] = {}
+    for source, target in value.items():
+        if (
+            not isinstance(source, str)
+            or _ID.fullmatch(source) is None
+            or not isinstance(target, str)
+            or _ID.fullmatch(target) is None
+        ):
+            raise _error("TEMPLATE_MAPPING_INVALID", "Source mapping identity is invalid.", "/source_mappings")
+        mappings[source] = target
+    return dict(sorted(mappings.items()))
+
+
 def _encode_token(value: str) -> str:
     return value.replace("~", "~0").replace("/", "~1")
 
@@ -207,8 +216,9 @@ def _canonical_object(
     metadata: TemplateMetadata,
     schema: dict[str, JsonValue],
     bindings: tuple[EvidenceBinding, ...],
+    source_mappings: dict[str, str],
 ) -> dict[str, JsonValue]:
-    return {
+    canonical: dict[str, JsonValue] = {
         "template": {
             "id": metadata.template_id,
             "version": metadata.version,
@@ -229,6 +239,9 @@ def _canonical_object(
             for binding in bindings
         ],
     }
+    if source_mappings:
+        canonical["source_mappings"] = source_mappings
+    return canonical
 
 
 class TemplateCompiler:
@@ -247,7 +260,7 @@ class TemplateCompiler:
         return self.compile(self._source_loader(path, self._limits))
 
     def compile(self, source: dict[str, JsonValue]) -> CompiledTemplate:
-        if set(source) != _ROOT_KEYS:
+        if frozenset(source) not in {_BASE_ROOT_KEYS, _ROOT_KEYS_WITH_MAPPINGS}:
             raise _error("TEMPLATE_ROOT_INVALID", "Template root has missing or unsupported fields.")
         metadata = _parse_metadata(source["template"])
         raw_schema = source["output_schema"]
@@ -261,7 +274,21 @@ class TemplateCompiler:
         measure_schema(schema, self._limits)
         bindings = _parse_bindings(source["evidence_bindings"], self._limits)
         _validate_binding_targets(bindings, schema)
-        canonical_object = _canonical_object(metadata, schema, bindings)
+        source_mappings = _parse_source_mappings(source.get("source_mappings", {}), self._limits)
+        raw_properties = schema.get("properties", {})
+        if source_mappings and not isinstance(raw_properties, dict):
+            raise _error(
+                "TEMPLATE_MAPPING_INVALID",
+                "Source mappings require top-level output properties.",
+                "/source_mappings",
+            )
+        if any(target not in raw_properties for target in source_mappings.values()):
+            raise _error(
+                "TEMPLATE_MAPPING_INVALID",
+                "Source mappings must target top-level output properties.",
+                "/source_mappings",
+            )
+        canonical_object = _canonical_object(metadata, schema, bindings, source_mappings)
         serialized = canonical_json(canonical_object)
         return CompiledTemplate(
             metadata=metadata,
@@ -269,6 +296,7 @@ class TemplateCompiler:
             evidence_bindings=bindings,
             template_hash=canonical_hash(canonical_object),
             canonical_json=serialized,
+            source_mappings=source_mappings,
         )
 
 

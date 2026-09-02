@@ -16,6 +16,7 @@ classifiers = [
 ]
 dependencies = [
     "chromadb>=0.5.23",
+    "defusedxml>=0.7.1,<1",
     "fastapi>=0.135.3",
     "igraph>=0.11.4",
     "jieba>=0.42.1",

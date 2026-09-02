@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal, TypeAlias, cast
 
@@ -11,6 +11,7 @@ JsonScalar: TypeAlias = None | bool | int | float | str
 JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_MAPPING_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 _REQUIREMENTS = frozenset({"required", "optional", "forbidden"})
 
 
@@ -90,9 +91,7 @@ class EvidenceBinding:
         if not isinstance(self.min_refs, int) or isinstance(self.min_refs, bool) or self.min_refs < 0:
             raise StructuredOutputError("TEMPLATE_BINDING_INVALID", "min_refs must be a non-negative integer")
         if self.max_refs is not None and (
-            not isinstance(self.max_refs, int)
-            or isinstance(self.max_refs, bool)
-            or self.max_refs < self.min_refs
+            not isinstance(self.max_refs, int) or isinstance(self.max_refs, bool) or self.max_refs < self.min_refs
         ):
             raise StructuredOutputError("TEMPLATE_BINDING_INVALID", "max_refs must be at least min_refs")
         if self.requirement == "required" and self.min_refs < 1:
@@ -113,6 +112,7 @@ class CompiledTemplate:
     evidence_bindings: tuple[EvidenceBinding, ...]
     template_hash: str
     canonical_json: str
+    source_mappings: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not isinstance(self.output_schema, dict):
@@ -124,6 +124,17 @@ class CompiledTemplate:
         _require_sha256(self.template_hash, "template_hash")
         if not isinstance(self.canonical_json, str) or not self.canonical_json:
             raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "canonical_json must not be empty")
+        if not isinstance(self.source_mappings, dict) or len(self.source_mappings) > 500:
+            raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "source_mappings must be an object")
+        if any(
+            not isinstance(source, str)
+            or _MAPPING_KEY.fullmatch(source) is None
+            or not isinstance(target, str)
+            or _MAPPING_KEY.fullmatch(target) is None
+            for source, target in self.source_mappings.items()
+        ):
+            raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "source_mappings are invalid")
+        object.__setattr__(self, "source_mappings", dict(sorted(self.source_mappings.items())))
 
 
 @dataclass(frozen=True, slots=True)

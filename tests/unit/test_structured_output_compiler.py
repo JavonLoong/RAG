@@ -125,6 +125,32 @@ def test_unknown_root_key_is_rejected() -> None:
     assert raised.value.code == "TEMPLATE_ROOT_INVALID"
 
 
+def test_optional_source_mappings_are_canonical_and_empty_extension_is_backward_compatible() -> None:
+    source = minimal_source()
+    baseline = compiler().compile(source)
+    with_empty = deepcopy(source)
+    with_empty["source_mappings"] = {}
+    mapped = deepcopy(source)
+    mapped["source_mappings"] = {"legacy_rows": "rows"}
+
+    compiled = compiler().compile(mapped)
+
+    assert compiler().compile(with_empty).template_hash == baseline.template_hash
+    assert compiled.source_mappings == {"legacy_rows": "rows"}
+    assert '"source_mappings":{"legacy_rows":"rows"}' in compiled.canonical_json
+    assert compiled.template_hash != baseline.template_hash
+
+
+def test_source_mapping_must_target_a_top_level_output_property() -> None:
+    source = minimal_source()
+    source["source_mappings"] = {"legacy_rows": "missing"}
+
+    with pytest.raises(StructuredOutputError) as raised:
+        compiler().compile(source)
+
+    assert raised.value.code == "TEMPLATE_MAPPING_INVALID"
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -155,15 +181,13 @@ def test_binding_limit_duplicate_and_constructor_invariants_are_rejected() -> No
 
     source = minimal_source()
     with pytest.raises(StructuredOutputError) as limit:
-        compiler(TemplateLimits(max_bindings=1)).compile(
-            {
-                **source,
-                "evidence_bindings": [
-                    source["evidence_bindings"][0],
-                    {"target": "/rows", "requirement": "optional"},
-                ],
-            }
-        )
+        compiler(TemplateLimits(max_bindings=1)).compile({
+            **source,
+            "evidence_bindings": [
+                source["evidence_bindings"][0],
+                {"target": "/rows", "requirement": "optional"},
+            ],
+        })
     assert limit.value.code == "TEMPLATE_LIMIT_EXCEEDED"
 
     source = minimal_source()

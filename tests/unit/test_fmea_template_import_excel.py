@@ -244,3 +244,39 @@ def test_excel_import_rejects_duplicate_relationship_ids_and_bad_content_type_bi
             "fmea.xlsx",
             workspace_id="ws-1",
         )
+
+
+def test_excel_import_scans_declared_xml_regardless_of_suffix_and_encoding() -> None:
+    content_types = b"""<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+      <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+      <Default Extension="xml" ContentType="application/xml"/>
+      <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+      <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+      <Override PartName="/xl/hidden.bin" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+    </Types>"""
+    hidden_formula = b"""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+      <sheetData><row r="1"><c r="A1"><f>SUM(1,2)</f></c></row></sheetData>
+    </worksheet>"""
+    with pytest.raises(TemplateImportError, match="formula"):
+        ExcelTemplateImporter().parse(
+            _xlsx(extra=(("[Content_Types].xml", content_types), ("xl/hidden.bin", hidden_formula))),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )
+
+    utf16_dtd = """<?xml version="1.0" encoding="utf-16"?>
+    <!DOCTYPE worksheet [<!ENTITY x "expanded">]>
+    <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>&x;</sheetData></worksheet>
+    """.encode("utf-16")
+    with pytest.raises(TemplateImportError, match="XML|declaration|entity|executable"):
+        ExcelTemplateImporter().parse(
+            _xlsx(extra=(("xl/hidden.xml", utf16_dtd),)),
+            "fmea.xlsx",
+            workspace_id="ws-1",
+        )
+
+
+@pytest.mark.parametrize("ratio", (float("nan"), float("inf"), True))
+def test_office_package_limits_reject_non_finite_or_boolean_compression_ratio(ratio: object) -> None:
+    with pytest.raises(ValueError, match="compression"):
+        OfficePackageLimits(max_compression_ratio=ratio)  # type: ignore[arg-type]

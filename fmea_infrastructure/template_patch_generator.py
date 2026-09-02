@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from core_domain.fmea.template_migration import TemplateDraft, TemplatePatchCandidate, TemplatePatchStatus
-from core_domain.fmea.value_objects import EvidencePack
+from core_domain.fmea.value_objects import EvidencePack, EvidenceRef
 from core_domain.structured_generation import GenerationRunStatus, GenerationStage, StructuredGenerationError
 from core_domain.structured_output import StructuredOutputError
 from fmea_application.assistance_contracts import AssistanceKind, AssistanceSuggestion
@@ -45,6 +45,7 @@ _MAX_MODEL_RESPONSE_BYTES = 64 * 1024
 _MAX_EVIDENCE_ID_LENGTH = 256
 _MAX_PROJECTED_EVIDENCE_REFS = 8
 _MAX_PROJECTED_QUOTE_CHARS = 256
+_MODEL_LABEL = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 _TEMPLATE_ID = "fmea-template-patch"
 _TEMPLATE_VERSION = "1.0.0"
 _UNAVAILABLE_CODES = {
@@ -185,11 +186,36 @@ def _normalize_evidence_ids(value: object) -> tuple[str, ...]:
     return result
 
 
-def _request_projection(request: TemplatePatchRequest) -> Mapping[str, object]:
-    draft = request.draft
-    refs = tuple(sorted(request.evidence_pack.refs, key=lambda item: item.evidence_id))
+def _projected_evidence(request: TemplatePatchRequest) -> tuple[tuple[str, EvidenceRef], ...]:
+    raw_refs = tuple(request.evidence_pack.refs)
+    if any(not isinstance(ref.evidence_id, str) for ref in raw_refs):
+        raise _invalid("template mapping evidence identity is invalid")
+    refs = tuple(sorted(raw_refs, key=lambda item: item.evidence_id))
     if len(refs) > _MAX_PROJECTED_EVIDENCE_REFS:
         raise _invalid("template mapping evidence projection exceeds the bounded limit")
+    projected: list[tuple[str, EvidenceRef]] = []
+    for index, ref in enumerate(refs, start=1):
+        if (
+            not isinstance(ref.evidence_id, str)
+            or not ref.evidence_id.strip()
+            or len(ref.evidence_id) > _MAX_EVIDENCE_ID_LENGTH
+            or _FORBIDDEN_TEXT.search(ref.evidence_id)
+            or not isinstance(ref.source_type, str)
+            or _MODEL_LABEL.fullmatch(ref.source_type) is None
+            or not isinstance(ref.source_trust, str)
+            or _MODEL_LABEL.fullmatch(ref.source_trust) is None
+            or not isinstance(ref.quote, str)
+            or not isinstance(ref.normalized_quote, str)
+            or not isinstance(ref.is_primary, bool)
+        ):
+            raise _invalid("template mapping evidence identity is invalid")
+        projected.append((f"ref-{index:03d}", ref))
+    return tuple(projected)
+
+
+def _request_projection(request: TemplatePatchRequest) -> Mapping[str, object]:
+    draft = request.draft
+    refs = _projected_evidence(request)
     projection: Mapping[str, object] = {
         "untrusted_import_headers": {
             "delimiter": "BEGIN_UNTRUSTED_IMPORT_HEADERS/END_UNTRUSTED_IMPORT_HEADERS",
@@ -211,14 +237,14 @@ def _request_projection(request: TemplatePatchRequest) -> Mapping[str, object]:
         },
         "untrusted_evidence": [
             {
-                "evidence_id": ref.evidence_id,
+                "evidence_id": alias,
                 "source_type": ref.source_type,
                 "source_trust": ref.source_trust,
                 "is_primary": ref.is_primary,
                 "quote": ref.quote[:_MAX_PROJECTED_QUOTE_CHARS],
                 "truncated": len(ref.quote) > _MAX_PROJECTED_QUOTE_CHARS,
             }
-            for ref in refs
+            for alias, ref in refs
         ],
         "rule": "Return only declarative field mapping diff and evidence IDs; never return executable content or authority decisions.",
     }
@@ -270,10 +296,11 @@ class TemplatePatchGenerator:
         if not isinstance(response, Mapping) or set(response) != {"diff", "evidence_ids"}:
             raise _invalid("template mapping model returned invalid, unknown, or missing fields")
         diff = _validate_diff(response["diff"])
-        evidence_ids = _normalize_evidence_ids(response["evidence_ids"])
-        allowed_evidence_ids = {ref.evidence_id for ref in request.evidence_pack.refs}
-        if not set(evidence_ids).issubset(allowed_evidence_ids):
+        projected_ids = _normalize_evidence_ids(response["evidence_ids"])
+        evidence_aliases = {alias: ref.evidence_id for alias, ref in _projected_evidence(request)}
+        if not set(projected_ids).issubset(evidence_aliases):
             raise _invalid("template mapping evidence is outside the EvidencePack")
+        evidence_ids = tuple(evidence_aliases[alias] for alias in projected_ids)
         created_at = request.created_at or self._clock()
         try:
             candidate = TemplatePatchCandidate(
@@ -423,17 +450,18 @@ class StructuredTemplatePatchGenerator:
         refs = tuple(
             replace(
                 ref,
+                evidence_id=alias,
                 workspace_id=workspace_id,
                 document_id=f"redacted-document-{index}",
                 document_version="redacted",
                 content_hash=sha256(f"content:{index}".encode()).hexdigest(),
-                locator=f"evidence:{ref.evidence_id}",
+                locator=f"evidence:{alias}",
                 quote=ref.quote[:_MAX_PROJECTED_QUOTE_CHARS],
                 normalized_quote=ref.normalized_quote[:_MAX_PROJECTED_QUOTE_CHARS],
                 evidence_hash=sha256(f"evidence:{index}".encode()).hexdigest(),
                 acl_scope=("model-projection",),
             )
-            for index, ref in enumerate(sorted(request.evidence_pack.refs, key=lambda item: item.evidence_id))
+            for index, (alias, ref) in enumerate(_projected_evidence(request))
         )
         return EvidencePack.build(
             pack_id=cls.projection_pack_id(request),
@@ -473,6 +501,12 @@ class StructuredTemplatePatchGenerator:
             raise _safe_generation_error(exc) from exc
         except (KeyError, TypeError, ValueError) as exc:
             raise _invalid("the template mapping model returned an invalid suggestion") from exc
+        except Exception as exc:
+            raise ReviewError(
+                "FMEA_MODEL_SUGGESTION_UNAVAILABLE",
+                "the template mapping model is temporarily unavailable",
+                retryable=True,
+            ) from exc
 
 
 @dataclass(frozen=True, slots=True)

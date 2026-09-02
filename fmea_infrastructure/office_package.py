@@ -1,20 +1,23 @@
 """Shared fail-closed inspection for bounded OPC Office packages."""
 
 # XML is parsed only after ZIP limits and contained member-name checks.
-# ruff: noqa: TRY003, S314
+# ruff: noqa: TRY003
 
 from __future__ import annotations
 
 import io
+import math
 import posixpath
-import re
-import xml.etree.ElementTree as ET
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from types import MappingProxyType
 from urllib.parse import unquote, urlsplit
+from xml.etree.ElementTree import ParseError
 from zipfile import BadZipFile, ZipFile
+
+from defusedxml.common import DefusedXmlException
+from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 
 from core_domain.fmea.filename_policy import validate_filename
 from core_domain.fmea.template_migration import ProposedFieldMapping
@@ -64,7 +67,12 @@ class OfficePackageLimits:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
-        if not isinstance(self.max_compression_ratio, int | float) or self.max_compression_ratio <= 1:
+        if (
+            isinstance(self.max_compression_ratio, bool)
+            or not isinstance(self.max_compression_ratio, int | float)
+            or not math.isfinite(self.max_compression_ratio)
+            or self.max_compression_ratio <= 1
+        ):
             raise ValueError("max_compression_ratio must be greater than one")
 
 
@@ -76,14 +84,9 @@ class InspectedOfficePackage:
 
 _REL_NAMESPACE = "http://schemas.openxmlformats.org/package/2006/relationships"
 _CONTENT_TYPE_NAMESPACE = "http://schemas.openxmlformats.org/package/2006/content-types"
-_FORBIDDEN_XML = (b"<!DOCTYPE", b"<!ENTITY")
-_FORMULA = re.compile(rb"<(?:(?:[A-Za-z_][\w.-]*):)?f(?:\s|>)", re.IGNORECASE)
-_DEFINED_NAME = re.compile(rb"<(?:(?:[A-Za-z_][\w.-]*):)?definedName(?:\s|>)", re.IGNORECASE)
-_WORD_FIELD = re.compile(rb"<(?:(?:[A-Za-z_][\w.-]*):)?(?:fldSimple|fldChar|instrText)(?:\s|>)", re.IGNORECASE)
-_WORD_EXECUTABLE = re.compile(
-    rb"<(?:(?:[A-Za-z_][\w.-]*):)?(?:altChunk|oleObject|object|embeddedPackage|embeddedObject)(?:\s|>)",
-    re.IGNORECASE,
-)
+_RELATIONSHIP_CONTENT_TYPE = "application/vnd.openxmlformats-package.relationships+xml"
+_WORD_FIELDS = frozenset({"fldsimple", "fldchar", "instrtext"})
+_WORD_EXECUTABLE = frozenset({"altchunk", "oleobject", "object", "embeddedpackage", "embeddedobject"})
 _REL_PREFIXES = (
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/",
     "http://purl.oclc.org/ooxml/officeDocument/relationships/",
@@ -148,13 +151,12 @@ def _text(value: object, field: str, *, limit: int = 256) -> str:
     return normalized
 
 
-def _parse_xml(raw: bytes, *, label: str) -> ET.Element:
-    upper = raw.upper()
-    if any(marker in upper for marker in _FORBIDDEN_XML):
-        raise _error("FMEA_TEMPLATE_EXECUTABLE_CONTENT", f"{label} contains unsupported XML declarations")
+def _parse_xml(raw: bytes, *, label: str):
     try:
-        return ET.fromstring(raw)
-    except ET.ParseError as exc:
+        return safe_xml_fromstring(raw, forbid_dtd=True, forbid_entities=True, forbid_external=True)
+    except DefusedXmlException as exc:
+        raise _error("FMEA_TEMPLATE_EXECUTABLE_CONTENT", f"{label} contains unsupported XML declarations") from exc
+    except ParseError as exc:
         raise _error("FMEA_TEMPLATE_CONTAINER_INVALID", f"{label} is malformed") from exc
 
 
@@ -204,13 +206,19 @@ def _relationship_suffix(value: str) -> str:
 
 
 def _validate_relationships(  # noqa: C901 - each OPC relationship invariant fails independently
-    members: Mapping[str, bytes], *, kind: str, limits: OfficePackageLimits
+    members: Mapping[str, bytes],
+    content_types: Mapping[str, str],
+    *,
+    kind: str,
+    limits: OfficePackageLimits,
 ) -> int:
     allowed = _SAFE_RELATIONSHIP_SUFFIXES[kind]
     total = 0
     for name, payload in members.items():
-        if not name.casefold().endswith(".rels"):
+        if content_types.get(name) != _RELATIONSHIP_CONTENT_TYPE:
             continue
+        if not name.casefold().endswith(".rels"):
+            raise _error("FMEA_TEMPLATE_CONTAINER_INVALID", "Office relationship part path is invalid")
         source_part = _relationship_source(name)
         root = _parse_xml(payload, label="relationship part")
         if root.tag != f"{{{_REL_NAMESPACE}}}Relationships":
@@ -237,12 +245,22 @@ def _validate_relationships(  # noqa: C901 - each OPC relationship invariant fai
             resolved = _resolve_part_target(source_part, target)
             if resolved not in members:
                 raise _error("FMEA_TEMPLATE_CONTAINER_INVALID", "Office relationship target is missing")
+            target_content_type = content_types.get(resolved, "")
+            suffix = _relationship_suffix(relationship_type)
+            target_is_xml = target_content_type == "application/xml" or target_content_type.endswith("+xml")
+            if (suffix == "image" and not target_content_type.startswith("image/")) or (
+                suffix != "image" and not target_is_xml
+            ):
+                raise _error(
+                    "FMEA_TEMPLATE_CONTENT_TYPE_UNSUPPORTED",
+                    "Office relationship target content type is unsupported",
+                )
     return total
 
 
 def _validate_content_types(  # noqa: C901 - content-type binding stays explicit and auditable
     members: Mapping[str, bytes], *, kind: str
-) -> None:
+) -> Mapping[str, str]:
     raw = members.get("[Content_Types].xml")
     if raw is None:
         raise _error("FMEA_TEMPLATE_CONTAINER_INVALID", "Office content types are missing")
@@ -282,30 +300,34 @@ def _validate_content_types(  # noqa: C901 - content-type binding stays explicit
     }[kind]
     if overrides.get(required_part) != required_type:
         raise _error("FMEA_TEMPLATE_CONTENT_TYPE_UNSUPPORTED", "Office content types are unsupported")
+    effective: dict[str, str] = {}
     for name in members:
         if name == "[Content_Types].xml":
             continue
         extension = name.rsplit(".", 1)[-1].casefold() if "." in name else ""
         if name not in overrides and extension not in defaults:
             raise _error("FMEA_TEMPLATE_CONTENT_TYPE_UNSUPPORTED", "Office package member has no content type")
+        effective[name] = overrides.get(name, defaults.get(extension, ""))
+        if name.casefold().endswith(".rels") != (effective[name] == _RELATIONSHIP_CONTENT_TYPE):
+            raise _error("FMEA_TEMPLATE_CONTENT_TYPE_UNSUPPORTED", "Office relationship content type is invalid")
+    return MappingProxyType(effective)
 
 
-def _scan_xml_parts(members: Mapping[str, bytes], *, kind: str) -> None:
+def _scan_xml_parts(members: Mapping[str, bytes], content_types: Mapping[str, str], *, kind: str) -> None:
     for name, payload in members.items():
+        content_type = content_types.get(name, "")
         lower_name = name.casefold()
-        if not (lower_name.endswith(".xml") or lower_name.endswith(".rels")):
+        declared_xml = content_type == "application/xml" or content_type.endswith("+xml")
+        if not declared_xml and not lower_name.endswith((".xml", ".rels")):
             continue
-        _parse_xml(payload, label=name)
-        if (
-            kind == "xlsx"
-            and lower_name.startswith("xl/")
-            and (_FORMULA.search(payload) or _DEFINED_NAME.search(payload))
-        ):
+        root = _parse_xml(payload, label=name)
+        local_names = {element.tag.rsplit("}", 1)[-1].casefold() for element in root.iter()}
+        if kind == "xlsx" and lower_name.startswith("xl/") and local_names & {"f", "definedname"}:
             raise _error("FMEA_TEMPLATE_FORMULA_UNSUPPORTED", "formula or defined-name content is unsupported")
         if kind == "docx" and lower_name.startswith("word/"):
-            if _WORD_FIELD.search(payload):
+            if local_names & _WORD_FIELDS:
                 raise _error("FMEA_TEMPLATE_FIELD_UNSUPPORTED", "Word fields are unsupported")
-            if _WORD_EXECUTABLE.search(payload):
+            if local_names & _WORD_EXECUTABLE:
                 raise _error("FMEA_TEMPLATE_EXECUTABLE_CONTENT", "Word executable content is unsupported")
 
 
@@ -374,9 +396,14 @@ def inspect_office_zip(  # noqa: C901
         raise _error("FMEA_TEMPLATE_EXECUTABLE_CONTENT", "executable or plugin Office content is unsupported")
     if kind == "xlsx" and any(name.startswith("xl/externallinks/") for name in lower_names):
         raise _error("FMEA_TEMPLATE_EXTERNAL_CONTENT", "external workbook links are unsupported")
-    _validate_content_types(members, kind=kind)
-    _scan_xml_parts(members, kind=kind)
-    relationship_count = _validate_relationships(members, kind=kind, limits=active_limits)
+    content_types = _validate_content_types(members, kind=kind)
+    _scan_xml_parts(members, content_types, kind=kind)
+    relationship_count = _validate_relationships(
+        members,
+        content_types,
+        kind=kind,
+        limits=active_limits,
+    )
     return InspectedOfficePackage(MappingProxyType(members), relationship_count)
 
 

@@ -150,3 +150,10 @@ def test_docx_import_enforces_paragraph_and_table_limits() -> None:
         DocxTemplateImporter(limits=OfficePackageLimits(max_tables=1)).parse(
             _docx(document_xml=two_tables), "fmea.docx", workspace_id="ws-1"
         )
+
+
+def test_docx_import_enforces_structure_limit_while_collecting_items() -> None:
+    with pytest.raises(TemplateImportError, match="structure|limit"):
+        DocxTemplateImporter(limits=OfficePackageLimits(max_structure_items=1)).parse(
+            _docx(), "fmea.docx", workspace_id="ws-1"
+        )

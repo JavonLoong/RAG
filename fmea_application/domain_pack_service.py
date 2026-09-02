@@ -96,6 +96,7 @@ class RejectTemplatePatchCommand:
 
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 _FIELD_NAME = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
+_SOURCE_MAPPINGS_KEY = "source_mappings"
 
 
 def _semver(value: object, field_name: str) -> tuple[int, int, int]:
@@ -188,7 +189,26 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
     source_keys = {_mapping_key(item.source_key) for item in draft.proposed_fields}
     source_keys.update(_mapping_key(item) for item in draft.unknown_fields)
     source_keys.update(_mapping_key(item) for item in draft.ambiguous_fields)
-    resolved_mappings = {_mapping_key(item.source_key): item.target_field for item in draft.proposed_fields}
+    raw_mappings = source.get(_SOURCE_MAPPINGS_KEY, {})
+    if not isinstance(raw_mappings, dict) or len(raw_mappings) > 500:
+        raise _invalid("base template source mappings are invalid")
+    resolved_mappings: dict[str, str] = {}
+    for source_key, target_field in raw_mappings.items():
+        if (
+            not isinstance(source_key, str)
+            or _FIELD_NAME.fullmatch(source_key) is None
+            or not isinstance(target_field, str)
+        ):
+            raise _invalid("base template source mappings are invalid")
+        resolved_mappings[source_key] = target_field
+    for item in draft.proposed_fields:
+        source_key = _mapping_key(item.source_key)
+        existing_target = resolved_mappings.get(source_key)
+        if existing_target is not None and existing_target != item.target_field:
+            raise _conflict("base and imported source mappings conflict")
+        resolved_mappings[source_key] = item.target_field
+    if len(resolved_mappings) > 500:
+        raise _invalid("template source mappings exceed the configured limit")
     for operation in mapping_operations:
         name = str(operation["path"]).rsplit("/", 1)[-1]
         action = operation["op"]
@@ -207,7 +227,12 @@ def _default_source_builder(  # noqa: C901 - patch groups retain explicit fail-c
         if action == "replace" and name not in resolved_mappings:
             raise _conflict("template patch mapping target does not exist")
         resolved_mappings[name] = target
+        if len(resolved_mappings) > 500:
+            raise _invalid("template source mappings exceed the configured limit")
 
+    if any(target not in properties for target in resolved_mappings.values()):
+        raise _conflict("source mapping references a missing resulting template field")
+    source[_SOURCE_MAPPINGS_KEY] = dict(sorted(resolved_mappings.items()))
     metadata["version"] = new_template_version
     return source
 

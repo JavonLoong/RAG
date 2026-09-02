@@ -201,6 +201,7 @@ class FileTemplateRegistry:
             reconstructed.metadata != template.metadata
             or reconstructed.output_schema != template.output_schema
             or reconstructed.evidence_bindings != template.evidence_bindings
+            or reconstructed.source_mappings != template.source_mappings
         ):
             raise _error("TEMPLATE_HASH_MISMATCH", "Compiled template contract does not match its content.")
 
@@ -309,10 +310,10 @@ class FileTemplateRegistry:
 
     @staticmethod
     def _reconstruct(compiled_object: object, compiled_text: str) -> CompiledTemplate:
-        if not isinstance(compiled_object, dict) or set(compiled_object) != {
-            "template",
-            "output_schema",
-            "evidence_bindings",
+        base_keys = {"template", "output_schema", "evidence_bindings"}
+        if not isinstance(compiled_object, dict) or frozenset(compiled_object) not in {
+            frozenset(base_keys),
+            frozenset(base_keys | {"source_mappings"}),
         }:
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored compiled template is invalid.")
         normalized = canonical_json(compiled_object)
@@ -321,8 +322,11 @@ class FileTemplateRegistry:
         raw_metadata = compiled_object["template"]
         raw_schema = compiled_object["output_schema"]
         raw_bindings = compiled_object["evidence_bindings"]
+        raw_mappings = compiled_object.get("source_mappings", {})
         if not isinstance(raw_metadata, dict) or not isinstance(raw_schema, dict) or not isinstance(raw_bindings, list):
             raise _error("TEMPLATE_HASH_MISMATCH", "Stored compiled template shape is invalid.")
+        if not isinstance(raw_mappings, dict):
+            raise _error("TEMPLATE_HASH_MISMATCH", "Stored compiled template mappings are invalid.")
         metadata = TemplateMetadata(
             template_id=raw_metadata["id"],
             version=raw_metadata["version"],
@@ -348,6 +352,7 @@ class FileTemplateRegistry:
             evidence_bindings=bindings,
             template_hash=template_hash,
             canonical_json=normalized,
+            source_mappings=cast("dict[str, str]", raw_mappings),
         )
 
 

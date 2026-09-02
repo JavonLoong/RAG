@@ -64,6 +64,12 @@ class DocxTemplateImporter:
 
         structure: list[SourceStructureItem] = []
         headers: list[tuple[str, str]] = []
+
+        def retain(item: SourceStructureItem) -> None:
+            if len(structure) >= self._limits.max_structure_items:
+                raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "Word document structure exceeds the configured limit")
+            structure.append(item)
+
         if len(document.paragraphs) > self._limits.max_paragraphs:
             raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "Word document has too many paragraphs")
         if len(document.tables) > self._limits.max_tables:
@@ -75,7 +81,7 @@ class DocxTemplateImporter:
             if len(text) > self._limits.max_text_length:
                 raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "paragraph text exceeds the configured limit")
             locator = f"document#paragraph-{index}"
-            structure.append(SourceStructureItem(kind="paragraph", locator=locator, value=text))
+            retain(SourceStructureItem(kind="paragraph", locator=locator, value=text))
             headers.append((text, locator))
         for table_index, table in enumerate(document.tables):
             for row_index, row in enumerate(table.rows):
@@ -86,7 +92,7 @@ class DocxTemplateImporter:
                     if len(text) > self._limits.max_text_length:
                         raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "table text exceeds the configured limit")
                     locator = f"document#table-{table_index}/row-{row_index}/cell-{cell_index}"
-                    structure.append(SourceStructureItem(kind="table-cell", locator=locator, value=text))
+                    retain(SourceStructureItem(kind="table-cell", locator=locator, value=text))
                     headers.append((text, locator))
         for name, payload in package.members.items():
             if not name.casefold().endswith(".rels"):
@@ -95,9 +101,7 @@ class DocxTemplateImporter:
             for relationship in rel_root.findall(f"{{{_REL_NAMESPACE}}}Relationship"):
                 relationship_id = relationship.attrib.get("Id", "")
                 if relationship_id:
-                    structure.append(SourceStructureItem(kind="relationship", locator=f"{name}#{relationship_id}"))
-        if len(structure) > self._limits.max_structure_items:
-            raise _error("FMEA_TEMPLATE_LIMIT_EXCEEDED", "Word document structure exceeds the configured limit")
+                    retain(SourceStructureItem(kind="relationship", locator=f"{name}#{relationship_id}"))
         proposed, unknown, ambiguous, identified = classify_source_fields(tuple(headers))
         source_hash = sha256(raw_bytes).hexdigest()
         return TemplateDraft(

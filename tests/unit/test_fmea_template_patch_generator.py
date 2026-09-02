@@ -117,7 +117,7 @@ class _StructuredGateway:
                                     "value": {"type": "string", "title": "Failure Mode"},
                                 }
                             ],
-                            "evidence_ids": ["evidence-1"],
+                            "evidence_ids": ["ref-001"],
                         },
                         "claims": [],
                     }
@@ -162,7 +162,7 @@ def test_provider_neutral_generator_returns_unapplied_suggestion_with_exact_prov
                 "value": {"type": "string", "title": "Failure Mode"},
             },
         ),
-        "evidence_ids": ("evidence-1",),
+        "evidence_ids": ("ref-001",),
     })
     suggestion = TemplatePatchGenerator(gateway, clock=lambda: TIMESTAMP).suggest(_request())
 
@@ -184,6 +184,7 @@ def test_provider_neutral_generator_returns_unapplied_suggestion_with_exact_prov
     assert "Sheet1!A1" not in projection
     assert "private-document-1" not in projection
     assert "C:/private" not in projection
+    assert "evidence-1" not in projection
     assert "Failure Mode is a source header." in projection
 
 
@@ -212,7 +213,14 @@ def test_structured_generator_reuses_flash_pro_pipeline_without_exposing_private
     assert [call[0].model_id for call in gateway.calls] == ["deepseek-v4-flash", "deepseek-v4-pro"]
     prompt = gateway.calls[0][0].user_prompt
     assert "Failure Mode is a source header." in prompt
-    for private_value in ("ws-1", "evidence-pack-1", PACK.pack_hash, "private-document-1", "C:/private"):
+    for private_value in (
+        "ws-1",
+        "evidence-pack-1",
+        PACK.pack_hash,
+        "private-document-1",
+        "C:/private",
+        "evidence-1",
+    ):
         assert private_value not in prompt
     critic_response = json.dumps({"verdict": "accept", "findings": [], "summary": "bounded mapping is valid"})
     assert suggestion.envelope.model_hash == hashlib.sha256(critic_response.encode()).hexdigest()
@@ -251,3 +259,34 @@ def test_patch_generator_normalizes_oversized_response_and_ids_to_stable_model_e
         with pytest.raises(ReviewError) as caught:
             TemplatePatchGenerator(_FakeGateway(response)).suggest(_request())
         assert caught.value.code == "FMEA_MODEL_SUGGESTION_INVALID"
+
+
+def test_patch_generator_rejects_private_or_unbounded_evidence_identity_before_model_call() -> None:
+    private_ref = replace(PACK.refs[0], evidence_id="C:/private/secret.txt")
+    private_pack = EvidencePack.build(
+        pack_id=PACK.pack_id,
+        workspace_id=PACK.workspace_id,
+        acl_scope=PACK.acl_scope,
+        versions=PACK.versions,
+        refs=(private_ref,),
+        created_at=PACK.created_at,
+        expires_at=PACK.expires_at,
+    )
+    gateway = _FakeGateway({"diff": (), "evidence_ids": ()})
+    with pytest.raises(ReviewError) as caught:
+        TemplatePatchGenerator(gateway).suggest(
+            _request(evidence_pack=private_pack, evidence_pack_hash=private_pack.pack_hash)
+        )
+    assert caught.value.code == "FMEA_MODEL_SUGGESTION_INVALID"
+    assert gateway.requests == []
+
+
+def test_structured_generator_normalizes_unexpected_pipeline_failure() -> None:
+    class _BrokenService:
+        def run(self, **_kwargs):
+            raise RuntimeError("private provider detail")  # noqa: TRY003
+
+    with pytest.raises(ReviewError) as caught:
+        StructuredTemplatePatchGenerator(_BrokenService()).suggest(_request())
+    assert caught.value.code == "FMEA_MODEL_SUGGESTION_UNAVAILABLE"
+    assert "private provider detail" not in str(caught.value)
