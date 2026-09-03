@@ -11,11 +11,14 @@ from __future__ import annotations
 import errno
 import hashlib
 import json
+import math
 import ntpath
 import os
+import secrets
 import stat
 import tempfile
 import threading
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
@@ -31,7 +34,10 @@ _MAX_MANIFEST_BYTES = 64 * 1024
 _MAX_POINTER_BYTES = 4096
 _MANIFEST_FILENAME = ".manifest.json"
 _LATEST_FILENAME = ".latest.json"
+_OWNER_FILENAME = ".owner"
 _TEMP_PREFIX = ".artifact-tmp-"
+_DEFAULT_RESERVATION_TIMEOUT_SECONDS = 2.0
+_DEFAULT_RESERVATION_POLL_SECONDS = 0.02
 _WINDOWS_RESERVED_BASENAMES = frozenset({
     "aux",
     "con",
@@ -69,8 +75,15 @@ def _raise_short_write() -> NoReturn:
 class ArtifactStoreError(FmeaDomainError):
     """Stable, bounded error raised at the artifact storage boundary."""
 
-    def __init__(self, code: str, message: str = "artifact store operation failed") -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str = "artifact store operation failed",
+        *,
+        retryable: bool = False,
+    ) -> None:
         self.code = code
+        self.retryable = retryable
         super().__init__(f"{code}: {message}")
 
 
@@ -108,6 +121,15 @@ class StoredArtifact:
 
     def __fspath__(self) -> str:
         return os.fspath(self.path)
+
+
+@dataclass(frozen=True, slots=True)
+class _Reservation:
+    path: Path
+    owner_path: Path
+    token: str
+    directory_info: os.stat_result
+    owner_info: os.stat_result
 
 
 class _LatestUpdateError(ArtifactStoreError):
@@ -187,6 +209,10 @@ class WorkspaceArtifactStore:
         max_artifact_bytes: int = MAX_ARTIFACT_BYTES,
         fault_hook: Callable[[str], None] | None = None,
         fsync_seam: Callable[[int], None] | None = None,
+        reservation_timeout_seconds: float = _DEFAULT_RESERVATION_TIMEOUT_SECONDS,
+        reservation_poll_seconds: float = _DEFAULT_RESERVATION_POLL_SECONDS,
+        monotonic_seam: Callable[[], float] = time.monotonic,
+        reservation_wait_seam: Callable[[float], None] = time.sleep,
     ) -> None:
         self._root = _absolute_root(artifact_root)
         self._workspace_id = _safe_segment(workspace_id, "workspace_id")
@@ -195,6 +221,24 @@ class WorkspaceArtifactStore:
         self._max_artifact_bytes = min(max_artifact_bytes, MAX_ARTIFACT_BYTES)
         self._fault_hook = fault_hook
         self._fsync_seam = fsync_seam
+        if (
+            isinstance(reservation_timeout_seconds, bool)
+            or not isinstance(reservation_timeout_seconds, int | float)
+            or not math.isfinite(reservation_timeout_seconds)
+            or reservation_timeout_seconds <= 0
+            or isinstance(reservation_poll_seconds, bool)
+            or not isinstance(reservation_poll_seconds, int | float)
+            or not math.isfinite(reservation_poll_seconds)
+            or reservation_poll_seconds <= 0
+            or reservation_poll_seconds > reservation_timeout_seconds
+            or not callable(monotonic_seam)
+            or not callable(reservation_wait_seam)
+        ):
+            _raise("FMEA_ARTIFACT_LIMIT_INVALID", "artifact reservation policy is invalid")
+        self._reservation_timeout_seconds = float(reservation_timeout_seconds)
+        self._reservation_poll_seconds = float(reservation_poll_seconds)
+        self._monotonic = monotonic_seam
+        self._reservation_wait = reservation_wait_seam
         self._workspace_root = self._root / self._workspace_id
         self._artifacts_root = self._workspace_root / "artifacts"
         self._runs_root = self._workspace_root / "runs"
@@ -629,20 +673,155 @@ class WorkspaceArtifactStore:
         with _LOCAL_LOCKS_GUARD:
             return _LOCAL_LOCKS.setdefault(key, threading.RLock())
 
-    def _reserve(self, artifact_id: str) -> Path:
-        lock_path = self._locks_root / artifact_id
+    def _reservation_deadline(self) -> float:
         try:
-            lock_path.mkdir()
-        except FileExistsError as exc:
-            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact publication is busy") from exc
-        except OSError as exc:
+            return self._monotonic() + self._reservation_timeout_seconds
+        except (ArithmeticError, RuntimeError, TypeError, ValueError) as exc:
             raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+
+    def _wait_for_reservation(
+        self,
+        lock_path: Path,
+        artifact_id: str,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+        deadline: float,
+    ) -> StoredArtifact | None:
+        self._inspect(lock_path, directory=True, allow_missing=True)
+        existing = self._read_existing(artifact_id)
+        if existing is not None:
+            if not self._matches_request(existing, run_id, filename, payload, manifest):
+                _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+            committed = self._reconcile_committed(run_id, filename, payload, manifest)
+            if committed is not None:
+                return committed
+            self._read_latest_pointer(run_id)
+        try:
+            remaining = deadline - self._monotonic()
+        except (ArithmeticError, RuntimeError, TypeError, ValueError) as exc:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+        if remaining <= 0:
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact publication is busy",
+                retryable=True,
+            ) from None
+        try:
+            self._reservation_wait(min(self._reservation_poll_seconds, remaining))
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation wait failed") from exc
+        return None
+
+    def _reserve(
+        self,
+        artifact_id: str,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> _Reservation | StoredArtifact:
+        lock_path = self._locks_root / artifact_id
+        deadline = self._reservation_deadline()
+        while True:
+            try:
+                lock_path.mkdir()
+                break
+            except FileExistsError:
+                # Validate every extant component but never remove a lock whose
+                # owner token is not ours.  A crashed owner therefore fails
+                # closed as a bounded, retryable busy result.
+                existing = self._wait_for_reservation(
+                    lock_path,
+                    artifact_id,
+                    run_id,
+                    filename,
+                    payload,
+                    manifest,
+                    deadline,
+                )
+                if existing is not None:
+                    return existing
+            except OSError as exc:
+                raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+        directory_info: os.stat_result | None = None
+        owner_info: os.stat_result | None = None
+        token = secrets.token_hex(32)
+        owner_path = lock_path / _OWNER_FILENAME
         try:
             self._inspect(lock_path, directory=True, allow_missing=False)
+            directory_info = lock_path.lstat()
+            self._write_file(owner_path, _canonical_json({"token": token}))
+            owner_info = owner_path.lstat()
+            self._sync_directory(lock_path)
         except ArtifactStoreError:
-            self._remove_tree(lock_path)
+            self._remove_owned_tree(lock_path, directory_info)
             raise
-        return lock_path
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            self._remove_owned_tree(lock_path, directory_info)
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+        return _Reservation(lock_path, owner_path, token, directory_info, owner_info)
+
+    def _release_reservation(self, reservation: _Reservation) -> None:
+        try:
+            directory_info = reservation.path.lstat()
+            owner_info = reservation.owner_path.lstat()
+            if not _same_file(reservation.directory_info, directory_info) or not _same_file(
+                reservation.owner_info, owner_info
+            ):
+                return
+            raw_owner = self._read_file(reservation.owner_path, max_bytes=_MAX_POINTER_BYTES)
+            if raw_owner != _canonical_json({"token": reservation.token}):
+                return
+            self._remove_file(reservation.owner_path, expected=reservation.owner_info)
+            if reservation.owner_path.exists():
+                return
+            current = reservation.path.lstat()
+            if _same_file(reservation.directory_info, current):
+                with suppress(OSError):
+                    reservation.path.rmdir()
+        except (ArtifactStoreError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
+            return
+
+    @staticmethod
+    def _matches_request(
+        stored: StoredArtifact,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> bool:
+        return (
+            stored.export_run_id == run_id
+            and stored.filename == filename
+            and stored.payload == payload
+            and stored.manifest == manifest
+        )
+
+    def _reconcile_committed(
+        self,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> StoredArtifact | None:
+        """Return success only when both immutable bytes and latest are exact."""
+
+        try:
+            final = self._read_existing(manifest.artifact_id)
+            latest = self._read_latest_pointer(run_id)
+        except ArtifactStoreError:
+            return None
+        if final is None or latest is None:
+            return None
+        if not self._matches_request(final, run_id, filename, payload, manifest):
+            return None
+        if not self._matches_request(latest, run_id, filename, payload, manifest):
+            return None
+        if final.path != latest.path:
+            return None
+        return final
 
     def _pointer_bytes(self, run_id: str, artifact_id: str) -> bytes:
         return _canonical_json({
@@ -736,14 +915,12 @@ class WorkspaceArtifactStore:
         final_directory = self._safe_artifact_path(artifact_id)
         existing = self._read_existing(artifact_id)
         if existing is not None:
-            if (
-                existing.export_run_id == run_id
-                and existing.filename == filename
-                and existing.payload == payload
-                and existing.manifest == normalized
-            ):
-                return existing
-            _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+            if not self._matches_request(existing, run_id, filename, payload, normalized):
+                _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+            committed = self._reconcile_committed(run_id, filename, payload, normalized)
+            if committed is not None:
+                return committed
+            self._read_latest_pointer(run_id)
 
         # The process lock keeps same-instance/thread callers out of the
         # reservation race; the mkdir reservation covers separate processes.
@@ -751,16 +928,16 @@ class WorkspaceArtifactStore:
         with local_lock:
             existing = self._read_existing(artifact_id)
             if existing is not None:
-                if (
-                    existing.export_run_id == run_id
-                    and existing.filename == filename
-                    and existing.payload == payload
-                    and existing.manifest == normalized
-                ):
-                    return existing
-                _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
-            reservation = self._reserve(artifact_id)
-            reservation_info = reservation.lstat()
+                if not self._matches_request(existing, run_id, filename, payload, normalized):
+                    _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+                committed = self._reconcile_committed(run_id, filename, payload, normalized)
+                if committed is not None:
+                    return committed
+                self._read_latest_pointer(run_id)
+            reservation_or_existing = self._reserve(artifact_id, run_id, filename, payload, normalized)
+            if isinstance(reservation_or_existing, StoredArtifact):
+                return reservation_or_existing
+            reservation = reservation_or_existing
             temporary: Path | None = None
             temporary_info: os.stat_result | None = None
             moved = False
@@ -769,14 +946,13 @@ class WorkspaceArtifactStore:
             try:
                 existing = self._read_existing(artifact_id)
                 if existing is not None:
-                    if (
-                        existing.export_run_id == run_id
-                        and existing.filename == filename
-                        and existing.payload == payload
-                        and existing.manifest == normalized
-                    ):
-                        return existing
-                    _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+                    if not self._matches_request(existing, run_id, filename, payload, normalized):
+                        _raise("FMEA_ARTIFACT_CONFLICT", "artifact identity already has different content")
+                    self._read_latest_pointer(run_id)
+                    self._fault("before_latest")
+                    pointer_replaced = self._write_latest(run_id, artifact_id)
+                    self._fault("after_latest")
+                    return existing
                 # Fail closed on a corrupt prior pointer before allocating a
                 # new artifact; a failed publication must not hide it.
                 self._read_latest_pointer(run_id)
@@ -813,17 +989,29 @@ class WorkspaceArtifactStore:
                 return verified  # noqa: TRY300
             except _LatestUpdateError as exc:
                 pointer_replaced = exc.pointer_replaced
+                if pointer_replaced:
+                    reconciled = self._reconcile_committed(run_id, filename, payload, normalized)
+                    if reconciled is not None:
+                        return reconciled
                 raise
             except ArtifactStoreError:
+                if pointer_replaced:
+                    reconciled = self._reconcile_committed(run_id, filename, payload, normalized)
+                    if reconciled is not None:
+                        return reconciled
                 raise
             except (OSError, RuntimeError, TypeError, ValueError) as exc:
+                if pointer_replaced:
+                    reconciled = self._reconcile_committed(run_id, filename, payload, normalized)
+                    if reconciled is not None:
+                        return reconciled
                 raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact publication failed") from exc
             finally:
                 if temporary is not None:
                     self._remove_owned_tree(temporary, temporary_info)
                 if moved and not pointer_replaced:
                     self._remove_owned_tree(final_directory, moved_info)
-                self._remove_owned_tree(reservation, reservation_info)
+                self._release_reservation(reservation)
 
     def get(self, artifact_id: str, workspace_id: str) -> StoredArtifact:
         """Return an independently reverified artifact for this workspace."""

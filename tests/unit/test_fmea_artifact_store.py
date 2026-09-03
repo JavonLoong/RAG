@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import multiprocessing
+import os
 from pathlib import Path
 
 import pytest
@@ -44,6 +46,45 @@ def _manifest(
 
 def _store(tmp_path: Path, **kwargs: object) -> WorkspaceArtifactStore:
     return WorkspaceArtifactStore(tmp_path / "artifacts", WORKSPACE, **kwargs)
+
+
+class _ReparseStat:
+    def __init__(self, delegate: os.stat_result) -> None:
+        self._delegate = delegate
+        self.st_file_attributes = getattr(delegate, "st_file_attributes", 0) | 0x400
+
+    def __getattr__(self, name: str):
+        return getattr(self._delegate, name)
+
+
+def _multiprocess_publish(
+    root: str,
+    ready,
+    release,
+    attempted,
+    results,
+    *,
+    hold_reservation: bool,
+) -> None:
+    def fault(stage: str) -> None:
+        if hold_reservation and stage == "after_temp_verify":
+            ready.set()
+            if not release.wait(10):
+                raise RuntimeError
+
+    store = WorkspaceArtifactStore(
+        root,
+        WORKSPACE,
+        fault_hook=fault,
+        reservation_timeout_seconds=5.0,
+        reservation_poll_seconds=0.01,
+    )
+    attempted.set()
+    try:
+        published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+        results.put(("ok", published.manifest.sha256))
+    except Exception as exc:  # pragma: no cover - reported to the parent process
+        results.put(("error", type(exc).__name__, str(exc)))
 
 
 def test_publish_get_and_latest_return_the_same_verified_artifact(tmp_path: Path) -> None:
@@ -102,6 +143,17 @@ def test_identical_replay_is_immutable_but_different_content_conflicts(tmp_path:
     assert first.path.read_bytes() == PAYLOAD
 
 
+def test_identical_replay_repairs_a_missing_latest_pointer(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    first = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    (store.runs_root / RUN / ".latest.json").unlink()
+
+    replay = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert replay == first
+    assert store.latest(RUN) == first
+
+
 def test_fault_after_final_rename_before_latest_preserves_previous_latest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -116,6 +168,63 @@ def test_fault_after_final_rename_before_latest_preserves_previous_latest(
             raise RuntimeError
 
     monkeypatch.setattr(store, "_fault", fail)
+    with pytest.raises(ArtifactStoreError) as error:
+        store.publish(RUN, FILENAME, next_payload, next_manifest)
+
+    assert error.value.code == "FMEA_ARTIFACT_STORAGE_FAILED"
+    assert store.latest(RUN) == previous
+    assert not (store.artifacts_root / "artifact-2").exists()
+
+
+def test_fault_after_latest_reconciles_the_committed_artifact(tmp_path: Path) -> None:
+    def fail(stage: str) -> None:
+        if stage == "after_latest":
+            raise RuntimeError
+
+    store = _store(tmp_path, fault_hook=fail)
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert published == store.get(ARTIFACT, WORKSPACE)
+    assert published == store.latest(RUN)
+
+
+def test_latest_directory_sync_fault_reconciles_the_committed_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    original_sync = store._sync_directory
+
+    def sync_then_fail(path: Path) -> None:
+        original_sync(path)
+        if path == store.runs_root / RUN:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "injected directory sync failure")
+
+    monkeypatch.setattr(store, "_sync_directory", sync_then_fail)
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert published == store.latest(RUN)
+
+
+def test_final_directory_sync_failure_before_latest_preserves_previous_latest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    previous = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    next_payload = b'{"next":true}\n'
+    next_manifest = _manifest(next_payload, artifact_id="artifact-2")
+    original_sync = store._sync_directory
+
+    def fail_final_parent_sync(path: Path) -> None:
+        if path == store.artifacts_root:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "injected directory sync failure")
+        original_sync(path)
+
+    monkeypatch.setattr(store, "_sync_directory", fail_final_parent_sync)
+
     with pytest.raises(ArtifactStoreError) as error:
         store.publish(RUN, FILENAME, next_payload, next_manifest)
 
@@ -207,6 +316,117 @@ def test_symlinked_artifact_path_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(ArtifactStoreError) as error:
         store.get(ARTIFACT, WORKSPACE)
     assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
+
+
+def test_windows_reparse_attribute_is_rejected_without_symlink_privilege(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    original_lstat = Path.lstat
+
+    def marked_lstat(path: Path):
+        result = original_lstat(path)
+        if path == published.directory:
+            return _ReparseStat(result)
+        return result
+
+    monkeypatch.setattr(Path, "lstat", marked_lstat)
+
+    with pytest.raises(ArtifactStoreError) as error:
+        store.get(ARTIFACT, WORKSPACE)
+    assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
+
+
+def test_foreign_reservation_times_out_retryably_without_unlinking_owner(tmp_path: Path) -> None:
+    elapsed = 0.0
+
+    def monotonic() -> float:
+        return elapsed
+
+    def wait(duration: float) -> None:
+        nonlocal elapsed
+        elapsed += duration
+
+    store = _store(
+        tmp_path,
+        reservation_timeout_seconds=0.03,
+        reservation_poll_seconds=0.01,
+        monotonic_seam=monotonic,
+        reservation_wait_seam=wait,
+    )
+    reservation = store.workspace_root / ".locks" / ARTIFACT
+    reservation.mkdir()
+    owner = reservation / ".owner"
+    owner.write_bytes(b'{"token":"foreign-owner"}\n')
+
+    with pytest.raises(ArtifactStoreError) as error:
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert error.value.code == "FMEA_ARTIFACT_BUSY"
+    assert error.value.retryable is True
+    assert owner.read_bytes() == b'{"token":"foreign-owner"}\n'
+
+
+def test_publisher_never_releases_a_reservation_after_owner_token_changes(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    owner = store.workspace_root / ".locks" / ARTIFACT / ".owner"
+    foreign_owner = b'{"token":"replacement-owner"}\n'
+
+    def replace_owner(stage: str) -> None:
+        if stage == "after_payload_write":
+            owner.write_bytes(foreign_owner)
+            raise RuntimeError
+
+    store._fault_hook = replace_owner
+
+    with pytest.raises(ArtifactStoreError):
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert owner.read_bytes() == foreign_owner
+
+
+def test_identical_cross_process_publish_converges(tmp_path: Path) -> None:
+    context = multiprocessing.get_context("spawn")
+    ready = context.Event()
+    release = context.Event()
+    first_attempted = context.Event()
+    second_attempted = context.Event()
+    results = context.Queue()
+    root = str((tmp_path / "artifacts").resolve())
+    first = context.Process(
+        target=_multiprocess_publish,
+        args=(root, ready, release, first_attempted, results),
+        kwargs={"hold_reservation": True},
+    )
+    second = context.Process(
+        target=_multiprocess_publish,
+        args=(root, ready, release, second_attempted, results),
+        kwargs={"hold_reservation": False},
+    )
+    first.start()
+    try:
+        assert first_attempted.wait(10)
+        assert ready.wait(10)
+        second.start()
+        assert second_attempted.wait(10)
+        release.set()
+        first.join(15)
+        second.join(15)
+        assert first.exitcode == 0
+        assert second.exitcode == 0
+        outcomes = [results.get(timeout=5), results.get(timeout=5)]
+        assert len(outcomes) == 2
+        assert all(outcome == ("ok", _manifest().sha256) for outcome in outcomes)
+        assert WorkspaceArtifactStore(root, WORKSPACE).latest(RUN) is not None
+    finally:
+        release.set()
+        for process in (first, second):
+            if process.pid is not None and process.is_alive():
+                process.terminate()
+            if process.pid is not None:
+                process.join(5)
 
 
 def test_manifest_file_is_canonical_and_contains_no_host_path(tmp_path: Path) -> None:

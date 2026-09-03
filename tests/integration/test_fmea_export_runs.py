@@ -80,11 +80,12 @@ def _service(
     clock=lambda: "2026-09-03T00:00:00Z",
     governance_repository=None,
     export_repository=None,
+    artifact_fault_hook=None,
 ):
     from fmea_application.export_service import ExportService
     from fmea_infrastructure.artifact_store import WorkspaceArtifactStore
 
-    store = WorkspaceArtifactStore(tmp_path / "artifacts", "ws-1")
+    store = WorkspaceArtifactStore(tmp_path / "artifacts", "ws-1", fault_hook=artifact_fault_hook)
     return (
         ExportService(
             governance_repository or repository,
@@ -132,6 +133,28 @@ def test_success_is_durable_verified_and_idempotent(tmp_path: Path):
     assert replay == first
     assert artifact.manifest.export_run_id == first.export_run_id
     assert artifact.payload == exporter.payload
+    assert exporter.calls == 1
+
+
+def test_post_latest_store_fault_is_reconciled_as_succeeded_and_replayable(tmp_path: Path):
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = FakeExporter()
+
+    def fault(stage: str) -> None:
+        if stage == "after_latest":
+            raise RuntimeError
+
+    service, store = _service(repository, tmp_path, exporter, artifact_fault_hook=fault)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+
+    first = service.start(command, actor)
+    replay = service.start(command, actor)
+
+    assert first.status.value == "succeeded"
+    assert replay == first
+    assert store.latest(first.export_run_id).artifact_id == first.artifact_id
     assert exporter.calls == 1
 
 
