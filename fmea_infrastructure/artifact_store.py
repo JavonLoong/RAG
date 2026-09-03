@@ -20,10 +20,13 @@ import tempfile
 import threading
 import time
 from collections.abc import Callable
-from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NoReturn
+from typing import ClassVar, NoReturn
+
+if os.name == "nt":
+    import ctypes
+    from ctypes import wintypes
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.filename_policy import validate_filename
@@ -66,6 +69,58 @@ _POINTER_FIELDS = frozenset({"artifact_id", "export_run_id", "workspace_id"})
 
 _LOCAL_LOCKS: dict[str, threading.RLock] = {}
 _LOCAL_LOCKS_GUARD = threading.Lock()
+
+if os.name == "nt":
+    _DELETE = 0x00010000
+    _FILE_READ_ATTRIBUTES = 0x00000080
+    _FILE_SHARE_ALL = 0x00000001 | 0x00000002 | 0x00000004
+    _OPEN_EXISTING = 3
+    _FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
+    _FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+    _FILE_ATTRIBUTE_DIRECTORY = 0x00000010
+    _FILE_ATTRIBUTE_REPARSE_POINT = 0x00000400
+    _FILE_DISPOSITION_INFO_CLASS = 4
+    _INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+
+    class _WindowsHandleInfo(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, object]]] = [
+            ("dwFileAttributes", wintypes.DWORD),
+            ("ftCreationTime", wintypes.FILETIME),
+            ("ftLastAccessTime", wintypes.FILETIME),
+            ("ftLastWriteTime", wintypes.FILETIME),
+            ("dwVolumeSerialNumber", wintypes.DWORD),
+            ("nFileSizeHigh", wintypes.DWORD),
+            ("nFileSizeLow", wintypes.DWORD),
+            ("nNumberOfLinks", wintypes.DWORD),
+            ("nFileIndexHigh", wintypes.DWORD),
+            ("nFileIndexLow", wintypes.DWORD),
+        ]
+
+    class _WindowsDispositionInfo(ctypes.Structure):
+        _fields_: ClassVar[list[tuple[str, object]]] = [("delete_file", ctypes.c_ubyte)]
+
+    _KERNEL32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    _KERNEL32.CreateFileW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    _KERNEL32.CreateFileW.restype = wintypes.HANDLE
+    _KERNEL32.GetFileInformationByHandle.argtypes = [wintypes.HANDLE, ctypes.POINTER(_WindowsHandleInfo)]
+    _KERNEL32.GetFileInformationByHandle.restype = wintypes.BOOL
+    _KERNEL32.SetFileInformationByHandle.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+    ]
+    _KERNEL32.SetFileInformationByHandle.restype = wintypes.BOOL
+    _KERNEL32.CloseHandle.argtypes = [wintypes.HANDLE]
+    _KERNEL32.CloseHandle.restype = wintypes.BOOL
 
 
 def _raise_short_write() -> NoReturn:
@@ -536,50 +591,201 @@ class WorkspaceArtifactStore:
         finally:
             os.close(descriptor)
 
-    def _remove_file(self, path: Path, *, expected: os.stat_result | None = None) -> None:
-        try:
-            info = path.lstat()
-        except FileNotFoundError:
-            return
-        except OSError:
-            return
-        if expected is not None and not _same_file(expected, info):
-            return
-        if _is_reparse_point(info) or not stat.S_ISREG(info.st_mode):
-            return
-        with suppress(OSError):
-            path.unlink()
+    @staticmethod
+    def _cleanup_entry_matches(
+        expected: os.stat_result,
+        current: os.stat_result,
+        *,
+        directory: bool,
+    ) -> bool:
+        expected_type_matches = stat.S_ISDIR(expected.st_mode) if directory else stat.S_ISREG(expected.st_mode)
+        current_type_matches = stat.S_ISDIR(current.st_mode) if directory else stat.S_ISREG(current.st_mode)
+        return (
+            expected_type_matches
+            and current_type_matches
+            and not _is_reparse_point(expected)
+            and not _is_reparse_point(current)
+            and _same_file(expected, current)
+        )
 
-    def _remove_tree(self, path: Path) -> None:
+    @staticmethod
+    def _supports_relative_cleanup(operation: Callable[..., object]) -> bool:
+        return (
+            operation in os.supports_dir_fd and os.stat in os.supports_dir_fd and os.stat in os.supports_follow_symlinks
+        )
+
+    def _remove_relative_entry(
+        self,
+        path: Path,
+        expected: os.stat_result,
+        parent_expected: os.stat_result,
+        operation: Callable[..., object],
+        *,
+        directory: bool,
+    ) -> bool:
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            parent_descriptor = os.open(os.fspath(path.parent), flags)
+        except OSError:
+            return False
+        try:
+            opened_parent = os.fstat(parent_descriptor)
+            current_parent = path.parent.lstat()
+            if (
+                _is_reparse_point(current_parent)
+                or not stat.S_ISDIR(opened_parent.st_mode)
+                or not _same_file(parent_expected, opened_parent)
+                or not _same_file(parent_expected, current_parent)
+            ):
+                return False
+            current = os.stat(path.name, dir_fd=parent_descriptor, follow_symlinks=False)
+            if not self._cleanup_entry_matches(expected, current, directory=directory):
+                return False
+            final = os.stat(path.name, dir_fd=parent_descriptor, follow_symlinks=False)
+            if not self._cleanup_entry_matches(expected, final, directory=directory):
+                return False
+            operation(path.name, dir_fd=parent_descriptor)
+        except (FileNotFoundError, OSError, TypeError, ValueError):
+            return False
+        else:
+            return True
+        finally:
+            os.close(parent_descriptor)
+
+    def _remove_windows_entry(
+        self,
+        path: Path,
+        expected: os.stat_result,
+        *,
+        directory: bool,
+    ) -> bool:
+        flags = _FILE_FLAG_OPEN_REPARSE_POINT
+        if directory:
+            flags |= _FILE_FLAG_BACKUP_SEMANTICS
+        handle = _KERNEL32.CreateFileW(
+            os.fspath(path),
+            _DELETE | _FILE_READ_ATTRIBUTES,
+            _FILE_SHARE_ALL,
+            None,
+            _OPEN_EXISTING,
+            flags,
+            None,
+        )
+        if handle == _INVALID_HANDLE_VALUE:
+            return False
+        try:
+            handle_info = _WindowsHandleInfo()
+            if not _KERNEL32.GetFileInformationByHandle(handle, ctypes.byref(handle_info)):
+                return False
+            file_index = (int(handle_info.nFileIndexHigh) << 32) | int(handle_info.nFileIndexLow)
+            expected_index = int(getattr(expected, "st_ino", 0))
+            attributes = int(handle_info.dwFileAttributes)
+            handle_is_directory = bool(attributes & _FILE_ATTRIBUTE_DIRECTORY)
+            if (
+                expected_index == 0
+                or file_index != expected_index
+                or handle_is_directory is not directory
+                or bool(attributes & _FILE_ATTRIBUTE_REPARSE_POINT)
+                or _is_reparse_point(expected)
+            ):
+                return False
+            self._fault("before_cleanup_remove")
+            disposition = _WindowsDispositionInfo(1)
+            if not _KERNEL32.SetFileInformationByHandle(
+                handle,
+                _FILE_DISPOSITION_INFO_CLASS,
+                ctypes.byref(disposition),
+                ctypes.sizeof(disposition),
+            ):
+                return False
+        except (OSError, RuntimeError, TypeError, ValueError):
+            return False
+        else:
+            return True
+        finally:
+            _KERNEL32.CloseHandle(handle)
+
+    def _remove_entry(self, path: Path, expected: os.stat_result, *, directory: bool) -> bool:
         try:
             path.relative_to(self._root)
         except ValueError:
-            return
+            return False
         try:
-            info = path.lstat()
+            parent_expected = self._inspect(path.parent, directory=True, allow_missing=False)
+        except ArtifactStoreError:
+            return False
+        if parent_expected is None:
+            return False
+        operation = os.rmdir if directory else os.unlink
+        if os.name == "nt":
+            return self._remove_windows_entry(path, expected, directory=directory)
+        if self._supports_relative_cleanup(operation):
+            return self._remove_relative_entry(
+                path,
+                expected,
+                parent_expected,
+                operation,
+                directory=directory,
+            )
+        # Platforms without a handle-relative primitive cannot safely close
+        # the final check-to-delete race, so cleanup is deliberately skipped.
+        return False
+
+    def _remove_file(self, path: Path, *, expected: os.stat_result | None = None) -> bool:
+        if expected is None:
+            return False
+        return self._remove_entry(path, expected, directory=False)
+
+    def _remove_empty_directory(self, path: Path, expected: os.stat_result) -> bool:
+        try:
+            current = path.lstat()
+            if not self._cleanup_entry_matches(expected, current, directory=True):
+                return False
+            if next(path.iterdir(), None) is not None:
+                return False
         except (FileNotFoundError, OSError):
-            return
-        if _is_reparse_point(info) or not stat.S_ISDIR(info.st_mode):
-            return
-        try:
-            children = tuple(path.iterdir())
-        except OSError:
-            return
-        for child in children:
+            return False
+        return self._remove_entry(path, expected, directory=True)
+
+    def _remove_tree_children(
+        self,
+        path: Path,
+        expected: os.stat_result,
+        children: tuple[tuple[Path, os.stat_result], ...],
+    ) -> bool:
+        for child, child_info in children:
             try:
-                child_info = child.lstat()
+                current = path.lstat()
             except OSError:
-                return
+                return False
+            if not self._cleanup_entry_matches(expected, current, directory=True):
+                return False
             if _is_reparse_point(child_info):
-                return
+                return False
             if stat.S_ISDIR(child_info.st_mode):
-                self._remove_tree(child)
+                if not self._remove_tree(child, expected=child_info):
+                    return False
             elif stat.S_ISREG(child_info.st_mode):
-                self._remove_file(child)
+                if not self._remove_file(child, expected=child_info):
+                    return False
             else:
-                return
-        with suppress(OSError):
-            path.rmdir()
+                return False
+        return True
+
+    def _remove_tree(self, path: Path, *, expected: os.stat_result | None = None) -> bool:
+        if expected is None:
+            return False
+        try:
+            path.relative_to(self._root)
+            info = path.lstat()
+            if not self._cleanup_entry_matches(expected, info, directory=True):
+                return False
+            children = tuple((child, child.lstat()) for child in path.iterdir())
+        except (FileNotFoundError, OSError, ValueError):
+            return False
+        if not self._remove_tree_children(path, expected, children):
+            return False
+        return self._remove_empty_directory(path, expected)
 
     def _remove_owned_tree(self, path: Path, expected: os.stat_result | None) -> None:
         if expected is None:
@@ -590,7 +796,7 @@ class WorkspaceArtifactStore:
             return
         if not _same_file(expected, current):
             return
-        self._remove_tree(path)
+        self._remove_tree(path, expected=expected)
 
     def _manifest_bytes(self, manifest: ExportArtifactManifest) -> bytes:
         try:
@@ -775,12 +981,13 @@ class WorkspaceArtifactStore:
             if raw_owner != _canonical_json({"token": reservation.token}):
                 return
             self._remove_file(reservation.owner_path, expected=reservation.owner_info)
-            if reservation.owner_path.exists():
+            try:
+                reservation.owner_path.lstat()
+            except FileNotFoundError:
+                pass
+            else:
                 return
-            current = reservation.path.lstat()
-            if _same_file(reservation.directory_info, current):
-                with suppress(OSError):
-                    reservation.path.rmdir()
+            self._remove_empty_directory(reservation.path, reservation.directory_info)
         except (ArtifactStoreError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
             return
 

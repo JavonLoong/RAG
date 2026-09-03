@@ -268,6 +268,80 @@ def test_fsync_seam_failure_cleans_the_staged_directory(tmp_path: Path) -> None:
     assert not tuple(store.artifacts_root.iterdir())
 
 
+def test_owned_tree_cleanup_preserves_a_replacement_after_identity_check(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    owned = store.artifacts_root / ".owned-cleanup"
+    displaced = store.artifacts_root / ".displaced-owned-cleanup"
+    owned.mkdir()
+    (owned / "owned.txt").write_bytes(b"owned")
+    expected = owned.lstat()
+    foreign_sentinel = owned / "foreign-sentinel.txt"
+    original_remove_tree = store._remove_tree
+
+    def replace_after_check(path: Path, *, expected=None) -> None:
+        path.rename(displaced)
+        path.mkdir()
+        foreign_sentinel.write_bytes(b"foreign")
+        if expected is None:
+            original_remove_tree(path)
+        else:
+            original_remove_tree(path, expected=expected)
+
+    monkeypatch.setattr(store, "_remove_tree", replace_after_check)
+
+    store._remove_owned_tree(owned, expected)
+
+    assert owned.is_dir()
+    assert foreign_sentinel.read_bytes() == b"foreign"
+
+
+def test_owned_tree_cleanup_fails_closed_when_parent_cannot_be_revalidated(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = _store(tmp_path)
+    owned = store.artifacts_root / ".owned-cleanup"
+    owned.mkdir()
+    owned_file = owned / "owned.txt"
+    owned_file.write_bytes(b"owned")
+    expected = owned.lstat()
+    original_inspect = store._inspect
+
+    def reject_owned_parent(path: Path, *, directory: bool, allow_missing: bool):
+        if path == owned:
+            raise ArtifactStoreError("FMEA_ARTIFACT_PATH_INVALID")
+        return original_inspect(path, directory=directory, allow_missing=allow_missing)
+
+    monkeypatch.setattr(store, "_inspect", reject_owned_parent)
+
+    store._remove_owned_tree(owned, expected)
+
+    assert owned_file.read_bytes() == b"owned"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows handle deletion regression")
+def test_windows_cleanup_handle_does_not_delete_a_post_check_replacement(tmp_path: Path) -> None:
+    owned = tmp_path / "artifacts" / WORKSPACE / "artifacts" / ".owned.txt"
+    displaced = owned.with_name(".displaced-owned.txt")
+
+    def replace_after_handle_check(stage: str) -> None:
+        if stage == "before_cleanup_remove":
+            owned.rename(displaced)
+            owned.write_bytes(b"foreign")
+
+    store = _store(tmp_path, fault_hook=replace_after_handle_check)
+    owned.write_bytes(b"owned")
+    expected = owned.lstat()
+
+    store._remove_file(owned, expected=expected)
+
+    assert owned.read_bytes() == b"foreign"
+    assert not displaced.exists()
+
+
 def test_get_rejects_corrupt_payload_and_latest_pointer(tmp_path: Path) -> None:
     store = _store(tmp_path)
     published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
