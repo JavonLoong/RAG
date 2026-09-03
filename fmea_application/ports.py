@@ -96,6 +96,8 @@ from .template_patch_contracts import TemplatePatchSuggestion
 if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
+    from .delivery_contracts import ExportArtifactManifest, ExportRun
+    from .export_service import StartExportCommand
     from .migration_service import (
         MigrationCandidate,
         MigrationCommand,
@@ -805,6 +807,56 @@ class GovernanceRepository(Protocol):
     def list_publication_events(self, query: GovernanceHistoryQuery) -> GovernanceHistoryPage: ...
 
 
+class SnapshotExporter(Protocol):
+    """Provider-neutral renderer for one normalized snapshot format."""
+
+    format: str
+    media_type: str
+
+    def render(self, snapshot: NormalizedFmeaSnapshot) -> bytes: ...
+
+
+class ArtifactStore(Protocol):
+    """Immutable artifact publication and verification boundary."""
+
+    def publish(self, run_id: str, filename: str, payload: bytes, manifest: ExportArtifactManifest) -> object: ...
+
+    def get(self, artifact_id: str, workspace_id: str) -> object: ...
+
+    def latest(self, run_id: str) -> object | None: ...
+
+
+class ExportRepository(Protocol):
+    """Durable export-run and manifest lifecycle boundary."""
+
+    def get_export_run(self, export_run_id: str, workspace_id: str) -> ExportRun | None: ...
+
+    def get_export_artifact(self, artifact_id: str, workspace_id: str) -> ExportArtifactManifest | None: ...
+
+    def reserve_export_run(
+        self,
+        command: StartExportCommand,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        created_at: str,
+    ) -> ExportRun: ...
+
+    def mark_export_running(self, export_run_id: str, workspace_id: str, started_at: str) -> ExportRun: ...
+
+    def complete_export(
+        self,
+        run: ExportRun,
+        manifest: ExportArtifactManifest,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        finished_at: str,
+    ) -> ExportRun: ...
+
+    def fail_export(self, export_run_id: str, workspace_id: str, error: str, finished_at: str) -> ExportRun: ...
+
+
 class ReviewRunExecutor(Protocol):
     def submit(self, run_id: str, operation: Callable[[], None]) -> None: ...
 
@@ -814,11 +866,13 @@ class ReviewRunExecutor(Protocol):
 __all__ = [
     "AnalysisAssistanceGenerator",
     "ApprovalWithdrawalResult",
+    "ArtifactStore",
     "AssistanceRepository",
     "DomainPackRegistry",
     "EvidenceProvider",
     "EvidenceRequest",
     "EvidenceSnapshot",
+    "ExportRepository",
     "FmeaRepository",
     "GovernanceAcknowledgementQueryPort",
     "GovernanceAnalysisQueryPort",
@@ -847,6 +901,7 @@ __all__ = [
     "RiskRepository",
     "RiskSuggestionGenerator",
     "ScoringRuleRegistry",
+    "SnapshotExporter",
     "SystemTopologyPort",
     "TemplateCompilerPort",
     "TemplateEvidenceProvider",

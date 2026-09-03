@@ -19,10 +19,10 @@ from dataclasses import fields, is_dataclass, replace
 from datetime import datetime, timezone
 from enum import Enum
 from hashlib import sha256
-from typing import cast
+from typing import Any, cast
 
 from core_domain.fmea.governance import FmeaRevision, revision_content_hash
-from core_domain.fmea.states import FMEA_SCHEMA_ID, ActorType
+from core_domain.fmea.states import FMEA_SCHEMA_ID, ActorType, RunStatus
 from core_domain.fmea.template_migration import (
     MigrationPlan,
     MigrationReport,
@@ -32,6 +32,12 @@ from core_domain.fmea.template_migration import (
     SourceStructureItem,
     TemplateDraft,
     TemplatePatchCandidate,
+)
+from core_domain.fmea.value_objects import VersionSet
+from fmea_application.delivery_contracts import (
+    ExportArtifactManifest,
+    ExportRun,
+    validate_export_binding,
 )
 from fmea_application.migration_service import (
     ConfirmMigrationCommand,
@@ -1156,6 +1162,524 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             raise ReviewError(
                 "FMEA_MIGRATION_FAILED", "confirmed migration could not be committed", retryable=True
             ) from None
+        finally:
+            connection.close()
+
+    # ------------------------------------------------------------------
+    # Export lifecycle persistence (Task 4 C1)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _export_scope(command: Any, actor: ActorContext) -> IdempotencyScope:
+        return IdempotencyScope(
+            workspace_id=actor.workspace_id,
+            actor_id=actor.actor_id,
+            command="fmea.export.start",
+            resource_path=f"/fmea/workspaces/{actor.workspace_id}/exports",
+            key_hash=idempotency_key_hash(command.idempotency_key),
+        )
+
+    @staticmethod
+    def _export_run_from_row(row: sqlite3.Row) -> ExportRun:
+        body = _load_object(row["run_json"], "export run")
+        expected = {field.name for field in fields(ExportRun)}
+        if set(body) != expected or row["canonical_json_hash"] != _hash_json(body):
+            raise ValueError("persisted export run is not canonical")
+        run = ExportRun(**body)
+        if _json_value(run) != body:
+            raise ValueError("persisted export run does not match its contract")
+        columns: dict[str, object] = {
+            "workspace_id": run.workspace_id,
+            "export_run_id": run.export_run_id,
+            "revision_id": run.revision_id,
+            "snapshot_id": run.snapshot_id,
+            "snapshot_hash": run.snapshot_hash,
+            "publication_id": run.publication_id,
+            "format": run.format.value,
+            "draft_preview": int(run.draft_preview),
+            "status": run.status.value,
+            "created_at": run.created_at,
+            "filename": run.filename,
+            "artifact_id": run.artifact_id,
+            "started_at": run.started_at,
+            "finished_at": run.finished_at,
+            "error": run.error,
+        }
+        for name, expected_value in columns.items():
+            if row[name] != expected_value:
+                raise ValueError(f"persisted export run column {name} is invalid")
+        if run.status is RunStatus.SUCCEEDED and (row["audit_event_id"] is None or row["outbox_event_id"] is None):
+            raise ValueError("succeeded export run is missing its audit/outbox binding")
+        if run.status is not RunStatus.SUCCEEDED and (
+            row["audit_event_id"] is not None or row["outbox_event_id"] is not None
+        ):
+            raise ValueError("non-terminal export run has a terminal event binding")
+        _load_object(row["request_json"], "export request")
+        if row["request_hash"] != _hash_json(json.loads(row["request_json"])):
+            raise ValueError("persisted export request hash is invalid")
+        if not isinstance(row["actor_id"], str) or not row["actor_id"].strip():
+            raise ValueError("persisted export actor is invalid")
+        if not isinstance(row["idempotency_scope"], str) or not row["idempotency_scope"].strip():
+            raise ValueError("persisted export idempotency scope is invalid")
+        return run
+
+    @staticmethod
+    def _export_manifest_from_row(row: sqlite3.Row) -> ExportArtifactManifest:
+        body = _load_object(row["artifact_json"], "export artifact")
+        expected = {field.name for field in fields(ExportArtifactManifest)}
+        if set(body) != expected or row["canonical_json_hash"] != _hash_json(body):
+            raise ValueError("persisted export artifact is not canonical")
+        manifest = ExportArtifactManifest(**body)
+        if _json_value(manifest) != body:
+            raise ValueError("persisted export artifact does not match its contract")
+        columns: dict[str, object] = {
+            "workspace_id": row["workspace_id"],
+            "artifact_id": manifest.artifact_id,
+            "export_run_id": manifest.export_run_id,
+            "publication_id": manifest.publication_id,
+            "revision_id": manifest.revision_id,
+            "snapshot_id": manifest.snapshot_id,
+            "snapshot_hash": manifest.snapshot_hash,
+            "format": manifest.format.value,
+            "media_type": manifest.media_type,
+            "byte_length": manifest.byte_length,
+            "sha256": manifest.sha256,
+            "draft_preview": int(manifest.draft_preview),
+            "created_at": manifest.created_at,
+            "filename": manifest.filename,
+        }
+        for name, expected_value in columns.items():
+            if row[name] != expected_value:
+                raise ValueError(f"persisted export artifact column {name} is invalid")
+        return manifest
+
+    @staticmethod
+    def _export_run_json(run: ExportRun) -> tuple[str, str]:
+        return _contract_json(run)
+
+    @staticmethod
+    def _export_manifest_json(manifest: ExportArtifactManifest) -> tuple[str, str]:
+        return _contract_json(manifest)
+
+    def get_export_run(self, export_run_id: str, workspace_id: str) -> ExportRun | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            return None if row is None else self._export_run_from_row(row)
+        finally:
+            connection.close()
+
+    def get_export_artifact(self, artifact_id: str, workspace_id: str) -> ExportArtifactManifest | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT * FROM fmea_export_artifacts WHERE workspace_id=? AND artifact_id=?",
+                (workspace_id, artifact_id),
+            ).fetchone()
+            return None if row is None else self._export_manifest_from_row(row)
+        finally:
+            connection.close()
+
+    def reserve_export_run(
+        self,
+        command: Any,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        created_at: str,
+    ) -> ExportRun:
+        scope = self._export_scope(command, actor)
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            idempotency = self._idempotency_row(connection, scope)
+            existing_row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (actor.workspace_id, command.export_run_id),
+            ).fetchone()
+            if idempotency is not None:
+                if idempotency["payload_hash"] != request_hash:
+                    raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
+                if existing_row is None:
+                    raise ValueError("persisted export idempotency has no run")
+                run = self._export_run_from_row(existing_row)
+                if existing_row["request_hash"] != request_hash or existing_row["idempotency_scope"] != scope.scope_key:
+                    raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
+                connection.execute("COMMIT")
+                return run
+            if existing_row is not None:
+                self._export_run_from_row(existing_row)
+                if existing_row["request_hash"] != request_hash:
+                    raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
+                raise ValueError("persisted export run is missing idempotency reservation")
+
+            self._insert_idempotency(connection, scope, request_hash, created_at)
+            self._fail("export.reserve")
+            run = ExportRun(
+                export_run_id=command.export_run_id,
+                workspace_id=actor.workspace_id,
+                revision_id=command.revision_id,
+                snapshot_id=command.snapshot_id,
+                snapshot_hash=command.snapshot_hash,
+                publication_id=command.publication_id,
+                format=command.format,
+                draft_preview=command.draft_preview,
+                status=RunStatus.QUEUED,
+                created_at=created_at,
+                filename=command.filename,
+            )
+            run_json, canonical_hash = self._export_run_json(run)
+            connection.execute(
+                "INSERT INTO fmea_export_runs "
+                "(workspace_id,export_run_id,revision_id,snapshot_id,snapshot_hash,publication_id,format,draft_preview,status,"
+                "created_at,filename,artifact_id,started_at,finished_at,error,actor_id,idempotency_scope,request_json,request_hash,"
+                "audit_event_id,outbox_event_id,run_json,canonical_json_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    run.workspace_id,
+                    run.export_run_id,
+                    run.revision_id,
+                    run.snapshot_id,
+                    run.snapshot_hash,
+                    run.publication_id,
+                    run.format.value,
+                    int(run.draft_preview),
+                    run.status.value,
+                    run.created_at,
+                    run.filename,
+                    run.artifact_id,
+                    run.started_at,
+                    run.finished_at,
+                    run.error,
+                    actor.actor_id,
+                    scope.scope_key,
+                    request_json,
+                    request_hash,
+                    None,
+                    None,
+                    run_json,
+                    canonical_hash,
+                ),
+            )
+            connection.execute("COMMIT")
+            return run
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def mark_export_running(self, export_run_id: str, workspace_id: str, started_at: str) -> ExportRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("export run was not found")
+            run = self._export_run_from_row(row)
+            if run.status is RunStatus.RUNNING:
+                connection.execute("COMMIT")
+                return run
+            if run.status is not RunStatus.QUEUED:
+                raise ValueError("export run cannot enter running state")
+            updated = replace(run, status=RunStatus.RUNNING, started_at=started_at)
+            run_json, canonical_hash = self._export_run_json(updated)
+            connection.execute(
+                "UPDATE fmea_export_runs SET status=?,started_at=?,run_json=?,canonical_json_hash=? "
+                "WHERE workspace_id=? AND export_run_id=?",
+                (
+                    updated.status.value,
+                    updated.started_at,
+                    run_json,
+                    canonical_hash,
+                    workspace_id,
+                    export_run_id,
+                ),
+            )
+            connection.execute("COMMIT")
+            return updated
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def _export_audit_and_outbox(
+        self,
+        connection: sqlite3.Connection,
+        run: ExportRun,
+        manifest: ExportArtifactManifest,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        finished_at: str,
+    ) -> tuple[str, str]:
+        request = _load_object(request_json, "export request")
+        key = request.get("idempotency_key")
+        if not isinstance(key, str):
+            raise ValueError("export request idempotency key is invalid")
+        scope = self._export_scope(type("Command", (), {"idempotency_key": key})(), actor)
+        if (
+            scope.scope_key
+            != connection.execute(
+                "SELECT idempotency_scope FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (run.workspace_id, run.export_run_id),
+            ).fetchone()[0]
+        ):
+            raise ValueError("export idempotency scope is invalid")
+        audit_id = "export-audit-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
+        outbox_id = "export-outbox-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
+        payload = {
+            "schema": "graphrag.fmea.export.lifecycle.v1",
+            "event": "completed",
+            "run": _json_value(run),
+            "artifact": _json_value(manifest),
+        }
+        audit = AuditEvent(
+            event_id=audit_id,
+            occurred_at_server=finished_at,
+            workspace_id=run.workspace_id,
+            actor_id=actor.actor_id,
+            actor_type=actor.actor_type,
+            actor_roles=tuple(sorted(actor.roles)),
+            command="fmea.export.start",
+            action=None,
+            reason_code=None,
+            reason="verified FMEA export completed",
+            analysis_id="fmea-export",
+            row_id=run.revision_id,
+            suggestion_id=None,
+            decision_id=None,
+            expected_record_version=None,
+            applied_record_version=None,
+            before_hash=None,
+            after_hash=_prefixed(manifest.snapshot_hash),
+            changed_fields=(),
+            evidence_ids=(),
+            evidence_request_targets=(),
+            idempotency_key_hash=scope.key_hash,
+            canonical_payload_hash=request_hash,
+            versions=VersionSet(
+                schema_id=FMEA_SCHEMA_ID,
+                data_version="export-v1",
+                graph_version="export-v1",
+                evidence_pack_version="export-v1",
+                profile_version="export-v1",
+                template_version="export-v1",
+                scoring_version="export-v1",
+                prompt_version="export-v1",
+                model_version="export-system",
+                input_snapshot_hash=manifest.snapshot_hash,
+            ),
+            template_id="fmea-export",
+            template_version="1.0.0",
+            profile_id="export",
+            profile_version="1.0.0",
+            model_manifest=None,
+            request_id=run.export_run_id,
+            trace_id=run.export_run_id,
+            retrieval_trace_id=run.export_run_id,
+            run_id=run.export_run_id,
+            request_hash=request_hash,
+        )
+        meta = _PreparedMeta(
+            "revision",
+            run.workspace_id,
+            run.revision_id,
+            run.revision_id,
+            "revision",
+            "fmea.export.start",
+            payload,
+        )
+        self._insert_audit(connection, audit, scope, request_hash, meta)
+        outbox = OutboxEvent(
+            event_id=outbox_id,
+            workspace_id=run.workspace_id,
+            aggregate_type="fmea_governance",
+            aggregate_id=run.revision_id,
+            event_type="export.completed",
+            payload=payload,
+            payload_hash=outbox_payload_hash(payload),
+            created_at=finished_at,
+            scope_key=scope.scope_key,
+        )
+        self._insert_outbox(connection, outbox, scope, meta, "export.completed")
+        return audit_id, outbox_id
+
+    def complete_export(
+        self,
+        run: ExportRun,
+        manifest: ExportArtifactManifest,
+        actor: ActorContext,
+        request_json: str,
+        request_hash: str,
+        finished_at: str,
+    ) -> ExportRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (actor.workspace_id, run.export_run_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("export run was not found")
+            current = self._export_run_from_row(row)
+            if current.status is RunStatus.SUCCEEDED:
+                connection.execute("COMMIT")
+                return current
+            if current.status is not RunStatus.RUNNING:
+                raise ValueError("export run is not running")
+            if current != run or row["request_hash"] != request_hash:
+                raise ValueError("export run binding is stale")
+            completed = replace(
+                current,
+                status=RunStatus.SUCCEEDED,
+                finished_at=finished_at,
+                artifact_id=manifest.artifact_id,
+            )
+            if (
+                manifest.export_run_id != completed.export_run_id
+                or manifest.revision_id != completed.revision_id
+                or manifest.snapshot_id != completed.snapshot_id
+                or manifest.snapshot_hash != completed.snapshot_hash
+                or manifest.publication_id != completed.publication_id
+                or manifest.format != completed.format
+                or manifest.draft_preview != completed.draft_preview
+                or manifest.filename != completed.filename
+            ):
+                raise ValueError("export artifact binding is invalid")
+            validate_export_binding(completed, manifest)
+            artifact_json, artifact_hash = self._export_manifest_json(manifest)
+            existing_artifact = connection.execute(
+                "SELECT * FROM fmea_export_artifacts WHERE workspace_id=? AND artifact_id=?",
+                (actor.workspace_id, manifest.artifact_id),
+            ).fetchone()
+            if existing_artifact is None:
+                connection.execute(
+                    "INSERT INTO fmea_export_artifacts "
+                    "(workspace_id,artifact_id,export_run_id,publication_id,revision_id,snapshot_id,snapshot_hash,format,media_type,"
+                    "byte_length,sha256,draft_preview,created_at,filename,artifact_json,canonical_json_hash) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        actor.workspace_id,
+                        manifest.artifact_id,
+                        manifest.export_run_id,
+                        manifest.publication_id,
+                        manifest.revision_id,
+                        manifest.snapshot_id,
+                        manifest.snapshot_hash,
+                        manifest.format.value,
+                        manifest.media_type,
+                        manifest.byte_length,
+                        manifest.sha256,
+                        int(manifest.draft_preview),
+                        manifest.created_at,
+                        manifest.filename,
+                        artifact_json,
+                        artifact_hash,
+                    ),
+                )
+            elif self._export_manifest_from_row(existing_artifact) != manifest:
+                raise ValueError("export artifact identity has different content")
+
+            audit_id, outbox_id = self._export_audit_and_outbox(
+                connection, completed, manifest, actor, request_json, request_hash, finished_at
+            )
+            run_json, canonical_hash = self._export_run_json(completed)
+            connection.execute(
+                "UPDATE fmea_export_runs SET status=?,finished_at=?,artifact_id=?,audit_event_id=?,outbox_event_id=?,"
+                "run_json=?,canonical_json_hash=? WHERE workspace_id=? AND export_run_id=?",
+                (
+                    completed.status.value,
+                    completed.finished_at,
+                    completed.artifact_id,
+                    audit_id,
+                    outbox_id,
+                    run_json,
+                    canonical_hash,
+                    actor.workspace_id,
+                    completed.export_run_id,
+                ),
+            )
+            response_json = canonical_json(_json_value(completed))
+            cursor = connection.execute(
+                "UPDATE idempotency_records SET state='completed',status_code=201,resource_id=?,response_json=?,completed_at=? "
+                "WHERE scope_key=? AND payload_hash=? AND state='reserved'",
+                (completed.export_run_id, response_json, finished_at, row["idempotency_scope"], request_hash),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("export idempotency completion failed")
+            self._fail("export.commit")
+            connection.execute("COMMIT")
+            return completed
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def fail_export(self, export_run_id: str, workspace_id: str, error: str, finished_at: str) -> ExportRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("export run was not found")
+            current = self._export_run_from_row(row)
+            if current.status in {RunStatus.FAILED, RunStatus.SUCCEEDED}:
+                connection.execute("COMMIT")
+                return current
+            if current.status not in {RunStatus.QUEUED, RunStatus.RUNNING}:
+                raise ValueError("export run cannot fail from its current state")
+            updated = replace(
+                current,
+                status=RunStatus.FAILED,
+                started_at=current.started_at or finished_at,
+                finished_at=finished_at,
+                error=_text(error[:512], "error"),
+            )
+            run_json, canonical_hash = self._export_run_json(updated)
+            connection.execute(
+                "UPDATE fmea_export_runs SET status=?,started_at=?,finished_at=?,error=?,run_json=?,canonical_json_hash=? "
+                "WHERE workspace_id=? AND export_run_id=?",
+                (
+                    updated.status.value,
+                    updated.started_at,
+                    updated.finished_at,
+                    updated.error,
+                    run_json,
+                    canonical_hash,
+                    workspace_id,
+                    export_run_id,
+                ),
+            )
+            response_json = canonical_json(_json_value(updated))
+            cursor = connection.execute(
+                "UPDATE idempotency_records SET state='completed',status_code=500,resource_id=?,response_json=?,completed_at=? "
+                "WHERE scope_key=? AND state='reserved'",
+                (export_run_id, response_json, finished_at, row["idempotency_scope"]),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("export failure idempotency completion failed")
+            self._fail("export.fail")
+            connection.execute("COMMIT")
+            return updated
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
         finally:
             connection.close()
 
