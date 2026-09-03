@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import fields
 from pathlib import Path
 from types import SimpleNamespace
+from typing import ClassVar
 
+from core_domain.fmea.governance import FmeaRevision
 from fmea_application.migration_service import (
     CompatibilityCommand,
     MigrationCandidate,
@@ -19,23 +22,38 @@ from tests.fmea_governance_fixtures import (
     seed_authoritative_analysis,
 )
 
+SOURCE_HASH = "a" * 64
 TARGET_HASH = "b" * 64
+
+
+def _materialized_target_revision(source: FmeaRevision) -> FmeaRevision:
+    values = {field.name: getattr(source, field.name) for field in fields(source) if field.name != "revision_hash"}
+    values["domain_pack_identity"] = ("fuel-combustion", "2.0.0", TARGET_HASH)
+    return make_fmea_revision(**values)
 
 
 class _MigrationAdapter:
     source_identity = ("fuel-combustion", "1.0.0")
     target_identity = ("fuel-combustion", "2.0.0")
 
-    def migrate(self, source: object) -> MigrationCandidate:
+    def migrate(self, source: FmeaRevision) -> MigrationCandidate:
         return MigrationCandidate(
-            target_domain_pack_identity=("fuel-combustion", "2.0.0", TARGET_HASH),
+            target_revision=_materialized_target_revision(source),
             mapped_fields=("failure_mode",),
         )
 
 
 class _DomainPackRegistry:
-    def get(self, pack_id: str, version: str) -> object:
-        return SimpleNamespace(pack_id=pack_id, version=version, content_hash=TARGET_HASH)
+    _hashes: ClassVar[dict[tuple[str, str], str]] = {
+        ("fuel-combustion", "1.0.0"): SOURCE_HASH,
+        ("fuel-combustion", "2.0.0"): TARGET_HASH,
+    }
+
+    def get(self, pack_id: str, version: str) -> object | None:
+        content_hash = self._hashes.get((pack_id, version))
+        if content_hash is None:
+            return None
+        return SimpleNamespace(pack_id=pack_id, version=version, content_hash=content_hash)
 
 
 def test_workspace_migration_runtime_wires_explicit_adapter_and_callable_paths(tmp_path: Path) -> None:
