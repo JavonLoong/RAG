@@ -442,6 +442,12 @@ git commit -m "feat(fmea): export consistent xlsx and docx"
 - Modify: `api_server/current_console/chroma_rag_poc/src/chroma_rag_poc/api.py`
 - Modify: `scripts/fmea_skill.py`
 - Modify: `fmea_infrastructure/local_auth.py`
+- Modify: `fmea_application/ports.py`
+- Modify: `fmea_application/domain_pack_service.py`
+- Modify: `fmea_application/migration_service.py`
+- Modify: `fmea_application/export_service.py`
+- Modify: `fmea_infrastructure/delivery_repository_sqlite.py`
+- Modify: `fmea_infrastructure/composition.py`
 - Test: `tests/unit/test_fmea_delivery_api_contracts.py`
 - Test: `tests/unit/test_fmea_codex_skill.py`
 - Test: `tests/integration/test_fmea_delivery_api_v1.py`
@@ -513,6 +519,10 @@ GET  /api/v1/fmea/export-artifacts/{artifact_id}
 CLI groups `domain-pack`, `migration`, and `export` mirror the resources, including `export narrative-suggest`. File input is read as bounded bytes by CLI/server; clients cannot supply output paths, model IDs, provider URLs, migration adapters, or filenames. Add local roles `template_admin` and `exporter` while retaining separate explicit confirmations.
 
 Use `superpowers:writing-skills` when implementing `skills/graphrag-fmea/SKILL.md`. The Skill invokes `scripts/fmea_skill.py` only, never imports repositories or reads SQLite, defaults to query/status/export-preview operations, explains all orthogonal states, preserves EvidencePack citations, and requires the exact human confirmation flag for assistance adoption, field review, risk confirmation, propagation review, approval, publication, withdrawal, template registration, or migration. It must not infer confirmation from conversational wording and must surface safe CLI errors unchanged.
+
+The transport layer may expose only typed application-service operations. Template drafts, patch candidates, and decisions must survive separate CLI processes and service restarts through the delivery repository; route and CLI modules must not probe repositories or compose subordinate runtimes. Response projection must use the real domain/application contracts and fail explicitly on unsupported values instead of converting unknown fields to `null`.
+
+All mutating resources retain operational concurrency semantics rather than decorative headers: the application command receives the parsed expected record version and idempotency key, rejects stale versions, replays matching requests, and rejects key reuse with a different payload. REST returns the current `ETag`; CLI carries the same expected-version value. Patch status returns the same provisional or decided state through both transports. Narrative lookup honors the requested revision through an application query port. Default migration composition registers only explicit server-owned adapters and fails closed when no compatible path exists.
 
 - [ ] **Step 4: Run delivery and governance transport matrices**
 

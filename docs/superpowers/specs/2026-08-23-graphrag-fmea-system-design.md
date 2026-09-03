@@ -502,6 +502,7 @@ actor 类型严格区分 `human`、`model` 和 `system`。批准和发布要求 
 
 - revision 和 row 使用递增 `record_version`；
 - HTTP 使用 `ETag/If-Match`，冲突返回 409 或 412；
+- REST 与 CLI 中的 `If-Match` 必须进入同一应用命令并在持久化事务中校验；不得只解析请求头后丢弃。响应的 `ETag` 来自服务返回的实际记录版本。
 - 不允许静默覆盖；
 - unresolved 项可以由人带理由接受，但必须在发布清单中显式列出；
 - published revision 不可修改；修改时从它创建新 revision；
@@ -609,6 +610,7 @@ template import/validate
 - 固定退出码区分输入、权限、冲突、运行失败和部分成功；
 - CLI 与 HTTP 共享 application service、权限、状态机和审计；
 - CLI 不直接访问 SQLite。
+- REST 路由同样不得探测仓储、拼装仓储适配器或读取 SQLite；跨进程命令所需的模板草稿、patch 候选与人工决定由应用端口和 FMEA delivery repository 持久化。
 
 ### 13.2 Codex Skill
 
