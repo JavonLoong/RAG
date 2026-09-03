@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from math import isfinite
+from types import MappingProxyType
 from typing import Literal, TypeVar
 
 from core_domain.fmea.filename_policy import validate_filename
@@ -138,7 +139,14 @@ def _boundary_call(
     try:
         return operation()
     except Exception as exc:
-        if idempotency_conflict and type(exc) is ValueError and str(exc) == "FMEA_EXPORT_IDEMPOTENCY_CONFLICT":
+        args = exc.args if type(exc) is ValueError else None
+        if (
+            idempotency_conflict
+            and type(args) is tuple
+            and len(args) == 1
+            and type(args[0]) is str
+            and args[0] == "FMEA_EXPORT_IDEMPOTENCY_CONFLICT"
+        ):
             raise ExportServiceError(
                 "FMEA_EXPORT_IDEMPOTENCY_CONFLICT", "idempotency key has a different payload"
             ) from None
@@ -152,12 +160,20 @@ def _narrative_boundary_call(operation: Callable[[], _T]) -> _T:
         return operation()
     except Exception as exc:
         if type(exc) is ExportNarrativeGenerationError:
-            message = (
-                "narrative generation result is invalid"
-                if exc.code == "FMEA_EXPORT_NARRATIVE_INVALID"
-                else "narrative generation is temporarily unavailable"
-            )
-            raise ExportServiceError(exc.code, message, exc.retryable) from None
+            code = exc.code
+            retryable = exc.retryable
+            if type(code) is str and code in ExportNarrativeGenerationError._CODES and type(retryable) is bool:
+                message = (
+                    "narrative generation result is invalid"
+                    if code == "FMEA_EXPORT_NARRATIVE_INVALID"
+                    else "narrative generation is temporarily unavailable"
+                )
+                raise ExportServiceError(code, message, retryable) from None
+            raise ExportServiceError(
+                "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
+                "narrative generation is temporarily unavailable",
+                retryable=True,
+            ) from None
         if type(exc) is ValueError:
             raise ExportServiceError(
                 "FMEA_EXPORT_NARRATIVE_INVALID", "narrative generation result is invalid"
@@ -167,6 +183,316 @@ def _narrative_boundary_call(operation: Callable[[], _T]) -> _T:
             "narrative generation is temporarily unavailable",
             retryable=True,
         ) from None
+
+
+def _plain_string(value: object) -> str:
+    if type(value) is not str:
+        raise ValueError("provider string is invalid")
+    return value
+
+
+def _plain_optional_string(value: object) -> str | None:
+    if value is None:
+        return None
+    return _plain_string(value)
+
+
+def _plain_json(value: object, *, depth: int = 0) -> object:
+    """Copy provider data without invoking provider-defined protocols."""
+
+    if depth > 8:
+        raise ValueError("provider JSON depth is invalid")
+    value_type = type(value)
+    if value is None or value_type in {bool, int, str}:
+        return value
+    if value_type is float:
+        if not isfinite(value):
+            raise ValueError("provider JSON number is invalid")
+        return value
+    if value_type is tuple:
+        if len(value) > 10_000:
+            raise ValueError("provider JSON sequence is too large")
+        return tuple(_plain_json(item, depth=depth + 1) for item in value)
+    if value_type is list:
+        if len(value) > 10_000:
+            raise ValueError("provider JSON sequence is too large")
+        return [_plain_json(item, depth=depth + 1) for item in value]
+    if value_type in {dict, MappingProxyType}:
+        if len(value) > 10_000:
+            raise ValueError("provider JSON mapping is too large")
+        copied: dict[str, object] = {}
+        for key, item in value.items():
+            if type(key) is not str:
+                raise ValueError("provider JSON key is invalid")
+            copied[key] = _plain_json(item, depth=depth + 1)
+        return copied
+    raise ValueError("provider JSON value is invalid")
+
+
+def _plain_mapping(value: object) -> dict[str, object]:
+    copied = _plain_json(value)
+    if type(copied) is not dict:
+        raise ValueError("provider mapping is invalid")
+    return copied
+
+
+def _plain_mapping_tuple(value: object) -> tuple[dict[str, object], ...]:
+    if type(value) is not tuple:
+        raise ValueError("provider mapping sequence is invalid")
+    return tuple(_plain_mapping(item) for item in value)
+
+
+def _rebuild_snapshot(value: object) -> NormalizedFmeaSnapshot:
+    if type(value) is not NormalizedFmeaSnapshot:
+        raise ValueError("provider snapshot is invalid")
+    values = {
+        "schema_version": _plain_string(value.schema_version),
+        "snapshot_id": _plain_string(value.snapshot_id),
+        "workspace_id": _plain_string(value.workspace_id),
+        "analysis_id": _plain_string(value.analysis_id),
+        "revision_id": _plain_string(value.revision_id),
+        "revision_hash": _plain_string(value.revision_hash),
+        "publication_id": _plain_string(value.publication_id),
+        "manifest_id": _plain_string(value.manifest_id),
+        "rows": _plain_mapping_tuple(value.rows),
+        "risk_records": _plain_mapping_tuple(value.risk_records),
+        "propagation": None if value.propagation is None else _plain_mapping(value.propagation),
+        "evidence_summary": _plain_mapping_tuple(value.evidence_summary),
+        "decision_summary": _plain_mapping_tuple(value.decision_summary),
+        "version_manifest": _plain_mapping(value.version_manifest),
+        "unresolved_items": _plain_mapping_tuple(value.unresolved_items),
+        "audit_summary": _plain_mapping(value.audit_summary),
+        "row_count": value.row_count,
+        "snapshot_hash": _plain_string(value.snapshot_hash),
+        "created_at": _plain_string(value.created_at),
+    }
+    if type(values["row_count"]) is not int:
+        raise ValueError("provider snapshot row count is invalid")
+    return NormalizedFmeaSnapshot(**values)  # type: ignore[arg-type]
+
+
+def _rebuild_publication(value: object) -> PublishedRevision:
+    if type(value) is not PublishedRevision:
+        raise ValueError("provider publication is invalid")
+    values = {
+        name: _plain_string(getattr(value, name))
+        for name in (
+            "publication_id",
+            "workspace_id",
+            "analysis_id",
+            "revision_id",
+            "revision_hash",
+            "approval_id",
+            "manifest_id",
+            "manifest_hash",
+            "snapshot_id",
+            "snapshot_hash",
+            "audit_chain_head",
+            "publisher_actor_id",
+            "created_at",
+        )
+    }
+    record_version = value.record_version
+    if type(record_version) is not int:
+        raise ValueError("provider publication version is invalid")
+    return PublishedRevision(**values, record_version=record_version)
+
+
+def _rebuild_lifecycle(value: object) -> tuple[PublishedRevision, RevisionPublicationStatus]:
+    if type(value) is not PublicationLifecycleView:
+        raise ValueError("provider publication lifecycle is invalid")
+    publication = _rebuild_publication(value.publication)
+    status = value.effective_status
+    if type(status) is not RevisionPublicationStatus:
+        raise ValueError("provider publication status is invalid")
+    if status is RevisionPublicationStatus.PUBLISHED and (
+        value.withdrawal is not None or value.supersession is not None
+    ):
+        raise ValueError("provider publication lifecycle is invalid")
+    return publication, status
+
+
+def _rebuild_eligibility(value: object) -> ExportEligibilityRecord:
+    if type(value) is not ExportEligibilityRecord:
+        raise ValueError("provider export eligibility is invalid")
+    source_hashes = value.source_hashes
+    if type(source_hashes) is not tuple:
+        raise ValueError("provider export eligibility hashes are invalid")
+    copied_hashes: list[tuple[str, str]] = []
+    for pair in source_hashes:
+        if type(pair) is not tuple or len(pair) != 2:
+            raise ValueError("provider export eligibility hash is invalid")
+        copied_hashes.append((_plain_string(pair[0]), _plain_string(pair[1])))
+    eligible = value.eligible
+    if type(eligible) is not bool:
+        raise ValueError("provider export eligibility decision is invalid")
+    return ExportEligibilityRecord(
+        eligibility_id=_plain_string(value.eligibility_id),
+        workspace_id=_plain_string(value.workspace_id),
+        publication_id=_plain_string(value.publication_id),
+        manifest_id=_plain_string(value.manifest_id),
+        eligible=eligible,
+        source_hashes=tuple(copied_hashes),
+        eligibility_hash=_plain_string(value.eligibility_hash),
+        created_at=_plain_string(value.created_at),
+    )
+
+
+def _rebuild_run(value: object) -> ExportRun:
+    if type(value) is not ExportRun:
+        raise ValueError("provider export run is invalid")
+    export_format = value.format
+    status = value.status
+    draft_preview = value.draft_preview
+    if type(export_format) is not ExportFormat or type(status) is not RunStatus or type(draft_preview) is not bool:
+        raise ValueError("provider export run state is invalid")
+    return ExportRun(
+        export_run_id=_plain_string(value.export_run_id),
+        workspace_id=_plain_string(value.workspace_id),
+        revision_id=_plain_string(value.revision_id),
+        snapshot_id=_plain_optional_string(value.snapshot_id),
+        snapshot_hash=_plain_string(value.snapshot_hash),
+        publication_id=_plain_optional_string(value.publication_id),
+        format=export_format,
+        draft_preview=draft_preview,
+        status=status,
+        created_at=_plain_string(value.created_at),
+        filename=_plain_optional_string(value.filename),
+        artifact_id=_plain_optional_string(value.artifact_id),
+        started_at=_plain_optional_string(value.started_at),
+        finished_at=_plain_optional_string(value.finished_at),
+        error=_plain_optional_string(value.error),
+    )
+
+
+def _rebuild_manifest(value: object) -> ExportArtifactManifest:
+    if type(value) is not ExportArtifactManifest:
+        raise ValueError("provider export manifest is invalid")
+    export_format = value.format
+    draft_preview = value.draft_preview
+    byte_length = value.byte_length
+    if type(export_format) is not ExportFormat or type(draft_preview) is not bool or type(byte_length) is not int:
+        raise ValueError("provider export manifest state is invalid")
+    return ExportArtifactManifest(
+        artifact_id=_plain_string(value.artifact_id),
+        export_run_id=_plain_string(value.export_run_id),
+        publication_id=_plain_optional_string(value.publication_id),
+        revision_id=_plain_string(value.revision_id),
+        snapshot_id=_plain_optional_string(value.snapshot_id),
+        snapshot_hash=_plain_string(value.snapshot_hash),
+        format=export_format,
+        media_type=_plain_string(value.media_type),
+        byte_length=byte_length,
+        sha256=_plain_string(value.sha256),
+        draft_preview=draft_preview,
+        created_at=_plain_string(value.created_at),
+        filename=_plain_optional_string(value.filename),
+    )
+
+
+def _rebuild_delivery(value: object) -> tuple[ExportRun, ExportArtifactManifest]:
+    if type(value) is not tuple or len(value) != 2:
+        raise ValueError("provider export delivery is invalid")
+    return _rebuild_run(value[0]), _rebuild_manifest(value[1])
+
+
+def _rebuild_artifact(value: object) -> VerifiedExportArtifact:
+    if type(value) is not VerifiedExportArtifact:
+        raise ValueError("provider verified artifact is invalid")
+    payload = value.payload
+    if type(payload) is not bytes:
+        raise ValueError("provider artifact payload is invalid")
+    return VerifiedExportArtifact(
+        workspace_id=_plain_string(value.workspace_id),
+        export_run_id=_plain_string(value.export_run_id),
+        artifact_id=_plain_string(value.artifact_id),
+        filename=_plain_string(value.filename),
+        payload=payload,
+        manifest=_rebuild_manifest(value.manifest),
+    )
+
+
+def _rebuild_narrative_result_unchecked(value: object) -> ExportNarrativeGenerationResult:
+    if type(value) is not ExportNarrativeGenerationResult:
+        raise ValueError("provider narrative result is invalid")
+    draft = value.draft
+    if type(draft) is not ExportNarrativeDraft or type(draft.sections) is not tuple or type(draft.claims) is not tuple:
+        raise ValueError("provider narrative draft is invalid")
+    sections: list[ExportNarrativeSection] = []
+    for section in draft.sections:
+        if type(section) is not ExportNarrativeSection or type(section.claim_ids) is not tuple:
+            raise ValueError("provider narrative section is invalid")
+        sections.append(
+            ExportNarrativeSection(
+                section_id=_plain_string(section.section_id),
+                title=_plain_string(section.title),
+                body=_plain_string(section.body),
+                claim_ids=tuple(_plain_string(item) for item in section.claim_ids),
+            )
+        )
+    claims: list[ExportNarrativeClaim] = []
+    for claim in draft.claims:
+        if type(claim) is not ExportNarrativeClaim or type(claim.evidence_ids) is not tuple:
+            raise ValueError("provider narrative claim is invalid")
+        claims.append(
+            ExportNarrativeClaim(
+                claim_id=_plain_string(claim.claim_id),
+                text=_plain_string(claim.text),
+                evidence_ids=tuple(_plain_string(item) for item in claim.evidence_ids),
+            )
+        )
+    status = value.status
+    repair_count = value.repair_count
+    if type(status) is not str or type(repair_count) is not int:
+        raise ValueError("provider narrative status is invalid")
+    return ExportNarrativeGenerationResult(
+        draft=ExportNarrativeDraft(
+            title=_plain_string(draft.title),
+            sections=tuple(sections),
+            claims=tuple(claims),
+        ),
+        model_hash=_plain_string(value.model_hash),
+        prompt_hash=_plain_string(value.prompt_hash),
+        run_id=_plain_string(value.run_id),
+        trace_id=_plain_string(value.trace_id),
+        status=status,  # type: ignore[arg-type]
+        repair_count=repair_count,
+    )
+
+
+def _rebuild_narrative_result(value: object) -> ExportNarrativeGenerationResult:
+    try:
+        return _rebuild_narrative_result_unchecked(value)
+    except Exception:
+        raise ValueError("provider narrative result is invalid") from None
+
+
+def _verify_artifact_value(
+    stored: object,
+    manifest: ExportArtifactManifest,
+    workspace_id: str,
+    payload: bytes | None,
+) -> VerifiedExportArtifact:
+    stored = _rebuild_artifact(stored)
+    manifest = _rebuild_manifest(manifest)
+    if type(workspace_id) is not str or (payload is not None and type(payload) is not bytes):
+        raise ValueError("artifact verification input is invalid")
+    if (
+        stored.workspace_id != workspace_id
+        or stored.export_run_id != manifest.export_run_id
+        or stored.artifact_id != manifest.artifact_id
+        or stored.filename != manifest.filename
+        or stored.manifest != manifest
+    ):
+        raise ValueError("artifact binding is invalid")
+    if payload is not None and stored.payload != payload:
+        raise ValueError("artifact payload changed")
+    if len(stored.payload) != manifest.byte_length:
+        raise ValueError("artifact length is invalid")
+    digest = sha256(stored.payload).hexdigest()
+    if manifest.sha256 not in {digest, f"sha256:{digest}"}:
+        raise ValueError("artifact hash is invalid")
+    return stored
 
 
 def _text(value: object, name: str, *, limit: int = _MAX_TEXT) -> str:
@@ -592,8 +918,10 @@ class ExportService:
 
     @staticmethod
     def _validate_run_binding(run: object, command: StartExportCommand, actor: ActorContext) -> ExportRun:
-        if type(run) is not ExportRun:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
+        try:
+            run = _rebuild_run(run)
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from None
         if (
             run.export_run_id != command.export_run_id
             or run.workspace_id != actor.workspace_id
@@ -610,7 +938,12 @@ class ExportService:
 
     @staticmethod
     def _same_run_binding(candidate: object, source: ExportRun) -> bool:
-        return type(candidate) is ExportRun and (
+        try:
+            candidate = _rebuild_run(candidate)
+            source = _rebuild_run(source)
+        except Exception:
+            return False
+        return (
             candidate.export_run_id,
             candidate.workspace_id,
             candidate.revision_id,
@@ -637,14 +970,16 @@ class ExportService:
     def _load_snapshot(self, command: StartExportCommand):
         lookup_id = command.publication_id or command.snapshot_id
         snapshot = _boundary_call(
-            lambda: self.governance_repository.get_snapshot(lookup_id, command.workspace_id),
+            lambda: (
+                None
+                if (raw := self.governance_repository.get_snapshot(lookup_id, command.workspace_id)) is None
+                else _rebuild_snapshot(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="snapshot persistence is invalid",
         )
         if snapshot is None:
             raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "exact export snapshot was not found")
-        if type(snapshot) is not NormalizedFmeaSnapshot:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "snapshot persistence is invalid")
         if (
             snapshot.workspace_id != command.workspace_id
             or snapshot.snapshot_id != command.snapshot_id
@@ -654,28 +989,39 @@ class ExportService:
             raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_STALE", "export snapshot binding is stale")
         if not command.draft_preview:
             publication = _boundary_call(
-                lambda: self.governance_repository.get_publication(command.publication_id, command.workspace_id),
+                lambda: (
+                    None
+                    if (raw := self.governance_repository.get_publication(command.publication_id, command.workspace_id))
+                    is None
+                    else _rebuild_publication(raw)
+                ),
                 code="FMEA_EXPORT_PERSISTENCE_INVALID",
                 message="publication persistence is invalid",
             )
             lifecycle = _boundary_call(
-                lambda: self.governance_repository.get_publication_lifecycle(
-                    command.publication_id, command.workspace_id
+                lambda: (
+                    None
+                    if (
+                        raw := self.governance_repository.get_publication_lifecycle(
+                            command.publication_id, command.workspace_id
+                        )
+                    )
+                    is None
+                    else _rebuild_lifecycle(raw)
                 ),
                 code="FMEA_EXPORT_PERSISTENCE_INVALID",
                 message="publication persistence is invalid",
             )
             if publication is None or lifecycle is None:
                 raise ExportServiceError("FMEA_EXPORT_PUBLICATION_NOT_FOUND", "publication was not found")
-            if type(publication) is not PublishedRevision or type(lifecycle) is not PublicationLifecycleView:
-                raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "publication persistence is invalid")
+            lifecycle_publication, lifecycle_status = lifecycle
             if (
                 publication.workspace_id != command.workspace_id
                 or publication.publication_id != command.publication_id
-                or lifecycle.publication != publication
+                or lifecycle_publication != publication
             ):
                 raise ExportServiceError("FMEA_EXPORT_PUBLICATION_STALE", "publication binding is stale")
-            if lifecycle.effective_status is not RevisionPublicationStatus.PUBLISHED:
+            if lifecycle_status is not RevisionPublicationStatus.PUBLISHED:
                 raise ExportServiceError("FMEA_EXPORT_NOT_ELIGIBLE", "publication is not currently exportable")
             if (
                 publication.revision_id != command.revision_id
@@ -688,12 +1034,19 @@ class ExportService:
             ):
                 raise ExportServiceError("FMEA_EXPORT_PUBLICATION_STALE", "publication binding is stale")
             eligibility = _boundary_call(
-                lambda: self.governance_repository.get_export_eligibility(command.publication_id, command.workspace_id),
+                lambda: (
+                    None
+                    if (
+                        raw := self.governance_repository.get_export_eligibility(
+                            command.publication_id, command.workspace_id
+                        )
+                    )
+                    is None
+                    else _rebuild_eligibility(raw)
+                ),
                 code="FMEA_EXPORT_PERSISTENCE_INVALID",
                 message="export eligibility persistence is invalid",
             )
-            if eligibility is not None and type(eligibility) is not ExportEligibilityRecord:
-                raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export eligibility persistence is invalid")
             if eligibility is None or not eligibility.eligible:
                 raise ExportServiceError("FMEA_EXPORT_NOT_ELIGIBLE", "publication is not eligible for export")
             if (
@@ -713,40 +1066,28 @@ class ExportService:
         workspace_id: str,
         payload: bytes | None = None,
     ) -> VerifiedExportArtifact:
-        if type(stored) is not VerifiedExportArtifact:
+        try:
+            return _verify_artifact_value(stored, manifest, workspace_id, payload)
+        except Exception:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact verification failed") from None
-        if (
-            stored.workspace_id != workspace_id
-            or stored.export_run_id != manifest.export_run_id
-            or stored.artifact_id != manifest.artifact_id
-            or stored.filename != manifest.filename
-            or stored.manifest != manifest
-        ):
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact verification failed") from None
-        if payload is not None and stored.payload != payload:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact payload changed") from None
-        if len(stored.payload) != manifest.byte_length:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact length is invalid") from None
-        digest = sha256(stored.payload).hexdigest()
-        if manifest.sha256 not in {digest, f"sha256:{digest}"}:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact hash is invalid") from None
-        return stored
 
     def _verify_completed(self, run: ExportRun, actor: ActorContext) -> ExportRun:
-        if type(run) is not ExportRun or run.workspace_id != actor.workspace_id or run.artifact_id is None:
+        try:
+            run = _rebuild_run(run)
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from None
+        if run.workspace_id != actor.workspace_id or run.artifact_id is None:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "succeeded export has no artifact")
         delivery = _boundary_call(
-            lambda: self.export_repository.verify_export_delivery(run.export_run_id, actor.workspace_id),
+            lambda: _rebuild_delivery(
+                self.export_repository.verify_export_delivery(run.export_run_id, actor.workspace_id)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export delivery persistence is invalid",
         )
-        if type(delivery) is not tuple or len(delivery) != 2:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery binding is corrupted")
         verified_run, manifest = delivery
         if (
-            type(verified_run) is not ExportRun
-            or type(manifest) is not ExportArtifactManifest
-            or verified_run != run
+            verified_run != run
             or verified_run.workspace_id != actor.workspace_id
             or manifest.artifact_id != run.artifact_id
         ):
@@ -774,6 +1115,12 @@ class ExportService:
             message="export failure could not be persisted",
             retryable=True,
         )
+        try:
+            failed = _rebuild_run(failed)
+        except Exception:
+            raise ExportServiceError(
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "failed export persistence is invalid"
+            ) from None
         if (
             not self._same_run_binding(failed, run)
             or failed.workspace_id != actor.workspace_id
@@ -788,15 +1135,15 @@ class ExportService:
 
     def _load_current_run(self, export_run_id: str, actor: ActorContext) -> ExportRun:
         current = _boundary_call(
-            lambda: self.export_repository.get_export_run(export_run_id, actor.workspace_id),
+            lambda: (
+                None
+                if (raw := self.export_repository.get_export_run(export_run_id, actor.workspace_id)) is None
+                else _rebuild_run(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export run persistence is invalid",
         )
-        if (
-            type(current) is not ExportRun
-            or current.export_run_id != export_run_id
-            or current.workspace_id != actor.workspace_id
-        ):
+        if current is None or current.export_run_id != export_run_id or current.workspace_id != actor.workspace_id:
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         return current
 
@@ -816,6 +1163,12 @@ class ExportService:
             message="export cancellation could not be completed",
             retryable=True,
         )
+        try:
+            cancelled = _rebuild_run(cancelled)
+        except Exception:
+            raise ExportServiceError(
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "cancelled export persistence is invalid"
+            ) from None
         if (
             not self._same_run_binding(cancelled, run)
             or cancelled.status is not RunStatus.CANCELLED
@@ -910,8 +1263,8 @@ class ExportService:
         try:
             completed = _boundary_call(
                 lambda: self.export_repository.complete_export(
-                    run,
-                    manifest,
+                    _rebuild_run(run),
+                    _rebuild_manifest(manifest),
                     actor,
                     request_json,
                     request_hash,
@@ -944,13 +1297,17 @@ class ExportService:
         except ValueError:
             raise ExportServiceError("FMEA_EXPORT_REQUEST_INVALID", "export run identity is invalid") from None
         run = _boundary_call(
-            lambda: self.export_repository.get_export_run(run_id, actor.workspace_id),
+            lambda: (
+                None
+                if (raw := self.export_repository.get_export_run(run_id, actor.workspace_id)) is None
+                else _rebuild_run(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export run persistence is invalid",
         )
         if run is None:
             raise ExportServiceError("FMEA_EXPORT_RUN_NOT_FOUND", "export run was not found")
-        if type(run) is not ExportRun or run.export_run_id != run_id or run.workspace_id != actor.workspace_id:
+        if run.export_run_id != run_id or run.workspace_id != actor.workspace_id:
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         resolved = self._resolve_replay_state(run, actor)
         if resolved is not None:
@@ -967,6 +1324,12 @@ class ExportService:
             message="export cancellation could not be requested",
             retryable=True,
         )
+        try:
+            cancelling = _rebuild_run(cancelling)
+        except Exception:
+            raise ExportServiceError(
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "cancelling export persistence is invalid"
+            ) from None
         if not self._same_run_binding(cancelling, run):
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "cancelling export binding is invalid")
         resolved = self._resolve_replay_state(cancelling, actor)
@@ -980,14 +1343,16 @@ class ExportService:
             raise ExportServiceError("FMEA_EXPORT_REQUEST_INVALID", "export request is invalid")
         request_json, request_hash = _request_hash(command)
         existing = _boundary_call(
-            lambda: self.export_repository.get_export_run(command.export_run_id, actor.workspace_id),
+            lambda: (
+                None
+                if (raw := self.export_repository.get_export_run(command.export_run_id, actor.workspace_id)) is None
+                else _rebuild_run(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export run persistence is invalid",
         )
         if existing is not None and (
-            type(existing) is not ExportRun
-            or existing.workspace_id != actor.workspace_id
-            or existing.export_run_id != command.export_run_id
+            existing.workspace_id != actor.workspace_id or existing.export_run_id != command.export_run_id
         ):
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         if existing is not None:
@@ -1072,15 +1437,15 @@ class ExportService:
             return run
         try:
             existing_store_artifact = _boundary_call(
-                lambda: self.artifact_store.latest(run.export_run_id),
+                lambda: (
+                    None if (raw := self.artifact_store.latest(run.export_run_id)) is None else _rebuild_artifact(raw)
+                ),
                 code="FMEA_EXPORT_ARTIFACT_INVALID",
                 message="artifact store lookup failed",
             )
         except ExportServiceError:
             return self._persist_failure(run, "artifact store lookup failed", actor)
         if existing_store_artifact is not None:
-            if type(existing_store_artifact) is not VerifiedExportArtifact:
-                return self._persist_failure(run, "reconciled artifact binding is invalid", actor)
             manifest = existing_store_artifact.manifest
             try:
                 self._verify_store(existing_store_artifact, manifest, actor.workspace_id)
@@ -1149,8 +1514,14 @@ class ExportService:
             filename=command.filename,
         )
         try:
+            store_manifest = _rebuild_manifest(manifest)
             published = _boundary_call(
-                lambda: self.artifact_store.publish(run.export_run_id, command.filename, payload, manifest),
+                lambda: self.artifact_store.publish(
+                    run.export_run_id,
+                    command.filename,
+                    payload,
+                    store_manifest,
+                ),
                 code="FMEA_EXPORT_ARTIFACT_INVALID",
                 message="artifact publication failed",
             )
@@ -1195,8 +1566,10 @@ class ExportService:
             projection=build_export_narrative_projection(snapshot),
             run_id="export-narrative-" + sha256(snapshot.snapshot_hash.encode("ascii")).hexdigest()[:32],
         )
-        result = _narrative_boundary_call(lambda: self._narrative_generator.generate(request))
-        if type(result) is not ExportNarrativeGenerationResult or result.run_id != request.run_id:
+        result = _narrative_boundary_call(
+            lambda: _rebuild_narrative_result(self._narrative_generator.generate(request))
+        )
+        if result.run_id != request.run_id:
             raise ExportServiceError("FMEA_EXPORT_NARRATIVE_INVALID", "narrative generation result is invalid")
         try:
             evidence_pack_ids = tuple(
@@ -1234,22 +1607,26 @@ class ExportService:
                 created_at=self._clock(),
                 applied=False,
             )
-        except (TypeError, ValueError) as exc:
+        except Exception:
             raise ExportServiceError(
                 "FMEA_EXPORT_NARRATIVE_INVALID", "narrative suggestion contract is invalid"
-            ) from exc
+            ) from None
         return ExportNarrativeSuggestion(envelope=envelope, draft=result.draft)
 
     def get_run(self, export_run_id: str, actor: ActorContext) -> ExportRun:
         self._authorize(actor)
         run = _boundary_call(
-            lambda: self.export_repository.get_export_run(export_run_id, actor.workspace_id),
+            lambda: (
+                None
+                if (raw := self.export_repository.get_export_run(export_run_id, actor.workspace_id)) is None
+                else _rebuild_run(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export run persistence is invalid",
         )
         if run is None:
             raise ExportServiceError("FMEA_EXPORT_RUN_NOT_FOUND", "export run was not found")
-        if type(run) is not ExportRun or run.workspace_id != actor.workspace_id or run.export_run_id != export_run_id:
+        if run.workspace_id != actor.workspace_id or run.export_run_id != export_run_id:
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         return self._verify_completed(run, actor) if run.status is RunStatus.SUCCEEDED else run
 
@@ -1258,28 +1635,27 @@ class ExportService:
         if not isinstance(artifact_id, str) or not artifact_id.strip():
             raise ExportServiceError("FMEA_EXPORT_REQUEST_INVALID", "artifact identity is invalid")
         manifest = _boundary_call(
-            lambda: self.export_repository.get_export_artifact(artifact_id, actor.workspace_id),
+            lambda: (
+                None
+                if (raw := self.export_repository.get_export_artifact(artifact_id, actor.workspace_id)) is None
+                else _rebuild_manifest(raw)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export artifact persistence is invalid",
         )
         if manifest is None:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_NOT_FOUND", "artifact was not found")
-        if type(manifest) is not ExportArtifactManifest or manifest.artifact_id != artifact_id:
+        if manifest.artifact_id != artifact_id:
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export artifact persistence is invalid")
         delivery = _boundary_call(
-            lambda: self.export_repository.verify_export_delivery(manifest.export_run_id, actor.workspace_id),
+            lambda: _rebuild_delivery(
+                self.export_repository.verify_export_delivery(manifest.export_run_id, actor.workspace_id)
+            ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="export delivery persistence is invalid",
         )
-        if type(delivery) is not tuple or len(delivery) != 2:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery binding is corrupted")
         run, verified_manifest = delivery
-        if (
-            type(run) is not ExportRun
-            or type(verified_manifest) is not ExportArtifactManifest
-            or run.workspace_id != actor.workspace_id
-            or verified_manifest != manifest
-        ):
+        if run.workspace_id != actor.workspace_id or verified_manifest != manifest:
             raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery binding is corrupted")
         try:
             validate_export_binding(run, manifest)

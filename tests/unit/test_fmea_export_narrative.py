@@ -424,6 +424,71 @@ def test_same_shaped_third_party_narrative_error_is_not_trusted() -> None:
     assert captured.value.__cause__ is None
 
 
+class _ExplosiveNarrativeValue:
+    _ERROR_DETAIL = "secret narrative operation"
+
+    def __eq__(self, other):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+    def __str__(self):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+    def __hash__(self):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+
+def test_mutated_exact_application_error_fields_are_not_trusted() -> None:
+    error = ExportNarrativeGenerationError(
+        "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
+        "initially safe",
+        retryable=False,
+    )
+    object.__setattr__(error, "code", _ExplosiveNarrativeValue())
+    object.__setattr__(error, "retryable", _ExplosiveNarrativeValue())
+
+    class MutatedErrorGenerator:
+        def generate(self, request):
+            raise error
+
+    service = ExportService(
+        TrackingRepository(), TrackingRepository(), TrackingStore(), (), narrative_generator=MutatedErrorGenerator()
+    )
+
+    with pytest.raises(ExportServiceError) as captured:
+        service.suggest_narrative(make_normalized_snapshot(), _model_actor())
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"
+    assert captured.value.retryable is True
+    assert "secret" not in str(captured.value)
+    assert captured.value.__cause__ is None
+
+
+@pytest.mark.parametrize("mutation", ["result", "nested_claim"])
+def test_mutated_exact_narrative_result_is_normalized_without_leak(mutation: str) -> None:
+    delegate = StructuredExportNarrativeGenerator(FakePipeline())
+
+    class MutatedResultGenerator:
+        def generate(self, request):
+            result = delegate.generate(request)
+            if mutation == "result":
+                object.__setattr__(result, "run_id", _ExplosiveNarrativeValue())
+            else:
+                object.__setattr__(result.draft.claims[0], "text", _ExplosiveNarrativeValue())
+            return result
+
+    service = ExportService(
+        TrackingRepository(), TrackingRepository(), TrackingStore(), (), narrative_generator=MutatedResultGenerator()
+    )
+
+    with pytest.raises(ExportServiceError) as captured:
+        service.suggest_narrative(make_normalized_snapshot(), _model_actor())
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_INVALID"
+    assert captured.value.retryable is False
+    assert "secret" not in str(captured.value)
+    assert captured.value.__cause__ is None
+
+
 def test_narrative_requires_model_actor_and_exact_snapshot() -> None:
     service = _service(StructuredExportNarrativeGenerator(FakePipeline()))
     human = ActorContext("human-1", ActorType.HUMAN, frozenset({"reviewer"}), "ws-1")

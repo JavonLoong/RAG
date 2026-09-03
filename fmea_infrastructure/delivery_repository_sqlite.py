@@ -1517,6 +1517,8 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 self._export_run_from_row(existing_row)
                 if existing_row["request_hash"] != request_hash:
                     raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
+                if existing_row["actor_id"] != actor.actor_id:
+                    raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
                 raise ValueError("persisted export run is missing idempotency reservation")
 
             self._insert_idempotency(connection, scope, request_hash, created_at)

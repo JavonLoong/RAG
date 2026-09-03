@@ -61,6 +61,24 @@ class AdversarialProvider:
         return invoke
 
 
+class ExplosiveProviderValue:
+    """Value whose ordinary coercion/comparison would leak adapter text."""
+
+    _ERROR_DETAIL = "secret provider operation"
+
+    def __eq__(self, other):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+    def __str__(self):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+    def __hash__(self):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+    def __len__(self):
+        raise RuntimeError(self._ERROR_DETAIL)
+
+
 def _published_repository(tmp_path: Path, *, fault_injector=None, upgrade_from_v10: bool = False):
     from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 
@@ -1074,4 +1092,180 @@ def test_typed_narrative_generator_error_is_normalized_by_service_policy():
     assert caught.value.code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"
     assert caught.value.retryable is True
     assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_physical_publish_with_mutated_exact_manifest_recovers_without_running_leak(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    real_publish = store.publish
+
+    def publish_then_mutate(*args, **kwargs):
+        published = real_publish(*args, **kwargs)
+        object.__setattr__(published.manifest, "sha256", ExplosiveProviderValue())
+        return published
+
+    store.publish = publish_then_mutate
+
+    result = service.start(command, actor)
+
+    assert result.status is RunStatus.SUCCEEDED
+    assert repository.get_export_run(command.export_run_id, actor.workspace_id).status is RunStatus.SUCCEEDED
+
+
+def test_mutated_exact_latest_payload_persists_failed_instead_of_running(tmp_path: Path):
+    from hashlib import sha256
+
+    from core_domain.fmea.states import RunStatus
+    from fmea_application.delivery_contracts import ExportArtifactManifest, VerifiedExportArtifact
+    from fmea_application.export_service import _artifact_id
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    payload = b'{"ok":true}\n'
+    manifest = ExportArtifactManifest(
+        artifact_id=_artifact_id(actor.workspace_id, command.export_run_id),
+        export_run_id=command.export_run_id,
+        publication_id=command.publication_id,
+        revision_id=command.revision_id,
+        snapshot_id=command.snapshot_id,
+        snapshot_hash=command.snapshot_hash,
+        format=command.format,
+        media_type="application/json",
+        byte_length=len(payload),
+        sha256=sha256(payload).hexdigest(),
+        draft_preview=command.draft_preview,
+        created_at="2026-09-03T00:00:00Z",
+        filename=command.filename,
+    )
+    malformed = VerifiedExportArtifact(
+        workspace_id=actor.workspace_id,
+        export_run_id=command.export_run_id,
+        artifact_id=manifest.artifact_id,
+        filename=command.filename,
+        payload=payload,
+        manifest=manifest,
+    )
+    object.__setattr__(malformed, "payload", ExplosiveProviderValue())
+    store.latest = lambda *args, **kwargs: malformed
+    store.get = lambda *args, **kwargs: malformed
+
+    result = service.start(command, actor)
+
+    assert result.status is RunStatus.FAILED
+    assert repository.get_export_run(command.export_run_id, actor.workspace_id).status is RunStatus.FAILED
+    assert "secret" not in result.error
+
+
+@pytest.mark.parametrize("operation", ["replay", "get_artifact"])
+def test_mutated_exact_artifact_is_bounded_on_completed_read_paths(tmp_path: Path, operation: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    completed = service.start(command, actor)
+    malformed = store.get(completed.artifact_id, actor.workspace_id)
+    object.__setattr__(malformed, "workspace_id", ExplosiveProviderValue())
+    store.get = lambda *args, **kwargs: malformed
+    store.latest = lambda *args, **kwargs: malformed
+
+    with pytest.raises(ExportServiceError) as caught:
+        if operation == "replay":
+            service.start(command, actor)
+        else:
+            service.get_artifact(completed.artifact_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_ARTIFACT_INVALID"
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_mutated_exact_snapshot_is_normalized_inside_governance_boundary(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    command = _command(snapshot)
+    object.__setattr__(snapshot, "workspace_id", ExplosiveProviderValue())
+    provider = AdversarialProvider(repository, "get_snapshot", result=snapshot)
+    service, _ = _service(repository, tmp_path, FakeExporter(), governance_repository=provider)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(command, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_mutated_exact_delivery_run_is_normalized_inside_repository_boundary(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    real_service, _ = _service(repository, tmp_path, FakeExporter())
+    completed = real_service.start(command, actor)
+    manifest = repository.get_export_artifact(completed.artifact_id, actor.workspace_id)
+    object.__setattr__(completed, "artifact_id", ExplosiveProviderValue())
+    provider = AdversarialProvider(repository, "verify_export_delivery", result=(completed, manifest))
+    service, _ = _service(repository, tmp_path, FakeExporter(), export_repository=provider)
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.get_run(command.export_run_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_plain_value_error_with_malicious_argument_is_not_coerced_for_sentinel(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    malicious = ValueError("placeholder")
+    malicious.args = (ExplosiveProviderValue(),)
+    provider = AdversarialProvider(repository, "reserve_export_run", failure=malicious)
+    service, _ = _service(repository, tmp_path, FakeExporter(), export_repository=provider)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(_command(snapshot), actor)
+
+    assert caught.value.code == "FMEA_EXPORT_STORAGE_UNAVAILABLE"
+    assert caught.value.retryable is True
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_same_workspace_different_actor_reuse_is_nonretryable_idempotency_conflict(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    command = _command(snapshot)
+    first_actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    second_actor = make_governance_actor(actor_id="exporter-2", roles=frozenset({"exporter"}))
+    service.start(command, first_actor)
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(command, second_actor)
+
+    assert caught.value.code == "FMEA_EXPORT_IDEMPOTENCY_CONFLICT"
+    assert caught.value.retryable is False
     assert caught.value.__cause__ is None
