@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import fields
 from pathlib import Path
 
 import pytest
 
 HASH = "a" * 64
 TARGET_HASH = "b" * 64
+DRIFTED_TARGET_HASH = "c" * 64
+MIGRATED_ROW_HASH = "d" * 64
+
+
+def _target_revision(source, target_hash: str = TARGET_HASH):
+    from fmea_governance_fixtures import make_fmea_revision
+
+    values = {field.name: getattr(source, field.name) for field in fields(source) if field.name != "revision_hash"}
+    values.update({
+        "domain_pack_identity": ("fuel-combustion", "2.0.0", target_hash),
+        "row_versions": (("row-migrated", 2, MIGRATED_ROW_HASH),),
+        "template_identities": (("fuel-fmea", "2.0.0", MIGRATED_ROW_HASH),),
+    })
+    return make_fmea_revision(**values)
 
 
 class Adapter:
@@ -17,17 +32,21 @@ class Adapter:
         from fmea_application.migration_service import MigrationCandidate
 
         return MigrationCandidate(
+            target_revision=_target_revision(source),
             mapped_fields=("failure_mode", "causes"),
             dropped_fields=("legacy_criticality",),
             unresolved_fields=("operator_note",),
             warnings=("manual review required",),
-            target_domain_pack_identity=("fuel-combustion", "2.0.0", TARGET_HASH),
         )
 
 
 class PackRegistry:
+    def __init__(self, target_hash: str = TARGET_HASH):
+        self.target_hash = target_hash
+
     def get(self, pack_id: str, version: str):
-        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": TARGET_HASH})()
+        content_hash = HASH if version == "1.0.0" else self.target_hash
+        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": content_hash})()
 
 
 @pytest.fixture
@@ -85,6 +104,7 @@ def test_additive_010_creates_delivery_tables_without_rewriting_governance_table
             "fmea_export_artifacts",
         } <= tables
         assert connection.execute("SELECT version FROM schema_migrations WHERE version=10").fetchone() is not None
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
 def test_dry_run_is_repeatable_and_does_not_create_revision(context):
@@ -126,6 +146,8 @@ def test_confirm_creates_immutable_child_and_invalidates_derived_state(context):
     assert child.parent_revision_hash == source.revision_hash
     assert child.revision_id != source.revision_id
     assert child.domain_pack_identity == ("fuel-combustion", "2.0.0", TARGET_HASH)
+    assert child.row_versions == (("row-migrated", 2, MIGRATED_ROW_HASH),)
+    assert child.template_identities == (("fuel-fmea", "2.0.0", MIGRATED_ROW_HASH),)
     assert child.risk_versions == ()
     assert child.propagation_graph_revision_id is None
     assert child.propagation_graph_hash is None
@@ -195,3 +217,104 @@ def test_confirmation_replays_after_repository_restart(context):
     assert restarted_repository.count_child_revisions("revision-1", "ws-1") == 1
     assert restarted_repository.count_outbox_events("migration.completed", "ws-1") == 1
     assert restarted_repository.count_migration_confirmations("ws-1") == 1
+
+
+def test_confirmation_replay_rejects_corrupted_durable_run_chain(context):
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationServiceError
+
+    repository, service, command, actor = context
+    report = service.dry_run(command, actor)
+    confirm = ConfirmMigrationCommand(
+        migration_id=command.migration_id,
+        report_hash=report.report_hash,
+        source_revision_id=command.source_revision_id,
+        source_revision_hash=command.source_revision_hash,
+        target_domain_pack_id=command.target_domain_pack_id,
+        target_domain_pack_version=command.target_domain_pack_version,
+        target_domain_pack_hash=command.target_domain_pack_hash,
+        idempotency_key="00000000-0000-4000-8000-000000000909",
+        confirm_migration=True,
+    )
+    service.confirm(confirm, actor)
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute("DROP TRIGGER fmea_migration_runs_immutable_fields")
+        connection.execute("DROP TRIGGER fmea_migration_runs_terminal_no_update")
+        connection.execute(
+            "UPDATE fmea_migration_runs SET request_hash=? WHERE workspace_id=? AND migration_id=?",
+            ("sha256:" + "e" * 64, "ws-1", command.migration_id),
+        )
+
+    with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_FAILED"):
+        service.confirm(confirm, actor)
+    assert repository.count_child_revisions("revision-1", "ws-1") == 1
+    assert repository.count_outbox_events("migration.completed", "ws-1") == 1
+    assert repository.count_migration_confirmations("ws-1") == 1
+
+
+def test_fresh_process_target_hash_drift_never_creates_child_or_event(context):
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationCandidate, MigrationService
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+    from fmea_infrastructure.migration_registry import MigrationRegistry
+
+    repository, service, command, actor = context
+    report = service.dry_run(command, actor)
+
+    class DriftedAdapter(Adapter):
+        def migrate(self, source):
+            return MigrationCandidate(target_revision=_target_revision(source, DRIFTED_TARGET_HASH))
+
+    restarted_repository = SqliteFmeaDeliveryRepository(repository.database_path)
+    restarted_repository.initialize()
+    restarted_service = MigrationService(
+        restarted_repository,
+        MigrationRegistry((DriftedAdapter(),)),
+        domain_pack_registry=PackRegistry(DRIFTED_TARGET_HASH),
+        clock=lambda: "2026-09-03T00:00:00Z",
+    )
+    confirm = ConfirmMigrationCommand(
+        migration_id=command.migration_id,
+        report_hash=report.report_hash,
+        source_revision_id=command.source_revision_id,
+        source_revision_hash=command.source_revision_hash,
+        target_domain_pack_id=command.target_domain_pack_id,
+        target_domain_pack_version=command.target_domain_pack_version,
+        target_domain_pack_hash=command.target_domain_pack_hash,
+        idempotency_key="00000000-0000-4000-8000-000000000910",
+        confirm_migration=True,
+    )
+
+    with pytest.raises(Exception, match="FMEA_MIGRATION_TARGET_STALE"):
+        restarted_service.confirm(confirm, actor)
+    assert restarted_repository.count_child_revisions("revision-1", "ws-1") == 0
+    assert restarted_repository.count_outbox_events("migration.completed", "ws-1") == 0
+
+
+def test_migration_run_source_revision_fk_is_workspace_scoped(context):
+    repository, service, command, actor = context
+    service.dry_run(command, actor)
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        for table in ("fmea_migration_runs", "fmea_migration_reports", "fmea_migration_confirmations"):
+            foreign_keys = connection.execute(f"PRAGMA foreign_key_list({table})").fetchall()
+            source_fk = {(row[3], row[4]) for row in foreign_keys if row[2] == "fmea_revisions"}
+            assert {("workspace_id", "workspace_id"), ("source_revision_id", "revision_id")} <= source_fk
+        source = connection.execute(
+            "SELECT * FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+            ("ws-1", command.migration_id),
+        ).fetchone()
+        columns = [item[1] for item in connection.execute("PRAGMA table_info(fmea_migration_runs)")]
+        values = dict(zip(columns, source, strict=True))
+        values.update({
+            "workspace_id": "ws-foreign",
+            "migration_id": "migration-foreign",
+            "run_id": "migration-run-foreign",
+        })
+        placeholders = ",".join("?" for _ in columns)
+        with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+            connection.execute(
+                f"INSERT INTO fmea_migration_runs ({','.join(columns)}) VALUES ({placeholders})",  # noqa: S608
+                tuple(values[column] for column in columns),
+            )
+            connection.commit()
+        connection.rollback()
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []

@@ -89,14 +89,18 @@ CREATE TABLE fmea_migration_runs (
     run_id TEXT NOT NULL,
     source_revision_id TEXT NOT NULL,
     source_revision_hash TEXT NOT NULL,
+    source_domain_pack_id TEXT NOT NULL,
+    source_domain_pack_version TEXT NOT NULL,
+    source_domain_pack_hash TEXT NOT NULL,
     target_domain_pack_id TEXT NOT NULL,
     target_domain_pack_version TEXT NOT NULL,
     target_domain_pack_hash TEXT NOT NULL,
+    target_revision_hash TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('dry_run', 'confirmed', 'failed')),
     request_json TEXT NOT NULL CHECK (length(request_json) > 0),
     request_hash TEXT NOT NULL,
-    report_id TEXT,
-    report_hash TEXT,
+    report_id TEXT NOT NULL,
+    report_hash TEXT NOT NULL,
     child_revision_id TEXT,
     idempotency_scope TEXT,
     actor_id TEXT NOT NULL,
@@ -105,10 +109,29 @@ CREATE TABLE fmea_migration_runs (
     finished_at TEXT,
     PRIMARY KEY (workspace_id, migration_id),
     UNIQUE (workspace_id, run_id),
+    CHECK (length(source_revision_hash) IN (64, 71)),
+    CHECK (length(source_domain_pack_hash) IN (64, 71)),
+    CHECK (length(target_domain_pack_hash) IN (64, 71)),
+    CHECK (length(target_revision_hash) IN (64, 71)),
     CHECK (length(request_hash) = 71 AND substr(request_hash, 1, 7) = 'sha256:'),
-    CHECK (report_hash IS NULL OR length(report_hash) IN (64, 71)),
-    CHECK (status <> 'confirmed' OR child_revision_id IS NOT NULL),
-    CHECK (status = 'dry_run' OR finished_at IS NOT NULL)
+    CHECK (length(report_hash) IN (64, 71)),
+    CHECK (
+        (status = 'dry_run' AND child_revision_id IS NULL AND idempotency_scope IS NULL AND finished_at IS NULL)
+        OR (status = 'confirmed' AND child_revision_id IS NOT NULL AND idempotency_scope IS NOT NULL
+            AND finished_at IS NOT NULL)
+        OR (status = 'failed' AND child_revision_id IS NULL AND idempotency_scope IS NULL
+            AND finished_at IS NOT NULL)
+    ),
+    FOREIGN KEY (workspace_id, source_revision_id)
+        REFERENCES fmea_revisions(workspace_id, revision_id),
+    FOREIGN KEY (workspace_id, child_revision_id)
+        REFERENCES fmea_revisions(workspace_id, revision_id),
+    FOREIGN KEY (workspace_id, report_id)
+        REFERENCES fmea_migration_reports(workspace_id, report_id)
+        DEFERRABLE INITIALLY DEFERRED,
+    FOREIGN KEY (idempotency_scope)
+        REFERENCES idempotency_records(scope_key)
+        DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE TABLE fmea_migration_reports (
@@ -117,9 +140,13 @@ CREATE TABLE fmea_migration_reports (
     migration_id TEXT NOT NULL,
     source_revision_id TEXT NOT NULL,
     source_revision_hash TEXT NOT NULL,
+    source_domain_pack_id TEXT NOT NULL,
+    source_domain_pack_version TEXT NOT NULL,
+    source_domain_pack_hash TEXT NOT NULL,
     target_domain_pack_id TEXT NOT NULL,
     target_domain_pack_version TEXT NOT NULL,
     target_domain_pack_hash TEXT NOT NULL,
+    target_revision_hash TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('dry_run', 'confirmed', 'failed')),
     plan_json TEXT NOT NULL CHECK (length(plan_json) > 0),
     report_json TEXT NOT NULL CHECK (length(report_json) > 0),
@@ -128,10 +155,16 @@ CREATE TABLE fmea_migration_reports (
     created_at TEXT NOT NULL,
     PRIMARY KEY (workspace_id, report_id),
     UNIQUE (workspace_id, migration_id),
+    CHECK (length(source_revision_hash) IN (64, 71)),
+    CHECK (length(source_domain_pack_hash) IN (64, 71)),
+    CHECK (length(target_domain_pack_hash) IN (64, 71)),
+    CHECK (length(target_revision_hash) IN (64, 71)),
     CHECK (length(report_hash) IN (64, 71)),
     CHECK (length(canonical_json_hash) = 71 AND substr(canonical_json_hash, 1, 7) = 'sha256:'),
     FOREIGN KEY (workspace_id, migration_id)
-        REFERENCES fmea_migration_runs(workspace_id, migration_id)
+        REFERENCES fmea_migration_runs(workspace_id, migration_id),
+    FOREIGN KEY (workspace_id, source_revision_id)
+        REFERENCES fmea_revisions(workspace_id, revision_id)
 );
 
 CREATE TABLE fmea_migration_confirmations (
@@ -142,9 +175,13 @@ CREATE TABLE fmea_migration_confirmations (
     report_hash TEXT NOT NULL,
     source_revision_id TEXT NOT NULL,
     source_revision_hash TEXT NOT NULL,
+    source_domain_pack_id TEXT NOT NULL,
+    source_domain_pack_version TEXT NOT NULL,
+    source_domain_pack_hash TEXT NOT NULL,
     target_domain_pack_id TEXT NOT NULL,
     target_domain_pack_version TEXT NOT NULL,
     target_domain_pack_hash TEXT NOT NULL,
+    target_revision_hash TEXT NOT NULL,
     child_revision_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
     actor_type TEXT NOT NULL CHECK (actor_type = 'human'),
@@ -162,13 +199,17 @@ CREATE TABLE fmea_migration_confirmations (
     UNIQUE (workspace_id, outbox_event_id),
     CHECK (length(report_hash) IN (64, 71)),
     CHECK (length(source_revision_hash) IN (64, 71)),
+    CHECK (length(source_domain_pack_hash) IN (64, 71)),
     CHECK (length(target_domain_pack_hash) IN (64, 71)),
+    CHECK (length(target_revision_hash) IN (64, 71)),
     CHECK (length(payload_hash) = 71 AND substr(payload_hash, 1, 7) = 'sha256:'),
     CHECK (length(canonical_json_hash) = 71 AND substr(canonical_json_hash, 1, 7) = 'sha256:'),
     FOREIGN KEY (workspace_id, migration_id)
         REFERENCES fmea_migration_runs(workspace_id, migration_id),
     FOREIGN KEY (workspace_id, report_id)
         REFERENCES fmea_migration_reports(workspace_id, report_id),
+    FOREIGN KEY (workspace_id, source_revision_id)
+        REFERENCES fmea_revisions(workspace_id, revision_id),
     FOREIGN KEY (workspace_id, child_revision_id)
         REFERENCES fmea_revisions(workspace_id, revision_id),
     FOREIGN KEY (workspace_id, audit_event_id)
@@ -282,6 +323,42 @@ BEGIN SELECT RAISE(ABORT, 'immutable fmea_migration_reports'); END;
 CREATE TRIGGER fmea_migration_reports_no_delete
 BEFORE DELETE ON fmea_migration_reports
 BEGIN SELECT RAISE(ABORT, 'immutable fmea_migration_reports'); END;
+CREATE TRIGGER fmea_migration_runs_immutable_fields
+BEFORE UPDATE ON fmea_migration_runs
+WHEN NEW.workspace_id IS NOT OLD.workspace_id
+    OR NEW.migration_id IS NOT OLD.migration_id
+    OR NEW.run_id IS NOT OLD.run_id
+    OR NEW.source_revision_id IS NOT OLD.source_revision_id
+    OR NEW.source_revision_hash IS NOT OLD.source_revision_hash
+    OR NEW.source_domain_pack_id IS NOT OLD.source_domain_pack_id
+    OR NEW.source_domain_pack_version IS NOT OLD.source_domain_pack_version
+    OR NEW.source_domain_pack_hash IS NOT OLD.source_domain_pack_hash
+    OR NEW.target_domain_pack_id IS NOT OLD.target_domain_pack_id
+    OR NEW.target_domain_pack_version IS NOT OLD.target_domain_pack_version
+    OR NEW.target_domain_pack_hash IS NOT OLD.target_domain_pack_hash
+    OR NEW.target_revision_hash IS NOT OLD.target_revision_hash
+    OR NEW.request_json IS NOT OLD.request_json
+    OR NEW.request_hash IS NOT OLD.request_hash
+    OR NEW.report_id IS NOT OLD.report_id
+    OR NEW.report_hash IS NOT OLD.report_hash
+    OR NEW.actor_id IS NOT OLD.actor_id
+    OR NEW.created_at IS NOT OLD.created_at
+    OR NEW.started_at IS NOT OLD.started_at
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_migration_runs binding'); END;
+CREATE TRIGGER fmea_migration_runs_status_transition
+BEFORE UPDATE ON fmea_migration_runs
+WHEN NEW.status IS NOT OLD.status AND NOT (
+    OLD.status = 'dry_run'
+    AND NEW.status IN ('confirmed', 'failed')
+)
+BEGIN SELECT RAISE(ABORT, 'invalid fmea_migration_runs status transition'); END;
+CREATE TRIGGER fmea_migration_runs_terminal_no_update
+BEFORE UPDATE ON fmea_migration_runs
+WHEN OLD.status IN ('confirmed', 'failed')
+BEGIN SELECT RAISE(ABORT, 'immutable terminal fmea_migration_runs'); END;
+CREATE TRIGGER fmea_migration_runs_no_delete
+BEFORE DELETE ON fmea_migration_runs
+BEGIN SELECT RAISE(ABORT, 'immutable fmea_migration_runs'); END;
 CREATE TRIGGER fmea_migration_confirmations_no_update
 BEFORE UPDATE ON fmea_migration_confirmations
 BEGIN SELECT RAISE(ABORT, 'immutable fmea_migration_confirmations'); END;

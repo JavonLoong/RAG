@@ -151,6 +151,9 @@ def _decode_report(payload: object, stored_hash: str) -> MigrationReport:
         plan=_decode_plan(data["plan"]),
         source_revision_id=cast(str, data["source_revision_id"]),
         source_revision_hash=cast(str, data["source_revision_hash"]),
+        source_domain_pack_identity=tuple(cast(list[object], data["source_domain_pack_identity"])),
+        target_domain_pack_identity=tuple(cast(list[object], data["target_domain_pack_identity"])),
+        target_revision_hash=cast(str, data["target_revision_hash"]),
         status=cast(str, data["status"]),
         mapped_fields=tuple(cast(list[object], data["mapped_fields"])),
         dropped_fields=tuple(cast(list[object], data["dropped_fields"])),
@@ -246,7 +249,9 @@ def _migration_payload(prepared: PreparedMigration, child: FmeaRevision) -> dict
         "migration_id": command.migration_id,
         "source_revision_id": command.source_revision_id,
         "source_revision_hash": command.source_revision_hash,
+        "source_domain_pack_identity": list(report.source_domain_pack_identity),
         "target_domain_pack_identity": list(prepared.target_domain_pack_identity),
+        "target_revision_hash": report.target_revision_hash,
         "report_hash": report.report_hash,
         "plan": _report_plan_value(report.plan),
         "mapped_fields": list(report.mapped_fields),
@@ -267,12 +272,12 @@ def _child_revision(source: FmeaRevision, prepared: PreparedMigration) -> FmeaRe
             f"{prepared.report.report_hash}:{prepared.target_domain_pack_identity}".encode()
         ).hexdigest()[:40]
     )
-    values = {field.name: getattr(source, field.name) for field in fields(source)}
+    target = prepared.candidate.target_revision
+    values = {field.name: getattr(target, field.name) for field in fields(target)}
     values.update({
         "revision_id": child_id,
         "parent_revision_id": source.revision_id,
         "parent_revision_hash": source.revision_hash,
-        "domain_pack_identity": prepared.target_domain_pack_identity,
         "risk_versions": (),
         "propagation_graph_revision_id": None,
         "propagation_graph_hash": None,
@@ -283,6 +288,75 @@ def _child_revision(source: FmeaRevision, prepared: PreparedMigration) -> FmeaRe
         object.__setattr__(provisional, field_name, value)
     values["revision_hash"] = revision_content_hash(provisional)
     return FmeaRevision(**values)
+
+
+def _report_row_is_valid(row: sqlite3.Row, report: MigrationReport) -> bool:
+    source_pack = report.source_domain_pack_identity
+    target_pack = report.target_domain_pack_identity
+    return (
+        row["migration_id"] == report.migration_id
+        and row["source_revision_id"] == report.source_revision_id
+        and _digest(row["source_revision_hash"]) == _digest(report.source_revision_hash)
+        and row["source_domain_pack_id"] == source_pack[0]
+        and row["source_domain_pack_version"] == source_pack[1]
+        and _digest(row["source_domain_pack_hash"]) == _digest(source_pack[2])
+        and row["target_domain_pack_id"] == target_pack[0]
+        and row["target_domain_pack_version"] == target_pack[1]
+        and _digest(row["target_domain_pack_hash"]) == _digest(target_pack[2])
+        and _digest(row["target_revision_hash"]) == _digest(report.target_revision_hash)
+        and row["status"] == report.status.value
+        and _digest(row["report_hash"]) == _digest(report.report_hash)
+        and row["canonical_json_hash"] == _hash_json(_report_value(report))
+        and row["plan_json"] == canonical_json(_report_plan_value(report.plan))
+        and row["report_json"] == canonical_json(_report_value(report))
+        and row["created_at"] == report.created_at
+    )
+
+
+def _validate_prepared_binding(prepared: PreparedMigration) -> None:
+    command = prepared.command
+    dry_command = prepared.dry_run_command
+    source = prepared.source
+    report = prepared.report
+    candidate = prepared.candidate
+    target_revision = candidate.target_revision
+    command_fields = (
+        "migration_id",
+        "source_revision_id",
+        "source_revision_hash",
+        "target_domain_pack_id",
+        "target_domain_pack_version",
+        "target_domain_pack_hash",
+    )
+    for field_name in command_fields:
+        left = getattr(command, field_name)
+        right = getattr(dry_command, field_name)
+        if field_name.endswith("_hash"):
+            if _digest(left) != _digest(right):
+                raise ValueError("prepared migration command binding is invalid")
+        elif left != right:
+            raise ValueError("prepared migration command binding is invalid")
+    if (
+        command.migration_id != report.migration_id
+        or source.revision_id != command.source_revision_id
+        or _digest(source.revision_hash) != _digest(command.source_revision_hash)
+        or report.source_revision_id != source.revision_id
+        or _digest(report.source_revision_hash) != _digest(source.revision_hash)
+        or report.source_domain_pack_identity != source.domain_pack_identity
+        or report.target_domain_pack_identity != prepared.target_domain_pack_identity
+        or target_revision.domain_pack_identity != prepared.target_domain_pack_identity
+        or target_revision.workspace_id != source.workspace_id
+        or target_revision.analysis_id != source.analysis_id
+        or _digest(target_revision.revision_hash) != _digest(report.target_revision_hash)
+        or prepared.plan != report.plan
+        or candidate.mapped_fields != report.mapped_fields
+        or candidate.dropped_fields != report.dropped_fields
+        or candidate.unresolved_fields != report.unresolved_fields
+        or candidate.warnings != report.warnings
+    ):
+        raise ValueError("prepared migration durable binding is invalid")
+    if _digest(revision_content_hash(target_revision)) != _digest(target_revision.revision_hash):
+        raise ValueError("prepared migration target revision is invalid")
 
 
 class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
@@ -311,6 +385,96 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
     def _confirmation_id(scope: IdempotencyScope) -> str:
         return "migration-confirmation-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
 
+    def _validated_report_row(self, connection: sqlite3.Connection, prepared: PreparedMigration) -> sqlite3.Row:
+        row = connection.execute(
+            "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
+            (prepared.actor.workspace_id, prepared.command.migration_id),
+        ).fetchone()
+        if row is None or row["report_id"] != self._report_id(
+            prepared.actor.workspace_id, prepared.command.migration_id
+        ):
+            raise ReviewError("FMEA_MIGRATION_REPORT_MISSING", "a stored dry-run report is required")
+        report = _decode_report(row["report_json"], row["report_hash"])
+        if report != prepared.report or not _report_row_is_valid(row, report):
+            raise ReviewError("FMEA_MIGRATION_REPORT_STALE", "stored migration report is stale")
+        return row
+
+    def _validate_run_row(
+        self,
+        row: sqlite3.Row | None,
+        prepared: PreparedMigration,
+        *,
+        status: str,
+        child: FmeaRevision | None = None,
+        scope: IdempotencyScope | None = None,
+    ) -> None:
+        if row is None:
+            raise ValueError("persisted migration run is missing")
+        request = _load_object(row["request_json"], "migration request")
+        command = prepared.command
+        report = prepared.report
+        source_pack = report.source_domain_pack_identity
+        target_pack = report.target_domain_pack_identity
+        expected_keys = set(_request_value(prepared.dry_run_command)) | {"actor_id", "workspace_id"}
+        if set(request) != expected_keys:
+            raise ValueError("persisted migration request shape is invalid")
+        request_fields = {
+            "migration_id": command.migration_id,
+            "source_revision_id": command.source_revision_id,
+            "source_revision_hash": command.source_revision_hash,
+            "target_domain_pack_id": command.target_domain_pack_id,
+            "target_domain_pack_version": command.target_domain_pack_version,
+            "target_domain_pack_hash": command.target_domain_pack_hash,
+            "actor_id": prepared.actor.actor_id,
+            "workspace_id": prepared.actor.workspace_id,
+        }
+        for field_name, expected in request_fields.items():
+            actual = request.get(field_name)
+            if field_name.endswith("_hash"):
+                if not isinstance(actual, str) or _digest(actual) != _digest(expected):
+                    raise ValueError("persisted migration request binding is invalid")
+            elif actual != expected:
+                raise ValueError("persisted migration request binding is invalid")
+        if not isinstance(request.get("idempotency_key"), str) or not request["idempotency_key"]:
+            raise ValueError("persisted migration request idempotency key is invalid")
+        if (
+            row["workspace_id"] != prepared.actor.workspace_id
+            or row["migration_id"] != command.migration_id
+            or row["run_id"] != self._run_id(prepared.actor.workspace_id, command.migration_id)
+            or row["source_revision_id"] != command.source_revision_id
+            or _digest(row["source_revision_hash"]) != _digest(command.source_revision_hash)
+            or row["source_domain_pack_id"] != source_pack[0]
+            or row["source_domain_pack_version"] != source_pack[1]
+            or _digest(row["source_domain_pack_hash"]) != _digest(source_pack[2])
+            or row["target_domain_pack_id"] != target_pack[0]
+            or row["target_domain_pack_version"] != target_pack[1]
+            or _digest(row["target_domain_pack_hash"]) != _digest(target_pack[2])
+            or _digest(row["target_revision_hash"]) != _digest(report.target_revision_hash)
+            or row["status"] != status
+            or row["request_hash"] != _hash_json(request)
+            or row["report_id"] != self._report_id(prepared.actor.workspace_id, command.migration_id)
+            or _digest(row["report_hash"]) != _digest(report.report_hash)
+            or row["actor_id"] != prepared.actor.actor_id
+            or row["created_at"] != report.created_at
+            or row["started_at"] != report.created_at
+        ):
+            raise ValueError("persisted migration run binding is invalid")
+        if status == "dry_run":
+            if (
+                row["child_revision_id"] is not None
+                or row["idempotency_scope"] is not None
+                or row["finished_at"] is not None
+            ):
+                raise ValueError("persisted dry-run state is invalid")
+        elif (
+            child is None
+            or scope is None
+            or row["child_revision_id"] != child.revision_id
+            or row["idempotency_scope"] != scope.scope_key
+            or row["finished_at"] != report.created_at
+        ):
+            raise ValueError("persisted confirmed run state is invalid")
+
     def _ensure_migration_run(
         self,
         connection: sqlite3.Connection,
@@ -324,20 +488,27 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         run_id = self._run_id(actor.workspace_id, command.migration_id)
         report_id = self._report_id(actor.workspace_id, command.migration_id)
         row = connection.execute(
-            "SELECT run_id,request_hash,source_revision_id,source_revision_hash,target_domain_pack_id,"
-            "target_domain_pack_version,target_domain_pack_hash,actor_id,report_id,report_hash,status "
+            "SELECT run_id,request_json,request_hash,source_revision_id,source_revision_hash,"
+            "source_domain_pack_id,source_domain_pack_version,source_domain_pack_hash,target_domain_pack_id,"
+            "target_domain_pack_version,target_domain_pack_hash,target_revision_hash,actor_id,report_id,"
+            "report_hash,status "
             "FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
             (actor.workspace_id, command.migration_id),
         ).fetchone()
         if row is not None:
             if (
                 row["run_id"] != run_id
+                or row["request_json"] != request_json
                 or row["request_hash"] != request_hash
                 or row["source_revision_id"] != command.source_revision_id
                 or _digest(row["source_revision_hash"]) != _digest(command.source_revision_hash)
+                or row["source_domain_pack_id"] != report.source_domain_pack_identity[0]
+                or row["source_domain_pack_version"] != report.source_domain_pack_identity[1]
+                or _digest(row["source_domain_pack_hash"]) != _digest(report.source_domain_pack_identity[2])
                 or row["target_domain_pack_id"] != command.target_domain_pack_id
                 or row["target_domain_pack_version"] != command.target_domain_pack_version
                 or _digest(row["target_domain_pack_hash"]) != _digest(command.target_domain_pack_hash)
+                or _digest(row["target_revision_hash"]) != _digest(report.target_revision_hash)
                 or row["actor_id"] != actor.actor_id
                 or row["report_id"] != report_id
                 or _digest(row["report_hash"] or "") != _digest(report.report_hash)
@@ -349,18 +520,23 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         connection.execute(
             "INSERT INTO fmea_migration_runs "
             "(workspace_id,migration_id,run_id,source_revision_id,source_revision_hash,"
-            "target_domain_pack_id,target_domain_pack_version,target_domain_pack_hash,status,request_json,"
+            "source_domain_pack_id,source_domain_pack_version,source_domain_pack_hash,target_domain_pack_id,"
+            "target_domain_pack_version,target_domain_pack_hash,target_revision_hash,status,request_json,"
             "request_hash,report_id,report_hash,actor_id,created_at,started_at,finished_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?,NULL)",
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)",
             (
                 actor.workspace_id,
                 command.migration_id,
                 run_id,
                 command.source_revision_id,
                 command.source_revision_hash,
+                report.source_domain_pack_identity[0],
+                report.source_domain_pack_identity[1],
+                report.source_domain_pack_identity[2],
                 command.target_domain_pack_id,
                 command.target_domain_pack_version,
                 command.target_domain_pack_hash,
+                report.target_revision_hash,
                 "dry_run",
                 request_json,
                 request_hash,
@@ -389,7 +565,11 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             or report.migration_id != command.migration_id
             or report.source_revision_id != command.source_revision_id
             or _digest(report.source_revision_hash) != _digest(command.source_revision_hash)
+            or report.plan.source != report.source_domain_pack_identity[:2]
             or report.plan.target != (command.target_domain_pack_id, command.target_domain_pack_version)
+            or report.target_domain_pack_identity[:2]
+            != (command.target_domain_pack_id, command.target_domain_pack_version)
+            or _digest(report.target_domain_pack_identity[2]) != _digest(command.target_domain_pack_hash)
         ):
             raise ReviewError("FMEA_MIGRATION_REPORT_INVALID", "migration report identity is invalid")
         report_json = canonical_json(_report_value(report))
@@ -399,33 +579,39 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             connection.execute("BEGIN IMMEDIATE")
             _, report_id, _ = self._ensure_migration_run(connection, report, command, actor)
             existing = connection.execute(
-                "SELECT report_json,report_hash,canonical_json_hash FROM fmea_migration_reports "
-                "WHERE workspace_id=? AND migration_id=?",
+                "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
                 (actor.workspace_id, command.migration_id),
             ).fetchone()
             if existing is not None:
+                stored = _decode_report(existing["report_json"], existing["report_hash"])
                 if (
-                    existing["report_json"] != report_json
-                    or _digest(existing["report_hash"]) != _digest(report.report_hash)
+                    stored != report
+                    or not _report_row_is_valid(existing, stored)
                     or existing["canonical_json_hash"] != canonical_hash
                 ):
                     raise ReviewError("FMEA_MIGRATION_IDEMPOTENCY_CONFLICT", "migration report is already bound")
                 connection.execute("COMMIT")
-                return _decode_report(existing["report_json"], existing["report_hash"])
+                return stored
             connection.execute(
                 "INSERT INTO fmea_migration_reports "
                 "(workspace_id,report_id,migration_id,source_revision_id,source_revision_hash,"
-                "target_domain_pack_id,target_domain_pack_version,target_domain_pack_hash,status,plan_json,"
-                "report_json,report_hash,canonical_json_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "source_domain_pack_id,source_domain_pack_version,source_domain_pack_hash,target_domain_pack_id,"
+                "target_domain_pack_version,target_domain_pack_hash,target_revision_hash,status,plan_json,"
+                "report_json,report_hash,canonical_json_hash,created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     actor.workspace_id,
                     report_id,
                     command.migration_id,
                     command.source_revision_id,
                     command.source_revision_hash,
+                    report.source_domain_pack_identity[0],
+                    report.source_domain_pack_identity[1],
+                    report.source_domain_pack_identity[2],
                     command.target_domain_pack_id,
                     command.target_domain_pack_version,
                     command.target_domain_pack_hash,
+                    report.target_revision_hash,
                     report.status.value,
                     canonical_json(_report_plan_value(report.plan)),
                     report_json,
@@ -455,16 +641,13 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         connection = self._connect()
         try:
             row = connection.execute(
-                "SELECT report_json,report_hash,canonical_json_hash,plan_json FROM fmea_migration_reports "
-                "WHERE workspace_id=? AND migration_id=?",
+                "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
                 (_text(workspace_id, "workspace_id"), _text(migration_id, "migration_id")),
             ).fetchone()
             if row is None:
                 return None
             report = _decode_report(row["report_json"], row["report_hash"])
-            if row["canonical_json_hash"] != _hash_json(_report_value(report)) or row["plan_json"] != canonical_json(
-                _report_plan_value(report.plan)
-            ):
+            if not _report_row_is_valid(row, report):
                 raise ValueError("persisted migration report hash is invalid")
             return report
         except ReviewError:
@@ -483,6 +666,13 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         payload_hash: str,
         result: MigrationResult,
     ) -> None:
+        _validate_prepared_binding(prepared)
+        self._validated_report_row(connection, prepared)
+        run = connection.execute(
+            "SELECT * FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+            (prepared.actor.workspace_id, prepared.command.migration_id),
+        ).fetchone()
+        self._validate_run_row(run, prepared, status="confirmed", child=child, scope=scope)
         confirmation = connection.execute(
             "SELECT * FROM fmea_migration_confirmations WHERE workspace_id=? AND idempotency_scope=?",
             (prepared.actor.workspace_id, scope.scope_key),
@@ -499,9 +689,14 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             or confirmation["report_hash"] != prepared.report.report_hash
             or confirmation["source_revision_id"] != prepared.source.revision_id
             or _digest(confirmation["source_revision_hash"]) != _digest(prepared.source.revision_hash)
+            or confirmation["source_domain_pack_id"] != prepared.report.source_domain_pack_identity[0]
+            or confirmation["source_domain_pack_version"] != prepared.report.source_domain_pack_identity[1]
+            or _digest(confirmation["source_domain_pack_hash"])
+            != _digest(prepared.report.source_domain_pack_identity[2])
             or confirmation["target_domain_pack_id"] != child.domain_pack_identity[0]
             or confirmation["target_domain_pack_version"] != child.domain_pack_identity[1]
             or _digest(confirmation["target_domain_pack_hash"]) != _digest(child.domain_pack_identity[2])
+            or _digest(confirmation["target_revision_hash"]) != _digest(prepared.report.target_revision_hash)
             or confirmation["child_revision_id"] != child.revision_id
             or confirmation["actor_id"] != prepared.actor.actor_id
             or confirmation["actor_type"] != prepared.actor.actor_type.value
@@ -606,7 +801,13 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         source = prepared.source
         if source.workspace_id != prepared.actor.workspace_id:
             raise ReviewError("FMEA_MIGRATION_SOURCE_MISSING", "source revision was not found")
-        child = _child_revision(source, prepared)
+        try:
+            _validate_prepared_binding(prepared)
+            child = _child_revision(source, prepared)
+        except Exception:
+            raise ReviewError(
+                "FMEA_MIGRATION_FAILED", "confirmed migration could not be committed", retryable=True
+            ) from None
         scope = self._migration_scope(prepared.command, prepared.actor)
         payload = _migration_payload(prepared, child)
         payload_hash = _hash_json(payload)
@@ -617,36 +818,7 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
-            existing_idempotency = self._idempotency_row(connection, scope)
-            if existing_idempotency is not None:
-                if existing_idempotency["payload_hash"] != payload_hash:
-                    raise ReviewError("FMEA_MIGRATION_IDEMPOTENCY_CONFLICT", "migration key has a different payload")
-                if existing_idempotency["state"] != "completed":
-                    raise ReviewError(
-                        "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
-                        "an incomplete migration transaction is present",
-                        retryable=True,
-                    )
-                self._verify_migration_replay(connection, prepared, child, scope, payload_hash, result)
-                connection.execute("COMMIT")
-                return replace(result, replayed=True)
-
-            report_row = connection.execute(
-                "SELECT report_id,report_json,report_hash,canonical_json_hash,plan_json,status FROM fmea_migration_reports "
-                "WHERE workspace_id=? AND migration_id=?",
-                (prepared.actor.workspace_id, prepared.command.migration_id),
-            ).fetchone()
-            if report_row is None or report_row["report_id"] != report_id:
-                raise ReviewError("FMEA_MIGRATION_REPORT_MISSING", "a stored dry-run report is required")
-            stored_report = _decode_report(report_row["report_json"], report_row["report_hash"])
-            if (
-                report_row["status"] != MigrationReportStatus.DRY_RUN.value
-                or stored_report != prepared.report
-                or _digest(report_row["report_hash"]) != _digest(prepared.report.report_hash)
-                or report_row["canonical_json_hash"] != _hash_json(_report_value(stored_report))
-                or report_row["plan_json"] != canonical_json(_report_plan_value(stored_report.plan))
-            ):
-                raise ReviewError("FMEA_MIGRATION_REPORT_STALE", "stored migration report is stale")
+            self._validated_report_row(connection, prepared)
 
             persisted_source = self._revision_from_connection(
                 connection, source.revision_id, prepared.actor.workspace_id
@@ -664,13 +836,23 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 raise ReviewError("FMEA_MIGRATION_SOURCE_STALE", "source revision is stale")
 
             run_row = connection.execute(
-                "SELECT run_id,status FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+                "SELECT * FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
                 (prepared.actor.workspace_id, prepared.command.migration_id),
             ).fetchone()
-            if run_row is None or run_row["run_id"] != run_id:
-                raise ReviewError("FMEA_MIGRATION_STORAGE_UNAVAILABLE", "migration run is unavailable", retryable=True)
-            if run_row["status"] == "confirmed":
-                raise ReviewError("FMEA_MIGRATION_IDEMPOTENCY_CONFLICT", "migration is already confirmed")
+            existing_idempotency = self._idempotency_row(connection, scope)
+            if existing_idempotency is not None:
+                if existing_idempotency["payload_hash"] != payload_hash:
+                    raise ReviewError("FMEA_MIGRATION_IDEMPOTENCY_CONFLICT", "migration key has a different payload")
+                if existing_idempotency["state"] != "completed":
+                    raise ReviewError(
+                        "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
+                        "an incomplete migration transaction is present",
+                        retryable=True,
+                    )
+                self._verify_migration_replay(connection, prepared, child, scope, payload_hash, result)
+                connection.execute("COMMIT")
+                return replace(result, replayed=True)
+            self._validate_run_row(run_row, prepared, status="dry_run")
 
             self._insert_idempotency(connection, scope, payload_hash, prepared.report.created_at)
             self._fail("migration.idempotency.reserve")
@@ -763,9 +945,11 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             connection.execute(
                 "INSERT INTO fmea_migration_confirmations "
                 "(workspace_id,confirmation_id,migration_id,report_id,report_hash,source_revision_id,"
-                "source_revision_hash,target_domain_pack_id,target_domain_pack_version,target_domain_pack_hash,"
+                "source_revision_hash,source_domain_pack_id,source_domain_pack_version,source_domain_pack_hash,"
+                "target_domain_pack_id,target_domain_pack_version,target_domain_pack_hash,target_revision_hash,"
                 "child_revision_id,actor_id,actor_type,idempotency_scope,payload_hash,confirmation_json,"
-                "canonical_json_hash,audit_event_id,outbox_event_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "canonical_json_hash,audit_event_id,outbox_event_id,created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     prepared.actor.workspace_id,
                     confirmation_id,
@@ -774,9 +958,13 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                     prepared.report.report_hash,
                     source.revision_id,
                     source.revision_hash,
+                    prepared.report.source_domain_pack_identity[0],
+                    prepared.report.source_domain_pack_identity[1],
+                    prepared.report.source_domain_pack_identity[2],
                     child.domain_pack_identity[0],
                     child.domain_pack_identity[1],
                     child.domain_pack_identity[2],
+                    prepared.report.target_revision_hash,
                     child.revision_id,
                     prepared.actor.actor_id,
                     prepared.actor.actor_type.value,
@@ -807,10 +995,9 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 )
             self._fail("migration.idempotency.complete")
             connection.execute(
-                "UPDATE fmea_migration_runs SET status='confirmed',report_hash=?,child_revision_id=?,"
+                "UPDATE fmea_migration_runs SET status='confirmed',child_revision_id=?,"
                 "idempotency_scope=?,finished_at=? WHERE workspace_id=? AND migration_id=?",
                 (
-                    prepared.report.report_hash,
                     child.revision_id,
                     scope.scope_key,
                     prepared.report.created_at,
@@ -818,6 +1005,10 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                     prepared.command.migration_id,
                 ),
             )
+            if connection.execute("SELECT changes()").fetchone()[0] != 1:
+                raise ReviewError(
+                    "FMEA_MIGRATION_STORAGE_UNAVAILABLE", "migration run completion failed", retryable=True
+                )
             connection.execute("COMMIT")
             return result
         except ReviewError:

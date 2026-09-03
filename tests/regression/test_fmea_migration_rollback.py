@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import fields
 from pathlib import Path
 
 import pytest
 
 HASH = "a" * 64
 TARGET_HASH = "b" * 64
+
+
+def _target_revision(source):
+    from fmea_governance_fixtures import make_fmea_revision
+
+    values = {field.name: getattr(source, field.name) for field in fields(source) if field.name != "revision_hash"}
+    values["domain_pack_identity"] = ("fuel-combustion", "2.0.0", TARGET_HASH)
+    return make_fmea_revision(**values)
 
 
 class FaultingAdapter:
@@ -16,12 +25,13 @@ class FaultingAdapter:
     def migrate(self, source):
         from fmea_application.migration_service import MigrationCandidate
 
-        return MigrationCandidate(target_domain_pack_identity=("fuel-combustion", "2.0.0", TARGET_HASH))
+        return MigrationCandidate(target_revision=_target_revision(source))
 
 
 class PackRegistry:
     def get(self, pack_id: str, version: str):
-        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": TARGET_HASH})()
+        content_hash = HASH if version == "1.0.0" else TARGET_HASH
+        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": content_hash})()
 
 
 @pytest.fixture
@@ -108,6 +118,14 @@ def test_failed_confirmed_migration_rolls_back_child_and_events(context):
             == 0
         )
         assert idempotency_count == before_idempotency_count
+        assert (
+            connection.execute(
+                "SELECT status FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+                ("ws-1", command.migration_id),
+            ).fetchone()[0]
+            == "dry_run"
+        )
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
         assert (
             connection.execute(
                 "SELECT COUNT(*) FROM fmea_governance_event_bindings WHERE workspace_id=? "
