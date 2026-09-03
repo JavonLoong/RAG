@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
     from .delivery_contracts import ExportArtifactManifest, ExportRun
-    from .export_service import StartExportCommand
+    from .export_service import ExportNarrativeGenerationResult, ExportNarrativeRequest, StartExportCommand
     from .migration_service import (
         MigrationCandidate,
         MigrationCommand,
@@ -816,6 +816,12 @@ class SnapshotExporter(Protocol):
     def render(self, snapshot: NormalizedFmeaSnapshot) -> bytes: ...
 
 
+class ExportNarrativeGenerator(Protocol):
+    """Provider-neutral, review-only narrative assistance boundary."""
+
+    def generate(self, request: ExportNarrativeRequest) -> ExportNarrativeGenerationResult: ...
+
+
 class ArtifactStore(Protocol):
     """Immutable artifact publication and verification boundary."""
 
@@ -872,6 +878,7 @@ __all__ = [
     "EvidenceProvider",
     "EvidenceRequest",
     "EvidenceSnapshot",
+    "ExportNarrativeGenerator",
     "ExportRepository",
     "FmeaRepository",
     "GovernanceAcknowledgementQueryPort",

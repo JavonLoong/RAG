@@ -8,18 +8,22 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from math import isfinite
+from typing import Literal
 
 from core_domain.fmea.filename_policy import validate_filename
 from core_domain.fmea.governance import RevisionPublicationStatus
 from core_domain.fmea.states import ActorType, RunStatus
 
+from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .delivery_contracts import ExportArtifactManifest, ExportFormat, ExportRun, validate_export_binding
-from .ports import ArtifactStore, ExportRepository, GovernanceRepository, SnapshotExporter
+from .ports import ArtifactStore, ExportNarrativeGenerator, ExportRepository, GovernanceRepository, SnapshotExporter
 from .review_contracts import ActorContext
+from .snapshot_contracts import NormalizedFmeaSnapshot
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _MAX_ID = 256
@@ -29,6 +33,31 @@ _MEDIA_TYPES = {
     ExportFormat.XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ExportFormat.DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
+_NARRATIVE_UNSAFE = re.compile(
+    r"(?i)(?:https?://|file://|\\\\|(?:[a-z]:[\\/])|\b(?:api[_ -]?key|authorization|credential|password|secret|token)\b)"
+)
+_NARRATIVE_ID = re.compile(r"^[A-Za-z][A-Za-z0-9._:-]{0,127}$")
+_NARRATIVE_FIELDS = (
+    "function",
+    "item",
+    "failure_mode",
+    "potential_failure_mode",
+    "effect",
+    "potential_effect",
+    "cause",
+    "potential_cause",
+    "current_control",
+    "current_controls",
+    "detection_method",
+    "recommended_action",
+    "severity",
+    "occurrence",
+    "detection",
+    "rpn",
+)
+_NARRATIVE_MAX_ROWS = 8
+_NARRATIVE_MAX_EVIDENCE = 12
+_NARRATIVE_MAX_UNRESOLVED = 8
 
 
 class ExportServiceError(ValueError):
@@ -50,6 +79,10 @@ class ExportServiceError(ValueError):
         "FMEA_EXPORT_IDEMPOTENCY_CONFLICT",
         "FMEA_EXPORT_STORAGE_UNAVAILABLE",
         "FMEA_EXPORT_PERSISTENCE_INVALID",
+        "FMEA_EXPORT_NARRATIVE_REQUEST_INVALID",
+        "FMEA_EXPORT_NARRATIVE_FORBIDDEN",
+        "FMEA_EXPORT_NARRATIVE_INVALID",
+        "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
     })
 
     def __init__(self, code: str, public_message: str, retryable: bool = False) -> None:
@@ -90,6 +123,279 @@ def _timestamp(value: object, name: str) -> str:
     if parsed.tzinfo is None or parsed.utcoffset() != timedelta(0):
         raise ValueError(f"{name} must be an ISO-8601 UTC timestamp")
     return value
+
+
+def _narrative_text(value: object, name: str, *, limit: int) -> str:
+    if not isinstance(value, str) or not value.strip() or len(value) > limit:
+        raise ValueError(f"{name} is invalid")
+    normalized = value.strip()
+    if _NARRATIVE_UNSAFE.search(normalized):
+        raise ValueError(f"{name} is not export-safe")
+    return normalized
+
+
+def _narrative_id(value: object, name: str) -> str:
+    normalized = _narrative_text(value, name, limit=128)
+    if _NARRATIVE_ID.fullmatch(normalized) is None:
+        raise ValueError(f"{name} is invalid")
+    return normalized
+
+
+def _narrative_ids(value: object, name: str, *, maximum: int) -> tuple[str, ...]:
+    if isinstance(value, str | bytes) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} is invalid")
+    if len(value) > maximum:
+        raise ValueError(f"{name} exceeds its limit")
+    normalized = tuple(_narrative_id(item, name) for item in value)
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"{name} contains duplicates")
+    return normalized
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeClaim:
+    """One bounded narrative claim and its projection-local evidence references."""
+
+    claim_id: str
+    text: str
+    evidence_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "claim_id", _narrative_id(self.claim_id, "claim_id"))
+        object.__setattr__(self, "text", _narrative_text(self.text, "claim text", limit=1000))
+        object.__setattr__(self, "evidence_ids", _narrative_ids(self.evidence_ids, "claim evidence_ids", maximum=8))
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeSection:
+    """One bounded section that can only point at claims in the same draft."""
+
+    section_id: str
+    title: str
+    body: str
+    claim_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "section_id", _narrative_id(self.section_id, "section_id"))
+        object.__setattr__(self, "title", _narrative_text(self.title, "section title", limit=256))
+        object.__setattr__(self, "body", _narrative_text(self.body, "section body", limit=2500))
+        object.__setattr__(self, "claim_ids", _narrative_ids(self.claim_ids, "section claim_ids", maximum=32))
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeDraft:
+    """Immutable, review-only narrative payload for one normalized snapshot."""
+
+    title: str
+    sections: tuple[ExportNarrativeSection, ...]
+    claims: tuple[ExportNarrativeClaim, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "title", _narrative_text(self.title, "narrative title", limit=256))
+        sections = tuple(self.sections)
+        claims = tuple(self.claims)
+        if not 1 <= len(sections) <= 8 or not 1 <= len(claims) <= 32:
+            raise ValueError("narrative sections or claims exceed the bounded limit")
+        if not all(isinstance(item, ExportNarrativeSection) for item in sections):
+            raise ValueError("narrative sections are invalid")
+        if not all(isinstance(item, ExportNarrativeClaim) for item in claims):
+            raise ValueError("narrative claims are invalid")
+        section_ids = tuple(item.section_id for item in sections)
+        claim_ids = tuple(item.claim_id for item in claims)
+        if len(section_ids) != len(set(section_ids)) or len(claim_ids) != len(set(claim_ids)):
+            raise ValueError("narrative section or claim IDs contain duplicates")
+        known_claims = set(claim_ids)
+        referenced_claims = {claim_id for section in sections for claim_id in section.claim_ids}
+        if referenced_claims != known_claims:
+            raise ValueError("narrative section claim references are invalid")
+        if sum(len(section.title) + len(section.body) for section in sections) + len(self.title) > 16_000:
+            raise ValueError("narrative text exceeds the bounded limit")
+        object.__setattr__(self, "sections", sections)
+        object.__setattr__(self, "claims", claims)
+
+    def as_json(self) -> Mapping[str, object]:
+        return {
+            "title": self.title,
+            "sections": [
+                {
+                    "section_id": section.section_id,
+                    "title": section.title,
+                    "body": section.body,
+                    "claim_ids": list(section.claim_ids),
+                }
+                for section in self.sections
+            ],
+            "claims": [
+                {
+                    "claim_id": claim.claim_id,
+                    "text": claim.text,
+                    "evidence_ids": list(claim.evidence_ids),
+                }
+                for claim in self.claims
+            ],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeRequest:
+    """Server-side request carrying the exact snapshot and its safe model projection."""
+
+    snapshot: NormalizedFmeaSnapshot
+    projection: Mapping[str, object]
+    run_id: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.snapshot, NormalizedFmeaSnapshot):
+            raise ValueError("snapshot must be a NormalizedFmeaSnapshot")
+        object.__setattr__(self, "run_id", _text(self.run_id, "run_id", limit=_MAX_ID))
+        if not isinstance(self.projection, Mapping):
+            raise ValueError("narrative projection must be a mapping")
+        object.__setattr__(self, "projection", dict(self.projection))
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeGenerationResult:
+    """Validated generator result before the application builds the shared envelope."""
+
+    draft: ExportNarrativeDraft
+    model_hash: str
+    prompt_hash: str
+    run_id: str
+    trace_id: str
+    status: Literal["succeeded", "needs_review"]
+    repair_count: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.draft, ExportNarrativeDraft):
+            raise ValueError("narrative draft is invalid")
+        object.__setattr__(self, "model_hash", _hash(self.model_hash, "model_hash"))
+        object.__setattr__(self, "prompt_hash", _hash(self.prompt_hash, "prompt_hash"))
+        object.__setattr__(self, "run_id", _text(self.run_id, "run_id", limit=_MAX_ID))
+        object.__setattr__(self, "trace_id", _text(self.trace_id, "trace_id", limit=_MAX_ID))
+        if self.status not in {"succeeded", "needs_review"}:
+            raise ValueError("narrative pipeline status is invalid")
+        if isinstance(self.repair_count, bool) or self.repair_count not in {0, 1}:
+            raise ValueError("narrative repair count is invalid")
+
+
+@dataclass(frozen=True, slots=True)
+class ExportNarrativeSuggestion:
+    """Typed view over the shared immutable AssistanceSuggestion envelope."""
+
+    envelope: AssistanceSuggestion[Mapping[str, object]]
+    draft: ExportNarrativeDraft
+
+    @property
+    def payload(self) -> ExportNarrativeDraft:
+        return self.draft
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self.envelope, name)
+
+
+def _narrative_alias(prefix: str, value: object) -> str:
+    return f"{prefix}-{sha256(str(value).encode('utf-8')).hexdigest()[:16]}"
+
+
+def _safe_projection_text(value: object, *, limit: int = 512) -> str | None:
+    if not isinstance(value, str) or not value.strip() or len(value) > 16_384:
+        return None
+    normalized = value.strip()
+    if _NARRATIVE_UNSAFE.search(normalized):
+        return None
+    return normalized[:limit]
+
+
+def _safe_projection_value(value: object) -> object | None:
+    if value is None or isinstance(value, bool | int):
+        return value
+    if isinstance(value, float):
+        return value if isfinite(value) else None
+    if isinstance(value, str):
+        return _safe_projection_text(value)
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        bounded = tuple(_safe_projection_text(item, limit=256) for item in value[:4])
+        return [item for item in bounded if item is not None]
+    return None
+
+
+def build_export_narrative_projection(snapshot: NormalizedFmeaSnapshot) -> Mapping[str, object]:
+    """Build a bounded projection without exposing workspace or source-document identities."""
+
+    if not isinstance(snapshot, NormalizedFmeaSnapshot):
+        raise ValueError("snapshot must be a NormalizedFmeaSnapshot")
+    raw_evidence: list[tuple[str, str, str]] = []
+
+    def add_evidence(raw_id: object, kind: str, excerpt: object) -> None:
+        if not isinstance(raw_id, str) or not raw_id.strip() or any(item[0] == raw_id for item in raw_evidence):
+            return
+        raw_evidence.append((raw_id.strip(), kind, _safe_projection_text(excerpt) or ""))
+
+    for item in snapshot.evidence_summary:
+        pack_id = item.get("pack_id")
+        raw_ids = item.get("evidence_ids")
+        if isinstance(raw_ids, Sequence) and not isinstance(raw_ids, str | bytes):
+            for raw_id in raw_ids:
+                add_evidence(raw_id, "evidence-summary", item.get("excerpt", item.get("summary", "")))
+        elif isinstance(item.get("evidence_id"), str):
+            add_evidence(item["evidence_id"], "evidence-summary", item.get("excerpt", ""))
+        else:
+            add_evidence(pack_id, "pack-summary", item.get("summary", ""))
+    for item in snapshot.unresolved_items:
+        evidence_ids = item.get("evidence_ids")
+        if isinstance(evidence_ids, Sequence) and not isinstance(evidence_ids, str | bytes):
+            for raw_id in evidence_ids:
+                add_evidence(raw_id, "unresolved", "")
+
+    raw_evidence = raw_evidence[:_NARRATIVE_MAX_EVIDENCE]
+    evidence_aliases = {raw_id: f"evidence-{index:03d}" for index, (raw_id, _, _) in enumerate(raw_evidence, start=1)}
+    evidence = [
+        {"ref": evidence_aliases[raw_id], "kind": kind, "excerpt": excerpt} for raw_id, kind, excerpt in raw_evidence
+    ]
+
+    row_items = sorted(snapshot.rows, key=lambda item: str(item.get("row_id", "")))[:_NARRATIVE_MAX_ROWS]
+    rows: list[dict[str, object]] = []
+    for row in row_items:
+        fields: dict[str, object] = {}
+        for field_name in _NARRATIVE_FIELDS:
+            if field_name not in row:
+                continue
+            value = _safe_projection_value(row[field_name])
+            if value is not None:
+                fields[field_name] = value
+        rows.append({"row_alias": _narrative_alias("row", row.get("row_id", len(rows))), "fields": fields})
+
+    unresolved: list[dict[str, object]] = []
+    for index, item in enumerate(snapshot.unresolved_items[:_NARRATIVE_MAX_UNRESOLVED], start=1):
+        item_evidence = item.get("evidence_ids")
+        refs = tuple(
+            evidence_aliases[raw_id]
+            for raw_id in item_evidence
+            if isinstance(item_evidence, Sequence)
+            and not isinstance(item_evidence, str | bytes)
+            and raw_id in evidence_aliases
+        )
+        unresolved.append({
+            "issue_alias": f"issue-{index:03d}",
+            "code": _safe_projection_text(item.get("code"), limit=128) or "unknown",
+            "severity": _safe_projection_text(item.get("severity"), limit=32) or "unknown",
+            "evidence_refs": list(refs),
+        })
+    return {
+        "snapshot_alias": _narrative_alias("snapshot", snapshot.snapshot_id),
+        "revision_alias": _narrative_alias("revision", snapshot.revision_id),
+        "summary": {
+            "row_count": snapshot.row_count,
+            "risk_record_count": len(snapshot.risk_records),
+            "evidence_pack_count": len(snapshot.evidence_summary),
+            "decision_count": len(snapshot.decision_summary),
+            "unresolved_count": len(snapshot.unresolved_items),
+            "propagation_present": snapshot.propagation is not None,
+        },
+        "rows": rows,
+        "evidence": evidence,
+        "unresolved": unresolved,
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,6 +487,8 @@ class ExportService:
         exporters: Mapping[str | ExportFormat, SnapshotExporter] | Iterable[SnapshotExporter],
         *,
         clock: Callable[[], str] | None = None,
+        narrative_generator: ExportNarrativeGenerator | None = None,
+        id_factory: Callable[[str], str] | None = None,
     ) -> None:
         self.governance_repository = governance_repository
         self.export_repository = export_repository
@@ -201,6 +509,8 @@ class ExportService:
         self._clock = clock or (
             lambda: datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
         )
+        self._narrative_generator = narrative_generator
+        self._id_factory = id_factory
 
     @staticmethod
     def _authorize(actor: ActorContext) -> None:
@@ -436,6 +746,91 @@ class ExportService:
         except Exception as exc:
             raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export completion is retryable", True) from exc
 
+    def suggest_narrative(
+        self,
+        snapshot: NormalizedFmeaSnapshot,
+        actor: ActorContext,
+    ) -> ExportNarrativeSuggestion:
+        """Generate a provisional narrative without touching durable export state."""
+
+        if not isinstance(snapshot, NormalizedFmeaSnapshot):
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_REQUEST_INVALID", "narrative snapshot is invalid")
+        if not isinstance(actor, ActorContext) or actor.actor_type is not ActorType.MODEL:
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_FORBIDDEN", "narrative suggestions require a model actor")
+        if actor.workspace_id != snapshot.workspace_id:
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_FORBIDDEN", "narrative workspace binding is invalid")
+        if self._narrative_generator is None:
+            raise ExportServiceError(
+                "FMEA_EXPORT_NARRATIVE_UNAVAILABLE", "narrative generation is not configured", retryable=True
+            )
+        try:
+            request = ExportNarrativeRequest(
+                snapshot=snapshot,
+                projection=build_export_narrative_projection(snapshot),
+                run_id="export-narrative-" + sha256(snapshot.snapshot_hash.encode("ascii")).hexdigest()[:32],
+            )
+            result = self._narrative_generator.generate(request)
+        except ExportServiceError:
+            raise
+        except Exception as exc:
+            generator_code = getattr(exc, "code", None)
+            if generator_code == "FMEA_EXPORT_NARRATIVE_INVALID":
+                raise ExportServiceError(
+                    "FMEA_EXPORT_NARRATIVE_INVALID", "narrative generation result is invalid"
+                ) from exc
+            if generator_code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE":
+                raise ExportServiceError(
+                    "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
+                    "narrative generation is temporarily unavailable",
+                    retryable=bool(getattr(exc, "retryable", True)),
+                ) from exc
+            raise ExportServiceError(
+                "FMEA_EXPORT_NARRATIVE_UNAVAILABLE", "narrative generation is temporarily unavailable", True
+            ) from exc
+        if not isinstance(result, ExportNarrativeGenerationResult) or result.run_id != request.run_id:
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_INVALID", "narrative generation result is invalid")
+        try:
+            evidence_pack_ids = tuple(
+                item["pack_id"]
+                for item in snapshot.evidence_summary
+                if isinstance(item.get("pack_id"), str) and item["pack_id"].strip()
+            ) or ("snapshot-evidence",)
+            evidence_values: list[str] = []
+            for claim in result.draft.claims:
+                for evidence_id in claim.evidence_ids:
+                    if evidence_id not in evidence_values:
+                        evidence_values.append(evidence_id)
+            evidence_ids = tuple(evidence_values)
+            envelope = AssistanceSuggestion(
+                suggestion_id="export-narrative-suggestion-"
+                + sha256(f"{snapshot.snapshot_id}:{snapshot.snapshot_hash}".encode()).hexdigest()[:32],
+                kind=AssistanceKind.EXPORT_NARRATIVE_DRAFT,
+                workspace_id=snapshot.workspace_id,
+                target_type="normalized_fmea_snapshot",
+                target_id=snapshot.snapshot_id,
+                target_record_version=1,
+                evidence_pack_ids=evidence_pack_ids,
+                payload=result.draft.as_json(),
+                evidence_ids=evidence_ids,
+                model_hash=result.model_hash,
+                prompt_hash=result.prompt_hash,
+                run_id=result.run_id,
+                trace_id=result.trace_id,
+                domain_pack_id=None,
+                domain_pack_version=None,
+                template_id=None,
+                template_version=None,
+                rule_pack_id=None,
+                rule_pack_version=None,
+                created_at=self._clock(),
+                applied=False,
+            )
+        except (TypeError, ValueError) as exc:
+            raise ExportServiceError(
+                "FMEA_EXPORT_NARRATIVE_INVALID", "narrative suggestion contract is invalid"
+            ) from exc
+        return ExportNarrativeSuggestion(envelope=envelope, draft=result.draft)
+
     def get_run(self, export_run_id: str, actor: ActorContext) -> ExportRun:
         self._authorize(actor)
         try:
@@ -475,4 +870,15 @@ class ExportService:
         return stored
 
 
-__all__ = ["ExportService", "ExportServiceError", "StartExportCommand"]
+__all__ = [
+    "ExportNarrativeClaim",
+    "ExportNarrativeDraft",
+    "ExportNarrativeGenerationResult",
+    "ExportNarrativeRequest",
+    "ExportNarrativeSection",
+    "ExportNarrativeSuggestion",
+    "ExportService",
+    "ExportServiceError",
+    "StartExportCommand",
+    "build_export_narrative_projection",
+]

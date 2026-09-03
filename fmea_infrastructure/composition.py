@@ -13,6 +13,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, NoReturn
 from uuid import uuid4
 
@@ -28,12 +29,14 @@ from fmea_application import (
 from fmea_application.analysis_assistance_service import AnalysisAssistanceService
 from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
+from fmea_application.export_service import ExportService
 from fmea_application.governance_assistance_service import GovernanceAssistanceService
 from fmea_application.governance_service import GovernanceServiceError, RevisionGovernanceService
 from fmea_application.migration_service import MigrationService
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
+    ExportNarrativeGenerator,
     GovernanceAssistanceGenerator,
     GovernanceRepository,
     GovernanceRepositoryProviders,
@@ -42,6 +45,7 @@ from fmea_application.ports import (
     PropagationRuleRegistry,
     RiskSuggestionGenerator,
     ScoringRuleRegistry,
+    SnapshotExporter,
     SystemTopologyPort,
 )
 from fmea_application.propagation_service import (
@@ -71,6 +75,7 @@ from fmea_application.service_factory import (
     build_risk_assessment_service,
 )
 from fmea_infrastructure.analysis_assistance_generator import EnvironmentAnalysisAssistanceGenerator
+from fmea_infrastructure.artifact_store import WorkspaceArtifactStore
 from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
 from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 from fmea_infrastructure.domain_pack_registry import (
@@ -81,6 +86,8 @@ from fmea_infrastructure.domain_pack_registry import (
     load_scoring_rule_pack,
     scoring_rule_content_hash,
 )
+from fmea_infrastructure.export_json import CanonicalJsonExporter
+from fmea_infrastructure.export_narrative_generator import EnvironmentExportNarrativeGenerator
 from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
 from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
 from fmea_infrastructure.migration_registry import MigrationRegistry
@@ -188,6 +195,18 @@ class MigrationRuntime:
     migration_registry: MigrationRegistry
     domain_pack_registry: DomainPackRegistry
     template_registry_root: Path
+
+
+@dataclass(frozen=True, slots=True)
+class ExportRuntime:
+    """Workspace-owned runtime for verified snapshot exports and narrative drafts."""
+
+    service: ExportService
+    repository: SqliteFmeaDeliveryRepository
+    artifact_store: WorkspaceArtifactStore
+    exporters: Mapping[str, SnapshotExporter]
+    narrative_generator: ExportNarrativeGenerator | None
+    artifact_root: Path
 
 
 class RegistryGovernanceArtifactProvider:
@@ -723,6 +742,72 @@ def build_workspace_migration_runtime(
     )
 
 
+def build_workspace_export_runtime(  # noqa: C901
+    workspace: WorkspaceConfig,
+    *,
+    exporters: Mapping[str | object, SnapshotExporter] | Iterable[SnapshotExporter] | None = None,
+    narrative_generator: ExportNarrativeGenerator | None = None,
+    artifact_root: Path | None = None,
+    clock: Callable[[], str] = utc_now,
+    id_factory: Callable[[str], str] = new_prefixed_uuid,
+) -> ExportRuntime:
+    """Compose one workspace's explicit export and narrative-assistance boundary."""
+
+    if not callable(clock) or not callable(id_factory):
+        raise TypeError("clock and id_factory must be callable")
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    resolved_artifact_root = _resolved_path(artifact_root or database_path.parent / "artifacts")
+    if _paths_overlap(database_path, resolved_artifact_root):
+        raise ValueError("FMEA export artifact root must be separate from the review database")
+    if _paths_overlap(template_registry_root, resolved_artifact_root):
+        raise ValueError("FMEA export artifact root must be separate from the template registry")
+
+    if exporters is None:
+        candidates = (CanonicalJsonExporter(),)
+        declared_keys: tuple[str, ...] | None = None
+    elif isinstance(exporters, Mapping):
+        candidates = tuple(exporters.values())
+        declared_keys = tuple(str(key.value if hasattr(key, "value") else key) for key in exporters)
+    else:
+        candidates = tuple(exporters)
+        declared_keys = None
+    if not candidates:
+        raise ValueError("at least one explicit exporter is required")
+    resolved_exporters: dict[str, SnapshotExporter] = {}
+    for index, exporter in enumerate(candidates):
+        key_value = getattr(exporter, "format", None)
+        key = str(key_value.value if hasattr(key_value, "value") else key_value)
+        if key not in {"json", "xlsx", "docx"}:
+            raise ValueError("exporter format is invalid")
+        if declared_keys is not None and declared_keys[index] != key:
+            raise ValueError("exporter mapping key does not match exporter format")
+        if key in resolved_exporters:
+            raise ValueError("exporter format is duplicated")
+        resolved_exporters[key] = exporter
+
+    repository = SqliteFmeaDeliveryRepository(database_path)
+    repository.initialize()
+    store = WorkspaceArtifactStore(resolved_artifact_root, workspace.workspace_id)
+    resolved_narrative_generator = narrative_generator or EnvironmentExportNarrativeGenerator()
+    service = ExportService(
+        repository,
+        repository,
+        store,
+        MappingProxyType(resolved_exporters),
+        clock=clock,
+        narrative_generator=resolved_narrative_generator,
+        id_factory=id_factory,
+    )
+    return ExportRuntime(
+        service=service,
+        repository=repository,
+        artifact_store=store,
+        exporters=MappingProxyType(resolved_exporters),
+        narrative_generator=resolved_narrative_generator,
+        artifact_root=resolved_artifact_root,
+    )
+
+
 def build_workspace_review_runtime(
     workspace: WorkspaceConfig,
     *,
@@ -1004,6 +1089,7 @@ def build_default_workspace_risk_runtime(
 
 
 __all__ = [
+    "ExportRuntime",
     "GovernanceRuntime",
     "MigrationRuntime",
     "PropagationRuntime",
@@ -1016,6 +1102,7 @@ __all__ = [
     "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
     "build_governance_runtime",
+    "build_workspace_export_runtime",
     "build_workspace_governance_runtime",
     "build_workspace_migration_runtime",
     "build_workspace_propagation_runtime",
