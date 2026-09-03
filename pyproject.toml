@@ -66,7 +66,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["data_pipeline/prototype/power_rag_pipeline"]
+packages = [
+  "data_pipeline/prototype/power_rag_pipeline",
+  "knowledge_base",
+  "workflow_runtime",
+]
 
 [tool.mypy]
 files = [
@@ -94,6 +98,10 @@ files = [
   "scripts/fmea_skill.py",
   "scripts/run_fmea_review_acceptance.py",
   "scripts/verify_fmea_review_acceptance.py",
+  "knowledge_base",
+  "workflow_runtime",
+  "retrieval_engine/knowledge_base.py",
+  "scripts/knowledge_base_cli.py",
   "tests",
 ]
 disallow_untyped_defs = true
@@ -143,6 +151,16 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
+"knowledge_base/adapters.py" = ["TRY003"]
+"knowledge_base/chunking.py" = ["RUF001", "TRY003"]
+"knowledge_base/contracts.py" = ["TRY003"]
+"knowledge_base/query.py" = ["RUF001", "TRY003"]
+"knowledge_base/store.py" = ["TRY003"]
+"workflow_runtime/engine.py" = ["TRY003", "TRY300", "TRY301"]
+"scripts/knowledge_base_cli.py" = ["TRY003"]
+"tests/unit/test_knowledge_base_lifecycle.py" = ["RUF001"]
+"tests/unit/test_workflow_runtime.py" = ["TRY003"]
+"tests/integration/test_m3_m6_knowledge_pipeline.py" = ["RUF001"]
 
 [tool.ruff.format]
 preview = true
@@ -152,4 +170,4 @@ skip_empty = true
 
 [tool.coverage.run]
 branch = true
-source = ["power_rag_pipeline"]
+source = ["power_rag_pipeline", "knowledge_base", "workflow_runtime"]
