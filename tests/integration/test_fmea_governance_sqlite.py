@@ -2462,7 +2462,7 @@ def test_migration_008_backfills_reconstructable_v7_authority_and_preserves_repl
     restarted = SqliteGovernanceRepository(path)
     restarted.initialize()
     with sqlite3.connect(path) as connection:
-        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (9,)
+        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (10,)
         assert connection.execute(
             "SELECT idempotency_scope,payload_hash FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
             (revision.scope.workspace_id, revision.revision.revision_id),

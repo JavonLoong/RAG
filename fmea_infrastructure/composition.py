@@ -8,7 +8,7 @@ from __future__ import annotations
 import hmac
 import os
 import secrets
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -30,6 +30,7 @@ from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
 from fmea_application.governance_assistance_service import GovernanceAssistanceService
 from fmea_application.governance_service import GovernanceServiceError, RevisionGovernanceService
+from fmea_application.migration_service import MigrationService
 from fmea_application.ports import (
     AnalysisAssistanceGenerator,
     DomainPackRegistry,
@@ -37,6 +38,7 @@ from fmea_application.ports import (
     GovernanceRepository,
     GovernanceRepositoryProviders,
     GovernanceSourcePort,
+    MigrationAdapter,
     PropagationRuleRegistry,
     RiskSuggestionGenerator,
     ScoringRuleRegistry,
@@ -70,6 +72,7 @@ from fmea_application.service_factory import (
 )
 from fmea_infrastructure.analysis_assistance_generator import EnvironmentAnalysisAssistanceGenerator
 from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
+from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 from fmea_infrastructure.domain_pack_registry import (
     FileDomainPackRegistry,
     FileScoringRuleRegistry,
@@ -80,6 +83,7 @@ from fmea_infrastructure.domain_pack_registry import (
 )
 from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
 from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
+from fmea_infrastructure.migration_registry import MigrationRegistry
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
 from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
 from fmea_infrastructure.propagation_rule_registry import (
@@ -173,6 +177,17 @@ class GovernanceRuntime:
     assistance_service: GovernanceAssistanceService
     repository: GovernanceRepository | None = None
     service: RevisionGovernanceService | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MigrationRuntime:
+    """Workspace-owned runtime for explicit, provider-neutral FMEA migration."""
+
+    service: MigrationService
+    repository: SqliteFmeaDeliveryRepository
+    migration_registry: MigrationRegistry
+    domain_pack_registry: DomainPackRegistry
+    template_registry_root: Path
 
 
 class RegistryGovernanceArtifactProvider:
@@ -678,6 +693,36 @@ def build_default_workspace_governance_runtime(
     )
 
 
+def build_workspace_migration_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    domain_pack_registry: DomainPackRegistry,
+    migration_adapters: Iterable[MigrationAdapter],
+    clock: Callable[[], str] = utc_now,
+) -> MigrationRuntime:
+    """Compose one workspace's explicit migration graph and delivery service."""
+
+    if not callable(getattr(domain_pack_registry, "get", None)):
+        raise TypeError("domain_pack_registry must provide a callable get method")
+    migration_registry = MigrationRegistry(migration_adapters)
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    repository = SqliteFmeaDeliveryRepository(database_path)
+    repository.initialize()
+    service = MigrationService(
+        repository,
+        migration_registry,
+        domain_pack_registry=domain_pack_registry,
+        clock=clock,
+    )
+    return MigrationRuntime(
+        service=service,
+        repository=repository,
+        migration_registry=migration_registry,
+        domain_pack_registry=domain_pack_registry,
+        template_registry_root=template_registry_root,
+    )
+
+
 def build_workspace_review_runtime(
     workspace: WorkspaceConfig,
     *,
@@ -960,6 +1005,7 @@ def build_default_workspace_risk_runtime(
 
 __all__ = [
     "GovernanceRuntime",
+    "MigrationRuntime",
     "PropagationRuntime",
     "RegistryGovernanceArtifactProvider",
     "RepositoryGovernanceSource",
@@ -971,6 +1017,7 @@ __all__ = [
     "build_default_workspace_risk_runtime",
     "build_governance_runtime",
     "build_workspace_governance_runtime",
+    "build_workspace_migration_runtime",
     "build_workspace_propagation_runtime",
     "build_workspace_review_runtime",
     "build_workspace_risk_runtime",
