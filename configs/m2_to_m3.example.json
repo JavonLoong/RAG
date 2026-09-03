@@ -1,0 +1,74 @@
+{
+  "schema_version": "power-rag.m2-document.v1",
+  "document": {
+    "document_id": "gas-turbine-compressor-manual",
+    "title": "燃气轮机压气机维护手册",
+    "source_uri": "approved/gas-turbine-compressor-manual.pdf",
+    "media_type": "application/pdf",
+    "metadata": {
+      "source_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "source_version": "2026-08-01",
+      "language": "zh-CN",
+      "source_trust": "reviewed",
+      "required_access_labels": ["internal-research"]
+    },
+    "pages": [
+      {
+        "page_number": 7,
+        "metadata": {
+          "parser": "layout-aware-ocr-v1",
+          "ocr_reviewed": true
+        },
+        "blocks": [
+          {
+            "block_id": "page-7-title-1",
+            "block_type": "title",
+            "ordinal": 0,
+            "text": "压气机污染",
+            "metadata": {
+              "bbox": [99, 264, 518, 285]
+            }
+          },
+          {
+            "block_id": "page-7-paragraph-1",
+            "block_type": "paragraph",
+            "ordinal": 1,
+            "text": "叶片积垢会降低压气机效率，应按维护规程进行检查与清洗。",
+            "metadata": {
+              "bbox": [95, 310, 530, 390]
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "asset_type": "image",
+        "page_number": 7,
+        "block_id": "page-7-paragraph-1",
+        "uri": "assets/gas-turbine-compressor-manual/page-7-figure-1.png",
+        "caption": "压气机叶片积垢示意图",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "review": {
+    "status": "approved",
+    "reviewer": "m2-human-reviewer",
+    "reviewed_at": "2026-09-02T09:00:00+08:00",
+    "comment": "原页、文字、阅读顺序和图注已核对。"
+  },
+  "quality": {
+    "evidence_coverage": 1.0,
+    "issues": [
+      {
+        "code": "OCR_LOW_CONFIDENCE",
+        "message": "图注曾为低置信度，人工复核后确认。",
+        "severity": "warning",
+        "resolved": true,
+        "page_number": 7,
+        "block_id": "page-7-paragraph-1"
+      }
+    ]
+  }
+}

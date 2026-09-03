@@ -1,0 +1,32 @@
+{
+  "document_id": "gas-turbine-compressor-manual",
+  "title": "燃气轮机压气机维护手册",
+  "source_uri": "approved/gas-turbine-compressor-manual.pdf",
+  "media_type": "application/pdf",
+  "metadata": {
+    "source_trust": "reviewed",
+    "permission": "internal-research",
+    "language": "zh-CN"
+  },
+  "pages": [
+    {
+      "page_number": 7,
+      "metadata": {
+        "ocr_reviewed": true
+      },
+      "blocks": [
+        {
+          "block_type": "title",
+          "ordinal": 0,
+          "text": "压气机污染"
+        },
+        {
+          "block_type": "paragraph",
+          "ordinal": 1,
+          "text": "叶片积垢会降低压气机效率，应按维护规程进行检查与清洗。"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
