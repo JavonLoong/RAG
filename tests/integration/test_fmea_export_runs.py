@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
+import orjson
 import pytest
 from fmea_governance_fixtures import (
     make_governance_actor,
@@ -13,6 +14,8 @@ from fmea_governance_fixtures import (
     prepared_publication,
     seed_authoritative_analysis,
 )
+
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
 
 class FakeExporter:
@@ -23,9 +26,11 @@ class FakeExporter:
         self.payload = payload
         self.failure = failure
         self.calls = 0
+        self.draft_previews: list[bool | None] = []
 
-    def render(self, snapshot) -> bytes:
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
         self.calls += 1
+        self.draft_previews.append(draft_preview)
         if self.failure is not None:
             raise self.failure
         return self.payload
@@ -181,6 +186,7 @@ def test_success_is_durable_verified_and_idempotent(tmp_path: Path):
     assert artifact.manifest.export_run_id == first.export_run_id
     assert artifact.payload == exporter.payload
     assert exporter.calls == 1
+    assert exporter.draft_previews == [False]
 
 
 def test_post_latest_store_fault_is_reconciled_as_succeeded_and_replayable(tmp_path: Path):
@@ -306,8 +312,48 @@ def test_draft_preview_is_explicit_and_workspace_isolated(tmp_path: Path):
 
     assert result.draft_preview is True
     assert result.publication_id is None
+    assert exporter.draft_previews == [True]
     with pytest.raises(Exception, match="FMEA_EXPORT_RUN_NOT_FOUND"):
         service.get_run(result.export_run_id, make_governance_actor(workspace_id="ws-2"))
+
+
+def test_real_json_exporter_uses_each_command_preview_identity_and_matches_artifact_manifest(tmp_path: Path):
+    from fmea_infrastructure.export_json import CanonicalJsonExporter
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = CanonicalJsonExporter(draft_preview=True)
+    service, _ = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    published_command = _command(snapshot)
+    preview_command = _command(
+        snapshot,
+        run_id="draft-run-real-json",
+        key="00000000-0000-4000-8000-000000000899",
+        publication_id=None,
+        draft_preview=True,
+        filename="fmea-preview.json",
+    )
+
+    published_run = service.start(published_command, actor)
+    preview_run = service.start(preview_command, actor)
+    published_artifact = service.get_artifact(published_run.artifact_id, actor)
+    preview_artifact = service.get_artifact(preview_run.artifact_id, actor)
+    published_body = orjson.loads(published_artifact.payload)
+    preview_body = orjson.loads(preview_artifact.payload)
+
+    assert published_artifact.manifest.draft_preview is False
+    assert published_artifact.manifest.publication_id == snapshot.publication_id
+    assert published_body["draft_preview"] is False
+    assert published_body["draft_marker"] is None
+    assert published_body["publication_id"] == published_artifact.manifest.publication_id
+    assert published_body["source_publication_id"] is None
+    assert preview_artifact.manifest.draft_preview is True
+    assert preview_artifact.manifest.publication_id is None
+    assert preview_body["draft_preview"] is True
+    assert preview_body["draft_marker"] == "DRAFT PREVIEW — NOT PUBLISHED"
+    assert preview_body["publication_id"] == preview_artifact.manifest.publication_id
+    assert preview_body["source_publication_id"] == snapshot.publication_id
 
 
 def test_corrupt_or_missing_published_artifact_is_not_exposed(tmp_path: Path):
@@ -702,8 +748,9 @@ def test_running_export_cooperatively_cancels_before_artifact_publication(tmp_pa
     release_render = threading.Event()
 
     class BlockingExporter(FakeExporter):
-        def render(self, snapshot) -> bytes:
+        def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
             self.calls += 1
+            self.draft_previews.append(draft_preview)
             entered_render.set()
             assert release_render.wait(5)
             return self.payload

@@ -18,7 +18,41 @@ from fmea_application.snapshot_contracts import (
     canonical_json_bytes,
     canonical_normalized_snapshot_body,
     iter_normalized_snapshot_pages,
+    revalidate_normalized_snapshot,
+    snapshot_content_hash,
 )
+
+
+def _forge_snapshot(snapshot: NormalizedFmeaSnapshot, **overrides: object) -> NormalizedFmeaSnapshot:
+    forged = object.__new__(NormalizedFmeaSnapshot)
+    for field in fields(snapshot):
+        object.__setattr__(forged, field.name, getattr(snapshot, field.name))
+    for field_name, value in overrides.items():
+        object.__setattr__(forged, field_name, value)
+    return forged
+
+
+class ExplosiveSnapshotValue:
+    _ERROR = "secret snapshot value"
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def _explode(self, operation: str):
+        self.calls.append(operation)
+        raise RuntimeError(self._ERROR)
+
+    def __eq__(self, other):
+        return self._explode("eq")
+
+    def __str__(self):
+        return self._explode("str")
+
+    def __hash__(self):
+        return self._explode("hash")
+
+    def __len__(self):
+        return self._explode("len")
 
 
 def test_normalized_snapshot_rejects_different_publication_revision() -> None:
@@ -54,6 +88,52 @@ def test_normalized_snapshot_rejects_valid_format_but_wrong_content_hash() -> No
     snapshot = make_normalized_snapshot()
     with pytest.raises(FmeaDomainError, match="snapshot hash"):
         replace(snapshot, snapshot_hash="b" * 64)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    (
+        {"row_count": 0},
+        {"schema_version": "not-normalized-v99"},
+    ),
+)
+def test_shared_revalidation_rejects_hash_consistent_constructor_invariant_bypass(overrides: dict[str, object]) -> None:
+    snapshot = make_normalized_snapshot()
+    forged = _forge_snapshot(snapshot, **overrides)
+    object.__setattr__(forged, "snapshot_hash", snapshot_content_hash(forged))
+
+    with pytest.raises(FmeaDomainError) as captured:
+        revalidate_normalized_snapshot(forged)
+
+    assert str(captured.value) == "snapshot revalidation failed"
+    assert captured.value.__cause__ is None
+
+
+def test_shared_revalidation_rejects_malicious_nested_value_without_invoking_its_protocols() -> None:
+    snapshot = make_normalized_snapshot()
+    malicious = ExplosiveSnapshotValue()
+    forged = _forge_snapshot(
+        snapshot,
+        rows=({"row_id": "row-1", "value": malicious},),
+        row_count=1,
+    )
+
+    with pytest.raises(FmeaDomainError) as captured:
+        revalidate_normalized_snapshot(forged)
+
+    assert str(captured.value) == "snapshot revalidation failed"
+    assert captured.value.__cause__ is None
+    assert malicious.calls == []
+
+
+def test_shared_revalidation_returns_a_fresh_exact_immutable_snapshot() -> None:
+    snapshot = make_normalized_snapshot()
+
+    rebuilt = revalidate_normalized_snapshot(snapshot)
+
+    assert type(rebuilt) is NormalizedFmeaSnapshot
+    assert rebuilt is not snapshot
+    assert rebuilt == snapshot
 
 
 def test_normalized_snapshot_hash_is_deterministic_for_mapping_order() -> None:
@@ -170,6 +250,7 @@ def test_large_snapshot_keeps_page_contract_bounded() -> None:
     assert sum(len(page.rows) for page in pages) == 10_000
     assert [page.next_offset for page in pages[:-1]] == list(range(500, 10_000, 500))
     assert pages[-1].next_offset is None
-    assert snapshot.snapshot_hash == sha256(
-        canonical_json_bytes(canonical_normalized_snapshot_body(source), max_array_items=10_000)
-    ).hexdigest()
+    assert (
+        snapshot.snapshot_hash
+        == sha256(canonical_json_bytes(canonical_normalized_snapshot_body(source), max_array_items=10_000)).hexdigest()
+    )

@@ -7,11 +7,11 @@ import orjson
 import pytest
 
 from core_domain.fmea.governance import canonical_json_value
-from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, snapshot_content_hash
 from fmea_infrastructure.export_json import CanonicalJsonExporter
 from tests.fmea_governance_fixtures import make_fmea_revision, make_normalized_snapshot
 
-EXPECTED_JSON_SHA256 = "b6b8ebdab2777fd3752226867e2a22c6c28b0c6934071c6efac644043ef76a47"
+EXPECTED_JSON_SHA256 = "150ccccf5c9793ded4904a2a7df98c064c49644160608be261e0a2962bf3c268"
 
 
 def _forge_snapshot(snapshot: NormalizedFmeaSnapshot, **overrides: object) -> NormalizedFmeaSnapshot:
@@ -56,6 +56,7 @@ def test_json_export_projects_complete_normalized_snapshot_semantics() -> None:
     body = orjson.loads(CanonicalJsonExporter().render(snapshot))
 
     assert body["schema_version"] == "graphrag.fmea.export.v1"
+    assert body["snapshot_schema_version"] == "graphrag.fmea.normalized-snapshot.v1"
     assert body["snapshot_id"] == snapshot.snapshot_id
     assert body["snapshot_hash"] == snapshot.snapshot_hash
     assert body["workspace_id"] == snapshot.workspace_id
@@ -63,6 +64,11 @@ def test_json_export_projects_complete_normalized_snapshot_semantics() -> None:
     assert body["revision_id"] == snapshot.revision_id
     assert body["revision_hash"] == snapshot.revision_hash
     assert body["publication_id"] == snapshot.publication_id
+    assert body["source_publication_id"] is None
+    assert body["draft_preview"] is False
+    assert body["draft_marker"] is None
+    assert body["format"] == "json"
+    assert body["media_type"] == "application/json"
     assert body["manifest_id"] == snapshot.manifest_id
     assert body["rows"] == [dict(row) for row in snapshot.rows]
     assert body["row_count"] == snapshot.row_count
@@ -73,6 +79,17 @@ def test_json_export_projects_complete_normalized_snapshot_semantics() -> None:
     assert body["version_manifest"] == canonical_json_value(version_manifest)
     assert body["unresolved_items"] == [dict(item) for item in snapshot.unresolved_items]
     assert body["audit_summary"] == dict(snapshot.audit_summary)
+
+
+def test_json_preview_has_explicit_non_published_identity_and_source_provenance() -> None:
+    snapshot = make_normalized_snapshot()
+
+    body = orjson.loads(CanonicalJsonExporter().render(snapshot, draft_preview=True))
+
+    assert body["draft_preview"] is True
+    assert body["draft_marker"] == "DRAFT PREVIEW — NOT PUBLISHED"
+    assert body["publication_id"] is None
+    assert body["source_publication_id"] == snapshot.publication_id
 
 
 def test_json_export_is_utf8_compact_sorted_and_has_one_trailing_newline() -> None:
@@ -102,6 +119,27 @@ def test_json_export_rejects_non_export_safe_values_without_leaking_them(bad_val
     assert getattr(captured.value, "code", None) == "FMEA_EXPORT_JSON_INVALID"
     assert str(captured.value) == "snapshot cannot be rendered as canonical JSON"
     assert "private" not in str(captured.value)
+    assert captured.value.__cause__ is None
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    (
+        {"row_count": 0},
+        {"schema_version": "not-normalized-v99"},
+    ),
+)
+def test_json_export_rejects_hash_consistent_snapshot_invariant_bypass(overrides: dict[str, object]) -> None:
+    snapshot = make_normalized_snapshot()
+    forged = _forge_snapshot(snapshot, **overrides)
+    object.__setattr__(forged, "snapshot_hash", snapshot_content_hash(forged))
+
+    with pytest.raises(ValueError) as captured:
+        CanonicalJsonExporter().render(forged)
+
+    assert getattr(captured.value, "code", None) == "FMEA_EXPORT_JSON_INVALID"
+    assert str(captured.value) == "snapshot cannot be rendered as canonical JSON"
+    assert captured.value.__cause__ is None
 
 
 def test_json_export_rejects_wrong_type_without_object_repr() -> None:

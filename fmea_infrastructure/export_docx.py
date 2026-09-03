@@ -14,9 +14,9 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
-from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
 
-from .export_json import _ensure_snapshot_hash, _snapshot_projection, _validate_export_value
+from .export_json import _snapshot_projection, _validate_export_value
 
 _PREVIEW_MARKER: Final = "DRAFT PREVIEW — NOT PUBLISHED"
 _MAX_DOCX_CELL_TEXT: Final = 1_000_000
@@ -128,7 +128,7 @@ def _record_columns(records: Sequence[Mapping[str, object]]) -> list[str]:
     return columns
 
 
-def _append_manifest(document: Document, projection: Mapping[str, object], *, draft_preview: bool) -> None:
+def _append_manifest(document: Document, projection: Mapping[str, object]) -> None:
     document.add_heading("Manifest", level=1)
     table = document.add_table(rows=1, cols=3)
     table.style = "Table Grid"
@@ -136,13 +136,14 @@ def _append_manifest(document: Document, projection: Mapping[str, object], *, dr
         _set_cell_text(cell, value)
     metadata: tuple[tuple[str, object], ...] = (
         ("schema_version", projection["schema_version"]),
-        ("snapshot_schema_version", projection.get("snapshot_schema_version", "graphrag.fmea.normalized-snapshot.v1")),
+        ("snapshot_schema_version", projection["snapshot_schema_version"]),
         ("snapshot_id", projection["snapshot_id"]),
         ("workspace_id", projection["workspace_id"]),
         ("analysis_id", projection["analysis_id"]),
         ("revision_id", projection["revision_id"]),
         ("revision_hash", projection["revision_hash"]),
         ("publication_id", projection["publication_id"]),
+        ("source_publication_id", projection["source_publication_id"]),
         ("manifest_id", projection["manifest_id"]),
         ("row_count", projection["row_count"]),
         ("risk_count", len(projection["risk_records"])),
@@ -154,10 +155,10 @@ def _append_manifest(document: Document, projection: Mapping[str, object], *, dr
         ("created_at", projection["created_at"]),
         ("version_manifest", projection["version_manifest"]),
         ("audit_summary", projection["audit_summary"]),
-        ("draft_preview", draft_preview),
-        ("draft_marker", _PREVIEW_MARKER if draft_preview else ""),
-        ("format", "docx"),
-        ("media_type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        ("draft_preview", projection["draft_preview"]),
+        ("draft_marker", projection["draft_marker"]),
+        ("format", projection["format"]),
+        ("media_type", projection["media_type"]),
     )
     for key, value in metadata:
         encoded, value_type = _value_encoding(value)
@@ -251,22 +252,30 @@ class DocxFmeaExporter:
             raise _error("FMEA_EXPORT_DOCX_INVALID", "draft_preview must be a boolean")
         self._draft_preview = draft_preview
 
-    def render(self, snapshot: NormalizedFmeaSnapshot) -> bytes:
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes:
         if type(snapshot) is not NormalizedFmeaSnapshot:
             raise _error("FMEA_EXPORT_SNAPSHOT_INVALID", "snapshot must be a NormalizedFmeaSnapshot")
+        if draft_preview is not None and type(draft_preview) is not bool:
+            raise _error("FMEA_EXPORT_DOCX_INVALID", "draft_preview must be a boolean or None")
         try:
-            projection = _snapshot_projection(snapshot)
+            resolved_preview = self._draft_preview if draft_preview is None else draft_preview
+            snapshot = revalidate_normalized_snapshot(snapshot)
+            projection = _snapshot_projection(
+                snapshot,
+                draft_preview=resolved_preview,
+                export_format=self.format,
+                media_type=self.media_type,
+            )
             _validate_export_value(projection)
             _validate_office_value(projection)
-            _ensure_snapshot_hash(snapshot)
             document = Document()
             document.core_properties.title = "FMEA Export"
             title = document.add_heading("FMEA Export", level=0)
             title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            if self._draft_preview:
+            if resolved_preview:
                 marker = document.add_paragraph(_PREVIEW_MARKER)
                 marker.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            _append_manifest(document, projection, draft_preview=self._draft_preview)
+            _append_manifest(document, projection)
             _append_section(document, "FMEA", projection["rows"], identity_field="row_id")
             _append_section(document, "Risk", projection["risk_records"], identity_field="assessment_id")
             propagation = () if projection["propagation"] is None else (projection["propagation"],)
@@ -275,9 +284,12 @@ class DocxFmeaExporter:
             _append_section(document, "Decisions", projection["decision_summary"], identity_field="decision_id")
             _append_section(document, "Unresolved", projection["unresolved_items"], identity_field=None)
             footer = document.sections[0].footer.paragraphs[0]
+            publication_id = projection["publication_id"] or ""
+            source_publication_id = projection["source_publication_id"] or ""
             footer.text = (
                 f"revision_id={projection['revision_id']} | snapshot_id={projection['snapshot_id']} | "
-                f"publication_id={projection['publication_id']} | snapshot_hash={projection['snapshot_hash']}"
+                f"publication_id={publication_id} | source_publication_id={source_publication_id} | "
+                f"snapshot_hash={projection['snapshot_hash']}"
             )
             footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
             buffer = io.BytesIO()

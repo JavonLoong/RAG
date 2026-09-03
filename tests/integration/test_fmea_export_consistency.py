@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 from collections.abc import Iterable
+from zipfile import ZipFile
 
 import openpyxl
 import orjson
@@ -14,6 +15,30 @@ from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
 from tests.fmea_governance_fixtures import make_fmea_revision, make_normalized_snapshot, make_readiness_issue
 
 MARKER = "DRAFT PREVIEW — NOT PUBLISHED"
+FORMAT_MEDIA_TYPES = {
+    "json": "application/json",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+ENVELOPE_KEYS = (
+    "schema_version",
+    "snapshot_schema_version",
+    "snapshot_id",
+    "workspace_id",
+    "analysis_id",
+    "revision_id",
+    "revision_hash",
+    "publication_id",
+    "source_publication_id",
+    "manifest_id",
+    "row_count",
+    "snapshot_hash",
+    "created_at",
+    "draft_preview",
+    "draft_marker",
+    "format",
+    "media_type",
+)
 
 
 def _decode_cell(value: object, value_type: str) -> object:
@@ -50,22 +75,7 @@ def _parse_xlsx(payload: bytes) -> dict[str, object]:
     workbook = openpyxl.load_workbook(io.BytesIO(payload), data_only=False, read_only=False)
     manifest_rows = list(workbook["Manifest"].iter_rows(values_only=True))
     manifest = {str(row[0]): _decode_cell(row[1], str(row[2])) for row in manifest_rows[1:] if row[0] is not None}
-    result: dict[str, object] = {
-        key: manifest[key]
-        for key in (
-            "schema_version",
-            "snapshot_id",
-            "workspace_id",
-            "analysis_id",
-            "revision_id",
-            "revision_hash",
-            "publication_id",
-            "manifest_id",
-            "row_count",
-            "snapshot_hash",
-            "created_at",
-        )
-    }
+    result: dict[str, object] = {key: manifest[key] for key in ENVELOPE_KEYS}
     result.update({
         "rows": _parse_typed_table(workbook["FMEA"].iter_rows(values_only=True)),
         "risk_records": _parse_typed_table(workbook["Risk"].iter_rows(values_only=True)),
@@ -91,22 +101,7 @@ def _parse_docx(payload: bytes) -> dict[str, object]:
     manifest = {
         row.cells[0].text: _decode_cell(row.cells[1].text, row.cells[2].text) for row in manifest_table.rows[1:]
     }
-    result: dict[str, object] = {
-        key: manifest[key]
-        for key in (
-            "schema_version",
-            "snapshot_id",
-            "workspace_id",
-            "analysis_id",
-            "revision_id",
-            "revision_hash",
-            "publication_id",
-            "manifest_id",
-            "row_count",
-            "snapshot_hash",
-            "created_at",
-        )
-    }
+    result: dict[str, object] = {key: manifest[key] for key in ENVELOPE_KEYS}
     result.update({
         "rows": _parse_docx_typed_table(next(tables)),
         "risk_records": _parse_docx_typed_table(next(tables)),
@@ -124,9 +119,33 @@ def _parse_docx(payload: bytes) -> dict[str, object]:
     return result
 
 
-def _semantic_json(snapshot) -> dict[str, object]:
-    body = orjson.loads(CanonicalJsonExporter().render(snapshot))
+def _semantic_json(snapshot, *, draft_preview: bool = False) -> dict[str, object]:
+    body = orjson.loads(CanonicalJsonExporter().render(snapshot, draft_preview=draft_preview))
     return body
+
+
+def _without_format_identity(view: dict[str, object]) -> dict[str, object]:
+    return {key: value for key, value in view.items() if key not in {"format", "media_type"}}
+
+
+def _assert_format_identity(view: dict[str, object], export_format: str) -> None:
+    assert view["format"] == export_format
+    assert view["media_type"] == FORMAT_MEDIA_TYPES[export_format]
+
+
+def _zip_xml_text(payload: bytes) -> str:
+    with ZipFile(io.BytesIO(payload)) as archive:
+        return "\n".join(
+            archive.read(name).decode("utf-8")
+            for name in archive.namelist()
+            if name.casefold().endswith((".xml", ".rels"))
+        )
+
+
+def _docx_footer_identity(payload: bytes) -> dict[str, str]:
+    document = Document(io.BytesIO(payload))
+    footer = " | ".join(paragraph.text for paragraph in document.sections[0].footer.paragraphs)
+    return dict(part.split("=", 1) for part in footer.split(" | ") if "=" in part)
 
 
 def test_json_xlsx_docx_share_all_snapshot_semantics() -> None:
@@ -155,7 +174,11 @@ def test_json_xlsx_docx_share_all_snapshot_semantics() -> None:
     xlsx_view = _parse_xlsx(XlsxFmeaExporter().render(snapshot))
     docx_view = _parse_docx(DocxFmeaExporter().render(snapshot))
 
-    assert json_view == xlsx_view == docx_view
+    assert _without_format_identity(json_view) == _without_format_identity(xlsx_view)
+    assert _without_format_identity(json_view) == _without_format_identity(docx_view)
+    _assert_format_identity(json_view, "json")
+    _assert_format_identity(xlsx_view, "xlsx")
+    _assert_format_identity(docx_view, "docx")
 
 
 def test_empty_optional_parts_round_trip_without_fabrication() -> None:
@@ -168,36 +191,53 @@ def test_empty_optional_parts_round_trip_without_fabrication() -> None:
     )
 
     expected = _semantic_json(snapshot)
-    assert _parse_xlsx(XlsxFmeaExporter().render(snapshot)) == expected
-    assert _parse_docx(DocxFmeaExporter().render(snapshot)) == expected
+    assert _without_format_identity(_parse_xlsx(XlsxFmeaExporter().render(snapshot))) == _without_format_identity(
+        expected
+    )
+    assert _without_format_identity(_parse_docx(DocxFmeaExporter().render(snapshot))) == _without_format_identity(
+        expected
+    )
 
 
 def test_draft_marker_is_visible_in_all_formats_and_absent_from_published() -> None:
     snapshot = make_normalized_snapshot()
-    rendered = (
-        XlsxFmeaExporter(draft_preview=True).render(snapshot),
-        DocxFmeaExporter(draft_preview=True).render(snapshot),
-    )
-    published = (
-        XlsxFmeaExporter().render(snapshot),
-        DocxFmeaExporter().render(snapshot),
-    )
-    xlsx_text = "\n".join(
-        str(cell.value)
-        for row in openpyxl.load_workbook(io.BytesIO(rendered[0]))["Manifest"].iter_rows()
-        for cell in row
-    )
-    docx_text = "\n".join(paragraph.text for paragraph in Document(io.BytesIO(rendered[1])).paragraphs)
-    published_text = "\n".join([
-        *(
-            str(cell.value)
-            for row in openpyxl.load_workbook(io.BytesIO(published[0]))["Manifest"].iter_rows()
-            for cell in row
-        ),
-        *(paragraph.text for paragraph in Document(io.BytesIO(published[1])).paragraphs),
-    ])
-    assert MARKER in xlsx_text and MARKER in docx_text
-    assert MARKER not in published_text
+    rendered = {
+        "json": CanonicalJsonExporter().render(snapshot, draft_preview=True),
+        "xlsx": XlsxFmeaExporter().render(snapshot, draft_preview=True),
+        "docx": DocxFmeaExporter().render(snapshot, draft_preview=True),
+    }
+    parsed = {
+        "json": orjson.loads(rendered["json"]),
+        "xlsx": _parse_xlsx(rendered["xlsx"]),
+        "docx": _parse_docx(rendered["docx"]),
+    }
+    assert _without_format_identity(parsed["json"]) == _without_format_identity(parsed["xlsx"])
+    assert _without_format_identity(parsed["json"]) == _without_format_identity(parsed["docx"])
+    for export_format, view in parsed.items():
+        _assert_format_identity(view, export_format)
+        assert view["draft_preview"] is True
+        assert view["draft_marker"] == MARKER
+        assert view["publication_id"] is None
+        assert view["source_publication_id"] == snapshot.publication_id
+
+    footer = _docx_footer_identity(rendered["docx"])
+    assert footer == {
+        "revision_id": snapshot.revision_id,
+        "snapshot_id": snapshot.snapshot_id,
+        "publication_id": "",
+        "source_publication_id": snapshot.publication_id,
+        "snapshot_hash": snapshot.snapshot_hash,
+    }
+    assert MARKER in rendered["json"].decode("utf-8")
+
+    published = {
+        "json": CanonicalJsonExporter().render(snapshot, draft_preview=False),
+        "xlsx": XlsxFmeaExporter().render(snapshot, draft_preview=False),
+        "docx": DocxFmeaExporter().render(snapshot, draft_preview=False),
+    }
+    assert MARKER not in published["json"].decode("utf-8")
+    assert MARKER not in _zip_xml_text(published["xlsx"])
+    assert MARKER not in _zip_xml_text(published["docx"])
 
 
 def test_repeated_render_preserves_semantic_identity_and_snapshot() -> None:
@@ -209,5 +249,8 @@ def test_repeated_render_preserves_semantic_identity_and_snapshot() -> None:
     first_docx = _parse_docx(DocxFmeaExporter().render(snapshot))
     second_docx = _parse_docx(DocxFmeaExporter().render(snapshot))
 
-    assert first_xlsx == second_xlsx == first_docx == second_docx == before
+    assert _without_format_identity(first_xlsx) == _without_format_identity(second_xlsx)
+    assert _without_format_identity(first_xlsx) == _without_format_identity(first_docx)
+    assert _without_format_identity(first_docx) == _without_format_identity(second_docx)
+    assert _without_format_identity(first_docx) == _without_format_identity(before)
     assert _semantic_json(snapshot) == before

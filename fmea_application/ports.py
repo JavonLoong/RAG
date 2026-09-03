@@ -813,7 +813,7 @@ class SnapshotExporter(Protocol):
     format: str
     media_type: str
 
-    def render(self, snapshot: NormalizedFmeaSnapshot) -> bytes: ...
+    def render(self, snapshot: NormalizedFmeaSnapshot, *, draft_preview: bool | None = None) -> bytes: ...
 
 
 class ExportNarrativeGenerator(Protocol):

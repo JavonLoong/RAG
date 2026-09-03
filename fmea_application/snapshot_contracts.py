@@ -7,7 +7,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from types import MappingProxyType
-from typing import Literal
+from typing import Literal, NoReturn
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import (
@@ -19,23 +19,21 @@ from core_domain.fmea.governance import (
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 _ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\|/)")
-_FORBIDDEN_KEY_PARTS = frozenset(
-    {
-        "access_token",
-        "api_key",
-        "authorization",
-        "credential",
-        "password",
-        "private_key",
-        "private_path",
-        "prompt",
-        "provider_output",
-        "raw_output",
-        "secret",
-        "source_url",
-        "url",
-    }
-)
+_FORBIDDEN_KEY_PARTS = frozenset({
+    "access_token",
+    "api_key",
+    "authorization",
+    "credential",
+    "password",
+    "private_key",
+    "private_path",
+    "prompt",
+    "provider_output",
+    "raw_output",
+    "secret",
+    "source_url",
+    "url",
+})
 _MAX_DEPTH = 8
 _MAX_ITEMS = 500
 _MAX_STRING_LENGTH = 65_536
@@ -178,10 +176,22 @@ class NormalizedFmeaSnapshot:
             object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
         object.__setattr__(self, "revision_hash", _hash(self.revision_hash, "revision_hash"))
         object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows", identity_field="row_id"))
-        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id"))
-        object.__setattr__(self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation"))
-        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"))
-        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"))
+        object.__setattr__(
+            self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id")
+        )
+        object.__setattr__(
+            self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation")
+        )
+        object.__setattr__(
+            self,
+            "evidence_summary",
+            _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"),
+        )
+        object.__setattr__(
+            self,
+            "decision_summary",
+            _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
+        )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
         object.__setattr__(self, "unresolved_items", _mapping_tuple(self.unresolved_items, "unresolved_items"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
@@ -231,15 +241,35 @@ class NormalizedSnapshotInput:
             raise FmeaDomainError("revision must be an FmeaRevision")  # noqa: TRY003
         object.__setattr__(self, "publication_id", _text(self.publication_id, "publication_id"))
         object.__setattr__(self, "manifest_id", _text(self.manifest_id, "manifest_id"))
-        object.__setattr__(self, "publication_revision_id", _text(self.publication_revision_id, "publication_revision_id"))
-        object.__setattr__(self, "publication_revision_hash", _hash(self.publication_revision_hash, "publication_revision_hash"))
-        object.__setattr__(self, "publication_workspace_id", _text(self.publication_workspace_id, "publication_workspace_id"))
-        object.__setattr__(self, "publication_analysis_id", _text(self.publication_analysis_id, "publication_analysis_id"))
+        object.__setattr__(
+            self, "publication_revision_id", _text(self.publication_revision_id, "publication_revision_id")
+        )
+        object.__setattr__(
+            self, "publication_revision_hash", _hash(self.publication_revision_hash, "publication_revision_hash")
+        )
+        object.__setattr__(
+            self, "publication_workspace_id", _text(self.publication_workspace_id, "publication_workspace_id")
+        )
+        object.__setattr__(
+            self, "publication_analysis_id", _text(self.publication_analysis_id, "publication_analysis_id")
+        )
         object.__setattr__(self, "rows", _mapping_tuple(self.rows, "rows", identity_field="row_id"))
-        object.__setattr__(self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id"))
-        object.__setattr__(self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation"))
-        object.__setattr__(self, "evidence_summary", _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"))
-        object.__setattr__(self, "decision_summary", _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"))
+        object.__setattr__(
+            self, "risk_records", _mapping_tuple(self.risk_records, "risk_records", identity_field="assessment_id")
+        )
+        object.__setattr__(
+            self, "propagation", None if self.propagation is None else _mapping(self.propagation, "propagation")
+        )
+        object.__setattr__(
+            self,
+            "evidence_summary",
+            _mapping_tuple(self.evidence_summary, "evidence_summary", identity_field="pack_id"),
+        )
+        object.__setattr__(
+            self,
+            "decision_summary",
+            _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
+        )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
@@ -319,6 +349,75 @@ def _canonical_snapshot_body(snapshot: NormalizedFmeaSnapshot) -> Mapping[str, o
     }
 
 
+def _plain_snapshot_value(value: object, *, depth: int = 0) -> object:
+    """Copy only exact plain JSON values without invoking custom protocols."""
+
+    if depth > _MAX_DEPTH + 1:
+        raise ValueError("snapshot value depth is invalid")  # noqa: TRY003
+    value_type = type(value)
+    if value is None or value_type in {bool, int, float, str}:
+        return value
+    if value_type in {tuple, list}:
+        if len(value) > _MAX_CANONICAL_ARRAY_ITEMS:  # type: ignore[arg-type]
+            raise ValueError("snapshot sequence is too large")  # noqa: TRY003
+        copied = tuple(_plain_snapshot_value(item, depth=depth + 1) for item in value)  # type: ignore[union-attr]
+        return copied
+    if value_type in {dict, MappingProxyType}:
+        if len(value) > _MAX_ITEMS:  # type: ignore[arg-type]
+            raise ValueError("snapshot mapping is too large")  # noqa: TRY003
+        copied_mapping: dict[str, object] = {}
+        for key, item in value.items():  # type: ignore[union-attr]
+            if type(key) is not str:
+                raise ValueError("snapshot mapping key is invalid")  # noqa: TRY003
+            copied_mapping[key] = _plain_snapshot_value(item, depth=depth + 1)
+        return copied_mapping
+    raise ValueError("snapshot value is not plain JSON")  # noqa: TRY003
+
+
+def _plain_snapshot_string(value: object) -> str:
+    if type(value) is not str:
+        raise ValueError("snapshot string is invalid")  # noqa: TRY003
+    return value
+
+
+def _snapshot_revalidation_invalid() -> NoReturn:
+    raise ValueError
+
+
+def revalidate_normalized_snapshot(value: object) -> NormalizedFmeaSnapshot:
+    """Rebuild an exact immutable snapshot and replay every constructor invariant."""
+
+    try:
+        if type(value) is not NormalizedFmeaSnapshot:
+            _snapshot_revalidation_invalid()
+        values = {
+            "schema_version": _plain_snapshot_string(value.schema_version),
+            "snapshot_id": _plain_snapshot_string(value.snapshot_id),
+            "workspace_id": _plain_snapshot_string(value.workspace_id),
+            "analysis_id": _plain_snapshot_string(value.analysis_id),
+            "revision_id": _plain_snapshot_string(value.revision_id),
+            "revision_hash": _plain_snapshot_string(value.revision_hash),
+            "publication_id": _plain_snapshot_string(value.publication_id),
+            "manifest_id": _plain_snapshot_string(value.manifest_id),
+            "rows": _plain_snapshot_value(value.rows),
+            "risk_records": _plain_snapshot_value(value.risk_records),
+            "propagation": None if value.propagation is None else _plain_snapshot_value(value.propagation),
+            "evidence_summary": _plain_snapshot_value(value.evidence_summary),
+            "decision_summary": _plain_snapshot_value(value.decision_summary),
+            "version_manifest": _plain_snapshot_value(value.version_manifest),
+            "unresolved_items": _plain_snapshot_value(value.unresolved_items),
+            "audit_summary": _plain_snapshot_value(value.audit_summary),
+            "row_count": value.row_count,
+            "snapshot_hash": _plain_snapshot_string(value.snapshot_hash),
+            "created_at": _plain_snapshot_string(value.created_at),
+        }
+        if type(values["row_count"]) is not int:
+            _snapshot_revalidation_invalid()
+        return NormalizedFmeaSnapshot(**values)  # type: ignore[arg-type]
+    except Exception:
+        raise FmeaDomainError("snapshot revalidation failed") from None  # noqa: TRY003
+
+
 def snapshot_content_hash(snapshot: NormalizedFmeaSnapshot) -> str:
     if not isinstance(snapshot, NormalizedFmeaSnapshot):
         raise FmeaDomainError("snapshot must be a NormalizedFmeaSnapshot")  # noqa: TRY003
@@ -356,6 +455,7 @@ __all__ = [
     "canonical_json_bytes",
     "canonical_normalized_snapshot_body",
     "iter_normalized_snapshot_pages",
+    "revalidate_normalized_snapshot",
     "snapshot_content_hash",
     "validate_snapshot_publication_binding",
 ]

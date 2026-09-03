@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from math import isfinite
-from types import MappingProxyType
 from typing import Literal, TypeVar
 
 from core_domain.fmea.filename_policy import validate_filename
@@ -31,7 +30,7 @@ from .delivery_contracts import (
 from .governance_contracts import ExportEligibilityRecord
 from .ports import ArtifactStore, ExportNarrativeGenerator, ExportRepository, GovernanceRepository, SnapshotExporter
 from .review_contracts import ActorContext
-from .snapshot_contracts import NormalizedFmeaSnapshot
+from .snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _MAX_ID = 256
@@ -195,80 +194,6 @@ def _plain_optional_string(value: object) -> str | None:
     if value is None:
         return None
     return _plain_string(value)
-
-
-def _plain_json(value: object, *, depth: int = 0) -> object:
-    """Copy provider data without invoking provider-defined protocols."""
-
-    if depth > 8:
-        raise ValueError("provider JSON depth is invalid")
-    value_type = type(value)
-    if value is None or value_type in {bool, int, str}:
-        return value
-    if value_type is float:
-        if not isfinite(value):
-            raise ValueError("provider JSON number is invalid")
-        return value
-    if value_type is tuple:
-        if len(value) > 10_000:
-            raise ValueError("provider JSON sequence is too large")
-        return tuple(_plain_json(item, depth=depth + 1) for item in value)
-    if value_type is list:
-        if len(value) > 10_000:
-            raise ValueError("provider JSON sequence is too large")
-        return [_plain_json(item, depth=depth + 1) for item in value]
-    if value_type in {dict, MappingProxyType}:
-        if len(value) > 10_000:
-            raise ValueError("provider JSON mapping is too large")
-        copied: dict[str, object] = {}
-        for key, item in value.items():
-            if type(key) is not str:
-                raise ValueError("provider JSON key is invalid")
-            copied[key] = _plain_json(item, depth=depth + 1)
-        return copied
-    raise ValueError("provider JSON value is invalid")
-
-
-def _plain_mapping(value: object) -> dict[str, object]:
-    copied = _plain_json(value)
-    if type(copied) is not dict:
-        raise ValueError("provider mapping is invalid")
-    return copied
-
-
-def _plain_mapping_tuple(value: object) -> tuple[dict[str, object], ...]:
-    if type(value) is not tuple:
-        raise ValueError("provider mapping sequence is invalid")
-    return tuple(_plain_mapping(item) for item in value)
-
-
-def _rebuild_snapshot(value: object) -> NormalizedFmeaSnapshot:
-    if type(value) is not NormalizedFmeaSnapshot:
-        raise ValueError("provider snapshot is invalid")
-    values = {
-        "schema_version": _plain_string(value.schema_version),
-        "snapshot_id": _plain_string(value.snapshot_id),
-        "workspace_id": _plain_string(value.workspace_id),
-        "analysis_id": _plain_string(value.analysis_id),
-        "revision_id": _plain_string(value.revision_id),
-        "revision_hash": _plain_string(value.revision_hash),
-        "publication_id": _plain_string(value.publication_id),
-        "manifest_id": _plain_string(value.manifest_id),
-        "rows": _plain_mapping_tuple(value.rows),
-        "risk_records": _plain_mapping_tuple(value.risk_records),
-        "propagation": None if value.propagation is None else _plain_mapping(value.propagation),
-        "evidence_summary": _plain_mapping_tuple(value.evidence_summary),
-        "decision_summary": _plain_mapping_tuple(value.decision_summary),
-        "version_manifest": _plain_mapping(value.version_manifest),
-        "unresolved_items": _plain_mapping_tuple(value.unresolved_items),
-        "audit_summary": _plain_mapping(value.audit_summary),
-        "row_count": value.row_count,
-        "snapshot_hash": _plain_string(value.snapshot_hash),
-        "created_at": _plain_string(value.created_at),
-    }
-    if type(values["row_count"]) is not int:
-        raise ValueError("provider snapshot row count is invalid")
-    return NormalizedFmeaSnapshot(**values)  # type: ignore[arg-type]
 
 
 def _rebuild_publication(value: object) -> PublishedRevision:
@@ -973,7 +898,7 @@ class ExportService:
             lambda: (
                 None
                 if (raw := self.governance_repository.get_snapshot(lookup_id, command.workspace_id)) is None
-                else _rebuild_snapshot(raw)
+                else revalidate_normalized_snapshot(raw)
             ),
             code="FMEA_EXPORT_PERSISTENCE_INVALID",
             message="snapshot persistence is invalid",
@@ -1494,7 +1419,7 @@ class ExportService:
 
         try:
             payload = _boundary_call(
-                lambda: exporter.render(snapshot),
+                lambda: exporter.render(snapshot, draft_preview=command.draft_preview),
                 code="FMEA_EXPORT_RENDER_FAILED",
                 message="exporter failed",
             )
@@ -1560,7 +1485,7 @@ class ExportService:
         """Generate a provisional narrative without touching durable export state."""
 
         try:
-            snapshot = _rebuild_snapshot(snapshot)
+            snapshot = revalidate_normalized_snapshot(snapshot)
         except Exception:
             raise ExportServiceError("FMEA_EXPORT_NARRATIVE_REQUEST_INVALID", "narrative snapshot is invalid") from None
         if not isinstance(actor, ActorContext) or actor.actor_type is not ActorType.MODEL:
