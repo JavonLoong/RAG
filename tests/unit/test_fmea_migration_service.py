@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields
 from importlib.util import find_spec
 
 import pytest
 
 HASH = "a" * 64
 TARGET_HASH = "b" * 64
+INTERMEDIATE_HASH = "c" * 64
+DRIFTED_TARGET_HASH = "d" * 64
 
 
 def _actor(*, actor_type: str = "human", roles: tuple[str, ...] = ("template_admin",)):
@@ -35,10 +37,31 @@ def _command(*, key: str = "00000000-0000-4000-8000-000000000901", source_hash: 
     )
 
 
+def _materialized_revision(source, target_identity, **overrides):
+    from fmea_governance_fixtures import make_fmea_revision
+
+    values = {field.name: getattr(source, field.name) for field in fields(source) if field.name != "revision_hash"}
+    values.update(overrides)
+    values["domain_pack_identity"] = target_identity
+    return make_fmea_revision(**values)
+
+
 class _PackRegistry:
+    def __init__(self, entries=None):
+        self.entries = (
+            {
+                ("fuel-combustion", "1.0.0"): HASH,
+                ("fuel-combustion", "2.0.0"): TARGET_HASH,
+            }
+            if entries is None
+            else dict(entries)
+        )
+
     def get(self, pack_id: str, version: str):
-        assert (pack_id, version) == ("fuel-combustion", "2.0.0")
-        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": TARGET_HASH})()
+        content_hash = self.entries.get((pack_id, version))
+        if content_hash is None:
+            return None
+        return type("Pack", (), {"pack_id": pack_id, "version": version, "content_hash": content_hash})()
 
 
 class _Adapter:
@@ -49,10 +72,13 @@ class _Adapter:
         from fmea_application.migration_service import MigrationCandidate
 
         return MigrationCandidate(
+            target_revision=_materialized_revision(
+                source,
+                ("fuel-combustion", "2.0.0", TARGET_HASH),
+            ),
             mapped_fields=("failure_mode",),
             dropped_fields=(),
             unresolved_fields=(),
-            target_domain_pack_identity=("fuel-combustion", "2.0.0", TARGET_HASH),
         )
 
 
@@ -72,9 +98,14 @@ class _FailingAdapter(_Adapter):
 
 class _WrongTargetHashAdapter(_Adapter):
     def migrate(self, source):
-        return replace(
-            super().migrate(source),
-            target_domain_pack_identity=("fuel-combustion", "2.0.0", "c" * 64),
+        from fmea_application.migration_service import MigrationCandidate
+
+        return MigrationCandidate(
+            target_revision=_materialized_revision(
+                source,
+                ("fuel-combustion", "2.0.0", INTERMEDIATE_HASH),
+            ),
+            mapped_fields=("failure_mode",),
         )
 
 
@@ -110,7 +141,7 @@ class _Repository:
         )
 
 
-def _service(adapter=None, repository=None):
+def _service(adapter=None, repository=None, pack_registry=None):
     from fmea_governance_fixtures import make_fmea_revision
 
     from fmea_application.migration_service import MigrationService
@@ -120,7 +151,7 @@ def _service(adapter=None, repository=None):
     service = MigrationService(
         repository,
         MigrationRegistry((adapter or _Adapter(),)),
-        domain_pack_registry=_PackRegistry(),
+        domain_pack_registry=pack_registry or _PackRegistry(),
         clock=lambda: "2026-09-03T00:00:00Z",
     )
     return service, repository
@@ -138,6 +169,15 @@ def test_dry_run_is_repeatable_and_does_not_create_revision():
 
     assert first.report_hash == second.report_hash
     assert first.status.value == "dry_run"
+    assert first.source_domain_pack_identity == repository.revision.domain_pack_identity
+    assert first.target_domain_pack_identity == ("fuel-combustion", "2.0.0", TARGET_HASH)
+    assert (
+        first.target_revision_hash
+        == _materialized_revision(
+            repository.revision,
+            ("fuel-combustion", "2.0.0", TARGET_HASH),
+        ).revision_hash
+    )
     assert repository.revision.revision_id == "revision-1"
 
 
@@ -213,6 +253,8 @@ def test_registry_resolves_one_path_and_rejects_ambiguous_or_cyclic_graphs():
 
 
 def test_migration_contracts_reject_unbounded_hashes_and_noncanonical_idempotency():
+    from fmea_governance_fixtures import make_fmea_revision
+
     from fmea_application.migration_service import MigrationCandidate
 
     with pytest.raises(ValueError):
@@ -221,8 +263,11 @@ def test_migration_contracts_reject_unbounded_hashes_and_noncanonical_idempotenc
         _command(key="00000000-0000-4000-8000-00000000090A")
     with pytest.raises(ValueError):
         MigrationCandidate(
+            target_revision=_materialized_revision(
+                make_fmea_revision(),
+                ("fuel-combustion", "2.0.0", TARGET_HASH),
+            ),
             mapped_fields=("x",) * 513,
-            target_domain_pack_identity=("fuel-combustion", "2.0.0", TARGET_HASH),
         )
 
 
@@ -286,3 +331,182 @@ def test_confirm_delegates_one_prepared_atomic_migration_unit():
     assert result.child_revision_id == "revision-child"
     assert repository.prepared is not None
     assert repository.prepared.report.report_hash == report.report_hash
+
+
+def test_fresh_confirmation_rejects_target_hash_drift_from_stored_report():
+    service, repository = _service()
+    report = service.dry_run(_command(), _actor())
+
+    class DriftedAdapter(_Adapter):
+        def migrate(self, source):
+            from fmea_application.migration_service import MigrationCandidate
+
+            return MigrationCandidate(
+                target_revision=_materialized_revision(
+                    source,
+                    ("fuel-combustion", "2.0.0", DRIFTED_TARGET_HASH),
+                ),
+                mapped_fields=("failure_mode",),
+            )
+
+    fresh_service, _ = _service(
+        adapter=DriftedAdapter(),
+        repository=repository,
+        pack_registry=_PackRegistry({
+            ("fuel-combustion", "1.0.0"): HASH,
+            ("fuel-combustion", "2.0.0"): DRIFTED_TARGET_HASH,
+        }),
+    )
+    from fmea_application.migration_service import ConfirmMigrationCommand
+
+    with pytest.raises(Exception, match="FMEA_MIGRATION_REPORT_STALE"):
+        fresh_service.confirm(
+            ConfirmMigrationCommand(
+                migration_id="migration-1",
+                report_hash=report.report_hash,
+                source_revision_id="revision-1",
+                source_revision_hash=report.source_revision_hash,
+                target_domain_pack_id="fuel-combustion",
+                target_domain_pack_version="2.0.0",
+                target_domain_pack_hash=DRIFTED_TARGET_HASH,
+                idempotency_key="00000000-0000-4000-8000-000000000902",
+                confirm_migration=True,
+            ),
+            _actor(),
+        )
+    assert repository.prepared is None
+
+
+@pytest.mark.parametrize(
+    ("source_hash", "expected_code"),
+    ((None, "FMEA_MIGRATION_SOURCE_PACK_MISSING"), (INTERMEDIATE_HASH, "FMEA_MIGRATION_SOURCE_PACK_STALE")),
+)
+def test_dry_run_rejects_missing_or_mismatched_source_registry_pack(source_hash, expected_code):
+    entries = {("fuel-combustion", "2.0.0"): TARGET_HASH}
+    if source_hash is not None:
+        entries[("fuel-combustion", "1.0.0")] = source_hash
+    service, _ = _service(pack_registry=_PackRegistry(entries))
+
+    with pytest.raises(Exception, match=expected_code):
+        service.dry_run(_command(), _actor())
+
+
+def test_two_hop_adapter_receives_materialized_intermediate_revision():
+    from fmea_governance_fixtures import make_fmea_revision
+
+    from fmea_application.migration_service import MigrationCandidate, MigrationService
+    from fmea_infrastructure.migration_registry import MigrationRegistry
+
+    transformed_rows = (("row-2", 7, DRIFTED_TARGET_HASH),)
+
+    class FirstAdapter:
+        source_identity = ("fuel-combustion", "1.0.0")
+        target_identity = ("fuel-combustion", "1.5.0")
+        adapter_id = "first"
+
+        def migrate(self, source):
+            return MigrationCandidate(
+                target_revision=_materialized_revision(
+                    source,
+                    ("fuel-combustion", "1.5.0", INTERMEDIATE_HASH),
+                    row_versions=transformed_rows,
+                ),
+                mapped_fields=("failure_mode",),
+            )
+
+    class SecondAdapter:
+        source_identity = ("fuel-combustion", "1.5.0")
+        target_identity = ("fuel-combustion", "2.0.0")
+        adapter_id = "second"
+
+        def __init__(self):
+            self.received = None
+
+        def migrate(self, source):
+            self.received = source
+            assert source.domain_pack_identity == ("fuel-combustion", "1.5.0", INTERMEDIATE_HASH)
+            assert source.row_versions == transformed_rows
+            return MigrationCandidate(
+                target_revision=_materialized_revision(
+                    source,
+                    ("fuel-combustion", "2.0.0", TARGET_HASH),
+                ),
+                mapped_fields=("severity",),
+            )
+
+    second = SecondAdapter()
+    repository = _Repository(make_fmea_revision())
+    service = MigrationService(
+        repository,
+        MigrationRegistry((FirstAdapter(), second)),
+        domain_pack_registry=_PackRegistry({
+            ("fuel-combustion", "1.0.0"): HASH,
+            ("fuel-combustion", "1.5.0"): INTERMEDIATE_HASH,
+            ("fuel-combustion", "2.0.0"): TARGET_HASH,
+        }),
+        clock=lambda: "2026-09-03T00:00:00Z",
+    )
+
+    report = service.dry_run(_command(), _actor())
+
+    assert second.received is not None
+    assert report.mapped_fields == ("failure_mode", "severity")
+
+
+def test_transformed_domain_fields_survive_in_prepared_candidate():
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationCandidate
+
+    transformed_rows = (("row-2", 7, DRIFTED_TARGET_HASH),)
+    transformed_templates = (("fuel-fmea", "2.0.0", INTERMEDIATE_HASH),)
+
+    class TransformingAdapter(_Adapter):
+        def migrate(self, source):
+            return MigrationCandidate(
+                target_revision=_materialized_revision(
+                    source,
+                    ("fuel-combustion", "2.0.0", TARGET_HASH),
+                    row_versions=transformed_rows,
+                    template_identities=transformed_templates,
+                    propagation_graph_revision_id=None,
+                    propagation_graph_hash=None,
+                ),
+                mapped_fields=("failure_mode",),
+                dropped_fields=("legacy_mode",),
+            )
+
+    service, repository = _service(adapter=TransformingAdapter())
+    dry_command = _command()
+    report = service.dry_run(dry_command, _actor())
+    service.confirm(
+        ConfirmMigrationCommand(
+            migration_id=dry_command.migration_id,
+            report_hash=report.report_hash,
+            source_revision_id=dry_command.source_revision_id,
+            source_revision_hash=dry_command.source_revision_hash,
+            target_domain_pack_id=dry_command.target_domain_pack_id,
+            target_domain_pack_version=dry_command.target_domain_pack_version,
+            target_domain_pack_hash=dry_command.target_domain_pack_hash,
+            idempotency_key="00000000-0000-4000-8000-000000000902",
+            confirm_migration=True,
+        ),
+        _actor(),
+    )
+
+    target = repository.prepared.candidate.target_revision
+    assert target.row_versions == transformed_rows
+    assert target.template_identities == transformed_templates
+    assert target.propagation_graph_revision_id is None
+    assert target.propagation_graph_hash is None
+
+
+def test_dry_run_rejects_candidate_with_corrupted_target_revision_hash():
+    class CorruptingAdapter(_Adapter):
+        def migrate(self, source):
+            candidate = super().migrate(source)
+            object.__setattr__(candidate.target_revision, "revision_hash", DRIFTED_TARGET_HASH)
+            return candidate
+
+    service, _ = _service(adapter=CorruptingAdapter())
+
+    with pytest.raises(Exception, match="FMEA_MIGRATION_ADAPTER_INVALID"):
+        service.dry_run(_command(), _actor())

@@ -153,6 +153,13 @@ def _identity(value: object, field_name: str) -> tuple[str, str]:
     return (_pack_identity(value[0], f"{field_name} ID"), _pack_semver(value[1], f"{field_name} version"))
 
 
+def _identity_with_hash(value: object, field_name: str) -> tuple[str, str, str]:
+    if not isinstance(value, tuple | list) or len(value) != 3:
+        raise FmeaDomainError(f"{field_name} must be an ID/version/hash triple")  # noqa: TRY003
+    identity = _identity(value[:2], field_name)
+    return identity[0], identity[1], _hash(value[2], f"{field_name} hash")
+
+
 def _filename(value: object, field_name: str) -> str:
     return validate_filename(value, field_name)
 
@@ -420,6 +427,9 @@ class MigrationReport:
     plan: MigrationPlan
     source_revision_id: str
     source_revision_hash: str
+    source_domain_pack_identity: tuple[str, str, str]
+    target_domain_pack_identity: tuple[str, str, str]
+    target_revision_hash: str
     status: MigrationReportStatus | str
     mapped_fields: tuple[str, ...]
     dropped_fields: tuple[str, ...]
@@ -434,6 +444,13 @@ class MigrationReport:
             raise FmeaDomainError("plan must be a MigrationPlan")  # noqa: TRY003
         object.__setattr__(self, "source_revision_id", _id(self.source_revision_id, "source_revision_id"))
         object.__setattr__(self, "source_revision_hash", _hash(self.source_revision_hash, "source_revision_hash"))
+        source_pack = _identity_with_hash(self.source_domain_pack_identity, "source_domain_pack_identity")
+        target_pack = _identity_with_hash(self.target_domain_pack_identity, "target_domain_pack_identity")
+        if self.plan.source != source_pack[:2] or self.plan.target != target_pack[:2]:
+            raise FmeaDomainError("report domain-pack identities must match the migration plan")  # noqa: TRY003
+        object.__setattr__(self, "source_domain_pack_identity", source_pack)
+        object.__setattr__(self, "target_domain_pack_identity", target_pack)
+        object.__setattr__(self, "target_revision_hash", _hash(self.target_revision_hash, "target_revision_hash"))
         object.__setattr__(self, "status", _enum(self.status, MigrationReportStatus, "status"))
         for field_name in ("mapped_fields", "dropped_fields", "unresolved_fields", "warnings"):
             object.__setattr__(self, field_name, _texts(getattr(self, field_name), field_name))

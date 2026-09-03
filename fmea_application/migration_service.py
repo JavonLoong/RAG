@@ -42,6 +42,9 @@ _MIGRATION_ERROR_CODES = frozenset({
     "FMEA_MIGRATION_SOURCE_MISSING",
     "FMEA_MIGRATION_SOURCE_STALE",
     "FMEA_MIGRATION_SOURCE_INVALID",
+    "FMEA_MIGRATION_SOURCE_PACK_MISSING",
+    "FMEA_MIGRATION_SOURCE_PACK_INVALID",
+    "FMEA_MIGRATION_SOURCE_PACK_STALE",
     "FMEA_MIGRATION_TARGET_MISSING",
     "FMEA_MIGRATION_TARGET_INVALID",
     "FMEA_MIGRATION_TARGET_STALE",
@@ -260,20 +263,21 @@ class ConfirmMigrationCommand:
 class MigrationCandidate:
     """Immutable provider-neutral output of one registered migration adapter."""
 
-    target_domain_pack_identity: tuple[str, str, str]
+    target_revision: FmeaRevision
     mapped_fields: tuple[str, ...] = ()
     dropped_fields: tuple[str, ...] = ()
     unresolved_fields: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "target_domain_pack_identity",
-            _identity_with_hash(self.target_domain_pack_identity, "target_domain_pack_identity"),
-        )
+        if not isinstance(self.target_revision, FmeaRevision):
+            raise ValueError("target_revision must be an FmeaRevision")  # noqa: TRY003
         for field_name in ("mapped_fields", "dropped_fields", "unresolved_fields", "warnings"):
             object.__setattr__(self, field_name, _texts(getattr(self, field_name), field_name))
+
+    @property
+    def target_domain_pack_identity(self) -> tuple[str, str, str]:
+        return self.target_revision.domain_pack_identity
 
 
 @dataclass(frozen=True, slots=True)
@@ -344,10 +348,22 @@ class PreparedMigration:
             raise ValueError("prepared source revision identity is invalid")  # noqa: TRY003
         if _digest(self.report.source_revision_hash) != _digest(self.source.revision_hash):
             raise ValueError("prepared source revision hash is invalid")  # noqa: TRY003
+        if self.report.source_domain_pack_identity != self.source.domain_pack_identity:
+            raise ValueError("prepared source domain pack binding is invalid")  # noqa: TRY003
+        if self.report.target_domain_pack_identity != target:
+            raise ValueError("prepared report target domain pack binding is invalid")  # noqa: TRY003
+        if _digest(self.report.target_revision_hash) != _digest(self.candidate.target_revision.revision_hash):
+            raise ValueError("prepared report target revision binding is invalid")  # noqa: TRY003
         if self.plan != self.report.plan or self.plan.source != self.source.domain_pack_identity[:2]:
             raise ValueError("prepared migration plan binding is invalid")  # noqa: TRY003
         if self.plan.target != expected_target[:2] or self.candidate.target_domain_pack_identity != target:
             raise ValueError("prepared migration target binding is invalid")  # noqa: TRY003
+        try:
+            candidate_hash = revision_content_hash(self.candidate.target_revision)
+        except Exception:
+            raise ValueError("prepared migration candidate is invalid") from None  # noqa: TRY003
+        if _digest(candidate_hash) != _digest(self.candidate.target_revision.revision_hash):
+            raise ValueError("prepared migration candidate hash is invalid")  # noqa: TRY003
 
 
 @dataclass(frozen=True, slots=True)
@@ -431,6 +447,20 @@ class MigrationService:
             raise _error("FMEA_MIGRATION_SOURCE_INVALID", "source revision content is invalid") from None
         if _digest(computed_hash) != _digest(source.revision_hash):
             raise _error("FMEA_MIGRATION_SOURCE_INVALID", "source revision content hash is invalid")
+        source_pack = self._load_pack_identity(
+            source.domain_pack_identity[0],
+            source.domain_pack_identity[1],
+            missing_code="FMEA_MIGRATION_SOURCE_PACK_MISSING",
+            invalid_code="FMEA_MIGRATION_SOURCE_PACK_INVALID",
+            label="source",
+        )
+        if source_pack[:2] != source.domain_pack_identity[:2] or _digest(source_pack[2]) != _digest(
+            source.domain_pack_identity[2]
+        ):
+            raise _error(
+                "FMEA_MIGRATION_SOURCE_PACK_STALE",
+                "source revision domain-pack identity is stale",
+            )
         try:
             record_version = self._repository.get_revision_record_version(
                 command.source_revision_id, actor.workspace_id
@@ -443,26 +473,42 @@ class MigrationService:
             raise _error("FMEA_MIGRATION_STORAGE_UNAVAILABLE", "source revision version is unavailable", retryable=True)
         return source, record_version
 
-    def _load_target(self, command: MigrationCommand) -> tuple[str, str, str]:
+    def _load_pack_identity(
+        self,
+        pack_id: str,
+        version: str,
+        *,
+        missing_code: str,
+        invalid_code: str,
+        label: str,
+    ) -> tuple[str, str, str]:
         try:
-            target = self._domain_pack_registry.get(command.target_domain_pack_id, command.target_domain_pack_version)
+            pack = self._domain_pack_registry.get(pack_id, version)
         except Exception:
             raise _error(
-                "FMEA_MIGRATION_STORAGE_UNAVAILABLE", "target domain-pack storage is unavailable", retryable=True
+                "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
+                f"{label} domain-pack storage is unavailable",
+                retryable=True,
             ) from None
-        if target is None:
-            raise _error("FMEA_MIGRATION_TARGET_MISSING", "target domain pack was not found")
-        pack_id = getattr(target, "pack_id", None)
-        version = getattr(target, "version", None)
-        content_hash = getattr(target, "content_hash", None)
+        if pack is None:
+            raise _error(missing_code, f"{label} domain pack was not found")
         try:
-            actual = (
-                _pack_id(pack_id, "target domain pack id"),
-                _version(version, "target domain pack version"),
-                _hash(content_hash, "target domain pack hash"),
+            return (
+                _pack_id(getattr(pack, "pack_id", None), f"{label} domain pack id"),
+                _version(getattr(pack, "version", None), f"{label} domain pack version"),
+                _hash(getattr(pack, "content_hash", None), f"{label} domain pack hash"),
             )
         except Exception:
-            raise _error("FMEA_MIGRATION_TARGET_INVALID", "target domain pack identity is invalid") from None
+            raise _error(invalid_code, f"{label} domain pack identity is invalid") from None
+
+    def _load_target(self, command: MigrationCommand) -> tuple[str, str, str]:
+        actual = self._load_pack_identity(
+            command.target_domain_pack_id,
+            command.target_domain_pack_version,
+            missing_code="FMEA_MIGRATION_TARGET_MISSING",
+            invalid_code="FMEA_MIGRATION_TARGET_INVALID",
+            label="target",
+        )
         expected = (
             command.target_domain_pack_id,
             command.target_domain_pack_version,
@@ -492,7 +538,7 @@ class MigrationService:
         dropped: list[str] = []
         unresolved: list[str] = []
         warnings: list[str] = []
-        final_target: tuple[str, str, str] | None = None
+        current = source
 
         def add_unique(destination: list[str], values: tuple[str, ...]) -> None:
             for value in values:
@@ -500,6 +546,11 @@ class MigrationService:
                     destination.append(value)
 
         for step in plan.steps:
+            if current.domain_pack_identity[:2] != step.source:
+                raise _error(
+                    "FMEA_MIGRATION_ADAPTER_INVALID",
+                    "migration adapter source does not match the registered edge",
+                )
             try:
                 adapter = self._migration_registry.adapter_for(step)
             except Exception as exc:
@@ -508,27 +559,53 @@ class MigrationService:
             if not callable(getattr(adapter, "migrate", None)):
                 raise _error("FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter is invalid")
             try:
-                candidate = adapter.migrate(source)
+                candidate = adapter.migrate(current)
             except Exception:
                 raise _error(
                     "FMEA_MIGRATION_ADAPTER_FAILED", "migration adapter execution failed", retryable=True
                 ) from None
             if not isinstance(candidate, MigrationCandidate):
                 raise _error("FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter returned an invalid candidate")
-            target = candidate.target_domain_pack_identity
-            if target[:2] != step.target[:2]:
+            target_revision = candidate.target_revision
+            if not isinstance(target_revision, FmeaRevision):
+                raise _error("FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter target revision is invalid")
+            try:
+                computed_hash = revision_content_hash(target_revision)
+            except Exception:
+                raise _error("FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter target revision is invalid") from None
+            if _digest(computed_hash) != _digest(target_revision.revision_hash):
+                raise _error("FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter target revision hash is invalid")
+            if (
+                target_revision.workspace_id != source.workspace_id
+                or target_revision.analysis_id != source.analysis_id
+                or target_revision.domain_pack_identity[:2] != step.target
+            ):
                 raise _error(
                     "FMEA_MIGRATION_ADAPTER_INVALID", "migration adapter target does not match the registered edge"
                 )
-            final_target = target
+            registered_target = self._load_pack_identity(
+                step.target[0],
+                step.target[1],
+                missing_code="FMEA_MIGRATION_ADAPTER_INVALID",
+                invalid_code="FMEA_MIGRATION_ADAPTER_INVALID",
+                label="adapter target",
+            )
+            if registered_target[:2] != target_revision.domain_pack_identity[:2] or _digest(
+                registered_target[2]
+            ) != _digest(target_revision.domain_pack_identity[2]):
+                raise _error(
+                    "FMEA_MIGRATION_ADAPTER_INVALID",
+                    "migration adapter target does not match the registered domain pack",
+                )
+            current = target_revision
             add_unique(mapped, candidate.mapped_fields)
             add_unique(dropped, candidate.dropped_fields)
             add_unique(unresolved, candidate.unresolved_fields)
             add_unique(warnings, candidate.warnings)
         if (
-            final_target is None
-            or final_target[:2] != target_identity[:2]
-            or _digest(final_target[2]) != _digest(target_identity[2])
+            current is source
+            or current.domain_pack_identity[:2] != target_identity[:2]
+            or _digest(current.domain_pack_identity[2]) != _digest(target_identity[2])
         ):
             raise _error(
                 "FMEA_MIGRATION_ADAPTER_INVALID",
@@ -536,7 +613,7 @@ class MigrationService:
             )
         try:
             return MigrationCandidate(
-                target_domain_pack_identity=target_identity,
+                target_revision=current,
                 mapped_fields=tuple(mapped),
                 dropped_fields=tuple(dropped),
                 unresolved_fields=tuple(unresolved),
@@ -556,6 +633,9 @@ class MigrationService:
                 plan=plan,
                 source_revision_id=source.revision_id,
                 source_revision_hash=source.revision_hash,
+                source_domain_pack_identity=source.domain_pack_identity,
+                target_domain_pack_identity=target,
+                target_revision_hash=candidate.target_revision.revision_hash,
                 status=MigrationReportStatus.DRY_RUN,
                 mapped_fields=candidate.mapped_fields,
                 dropped_fields=candidate.dropped_fields,
@@ -754,13 +834,7 @@ class MigrationService:
                 source=record.source,
                 source_record_version=record.source_record_version,
                 plan=record.plan,
-                candidate=MigrationCandidate(
-                    target_domain_pack_identity=target,
-                    mapped_fields=record.candidate.mapped_fields,
-                    dropped_fields=record.candidate.dropped_fields,
-                    unresolved_fields=record.candidate.unresolved_fields,
-                    warnings=record.candidate.warnings,
-                ),
+                candidate=record.candidate,
                 report=record.report,
                 target_domain_pack_identity=target,
                 actor=actor,
