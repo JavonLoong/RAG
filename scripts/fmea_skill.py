@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Final, Literal, NoReturn, cast
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -35,6 +35,7 @@ FMEA_REVIEW_COMMANDS: Final = frozenset(
 )
 FMEA_PROPAGATION_COMMANDS: Final = frozenset({"start", "status", "show", "paths", "review"})
 FMEA_GOVERNANCE_COMMANDS: Final = frozenset({"revision", "approval", "publication"})
+FMEA_DELIVERY_COMMANDS: Final = frozenset({"domain-pack", "migration", "export"})
 SUGGESTION_POLL_INTERVAL_SECONDS: Final = 0.2
 SUGGESTION_DEADLINE_SECONDS: Final = 360.0
 DECISION_REQUEST_MAX_BYTES: Final = 256 * 1024
@@ -122,6 +123,64 @@ _ERROR_EXIT_GROUPS: Final = {
     **dict.fromkeys(("FMEA_PROPAGATION_REVIEW_FORBIDDEN", "FMEA_PROPAGATION_GRAPH_NOT_FOUND", "FMEA_PROPAGATION_RUN_NOT_FOUND"), _EXIT_CODES["auth"]),
     "FMEA_PROPAGATION_PERSISTENCE_INVALID": _EXIT_CODES["storage"],
     "FMEA_REVIEW_STORAGE_UNAVAILABLE": _EXIT_CODES["storage"],
+    **dict.fromkeys((
+        "FMEA_DELIVERY_REQUEST_INVALID",
+        "FMEA_TEMPLATE_CONFIRMATION_REQUIRED",
+        "FMEA_MIGRATION_CONFIRMATION_REQUIRED",
+        "FMEA_EXPORT_PUBLICATION_CONFIRMATION_REQUIRED",
+        "FMEA_EXPORT_REQUEST_INVALID",
+        "FMEA_EXPORT_FORMAT_UNSUPPORTED",
+        "FMEA_EXPORT_RENDER_FAILED",
+        "FMEA_TEMPLATE_IMPORT_INVALID",
+        "FMEA_TEMPLATE_CONTAINER_INVALID",
+        "FMEA_TEMPLATE_LIMIT_EXCEEDED",
+        "FMEA_MIGRATION_REQUEST_INVALID",
+        "FMEA_MIGRATION_SOURCE_INVALID",
+        "FMEA_MIGRATION_SOURCE_PACK_INVALID",
+        "FMEA_MIGRATION_SOURCE_PACK_STALE",
+        "FMEA_MIGRATION_TARGET_INVALID",
+        "FMEA_MIGRATION_EDGE_MISSING",
+        "FMEA_MIGRATION_EDGE_AMBIGUOUS",
+        "FMEA_MIGRATION_EDGE_CYCLIC",
+        "FMEA_MIGRATION_REGISTRY_INVALID",
+        "FMEA_MIGRATION_ADAPTER_INVALID",
+        "FMEA_MIGRATION_REPORT_INVALID",
+        "FMEA_EXPORT_NARRATIVE_REQUEST_INVALID",
+        "FMEA_EXPORT_NARRATIVE_INVALID",
+    ), _EXIT_CODES["request"]),
+    **dict.fromkeys((
+        "FMEA_TEMPLATE_DRAFT_NOT_FOUND",
+        "FMEA_TEMPLATE_PATCH_NOT_FOUND",
+        "FMEA_MIGRATION_REPORT_NOT_FOUND",
+        "FMEA_EXPORT_RUN_NOT_FOUND",
+        "FMEA_EXPORT_ARTIFACT_NOT_FOUND",
+        "FMEA_EXPORT_SNAPSHOT_NOT_FOUND",
+        "FMEA_EXPORT_PUBLICATION_NOT_FOUND",
+        "FMEA_MIGRATION_SOURCE_MISSING",
+        "FMEA_MIGRATION_TARGET_MISSING",
+    ), _EXIT_CODES["configuration"]),
+    **dict.fromkeys((
+        "FMEA_TEMPLATE_ADMIN_REQUIRED",
+        "FMEA_MIGRATION_FORBIDDEN",
+        "FMEA_EXPORT_FORBIDDEN",
+        "FMEA_EXPORT_NARRATIVE_FORBIDDEN",
+    ), _EXIT_CODES["auth"]),
+    **dict.fromkeys((
+        "FMEA_MIGRATION_IDEMPOTENCY_CONFLICT",
+        "FMEA_MIGRATION_REPORT_STALE",
+        "FMEA_MIGRATION_FAILED",
+        "FMEA_EXPORT_SNAPSHOT_STALE",
+        "FMEA_EXPORT_PUBLICATION_STALE",
+        "FMEA_EXPORT_NOT_ELIGIBLE",
+        "FMEA_EXPORT_PERSISTENCE_INVALID",
+        "FMEA_EXPORT_ARTIFACT_INVALID",
+        "FMEA_EXPORT_IDEMPOTENCY_CONFLICT",
+    ), _EXIT_CODES["conflict"]),
+    **dict.fromkeys((
+        "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
+        "FMEA_EXPORT_STORAGE_UNAVAILABLE",
+        "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
+    ), _EXIT_CODES["storage"]),
     **dict.fromkeys((
         "FMEA_GOVERNANCE_REQUEST_INVALID",
         "FMEA_GOVERNANCE_CURSOR_INVALID",
@@ -222,6 +281,9 @@ class CliRuntime:
     governance_service: Any | None = None
     governance_assistance_service: Any | None = None
     governance_cursor_secret: bytes | None = None
+    domain_pack_service: Any | None = None
+    migration_service: Any | None = None
+    export_service: Any | None = None
 
 
 def _positive_int(value: str) -> int:
@@ -326,6 +388,94 @@ def build_parser() -> argparse.ArgumentParser:
     propagation_review.add_argument("--request-file", required=True)
     propagation_review.add_argument("--confirm-human-propagation-review", action="store_true")
     _add_pretty(propagation_review)
+
+    domain_pack = commands.add_parser("domain-pack")
+    domain_pack_commands = domain_pack.add_subparsers(dest="domain_pack_command", required=True, parser_class=_CliArgumentParser)
+    domain_pack_import = domain_pack_commands.add_parser("import", aliases=["draft-import"])
+    domain_pack_import.add_argument("--source-file", required=True)
+    domain_pack_import.add_argument("--idempotency-key", required=True)
+    _add_pretty(domain_pack_import)
+    patch_suggest = domain_pack_commands.add_parser("patch-suggest")
+    patch_suggest.add_argument("--draft-id", required=True)
+    patch_suggest.add_argument("--record-version", required=True, type=_positive_int)
+    patch_suggest.add_argument("--input-template-version", required=True)
+    patch_suggest.add_argument("--target-template-id", required=True)
+    patch_suggest.add_argument("--target-template-version", required=True)
+    patch_suggest.add_argument("--target-template-hash", required=True)
+    patch_suggest.add_argument("--domain-pack-id", required=True)
+    patch_suggest.add_argument("--domain-pack-version", required=True)
+    patch_suggest.add_argument("--domain-pack-hash", required=True)
+    patch_suggest.add_argument("--evidence-pack-id", required=True)
+    patch_suggest.add_argument("--evidence-pack-hash", required=True)
+    patch_suggest.add_argument("--idempotency-key", required=True)
+    _add_pretty(patch_suggest)
+    patch_status = domain_pack_commands.add_parser("patch-status")
+    patch_status.add_argument("--patch-id", required=True)
+    _add_pretty(patch_status)
+    patch_accept = domain_pack_commands.add_parser("accept", aliases=["register"])
+    patch_accept.add_argument("--request-file", required=True)
+    patch_accept.add_argument("--confirm-template-change", action="store_true")
+    patch_accept.add_argument("--idempotency-key", required=True)
+    patch_accept.add_argument("--record-version", required=True, type=_positive_int)
+    _add_pretty(patch_accept)
+    patch_reject = domain_pack_commands.add_parser("reject")
+    patch_reject.add_argument("--request-file", required=True)
+    patch_reject.add_argument("--idempotency-key", required=True)
+    patch_reject.add_argument("--record-version", required=True, type=_positive_int)
+    _add_pretty(patch_reject)
+
+    migration = commands.add_parser("migration")
+    migration_commands = migration.add_subparsers(dest="migration_command", required=True, parser_class=_CliArgumentParser)
+    migration_dry_run = migration_commands.add_parser("dry-run")
+    migration_dry_run.add_argument("--migration-id", required=True)
+    migration_dry_run.add_argument("--revision-id", required=True)
+    migration_dry_run.add_argument("--source-revision-hash", required=True)
+    migration_dry_run.add_argument("--target-domain-pack-id", required=True)
+    migration_dry_run.add_argument("--target-domain-pack-version", required=True)
+    migration_dry_run.add_argument("--target-domain-pack-hash", required=True)
+    migration_dry_run.add_argument("--record-version", required=True, type=_positive_int)
+    migration_dry_run.add_argument("--idempotency-key", required=True)
+    _add_pretty(migration_dry_run)
+    migration_compatibility = migration_commands.add_parser("compatibility")
+    migration_compatibility.add_argument("--source-domain-pack-id", required=True)
+    migration_compatibility.add_argument("--source-domain-pack-version", required=True)
+    migration_compatibility.add_argument("--target-domain-pack-id", required=True)
+    migration_compatibility.add_argument("--target-domain-pack-version", required=True)
+    migration_compatibility.add_argument("--target-domain-pack-hash", required=True)
+    migration_compatibility.add_argument("--idempotency-key", required=True)
+    _add_pretty(migration_compatibility)
+    migration_confirm = migration_commands.add_parser("confirm")
+    migration_confirm.add_argument("--request-file", required=True)
+    migration_confirm.add_argument("--confirm-migration", action="store_true")
+    migration_confirm.add_argument("--record-version", required=True, type=_positive_int)
+    migration_confirm.add_argument("--idempotency-key", required=True)
+    _add_pretty(migration_confirm)
+
+    export = commands.add_parser("export")
+    export_commands = export.add_subparsers(dest="export_command", required=True, parser_class=_CliArgumentParser)
+    export_start = export_commands.add_parser("start")
+    export_start.add_argument("--revision-id", required=True)
+    export_start.add_argument("--snapshot-id", required=True)
+    export_start.add_argument("--snapshot-hash", required=True)
+    export_start.add_argument("--format", required=True, choices=("json", "xlsx", "docx"))
+    export_start.add_argument("--publication-id")
+    export_start.add_argument("--draft-preview", action="store_true")
+    export_start.add_argument("--record-version", required=True, type=_positive_int)
+    export_start.add_argument("--idempotency-key", required=True)
+    export_start.add_argument("--confirm-publication", action="store_true")
+    _add_pretty(export_start)
+    export_status = export_commands.add_parser("status")
+    export_status.add_argument("--run-id", required=True)
+    _add_pretty(export_status)
+    export_artifact = export_commands.add_parser("artifact", aliases=["download"])
+    export_artifact.add_argument("--artifact-id", required=True)
+    _add_pretty(export_artifact)
+    export_narrative = export_commands.add_parser("narrative-suggest")
+    export_narrative.add_argument("--revision-id", required=True)
+    export_narrative.add_argument("--snapshot-id")
+    export_narrative.add_argument("--snapshot-hash")
+    export_narrative.add_argument("--publication-id")
+    _add_pretty(export_narrative)
 
     revision = commands.add_parser("revision")
     revision_commands = revision.add_subparsers(dest="revision_command", required=True, parser_class=_CliArgumentParser)
@@ -674,6 +824,14 @@ def build_cli_runtime() -> CliRuntime:
         governance_cursor_secret = governance_contracts.derive_governance_cursor_secret(
             configured_cursor_secret
         )
+    delivery_runtime = None
+    try:
+        delivery_module = import_module("chroma_rag_poc.routes_fmea_delivery_v1")
+        delivery_runtime = delivery_module.build_default_delivery_runtime(workspace)
+    except Exception:
+        # Existing review/governance commands remain usable when optional delivery
+        # providers are not configured; delivery commands surface a safe error.
+        delivery_runtime = None
     model_actor = dependencies.review_contracts.ActorContext(
         actor_id="fmea-model-assistant",
         actor_type=dependencies.states.ActorType.MODEL,
@@ -706,6 +864,9 @@ def build_cli_runtime() -> CliRuntime:
         governance_service=governance_runtime.service,
         governance_assistance_service=governance_runtime.assistance_service,
         governance_cursor_secret=governance_cursor_secret,
+        domain_pack_service=None if delivery_runtime is None else delivery_runtime.domain_pack_service,
+        migration_service=None if delivery_runtime is None else delivery_runtime.migration_service,
+        export_service=None if delivery_runtime is None else delivery_runtime.export_service,
     )
 
 
@@ -956,6 +1117,11 @@ def _pretty_requested(argv: Sequence[str] | None) -> bool:
 def _is_governance_argv(argv: Sequence[str] | None) -> bool:
     values = sys.argv[1:] if argv is None else argv
     return bool(values) and values[0] in FMEA_GOVERNANCE_COMMANDS
+
+
+def _is_delivery_argv(argv: Sequence[str] | None) -> bool:
+    values = sys.argv[1:] if argv is None else argv
+    return bool(values) and values[0] in FMEA_DELIVERY_COMMANDS
 
 
 def _write_json(payload: Mapping[str, object], *, pretty: bool) -> None:
@@ -1768,7 +1934,221 @@ def _dispatch_propagation(  # noqa: C901
     raise CliUsageError
 
 
+def _delivery_error(code: str, detail: str) -> Exception:
+    module = import_module("chroma_rag_poc.routes_fmea_delivery_v1")
+    return cast(Exception, module.DeliveryError(code, detail))
+
+
+def _stable_delivery_id(prefix: str, workspace_id: str, idempotency_key: str) -> str:
+    return f"{prefix}-{uuid5(NAMESPACE_URL, f'fmea-delivery:{workspace_id}:{idempotency_key}')}"
+
+
+def _delivery_service(runtime: CliRuntime, name: str) -> Any:
+    service = getattr(runtime, name, None)
+    if service is None:
+        raise _delivery_error("FMEA_DELIVERY_STORAGE_UNAVAILABLE", "requested FMEA delivery service is not configured")
+    return service
+
+
+def _require_delivery_role(runtime: CliRuntime, role: str) -> None:
+    states = import_module("core_domain.fmea.states")
+    actor = runtime.actor
+    if getattr(actor, "actor_type", None) is not states.ActorType.HUMAN or role not in getattr(actor, "roles", ()):
+        code = {"template_admin": "FMEA_TEMPLATE_ADMIN_REQUIRED", "exporter": "FMEA_EXPORT_FORBIDDEN"}.get(
+            role, "FMEA_DELIVERY_REQUEST_INVALID"
+        )
+        raise _delivery_error(code, f"only a human {role} may perform this operation")
+
+
+def _delivery_data(function_name: str, value: Any) -> dict[str, object]:
+    module = import_module("chroma_rag_poc.fmea_delivery_contracts")
+    return cast(dict[str, object], getattr(module, function_name)(value))
+
+
+def _delivery_request(model_name: str, request: Mapping[str, object]) -> Any:
+    module = import_module("chroma_rag_poc.fmea_delivery_contracts")
+    try:
+        return getattr(module, model_name).model_validate(dict(request))
+    except (TypeError, ValueError) as exc:
+        raise _delivery_error("FMEA_DELIVERY_REQUEST_INVALID", "delivery request is invalid") from exc
+
+
+def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:  # noqa: C901
+    pretty = bool(args.pretty)
+    domain_module = import_module("fmea_application.domain_pack_service")
+    migration_module = import_module("fmea_application.migration_service")
+    export_module = import_module("fmea_application.export_service")
+    if args.command == "domain-pack":
+        service = _delivery_service(runtime, "domain_pack_service")
+        if args.domain_pack_command in {"import", "draft-import"}:
+            raw = _read_bounded_request_file(Path(args.source_file))
+            draft = service.import_template(
+                domain_module.ImportTemplateCommand(raw, Path(args.source_file).name, runtime.actor.workspace_id),
+                runtime.actor,
+            )
+            _emit_resource("fmea_template_draft", _delivery_data("template_draft_data", draft), pretty=pretty)
+            return 0
+        if args.domain_pack_command == "patch-suggest":
+            body = _delivery_request("TemplatePatchRunRequest", {
+                "input_template_version": args.input_template_version,
+                "target_template_id": args.target_template_id,
+                "target_template_version": args.target_template_version,
+                "target_template_hash": args.target_template_hash,
+                "domain_pack_id": args.domain_pack_id,
+                "domain_pack_version": args.domain_pack_version,
+                "domain_pack_hash": args.domain_pack_hash,
+                "evidence_pack_id": args.evidence_pack_id,
+                "evidence_pack_hash": args.evidence_pack_hash,
+            })
+            suggestion = service.suggest_patch(
+                domain_module.SuggestTemplatePatchCommand(
+                    draft_id=args.draft_id,
+                    patch_id=_stable_delivery_id("template-patch", runtime.actor.workspace_id, args.idempotency_key),
+                    input_template_version=body.input_template_version,
+                    target_template_id=body.target_template_id,
+                    target_template_version=body.target_template_version,
+                    target_template_hash=body.target_template_hash,
+                    domain_pack_id=body.domain_pack_id,
+                    domain_pack_version=body.domain_pack_version,
+                    domain_pack_hash=body.domain_pack_hash,
+                    evidence_pack_id=body.evidence_pack_id,
+                    evidence_pack_hash=body.evidence_pack_hash,
+                    run_id=_stable_delivery_id("template-patch-run", runtime.actor.workspace_id, args.idempotency_key),
+                    trace_id=str(uuid4()),
+                    model_version="server-configured",
+                    prompt_version="server-configured",
+                    target_record_version=args.record_version,
+                ),
+                runtime.actor,
+            )
+            _emit_resource("fmea_template_patch", _delivery_data("template_patch_data", suggestion), pretty=pretty)
+            return 0
+        if args.domain_pack_command == "patch-status":
+            decision = service.decision_for_patch(args.patch_id, runtime.actor)
+            if decision is None:
+                raise _delivery_error("FMEA_TEMPLATE_PATCH_NOT_FOUND", "template patch was not found")
+            _emit_resource("fmea_template_patch_decision", _delivery_data("template_patch_decision_data", decision), pretty=pretty)
+            return 0
+        if args.domain_pack_command in {"accept", "register", "reject"}:
+            _require_delivery_role(runtime, "template_admin")
+            if request is None:
+                raise _invalid_request_file()
+            if args.domain_pack_command in {"accept", "register"}:
+                body = _delivery_request("TemplatePatchAcceptanceRequest", request)
+                result = service.accept_patch(domain_module.AcceptTemplatePatchCommand(**body.model_dump()), runtime.actor)
+                _emit_resource("fmea_template_registration", _delivery_data("template_registration_data", result), pretty=pretty)
+            else:
+                body = _delivery_request("TemplatePatchRejectionRequest", request)
+                result = service.reject_patch(domain_module.RejectTemplatePatchCommand(**body.model_dump()), runtime.actor)
+                _emit_resource("fmea_template_patch_decision", _delivery_data("template_patch_decision_data", result), pretty=pretty)
+            return 0
+        raise CliUsageError
+
+    if args.command == "migration":
+        if args.migration_command in {"dry-run", "compatibility", "confirm"}:
+            _require_delivery_role(runtime, "template_admin")
+        service = _delivery_service(runtime, "migration_service")
+        if args.migration_command == "dry-run":
+            result = service.dry_run(migration_module.MigrationCommand(
+                migration_id=args.migration_id,
+                source_revision_id=args.revision_id,
+                source_revision_hash=args.source_revision_hash,
+                target_domain_pack_id=args.target_domain_pack_id,
+                target_domain_pack_version=args.target_domain_pack_version,
+                target_domain_pack_hash=args.target_domain_pack_hash,
+                idempotency_key=args.idempotency_key,
+            ), runtime.actor)
+            _emit_resource("fmea_migration_report", _delivery_data("migration_report_data", result), pretty=pretty)
+            return 0
+        if args.migration_command == "compatibility":
+            result = service.compatibility(migration_module.CompatibilityCommand(
+                source_domain_pack_id=args.source_domain_pack_id,
+                source_domain_pack_version=args.source_domain_pack_version,
+                target_domain_pack_id=args.target_domain_pack_id,
+                target_domain_pack_version=args.target_domain_pack_version,
+                target_domain_pack_hash=args.target_domain_pack_hash,
+                idempotency_key=args.idempotency_key,
+            ), runtime.actor)
+            _emit_resource("fmea_migration_compatibility", _delivery_data("compatibility_report_data", result), pretty=pretty)
+            return 0
+        if args.migration_command == "confirm":
+            if request is None:
+                raise _invalid_request_file()
+            body = _delivery_request("MigrationConfirmationRequest", request)
+            dry = body.dry_run
+            result = service.confirm(migration_module.ConfirmMigrationCommand(
+                migration_id=body.migration_id,
+                report_hash=body.report_hash,
+                source_revision_id=body.source_revision_id,
+                source_revision_hash=body.source_revision_hash,
+                target_domain_pack_id=body.target_domain_pack_id,
+                target_domain_pack_version=body.target_domain_pack_version,
+                target_domain_pack_hash=body.target_domain_pack_hash,
+                dry_run_command=migration_module.MigrationCommand(
+                    migration_id=dry.migration_id,
+                    source_revision_id=body.source_revision_id,
+                    source_revision_hash=dry.source_revision_hash,
+                    target_domain_pack_id=dry.target_domain_pack_id,
+                    target_domain_pack_version=dry.target_domain_pack_version,
+                    target_domain_pack_hash=dry.target_domain_pack_hash,
+                    idempotency_key=args.idempotency_key,
+                ),
+                idempotency_key=args.idempotency_key,
+                confirm_migration=body.confirm_migration,
+            ), runtime.actor)
+            _emit_resource("fmea_migration_result", _delivery_data("migration_result_data", result), pretty=pretty)
+            return 0
+        raise CliUsageError
+
+    if args.command == "export":
+        service = _delivery_service(runtime, "export_service")
+        if args.export_command == "start":
+            if not args.draft_preview:
+                _require_delivery_role(runtime, "exporter")
+            result = service.start(export_module.StartExportCommand(
+                export_run_id=_stable_delivery_id("export", runtime.actor.workspace_id, args.idempotency_key),
+                workspace_id=runtime.actor.workspace_id,
+                revision_id=args.revision_id,
+                snapshot_id=args.snapshot_id,
+                snapshot_hash=args.snapshot_hash,
+                publication_id=args.publication_id,
+                format=args.format,
+                draft_preview=args.draft_preview,
+                idempotency_key=args.idempotency_key,
+            ), runtime.actor)
+            _emit_resource("fmea_export_run", _delivery_data("export_run_data", result), pretty=pretty)
+            return 0
+        if args.export_command == "status":
+            result = service.get_run(args.run_id, runtime.actor)
+            _emit_resource("fmea_export_run", _delivery_data("export_run_data", result), pretty=pretty)
+            return 0
+        if args.export_command in {"artifact", "download"}:
+            import base64
+
+            artifact = service.get_artifact(args.artifact_id, runtime.actor)
+            _emit_resource("fmea_export_artifact", {
+                "manifest": _delivery_data("export_artifact_manifest_data", artifact.manifest),
+                "payload_base64": base64.b64encode(artifact.payload).decode("ascii"),
+            }, pretty=pretty)
+            return 0
+        if args.export_command == "narrative-suggest":
+            snapshot_service = getattr(runtime, "governance_service", None)
+            getter = getattr(snapshot_service, "get_snapshot", None)
+            if not callable(getter):
+                raise _delivery_error("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "narrative snapshot was not found")
+            snapshot = getter(args.snapshot_id or args.publication_id, runtime.actor)
+            if args.snapshot_hash is not None and getattr(snapshot, "snapshot_hash", None) != args.snapshot_hash:
+                raise _delivery_error("FMEA_EXPORT_SNAPSHOT_STALE", "narrative snapshot hash is stale")
+            result = service.suggest_narrative(snapshot, _task5_model_actor(runtime))
+            _emit_resource("fmea_export_narrative_suggestion", _delivery_data("narrative_data", result), pretty=pretty)
+            return 0
+        raise CliUsageError
+    raise CliUsageError
+
+
 def _dispatch(args: argparse.Namespace, runtime: CliRuntime, request: dict[str, object] | None) -> int:  # noqa: C901
+    if args.command in FMEA_DELIVERY_COMMANDS:
+        return _dispatch_delivery(args, runtime, request)
     if args.command in FMEA_GOVERNANCE_COMMANDS:
         return _dispatch_governance(args, runtime)
     if args.command == "assist":
@@ -1849,8 +2229,12 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
         args = parse_cli_args(argv)
     except CliUsageError:
         return _emit_error(
-            "FMEA_GOVERNANCE_REQUEST_INVALID" if _is_governance_argv(argv) else "FMEA_REVIEW_REQUEST_INVALID",
-            "invalid governance CLI request" if _is_governance_argv(argv) else "invalid review CLI request",
+            "FMEA_GOVERNANCE_REQUEST_INVALID" if _is_governance_argv(argv) else (
+                "FMEA_DELIVERY_REQUEST_INVALID" if _is_delivery_argv(argv) else "FMEA_REVIEW_REQUEST_INVALID"
+            ),
+            "invalid governance CLI request" if _is_governance_argv(argv) else (
+                "invalid delivery CLI request" if _is_delivery_argv(argv) else "invalid review CLI request"
+            ),
             pretty=pretty,
         )
 
@@ -1877,6 +2261,30 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
         return _emit_error(
             "FMEA_REVIEW_CONFIRMATION_REQUIRED",
             "explicit human propagation review confirmation is required",
+            pretty=bool(args.pretty),
+        )
+
+    if args.command == "domain-pack" and args.domain_pack_command in {"accept", "register"} and not args.confirm_template_change:
+        return _emit_error(
+            "FMEA_TEMPLATE_CONFIRMATION_REQUIRED",
+            "explicit template change confirmation is required",
+            pretty=bool(args.pretty),
+        )
+    if args.command == "migration" and args.migration_command == "confirm" and not args.confirm_migration:
+        return _emit_error(
+            "FMEA_MIGRATION_CONFIRMATION_REQUIRED",
+            "explicit migration confirmation is required",
+            pretty=bool(args.pretty),
+        )
+    if (
+        args.command == "export"
+        and args.export_command == "start"
+        and not args.draft_preview
+        and not args.confirm_publication
+    ):
+        return _emit_error(
+            "FMEA_EXPORT_PUBLICATION_CONFIRMATION_REQUIRED",
+            "explicit publication confirmation is required",
             pretty=bool(args.pretty),
         )
 
@@ -1928,6 +2336,11 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
                 "invalid FMEA request file",
                 pretty=bool(args.pretty),
             )
+    elif (args.command == "domain-pack" and args.domain_pack_command in {"accept", "register", "reject"}) or (args.command == "migration" and args.migration_command == "confirm"):
+        try:
+            request = load_json_request(args.request_file)
+        except CliUsageError:
+            return _emit_error("FMEA_DELIVERY_REQUEST_INVALID", "invalid delivery request file", pretty=bool(args.pretty))
 
     try:
         runtime = build_cli_runtime()

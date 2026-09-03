@@ -404,6 +404,7 @@ def create_app(
     risk_runtime_factory: Callable[[WorkspaceConfig], RiskRuntime] | None = None,
     propagation_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
     governance_runtime_factory: Callable[[WorkspaceConfig], GovernanceRuntime] | None = None,
+    delivery_runtime_factory: Callable[[WorkspaceConfig], object] | None = None,
     review_auth_provider: LocalReviewAuthProvider | None = None,
 ) -> FastAPI:
     """创建 FastAPI 应用（工厂模式）"""
@@ -448,6 +449,10 @@ def create_app(
     app.state.governance_runtime_factory = governance_runtime_factory
     app.state.governance_runtimes = {}
     app.state.governance_runtime_lock = Lock()
+    app.state.fmea_delivery_runtime_factory = delivery_runtime_factory
+    app.state.fmea_delivery_runtimes = {}
+    app.state.fmea_delivery_runtime_lock = Lock()
+    app.state.fmea_delivery_patch_suggestions = {}
     configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
     try:
         app.state.governance_cursor_secret = derive_governance_cursor_secret(configured_cursor_secret)
@@ -465,6 +470,13 @@ def create_app(
             app.state.review_auth_error = exc
 
     from .routes_fmea_assistance_v1 import router as fmea_assistance_v1_router
+    from .routes_fmea_delivery_v1 import (
+        DeliveryError,
+        delivery_error_response,
+        delivery_validation_error_response,
+        is_delivery_path,
+    )
+    from .routes_fmea_delivery_v1 import router as fmea_delivery_v1_router
     from .routes_fmea_governance_v1 import (
         governance_error_response,
         governance_validation_error_response,
@@ -487,6 +499,8 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        if is_delivery_path(request.url.path):
+            return delivery_validation_error_response(request, exc)
         if is_governance_path(request.url.path):
             return governance_validation_error_response(request, exc)
         if request.url.path.startswith("/api/v1/fmea/"):
@@ -497,10 +511,12 @@ def create_app(
 
     app.add_exception_handler(ReviewError, review_error_response)
     app.add_exception_handler(GovernanceServiceError, governance_error_response)
+    app.add_exception_handler(DeliveryError, delivery_error_response)
 
     app.include_router(query_v1_router)
     app.include_router(fmea_review_v1_router)
     app.include_router(fmea_governance_v1_router)
+    app.include_router(fmea_delivery_v1_router)
     app.include_router(fmea_assistance_v1_router)
     app.include_router(fmea_risk_v1_router)
     app.include_router(fmea_propagation_v1_router)
