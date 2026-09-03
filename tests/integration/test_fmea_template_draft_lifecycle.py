@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
+from threading import Event
 
 import pytest
 
@@ -15,6 +16,7 @@ from fmea_application.domain_pack_service import (
     RejectTemplatePatchCommand,
     SuggestTemplatePatchCommand,
 )
+from fmea_application.template_patch_contracts import normalize_source_mapping_key
 from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
 from fmea_infrastructure.template_patch_generator import TemplatePatchGenerator
 from structured_output_application import TemplateCompiler
@@ -259,7 +261,7 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
                     },
                     {
                         "op": "add",
-                        "path": "/mappings/legacy_criticality",
+                        "path": f"/mappings/{normalize_source_mapping_key('Legacy Criticality')}",
                         "value": "criticality",
                     },
                 ),
@@ -297,8 +299,8 @@ def test_accept_applies_exact_patch_to_verified_base_and_registers_new_version(t
         "criticality": {"type": "integer", "minimum": 1, "maximum": 5},
     }
     assert stored.source_mappings == {
-        "failure_mode": "failure_mode",
-        "legacy_criticality": "criticality",
+        normalize_source_mapping_key("Failure Mode"): "failure_mode",
+        normalize_source_mapping_key("Legacy Criticality"): "criticality",
     }
 
     class _SecondGateway:
@@ -384,6 +386,35 @@ def test_accept_is_process_local_serialized_and_records_one_decision() -> None:
     assert decision.candidate.diff[0]["path"] == "/fields/failure_mode"
 
 
+def test_suggest_reserves_patch_identity_before_model_generation() -> None:
+    entered = Event()
+    release = Event()
+
+    class _BlockingGateway:
+        def generate(self, request: object) -> object:
+            entered.set()
+            assert release.wait(timeout=2)
+            return {"diff": (), "evidence_ids": ()}
+
+    service, _, _ = _service(_BlockingGateway())
+    draft = service.import_template(
+        ImportTemplateCommand(raw_bytes=_xlsx(), filename="fmea.xlsx", workspace_id="ws-1"),
+        _actor(roles=frozenset()),
+    )
+    command = _suggest_command(draft.draft_id)
+    model = _actor(roles=frozenset(), actor_type=ActorType.MODEL)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first = executor.submit(service.suggest_patch, command, model)
+        assert entered.wait(timeout=2)
+        with pytest.raises(ReviewError, match="already|progress|reserved"):
+            service.suggest_patch(command, model)
+        release.set()
+        suggestion = first.result(timeout=2)
+
+    assert suggestion.candidate.patch_id == "patch-1"
+
+
 def test_failed_registration_leaves_no_decision_and_allows_bounded_retry() -> None:
     class _FailOnceRegistry(_Registry):
         def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object:
@@ -437,7 +468,13 @@ def test_mapping_operations_use_imported_mapping_state_exactly() -> None:
     class _MappingGateway:
         def generate(self, request: object) -> object:
             return {
-                "diff": ({"op": "add", "path": "/mappings/failure_mode", "value": "failure_mode"},),
+                "diff": (
+                    {
+                        "op": "add",
+                        "path": f"/mappings/{normalize_source_mapping_key('Failure Mode')}",
+                        "value": "failure_mode",
+                    },
+                ),
                 "evidence_ids": (),
             }
 

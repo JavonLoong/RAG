@@ -13,7 +13,7 @@ from core_domain.fmea.value_objects import EvidencePack, EvidenceRef, VersionSet
 from core_domain.structured_generation import GenerationStage, StructuredModelResponse
 from fmea_application.assistance_contracts import AssistanceKind
 from fmea_application.review_errors import ReviewError
-from fmea_application.template_patch_contracts import TemplatePatchSuggestion
+from fmea_application.template_patch_contracts import TemplatePatchSuggestion, normalize_source_mapping_key
 from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
 from fmea_infrastructure.template_patch_generator import (
     StructuredTemplatePatchGenerator,
@@ -212,6 +212,17 @@ def test_projection_exposes_stable_ascii_mapping_key_for_non_ascii_header() -> N
     assert mapping_key.isascii()
 
 
+def test_source_mapping_normalization_is_collision_resistant_and_bounded() -> None:
+    slash = normalize_source_mapping_key("A/B")
+    spaced = normalize_source_mapping_key("A B")
+    oversized = normalize_source_mapping_key("a" * 200)
+
+    assert slash != spaced
+    assert slash.startswith("a_b_") and spaced.startswith("a_b_")
+    assert len(oversized) <= 128
+    assert normalize_source_mapping_key("already_valid") == "already_valid"
+
+
 def test_structured_generator_reuses_flash_pro_pipeline_without_exposing_private_pack_identity(tmp_path) -> None:
     source_path = ROOT / "templates" / "examples" / "fmea-template-patch.yaml"
     schema = Draft202012SchemaAdapter()
@@ -321,6 +332,29 @@ def test_patch_generator_rejects_noncanonical_evidence_identity_before_model_cal
     with pytest.raises(ReviewError) as caught:
         TemplatePatchGenerator(gateway).suggest(
             _request(evidence_pack=spaced_pack, evidence_pack_hash=spaced_pack.pack_hash)
+        )
+
+    assert caught.value.code == "FMEA_MODEL_SUGGESTION_INVALID"
+    assert gateway.requests == []
+
+
+@pytest.mark.parametrize("evidence_id", ("/private/document.txt", "private/document.txt"))
+def test_patch_generator_rejects_path_like_evidence_identity_before_model_call(evidence_id: str) -> None:
+    path_ref = replace(PACK.refs[0], evidence_id=evidence_id)
+    path_pack = EvidencePack.build(
+        pack_id=PACK.pack_id,
+        workspace_id=PACK.workspace_id,
+        acl_scope=PACK.acl_scope,
+        versions=PACK.versions,
+        refs=(path_ref,),
+        created_at=PACK.created_at,
+        expires_at=PACK.expires_at,
+    )
+    gateway = _FakeGateway({"diff": (), "evidence_ids": ()})
+
+    with pytest.raises(ReviewError) as caught:
+        TemplatePatchGenerator(gateway).suggest(
+            _request(evidence_pack=path_pack, evidence_pack_hash=path_pack.pack_hash)
         )
 
     assert caught.value.code == "FMEA_MODEL_SUGGESTION_INVALID"

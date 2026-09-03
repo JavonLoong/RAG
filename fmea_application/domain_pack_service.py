@@ -264,6 +264,7 @@ class DomainPackService:
         self._clock = clock
         self._drafts: dict[str, TemplateDraft] = {}
         self._suggestions: dict[str, TemplatePatchSuggestion] = {}
+        self._suggestion_reservations: dict[str, str] = {}
         self._decisions: dict[str, TemplatePatchDecision] = {}
         self._decision_lock = RLock()
 
@@ -287,21 +288,36 @@ class DomainPackService:
         self._drafts[draft.draft_id] = draft
         return draft
 
-    def suggest_patch(  # noqa: C901 - provenance checks remain explicit at the authority boundary
-        self, command: SuggestTemplatePatchCommand, actor: ActorContext
-    ) -> TemplatePatchSuggestion:
+    def suggest_patch(self, command: SuggestTemplatePatchCommand, actor: ActorContext) -> TemplatePatchSuggestion:
         if not isinstance(command, SuggestTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch request is invalid")
+        with self._decision_lock:
+            existing = self._suggestions.get(command.patch_id)
+            reserved_workspace = self._suggestion_reservations.get(command.patch_id)
+            if existing is not None:
+                if existing.envelope.workspace_id == actor.workspace_id:
+                    raise _conflict("template patch suggestion already exists")
+                raise _forbidden("template patch belongs to another workspace")
+            if reserved_workspace is not None:
+                if reserved_workspace == actor.workspace_id:
+                    raise _conflict("template patch suggestion generation is already in progress")
+                raise _forbidden("template patch belongs to another workspace")
+            self._suggestion_reservations[command.patch_id] = actor.workspace_id
+        try:
+            return self._suggest_patch(command, actor)
+        finally:
+            with self._decision_lock:
+                if self._suggestion_reservations.get(command.patch_id) == actor.workspace_id:
+                    del self._suggestion_reservations[command.patch_id]
+
+    def _suggest_patch(  # noqa: C901 - provenance checks remain explicit at the authority boundary
+        self, command: SuggestTemplatePatchCommand, actor: ActorContext
+    ) -> TemplatePatchSuggestion:
         draft = self._drafts.get(command.draft_id)
         if draft is None:
             raise _invalid("template draft was not found")
         if draft.workspace_id != actor.workspace_id:
             raise _forbidden("template draft belongs to another workspace")
-        if command.patch_id in self._suggestions:
-            existing = self._suggestions[command.patch_id]
-            if existing.envelope.workspace_id == actor.workspace_id:
-                raise _conflict("template patch suggestion already exists")
-            raise _forbidden("template patch belongs to another workspace")
         try:
             evidence_pack = self._evidence_provider.load_pack(actor.workspace_id, command.evidence_pack_id)
         except ReviewError:
@@ -373,7 +389,10 @@ class DomainPackService:
             or envelope.created_at != candidate.created_at
         ):
             raise _invalid("template patch suggestion provenance does not match the request")
-        self._suggestions[candidate.patch_id] = suggestion
+        with self._decision_lock:
+            if candidate.patch_id in self._suggestions:
+                raise _conflict("template patch suggestion already exists")
+            self._suggestions[candidate.patch_id] = suggestion
         return suggestion
 
     def _load_candidate(

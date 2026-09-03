@@ -125,15 +125,20 @@ class CompiledTemplate:
         if not isinstance(self.canonical_json, str) or not self.canonical_json:
             raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "canonical_json must not be empty")
         if not isinstance(self.source_mappings, dict) or len(self.source_mappings) > 500:
-            raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "source_mappings must be an object")
+            raise StructuredOutputError("TEMPLATE_MAPPING_INVALID", "source_mappings must be an object")
         if any(
             not isinstance(source, str)
             or _MAPPING_KEY.fullmatch(source) is None
             or not isinstance(target, str)
-            or _MAPPING_KEY.fullmatch(target) is None
+            or not target
             for source, target in self.source_mappings.items()
         ):
-            raise StructuredOutputError("STRUCTURED_OUTPUT_CONTRACT_INVALID", "source_mappings are invalid")
+            raise StructuredOutputError("TEMPLATE_MAPPING_INVALID", "source_mappings are invalid")
+        properties = self.output_schema.get("properties", {})
+        if not isinstance(properties, dict) or any(
+            target not in properties for target in self.source_mappings.values()
+        ):
+            raise StructuredOutputError("TEMPLATE_MAPPING_INVALID", "source_mappings target missing properties")
         object.__setattr__(self, "source_mappings", dict(sorted(self.source_mappings.items())))
 
 

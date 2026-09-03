@@ -18,6 +18,7 @@ from core_domain.fmea.template_migration import TemplatePatchCandidate, Template
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 
 _SOURCE_KEY = re.compile(r"[^a-z0-9]+")
+_VALID_SOURCE_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
 
 
 def normalize_source_mapping_key(value: str) -> str:
@@ -26,11 +27,11 @@ def normalize_source_mapping_key(value: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError("source mapping header must not be empty")
     canonical = unicodedata.normalize("NFKC", value).casefold().strip()
+    if _VALID_SOURCE_KEY.fullmatch(canonical) is not None:
+        return canonical
     ascii_slug = _SOURCE_KEY.sub("_", canonical).strip("_")
-    if canonical.isascii() and ascii_slug:
-        return ascii_slug[:128]
     digest = sha256(canonical.encode("utf-8")).hexdigest()[:24]
-    prefix = ascii_slug[:96].rstrip("_") or "source"
+    prefix = ascii_slug[:103].rstrip("_") or "source"
     return f"{prefix}_{digest}"
 
 

@@ -50,6 +50,7 @@ _MAX_EVIDENCE_ID_LENGTH = 256
 _MAX_PROJECTED_EVIDENCE_REFS = 8
 _MAX_PROJECTED_QUOTE_CHARS = 256
 _MODEL_LABEL = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
+_EVIDENCE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
 _TEMPLATE_ID = "fmea-template-patch"
 _TEMPLATE_VERSION = "1.0.0"
 _UNAVAILABLE_CODES = {
@@ -204,6 +205,7 @@ def _projected_evidence(request: TemplatePatchRequest) -> tuple[tuple[str, Evide
             or not ref.evidence_id.strip()
             or ref.evidence_id != ref.evidence_id.strip()
             or len(ref.evidence_id) > _MAX_EVIDENCE_ID_LENGTH
+            or _EVIDENCE_ID.fullmatch(ref.evidence_id) is None
             or _FORBIDDEN_TEXT.search(ref.evidence_id)
             or not isinstance(ref.source_type, str)
             or _MODEL_LABEL.fullmatch(ref.source_type) is None

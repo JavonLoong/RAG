@@ -161,6 +161,16 @@ def test_source_mapping_identity_rejects_leading_digit_at_compiler_boundary() ->
     assert raised.value.code == "TEMPLATE_MAPPING_INVALID"
 
 
+def test_source_mapping_target_may_use_any_top_level_json_property_name() -> None:
+    source = minimal_source()
+    source["output_schema"]["properties"]["1行"] = {"type": "string"}
+    source["source_mappings"] = {"source_field": "1行"}
+
+    compiled = compiler().compile(source)
+
+    assert compiled.source_mappings == {"source_field": "1行"}
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [

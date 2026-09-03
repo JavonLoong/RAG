@@ -149,7 +149,8 @@ def _parse_source_mappings(value: object, limits: TemplateLimits) -> dict[str, s
             not isinstance(source, str)
             or _MAPPING_KEY.fullmatch(source) is None
             or not isinstance(target, str)
-            or _MAPPING_KEY.fullmatch(target) is None
+            or not target
+            or len(target) > limits.max_string_length
         ):
             raise _error("TEMPLATE_MAPPING_INVALID", "Source mapping identity is invalid.", "/source_mappings")
         mappings[source] = target
