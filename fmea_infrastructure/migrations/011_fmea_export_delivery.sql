@@ -30,7 +30,7 @@ CREATE TABLE fmea_export_runs (
     publication_id TEXT,
     format TEXT NOT NULL CHECK (format IN ('json', 'xlsx', 'docx')),
     draft_preview INTEGER NOT NULL CHECK (draft_preview IN (0, 1)),
-    status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'succeeded', 'failed')),
+    status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'cancelling', 'cancelled', 'succeeded', 'failed')),
     created_at TEXT NOT NULL,
     filename TEXT,
     artifact_id TEXT,
@@ -54,6 +54,10 @@ CREATE TABLE fmea_export_runs (
         (status = 'queued' AND started_at IS NULL AND finished_at IS NULL AND artifact_id IS NULL
             AND error IS NULL AND audit_event_id IS NULL AND outbox_event_id IS NULL)
         OR (status = 'running' AND started_at IS NOT NULL AND finished_at IS NULL AND artifact_id IS NULL
+            AND error IS NULL AND audit_event_id IS NULL AND outbox_event_id IS NULL)
+        OR (status = 'cancelling' AND started_at IS NOT NULL AND finished_at IS NULL AND artifact_id IS NULL
+            AND error IS NULL AND audit_event_id IS NULL AND outbox_event_id IS NULL)
+        OR (status = 'cancelled' AND started_at IS NOT NULL AND finished_at IS NOT NULL AND artifact_id IS NULL
             AND error IS NULL AND audit_event_id IS NULL AND outbox_event_id IS NULL)
         OR (status = 'succeeded' AND started_at IS NOT NULL AND finished_at IS NOT NULL AND artifact_id IS NOT NULL
             AND error IS NULL AND audit_event_id IS NOT NULL AND outbox_event_id IS NOT NULL)
@@ -141,8 +145,11 @@ BEGIN SELECT RAISE(ABORT, 'immutable fmea_export_runs binding'); END;
 CREATE TRIGGER fmea_export_runs_status_transition
 BEFORE UPDATE ON fmea_export_runs
 WHEN NEW.status IS NOT OLD.status AND NOT (
-    (OLD.status = 'queued' AND NEW.status IN ('running', 'failed'))
-    OR (OLD.status = 'running' AND NEW.status IN ('succeeded', 'failed'))
+    -- Cancellation is always two-phase. A queued cancellation records
+    -- started_at as it enters cancelling; only cancelling may become cancelled.
+    (OLD.status = 'queued' AND NEW.status IN ('running', 'cancelling', 'failed'))
+    OR (OLD.status = 'running' AND NEW.status IN ('succeeded', 'cancelling', 'failed'))
+    OR (OLD.status = 'cancelling' AND NEW.status IN ('cancelled', 'failed'))
 )
 BEGIN SELECT RAISE(ABORT, 'invalid fmea_export_runs status transition'); END;
 
@@ -197,7 +204,7 @@ BEGIN SELECT RAISE(ABORT, 'export completion authority chain mismatch'); END;
 
 CREATE TRIGGER fmea_export_runs_terminal_no_update
 BEFORE UPDATE ON fmea_export_runs
-WHEN OLD.status IN ('succeeded', 'failed')
+WHEN OLD.status IN ('cancelled', 'succeeded', 'failed')
 BEGIN SELECT RAISE(ABORT, 'immutable terminal fmea_export_runs'); END;
 
 CREATE TRIGGER fmea_export_runs_no_delete
