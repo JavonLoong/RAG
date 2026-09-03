@@ -28,6 +28,11 @@ if os.name == "nt":
     import ctypes
     from ctypes import wintypes
 
+try:
+    import fcntl as _fcntl
+except ImportError:  # pragma: no cover - exercised by Windows and capability tests
+    _fcntl = None
+
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.filename_policy import validate_filename
 from fmea_application.delivery_contracts import ExportArtifactManifest, ExportFormat, VerifiedExportArtifact
@@ -38,6 +43,7 @@ _MAX_POINTER_BYTES = 4096
 _MANIFEST_FILENAME = ".manifest.json"
 _LATEST_FILENAME = ".latest.json"
 _OWNER_FILENAME = ".owner"
+_LEASE_SUFFIX = ".artifact-lease"
 _TEMP_PREFIX = ".artifact-tmp-"
 _DEFAULT_RESERVATION_TIMEOUT_SECONDS = 2.0
 _DEFAULT_RESERVATION_POLL_SECONDS = 0.02
@@ -178,13 +184,15 @@ class _StoredArtifact:
         return os.fspath(self.path)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _Reservation:
+    kind: str
     path: Path
-    owner_path: Path
     token: str
-    directory_info: os.stat_result
-    owner_info: os.stat_result
+    owner_path: Path | None = None
+    directory_info: os.stat_result | None = None
+    owner_info: os.stat_result | None = None
+    lease_descriptor: int | None = None
 
 
 class _LatestUpdateError(ArtifactStoreError):
@@ -914,8 +922,10 @@ class WorkspaceArtifactStore:
         payload: bytes,
         manifest: ExportArtifactManifest,
         deadline: float,
+        *,
+        directory: bool,
     ) -> _StoredArtifact | None:
-        self._inspect(lock_path, directory=True, allow_missing=True)
+        self._inspect(lock_path, directory=directory, allow_missing=True)
         existing = self._read_existing(artifact_id)
         if existing is not None:
             if not self._matches_request(existing, run_id, filename, payload, manifest):
@@ -940,7 +950,7 @@ class WorkspaceArtifactStore:
             raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation wait failed") from exc
         return None
 
-    def _reserve(
+    def _reserve_windows(
         self,
         artifact_id: str,
         run_id: str,
@@ -966,6 +976,7 @@ class WorkspaceArtifactStore:
                     payload,
                     manifest,
                     deadline,
+                    directory=True,
                 )
                 if existing is not None:
                     return existing
@@ -987,9 +998,200 @@ class WorkspaceArtifactStore:
         except (OSError, RuntimeError, TypeError, ValueError) as exc:
             self._remove_owned_tree(lock_path, directory_info)
             raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
-        return _Reservation(lock_path, owner_path, token, directory_info, owner_info)
+        return _Reservation(
+            kind="windows_directory",
+            path=lock_path,
+            token=token,
+            owner_path=owner_path,
+            directory_info=directory_info,
+            owner_info=owner_info,
+        )
 
-    def _release_reservation(self, reservation: _Reservation) -> None:
+    @staticmethod
+    def _posix_lease_available() -> bool:
+        return (
+            _fcntl is not None
+            and callable(getattr(_fcntl, "flock", None))
+            and all(hasattr(_fcntl, attribute) for attribute in ("LOCK_EX", "LOCK_NB", "LOCK_UN"))
+            and all(hasattr(os, attribute) for attribute in ("O_CLOEXEC", "O_CREAT", "O_NOFOLLOW", "O_RDWR"))
+        )
+
+    def _write_posix_lease_diagnostic(
+        self,
+        descriptor: int,
+        lease_path: Path,
+        artifact_id: str,
+        run_id: str,
+        request_sha256: str,
+        token: str,
+    ) -> None:
+        diagnostic = _canonical_json({
+            "artifact_id": artifact_id,
+            "export_run_id": run_id,
+            "owner_token": token,
+            "request_sha256": request_sha256,
+        })
+        try:
+            os.ftruncate(descriptor, 0)
+            os.lseek(descriptor, 0, os.SEEK_SET)
+        except (OSError, TypeError, ValueError) as exc:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact lease diagnostic failed") from exc
+        self._write_open_descriptor(descriptor, lease_path, diagnostic)
+
+    @staticmethod
+    def _close_descriptor(descriptor: int) -> None:
+        try:
+            os.close(descriptor)
+        except OSError:
+            return
+
+    @staticmethod
+    def _validate_posix_lease_descriptor(descriptor: int, lease_path: Path) -> None:
+        opened = os.fstat(descriptor)
+        current = lease_path.lstat()
+        if (
+            _is_reparse_point(opened)
+            or _is_reparse_point(current)
+            or not stat.S_ISREG(opened.st_mode)
+            or not stat.S_ISREG(current.st_mode)
+            or not _same_file(opened, current)
+        ):
+            _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact lease is not a normal file")
+
+    def _open_posix_lease(self, lease_path: Path) -> int:
+        flags = os.O_RDWR | os.O_CREAT | os.O_CLOEXEC | os.O_NOFOLLOW | getattr(os, "O_BINARY", 0)
+        try:
+            descriptor = os.open(os.fspath(lease_path), flags, 0o600)
+        except OSError as exc:
+            unsupported = {
+                errno.EINVAL,
+                errno.ENOSYS,
+                getattr(errno, "ENOTSUP", errno.EINVAL),
+                getattr(errno, "EOPNOTSUPP", errno.EINVAL),
+            }
+            if exc.errno in unsupported:
+                raise ArtifactStoreError(
+                    "FMEA_ARTIFACT_BUSY",
+                    "artifact lease is unavailable",
+                    retryable=True,
+                ) from None
+            if exc.errno in {errno.ELOOP, errno.EISDIR, errno.ENOTDIR}:
+                _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact lease is not a normal file")
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+        try:
+            self._validate_posix_lease_descriptor(descriptor, lease_path)
+        except (ArtifactStoreError, OSError, RuntimeError, TypeError, ValueError):
+            self._close_descriptor(descriptor)
+            raise
+        return descriptor
+
+    @staticmethod
+    def _try_posix_lease(descriptor: int) -> bool:
+        if _fcntl is None:
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from None
+        try:
+            _fcntl.flock(descriptor, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+        except OSError as exc:
+            if exc.errno in {errno.EACCES, errno.EAGAIN}:
+                return False
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from None
+        return True
+
+    def _reserve_posix(
+        self,
+        artifact_id: str,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> _Reservation | _StoredArtifact:
+        if not self._posix_lease_available():
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from None
+        lease_path = self._locks_root / f"{artifact_id}{_LEASE_SUFFIX}"
+        self._inspect(lease_path.parent, directory=True, allow_missing=False)
+        deadline = self._reservation_deadline()
+        descriptor = self._open_posix_lease(lease_path)
+        try:
+            while not self._try_posix_lease(descriptor):
+                existing = self._wait_for_reservation(
+                    lease_path,
+                    artifact_id,
+                    run_id,
+                    filename,
+                    payload,
+                    manifest,
+                    deadline,
+                    directory=False,
+                )
+                if existing is not None:
+                    return existing
+            self._validate_posix_lease_descriptor(descriptor, lease_path)
+            token = secrets.token_hex(32)
+            self._write_posix_lease_diagnostic(
+                descriptor,
+                lease_path,
+                artifact_id,
+                run_id,
+                manifest.sha256.removeprefix("sha256:"),
+                token,
+            )
+            reservation = _Reservation(
+                kind="posix_lease",
+                path=lease_path,
+                token=token,
+                lease_descriptor=descriptor,
+            )
+        except ArtifactStoreError:
+            raise
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
+        else:
+            descriptor = -1
+            return reservation
+        finally:
+            if descriptor >= 0:
+                self._close_descriptor(descriptor)
+
+    def _reserve(
+        self,
+        artifact_id: str,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> _Reservation | _StoredArtifact:
+        if os.name == "nt":
+            return self._reserve_windows(artifact_id, run_id, filename, payload, manifest)
+        return self._reserve_posix(artifact_id, run_id, filename, payload, manifest)
+
+    def _release_posix_reservation(self, reservation: _Reservation) -> None:
+        descriptor = reservation.lease_descriptor
+        reservation.lease_descriptor = None
+        if descriptor is None:
+            return
+        try:
+            if _fcntl is not None:
+                _fcntl.flock(descriptor, _fcntl.LOCK_UN)
+        except (OSError, RuntimeError, TypeError, ValueError):
+            pass
+        finally:
+            self._close_descriptor(descriptor)
+
+    def _release_windows_reservation(self, reservation: _Reservation) -> None:
+        if reservation.owner_path is None or reservation.directory_info is None or reservation.owner_info is None:
+            return
         try:
             directory_info = reservation.path.lstat()
             owner_info = reservation.owner_path.lstat()
@@ -1010,6 +1212,12 @@ class WorkspaceArtifactStore:
             self._remove_empty_directory(reservation.path, reservation.directory_info)
         except (ArtifactStoreError, FileNotFoundError, OSError, RuntimeError, TypeError, ValueError):
             return
+
+    def _release_reservation(self, reservation: _Reservation) -> None:
+        if reservation.kind == "posix_lease":
+            self._release_posix_reservation(reservation)
+        elif reservation.kind == "windows_directory":
+            self._release_windows_reservation(reservation)
 
     @staticmethod
     def _matches_request(
@@ -1150,7 +1358,7 @@ class WorkspaceArtifactStore:
             self._read_latest_pointer(run_id)
 
         # The process lock keeps same-instance/thread callers out of the
-        # reservation race; the mkdir reservation covers separate processes.
+        # reservation race; the platform reservation covers separate processes.
         local_lock = self._lock_for(artifact_id)
         with local_lock:
             existing = self._read_existing(artifact_id)

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import multiprocessing
 import os
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -69,9 +71,30 @@ class _ReparseStat:
 
 class _PosixOsProxy:
     name = "posix"
+    O_CLOEXEC = 0
+    O_NOFOLLOW = 0
 
     def __getattr__(self, name: str):
         return getattr(os, name)
+
+
+class _FakeFcntl:
+    LOCK_EX = 1
+    LOCK_NB = 2
+    LOCK_UN = 4
+
+    def __init__(self, *, busy_attempts: int = 0) -> None:
+        self.calls: list[tuple[int, int]] = []
+        self._busy_attempts = busy_attempts
+        self._attempts = 0
+
+    def flock(self, descriptor: int, operation: int) -> None:
+        self.calls.append((descriptor, operation))
+        if operation == self.LOCK_EX | self.LOCK_NB:
+            self._attempts += 1
+            if self._attempts <= self._busy_attempts:
+                raise BlockingIOError(errno.EAGAIN, "lease busy")
+        return
 
 
 def _multiprocess_publish(
@@ -97,6 +120,42 @@ def _multiprocess_publish(
         reservation_poll_seconds=0.01,
     )
     attempted.set()
+    try:
+        published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+        results.put(("ok", published.manifest.sha256))
+    except Exception as exc:  # pragma: no cover - reported to the parent process
+        results.put(("error", type(exc).__name__, str(exc)))
+
+
+def _hold_posix_lease(
+    root: str,
+    ready,
+    release,
+    *,
+    abrupt_exit: bool,
+) -> None:
+    store = WorkspaceArtifactStore(root, WORKSPACE)
+    reservation = store._reserve(ARTIFACT, RUN, FILENAME, PAYLOAD, _manifest())
+    ready.set()
+    if not release.wait(10):
+        os._exit(98)
+    if abrupt_exit:
+        os._exit(17)
+    store._release_reservation(reservation)
+
+
+def _multiprocess_publish_after_wait(root: str, waiting, results) -> None:
+    def wait(duration: float) -> None:
+        waiting.set()
+        time.sleep(duration)
+
+    store = WorkspaceArtifactStore(
+        root,
+        WORKSPACE,
+        reservation_timeout_seconds=5.0,
+        reservation_poll_seconds=0.01,
+        reservation_wait_seam=wait,
+    )
     try:
         published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
         results.put(("ok", published.manifest.sha256))
@@ -263,7 +322,10 @@ def test_final_directory_sync_failure_before_latest_preserves_previous_latest(
 
     assert error.value.code == "FMEA_ARTIFACT_STORAGE_FAILED"
     assert store.latest(RUN) == previous
-    assert not (store.artifacts_root / "artifact-2").exists()
+    if os.name == "nt":
+        assert not (store.artifacts_root / "artifact-2").exists()
+    else:
+        assert store.get("artifact-2", WORKSPACE).payload == next_payload
 
 
 def test_fault_during_temp_write_does_not_create_latest_or_final(
@@ -288,19 +350,21 @@ def test_fault_during_temp_write_does_not_create_latest_or_final(
         assert staged[0].name.startswith(".artifact-tmp-")
 
 
-def test_fsync_seam_failure_cleans_the_staged_directory(tmp_path: Path) -> None:
+def test_fsync_seam_failure_does_not_expose_the_staged_directory(tmp_path: Path) -> None:
     calls = 0
+    fail_on_call = 1 if os.name == "nt" else 2
 
     def fail(_descriptor: int) -> None:
         nonlocal calls
         calls += 1
-        raise OSError
+        if calls == fail_on_call:
+            raise OSError
 
     store = _store(tmp_path, fsync_seam=fail)
     with pytest.raises(ArtifactStoreError) as error:
         store.publish(RUN, FILENAME, PAYLOAD, _manifest())
 
-    assert calls == 1
+    assert calls == fail_on_call
     assert error.value.code == "FMEA_ARTIFACT_STORAGE_FAILED"
     assert store.latest(RUN) is None
     staged = tuple(store.artifacts_root.iterdir())
@@ -471,24 +535,106 @@ def test_posix_cleanup_never_removes_a_second_stat_replacement(  # noqa: C901
     assert displaced.exists()
 
 
-def test_posix_fail_closed_reservation_allows_committed_replay(
+def test_posix_persistent_lease_file_allows_committed_replay(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
     store = _store(tmp_path)
     monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
 
     published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
-    reservation = store.workspace_root / ".locks" / ARTIFACT
-    owner = reservation / ".owner"
+    lease = store.workspace_root / ".locks" / f"{ARTIFACT}.artifact-lease"
+    diagnostic = json.loads(lease.read_bytes())
 
-    assert owner.is_file()
+    assert lease.is_file()
+    assert not (store.workspace_root / ".locks" / ARTIFACT).exists()
+    assert diagnostic == {
+        "artifact_id": ARTIFACT,
+        "export_run_id": RUN,
+        "owner_token": diagnostic["owner_token"],
+        "request_sha256": _manifest().sha256,
+    }
+    assert type(diagnostic["owner_token"]) is str
+    assert len(diagnostic["owner_token"]) == 64
+    assert PAYLOAD not in lease.read_bytes()
+    assert str(tmp_path).encode() not in lease.read_bytes()
     assert store.publish(RUN, FILENAME, PAYLOAD, _manifest()) == published
     assert store.latest(RUN) == published
 
 
-def test_posix_fail_closed_failed_publication_is_bounded_and_retryable(
+def test_posix_lease_releases_after_fault_and_retry_succeeds(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_after_write(stage: str) -> None:
+        if stage == "after_payload_write":
+            raise RuntimeError
+
+    if os.name == "nt":
+        monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+        monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(
+        tmp_path,
+        fault_hook=fail_after_write,
+    )
+    if os.name == "nt":
+        monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+
+    with pytest.raises(ArtifactStoreError):
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    store._fault_hook = None
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert store.latest(RUN) == published
+    assert not (store.workspace_root / ".locks" / ARTIFACT).exists()
+    assert (store.workspace_root / ".locks" / f"{ARTIFACT}.artifact-lease").is_file()
+    orphaned = tuple(path for path in store.artifacts_root.iterdir() if path.name.startswith(".artifact-tmp-"))
+    assert len(orphaned) == 1
+    assert (orphaned[0] / FILENAME).read_bytes() == PAYLOAD
+
+
+def test_posix_lease_ignores_legacy_directory_reservation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(tmp_path)
+    monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+    legacy = store.workspace_root / ".locks" / ARTIFACT
+    legacy.mkdir()
+    owner = legacy / ".owner"
+    owner.write_bytes(b'{"token":"legacy"}\n')
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert store.latest(RUN) == published
+    assert owner.read_bytes() == b'{"token":"legacy"}\n'
+    assert (store.workspace_root / ".locks" / f"{ARTIFACT}.artifact-lease").is_file()
+
+
+@pytest.mark.parametrize("lease_module", [None, SimpleNamespace()], ids=["missing-module", "missing-flock"])
+def test_posix_without_flock_fails_retryably_without_path_lock_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    lease_module: object,
+) -> None:
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", lease_module)
+    store = _store(tmp_path)
+
+    with pytest.raises(ArtifactStoreError) as error:
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert error.value.code == "FMEA_ARTIFACT_BUSY"
+    assert error.value.retryable is True
+    assert not tuple(store.workspace_root.joinpath(".locks").iterdir())
+
+
+def test_posix_lease_retries_contention_with_existing_deadline(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -501,34 +647,193 @@ def test_posix_fail_closed_failed_publication_is_bounded_and_retryable(
         nonlocal elapsed
         elapsed += duration
 
-    def fail_after_write(stage: str) -> None:
-        if stage == "after_payload_write":
-            raise RuntimeError
-
+    fake_fcntl = _FakeFcntl(busy_attempts=2)
     monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", fake_fcntl)
     store = _store(
         tmp_path,
-        fault_hook=fail_after_write,
-        reservation_timeout_seconds=0.03,
-        reservation_poll_seconds=0.01,
         monotonic_seam=monotonic,
         reservation_wait_seam=wait,
     )
     monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
 
-    with pytest.raises(ArtifactStoreError):
-        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
 
-    store._fault_hook = None
+    assert store.latest(RUN) == published
+    assert elapsed == pytest.approx(0.04)
+    attempts = [operation for _descriptor, operation in fake_fcntl.calls if operation != _FakeFcntl.LOCK_UN]
+    assert attempts == [_FakeFcntl.LOCK_EX | _FakeFcntl.LOCK_NB] * 3
+
+
+def test_posix_lease_contention_times_out_without_unbounded_wait(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    elapsed = 0.0
+
+    def monotonic() -> float:
+        return elapsed
+
+    def wait(duration: float) -> None:
+        nonlocal elapsed
+        elapsed += duration
+
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl(busy_attempts=100))
+    store = _store(
+        tmp_path,
+        reservation_timeout_seconds=0.03,
+        reservation_poll_seconds=0.01,
+        monotonic_seam=monotonic,
+        reservation_wait_seam=wait,
+    )
+
     with pytest.raises(ArtifactStoreError) as error:
         store.publish(RUN, FILENAME, PAYLOAD, _manifest())
 
     assert error.value.code == "FMEA_ARTIFACT_BUSY"
     assert error.value.retryable is True
     assert elapsed == pytest.approx(0.03)
-    assert store.latest(RUN) is None
-    assert (store.workspace_root / ".locks" / ARTIFACT / ".owner").is_file()
-    assert any(path.name.startswith(".artifact-tmp-") for path in store.artifacts_root.iterdir())
+    assert not tuple(store.artifacts_root.iterdir())
+
+
+def test_posix_lease_double_release_unlocks_and_closes_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_fcntl = _FakeFcntl()
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", fake_fcntl)
+    store = _store(tmp_path)
+    reservation = store._reserve(ARTIFACT, RUN, FILENAME, PAYLOAD, _manifest())
+    descriptor = reservation.lease_descriptor
+
+    store._release_reservation(reservation)
+    store._release_reservation(reservation)
+
+    assert descriptor is not None
+    assert [operation for _descriptor, operation in fake_fcntl.calls] == [
+        _FakeFcntl.LOCK_EX | _FakeFcntl.LOCK_NB,
+        _FakeFcntl.LOCK_UN,
+    ]
+    with pytest.raises(OSError):
+        os.fstat(descriptor)
+
+
+def test_posix_lease_does_not_leak_descriptor_when_deadline_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    opened: list[int] = []
+
+    class TrackingPosixOsProxy(_PosixOsProxy):
+        @staticmethod
+        def open(path: str, flags: int, mode: int = 0o777) -> int:
+            descriptor = os.open(path, flags, mode)
+            opened.append(descriptor)
+            return descriptor
+
+    def fail_monotonic() -> float:
+        raise RuntimeError
+
+    monkeypatch.setattr(artifact_store_module, "os", TrackingPosixOsProxy())
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(tmp_path, monotonic_seam=fail_monotonic)
+
+    with pytest.raises(ArtifactStoreError):
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert opened == []
+
+
+@pytest.mark.skipif(
+    os.name == "nt" or getattr(artifact_store_module, "_fcntl", None) is None,
+    reason="real POSIX flock regression",
+)
+def test_posix_process_lease_is_bounded_busy_then_recovers_after_close(tmp_path: Path) -> None:
+    context = multiprocessing.get_context("spawn")
+    ready = context.Event()
+    release = context.Event()
+    root = str((tmp_path / "artifacts").resolve())
+    holder = context.Process(
+        target=_hold_posix_lease,
+        args=(root, ready, release),
+        kwargs={"abrupt_exit": False},
+    )
+    holder.start()
+    try:
+        assert ready.wait(10)
+        elapsed = 0.0
+
+        def monotonic() -> float:
+            return elapsed
+
+        def wait(duration: float) -> None:
+            nonlocal elapsed
+            elapsed += duration
+
+        competitor = WorkspaceArtifactStore(
+            root,
+            WORKSPACE,
+            reservation_timeout_seconds=0.03,
+            reservation_poll_seconds=0.01,
+            monotonic_seam=monotonic,
+            reservation_wait_seam=wait,
+        )
+        with pytest.raises(ArtifactStoreError) as error:
+            competitor.publish(RUN, FILENAME, PAYLOAD, _manifest())
+        assert error.value.code == "FMEA_ARTIFACT_BUSY"
+        assert error.value.retryable is True
+        assert elapsed == pytest.approx(0.03)
+        assert not tuple(competitor.artifacts_root.iterdir())
+
+        release.set()
+        holder.join(10)
+        assert holder.exitcode == 0
+        assert competitor.publish(RUN, FILENAME, PAYLOAD, _manifest()) == competitor.latest(RUN)
+    finally:
+        release.set()
+        if holder.is_alive():
+            holder.terminate()
+        holder.join(5)
+
+
+@pytest.mark.skipif(
+    os.name == "nt" or getattr(artifact_store_module, "_fcntl", None) is None,
+    reason="real POSIX flock regression",
+)
+def test_posix_process_exit_releases_lease_to_waiting_competitor(tmp_path: Path) -> None:
+    context = multiprocessing.get_context("spawn")
+    ready = context.Event()
+    crash = context.Event()
+    waiting = context.Event()
+    results = context.Queue()
+    root = str((tmp_path / "artifacts").resolve())
+    holder = context.Process(
+        target=_hold_posix_lease,
+        args=(root, ready, crash),
+        kwargs={"abrupt_exit": True},
+    )
+    competitor = context.Process(target=_multiprocess_publish_after_wait, args=(root, waiting, results))
+    holder.start()
+    try:
+        assert ready.wait(10)
+        competitor.start()
+        assert waiting.wait(10)
+        crash.set()
+        holder.join(10)
+        competitor.join(15)
+        assert holder.exitcode == 17
+        assert competitor.exitcode == 0
+        assert results.get(timeout=5) == ("ok", _manifest().sha256)
+        assert WorkspaceArtifactStore(root, WORKSPACE).latest(RUN) is not None
+    finally:
+        crash.set()
+        for process in (holder, competitor):
+            if process.pid is not None and process.is_alive():
+                process.terminate()
+            if process.pid is not None:
+                process.join(5)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows handle deletion regression")
@@ -623,7 +928,8 @@ def test_windows_reparse_attribute_is_rejected_without_symlink_privilege(
     assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
 
 
-def test_foreign_reservation_times_out_retryably_without_unlinking_owner(tmp_path: Path) -> None:
+@pytest.mark.skipif(os.name != "nt", reason="Windows directory reservation regression")
+def test_windows_foreign_reservation_times_out_without_unlinking_owner(tmp_path: Path) -> None:
     elapsed = 0.0
 
     def monotonic() -> float:
@@ -653,7 +959,8 @@ def test_foreign_reservation_times_out_retryably_without_unlinking_owner(tmp_pat
     assert owner.read_bytes() == b'{"token":"foreign-owner"}\n'
 
 
-def test_publisher_never_releases_a_reservation_after_owner_token_changes(tmp_path: Path) -> None:
+@pytest.mark.skipif(os.name != "nt", reason="Windows directory reservation regression")
+def test_windows_publisher_preserves_reservation_after_owner_token_changes(tmp_path: Path) -> None:
     store = _store(tmp_path)
     owner = store.workspace_root / ".locks" / ARTIFACT / ".owner"
     foreign_owner = b'{"token":"replacement-owner"}\n'
