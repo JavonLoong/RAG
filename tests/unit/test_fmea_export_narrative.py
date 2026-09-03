@@ -22,6 +22,7 @@ from fmea_infrastructure.export_narrative_generator import (
     StructuredExportNarrativeGenerator,
     StructuredExportNarrativePipeline,
     _bounded_task,
+    _build_bounded_context,
 )
 from structured_generation_application import StructuredGenerationPipeline
 from structured_generation_infrastructure import StrictCandidateBatchCodec, StrictCriticReportCodec
@@ -293,12 +294,43 @@ def test_narrative_context_budget_keeps_whole_multibyte_entries_and_reports_omis
     assert len(first) <= 4000
     assert len(first.encode("utf-8")) <= 4000
     assert decoded["context_budget"]["contract"] == "unicode-characters-and-utf8-bytes"
+    assert len(decoded["rows"]) >= 1
+    assert decoded["context_budget"]["row_quota"] == {"minimum": 1, "status": "satisfied"}
     assert all(decoded["context_budget"]["omitted_counts"][name] > 0 for name in ("rows", "evidence", "unresolved"))
     assert all(item in projection["rows"] for item in decoded["rows"])
     assert all(item in projection["evidence"] for item in decoded["evidence"])
     assert all(item in projection["unresolved"] for item in decoded["unresolved"])
+    included_evidence = {item["ref"] for item in decoded["evidence"]}
+    assert all(set(item["evidence_refs"]) <= included_evidence for item in decoded["unresolved"])
     assert "private-document" not in first
     assert "private full document" not in first
+
+
+def test_narrative_context_reports_when_minimum_row_cannot_fit_tiny_budget() -> None:
+    snapshot = make_normalized_snapshot(
+        rows=(
+            {
+                "row_id": "row-too-large",
+                "failure_mode": "燃" * 512,
+                "current_control": "检" * 512,
+            },
+        ),
+        evidence_summary=(),
+    )
+    projection = StructuredExportNarrativeGenerator.projection(snapshot)
+
+    context = _build_bounded_context(projection, max_characters=1200, max_utf8_bytes=1200)
+    decoded = json.loads(context.task)
+
+    assert decoded["rows"] == []
+    assert decoded["context_budget"]["row_quota"] == {
+        "minimum": 1,
+        "status": "budget_insufficient",
+    }
+    assert decoded["context_budget"]["omitted_counts"]["rows"] == 1
+    assert "燃" not in context.task
+    assert len(context.task) <= 1200
+    assert len(context.task.encode("utf-8")) <= 1200
 
 
 def test_narrative_output_rejects_an_evidence_alias_omitted_by_context_budget() -> None:

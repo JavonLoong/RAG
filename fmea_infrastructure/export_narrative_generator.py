@@ -506,6 +506,12 @@ def _context_document(
             raise _invalid("narrative context projection is invalid")
         aliases[key] = value
     included_counts = {name: len(entries[name]) for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
+    if totals["rows"] == 0:
+        row_quota = {"minimum": 0, "status": "not_applicable"}
+    elif included_counts["rows"]:
+        row_quota = {"minimum": 1, "status": "satisfied"}
+    else:
+        row_quota = {"minimum": 1, "status": "budget_insufficient"}
     return {
         **aliases,
         "summary": summary,
@@ -520,6 +526,7 @@ def _context_document(
             "source_counts": dict(totals),
             "included_counts": included_counts,
             "omitted_counts": {name: totals[name] - included_counts[name] for name in totals},
+            "row_quota": row_quota,
         },
         "rule": "Draft narrative only; preserve unknowns and cite only included evidence refs.",
     }
@@ -547,14 +554,34 @@ def _serialize_context(
     return encoded
 
 
-def _build_bounded_context(
+def _select_context_entry(
     projection: Mapping[str, object],
+    selected: Mapping[str, Sequence[dict[str, object]]],
+    totals: Mapping[str, int],
+    name: str,
+    entry: dict[str, object],
     *,
-    max_characters: int = _NARRATIVE_TASK_MAX_CHARACTERS,
-    max_utf8_bytes: int = _NARRATIVE_TASK_MAX_UTF8_BYTES,
-) -> _BoundedNarrativeContext:
-    """Select whole entries under both Unicode-character and UTF-8-byte limits."""
+    max_characters: int,
+    max_utf8_bytes: int,
+) -> tuple[dict[str, list[dict[str, object]]], str] | None:
+    candidate = {key: list(values) for key, values in selected.items()}
+    candidate[name].append(entry)
+    document = _context_document(
+        projection,
+        candidate,
+        totals,
+        max_characters=max_characters,
+        max_utf8_bytes=max_utf8_bytes,
+    )
+    task = _serialize_context(
+        document,
+        max_characters=max_characters,
+        max_utf8_bytes=max_utf8_bytes,
+    )
+    return None if task is None else (candidate, task)
 
+
+def _validate_context_budget(projection: object, max_characters: object, max_utf8_bytes: object) -> None:
     if (
         not isinstance(projection, Mapping)
         or isinstance(max_characters, bool)
@@ -565,6 +592,28 @@ def _build_bounded_context(
         or max_utf8_bytes < 1
     ):
         raise _invalid("narrative context budget is invalid")
+
+
+def _context_dependencies_included(
+    name: str,
+    entry: Mapping[str, object],
+    selected: Mapping[str, Sequence[Mapping[str, object]]],
+) -> bool:
+    if name != "unresolved":
+        return True
+    included_refs = {str(item["ref"]) for item in selected["evidence"]}
+    return set(entry["evidence_refs"]).issubset(included_refs)
+
+
+def _build_bounded_context(
+    projection: Mapping[str, object],
+    *,
+    max_characters: int = _NARRATIVE_TASK_MAX_CHARACTERS,
+    max_utf8_bytes: int = _NARRATIVE_TASK_MAX_UTF8_BYTES,
+) -> _BoundedNarrativeContext:
+    """Select whole entries under both Unicode-character and UTF-8-byte limits."""
+
+    _validate_context_budget(projection, max_characters, max_utf8_bytes)
     available = {name: _context_entries(projection, name) for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
     totals = {name: len(items) for name, items in available.items()}
     selected: dict[str, list[dict[str, object]]] = {name: [] for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
@@ -583,31 +632,41 @@ def _build_bounded_context(
     if task is None:
         raise _invalid("narrative context minimum envelope exceeds its configured budget")
 
+    for row in available["rows"]:
+        reserved = _select_context_entry(
+            projection,
+            selected,
+            totals,
+            "rows",
+            row,
+            max_characters=max_characters,
+            max_utf8_bytes=max_utf8_bytes,
+        )
+        if reserved is not None:
+            selected, task = reserved
+            break
+
     for name in _NARRATIVE_CONTEXT_PRIORITY:
         for entry in available[name]:
             if len(selected[name]) >= _NARRATIVE_CONTEXT_ITEM_LIMITS[name]:
                 break
-            if name == "unresolved":
-                included_refs = {str(item["ref"]) for item in selected["evidence"]}
-                if not set(entry["evidence_refs"]).issubset(included_refs):
-                    continue
-            candidate = {key: list(values) for key, values in selected.items()}
-            candidate[name].append(entry)
-            document = _context_document(
+            if name == "rows" and any(
+                selected_row["row_alias"] == entry["row_alias"] for selected_row in selected["rows"]
+            ):
+                continue
+            if not _context_dependencies_included(name, entry, selected):
+                continue
+            accepted = _select_context_entry(
                 projection,
-                candidate,
+                selected,
                 totals,
+                name,
+                entry,
                 max_characters=max_characters,
                 max_utf8_bytes=max_utf8_bytes,
             )
-            candidate_task = _serialize_context(
-                document,
-                max_characters=max_characters,
-                max_utf8_bytes=max_utf8_bytes,
-            )
-            if candidate_task is not None:
-                selected = candidate
-                task = candidate_task
+            if accepted is not None:
+                selected, task = accepted
 
     final_document = json.loads(task)
     evidence_refs = tuple(str(item["ref"]) for item in final_document["evidence"])
