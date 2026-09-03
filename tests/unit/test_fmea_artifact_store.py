@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from fmea_application.delivery_contracts import ExportArtifactManifest
-from fmea_infrastructure.artifact_store import ArtifactStoreError, StoredArtifact, WorkspaceArtifactStore
+from fmea_application.delivery_contracts import ExportArtifactManifest, VerifiedExportArtifact
+from fmea_infrastructure.artifact_store import ArtifactStoreError, WorkspaceArtifactStore
 
 WORKSPACE = "workspace-1"
 RUN = "export-run-1"
@@ -46,6 +46,14 @@ def _manifest(
 
 def _store(tmp_path: Path, **kwargs: object) -> WorkspaceArtifactStore:
     return WorkspaceArtifactStore(tmp_path / "artifacts", WORKSPACE, **kwargs)
+
+
+def _payload_path(store: WorkspaceArtifactStore) -> Path:
+    return store.artifacts_root / ARTIFACT / FILENAME
+
+
+def _manifest_path(store: WorkspaceArtifactStore) -> Path:
+    return store.artifacts_root / ARTIFACT / ".manifest.json"
 
 
 class _ReparseStat:
@@ -94,13 +102,26 @@ def test_publish_get_and_latest_return_the_same_verified_artifact(tmp_path: Path
     loaded = store.get(ARTIFACT, WORKSPACE)
     latest = store.latest(RUN)
 
-    assert isinstance(published, StoredArtifact)
+    assert type(published) is VerifiedExportArtifact
     assert loaded == published
     assert latest == published
-    assert published.path.read_bytes() == PAYLOAD
+    assert _payload_path(store).read_bytes() == PAYLOAD
     assert published.manifest == _manifest()
-    assert published.path.name == FILENAME
-    assert not tuple(published.directory.glob(".*.tmp-*"))
+    assert published.filename == FILENAME
+    assert not tuple((store.artifacts_root / ARTIFACT).glob(".*.tmp-*"))
+
+
+def test_public_store_contract_returns_application_owned_path_free_value(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    loaded = store.get(ARTIFACT, WORKSPACE)
+    latest = store.latest(RUN)
+
+    assert type(published) is VerifiedExportArtifact
+    assert loaded == published
+    assert latest == published
+    assert not hasattr(published, "path")
 
 
 @pytest.mark.parametrize("filename", ["../escape.json", "nested/file.json", "/absolute.json", "CON.json"])
@@ -140,7 +161,7 @@ def test_identical_replay_is_immutable_but_different_content_conflicts(tmp_path:
     with pytest.raises(ArtifactStoreError) as error:
         store.publish(RUN, FILENAME, changed, _manifest(changed))
     assert error.value.code == "FMEA_ARTIFACT_CONFLICT"
-    assert first.path.read_bytes() == PAYLOAD
+    assert _payload_path(store).read_bytes() == PAYLOAD
 
 
 def test_identical_replay_repairs_a_missing_latest_pointer(tmp_path: Path) -> None:
@@ -344,14 +365,14 @@ def test_windows_cleanup_handle_does_not_delete_a_post_check_replacement(tmp_pat
 
 def test_get_rejects_corrupt_payload_and_latest_pointer(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
-    published.path.write_bytes(b"tampered")
+    store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    _payload_path(store).write_bytes(b"tampered")
 
     with pytest.raises(ArtifactStoreError) as artifact_error:
         store.get(ARTIFACT, WORKSPACE)
     assert artifact_error.value.code == "FMEA_ARTIFACT_INTEGRITY_FAILED"
 
-    published.path.write_bytes(PAYLOAD)
+    _payload_path(store).write_bytes(PAYLOAD)
     pointer = store.runs_root / RUN / ".latest.json"
     pointer.write_bytes(b"not-json")
     with pytest.raises(ArtifactStoreError) as latest_error:
@@ -397,12 +418,13 @@ def test_windows_reparse_attribute_is_rejected_without_symlink_privilege(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = _store(tmp_path)
-    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    artifact_directory = store.artifacts_root / ARTIFACT
     original_lstat = Path.lstat
 
     def marked_lstat(path: Path):
         result = original_lstat(path)
-        if path == published.directory:
+        if path == artifact_directory:
             return _ReparseStat(result)
         return result
 
@@ -505,8 +527,8 @@ def test_identical_cross_process_publish_converges(tmp_path: Path) -> None:
 
 def test_manifest_file_is_canonical_and_contains_no_host_path(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
-    raw = published.manifest_path.read_bytes()
+    store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    raw = _manifest_path(store).read_bytes()
     decoded = json.loads(raw)
 
     assert raw == (json.dumps(decoded, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()

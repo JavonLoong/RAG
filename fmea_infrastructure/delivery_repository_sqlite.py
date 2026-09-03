@@ -1450,7 +1450,12 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
                 (workspace_id, export_run_id),
             ).fetchone()
-            return None if row is None else self._export_run_from_row(row)
+            if row is None:
+                return None
+            run = self._export_run_from_row(row)
+            if run.status is RunStatus.CANCELLED:
+                self._verify_export_cancelled_idempotency(connection, row, run)
+            return run
         finally:
             connection.close()
 
@@ -1504,6 +1509,8 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 run = self._export_run_from_row(existing_row)
                 if existing_row["request_hash"] != request_hash or existing_row["idempotency_scope"] != scope.scope_key:
                     raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
+                if run.status is RunStatus.CANCELLED:
+                    self._verify_export_cancelled_idempotency(connection, existing_row, run)
                 connection.execute("COMMIT")
                 return run
             if existing_row is not None:
@@ -1600,6 +1607,164 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             )
             connection.execute("COMMIT")
             return updated
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _verify_export_cancelled_idempotency(
+        connection: sqlite3.Connection,
+        row: sqlite3.Row,
+        run: ExportRun,
+    ) -> None:
+        if run.status is not RunStatus.CANCELLED or run.finished_at is None:
+            raise ValueError("export cancellation is not complete")
+        request = _load_object(row["request_json"], "export request")
+        key = request.get("idempotency_key")
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("cancelled export request is invalid")
+        scope = IdempotencyScope(
+            workspace_id=run.workspace_id,
+            actor_id=row["actor_id"],
+            command="fmea.export.start",
+            resource_path=f"/fmea/workspaces/{run.workspace_id}/exports",
+            key_hash=idempotency_key_hash(key),
+        )
+        idempotency = connection.execute(
+            "SELECT * FROM idempotency_records WHERE scope_key=?",
+            (scope.scope_key,),
+        ).fetchone()
+        if idempotency is None:
+            raise ValueError("cancelled export idempotency is missing")
+        response = _load_object(idempotency["response_json"], "cancelled export response")
+        if (
+            row["idempotency_scope"] != scope.scope_key
+            or idempotency["payload_hash"] != row["request_hash"]
+            or idempotency["state"] != "completed"
+            or idempotency["status_code"] != 200
+            or idempotency["resource_id"] != run.export_run_id
+            or response != _json_value(run)
+            or canonical_json(response) != idempotency["response_json"]
+            or idempotency["created_at"] != run.created_at
+            or idempotency["completed_at"] != run.finished_at
+        ):
+            raise ValueError("cancelled export idempotency is invalid")
+
+    def request_export_cancellation(
+        self,
+        export_run_id: str,
+        workspace_id: str,
+        requested_at: str,
+    ) -> ExportRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("export run was not found")
+            current = self._export_run_from_row(row)
+            if current.status is RunStatus.CANCELLED:
+                self._verify_export_cancelled_idempotency(connection, row, current)
+                connection.execute("COMMIT")
+                return current
+            if current.status in {RunStatus.CANCELLING, RunStatus.SUCCEEDED, RunStatus.FAILED}:
+                connection.execute("COMMIT")
+                return current
+            if current.status not in {RunStatus.QUEUED, RunStatus.RUNNING}:
+                raise ValueError("export run cannot enter cancelling state")
+            updated = replace(
+                current,
+                status=RunStatus.CANCELLING,
+                started_at=current.started_at or requested_at,
+            )
+            run_json, canonical_hash = self._export_run_json(updated)
+            connection.execute(
+                "UPDATE fmea_export_runs SET status=?,started_at=?,run_json=?,canonical_json_hash=? "
+                "WHERE workspace_id=? AND export_run_id=?",
+                (
+                    updated.status.value,
+                    updated.started_at,
+                    run_json,
+                    canonical_hash,
+                    workspace_id,
+                    export_run_id,
+                ),
+            )
+            connection.execute("COMMIT")
+            return updated
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def complete_export_cancellation(
+        self,
+        export_run_id: str,
+        workspace_id: str,
+        finished_at: str,
+    ) -> ExportRun:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            if row is None:
+                raise ValueError("export run was not found")
+            current = self._export_run_from_row(row)
+            if current.status is RunStatus.CANCELLED:
+                self._verify_export_cancelled_idempotency(connection, row, current)
+                connection.execute("COMMIT")
+                return current
+            if current.status is not RunStatus.CANCELLING:
+                raise ValueError("export run is not cancelling")
+            updated = replace(current, status=RunStatus.CANCELLED, finished_at=finished_at)
+            run_json, canonical_hash = self._export_run_json(updated)
+            connection.execute(
+                "UPDATE fmea_export_runs SET status=?,finished_at=?,run_json=?,canonical_json_hash=? "
+                "WHERE workspace_id=? AND export_run_id=?",
+                (
+                    updated.status.value,
+                    updated.finished_at,
+                    run_json,
+                    canonical_hash,
+                    workspace_id,
+                    export_run_id,
+                ),
+            )
+            response_json = canonical_json(_json_value(updated))
+            cursor = connection.execute(
+                "UPDATE idempotency_records SET state='completed',status_code=200,resource_id=?,response_json=?,"
+                "completed_at=? WHERE scope_key=? AND payload_hash=? AND state='reserved'",
+                (
+                    updated.export_run_id,
+                    response_json,
+                    updated.finished_at,
+                    row["idempotency_scope"],
+                    row["request_hash"],
+                ),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("export cancellation idempotency completion failed")
+            updated_row = connection.execute(
+                "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+                (workspace_id, export_run_id),
+            ).fetchone()
+            persisted = self._export_run_from_row(updated_row)
+            if persisted != updated:
+                raise ValueError("persisted export cancellation is invalid")
+            self._verify_export_cancelled_idempotency(connection, updated_row, persisted)
+            connection.execute("COMMIT")
+            return persisted
         except Exception:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")

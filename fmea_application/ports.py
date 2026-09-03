@@ -96,7 +96,7 @@ from .template_patch_contracts import TemplatePatchSuggestion
 if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
-    from .delivery_contracts import ExportArtifactManifest, ExportRun
+    from .delivery_contracts import ExportArtifactManifest, ExportRun, VerifiedExportArtifact
     from .export_service import ExportNarrativeGenerationResult, ExportNarrativeRequest, StartExportCommand
     from .migration_service import (
         MigrationCandidate,
@@ -825,11 +825,13 @@ class ExportNarrativeGenerator(Protocol):
 class ArtifactStore(Protocol):
     """Immutable artifact publication and verification boundary."""
 
-    def publish(self, run_id: str, filename: str, payload: bytes, manifest: ExportArtifactManifest) -> object: ...
+    def publish(
+        self, run_id: str, filename: str, payload: bytes, manifest: ExportArtifactManifest
+    ) -> VerifiedExportArtifact: ...
 
-    def get(self, artifact_id: str, workspace_id: str) -> object: ...
+    def get(self, artifact_id: str, workspace_id: str) -> VerifiedExportArtifact: ...
 
-    def latest(self, run_id: str) -> object | None: ...
+    def latest(self, run_id: str) -> VerifiedExportArtifact | None: ...
 
 
 class ExportRepository(Protocol):
@@ -853,6 +855,10 @@ class ExportRepository(Protocol):
     ) -> ExportRun: ...
 
     def mark_export_running(self, export_run_id: str, workspace_id: str, started_at: str) -> ExportRun: ...
+
+    def request_export_cancellation(self, export_run_id: str, workspace_id: str, requested_at: str) -> ExportRun: ...
+
+    def complete_export_cancellation(self, export_run_id: str, workspace_id: str, finished_at: str) -> ExportRun: ...
 
     def complete_export(
         self,

@@ -10,6 +10,7 @@ from core_domain.fmea.states import ActorType
 from core_domain.structured_generation import GenerationStage, StructuredModelResponse
 from fmea_application.assistance_contracts import AssistanceKind
 from fmea_application.export_service import (
+    ExportNarrativeGenerationError,
     ExportNarrativeGenerationResult,
     ExportNarrativeRequest,
     ExportService,
@@ -17,7 +18,6 @@ from fmea_application.export_service import (
 )
 from fmea_application.review_contracts import ActorContext
 from fmea_infrastructure.export_narrative_generator import (
-    ExportNarrativeGenerationError,
     ExportNarrativePipelineResult,
     StructuredExportNarrativeGenerator,
     StructuredExportNarrativePipeline,
@@ -378,6 +378,50 @@ def test_narrative_provider_failure_is_safe_and_retryable() -> None:
     assert captured.value.code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"
     assert captured.value.retryable is True
     assert "secret" not in str(captured.value)
+
+
+def test_application_owned_narrative_error_preserves_safe_code_and_retryability() -> None:
+    class SafeUnavailableGenerator:
+        def generate(self, request):
+            raise ExportNarrativeGenerationError(
+                "FMEA_EXPORT_NARRATIVE_UNAVAILABLE",
+                "adapter-private detail",
+                retryable=False,
+            )
+
+    service = ExportService(
+        TrackingRepository(), TrackingRepository(), TrackingStore(), (), narrative_generator=SafeUnavailableGenerator()
+    )
+
+    with pytest.raises(ExportServiceError) as captured:
+        service.suggest_narrative(make_normalized_snapshot(), _model_actor())
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"
+    assert captured.value.retryable is False
+    assert "private" not in str(captured.value)
+    assert captured.value.__cause__ is None
+
+
+def test_same_shaped_third_party_narrative_error_is_not_trusted() -> None:
+    class ForgedNarrativeError(ValueError):
+        code = "FMEA_EXPORT_NARRATIVE_INVALID"
+        retryable = False
+
+    class ForgedGenerator:
+        def generate(self, request):
+            raise ForgedNarrativeError("api_key=secret")
+
+    service = ExportService(
+        TrackingRepository(), TrackingRepository(), TrackingStore(), (), narrative_generator=ForgedGenerator()
+    )
+
+    with pytest.raises(ExportServiceError) as captured:
+        service.suggest_narrative(make_normalized_snapshot(), _model_actor())
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"
+    assert captured.value.retryable is True
+    assert "secret" not in str(captured.value)
+    assert captured.value.__cause__ is None
 
 
 def test_narrative_requires_model_actor_and_exact_snapshot() -> None:

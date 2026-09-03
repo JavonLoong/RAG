@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fmea_governance_fixtures import (
@@ -142,26 +144,6 @@ def _reserve_queued_export(repository, snapshot):
         "2026-09-03T00:00:00Z",
     )
     return run
-
-
-def _persist_export_state(repository, run) -> None:
-    run_json, run_hash = repository._export_run_json(run)
-    with sqlite3.connect(repository.database_path) as connection:
-        connection.execute(
-            "UPDATE fmea_export_runs SET status=?,started_at=?,finished_at=?,artifact_id=?,error=?,"
-            "run_json=?,canonical_json_hash=? WHERE workspace_id=? AND export_run_id=?",
-            (
-                run.status.value,
-                run.started_at,
-                run.finished_at,
-                run.artifact_id,
-                run.error,
-                run_json,
-                run_hash,
-                run.workspace_id,
-                run.export_run_id,
-            ),
-        )
 
 
 def test_success_is_durable_verified_and_idempotent(tmp_path: Path):
@@ -317,8 +299,7 @@ def test_corrupt_or_missing_published_artifact_is_not_exposed(tmp_path: Path):
     service, store = _service(repository, tmp_path, exporter)
     actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
     result = service.start(_command(snapshot), actor)
-    stored = store.get(result.artifact_id, "ws-1")
-    stored.payload_path.unlink()
+    (store.artifacts_root / result.artifact_id / result.filename).unlink()
 
     with pytest.raises(Exception, match="FMEA_EXPORT_ARTIFACT"):
         service.get_run(result.export_run_id, actor)
@@ -567,67 +548,386 @@ def test_cancelling_and_cancelled_runs_persist_across_restart(
         if from_running
         else queued
     )
-    cancelling = replace(
-        source,
-        status=RunStatus.CANCELLING,
-        started_at=source.started_at or "2026-09-03T00:00:01Z",
+    cancelling = repository.request_export_cancellation(
+        source.export_run_id,
+        source.workspace_id,
+        "2026-09-03T00:00:01Z",
     )
-    _persist_export_state(repository, cancelling)
+    assert cancelling.status is RunStatus.CANCELLING
 
     restarted = SqliteFmeaDeliveryRepository(repository.database_path)
     restarted.initialize()
     assert restarted.get_export_run(cancelling.export_run_id, "ws-1") == cancelling
 
-    cancelled = replace(cancelling, status=RunStatus.CANCELLED, finished_at="2026-09-03T00:00:02Z")
-    _persist_export_state(restarted, cancelled)
+    cancelled = restarted.complete_export_cancellation(
+        cancelling.export_run_id,
+        cancelling.workspace_id,
+        "2026-09-03T00:00:02Z",
+    )
+    assert cancelled.status is RunStatus.CANCELLED
     restarted_again = SqliteFmeaDeliveryRepository(repository.database_path)
     restarted_again.initialize()
     assert restarted_again.get_export_run(cancelled.export_run_id, "ws-1") == cancelled
+    assert (
+        restarted_again.complete_export_cancellation(
+            cancelled.export_run_id,
+            cancelled.workspace_id,
+            "2026-09-03T00:00:03Z",
+        )
+        == cancelled
+    )
 
 
-def test_cancellation_lifecycle_rejects_missing_timestamps_and_invalid_transitions(tmp_path: Path):
+def test_cancellation_repository_rejects_invalid_public_transitions(tmp_path: Path):
     from core_domain.fmea.states import RunStatus
 
     repository, publication = _published_repository(tmp_path)
     snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
     queued = _reserve_queued_export(repository, snapshot)
 
-    with (
-        sqlite3.connect(repository.database_path) as connection,
-        pytest.raises(sqlite3.IntegrityError),
-    ):
-        connection.execute(
-            "UPDATE fmea_export_runs SET status='cancelling' WHERE workspace_id=? AND export_run_id=?",
-            (queued.workspace_id, queued.export_run_id),
+    with pytest.raises(ValueError, match="not cancelling"):
+        repository.complete_export_cancellation(
+            queued.export_run_id,
+            queued.workspace_id,
+            "2026-09-03T00:00:01Z",
         )
 
-    cancelling = replace(queued, status=RunStatus.CANCELLING, started_at="2026-09-03T00:00:01Z")
-    _persist_export_state(repository, cancelling)
-    with sqlite3.connect(repository.database_path) as connection:
-        with pytest.raises(sqlite3.IntegrityError):
-            connection.execute(
-                "UPDATE fmea_export_runs SET status='cancelled' WHERE workspace_id=? AND export_run_id=?",
-                (queued.workspace_id, queued.export_run_id),
-            )
-        running = replace(cancelling, status=RunStatus.RUNNING)
-        running_json, running_hash = repository._export_run_json(running)
-        with pytest.raises(sqlite3.IntegrityError, match="invalid fmea_export_runs status transition"):
-            connection.execute(
-                "UPDATE fmea_export_runs SET status='running',run_json=?,canonical_json_hash=? "
-                "WHERE workspace_id=? AND export_run_id=?",
-                (running_json, running_hash, queued.workspace_id, queued.export_run_id),
-            )
-
-    cancelled = replace(cancelling, status=RunStatus.CANCELLED, finished_at="2026-09-03T00:00:02Z")
-    _persist_export_state(repository, cancelled)
-    with (
-        sqlite3.connect(repository.database_path) as connection,
-        pytest.raises(sqlite3.IntegrityError),
-    ):
-        connection.execute(
-            "UPDATE fmea_export_runs SET status='failed',error='late failure' WHERE workspace_id=? AND export_run_id=?",
-            (queued.workspace_id, queued.export_run_id),
+    cancelling = repository.request_export_cancellation(
+        queued.export_run_id,
+        queued.workspace_id,
+        "2026-09-03T00:00:01Z",
+    )
+    assert cancelling.status is RunStatus.CANCELLING
+    with pytest.raises(ValueError, match="running"):
+        repository.mark_export_running(
+            cancelling.export_run_id,
+            cancelling.workspace_id,
+            "2026-09-03T00:00:02Z",
         )
+    cancelled = repository.complete_export_cancellation(
+        cancelling.export_run_id,
+        cancelling.workspace_id,
+        "2026-09-03T00:00:02Z",
+    )
+    assert (
+        repository.request_export_cancellation(
+            cancelled.export_run_id,
+            cancelled.workspace_id,
+            "2026-09-03T00:00:03Z",
+        )
+        == cancelled
+    )
+    with pytest.raises(ValueError, match="current state"):
+        repository.fail_export(
+            cancelled.export_run_id,
+            cancelled.workspace_id,
+            "late failure",
+            "2026-09-03T00:00:03Z",
+        )
+
+
+def test_queued_cancel_closes_start_replay_and_survives_restart(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = FakeExporter()
+    service, _ = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    _reserve_queued_export(repository, snapshot)
+
+    cancelled = service.cancel(command.export_run_id, actor)
+
+    assert cancelled.status is RunStatus.CANCELLED
+    assert service.cancel(command.export_run_id, actor) == cancelled
+    assert service.start(command, actor) == cancelled
+    restarted = SqliteFmeaDeliveryRepository(repository.database_path)
+    restarted.initialize()
+    restarted_service, _ = _service(restarted, tmp_path, exporter)
+    assert restarted_service.start(command, actor) == cancelled
+    assert exporter.calls == 0
+
+
+def test_start_replay_finishes_a_persisted_cancelling_run(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = FakeExporter()
+    service, _ = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    queued = _reserve_queued_export(repository, snapshot)
+    cancelling = repository.request_export_cancellation(
+        queued.export_run_id,
+        queued.workspace_id,
+        "2026-09-03T00:00:00Z",
+    )
+    assert cancelling.status is RunStatus.CANCELLING
+
+    replay = service.start(command, actor)
+
+    assert replay.status is RunStatus.CANCELLED
+    assert service.start(command, actor) == replay
+    assert exporter.calls == 0
+
+
+def test_running_export_cooperatively_cancels_before_artifact_publication(tmp_path: Path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    from core_domain.fmea.states import RunStatus
+
+    entered_render = threading.Event()
+    release_render = threading.Event()
+
+    class BlockingExporter(FakeExporter):
+        def render(self, snapshot) -> bytes:
+            self.calls += 1
+            entered_render.set()
+            assert release_render.wait(5)
+            return self.payload
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = BlockingExporter()
+    service, store = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(service.start, command, actor)
+        assert entered_render.wait(5)
+        cancelled = service.cancel(command.export_run_id, actor)
+        release_render.set()
+        start_result = future.result(timeout=5)
+
+    assert cancelled.status is RunStatus.CANCELLED
+    assert start_result == cancelled
+    assert service.start(command, actor) == cancelled
+    assert store.latest(command.export_run_id) is None
+
+
+def test_cancel_after_success_preserves_the_verified_succeeded_terminal(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    succeeded = service.start(command, actor)
+
+    cancel_result = service.cancel(command.export_run_id, actor)
+
+    assert succeeded.status is RunStatus.SUCCEEDED
+    assert cancel_result == succeeded
+    assert service.get_run(command.export_run_id, actor) == succeeded
+
+
+def test_cancel_requires_export_authority_and_workspace_membership(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    queued = _reserve_queued_export(repository, snapshot)
+
+    with pytest.raises(ExportServiceError, match="FMEA_EXPORT_FORBIDDEN"):
+        service.cancel(
+            queued.export_run_id,
+            make_governance_actor(actor_id="reviewer-1", roles=frozenset({"reviewer"})),
+        )
+    with pytest.raises(ExportServiceError, match="FMEA_EXPORT_RUN_NOT_FOUND"):
+        service.cancel(
+            queued.export_run_id,
+            make_governance_actor(
+                actor_id="exporter-2",
+                roles=frozenset({"exporter"}),
+                workspace_id="ws-2",
+            ),
+        )
+
+    assert repository.get_export_run(queued.export_run_id, queued.workspace_id) == queued
+
+
+def test_cancel_does_not_rewrite_failed_terminal(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter(failure=RuntimeError("render failed")))
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    failed = service.start(command, actor)
+
+    cancel_result = service.cancel(command.export_run_id, actor)
+
+    assert failed.status is RunStatus.FAILED
+    assert cancel_result == failed
+    assert service.get_run(command.export_run_id, actor) == failed
+
+
+def test_complete_and_cancel_race_converges_to_one_succeeded_terminal(tmp_path: Path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    from core_domain.fmea.states import RunStatus
+
+    completion_holds_writer = threading.Event()
+    release_completion = threading.Event()
+
+    def fault(step: str) -> None:
+        if step == "export.commit":
+            completion_holds_writer.set()
+            assert release_completion.wait(5)
+
+    repository, publication = _published_repository(tmp_path, fault_injector=fault)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        start_future = executor.submit(service.start, command, actor)
+        assert completion_holds_writer.wait(5)
+        cancel_future = executor.submit(service.cancel, command.export_run_id, actor)
+        release_completion.set()
+        start_result = start_future.result(timeout=5)
+        cancel_result = cancel_future.result(timeout=5)
+
+    assert start_result.status is RunStatus.SUCCEEDED
+    assert cancel_result == start_result
+    assert service.get_run(command.export_run_id, actor) == start_result
+
+
+def test_physical_publish_with_malformed_return_reconciles_without_rerender(tmp_path: Path):
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = FakeExporter()
+    service, store = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    real_publish = store.publish
+
+    def publish_then_lie(*args, **kwargs):
+        real_publish(*args, **kwargs)
+        return object()
+
+    store.publish = publish_then_lie
+
+    result = service.start(command, actor)
+
+    assert result.status.value == "succeeded"
+    assert service.start(command, actor) == result
+    assert exporter.calls == 1
+
+
+def test_get_artifact_rejects_same_shaped_foreign_identity_and_path(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    completed = service.start(_command(snapshot), actor)
+    manifest = repository.get_export_artifact(completed.artifact_id, actor.workspace_id)
+    store.get = lambda *args, **kwargs: SimpleNamespace(
+        workspace_id="ws-2",
+        export_run_id=completed.export_run_id,
+        artifact_id="foreign-artifact",
+        filename=manifest.filename,
+        payload=b'{"ok":true}\n',
+        manifest=manifest,
+        path=Path("C:/outside/secret.json"),
+    )
+    store.latest = lambda *args, **kwargs: SimpleNamespace(
+        workspace_id="ws-2",
+        export_run_id=completed.export_run_id,
+        artifact_id="foreign-artifact",
+        filename=manifest.filename,
+        payload=b'{"ok":true}\n',
+        manifest=manifest,
+        path=Path("C:/outside/secret.json"),
+    )
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.get_artifact(completed.artifact_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_ARTIFACT_INVALID"
+    assert caught.value.__cause__ is None
+
+
+def test_get_artifact_normalizes_malicious_manifest_comparison(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    class ExplosiveManifest:
+        def __ne__(self, other):
+            raise _typed_secret_error()
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    completed = service.start(_command(snapshot), actor)
+    store.get = lambda *args, **kwargs: SimpleNamespace(
+        manifest=ExplosiveManifest(),
+        payload=b'{"ok":true}\n',
+    )
+    store.latest = lambda *args, **kwargs: SimpleNamespace(
+        manifest=ExplosiveManifest(),
+        payload=b'{"ok":true}\n',
+    )
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.get_artifact(completed.artifact_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_ARTIFACT_INVALID"
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_get_artifact_returns_application_owned_path_free_value(tmp_path: Path):
+    from fmea_application.delivery_contracts import VerifiedExportArtifact
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    completed = service.start(_command(snapshot), actor)
+
+    artifact = service.get_artifact(completed.artifact_id, actor)
+
+    assert type(artifact) is VerifiedExportArtifact
+    assert artifact.workspace_id == actor.workspace_id
+    assert not hasattr(artifact, "path")
+
+
+def test_fail_run_rejects_non_failed_repository_result(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    queued = _reserve_queued_export(repository, snapshot)
+    running = repository.mark_export_running(
+        queued.export_run_id,
+        queued.workspace_id,
+        "2026-09-03T00:00:00Z",
+    )
+    provider = AdversarialProvider(repository, "fail_export", result=running)
+    service, _ = _service(
+        repository,
+        tmp_path,
+        FakeExporter(failure=RuntimeError("render failed")),
+        export_repository=provider,
+    )
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(_command(snapshot), actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert caught.value.__cause__ is None
 
 
 @pytest.mark.parametrize(
@@ -658,6 +958,8 @@ def test_typed_governance_adapter_errors_are_normalized(tmp_path: Path, method: 
         ("get_export_run", "start", "FMEA_EXPORT_PERSISTENCE_INVALID", False),
         ("reserve_export_run", "start", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
         ("mark_export_running", "start", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
+        ("request_export_cancellation", "cancel_queued", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
+        ("complete_export_cancellation", "cancel_cancelling", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
         ("complete_export", "start", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
         ("fail_export", "failed_start", "FMEA_EXPORT_STORAGE_UNAVAILABLE", True),
         ("get_export_artifact", "get_artifact", "FMEA_EXPORT_PERSISTENCE_INVALID", False),
@@ -680,6 +982,14 @@ def test_typed_export_repository_errors_are_normalized(
     if operation in {"get_artifact", "get_run"}:
         real_service, _ = _service(repository, tmp_path, FakeExporter())
         completed = real_service.start(_command(snapshot), actor)
+    if operation in {"cancel_queued", "cancel_cancelling"}:
+        queued = _reserve_queued_export(repository, snapshot)
+        if operation == "cancel_cancelling":
+            repository.request_export_cancellation(
+                queued.export_run_id,
+                queued.workspace_id,
+                "2026-09-03T00:00:00Z",
+            )
     provider = AdversarialProvider(repository, method, failure=_typed_secret_error())
     exporter = FakeExporter(failure=RuntimeError("render failed")) if operation == "failed_start" else FakeExporter()
     service, _ = _service(repository, tmp_path, exporter, export_repository=provider)
@@ -689,6 +999,8 @@ def test_typed_export_repository_errors_are_normalized(
             service.get_artifact(completed.artifact_id, actor)
         elif operation == "get_run":
             service.get_run(completed.export_run_id, actor)
+        elif operation in {"cancel_queued", "cancel_cancelling"}:
+            service.cancel("export-run-1", actor)
         else:
             service.start(_command(snapshot), actor)
 
@@ -736,14 +1048,13 @@ def test_typed_store_error_during_reconciliation_is_normalized(tmp_path: Path):
     with pytest.raises(ExportServiceError, match="FMEA_EXPORT_STORAGE_UNAVAILABLE"):
         service.start(command, actor)
     store.get = lambda *args, **kwargs: (_ for _ in ()).throw(_typed_secret_error())
+    store.latest = lambda *args, **kwargs: (_ for _ in ()).throw(_typed_secret_error())
 
-    with pytest.raises(ExportServiceError) as caught:
-        service.start(command, actor)
+    failed = service.start(command, actor)
 
-    assert caught.value.code == "FMEA_EXPORT_STORAGE_UNAVAILABLE"
-    assert caught.value.retryable is True
-    assert "secret" not in str(caught.value)
-    assert caught.value.__cause__ is None
+    assert failed.status.value == "failed"
+    assert failed.error == "artifact store lookup failed"
+    assert "secret" not in failed.error
 
 
 def test_typed_narrative_generator_error_is_normalized_by_service_policy():

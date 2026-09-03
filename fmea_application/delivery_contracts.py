@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+from hashlib import sha256
 from typing import TypeVar
 
 from core_domain.fmea.errors import FmeaDomainError
@@ -238,6 +239,43 @@ class ExportArtifactManifest:
             )
 
 
+@dataclass(frozen=True, slots=True)
+class VerifiedExportArtifact:
+    """Path-free artifact bytes verified against one application manifest."""
+
+    workspace_id: str
+    export_run_id: str
+    artifact_id: str
+    filename: str
+    payload: bytes
+    manifest: ExportArtifactManifest
+
+    def __post_init__(self) -> None:
+        for field_name in ("workspace_id", "export_run_id", "artifact_id"):
+            object.__setattr__(self, field_name, _id(getattr(self, field_name), field_name))
+        if type(self.manifest) is not ExportArtifactManifest:
+            raise FmeaDomainError("verified artifact manifest is invalid")  # noqa: TRY003
+        object.__setattr__(
+            self,
+            "filename",
+            _filename(self.filename, "filename", expected_extension=self.manifest.format.value),
+        )
+        if type(self.payload) is not bytes:
+            raise FmeaDomainError("verified artifact payload must be bytes")  # noqa: TRY003
+        if len(self.payload) > _MAX_ARTIFACT_BYTES:
+            raise FmeaDomainError("verified artifact payload exceeds its limit")  # noqa: TRY003
+        digest = sha256(self.payload).hexdigest()
+        expected_hashes = {digest, f"sha256:{digest}"}
+        if (
+            self.export_run_id != self.manifest.export_run_id
+            or self.artifact_id != self.manifest.artifact_id
+            or self.filename != self.manifest.filename
+            or len(self.payload) != self.manifest.byte_length
+            or self.manifest.sha256 not in expected_hashes
+        ):
+            raise FmeaDomainError("verified artifact binding is invalid")  # noqa: TRY003
+
+
 def validate_export_binding(run: ExportRun, manifest: ExportArtifactManifest) -> None:
     """Validate that a completed run and artifact manifest describe one export."""
 
@@ -272,6 +310,7 @@ __all__ = [
     "ExportArtifactManifest",
     "ExportFormat",
     "ExportRun",
+    "VerifiedExportArtifact",
     "bind_export_artifact",
     "validate_export_binding",
 ]

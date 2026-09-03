@@ -30,7 +30,7 @@ if os.name == "nt":
 
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.filename_policy import validate_filename
-from fmea_application.delivery_contracts import ExportArtifactManifest, ExportFormat
+from fmea_application.delivery_contracts import ExportArtifactManifest, ExportFormat, VerifiedExportArtifact
 
 MAX_ARTIFACT_BYTES = 1_073_741_824
 _MAX_MANIFEST_BYTES = 64 * 1024
@@ -143,8 +143,8 @@ class ArtifactStoreError(FmeaDomainError):
 
 
 @dataclass(frozen=True, slots=True)
-class StoredArtifact:
-    """One independently verified immutable artifact returned by the store."""
+class _StoredArtifact:
+    """Infrastructure-only verified artifact carrying its contained server path."""
 
     workspace_id: str
     export_run_id: str
@@ -311,6 +311,19 @@ class WorkspaceArtifactStore:
     @property
     def workspace_id(self) -> str:
         return self._workspace_id
+
+    @staticmethod
+    def _public_artifact(stored: _StoredArtifact) -> VerifiedExportArtifact:
+        """Remove infrastructure paths before crossing the application port."""
+
+        return VerifiedExportArtifact(
+            workspace_id=stored.workspace_id,
+            export_run_id=stored.export_run_id,
+            artifact_id=stored.artifact_id,
+            filename=stored.filename,
+            payload=stored.payload,
+            manifest=stored.manifest,
+        )
 
     @property
     def workspace_root(self) -> Path:
@@ -820,7 +833,7 @@ class WorkspaceArtifactStore:
         except (FmeaDomainError, TypeError, ValueError, UnicodeError, json.JSONDecodeError) as exc:
             raise ArtifactStoreError("FMEA_ARTIFACT_INTEGRITY_FAILED", "stored artifact manifest is invalid") from exc
 
-    def _verify_directory(self, directory: Path, artifact_id: str) -> StoredArtifact:
+    def _verify_directory(self, directory: Path, artifact_id: str) -> _StoredArtifact:
         info = self._inspect(directory, directory=True, allow_missing=False)
         if info is None:
             _raise("FMEA_ARTIFACT_NOT_FOUND", "artifact was not found")
@@ -858,7 +871,7 @@ class WorkspaceArtifactStore:
             "sha256:"
         ):
             _raise("FMEA_ARTIFACT_INTEGRITY_FAILED", "stored artifact bytes do not match its manifest")
-        return StoredArtifact(
+        return _StoredArtifact(
             workspace_id=self._workspace_id,
             export_run_id=manifest.export_run_id,
             artifact_id=manifest.artifact_id,
@@ -868,7 +881,7 @@ class WorkspaceArtifactStore:
             path=payload_path,
         )
 
-    def _read_existing(self, artifact_id: str) -> StoredArtifact | None:
+    def _read_existing(self, artifact_id: str) -> _StoredArtifact | None:
         directory = self._safe_artifact_path(artifact_id)
         if self._inspect(directory, directory=True, allow_missing=True) is None:
             return None
@@ -894,7 +907,7 @@ class WorkspaceArtifactStore:
         payload: bytes,
         manifest: ExportArtifactManifest,
         deadline: float,
-    ) -> StoredArtifact | None:
+    ) -> _StoredArtifact | None:
         self._inspect(lock_path, directory=True, allow_missing=True)
         existing = self._read_existing(artifact_id)
         if existing is not None:
@@ -927,7 +940,7 @@ class WorkspaceArtifactStore:
         filename: str,
         payload: bytes,
         manifest: ExportArtifactManifest,
-    ) -> _Reservation | StoredArtifact:
+    ) -> _Reservation | _StoredArtifact:
         lock_path = self._locks_root / artifact_id
         deadline = self._reservation_deadline()
         while True:
@@ -993,7 +1006,7 @@ class WorkspaceArtifactStore:
 
     @staticmethod
     def _matches_request(
-        stored: StoredArtifact,
+        stored: _StoredArtifact,
         run_id: str,
         filename: str,
         payload: bytes,
@@ -1012,7 +1025,7 @@ class WorkspaceArtifactStore:
         filename: str,
         payload: bytes,
         manifest: ExportArtifactManifest,
-    ) -> StoredArtifact | None:
+    ) -> _StoredArtifact | None:
         """Return success only when both immutable bytes and latest are exact."""
 
         try:
@@ -1055,7 +1068,7 @@ class WorkspaceArtifactStore:
         except (TypeError, ValueError, UnicodeError, json.JSONDecodeError) as exc:
             raise ArtifactStoreError("FMEA_ARTIFACT_INTEGRITY_FAILED", "latest pointer is invalid") from exc
 
-    def _read_latest_pointer(self, run_id: str) -> StoredArtifact | None:
+    def _read_latest_pointer(self, run_id: str) -> _StoredArtifact | None:
         run_directory = self._safe_run_path(run_id)
         if self._inspect(run_directory, directory=True, allow_missing=True) is None:
             return None
@@ -1108,13 +1121,13 @@ class WorkspaceArtifactStore:
             if temporary is not None:
                 self._remove_file(temporary, expected=temporary_info)
 
-    def publish(  # noqa: C901
+    def _publish_stored(  # noqa: C901
         self,
         run_id: str,
         filename: str,
         payload: bytes,
         manifest: ExportArtifactManifest,
-    ) -> StoredArtifact:
+    ) -> _StoredArtifact:
         """Validate and atomically publish one immutable artifact."""
 
         normalized = self._validate_manifest_and_payload(run_id, filename, payload, manifest)
@@ -1142,7 +1155,7 @@ class WorkspaceArtifactStore:
                     return committed
                 self._read_latest_pointer(run_id)
             reservation_or_existing = self._reserve(artifact_id, run_id, filename, payload, normalized)
-            if isinstance(reservation_or_existing, StoredArtifact):
+            if isinstance(reservation_or_existing, _StoredArtifact):
                 return reservation_or_existing
             reservation = reservation_or_existing
             temporary: Path | None = None
@@ -1220,7 +1233,18 @@ class WorkspaceArtifactStore:
                     self._remove_owned_tree(final_directory, moved_info)
                 self._release_reservation(reservation)
 
-    def get(self, artifact_id: str, workspace_id: str) -> StoredArtifact:
+    def publish(
+        self,
+        run_id: str,
+        filename: str,
+        payload: bytes,
+        manifest: ExportArtifactManifest,
+    ) -> VerifiedExportArtifact:
+        """Publish and expose only the path-free application artifact value."""
+
+        return self._public_artifact(self._publish_stored(run_id, filename, payload, manifest))
+
+    def get(self, artifact_id: str, workspace_id: str) -> VerifiedExportArtifact:
         """Return an independently reverified artifact for this workspace."""
 
         if workspace_id != self._workspace_id:
@@ -1229,18 +1253,18 @@ class WorkspaceArtifactStore:
         stored = self._read_existing(artifact_id)
         if stored is None:
             _raise("FMEA_ARTIFACT_NOT_FOUND", "artifact was not found")
-        return stored
+        return self._public_artifact(stored)
 
-    def latest(self, run_id: str) -> StoredArtifact | None:
+    def latest(self, run_id: str) -> VerifiedExportArtifact | None:
         """Return the verified artifact selected by the run's atomic pointer."""
 
         _safe_segment(run_id, "run_id")
-        return self._read_latest_pointer(run_id)
+        stored = self._read_latest_pointer(run_id)
+        return None if stored is None else self._public_artifact(stored)
 
 
 __all__ = [
     "MAX_ARTIFACT_BYTES",
     "ArtifactStoreError",
-    "StoredArtifact",
     "WorkspaceArtifactStore",
 ]

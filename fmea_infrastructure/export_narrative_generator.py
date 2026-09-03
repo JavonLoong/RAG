@@ -26,6 +26,7 @@ from core_domain.structured_output import (
 from fmea_application.export_service import (
     ExportNarrativeClaim,
     ExportNarrativeDraft,
+    ExportNarrativeGenerationError,
     ExportNarrativeGenerationResult,
     ExportNarrativeRequest,
 )
@@ -49,19 +50,6 @@ _UNAVAILABLE_CODES = {
     "MODEL_TIMEOUT",
     "MODEL_TOTAL_TIMEOUT",
 }
-
-
-class ExportNarrativeGenerationError(ValueError):
-    """Stable, public-safe narrative generator error."""
-
-    _CODES = frozenset({"FMEA_EXPORT_NARRATIVE_INVALID", "FMEA_EXPORT_NARRATIVE_UNAVAILABLE"})
-
-    def __init__(self, code: str, message: str, *, retryable: bool = False) -> None:
-        if code not in self._CODES:
-            raise ValueError("unsupported narrative error code")
-        self.code = code
-        self.retryable = retryable
-        super().__init__(f"{code}: {message}")
 
 
 @dataclass(frozen=True, slots=True)
