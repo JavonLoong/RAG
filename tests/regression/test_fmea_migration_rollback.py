@@ -91,6 +91,7 @@ def test_failed_confirmed_migration_rolls_back_child_and_events(context):
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000907",
         confirm_migration=True,
     )

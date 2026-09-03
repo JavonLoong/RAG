@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from dataclasses import fields
+from dataclasses import fields, replace
 from hashlib import sha256
 from pathlib import Path
 
@@ -121,6 +121,59 @@ def test_dry_run_is_repeatable_and_does_not_create_revision(context):
     assert repository.count_outbox_events("migration.completed", "ws-1") == 0
 
 
+def test_fresh_process_dry_run_binds_the_original_request_key(context):
+    from fmea_application.migration_service import MigrationService, MigrationServiceError
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+    from fmea_infrastructure.migration_registry import MigrationRegistry
+
+    repository, service, command, actor = context
+    first = service.dry_run(command, actor)
+
+    def restarted_service():
+        restarted_repository = SqliteFmeaDeliveryRepository(repository.database_path)
+        restarted_repository.initialize()
+        return MigrationService(
+            restarted_repository,
+            MigrationRegistry((Adapter(),)),
+            domain_pack_registry=PackRegistry(),
+            clock=lambda: "2026-09-03T00:00:00Z",
+        )
+
+    replay = restarted_service().dry_run(command, actor)
+    assert replay == first
+
+    with sqlite3.connect(repository.database_path) as connection:
+        before = tuple(
+            connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
+            for table in (
+                "fmea_migration_runs",
+                "fmea_migration_reports",
+                "fmea_migration_confirmations",
+                "fmea_revisions",
+                "fmea_audit_events",
+                "fmea_outbox_events",
+            )
+        )
+
+    different_key = replace(command, idempotency_key="00000000-0000-4000-8000-000000000998")
+    with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_IDEMPOTENCY_CONFLICT"):
+        restarted_service().dry_run(different_key, actor)
+
+    with sqlite3.connect(repository.database_path) as connection:
+        after = tuple(
+            connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
+            for table in (
+                "fmea_migration_runs",
+                "fmea_migration_reports",
+                "fmea_migration_confirmations",
+                "fmea_revisions",
+                "fmea_audit_events",
+                "fmea_outbox_events",
+            )
+        )
+    assert after == before
+
+
 def test_confirm_creates_immutable_child_and_invalidates_derived_state(context):
     from fmea_application.migration_service import ConfirmMigrationCommand
 
@@ -135,6 +188,7 @@ def test_confirm_creates_immutable_child_and_invalidates_derived_state(context):
             target_domain_pack_id=command.target_domain_pack_id,
             target_domain_pack_version=command.target_domain_pack_version,
             target_domain_pack_hash=command.target_domain_pack_hash,
+            dry_run_command=command,
             idempotency_key="00000000-0000-4000-8000-000000000904",
             confirm_migration=True,
         ),
@@ -171,6 +225,7 @@ def test_confirmation_replays_without_a_second_child_or_event(context):
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000905",
         confirm_migration=True,
     )
@@ -199,6 +254,7 @@ def test_confirmation_replays_after_repository_restart(context):
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000908",
         confirm_migration=True,
     )
@@ -235,6 +291,7 @@ def test_confirmation_replay_rejects_corrupted_durable_run_chain(context):
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000909",
         confirm_migration=True,
     )
@@ -259,7 +316,7 @@ def test_confirmation_replay_rejects_corrupted_durable_run_chain(context):
             ),
         )
 
-    with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_FAILED"):
+    with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_STORAGE_UNAVAILABLE"):
         service.confirm(confirm, actor)
     assert repository.count_child_revisions("revision-1", "ws-1") == 1
     assert repository.count_outbox_events("migration.completed", "ws-1") == 1
@@ -295,6 +352,7 @@ def test_confirmation_replay_rejects_dedicated_timestamp_corruption(
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000911",
         confirm_migration=True,
     )
@@ -345,6 +403,7 @@ def test_fresh_process_target_hash_drift_never_creates_child_or_event(context):
         target_domain_pack_id=command.target_domain_pack_id,
         target_domain_pack_version=command.target_domain_pack_version,
         target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
         idempotency_key="00000000-0000-4000-8000-000000000910",
         confirm_migration=True,
     )

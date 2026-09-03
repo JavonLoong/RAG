@@ -42,6 +42,7 @@ from fmea_application.migration_service import (
 from fmea_application.migration_service import (
     MigrationServiceError as ReviewError,
 )
+from fmea_application.ports import MigrationReportRequestConflict
 from fmea_application.review_contracts import (
     ActorContext,
     AuditEvent,
@@ -393,6 +394,56 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
     def _confirmation_id(scope: IdempotencyScope) -> str:
         return "migration-confirmation-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
 
+    def _durable_run_command(
+        self,
+        row: sqlite3.Row | None,
+        *,
+        workspace_id: str,
+        migration_id: str,
+        actor_id: str | None = None,
+    ) -> tuple[MigrationCommand, str]:
+        if row is None:
+            raise ValueError("persisted migration run is missing")
+        request = _load_object(row["request_json"], "migration request")
+        expected_keys = {field.name for field in fields(MigrationCommand)} | {"actor_id", "workspace_id"}
+        if set(request) != expected_keys:
+            raise ValueError("persisted migration request shape is invalid")
+        try:
+            durable_command = MigrationCommand(
+                migration_id=cast(str, request["migration_id"]),
+                source_revision_id=cast(str, request["source_revision_id"]),
+                source_revision_hash=cast(str, request["source_revision_hash"]),
+                target_domain_pack_id=cast(str, request["target_domain_pack_id"]),
+                target_domain_pack_version=cast(str, request["target_domain_pack_version"]),
+                target_domain_pack_hash=cast(str, request["target_domain_pack_hash"]),
+                idempotency_key=cast(str, request["idempotency_key"]),
+            )
+            durable_actor_id = _text(row["actor_id"], "persisted actor_id")
+            durable_key_hash = idempotency_key_hash(durable_command.idempotency_key)
+        except Exception:
+            raise ValueError("persisted migration request is invalid") from None
+        expected_request = _request_value(durable_command) | {
+            "actor_id": durable_actor_id,
+            "workspace_id": workspace_id,
+        }
+        if (
+            row["workspace_id"] != workspace_id
+            or row["migration_id"] != migration_id
+            or row["run_id"] != self._run_id(workspace_id, migration_id)
+            or row["source_revision_id"] != durable_command.source_revision_id
+            or row["source_revision_hash"] != durable_command.source_revision_hash
+            or row["target_domain_pack_id"] != durable_command.target_domain_pack_id
+            or row["target_domain_pack_version"] != durable_command.target_domain_pack_version
+            or row["target_domain_pack_hash"] != durable_command.target_domain_pack_hash
+            or row["actor_id"] != durable_actor_id
+            or (actor_id is not None and durable_actor_id != actor_id)
+            or request != expected_request
+            or row["request_hash"] != _hash_json(request)
+            or row["request_idempotency_key_hash"] != durable_key_hash
+        ):
+            raise ValueError("persisted migration request binding is invalid")
+        return durable_command, durable_key_hash
+
     def _validated_report_row(self, connection: sqlite3.Connection, prepared: PreparedMigration) -> sqlite3.Row:
         row = connection.execute(
             "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
@@ -417,49 +468,19 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         child: FmeaRevision | None = None,
         scope: IdempotencyScope | None = None,
     ) -> str:
-        if row is None:
-            raise ValueError("persisted migration run is missing")
-        request = _load_object(row["request_json"], "migration request")
+        durable_command, durable_key_hash = self._durable_run_command(
+            row,
+            workspace_id=prepared.actor.workspace_id,
+            migration_id=prepared.command.migration_id,
+            actor_id=prepared.actor.actor_id,
+        )
+        row = cast(sqlite3.Row, row)
         command = prepared.command
         report = prepared.report
         source_pack = report.source_domain_pack_identity
         target_pack = report.target_domain_pack_identity
-        expected_keys = set(_request_value(prepared.dry_run_command)) | {"actor_id", "workspace_id"}
-        if set(request) != expected_keys:
-            raise ValueError("persisted migration request shape is invalid")
-        try:
-            durable_command = MigrationCommand(
-                migration_id=cast(str, request["migration_id"]),
-                source_revision_id=cast(str, request["source_revision_id"]),
-                source_revision_hash=cast(str, request["source_revision_hash"]),
-                target_domain_pack_id=cast(str, request["target_domain_pack_id"]),
-                target_domain_pack_version=cast(str, request["target_domain_pack_version"]),
-                target_domain_pack_hash=cast(str, request["target_domain_pack_hash"]),
-                idempotency_key=cast(str, request["idempotency_key"]),
-            )
-            durable_key_hash = idempotency_key_hash(durable_command.idempotency_key)
-        except Exception:
-            raise ValueError("persisted migration request is invalid") from None
-        expected_request = _request_value(durable_command) | {
-            "actor_id": prepared.actor.actor_id,
-            "workspace_id": prepared.actor.workspace_id,
-        }
-        if request != expected_request:
-            raise ValueError("persisted migration request is not canonical")
         if durable_command != prepared.dry_run_command:
-            # A fresh service rebuilds this temporary command from the confirmation
-            # and therefore carries the confirmation key.  Only that known key
-            # substitution is allowed; the immutable report copy anchors the
-            # original dry-run key hash below.
-            fresh_process_command = replace(
-                prepared.dry_run_command,
-                idempotency_key=durable_command.idempotency_key,
-            )
-            if (
-                prepared.dry_run_command.idempotency_key != prepared.command.idempotency_key
-                or durable_command != fresh_process_command
-            ):
-                raise ValueError("persisted migration request binding is invalid")
+            raise ValueError("persisted migration request binding is invalid")
         report_key = connection.execute(
             "SELECT request_idempotency_key_hash FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
             (prepared.actor.workspace_id, prepared.command.migration_id),
@@ -478,8 +499,6 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             or _digest(row["target_domain_pack_hash"]) != _digest(target_pack[2])
             or _digest(row["target_revision_hash"]) != _digest(report.target_revision_hash)
             or row["status"] != status
-            or row["request_hash"] != _hash_json(request)
-            or row["request_idempotency_key_hash"] != durable_key_hash
             or report_key is None
             or report_key["request_idempotency_key_hash"] != durable_key_hash
             or row["report_id"] != self._report_id(prepared.actor.workspace_id, command.migration_id)
@@ -674,19 +693,74 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         finally:
             connection.close()
 
-    def get_migration_report(self, migration_id: str, workspace_id: str) -> MigrationReport | None:
+    def get_migration_report(
+        self,
+        migration_id: str,
+        workspace_id: str,
+        *,
+        command: MigrationCommand,
+    ) -> MigrationReport | None:
         connection = self._connect()
         try:
+            workspace_id = _text(workspace_id, "workspace_id")
+            migration_id = _text(migration_id, "migration_id")
+            if not isinstance(command, MigrationCommand):
+                raise ValueError("migration report request is invalid")
             row = connection.execute(
                 "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
-                (_text(workspace_id, "workspace_id"), _text(migration_id, "migration_id")),
+                (workspace_id, migration_id),
             ).fetchone()
             if row is None:
                 return None
+            run = connection.execute(
+                "SELECT * FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+                (workspace_id, migration_id),
+            ).fetchone()
+            durable_command, durable_key_hash = self._durable_run_command(
+                run,
+                workspace_id=workspace_id,
+                migration_id=migration_id,
+            )
+            run = cast(sqlite3.Row, run)
             report = _decode_report(row["report_json"], row["report_hash"])
-            if not _report_row_is_valid(row, report):
-                raise ValueError("persisted migration report hash is invalid")
+            if (
+                not _report_row_is_valid(row, report, durable_key_hash)
+                or run["report_id"] != row["report_id"]
+                or _digest(run["report_hash"]) != _digest(report.report_hash)
+                or run["source_revision_id"] != report.source_revision_id
+                or _digest(run["source_revision_hash"]) != _digest(report.source_revision_hash)
+                or run["source_domain_pack_id"] != report.source_domain_pack_identity[0]
+                or run["source_domain_pack_version"] != report.source_domain_pack_identity[1]
+                or _digest(run["source_domain_pack_hash"]) != _digest(report.source_domain_pack_identity[2])
+                or run["target_domain_pack_id"] != report.target_domain_pack_identity[0]
+                or run["target_domain_pack_version"] != report.target_domain_pack_identity[1]
+                or _digest(run["target_domain_pack_hash"]) != _digest(report.target_domain_pack_identity[2])
+                or _digest(run["target_revision_hash"]) != _digest(report.target_revision_hash)
+                or run["created_at"] != report.created_at
+                or run["started_at"] != report.created_at
+            ):
+                raise ValueError("persisted migration report binding is invalid")
+            if run["status"] == "dry_run":
+                if (
+                    run["child_revision_id"] is not None
+                    or run["idempotency_scope"] is not None
+                    or run["finished_at"] is not None
+                ):
+                    raise ValueError("persisted dry-run state is invalid")
+            elif run["status"] == "confirmed":
+                if (
+                    run["child_revision_id"] is None
+                    or run["idempotency_scope"] is None
+                    or run["finished_at"] != report.created_at
+                ):
+                    raise ValueError("persisted confirmed run state is invalid")
+            else:
+                raise ValueError("persisted migration run state is invalid")
+            if durable_command != command:
+                raise MigrationReportRequestConflict("stored migration report is bound to another request")
             return report
+        except MigrationReportRequestConflict:
+            raise
         except ReviewError:
             raise
         except Exception:
