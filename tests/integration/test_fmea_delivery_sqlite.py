@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import fields
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,8 @@ HASH = "a" * 64
 TARGET_HASH = "b" * 64
 DRIFTED_TARGET_HASH = "c" * 64
 MIGRATED_ROW_HASH = "d" * 64
+CORRUPTED_REQUEST_KEY = "00000000-0000-4000-8000-000000000999"
+CORRUPTED_TIMESTAMP = "2026-09-03T00:00:01Z"
 
 
 def _target_revision(source, target_hash: str = TARGET_HASH):
@@ -239,9 +242,21 @@ def test_confirmation_replay_rejects_corrupted_durable_run_chain(context):
     with sqlite3.connect(repository.database_path) as connection:
         connection.execute("DROP TRIGGER fmea_migration_runs_immutable_fields")
         connection.execute("DROP TRIGGER fmea_migration_runs_terminal_no_update")
+        request_json = connection.execute(
+            "SELECT request_json FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+            ("ws-1", command.migration_id),
+        ).fetchone()[0]
+        corrupted_json = request_json.replace(command.idempotency_key, CORRUPTED_REQUEST_KEY)
         connection.execute(
-            "UPDATE fmea_migration_runs SET request_hash=? WHERE workspace_id=? AND migration_id=?",
-            ("sha256:" + "e" * 64, "ws-1", command.migration_id),
+            "UPDATE fmea_migration_runs SET request_json=?,request_hash=?,request_idempotency_key_hash=? "
+            "WHERE workspace_id=? AND migration_id=?",
+            (
+                corrupted_json,
+                "sha256:" + sha256(corrupted_json.encode("utf-8")).hexdigest(),
+                "sha256:" + sha256(CORRUPTED_REQUEST_KEY.encode("utf-8")).hexdigest(),
+                "ws-1",
+                command.migration_id,
+            ),
         )
 
     with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_FAILED"):
@@ -249,6 +264,57 @@ def test_confirmation_replay_rejects_corrupted_durable_run_chain(context):
     assert repository.count_child_revisions("revision-1", "ws-1") == 1
     assert repository.count_outbox_events("migration.completed", "ws-1") == 1
     assert repository.count_migration_confirmations("ws-1") == 1
+
+
+@pytest.mark.parametrize(
+    ("table", "trigger", "identity_column", "confirmation_column"),
+    (
+        (
+            "fmea_migration_confirmations",
+            "fmea_migration_confirmations_no_update",
+            "confirmation_id",
+            "confirmation_id",
+        ),
+        ("fmea_revisions", "fmea_revisions_no_update", "revision_id", "child_revision_id"),
+        ("fmea_audit_events", "fmea_audit_events_no_update", "event_id", "audit_event_id"),
+        ("fmea_outbox_events", "fmea_outbox_events_no_update", "event_id", "outbox_event_id"),
+    ),
+)
+def test_confirmation_replay_rejects_dedicated_timestamp_corruption(
+    context, table, trigger, identity_column, confirmation_column
+):
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationServiceError
+
+    repository, service, command, actor = context
+    report = service.dry_run(command, actor)
+    confirm = ConfirmMigrationCommand(
+        migration_id=command.migration_id,
+        report_hash=report.report_hash,
+        source_revision_id=command.source_revision_id,
+        source_revision_hash=command.source_revision_hash,
+        target_domain_pack_id=command.target_domain_pack_id,
+        target_domain_pack_version=command.target_domain_pack_version,
+        target_domain_pack_hash=command.target_domain_pack_hash,
+        idempotency_key="00000000-0000-4000-8000-000000000911",
+        confirm_migration=True,
+    )
+    service.confirm(confirm, actor)
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        confirmation = connection.execute(
+            "SELECT * FROM fmea_migration_confirmations WHERE workspace_id=? AND migration_id=?",
+            ("ws-1", command.migration_id),
+        ).fetchone()
+        connection.execute(f"DROP TRIGGER {trigger}")
+        connection.execute(
+            f"UPDATE {table} SET created_at=? WHERE workspace_id=? AND {identity_column}=?",  # noqa: S608
+            (CORRUPTED_TIMESTAMP, "ws-1", confirmation[confirmation_column]),
+        )
+
+    with pytest.raises(MigrationServiceError, match="FMEA_MIGRATION_FAILED"):
+        service.confirm(confirm, actor)
+    assert repository.count_child_revisions("revision-1", "ws-1") == 1
+    assert repository.count_outbox_events("migration.completed", "ws-1") == 1
 
 
 def test_fresh_process_target_hash_drift_never_creates_child_or_event(context):

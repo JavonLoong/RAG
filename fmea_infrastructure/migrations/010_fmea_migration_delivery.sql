@@ -99,6 +99,7 @@ CREATE TABLE fmea_migration_runs (
     status TEXT NOT NULL CHECK (status IN ('dry_run', 'confirmed', 'failed')),
     request_json TEXT NOT NULL CHECK (length(request_json) > 0),
     request_hash TEXT NOT NULL,
+    request_idempotency_key_hash TEXT NOT NULL,
     report_id TEXT NOT NULL,
     report_hash TEXT NOT NULL,
     child_revision_id TEXT,
@@ -114,6 +115,8 @@ CREATE TABLE fmea_migration_runs (
     CHECK (length(target_domain_pack_hash) IN (64, 71)),
     CHECK (length(target_revision_hash) IN (64, 71)),
     CHECK (length(request_hash) = 71 AND substr(request_hash, 1, 7) = 'sha256:'),
+    CHECK (length(request_idempotency_key_hash) = 71
+        AND substr(request_idempotency_key_hash, 1, 7) = 'sha256:'),
     CHECK (length(report_hash) IN (64, 71)),
     CHECK (
         (status = 'dry_run' AND child_revision_id IS NULL AND idempotency_scope IS NULL AND finished_at IS NULL)
@@ -151,6 +154,7 @@ CREATE TABLE fmea_migration_reports (
     plan_json TEXT NOT NULL CHECK (length(plan_json) > 0),
     report_json TEXT NOT NULL CHECK (length(report_json) > 0),
     report_hash TEXT NOT NULL,
+    request_idempotency_key_hash TEXT NOT NULL,
     canonical_json_hash TEXT NOT NULL,
     created_at TEXT NOT NULL,
     PRIMARY KEY (workspace_id, report_id),
@@ -160,6 +164,8 @@ CREATE TABLE fmea_migration_reports (
     CHECK (length(target_domain_pack_hash) IN (64, 71)),
     CHECK (length(target_revision_hash) IN (64, 71)),
     CHECK (length(report_hash) IN (64, 71)),
+    CHECK (length(request_idempotency_key_hash) = 71
+        AND substr(request_idempotency_key_hash, 1, 7) = 'sha256:'),
     CHECK (length(canonical_json_hash) = 71 AND substr(canonical_json_hash, 1, 7) = 'sha256:'),
     FOREIGN KEY (workspace_id, migration_id)
         REFERENCES fmea_migration_runs(workspace_id, migration_id),
@@ -339,6 +345,7 @@ WHEN NEW.workspace_id IS NOT OLD.workspace_id
     OR NEW.target_revision_hash IS NOT OLD.target_revision_hash
     OR NEW.request_json IS NOT OLD.request_json
     OR NEW.request_hash IS NOT OLD.request_hash
+    OR NEW.request_idempotency_key_hash IS NOT OLD.request_idempotency_key_hash
     OR NEW.report_id IS NOT OLD.report_id
     OR NEW.report_hash IS NOT OLD.report_hash
     OR NEW.actor_id IS NOT OLD.actor_id
