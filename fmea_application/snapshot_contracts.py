@@ -38,6 +38,7 @@ _MAX_DEPTH = 8
 _MAX_ITEMS = 500
 _MAX_STRING_LENGTH = 65_536
 _MAX_CANONICAL_ARRAY_ITEMS = 10_000
+DRAFT_PREVIEW_MARKER = "DRAFT PREVIEW — NOT PUBLISHED"
 
 
 def _text(value: object, field_name: str) -> str:
@@ -355,7 +356,9 @@ def _plain_snapshot_value(value: object, *, depth: int = 0) -> object:
     if depth > _MAX_DEPTH + 1:
         raise ValueError("snapshot value depth is invalid")  # noqa: TRY003
     value_type = type(value)
-    if value is None or value_type in {bool, int, float, str}:
+    if value_type is str:
+        return _plain_snapshot_string(value)
+    if value is None or value_type in {bool, int, float}:
         return value
     if value_type in {tuple, list}:
         if len(value) > _MAX_CANONICAL_ARRAY_ITEMS:  # type: ignore[arg-type]
@@ -369,13 +372,14 @@ def _plain_snapshot_value(value: object, *, depth: int = 0) -> object:
         for key, item in value.items():  # type: ignore[union-attr]
             if type(key) is not str:
                 raise ValueError("snapshot mapping key is invalid")  # noqa: TRY003
+            _plain_snapshot_string(key)
             copied_mapping[key] = _plain_snapshot_value(item, depth=depth + 1)
         return copied_mapping
     raise ValueError("snapshot value is not plain JSON")  # noqa: TRY003
 
 
 def _plain_snapshot_string(value: object) -> str:
-    if type(value) is not str:
+    if type(value) is not str or DRAFT_PREVIEW_MARKER in value:
         raise ValueError("snapshot string is invalid")  # noqa: TRY003
     return value
 
@@ -448,6 +452,7 @@ def iter_normalized_snapshot_pages(
 
 
 __all__ = [
+    "DRAFT_PREVIEW_MARKER",
     "NormalizedFmeaSnapshot",
     "NormalizedSnapshotInput",
     "NormalizedSnapshotPage",

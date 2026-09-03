@@ -14,11 +14,14 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
-from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
+from fmea_application.snapshot_contracts import (
+    DRAFT_PREVIEW_MARKER,
+    NormalizedFmeaSnapshot,
+    revalidate_normalized_snapshot,
+)
 
 from .export_json import _snapshot_projection, _validate_export_value
 
-_PREVIEW_MARKER: Final = "DRAFT PREVIEW — NOT PUBLISHED"
 _MAX_DOCX_CELL_TEXT: Final = 1_000_000
 _MAX_COLUMNS: Final = 256
 _TYPES_COLUMN: Final = "__types__"
@@ -273,7 +276,7 @@ class DocxFmeaExporter:
             title = document.add_heading("FMEA Export", level=0)
             title.alignment = WD_ALIGN_PARAGRAPH.CENTER
             if resolved_preview:
-                marker = document.add_paragraph(_PREVIEW_MARKER)
+                marker = document.add_paragraph(DRAFT_PREVIEW_MARKER)
                 marker.alignment = WD_ALIGN_PARAGRAPH.CENTER
             _append_manifest(document, projection)
             _append_section(document, "FMEA", projection["rows"], identity_field="row_id")

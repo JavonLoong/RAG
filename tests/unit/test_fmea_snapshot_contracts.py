@@ -126,6 +126,25 @@ def test_shared_revalidation_rejects_malicious_nested_value_without_invoking_its
     assert malicious.calls == []
 
 
+def test_shared_revalidation_rejects_reserved_preview_marker_in_plain_nested_value() -> None:
+    marker = "DRAFT PREVIEW — NOT PUBLISHED"
+    snapshot = make_normalized_snapshot()
+    forged = _forge_snapshot(
+        snapshot,
+        rows=({"row_id": "row-1", "nested": {"value": f"private {marker} value"}},),
+        row_count=1,
+    )
+    object.__setattr__(forged, "snapshot_hash", snapshot_content_hash(forged))
+
+    with pytest.raises(FmeaDomainError) as captured:
+        revalidate_normalized_snapshot(forged)
+
+    assert str(captured.value) == "snapshot revalidation failed"
+    assert captured.value.__cause__ is None
+    assert marker not in str(captured.value)
+    assert "private" not in str(captured.value)
+
+
 def test_shared_revalidation_returns_a_fresh_exact_immutable_snapshot() -> None:
     snapshot = make_normalized_snapshot()
 

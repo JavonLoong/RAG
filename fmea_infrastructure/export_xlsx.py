@@ -18,7 +18,6 @@ from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalida
 
 from .export_json import _snapshot_projection, _validate_export_value
 
-_PREVIEW_MARKER: Final = "DRAFT PREVIEW — NOT PUBLISHED"
 _MAX_EXCEL_CELL_TEXT: Final = 32_767
 _MAX_COLUMNS: Final = 256
 _MAX_WIDTH: Final = 48

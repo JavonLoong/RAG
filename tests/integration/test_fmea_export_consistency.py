@@ -3,12 +3,17 @@ from __future__ import annotations
 import io
 import json
 from collections.abc import Iterable
+from dataclasses import fields
+from html import unescape
 from zipfile import ZipFile
 
 import openpyxl
 import orjson
+import pytest
+from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 from docx import Document
 
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, snapshot_content_hash
 from fmea_infrastructure.export_docx import DocxFmeaExporter
 from fmea_infrastructure.export_json import CanonicalJsonExporter
 from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
@@ -133,13 +138,68 @@ def _assert_format_identity(view: dict[str, object], export_format: str) -> None
     assert view["media_type"] == FORMAT_MEDIA_TYPES[export_format]
 
 
-def _zip_xml_text(payload: bytes) -> str:
+def _forge_snapshot(snapshot: NormalizedFmeaSnapshot, **overrides: object) -> NormalizedFmeaSnapshot:
+    forged = object.__new__(NormalizedFmeaSnapshot)
+    for field in fields(snapshot):
+        object.__setattr__(forged, field.name, getattr(snapshot, field.name))
+    for field_name, value in overrides.items():
+        object.__setattr__(forged, field_name, value)
+    return forged
+
+
+def _scan_office_package(payload: bytes) -> tuple[tuple[str, ...], dict[str, int]]:
+    marker_encodings = tuple(MARKER.encode(encoding) for encoding in ("utf-8", "utf-16-le", "utf-16-be"))
+    forbidden_parts = ("altchunk", "externallinks", "vbaproject", "embeddings")
+    executable_suffixes = (".bin", ".com", ".dll", ".exe", ".jar", ".js", ".ps1", ".vbs")
+    marker_hits: dict[str, int] = {}
     with ZipFile(io.BytesIO(payload)) as archive:
-        return "\n".join(
-            archive.read(name).decode("utf-8")
-            for name in archive.namelist()
-            if name.casefold().endswith((".xml", ".rels"))
-        )
+        names = tuple(archive.namelist())
+        for name in names:
+            folded_name = name.casefold()
+            assert not name.startswith(("/", "\\"))
+            assert "\\" not in name
+            assert ".." not in name.split("/")
+            assert not any(part in folded_name for part in forbidden_parts)
+            assert not folded_name.endswith(executable_suffixes)
+
+            payload_part = archive.read(name)
+            count = max(payload_part.count(encoded) for encoded in marker_encodings)
+            if folded_name.endswith((".xml", ".rels")):
+                decoded_xml = unescape(payload_part.decode("utf-8"))
+                root = safe_xml_fromstring(payload_part)
+                visible_text = "".join(root.itertext())
+                count = max(count, decoded_xml.count(MARKER), visible_text.count(MARKER))
+                for element in root.iter():
+                    local_name = element.tag.rsplit("}", 1)[-1].casefold()
+                    assert local_name not in {"altchunk", "fldchar", "fldsimple", "instrtext"}
+                    if folded_name.endswith(".rels"):
+                        target_mode = element.attrib.get("TargetMode", "")
+                        target = element.attrib.get("Target", "").casefold()
+                        assert target_mode.casefold() != "external"
+                        assert not target.startswith(("file:", "ftp:", "http:", "https:"))
+            if count:
+                marker_hits[name] = count
+        return names, marker_hits
+
+
+def _snapshot_with_reserved_marker(location: str) -> NormalizedFmeaSnapshot:
+    collision = f"confidential-before {MARKER} confidential-after"
+    snapshot = make_normalized_snapshot()
+    overrides: dict[str, object] = {
+        "rows": ({"row_id": "row-1", "nested": {"value": collision}},),
+        "risk_records": ({"assessment_id": "assessment-1", "nested": [collision]},),
+        "propagation": {"nested": {"value": collision}},
+        "evidence_summary": ({"pack_id": "pack-1", "nested": [collision]},),
+        "decision_summary": ({"decision_id": "decision-1", "nested": {"value": collision}},),
+        "unresolved_items": ({"code": "collision", "nested": [collision]},),
+        "version_manifest": {"nested": {"value": collision}},
+        "audit_summary": {"nested": [{"value": collision}]},
+    }
+    forged = _forge_snapshot(snapshot, **{location: overrides[location]})
+    if location == "rows":
+        object.__setattr__(forged, "row_count", 1)
+    object.__setattr__(forged, "snapshot_hash", snapshot_content_hash(forged))
+    return forged
 
 
 def _docx_footer_identity(payload: bytes) -> dict[str, str]:
@@ -236,8 +296,72 @@ def test_draft_marker_is_visible_in_all_formats_and_absent_from_published() -> N
         "docx": DocxFmeaExporter().render(snapshot, draft_preview=False),
     }
     assert MARKER not in published["json"].decode("utf-8")
-    assert MARKER not in _zip_xml_text(published["xlsx"])
-    assert MARKER not in _zip_xml_text(published["docx"])
+    assert _scan_office_package(published["xlsx"])[1] == {}
+    assert _scan_office_package(published["docx"])[1] == {}
+
+
+def test_office_packages_scan_every_member_and_only_contain_generated_preview_marker() -> None:
+    snapshot = make_normalized_snapshot()
+    for exporter, expected_hits in (
+        (XlsxFmeaExporter(), {"xl/worksheets/sheet1.xml": 1}),
+        (DocxFmeaExporter(), {"word/document.xml": 2}),
+    ):
+        published = exporter.render(snapshot, draft_preview=False)
+        preview = exporter.render(snapshot, draft_preview=True)
+
+        published_names, published_hits = _scan_office_package(published)
+        preview_names, preview_hits = _scan_office_package(preview)
+
+        assert published_names
+        assert preview_names
+        assert published_hits == {}
+        assert preview_hits == expected_hits
+
+
+@pytest.mark.parametrize(
+    "location",
+    (
+        "rows",
+        "risk_records",
+        "propagation",
+        "evidence_summary",
+        "decision_summary",
+        "unresolved_items",
+        "version_manifest",
+        "audit_summary",
+    ),
+)
+@pytest.mark.parametrize("draft_preview", (False, True), ids=("published", "preview"))
+@pytest.mark.parametrize(
+    ("exporter_type", "expected_code", "expected_message"),
+    (
+        (CanonicalJsonExporter, "FMEA_EXPORT_JSON_INVALID", "snapshot cannot be rendered as canonical JSON"),
+        (XlsxFmeaExporter, "FMEA_EXPORT_XLSX_INVALID", "snapshot cannot be rendered as XLSX"),
+        (DocxFmeaExporter, "FMEA_EXPORT_DOCX_INVALID", "snapshot cannot be rendered as DOCX"),
+    ),
+    ids=("json", "xlsx", "docx"),
+)
+def test_all_formats_reject_reserved_marker_in_nested_snapshot_values(
+    location: str,
+    draft_preview: bool,
+    exporter_type,
+    expected_code: str,
+    expected_message: str,
+) -> None:
+    snapshot = _snapshot_with_reserved_marker(location)
+    exporter = exporter_type()
+
+    failures = []
+    for _ in range(2):
+        with pytest.raises(ValueError) as captured:
+            exporter.render(snapshot, draft_preview=draft_preview)
+        failures.append((captured.value.code, str(captured.value)))
+        assert captured.value.__cause__ is None
+        assert MARKER not in str(captured.value)
+        assert "confidential-before" not in str(captured.value)
+        assert "confidential-after" not in str(captured.value)
+
+    assert failures == [(expected_code, expected_message)] * 2
 
 
 def test_repeated_render_preserves_semantic_identity_and_snapshot() -> None:

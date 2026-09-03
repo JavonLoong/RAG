@@ -10,10 +10,13 @@ from typing import NoReturn, cast
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import canonical_json_value
 from core_domain.structured_output import StructuredOutputError, TemplateLimits, canonical_json
-from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
+from fmea_application.snapshot_contracts import (
+    DRAFT_PREVIEW_MARKER,
+    NormalizedFmeaSnapshot,
+    revalidate_normalized_snapshot,
+)
 
 _EXPORT_SCHEMA = "graphrag.fmea.export.v1"
-_PREVIEW_MARKER = "DRAFT PREVIEW — NOT PUBLISHED"
 _MAX_DEPTH = 8
 _MAX_COLLECTION_ITEMS = 10_000
 _MAX_OBJECT_ITEMS = 500
@@ -134,7 +137,7 @@ def _snapshot_projection(
             "snapshot_hash": snapshot.snapshot_hash,
             "created_at": snapshot.created_at,
             "draft_preview": draft_preview,
-            "draft_marker": _PREVIEW_MARKER if draft_preview else None,
+            "draft_marker": DRAFT_PREVIEW_MARKER if draft_preview else None,
             "format": export_format,
             "media_type": media_type,
         }),
