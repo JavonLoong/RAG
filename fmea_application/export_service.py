@@ -16,11 +16,12 @@ from math import isfinite
 from typing import Literal
 
 from core_domain.fmea.filename_policy import validate_filename
-from core_domain.fmea.governance import RevisionPublicationStatus
+from core_domain.fmea.governance import PublicationLifecycleView, PublishedRevision, RevisionPublicationStatus
 from core_domain.fmea.states import ActorType, RunStatus
 
 from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 from .delivery_contracts import ExportArtifactManifest, ExportFormat, ExportRun, validate_export_binding
+from .governance_contracts import ExportEligibilityRecord
 from .ports import ArtifactStore, ExportNarrativeGenerator, ExportRepository, GovernanceRepository, SnapshotExporter
 from .review_contracts import ActorContext
 from .snapshot_contracts import NormalizedFmeaSnapshot
@@ -519,16 +520,36 @@ class ExportService:
         if actor.actor_type is not ActorType.HUMAN or not ({"exporter", "publisher", "admin"} & actor.roles):
             raise ExportServiceError("FMEA_EXPORT_FORBIDDEN", "actor is not allowed to export")
 
+    @staticmethod
+    def _validate_run_binding(run: object, command: StartExportCommand, actor: ActorContext) -> ExportRun:
+        if not isinstance(run, ExportRun):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
+        if (
+            run.export_run_id != command.export_run_id
+            or run.workspace_id != actor.workspace_id
+            or run.revision_id != command.revision_id
+            or run.snapshot_id != command.snapshot_id
+            or run.snapshot_hash != command.snapshot_hash
+            or run.publication_id != command.publication_id
+            or run.format != command.format
+            or run.draft_preview != command.draft_preview
+            or run.filename != command.filename
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run binding is invalid")
+        return run
+
     def _load_snapshot(self, command: StartExportCommand):
         lookup_id = command.publication_id or command.snapshot_id
         try:
             snapshot = self.governance_repository.get_snapshot(lookup_id, command.workspace_id)
         except ExportServiceError:
             raise
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "snapshot persistence is invalid") from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "snapshot persistence is invalid") from None
         if snapshot is None:
             raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "exact export snapshot was not found")
+        if not isinstance(snapshot, NormalizedFmeaSnapshot):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "snapshot persistence is invalid")
         if (
             snapshot.workspace_id != command.workspace_id
             or snapshot.snapshot_id != command.snapshot_id
@@ -537,28 +558,56 @@ class ExportService:
         ):
             raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_STALE", "export snapshot binding is stale")
         if not command.draft_preview:
-            publication = self.governance_repository.get_publication(command.publication_id, command.workspace_id)
-            lifecycle = self.governance_repository.get_publication_lifecycle(
-                command.publication_id, command.workspace_id
-            )
+            try:
+                publication = self.governance_repository.get_publication(command.publication_id, command.workspace_id)
+                lifecycle = self.governance_repository.get_publication_lifecycle(
+                    command.publication_id, command.workspace_id
+                )
+            except ExportServiceError:
+                raise
+            except Exception:
+                raise ExportServiceError(
+                    "FMEA_EXPORT_PERSISTENCE_INVALID", "publication persistence is invalid"
+                ) from None
             if publication is None or lifecycle is None:
                 raise ExportServiceError("FMEA_EXPORT_PUBLICATION_NOT_FOUND", "publication was not found")
+            if not isinstance(publication, PublishedRevision) or not isinstance(lifecycle, PublicationLifecycleView):
+                raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "publication persistence is invalid")
+            if (
+                publication.workspace_id != command.workspace_id
+                or publication.publication_id != command.publication_id
+                or lifecycle.publication != publication
+            ):
+                raise ExportServiceError("FMEA_EXPORT_PUBLICATION_STALE", "publication binding is stale")
             if lifecycle.effective_status is not RevisionPublicationStatus.PUBLISHED:
                 raise ExportServiceError("FMEA_EXPORT_NOT_ELIGIBLE", "publication is not currently exportable")
             if (
                 publication.revision_id != command.revision_id
+                or publication.revision_hash != snapshot.revision_hash
                 or publication.snapshot_id != command.snapshot_id
                 or publication.snapshot_hash != command.snapshot_hash
                 or snapshot.publication_id != command.publication_id
+                or snapshot.manifest_id != publication.manifest_id
+                or snapshot.analysis_id != publication.analysis_id
             ):
                 raise ExportServiceError("FMEA_EXPORT_PUBLICATION_STALE", "publication binding is stale")
-            eligibility = self.governance_repository.get_export_eligibility(
-                command.publication_id, command.workspace_id
-            )
+            try:
+                eligibility = self.governance_repository.get_export_eligibility(
+                    command.publication_id, command.workspace_id
+                )
+            except ExportServiceError:
+                raise
+            except Exception:
+                raise ExportServiceError(
+                    "FMEA_EXPORT_PERSISTENCE_INVALID", "export eligibility persistence is invalid"
+                ) from None
+            if eligibility is not None and not isinstance(eligibility, ExportEligibilityRecord):
+                raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export eligibility persistence is invalid")
             if eligibility is None or not eligibility.eligible:
                 raise ExportServiceError("FMEA_EXPORT_NOT_ELIGIBLE", "publication is not eligible for export")
             if (
-                eligibility.publication_id != command.publication_id
+                eligibility.workspace_id != command.workspace_id
+                or eligibility.publication_id != command.publication_id
                 or eligibility.manifest_id != publication.manifest_id
                 or dict(eligibility.source_hashes).get("revision") != publication.revision_hash
                 or dict(eligibility.source_hashes).get("snapshot") != command.snapshot_hash
@@ -581,39 +630,61 @@ class ExportService:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "published artifact hash is invalid")
 
     def _verify_completed(self, run: ExportRun, actor: ActorContext) -> ExportRun:
-        if run.artifact_id is None:
+        if not isinstance(run, ExportRun) or run.workspace_id != actor.workspace_id or run.artifact_id is None:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "succeeded export has no artifact")
         try:
-            manifest = self.export_repository.get_export_artifact(run.artifact_id, actor.workspace_id)
-        except Exception as exc:
+            verified_run, manifest = self.export_repository.verify_export_delivery(
+                run.export_run_id, actor.workspace_id
+            )
+        except Exception:
             raise ExportServiceError(
-                "FMEA_EXPORT_PERSISTENCE_INVALID", "export artifact persistence is invalid"
-            ) from exc
-        if manifest is None:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_NOT_FOUND", "succeeded export artifact was not found")
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery persistence is invalid"
+            ) from None
+        if (
+            not isinstance(verified_run, ExportRun)
+            or not isinstance(manifest, ExportArtifactManifest)
+            or verified_run != run
+            or verified_run.workspace_id != actor.workspace_id
+            or manifest.artifact_id != run.artifact_id
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery binding is corrupted")
         try:
             validate_export_binding(run, manifest)
-        except ValueError as exc:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export binding is corrupted") from exc
+        except ValueError:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export binding is corrupted") from None
         try:
             stored = self.artifact_store.get(run.artifact_id, actor.workspace_id)
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "succeeded export file is unavailable") from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "succeeded export file is unavailable") from None
         self._verify_store(stored, manifest)
         return run
 
     def _fail_run(self, run: ExportRun, error: str, actor: ActorContext) -> ExportRun:
         try:
-            return self.export_repository.fail_export(
+            failed = self.export_repository.fail_export(
                 run.export_run_id,
                 actor.workspace_id,
                 error[:512],
                 self._clock(),
             )
-        except Exception as exc:
+        except Exception:
             raise ExportServiceError(
                 "FMEA_EXPORT_STORAGE_UNAVAILABLE", "export failure could not be persisted", retryable=True
-            ) from exc
+            ) from None
+        if (
+            not isinstance(failed, ExportRun)
+            or failed.export_run_id != run.export_run_id
+            or failed.workspace_id != actor.workspace_id
+            or failed.revision_id != run.revision_id
+            or failed.snapshot_id != run.snapshot_id
+            or failed.snapshot_hash != run.snapshot_hash
+            or failed.publication_id != run.publication_id
+            or failed.format != run.format
+            or failed.draft_preview != run.draft_preview
+            or failed.filename != run.filename
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "failed export persistence is invalid")
+        return failed
 
     def start(self, command: StartExportCommand, actor: ActorContext) -> ExportRun:
         self._authorize(actor)
@@ -622,8 +693,14 @@ class ExportService:
         request_json, request_hash = _request_hash(command)
         try:
             existing = self.export_repository.get_export_run(command.export_run_id, actor.workspace_id)
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from None
+        if existing is not None and (
+            not isinstance(existing, ExportRun)
+            or existing.workspace_id != actor.workspace_id
+            or existing.export_run_id != command.export_run_id
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         if existing is not None:
             try:
                 existing = self.export_repository.reserve_export_run(
@@ -633,10 +710,11 @@ class ExportService:
                 if "IDEMPOTENCY_CONFLICT" in str(exc):
                     raise ExportServiceError(
                         "FMEA_EXPORT_IDEMPOTENCY_CONFLICT", "idempotency key has a different payload"
-                    ) from exc
+                    ) from None
                 raise ExportServiceError(
                     "FMEA_EXPORT_STORAGE_UNAVAILABLE", "export replay lookup failed", True
-                ) from exc
+                ) from None
+            existing = self._validate_run_binding(existing, command, actor)
             if existing.status is RunStatus.SUCCEEDED:
                 return self._verify_completed(existing, actor)
             if existing.status is RunStatus.FAILED:
@@ -662,8 +740,9 @@ class ExportService:
             if "IDEMPOTENCY_CONFLICT" in str(exc):
                 raise ExportServiceError(
                     "FMEA_EXPORT_IDEMPOTENCY_CONFLICT", "idempotency key has a different payload"
-                ) from exc
-            raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export run reservation failed", True) from exc
+                ) from None
+            raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export run reservation failed", True) from None
+        run = self._validate_run_binding(run, command, actor)
         if run.status is RunStatus.SUCCEEDED:
             return self._verify_completed(run, actor)
         if run.status is RunStatus.FAILED:
@@ -671,8 +750,11 @@ class ExportService:
         try:
             if run.status is RunStatus.QUEUED:
                 run = self.export_repository.mark_export_running(run.export_run_id, actor.workspace_id, self._clock())
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export run could not start", True) from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export run could not start", True) from None
+        run = self._validate_run_binding(run, command, actor)
+        if run.status is not RunStatus.RUNNING:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "running export persistence is invalid")
 
         artifact_id = _artifact_id(actor.workspace_id, run.export_run_id)
         try:
@@ -698,15 +780,17 @@ class ExportService:
             try:
                 verified = self.artifact_store.get(artifact_id, actor.workspace_id)
                 self._verify_store(verified, manifest)
-                return self.export_repository.complete_export(
+                completed = self.export_repository.complete_export(
                     run, manifest, actor, request_json, request_hash, self._clock()
                 )
+                completed = self._validate_run_binding(completed, command, actor)
+                return self._verify_completed(completed, actor)
             except ExportServiceError:
                 raise
-            except Exception as exc:
+            except Exception:
                 raise ExportServiceError(
                     "FMEA_EXPORT_STORAGE_UNAVAILABLE", "export reconciliation failed", True
-                ) from exc
+                ) from None
 
         try:
             payload = exporter.render(snapshot)
@@ -738,13 +822,17 @@ class ExportService:
         except Exception:
             return self._fail_run(run, "artifact publication failed", actor)
         try:
-            return self.export_repository.complete_export(
+            completed = self.export_repository.complete_export(
                 run, manifest, actor, request_json, request_hash, self._clock()
             )
         except ExportServiceError:
             raise
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_STORAGE_UNAVAILABLE", "export completion is retryable", True) from exc
+        except Exception:
+            raise ExportServiceError(
+                "FMEA_EXPORT_STORAGE_UNAVAILABLE", "export completion is retryable", True
+            ) from None
+        completed = self._validate_run_binding(completed, command, actor)
+        return self._verify_completed(completed, actor)
 
     def suggest_narrative(
         self,
@@ -835,10 +923,16 @@ class ExportService:
         self._authorize(actor)
         try:
             run = self.export_repository.get_export_run(export_run_id, actor.workspace_id)
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from None
         if run is None:
             raise ExportServiceError("FMEA_EXPORT_RUN_NOT_FOUND", "export run was not found")
+        if (
+            not isinstance(run, ExportRun)
+            or run.workspace_id != actor.workspace_id
+            or run.export_run_id != export_run_id
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid")
         return self._verify_completed(run, actor) if run.status is RunStatus.SUCCEEDED else run
 
     def get_artifact(self, artifact_id: str, actor: ActorContext):
@@ -847,26 +941,37 @@ class ExportService:
             raise ExportServiceError("FMEA_EXPORT_REQUEST_INVALID", "artifact identity is invalid")
         try:
             manifest = self.export_repository.get_export_artifact(artifact_id, actor.workspace_id)
-        except Exception as exc:
+        except Exception:
             raise ExportServiceError(
                 "FMEA_EXPORT_PERSISTENCE_INVALID", "export artifact persistence is invalid"
-            ) from exc
+            ) from None
         if manifest is None:
             raise ExportServiceError("FMEA_EXPORT_ARTIFACT_NOT_FOUND", "artifact was not found")
+        if not isinstance(manifest, ExportArtifactManifest) or manifest.artifact_id != artifact_id:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export artifact persistence is invalid")
         try:
-            run = self.export_repository.get_export_run(manifest.export_run_id, actor.workspace_id)
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export run persistence is invalid") from exc
-        if run is None:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "artifact run is missing")
+            run, verified_manifest = self.export_repository.verify_export_delivery(
+                manifest.export_run_id, actor.workspace_id
+            )
+        except Exception:
+            raise ExportServiceError(
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery persistence is invalid"
+            ) from None
+        if (
+            not isinstance(run, ExportRun)
+            or not isinstance(verified_manifest, ExportArtifactManifest)
+            or run.workspace_id != actor.workspace_id
+            or verified_manifest != manifest
+        ):
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "export delivery binding is corrupted")
         try:
             validate_export_binding(run, manifest)
             stored = self.artifact_store.get(artifact_id, actor.workspace_id)
             self._verify_store(stored, manifest)
         except ExportServiceError:
             raise
-        except Exception as exc:
-            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "artifact verification failed") from exc
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_ARTIFACT_INVALID", "artifact verification failed") from None
         return stored
 
 

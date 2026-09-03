@@ -839,6 +839,10 @@ class ExportRepository(Protocol):
 
     def get_export_artifact(self, artifact_id: str, workspace_id: str) -> ExportArtifactManifest | None: ...
 
+    def verify_export_delivery(
+        self, export_run_id: str, workspace_id: str
+    ) -> tuple[ExportRun, ExportArtifactManifest]: ...
+
     def reserve_export_run(
         self,
         command: StartExportCommand,

@@ -39,6 +39,25 @@ class IneligibleGovernance:
         return None
 
 
+class AdversarialProvider:
+    def __init__(self, delegate, method: str, *, result=None, failure: Exception | None = None) -> None:
+        self.delegate = delegate
+        self.method = method
+        self.result = result
+        self.failure = failure
+
+    def __getattr__(self, name):
+        if name != self.method:
+            return getattr(self.delegate, name)
+
+        def invoke(*args, **kwargs):
+            if self.failure is not None:
+                raise self.failure
+            return self.result
+
+        return invoke
+
+
 def _published_repository(tmp_path: Path, *, fault_injector=None):
     from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 
@@ -60,12 +79,22 @@ def _service(
     *,
     clock=lambda: "2026-09-03T00:00:00Z",
     governance_repository=None,
+    export_repository=None,
 ):
     from fmea_application.export_service import ExportService
     from fmea_infrastructure.artifact_store import WorkspaceArtifactStore
 
     store = WorkspaceArtifactStore(tmp_path / "artifacts", "ws-1")
-    return ExportService(governance_repository or repository, repository, store, (exporter,), clock=clock), store
+    return (
+        ExportService(
+            governance_repository or repository,
+            export_repository or repository,
+            store,
+            (exporter,),
+            clock=clock,
+        ),
+        store,
+    )
 
 
 def _command(snapshot, *, run_id="export-run-1", key="00000000-0000-4000-8000-000000000801", **overrides):
@@ -242,3 +271,208 @@ def test_corrupt_persisted_run_is_not_exposed(tmp_path: Path):
 
     with pytest.raises(Exception, match="FMEA_EXPORT_PERSISTENCE_INVALID"):
         service.get_run(result.export_run_id, actor)
+
+
+def test_old_010_empty_database_upgrades_additively_to_011(tmp_path: Path):
+    from test_fmea_governance_sqlite import _initialize_through
+
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+
+    database_path = tmp_path / "old-v10.sqlite3"
+    _initialize_through(database_path, 10)
+
+    repository = SqliteFmeaDeliveryRepository(database_path)
+    repository.initialize()
+
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (11,)
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(fmea_export_runs)")}
+    assert {"actor_id", "idempotency_scope", "request_json", "request_hash"} <= columns
+
+
+def test_011_rejects_legacy_export_rows_without_inventing_authority(tmp_path: Path):
+    from test_fmea_governance_sqlite import _initialize_through
+
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+
+    database_path = tmp_path / "legacy-v10.sqlite3"
+    _initialize_through(database_path, 10)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "INSERT INTO fmea_export_runs "
+            "(workspace_id,export_run_id,revision_id,snapshot_id,snapshot_hash,publication_id,format,draft_preview,"
+            "status,created_at,run_json,canonical_json_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                "legacy-workspace",
+                "legacy-run",
+                "legacy-revision",
+                "legacy-snapshot",
+                "a" * 64,
+                None,
+                "json",
+                1,
+                "queued",
+                "2026-09-03T00:00:00Z",
+                "{}",
+                "sha256:" + "b" * 64,
+            ),
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="fmea_export_011_requires_empty_legacy_tables"):
+        SqliteFmeaDeliveryRepository(database_path).initialize()
+
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (10,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_export_runs").fetchone() == (1,)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["get_snapshot", "get_publication", "get_publication_lifecycle", "get_export_eligibility"],
+)
+def test_governance_provider_failures_are_bounded_without_backend_causes(tmp_path: Path, method: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    provider = AdversarialProvider(repository, method, failure=RuntimeError("secret backend detail"))
+    service, _ = _service(repository, tmp_path, FakeExporter(), governance_repository=provider)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(_command(snapshot), actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert "secret backend detail" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["get_snapshot", "get_publication", "get_publication_lifecycle", "get_export_eligibility"],
+)
+def test_governance_provider_wrong_types_fail_as_invalid_persistence(tmp_path: Path, method: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    provider = AdversarialProvider(repository, method, result=object())
+    service, _ = _service(repository, tmp_path, FakeExporter(), governance_repository=provider)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(_command(snapshot), actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert caught.value.__cause__ is None
+
+
+@pytest.mark.parametrize("method,operation", [("get_export_run", "run"), ("get_export_artifact", "artifact")])
+def test_export_query_failures_are_bounded_without_backend_causes(tmp_path: Path, method: str, operation: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    completed = service.start(_command(snapshot), actor)
+    provider = AdversarialProvider(repository, method, failure=RuntimeError("secret sqlite detail"))
+    faulted, _ = _service(repository, tmp_path, FakeExporter(), export_repository=provider)
+
+    with pytest.raises(ExportServiceError) as caught:
+        if operation == "run":
+            faulted.get_run(completed.export_run_id, actor)
+        else:
+            faulted.get_artifact(completed.artifact_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert "secret sqlite detail" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+@pytest.mark.parametrize(
+    "tamper_sql",
+    [
+        "DROP TRIGGER fmea_audit_events_no_delete; DELETE FROM fmea_audit_events WHERE command='fmea.export.start';",
+        "DROP TRIGGER fmea_outbox_events_no_delete; DELETE FROM fmea_outbox_events WHERE event_type='export.completed';",
+        "UPDATE idempotency_records SET response_json='{}' WHERE resource_id='export-run-1';",
+        "UPDATE idempotency_records SET scope_key=scope_key || '-tampered' WHERE resource_id='export-run-1';",
+        "DROP TRIGGER fmea_audit_events_no_update; UPDATE fmea_audit_events SET canonical_payload_hash='sha256:"
+        + "c" * 64
+        + "' WHERE command='fmea.export.start';",
+        "DROP TRIGGER fmea_outbox_events_no_update; UPDATE fmea_outbox_events SET payload_hash='sha256:"
+        + "d" * 64
+        + "' WHERE event_type='export.completed';",
+        "DROP TRIGGER fmea_audit_events_no_update; UPDATE fmea_audit_events SET created_at='2026-09-03T00:00:01Z' "
+        "WHERE command='fmea.export.start';",
+        "UPDATE idempotency_records SET completed_at='2026-09-03T00:00:01Z' WHERE resource_id='export-run-1';",
+    ],
+)
+def test_completed_export_rejects_each_corrupted_delivery_chain_link(tmp_path: Path, tamper_sql: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    completed = service.start(_command(snapshot), actor)
+
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.executescript(tamper_sql)
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.get_run(completed.export_run_id, actor)
+
+    assert caught.value.code == "FMEA_EXPORT_PERSISTENCE_INVALID"
+    assert caught.value.__cause__ is None
+
+
+@pytest.mark.parametrize("read_path", ["replay", "get_run", "get_artifact"])
+def test_every_completed_read_path_revalidates_the_delivery_chain(tmp_path: Path, read_path: str):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    command = _command(snapshot)
+    completed = service.start(command, actor)
+    with sqlite3.connect(repository.database_path) as connection:
+        connection.execute(
+            "UPDATE idempotency_records SET response_json='{}' WHERE resource_id=?",
+            (completed.export_run_id,),
+        )
+
+    with pytest.raises(ExportServiceError, match="FMEA_EXPORT_PERSISTENCE_INVALID"):
+        if read_path == "replay":
+            service.start(command, actor)
+        elif read_path == "get_run":
+            service.get_run(completed.export_run_id, actor)
+        else:
+            service.get_artifact(completed.artifact_id, actor)
+
+
+def test_completion_chain_is_verified_before_transaction_commit(tmp_path: Path, monkeypatch):
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    service, _ = _service(repository, tmp_path, FakeExporter())
+
+    def reject_chain(*args, **kwargs):
+        raise ValueError("simulated chain verifier rejection")  # noqa: TRY003
+
+    monkeypatch.setattr(repository, "_verify_export_delivery_chain", reject_chain)
+    with pytest.raises(Exception, match="FMEA_EXPORT_STORAGE_UNAVAILABLE"):
+        service.start(_command(snapshot), actor)
+
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute(
+            "SELECT status FROM fmea_export_runs WHERE workspace_id='ws-1' AND export_run_id='export-run-1'"
+        ).fetchone() == ("running",)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_export_artifacts").fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_audit_events WHERE command='fmea.export.start'"
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT COUNT(*) FROM fmea_outbox_events WHERE event_type='export.completed'"
+        ).fetchone() == (0,)

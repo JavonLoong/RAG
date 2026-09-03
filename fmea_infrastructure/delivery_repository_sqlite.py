@@ -1261,6 +1261,188 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
     def _export_manifest_json(manifest: ExportArtifactManifest) -> tuple[str, str]:
         return _contract_json(manifest)
 
+    @classmethod
+    def _verify_export_delivery_chain(
+        cls,
+        connection: sqlite3.Connection,
+        export_run_id: str,
+        workspace_id: str,
+    ) -> tuple[ExportRun, ExportArtifactManifest]:
+        run_row = connection.execute(
+            "SELECT * FROM fmea_export_runs WHERE workspace_id=? AND export_run_id=?",
+            (workspace_id, export_run_id),
+        ).fetchone()
+        if run_row is None:
+            raise ValueError("persisted export run is missing")
+        run = cls._export_run_from_row(run_row)
+        if run.status is not RunStatus.SUCCEEDED or run.artifact_id is None or run.finished_at is None:
+            raise ValueError("persisted export delivery is not completed")
+
+        artifact_row = connection.execute(
+            "SELECT * FROM fmea_export_artifacts WHERE workspace_id=? AND artifact_id=?",
+            (workspace_id, run.artifact_id),
+        ).fetchone()
+        if artifact_row is None:
+            raise ValueError("persisted export artifact is missing")
+        manifest = cls._export_manifest_from_row(artifact_row)
+        validate_export_binding(run, manifest)
+        if datetime.fromisoformat(manifest.created_at.replace("Z", "+00:00")) > datetime.fromisoformat(
+            run.finished_at.replace("Z", "+00:00")
+        ):
+            raise ValueError("persisted export artifact chronology is invalid")
+
+        request = _load_object(run_row["request_json"], "export request")
+        expected_request = {
+            "export_run_id": run.export_run_id,
+            "workspace_id": run.workspace_id,
+            "revision_id": run.revision_id,
+            "snapshot_id": run.snapshot_id,
+            "snapshot_hash": run.snapshot_hash,
+            "publication_id": run.publication_id,
+            "format": run.format.value,
+            "draft_preview": run.draft_preview,
+            "filename": run.filename,
+            "idempotency_key": request.get("idempotency_key"),
+        }
+        idempotency_key = request.get("idempotency_key")
+        if request != expected_request or not isinstance(idempotency_key, str) or not idempotency_key.strip():
+            raise ValueError("persisted export request binding is invalid")
+        request_hash = _hash_json(request)
+        if run_row["request_hash"] != request_hash:
+            raise ValueError("persisted export request hash is invalid")
+        actor_id = run_row["actor_id"]
+        scope = IdempotencyScope(
+            workspace_id=workspace_id,
+            actor_id=actor_id,
+            command="fmea.export.start",
+            resource_path=f"/fmea/workspaces/{workspace_id}/exports",
+            key_hash=idempotency_key_hash(idempotency_key),
+        )
+        if run_row["idempotency_scope"] != scope.scope_key:
+            raise ValueError("persisted export idempotency scope is invalid")
+
+        expected_audit_id = "export-audit-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
+        audit_row = connection.execute(
+            "SELECT * FROM fmea_audit_events WHERE workspace_id=? AND event_id=?",
+            (workspace_id, run_row["audit_event_id"]),
+        ).fetchone()
+        if audit_row is None or run_row["audit_event_id"] != expected_audit_id:
+            raise ValueError("persisted export audit event is missing")
+        audit = decode_audit_event(audit_row["event_json"])
+        expected_versions = VersionSet(
+            schema_id=FMEA_SCHEMA_ID,
+            data_version="export-v1",
+            graph_version="export-v1",
+            evidence_pack_version="export-v1",
+            profile_version="export-v1",
+            template_version="export-v1",
+            scoring_version="export-v1",
+            prompt_version="export-v1",
+            model_version="export-system",
+            input_snapshot_hash=manifest.snapshot_hash,
+        )
+        if (
+            audit_row["workspace_id"] != workspace_id
+            or audit_row["event_id"] != expected_audit_id
+            or audit_row["resource_type"] != "revision"
+            or audit_row["resource_id"] != run.revision_id
+            or audit_row["actor_id"] != actor_id
+            or audit_row["actor_type"] != ActorType.HUMAN.value
+            or audit_row["command"] != "fmea.export.start"
+            or audit_row["idempotency_scope"] != scope.scope_key
+            or audit_row["canonical_payload_hash"] != request_hash
+            or audit_row["created_at"] != run.finished_at
+            or canonical_json(_json_value(audit)) != audit_row["event_json"]
+            or audit.event_id != expected_audit_id
+            or audit.occurred_at_server != run.finished_at
+            or audit.workspace_id != workspace_id
+            or audit.actor_id != actor_id
+            or audit.actor_type is not ActorType.HUMAN
+            or not ({"exporter", "publisher", "admin"} & set(audit.actor_roles))
+            or tuple(sorted(audit.actor_roles)) != audit.actor_roles
+            or audit.command != "fmea.export.start"
+            or audit.action is not None
+            or audit.reason_code is not None
+            or audit.reason != "verified FMEA export completed"
+            or audit.analysis_id != "fmea-export"
+            or audit.row_id != run.revision_id
+            or audit.suggestion_id is not None
+            or audit.decision_id is not None
+            or audit.expected_record_version is not None
+            or audit.applied_record_version is not None
+            or audit.before_hash is not None
+            or audit.after_hash != _prefixed(manifest.snapshot_hash)
+            or audit.changed_fields
+            or audit.evidence_ids
+            or audit.evidence_request_targets
+            or audit.idempotency_key_hash != scope.key_hash
+            or audit.canonical_payload_hash != request_hash
+            or audit.versions != expected_versions
+            or audit.template_id != "fmea-export"
+            or audit.template_version != "1.0.0"
+            or audit.profile_id != "export"
+            or audit.profile_version != "1.0.0"
+            or audit.model_manifest is not None
+            or audit.request_id != run.export_run_id
+            or audit.trace_id != run.export_run_id
+            or audit.retrieval_trace_id != run.export_run_id
+            or audit.run_id != run.export_run_id
+            or audit.request_hash != request_hash
+            or audit.error_code is not None
+            or audit.retryable
+        ):
+            raise ValueError("persisted export audit binding is invalid")
+
+        expected_outbox_id = "export-outbox-" + sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
+        outbox_row = connection.execute(
+            "SELECT * FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            (workspace_id, run_row["outbox_event_id"]),
+        ).fetchone()
+        if outbox_row is None or run_row["outbox_event_id"] != expected_outbox_id:
+            raise ValueError("persisted export outbox event is missing")
+        outbox_payload = load_strict_json(outbox_row["payload_json"], "export outbox")
+        expected_payload = {
+            "schema": "graphrag.fmea.export.lifecycle.v1",
+            "event": "completed",
+            "run": _json_value(run),
+            "artifact": _json_value(manifest),
+        }
+        if (
+            outbox_payload != expected_payload
+            or canonical_json(outbox_payload) != outbox_row["payload_json"]
+            or outbox_row["event_id"] != expected_outbox_id
+            or outbox_row["workspace_id"] != workspace_id
+            or outbox_row["aggregate_type"] != "fmea_governance"
+            or outbox_row["aggregate_id"] != run.revision_id
+            or outbox_row["event_type"] != "export.completed"
+            or outbox_row["status"] != "pending"
+            or outbox_row["payload_hash"] != outbox_payload_hash(outbox_payload)
+            or outbox_row["idempotency_scope"] != scope.scope_key
+            or outbox_row["created_at"] != run.finished_at
+        ):
+            raise ValueError("persisted export outbox binding is invalid")
+
+        idempotency = connection.execute(
+            "SELECT * FROM idempotency_records WHERE scope_key=?",
+            (scope.scope_key,),
+        ).fetchone()
+        if idempotency is None:
+            raise ValueError("persisted export idempotency record is missing")
+        response = _load_object(idempotency["response_json"], "export response")
+        if (
+            idempotency["scope_key"] != scope.scope_key
+            or idempotency["payload_hash"] != request_hash
+            or idempotency["state"] != "completed"
+            or idempotency["status_code"] != 201
+            or idempotency["resource_id"] != run.export_run_id
+            or response != _json_value(run)
+            or canonical_json(response) != idempotency["response_json"]
+            or idempotency["created_at"] != run.created_at
+            or idempotency["completed_at"] != run.finished_at
+        ):
+            raise ValueError("persisted export idempotency binding is invalid")
+        return run, manifest
+
     def get_export_run(self, export_run_id: str, workspace_id: str) -> ExportRun | None:
         connection = self._connect()
         try:
@@ -1280,6 +1462,20 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 (workspace_id, artifact_id),
             ).fetchone()
             return None if row is None else self._export_manifest_from_row(row)
+        finally:
+            connection.close()
+
+    def verify_export_delivery(self, export_run_id: str, workspace_id: str) -> tuple[ExportRun, ExportArtifactManifest]:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN")
+            result = self._verify_export_delivery_chain(connection, export_run_id, workspace_id)
+            connection.execute("COMMIT")
+            return result
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
         finally:
             connection.close()
 
@@ -1533,8 +1729,11 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 raise ValueError("export run was not found")
             current = self._export_run_from_row(row)
             if current.status is RunStatus.SUCCEEDED:
+                verified, _ = self._verify_export_delivery_chain(
+                    connection, current.export_run_id, current.workspace_id
+                )
                 connection.execute("COMMIT")
-                return current
+                return verified
             if current.status is not RunStatus.RUNNING:
                 raise ValueError("export run is not running")
             if current != run or row["request_hash"] != request_hash:
@@ -1617,9 +1816,14 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             )
             if cursor.rowcount != 1:
                 raise ValueError("export idempotency completion failed")
+            verified, verified_manifest = self._verify_export_delivery_chain(
+                connection, completed.export_run_id, completed.workspace_id
+            )
+            if verified != completed or verified_manifest != manifest:
+                raise ValueError("persisted export completion verification failed")
             self._fail("export.commit")
             connection.execute("COMMIT")
-            return completed
+            return verified
         except Exception:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
