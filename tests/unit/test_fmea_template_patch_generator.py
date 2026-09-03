@@ -223,6 +223,13 @@ def test_source_mapping_normalization_is_collision_resistant_and_bounded() -> No
     assert normalize_source_mapping_key("already_valid") == "already_valid"
 
 
+def test_source_mapping_normalization_reserves_generated_key_namespace() -> None:
+    generated_key = f"x_y_{hashlib.sha256(b'x/y').hexdigest()[:24]}"
+
+    assert normalize_source_mapping_key("x/y") == generated_key
+    assert normalize_source_mapping_key(generated_key) != generated_key
+
+
 def test_structured_generator_reuses_flash_pro_pipeline_without_exposing_private_pack_identity(tmp_path) -> None:
     source_path = ROOT / "templates" / "examples" / "fmea-template-patch.yaml"
     schema = Draft202012SchemaAdapter()

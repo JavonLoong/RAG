@@ -19,6 +19,7 @@ from .assistance_contracts import AssistanceKind, AssistanceSuggestion
 
 _SOURCE_KEY = re.compile(r"[^a-z0-9]+")
 _VALID_SOURCE_KEY = re.compile(r"^[a-z][a-z0-9_.-]{0,127}$")
+_GENERATED_SOURCE_KEY = re.compile(r"^[a-z](?:[a-z0-9_]{0,101}[a-z0-9])?_[0-9a-f]{24}$")
 
 
 def normalize_source_mapping_key(value: str) -> str:
@@ -27,9 +28,11 @@ def normalize_source_mapping_key(value: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError("source mapping header must not be empty")
     canonical = unicodedata.normalize("NFKC", value).casefold().strip()
-    if _VALID_SOURCE_KEY.fullmatch(canonical) is not None:
+    if _VALID_SOURCE_KEY.fullmatch(canonical) is not None and _GENERATED_SOURCE_KEY.fullmatch(canonical) is None:
         return canonical
     ascii_slug = _SOURCE_KEY.sub("_", canonical).strip("_")
+    if ascii_slug and not ascii_slug[0].isalpha():
+        ascii_slug = f"source_{ascii_slug}"
     digest = sha256(canonical.encode("utf-8")).hexdigest()[:24]
     prefix = ascii_slug[:103].rstrip("_") or "source"
     return f"{prefix}_{digest}"
