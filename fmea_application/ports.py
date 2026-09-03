@@ -31,7 +31,10 @@ from core_domain.fmea.propagation import (
     TopologySnapshot,
 )
 from core_domain.fmea.scoring import RiskAssessmentRecord, RiskProposal, ScoringRulePack
-from core_domain.fmea.template_migration import TemplateDraft
+from core_domain.fmea.template_migration import (
+    MigrationReport,
+    TemplateDraft,
+)
 from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
 
 from .assistance_contracts import (
@@ -93,6 +96,12 @@ from .template_patch_contracts import TemplatePatchSuggestion
 if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
+    from .migration_service import (
+        MigrationCandidate,
+        MigrationCommand,
+        MigrationResult,
+        PreparedMigration,
+    )
     from .propagation_service import (
         PreparedPropagationInvalidation,
         PreparedPropagationProposal,
@@ -234,6 +243,31 @@ class DomainPackRegistry(Protocol):
     def get(self, pack_id: str, version: str) -> DomainPackManifest: ...
 
     def get_source_bytes(self, pack_id: str, version: str) -> bytes: ...
+
+
+class MigrationAdapter(Protocol):
+    """One explicitly registered, deterministic domain-pack migration edge."""
+
+    source_identity: tuple[str, str]
+    target_identity: tuple[str, str]
+
+    def migrate(self, source: FmeaRevision) -> MigrationCandidate: ...
+
+
+class MigrationRepository(Protocol):
+    """Provider-neutral persistence boundary for durable migration delivery."""
+
+    def get_revision(self, revision_id: str, workspace_id: str) -> FmeaRevision | None: ...
+
+    def get_revision_record_version(self, revision_id: str, workspace_id: str) -> int | None: ...
+
+    def save_migration_report(
+        self, report: MigrationReport, *, command: MigrationCommand, actor: ActorContext
+    ) -> MigrationReport: ...
+
+    def get_migration_report(self, migration_id: str, workspace_id: str) -> MigrationReport | None: ...
+
+    def commit_migration(self, prepared: PreparedMigration) -> MigrationResult: ...
 
 
 class ScoringRuleRegistry(Protocol):
@@ -789,6 +823,8 @@ __all__ = [
     "GovernanceRiskQueryPort",
     "GovernanceRunQueryPort",
     "GovernanceSourcePort",
+    "MigrationAdapter",
+    "MigrationRepository",
     "PropagationEvidenceProvider",
     "PropagationRepository",
     "PropagationRequest",
