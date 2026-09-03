@@ -17,6 +17,7 @@ from fmea_application.domain_pack_service import (
     SuggestTemplatePatchCommand,
 )
 from fmea_application.template_patch_contracts import normalize_source_mapping_key
+from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
 from fmea_infrastructure.template_patch_generator import TemplatePatchGenerator
 from structured_output_application import TemplateCompiler
@@ -171,6 +172,144 @@ def test_import_and_suggest_create_only_immutable_draft_and_patch_suggestion() -
     assert suggestion.payload.patch_id == "patch-1"
     assert compiler.calls == 0
     assert registry.calls == 0
+
+
+def test_template_workflow_survives_service_restarts_with_versions_and_idempotency(tmp_path) -> None:
+    repository = SqliteFmeaDeliveryRepository(tmp_path / "fmea.db")
+    repository.initialize()
+    compiler = _Compiler()
+    registry = _Registry()
+
+    def service() -> DomainPackService:
+        return DomainPackService(
+            importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
+            patch_generator=TemplatePatchGenerator(_FakeGateway(), clock=lambda: TIMESTAMP),
+            evidence_provider=_EvidenceProvider(),
+            compiler=compiler,
+            registry=registry,
+            workflow_repository=repository,
+            clock=lambda: TIMESTAMP,
+        )
+
+    draft = service().import_template(
+        ImportTemplateCommand(
+            raw_bytes=_xlsx(),
+            filename="fmea.xlsx",
+            workspace_id="ws-1",
+            idempotency_key="00000000-0000-4000-8000-000000000601",
+        ),
+        _actor(roles=frozenset()),
+    )
+    reloaded_draft, draft_version = service().get_draft_record(draft.draft_id, _actor(roles=frozenset()))
+    assert reloaded_draft == draft
+    assert draft_version == 1
+
+    suggestion = service().suggest_patch(
+        replace(
+            _suggest_command(draft.draft_id),
+            idempotency_key="00000000-0000-4000-8000-000000000602",
+        ),
+        _actor(roles=frozenset(), actor_type=ActorType.MODEL),
+    )
+    reloaded_patch, patch_version = service().patch_for("patch-1", _actor(roles=frozenset()))
+    assert reloaded_patch == suggestion
+    assert patch_version == 1
+
+    decision = service().reject_patch(
+        RejectTemplatePatchCommand(
+            suggestion_id=suggestion.suggestion_id,
+            patch_id="patch-1",
+            reason="ambiguous",
+            expected_patch_version=1,
+            idempotency_key="00000000-0000-4000-8000-000000000603",
+        ),
+        _actor(roles=frozenset({"template_admin"})),
+    )
+    reloaded_decision, decided_version = service().patch_for("patch-1", _actor(roles=frozenset()))
+    assert reloaded_decision == decision
+    assert decided_version == 2
+
+    replayed = service().reject_patch(
+        RejectTemplatePatchCommand(
+            suggestion_id=suggestion.suggestion_id,
+            patch_id="patch-1",
+            reason="ambiguous",
+            expected_patch_version=1,
+            idempotency_key="00000000-0000-4000-8000-000000000603",
+        ),
+        _actor(roles=frozenset({"template_admin"})),
+    )
+    assert replayed == decision
+
+    with pytest.raises(ReviewError, match="IDEMPOTENCY|different payload"):
+        service().reject_patch(
+            RejectTemplatePatchCommand(
+                suggestion_id=suggestion.suggestion_id,
+                patch_id="patch-1",
+                reason="different reason",
+                expected_patch_version=1,
+                idempotency_key="00000000-0000-4000-8000-000000000603",
+            ),
+            _actor(roles=frozenset({"template_admin"})),
+        )
+
+
+def test_accepted_template_patch_decision_survives_service_restart(tmp_path) -> None:
+    repository = SqliteFmeaDeliveryRepository(tmp_path / "fmea.db")
+    repository.initialize()
+    compiler = _Compiler()
+
+    class _StatefulRegistry(_Registry):
+        def __init__(self) -> None:
+            super().__init__()
+            self.templates = {("template-1", "1.0.0"): _Compiled()}
+
+        def register(self, template: object, source_bytes: bytes, source_suffix: str) -> object:
+            self.calls += 1
+            assert isinstance(template, _Compiled)
+            self.templates[(template.template_id, template.version)] = template
+            return template
+
+        def get(self, template_id: str, version: str) -> _Compiled:
+            return self.templates[(template_id, version)]
+
+    registry = _StatefulRegistry()
+
+    def service() -> DomainPackService:
+        return DomainPackService(
+            importers={"xlsx": ExcelTemplateImporter(clock=lambda: TIMESTAMP)},
+            patch_generator=TemplatePatchGenerator(_FakeGateway(), clock=lambda: TIMESTAMP),
+            evidence_provider=_EvidenceProvider(),
+            compiler=compiler,
+            registry=registry,
+            workflow_repository=repository,
+            clock=lambda: TIMESTAMP,
+        )
+
+    draft = service().import_template(
+        ImportTemplateCommand(_xlsx(), "fmea.xlsx", "ws-1", "00000000-0000-4000-8000-000000000611"),
+        _actor(roles=frozenset()),
+    )
+    suggestion = service().suggest_patch(
+        replace(
+            _suggest_command(draft.draft_id),
+            idempotency_key="00000000-0000-4000-8000-000000000612",
+        ),
+        _actor(roles=frozenset(), actor_type=ActorType.MODEL),
+    )
+    registered = service().accept_patch(
+        replace(
+            _accept_command(draft.draft_id, draft.source_sha256),
+            suggestion_id=suggestion.suggestion_id,
+            expected_patch_version=1,
+            idempotency_key="00000000-0000-4000-8000-000000000613",
+        ),
+        _actor(roles=frozenset({"template_admin"})),
+    )
+    assert registered.version == "1.1.0"
+    persisted, version = service().patch_for("patch-1", _actor(roles=frozenset()))
+    assert persisted.action == "accepted"  # type: ignore[union-attr]
+    assert version == 2
 
 
 def test_model_and_non_admin_cannot_accept_but_template_admin_compiles_and_registers_once() -> None:

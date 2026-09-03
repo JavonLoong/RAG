@@ -10,6 +10,7 @@ import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from threading import RLock
 
 from core_domain.fmea.states import ActorType
@@ -24,8 +25,9 @@ from .ports import (
     TemplatePatchRequest,
     TemplateRegistryPort,
     TemplateSourceBuilder,
+    TemplateWorkflowRepository,
 )
-from .review_contracts import ActorContext
+from .review_contracts import ActorContext, IdempotencyScope, idempotency_key_hash
 from .review_errors import ReviewError
 from .template_patch_contracts import (
     TemplatePatchDecision,
@@ -50,11 +52,33 @@ def _conflict(message: str) -> ReviewError:
     return ReviewError("FMEA_VERSION_CONFLICT", message)
 
 
+def _payload_hash(value: Mapping[str, object]) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return "sha256:" + sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _scope(actor: ActorContext, *, key: str | None, command: str, resource_path: str) -> IdempotencyScope:
+    if key is None:
+        raise _invalid("idempotency_key is required for durable template workflow operations")
+    try:
+        key_hash = idempotency_key_hash(key)
+    except Exception:
+        raise _invalid("idempotency_key must be a canonical UUID") from None
+    return IdempotencyScope(
+        workspace_id=actor.workspace_id,
+        actor_id=actor.actor_id,
+        command=command,
+        resource_path=resource_path,
+        key_hash=key_hash,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class ImportTemplateCommand:
     raw_bytes: bytes
     filename: str
     workspace_id: str
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +99,7 @@ class SuggestTemplatePatchCommand:
     model_version: str
     prompt_version: str
     target_record_version: int = 1
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +114,8 @@ class AcceptTemplatePatchCommand:
     domain_pack_hash: str
     evidence_pack_hash: str
     confirm_template_change: bool
+    expected_patch_version: int = 1
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +123,8 @@ class RejectTemplatePatchCommand:
     suggestion_id: str
     patch_id: str
     reason: str
+    expected_patch_version: int = 1
+    idempotency_key: str | None = None
 
 
 _SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
@@ -251,6 +280,7 @@ class DomainPackService:
         compiler: TemplateCompilerPort,
         registry: TemplateRegistryPort,
         source_builder: TemplateSourceBuilder | None = None,
+        workflow_repository: TemplateWorkflowRepository | None = None,
         clock: Callable[[], str] = _now,
     ) -> None:
         if not importers:
@@ -261,6 +291,7 @@ class DomainPackService:
         self._compiler = compiler
         self._registry = registry
         self._source_builder = source_builder
+        self._workflow_repository = workflow_repository
         self._clock = clock
         self._drafts: dict[str, TemplateDraft] = {}
         self._suggestions: dict[str, TemplatePatchSuggestion] = {}
@@ -282,17 +313,60 @@ class DomainPackService:
         draft = importer.parse(command.raw_bytes, command.filename, workspace_id=command.workspace_id)
         if draft.workspace_id != actor.workspace_id:
             raise _forbidden("template draft workspace does not match actor")
+        if self._workflow_repository is not None:
+            scope = _scope(
+                actor,
+                key=command.idempotency_key,
+                command="fmea.template.import",
+                resource_path=f"/fmea/template-drafts/{draft.draft_id}",
+            )
+            payload_hash = _payload_hash({
+                "workspace_id": command.workspace_id,
+                "filename": command.filename,
+                "source_sha256": sha256(command.raw_bytes).hexdigest(),
+            })
+            try:
+                stored, _, _ = self._workflow_repository.save_template_draft(draft, scope, payload_hash)
+            except ReviewError:
+                raise
+            except Exception:
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template draft storage is unavailable", retryable=True
+                ) from None
+            return stored
         existing = self._drafts.get(draft.draft_id)
         if existing is not None and existing != draft:
             raise _conflict("template draft identity already has different content")
         self._drafts[draft.draft_id] = draft
         return draft
 
+    def get_draft_record(self, draft_id: str, actor: ActorContext) -> tuple[TemplateDraft, int]:
+        if not isinstance(draft_id, str) or not isinstance(actor, ActorContext):
+            raise _invalid("template draft query is invalid")
+        if self._workflow_repository is not None:
+            try:
+                item = self._workflow_repository.get_template_draft(draft_id, actor.workspace_id)
+            except ReviewError:
+                raise
+            except Exception:
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template draft storage is unavailable", retryable=True
+                ) from None
+            if item is None:
+                raise _invalid("template draft was not found")
+            return item
+        draft = self._drafts.get(draft_id)
+        if draft is None:
+            raise _invalid("template draft was not found")
+        if draft.workspace_id != actor.workspace_id:
+            raise _forbidden("template draft belongs to another workspace")
+        return draft, 1
+
     def suggest_patch(self, command: SuggestTemplatePatchCommand, actor: ActorContext) -> TemplatePatchSuggestion:
         if not isinstance(command, SuggestTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch request is invalid")
         with self._decision_lock:
-            existing = self._suggestions.get(command.patch_id)
+            existing = None if self._workflow_repository is not None else self._suggestions.get(command.patch_id)
             reserved_workspace = self._suggestion_reservations.get(command.patch_id)
             if existing is not None:
                 if existing.envelope.workspace_id == actor.workspace_id:
@@ -313,9 +387,9 @@ class DomainPackService:
     def _suggest_patch(  # noqa: C901 - provenance checks remain explicit at the authority boundary
         self, command: SuggestTemplatePatchCommand, actor: ActorContext
     ) -> TemplatePatchSuggestion:
-        draft = self._drafts.get(command.draft_id)
-        if draft is None:
-            raise _invalid("template draft was not found")
+        draft, draft_version = self.get_draft_record(command.draft_id, actor)
+        if draft_version != command.target_record_version:
+            raise _conflict("template draft version is stale")
         if draft.workspace_id != actor.workspace_id:
             raise _forbidden("template draft belongs to another workspace")
         try:
@@ -390,27 +464,67 @@ class DomainPackService:
         ):
             raise _invalid("template patch suggestion provenance does not match the request")
         with self._decision_lock:
-            if candidate.patch_id in self._suggestions:
-                raise _conflict("template patch suggestion already exists")
-            self._suggestions[candidate.patch_id] = suggestion
+            if self._workflow_repository is None:
+                if candidate.patch_id in self._suggestions:
+                    raise _conflict("template patch suggestion already exists")
+                self._suggestions[candidate.patch_id] = suggestion
+            else:
+                scope = _scope(
+                    actor,
+                    key=command.idempotency_key,
+                    command="fmea.template.patch.suggest",
+                    resource_path=f"/fmea/template-patches/{candidate.patch_id}",
+                )
+                payload_hash = _payload_hash({
+                    "draft_id": command.draft_id,
+                    "patch_id": command.patch_id,
+                    "input_template_version": command.input_template_version,
+                    "target_template_id": command.target_template_id,
+                    "target_template_version": command.target_template_version,
+                    "target_template_hash": command.target_template_hash,
+                    "domain_pack_id": command.domain_pack_id,
+                    "domain_pack_version": command.domain_pack_version,
+                    "domain_pack_hash": command.domain_pack_hash,
+                    "evidence_pack_id": command.evidence_pack_id,
+                    "evidence_pack_hash": command.evidence_pack_hash,
+                    "target_record_version": command.target_record_version,
+                })
+                try:
+                    suggestion, _, _ = self._workflow_repository.save_template_patch(
+                        suggestion,
+                        scope,
+                        payload_hash,
+                        expected_draft_version=command.target_record_version,
+                    )
+                except ReviewError:
+                    raise
+                except Exception:
+                    raise ReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "template patch storage is unavailable",
+                        retryable=True,
+                    ) from None
         return suggestion
 
     def _load_candidate(
         self, suggestion_id: str, patch_id: str, actor: ActorContext
     ) -> tuple[TemplateDraft, TemplatePatchCandidate]:
-        item = self._suggestions.get(patch_id)
-        if item is None:
-            raise _invalid("template patch suggestion was not found")
+        if self._workflow_repository is not None:
+            item, _ = self.patch_for(patch_id, actor)
+            if isinstance(item, TemplatePatchDecision):
+                raise _conflict("template patch suggestion was already decided")
+        else:
+            item = self._suggestions.get(patch_id)
+            if item is None:
+                raise _invalid("template patch suggestion was not found")
         candidate = item.candidate
         envelope = item.envelope
         if envelope.suggestion_id != suggestion_id:
             raise _conflict("template patch suggestion identity does not match")
-        draft = self._drafts.get(candidate.draft_id)
-        if draft is None:
-            raise _invalid("template draft was not found")
+        draft, _ = self.get_draft_record(candidate.draft_id, actor)
         if draft.workspace_id != actor.workspace_id or envelope.workspace_id != actor.workspace_id:
             raise _forbidden("template patch belongs to another workspace")
-        if self._decisions.get(patch_id) is not None:
+        if self._workflow_repository is None and self._decisions.get(patch_id) is not None:
             raise _conflict("template patch suggestion was already decided")
         return draft, candidate
 
@@ -423,15 +537,34 @@ class DomainPackService:
         with self._decision_lock:
             return self._accept_patch(command, actor)
 
-    def _accept_patch(self, command: AcceptTemplatePatchCommand, actor: ActorContext) -> object:
+    def _accept_patch(  # noqa: C901 - authority, replay, compilation and persistence checks stay explicit
+        self, command: AcceptTemplatePatchCommand, actor: ActorContext
+    ) -> object:
         if not isinstance(command, AcceptTemplatePatchCommand) or not isinstance(actor, ActorContext):
             raise _invalid("template patch acceptance request is invalid")
         self._require_template_admin(actor)
         if command.confirm_template_change is not True:
             raise _forbidden("FMEA_TEMPLATE_CONFIRMATION_REQUIRED: explicit template confirmation is required")
-        draft, candidate = self._load_candidate(command.suggestion_id, command.patch_id, actor)
+        existing_decision: TemplatePatchDecision | None = None
+        if self._workflow_repository is not None:
+            existing, _ = self.patch_for(command.patch_id, actor)
+            if isinstance(existing, TemplatePatchDecision):
+                existing_decision = existing
+                candidate = existing.candidate
+            else:
+                candidate = existing.candidate
+            draft, _ = self.get_draft_record(candidate.draft_id, actor)
+        else:
+            draft, candidate = self._load_candidate(command.suggestion_id, command.patch_id, actor)
         if (
-            command.draft_id != draft.draft_id
+            command.suggestion_id
+            != (
+                existing_decision.suggestion_id
+                if existing_decision is not None
+                else f"template-patch-suggestion-{candidate.patch_id}"
+            )
+            or command.expected_patch_version != 1
+            or command.draft_id != draft.draft_id
             or command.draft_sha256 != draft.source_sha256
             or command.target_template_version != candidate.target_template_version
             or command.target_template_hash != candidate.target_template_hash
@@ -441,6 +574,48 @@ class DomainPackService:
             or candidate.applied
         ):
             raise _conflict("template patch acceptance precondition is stale")
+        scope: IdempotencyScope | None = None
+        payload_hash: str | None = None
+        if self._workflow_repository is not None:
+            scope = _scope(
+                actor,
+                key=command.idempotency_key,
+                command="fmea.template.patch.accept",
+                resource_path=f"/fmea/template-patches/{command.patch_id}/acceptance",
+            )
+            payload_hash = _payload_hash({
+                "suggestion_id": command.suggestion_id,
+                "patch_id": command.patch_id,
+                "draft_id": command.draft_id,
+                "draft_sha256": command.draft_sha256,
+                "target_template_version": command.target_template_version,
+                "target_template_hash": command.target_template_hash,
+                "new_template_version": command.new_template_version,
+                "domain_pack_hash": command.domain_pack_hash,
+                "evidence_pack_hash": command.evidence_pack_hash,
+                "expected_patch_version": command.expected_patch_version,
+                "confirm_template_change": command.confirm_template_change,
+            })
+        if existing_decision is not None:
+            if (
+                existing_decision.action != "accepted"
+                or existing_decision.new_template_version != command.new_template_version
+            ):
+                raise _conflict("template patch was already decided")
+            if scope is None or payload_hash is None:
+                raise _invalid("durable template acceptance binding is incomplete")
+            self._workflow_repository.save_template_patch_decision(
+                existing_decision,
+                scope,
+                payload_hash,
+                expected_patch_version=command.expected_patch_version,
+            )
+            try:
+                return self._registry.get(candidate.target_template_id, command.new_template_version)
+            except Exception:
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "registered template replay is unavailable", retryable=True
+                ) from None
         try:
             base = self._registry.get(candidate.target_template_id, candidate.target_template_version)
         except ReviewError:
@@ -463,7 +638,7 @@ class DomainPackService:
             raise
         except Exception as exc:
             raise ReviewError("FMEA_REVIEW_STORAGE_UNAVAILABLE", "template compilation or registration failed") from exc
-        self._decisions[command.patch_id] = TemplatePatchDecision(
+        decision = TemplatePatchDecision(
             decision_id=f"template-patch-decision-{command.patch_id}",
             suggestion_id=command.suggestion_id,
             patch_id=command.patch_id,
@@ -479,6 +654,26 @@ class DomainPackService:
             new_template_version=command.new_template_version,
             created_at=self._clock(),
         )
+        if self._workflow_repository is None:
+            self._decisions[command.patch_id] = decision
+        else:
+            if scope is None or payload_hash is None:
+                raise _invalid("durable template acceptance binding is incomplete")
+            try:
+                self._workflow_repository.save_template_patch_decision(
+                    decision,
+                    scope,
+                    payload_hash,
+                    expected_patch_version=command.expected_patch_version,
+                )
+            except ReviewError:
+                raise
+            except Exception:
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template patch decision storage is unavailable",
+                    retryable=True,
+                ) from None
         return registered
 
     def reject_patch(self, command: RejectTemplatePatchCommand, actor: ActorContext) -> TemplatePatchDecision:
@@ -491,8 +686,19 @@ class DomainPackService:
         self._require_template_admin(actor)
         if not isinstance(command.reason, str) or not command.reason.strip():
             raise _invalid("template patch rejection reason is required")
-        _, candidate = self._load_candidate(command.suggestion_id, command.patch_id, actor)
-        decision = TemplatePatchDecision(
+        existing_decision: TemplatePatchDecision | None = None
+        if self._workflow_repository is not None:
+            existing, _ = self.patch_for(command.patch_id, actor)
+            if isinstance(existing, TemplatePatchDecision):
+                candidate = existing.candidate
+                existing_decision = existing
+            else:
+                candidate = existing.candidate
+        else:
+            _, candidate = self._load_candidate(command.suggestion_id, command.patch_id, actor)
+        if command.suggestion_id != f"template-patch-suggestion-{candidate.patch_id}":
+            raise _conflict("template patch suggestion identity does not match")
+        decision = existing_decision or TemplatePatchDecision(
             decision_id=f"template-patch-decision-{command.patch_id}",
             suggestion_id=command.suggestion_id,
             patch_id=command.patch_id,
@@ -508,17 +714,85 @@ class DomainPackService:
             new_template_version=None,
             created_at=self._clock(),
         )
-        self._decisions[command.patch_id] = decision
-        return decision
+        if self._workflow_repository is None:
+            self._decisions[command.patch_id] = decision
+            return decision
+        scope = _scope(
+            actor,
+            key=command.idempotency_key,
+            command="fmea.template.patch.reject",
+            resource_path=f"/fmea/template-patches/{command.patch_id}/rejection",
+        )
+        payload_hash = _payload_hash({
+            "suggestion_id": command.suggestion_id,
+            "patch_id": command.patch_id,
+            "reason": command.reason.strip(),
+            "expected_patch_version": command.expected_patch_version,
+        })
+        try:
+            stored, _, _ = self._workflow_repository.save_template_patch_decision(
+                decision,
+                scope,
+                payload_hash,
+                expected_patch_version=command.expected_patch_version,
+            )
+        except ReviewError:
+            raise
+        except Exception:
+            raise ReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template patch decision storage is unavailable", retryable=True
+            ) from None
+        return stored
 
     def decision_for_patch(self, patch_id: str, actor: ActorContext) -> TemplatePatchDecision | None:
         if not isinstance(patch_id, str) or not isinstance(actor, ActorContext):
             raise _invalid("template patch decision query is invalid")
         with self._decision_lock:
+            if self._workflow_repository is not None:
+                try:
+                    item = self._workflow_repository.get_template_patch(patch_id, actor.workspace_id)
+                except ReviewError:
+                    raise
+                except Exception:
+                    raise ReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "template patch storage is unavailable",
+                        retryable=True,
+                    ) from None
+                return item[0] if item is not None and isinstance(item[0], TemplatePatchDecision) else None
             decision = self._decisions.get(patch_id)
             if decision is not None and decision.workspace_id != actor.workspace_id:
                 raise _forbidden("template patch decision belongs to another workspace")
             return decision
+
+    def patch_for(
+        self, patch_id: str, actor: ActorContext
+    ) -> tuple[TemplatePatchSuggestion | TemplatePatchDecision, int]:
+        if not isinstance(patch_id, str) or not isinstance(actor, ActorContext):
+            raise _invalid("template patch query is invalid")
+        if self._workflow_repository is not None:
+            try:
+                item = self._workflow_repository.get_template_patch(patch_id, actor.workspace_id)
+            except ReviewError:
+                raise
+            except Exception:
+                raise ReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template patch storage is unavailable", retryable=True
+                ) from None
+            if item is None:
+                raise _invalid("template patch was not found")
+            return item
+        decision = self._decisions.get(patch_id)
+        if decision is not None:
+            if decision.workspace_id != actor.workspace_id:
+                raise _forbidden("template patch belongs to another workspace")
+            return decision, 2
+        suggestion = self._suggestions.get(patch_id)
+        if suggestion is None:
+            raise _invalid("template patch was not found")
+        if suggestion.envelope.workspace_id != actor.workspace_id:
+            raise _forbidden("template patch belongs to another workspace")
+        return suggestion, 1
 
 
 @dataclass(frozen=True, slots=True)

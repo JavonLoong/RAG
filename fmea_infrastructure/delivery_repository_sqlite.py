@@ -34,6 +34,7 @@ from core_domain.fmea.template_migration import (
     TemplatePatchCandidate,
 )
 from core_domain.fmea.value_objects import VersionSet
+from fmea_application.assistance_contracts import AssistanceKind, AssistanceSuggestion
 from fmea_application.delivery_contracts import (
     ExportArtifactManifest,
     ExportRun,
@@ -53,9 +54,16 @@ from fmea_application.review_contracts import (
     ActorContext,
     AuditEvent,
     IdempotencyScope,
+    encode_review_json,
     idempotency_key_hash,
 )
+from fmea_application.review_errors import ReviewError as ApplicationReviewError
 from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
+from fmea_application.template_patch_contracts import (
+    TemplatePatchDecision,
+    TemplatePatchSuggestion,
+    candidate_from_payload,
+)
 
 from .governance_repository_sqlite import SqliteGovernanceRepository, _PreparedMeta
 from .sqlite_codec import decode_audit_event, load_strict_json
@@ -242,6 +250,49 @@ def _decode_patch(payload: object) -> TemplatePatchCandidate:
     return candidate
 
 
+def _decode_template_suggestion(payload: object) -> TemplatePatchSuggestion:
+    data = _load_object(payload, "template patch suggestion")
+    try:
+        kind = AssistanceKind(cast(str, data["kind"]))
+        candidate = candidate_from_payload(data["payload"])
+        envelope = AssistanceSuggestion(
+            **(
+                data
+                | {
+                    "kind": kind,
+                    "evidence_pack_ids": tuple(cast(list[object], data["evidence_pack_ids"])),
+                    "evidence_ids": tuple(cast(list[object], data["evidence_ids"])),
+                    "conflict_ids": tuple(cast(list[object], data["conflict_ids"])),
+                }
+            )
+        )
+        suggestion = TemplatePatchSuggestion(candidate=candidate, envelope=envelope)
+    except Exception:
+        raise ValueError("persisted template patch suggestion is invalid") from None
+    if _json_value(suggestion.envelope) != data:
+        raise ValueError("persisted template patch suggestion does not round-trip")
+    return suggestion
+
+
+def _decode_template_decision(payload: object) -> TemplatePatchDecision:
+    data = _load_object(payload, "template patch decision")
+    try:
+        decision = TemplatePatchDecision(
+            **(
+                data
+                | {
+                    "actor_type": ActorType(cast(str, data["actor_type"])),
+                    "candidate": candidate_from_payload(data["candidate"]),
+                }
+            )
+        )
+    except Exception:
+        raise ValueError("persisted template patch decision is invalid") from None
+    if _json_value(decision) != data:
+        raise ValueError("persisted template patch decision does not round-trip")
+    return decision
+
+
 def _request_value(command: MigrationCommand | ConfirmMigrationCommand) -> dict[str, object]:
     return cast(
         dict[str, object],
@@ -378,6 +429,346 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
     """Governance-compatible SQLite repository with durable delivery state."""
 
     _MIGRATION_COMMAND = "fmea.migration.confirm"
+
+    @staticmethod
+    def _template_response(kind: str, value: object, record_version: int) -> dict[str, object]:
+        return {
+            "kind": kind,
+            "record_version": record_version,
+            "value": _json_value(value),
+        }
+
+    @classmethod
+    def _template_replay(
+        cls,
+        connection: sqlite3.Connection,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        kind: str,
+        resource_id: str,
+    ) -> tuple[object, int, bool] | None:
+        row = cls._idempotency_row(connection, scope)
+        if row is None:
+            return None
+        if row["payload_hash"] != payload_hash:
+            raise ApplicationReviewError(
+                "FMEA_IDEMPOTENCY_CONFLICT", "idempotency key was used with a different payload"
+            )
+        if row["state"] != "completed" or row["resource_id"] != resource_id:
+            raise ApplicationReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                "template workflow idempotency reservation is incomplete",
+                retryable=True,
+            )
+        response = _load_object(row["response_json"], "template workflow response")
+        if set(response) != {"kind", "record_version", "value"} or response["kind"] != kind:
+            raise ValueError("persisted template workflow response is invalid")
+        version = response["record_version"]
+        if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+            raise ValueError("persisted template workflow version is invalid")
+        if kind == "template_draft":
+            value = _decode_draft(canonical_json(response["value"]))
+        elif kind == "template_patch":
+            value = _decode_template_suggestion(canonical_json(response["value"]))
+        elif kind == "template_patch_decision":
+            value = _decode_template_decision(canonical_json(response["value"]))
+        else:
+            raise ValueError("persisted template workflow response kind is invalid")
+        return value, version, True
+
+    @classmethod
+    def _complete_template_idempotency(
+        cls,
+        connection: sqlite3.Connection,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        resource_id: str,
+        response: Mapping[str, object],
+        created_at: str,
+    ) -> None:
+        cursor = connection.execute(
+            "UPDATE idempotency_records SET state='completed', status_code=201, resource_id=?, "
+            "response_json=?, completed_at=? WHERE scope_key=? AND payload_hash=? AND state='reserved'",
+            (resource_id, encode_review_json(response), created_at, scope.scope_key, payload_hash),
+        )
+        if cursor.rowcount != 1:
+            raise ApplicationReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template workflow idempotency completion failed", retryable=True
+            )
+
+    def save_template_draft(
+        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str
+    ) -> tuple[TemplateDraft, int, bool]:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._template_replay(
+                connection, scope, payload_hash, kind="template_draft", resource_id=draft.draft_id
+            )
+            if replay is not None:
+                connection.execute("COMMIT")
+                return cast(tuple[TemplateDraft, int, bool], replay)
+            existing = connection.execute(
+                "SELECT draft_json, canonical_json_hash, record_version FROM fmea_template_drafts "
+                "WHERE workspace_id=? AND draft_id=?",
+                (draft.workspace_id, draft.draft_id),
+            ).fetchone()
+            draft_json, draft_hash = _contract_json(draft)
+            if existing is None:
+                connection.execute(
+                    "INSERT INTO fmea_template_drafts "
+                    "(workspace_id,draft_id,source_filename,source_sha256,source_type,structure_json,"
+                    "proposed_fields_json,unknown_fields_json,ambiguous_fields_json,parser_warnings_json,"
+                    "identified_fields_json,status,draft_json,canonical_json_hash,created_at,record_version) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+                    (
+                        draft.workspace_id,
+                        draft.draft_id,
+                        draft.source_filename,
+                        draft.source_sha256,
+                        draft.source_type,
+                        canonical_json(_json_value(draft.structure)),
+                        canonical_json(_json_value(draft.proposed_fields)),
+                        canonical_json(_json_value(draft.unknown_fields)),
+                        canonical_json(_json_value(draft.ambiguous_fields)),
+                        canonical_json(_json_value(draft.parser_warnings)),
+                        canonical_json(_json_value(draft.identified_fields)),
+                        draft.status.value,
+                        draft_json,
+                        draft_hash,
+                        draft.created_at,
+                    ),
+                )
+            elif existing["draft_json"] != draft_json or existing["canonical_json_hash"] != draft_hash:
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template draft identity has different content")
+            self._insert_idempotency(connection, scope, payload_hash, draft.created_at)
+            response = self._template_response("template_draft", draft, 1)
+            self._complete_template_idempotency(
+                connection, scope, payload_hash, draft.draft_id, response, draft.created_at
+            )
+            connection.execute("COMMIT")
+            return draft, 1, False
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def get_template_draft(self, draft_id: str, workspace_id: str) -> tuple[TemplateDraft, int] | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                "SELECT draft_json, canonical_json_hash, record_version FROM fmea_template_drafts "
+                "WHERE workspace_id=? AND draft_id=?",
+                (workspace_id, draft_id),
+            ).fetchone()
+            if row is None:
+                return None
+            draft = _decode_draft(row["draft_json"])
+            if row["canonical_json_hash"] != _contract_json(draft)[1] or row["record_version"] != 1:
+                raise ValueError("persisted template draft binding is invalid")
+            return draft, 1
+        finally:
+            connection.close()
+
+    def save_template_patch(
+        self,
+        suggestion: TemplatePatchSuggestion,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_draft_version: int,
+    ) -> tuple[TemplatePatchSuggestion, int, bool]:
+        candidate = suggestion.candidate
+        workspace_id = suggestion.envelope.workspace_id
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._template_replay(
+                connection, scope, payload_hash, kind="template_patch", resource_id=candidate.patch_id
+            )
+            if replay is not None:
+                connection.execute("COMMIT")
+                return cast(tuple[TemplatePatchSuggestion, int, bool], replay)
+            draft = connection.execute(
+                "SELECT record_version FROM fmea_template_drafts WHERE workspace_id=? AND draft_id=?",
+                (workspace_id, candidate.draft_id),
+            ).fetchone()
+            if draft is None or draft["record_version"] != expected_draft_version:
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template draft version is stale")
+            if (
+                connection.execute(
+                    "SELECT 1 FROM fmea_template_patch_candidates WHERE workspace_id=? AND patch_id=?",
+                    (workspace_id, candidate.patch_id),
+                ).fetchone()
+                is not None
+            ):
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch identity already exists")
+            candidate_json, candidate_hash = _contract_json(candidate)
+            suggestion_json = canonical_json(_json_value(suggestion.envelope))
+            connection.execute(
+                "INSERT INTO fmea_template_patch_candidates "
+                "(workspace_id,patch_id,draft_id,input_template_version,target_template_id,"
+                "target_template_version,target_template_hash,domain_pack_id,domain_pack_version,domain_pack_hash,"
+                "evidence_pack_id,evidence_pack_hash,run_id,trace_id,model_version,prompt_version,diff_json,"
+                "evidence_ids_json,status,applied,candidate_json,canonical_json_hash,created_at,suggestion_json,"
+                "record_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+                (
+                    workspace_id,
+                    candidate.patch_id,
+                    candidate.draft_id,
+                    candidate.input_template_version,
+                    candidate.target_template_id,
+                    candidate.target_template_version,
+                    candidate.target_template_hash,
+                    candidate.domain_pack_id,
+                    candidate.domain_pack_version,
+                    candidate.domain_pack_hash,
+                    candidate.evidence_pack_id,
+                    candidate.evidence_pack_hash,
+                    candidate.run_id,
+                    candidate.trace_id,
+                    candidate.model_version,
+                    candidate.prompt_version,
+                    canonical_json(_json_value(candidate.diff)),
+                    canonical_json(_json_value(candidate.evidence_ids)),
+                    candidate.status.value,
+                    0,
+                    candidate_json,
+                    candidate_hash,
+                    candidate.created_at,
+                    suggestion_json,
+                ),
+            )
+            self._insert_idempotency(connection, scope, payload_hash, candidate.created_at)
+            response = self._template_response("template_patch", suggestion.envelope, 1)
+            self._complete_template_idempotency(
+                connection, scope, payload_hash, candidate.patch_id, response, candidate.created_at
+            )
+            connection.execute("COMMIT")
+            return suggestion, 1, False
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def get_template_patch(
+        self, patch_id: str, workspace_id: str
+    ) -> tuple[TemplatePatchSuggestion | TemplatePatchDecision, int] | None:
+        connection = self._connect()
+        try:
+            decision = connection.execute(
+                "SELECT decision_json, canonical_json_hash, record_version FROM fmea_template_patch_decisions "
+                "WHERE workspace_id=? AND patch_id=?",
+                (workspace_id, patch_id),
+            ).fetchone()
+            if decision is not None:
+                value = _decode_template_decision(decision["decision_json"])
+                if decision["canonical_json_hash"] != _contract_json(value)[1] or decision["record_version"] != 2:
+                    raise ValueError("persisted template patch decision binding is invalid")
+                return value, 2
+            row = connection.execute(
+                "SELECT suggestion_json, candidate_json, canonical_json_hash, record_version "
+                "FROM fmea_template_patch_candidates WHERE workspace_id=? AND patch_id=?",
+                (workspace_id, patch_id),
+            ).fetchone()
+            if row is None:
+                return None
+            if row["suggestion_json"] is None:
+                raise ValueError("persisted template patch suggestion envelope is missing")
+            suggestion = _decode_template_suggestion(row["suggestion_json"])
+            if (
+                row["candidate_json"] != canonical_json(_json_value(suggestion.candidate))
+                or row["canonical_json_hash"] != _contract_json(suggestion.candidate)[1]
+                or row["record_version"] != 1
+            ):
+                raise ValueError("persisted template patch binding is invalid")
+            return suggestion, 1
+        finally:
+            connection.close()
+
+    def save_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, int, bool]:
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._template_replay(
+                connection,
+                scope,
+                payload_hash,
+                kind="template_patch_decision",
+                resource_id=decision.decision_id,
+            )
+            if replay is not None:
+                connection.execute("COMMIT")
+                return cast(tuple[TemplatePatchDecision, int, bool], replay)
+            candidate = connection.execute(
+                "SELECT draft_id, candidate_json, record_version FROM fmea_template_patch_candidates "
+                "WHERE workspace_id=? AND patch_id=?",
+                (decision.workspace_id, decision.patch_id),
+            ).fetchone()
+            if candidate is None or candidate["record_version"] != expected_patch_version:
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch version is stale")
+            if _decode_patch(candidate["candidate_json"]) != decision.candidate:
+                raise ValueError("persisted template patch candidate binding is invalid")
+            if (
+                connection.execute(
+                    "SELECT 1 FROM fmea_template_patch_decisions WHERE workspace_id=? AND patch_id=?",
+                    (decision.workspace_id, decision.patch_id),
+                ).fetchone()
+                is not None
+            ):
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch was already decided")
+            decision_json, decision_hash = _contract_json(decision)
+            connection.execute(
+                "INSERT INTO fmea_template_patch_decisions "
+                "(workspace_id,decision_id,suggestion_id,patch_id,draft_id,actor_id,actor_type,action,reason,"
+                "base_template_id,base_template_version,base_template_hash,new_template_version,candidate_json,"
+                "decision_json,canonical_json_hash,created_at,record_version) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)",
+                (
+                    decision.workspace_id,
+                    decision.decision_id,
+                    decision.suggestion_id,
+                    decision.patch_id,
+                    candidate["draft_id"],
+                    decision.actor_id,
+                    decision.actor_type.value,
+                    decision.action,
+                    decision.reason,
+                    decision.base_template_id,
+                    decision.base_template_version,
+                    decision.base_template_hash,
+                    decision.new_template_version,
+                    canonical_json(_json_value(decision.candidate)),
+                    decision_json,
+                    decision_hash,
+                    decision.created_at,
+                ),
+            )
+            self._insert_idempotency(connection, scope, payload_hash, decision.created_at)
+            response = self._template_response("template_patch_decision", decision, 2)
+            self._complete_template_idempotency(
+                connection, scope, payload_hash, decision.decision_id, response, decision.created_at
+            )
+            connection.execute("COMMIT")
+            return decision, 2, False
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
 
     def _migration_scope(self, command: ConfirmMigrationCommand, actor: ActorContext) -> IdempotencyScope:
         return IdempotencyScope(

@@ -91,7 +91,7 @@ from .risk_contracts import (
     RiskConfirmationResult,
     RiskModelRequest,
 )
-from .template_patch_contracts import TemplatePatchSuggestion
+from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 if TYPE_CHECKING:
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
@@ -516,6 +516,38 @@ class TemplateRegistryPort(Protocol):
     def get(self, template_id: str, version: str) -> object: ...
 
 
+class TemplateWorkflowRepository(Protocol):
+    """Durable workspace-scoped template draft and patch lifecycle."""
+
+    def save_template_draft(
+        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str
+    ) -> tuple[TemplateDraft, int, bool]: ...
+
+    def get_template_draft(self, draft_id: str, workspace_id: str) -> tuple[TemplateDraft, int] | None: ...
+
+    def save_template_patch(
+        self,
+        suggestion: TemplatePatchSuggestion,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_draft_version: int,
+    ) -> tuple[TemplatePatchSuggestion, int, bool]: ...
+
+    def get_template_patch(
+        self, patch_id: str, workspace_id: str
+    ) -> tuple[TemplatePatchSuggestion | TemplatePatchDecision, int] | None: ...
+
+    def save_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, int, bool]: ...
+
+
 class TemplateSourceBuilder(Protocol):
     """Build a declarative compiler input from an accepted immutable draft."""
 
@@ -927,4 +959,5 @@ __all__ = [
     "TemplatePatchRequest",
     "TemplateRegistryPort",
     "TemplateSourceBuilder",
+    "TemplateWorkflowRepository",
 ]
