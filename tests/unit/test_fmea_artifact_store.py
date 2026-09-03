@@ -69,10 +69,181 @@ class _ReparseStat:
         return getattr(self._delegate, name)
 
 
+class _PosixStat:
+    def __init__(
+        self,
+        delegate: os.stat_result,
+        *,
+        owner_uid: int,
+        writable: bool,
+        reparse: bool,
+    ) -> None:
+        self._delegate = delegate
+        self.st_mode = delegate.st_mode | 0o022 if writable else delegate.st_mode & ~0o022
+        self.st_uid = owner_uid
+        self.st_file_attributes = getattr(delegate, "st_file_attributes", 0) | (0x400 if reparse else 0)
+
+    def __getattr__(self, name: str):
+        return getattr(self._delegate, name)
+
+
 class _PosixOsProxy:
     name = "posix"
     O_CLOEXEC = 0
+    O_DIRECTORY = 0
     O_NOFOLLOW = 0
+
+    def __init__(
+        self,
+        *,
+        writable_paths: tuple[Path, ...] = (),
+        foreign_owner_paths: tuple[Path, ...] = (),
+        reparse_paths: tuple[Path, ...] = (),
+        symlink_paths: tuple[Path, ...] = (),
+    ) -> None:
+        self._current_uid = 1000
+        self._descriptor_paths: dict[int, Path] = {}
+        self._directory_descriptors: set[int] = set()
+        self._next_directory_descriptor = 100_000
+        self._writable_paths = {self._key(path) for path in writable_paths}
+        self._foreign_owner_paths = {self._key(path) for path in foreign_owner_paths}
+        self._reparse_paths = {self._key(path) for path in reparse_paths}
+        self._symlink_paths = {self._key(path) for path in symlink_paths}
+        self._pathname_redirects: dict[str, Path] = {}
+        self.open_calls: list[tuple[str, int | None]] = []
+        self.lease_mutations: list[str] = []
+
+    @staticmethod
+    def _key(path: str | Path) -> str:
+        return os.path.normcase(os.path.abspath(os.fspath(path)))
+
+    def _path(self, path: str | Path, dir_fd: int | None) -> Path:
+        candidate = Path(path)
+        if dir_fd is not None:
+            candidate = self._descriptor_paths[dir_fd] / candidate
+        target = Path(os.path.abspath(os.fspath(candidate)))
+        if dir_fd is None:
+            target_key = self._key(target)
+            for original_key, replacement in self._pathname_redirects.items():
+                if target_key == original_key or target_key.startswith(f"{original_key}{os.sep}"):
+                    relative = os.path.relpath(target, original_key)
+                    return replacement if relative == "." else replacement / relative
+        return target
+
+    def open(
+        self,
+        path: str | Path,
+        flags: int,
+        mode: int = 0o777,
+        *,
+        dir_fd: int | None = None,
+    ) -> int:
+        target = self._path(path, dir_fd)
+        self.open_calls.append((os.fspath(path), dir_fd))
+        if self._key(target) in self._symlink_paths or target.is_symlink():
+            raise OSError(errno.ELOOP, "link refused")
+        if target.is_dir():
+            descriptor = self._next_directory_descriptor
+            self._next_directory_descriptor += 1
+            self._directory_descriptors.add(descriptor)
+        else:
+            descriptor = os.open(target, flags, mode)
+        self._descriptor_paths[descriptor] = target
+        return descriptor
+
+    def close(self, descriptor: int) -> None:
+        if descriptor not in self._descriptor_paths:
+            os.close(descriptor)
+            return
+        self._descriptor_paths.pop(descriptor)
+        if descriptor in self._directory_descriptors:
+            self._directory_descriptors.remove(descriptor)
+            return
+        os.close(descriptor)
+
+    def fstat(self, descriptor: int) -> _PosixStat:
+        path = self._descriptor_paths.get(descriptor)
+        if path is None:
+            return os.fstat(descriptor)
+        delegate = path.lstat() if descriptor in self._directory_descriptors else os.fstat(descriptor)
+        key = self._key(path)
+        return _PosixStat(
+            delegate,
+            owner_uid=self._current_uid + 1 if key in self._foreign_owner_paths else self._current_uid,
+            writable=key in self._writable_paths,
+            reparse=key in self._reparse_paths,
+        )
+
+    def stat(
+        self,
+        path: str | Path,
+        *,
+        dir_fd: int | None = None,
+        follow_symlinks: bool = True,
+    ) -> _PosixStat:
+        target = self._path(path, dir_fd)
+        delegate = os.stat(target, follow_symlinks=follow_symlinks)
+        key = self._key(target)
+        return _PosixStat(
+            delegate,
+            owner_uid=self._current_uid + 1 if key in self._foreign_owner_paths else self._current_uid,
+            writable=key in self._writable_paths,
+            reparse=key in self._reparse_paths,
+        )
+
+    def fsync(self, descriptor: int) -> None:
+        if descriptor not in self._directory_descriptors:
+            os.fsync(descriptor)
+
+    def unlink(self, path: str | Path, *, dir_fd: int | None = None) -> None:
+        target = self._path(path, dir_fd)
+        if target.name.endswith(".artifact-lease"):
+            self.lease_mutations.append("unlink")
+        os.unlink(target)
+
+    def rename(
+        self,
+        source: str | Path,
+        destination: str | Path,
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        source_path = self._path(source, src_dir_fd)
+        destination_path = self._path(destination, dst_dir_fd)
+        if source_path.name.endswith(".artifact-lease") or destination_path.name.endswith(".artifact-lease"):
+            self.lease_mutations.append("rename")
+        os.rename(source_path, destination_path)
+
+    def replace(
+        self,
+        source: str | Path,
+        destination: str | Path,
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        source_path = self._path(source, src_dir_fd)
+        destination_path = self._path(destination, dst_dir_fd)
+        if source_path.name.endswith(".artifact-lease") or destination_path.name.endswith(".artifact-lease"):
+            self.lease_mutations.append("replace")
+        os.replace(source_path, destination_path)
+
+    def geteuid(self) -> int:
+        return self._current_uid
+
+    def rebind_directory(self, original: Path, replacement: Path) -> None:
+        original_key = self._key(original)
+        for descriptor, path in tuple(self._descriptor_paths.items()):
+            if descriptor in self._directory_descriptors and self._key(path) == original_key:
+                self._descriptor_paths[descriptor] = replacement
+
+    def redirect_pathname(self, original: Path, replacement: Path) -> None:
+        self._pathname_redirects[self._key(original)] = replacement
+
+    @property
+    def open_descriptors(self) -> frozenset[int]:
+        return frozenset(self._descriptor_paths)
 
     def __getattr__(self, name: str):
         return getattr(os, name)
@@ -539,7 +710,8 @@ def test_posix_persistent_lease_file_allows_committed_replay(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    proxy = _PosixOsProxy()
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
     monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
     store = _store(tmp_path)
     monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
@@ -562,6 +734,125 @@ def test_posix_persistent_lease_file_allows_committed_replay(
     assert str(tmp_path).encode() not in lease.read_bytes()
     assert store.publish(RUN, FILENAME, PAYLOAD, _manifest()) == published
     assert store.latest(RUN) == published
+    assert proxy.lease_mutations == []
+
+
+@pytest.mark.parametrize("violation", ["writable", "foreign-owner", "reparse"])
+def test_posix_rejects_untrusted_server_owned_lock_directory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    violation: str,
+) -> None:
+    locks = tmp_path / "artifacts" / WORKSPACE / ".locks"
+    proxy = _PosixOsProxy(
+        writable_paths=(locks,) if violation == "writable" else (),
+        foreign_owner_paths=(locks,) if violation == "foreign-owner" else (),
+        reparse_paths=(locks,) if violation == "reparse" else (),
+    )
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+
+    with pytest.raises(ArtifactStoreError) as error:
+        _store(tmp_path)
+
+    assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
+    assert not proxy.open_descriptors
+
+
+def test_posix_rejects_reparse_lease_entry_without_descriptor_leak(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = tmp_path / "artifacts" / WORKSPACE / ".locks" / f"{ARTIFACT}.artifact-lease"
+    proxy = _PosixOsProxy(reparse_paths=(lease,))
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(tmp_path)
+
+    with pytest.raises(ArtifactStoreError) as error:
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
+    assert not proxy.open_descriptors
+
+
+@pytest.mark.parametrize("target_kind", ["ancestor", "lease"])
+def test_posix_rejects_symlinked_lease_path_components(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target_kind: str,
+) -> None:
+    workspace = tmp_path / "artifacts" / WORKSPACE
+    lease = workspace / ".locks" / f"{ARTIFACT}.artifact-lease"
+    target = workspace if target_kind == "ancestor" else lease
+    proxy = _PosixOsProxy(symlink_paths=(target,))
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+
+    with pytest.raises(ArtifactStoreError) as error:
+        store = _store(tmp_path)
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert error.value.code == "FMEA_ARTIFACT_PATH_INVALID"
+    assert not proxy.open_descriptors
+
+
+def test_posix_lease_open_is_anchored_to_verified_locks_descriptor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    proxy = _PosixOsProxy()
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(tmp_path)
+    monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+
+    store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    lease_name = f"{ARTIFACT}.artifact-lease"
+    lease_opens = [(path, dir_fd) for path, dir_fd in proxy.open_calls if str(path).endswith(lease_name)]
+    assert lease_opens == [(lease_name, lease_opens[0][1])]
+    assert lease_opens[0][1] is not None
+    assert not proxy.open_descriptors
+
+
+def test_posix_parent_replacement_after_validation_cannot_redirect_lease_open(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    proxy = _PosixOsProxy()
+    locks = tmp_path / "artifacts" / WORKSPACE / ".locks"
+    displaced = locks.with_name(".locks-displaced")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    triggered = False
+
+    def replace_locks_path(stage: str) -> None:
+        nonlocal triggered
+        if stage != "after_posix_locks_open" or triggered:
+            return
+        triggered = True
+        locks.rename(displaced)
+        proxy.rebind_directory(locks, displaced)
+        locks.mkdir()
+        locks.joinpath("foreign-sentinel.txt").write_text("foreign", encoding="utf-8")
+        proxy.redirect_pathname(locks, outside)
+
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
+    monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
+    store = _store(tmp_path, fault_hook=replace_locks_path)
+    monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    lease_name = f"{ARTIFACT}.artifact-lease"
+    assert triggered is True
+    assert store.latest(RUN) == published
+    assert locks.joinpath("foreign-sentinel.txt").read_text(encoding="utf-8") == "foreign"
+    assert not locks.joinpath(lease_name).exists()
+    assert not outside.joinpath(lease_name).exists()
+    assert displaced.joinpath(lease_name).is_file()
+    assert not proxy.open_descriptors
 
 
 def test_posix_lease_releases_after_fault_and_retry_succeeds(
@@ -724,26 +1015,20 @@ def test_posix_lease_does_not_leak_descriptor_when_deadline_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    opened: list[int] = []
-
-    class TrackingPosixOsProxy(_PosixOsProxy):
-        @staticmethod
-        def open(path: str, flags: int, mode: int = 0o777) -> int:
-            descriptor = os.open(path, flags, mode)
-            opened.append(descriptor)
-            return descriptor
-
     def fail_monotonic() -> float:
         raise RuntimeError
 
-    monkeypatch.setattr(artifact_store_module, "os", TrackingPosixOsProxy())
+    proxy = _PosixOsProxy()
+    monkeypatch.setattr(artifact_store_module, "os", proxy)
     monkeypatch.setattr(artifact_store_module, "_fcntl", _FakeFcntl())
     store = _store(tmp_path, monotonic_seam=fail_monotonic)
+    proxy.open_calls.clear()
 
     with pytest.raises(ArtifactStoreError):
         store.publish(RUN, FILENAME, PAYLOAD, _manifest())
 
-    assert opened == []
+    assert proxy.open_calls == []
+    assert not proxy.open_descriptors
 
 
 @pytest.mark.skipif(

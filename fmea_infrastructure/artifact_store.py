@@ -4,6 +4,14 @@ The store deliberately owns the complete filesystem layout.  Callers provide an
 export identity and bytes, never an output path.  A final artifact directory is
 immutable after its atomic rename; the per-run latest pointer is updated only
 after that directory has been independently read back and verified.
+
+On POSIX, the configured artifact root, workspace directory, and lock directory
+form a server-owned trust boundary: each must be owned by the service effective
+UID and must not be group- or other-writable.  Directory descriptors opened one
+component at a time with no-follow semantics anchor lease operations inside that
+boundary.  Cooperative service processes never replace persistent lease entries;
+an attacker already able to write storage as the service UID is outside this
+module's OS-isolation threat model.
 """
 
 from __future__ import annotations
@@ -311,6 +319,9 @@ class WorkspaceArtifactStore:
         self._ensure_directory(self._artifacts_root)
         self._ensure_directory(self._runs_root)
         self._ensure_directory(self._locks_root)
+        if os.name != "nt" and self._posix_directory_anchor_available():
+            locks_descriptor = self._open_trusted_posix_locks_directory()
+            self._close_descriptor(locks_descriptor)
 
     @property
     def root(self) -> Path:
@@ -915,7 +926,7 @@ class WorkspaceArtifactStore:
 
     def _wait_for_reservation(
         self,
-        lock_path: Path,
+        lock_path: Path | None,
         artifact_id: str,
         run_id: str,
         filename: str,
@@ -925,7 +936,8 @@ class WorkspaceArtifactStore:
         *,
         directory: bool,
     ) -> _StoredArtifact | None:
-        self._inspect(lock_path, directory=directory, allow_missing=True)
+        if lock_path is not None:
+            self._inspect(lock_path, directory=directory, allow_missing=True)
         existing = self._read_existing(artifact_id)
         if existing is not None:
             if not self._matches_request(existing, run_id, filename, payload, manifest):
@@ -1008,18 +1020,89 @@ class WorkspaceArtifactStore:
         )
 
     @staticmethod
+    def _posix_directory_anchor_available() -> bool:
+        return (
+            all(hasattr(os, attribute) for attribute in ("O_CLOEXEC", "O_DIRECTORY", "O_NOFOLLOW", "O_RDONLY"))
+            and callable(getattr(os, "fstat", None))
+            and callable(getattr(os, "geteuid", None))
+            and callable(getattr(os, "open", None))
+            and callable(getattr(os, "stat", None))
+        )
+
+    @staticmethod
     def _posix_lease_available() -> bool:
         return (
-            _fcntl is not None
+            WorkspaceArtifactStore._posix_directory_anchor_available()
+            and _fcntl is not None
             and callable(getattr(_fcntl, "flock", None))
             and all(hasattr(_fcntl, attribute) for attribute in ("LOCK_EX", "LOCK_NB", "LOCK_UN"))
             and all(hasattr(os, attribute) for attribute in ("O_CLOEXEC", "O_CREAT", "O_NOFOLLOW", "O_RDWR"))
         )
 
+    @staticmethod
+    def _validate_posix_directory_descriptor(descriptor: int, *, trusted: bool) -> None:
+        info = os.fstat(descriptor)
+        if _is_reparse_point(info) or not stat.S_ISDIR(info.st_mode):
+            _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact storage boundary is not a normal directory")
+        if trusted and (int(getattr(info, "st_uid", -1)) != int(os.geteuid()) or info.st_mode & 0o022):
+            _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact storage boundary is not trusted")
+
+    def _open_trusted_posix_locks_directory(self) -> int:
+        if not self._posix_directory_anchor_available():
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from None
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
+        anchor = Path(self._locks_root.anchor)
+        descriptor = -1
+        try:
+            descriptor = os.open(os.fspath(anchor), flags)
+            trusted_paths = {self._root, self._workspace_root, self._locks_root}
+            self._validate_posix_directory_descriptor(descriptor, trusted=anchor in trusted_paths)
+            current = anchor
+            for component in self._path_parts(self._locks_root):
+                next_descriptor = os.open(component, flags, dir_fd=descriptor)
+                try:
+                    current = current / component
+                    self._validate_posix_directory_descriptor(
+                        next_descriptor,
+                        trusted=current in trusted_paths,
+                    )
+                except BaseException:
+                    self._close_descriptor(next_descriptor)
+                    raise
+                self._close_descriptor(descriptor)
+                descriptor = next_descriptor
+        except ArtifactStoreError:
+            raise
+        except TypeError as exc:
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from exc
+        except OSError as exc:
+            if exc.errno in {errno.ELOOP, errno.ENOTDIR}:
+                _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact storage boundary is not a normal directory")
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_STORAGE_FAILED",
+                "artifact storage boundary validation failed",
+            ) from exc
+        else:
+            result = descriptor
+            descriptor = -1
+            return result
+        finally:
+            if descriptor >= 0:
+                self._close_descriptor(descriptor)
+
     def _write_posix_lease_diagnostic(
         self,
         descriptor: int,
-        lease_path: Path,
+        locks_descriptor: int,
+        lease_name: str,
         artifact_id: str,
         run_id: str,
         request_sha256: str,
@@ -1034,9 +1117,21 @@ class WorkspaceArtifactStore:
         try:
             os.ftruncate(descriptor, 0)
             os.lseek(descriptor, 0, os.SEEK_SET)
+            view = memoryview(diagnostic)
+            offset = 0
+            while offset < len(view):
+                written = os.write(descriptor, view[offset:])
+                if written <= 0:
+                    _raise_short_write()
+                offset += written
+            self._fsync(descriptor)
+            self._validate_posix_lease_descriptor(descriptor, locks_descriptor, lease_name)
+            if os.fstat(descriptor).st_size != len(diagnostic):
+                _raise_short_write()
+        except ArtifactStoreError:
+            raise
         except (OSError, TypeError, ValueError) as exc:
             raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact lease diagnostic failed") from exc
-        self._write_open_descriptor(descriptor, lease_path, diagnostic)
 
     @staticmethod
     def _close_descriptor(descriptor: int) -> None:
@@ -1046,22 +1141,24 @@ class WorkspaceArtifactStore:
             return
 
     @staticmethod
-    def _validate_posix_lease_descriptor(descriptor: int, lease_path: Path) -> None:
+    def _validate_posix_lease_descriptor(descriptor: int, locks_descriptor: int, lease_name: str) -> None:
         opened = os.fstat(descriptor)
-        current = lease_path.lstat()
+        current = os.stat(lease_name, dir_fd=locks_descriptor, follow_symlinks=False)
         if (
             _is_reparse_point(opened)
             or _is_reparse_point(current)
             or not stat.S_ISREG(opened.st_mode)
             or not stat.S_ISREG(current.st_mode)
             or not _same_file(opened, current)
+            or int(getattr(opened, "st_uid", -1)) != int(os.geteuid())
+            or opened.st_mode & 0o022
         ):
             _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact lease is not a normal file")
 
-    def _open_posix_lease(self, lease_path: Path) -> int:
+    def _open_posix_lease(self, locks_descriptor: int, lease_name: str) -> int:
         flags = os.O_RDWR | os.O_CREAT | os.O_CLOEXEC | os.O_NOFOLLOW | getattr(os, "O_BINARY", 0)
         try:
-            descriptor = os.open(os.fspath(lease_path), flags, 0o600)
+            descriptor = os.open(lease_name, flags, 0o600, dir_fd=locks_descriptor)
         except OSError as exc:
             unsupported = {
                 errno.EINVAL,
@@ -1079,10 +1176,20 @@ class WorkspaceArtifactStore:
                 _raise("FMEA_ARTIFACT_PATH_INVALID", "artifact lease is not a normal file")
             raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
         try:
-            self._validate_posix_lease_descriptor(descriptor, lease_path)
-        except (ArtifactStoreError, OSError, RuntimeError, TypeError, ValueError):
+            self._validate_posix_lease_descriptor(descriptor, locks_descriptor, lease_name)
+        except ArtifactStoreError:
             self._close_descriptor(descriptor)
             raise
+        except TypeError as exc:
+            self._close_descriptor(descriptor)
+            raise ArtifactStoreError(
+                "FMEA_ARTIFACT_BUSY",
+                "artifact lease is unavailable",
+                retryable=True,
+            ) from exc
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._close_descriptor(descriptor)
+            raise ArtifactStoreError("FMEA_ARTIFACT_STORAGE_FAILED", "artifact reservation failed") from exc
         return descriptor
 
     @staticmethod
@@ -1120,13 +1227,16 @@ class WorkspaceArtifactStore:
                 retryable=True,
             ) from None
         lease_path = self._locks_root / f"{artifact_id}{_LEASE_SUFFIX}"
-        self._inspect(lease_path.parent, directory=True, allow_missing=False)
+        lease_name = lease_path.name
         deadline = self._reservation_deadline()
-        descriptor = self._open_posix_lease(lease_path)
+        locks_descriptor = self._open_trusted_posix_locks_directory()
+        descriptor = -1
         try:
+            self._fault("after_posix_locks_open")
+            descriptor = self._open_posix_lease(locks_descriptor, lease_name)
             while not self._try_posix_lease(descriptor):
                 existing = self._wait_for_reservation(
-                    lease_path,
+                    None,
                     artifact_id,
                     run_id,
                     filename,
@@ -1137,11 +1247,12 @@ class WorkspaceArtifactStore:
                 )
                 if existing is not None:
                     return existing
-            self._validate_posix_lease_descriptor(descriptor, lease_path)
+            self._validate_posix_lease_descriptor(descriptor, locks_descriptor, lease_name)
             token = secrets.token_hex(32)
             self._write_posix_lease_diagnostic(
                 descriptor,
-                lease_path,
+                locks_descriptor,
+                lease_name,
                 artifact_id,
                 run_id,
                 manifest.sha256.removeprefix("sha256:"),
@@ -1163,6 +1274,7 @@ class WorkspaceArtifactStore:
         finally:
             if descriptor >= 0:
                 self._close_descriptor(descriptor)
+            self._close_descriptor(locks_descriptor)
 
     def _reserve(
         self,
