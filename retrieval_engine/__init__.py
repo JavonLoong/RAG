@@ -3,6 +3,7 @@ from .core import BaseRetriever, DocumentChunk, RetrievalResult
 from .graph import SQLiteGraphRetriever
 from .hybrid import HybridRetriever
 from .keyword import KeywordRetriever
+from .knowledge_base import KnowledgeBaseRetriever
 
 __all__ = [
     "BaseRetriever",
@@ -12,7 +13,7 @@ __all__ = [
     "DocumentChunk",
     "HybridRetriever",
     "KeywordRetriever",
+    "KnowledgeBaseRetriever",
     "RetrievalResult",
     "SQLiteGraphRetriever",
 ]
-
