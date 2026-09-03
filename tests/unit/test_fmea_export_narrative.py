@@ -17,9 +17,11 @@ from fmea_application.export_service import (
 )
 from fmea_application.review_contracts import ActorContext
 from fmea_infrastructure.export_narrative_generator import (
+    ExportNarrativeGenerationError,
     ExportNarrativePipelineResult,
     StructuredExportNarrativeGenerator,
     StructuredExportNarrativePipeline,
+    _bounded_task,
 )
 from structured_generation_application import StructuredGenerationPipeline
 from structured_generation_infrastructure import StrictCandidateBatchCodec, StrictCriticReportCodec
@@ -67,6 +69,11 @@ class FakePipeline:
             raise self.error
         return ExportNarrativePipelineResult(
             payload=self.payload,
+            evidence_refs=tuple(
+                item["ref"]
+                for item in request.projection["evidence"]
+                if isinstance(item, dict) and isinstance(item.get("ref"), str)
+            ),
             model_hash=HASH,
             prompt_hash="b" * 64,
             run_id=request.run_id,
@@ -88,6 +95,91 @@ class TrackingRepository:
 class TrackingStore:
     def __getattr__(self, name: str) -> object:
         raise AssertionError(f"narrative suggestion must not access artifact store: {name}")  # noqa: TRY003
+
+
+class SharedGateway:
+    def __init__(self, payload: dict[str, object] | None = None) -> None:
+        self.payload = payload or _payload()
+        self.models: list[str] = []
+        self.template = None
+        self.evidence_pack_id = ""
+
+    def bind(self, bridge: StructuredExportNarrativePipeline, snapshot) -> None:
+        self.template = bridge._template
+        self.evidence_pack_id = (
+            "export-narrative-projection-" + hashlib.sha256(snapshot.snapshot_hash.encode("ascii")).hexdigest()[:24]
+        )
+
+    def complete(self, request, *, max_attempts: int, timeout_seconds: float) -> StructuredModelResponse:
+        self.models.append(request.model_id)
+        if request.stage is GenerationStage.GENERATE:
+            content = json.dumps({
+                "template_id": self.template.metadata.template_id,
+                "template_version": self.template.metadata.version,
+                "template_hash": self.template.template_hash,
+                "evidence_pack_id": self.evidence_pack_id,
+                "candidates": [
+                    {
+                        "candidate_id": "narrative-candidate-1",
+                        "payload": self.payload,
+                        "claims": [],
+                    }
+                ],
+            })
+        else:
+            content = json.dumps({"verdict": "accept", "findings": [], "summary": "accepted"})
+        return StructuredModelResponse(
+            content=content,
+            model_id=request.model_id,
+            finish_reason="stop",
+            input_tokens=10,
+            output_tokens=10,
+            response_hash=hashlib.sha256(content.encode()).hexdigest(),
+            http_attempts=1,
+        )
+
+
+def _shared_pipeline(gateway: SharedGateway) -> StructuredGenerationPipeline:
+    return StructuredGenerationPipeline(
+        gateway=gateway,
+        batch_codec=StrictCandidateBatchCodec(),
+        critic_codec=StrictCriticReportCodec(),
+        candidate_validator=StructuredCandidateValidator(Draft202012SchemaAdapter()),
+    )
+
+
+def _large_multibyte_projection():
+    evidence_summary = tuple(
+        {
+            "pack_id": f"private-pack-{index}",
+            "evidence_ids": (f"private-document-{index}",),
+            "excerpt": f"{index:02d}" + "燃" * 510,
+        }
+        for index in range(1, 13)
+    )
+    rows = tuple(
+        {
+            "row_id": f"private-row-{index}",
+            "failure_mode": "燃料压力异常" * 80,
+            "current_control": "人工检查" * 80,
+            "document_id": f"private-document-{index}",
+            "private_document_ref": f"private-document-reference-{index}",
+            "full_document": "private full document",
+        }
+        for index in range(8)
+    )
+    snapshot = make_normalized_snapshot(rows=rows, evidence_summary=evidence_summary)
+    projection = dict(StructuredExportNarrativeGenerator.projection(snapshot))
+    projection["unresolved"] = [
+        {
+            "issue_alias": f"issue-{index:03d}",
+            "code": "证据不足" * 24,
+            "severity": "high",
+            "evidence_refs": [f"evidence-{index:03d}"],
+        }
+        for index in range(1, 9)
+    ]
+    return snapshot, projection
 
 
 def _service(generator: StructuredExportNarrativeGenerator, repository: object | None = None) -> ExportService:
@@ -147,6 +239,7 @@ def test_narrative_pipeline_result_preserves_flash_then_pro_review_metadata_and_
             self.requests.append(request)
             return ExportNarrativePipelineResult(
                 payload=_payload(),
+                evidence_refs=("evidence-001",),
                 model_hash=HASH,
                 prompt_hash="b" * 64,
                 run_id=request.run_id,
@@ -172,53 +265,10 @@ def test_narrative_pipeline_result_preserves_flash_then_pro_review_metadata_and_
 
 
 def test_shared_generation_pipeline_calls_flash_then_pro_without_network() -> None:
-    class SharedGateway:
-        def __init__(self) -> None:
-            self.models: list[str] = []
-            self.template = None
-            self.evidence_pack_id = ""
-
-        def complete(self, request, *, max_attempts: int, timeout_seconds: float) -> StructuredModelResponse:
-            self.models.append(request.model_id)
-            if request.stage is GenerationStage.GENERATE:
-                content = json.dumps({
-                    "template_id": self.template.metadata.template_id,
-                    "template_version": self.template.metadata.version,
-                    "template_hash": self.template.template_hash,
-                    "evidence_pack_id": self.evidence_pack_id,
-                    "candidates": [
-                        {
-                            "candidate_id": "narrative-candidate-1",
-                            "payload": _payload(),
-                            "claims": [],
-                        }
-                    ],
-                })
-            else:
-                content = json.dumps({"verdict": "accept", "findings": [], "summary": "accepted"})
-            return StructuredModelResponse(
-                content=content,
-                model_id=request.model_id,
-                finish_reason="stop",
-                input_tokens=10,
-                output_tokens=10,
-                response_hash=hashlib.sha256(content.encode()).hexdigest(),
-                http_attempts=1,
-            )
-
     gateway = SharedGateway()
-    shared_pipeline = StructuredGenerationPipeline(
-        gateway=gateway,
-        batch_codec=StrictCandidateBatchCodec(),
-        critic_codec=StrictCriticReportCodec(),
-        candidate_validator=StructuredCandidateValidator(Draft202012SchemaAdapter()),
-    )
     snapshot = make_normalized_snapshot()
-    bridge = StructuredExportNarrativePipeline(shared_pipeline)
-    gateway.template = bridge._template
-    gateway.evidence_pack_id = (
-        "export-narrative-projection-" + hashlib.sha256(snapshot.snapshot_hash.encode("ascii")).hexdigest()[:24]
-    )
+    bridge = StructuredExportNarrativePipeline(_shared_pipeline(gateway))
+    gateway.bind(bridge, snapshot)
     request = ExportNarrativeRequest(
         snapshot=snapshot,
         projection=StructuredExportNarrativeGenerator.projection(snapshot),
@@ -230,6 +280,43 @@ def test_shared_generation_pipeline_calls_flash_then_pro_without_network() -> No
     assert gateway.models == ["deepseek-v4-flash", "deepseek-v4-pro"]
     assert result.stages == ("generate:deepseek-v4-flash", "critic:deepseek-v4-pro")
     assert result.status == "succeeded"
+
+
+def test_narrative_context_budget_keeps_whole_multibyte_entries_and_reports_omissions() -> None:
+    _, projection = _large_multibyte_projection()
+
+    first = _bounded_task(projection)
+    second = _bounded_task(projection)
+    decoded = json.loads(first)
+
+    assert first == second
+    assert len(first) <= 4000
+    assert len(first.encode("utf-8")) <= 4000
+    assert decoded["context_budget"]["contract"] == "unicode-characters-and-utf8-bytes"
+    assert all(decoded["context_budget"]["omitted_counts"][name] > 0 for name in ("rows", "evidence", "unresolved"))
+    assert all(item in projection["rows"] for item in decoded["rows"])
+    assert all(item in projection["evidence"] for item in decoded["evidence"])
+    assert all(item in projection["unresolved"] for item in decoded["unresolved"])
+    assert "private-document" not in first
+    assert "private full document" not in first
+
+
+def test_narrative_output_rejects_an_evidence_alias_omitted_by_context_budget() -> None:
+    snapshot, projection = _large_multibyte_projection()
+    gateway = SharedGateway(_payload(evidence_ids=("evidence-012",)))
+    bridge = StructuredExportNarrativePipeline(_shared_pipeline(gateway))
+    gateway.bind(bridge, snapshot)
+    request = ExportNarrativeRequest(
+        snapshot=snapshot,
+        projection=projection,
+        run_id="export-narrative-budget-run-1",
+    )
+
+    with pytest.raises(ExportNarrativeGenerationError) as captured:
+        StructuredExportNarrativeGenerator(bridge).generate(request)
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_INVALID"
+    assert "evidence-012" not in str(captured.value)
 
 
 @pytest.mark.parametrize(

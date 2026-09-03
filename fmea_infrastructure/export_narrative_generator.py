@@ -36,6 +36,10 @@ _SECTION_KEYS = frozenset({"section_id", "title", "body", "claim_ids"})
 _CLAIM_KEYS = frozenset({"claim_id", "text", "evidence_ids"})
 _NARRATIVE_TEMPLATE_ID = "fmea-export-narrative"
 _NARRATIVE_TEMPLATE_VERSION = "1.0.0"
+_NARRATIVE_TASK_MAX_CHARACTERS = 4_000
+_NARRATIVE_TASK_MAX_UTF8_BYTES = 4_000
+_NARRATIVE_CONTEXT_ITEM_LIMITS = {"rows": 4, "evidence": 12, "unresolved": 4}
+_NARRATIVE_CONTEXT_PRIORITY = ("evidence", "unresolved", "rows")
 _UNAVAILABLE_CODES = {
     "MODEL_AUTHENTICATION_FAILED",
     "MODEL_CONFIGURATION_INVALID",
@@ -65,6 +69,7 @@ class ExportNarrativePipelineResult:
     """Provider-neutral output of either a fake or shared generation pipeline."""
 
     payload: object
+    evidence_refs: tuple[str, ...]
     model_hash: str
     prompt_hash: str
     run_id: str
@@ -72,6 +77,15 @@ class ExportNarrativePipelineResult:
     status: str
     repair_count: int = 0
     stages: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class _BoundedNarrativeContext:
+    """Canonical task plus the exact projection identities exposed to the model."""
+
+    task: str
+    projection: Mapping[str, object]
+    evidence_refs: tuple[str, ...]
 
 
 class ExportNarrativePipeline(Protocol):
@@ -211,6 +225,7 @@ def _coerce_pipeline_result(raw: object) -> ExportNarrativePipelineResult:
         raise _unavailable("narrative pipeline did not produce a reviewable result", retryable=False)
     if raw.repair_count not in {0, 1}:
         raise _invalid("narrative pipeline repair count is invalid")
+    _string_ids(raw.evidence_refs, "pipeline evidence_refs", 12)
     _hash(raw.model_hash, "model")
     _hash(raw.prompt_hash, "prompt")
     _text(raw.run_id, "run_id", 256)
@@ -236,7 +251,7 @@ class StructuredExportNarrativeGenerator:
     def generate(self, request: ExportNarrativeRequest) -> ExportNarrativeGenerationResult:
         if not isinstance(request, ExportNarrativeRequest):
             raise _invalid("narrative request is invalid")
-        known_evidence = _safe_projection_refs(request)
+        supplied_evidence = _safe_projection_refs(request)
         try:
             raw = self._pipeline.run(request)
         except ExportNarrativeGenerationError:
@@ -246,7 +261,10 @@ class StructuredExportNarrativeGenerator:
         except Exception as exc:
             raise _unavailable("narrative model is temporarily unavailable") from exc
         result = _coerce_pipeline_result(raw)
-        draft = _parse_draft(result.payload, known_evidence=known_evidence)
+        included_evidence = frozenset(result.evidence_refs)
+        if not included_evidence.issubset(supplied_evidence):
+            raise _invalid("narrative pipeline exposed evidence outside the safe projection")
+        draft = _parse_draft(result.payload, known_evidence=included_evidence)
         return ExportNarrativeGenerationResult(
             draft=draft,
             model_hash=result.model_hash,
@@ -390,28 +408,216 @@ def _projection_pack(request: ExportNarrativeRequest) -> EvidencePack:
     )
 
 
-def _bounded_task(projection: Mapping[str, object]) -> str:
-    """Keep the shared request's task field under its existing 4K contract."""
+def _canonical_context_json(value: object) -> str:
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise _invalid("narrative context projection is invalid") from exc
 
-    compact = {
-        "summary": projection.get("summary", {}),
-        "rows": projection.get("rows", ())[:4],
-        "evidence": projection.get("evidence", ()),
-        "unresolved": projection.get("unresolved", ())[:4],
-        "rule": "Draft narrative only; preserve unknowns and cite only evidence refs.",
+
+def _json_round_trip(value: object) -> object:
+    encoded = _canonical_context_json(value)
+    try:
+        return json.loads(encoded)
+    except (UnicodeError, json.JSONDecodeError) as exc:  # pragma: no cover - json.dumps produced the input.
+        raise _invalid("narrative context projection is invalid") from exc
+
+
+def _context_entries(projection: Mapping[str, object], name: str) -> list[dict[str, object]]:  # noqa: C901
+    raw_entries = projection.get(name, ())
+    if isinstance(raw_entries, str | bytes) or not isinstance(raw_entries, Sequence) or len(raw_entries) > 64:
+        raise _invalid("narrative context projection is invalid")
+    expected_keys = {
+        "rows": {"row_alias", "fields"},
+        "evidence": {"ref", "kind", "excerpt"},
+        "unresolved": {"issue_alias", "code", "severity", "evidence_refs"},
+    }[name]
+    identity_key = {"rows": "row_alias", "evidence": "ref", "unresolved": "issue_alias"}[name]
+    normalized: list[dict[str, object]] = []
+    identities: list[str] = []
+    for raw_entry in raw_entries:
+        entry = _json_round_trip(raw_entry)
+        if not isinstance(entry, dict) or set(entry) != expected_keys:
+            raise _invalid("narrative context projection is invalid")
+        identity = entry.get(identity_key)
+        if not isinstance(identity, str) or _text(identity, identity_key, 128) != identity:
+            raise _invalid("narrative context projection is invalid")
+        if name == "rows" and not isinstance(entry.get("fields"), dict):
+            raise _invalid("narrative context projection is invalid")
+        if name == "evidence":
+            kind = entry.get("kind")
+            excerpt = entry.get("excerpt")
+            if (
+                not isinstance(kind, str)
+                or _text(kind, "evidence kind", 128) != kind
+                or not isinstance(excerpt, str)
+                or len(excerpt) > 512
+            ):
+                raise _invalid("narrative context projection is invalid")
+        if name == "unresolved":
+            code = entry.get("code")
+            severity = entry.get("severity")
+            refs = entry.get("evidence_refs")
+            if (
+                not isinstance(code, str)
+                or _text(code, "unresolved code", 128) != code
+                or not isinstance(severity, str)
+                or _text(severity, "unresolved severity", 32) != severity
+                or isinstance(refs, str | bytes)
+                or not isinstance(refs, Sequence)
+            ):
+                raise _invalid("narrative context projection is invalid")
+            _string_ids(refs, "unresolved evidence_refs", 12)
+        if identity in identities:
+            raise _invalid("narrative context projection contains duplicate aliases")
+        identities.append(identity)
+        normalized.append(entry)
+    return sorted(normalized, key=lambda item: str(item[identity_key]))
+
+
+def _context_document(
+    projection: Mapping[str, object],
+    entries: Mapping[str, Sequence[Mapping[str, object]]],
+    totals: Mapping[str, int],
+    *,
+    max_characters: int,
+    max_utf8_bytes: int,
+) -> dict[str, object]:
+    summary = _json_round_trip(projection.get("summary"))
+    expected_summary = {
+        "row_count",
+        "risk_record_count",
+        "evidence_pack_count",
+        "decision_count",
+        "unresolved_count",
+        "propagation_present",
     }
-    encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    if len(encoded) > 3900:
-        compact["rows"] = tuple(
-            {
-                "row_alias": row.get("row_alias"),
-                "fields": {key: str(value)[:96] for key, value in row.get("fields", {}).items()},
-            }
-            for row in compact["rows"]
-            if isinstance(row, Mapping)
-        )[:2]
-        encoded = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return encoded[:4000]
+    if not isinstance(summary, dict) or set(summary) != expected_summary:
+        raise _invalid("narrative context projection is invalid")
+    for key in expected_summary - {"propagation_present"}:
+        if isinstance(summary[key], bool) or not isinstance(summary[key], int) or summary[key] < 0:
+            raise _invalid("narrative context projection is invalid")
+    if not isinstance(summary["propagation_present"], bool):
+        raise _invalid("narrative context projection is invalid")
+    aliases: dict[str, str] = {}
+    for key in ("snapshot_alias", "revision_alias"):
+        value = projection.get(key)
+        if not isinstance(value, str) or _text(value, key, 128) != value:
+            raise _invalid("narrative context projection is invalid")
+        aliases[key] = value
+    included_counts = {name: len(entries[name]) for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
+    return {
+        **aliases,
+        "summary": summary,
+        "rows": list(entries["rows"]),
+        "evidence": list(entries["evidence"]),
+        "unresolved": list(entries["unresolved"]),
+        "context_budget": {
+            "contract": "unicode-characters-and-utf8-bytes",
+            "max_characters": max_characters,
+            "max_utf8_bytes": max_utf8_bytes,
+            "item_limits": dict(_NARRATIVE_CONTEXT_ITEM_LIMITS),
+            "source_counts": dict(totals),
+            "included_counts": included_counts,
+            "omitted_counts": {name: totals[name] - included_counts[name] for name in totals},
+        },
+        "rule": "Draft narrative only; preserve unknowns and cite only included evidence refs.",
+    }
+
+
+def _serialize_context(
+    document: Mapping[str, object],
+    *,
+    max_characters: int,
+    max_utf8_bytes: int,
+) -> str | None:
+    encoded = _canonical_context_json(document)
+    try:
+        wire = encoded.encode("utf-8")
+    except UnicodeError as exc:
+        raise _invalid("narrative context serialization is invalid") from exc
+    if len(encoded) > max_characters or len(wire) > max_utf8_bytes:
+        return None
+    try:
+        decoded = json.loads(wire.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:  # pragma: no cover - canonical encoder produced the input.
+        raise _invalid("narrative context serialization is invalid") from exc
+    if _canonical_context_json(decoded) != encoded:
+        raise _invalid("narrative context serialization is not canonical")
+    return encoded
+
+
+def _build_bounded_context(
+    projection: Mapping[str, object],
+    *,
+    max_characters: int = _NARRATIVE_TASK_MAX_CHARACTERS,
+    max_utf8_bytes: int = _NARRATIVE_TASK_MAX_UTF8_BYTES,
+) -> _BoundedNarrativeContext:
+    """Select whole entries under both Unicode-character and UTF-8-byte limits."""
+
+    if (
+        not isinstance(projection, Mapping)
+        or isinstance(max_characters, bool)
+        or not isinstance(max_characters, int)
+        or max_characters < 1
+        or isinstance(max_utf8_bytes, bool)
+        or not isinstance(max_utf8_bytes, int)
+        or max_utf8_bytes < 1
+    ):
+        raise _invalid("narrative context budget is invalid")
+    available = {name: _context_entries(projection, name) for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
+    totals = {name: len(items) for name, items in available.items()}
+    selected: dict[str, list[dict[str, object]]] = {name: [] for name in _NARRATIVE_CONTEXT_ITEM_LIMITS}
+    minimum = _context_document(
+        projection,
+        selected,
+        totals,
+        max_characters=max_characters,
+        max_utf8_bytes=max_utf8_bytes,
+    )
+    task = _serialize_context(
+        minimum,
+        max_characters=max_characters,
+        max_utf8_bytes=max_utf8_bytes,
+    )
+    if task is None:
+        raise _invalid("narrative context minimum envelope exceeds its configured budget")
+
+    for name in _NARRATIVE_CONTEXT_PRIORITY:
+        for entry in available[name]:
+            if len(selected[name]) >= _NARRATIVE_CONTEXT_ITEM_LIMITS[name]:
+                break
+            if name == "unresolved":
+                included_refs = {str(item["ref"]) for item in selected["evidence"]}
+                if not set(entry["evidence_refs"]).issubset(included_refs):
+                    continue
+            candidate = {key: list(values) for key, values in selected.items()}
+            candidate[name].append(entry)
+            document = _context_document(
+                projection,
+                candidate,
+                totals,
+                max_characters=max_characters,
+                max_utf8_bytes=max_utf8_bytes,
+            )
+            candidate_task = _serialize_context(
+                document,
+                max_characters=max_characters,
+                max_utf8_bytes=max_utf8_bytes,
+            )
+            if candidate_task is not None:
+                selected = candidate
+                task = candidate_task
+
+    final_document = json.loads(task)
+    evidence_refs = tuple(str(item["ref"]) for item in final_document["evidence"])
+    return _BoundedNarrativeContext(task=task, projection=final_document, evidence_refs=evidence_refs)
+
+
+def _bounded_task(projection: Mapping[str, object]) -> str:
+    """Return canonical, structurally budgeted JSON for the shared 4K task field."""
+
+    return _build_bounded_context(projection).task
 
 
 class StructuredExportNarrativePipeline:
@@ -426,12 +632,18 @@ class StructuredExportNarrativePipeline:
 
         if not isinstance(request, ExportNarrativeRequest):
             raise _invalid("narrative request is invalid")
-        model_pack = _projection_pack(request)
+        context = _build_bounded_context(request.projection)
+        bounded_request = ExportNarrativeRequest(
+            snapshot=request.snapshot,
+            projection=context.projection,
+            run_id=request.run_id,
+        )
+        model_pack = _projection_pack(bounded_request)
         try:
             result = self._pipeline.run(
                 GenerationRunRequest(
                     run_id=request.run_id,
-                    task=_bounded_task(request.projection),
+                    task=context.task,
                     template=self._template,
                     evidence_pack=model_pack,
                     budget=GenerationBudget(
@@ -474,8 +686,10 @@ class StructuredExportNarrativePipeline:
         payload = result.batch.candidates[0].payload
         if not isinstance(payload, Mapping):
             raise _invalid("narrative candidate payload is invalid")
+        _parse_draft(payload, known_evidence=frozenset(context.evidence_refs))
         return ExportNarrativePipelineResult(
             payload=payload,
+            evidence_refs=context.evidence_refs,
             model_hash=final[0].response_hash or "",
             prompt_hash=final[0].prompt_hash,
             run_id=request.run_id,
