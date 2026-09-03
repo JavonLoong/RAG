@@ -7,9 +7,11 @@ import json
 import multiprocessing
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import fmea_infrastructure.artifact_store as artifact_store_module
 from fmea_application.delivery_contracts import ExportArtifactManifest, VerifiedExportArtifact
 from fmea_infrastructure.artifact_store import ArtifactStoreError, WorkspaceArtifactStore
 
@@ -63,6 +65,13 @@ class _ReparseStat:
 
     def __getattr__(self, name: str):
         return getattr(self._delegate, name)
+
+
+class _PosixOsProxy:
+    name = "posix"
+
+    def __getattr__(self, name: str):
+        return getattr(os, name)
 
 
 def _multiprocess_publish(
@@ -194,7 +203,10 @@ def test_fault_after_final_rename_before_latest_preserves_previous_latest(
 
     assert error.value.code == "FMEA_ARTIFACT_STORAGE_FAILED"
     assert store.latest(RUN) == previous
-    assert not (store.artifacts_root / "artifact-2").exists()
+    if os.name == "nt":
+        assert not (store.artifacts_root / "artifact-2").exists()
+    else:
+        assert store.get("artifact-2", WORKSPACE).payload == next_payload
 
 
 def test_fault_after_latest_reconciles_the_committed_artifact(tmp_path: Path) -> None:
@@ -268,7 +280,12 @@ def test_fault_during_temp_write_does_not_create_latest_or_final(
         store.publish(RUN, FILENAME, PAYLOAD, _manifest())
 
     assert store.latest(RUN) is None
-    assert not tuple(store.artifacts_root.iterdir())
+    staged = tuple(store.artifacts_root.iterdir())
+    if os.name == "nt":
+        assert not staged
+    else:
+        assert len(staged) == 1
+        assert staged[0].name.startswith(".artifact-tmp-")
 
 
 def test_fsync_seam_failure_cleans_the_staged_directory(tmp_path: Path) -> None:
@@ -286,7 +303,12 @@ def test_fsync_seam_failure_cleans_the_staged_directory(tmp_path: Path) -> None:
     assert calls == 1
     assert error.value.code == "FMEA_ARTIFACT_STORAGE_FAILED"
     assert store.latest(RUN) is None
-    assert not tuple(store.artifacts_root.iterdir())
+    staged = tuple(store.artifacts_root.iterdir())
+    if os.name == "nt":
+        assert not staged
+    else:
+        assert len(staged) == 1
+        assert staged[0].name.startswith(".artifact-tmp-")
 
 
 def test_owned_tree_cleanup_preserves_a_replacement_after_identity_check(
@@ -341,6 +363,172 @@ def test_owned_tree_cleanup_fails_closed_when_parent_cannot_be_revalidated(
     store._remove_owned_tree(owned, expected)
 
     assert owned_file.read_bytes() == b"owned"
+
+
+@pytest.mark.parametrize(
+    ("entry_role", "directory"),
+    [
+        pytest.param("file", False, id="file"),
+        pytest.param("directory", True, id="directory"),
+        pytest.param("owner", False, id="owner"),
+        pytest.param("reservation", True, id="reservation"),
+    ],
+)
+def test_posix_cleanup_never_removes_a_second_stat_replacement(  # noqa: C901
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    entry_role: str,
+    directory: bool,
+) -> None:
+    store = _store(tmp_path)
+    parent = store.workspace_root / ".locks" if entry_role in {"owner", "reservation"} else store.artifacts_root
+    if entry_role == "owner":
+        parent = parent / "owned-reservation"
+        parent.mkdir()
+        target = parent / ".owner"
+    else:
+        target = parent / f".{entry_role}-cleanup"
+    displaced = target.with_name(f".displaced-{target.name}")
+    if directory:
+        target.mkdir()
+    else:
+        target.write_bytes(b"owned")
+    expected = target.lstat()
+    parent_expected = target.parent.lstat()
+    descriptor = 91
+    stat_calls = 0
+    operation_calls = 0
+    original_unlink = os.unlink
+    original_rmdir = os.rmdir
+
+    def open_parent(path: str, _flags: int) -> int:
+        assert os.fspath(path) == os.fspath(target.parent)
+        return descriptor
+
+    def inspect_parent(opened_descriptor: int) -> os.stat_result:
+        assert opened_descriptor == descriptor
+        return parent_expected
+
+    def replace_after_second_stat(
+        name: str,
+        *,
+        dir_fd: int,
+        follow_symlinks: bool,
+    ) -> os.stat_result:
+        nonlocal stat_calls
+        assert name == target.name
+        assert dir_fd == descriptor
+        assert follow_symlinks is False
+        stat_calls += 1
+        if stat_calls == 2:
+            target.rename(displaced)
+            if directory:
+                target.mkdir()
+            else:
+                target.write_bytes(b"foreign")
+        return expected
+
+    def remove_replacement(name: str, *, dir_fd: int) -> None:
+        nonlocal operation_calls
+        assert name == target.name
+        assert dir_fd == descriptor
+        operation_calls += 1
+        if directory:
+            original_rmdir(target)
+        else:
+            original_unlink(target)
+
+    monkeypatch.setattr(store, "_supports_relative_cleanup", lambda _operation: True)
+    monkeypatch.setattr(
+        artifact_store_module,
+        "os",
+        SimpleNamespace(
+            name="posix",
+            O_RDONLY=os.O_RDONLY,
+            close=lambda opened_descriptor: None,
+            fspath=os.fspath,
+            fstat=inspect_parent,
+            open=open_parent,
+            rmdir=remove_replacement,
+            stat=replace_after_second_stat,
+            unlink=remove_replacement,
+        ),
+    )
+
+    if directory:
+        removed = store._remove_empty_directory(target, expected)
+    else:
+        removed = store._remove_file(target, expected=expected)
+
+    assert stat_calls == 2
+    assert operation_calls == 0
+    assert removed is False
+    assert target.exists()
+    if directory:
+        assert target.is_dir()
+    else:
+        assert target.read_bytes() == b"foreign"
+    assert displaced.exists()
+
+
+def test_posix_fail_closed_reservation_allows_committed_replay(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    store = _store(tmp_path)
+    monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+
+    published = store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+    reservation = store.workspace_root / ".locks" / ARTIFACT
+    owner = reservation / ".owner"
+
+    assert owner.is_file()
+    assert store.publish(RUN, FILENAME, PAYLOAD, _manifest()) == published
+    assert store.latest(RUN) == published
+
+
+def test_posix_fail_closed_failed_publication_is_bounded_and_retryable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    elapsed = 0.0
+
+    def monotonic() -> float:
+        return elapsed
+
+    def wait(duration: float) -> None:
+        nonlocal elapsed
+        elapsed += duration
+
+    def fail_after_write(stage: str) -> None:
+        if stage == "after_payload_write":
+            raise RuntimeError
+
+    monkeypatch.setattr(artifact_store_module, "os", _PosixOsProxy())
+    store = _store(
+        tmp_path,
+        fault_hook=fail_after_write,
+        reservation_timeout_seconds=0.03,
+        reservation_poll_seconds=0.01,
+        monotonic_seam=monotonic,
+        reservation_wait_seam=wait,
+    )
+    monkeypatch.setattr(store, "_sync_directory", lambda _path: None)
+
+    with pytest.raises(ArtifactStoreError):
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    store._fault_hook = None
+    with pytest.raises(ArtifactStoreError) as error:
+        store.publish(RUN, FILENAME, PAYLOAD, _manifest())
+
+    assert error.value.code == "FMEA_ARTIFACT_BUSY"
+    assert error.value.retryable is True
+    assert elapsed == pytest.approx(0.03)
+    assert store.latest(RUN) is None
+    assert (store.workspace_root / ".locks" / ARTIFACT / ".owner").is_file()
+    assert any(path.name.startswith(".artifact-tmp-") for path in store.artifacts_root.iterdir())
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows handle deletion regression")

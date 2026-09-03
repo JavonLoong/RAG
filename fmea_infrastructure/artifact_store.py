@@ -632,10 +632,19 @@ class WorkspaceArtifactStore:
         path: Path,
         expected: os.stat_result,
         parent_expected: os.stat_result,
-        operation: Callable[..., object],
+        _operation: Callable[..., object],
         *,
         directory: bool,
     ) -> bool:
+        """Validate a POSIX cleanup candidate but never delete it by name.
+
+        Python exposes no handle-bound POSIX unlink primitive.  Even a name
+        relative to an opened parent can be replaced after ``stat`` and before
+        ``unlink``/``rmdir``.  The checks below remain useful diagnostics, but
+        successful validation must still fail closed rather than remove an
+        entry whose identity cannot be bound to the deletion operation.
+        """
+
         flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
         try:
             parent_descriptor = os.open(os.fspath(path.parent), flags)
@@ -657,13 +666,11 @@ class WorkspaceArtifactStore:
             final = os.stat(path.name, dir_fd=parent_descriptor, follow_symlinks=False)
             if not self._cleanup_entry_matches(expected, final, directory=directory):
                 return False
-            operation(path.name, dir_fd=parent_descriptor)
         except (FileNotFoundError, OSError, TypeError, ValueError):
             return False
-        else:
-            return True
         finally:
             os.close(parent_descriptor)
+        return False
 
     def _remove_windows_entry(
         self,
