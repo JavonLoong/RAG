@@ -113,6 +113,7 @@ class _Repository:
     def __init__(self, revision):
         self.revision = revision
         self.reports = {}
+        self.report_commands = {}
         self.prepared = None
 
     def get_revision(self, revision_id, workspace_id):
@@ -125,9 +126,15 @@ class _Repository:
 
     def save_migration_report(self, report, *, command, actor):
         self.reports[report.migration_id] = report
+        self.report_commands[report.migration_id] = command
         return report
 
-    def get_migration_report(self, migration_id, workspace_id):
+    def get_migration_report(self, migration_id, workspace_id, *, command):
+        stored_command = self.report_commands.get(migration_id)
+        if stored_command is not None and stored_command != command:
+            from fmea_application.ports import MigrationReportRequestConflict
+
+            raise MigrationReportRequestConflict
         return self.reports.get(migration_id)
 
     def commit_migration(self, prepared):
@@ -199,7 +206,8 @@ def test_stale_source_hash_fails_closed():
 
 def test_confirm_requires_the_exact_dry_run_report_hash():
     service, _ = _service()
-    report = service.dry_run(_command(), _actor())
+    dry_command = _command()
+    report = service.dry_run(dry_command, _actor())
 
     from fmea_application.migration_service import ConfirmMigrationCommand
 
@@ -211,6 +219,7 @@ def test_confirm_requires_the_exact_dry_run_report_hash():
         target_domain_pack_id="fuel-combustion",
         target_domain_pack_version="2.0.0",
         target_domain_pack_hash=TARGET_HASH,
+        dry_run_command=dry_command,
         idempotency_key="00000000-0000-4000-8000-000000000902",
         confirm_migration=True,
     )
@@ -283,6 +292,20 @@ def test_dry_run_replays_stored_report_without_reinvoking_adapter():
     assert repository.prepared is None
 
 
+def test_fresh_dry_run_rejects_a_different_request_key_for_the_stored_report():
+    first_service, repository = _service()
+    first_service.dry_run(_command(), _actor())
+    fresh_adapter = _CountingAdapter()
+    fresh_service, _ = _service(adapter=fresh_adapter, repository=repository)
+
+    with pytest.raises(Exception, match="FMEA_MIGRATION_IDEMPOTENCY_CONFLICT"):
+        fresh_service.dry_run(
+            _command(key="00000000-0000-4000-8000-000000000903"),
+            _actor(),
+        )
+    assert fresh_adapter.calls == 0
+
+
 def test_adapter_and_storage_failures_are_safe_migration_errors():
     service, _ = _service(adapter=_FailingAdapter())
     with pytest.raises(Exception, match="FMEA_MIGRATION_ADAPTER_FAILED") as adapter_error:
@@ -322,6 +345,7 @@ def test_confirm_delegates_one_prepared_atomic_migration_unit():
             target_domain_pack_id=dry_command.target_domain_pack_id,
             target_domain_pack_version=dry_command.target_domain_pack_version,
             target_domain_pack_hash=dry_command.target_domain_pack_hash,
+            dry_run_command=dry_command,
             idempotency_key="00000000-0000-4000-8000-000000000902",
             confirm_migration=True,
         ),
@@ -335,7 +359,8 @@ def test_confirm_delegates_one_prepared_atomic_migration_unit():
 
 def test_fresh_confirmation_rejects_target_hash_drift_from_stored_report():
     service, repository = _service()
-    report = service.dry_run(_command(), _actor())
+    dry_command = _command()
+    report = service.dry_run(dry_command, _actor())
 
     class DriftedAdapter(_Adapter):
         def migrate(self, source):
@@ -369,6 +394,7 @@ def test_fresh_confirmation_rejects_target_hash_drift_from_stored_report():
                 target_domain_pack_id="fuel-combustion",
                 target_domain_pack_version="2.0.0",
                 target_domain_pack_hash=DRIFTED_TARGET_HASH,
+                dry_run_command=dry_command,
                 idempotency_key="00000000-0000-4000-8000-000000000902",
                 confirm_migration=True,
             ),
@@ -486,6 +512,7 @@ def test_transformed_domain_fields_survive_in_prepared_candidate():
             target_domain_pack_id=dry_command.target_domain_pack_id,
             target_domain_pack_version=dry_command.target_domain_pack_version,
             target_domain_pack_hash=dry_command.target_domain_pack_hash,
+            dry_run_command=dry_command,
             idempotency_key="00000000-0000-4000-8000-000000000902",
             confirm_migration=True,
         ),

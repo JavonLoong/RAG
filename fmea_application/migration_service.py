@@ -21,7 +21,7 @@ from core_domain.fmea.template_migration import (
     MigrationReportStatus,
 )
 
-from .ports import MigrationRepository
+from .ports import MigrationReportRequestConflict, MigrationRepository
 from .review_contracts import ActorContext, idempotency_key_hash
 from .review_errors import ReviewError
 
@@ -237,6 +237,7 @@ class ConfirmMigrationCommand:
     target_domain_pack_id: str
     target_domain_pack_version: str
     target_domain_pack_hash: str
+    dry_run_command: MigrationCommand
     idempotency_key: str
     confirm_migration: bool
 
@@ -254,6 +255,8 @@ class ConfirmMigrationCommand:
         object.__setattr__(
             self, "target_domain_pack_hash", _hash(self.target_domain_pack_hash, "target_domain_pack_hash")
         )
+        if not isinstance(self.dry_run_command, MigrationCommand):
+            raise ValueError("dry_run_command must be a MigrationCommand")  # noqa: TRY003
         object.__setattr__(self, "idempotency_key", _validate_key(self.idempotency_key))
         if not isinstance(self.confirm_migration, bool):
             raise ValueError("confirm_migration must be a boolean")  # noqa: TRY003
@@ -340,6 +343,8 @@ class PreparedMigration:
             raise ValueError("prepared target domain pack binding is invalid")  # noqa: TRY003
         if self.command.migration_id != self.dry_run_command.migration_id:
             raise ValueError("prepared migration identity is invalid")  # noqa: TRY003
+        if self.command.dry_run_command != self.dry_run_command:
+            raise ValueError("prepared dry-run request binding is invalid")  # noqa: TRY003
         if self.report.migration_id != self.command.migration_id:
             raise ValueError("prepared report identity is invalid")  # noqa: TRY003
         if self.report.status is not MigrationReportStatus.DRY_RUN:
@@ -393,6 +398,7 @@ def _same_migration_fields(left: MigrationCommand, right: ConfirmMigrationComman
         and left.target_domain_pack_id == right.target_domain_pack_id
         and left.target_domain_pack_version == right.target_domain_pack_version
         and _digest(left.target_domain_pack_hash) == _digest(right.target_domain_pack_hash)
+        and left == right.dry_run_command
     )
 
 
@@ -647,7 +653,7 @@ class MigrationService:
             raise _error("FMEA_MIGRATION_REPORT_INVALID", "migration report could not be created") from None
         return _DryRunRecord(command, source, source_record_version, plan, candidate, report)
 
-    def _stored_report(self, migration_id: str, workspace_id: str) -> MigrationReport | None:
+    def _stored_report(self, command: MigrationCommand, workspace_id: str) -> MigrationReport | None:
         getter = getattr(self._repository, "get_migration_report", None)
         if getter is None:
             return None
@@ -656,7 +662,12 @@ class MigrationService:
                 "FMEA_MIGRATION_STORAGE_UNAVAILABLE", "migration report storage is unavailable", retryable=True
             )
         try:
-            report = getter(migration_id, workspace_id)
+            report = getter(command.migration_id, workspace_id, command=command)
+        except MigrationReportRequestConflict:
+            raise _error(
+                "FMEA_MIGRATION_IDEMPOTENCY_CONFLICT",
+                "migration request identity conflicts with the stored dry run",
+            ) from None
         except Exception:
             raise _error(
                 "FMEA_MIGRATION_STORAGE_UNAVAILABLE", "migration report storage is unavailable", retryable=True
@@ -682,12 +693,12 @@ class MigrationService:
             plan = self._resolve(source.domain_pack_identity[:2], target[:2])
             if plan != cached.plan:
                 raise _error("FMEA_MIGRATION_REPORT_STALE", "stored migration report is stale")
-            stored = self._stored_report(command.migration_id, actor.workspace_id)
+            stored = self._stored_report(command, actor.workspace_id)
             if stored is not None and stored.report_hash != cached.report.report_hash:
                 raise _error("FMEA_MIGRATION_REPORT_STALE", "stored migration report hash is stale")
             return cached.report if stored is None else stored
 
-        stored = self._stored_report(command.migration_id, actor.workspace_id)
+        stored = self._stored_report(command, actor.workspace_id)
         record = self._build_record(command, actor)
         if stored is not None:
             if stored.status is not MigrationReportStatus.DRY_RUN or stored.report_hash != record.report.report_hash:
@@ -780,11 +791,11 @@ class MigrationService:
     def _record_for_confirmation(self, command: ConfirmMigrationCommand, actor: ActorContext) -> _DryRunRecord:
         cache_key = (actor.workspace_id, command.migration_id)
         cached = self._dry_runs.get(cache_key)
-        stored = self._stored_report(command.migration_id, actor.workspace_id)
         if cached is not None and cached.command.migration_id != command.migration_id:
             cached = None
         if cached is not None:
             record = cached
+            stored = self._stored_report(record.command, actor.workspace_id)
             source, source_version = self._load_source(record.command, actor)
             target = self._load_target(record.command)
             if not _same_migration_fields(record.command, command):
@@ -797,17 +808,12 @@ class MigrationService:
             if plan != record.plan:
                 raise _error("FMEA_MIGRATION_REPORT_STALE", "migration compatibility path is stale")
             return _DryRunRecord(record.command, source, source_version, plan, record.candidate, record.report)
+        dry_command = command.dry_run_command
+        stored = self._stored_report(dry_command, actor.workspace_id)
         if stored is None:
             raise _error("FMEA_MIGRATION_REPORT_MISSING", "a stored dry-run report is required")
-        dry_command = MigrationCommand(
-            migration_id=command.migration_id,
-            source_revision_id=command.source_revision_id,
-            source_revision_hash=command.source_revision_hash,
-            target_domain_pack_id=command.target_domain_pack_id,
-            target_domain_pack_version=command.target_domain_pack_version,
-            target_domain_pack_hash=command.target_domain_pack_hash,
-            idempotency_key=command.idempotency_key,
-        )
+        if not _same_migration_fields(dry_command, command):
+            raise _error("FMEA_MIGRATION_REPORT_STALE", "confirmation preconditions do not match the dry run")
         record = self._build_record(dry_command, actor)
         if (
             stored.report_hash != command.report_hash

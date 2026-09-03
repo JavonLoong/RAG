@@ -254,6 +254,10 @@ class MigrationAdapter(Protocol):
     def migrate(self, source: FmeaRevision) -> MigrationCandidate: ...
 
 
+class MigrationReportRequestConflict(ValueError):
+    """The stored dry run is bound to a different canonical request."""
+
+
 class MigrationRepository(Protocol):
     """Provider-neutral persistence boundary for durable migration delivery."""
 
@@ -265,7 +269,13 @@ class MigrationRepository(Protocol):
         self, report: MigrationReport, *, command: MigrationCommand, actor: ActorContext
     ) -> MigrationReport: ...
 
-    def get_migration_report(self, migration_id: str, workspace_id: str) -> MigrationReport | None: ...
+    def get_migration_report(
+        self,
+        migration_id: str,
+        workspace_id: str,
+        *,
+        command: MigrationCommand,
+    ) -> MigrationReport | None: ...
 
     def commit_migration(self, prepared: PreparedMigration) -> MigrationResult: ...
 
@@ -824,6 +834,7 @@ __all__ = [
     "GovernanceRunQueryPort",
     "GovernanceSourcePort",
     "MigrationAdapter",
+    "MigrationReportRequestConflict",
     "MigrationRepository",
     "PropagationEvidenceProvider",
     "PropagationRepository",
