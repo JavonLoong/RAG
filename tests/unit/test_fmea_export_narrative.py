@@ -205,7 +205,8 @@ def test_narrative_suggestion_is_unapplied_and_does_not_persist_or_mutate_snapsh
     assert suggestion.draft.title == "Fuel system export narrative"
     assert suggestion.envelope.applied is False
     assert snapshot == before
-    assert pipeline.requests[0].snapshot is snapshot
+    assert pipeline.requests[0].snapshot == snapshot
+    assert pipeline.requests[0].snapshot is not snapshot
 
 
 def test_narrative_model_projection_is_bounded_and_private_safe() -> None:
@@ -484,6 +485,30 @@ def test_mutated_exact_narrative_result_is_normalized_without_leak(mutation: str
         service.suggest_narrative(make_normalized_snapshot(), _model_actor())
 
     assert captured.value.code == "FMEA_EXPORT_NARRATIVE_INVALID"
+    assert captured.value.retryable is False
+    assert "secret" not in str(captured.value)
+    assert captured.value.__cause__ is None
+
+
+@pytest.mark.parametrize("mutation", ["workspace", "snapshot_hash", "nested_row"])
+def test_mutated_exact_narrative_snapshot_is_rejected_before_use(mutation: str) -> None:
+    snapshot = make_normalized_snapshot()
+    if mutation == "workspace":
+        object.__setattr__(snapshot, "workspace_id", _ExplosiveNarrativeValue())
+    elif mutation == "snapshot_hash":
+        object.__setattr__(snapshot, "snapshot_hash", _ExplosiveNarrativeValue())
+    else:
+        object.__setattr__(
+            snapshot,
+            "rows",
+            ({"row_id": _ExplosiveNarrativeValue(), "failure_mode": "low pressure"},),
+        )
+    service = _service(StructuredExportNarrativeGenerator(FakePipeline()))
+
+    with pytest.raises(ExportServiceError) as captured:
+        service.suggest_narrative(snapshot, _model_actor())
+
+    assert captured.value.code == "FMEA_EXPORT_NARRATIVE_REQUEST_INVALID"
     assert captured.value.retryable is False
     assert "secret" not in str(captured.value)
     assert captured.value.__cause__ is None

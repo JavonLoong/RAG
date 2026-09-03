@@ -243,7 +243,7 @@ def test_exporter_or_store_failure_persists_failed_run_without_artifact(tmp_path
         )
 
 
-def test_db_commit_failure_is_reconciled_by_same_key(tmp_path: Path):
+def test_db_commit_failure_converges_to_replayable_failed_terminal(tmp_path: Path):
     failed_once = False
 
     def fault(step: str) -> None:
@@ -259,11 +259,11 @@ def test_db_commit_failure_is_reconciled_by_same_key(tmp_path: Path):
     actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
     command = _command(snapshot)
 
-    with pytest.raises(Exception, match="FMEA_EXPORT_STORAGE_UNAVAILABLE"):
-        service.start(command, actor)
     result = service.start(command, actor)
+    replay = service.start(command, actor)
 
-    assert result.status.value == "succeeded"
+    assert result.status.value == "failed"
+    assert replay == result
     assert exporter.calls == 1
 
 
@@ -531,13 +531,14 @@ def test_completion_chain_is_verified_before_transaction_commit(tmp_path: Path, 
         raise ValueError("simulated chain verifier rejection")  # noqa: TRY003
 
     monkeypatch.setattr(repository, "_verify_export_delivery_chain", reject_chain)
-    with pytest.raises(Exception, match="FMEA_EXPORT_STORAGE_UNAVAILABLE"):
-        service.start(_command(snapshot), actor)
+    result = service.start(_command(snapshot), actor)
+
+    assert result.status.value == "failed"
 
     with sqlite3.connect(repository.database_path) as connection:
         assert connection.execute(
             "SELECT status FROM fmea_export_runs WHERE workspace_id='ws-1' AND export_run_id='export-run-1'"
-        ).fetchone() == ("running",)
+        ).fetchone() == ("failed",)
         assert connection.execute("SELECT COUNT(*) FROM fmea_export_artifacts").fetchone() == (0,)
         assert connection.execute(
             "SELECT COUNT(*) FROM fmea_audit_events WHERE command='fmea.export.start'"
@@ -1012,6 +1013,13 @@ def test_typed_export_repository_errors_are_normalized(
     exporter = FakeExporter(failure=RuntimeError("render failed")) if operation == "failed_start" else FakeExporter()
     service, _ = _service(repository, tmp_path, exporter, export_repository=provider)
 
+    if method == "complete_export":
+        failed = service.start(_command(snapshot), actor)
+        assert failed.status.value == "failed"
+        assert failed.error == "export completion failed"
+        assert "secret" not in failed.error
+        return
+
     with pytest.raises(ExportServiceError) as caught:
         if operation == "get_artifact":
             service.get_artifact(completed.artifact_id, actor)
@@ -1048,23 +1056,35 @@ def test_typed_render_and_store_errors_persist_only_safe_failure(tmp_path: Path,
 
 
 def test_typed_store_error_during_reconciliation_is_normalized(tmp_path: Path):
-    from fmea_application.export_service import ExportServiceError
+    from hashlib import sha256
 
-    failed_once = False
+    from fmea_application.delivery_contracts import ExportArtifactManifest
+    from fmea_application.export_service import _artifact_id
 
-    def fault(step: str) -> None:
-        nonlocal failed_once
-        if step == "export.commit" and not failed_once:
-            failed_once = True
-            raise sqlite3.OperationalError("commit failed")  # noqa: TRY003
-
-    repository, publication = _published_repository(tmp_path, fault_injector=fault)
+    repository, publication = _published_repository(tmp_path)
     snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
     actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
     service, store = _service(repository, tmp_path, FakeExporter())
     command = _command(snapshot)
-    with pytest.raises(ExportServiceError, match="FMEA_EXPORT_STORAGE_UNAVAILABLE"):
-        service.start(command, actor)
+    queued = _reserve_queued_export(repository, snapshot)
+    repository.mark_export_running(queued.export_run_id, queued.workspace_id, "2026-09-03T00:00:00Z")
+    payload = b'{"ok":true}\n'
+    manifest = ExportArtifactManifest(
+        artifact_id=_artifact_id(actor.workspace_id, command.export_run_id),
+        export_run_id=command.export_run_id,
+        publication_id=command.publication_id,
+        revision_id=command.revision_id,
+        snapshot_id=command.snapshot_id,
+        snapshot_hash=command.snapshot_hash,
+        format=command.format,
+        media_type="application/json",
+        byte_length=len(payload),
+        sha256=sha256(payload).hexdigest(),
+        draft_preview=command.draft_preview,
+        created_at="2026-09-03T00:00:00Z",
+        filename=command.filename,
+    )
+    store.publish(command.export_run_id, command.filename, payload, manifest)
     store.get = lambda *args, **kwargs: (_ for _ in ()).throw(_typed_secret_error())
     store.latest = lambda *args, **kwargs: (_ for _ in ()).throw(_typed_secret_error())
 
@@ -1269,3 +1289,96 @@ def test_same_workspace_different_actor_reuse_is_nonretryable_idempotency_confli
     assert caught.value.code == "FMEA_EXPORT_IDEMPOTENCY_CONFLICT"
     assert caught.value.retryable is False
     assert caught.value.__cause__ is None
+
+
+def test_committed_completion_with_mutated_exact_return_reloads_verified_success(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    real_complete = repository.complete_export
+
+    def commit_then_mutate(*args, **kwargs):
+        completed = real_complete(*args, **kwargs)
+        object.__setattr__(completed, "artifact_id", ExplosiveProviderValue())
+        return completed
+
+    repository.complete_export = commit_then_mutate
+
+    result = service.start(command, actor)
+
+    assert result.status is RunStatus.SUCCEEDED
+    assert repository.get_export_run(command.export_run_id, actor.workspace_id) == result
+    assert store.latest(command.export_run_id).artifact_id == result.artifact_id
+
+
+def test_uncommitted_completion_with_mutated_exact_return_persists_failed(tmp_path: Path):
+    from core_domain.fmea.states import RunStatus
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+
+    def return_mutated(run, manifest, actor, request_json, request_hash, finished_at):
+        completed = replace(
+            run,
+            status=RunStatus.SUCCEEDED,
+            artifact_id=manifest.artifact_id,
+            finished_at=finished_at,
+        )
+        object.__setattr__(completed, "artifact_id", ExplosiveProviderValue())
+        return completed
+
+    repository.complete_export = return_mutated
+
+    result = service.start(command, actor)
+
+    assert store.latest(command.export_run_id) is not None
+    assert result.status is RunStatus.FAILED
+    assert repository.get_export_run(command.export_run_id, actor.workspace_id) == result
+    assert "secret" not in result.error
+
+
+def test_existing_latest_completion_with_non_exact_return_persists_failed(tmp_path: Path):
+    from hashlib import sha256
+
+    from core_domain.fmea.states import RunStatus
+    from fmea_application.delivery_contracts import ExportArtifactManifest
+    from fmea_application.export_service import _artifact_id
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, store = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    queued = _reserve_queued_export(repository, snapshot)
+    repository.mark_export_running(queued.export_run_id, queued.workspace_id, "2026-09-03T00:00:00Z")
+    payload = b'{"ok":true}\n'
+    manifest = ExportArtifactManifest(
+        artifact_id=_artifact_id(actor.workspace_id, command.export_run_id),
+        export_run_id=command.export_run_id,
+        publication_id=command.publication_id,
+        revision_id=command.revision_id,
+        snapshot_id=command.snapshot_id,
+        snapshot_hash=command.snapshot_hash,
+        format=command.format,
+        media_type="application/json",
+        byte_length=len(payload),
+        sha256=sha256(payload).hexdigest(),
+        draft_preview=command.draft_preview,
+        created_at="2026-09-03T00:00:00Z",
+        filename=command.filename,
+    )
+    store.publish(command.export_run_id, command.filename, payload, manifest)
+    repository.complete_export = lambda *args, **kwargs: object()
+
+    result = service.start(command, actor)
+
+    assert result.status is RunStatus.FAILED
+    assert repository.get_export_run(command.export_run_id, actor.workspace_id) == result
+    assert "private" not in result.error

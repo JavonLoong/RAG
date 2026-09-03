@@ -1249,6 +1249,17 @@ class ExportService:
         resolved = self._resolve_replay_state(current, actor)
         return current if resolved is None else resolved
 
+    def _verify_completion_result(
+        self,
+        completed: object,
+        command: StartExportCommand,
+        actor: ActorContext,
+    ) -> ExportRun:
+        completed = self._validate_run_binding(completed, command, actor)
+        if completed.status is not RunStatus.SUCCEEDED:
+            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "completed export persistence is invalid")
+        return self._verify_completed(completed, actor)
+
     def _complete_export_run(
         self,
         run: ExportRun,
@@ -1274,7 +1285,8 @@ class ExportService:
                 message=message,
                 retryable=True,
             )
-        except ExportServiceError as completion_error:
+            return self._verify_completion_result(completed, command, actor)
+        except Exception:
             current = self._cooperative_state(run, command, actor)
             if current.status in {
                 RunStatus.CANCELLED,
@@ -1282,11 +1294,7 @@ class ExportService:
                 RunStatus.SUCCEEDED,
             }:
                 return current
-            raise completion_error from None
-        completed = self._validate_run_binding(completed, command, actor)
-        if completed.status is not RunStatus.SUCCEEDED:
-            raise ExportServiceError("FMEA_EXPORT_PERSISTENCE_INVALID", "completed export persistence is invalid")
-        return self._verify_completed(completed, actor)
+            return self._persist_failure(current, "export completion failed", actor)
 
     def cancel(self, export_run_id: str, actor: ActorContext) -> ExportRun:
         """Cooperatively cancel one queued/running export and close its start reservation."""
@@ -1551,8 +1559,10 @@ class ExportService:
     ) -> ExportNarrativeSuggestion:
         """Generate a provisional narrative without touching durable export state."""
 
-        if not isinstance(snapshot, NormalizedFmeaSnapshot):
-            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_REQUEST_INVALID", "narrative snapshot is invalid")
+        try:
+            snapshot = _rebuild_snapshot(snapshot)
+        except Exception:
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_REQUEST_INVALID", "narrative snapshot is invalid") from None
         if not isinstance(actor, ActorContext) or actor.actor_type is not ActorType.MODEL:
             raise ExportServiceError("FMEA_EXPORT_NARRATIVE_FORBIDDEN", "narrative suggestions require a model actor")
         if actor.workspace_id != snapshot.workspace_id:
