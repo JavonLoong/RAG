@@ -1,0 +1,71 @@
+template:
+  id: software-demo-fmea
+  version: 1.0.0
+  title: Software behavior FMEA row
+  description: Describe a software hazard from function through trigger and detection evidence.
+  domain_tags: [software, fmea, demo]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [component, failure_mode, effects, software.function, software.hazardous_behavior, software.trigger, software.detection]
+  properties:
+    component:
+      type: string
+      minLength: 1
+      description: Software component or service under analysis.
+    failure_mode:
+      type: string
+      minLength: 1
+      description: Observable software failure mode.
+    effects:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        minLength: 1
+    software.function:
+      type: string
+      minLength: 1
+      description: Intended function represented by the row.
+    software.hazardous_behavior:
+      type: string
+      minLength: 1
+      description: Unsafe or hazardous behavior when the function fails.
+    software.trigger:
+      type: string
+      minLength: 1
+      description: Trigger or precondition that activates the behavior.
+    software.detection:
+      type: string
+      minLength: 1
+      description: Detection mechanism or observable signal.
+evidence_bindings:
+  - target: /component
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /failure_mode
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /effects/*
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /software.function
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
+  - target: /software.hazardous_behavior
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
+  - target: /software.trigger
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
+  - target: /software.detection
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]

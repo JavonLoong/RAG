@@ -1,0 +1,25 @@
+domain_pack:
+  id: electrical-demo
+  version: 1.0.0
+  content_hash: 01b67aff5ea14af2a429fffad76643265e046170938bd6ad932681a102f0aeb3
+  kernel_compatibility_range: ">=1.0.0,<2.0.0"
+  compatible_schema_ids:
+    - graphrag.fmea.v1
+  analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  templates:
+    - id: electrical-demo-fmea
+      version: 1.0.0
+  scoring_rules:
+    - id: electrical-sod-rpn
+      version: 1.0.0
+  propagation_rules: []
+  extension_fields:
+    - key: electrical.voltage
+      type: decimal
+    - key: electrical.current
+      type: decimal
+    - key: electrical.isolation
+      type: string

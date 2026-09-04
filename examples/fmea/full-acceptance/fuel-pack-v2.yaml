@@ -1,0 +1,51 @@
+domain_pack:
+  id: fuel-combustion
+  version: 2.0.0
+  content_hash: 5199b2772302e8b7f809d9ec478343108a6bdfaa8d2f4ade8957f63ff78aa353
+  kernel_compatibility_range: ">=1.0.0,<2.0.0"
+  compatible_schema_ids:
+    - graphrag.fmea.v1
+  analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  templates:
+    - id: fuel-combustion-fmea
+      version: 2.0.0
+    - id: fmea-propagation-hypothesis
+      version: 1.0.0
+  scoring_rules:
+    - id: fuel-sod-rpn
+      version: 1.0.0
+  propagation_rules:
+    - id: fuel-combustion-propagation
+      version: 1.0.0
+  extension_fields:
+    - key: fuel.composition
+      type: string
+    - key: fuel.heating_value
+      type: decimal
+    - key: fuel.wobbe_index
+      type: decimal
+    - key: fuel.supply_pressure
+      type: decimal
+    - key: fuel.supply_temperature
+      type: decimal
+    - key: fuel.flow_rate
+      type: decimal
+    - key: combustion.air_fuel_ratio
+      type: decimal
+    - key: combustion.equivalence_ratio
+      type: decimal
+    - key: combustion.flame_stability
+      type: string
+    - key: combustion.ignition_margin
+      type: decimal
+    - key: combustion.exhaust_temperature
+      type: decimal
+    - key: combustion.emission_limit_state
+      type: string
+    - key: safety.trip_margin
+      type: decimal
+    - key: safety.flame_failure_response
+      type: string

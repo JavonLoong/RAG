@@ -1,0 +1,72 @@
+rule_pack:
+  id: electrical-sod-rpn
+  version: 1.0.0
+  applicable_analysis_types:
+    - design_fmea
+    - process_fmea
+    - system_fmea
+  score_range:
+    min: 1
+    max: 10
+  dimensions:
+    severity:
+      anchors:
+        1: No observable electrical impact and no service interruption.
+        2: Small voltage or current deviation with automatic recovery.
+        3: Localized circuit degradation with planned service available.
+        4: Noticeable loss of electrical performance requiring adjustment.
+        5: Partial loss of a protected circuit or short service interruption.
+        6: Functional electrical failure requiring unplanned maintenance.
+        7: Main circuit loss with credible equipment damage or outage.
+        8: Severe energized-system consequence affecting several loads.
+        9: Serious shock, arc, fire, or protection-system consequence.
+        10: Catastrophic electrical event with severe personnel or asset harm.
+    occurrence:
+      anchors:
+        1: No comparable energized-cycle failures observed.
+        2: Exceptional event, below one failure per 1000 energized cycles.
+        3: Infrequent event, roughly one to three failures per 1000 energized cycles.
+        4: Low-frequency event in a known installation condition.
+        5: Intermittent event during repeated switching or loading.
+        6: Moderate recurrence across normal energized cycles.
+        7: Frequent recurrence in the same circuit configuration.
+        8: High recurrence across multiple energized operating modes.
+        9: Very frequent event in nearly every loaded condition.
+        10: Failure is persistent or practically unavoidable without redesign.
+    detection:
+      anchors:
+        1: Instrumentation and protection identify the issue before consequence.
+        2: Independent protection normally identifies the issue with margin.
+        3: Instrument or protective logic gives an early reliable indication.
+        4: Trending identifies the issue but needs qualified interpretation.
+        5: Detection is available only in selected loads or configurations.
+        6: Alarm review is required and early signal can be missed.
+        7: Periodic insulation or maintenance testing is the main detector.
+        8: The issue is found after performance loss or a protection trip.
+        9: No stable pre-consequence detector is available in normal service.
+        10: Detection is only possible after the electrical consequence occurs.
+  occurrence:
+    window: energized_cycles
+    denominator: 1000_energized_cycles
+  detection:
+    positions:
+      - instrument
+      - protection
+      - operator
+  decision_severity:
+    aggregation: max_consequence
+  rpn:
+    formula: S*O*D
+    version: electrical-S*O*D-1
+  risk_matrix:
+    version: electrical-risk-matrix-1
+  priority:
+    version: electrical-priority-1
+    high_rpn: 200
+    critical_severity: 9
+    medium_rpn: 100
+  uncertainty:
+    missing_score_policy: unknown_no_zero
+    conflict_score_policy: block_rpn
+    uncertainty_policy: preserve_require_review
+  policy_basis: project_default_non_certification

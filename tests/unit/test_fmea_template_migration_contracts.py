@@ -352,6 +352,9 @@ def test_migration_report_is_immutable_and_requires_matching_plan_endpoints() ->
         plan=plan,
         source_revision_id="revision-1",
         source_revision_hash=HASH,
+        source_domain_pack_identity=(*plan.source, HASH),
+        target_domain_pack_identity=(*plan.target, "b" * 64),
+        target_revision_hash="c" * 64,
         status="dry_run",
         mapped_fields=("failure_mode",),
         dropped_fields=(),
@@ -364,6 +367,8 @@ def test_migration_report_is_immutable_and_requires_matching_plan_endpoints() ->
         report.status = "confirmed"  # type: ignore[misc]
     with pytest.raises(FmeaDomainError, match="status"):
         replace(report, status="published")
+    with pytest.raises(FmeaDomainError, match="identity|endpoints|plan"):
+        replace(report, target_domain_pack_identity=("other-domain", "3.0.0", "b" * 64), report_hash=None)
 
 
 def test_migration_report_hash_detects_semantic_change_but_excludes_timestamp() -> None:
@@ -372,6 +377,9 @@ def test_migration_report_hash_detects_semantic_change_but_excludes_timestamp() 
         plan=_plan(),
         source_revision_id="revision-1",
         source_revision_hash=HASH,
+        source_domain_pack_identity=(*_plan().source, HASH),
+        target_domain_pack_identity=(*_plan().target, "b" * 64),
+        target_revision_hash="c" * 64,
         status="dry_run",
         mapped_fields=("failure_mode",),
         dropped_fields=(),
@@ -380,6 +388,7 @@ def test_migration_report_hash_detects_semantic_change_but_excludes_timestamp() 
         created_at=TIMESTAMP,
     )
     assert replace(report, warnings=("changed",), report_hash=None).report_hash != report.report_hash
+    assert replace(report, target_revision_hash="d" * 64, report_hash=None).report_hash != report.report_hash
     assert replace(report, created_at="2026-08-27T12:01:00Z", report_hash=None).report_hash == report.report_hash
 
 

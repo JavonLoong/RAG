@@ -1,0 +1,63 @@
+template:
+  id: electrical-demo-fmea
+  version: 1.0.0
+  title: Electrical circuit FMEA row
+  description: Describe an electrical failure with measured circuit conditions and isolation evidence.
+  domain_tags: [electrical, fmea, demo]
+  schema_dialect: https://json-schema.org/draft/2020-12/schema
+output_schema:
+  type: object
+  additionalProperties: false
+  required: [circuit, failure_mode, effects, electrical.voltage, electrical.current, electrical.isolation]
+  properties:
+    circuit:
+      type: string
+      minLength: 1
+      description: Circuit or energized assembly under analysis.
+    failure_mode:
+      type: string
+      minLength: 1
+      description: Observable electrical failure mode.
+    effects:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        minLength: 1
+    electrical.voltage:
+      type: number
+      minimum: 0
+      description: Nominal or measured circuit voltage.
+    electrical.current:
+      type: number
+      minimum: 0
+      description: Nominal or measured circuit current.
+    electrical.isolation:
+      type: string
+      enum: [basic, reinforced, double]
+      description: Declared isolation class.
+evidence_bindings:
+  - target: /circuit
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /failure_mode
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /effects/*
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [graphrag_community, graphrag_relation, primary_document, rag_text]
+  - target: /electrical.voltage
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
+  - target: /electrical.current
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
+  - target: /electrical.isolation
+    requirement: required
+    min_refs: 1
+    allowed_source_types: [primary_document, rag_text]
