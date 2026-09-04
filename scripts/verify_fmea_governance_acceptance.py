@@ -754,10 +754,18 @@ def _verify_bindings_complete(payloads: dict[str, dict[str, object]], summary: d
         else:
             _verify_new_publication_body(snapshot, revision)
             snapshot_body_valid = True
+        expected_version_manifest = _expected_snapshot_version_manifest(revision, body_schema_version=body_schema_version)
+        if "report_layout" in version_manifest:
+            if body_schema_version is None:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            # _verify_new_publication_body validated the safe layout and approved
+            # template identity. Full native-template reconstruction belongs to
+            # the full acceptance verifier, not this legacy lifecycle verifier.
+            expected_version_manifest["report_layout"] = version_manifest["report_layout"]
         if (
             not snapshot_body_valid
             or snapshot.get("version_manifest")
-            != _expected_snapshot_version_manifest(revision, body_schema_version=body_schema_version)
+            != expected_version_manifest
             or snapshot.get("unresolved_items") != revision.get("unresolved_items")
             or audit_summary.get("approval_id") != approval.get("approval_id")
             or not _same_hash(audit_summary.get("approval_hash"), canonical_hash(approval, prefixed=True))

@@ -852,6 +852,8 @@ class PublicationSourceBinding:
     evidence_pack_hashes: tuple[tuple[str, str], ...]
     review_bindings: tuple[PublicationReviewAuthority, ...]
     body_hash: str
+    template_canonical_json: str | None = None
+    template_canonical_sources: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "analysis_id", _text(self.analysis_id, "analysis_id"))
@@ -873,6 +875,16 @@ class PublicationSourceBinding:
         object.__setattr__(self, "evidence_pack_hashes", _hash_pairs(self.evidence_pack_hashes, "evidence_pack_hashes"))
         object.__setattr__(self, "review_bindings", _publication_binding_reviews(self.review_bindings))
         object.__setattr__(self, "body_hash", _hash(self.body_hash, "body_hash"))
+        if self.template_canonical_json is not None and (
+            type(self.template_canonical_json) is not str
+            or len(self.template_canonical_json.encode("utf-8")) > 1_048_576
+        ):
+            raise ValueError("publication template canonical content is invalid")
+        if not isinstance(self.template_canonical_sources, tuple) or len(self.template_canonical_sources) > 500 or any(
+            type(source) is not str or len(source.encode("utf-8")) > 1_048_576
+            for source in self.template_canonical_sources
+        ):
+            raise ValueError("publication template source set is invalid")
 
 
 @dataclass(frozen=True, slots=True)

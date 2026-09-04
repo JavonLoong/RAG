@@ -60,7 +60,7 @@ def test_verifier_rejects_snapshot_hash_mismatch(tmp_path: Path) -> None:
     assert verification.error_code == "FMEA_SNAPSHOT_HASH_MISMATCH"
 
 
-@pytest.mark.parametrize("case", ("missing-row-body", "removed-quoted-ref", "mismatched-decision", "graph"))
+@pytest.mark.parametrize("case", ("missing-row-body", "removed-quoted-ref", "mismatched-decision", "graph", "unsafe-layout"))
 def test_new_body_verifier_rejects_structural_counterexamples(tmp_path: Path, case: str) -> None:
     snapshot, revision = _new_body_artifacts(tmp_path)
     if case == "missing-row-body":
@@ -69,6 +69,8 @@ def test_new_body_verifier_rejects_structural_counterexamples(tmp_path: Path, ca
         del snapshot["evidence_summary"][0]["refs"][0]
     elif case == "mismatched-decision":
         snapshot["decision_summary"][0]["row_id"] = "missing-row"
+    elif case == "unsafe-layout":
+        snapshot["version_manifest"]["report_layout"]["columns"][0]["value_path"] = ["row", "__class__"]
     else:
         del snapshot["propagation"]["nodes"]
     snapshot["snapshot_hash"] = canonical_hash(

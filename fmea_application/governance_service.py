@@ -823,6 +823,11 @@ class RevisionGovernanceService:
             raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: governance source is not configured")
         try:
             body = self._source.build_publication_body(revision, inputs)
+            template_canonical_sources = self._source.get_publication_templates(revision, inputs)
+            from fmea_application.report_view import compile_report_layout, select_report_template
+
+            template_canonical_json = select_report_template(template_canonical_sources, revision.template_identities)
+            report_layout = compile_report_layout(template_canonical_json, revision.template_identities)
         except Exception as exc:
             _raise_mapped(exc, "FMEA_PUBLICATION_BODY_INCOMPLETE")
         if not isinstance(body, PublicationBody):
@@ -833,6 +838,7 @@ class RevisionGovernanceService:
 
         version_manifest = {
             "body_schema_version": PUBLICATION_BODY_SCHEMA_VERSION,
+            "report_layout": report_layout,
             "analysis_hash": _export_hash(revision.analysis_hash),
             "domain_pack_identity": identity(revision.domain_pack_identity),
             "template_identities": tuple(identity(item) for item in revision.template_identities),
@@ -884,6 +890,8 @@ class RevisionGovernanceService:
                 )
             )
             binding = PublicationSourceBinding(
+                template_canonical_json=template_canonical_json,
+                template_canonical_sources=template_canonical_sources,
                 analysis_id=revision.analysis_id,
                 analysis_record_version=revision.analysis_record_version,
                 analysis_hash=revision.analysis_hash,

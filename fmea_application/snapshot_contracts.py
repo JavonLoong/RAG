@@ -592,6 +592,10 @@ def _validate_publication_body_marker(
     workspace_id: str,
     analysis_id: str,
 ) -> None:
+    if "report_layout" in version_manifest:
+        from fmea_application.report_view import validate_report_layout
+
+        validate_report_layout(version_manifest["report_layout"], version_manifest.get("template_identities"))
     if "body_schema_version" not in version_manifest:
         return
     marker = version_manifest["body_schema_version"]

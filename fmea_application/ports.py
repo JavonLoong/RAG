@@ -586,6 +586,8 @@ class GovernanceSourcePort(Protocol):
 
     def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody: ...
 
+    def get_publication_templates(self, revision: FmeaRevision, inputs: GovernanceInputs) -> tuple[str, ...]: ...
+
 
 class GovernanceAnalysisQueryPort(Protocol):
     def get_analysis(self, analysis_id: str, workspace_id: str) -> ResolvedAnalysisRecord | None: ...
@@ -616,6 +618,8 @@ class GovernanceParentRevisionQueryPort(Protocol):
 
 
 class GovernanceArtifactQueryPort(Protocol):
+    def get_report_template(self, template_id: str, version: str) -> str: ...
+
     def get_artifacts(
         self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
     ) -> GovernanceArtifactSet: ...

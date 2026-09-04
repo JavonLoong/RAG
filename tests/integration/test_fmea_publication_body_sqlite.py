@@ -68,6 +68,41 @@ class _PersistedInputProvider:
         return () if pack is None else (pack,)
 
 
+class _ReportArtifacts:
+    """Use actual compiled content instead of the old identity-only fixture."""
+
+    def __init__(self, delegate):
+        from structured_output_application.compiler import TemplateCompiler
+        from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
+
+        self.delegate = delegate
+        self.template = TemplateCompiler(
+            schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source,
+        ).compile({
+            "template": {"id": "generic-template", "version": "1.0.0", "title": "报告",
+                         "description": "Publication test", "domain_tags": ["fmea"],
+                         "schema_dialect": "https://json-schema.org/draft/2020-12/schema"},
+            "output_schema": {"type": "object", "properties": {
+                "failure_mode": {"type": "string", "title": "故障模式"},
+                "effects": {"type": "array", "items": {"type": "string"}},
+                "causes": {"type": "array", "items": {"type": "string"}},
+            }}, "evidence_bindings": [],
+        })
+
+    def get_artifacts(self, *args):
+        from fmea_application.revision_assembler import ResolvedArtifactIdentity
+
+        artifacts = self.delegate.get_artifacts(*args)
+        return replace(artifacts, template_identities=(ResolvedArtifactIdentity(
+            "template", "generic-template", "1.0.0", self.template.template_hash,
+            sha256(self.template.canonical_json.encode("utf-8")).hexdigest(),
+        ),))
+
+    def get_report_template(self, template_id, version):
+        assert (template_id, version) == ("generic-template", "1.0.0")
+        return self.template.canonical_json
+
+
 def _persisted_body_runtime(
     tmp_path: Path,
     fixture_pack,
@@ -173,6 +208,7 @@ def _persisted_body_runtime(
     persisted = _PersistedInputProvider(review_repository, row_ids=tuple(item.row_id for item in review_rows))
     providers = replace(
         providers,
+        artifacts=_ReportArtifacts(providers.artifacts),
         review=persisted,
         evidence=persisted,
         publication_reviews=publication_reviews,
@@ -386,7 +422,7 @@ def _seed_persisted_legacy_publication(repository: SqliteGovernanceRepository, p
         connection.close()
 
 
-def _forge_consistent_body(prepared):
+def _forge_consistent_body(prepared, *, version_manifest=None):
     from core_domain.fmea.governance import canonical_hash
     from fmea_application.governance_contracts import (
         PreparedPublication,
@@ -404,6 +440,8 @@ def _forge_consistent_body(prepared):
         for row in prepared.snapshot.rows
     )
     original = prepared.snapshot
+    if version_manifest is not None:
+        rows = original.rows
     forged_snapshot = build_normalized_snapshot(
         NormalizedSnapshotInput(
             revision=original.revision if hasattr(original, "revision") else prepared.revision,
@@ -418,7 +456,7 @@ def _forge_consistent_body(prepared):
             propagation=original.propagation,
             evidence_summary=original.evidence_summary,
             decision_summary=original.decision_summary,
-            version_manifest=original.version_manifest,
+            version_manifest=original.version_manifest if version_manifest is None else version_manifest,
             audit_summary=original.audit_summary,
             created_at=original.created_at,
         )
@@ -530,10 +568,11 @@ def test_publication_snapshot_is_projected_from_runtime_body() -> None:
     from fmea_governance_fixtures import make_approval_decision, make_assemble_request, make_governance_inputs
 
     inputs = make_governance_inputs()
+    providers = __import__("fmea_governance_fixtures", fromlist=["_INPUT_PROVIDERS"])._INPUT_PROVIDERS[
+        id(inputs._source_attestation)
+    ]
     base_runtime = build_workspace_governance_runtime(
-        __import__("fmea_governance_fixtures", fromlist=["_INPUT_PROVIDERS"])._INPUT_PROVIDERS[
-            id(inputs._source_attestation)
-        ],
+        replace(providers, artifacts=_ReportArtifacts(providers.artifacts)),
     )
     source = base_runtime.source
     calls: list[tuple[object, object]] = []
@@ -545,6 +584,9 @@ def test_publication_snapshot_is_projected_from_runtime_body() -> None:
         def build_publication_body(self, revision, trusted_inputs):
             calls.append((revision, trusted_inputs))
             return PublicationBody((), (), None, (), ())
+
+        def get_publication_templates(self, revision, trusted_inputs):
+            return source.get_publication_templates(revision, trusted_inputs)
 
     trusted_inputs = source.load_inputs("analysis-1", "ws-1")
     revision = base_runtime.assembler.assemble(make_assemble_request(), trusted_inputs)
@@ -607,6 +649,76 @@ def test_sqlite_runtime_publishes_real_body_and_replays_immutable_snapshot(
     replayed_snapshot = service.get_snapshot(replay.publication_id, publisher)
     assert replay.replayed is True
     assert replayed_snapshot.snapshot_hash == snapshot.snapshot_hash
+
+
+def test_publication_pins_template_and_saved_view_survives_registry_upgrade(
+    tmp_path, fixture_pack, fixture_review_row, fixture_review_source,
+    fixture_system_actor, fixture_human_reviewer,
+):
+    from fmea_application.report_view import build_report_view
+
+    runtime, repository, _, _, service, command, publisher = _prepare_real_publication(
+        tmp_path, fixture_pack, fixture_review_row, fixture_review_source,
+        fixture_system_actor, fixture_human_reviewer,
+    )
+    published = service.publish(command, publisher)
+    snapshot = service.get_snapshot(published.publication_id, publisher)
+    assert snapshot.version_manifest["report_layout"]["columns"][2]["label"] == "故障模式"
+    view = build_report_view(snapshot)
+    # Any registry dependency would now fail; read/replay must use saved bytes only.
+    runtime.source._providers.artifacts.template = None
+    saved = repository.get_snapshot(published.publication_id, publisher.workspace_id)
+    assert build_report_view(saved) == view
+    assert service.publish(command, publisher).replayed
+
+
+@pytest.mark.parametrize("attack", ["label", "order", "missing_layout", "missing_content", "forged_content", "noncanonical_content", "missing_source_set", "forged_source_set"])
+def test_commit_rejects_fully_rehashed_layout_or_private_template_tampering(
+    tmp_path, fixture_pack, fixture_review_row, fixture_review_source,
+    fixture_system_actor, fixture_human_reviewer, attack,
+):
+    class TamperingRepository(SqliteGovernanceRepository):
+        def commit_publication(self, prepared):
+            if attack in {"missing_source_set", "forged_source_set"}:
+                sources = prepared.source_binding.template_canonical_sources
+                sources = () if attack == "missing_source_set" else tuple(
+                    source.replace("故障模式", "伪造标签") for source in sources
+                )
+                prepared = replace(prepared, source_binding=replace(
+                    prepared.source_binding, template_canonical_sources=sources,
+                ))
+            elif attack in {"missing_content", "forged_content", "noncanonical_content"}:
+                canonical = prepared.source_binding.template_canonical_json
+                replacement = None if attack == "missing_content" else (
+                    canonical.replace("故障模式", "伪造标签") if attack == "forged_content" else canonical + " "
+                )
+                prepared = replace(prepared, source_binding=replace(
+                    prepared.source_binding, template_canonical_json=replacement,
+                ))
+            else:
+                manifest = dict(prepared.snapshot.version_manifest)
+                layout = dict(manifest["report_layout"])
+                columns = [dict(c) for c in layout["columns"]]
+                if attack == "label":
+                    columns[0]["label"] = "forged label"
+                elif attack == "order":
+                    columns.reverse()
+                layout["columns"] = tuple(columns)
+                manifest["report_layout"] = layout
+                if attack == "missing_layout":
+                    del manifest["report_layout"]
+                prepared = _forge_consistent_body(prepared, version_manifest=manifest)
+            return super().commit_publication(prepared)
+
+    _, repository, _, _, service, command, publisher = _prepare_real_publication(
+        tmp_path, fixture_pack, fixture_review_row, fixture_review_source,
+        fixture_system_actor, fixture_human_reviewer, governance_repository_type=TamperingRepository,
+    )
+    before = _database_state(repository.database_path)
+    with pytest.raises(GovernanceServiceError) as caught:
+        service.publish(command, publisher)
+    assert caught.value.code in {"FMEA_PUBLICATION_BODY_UNSAFE", "FMEA_PUBLICATION_BODY_INCOMPLETE"}
+    assert _database_state(repository.database_path) == before
 
 
 def test_two_row_publication_normalizes_reversed_decision_id_authority_order(

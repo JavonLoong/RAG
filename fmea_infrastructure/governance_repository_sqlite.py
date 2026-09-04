@@ -2565,6 +2565,48 @@ class SqliteGovernanceRepository:
                     "Publication authority chain is missing or invalid.",
                 )
 
+    @staticmethod
+    def _revalidate_report_layout(prepared: PreparedPublication) -> None:
+        """Bind display configuration to approved content, not caller-supplied hashes."""
+        from fmea_application.report_view import compile_report_layout, select_report_template
+        from structured_output_application.compiler import TemplateCompiler
+        from structured_output_infrastructure import (
+            Draft202012SchemaAdapter,
+            load_template_source,
+            load_template_source_bytes,
+        )
+
+        binding = prepared.source_binding
+        if binding is None or binding.template_canonical_json is None or "report_layout" not in prepared.snapshot.version_manifest:
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: fixed report layout source is missing")
+
+        def invalid_source() -> NoReturn:
+            raise ValueError("invalid fixed template source")
+
+        try:
+            # Recompile even a forged internal DTO; its advertised identity is not authority.
+            sources = binding.template_canonical_sources
+            if not isinstance(sources, tuple) or len(sources) != len(prepared.revision.template_identities):
+                invalid_source()
+            for canonical in sources:
+                if type(canonical) is not str or len(canonical.encode("utf-8")) > 1_048_576:
+                    invalid_source()
+                template = TemplateCompiler(
+                    schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source,
+                ).compile(load_template_source_bytes(canonical.encode("utf-8")))
+                if template.canonical_json != canonical:
+                    invalid_source()
+            canonical = select_report_template(sources, prepared.revision.template_identities)
+            if canonical != binding.template_canonical_json:
+                invalid_source()
+            expected = compile_report_layout(canonical, prepared.revision.template_identities)
+            if prepared.snapshot.version_manifest["report_layout"] != expected:
+                invalid_source()
+        except FmeaDomainError:
+            raise
+        except (TypeError, ValueError, AttributeError, UnicodeError, RecursionError):
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: fixed report layout source is invalid") from None
+
     def _revalidate_publication_sources(
         self, connection: sqlite3.Connection, prepared: PreparedPublication
     ) -> None:
@@ -2579,6 +2621,7 @@ class SqliteGovernanceRepository:
         if marker != "graphrag.fmea.body.v1" or not isinstance(prepared.source_binding, PublicationSourceBinding):
             raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: publication source binding is missing")
         binding = prepared.source_binding
+        self._revalidate_report_layout(prepared)
         if binding.body_hash != publication_body_content_hash(
             prepared.snapshot.rows,
             prepared.snapshot.risk_records,

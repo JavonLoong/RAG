@@ -270,6 +270,15 @@ class RegistryGovernanceArtifactProvider:
         self._scoring_registry = scoring_rule_registry
         self._propagation_registry = propagation_rule_registry
 
+    def get_report_template(self, template_id: str, version: str) -> str:
+        raw = self._template_registry.get_source_bytes(template_id, version)
+        template = TemplateCompiler(
+            schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source,
+        ).compile(load_template_source_bytes(raw))
+        if (template.metadata.template_id, template.metadata.version) != (template_id, version):
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: report layout template identity differs")
+        return template.canonical_json
+
     def get_artifacts(  # noqa: C901
         self, analysis_id: str, workspace_id: str, analysis: ResolvedAnalysisRecord
     ) -> GovernanceArtifactSet:
@@ -614,6 +623,27 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
         def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
             inputs = self._load_unattested_inputs(analysis_id, workspace_id)
             return replace(inputs, _source_attestation=issue(inputs))
+
+        def get_publication_templates(self, revision: FmeaRevision, inputs: GovernanceInputs) -> tuple[str, ...]:
+            verify(inputs)
+            from fmea_application.publication_body import _verify_revision_and_inputs
+            from fmea_application.report_view import select_report_template
+
+            _verify_revision_and_inputs(revision, inputs)
+            getter = getattr(self._providers.artifacts, "get_report_template", None)
+            if not callable(getter):
+                raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: fixed report template source is unavailable")
+            sources = []
+            for template_id, version, _hash in revision.template_identities:
+                canonical = getter(template_id, version)
+                template = TemplateCompiler(
+                    schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source,
+                ).compile(load_template_source_bytes(canonical.encode("utf-8")))
+                if template.canonical_json != canonical:
+                    raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: report layout template is not canonical")
+                sources.append(canonical)
+            select_report_template(tuple(sources), revision.template_identities)
+            return tuple(sources)
 
         def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody:
             verify(inputs)

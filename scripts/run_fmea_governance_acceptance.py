@@ -109,6 +109,8 @@ from scripts.verify_fmea_governance_acceptance import (
     VerificationResult,
     verify_acceptance_directory,
 )
+from structured_output_application.compiler import TemplateCompiler
+from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source, load_template_source_bytes
 
 SCHEMA_VERSION = "graphrag.fmea.governance.acceptance.v1"
 WORKSPACE_ID = "fmea-governance-acceptance"
@@ -171,6 +173,7 @@ class _FixtureProviders:
     def __init__(self, domain_pack: DomainPackManifest, artifacts: GovernanceArtifactSet) -> None:
         self.domain_pack = domain_pack
         self.artifacts = artifacts
+        self.report_templates = {template.metadata.template_id: template for template, _raw in _fixture_report_templates()}
         self.profile = "combined"
         self.parent_revision: FmeaRevision | None = None
         self.retrieval_calls = 0
@@ -208,6 +211,12 @@ class _FixtureProviders:
         if analysis.analysis_id != ANALYSIS_ID:
             raise ValueError("fixture analysis is outside the acceptance scope")
         return self.artifacts
+
+    def get_report_template(self, template_id: str, version: str) -> str:
+        template = self.report_templates[template_id]
+        if template.metadata.version != version:
+            raise ValueError("fixture report template version differs")
+        return template.canonical_json
 
     def list_active_run_ids(self, analysis_id: str, workspace_id: str) -> tuple[str, ...]:
         _require_scope(analysis_id, workspace_id)
@@ -465,17 +474,28 @@ def _artifact_identity(artifact_type: str, artifact_id: str, version: str, sourc
     return ResolvedArtifactIdentity(artifact_type, artifact_id, version, digest, digest)
 
 
+def _fixture_report_templates():
+    compiler = TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source)
+    paths = (
+        _REPO_ROOT / "templates" / "examples" / "fuel-combustion-fmea.yaml",
+        _REPO_ROOT / "domain_packs" / "fuel-combustion" / "templates" / "fmea-propagation-hypothesis-1.0.0.yaml",
+    )
+    return tuple((compiler.compile(load_template_source_bytes(raw)), raw) for raw in (path.read_bytes() for path in paths))
+
+
 def _fixture_artifacts() -> tuple[DomainPackManifest, GovernanceArtifactSet]:
     domain_source = (_REPO_ROOT / "domain_packs" / "fuel-combustion" / "manifest.yaml").read_bytes()
     domain = load_domain_pack_manifest(domain_source)
-    template_source = (_REPO_ROOT / "templates" / "examples" / "fuel-combustion-fmea.yaml").read_bytes()
     propagation_source = (
         _REPO_ROOT / "domain_packs" / "fuel-combustion" / "propagation" / "fuel-combustion-1.0.0.yaml"
     ).read_bytes()
     scoring_source = (_REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml").read_bytes()
     templates = tuple(
-        _artifact_identity("template", artifact_id, version, template_source)
-        for artifact_id, version in domain.template_identities
+        ResolvedArtifactIdentity(
+            "template", template.metadata.template_id, template.metadata.version,
+            template.template_hash, sha256(raw).hexdigest(),
+        )
+        for template, raw in _fixture_report_templates()
     )
     artifacts = GovernanceArtifactSet(
         domain_pack=domain,
