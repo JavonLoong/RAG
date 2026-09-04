@@ -236,18 +236,6 @@ def _publication_body_required(item: Mapping[str, object], fields: frozenset[str
         _publication_body_incomplete()
 
 
-def _publication_body_evidence_ids(value: object) -> set[str]:
-    ids: set[str] = set()
-    for item in _publication_body_sequence(value):
-        ref = _publication_body_mapping(item)
-        _publication_body_required(ref, frozenset({"evidence_id"}))
-        evidence_id = _publication_body_text(ref["evidence_id"])
-        if evidence_id in ids:
-            _publication_body_incomplete()
-        ids.add(evidence_id)
-    return ids
-
-
 def _validate_publication_body_row(  # noqa: C901
     row: Mapping[str, object], row_ids: set[str]
 ) -> tuple[str, set[str]]:
@@ -309,6 +297,7 @@ def _validate_publication_body_evidence(
 ) -> set[str]:
     pack_ids: set[str] = set()
     evidence_ids: set[str] = set()
+    evidence_refs_by_id: dict[str, Mapping[str, object]] = {}
     for pack in evidence_summary:
         _publication_body_required(pack, frozenset({"pack_id", "pack_hash", "evidence_pack_version", "refs"}))
         pack_id = _publication_body_text(pack["pack_id"])
@@ -317,6 +306,7 @@ def _validate_publication_body_evidence(
         pack_ids.add(pack_id)
         _publication_body_hash(pack["pack_hash"])
         _publication_body_text(pack["evidence_pack_version"])
+        pack_evidence_ids: set[str] = set()
         for ref in _publication_body_sequence(pack["refs"]):
             evidence_ref = _publication_body_mapping(ref)
             _publication_body_required(
@@ -335,10 +325,15 @@ def _validate_publication_body_evidence(
                     }
                 ),
             )
-            ref_ids = _publication_body_evidence_ids((evidence_ref,))
-            if evidence_ids.intersection(ref_ids):
+            evidence_id = _publication_body_text(evidence_ref["evidence_id"])
+            if evidence_id in pack_evidence_ids:
                 _publication_body_incomplete()
-            evidence_ids.update(ref_ids)
+            previous_ref = evidence_refs_by_id.get(evidence_id)
+            if previous_ref is not None and previous_ref != evidence_ref:
+                _publication_body_incomplete()
+            pack_evidence_ids.add(evidence_id)
+            evidence_refs_by_id[evidence_id] = evidence_ref
+            evidence_ids.add(evidence_id)
             _publication_body_text(evidence_ref["document_id"])
             _publication_body_text(evidence_ref["document_version"])
             _publication_body_hash(evidence_ref["content_hash"])
@@ -603,7 +598,7 @@ def _validate_publication_body_marker(
     if marker != PUBLICATION_BODY_SCHEMA_VERSION:
         raise FmeaDomainError("publication body schema version is invalid")  # noqa: TRY003
     if any(
-        len(section) > _MAX_ITEMS
+        len(section) > _MAX_CANONICAL_ARRAY_ITEMS
         for section in (rows, risk_records, evidence_summary, decision_summary)
     ):
         _publication_body_incomplete()

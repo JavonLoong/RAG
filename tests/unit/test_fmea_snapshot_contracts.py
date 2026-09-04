@@ -377,18 +377,113 @@ def test_marked_publication_body_rejects_review_reference_for_wrong_row_hash() -
         build_normalized_snapshot(replace(source, decision_summary=(decision,)))
 
 
-def test_marked_publication_body_rejects_section_over_minimum_bound() -> None:
+def test_marked_publication_body_accepts_top_level_sections_within_canonical_bound() -> None:
     source = _marked_publication_body_source()
+    row_template = dict(source.rows[0])
+    rows = tuple(
+        {
+            **row_template,
+            "row_id": f"row-{index}",
+        }
+        for index in range(501)
+    )
+    decision_template = dict(source.decision_summary[0])
     decisions = tuple(
         {
-            **source.decision_summary[0],
+            **decision_template,
             "decision_id": f"decision-{index}",
+            "row_id": f"row-{index}",
         }
         for index in range(501)
     )
 
+    snapshot = build_normalized_snapshot(replace(source, rows=rows, decision_summary=decisions))
+
+    assert len(snapshot.rows) == 501
+
+
+def test_marked_publication_body_rejects_nested_section_over_500() -> None:
+    source = _marked_publication_body_source()
+    row = dict(source.rows[0])
+    row["causes"] = tuple(f"cause-{index}" for index in range(501))
+
+    with pytest.raises(FmeaDomainError, match="snapshot array exceeds maximum size"):
+        replace(source, rows=(row,))
+
+
+def _shared_publication_reference(**overrides: object) -> dict[str, object]:
+    reference: dict[str, object] = {
+        "evidence_id": "ev-shared",
+        "document_id": "doc-1",
+        "document_version": "1",
+        "content_hash": "c" * 64,
+        "evidence_hash": "d" * 64,
+        "locator": {"page": 1, "span": 1},
+        "quote": "shared citation",
+        "source_type": "text",
+        "source_trust": "trusted",
+    }
+    reference.update(overrides)
+    return reference
+
+
+def _shared_reference_source(*, second_reference: dict[str, object] | None = None, duplicate_first: bool = False):
+    source = _marked_publication_body_source()
+    row = dict(source.rows[0])
+    row.update(
+        {
+            "claim_status": "known",
+            "field_evidence": ({"field_key": "failure_mode", "evidence_ids": ("ev-shared",)},),
+            "field_support": ({"field_key": "failure_mode", "support_status": "supported"},),
+            "field_claims": (
+                {
+                    "field_key": "failure_mode",
+                    "claim_status": "known",
+                    "support_status": "supported",
+                    "evidence_ids": ("ev-shared",),
+                    "uncertainty": None,
+                    "conflict_ids": (),
+                },
+            ),
+        }
+    )
+    first_reference = _shared_publication_reference()
+    second_reference = second_reference or first_reference
+    first_refs = (first_reference, first_reference) if duplicate_first else (first_reference,)
+    evidence_summary = (
+        {
+            "pack_id": "pack-1",
+            "pack_hash": "b" * 64,
+            "evidence_pack_version": "1",
+            "refs": first_refs,
+        },
+        {
+            "pack_id": "pack-2",
+            "pack_hash": "e" * 64,
+            "evidence_pack_version": "1",
+            "refs": (second_reference,),
+        },
+    )
+    return _marked_publication_body_source(rows=(row,), evidence_summary=evidence_summary)
+
+
+def test_marked_publication_body_accepts_identical_shared_reference_across_packs() -> None:
+    source = _shared_reference_source()
+
+    snapshot = build_normalized_snapshot(source)
+
+    assert snapshot.evidence_summary[0]["refs"][0]["evidence_id"] == "ev-shared"
+    assert snapshot.evidence_summary[1]["refs"][0] == snapshot.evidence_summary[0]["refs"][0]
+
+
+def test_marked_publication_body_rejects_conflicting_shared_reference_across_packs() -> None:
     with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
-        build_normalized_snapshot(replace(source, decision_summary=decisions))
+        _shared_reference_source(second_reference=_shared_publication_reference(quote="different quote"))
+
+
+def test_marked_publication_body_rejects_duplicate_reference_inside_one_pack() -> None:
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        _shared_reference_source(duplicate_first=True)
 
 
 @pytest.mark.parametrize(
