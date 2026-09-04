@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from types import MappingProxyType
 from typing import Literal, NoReturn
 
+from core_domain.fmea.entities import FieldValue
 from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import (
     FmeaRevision,
@@ -60,11 +61,29 @@ _PUBLICATION_BODY_REQUIRED_ROW_FIELDS = frozenset(
         "publication_status",
         "record_version",
         "row_hash",
+        "risk_assessment",
         "field_evidence",
         "field_support",
         "field_claims",
         "extension_values",
     }
+)
+
+_PUBLICATION_BODY_ROW_TEXT_FIELDS = frozenset(
+    {
+        "row_id",
+        "analysis_id",
+        "evidence_pack_id",
+        "item_id",
+        "function_id",
+        "failure_mode",
+        "claim_status",
+        "review_status",
+        "publication_status",
+    }
+)
+_PUBLICATION_BODY_ROW_STRING_SEQUENCE_FIELDS = frozenset(
+    {"causes", "mechanisms", "effects", "symptoms", "controls", "barriers", "actions"}
 )
 
 
@@ -168,17 +187,448 @@ def _mapping_tuple(
     return tuple(item for _, item in sorted(zip(identities, normalized, strict=True), key=lambda pair: pair[0]))
 
 
-def _validate_publication_body_marker(
-    version_manifest: Mapping[str, object], rows: tuple[Mapping[str, object], ...]
+def _publication_body_incomplete() -> NoReturn:
+    raise FmeaDomainError("publication body is incomplete")  # noqa: TRY003
+
+
+def _publication_body_mapping(value: object) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        _publication_body_incomplete()
+    return value
+
+
+def _publication_body_sequence(value: object) -> tuple[object, ...]:
+    if not isinstance(value, tuple | list) or len(value) > _MAX_ITEMS:
+        _publication_body_incomplete()
+    return tuple(value)
+
+
+def _publication_body_text(value: object) -> str:
+    try:
+        return _text(value, "publication body field")
+    except FmeaDomainError as exc:
+        raise FmeaDomainError("publication body is incomplete") from exc  # noqa: TRY003
+
+
+def _publication_body_hash(value: object) -> str:
+    try:
+        return _hash(value, "publication body hash")
+    except FmeaDomainError as exc:
+        raise FmeaDomainError("publication body is incomplete") from exc  # noqa: TRY003
+
+
+def _publication_body_positive(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        _publication_body_incomplete()
+    return value
+
+
+def _publication_body_strings(value: object) -> tuple[str, ...]:
+    values = _publication_body_sequence(value)
+    result: list[str] = []
+    for item in values:
+        result.append(_publication_body_text(item))
+    return tuple(result)
+
+
+def _publication_body_required(item: Mapping[str, object], fields: frozenset[str]) -> None:
+    if not fields.issubset(item):
+        _publication_body_incomplete()
+
+
+def _publication_body_evidence_ids(value: object) -> set[str]:
+    ids: set[str] = set()
+    for item in _publication_body_sequence(value):
+        ref = _publication_body_mapping(item)
+        _publication_body_required(ref, frozenset({"evidence_id"}))
+        evidence_id = _publication_body_text(ref["evidence_id"])
+        if evidence_id in ids:
+            _publication_body_incomplete()
+        ids.add(evidence_id)
+    return ids
+
+
+def _validate_publication_body_row(  # noqa: C901
+    row: Mapping[str, object], row_ids: set[str]
+) -> tuple[str, set[str]]:
+    if not _PUBLICATION_BODY_REQUIRED_ROW_FIELDS.issubset(row):
+        _publication_body_incomplete()
+    for field_name in _PUBLICATION_BODY_ROW_TEXT_FIELDS:
+        _publication_body_text(row[field_name])
+    row_id = _publication_body_text(row["row_id"])
+    if row_id in row_ids:
+        _publication_body_incomplete()
+    row_ids.add(row_id)
+    _publication_body_positive(row["record_version"])
+    _publication_body_hash(row["row_hash"])
+    if row["risk_assessment"] is not None:
+        _publication_body_mapping(row["risk_assessment"])
+    for field_name in _PUBLICATION_BODY_ROW_STRING_SEQUENCE_FIELDS:
+        _publication_body_strings(row[field_name])
+
+    evidence_ids: set[str] = set()
+    evidence_fields: set[str] = set()
+    for item in _publication_body_sequence(row["field_evidence"]):
+        binding = _publication_body_mapping(item)
+        _publication_body_required(binding, frozenset({"field_key", "evidence_ids"}))
+        evidence_fields.add(_publication_body_text(binding["field_key"]))
+        evidence_ids.update(_publication_body_strings(binding["evidence_ids"]))
+    support_fields: set[str] = set()
+    for item in _publication_body_sequence(row["field_support"]):
+        binding = _publication_body_mapping(item)
+        _publication_body_required(binding, frozenset({"field_key", "support_status"}))
+        support_fields.add(_publication_body_text(binding["field_key"]))
+        _publication_body_text(binding["support_status"])
+    if evidence_fields != support_fields:
+        _publication_body_incomplete()
+    for item in _publication_body_sequence(row["field_claims"]):
+        claim = _publication_body_mapping(item)
+        _publication_body_required(
+            claim,
+            frozenset({"field_key", "claim_status", "support_status", "evidence_ids", "uncertainty", "conflict_ids"}),
+        )
+        _publication_body_text(claim["field_key"])
+        _publication_body_text(claim["claim_status"])
+        _publication_body_text(claim["support_status"])
+        evidence_ids.update(_publication_body_strings(claim["evidence_ids"]))
+        _publication_body_strings(claim["conflict_ids"])
+        if claim["uncertainty"] is not None:
+            _publication_body_text(claim["uncertainty"])
+    for item in _publication_body_sequence(row["extension_values"]):
+        extension = _publication_body_mapping(item)
+        _publication_body_required(extension, frozenset({"field_key", "value_type", "value"}))
+        try:
+            FieldValue(extension["field_key"], extension["value_type"], extension["value"])
+        except FmeaDomainError as exc:
+            raise FmeaDomainError("publication body is incomplete") from exc  # noqa: TRY003
+    return _publication_body_text(row["evidence_pack_id"]), evidence_ids
+
+
+def _validate_publication_body_evidence(
+    evidence_summary: tuple[Mapping[str, object], ...], referenced_pack_ids: set[str]
+) -> set[str]:
+    pack_ids: set[str] = set()
+    evidence_ids: set[str] = set()
+    for pack in evidence_summary:
+        _publication_body_required(pack, frozenset({"pack_id", "pack_hash", "evidence_pack_version", "refs"}))
+        pack_id = _publication_body_text(pack["pack_id"])
+        if pack_id in pack_ids:
+            _publication_body_incomplete()
+        pack_ids.add(pack_id)
+        _publication_body_hash(pack["pack_hash"])
+        _publication_body_text(pack["evidence_pack_version"])
+        for ref in _publication_body_sequence(pack["refs"]):
+            evidence_ref = _publication_body_mapping(ref)
+            _publication_body_required(
+                evidence_ref,
+                frozenset(
+                    {
+                        "evidence_id",
+                        "document_id",
+                        "document_version",
+                        "content_hash",
+                        "evidence_hash",
+                        "locator",
+                        "quote",
+                        "source_type",
+                        "source_trust",
+                    }
+                ),
+            )
+            ref_ids = _publication_body_evidence_ids((evidence_ref,))
+            if evidence_ids.intersection(ref_ids):
+                _publication_body_incomplete()
+            evidence_ids.update(ref_ids)
+            _publication_body_text(evidence_ref["document_id"])
+            _publication_body_text(evidence_ref["document_version"])
+            _publication_body_hash(evidence_ref["content_hash"])
+            _publication_body_hash(evidence_ref["evidence_hash"])
+            _publication_body_mapping(evidence_ref["locator"])
+            _publication_body_text(evidence_ref["quote"])
+            _publication_body_text(evidence_ref["source_type"])
+            _publication_body_text(evidence_ref["source_trust"])
+    if not referenced_pack_ids.issubset(pack_ids):
+        _publication_body_incomplete()
+    return evidence_ids
+
+
+def _validate_publication_body_risks(  # noqa: C901
+    risk_records: tuple[Mapping[str, object], ...], rows: Mapping[str, Mapping[str, object]]
+) -> tuple[set[str], set[str]]:
+    pack_ids: set[str] = set()
+    evidence_ids: set[str] = set()
+    required = frozenset(
+        {
+            "assessment_id",
+            "assessment_hash",
+            "workspace_id",
+            "row_id",
+            "source_record_version",
+            "evidence_pack_id",
+            "domain_pack_id",
+            "domain_pack_version",
+            "rule_pack_id",
+            "rule_pack_version",
+            "status",
+            "dimensions",
+            "derived",
+            "proposal_id",
+            "invalidated_reason",
+            "record_version",
+            "confirmation_basis",
+        }
+    )
+    for risk in risk_records:
+        _publication_body_required(risk, required)
+        _publication_body_text(risk["assessment_id"])
+        _publication_body_hash(risk["assessment_hash"])
+        _publication_body_text(risk["workspace_id"])
+        row_id = _publication_body_text(risk["row_id"])
+        row = rows.get(row_id)
+        if row is None:
+            _publication_body_incomplete()
+        _publication_body_positive(risk["source_record_version"])
+        if risk["source_record_version"] != row["record_version"]:
+            _publication_body_incomplete()
+        pack_ids.add(_publication_body_text(risk["evidence_pack_id"]))
+        for field_name in ("domain_pack_id", "domain_pack_version", "rule_pack_id", "rule_pack_version", "status"):
+            _publication_body_text(risk[field_name])
+        _publication_body_positive(risk["record_version"])
+        for field_name in ("proposal_id", "invalidated_reason"):
+            if risk[field_name] is not None:
+                _publication_body_text(risk[field_name])
+        for dimension in _publication_body_sequence(risk["dimensions"]):
+            value = _publication_body_mapping(dimension)
+            _publication_body_required(value, frozenset({"name", "value", "evidence_ids", "reason", "uncertainty"}))
+            _publication_body_text(value["name"])
+            if value["value"] is not None and (
+                isinstance(value["value"], bool) or not isinstance(value["value"], int | float)
+            ):
+                _publication_body_incomplete()
+            evidence_ids.update(_publication_body_strings(value["evidence_ids"]))
+            _publication_body_text(value["reason"])
+            if value["uncertainty"] is not None:
+                _publication_body_text(value["uncertainty"])
+        if risk["derived"] is not None:
+            derived = _publication_body_mapping(risk["derived"])
+            if "evidence_ids" not in derived:
+                _publication_body_incomplete()
+            evidence_ids.update(_publication_body_strings(derived["evidence_ids"]))
+        if risk["confirmation_basis"] is not None:
+            basis = _publication_body_mapping(risk["confirmation_basis"])
+            _publication_body_required(basis, frozenset({"proposal_id"}))
+            _publication_body_text(basis["proposal_id"])
+            if "confirmer_actor_id" in basis:
+                _publication_body_incomplete()
+    return pack_ids, evidence_ids
+
+
+def _validate_publication_body_graph(  # noqa: C901
+    propagation: Mapping[str, object] | None,
+    row_ids: set[str],
+    workspace_id: str,
+    analysis_id: str,
+) -> tuple[set[str], set[str]]:
+    if propagation is None:
+        return set(), set()
+    _publication_body_required(
+        propagation,
+        frozenset(
+            {
+                "graph_revision_id",
+                "workspace_id",
+                "analysis_id",
+                "analysis_record_version",
+                "topology_snapshot_id",
+                "topology_hash",
+                "domain_pack_id",
+                "domain_pack_version",
+                "rule_pack_id",
+                "rule_pack_version",
+                "status",
+                "record_version",
+                "nodes",
+                "edges",
+                "paths",
+                "row_lineage",
+            }
+        ),
+    )
+    for field_name in (
+        "graph_revision_id",
+        "workspace_id",
+        "analysis_id",
+        "topology_snapshot_id",
+        "domain_pack_id",
+        "domain_pack_version",
+        "rule_pack_id",
+        "rule_pack_version",
+        "status",
+    ):
+        _publication_body_text(propagation[field_name])
+    if propagation["workspace_id"] != workspace_id or propagation["analysis_id"] != analysis_id:
+        _publication_body_incomplete()
+    _publication_body_hash(propagation["topology_hash"])
+    _publication_body_positive(propagation["analysis_record_version"])
+    _publication_body_positive(propagation["record_version"])
+    for node in _publication_body_sequence(propagation["nodes"]):
+        value = _publication_body_mapping(node)
+        _publication_body_required(value, frozenset({"node_id", "node_type", "operating_modes"}))
+        _publication_body_text(value["node_id"])
+        _publication_body_text(value["node_type"])
+        _publication_body_strings(value["operating_modes"])
+
+    edge_ids: set[str] = set()
+    pack_ids: set[str] = set()
+    evidence_ids: set[str] = set()
+    edge_required = frozenset(
+        {
+            "edge_id",
+            "analysis_id",
+            "source_entity_id",
+            "target_entity_id",
+            "evidence_pack_id",
+            "evidence_ids",
+            "review_status",
+            "publication_status",
+            "record_version",
+        }
+    )
+    for edge in _publication_body_sequence(propagation["edges"]):
+        value = _publication_body_mapping(edge)
+        _publication_body_required(value, edge_required)
+        edge_id = _publication_body_text(value["edge_id"])
+        if edge_id in edge_ids:
+            _publication_body_incomplete()
+        edge_ids.add(edge_id)
+        for field_name in ("analysis_id", "source_entity_id", "target_entity_id", "review_status", "publication_status"):
+            _publication_body_text(value[field_name])
+        if value["analysis_id"] != analysis_id:
+            _publication_body_incomplete()
+        if value["review_status"] != "accepted":
+            _publication_body_incomplete()
+        _publication_body_positive(value["record_version"])
+        pack_ids.add(_publication_body_text(value["evidence_pack_id"]))
+        evidence_ids.update(_publication_body_strings(value["evidence_ids"]))
+    for path in _publication_body_sequence(propagation["paths"]):
+        value = _publication_body_mapping(path)
+        _publication_body_required(
+            value, frozenset({"path_id", "analysis_id", "source_entity_id", "target_entity_id", "edges"})
+        )
+        for field_name in ("path_id", "analysis_id", "source_entity_id", "target_entity_id"):
+            _publication_body_text(value[field_name])
+        if value["analysis_id"] != analysis_id:
+            _publication_body_incomplete()
+        for edge in _publication_body_sequence(value["edges"]):
+            path_edge = _publication_body_mapping(edge)
+            _publication_body_required(path_edge, frozenset({"edge_id"}))
+            if _publication_body_text(path_edge["edge_id"]) not in edge_ids:
+                _publication_body_incomplete()
+    lineage = set(_publication_body_strings(propagation["row_lineage"]))
+    if not lineage.issubset(row_ids):
+        _publication_body_incomplete()
+    return pack_ids, evidence_ids
+
+
+def _validate_publication_body_reviews(  # noqa: C901
+    decision_summary: tuple[Mapping[str, object], ...],
+    rows: Mapping[str, Mapping[str, object]],
+    workspace_id: str,
+    analysis_id: str,
 ) -> None:
-    marker = version_manifest.get("body_schema_version")
-    if marker is None:
+    covered_rows: set[str] = set()
+    required = frozenset(
+        {
+            "record_type",
+            "decision_id",
+            "workspace_id",
+            "analysis_id",
+            "row_id",
+            "record_version",
+            "row_hash",
+            "role_category",
+            "decision",
+            "reason",
+            "decided_at",
+        }
+    )
+    for decision in decision_summary:
+        _publication_body_required(decision, required)
+        if decision["record_type"] != "row_review":
+            _publication_body_incomplete()
+        _publication_body_text(decision["decision_id"])
+        if _publication_body_text(decision["workspace_id"]) != workspace_id:
+            _publication_body_incomplete()
+        if _publication_body_text(decision["analysis_id"]) != analysis_id:
+            _publication_body_incomplete()
+        row_id = _publication_body_text(decision["row_id"])
+        row = rows.get(row_id)
+        if row is None or row_id in covered_rows:
+            _publication_body_incomplete()
+        covered_rows.add(row_id)
+        _publication_body_positive(decision["record_version"])
+        if _publication_body_positive(decision["record_version"]) != row["record_version"]:
+            _publication_body_incomplete()
+        if _publication_body_hash(decision["row_hash"]).removeprefix("sha256:") != str(row["row_hash"]).removeprefix(
+            "sha256:"
+        ):
+            _publication_body_incomplete()
+        if decision["role_category"] != "human_reviewer" or decision["decision"] != "accepted":
+            _publication_body_incomplete()
+        _publication_body_text(decision["role_category"])
+        _publication_body_text(decision["decision"])
+        _publication_body_text(decision["reason"])
+        try:
+            _timestamp(decision["decided_at"], "decided_at")
+        except FmeaDomainError as exc:
+            raise FmeaDomainError("publication body is incomplete") from exc  # noqa: TRY003
+    if covered_rows != set(rows):
+        _publication_body_incomplete()
+
+
+def _validate_publication_body_marker(
+    version_manifest: Mapping[str, object],
+    rows: tuple[Mapping[str, object], ...],
+    risk_records: tuple[Mapping[str, object], ...],
+    propagation: Mapping[str, object] | None,
+    evidence_summary: tuple[Mapping[str, object], ...],
+    decision_summary: tuple[Mapping[str, object], ...],
+    *,
+    workspace_id: str,
+    analysis_id: str,
+) -> None:
+    if "body_schema_version" not in version_manifest:
         return
+    marker = version_manifest["body_schema_version"]
     if marker != PUBLICATION_BODY_SCHEMA_VERSION:
         raise FmeaDomainError("publication body schema version is invalid")  # noqa: TRY003
+    if any(
+        len(section) > _MAX_ITEMS
+        for section in (rows, risk_records, evidence_summary, decision_summary)
+    ):
+        _publication_body_incomplete()
+    row_ids: set[str] = set()
+    row_pack_ids: set[str] = set()
+    row_evidence_ids: set[str] = set()
+    rows_by_id: dict[str, Mapping[str, object]] = {}
     for row in rows:
-        if not _PUBLICATION_BODY_REQUIRED_ROW_FIELDS.issubset(row):
-            raise FmeaDomainError("publication body is incomplete")  # noqa: TRY003
+        pack_id, evidence_ids = _validate_publication_body_row(row, row_ids)
+        row_pack_ids.add(pack_id)
+        row_evidence_ids.update(evidence_ids)
+        rows_by_id[row["row_id"]] = row
+    for row in rows:
+        if row["analysis_id"] != analysis_id:
+            _publication_body_incomplete()
+    risk_pack_ids, risk_evidence_ids = _validate_publication_body_risks(risk_records, rows_by_id)
+    graph_pack_ids, graph_evidence_ids = _validate_publication_body_graph(
+        propagation, row_ids, workspace_id, analysis_id
+    )
+    evidence_ids = _validate_publication_body_evidence(
+        evidence_summary, row_pack_ids | risk_pack_ids | graph_pack_ids
+    )
+    if not (row_evidence_ids | risk_evidence_ids | graph_evidence_ids).issubset(evidence_ids):
+        _publication_body_incomplete()
+    _validate_publication_body_reviews(decision_summary, rows_by_id, workspace_id, analysis_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,7 +684,16 @@ class NormalizedFmeaSnapshot:
             _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
         )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
-        _validate_publication_body_marker(self.version_manifest, self.rows)
+        _validate_publication_body_marker(
+            self.version_manifest,
+            self.rows,
+            self.risk_records,
+            self.propagation,
+            self.evidence_summary,
+            self.decision_summary,
+            workspace_id=self.workspace_id,
+            analysis_id=self.analysis_id,
+        )
         object.__setattr__(self, "unresolved_items", _mapping_tuple(self.unresolved_items, "unresolved_items"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         if isinstance(self.row_count, bool) or not isinstance(self.row_count, int) or self.row_count < 0:
@@ -313,7 +772,16 @@ class NormalizedSnapshotInput:
             _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
         )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
-        _validate_publication_body_marker(self.version_manifest, self.rows)
+        _validate_publication_body_marker(
+            self.version_manifest,
+            self.rows,
+            self.risk_records,
+            self.propagation,
+            self.evidence_summary,
+            self.decision_summary,
+            workspace_id=self.publication_workspace_id,
+            analysis_id=self.publication_analysis_id,
+        )
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
 

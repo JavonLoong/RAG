@@ -94,6 +94,7 @@ from .risk_contracts import (
 from .template_patch_contracts import TemplatePatchDecision, TemplatePatchSuggestion
 
 if TYPE_CHECKING:
+    from fmea_application.publication_body import PublicationBody, PublicationReviewRecord
     from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
     from .delivery_contracts import ExportArtifactManifest, ExportRun, VerifiedExportArtifact
@@ -583,6 +584,8 @@ class GovernanceSourcePort(Protocol):
 
     def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs: ...
 
+    def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody: ...
+
 
 class GovernanceAnalysisQueryPort(Protocol):
     def get_analysis(self, analysis_id: str, workspace_id: str) -> ResolvedAnalysisRecord | None: ...
@@ -590,6 +593,10 @@ class GovernanceAnalysisQueryPort(Protocol):
 
 class GovernanceReviewQueryPort(Protocol):
     def list_rows(self, analysis_id: str, workspace_id: str) -> tuple[FmeaRow, ...]: ...
+
+
+class GovernancePublicationReviewQueryPort(Protocol):
+    def load_publication_reviews(self, revision: FmeaRevision) -> tuple[PublicationReviewRecord, ...]: ...
 
 
 class GovernanceRiskQueryPort(Protocol):
@@ -647,6 +654,7 @@ class GovernanceRepositoryProviders:
     acknowledgements: GovernanceAcknowledgementQueryPort
     retrieval: RetrievalProvenanceQueryPort
     parent: GovernanceParentRevisionQueryPort | None = None
+    publication_reviews: GovernancePublicationReviewQueryPort | None = None
 
     def __post_init__(self) -> None:
         required_methods = {
@@ -666,6 +674,10 @@ class GovernanceRepositoryProviders:
                 raise TypeError(f"{provider_name} provider does not implement its typed query port")  # noqa: TRY003
         if self.parent is not None and not callable(getattr(self.parent, "get_parent_revision", None)):
             raise TypeError("parent provider does not implement its typed query port")  # noqa: TRY003
+        if self.publication_reviews is not None and not callable(
+            getattr(self.publication_reviews, "load_publication_reviews", None)
+        ):
+            raise TypeError("publication review provider does not implement its typed query port")  # noqa: TRY003
 
 
 class GovernanceAssistanceGenerator(Protocol):
@@ -952,6 +964,7 @@ __all__ = [
     "GovernanceEvidenceQueryPort",
     "GovernanceHistoryPage",
     "GovernancePropagationQueryPort",
+    "GovernancePublicationReviewQueryPort",
     "GovernanceRepository",
     "GovernanceRepositoryProviders",
     "GovernanceReviewQueryPort",

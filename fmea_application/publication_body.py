@@ -6,6 +6,7 @@ import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Final, NoReturn
 
@@ -64,7 +65,6 @@ _RISK_FIELDS: Final = (
     "dimensions",
     "derived",
     "proposal_id",
-    "confirmer_actor_id",
     "invalidated_reason",
     "record_version",
 )
@@ -210,7 +210,7 @@ def _verify_pack(pack: EvidencePack, packs_by_id: Mapping[str, EvidencePack], wo
         _stale("evidence pack is outside the governance scope")
     try:
         validate_evidence_lineage(pack, packs_by_id)
-    except Exception:
+    except FmeaDomainError:
         _stale("evidence pack lineage does not match its contents")
     refs_by_id: dict[str, EvidenceRef] = {}
     for ref in pack.refs:
@@ -337,7 +337,7 @@ def _verify_row(row: FmeaRow, inputs: GovernanceInputs, packs: Mapping[str, Evid
     try:
         validate_row_evidence(row, pack)
         validate_extension_values(row, inputs.domain_pack)
-    except Exception:
+    except FmeaDomainError:
         _stale("row evidence or extension binding is invalid")
 
 
@@ -370,7 +370,7 @@ def _verify_risk(
             validate_evidence_ids(dimension.evidence_ids, pack)
         if risk.derived is not None:
             validate_evidence_ids(risk.derived.evidence_ids, pack)
-    except Exception:
+    except FmeaDomainError:
         _stale("risk evidence binding is invalid")
 
 
@@ -403,12 +403,14 @@ def _verify_graph(  # noqa: C901
             _stale("propagation graph contains duplicate edge identities")
         if edge.analysis_id != graph.analysis_id:
             _stale("propagation edge is outside the governance scope")
+        if edge.review_status is not ReviewStatus.ACCEPTED:
+            _incomplete("propagation edges must be accepted before publication")
         pack = packs.get(edge.evidence_pack_id)
         if pack is None:
             _stale("propagation edge evidence pack is missing")
         try:
             validate_propagation_edge(edge, pack)
-        except Exception:
+        except FmeaDomainError:
             _stale("propagation edge evidence binding is invalid")
         edges_by_id[edge.edge_id] = edge
     for path in graph.paths:
@@ -503,11 +505,7 @@ def _project_risk_record(risk: RiskAssessmentRecord, risk_hash: str) -> Mapping[
     result["status"] = risk.status.value
     result["dimensions"] = tuple(_project_dimension(dimension) for dimension in sorted(risk.dimensions, key=lambda item: item.name))
     result["derived"] = None if risk.derived is None else _project_risk_assessment(risk.derived)
-    result["confirmation_basis"] = (
-        None
-        if risk.proposal_id is None and risk.confirmer_actor_id is None
-        else {"proposal_id": risk.proposal_id, "confirmer_actor_id": risk.confirmer_actor_id}
-    )
+    result["confirmation_basis"] = None if risk.proposal_id is None else {"proposal_id": risk.proposal_id}
     return _freeze_mapping(result)
 
 
@@ -641,6 +639,17 @@ def _review_values(record: PublicationReviewRecord) -> Mapping[str, object]:
         value = record.public_fields[field_name]
         if not isinstance(value, str) or not value.strip():
             _incomplete("review record public fields must contain non-empty text")
+    if record.public_fields["role_category"] != "human_reviewer":
+        _incomplete("publication review must be a human reviewer decision")
+    if record.public_fields["decision"] != "accepted":
+        _incomplete("publication review decision must be accepted")
+    decided_at = record.public_fields["decided_at"]
+    try:
+        parsed_timestamp = datetime.fromisoformat(str(decided_at).replace("Z", "+00:00"))
+    except ValueError:
+        _incomplete("publication review timestamp is invalid")
+    if parsed_timestamp.tzinfo is None or parsed_timestamp.utcoffset() != timedelta(0):
+        _incomplete("publication review timestamp must be UTC")
     result: dict[str, object] = {
         "record_type": "row_review",
         "decision_id": record.decision_id,
@@ -668,6 +677,8 @@ def _verify_reviews(
             _incomplete("review records must be typed server records")
         if record.decision_id in seen_decisions:
             _incomplete("review records contain duplicate decision identities")
+        if record.row_id in covered_rows:
+            _incomplete("each selected row requires exactly one repository review record")
         expected = row_versions.get(record.row_id)
         if (
             record.workspace_id != revision.workspace_id

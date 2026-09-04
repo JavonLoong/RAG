@@ -52,12 +52,10 @@ def test_publication_body_entrypoint_is_runtime_owned_and_base_fails_closed():
         runtime.source.load_inputs("analysis-1", "ws-1"),
     )
 
+    _, RepositoryGovernanceSource = _implementation()
+    base_source = RepositoryGovernanceSource(runtime.source._providers)
     with pytest.raises(TypeError, match="must be obtained from build_workspace_governance_runtime"):
-        type(runtime.source).__mro__[1](runtime.source._providers).build_publication_body(
-            revision,
-            base,
-            review_records=(),
-        )
+        base_source.build_publication_body(revision, base)
     assert callable(runtime.source.build_publication_body)
 
 
@@ -70,7 +68,54 @@ def test_publication_body_entrypoint_rejects_forged_runtime_inputs_before_projec
     forged = replace(inputs, active_run_ids=("forged-run",))
 
     with pytest.raises(ValueError, match="attestation"):
-        runtime.source.build_publication_body(revision, forged, review_records=())
+        runtime.source.build_publication_body(revision, forged)
+
+
+class _PublicationReviewProvider:
+    def __init__(self, records=()):
+        self.records = tuple(records)
+        self.revisions = []
+
+    def load_publication_reviews(self, revision):
+        self.revisions.append(revision)
+        return self.records
+
+
+def test_runtime_publication_body_loads_reviews_from_server_owned_typed_provider():
+    from fmea_governance_fixtures import make_assemble_request, make_governance_inputs
+
+    base = make_governance_inputs()
+    publication_reviews = _PublicationReviewProvider()
+    runtime = _source(base, publication_reviews=publication_reviews, return_runtime=True)
+    inputs = runtime.source.load_inputs("analysis-1", "ws-1")
+    revision = runtime.assembler.assemble(make_assemble_request(), inputs)
+
+    body = runtime.source.build_publication_body(revision, inputs)
+
+    assert body.rows == ()
+    assert publication_reviews.revisions == [revision]
+    assert "review_records" not in inspect.signature(runtime.source.build_publication_body).parameters
+
+
+def test_repository_providers_validate_configured_publication_review_port():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    with pytest.raises(TypeError, match="publication review provider"):
+        _source(make_governance_inputs(), publication_reviews=object())
+
+
+def test_runtime_publication_body_fails_closed_without_review_provider():
+    from fmea_governance_fixtures import make_assemble_request, make_governance_inputs
+
+    from core_domain.fmea.errors import FmeaDomainError
+
+    base = make_governance_inputs()
+    runtime = _source(base, return_runtime=True)
+    inputs = runtime.source.load_inputs("analysis-1", "ws-1")
+    revision = runtime.assembler.assemble(make_assemble_request(), inputs)
+
+    with pytest.raises(FmeaDomainError, match="FMEA_PUBLICATION_BODY_INCOMPLETE"):
+        runtime.source.build_publication_body(revision, inputs)
 
 
 def test_valid_source_rejects_client_state_overrides_at_load_boundary():
@@ -200,10 +245,11 @@ def _source(
     acknowledgements=(),
     provenance=None,
     parent=None,
+    publication_reviews=None,
     return_runtime=False,
 ):
     GovernanceRepositoryProviders, RepositoryGovernanceSource = _implementation()
-    providers = GovernanceRepositoryProviders(
+    provider_values = dict(  # noqa: C408
         analysis=_AnalysisProvider(analysis or base.analysis),
         review=_ReviewProvider(rows),
         risk=_RiskProvider(risk_records),
@@ -231,6 +277,9 @@ def _source(
             else None
         ),
     )
+    if publication_reviews is not None:
+        provider_values["publication_reviews"] = publication_reviews
+    providers = GovernanceRepositoryProviders(**provider_values)
     from fmea_infrastructure.composition import build_workspace_governance_runtime
 
     runtime = build_workspace_governance_runtime(providers)

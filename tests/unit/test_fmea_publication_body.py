@@ -33,6 +33,11 @@ def _contracts():
     return PublicationReviewRecord, _project_publication_body
 
 
+def _project_body(revision, inputs, review_records=()):
+    _, projector = _contracts()
+    return projector(revision, inputs, review_records=tuple(review_records))
+
+
 def _production_evidence_pack(fixture_pack: EvidencePack, *, locator: str | None = None) -> EvidencePack:
     locator = locator or json.dumps({"page": 1, "span": 1}, sort_keys=True, separators=(",", ":"))
     ref = fixture_pack.refs[0]
@@ -153,10 +158,10 @@ def test_runtime_source_projects_version_bound_full_row_and_safe_evidence(
     fixture_pack: EvidencePack,
     fixture_row: FmeaRow,
 ) -> None:
-    inputs, source, revision, row, pack = _publication_inputs(fixture_pack, fixture_row)
+    inputs, _source, revision, row, pack = _publication_inputs(fixture_pack, fixture_row)
     review = _review_record(revision, row)
 
-    body = source.build_publication_body(revision, inputs, review_records=(review,))
+    body = _project_body(revision, inputs, (review,))
 
     assert body.rows[0]["failure_mode"] == row.failure_mode
     assert body.rows[0]["record_version"] == row.record_version
@@ -176,17 +181,52 @@ def test_projector_preserves_confirmed_native_risk_without_rescoring(
     row = replace(fixture_row, review_status=ReviewStatus.ACCEPTED)
     risk = _confirmed_risk()
     inputs = make_governance_inputs(rows=(row,), risk_records=(risk,), evidence_packs=(pack,))
-    source = make_governance_source(inputs)
+    _source = make_governance_source(inputs)
     revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
 
-    body = source.build_publication_body(revision, inputs, review_records=(_review_record(revision, row),))
+    body = _project_body(revision, inputs, (_review_record(revision, row),))
 
     assert body.risk_records[0]["status"] == "confirmed"
     assert body.risk_records[0]["derived"]["rpn"] == 108
     assert body.risk_records[0]["dimensions"][0]["value"] == 3
+    assert "confirmer_actor_id" not in body.risk_records[0]
+    assert "confirmer_actor_id" not in body.risk_records[0]["confirmation_basis"]
 
 
 def test_projector_preserves_confirmed_propagation_and_row_lineage(
+    fixture_pack: EvidencePack,
+    fixture_row: FmeaRow,
+) -> None:
+    from fmea_propagation_fixtures import _graph
+
+    pack = _production_evidence_pack(fixture_pack)
+    row = replace(fixture_row, review_status=ReviewStatus.ACCEPTED)
+    graph = _graph("ws-1")
+    accepted_edges = tuple(replace(edge, review_status=ReviewStatus.ACCEPTED) for edge in graph.edges)
+    graph = replace(
+        graph,
+        domain_pack_id="generic-domain",
+        rule_pack_id="generic-propagation",
+        status=PropagationStatus.CONFIRMED,
+        edges=accepted_edges,
+        paths=tuple(
+            replace(path, edges=tuple(replace(edge, review_status=ReviewStatus.ACCEPTED) for edge in path.edges))
+            for path in graph.paths
+        ),
+    )
+    inputs = make_governance_inputs(rows=(row,), propagation_graph_revision=graph, evidence_packs=(pack,))
+    _source = make_governance_source(inputs)
+    revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
+
+    body = _project_body(revision, inputs, (_review_record(revision, row),))
+
+    assert body.propagation is not None
+    assert body.propagation["status"] == "confirmed"
+    assert body.propagation["topology_hash"] == "1" * 64
+    assert body.propagation["edges"][0]["evidence_ids"] == ("ev-1",)
+
+
+def test_projector_rejects_confirmed_graph_with_suggested_edge(
     fixture_pack: EvidencePack,
     fixture_row: FmeaRow,
 ) -> None:
@@ -201,23 +241,18 @@ def test_projector_preserves_confirmed_propagation_and_row_lineage(
         status=PropagationStatus.CONFIRMED,
     )
     inputs = make_governance_inputs(rows=(row,), propagation_graph_revision=graph, evidence_packs=(pack,))
-    source = make_governance_source(inputs)
     revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
 
-    body = source.build_publication_body(revision, inputs, review_records=(_review_record(revision, row),))
-
-    assert body.propagation is not None
-    assert body.propagation["status"] == "confirmed"
-    assert body.propagation["topology_hash"] == "1" * 64
-    assert body.propagation["edges"][0]["evidence_ids"] == ("ev-1",)
+    with pytest.raises(FmeaDomainError, match="FMEA_PUBLICATION_BODY_INCOMPLETE"):
+        _project_body(revision, inputs, (_review_record(revision, row),))
 
 
 def test_projected_publication_body_is_deeply_immutable(
     fixture_pack: EvidencePack,
     fixture_row: FmeaRow,
 ) -> None:
-    inputs, source, revision, row, _ = _publication_inputs(fixture_pack, fixture_row)
-    body = source.build_publication_body(revision, inputs, review_records=(_review_record(revision, row),))
+    inputs, _source, revision, row, _ = _publication_inputs(fixture_pack, fixture_row)
+    body = _project_body(revision, inputs, (_review_record(revision, row),))
 
     with pytest.raises(TypeError):
         body.rows[0]["failure_mode"] = "changed"  # type: ignore[index]
@@ -229,10 +264,57 @@ def test_projector_rejects_missing_review_record(
     fixture_pack: EvidencePack,
     fixture_row: FmeaRow,
 ) -> None:
-    inputs, source, revision, _row, _ = _publication_inputs(fixture_pack, fixture_row)
+    inputs, _source, revision, _row, _ = _publication_inputs(fixture_pack, fixture_row)
 
     with pytest.raises(FmeaDomainError, match="FMEA_PUBLICATION_BODY_INCOMPLETE"):
-        source.build_publication_body(revision, inputs, review_records=())
+        _project_body(revision, inputs)
+
+
+@pytest.mark.parametrize(
+    "public_fields",
+    (
+        {
+            "role_category": "human_reviewer",
+            "decision": "rejected",
+            "reason": "not accepted",
+            "decided_at": "2026-09-04T00:00:00Z",
+        },
+        {
+            "role_category": "model",
+            "decision": "accepted",
+            "reason": "model suggestion",
+            "decided_at": "2026-09-04T00:00:00Z",
+        },
+        {
+            "role_category": "human_reviewer",
+            "decision": "accepted",
+            "reason": "bad timestamp",
+            "decided_at": "not-a-timestamp",
+        },
+    ),
+)
+def test_projector_requires_accepted_human_review_with_valid_timestamp(
+    fixture_pack: EvidencePack,
+    fixture_row: FmeaRow,
+    public_fields: dict[str, str],
+) -> None:
+    inputs, _source, revision, row, _ = _publication_inputs(fixture_pack, fixture_row)
+    review = _review_record(revision, row, public_fields=public_fields)
+
+    with pytest.raises(FmeaDomainError, match="FMEA_PUBLICATION_BODY_INCOMPLETE"):
+        _project_body(revision, inputs, (review,))
+
+
+def test_projector_rejects_two_decisions_for_one_row(
+    fixture_pack: EvidencePack,
+    fixture_row: FmeaRow,
+) -> None:
+    inputs, _source, revision, row, _ = _publication_inputs(fixture_pack, fixture_row)
+    first = _review_record(revision, row)
+    second = _review_record(revision, row, decision_id="decision-2")
+
+    with pytest.raises(FmeaDomainError, match="FMEA_PUBLICATION_BODY_INCOMPLETE"):
+        _project_body(revision, inputs, (first, second))
 
 
 def test_runtime_source_rejects_cross_runtime_attestation(
@@ -241,10 +323,8 @@ def test_runtime_source_rejects_cross_runtime_attestation(
 ) -> None:
     first_inputs, first_source, first_revision, first_row, _ = _publication_inputs(fixture_pack, fixture_row)
     second_inputs, _second_source, _second_revision, _second_row, _ = _publication_inputs(fixture_pack, fixture_row)
-    review = _review_record(first_revision, first_row)
-
     with pytest.raises(ValueError, match="attestation"):
-        first_source.build_publication_body(first_revision, second_inputs, review_records=(review,))
+        first_source.build_publication_body(first_revision, second_inputs)
 
 
 def test_projector_rejects_recomputed_row_hash_mismatch(
@@ -330,10 +410,10 @@ def test_projector_preserves_unknown_status_and_empty_bindings(
         review_status=ReviewStatus.ACCEPTED,
     )
     inputs = make_governance_inputs(rows=(unknown_row,), evidence_packs=(pack,))
-    source = make_governance_source(inputs)
+    _source = make_governance_source(inputs)
     revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
 
-    body = source.build_publication_body(revision, inputs, review_records=(_review_record(revision, unknown_row),))
+    body = _project_body(revision, inputs, (_review_record(revision, unknown_row),))
 
     assert body.rows[0]["claim_status"] == "unknown"
     assert body.rows[0]["field_evidence"] == ()
@@ -348,7 +428,7 @@ def test_projector_stably_sorts_rows_and_reviews(
     row_a = replace(fixture_row, row_id="row-a", review_status=ReviewStatus.ACCEPTED)
     row_b = replace(fixture_row, row_id="row-b", review_status=ReviewStatus.ACCEPTED)
     inputs = make_governance_inputs(rows=(row_b, row_a), evidence_packs=(pack,))
-    source = make_governance_source(inputs)
+    _source = make_governance_source(inputs)
     revision = make_governance_assembler(inputs).assemble(make_assemble_request(), inputs)
     row_hashes = {row_id: row_hash for row_id, _version, row_hash in revision.row_versions}
     reviews = tuple(
@@ -361,7 +441,7 @@ def test_projector_stably_sorts_rows_and_reviews(
         for row in (row_b, row_a)
     )
 
-    body = source.build_publication_body(revision, inputs, review_records=reviews)
+    body = _project_body(revision, inputs, reviews)
 
     assert tuple(row["row_id"] for row in body.rows) == ("row-a", "row-b")
     assert tuple(item["decision_id"] for item in body.decision_summary) == ("decision-row-a", "decision-row-b")

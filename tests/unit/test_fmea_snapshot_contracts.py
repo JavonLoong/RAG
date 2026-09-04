@@ -266,6 +266,131 @@ def test_publication_body_marker_rejects_summary_rows() -> None:
         )
 
 
+def _marked_publication_body_source(**overrides: object) -> NormalizedSnapshotInput:
+    source = make_normalized_snapshot_input()
+    row = {
+        "row_id": "row-1",
+        "analysis_id": source.publication_analysis_id,
+        "evidence_pack_id": "pack-1",
+        "item_id": "item-1",
+        "function_id": "function-1",
+        "failure_mode": "low pressure",
+        "causes": (),
+        "mechanisms": (),
+        "effects": (),
+        "symptoms": (),
+        "controls": (),
+        "barriers": (),
+        "actions": (),
+        "risk_assessment": None,
+        "claim_status": "unknown",
+        "review_status": "accepted",
+        "publication_status": "unpublished",
+        "record_version": 1,
+        "row_hash": "a" * 64,
+        "field_evidence": (),
+        "field_support": (),
+        "field_claims": (),
+        "extension_values": (),
+        "unknown_extension": {"preserve": True},
+    }
+    decision = {
+        "record_type": "row_review",
+        "decision_id": "decision-1",
+        "workspace_id": source.publication_workspace_id,
+        "analysis_id": source.publication_analysis_id,
+        "row_id": "row-1",
+        "record_version": 1,
+        "row_hash": "a" * 64,
+        "role_category": "human_reviewer",
+        "decision": "accepted",
+        "reason": "reviewed",
+        "decided_at": "2026-09-04T00:00:00Z",
+    }
+    values: dict[str, object] = {
+        "rows": (row,),
+        "risk_records": (),
+        "propagation": None,
+        "evidence_summary": (
+            {
+                "pack_id": "pack-1",
+                "pack_hash": "b" * 64,
+                "evidence_pack_version": "1",
+                "refs": (),
+            },
+        ),
+        "decision_summary": (decision,),
+        "version_manifest": {
+            **source.version_manifest,
+            "body_schema_version": "graphrag.fmea.body.v1",
+        },
+    }
+    values.update(overrides)
+    return replace(source, **values)
+
+
+def test_marked_publication_body_accepts_optional_empty_risk_and_graph_sections() -> None:
+    source = _marked_publication_body_source()
+
+    snapshot = build_normalized_snapshot(source)
+
+    assert snapshot.risk_records == ()
+    assert snapshot.propagation is None
+    assert snapshot.rows[0]["unknown_extension"] == {"preserve": True}
+
+
+def test_marked_publication_body_rejects_explicit_null_schema_marker() -> None:
+    with pytest.raises(FmeaDomainError, match="publication body schema version"):
+        make_normalized_snapshot_input(
+            version_manifest={
+                "schema_id": "graphrag.fmea.v1",
+                "domain_pack": "fuel-combustion@1.0.0",
+                "body_schema_version": None,
+            }
+        )
+
+
+def test_marked_publication_body_rejects_null_required_row_value() -> None:
+    source = _marked_publication_body_source()
+    row = dict(source.rows[0])
+    row["failure_mode"] = None
+
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        build_normalized_snapshot(replace(source, rows=(row,)))
+
+
+def test_marked_publication_body_rejects_missing_evidence_reference() -> None:
+    source = _marked_publication_body_source()
+    row = dict(source.rows[0])
+    row["field_evidence"] = ({"field_key": "failure_mode", "evidence_ids": ("ev-missing",)},)
+
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        build_normalized_snapshot(replace(source, rows=(row,)))
+
+
+def test_marked_publication_body_rejects_review_reference_for_wrong_row_hash() -> None:
+    source = _marked_publication_body_source()
+    decision = dict(source.decision_summary[0])
+    decision["row_hash"] = "b" * 64
+
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        build_normalized_snapshot(replace(source, decision_summary=(decision,)))
+
+
+def test_marked_publication_body_rejects_section_over_minimum_bound() -> None:
+    source = _marked_publication_body_source()
+    decisions = tuple(
+        {
+            **source.decision_summary[0],
+            "decision_id": f"decision-{index}",
+        }
+        for index in range(501)
+    )
+
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        build_normalized_snapshot(replace(source, decision_summary=decisions))
+
+
 @pytest.mark.parametrize(
     "unsafe_value",
     (

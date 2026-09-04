@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, NoReturn
 from uuid import uuid4
 
 from core_domain.fmea.domain_pack import DomainPackManifest
+from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import FmeaRevision, canonical_hash
 from core_domain.fmea.states import ActorType
 from core_domain.fmea.value_objects import EvidencePack
@@ -123,7 +124,7 @@ from structured_output_infrastructure import (
 if TYPE_CHECKING:
     from chroma_rag_poc.workspace_registry import WorkspaceConfig
 
-    from fmea_application.publication_body import PublicationBody, PublicationReviewRecord
+    from fmea_application.publication_body import PublicationBody
 
 _TEMPLATE_ID = "fmea-row-review"
 _TEMPLATE_VERSION = "1.0.0"
@@ -398,13 +399,7 @@ class RepositoryGovernanceSource:
     def load_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:
         raise TypeError("RepositoryGovernanceSource must be obtained from build_workspace_governance_runtime")
 
-    def build_publication_body(
-        self,
-        revision: FmeaRevision,
-        inputs: GovernanceInputs,
-        *,
-        review_records: tuple[PublicationReviewRecord, ...],
-    ) -> PublicationBody:
+    def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody:
         raise TypeError("RepositoryGovernanceSource must be obtained from build_workspace_governance_runtime")
 
     def _load_unattested_inputs(self, analysis_id: str, workspace_id: str) -> GovernanceInputs:  # noqa: C901
@@ -620,14 +615,18 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
             inputs = self._load_unattested_inputs(analysis_id, workspace_id)
             return replace(inputs, _source_attestation=issue(inputs))
 
-        def build_publication_body(
-            self,
-            revision: FmeaRevision,
-            inputs: GovernanceInputs,
-            *,
-            review_records: tuple[PublicationReviewRecord, ...],
-        ) -> PublicationBody:
+        def build_publication_body(self, revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody:
             verify(inputs)
+            publication_reviews = self._providers.publication_reviews
+            if publication_reviews is None:
+                raise FmeaDomainError(
+                    "FMEA_PUBLICATION_BODY_INCOMPLETE: publication review provider is not configured"
+                )
+            review_records = publication_reviews.load_publication_reviews(revision)
+            if not isinstance(review_records, tuple):
+                raise FmeaDomainError(
+                    "FMEA_PUBLICATION_BODY_INCOMPLETE: publication review provider returned an invalid record set"
+                )
             from fmea_application.publication_body import _project_publication_body
 
             return _project_publication_body(revision, inputs, review_records=review_records)
