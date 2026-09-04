@@ -72,7 +72,7 @@ from fmea_application.review_contracts import AuditEvent, IdempotencyScope, enco
 from fmea_application.review_errors import ReviewError
 from fmea_application.revision_assembler import PublicationReadinessReport
 from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
-from fmea_application.snapshot_contracts import snapshot_content_hash
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, snapshot_content_hash
 
 from .repository_sqlite import SqliteFmeaRepository
 from .sqlite_codec import decode_audit_event, load_strict_json
@@ -3253,6 +3253,22 @@ class SqliteGovernanceRepository:
             if row is None:
                 return None
             return self._snapshot_from_connection(connection, row["snapshot_id"], workspace_id)
+        finally:
+            connection.close()
+
+    def get_snapshot_for_revision(self, revision_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None:
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                "SELECT snapshot_id FROM fmea_normalized_snapshots WHERE workspace_id=? AND revision_id=? "
+                "ORDER BY created_at DESC, snapshot_id DESC LIMIT 2",
+                (_text(workspace_id, "workspace_id"), _text(revision_id, "revision_id")),
+            ).fetchall()
+            if not rows:
+                return None
+            if len(rows) != 1:
+                raise ValueError("revision snapshot lookup is ambiguous")
+            return self._snapshot_from_connection(connection, rows[0]["snapshot_id"], workspace_id)
         finally:
             connection.close()
 

@@ -30,6 +30,7 @@ from .delivery_contracts import (
 from .governance_contracts import ExportEligibilityRecord
 from .ports import ArtifactStore, ExportNarrativeGenerator, ExportRepository, GovernanceRepository, SnapshotExporter
 from .review_contracts import ActorContext
+from .review_errors import ReviewError as ApplicationReviewError
 from .snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
 
 _HASH = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
@@ -84,6 +85,7 @@ class ExportServiceError(ValueError):
         "FMEA_EXPORT_ARTIFACT_NOT_FOUND",
         "FMEA_EXPORT_ARTIFACT_INVALID",
         "FMEA_EXPORT_IDEMPOTENCY_CONFLICT",
+        "FMEA_VERSION_CONFLICT",
         "FMEA_EXPORT_STORAGE_UNAVAILABLE",
         "FMEA_EXPORT_PERSISTENCE_INVALID",
         "FMEA_EXPORT_NARRATIVE_REQUEST_INVALID",
@@ -139,6 +141,18 @@ def _boundary_call(
         return operation()
     except Exception as exc:
         args = exc.args if type(exc) is ValueError else None
+        provider_code = None
+        if type(exc) in {ApplicationReviewError, ExportServiceError}:
+            candidate_code = exc.code
+            if type(candidate_code) is str:
+                provider_code = candidate_code
+        if provider_code == "FMEA_VERSION_CONFLICT" or (
+            type(args) is tuple
+            and len(args) == 1
+            and type(args[0]) is str
+            and args[0] == "FMEA_VERSION_CONFLICT"
+        ):
+            raise ExportServiceError("FMEA_VERSION_CONFLICT", "export source revision version is stale") from None
         if (
             idempotency_conflict
             and type(args) is tuple
@@ -735,6 +749,7 @@ class StartExportCommand:
     idempotency_key: str
     filename: str | None = None
     filename_token: str | None = None
+    expected_revision_version: int = 1
 
     def __post_init__(self) -> None:
         for name in ("export_run_id", "workspace_id", "revision_id", "snapshot_id"):
@@ -754,6 +769,10 @@ class StartExportCommand:
             raise ValueError("format is unsupported") from exc
         object.__setattr__(self, "format", export_format)
         object.__setattr__(self, "idempotency_key", _text(self.idempotency_key, "idempotency_key", limit=256))
+        if isinstance(self.expected_revision_version, bool) or not isinstance(self.expected_revision_version, int):
+            raise ValueError("expected_revision_version must be an integer")
+        if self.expected_revision_version < 1:
+            raise ValueError("expected_revision_version must be positive")
         if self.filename is not None and self.filename_token is not None:
             raise ValueError("filename and filename_token are mutually exclusive")
         if self.filename_token is not None:
@@ -780,6 +799,7 @@ def _command_value(command: StartExportCommand) -> dict[str, object]:
         "draft_preview": command.draft_preview,
         "filename": command.filename,
         "idempotency_key": command.idempotency_key,
+        "expected_revision_version": command.expected_revision_version,
     }
 
 
@@ -893,6 +913,15 @@ class ExportService:
         )
 
     def _load_snapshot(self, command: StartExportCommand):
+        record_version = _boundary_call(
+            lambda: self.governance_repository.get_revision_record_version(
+                command.revision_id, command.workspace_id
+            ),
+            code="FMEA_EXPORT_PERSISTENCE_INVALID",
+            message="revision version persistence is invalid",
+        )
+        if record_version != command.expected_revision_version:
+            raise ExportServiceError("FMEA_VERSION_CONFLICT", "export source revision version is stale")
         lookup_id = command.publication_id or command.snapshot_id
         snapshot = _boundary_call(
             lambda: (
@@ -1476,6 +1505,48 @@ class ExportService:
             request_hash,
             message="export completion is retryable",
         )
+
+    def suggest_narrative_for_revision(
+        self,
+        revision_id: str,
+        actor: ActorContext,
+        *,
+        snapshot_id: str | None = None,
+        snapshot_hash: str | None = None,
+        publication_id: str | None = None,
+    ) -> ExportNarrativeSuggestion:
+        """Resolve the exact durable revision snapshot before model generation."""
+
+        if not isinstance(revision_id, str) or not revision_id.strip():
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_REQUEST_INVALID", "revision identity is invalid")
+        if not isinstance(actor, ActorContext) or actor.actor_type is not ActorType.MODEL:
+            raise ExportServiceError("FMEA_EXPORT_NARRATIVE_FORBIDDEN", "narrative suggestions require a model actor")
+        getter = getattr(self.governance_repository, "get_snapshot_for_revision", None)
+        if not callable(getter):
+            raise ExportServiceError(
+                "FMEA_EXPORT_PERSISTENCE_INVALID", "revision snapshot query is unavailable", retryable=True
+            )
+        snapshot = _boundary_call(
+            lambda: (
+                None
+                if (raw := getter(revision_id, actor.workspace_id)) is None
+                else revalidate_normalized_snapshot(raw)
+            ),
+            code="FMEA_EXPORT_PERSISTENCE_INVALID",
+            message="revision snapshot persistence is invalid",
+        )
+        if snapshot is None:
+            raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "revision snapshot was not found")
+        if snapshot.revision_id != revision_id or snapshot.workspace_id != actor.workspace_id:
+            raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_STALE", "revision snapshot binding is stale")
+        expected = (
+            (snapshot_id, snapshot.snapshot_id, "snapshot identity"),
+            (snapshot_hash, snapshot.snapshot_hash, "snapshot hash"),
+            (publication_id, snapshot.publication_id, "publication identity"),
+        )
+        if any(requested is not None and requested != actual for requested, actual, _ in expected):
+            raise ExportServiceError("FMEA_EXPORT_SNAPSHOT_STALE", "revision snapshot binding is stale")
+        return self.suggest_narrative(snapshot, actor)
 
     def suggest_narrative(
         self,

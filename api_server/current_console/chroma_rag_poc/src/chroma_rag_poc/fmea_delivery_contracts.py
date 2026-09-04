@@ -7,7 +7,7 @@ from enum import Enum
 from math import isfinite
 from typing import Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr, field_validator
 
 from core_domain.fmea.template_migration import (
     CompatibilityReport,
@@ -98,6 +98,8 @@ class MigrationConfirmationRequest(_StrictRequest):
     target_domain_pack_version: StrictStr = _VERSION
     target_domain_pack_hash: StrictStr = _HASH
     dry_run: MigrationDryRunRequest
+    dry_run_idempotency_key: StrictStr = _ID
+    dry_run_source_version: StrictInt = Field(gt=0)
     confirm_migration: StrictBool
 
     @field_validator("confirm_migration")

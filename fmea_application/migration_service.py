@@ -10,6 +10,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from typing import Any
 
 from core_domain.fmea.governance import FmeaRevision, revision_content_hash
@@ -58,6 +59,7 @@ _MIGRATION_ERROR_CODES = frozenset({
     "FMEA_MIGRATION_REPORT_INVALID",
     "FMEA_MIGRATION_REPORT_STALE",
     "FMEA_MIGRATION_IDEMPOTENCY_CONFLICT",
+    "FMEA_VERSION_CONFLICT",
     "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
     "FMEA_MIGRATION_CONFIRMATION_REQUIRED",
     "FMEA_MIGRATION_FAILED",
@@ -162,6 +164,12 @@ def _validate_key(value: object) -> str:
     return value
 
 
+def migration_report_id(workspace_id: str, migration_id: str) -> str:
+    """Return the stable public identity of one workspace migration report."""
+
+    return "migration-report-" + sha256(f"{_id(workspace_id, 'workspace_id')}:{_id(migration_id, 'migration_id')}".encode()).hexdigest()[:40]
+
+
 @dataclass(frozen=True, slots=True)
 class MigrationCommand:
     """Immutable request for one source-revision to domain-pack dry run."""
@@ -173,6 +181,7 @@ class MigrationCommand:
     target_domain_pack_version: str
     target_domain_pack_hash: str
     idempotency_key: str
+    expected_source_version: int = 1
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "migration_id", _id(self.migration_id, "migration_id"))
@@ -188,6 +197,9 @@ class MigrationCommand:
             self, "target_domain_pack_hash", _hash(self.target_domain_pack_hash, "target_domain_pack_hash")
         )
         object.__setattr__(self, "idempotency_key", _validate_key(self.idempotency_key))
+        object.__setattr__(
+            self, "expected_source_version", _positive(self.expected_source_version, "expected_source_version")
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,6 +252,7 @@ class ConfirmMigrationCommand:
     dry_run_command: MigrationCommand
     idempotency_key: str
     confirm_migration: bool
+    expected_report_version: int = 1
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "migration_id", _id(self.migration_id, "migration_id"))
@@ -260,6 +273,9 @@ class ConfirmMigrationCommand:
         object.__setattr__(self, "idempotency_key", _validate_key(self.idempotency_key))
         if not isinstance(self.confirm_migration, bool):
             raise ValueError("confirm_migration must be a boolean")  # noqa: TRY003
+        object.__setattr__(
+            self, "expected_report_version", _positive(self.expected_report_version, "expected_report_version")
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -430,7 +446,7 @@ class MigrationService:
         if actor.actor_type is not ActorType.HUMAN or "template_admin" not in actor.roles:
             raise _error("FMEA_MIGRATION_FORBIDDEN", "only a human template_admin may run an FMEA migration")
 
-    def _load_source(self, command: MigrationCommand, actor: ActorContext) -> tuple[FmeaRevision, int]:
+    def _load_source(self, command: MigrationCommand, actor: ActorContext) -> tuple[FmeaRevision, int]:  # noqa: C901
         try:
             source = self._repository.get_revision(command.source_revision_id, actor.workspace_id)
         except Exception:
@@ -477,6 +493,8 @@ class MigrationService:
             ) from None
         if isinstance(record_version, bool) or not isinstance(record_version, int) or record_version < 1:
             raise _error("FMEA_MIGRATION_STORAGE_UNAVAILABLE", "source revision version is unavailable", retryable=True)
+        if record_version != command.expected_source_version:
+            raise _error("FMEA_VERSION_CONFLICT", "source revision version is stale")
         return source, record_version
 
     def _load_pack_identity(
@@ -722,6 +740,8 @@ class MigrationService:
             )
         try:
             saved = saver(record.report, command=command, actor=actor)
+        except MigrationServiceError:
+            raise
         except Exception:
             raise _error(
                 "FMEA_MIGRATION_STORAGE_UNAVAILABLE", "migration report storage is unavailable", retryable=True
@@ -825,12 +845,14 @@ class MigrationService:
             dry_command, record.source, record.source_record_version, record.plan, record.candidate, stored
         )
 
-    def confirm(self, command: ConfirmMigrationCommand, actor: ActorContext) -> MigrationResult:
+    def confirm(self, command: ConfirmMigrationCommand, actor: ActorContext) -> MigrationResult:  # noqa: C901
         self._authorize(actor)
         if not isinstance(command, ConfirmMigrationCommand):
             raise _error("FMEA_MIGRATION_REQUEST_INVALID", "migration confirmation request is invalid")
         if command.confirm_migration is not True:
             raise _error("FMEA_MIGRATION_CONFIRMATION_REQUIRED", "explicit migration confirmation is required")
+        if command.expected_report_version != 1:
+            raise _error("FMEA_VERSION_CONFLICT", "migration report version is stale")
         record = self._record_for_confirmation(command, actor)
         target = self._load_target(record.command)
         try:

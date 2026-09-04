@@ -520,10 +520,18 @@ class TemplateWorkflowRepository(Protocol):
     """Durable workspace-scoped template draft and patch lifecycle."""
 
     def save_template_draft(
-        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str
+        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str, *, actor_type: ActorType
     ) -> tuple[TemplateDraft, int, bool]: ...
 
     def get_template_draft(self, draft_id: str, workspace_id: str) -> tuple[TemplateDraft, int] | None: ...
+
+    def reserve_template_patch_generation(
+        self, patch_id: str, scope: IdempotencyScope, payload_hash: str, *, created_at: str
+    ) -> TemplatePatchSuggestion | None: ...
+
+    def replay_template_patch(
+        self, patch_id: str, scope: IdempotencyScope, payload_hash: str
+    ) -> TemplatePatchSuggestion | None: ...
 
     def save_template_patch(
         self,
@@ -532,7 +540,17 @@ class TemplateWorkflowRepository(Protocol):
         payload_hash: str,
         *,
         expected_draft_version: int,
+        actor_type: ActorType,
     ) -> tuple[TemplatePatchSuggestion, int, bool]: ...
+
+    def reserve_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, bool]: ...
 
     def get_template_patch(
         self, patch_id: str, workspace_id: str
@@ -831,6 +849,10 @@ class GovernanceRepository(Protocol):
     def get_publication_lifecycle(self, publication_id: str, workspace_id: str) -> PublicationLifecycleView | None: ...
 
     def get_snapshot(self, publication_id: str, workspace_id: str) -> NormalizedFmeaSnapshot | None: ...
+
+    def get_snapshot_for_revision(
+        self, revision_id: str, workspace_id: str
+    ) -> NormalizedFmeaSnapshot | None: ...
 
     def get_export_eligibility(self, publication_id: str, workspace_id: str) -> ExportEligibilityRecord | None: ...
 

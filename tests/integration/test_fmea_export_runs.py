@@ -84,6 +84,12 @@ class ExplosiveProviderValue:
         raise RuntimeError(self._ERROR_DETAIL)
 
 
+class ExplosiveException(RuntimeError):
+    @property
+    def code(self):
+        raise RuntimeError("secret exception property")  # noqa: TRY003
+
+
 def _published_repository(tmp_path: Path, *, fault_injector=None, upgrade_from_v10: bool = False):
     from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
 
@@ -189,6 +195,60 @@ def test_success_is_durable_verified_and_idempotent(tmp_path: Path):
     assert exporter.draft_previews == [False]
 
 
+def test_completed_legacy_export_replays_only_exact_default_version_request(tmp_path: Path, monkeypatch):
+    import fmea_application.export_service as export_module
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    exporter = FakeExporter()
+    service, _ = _service(repository, tmp_path, exporter)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+    current_serializer = export_module._command_value
+
+    def legacy_serializer(value):
+        payload = current_serializer(value)
+        payload.pop("expected_revision_version")
+        return payload
+
+    with monkeypatch.context() as legacy:
+        legacy.setattr(export_module, "_command_value", legacy_serializer)
+        completed = service.start(command, actor)
+
+    with sqlite3.connect(repository.database_path) as connection:
+        request = orjson.loads(connection.execute("SELECT request_json FROM fmea_export_runs").fetchone()[0])
+        assert set(request) == {
+            "export_run_id", "workspace_id", "revision_id", "snapshot_id", "snapshot_hash",
+            "publication_id", "format", "draft_preview", "filename", "idempotency_key",
+        }
+        history = tuple(connection.iterdump())
+
+    restarted = SqliteFmeaDeliveryRepository(repository.database_path)
+    restarted.initialize()
+    service, _ = _service(restarted, tmp_path, exporter)
+    assert service.get_artifact(completed.artifact_id, actor).payload == exporter.payload
+    assert service.start(command, actor) == completed
+    for changed in (replace(command, expected_revision_version=2), replace(command, filename="other.json")):
+        with pytest.raises(export_module.ExportServiceError, match="FMEA_EXPORT_IDEMPOTENCY_CONFLICT"):
+            service.start(changed, actor)
+    with monkeypatch.context() as extra_field:
+        extra_field.setattr(export_module, "_command_value", lambda value: current_serializer(value) | {"extra": 1})
+        with pytest.raises(export_module.ExportServiceError, match="FMEA_EXPORT_IDEMPOTENCY_CONFLICT"):
+            service.start(command, actor)
+    assert service.get_artifact(completed.artifact_id, actor).payload == exporter.payload
+    assert exporter.calls == 1
+    with sqlite3.connect(repository.database_path) as connection:
+        assert tuple(connection.iterdump()) == history
+        connection.execute(
+            "UPDATE idempotency_records SET payload_hash=? WHERE resource_id=?",
+            ("sha256:" + "f" * 64, completed.export_run_id),
+        )
+    with pytest.raises(export_module.ExportServiceError, match="FMEA_EXPORT_IDEMPOTENCY_CONFLICT"):
+        service.start(command, actor)
+    assert exporter.calls == 1
+
+
 def test_post_latest_store_fault_is_reconciled_as_succeeded_and_replayable(tmp_path: Path):
     repository, publication = _published_repository(tmp_path)
     snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
@@ -222,6 +282,63 @@ def test_same_key_different_payload_fails_closed(tmp_path: Path):
 
     with pytest.raises(Exception, match="FMEA_EXPORT_IDEMPOTENCY_CONFLICT"):
         service.start(replace(command, filename="other.json"), actor)
+
+
+def test_export_revision_version_is_checked_inside_repository_write_transaction(tmp_path: Path):
+    from fmea_application.export_service import _request_hash
+    from fmea_application.review_errors import ReviewError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot, expected_revision_version=2)
+    request_json, request_hash = _request_hash(command)
+
+    with pytest.raises(ReviewError) as caught:
+        repository.reserve_export_run(
+            command,
+            actor,
+            request_json,
+            request_hash,
+            "2026-09-03T00:00:00Z",
+        )
+    assert caught.value.code == "FMEA_VERSION_CONFLICT"
+
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_export_runs").fetchone() == (0,)
+
+
+def test_export_boundary_does_not_inspect_untyped_exception_properties(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    provider = AdversarialProvider(repository, "reserve_export_run", failure=ExplosiveException())
+    service, _ = _service(repository, tmp_path, FakeExporter(), export_repository=provider)
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+
+    with pytest.raises(ExportServiceError) as caught:
+        service.start(_command(snapshot), actor)
+
+    assert caught.value.code == "FMEA_EXPORT_STORAGE_UNAVAILABLE"
+    assert "secret" not in str(caught.value)
+    assert caught.value.__cause__ is None
+
+
+def test_export_exact_replay_stays_valid_but_changed_revision_version_fails(tmp_path: Path):
+    from fmea_application.export_service import ExportServiceError
+
+    repository, publication = _published_repository(tmp_path)
+    snapshot = repository.get_snapshot(publication.publication_id, "ws-1")
+    service, _ = _service(repository, tmp_path, FakeExporter())
+    actor = make_governance_actor(actor_id="exporter-1", roles=frozenset({"exporter"}))
+    command = _command(snapshot)
+
+    first = service.start(command, actor)
+    assert service.start(command, actor) == first
+
+    with pytest.raises(ExportServiceError, match="FMEA_EXPORT_IDEMPOTENCY_CONFLICT"):
+        service.start(replace(command, expected_revision_version=2), actor)
 
 
 @pytest.mark.parametrize("failure", [RuntimeError("renderer failed"), OSError("store failed")])
@@ -400,9 +517,28 @@ def test_old_010_empty_database_upgrades_additively_to_011(tmp_path: Path):
     repository.initialize()
 
     with sqlite3.connect(database_path) as connection:
-        assert connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone() == (11,)
+        historical_010 = connection.execute(
+            "SELECT version, filename FROM schema_migrations WHERE version=?",
+            (10,),
+        ).fetchone()
+        assert historical_010 == (10, "010_fmea_migration_delivery.sql")
+        applied_versions = {
+            row[0] for row in connection.execute("SELECT version FROM schema_migrations")
+        }
+        assert {11, 12} <= applied_versions
+
         columns = {row[1] for row in connection.execute("PRAGMA table_info(fmea_export_runs)")}
+        draft_columns = {row[1] for row in connection.execute("PRAGMA table_info(fmea_template_drafts)")}
+        candidate_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(fmea_template_patch_candidates)")
+        }
+        decision_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(fmea_template_patch_decisions)")
+        }
     assert {"actor_id", "idempotency_scope", "request_json", "request_hash"} <= columns
+    assert {"record_version"} <= draft_columns
+    assert {"suggestion_json", "record_version"} <= candidate_columns
+    assert {"record_version"} <= decision_columns
 
 
 def test_011_rejects_legacy_export_rows_without_inventing_authority(tmp_path: Path):

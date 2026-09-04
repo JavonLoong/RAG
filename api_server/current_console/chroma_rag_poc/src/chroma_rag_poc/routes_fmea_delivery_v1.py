@@ -11,7 +11,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
-from types import SimpleNamespace
 from typing import Any, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -30,8 +29,10 @@ from fmea_application.export_service import ExportServiceError, StartExportComma
 from fmea_application.migration_service import (
     ConfirmMigrationCommand,
     MigrationCommand,
+    migration_report_id,
 )
 from fmea_application.review_contracts import ActorContext
+from fmea_application.template_patch_contracts import TemplatePatchDecision
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
 
 from .fmea_delivery_contracts import (
@@ -156,17 +157,24 @@ class DeliveryAccess:
     runtime: object
 
 
-def _problem_response(error: DeliveryError, *, errors: list[dict[str, object]] | None = None) -> JSONResponse:
+def _problem_response(
+    error: DeliveryError,
+    *,
+    request: Request | None = None,
+    errors: list[dict[str, object]] | None = None,
+) -> JSONResponse:
     code = error.code if error.code in _ERROR_STATUS else "FMEA_DELIVERY_STORAGE_UNAVAILABLE"
     status = _ERROR_STATUS[code]
     detail = error.public_message if code == error.code else "FMEA delivery request failed"
-    trace_id = str(uuid4())
+    request_id = _request_id(request) if request is not None else str(uuid4())
+    trace_id = _trace_id(request) if request is not None else str(uuid4())
     problem = {
         "type": f"/problems/{code}",
         "title": "FMEA delivery request failed.",
         "status": status,
         "code": code,
         "detail": detail,
+        "request_id": request_id,
         "trace_id": trace_id,
         "retryable": error.retryable if code == error.code else True,
         "errors": errors or [],
@@ -181,8 +189,8 @@ def _problem_response(error: DeliveryError, *, errors: list[dict[str, object]] |
     return JSONResponse(status_code=status, content=problem, media_type="application/problem+json")
 
 
-def delivery_error_response(_request: Request, error: DeliveryError) -> JSONResponse:
-    return _problem_response(error)
+def delivery_error_response(request: Request, error: DeliveryError) -> JSONResponse:
+    return _problem_response(error, request=request)
 
 
 def is_delivery_path(path: str) -> bool:
@@ -198,7 +206,7 @@ def is_delivery_path(path: str) -> bool:
     )
 
 
-def delivery_validation_error_response(_request: Request, error: RequestValidationError) -> JSONResponse:
+def delivery_validation_error_response(request: Request, error: RequestValidationError) -> JSONResponse:
     safe_errors = [
         {
             "loc": [str(part)[:64] for part in item.get("loc", ()) if str(part) != "body"][:6],
@@ -207,7 +215,9 @@ def delivery_validation_error_response(_request: Request, error: RequestValidati
         for item in error.errors()[:16]
     ]
     return _problem_response(
-        DeliveryError("FMEA_DELIVERY_REQUEST_INVALID", "delivery request validation failed"), errors=safe_errors
+        DeliveryError("FMEA_DELIVERY_REQUEST_INVALID", "delivery request validation failed"),
+        request=request,
+        errors=safe_errors,
     )
 
 
@@ -249,8 +259,10 @@ def _runtime_for(request: Request, workspace: WorkspaceConfig) -> object:
         if existing is not None:
             return existing
         factory = cast(Callable[[WorkspaceConfig], object] | None, request.app.state.fmea_delivery_runtime_factory)
+        if factory is None:
+            raise DeliveryError("FMEA_WORKSPACE_CONFIGURATION_INVALID", "FMEA delivery runtime factory is unavailable")
         try:
-            runtime = build_default_delivery_runtime(workspace) if factory is None else factory(workspace)
+            runtime = factory(workspace)
         except DeliveryError:
             raise
         except Exception as exc:
@@ -318,13 +330,23 @@ def _idempotency_key(request: Request) -> str:
 
 
 def _request_id(request: Request) -> str:
+    cached = getattr(request.state, "fmea_request_id", None)
+    if isinstance(cached, str):
+        return cached
     value = request.headers.get("x-request-id")
-    return value[:128] if isinstance(value, str) and 1 <= len(value) <= 128 else str(uuid4())
+    request_id = value[:128] if isinstance(value, str) and 1 <= len(value) <= 128 else str(uuid4())
+    request.state.fmea_request_id = request_id
+    return request_id
 
 
 def _trace_id(request: Request) -> str:
+    cached = getattr(request.state, "fmea_trace_id", None)
+    if isinstance(cached, str):
+        return cached
     value = request.headers.get("x-trace-id")
-    return value[:128] if isinstance(value, str) and 1 <= len(value) <= 128 else str(uuid4())
+    trace_id = value[:128] if isinstance(value, str) and 1 <= len(value) <= 128 else str(uuid4())
+    request.state.fmea_trace_id = trace_id
+    return trace_id
 
 
 def _envelope(request: Request, resource_type: str, data: object) -> dict[str, object]:
@@ -338,8 +360,16 @@ def _envelope(request: Request, resource_type: str, data: object) -> dict[str, o
     }
 
 
-def _json_response(request: Request, resource_type: str, data: object, *, status: int = 200) -> JSONResponse:
-    return JSONResponse(status_code=status, content=_envelope(request, resource_type, data))
+def _json_response(
+    request: Request,
+    resource_type: str,
+    data: object,
+    *,
+    status: int = 200,
+    record_version: int | None = None,
+) -> JSONResponse:
+    headers = {} if record_version is None else {"ETag": f'"{record_version}"'}
+    return JSONResponse(status_code=status, content=_envelope(request, resource_type, data), headers=headers)
 
 
 def _require_role(access: DeliveryAccess, role: str, code: str) -> None:
@@ -374,15 +404,18 @@ async def _bounded_upload(file: UploadFile) -> tuple[bytes, str]:
 @router.post("/template-drafts")
 async def create_template_draft(request: Request, file: UploadFile = File(...)) -> JSONResponse:
     access = get_delivery_access(request)
-    _idempotency_key(request)
+    key = _idempotency_key(request)
     raw, filename = await _bounded_upload(file)
     service = _runtime_service(access.runtime, "domain_pack_service")
     draft = _service_call(
         lambda: service.import_template(
-            ImportTemplateCommand(raw, filename, access.workspace.workspace_id), access.actor
+            ImportTemplateCommand(raw, filename, access.workspace.workspace_id, key), access.actor
         )
     )
-    return _json_response(request, "fmea_template_draft", template_draft_data(draft), status=201)
+    _, version = _service_call(lambda: service.get_draft_record(draft.draft_id, access.actor))
+    return _json_response(
+        request, "fmea_template_draft", template_draft_data(draft), status=201, record_version=version
+    )
 
 
 @router.post("/template-drafts/{draft_id}/patch-runs")
@@ -415,24 +448,29 @@ def create_template_patch_run(
         model_version="server-configured",
         prompt_version="server-configured",
         target_record_version=target_record_version,
+        idempotency_key=key,
     )
     suggestion = _service_call(lambda: service.suggest_patch(command, access.actor))
-    request.app.state.fmea_delivery_patch_suggestions[(access.workspace.workspace_id, patch_id)] = suggestion
-    return _json_response(request, "fmea_template_patch", template_patch_data(suggestion), status=202)
+    _, version = _service_call(lambda: service.patch_for(patch_id, access.actor))
+    return _json_response(
+        request, "fmea_template_patch", template_patch_data(suggestion), status=202, record_version=version
+    )
 
 
 @router.get("/template-patches/{patch_id}")
 def get_template_patch(patch_id: str, request: Request) -> JSONResponse:
     access = get_delivery_access(request)
     patch_id = _path_id(patch_id, "patch_id")
-    suggestion = request.app.state.fmea_delivery_patch_suggestions.get((access.workspace.workspace_id, patch_id))
-    if suggestion is not None:
-        return _json_response(request, "fmea_template_patch", template_patch_data(suggestion))
     service = _runtime_service(access.runtime, "domain_pack_service")
-    decision = _service_call(lambda: service.decision_for_patch(patch_id, access.actor))
-    if decision is None:
-        raise DeliveryError("FMEA_TEMPLATE_PATCH_NOT_FOUND", "template patch was not found")
-    return _json_response(request, "fmea_template_patch_decision", template_patch_decision_data(decision))
+    item, version = _service_call(lambda: service.patch_for(patch_id, access.actor))
+    if isinstance(item, TemplatePatchDecision):
+        return _json_response(
+            request,
+            "fmea_template_patch_decision",
+            template_patch_decision_data(item),
+            record_version=version,
+        )
+    return _json_response(request, "fmea_template_patch", template_patch_data(item), record_version=version)
 
 
 @router.post("/template-patches/{patch_id}/acceptance")
@@ -443,7 +481,8 @@ def accept_template_patch(
 ) -> JSONResponse:
     access = get_delivery_access(request)
     _require_role(access, "template_admin", "FMEA_TEMPLATE_ADMIN_REQUIRED")
-    _if_match(request)
+    expected_version = _if_match(request)
+    key = _idempotency_key(request)
     if body.confirm_template_change is not True:
         raise DeliveryError("FMEA_TEMPLATE_CONFIRMATION_REQUIRED", "explicit template confirmation is required")
     if body.patch_id != _path_id(patch_id, "patch_id"):
@@ -462,11 +501,20 @@ def accept_template_patch(
                 domain_pack_hash=body.domain_pack_hash,
                 evidence_pack_hash=body.evidence_pack_hash,
                 confirm_template_change=body.confirm_template_change,
+                expected_patch_version=expected_version,
+                idempotency_key=key,
             ),
             access.actor,
         )
     )
-    return _json_response(request, "fmea_template_registration", template_registration_data(decision), status=201)
+    _, version = _service_call(lambda: service.patch_for(body.patch_id, access.actor))
+    return _json_response(
+        request,
+        "fmea_template_registration",
+        template_registration_data(decision),
+        status=201,
+        record_version=version,
+    )
 
 
 @router.post("/template-patches/{patch_id}/rejection")
@@ -477,20 +525,39 @@ def reject_template_patch(
 ) -> JSONResponse:
     access = get_delivery_access(request)
     _require_role(access, "template_admin", "FMEA_TEMPLATE_ADMIN_REQUIRED")
-    _if_match(request)
-    _idempotency_key(request)
+    expected_version = _if_match(request)
+    key = _idempotency_key(request)
     if body.patch_id != _path_id(patch_id, "patch_id"):
         raise DeliveryError("FMEA_DELIVERY_REQUEST_INVALID", "patch identity does not match the path")
     service = _runtime_service(access.runtime, "domain_pack_service")
     decision = _service_call(
         lambda: service.reject_patch(
-            RejectTemplatePatchCommand(body.suggestion_id, body.patch_id, body.reason), access.actor
+            RejectTemplatePatchCommand(
+                body.suggestion_id,
+                body.patch_id,
+                body.reason,
+                expected_version,
+                key,
+            ),
+            access.actor,
         )
     )
-    return _json_response(request, "fmea_template_patch_decision", template_patch_decision_data(decision), status=201)
+    _, version = _service_call(lambda: service.patch_for(body.patch_id, access.actor))
+    return _json_response(
+        request,
+        "fmea_template_patch_decision",
+        template_patch_decision_data(decision),
+        status=201,
+        record_version=version,
+    )
 
 
-def _migration_command(revision_id: str, body: MigrationDryRunRequest, idempotency_key: str) -> MigrationCommand:
+def _migration_command(
+    revision_id: str,
+    body: MigrationDryRunRequest,
+    idempotency_key: str,
+    expected_source_version: int,
+) -> MigrationCommand:
     return MigrationCommand(
         migration_id=body.migration_id,
         source_revision_id=_path_id(revision_id, "revision_id"),
@@ -499,6 +566,7 @@ def _migration_command(revision_id: str, body: MigrationDryRunRequest, idempoten
         target_domain_pack_version=body.target_domain_pack_version,
         target_domain_pack_hash=body.target_domain_pack_hash,
         idempotency_key=idempotency_key,
+        expected_source_version=expected_source_version,
     )
 
 
@@ -510,11 +578,13 @@ def migration_dry_run(
 ) -> JSONResponse:
     access = get_delivery_access(request)
     _require_role(access, "template_admin", "FMEA_MIGRATION_FORBIDDEN")
-    _if_match(request)
+    expected_version = _if_match(request)
     key = _idempotency_key(request)
     service = _runtime_service(access.runtime, "migration_service")
-    report = _service_call(lambda: service.dry_run(_migration_command(revision_id, body, key), access.actor))
-    return _json_response(request, "fmea_migration_report", migration_report_data(report), status=202)
+    report = _service_call(
+        lambda: service.dry_run(_migration_command(revision_id, body, key, expected_version), access.actor)
+    )
+    return _json_response(request, "fmea_migration_report", migration_report_data(report), status=202, record_version=1)
 
 
 @router.post("/migration-reports/{report_id}/confirmations")
@@ -525,14 +595,19 @@ def confirm_migration(
 ) -> JSONResponse:
     access = get_delivery_access(request)
     _require_role(access, "template_admin", "FMEA_TEMPLATE_ADMIN_REQUIRED")
-    _if_match(request)
+    expected_report_version = _if_match(request)
     key = _idempotency_key(request)
     if body.confirm_migration is not True:
         raise DeliveryError("FMEA_MIGRATION_CONFIRMATION_REQUIRED", "explicit migration confirmation is required")
-    if body.migration_id != _path_id(report_id, "report_id"):
+    if migration_report_id(access.workspace.workspace_id, body.migration_id) != _path_id(report_id, "report_id"):
         raise DeliveryError("FMEA_DELIVERY_REQUEST_INVALID", "migration report identity does not match the path")
     service = _runtime_service(access.runtime, "migration_service")
-    dry_run = _migration_command(body.source_revision_id, body.dry_run, key)
+    dry_run = _migration_command(
+        body.source_revision_id,
+        body.dry_run,
+        body.dry_run_idempotency_key,
+        body.dry_run_source_version,
+    )
     result = _service_call(
         lambda: service.confirm(
             ConfirmMigrationCommand(
@@ -546,11 +621,12 @@ def confirm_migration(
                 dry_run_command=dry_run,
                 idempotency_key=key,
                 confirm_migration=body.confirm_migration,
+                expected_report_version=expected_report_version,
             ),
             access.actor,
         )
     )
-    return _json_response(request, "fmea_migration_result", migration_result_data(result), status=201)
+    return _json_response(request, "fmea_migration_result", migration_result_data(result), status=201, record_version=1)
 
 
 @router.post("/revisions/{revision_id}/export-runs")
@@ -560,7 +636,7 @@ def start_export(
     body: ExportRunRequest = Body(...),
 ) -> JSONResponse:
     access = get_delivery_access(request)
-    _if_match(request)
+    expected_version = _if_match(request)
     key = _idempotency_key(request)
     if not body.draft_preview:
         _require_role(access, "exporter", "FMEA_EXPORT_FORBIDDEN")
@@ -579,37 +655,15 @@ def start_export(
         format=body.format,
         draft_preview=body.draft_preview,
         idempotency_key=key,
+        expected_revision_version=expected_version,
     )
     run = _service_call(lambda: service.start(command, access.actor))
-    return _json_response(request, "fmea_export_run", export_run_data(run), status=202)
-
-
-def _snapshot_for_narrative(
-    runtime: object, body: ExportNarrativeRunRequest, revision_id: str, actor: ActorContext
-) -> object:
-    candidates = (
-        getattr(runtime, "governance_service", None),
-        getattr(runtime, "governance_repository", None),
-        getattr(getattr(runtime, "export_runtime", None), "repository", None),
-        getattr(runtime, "repository", None),
+    return _json_response(
+        request,
+        "fmea_export_run",
+        export_run_data(run),
+        status=202,
     )
-    requested_ids = tuple(item for item in (body.snapshot_id, body.publication_id, revision_id) if item is not None)
-    for service in candidates:
-        if service is None:
-            continue
-        for method_name in ("get_snapshot", "snapshot_for_revision", "latest_snapshot"):
-            method = getattr(service, method_name, None)
-            if not callable(method):
-                continue
-            for object_id in requested_ids:
-                for args in ((object_id, actor), (object_id, actor.workspace_id)):
-                    try:
-                        snapshot = method(*args)
-                    except (TypeError, KeyError, LookupError, AssertionError):
-                        continue
-                    if snapshot is not None:
-                        return snapshot
-    raise DeliveryError("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "narrative snapshot was not found")
 
 
 @router.post("/revisions/{revision_id}/export-narrative-runs")
@@ -620,12 +674,15 @@ def suggest_export_narrative(
 ) -> JSONResponse:
     access = get_delivery_access(request)
     service = _runtime_service(access.runtime, "export_service")
-    snapshot = _service_call(
-        lambda: _snapshot_for_narrative(access.runtime, body, _path_id(revision_id, "revision_id"), access.actor)
+    suggestion = _service_call(
+        lambda: service.suggest_narrative_for_revision(
+            _path_id(revision_id, "revision_id"),
+            access.model_actor,
+            snapshot_id=body.snapshot_id,
+            snapshot_hash=body.snapshot_hash,
+            publication_id=body.publication_id,
+        )
     )
-    if body.snapshot_hash is not None and getattr(snapshot, "snapshot_hash", None) != body.snapshot_hash:
-        raise DeliveryError("FMEA_EXPORT_SNAPSHOT_STALE", "narrative snapshot hash is stale")
-    suggestion = _service_call(lambda: service.suggest_narrative(snapshot, access.model_actor))
     return _json_response(request, "fmea_export_narrative_suggestion", narrative_data(suggestion), status=202)
 
 
@@ -677,65 +734,3 @@ __all__ = [
     "is_delivery_path",
     "router",
 ]
-
-
-class _RepositoryEvidenceProvider:
-    def __init__(self, repository: object) -> None:
-        self._repository = repository
-
-    def load_pack(self, workspace_id: str, pack_id: str) -> object:
-        return self._repository.get_evidence_pack(pack_id, workspace_id)
-
-
-def build_default_delivery_runtime(workspace: WorkspaceConfig) -> object:
-    """Compose the existing application services for the default local workspace."""
-
-    from fmea_application.domain_pack_service import DomainPackService
-    from fmea_infrastructure.composition import (
-        _register_bundled_domain_packs,
-        build_workspace_export_runtime,
-        build_workspace_migration_runtime,
-        build_workspace_review_runtime,
-    )
-    from fmea_infrastructure.domain_pack_registry import FileDomainPackRegistry, FileScoringRuleRegistry
-    from fmea_infrastructure.office_package import OfficePackageLimits
-    from fmea_infrastructure.template_import_docx import DocxTemplateImporter
-    from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
-    from fmea_infrastructure.template_patch_generator import EnvironmentTemplatePatchGenerator
-    from structured_output_application import TemplateCompiler
-    from structured_output_infrastructure import Draft202012SchemaAdapter, FileTemplateRegistry, load_template_source
-
-    review_runtime = build_workspace_review_runtime(workspace)
-    domain_registry = FileDomainPackRegistry(review_runtime.template_registry_root / "domain-packs")
-    scoring_registry = FileScoringRuleRegistry(review_runtime.template_registry_root / "scoring-rules")
-    _register_bundled_domain_packs(domain_registry, scoring_registry)
-    compiler = TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source)
-    template_registry = FileTemplateRegistry(review_runtime.template_registry_root)
-    domain_service = DomainPackService(
-        importers={
-            "xlsx": ExcelTemplateImporter(limits=OfficePackageLimits()),
-            "docx": DocxTemplateImporter(limits=OfficePackageLimits()),
-        },
-        patch_generator=EnvironmentTemplatePatchGenerator(
-            registry_root=review_runtime.template_registry_root / "assistance"
-        ),
-        evidence_provider=_RepositoryEvidenceProvider(review_runtime.repository),
-        compiler=compiler,
-        registry=template_registry,
-    )
-    migration_runtime = build_workspace_migration_runtime(
-        workspace,
-        domain_pack_registry=domain_registry,
-        migration_adapters=(),
-    )
-    export_runtime = build_workspace_export_runtime(workspace)
-    return SimpleNamespace(
-        domain_pack_service=domain_service,
-        migration_service=migration_runtime.service,
-        export_service=export_runtime.service,
-        repository=export_runtime.repository,
-        governance_repository=export_runtime.repository,
-        review_runtime=review_runtime,
-        migration_runtime=migration_runtime,
-        export_runtime=export_runtime,
-    )

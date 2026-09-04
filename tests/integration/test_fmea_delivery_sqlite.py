@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import fields, replace
 from hashlib import sha256
@@ -172,6 +173,137 @@ def test_fresh_process_dry_run_binds_the_original_request_key(context):
             )
         )
     assert after == before
+
+
+def test_historical_dry_run_without_expected_source_version_remains_readable(context):
+    from fmea_application.migration_service import MigrationService
+    from fmea_infrastructure.delivery_repository_sqlite import SqliteFmeaDeliveryRepository
+    from fmea_infrastructure.migration_registry import MigrationRegistry
+
+    repository, service, command, actor = context
+    first = service.dry_run(command, actor)
+    with sqlite3.connect(repository.database_path) as connection:
+        request_json = connection.execute(
+            "SELECT request_json FROM fmea_migration_runs WHERE workspace_id=? AND migration_id=?",
+            (actor.workspace_id, command.migration_id),
+        ).fetchone()[0]
+        request = json.loads(request_json)
+        assert request["expected_source_version"] == command.expected_source_version
+        request.pop("expected_source_version")
+        legacy_json = json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        connection.execute("DROP TRIGGER fmea_migration_runs_immutable_fields")
+        connection.execute(
+            "UPDATE fmea_migration_runs SET request_json=?,request_hash=? WHERE workspace_id=? AND migration_id=?",
+            (
+                legacy_json,
+                "sha256:" + sha256(legacy_json.encode("utf-8")).hexdigest(),
+                actor.workspace_id,
+                command.migration_id,
+            ),
+        )
+
+    restarted_repository = SqliteFmeaDeliveryRepository(repository.database_path)
+    restarted_repository.initialize()
+    restarted_service = MigrationService(
+        restarted_repository,
+        MigrationRegistry((Adapter(),)),
+        domain_pack_registry=PackRegistry(),
+        clock=lambda: "2026-09-03T00:00:00Z",
+    )
+
+    assert restarted_service.dry_run(command, actor) == first
+
+
+def test_dry_run_source_version_is_checked_inside_repository_write_transaction(context):
+    from fmea_application.migration_service import MigrationServiceError
+
+    repository, service, command, actor = context
+    report = service._build_record(command, actor).report
+    stale_command = replace(command, expected_source_version=2)
+
+    with pytest.raises(MigrationServiceError, match="FMEA_VERSION_CONFLICT"):
+        repository.save_migration_report(report, command=stale_command, actor=actor)
+
+    assert repository.count_child_revisions("revision-1", "ws-1") == 0
+    with sqlite3.connect(repository.database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM fmea_migration_runs").fetchone() == (0,)
+        assert connection.execute("SELECT COUNT(*) FROM fmea_migration_reports").fetchone() == (0,)
+
+
+def test_confirm_source_version_is_checked_inside_repository_write_transaction(context):
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationServiceError, PreparedMigration
+
+    repository, service, command, actor = context
+    report_record = service._build_record(command, actor)
+    service.dry_run(command, actor)
+    stale_dry_run = replace(command, expected_source_version=2)
+    confirm = ConfirmMigrationCommand(
+        migration_id=command.migration_id,
+        report_hash=report_record.report.report_hash,
+        source_revision_id=command.source_revision_id,
+        source_revision_hash=command.source_revision_hash,
+        target_domain_pack_id=command.target_domain_pack_id,
+        target_domain_pack_version=command.target_domain_pack_version,
+        target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=stale_dry_run,
+        idempotency_key="00000000-0000-4000-8000-000000000912",
+        confirm_migration=True,
+    )
+    prepared = PreparedMigration(
+        command=confirm,
+        dry_run_command=stale_dry_run,
+        source=report_record.source,
+        source_record_version=report_record.source_record_version,
+        plan=report_record.plan,
+        candidate=report_record.candidate,
+        report=report_record.report,
+        target_domain_pack_identity=report_record.candidate.target_domain_pack_identity,
+        actor=actor,
+    )
+
+    with pytest.raises(MigrationServiceError, match="FMEA_VERSION_CONFLICT"):
+        repository.commit_migration(prepared)
+
+    assert repository.count_child_revisions("revision-1", "ws-1") == 0
+    assert repository.count_outbox_events("migration.completed", "ws-1") == 0
+
+
+def test_confirm_report_version_is_checked_inside_repository_write_transaction(context):
+    from fmea_application.migration_service import ConfirmMigrationCommand, MigrationServiceError, PreparedMigration
+
+    repository, service, command, actor = context
+    report_record = service._build_record(command, actor)
+    service.dry_run(command, actor)
+    confirm = ConfirmMigrationCommand(
+        migration_id=command.migration_id,
+        report_hash=report_record.report.report_hash,
+        source_revision_id=command.source_revision_id,
+        source_revision_hash=command.source_revision_hash,
+        target_domain_pack_id=command.target_domain_pack_id,
+        target_domain_pack_version=command.target_domain_pack_version,
+        target_domain_pack_hash=command.target_domain_pack_hash,
+        dry_run_command=command,
+        idempotency_key="00000000-0000-4000-8000-000000000913",
+        confirm_migration=True,
+        expected_report_version=2,
+    )
+    prepared = PreparedMigration(
+        command=confirm,
+        dry_run_command=command,
+        source=report_record.source,
+        source_record_version=report_record.source_record_version,
+        plan=report_record.plan,
+        candidate=report_record.candidate,
+        report=report_record.report,
+        target_domain_pack_identity=report_record.candidate.target_domain_pack_identity,
+        actor=actor,
+    )
+
+    with pytest.raises(MigrationServiceError, match="FMEA_VERSION_CONFLICT"):
+        repository.commit_migration(prepared)
+
+    assert repository.count_child_revisions("revision-1", "ws-1") == 0
+    assert repository.count_outbox_events("migration.completed", "ws-1") == 0
 
 
 def test_confirm_creates_immutable_child_and_invalidates_derived_state(context):

@@ -503,6 +503,7 @@ actor 类型严格区分 `human`、`model` 和 `system`。批准和发布要求 
 - revision 和 row 使用递增 `record_version`；
 - HTTP 使用 `ETag/If-Match`，冲突返回 409 或 412；
 - REST 与 CLI 中的 `If-Match` 必须进入同一应用命令并在持久化事务中校验；不得只解析请求头后丢弃。响应的 `ETag` 来自服务返回的实际记录版本。
+- 交付接口区分操作重放与当前资源状态：模板建议请求的幂等重放保留原始不可变建议，不表示重新打开已决策补丁；响应中的补丁版本表示当前逻辑资源版本，当前审核结论须通过补丁状态查询读取。导出启动的 `If-Match` 绑定源 revision，而非导出 run；没有独立记录版本的 `ExportRun` 不伪造整数 `ETag`，产物下载仍使用已验证内容摘要。
 - 不允许静默覆盖；
 - unresolved 项可以由人带理由接受，但必须在发布清单中显式列出；
 - published revision 不可修改；修改时从它创建新 revision；

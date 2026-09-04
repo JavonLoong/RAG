@@ -37,6 +37,7 @@ from fmea_infrastructure.composition import (
     GovernanceRuntime,
     ReviewRuntime,
     RiskRuntime,
+    build_default_workspace_delivery_runtime,
     build_workspace_review_runtime,
 )
 from fmea_infrastructure.local_auth import LocalReviewAuthProvider
@@ -449,10 +450,9 @@ def create_app(
     app.state.governance_runtime_factory = governance_runtime_factory
     app.state.governance_runtimes = {}
     app.state.governance_runtime_lock = Lock()
-    app.state.fmea_delivery_runtime_factory = delivery_runtime_factory
+    app.state.fmea_delivery_runtime_factory = delivery_runtime_factory or build_default_workspace_delivery_runtime
     app.state.fmea_delivery_runtimes = {}
     app.state.fmea_delivery_runtime_lock = Lock()
-    app.state.fmea_delivery_patch_suggestions = {}
     configured_cursor_secret = os.environ.get("FMEA_GOVERNANCE_CURSOR_SECRET")
     try:
         app.state.governance_cursor_secret = derive_governance_cursor_secret(configured_cursor_secret)
@@ -529,6 +529,14 @@ def create_app(
                 continue
             closed.add(id(runtime))
             runtime.executor.close()
+        delivery_runtimes = tuple(cast(dict[str, object], app.state.fmea_delivery_runtimes).values())
+        for runtime in delivery_runtimes:
+            if id(runtime) in closed:
+                continue
+            closed.add(id(runtime))
+            closer = getattr(runtime, "close", None)
+            if callable(closer):
+                closer()
 
     app.router.add_event_handler("shutdown", close_review_runtimes)
 

@@ -45,6 +45,7 @@ from fmea_application.migration_service import (
     MigrationCommand,
     MigrationResult,
     PreparedMigration,
+    migration_report_id,
 )
 from fmea_application.migration_service import (
     MigrationServiceError as ReviewError,
@@ -455,7 +456,9 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             raise ApplicationReviewError(
                 "FMEA_IDEMPOTENCY_CONFLICT", "idempotency key was used with a different payload"
             )
-        if row["state"] != "completed" or row["resource_id"] != resource_id:
+        if row["state"] != "completed":
+            return None
+        if row["resource_id"] != resource_id:
             raise ApplicationReviewError(
                 "FMEA_REVIEW_STORAGE_UNAVAILABLE",
                 "template workflow idempotency reservation is incomplete",
@@ -471,8 +474,22 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             value = _decode_draft(canonical_json(response["value"]))
         elif kind == "template_patch":
             value = _decode_template_suggestion(canonical_json(response["value"]))
+            stored = connection.execute(
+                "SELECT * FROM fmea_template_patch_candidates "
+                "WHERE workspace_id=? AND patch_id=?",
+                (scope.workspace_id, resource_id),
+            ).fetchone()
+            if stored is None or cls._validate_template_suggestion_row(connection, stored) != value:
+                raise ValueError("persisted template patch replay binding is invalid")
         elif kind == "template_patch_decision":
             value = _decode_template_decision(canonical_json(response["value"]))
+            stored = connection.execute(
+                "SELECT * FROM fmea_template_patch_decisions "
+                "WHERE workspace_id=? AND decision_id=?",
+                (scope.workspace_id, resource_id),
+            ).fetchone()
+            if stored is None or cls._validate_template_decision_row(connection, stored, value) != value:
+                raise ValueError("persisted template decision replay binding is invalid")
         else:
             raise ValueError("persisted template workflow response kind is invalid")
         return value, version, True
@@ -497,8 +514,259 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template workflow idempotency completion failed", retryable=True
             )
 
+    @staticmethod
+    def _template_claim_row(
+        connection: sqlite3.Connection, workspace_id: str, patch_id: str
+    ) -> sqlite3.Row | None:
+        return connection.execute(
+            "SELECT workspace_id, patch_id, idempotency_scope, payload_hash, created_at, completed_at "
+            "FROM fmea_template_patch_generation_claims WHERE workspace_id=? AND patch_id=?",
+            (workspace_id, patch_id),
+        ).fetchone()
+
+    @staticmethod
+    def _template_event_ids(scope: IdempotencyScope) -> tuple[str, str]:
+        digest = sha256(scope.scope_key.encode("utf-8")).hexdigest()[:40]
+        return f"template-audit-{digest}", f"template-outbox-{digest}"
+
+    @classmethod
+    def _insert_template_audit(
+        cls,
+        connection: sqlite3.Connection,
+        *,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        patch_id: str | None,
+        draft_id: str,
+        suggestion_id: str | None,
+        decision_id: str | None,
+        action: str,
+        created_at: str,
+        outbox_event_id: str,
+        actor_type: ActorType,
+    ) -> str:
+        event_id, expected_outbox_id = cls._template_event_ids(scope)
+        if outbox_event_id != expected_outbox_id:
+            raise ApplicationReviewError(
+                "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template audit and outbox identities are not bound", retryable=True
+            )
+        command = scope.command
+        if not isinstance(actor_type, ActorType):
+            raise ApplicationReviewError(
+                "FMEA_REVIEW_REQUEST_INVALID", "template audit actor type is invalid"
+            )
+        event = {
+            "event_id": event_id,
+            "workspace_id": scope.workspace_id,
+            "patch_id": patch_id,
+            "draft_id": draft_id,
+            "suggestion_id": suggestion_id,
+            "decision_id": decision_id,
+            "actor_id": scope.actor_id,
+            "actor_type": actor_type.value,
+            "command": command,
+            "action": action,
+            "idempotency_scope": scope.scope_key,
+            "canonical_payload_hash": payload_hash,
+            "outbox_event_id": outbox_event_id,
+            "created_at": created_at,
+        }
+        event_json = canonical_json(event)
+        connection.execute(
+            "INSERT INTO fmea_template_audit_events "
+            "(workspace_id,event_id,patch_id,draft_id,suggestion_id,decision_id,actor_id,actor_type,command,action,"
+            "idempotency_scope,canonical_payload_hash,outbox_event_id,event_json,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                scope.workspace_id,
+                event_id,
+                patch_id,
+                draft_id,
+                suggestion_id,
+                decision_id,
+                scope.actor_id,
+                actor_type.value,
+                command,
+                action,
+                scope.scope_key,
+                payload_hash,
+                outbox_event_id,
+                event_json,
+                created_at,
+            ),
+        )
+        return event_id
+
+    @staticmethod
+    def _insert_template_outbox(
+        connection: sqlite3.Connection,
+        *,
+        scope: IdempotencyScope,
+        event_id: str,
+        event_type: str,
+        aggregate_type: str,
+        aggregate_id: str,
+        payload: Mapping[str, object],
+        created_at: str,
+    ) -> None:
+        payload_json = canonical_json(payload)
+        connection.execute(
+            "INSERT INTO fmea_outbox_events "
+            "(event_id,workspace_id,aggregate_type,aggregate_id,event_type,status,payload_json,payload_hash,"
+            "idempotency_scope,created_at) VALUES (?,?,?, ?,?,'pending',?,?,?,?)",
+            (
+                event_id,
+                scope.workspace_id,
+                aggregate_type,
+                aggregate_id,
+                event_type,
+                payload_json,
+                outbox_payload_hash(payload),
+                scope.scope_key,
+                created_at,
+            ),
+        )
+
+    @classmethod
+    def _validate_template_event_chain(
+        cls,
+        connection: sqlite3.Connection,
+        *,
+        workspace_id: str,
+        patch_id: str | None,
+        draft_id: str,
+        suggestion_id: str | None,
+        decision_id: str | None,
+        action: str,
+        audit_event_id: object,
+        outbox_event_id: object,
+    ) -> None:
+        links = (audit_event_id, outbox_event_id)
+        if all(value is None for value in links):
+            return
+        if any(value is None for value in links):
+            raise ValueError("persisted template workflow event links are incomplete")
+        audit = connection.execute(
+            "SELECT * FROM fmea_template_audit_events WHERE workspace_id=? AND event_id=?",
+            (workspace_id, audit_event_id),
+        ).fetchone()
+        outbox = connection.execute(
+            "SELECT * FROM fmea_outbox_events WHERE workspace_id=? AND event_id=?",
+            (workspace_id, outbox_event_id),
+        ).fetchone()
+        if audit is None or outbox is None:
+            raise ValueError("persisted template workflow event chain is missing")
+        expected_command = {
+            "imported": "fmea.template.import",
+            "suggested": "fmea.template.patch.suggest",
+            "accepted": "fmea.template.patch.accept",
+            "rejected": "fmea.template.patch.reject",
+        }[action]
+        expected_event_type = {
+            "imported": "template.imported",
+            "suggested": "template.suggested",
+            "accepted": "template.accepted",
+            "rejected": "template.rejected",
+        }[action]
+        expected_aggregate_type = "template_draft" if action == "imported" else "template_patch"
+        expected_aggregate_id = draft_id if action == "imported" else patch_id
+        if not all(
+            (
+                audit["patch_id"] == patch_id,
+                audit["draft_id"] == draft_id,
+                audit["suggestion_id"] == suggestion_id,
+                audit["decision_id"] == decision_id,
+                audit["action"] == action,
+                audit["command"] == expected_command,
+                audit["outbox_event_id"] == outbox_event_id,
+                outbox["aggregate_type"] == expected_aggregate_type,
+                outbox["aggregate_id"] == expected_aggregate_id,
+                outbox["event_type"] == expected_event_type,
+                outbox["status"] == "pending",
+                outbox["idempotency_scope"] == audit["idempotency_scope"],
+            )
+        ):
+            raise ValueError("persisted template workflow event chain binding is invalid")
+        try:
+            event = _load_object(audit["event_json"], "template audit event")
+            payload = _load_object(outbox["payload_json"], "template outbox payload")
+        except ValueError as exc:
+            raise ValueError("persisted template workflow event JSON is invalid") from exc
+        if event != {
+            "event_id": audit["event_id"],
+            "workspace_id": audit["workspace_id"],
+            "patch_id": audit["patch_id"],
+            "draft_id": audit["draft_id"],
+            "suggestion_id": audit["suggestion_id"],
+            "decision_id": audit["decision_id"],
+            "actor_id": audit["actor_id"],
+            "actor_type": audit["actor_type"],
+            "command": audit["command"],
+            "action": audit["action"],
+            "idempotency_scope": audit["idempotency_scope"],
+            "canonical_payload_hash": audit["canonical_payload_hash"],
+            "outbox_event_id": audit["outbox_event_id"],
+            "created_at": audit["created_at"],
+        } or outbox["payload_hash"] != outbox_payload_hash(payload):
+            raise ValueError("persisted template workflow event payload is invalid")
+
+    @classmethod
+    def _validate_template_suggestion_row(cls, connection: sqlite3.Connection, row: sqlite3.Row) -> TemplatePatchSuggestion:
+        if row["suggestion_json"] is None:
+            raise ValueError("persisted template patch suggestion envelope is missing")
+        suggestion = _decode_template_suggestion(row["suggestion_json"])
+        if row["suggestion_id"] is not None and row["suggestion_id"] != suggestion.suggestion_id:
+            raise ValueError("persisted template patch suggestion identity is invalid")
+        if (
+            row["candidate_json"] != canonical_json(_json_value(suggestion.candidate))
+            or row["canonical_json_hash"] != _contract_json(suggestion.candidate)[1]
+            or row["record_version"] != 1
+        ):
+            raise ValueError("persisted template patch binding is invalid")
+        cls._validate_template_event_chain(
+            connection,
+            workspace_id=suggestion.envelope.workspace_id,
+            patch_id=suggestion.candidate.patch_id,
+            draft_id=suggestion.candidate.draft_id,
+            suggestion_id=suggestion.suggestion_id,
+            decision_id=None,
+            action="suggested",
+            audit_event_id=row["audit_event_id"],
+            outbox_event_id=row["outbox_event_id"],
+        )
+        return suggestion
+
+    @classmethod
+    def _validate_template_decision_row(
+        cls, connection: sqlite3.Connection, row: sqlite3.Row, decision: TemplatePatchDecision
+    ) -> TemplatePatchDecision:
+        candidate_row = connection.execute(
+            "SELECT suggestion_json, suggestion_id, candidate_json, canonical_json_hash, record_version, "
+            "audit_event_id, outbox_event_id FROM fmea_template_patch_candidates "
+            "WHERE workspace_id=? AND patch_id=?",
+            (decision.workspace_id, decision.patch_id),
+        ).fetchone()
+        if candidate_row is None:
+            raise ValueError("persisted template patch candidate is missing")
+        suggestion = cls._validate_template_suggestion_row(connection, candidate_row)
+        if decision.suggestion_id != suggestion.suggestion_id or decision.candidate != suggestion.candidate:
+            raise ValueError("persisted template decision suggestion binding is invalid")
+        if row["audit_event_id"] is not None or row["outbox_event_id"] is not None:
+            cls._validate_template_event_chain(
+                connection,
+                workspace_id=decision.workspace_id,
+                patch_id=decision.patch_id,
+                draft_id=decision.candidate.draft_id,
+                suggestion_id=decision.suggestion_id,
+                decision_id=decision.decision_id,
+                action=decision.action,
+                audit_event_id=row["audit_event_id"],
+                outbox_event_id=row["outbox_event_id"],
+            )
+        return decision
+
     def save_template_draft(
-        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str
+        self, draft: TemplateDraft, scope: IdempotencyScope, payload_hash: str, *, actor_type: ActorType
     ) -> tuple[TemplateDraft, int, bool]:
         connection = self._connect()
         try:
@@ -540,6 +808,34 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                         draft.created_at,
                     ),
                 )
+                audit_event_id, outbox_event_id = self._template_event_ids(scope)
+                self._insert_template_audit(
+                    connection,
+                    scope=scope,
+                    payload_hash=payload_hash,
+                    patch_id=None,
+                    draft_id=draft.draft_id,
+                    suggestion_id=None,
+                    decision_id=None,
+                    action="imported",
+                    created_at=draft.created_at,
+                    outbox_event_id=outbox_event_id,
+                    actor_type=actor_type,
+                )
+                self._insert_template_outbox(
+                    connection,
+                    scope=scope,
+                    event_id=outbox_event_id,
+                    event_type="template.imported",
+                    aggregate_type="template_draft",
+                    aggregate_id=draft.draft_id,
+                    payload={
+                        "draft_id": draft.draft_id,
+                        "source_sha256": draft.source_sha256,
+                        "payload_hash": payload_hash,
+                    },
+                    created_at=draft.created_at,
+                )
             elif existing["draft_json"] != draft_json or existing["canonical_json_hash"] != draft_hash:
                 raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template draft identity has different content")
             self._insert_idempotency(connection, scope, payload_hash, draft.created_at)
@@ -573,6 +869,82 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         finally:
             connection.close()
 
+    def reserve_template_patch_generation(
+        self,
+        patch_id: str,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        created_at: str,
+    ) -> TemplatePatchSuggestion | None:
+        """Reserve one provider call, committing before any external work."""
+
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._template_replay(
+                connection, scope, payload_hash, kind="template_patch", resource_id=patch_id
+            )
+            if replay is not None:
+                connection.execute("COMMIT")
+                return cast(TemplatePatchSuggestion, replay[0])
+            existing = connection.execute(
+                "SELECT * FROM fmea_template_patch_candidates WHERE workspace_id=? AND patch_id=?",
+                (scope.workspace_id, patch_id),
+            ).fetchone()
+            if existing is not None:
+                self._validate_template_suggestion_row(connection, existing)
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch identity already exists")
+            idempotency = self._idempotency_row(connection, scope)
+            if idempotency is not None:
+                if idempotency["payload_hash"] != payload_hash:
+                    raise ApplicationReviewError(
+                        "FMEA_IDEMPOTENCY_CONFLICT", "idempotency key was used with a different payload"
+                    )
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template patch generation reservation is incomplete",
+                    retryable=True,
+                )
+            claim = self._template_claim_row(connection, scope.workspace_id, patch_id)
+            if claim is not None:
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template patch generation is already reserved",
+                    retryable=True,
+                )
+            self._insert_idempotency(connection, scope, payload_hash, created_at)
+            connection.execute(
+                "UPDATE idempotency_records SET resource_id=? WHERE scope_key=? AND state='reserved'",
+                (patch_id, scope.scope_key),
+            )
+            connection.execute(
+                "INSERT INTO fmea_template_patch_generation_claims "
+                "(workspace_id,patch_id,idempotency_scope,payload_hash,created_at,completed_at) "
+                "VALUES (?,?,?,?,?,NULL)",
+                (scope.workspace_id, patch_id, scope.scope_key, payload_hash, created_at),
+            )
+            connection.execute("COMMIT")
+            return None
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def replay_template_patch(
+        self, patch_id: str, scope: IdempotencyScope, payload_hash: str
+    ) -> TemplatePatchSuggestion | None:
+        connection = self._connect()
+        try:
+            replay = self._template_replay(
+                connection, scope, payload_hash, kind="template_patch", resource_id=patch_id
+            )
+            return None if replay is None else cast(TemplatePatchSuggestion, replay[0])
+        finally:
+            connection.close()
+
     def save_template_patch(
         self,
         suggestion: TemplatePatchSuggestion,
@@ -580,6 +952,7 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         payload_hash: str,
         *,
         expected_draft_version: int,
+        actor_type: ActorType,
     ) -> tuple[TemplatePatchSuggestion, int, bool]:
         candidate = suggestion.candidate
         workspace_id = suggestion.envelope.workspace_id
@@ -592,6 +965,30 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             if replay is not None:
                 connection.execute("COMMIT")
                 return cast(tuple[TemplatePatchSuggestion, int, bool], replay)
+            idempotency = self._idempotency_row(connection, scope)
+            if (
+                idempotency is None
+                or idempotency["payload_hash"] != payload_hash
+                or idempotency["state"] != "reserved"
+                or idempotency["resource_id"] != candidate.patch_id
+            ):
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template patch generation claim is missing or invalid",
+                    retryable=True,
+                )
+            claim = self._template_claim_row(connection, workspace_id, candidate.patch_id)
+            if (
+                claim is None
+                or claim["idempotency_scope"] != scope.scope_key
+                or claim["payload_hash"] != payload_hash
+                or claim["completed_at"] is not None
+            ):
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template patch generation claim is missing or already completed",
+                    retryable=True,
+                )
             draft = connection.execute(
                 "SELECT record_version FROM fmea_template_drafts WHERE workspace_id=? AND draft_id=?",
                 (workspace_id, candidate.draft_id),
@@ -608,13 +1005,43 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch identity already exists")
             candidate_json, candidate_hash = _contract_json(candidate)
             suggestion_json = canonical_json(_json_value(suggestion.envelope))
+            audit_event_id, outbox_event_id = self._template_event_ids(scope)
+            self._insert_template_audit(
+                connection,
+                scope=scope,
+                payload_hash=payload_hash,
+                patch_id=candidate.patch_id,
+                draft_id=candidate.draft_id,
+                suggestion_id=suggestion.suggestion_id,
+                decision_id=None,
+                action="suggested",
+                created_at=candidate.created_at,
+                outbox_event_id=outbox_event_id,
+                actor_type=actor_type,
+            )
+            self._insert_template_outbox(
+                connection,
+                scope=scope,
+                event_id=outbox_event_id,
+                event_type="template.suggested",
+                aggregate_type="template_patch",
+                aggregate_id=candidate.patch_id,
+                payload={
+                    "patch_id": candidate.patch_id,
+                    "draft_id": candidate.draft_id,
+                    "suggestion_id": suggestion.suggestion_id,
+                    "payload_hash": payload_hash,
+                },
+                created_at=candidate.created_at,
+            )
             connection.execute(
                 "INSERT INTO fmea_template_patch_candidates "
                 "(workspace_id,patch_id,draft_id,input_template_version,target_template_id,"
                 "target_template_version,target_template_hash,domain_pack_id,domain_pack_version,domain_pack_hash,"
                 "evidence_pack_id,evidence_pack_hash,run_id,trace_id,model_version,prompt_version,diff_json,"
                 "evidence_ids_json,status,applied,candidate_json,canonical_json_hash,created_at,suggestion_json,"
-                "record_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
+                "record_version,suggestion_id,audit_event_id,outbox_event_id) VALUES ("
+                "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     workspace_id,
                     candidate.patch_id,
@@ -640,13 +1067,27 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                     candidate_hash,
                     candidate.created_at,
                     suggestion_json,
+                    1,
+                    suggestion.suggestion_id,
+                    audit_event_id,
+                    outbox_event_id,
                 ),
             )
-            self._insert_idempotency(connection, scope, payload_hash, candidate.created_at)
             response = self._template_response("template_patch", suggestion.envelope, 1)
             self._complete_template_idempotency(
                 connection, scope, payload_hash, candidate.patch_id, response, candidate.created_at
             )
+            claim_update = connection.execute(
+                "UPDATE fmea_template_patch_generation_claims SET completed_at=? "
+                "WHERE workspace_id=? AND patch_id=? AND idempotency_scope=? "
+                "AND payload_hash=? AND completed_at IS NULL",
+                (candidate.created_at, workspace_id, candidate.patch_id, scope.scope_key, payload_hash),
+            )
+            if claim_update.rowcount != 1:
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template patch generation claim completion failed", retryable=True
+                )
+            self._fail("template_patch_before_commit")
             connection.execute("COMMIT")
             return suggestion, 1, False
         except Exception:
@@ -662,7 +1103,7 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         connection = self._connect()
         try:
             decision = connection.execute(
-                "SELECT decision_json, canonical_json_hash, record_version FROM fmea_template_patch_decisions "
+                "SELECT * FROM fmea_template_patch_decisions "
                 "WHERE workspace_id=? AND patch_id=?",
                 (workspace_id, patch_id),
             ).fetchone()
@@ -670,24 +1111,171 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 value = _decode_template_decision(decision["decision_json"])
                 if decision["canonical_json_hash"] != _contract_json(value)[1] or decision["record_version"] != 2:
                     raise ValueError("persisted template patch decision binding is invalid")
+                self._validate_template_decision_row(connection, decision, value)
                 return value, 2
             row = connection.execute(
-                "SELECT suggestion_json, candidate_json, canonical_json_hash, record_version "
+                "SELECT * "
                 "FROM fmea_template_patch_candidates WHERE workspace_id=? AND patch_id=?",
                 (workspace_id, patch_id),
             ).fetchone()
             if row is None:
                 return None
-            if row["suggestion_json"] is None:
-                raise ValueError("persisted template patch suggestion envelope is missing")
-            suggestion = _decode_template_suggestion(row["suggestion_json"])
-            if (
-                row["candidate_json"] != canonical_json(_json_value(suggestion.candidate))
-                or row["canonical_json_hash"] != _contract_json(suggestion.candidate)[1]
-                or row["record_version"] != 1
-            ):
-                raise ValueError("persisted template patch binding is invalid")
+            suggestion = self._validate_template_suggestion_row(connection, row)
             return suggestion, 1
+        finally:
+            connection.close()
+
+    def reserve_template_patch_decision(
+        self,
+        decision: TemplatePatchDecision,
+        scope: IdempotencyScope,
+        payload_hash: str,
+        *,
+        expected_patch_version: int,
+    ) -> tuple[TemplatePatchDecision, bool]:
+        """Persist the human decision intent before registry side effects."""
+
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            replay = self._template_replay(
+                connection,
+                scope,
+                payload_hash,
+                kind="template_patch_decision",
+                resource_id=decision.decision_id,
+            )
+            if replay is not None:
+                connection.execute("COMMIT")
+                return cast(TemplatePatchDecision, replay[0]), True
+            candidate = connection.execute(
+                "SELECT * FROM fmea_template_patch_candidates WHERE workspace_id=? AND patch_id=?",
+                (scope.workspace_id, decision.patch_id),
+            ).fetchone()
+            if candidate is None or candidate["record_version"] != expected_patch_version:
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch version is stale")
+            suggestion = self._validate_template_suggestion_row(connection, candidate)
+            expected_command = {
+                "accepted": "fmea.template.patch.accept",
+                "rejected": "fmea.template.patch.reject",
+            }.get(decision.action)
+            if (
+                decision.workspace_id != scope.workspace_id
+                or decision.actor_id != scope.actor_id
+                or decision.actor_type is not ActorType.HUMAN
+                or scope.command != expected_command
+                or decision.suggestion_id != suggestion.suggestion_id
+                or decision.candidate != suggestion.candidate
+            ):
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template decision is not bound to the persisted suggestion envelope",
+                    retryable=True,
+                )
+            final_row = connection.execute(
+                "SELECT * FROM fmea_template_patch_decisions WHERE workspace_id=? AND patch_id=?",
+                (scope.workspace_id, decision.patch_id),
+            ).fetchone()
+            if final_row is not None:
+                final = _decode_template_decision(final_row["decision_json"])
+                if final_row["canonical_json_hash"] != _contract_json(final)[1] or final_row["record_version"] != 2:
+                    raise ValueError("persisted template patch decision binding is invalid")
+                self._validate_template_decision_row(connection, final_row, final)
+                if (
+                    final.action != decision.action
+                    or final.new_template_version != decision.new_template_version
+                    or final.suggestion_id != decision.suggestion_id
+                ):
+                    raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch was already decided")
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch was already decided")
+            idempotency = self._idempotency_row(connection, scope)
+            if idempotency is not None:
+                if idempotency["payload_hash"] != payload_hash:
+                    raise ApplicationReviewError(
+                        "FMEA_IDEMPOTENCY_CONFLICT", "idempotency key was used with a different payload"
+                    )
+                if idempotency["state"] != "reserved":
+                    raise ApplicationReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "template decision replay is incomplete",
+                        retryable=True,
+                    )
+            intent = connection.execute(
+                "SELECT * FROM fmea_template_patch_decision_intents WHERE workspace_id=? AND patch_id=?",
+                (scope.workspace_id, decision.patch_id),
+            ).fetchone()
+            decision_json, decision_hash = _contract_json(decision)
+            if intent is not None:
+                if (
+                    intent["idempotency_scope"] != scope.scope_key
+                    or intent["payload_hash"] != payload_hash
+                    or intent["decision_id"] != decision.decision_id
+                    or intent["suggestion_id"] != decision.suggestion_id
+                    or intent["action"] != decision.action
+                ):
+                    raise ApplicationReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "another template decision intent is already reserved",
+                        retryable=True,
+                    )
+                if intent["state"] != "reserved":
+                    raise ApplicationReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "template decision intent completion is incomplete",
+                        retryable=True,
+                    )
+                if (
+                    intent["decision_json"] != decision_json
+                    or intent["canonical_json_hash"] != decision_hash
+                ):
+                    raise ApplicationReviewError(
+                        "FMEA_IDEMPOTENCY_CONFLICT", "idempotency key was used with a different decision"
+                    )
+                stored = _decode_template_decision(intent["decision_json"])
+                if stored != decision:
+                    raise ValueError("persisted template decision intent binding is invalid")
+                if idempotency is None:
+                    raise ApplicationReviewError(
+                        "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                        "template decision intent has no idempotency reservation",
+                        retryable=True,
+                    )
+                connection.execute("COMMIT")
+                return stored, False
+            if idempotency is not None:
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template decision idempotency reservation has no intent",
+                    retryable=True,
+                )
+            self._insert_idempotency(connection, scope, payload_hash, decision.created_at)
+            connection.execute(
+                "UPDATE idempotency_records SET resource_id=? WHERE scope_key=? AND state='reserved'",
+                (decision.decision_id, scope.scope_key),
+            )
+            connection.execute(
+                "INSERT INTO fmea_template_patch_decision_intents "
+                "(workspace_id,patch_id,decision_id,suggestion_id,action,idempotency_scope,payload_hash,"
+                "decision_json,canonical_json_hash,state,created_at,completed_at) VALUES (?,?,?,?,?,?,?,?,?,'reserved',?,NULL)",
+                (
+                    scope.workspace_id,
+                    decision.patch_id,
+                    decision.decision_id,
+                    decision.suggestion_id,
+                    decision.action,
+                    scope.scope_key,
+                    payload_hash,
+                    decision_json,
+                    decision_hash,
+                    decision.created_at,
+                ),
+            )
+            connection.execute("COMMIT")
+            return decision, False
+        except Exception:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
         finally:
             connection.close()
 
@@ -712,15 +1300,52 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             if replay is not None:
                 connection.execute("COMMIT")
                 return cast(tuple[TemplatePatchDecision, int, bool], replay)
+            idempotency = self._idempotency_row(connection, scope)
+            if (
+                idempotency is None
+                or idempotency["payload_hash"] != payload_hash
+                or idempotency["state"] != "reserved"
+                or idempotency["resource_id"] != decision.decision_id
+            ):
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template decision intent reservation is missing or invalid",
+                    retryable=True,
+                )
+            intent = connection.execute(
+                "SELECT * FROM fmea_template_patch_decision_intents "
+                "WHERE workspace_id=? AND patch_id=?",
+                (decision.workspace_id, decision.patch_id),
+            ).fetchone()
+            decision_json, decision_hash = _contract_json(decision)
+            if (
+                intent is None
+                or intent["idempotency_scope"] != scope.scope_key
+                or intent["payload_hash"] != payload_hash
+                or intent["decision_id"] != decision.decision_id
+                or intent["state"] != "reserved"
+                or intent["decision_json"] != decision_json
+                or intent["canonical_json_hash"] != decision_hash
+            ):
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template decision intent is missing or invalid",
+                    retryable=True,
+                )
             candidate = connection.execute(
-                "SELECT draft_id, candidate_json, record_version FROM fmea_template_patch_candidates "
+                "SELECT * FROM fmea_template_patch_candidates "
                 "WHERE workspace_id=? AND patch_id=?",
                 (decision.workspace_id, decision.patch_id),
             ).fetchone()
             if candidate is None or candidate["record_version"] != expected_patch_version:
                 raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch version is stale")
-            if _decode_patch(candidate["candidate_json"]) != decision.candidate:
-                raise ValueError("persisted template patch candidate binding is invalid")
+            suggestion = self._validate_template_suggestion_row(connection, candidate)
+            if decision.suggestion_id != suggestion.suggestion_id or decision.candidate != suggestion.candidate:
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE",
+                    "template decision is not bound to the persisted suggestion envelope",
+                    retryable=True,
+                )
             if (
                 connection.execute(
                     "SELECT 1 FROM fmea_template_patch_decisions WHERE workspace_id=? AND patch_id=?",
@@ -729,13 +1354,43 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 is not None
             ):
                 raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "template patch was already decided")
-            decision_json, decision_hash = _contract_json(decision)
+            audit_event_id, outbox_event_id = self._template_event_ids(scope)
+            self._insert_template_audit(
+                connection,
+                scope=scope,
+                payload_hash=payload_hash,
+                patch_id=decision.patch_id,
+                draft_id=candidate["draft_id"],
+                suggestion_id=decision.suggestion_id,
+                decision_id=decision.decision_id,
+                action=decision.action,
+                created_at=decision.created_at,
+                outbox_event_id=outbox_event_id,
+                actor_type=decision.actor_type,
+            )
+            self._insert_template_outbox(
+                connection,
+                scope=scope,
+                event_id=outbox_event_id,
+                event_type=f"template.{decision.action}",
+                aggregate_type="template_patch",
+                aggregate_id=decision.patch_id,
+                payload={
+                    "patch_id": decision.patch_id,
+                    "draft_id": candidate["draft_id"],
+                    "suggestion_id": decision.suggestion_id,
+                    "decision_id": decision.decision_id,
+                    "action": decision.action,
+                    "payload_hash": payload_hash,
+                },
+                created_at=decision.created_at,
+            )
             connection.execute(
                 "INSERT INTO fmea_template_patch_decisions "
                 "(workspace_id,decision_id,suggestion_id,patch_id,draft_id,actor_id,actor_type,action,reason,"
                 "base_template_id,base_template_version,base_template_hash,new_template_version,candidate_json,"
-                "decision_json,canonical_json_hash,created_at,record_version) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,2)",
+                "decision_json,canonical_json_hash,created_at,record_version,audit_event_id,outbox_event_id) "
+                "VALUES (" + ",".join("?" for _ in range(20)) + ")",
                 (
                     decision.workspace_id,
                     decision.decision_id,
@@ -754,13 +1409,33 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                     decision_json,
                     decision_hash,
                     decision.created_at,
+                    2,
+                    audit_event_id,
+                    outbox_event_id,
                 ),
             )
-            self._insert_idempotency(connection, scope, payload_hash, decision.created_at)
             response = self._template_response("template_patch_decision", decision, 2)
             self._complete_template_idempotency(
                 connection, scope, payload_hash, decision.decision_id, response, decision.created_at
             )
+            intent_update = connection.execute(
+                "UPDATE fmea_template_patch_decision_intents SET state='completed', completed_at=? "
+                "WHERE workspace_id=? AND patch_id=? AND decision_id=? AND idempotency_scope=? "
+                "AND payload_hash=? AND state='reserved'",
+                (
+                    decision.created_at,
+                    decision.workspace_id,
+                    decision.patch_id,
+                    decision.decision_id,
+                    scope.scope_key,
+                    payload_hash,
+                ),
+            )
+            if intent_update.rowcount != 1:
+                raise ApplicationReviewError(
+                    "FMEA_REVIEW_STORAGE_UNAVAILABLE", "template decision intent completion failed", retryable=True
+                )
+            self._fail("template_decision_before_commit")
             connection.execute("COMMIT")
             return decision, 2, False
         except Exception:
@@ -781,7 +1456,7 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
 
     @staticmethod
     def _report_id(workspace_id: str, migration_id: str) -> str:
-        return "migration-report-" + sha256(f"{workspace_id}:{migration_id}".encode()).hexdigest()[:40]
+        return migration_report_id(workspace_id, migration_id)
 
     @staticmethod
     def _run_id(workspace_id: str, migration_id: str) -> str:
@@ -802,9 +1477,12 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         if row is None:
             raise ValueError("persisted migration run is missing")
         request = _load_object(row["request_json"], "migration request")
-        expected_keys = {field.name for field in fields(MigrationCommand)} | {"actor_id", "workspace_id"}
-        if set(request) != expected_keys:
+        command_keys = {field.name for field in fields(MigrationCommand)}
+        expected_keys = command_keys | {"actor_id", "workspace_id"}
+        legacy_keys = (command_keys - {"expected_source_version"}) | {"actor_id", "workspace_id"}
+        if set(request) not in (expected_keys, legacy_keys):
             raise ValueError("persisted migration request shape is invalid")
+        legacy_request = set(request) == legacy_keys
         try:
             durable_command = MigrationCommand(
                 migration_id=cast(str, request["migration_id"]),
@@ -814,6 +1492,7 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 target_domain_pack_version=cast(str, request["target_domain_pack_version"]),
                 target_domain_pack_hash=cast(str, request["target_domain_pack_hash"]),
                 idempotency_key=cast(str, request["idempotency_key"]),
+                expected_source_version=cast(int, request.get("expected_source_version", 1)),
             )
             durable_actor_id = _text(row["actor_id"], "persisted actor_id")
             durable_key_hash = idempotency_key_hash(durable_command.idempotency_key)
@@ -823,6 +1502,8 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             "actor_id": durable_actor_id,
             "workspace_id": workspace_id,
         }
+        if legacy_request:
+            expected_request.pop("expected_source_version")
         if (
             row["workspace_id"] != workspace_id
             or row["migration_id"] != migration_id
@@ -840,6 +1521,26 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         ):
             raise ValueError("persisted migration request binding is invalid")
         return durable_command, durable_key_hash
+
+    @staticmethod
+    def _assert_migration_source_version(
+        connection: sqlite3.Connection, command: MigrationCommand, workspace_id: str
+    ) -> None:
+        row = connection.execute(
+            "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+            (workspace_id, command.source_revision_id),
+        ).fetchone()
+        if row is None:
+            raise ReviewError("FMEA_MIGRATION_SOURCE_MISSING", "source revision was not found")
+        record_version = row["record_version"]
+        if isinstance(record_version, bool) or not isinstance(record_version, int) or record_version < 1:
+            raise ReviewError(
+                "FMEA_MIGRATION_STORAGE_UNAVAILABLE",
+                "source revision version is unavailable",
+                retryable=True,
+            )
+        if record_version != command.expected_source_version:
+            raise ReviewError("FMEA_VERSION_CONFLICT", "source revision version is stale")
 
     def _validated_report_row(self, connection: sqlite3.Connection, prepared: PreparedMigration) -> sqlite3.Row:
         row = connection.execute(
@@ -1029,6 +1730,12 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
+                (actor.workspace_id, command.migration_id),
+            ).fetchone()
+            if existing is None:
+                self._assert_migration_source_version(connection, command, actor.workspace_id)
             _, report_id, _ = self._ensure_migration_run(connection, report, command, actor)
             existing = connection.execute(
                 "SELECT * FROM fmea_migration_reports WHERE workspace_id=? AND migration_id=?",
@@ -1332,6 +2039,11 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         try:
             connection.execute("BEGIN IMMEDIATE")
             self._validated_report_row(connection, prepared)
+            self._assert_migration_source_version(
+                connection, prepared.dry_run_command, prepared.actor.workspace_id
+            )
+            if prepared.command.expected_report_version != 1:
+                raise ReviewError("FMEA_VERSION_CONFLICT", "migration report version is stale")
 
             persisted_source = self._revision_from_connection(
                 connection, source.revision_id, prepared.actor.workspace_id
@@ -1695,6 +2407,8 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
             "filename": run.filename,
             "idempotency_key": request.get("idempotency_key"),
         }
+        if "expected_revision_version" in request:
+            expected_request["expected_revision_version"] = request["expected_revision_version"]
         idempotency_key = request.get("idempotency_key")
         if request != expected_request or not isinstance(idempotency_key, str) or not idempotency_key.strip():
             raise ValueError("persisted export request binding is invalid")
@@ -1875,6 +2589,27 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
         finally:
             connection.close()
 
+    @staticmethod
+    def _legacy_export_replay_hash(command: Any, request_json: str, request_hash: str) -> str:
+        request = _load_object(request_json, "export request")
+        expected_keys = {
+            "export_run_id", "workspace_id", "revision_id", "snapshot_id", "snapshot_hash",
+            "publication_id", "format", "draft_preview", "filename", "idempotency_key",
+            "expected_revision_version",
+        }
+        if (
+            set(request) != expected_keys
+            or type(command.expected_revision_version) is not int
+            or command.expected_revision_version != 1
+            or type(request.get("expected_revision_version")) is not int
+            or request["expected_revision_version"] != 1
+            or _hash_json(request) != request_hash
+        ):
+            return request_hash
+        # Only this added default field may differ from immutable legacy history.
+        request.pop("expected_revision_version")
+        return _hash_json(request)
+
     def reserve_export_run(
         self,
         command: Any,
@@ -1893,12 +2628,20 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 (actor.workspace_id, command.export_run_id),
             ).fetchone()
             if idempotency is not None:
-                if idempotency["payload_hash"] != request_hash:
+                replay_hash = request_hash
+                if (
+                    idempotency["payload_hash"] != request_hash
+                    and idempotency["state"] == "completed"
+                    and existing_row is not None
+                    and existing_row["status"] == "succeeded"
+                ):
+                    replay_hash = self._legacy_export_replay_hash(command, request_json, request_hash)
+                if idempotency["payload_hash"] != replay_hash:
                     raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
                 if existing_row is None:
                     raise ValueError("persisted export idempotency has no run")
                 run = self._export_run_from_row(existing_row)
-                if existing_row["request_hash"] != request_hash or existing_row["idempotency_scope"] != scope.scope_key:
+                if existing_row["request_hash"] != replay_hash or existing_row["idempotency_scope"] != scope.scope_key:
                     raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
                 if run.status is RunStatus.CANCELLED:
                     self._verify_export_cancelled_idempotency(connection, existing_row, run)
@@ -1911,6 +2654,26 @@ class SqliteFmeaDeliveryRepository(SqliteGovernanceRepository):
                 if existing_row["actor_id"] != actor.actor_id:
                     raise ValueError("FMEA_EXPORT_IDEMPOTENCY_CONFLICT")
                 raise ValueError("persisted export run is missing idempotency reservation")
+
+            revision_row = connection.execute(
+                "SELECT record_version FROM fmea_revisions WHERE workspace_id=? AND revision_id=?",
+                (actor.workspace_id, command.revision_id),
+            ).fetchone()
+            expected_version = getattr(command, "expected_revision_version", 1)
+            if revision_row is None:
+                raise ValueError("export revision was not found")
+            record_version = revision_row["record_version"]
+            if (
+                isinstance(record_version, bool)
+                or not isinstance(record_version, int)
+                or record_version < 1
+                or isinstance(expected_version, bool)
+                or not isinstance(expected_version, int)
+                or expected_version < 1
+            ):
+                raise ValueError("export revision version is invalid")
+            if record_version != expected_version:
+                raise ApplicationReviewError("FMEA_VERSION_CONFLICT", "export source revision version is stale")
 
             self._insert_idempotency(connection, scope, request_hash, created_at)
             self._fail("export.reserve")

@@ -255,6 +255,16 @@ class _InvalidRequestFileError(CliUsageError):
         super().__init__("invalid review request file")
 
 
+class DeliveryCliError(Exception):
+    """Safe application-facing delivery error without importing the REST transport."""
+
+    def __init__(self, code: str, public_message: str, retryable: bool = False) -> None:
+        self.code = code
+        self.public_message = public_message[:4096]
+        self.retryable = retryable
+        super().__init__(self.public_message)
+
+
 class _CliArgumentParser(argparse.ArgumentParser):
     """Argparse parser that never writes usage text for invalid input."""
 
@@ -826,8 +836,7 @@ def build_cli_runtime() -> CliRuntime:
         )
     delivery_runtime = None
     try:
-        delivery_module = import_module("chroma_rag_poc.routes_fmea_delivery_v1")
-        delivery_runtime = delivery_module.build_default_delivery_runtime(workspace)
+        delivery_runtime = composition.build_default_workspace_delivery_runtime(workspace)
     except Exception:
         # Existing review/governance commands remain usable when optional delivery
         # providers are not configured; delivery commands surface a safe error.
@@ -850,6 +859,8 @@ def build_cli_runtime() -> CliRuntime:
             close_nonblocking()
         else:
             runtime.executor.close()
+        if delivery_runtime is not None:
+            delivery_runtime.close()
 
     return CliRuntime(
         service=runtime.service,
@@ -1935,8 +1946,7 @@ def _dispatch_propagation(  # noqa: C901
 
 
 def _delivery_error(code: str, detail: str) -> Exception:
-    module = import_module("chroma_rag_poc.routes_fmea_delivery_v1")
-    return cast(Exception, module.DeliveryError(code, detail))
+    return DeliveryCliError(code, detail)
 
 
 def _stable_delivery_id(prefix: str, workspace_id: str, idempotency_key: str) -> str:
@@ -1983,10 +1993,17 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
         if args.domain_pack_command in {"import", "draft-import"}:
             raw = _read_bounded_request_file(Path(args.source_file))
             draft = service.import_template(
-                domain_module.ImportTemplateCommand(raw, Path(args.source_file).name, runtime.actor.workspace_id),
+                domain_module.ImportTemplateCommand(
+                    raw,
+                    Path(args.source_file).name,
+                    runtime.actor.workspace_id,
+                    args.idempotency_key,
+                ),
                 runtime.actor,
             )
-            _emit_resource("fmea_template_draft", _delivery_data("template_draft_data", draft), pretty=pretty)
+            _, version = service.get_draft_record(draft.draft_id, runtime.actor)
+            data = _delivery_data("template_draft_data", draft) | {"record_version": version}
+            _emit_resource("fmea_template_draft", data, pretty=pretty)
             return 0
         if args.domain_pack_command == "patch-suggest":
             body = _delivery_request("TemplatePatchRunRequest", {
@@ -2018,16 +2035,23 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
                     model_version="server-configured",
                     prompt_version="server-configured",
                     target_record_version=args.record_version,
+                    idempotency_key=args.idempotency_key,
                 ),
                 runtime.actor,
             )
-            _emit_resource("fmea_template_patch", _delivery_data("template_patch_data", suggestion), pretty=pretty)
+            _, version = service.patch_for(suggestion.candidate.patch_id, runtime.actor)
+            data = _delivery_data("template_patch_data", suggestion) | {"record_version": version}
+            _emit_resource("fmea_template_patch", data, pretty=pretty)
             return 0
         if args.domain_pack_command == "patch-status":
-            decision = service.decision_for_patch(args.patch_id, runtime.actor)
-            if decision is None:
-                raise _delivery_error("FMEA_TEMPLATE_PATCH_NOT_FOUND", "template patch was not found")
-            _emit_resource("fmea_template_patch_decision", _delivery_data("template_patch_decision_data", decision), pretty=pretty)
+            item, version = service.patch_for(args.patch_id, runtime.actor)
+            contracts = import_module("fmea_application.template_patch_contracts")
+            if isinstance(item, contracts.TemplatePatchDecision):
+                data = _delivery_data("template_patch_decision_data", item) | {"record_version": version}
+                _emit_resource("fmea_template_patch_decision", data, pretty=pretty)
+            else:
+                data = _delivery_data("template_patch_data", item) | {"record_version": version}
+                _emit_resource("fmea_template_patch", data, pretty=pretty)
             return 0
         if args.domain_pack_command in {"accept", "register", "reject"}:
             _require_delivery_role(runtime, "template_admin")
@@ -2035,12 +2059,30 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
                 raise _invalid_request_file()
             if args.domain_pack_command in {"accept", "register"}:
                 body = _delivery_request("TemplatePatchAcceptanceRequest", request)
-                result = service.accept_patch(domain_module.AcceptTemplatePatchCommand(**body.model_dump()), runtime.actor)
-                _emit_resource("fmea_template_registration", _delivery_data("template_registration_data", result), pretty=pretty)
+                result = service.accept_patch(
+                    domain_module.AcceptTemplatePatchCommand(
+                        **body.model_dump(),
+                        expected_patch_version=args.record_version,
+                        idempotency_key=args.idempotency_key,
+                    ),
+                    runtime.actor,
+                )
+                _, version = service.patch_for(body.patch_id, runtime.actor)
+                data = _delivery_data("template_registration_data", result) | {"record_version": version}
+                _emit_resource("fmea_template_registration", data, pretty=pretty)
             else:
                 body = _delivery_request("TemplatePatchRejectionRequest", request)
-                result = service.reject_patch(domain_module.RejectTemplatePatchCommand(**body.model_dump()), runtime.actor)
-                _emit_resource("fmea_template_patch_decision", _delivery_data("template_patch_decision_data", result), pretty=pretty)
+                result = service.reject_patch(
+                    domain_module.RejectTemplatePatchCommand(
+                        **body.model_dump(),
+                        expected_patch_version=args.record_version,
+                        idempotency_key=args.idempotency_key,
+                    ),
+                    runtime.actor,
+                )
+                _, version = service.patch_for(body.patch_id, runtime.actor)
+                data = _delivery_data("template_patch_decision_data", result) | {"record_version": version}
+                _emit_resource("fmea_template_patch_decision", data, pretty=pretty)
             return 0
         raise CliUsageError
 
@@ -2057,8 +2099,13 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
                 target_domain_pack_version=args.target_domain_pack_version,
                 target_domain_pack_hash=args.target_domain_pack_hash,
                 idempotency_key=args.idempotency_key,
+                expected_source_version=args.record_version,
             ), runtime.actor)
-            _emit_resource("fmea_migration_report", _delivery_data("migration_report_data", result), pretty=pretty)
+            _emit_resource(
+                "fmea_migration_report",
+                _delivery_data("migration_report_data", result) | {"record_version": 1},
+                pretty=pretty,
+            )
             return 0
         if args.migration_command == "compatibility":
             result = service.compatibility(migration_module.CompatibilityCommand(
@@ -2091,12 +2138,18 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
                     target_domain_pack_id=dry.target_domain_pack_id,
                     target_domain_pack_version=dry.target_domain_pack_version,
                     target_domain_pack_hash=dry.target_domain_pack_hash,
-                    idempotency_key=args.idempotency_key,
+                    idempotency_key=body.dry_run_idempotency_key,
+                    expected_source_version=body.dry_run_source_version,
                 ),
                 idempotency_key=args.idempotency_key,
                 confirm_migration=body.confirm_migration,
+                expected_report_version=args.record_version,
             ), runtime.actor)
-            _emit_resource("fmea_migration_result", _delivery_data("migration_result_data", result), pretty=pretty)
+            _emit_resource(
+                "fmea_migration_result",
+                _delivery_data("migration_result_data", result) | {"record_version": args.record_version},
+                pretty=pretty,
+            )
             return 0
         raise CliUsageError
 
@@ -2115,8 +2168,13 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
                 format=args.format,
                 draft_preview=args.draft_preview,
                 idempotency_key=args.idempotency_key,
+                expected_revision_version=args.record_version,
             ), runtime.actor)
-            _emit_resource("fmea_export_run", _delivery_data("export_run_data", result), pretty=pretty)
+            _emit_resource(
+                "fmea_export_run",
+                _delivery_data("export_run_data", result),
+                pretty=pretty,
+            )
             return 0
         if args.export_command == "status":
             result = service.get_run(args.run_id, runtime.actor)
@@ -2132,14 +2190,13 @@ def _dispatch_delivery(args: argparse.Namespace, runtime: CliRuntime, request: d
             }, pretty=pretty)
             return 0
         if args.export_command == "narrative-suggest":
-            snapshot_service = getattr(runtime, "governance_service", None)
-            getter = getattr(snapshot_service, "get_snapshot", None)
-            if not callable(getter):
-                raise _delivery_error("FMEA_EXPORT_SNAPSHOT_NOT_FOUND", "narrative snapshot was not found")
-            snapshot = getter(args.snapshot_id or args.publication_id, runtime.actor)
-            if args.snapshot_hash is not None and getattr(snapshot, "snapshot_hash", None) != args.snapshot_hash:
-                raise _delivery_error("FMEA_EXPORT_SNAPSHOT_STALE", "narrative snapshot hash is stale")
-            result = service.suggest_narrative(snapshot, _task5_model_actor(runtime))
+            result = service.suggest_narrative_for_revision(
+                args.revision_id,
+                _task5_model_actor(runtime),
+                snapshot_id=args.snapshot_id,
+                snapshot_hash=args.snapshot_hash,
+                publication_id=args.publication_id,
+            )
             _emit_resource("fmea_export_narrative_suggestion", _delivery_data("narrative_data", result), pretty=pretty)
             return 0
         raise CliUsageError

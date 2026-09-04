@@ -20,6 +20,7 @@ from uuid import uuid4
 from core_domain.fmea.domain_pack import DomainPackManifest
 from core_domain.fmea.governance import FmeaRevision, canonical_hash
 from core_domain.fmea.states import ActorType
+from core_domain.fmea.value_objects import EvidencePack
 from fmea_application import (
     ReviewRunExecutor,
     ReviewService,
@@ -29,6 +30,7 @@ from fmea_application import (
 from fmea_application.analysis_assistance_service import AnalysisAssistanceService
 from fmea_application.assistance_contracts import AssistanceDecisionAction
 from fmea_application.assistance_service import AssistanceDecisionService, AssistanceHandler
+from fmea_application.domain_pack_service import DomainPackService
 from fmea_application.export_service import ExportService
 from fmea_application.governance_assistance_service import GovernanceAssistanceService
 from fmea_application.governance_service import GovernanceServiceError, RevisionGovernanceService
@@ -86,11 +88,14 @@ from fmea_infrastructure.domain_pack_registry import (
     load_scoring_rule_pack,
     scoring_rule_content_hash,
 )
+from fmea_infrastructure.export_docx import DocxFmeaExporter
 from fmea_infrastructure.export_json import CanonicalJsonExporter
 from fmea_infrastructure.export_narrative_generator import EnvironmentExportNarrativeGenerator
+from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
 from fmea_infrastructure.governance_assistance_generator import OfflineGovernanceAssistanceGenerator
 from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
 from fmea_infrastructure.migration_registry import MigrationRegistry
+from fmea_infrastructure.office_package import OfficePackageLimits
 from fmea_infrastructure.propagation_generator import EnvironmentPropagationSuggestionGenerator
 from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
 from fmea_infrastructure.propagation_rule_registry import (
@@ -103,6 +108,9 @@ from fmea_infrastructure.review_executor import ThreadPoolReviewRunExecutor
 from fmea_infrastructure.review_generator import EnvironmentReviewSuggestionGenerator
 from fmea_infrastructure.risk_generator import EnvironmentRiskSuggestionGenerator
 from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
+from fmea_infrastructure.template_import_docx import DocxTemplateImporter
+from fmea_infrastructure.template_import_excel import ExcelTemplateImporter
+from fmea_infrastructure.template_patch_generator import EnvironmentTemplatePatchGenerator
 from fmea_infrastructure.topology_json import JsonTopologyRepository
 from structured_output_application import TemplateCompiler
 from structured_output_infrastructure import (
@@ -207,6 +215,36 @@ class ExportRuntime:
     exporters: Mapping[str, SnapshotExporter]
     narrative_generator: ExportNarrativeGenerator | None
     artifact_root: Path
+
+
+@dataclass(frozen=True, slots=True)
+class DeliveryRuntime:
+    """Typed service bundle consumed by REST and CLI delivery transports."""
+
+    domain_pack_service: DomainPackService
+    migration_service: MigrationService
+    export_service: ExportService
+    migration_runtime: MigrationRuntime
+    export_runtime: ExportRuntime
+
+    def close(self) -> None:
+        for value in (self.domain_pack_service, self.migration_service, self.export_service):
+            closer = getattr(value, "close", None)
+            if callable(closer):
+                closer()
+
+
+class _RepositoryTemplateEvidenceProvider:
+    """Infrastructure adapter for exact persisted EvidencePack lookup."""
+
+    def __init__(self, repository: SqliteFmeaRepository) -> None:
+        self._repository = repository
+
+    def load_pack(self, workspace_id: str, pack_id: str) -> EvidencePack:
+        pack = self._repository.get_evidence_pack(pack_id, workspace_id)
+        if not isinstance(pack, EvidencePack):
+            raise ReviewError("FMEA_EVIDENCE_INVALID", "template mapping EvidencePack was not found")
+        return pack
 
 
 class RegistryGovernanceArtifactProvider:
@@ -808,6 +846,71 @@ def build_workspace_export_runtime(  # noqa: C901
     )
 
 
+def build_default_workspace_delivery_runtime(
+    workspace: WorkspaceConfig,
+    *,
+    migration_adapters: Iterable[MigrationAdapter] = (),
+    exporters: Mapping[str | object, SnapshotExporter] | Iterable[SnapshotExporter] | None = None,
+    narrative_generator: ExportNarrativeGenerator | None = None,
+    clock: Callable[[], str] = utc_now,
+    id_factory: Callable[[str], str] = new_prefixed_uuid,
+) -> DeliveryRuntime:
+    """Compose the server-owned template, migration, and export services.
+
+    Migration edges are dependency-injected by trusted server composition.  An
+    empty allowlist is valid and fails closed with the stable missing-edge error;
+    REST and CLI never receive an adapter-selection knob.
+    """
+
+    database_path, template_registry_root = _workspace_review_paths(workspace)
+    evidence_repository = SqliteFmeaRepository(database_path)
+    evidence_repository.initialize()
+
+    domain_registry = FileDomainPackRegistry(template_registry_root / "domain-packs")
+    scoring_registry = FileScoringRuleRegistry(template_registry_root / "scoring-rules")
+    _register_bundled_domain_packs(domain_registry, scoring_registry)
+    template_registry = FileTemplateRegistry(template_registry_root)
+    compiler = TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source)
+
+    default_exporters = exporters if exporters is not None else (
+        CanonicalJsonExporter(),
+        XlsxFmeaExporter(),
+        DocxFmeaExporter(),
+    )
+    export_runtime = build_workspace_export_runtime(
+        workspace,
+        exporters=default_exporters,
+        narrative_generator=narrative_generator,
+        clock=clock,
+        id_factory=id_factory,
+    )
+    migration_runtime = build_workspace_migration_runtime(
+        workspace,
+        domain_pack_registry=domain_registry,
+        migration_adapters=tuple(migration_adapters),
+        clock=clock,
+    )
+    domain_service = DomainPackService(
+        importers={
+            "xlsx": ExcelTemplateImporter(limits=OfficePackageLimits()),
+            "docx": DocxTemplateImporter(limits=OfficePackageLimits()),
+        },
+        patch_generator=EnvironmentTemplatePatchGenerator(registry_root=template_registry_root / "assistance"),
+        evidence_provider=_RepositoryTemplateEvidenceProvider(evidence_repository),
+        compiler=compiler,
+        registry=template_registry,
+        workflow_repository=export_runtime.repository,
+        clock=clock,
+    )
+    return DeliveryRuntime(
+        domain_pack_service=domain_service,
+        migration_service=migration_runtime.service,
+        export_service=export_runtime.service,
+        migration_runtime=migration_runtime,
+        export_runtime=export_runtime,
+    )
+
+
 def build_workspace_review_runtime(
     workspace: WorkspaceConfig,
     *,
@@ -1089,6 +1192,7 @@ def build_default_workspace_risk_runtime(
 
 
 __all__ = [
+    "DeliveryRuntime",
     "ExportRuntime",
     "GovernanceRuntime",
     "MigrationRuntime",
@@ -1098,6 +1202,7 @@ __all__ = [
     "ReviewRuntime",
     "RiskRuntime",
     "ServerGovernanceSourceAdapter",
+    "build_default_workspace_delivery_runtime",
     "build_default_workspace_governance_runtime",
     "build_default_workspace_propagation_runtime",
     "build_default_workspace_risk_runtime",
