@@ -18,6 +18,8 @@
 
 **Task 3 完成记录（2026-09-04）。** 代码至 `f595fcb0`，主代理合并定向验证 **216 passed，1 deselected，31.53s**；未重复未改动的万行测试。12 个改动文件 Ruff 与范围差异检查通过；独立 Luna xhigh 复审 Spec PASS / Quality Approved，无阻断项。支持固定模板视图、完整模板集合提交核验与旧历史读取；生成布局使用稳定字段键排序，尚不支持任意自定义排序元数据。Task 4/5 未开始。[Task 3 交接](../../handoff/fmea-publication-body-task3.md)。
 
+**Task 4 完成记录（2026-09-05）。** 实现 `09bd6c8f`、复审修正 `757c8fe1`。主代理最终四文件定向集合 **106 passed in 3.46s**，范围 Ruff 与差异检查通过。独立 Luna xhigh 复审发现两项 XLSX 阻断问题，定点复核已关闭，PASS / Quality Approved。真实 Word 与 Excel 小样例及多换行/超长正文边界预览通过；旧机器附录宽表仍是明确保留的阅读限制，不宣称整份 DOCX 精排。Task 5 未开始。[Task 4 交接](../../handoff/fmea-publication-body-task4.md)。
+
 ## Global Constraints
 
 - 新内容标记：`body_schema_version: "graphrag.fmea.body.v1"`；无标记的既有快照保持旧读取路径。
@@ -140,17 +142,17 @@ assert snapshot.snapshot_hash == original_snapshot_hash
 
 **Interfaces:** 消费 Task 3 的 `build_report_view`；保持现有 exporter `render` 和 JSON `iter_chunks` 合同、内容身份和旧快照支持。
 
-- [ ] 扩充既有三格式一致性测试：JSON 正文完整；XLSX 主表有实际中文/长文本，证据在明细；DOCX 阅读正文不只是一张 ID 类型表；独立解码保留全部 canonical 内容。新可读表不能干扰现有类型表识别。
-- [ ] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_export_consistency.py tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py -q`，确认 RED。
-- [ ] 使用统一 report view 渲染正文；评分关联按 row ID/version，不按数组位置；保留原 manifest、类型表、草稿标记及公式注入/XML 安全处理。断言示例复用现有独立解析器：
+- [x] 扩充既有三格式一致性测试：JSON 正文完整；XLSX 主表有实际中文/长文本，证据在明细；DOCX 阅读正文不只是一张 ID 类型表；独立解码保留全部 canonical 内容。新可读表不能干扰现有类型表识别。
+- [x] 执行 `.venv/Scripts/python.exe -m pytest tests/integration/test_fmea_export_consistency.py tests/unit/test_fmea_export_json.py tests/unit/test_fmea_export_xlsx.py tests/unit/test_fmea_export_docx.py -q`，确认 RED。
+- [x] 使用统一 report view 渲染正文；评分关联按 row ID/version，不按数组位置；保留原 manifest、类型表、草稿标记及公式注入/XML 安全处理。断言示例复用现有独立解析器：
 
 ```python
 assert _without_format_identity(_parse_xlsx(xlsx_bytes)) == _without_format_identity(_semantic_json(snapshot))
 assert _without_format_identity(_parse_docx(docx_bytes)) == _without_format_identity(_semantic_json(snapshot))
 ```
 
-- [ ] 同一命令 GREEN。生成一份小型长文本报告，按执行时可用的 documents/spreadsheets 技能做版式检查；没有渲染能力时明确列为未验证，不能称正文可读性验收完成。
-- [ ] 复核内容完整与排版；本地提交 `feat(fmea): deliver readable body in office exports`。
+- [x] 同一命令 GREEN。生成小型长文本报告及边界样例，使用 documents/spreadsheets/PDF 技能完成实际 Word 与 Excel 阅读正文检查；标准 LibreOffice 路径不可用，采用本机 Word 渲染，具体范围和旧机器附录限制见交接。
+- [x] 复核内容完整与排版；本地提交 `09bd6c8f`、`757c8fe1`，独立复审及定点复核通过。未推送。
 
 ## Task 5：完整样例、独立反例与交接
 
