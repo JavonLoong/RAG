@@ -582,6 +582,15 @@ def make_governance_assembler(inputs: GovernanceInputs, **overrides: Any) -> Rev
     return runtime.assembler
 
 
+def make_governance_source(inputs: GovernanceInputs) -> object:
+    """Return the runtime-owned source for a fixture-created input set."""
+
+    runtime = _INPUT_RUNTIMES.get(id(inputs._source_attestation))
+    if runtime is None:
+        raise TypeError("fixture inputs are not associated with a governance runtime")  # noqa: TRY003
+    return runtime.source
+
+
 def make_assemble_request(**overrides: Any) -> RevisionAssemblyRequest:
     values: dict[str, Any] = {"analysis_id": "analysis-1", "parent_revision_id": None, "expected_analysis_version": 1}
     values.update(overrides)

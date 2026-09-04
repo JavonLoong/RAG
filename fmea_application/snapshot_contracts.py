@@ -39,6 +39,33 @@ _MAX_ITEMS = 500
 _MAX_STRING_LENGTH = 65_536
 _MAX_CANONICAL_ARRAY_ITEMS = 10_000
 DRAFT_PREVIEW_MARKER = "DRAFT PREVIEW — NOT PUBLISHED"
+PUBLICATION_BODY_SCHEMA_VERSION = "graphrag.fmea.body.v1"
+_PUBLICATION_BODY_REQUIRED_ROW_FIELDS = frozenset(
+    {
+        "row_id",
+        "analysis_id",
+        "evidence_pack_id",
+        "item_id",
+        "function_id",
+        "failure_mode",
+        "causes",
+        "mechanisms",
+        "effects",
+        "symptoms",
+        "controls",
+        "barriers",
+        "actions",
+        "claim_status",
+        "review_status",
+        "publication_status",
+        "record_version",
+        "row_hash",
+        "field_evidence",
+        "field_support",
+        "field_claims",
+        "extension_values",
+    }
+)
 
 
 def _text(value: object, field_name: str) -> str:
@@ -141,6 +168,19 @@ def _mapping_tuple(
     return tuple(item for _, item in sorted(zip(identities, normalized, strict=True), key=lambda pair: pair[0]))
 
 
+def _validate_publication_body_marker(
+    version_manifest: Mapping[str, object], rows: tuple[Mapping[str, object], ...]
+) -> None:
+    marker = version_manifest.get("body_schema_version")
+    if marker is None:
+        return
+    if marker != PUBLICATION_BODY_SCHEMA_VERSION:
+        raise FmeaDomainError("publication body schema version is invalid")  # noqa: TRY003
+    for row in rows:
+        if not _PUBLICATION_BODY_REQUIRED_ROW_FIELDS.issubset(row):
+            raise FmeaDomainError("publication body is incomplete")  # noqa: TRY003
+
+
 @dataclass(frozen=True, slots=True)
 class NormalizedFmeaSnapshot:
     schema_version: Literal["graphrag.fmea.normalized-snapshot.v1"]
@@ -194,6 +234,7 @@ class NormalizedFmeaSnapshot:
             _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
         )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
+        _validate_publication_body_marker(self.version_manifest, self.rows)
         object.__setattr__(self, "unresolved_items", _mapping_tuple(self.unresolved_items, "unresolved_items"))
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         if isinstance(self.row_count, bool) or not isinstance(self.row_count, int) or self.row_count < 0:
@@ -272,6 +313,7 @@ class NormalizedSnapshotInput:
             _mapping_tuple(self.decision_summary, "decision_summary", identity_field="decision_id"),
         )
         object.__setattr__(self, "version_manifest", _mapping(self.version_manifest, "version_manifest"))
+        _validate_publication_body_marker(self.version_manifest, self.rows)
         object.__setattr__(self, "audit_summary", _mapping(self.audit_summary, "audit_summary"))
         object.__setattr__(self, "created_at", _timestamp(self.created_at, "created_at"))
 
@@ -453,6 +495,7 @@ def iter_normalized_snapshot_pages(
 
 __all__ = [
     "DRAFT_PREVIEW_MARKER",
+    "PUBLICATION_BODY_SCHEMA_VERSION",
     "NormalizedFmeaSnapshot",
     "NormalizedSnapshotInput",
     "NormalizedSnapshotPage",

@@ -243,6 +243,29 @@ def test_normalized_snapshot_rejects_non_export_safe_fields() -> None:
         make_normalized_snapshot_input(row_payload={"prompt": "secret instruction"})
 
 
+def test_legacy_snapshot_without_publication_body_marker_remains_accepted() -> None:
+    source = make_normalized_snapshot_input()
+    snapshot = build_normalized_snapshot(source)
+
+    assert "body_schema_version" not in snapshot.version_manifest
+    assert snapshot.rows[0]["failure_mode"] == "low pressure"
+
+
+def test_publication_body_marker_rejects_summary_rows() -> None:
+    source = make_normalized_snapshot_input()
+    with pytest.raises(FmeaDomainError, match="publication body is incomplete"):
+        build_normalized_snapshot(
+            replace(
+                source,
+                rows=({"row_id": "row-1", "failure_mode": "summary"},),
+                version_manifest={
+                    **source.version_manifest,
+                    "body_schema_version": "graphrag.fmea.body.v1",
+                },
+            )
+        )
+
+
 @pytest.mark.parametrize(
     "unsafe_value",
     (

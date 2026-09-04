@@ -42,6 +42,37 @@ def test_source_exposes_no_issuer_or_verifier_instance_seam():
     assert not any("issue" in name or "verif" in name for name in dir(source))
 
 
+def test_publication_body_entrypoint_is_runtime_owned_and_base_fails_closed():
+    from fmea_governance_fixtures import make_governance_inputs
+
+    base = make_governance_inputs()
+    runtime = _source(base, return_runtime=True)
+    revision = runtime.assembler.assemble(
+        __import__("fmea_governance_fixtures", fromlist=["make_assemble_request"]).make_assemble_request(),
+        runtime.source.load_inputs("analysis-1", "ws-1"),
+    )
+
+    with pytest.raises(TypeError, match="must be obtained from build_workspace_governance_runtime"):
+        type(runtime.source).__mro__[1](runtime.source._providers).build_publication_body(
+            revision,
+            base,
+            review_records=(),
+        )
+    assert callable(runtime.source.build_publication_body)
+
+
+def test_publication_body_entrypoint_rejects_forged_runtime_inputs_before_projection():
+    from fmea_governance_fixtures import make_assemble_request, make_governance_inputs
+
+    runtime = _source(make_governance_inputs(), return_runtime=True)
+    inputs = runtime.source.load_inputs("analysis-1", "ws-1")
+    revision = runtime.assembler.assemble(make_assemble_request(), inputs)
+    forged = replace(inputs, active_run_ids=("forged-run",))
+
+    with pytest.raises(ValueError, match="attestation"):
+        runtime.source.build_publication_body(revision, forged, review_records=())
+
+
 def test_valid_source_rejects_client_state_overrides_at_load_boundary():
     from fmea_governance_fixtures import make_governance_inputs
 
