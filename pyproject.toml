@@ -37,6 +37,8 @@ dependencies = [
     "tqdm>=4.67.3",
     "transformers>=4.46.3",
     "uvicorn>=0.44.0",
+    "pymupdf>=1.26.4,<2",
+    "rapidocr-onnxruntime>=1.4.4,<2",
 ]
 
 [project.urls]

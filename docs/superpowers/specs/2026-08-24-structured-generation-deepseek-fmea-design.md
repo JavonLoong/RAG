@@ -1,8 +1,11 @@
 # 通用结构化生成、DeepSeek 与 FMEA 候选闭环设计
 
-> 日期：2026-08-24  
-> 状态：已批准进入实现；用户授权按本规格默认确认并连续执行  
-> 前置：`docs/superpowers/specs/2026-08-24-generic-structured-output-template-engine-design.md`  
+> 日期：2026-08-24
+>
+> 状态：已批准进入实现；用户授权按本规格默认确认并连续执行
+>
+> 前置：`docs/superpowers/specs/2026-08-24-generic-structured-output-template-engine-design.md`
+>
 > 目标模型：`deepseek-v4-flash` 生成，`deepseek-v4-pro` 批评与最多一次修复
 
 ## 1. 目标

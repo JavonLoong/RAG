@@ -1,0 +1,3 @@
+# Governance source hashes are byte-exact and must be stable across platforms.
+domain_packs/** text eol=lf
+fmea_infrastructure/migrations/*.sql text eol=lf
