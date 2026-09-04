@@ -10,7 +10,9 @@
 
 **Spec:** [正文发布设计](../specs/2026-09-04-fmea-publication-body-design.md)。同时遵循 [完整 FMEA 产品设计](../specs/2026-08-27-full-fmea-modular-product-design.md)。
 
-**Status:** USER_REVIEW。本次产出为设计及实施计划；以下任务未开始。基线 `9fca984e`，工作树 `C:/Users/35551/Desktop/RAG/.worktrees/interface-output-v1`，分支 `feat/interface-output-v1`。不切 main，不推送，不创建 PR。
+**Status:** APPROVED / IMPLEMENTING。用户于 2026-09-04 确认，从 Task 1 开始。实现起点 `d1040fcf`（文档提交），代码基线 `9fca984e`，工作树 `C:/Users/35551/Desktop/RAG/.worktrees/interface-output-v1`，分支 `feat/interface-output-v1`。不切 main，不推送，不创建 PR。
+
+**进度（2026-09-04）：Task 1 已完成；Task 2–5 未开始。** Task 1 提交 `75d1cb98` → `c4cdfc4b` → `7bd0c69b`。最终定向测试 100 passed（主代理复验 0.79s），范围 Ruff 与差异空白检查通过；Luna xhigh 规格/质量审查发现五项缺口，经 round 1 修正；其引入的两项兼容性回归经 round 2 关闭，PASS / CLOSED。该结论不表示真实发布与三格式正文报告已经接通。[Task 1 交接](../../handoff/fmea-publication-body-task1.md)。
 
 ## Global Constraints
 
@@ -42,7 +44,7 @@
 
 ## Task 1：正文投影与版本绑定契约
 
-**Files:** Create `fmea_application/publication_body.py`, `tests/unit/test_fmea_publication_body.py`; Modify `fmea_application/snapshot_contracts.py`; Test `tests/unit/test_fmea_snapshot_contracts.py`。
+**Files:** Create `fmea_application/publication_body.py`, `tests/unit/test_fmea_publication_body.py`; Modify `fmea_application/snapshot_contracts.py`, `fmea_infrastructure/composition.py`（仅运行时正文入口）, `fmea_application/ports.py`（可选只读 publication_reviews provider）; Test `tests/unit/test_fmea_snapshot_contracts.py`, `tests/unit/test_fmea_governance_source.py`; `tests/fmea_governance_fixtures.py` 仅按需添加测试专用 runtime source 与复核来源辅助。
 
 **Interfaces:** 输入 `FmeaRevision`、`GovernanceInputs`；输出下列新类型。复核来源只能由服务端仓储解析，公开内容为白名单。
 
@@ -67,10 +69,10 @@ class PublicationBody:
 
 ```
 
-拟新增函数签名：`build_publication_body(revision: FmeaRevision, inputs: GovernanceInputs, *, review_records: tuple[PublicationReviewRecord, ...]) -> PublicationBody`。实现顺序为验证来源证明及范围、重算绑定、白名单投影、冻结排序。上述代码仅定义合同类型；下面断言是测试片段，不是可直接执行的完整测试文件。
+实施核对及 Task 1 复审后采用运行时入口：`source.build_publication_body(revision: FmeaRevision, inputs: GovernanceInputs) -> PublicationBody`。基础 `RepositoryGovernanceSource` 拒绝未配置调用；`RuntimeGovernanceSource` 复用闭包内 HMAC verify，内部调用 `publication_reviews.load_publication_reviews(revision)` 后，将这些记录传给应用层内部 `_project_publication_body(..., review_records=records)`。`GovernanceRepositoryProviders.publication_reviews` 为可选配置；旧来源的其他功能兼容，但新正文入口缺少复核来源时拒绝。实现顺序为验证来源证明及范围、读取服务端复核、重算绑定、白名单投影、冻结排序。不得通过 proof 非空、调用方提供的复核记录或 verifier 回调声称可信。上述代码仅定义合同类型；下面断言是测试片段，不是可直接执行的完整测试文件。
 
-- [ ] 先增加最小定向测试：完整字段保留；稳定排序；扩展值类型；未知/不适用；错误行哈希/版本/范围；证据正文篡改；缺失或错版本审核；不安全路径/超限。复用 `tests/fmea_governance_fixtures.py` 的 `make_governance_inputs` 与 `make_governance_assembler`，通过真实 assembler 建立对应 revision，不能用随机 hash 凑绑定。
-- [ ] 为新标记增加明确的新/旧兼容断言：旧快照仍接受，新标记配摘要行拒绝。测试示例断言如下，`body`、`inputs` 由本 Task 的真实来源夹具提供。
+- [x] 先增加最小定向测试：完整字段保留；稳定排序；扩展值类型；未知/不适用；错误行哈希/版本/范围；证据正文篡改；缺失或错版本审核；不安全路径/超限。复用 `tests/fmea_governance_fixtures.py` 的 `make_governance_inputs` 与 `make_governance_assembler`，通过真实 assembler 建立对应 revision，不能用随机 hash 凑绑定。
+- [x] 为新标记增加明确的新/旧兼容断言：旧快照仍接受，新标记配摘要行拒绝。测试示例断言如下，`body`、`inputs` 由本 Task 的真实来源夹具提供。
 
 ```python
 assert body.rows[0]["failure_mode"] == inputs.rows[0].failure_mode
@@ -80,15 +82,15 @@ assert body.rows[0]["field_claims"]
 assert body.evidence_summary[0]["pack_hash"]
 ```
 
-- [ ] 执行 `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_publication_body.py tests/unit/test_fmea_snapshot_contracts.py -q`；确认 RED 来自缺少正文行为。
-- [ ] 实现上述契约：显式投影原生字段；重算行/风险/图/证据身份并比对 revision；审核必须精确命中版本。安全过滤应拒绝不允许的值，不能悄悄删除必需证据后发布。
-- [ ] 执行同一测试命令到 GREEN；复核仅看正文绑定、类型和兼容性；显式暂存上述文件并本地提交 `feat(fmea): add version-bound publication body projection`。
+- [x] 执行 `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_publication_body.py tests/unit/test_fmea_snapshot_contracts.py -q`；确认 RED 来自缺少正文行为。
+- [x] 实现上述契约：显式投影原生字段；重算行/风险/图/证据身份并比对 revision；审核必须精确命中版本。安全过滤应拒绝不允许的值，不能悄悄删除必需证据后发布。
+- [x] 执行同一测试命令到 GREEN；复核仅看正文绑定、类型和兼容性；显式暂存上述文件并本地提交 `feat(fmea): add version-bound publication body projection`。
 
 ## Task 2：真实发布接入与事务内核验
 
 **Files:** Modify `fmea_application/governance_service.py`, `fmea_application/governance_contracts.py`, `fmea_infrastructure/governance_repository_sqlite.py`, `fmea_infrastructure/composition.py`; Create `tests/integration/test_fmea_publication_body.py`; Test `tests/regression/test_fmea_governance_atomic_publish.py`, `tests/regression/test_fmea_governance_idempotency.py`。
 
-**Interfaces:** 消费 Task 1 的 `build_publication_body`。新增只读接口 `load_publication_reviews(revision: FmeaRevision) -> tuple[PublicationReviewRecord, ...]`，实现绑定现有复核存储；不能由 HTTP/CLI 调用者提供。`PreparedPublication` 内部保存提交校验需要的源绑定，外部 PublishCommand 保持不变。
+**Interfaces:** 消费 Task 1 的运行时 `source.build_publication_body` 及只读 `publication_reviews` port。实现 `load_publication_reviews(revision: FmeaRevision) -> tuple[PublicationReviewRecord, ...]` 的真实仓储适配并配置进运行时；不能由 HTTP/CLI 调用者提供。`PreparedPublication` 内部保存提交校验需要的源绑定，外部 PublishCommand 保持不变。
 
 - [ ] 增加真实 SQLite 测试：批准后发布有正文；原始复核缺失会失败；准备正文后改源行会失败且无半发布；伪造正文并重算整个导出哈希链仍拒绝；故障注入回滚；重放返回同一快照；发布后改行不改变保存快照。
 - [ ] 测试明确比较 publication/snapshot/manifest/eligibility/audit/outbox 写入前后状态，而非只断言抛异常。使用现有 atomic publish 的故障注入入口和治理 idempotency 夹具，不构造第二套提交器。
@@ -97,10 +99,7 @@ assert body.evidence_summary[0]["pack_hash"]
 
 ```python
 inputs = self._inputs(revision.analysis_id, revision.workspace_id)
-body = build_publication_body(
-    revision, inputs,
-    review_records=self._source.load_publication_reviews(revision),
-)
+body = self._source.build_publication_body(revision, inputs)
 # NormalizedSnapshotInput 使用 body 的五个部分；version_manifest 写入正文标记。
 # 原有 publication_id、manifest_id、revision_hash、created_at 不改变生成规则。
 ```
@@ -178,4 +177,4 @@ Task 1 → Task 2 是版本与事务主链。Task 1 契约通过复审后，Task
 - 覆盖：版本冻结在 Task 1/2；真实审核与证据在 Task 1/2；跨域模板在 Task 3；报告在 Task 4；独立证明在 Task 5。
 - 兼容：旧快照不回填，新标记不可降级绕过；三格式共享同一保存内容。
 - 依赖：现有 Python/SQLite/Office 库；没有新服务或付费调用。
-- 当前仅文档完成；确认设计与该任务拆解后进入 Task 1，延续用户指定的 Luna xhigh 分工偏好。
+- 设计及任务拆解已确认；从 Task 1 开始，延续用户指定的 Luna xhigh 分工偏好。仅在测试及独立复审通过后勾选完成项。
