@@ -101,7 +101,8 @@ SELECT CASE WHEN
           ON dependency_eligibility.workspace_id = publication.workspace_id
          AND dependency_eligibility.publication_id = publication.publication_id
         WHERE fmea_validate_governance_replay(
-            json_object(
+            json_patch(
+              json_object(
                 'kind', 'publication',
                 'workspace_id', publication.workspace_id,
                 'resource_id', publication.publication_id,
@@ -142,7 +143,9 @@ SELECT CASE WHEN
                 'idempotency_payload_hash', idempotency.payload_hash,
                 'idempotency_state', idempotency.state,
                 'idempotency_resource_id', idempotency.resource_id,
-                'idempotency_response_json', idempotency.response_json,
+                'idempotency_response_json', idempotency.response_json
+              ),
+              json_object(
                 'dependency_revision_json', dependency_revision.revision_json,
                 'dependency_revision_canonical_json_hash', dependency_revision.canonical_json_hash,
                 'dependency_revision_record_version', dependency_revision.record_version,
@@ -184,6 +187,7 @@ SELECT CASE WHEN
                 'dependency_eligibility_publication_id', dependency_eligibility.publication_id,
                 'dependency_eligibility_manifest_id', dependency_eligibility.manifest_id,
                 'dependency_eligibility', dependency_eligibility.eligible
+              )
             )
         ) <> 1
     )
