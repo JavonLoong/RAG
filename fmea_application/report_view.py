@@ -182,7 +182,12 @@ def compile_report_layout(canonical_json: str, identities: Sequence[tuple[str, s
         _incomplete()
     source, (template_id, version, digest) = _bound_source(canonical_json, approved)
     try:
-        properties = source["output_schema"]["properties"]
+        properties = dict(source["output_schema"]["properties"])
+        # These native snapshot fields remain report-visible even for older, smaller
+        # FMEA templates. Never infer item/function text from their native IDs.
+        properties.setdefault("failure_mode", {"type": "string"})
+        for key in ("causes", "effects"):
+            properties.setdefault(key, {"type": "array", "items": {"type": "string"}})
         columns = []
         for key, definition in sorted(properties.items()):
             # JSON Schema permits boolean property schemas and boolean array items.

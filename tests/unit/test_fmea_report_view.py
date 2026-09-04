@@ -283,10 +283,11 @@ def test_layout_compiler_uses_titles_and_canonical_order_not_import_mappings():
     layout = compile_report_layout(template.canonical_json, (("report-test", "1.0.0", template.template_hash),))
     assert [(c["field_key"], c["label"]) for c in layout["columns"]] == [
         ("causes", "causes"),
+        ("effects", "effects"),
         ("failure_mode", "故障模式"),
         ("fuel.pressure_drop", "压降"),
     ]
-    assert layout["columns"][2]["value_path"] == ("extension_values", "fuel.pressure_drop")
+    assert layout["columns"][3]["value_path"] == ("extension_values", "fuel.pressure_drop")
 
 
 def test_layout_compiler_blocks_missing_template_identity():
@@ -315,6 +316,7 @@ def test_boolean_property_and_array_item_schemas_use_lossless_generic_types():
     layout = compile_report_layout(template.canonical_json, (("report-test", "1.0.0", template.template_hash),))
     assert [(column["field_key"], column["value_type"]) for column in layout["columns"]] == [
         ("causes", "array"),
+        ("effects", "string[]"),
         ("failure_mode", "json"),
     ]
 
@@ -524,3 +526,86 @@ def test_select_report_template_rejects_empty_approved_set():
 
     with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
         select_report_template((), ())
+
+
+def test_compiled_property_insertion_order_does_not_override_canonical_fallback():
+    from fmea_application.report_view import build_report_view, compile_report_layout
+
+    declared = {
+        "fuel.pressure_drop": {"type": "number"},
+        "failure_mode": {"type": "string", "title": "故障模式"},
+        "causes": {"type": "array"},
+    }
+    template = _compiled_template(properties=declared)
+    layout = compile_report_layout(template.canonical_json, _identities(template))
+    snapshot = _snapshot(layout=layout, row={"failure_mode": "original", "causes": ("first", "second")})
+    original_hash = snapshot.snapshot_hash
+    view = build_report_view(snapshot)
+
+    assert [column.field_key for column in view.columns] == [
+        "causes",
+        "effects",
+        "failure_mode",
+        "fuel.pressure_drop",
+    ]
+    assert view.rows[0]["causes"] == ("first", "second")
+    reordered = _compiled_template(properties=dict(reversed(tuple(declared.items()))))
+    changed_layout = compile_report_layout(reordered.canonical_json, _identities(reordered))
+    assert changed_layout == layout
+    assert reordered.canonical_json == template.canonical_json
+    assert build_report_view(snapshot) == view
+    assert snapshot.snapshot_hash == original_hash
+
+
+@pytest.mark.parametrize(
+    "order",
+    [
+        ["failure_mode", "causes", "fuel.pressure_drop"],
+        [],
+        None,
+    ],
+)
+def test_existing_compiler_does_not_support_report_order_annotation(order):
+    from core_domain.structured_output.contracts import StructuredOutputError
+
+    with pytest.raises(StructuredOutputError, match="Schema keyword is not supported"):
+        _compiled_template(**{"x-report-order": order})
+
+
+def test_legacy_template_missing_causes_gets_canonical_core_fallback_without_item_remap():
+    from fmea_application.report_view import build_report_view, compile_report_layout
+
+    template = _compiled_template(
+        properties={
+            "item": {"type": "string", "title": "设备"},
+            "failure_mode": {"type": "string", "title": "故障模式"},
+            "effects": {"type": "array", "items": {"type": "string"}},
+        }
+    )
+    layout = compile_report_layout(template.canonical_json, _identities(template))
+    snapshot = _snapshot(layout=layout, row={"item_id": "native-item", "causes": ("retained cause",)})
+    view = build_report_view(snapshot)
+
+    assert [column.field_key for column in view.columns] == ["causes", "effects", "failure_mode", "item"]
+    assert dict(layout["columns"][0]) == {
+        "field_key": "causes",
+        "label": "causes",
+        "value_type": "string[]",
+        "value_path": ("row", "causes"),
+    }
+    assert view.rows[0]["causes"] == ("retained cause",)
+    assert view.rows[0]["item"] is None
+    assert view.details[0]["row"]["item_id"] == "native-item"
+
+
+def test_all_missing_core_columns_use_canonical_fallback_definitions():
+    from fmea_application.report_view import compile_report_layout
+
+    template = _compiled_template(properties={"component": {"type": "string"}})
+    layout = compile_report_layout(template.canonical_json, _identities(template))
+    assert [(c["field_key"], c["label"], c["value_type"], c["value_path"]) for c in layout["columns"]] == [
+        ("causes", "causes", "string[]", ("row", "causes")),
+        ("component", "component", "string", ("unavailable", "component")),
+        ("effects", "effects", "string[]", ("row", "effects")),
+        ("failure_mode", "failure_mode", "string", ("row", "failure_mode")),
+    ]
