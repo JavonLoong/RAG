@@ -14,7 +14,9 @@
 
 **Task 1 完成记录（2026-09-04）。** Task 1 提交 `75d1cb98` → `c4cdfc4b` → `7bd0c69b`。最终定向测试 100 passed（主代理复验 0.79s），范围 Ruff 与差异空白检查通过；Luna xhigh 规格/质量审查发现五项缺口，经 round 1 修正；其引入的两项兼容性回归经 round 2 关闭，PASS / CLOSED。该结论不表示真实发布与三格式正文报告已经接通。[Task 1 交接](../../handoff/fmea-publication-body-task1.md)。
 
-**续做状态：Task 2 已完成，代码至 `7d702fc6`。** 最终主代理定向验证 **165 passed in 28.61s**，全部改动文件 Ruff 与范围差异检查通过。独立 Luna xhigh 复审及两轮定点复核关闭全部发现，Spec ✅ / Quality Approved，无新增 Critical/Important。Task 3–5 未开始。实施记录见 [Task 2 交接](../../handoff/fmea-publication-body-task2.md)。新 SQLite 集成测试改用独立文件名，避免与单元测试在同次 pytest 收集时重名。旧治理验收验证器的格式反例补充在 `tests/integration/test_fmea_governance_acceptance.py`，不提前宣称 Task 5 完成。
+**Task 2 完成记录：代码至 `7d702fc6`。** 最终主代理定向验证 **165 passed in 28.61s**，全部改动文件 Ruff 与范围差异检查通过。独立 Luna xhigh 复审及两轮定点复核关闭全部发现，Spec ✅ / Quality Approved，无新增 Critical/Important。实施记录见 [Task 2 交接](../../handoff/fmea-publication-body-task2.md)。新 SQLite 集成测试改用独立文件名，避免与单元测试在同次 pytest 收集时重名。旧治理验收验证器的格式反例补充在 `tests/integration/test_fmea_governance_acceptance.py`，不提前宣称 Task 5 完成。
+
+**Task 3 完成记录（2026-09-04）。** 代码至 `f595fcb0`，主代理合并定向验证 **216 passed，1 deselected，31.53s**；未重复未改动的万行测试。12 个改动文件 Ruff 与范围差异检查通过；独立 Luna xhigh 复审 Spec PASS / Quality Approved，无阻断项。支持固定模板视图、完整模板集合提交核验与旧历史读取；生成布局使用稳定字段键排序，尚不支持任意自定义排序元数据。Task 4/5 未开始。[Task 3 交接](../../handoff/fmea-publication-body-task3.md)。
 
 ## Global Constraints
 
@@ -117,9 +119,11 @@ body = self._source.build_publication_body(revision, inputs)
 
 **Interfaces:** `build_report_view(snapshot: NormalizedFmeaSnapshot) -> FmeaReportView`。新类型 `FmeaReportView` 是冻结 dataclass：`columns: tuple[ReportColumn, ...]`、`rows: tuple[Mapping[str, object], ...]`、`details: tuple[Mapping[str, object], ...]`；`ReportColumn` 字段为 `field_key/label/value_type: str`。固定模板编译得到的显示配置保存于 `version_manifest.report_layout`，包含模板身份、column 的字段键/显示名/类型/取值路径，并纳入 snapshot_hash，导出时不读取最新模板。提交时将配置与批准 revision 的固定模板内容核对；有多个模板而无法确定显示布局时明确阻断，不任取最新一个。
 
-- [ ] 增加定向测试：中文显示名但键不变；字段重排；多原因/长证据转详情；decimal 无损；非 RPN 评分不冒充 RPN；不认识的扩展保留；非法映射路径拒绝；模板升级不改变已发布视图；旧摘要快照只显示摘要。
-- [ ] 执行 `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_report_view.py -q`，确认 RED。
-- [ ] 实现白名单取值路径和稳定字段布局，沿用现有编译模板字段定义，不解析用户表达式。核心行为断言：
+实施接入决定：运行时按固定身份解析所有批准模板，在内部 `PublicationSourceBinding` 携带完整模板规范化内容集合及被选中的 `canonical_json`。提交时重新编译并核对批准 revision 中的完整模板 ID/version/hash 集合，再选出唯一直接声明 `failure_mode` 与 `effects` 的 FMEA 行模板，比较由该内容确定生成的整个布局；不信任调用方自报模板哈希，也不能通过漏传竞争模板绕过歧义检查。没有候选或多个候选时阻断。此规则兼容现有领域包中 FMEA 与传播模板并存，不按名称、数组首位或最新版本猜选。为此允许最小修改 `governance_contracts.py` 和 `ports.py`，不增加公开请求或 SQL migration。Task 2 已保存但无 layout 的正文快照仍以稳定键名读取，不回填或修改历史；新写入必须含 layout。旧治理验收 runner 使用实际对应的编译模板身份，verifier 允许最小版本清单兼容适配及对应反例；完整三格式独立验收仍为 Task 5。
+
+- [x] 增加定向测试：中文显示名但键不变；保存布局列序与稳定排序；多原因/长证据转详情；decimal 无损；非 RPN 评分不冒充 RPN；不认识的扩展保留；非法映射路径拒绝；模板升级不改变已发布视图；旧摘要快照只显示摘要。自定义排序注解不在现有编译器能力内，未宣称支持。
+- [x] 执行 `.venv/Scripts/python.exe -m pytest tests/unit/test_fmea_report_view.py -q`，确认 RED。
+- [x] 实现白名单取值路径和稳定字段布局，沿用现有编译模板字段定义，不解析用户表达式。核心行为断言：
 
 ```python
 view = build_report_view(snapshot)
@@ -128,7 +132,7 @@ assert view.rows[0]["failure_mode"] == snapshot.rows[0]["failure_mode"]
 assert snapshot.snapshot_hash == original_snapshot_hash
 ```
 
-- [ ] 执行同一命令 GREEN；复审模板身份、跨域字段无损和无隐式业务计算；本地提交 `feat(fmea): add template-driven report view`。
+- [x] 执行同一命令 GREEN；复审模板身份、跨域字段无损和无隐式业务计算；本地提交 `3579f295`、`71327562`、`4277b31d`、`f595fcb0`，独立复审通过。
 
 ## Task 4：三格式正式正文交付
 
