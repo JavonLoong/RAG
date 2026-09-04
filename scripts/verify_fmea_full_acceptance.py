@@ -1383,11 +1383,14 @@ def _visible_xlsx_body(payload: bytes, snapshot: dict[str, object], layout: dict
             for field_index, expected in enumerate(values, start=3):
                 _require("".join(row[field_index] for row in group) == expected, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
         _require(cursor == len(actual_rows), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
+        detail_sheet = workbook["正文详情"]
+        _require(detail_sheet.max_column == 5, "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
         detail_table = [
-            tuple("" if value is None else str(value) for value in row[:5])
-            for row in workbook["正文详情"].iter_rows(values_only=True)
+            tuple("" if value is None else str(value) for value in row)
+            for row in detail_sheet.iter_rows(values_only=True)
             if any(value is not None and value != "" for value in row)
         ]
+        _require(all(len(row) == 5 for row in detail_table), "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
         _require(detail_table and list(detail_table[0]) == ["行ID", "记录版本", "详情类型", "字段", "内容"], "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH")
         _require(
             _collapse_visible_detail_rows(detail_table[1:]) == _visible_detail_rows(snapshot),

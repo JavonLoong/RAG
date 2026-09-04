@@ -781,6 +781,57 @@ def _reseal_visible_body_tamper(full_artifact, tmp_path, format_name, surface):
     return verifier, root
 
 
+def _reseal_xlsx_detail_trailing_cell_tamper(full_artifact, tmp_path):
+    verifier, artifact, manifest, _payloads, evidence = full_artifact
+    root = tmp_path / manifest["artifact_id"]
+    shutil.copytree(artifact, root)
+    evidence = deepcopy(evidence)
+    changed_payloads = {}
+    mutation_count = 0
+    expected_publications = sum(1 for export in evidence["cases"][0]["exports"] if export["format"] == "xlsx")
+    assert expected_publications == 2
+
+    for export in evidence["cases"][0]["exports"]:
+        path = export["path"]
+        payload = (root / path).read_bytes()
+        if export["format"] == "xlsx":
+            import openpyxl
+
+            workbook = openpyxl.load_workbook(io.BytesIO(payload))
+            sheet = workbook["正文详情"]
+            row_index = 87
+            assert any(sheet.cell(row=row_index, column=column).value not in (None, "") for column in range(1, 6))
+            assert sheet.cell(row=row_index, column=6).value in (None, "")
+            sheet.cell(row=row_index, column=6).value = "forged trailing detail"
+            mutation_count += 1
+            output = io.BytesIO()
+            workbook.save(output)
+            workbook.close()
+            payload = output.getvalue()
+            (root / path).write_bytes(payload)
+            export["manifest"]["sha256"] = sha256(payload).hexdigest()
+            export["manifest"]["byte_length"] = len(payload)
+        changed_payloads[path] = payload
+
+    assert mutation_count == expected_publications and mutation_count > 0
+    evidence_payload = json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    (root / "evidence.json").write_bytes(evidence_payload)
+    manifest = deepcopy(manifest)
+    for path, payload in {**changed_payloads, "evidence.json": evidence_payload}.items():
+        manifest["files"][path] = {"sha256": sha256(payload).hexdigest(), "size_bytes": len(payload)}
+    (root / "manifest.json").write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+    return verifier, root
+
+
+def test_v2_xlsx_visible_detail_trailing_cell_tampering_is_rejected_after_resealing(full_artifact, tmp_path):
+    verifier, root = _reseal_xlsx_detail_trailing_cell_tamper(full_artifact, tmp_path)
+
+    result = verifier.verify_acceptance_directory(root)
+
+    assert result.passed is False
+    assert result.error_code == "FMEA_PUBLICATION_VISIBLE_BODY_MISMATCH"
+
+
 @pytest.mark.parametrize("surface", ["main", "details"])
 @pytest.mark.parametrize("format_name", ["xlsx", "docx"])
 def test_v2_visible_body_tampering_is_rejected_after_resealing_office_exports(full_artifact, tmp_path, format_name, surface):
