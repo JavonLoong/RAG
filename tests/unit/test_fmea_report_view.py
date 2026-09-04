@@ -246,13 +246,13 @@ def test_saved_task2_body_without_layout_uses_stable_keys():
     assert view.rows[0]["failure_mode"] == "saved body"
 
 
-def _compiled_template(**schema_overrides):
+def _compiled_template(*, template_id="report-test", **schema_overrides):
     from structured_output_application.compiler import TemplateCompiler
     from structured_output_infrastructure import Draft202012SchemaAdapter, load_template_source
 
     return TemplateCompiler(schema_validator=Draft202012SchemaAdapter(), source_loader=load_template_source).compile({
         "template": {
-            "id": "report-test",
+            "id": template_id,
             "version": "1.0.0",
             "title": "报告",
             "description": "Pinned report",
@@ -269,7 +269,9 @@ def _compiled_template(**schema_overrides):
             **schema_overrides,
         },
         "evidence_bindings": [],
-        "source_mappings": {"failure_mode": "causes"},
+        "source_mappings": {"failure_mode": "causes"}
+        if "causes" in schema_overrides.get("properties", {"causes": None})
+        else {},
     })
 
 
@@ -287,13 +289,12 @@ def test_layout_compiler_uses_titles_and_canonical_order_not_import_mappings():
     assert layout["columns"][2]["value_path"] == ("extension_values", "fuel.pressure_drop")
 
 
-@pytest.mark.parametrize("identities", [(), (("one", "1", "a" * 64), ("two", "1", "b" * 64))])
-def test_layout_compiler_blocks_missing_or_ambiguous_template(identities):
+def test_layout_compiler_blocks_missing_template_identity():
     _implementation()
     from fmea_application.report_view import compile_report_layout
 
     with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
-        compile_report_layout(_compiled_template().canonical_json, identities)
+        compile_report_layout(_compiled_template().canonical_json, ())
 
 
 def test_layout_compiler_recomputes_hash_instead_of_trusting_identity():
@@ -410,3 +411,116 @@ def test_layout_compiler_binds_id_and_version_in_addition_to_hash(identity):
     template = _compiled_template()
     with pytest.raises(FmeaDomainError, match="report layout"):
         compile_report_layout(template.canonical_json, ((*identity, template.template_hash),))
+
+
+def _selection_templates():
+    fmea = _compiled_template(
+        template_id="legacy-fmea",
+        properties={
+            "failure_mode": {"type": "string"},
+            "effects": {"type": "array"},
+        },
+    )
+    propagation = _compiled_template(template_id="propagation", properties={"edges": {"type": "array"}})
+    return fmea, propagation
+
+
+def _identities(*templates):
+    return tuple((t.metadata.template_id, t.metadata.version, t.template_hash) for t in templates)
+
+
+@pytest.mark.parametrize("reverse_sources", [False, True])
+@pytest.mark.parametrize("reverse_identities", [False, True])
+def test_select_report_template_chooses_unique_fmea_with_propagation_in_any_order(reverse_sources, reverse_identities):
+    from fmea_application.report_view import select_report_template
+
+    fmea, propagation = _selection_templates()
+    sources = (fmea.canonical_json, propagation.canonical_json)
+    identities = _identities(fmea, propagation)
+    selected = select_report_template(
+        sources[::-1] if reverse_sources else sources, identities[::-1] if reverse_identities else identities
+    )
+    assert selected == fmea.canonical_json
+
+
+def test_layout_compiler_and_validator_bind_selected_member_of_multi_template_revision():
+    from fmea_application.report_view import compile_report_layout, validate_report_layout
+
+    fmea, propagation = _selection_templates()
+    identities = _identities(propagation, fmea)
+    layout = compile_report_layout(fmea.canonical_json, identities)
+    validate_report_layout(layout, identities)
+    assert layout["template_identity"] == {
+        "template_id": "legacy-fmea",
+        "version": "1.0.0",
+        "template_hash": fmea.template_hash,
+    }
+    with pytest.raises(FmeaDomainError, match="report layout"):
+        validate_report_layout(layout, _identities(propagation))
+    with pytest.raises(FmeaDomainError, match="report layout"):
+        compile_report_layout(fmea.canonical_json, _identities(propagation))
+
+
+def test_select_report_template_rejects_two_fmea_candidates():
+    from fmea_application.report_view import select_report_template
+
+    first, _ = _selection_templates()
+    second = _compiled_template(
+        template_id="second-fmea",
+        properties={
+            "failure_mode": {"type": "string"},
+            "effects": {"type": "array"},
+            "causes": {"type": "array"},
+        },
+    )
+    with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
+        select_report_template((first.canonical_json, second.canonical_json), _identities(first, second))
+
+
+@pytest.mark.parametrize("source_set", ["missing", "empty", "duplicate", "extra"])
+def test_select_report_template_requires_exact_complete_source_set(source_set):
+    from fmea_application.report_view import select_report_template
+
+    fmea, propagation = _selection_templates()
+    sources = {
+        "missing": (fmea.canonical_json,),
+        "empty": (),
+        "duplicate": (fmea.canonical_json, fmea.canonical_json),
+        "extra": (fmea.canonical_json, propagation.canonical_json, propagation.canonical_json),
+    }[source_set]
+    with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
+        select_report_template(sources, _identities(fmea, propagation))
+
+
+def test_select_report_template_verifies_even_non_candidate_source_hash():
+    from fmea_application.report_view import select_report_template
+
+    fmea, propagation = _selection_templates()
+    with pytest.raises(FmeaDomainError, match="UNSAFE"):
+        select_report_template(
+            (fmea.canonical_json, propagation.canonical_json.replace('"edges"', '"links"')),
+            _identities(fmea, propagation),
+        )
+
+
+@pytest.mark.parametrize(
+    "properties",
+    [
+        {"edges": {"type": "array"}},
+        {"failure_mode": {"type": "string"}},
+        {"nested": {"type": "object", "properties": {"failure_mode": {}, "effects": {}}}},
+    ],
+)
+def test_select_report_template_rejects_zero_direct_core_candidates(properties):
+    from fmea_application.report_view import select_report_template
+
+    template = _compiled_template(properties=properties)
+    with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
+        select_report_template((template.canonical_json,), _identities(template))
+
+
+def test_select_report_template_rejects_empty_approved_set():
+    from fmea_application.report_view import select_report_template
+
+    with pytest.raises(FmeaDomainError, match="INCOMPLETE"):
+        select_report_template((), ())

@@ -56,6 +56,79 @@ def _invalid() -> NoReturn:
     raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: report layout is invalid or not template-bound")  # noqa: TRY003
 
 
+def _incomplete() -> NoReturn:
+    message = "FMEA_PUBLICATION_BODY_INCOMPLETE: report layout requires a complete template set and one FMEA candidate"
+    raise FmeaDomainError(message)
+
+
+def _approved_identities(identities: object) -> frozenset[tuple[str, str, str]]:
+    if not isinstance(identities, Sequence) or isinstance(identities, str | bytes) or len(identities) > 500:
+        _invalid()
+    approved: set[tuple[str, str, str]] = set()
+    versions: set[tuple[str, str]] = set()
+    for identity in identities:
+        if (
+            not isinstance(identity, tuple | list)
+            or len(identity) != 3
+            or not all(isinstance(v, str) and v.strip() for v in identity)
+        ):
+            _invalid()
+        template_id, version, digest = identity
+        digest = digest.removeprefix("sha256:")
+        if not re.fullmatch(r"[0-9a-f]{64}", digest) or (template_id, version) in versions:
+            _invalid()
+        versions.add((template_id, version))
+        approved.add((template_id, version, digest))
+    return frozenset(approved)
+
+
+def _bound_source(canonical_json: str, approved: frozenset[tuple[str, str, str]]) -> tuple[dict, tuple[str, str, str]]:
+    """Inspect already-compiled content, recomputing its identity independently."""
+    try:
+        if not isinstance(canonical_json, str) or len(canonical_json.encode("utf-8")) > 1_048_576:
+            _invalid()
+        source = json.loads(canonical_json)
+        metadata = source["template"]
+        identity = (metadata["id"], metadata["version"], sha256(canonical_json.encode("utf-8")).hexdigest())
+        if identity not in approved:
+            _invalid()
+    except (KeyError, TypeError, ValueError, RecursionError) as exc:
+        raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: report layout template content is invalid") from exc  # noqa: TRY003
+    return source, identity
+
+
+def select_report_template(canonical_sources: Sequence[str], identities: Sequence[tuple[str, str, str]]) -> str:
+    """Bind the complete approved source set, then select its unique direct-core schema.
+
+    Runtime/commit callers must first recompile ALL sources with the existing bounded
+    TemplateCompiler and check canonical equality. Neither source order nor version
+    recency selects a report; import mappings and nested schema fields are ignored.
+    """
+    approved = _approved_identities(identities)
+    if not isinstance(canonical_sources, Sequence) or isinstance(canonical_sources, str | bytes):
+        _invalid()
+    if not approved or len(canonical_sources) != len(approved):
+        _incomplete()
+    seen: set[tuple[str, str, str]] = set()
+    candidates: list[str] = []
+    for canonical in canonical_sources:
+        source, identity = _bound_source(canonical, approved)
+        if identity in seen:
+            _incomplete()
+        seen.add(identity)
+        schema = source.get("output_schema")
+        if not isinstance(schema, Mapping):
+            _invalid()
+        properties = schema.get("properties", {})
+        if not isinstance(properties, Mapping):
+            _invalid()
+        if {"failure_mode", "effects"}.issubset(properties):
+            candidates.append(canonical)
+    if seen != approved or len(candidates) != 1:
+        _incomplete()
+    return candidates[0]
+
+
 def _path(key: str) -> tuple[str, str]:
     if not _FIELD_KEY.fullmatch(key) or ".." in key:
         _invalid()
@@ -74,18 +147,8 @@ def validate_report_layout(layout: object, identities: object) -> None:
     identity = layout["template_identity"]
     if not isinstance(identity, Mapping) or set(identity) != {"template_id", "version", "template_hash"}:
         _invalid()
-    if not isinstance(identities, tuple | list) or len(identities) != 1:
-        _invalid()
-    expected = identities[0]
-    if not isinstance(expected, tuple | list) or len(expected) != 3 or not all(isinstance(v, str) for v in expected):
-        _invalid()
-    if tuple(identity[k] for k in ("template_id", "version", "template_hash")) != (
-        expected[0],
-        expected[1],
-        expected[2].removeprefix("sha256:"),
-    ):
-        _invalid()
-    if not re.fullmatch(r"[0-9a-f]{64}", str(identity["template_hash"])):
+    selected = tuple(identity[k] for k in ("template_id", "version", "template_hash"))
+    if not all(isinstance(value, str) for value in selected) or selected not in _approved_identities(identities):
         _invalid()
     _validate_columns(layout["columns"])
 
@@ -110,22 +173,15 @@ def _validate_columns(columns: object) -> None:
 def compile_report_layout(canonical_json: str, identities: Sequence[tuple[str, str, str]]) -> Mapping[str, object]:
     """Derive display-only fields from exact compiled content, not source_mappings.
 
-    Callers resolving/committing templates also run the existing bounded TemplateCompiler.
-    Read paths never need this content or a registry.
+    Callers resolving/committing templates run the existing bounded TemplateCompiler
+    and select_report_template over the complete source set before calling this helper.
+    This helper checks membership, not ambiguity. Read paths never need a registry.
     """
-    if len(identities) != 1:
-        raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: report layout requires exactly one template")  # noqa: TRY003
-    if not isinstance(canonical_json, str) or len(canonical_json.encode("utf-8")) > 1_048_576:
-        _invalid()
-    template_id, version, expected_hash = identities[0]
-    digest = sha256(canonical_json.encode("utf-8")).hexdigest()
-    if digest != expected_hash.removeprefix("sha256:"):
-        _invalid()
+    approved = _approved_identities(identities)
+    if not approved:
+        _incomplete()
+    source, (template_id, version, digest) = _bound_source(canonical_json, approved)
     try:
-        source = json.loads(canonical_json)
-        metadata = source["template"]
-        if (metadata["id"], metadata["version"]) != (template_id, version):
-            _invalid()
         properties = source["output_schema"]["properties"]
         columns = []
         for key, definition in sorted(properties.items()):
