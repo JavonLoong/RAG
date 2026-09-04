@@ -24,6 +24,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+from typing import Any, cast
 from uuid import uuid4
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +52,8 @@ from core_domain.fmea.states import (
     RiskStatus,
 )
 from core_domain.fmea.value_objects import EvidencePack, EvidenceRef, VersionSet
+from core_domain.query_contracts import CitationType, EvidenceSelectionProfile
+from fmea_application.assistance_contracts import AssistanceKind, AssistanceSuggestion
 from fmea_application.governance_contracts import (
     ApprovalCommand,
     ApprovalRejectionCommand,
@@ -63,21 +66,45 @@ from fmea_application.governance_contracts import (
     WithdrawPublicationCommand,
 )
 from fmea_application.ports import GovernanceRepositoryProviders
-from fmea_application.review_contracts import ActorContext
+from fmea_application.review_contracts import (
+    ActorContext,
+    ReviewAction,
+    ReviewCandidateBundle,
+    ReviewDecisionCommand,
+    ReviewReasonCode,
+    ReviewSourceSnapshot,
+)
+from fmea_application.review_projection import build_review_context
+from fmea_application.review_service import ReviewService
 from fmea_application.revision_assembler import (
     GovernanceArtifactSet,
     GovernanceRetrievalProvenance,
     ResolvedAnalysisRecord,
     ResolvedArtifactIdentity,
 )
+from fmea_application.risk_contracts import (
+    ConfirmRiskCommand,
+    StartRiskProposalCommand,
+    risk_context_hash,
+)
+from fmea_application.risk_service import RiskAssessmentService
 from fmea_application.snapshot_contracts import (
+    PUBLICATION_BODY_SCHEMA_VERSION,
     NormalizedSnapshotInput,
     build_normalized_snapshot,
     iter_normalized_snapshot_pages,
 )
+from fmea_infrastructure.assistance_repository_sqlite import SqliteAssistanceRepository
 from fmea_infrastructure.composition import build_workspace_governance_runtime
-from fmea_infrastructure.domain_pack_registry import load_domain_pack_manifest
+from fmea_infrastructure.domain_pack_registry import (
+    FileDomainPackRegistry,
+    FileScoringRuleRegistry,
+    load_domain_pack_manifest,
+    load_scoring_rule_pack,
+)
 from fmea_infrastructure.governance_repository_sqlite import SqliteGovernanceRepository
+from fmea_infrastructure.repository_sqlite import SqliteFmeaRepository
+from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
 from scripts.verify_fmea_governance_acceptance import (
     VerificationResult,
     verify_acceptance_directory,
@@ -286,7 +313,19 @@ def _evidence_pack(versions: VersionSet) -> EvidencePack:
             locator=locator,
             quote=quote,
             normalized_quote=quote,
-            evidence_hash=_hash_text(evidence_id),
+            evidence_hash=_hash_text(
+                json.dumps(
+                    {
+                        "source_type": "primary_document",
+                        "document_id": document_id,
+                        "document_version": "v1",
+                        "locator": locator,
+                        "normalized_quote": quote,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            ),
             acl_scope=("engineering",),
             source_type="primary_document",
             source_trust="reviewed",
@@ -295,8 +334,18 @@ def _evidence_pack(versions: VersionSet) -> EvidencePack:
             expires_at=None,
         )
         for evidence_id, document_id, locator, quote in (
-            ("ev-pressure", "fuel-pressure-spec", "page:1#pressure", "pressure trip threshold is defined"),
-            ("ev-flame", "flame-stability-spec", "page:2#flame", "flame stability control is defined"),
+            (
+                "ev-pressure",
+                "fuel-pressure-spec",
+                json.dumps({"page": 1, "span": 1}, sort_keys=True, separators=(",", ":")),
+                "pressure trip threshold is defined",
+            ),
+            (
+                "ev-flame",
+                "flame-stability-spec",
+                json.dumps({"page": 2, "span": 1}, sort_keys=True, separators=(",", ":")),
+                "flame stability control is defined",
+            ),
         )
     )
     return EvidencePack.build(
@@ -472,6 +521,210 @@ def _seed_analysis(database_path: Path, analysis: FmeaAnalysis) -> None:
         connection.close()
 
 
+class _AcceptanceRiskContextProvider:
+    def __init__(self, repository: SqliteFmeaRepository) -> None:
+        self._repository = repository
+
+    def get_context(self, row_id: str, actor: ActorContext):
+        row = self._repository.get_row(row_id, actor.workspace_id)
+        if row is None:
+            raise AcceptanceRunError("PUBLICATION_SOURCE_SEED_INCOMPLETE")
+        pack = self._repository.get_evidence_pack(row.evidence_pack_id, actor.workspace_id)
+        source = self._repository.get_review_source(row_id, actor.workspace_id)
+        if pack is None or source is None:
+            raise AcceptanceRunError("PUBLICATION_SOURCE_SEED_INCOMPLETE")
+        return build_review_context(
+            row=row,
+            source=source,
+            pack=pack,
+            suggestions=self._repository.list_suggestions(row_id, actor.workspace_id),
+            decisions=self._repository.list_decisions(row_id, actor.workspace_id),
+        )
+
+
+class _AcceptanceRiskSuggestionGenerator:
+    def generate(self, request: object) -> AssistanceSuggestion[object]:
+        request = cast(Any, request)
+        dimensions = tuple(
+            {
+                "name": name,
+                "value": value,
+                "evidence_ids": [evidence_id],
+                "reason": f"Acceptance source supports {name}={value}.",
+                "uncertainty": "bounded-acceptance-fixture",
+            }
+            for name, value, evidence_id in (
+                ("severity", 9, "ev-pressure"),
+                ("occurrence", 3, "ev-pressure"),
+                ("detection", 4, "ev-flame"),
+            )
+        )
+        return AssistanceSuggestion(
+            suggestion_id="risk-suggestion-fuel-pressure",
+            kind=AssistanceKind.SCORE_RECOMMENDATION,
+            workspace_id=request.evidence_pack.workspace_id,
+            target_type="fmea_row",
+            target_id=request.context.row.row_id,
+            target_record_version=request.context.row.record_version,
+            evidence_pack_ids=(request.evidence_pack.pack_id,),
+            payload={
+                "dimensions": dimensions,
+                "reason": "Deterministic acceptance risk proposal.",
+                "uncertainty": "bounded-acceptance-fixture",
+                "binding": {
+                    "operating_context_hash": risk_context_hash(request.context),
+                    "evidence_pack_hash": request.evidence_pack.pack_hash.removeprefix("sha256:"),
+                    "model_template_id": "fmea-risk-proposal",
+                    "model_template_version": "1.0.0",
+                },
+            },
+            evidence_ids=("ev-pressure", "ev-flame"),
+            uncertainty="bounded-acceptance-fixture",
+            model_hash="sha256:" + "5" * 64,
+            prompt_hash="sha256:" + "6" * 64,
+            run_id=request.run_id,
+            trace_id="risk-trace-fuel-pressure",
+            domain_pack_id=request.domain_pack.pack_id,
+            domain_pack_version=request.domain_pack.version,
+            template_id=request.template_id,
+            template_version=request.template_version,
+            rule_pack_id=request.rule_pack.rule_pack_id,
+            rule_pack_version=request.rule_pack.version,
+            created_at=TIMESTAMP,
+        )
+
+
+def _persist_authoritative_publication_sources(database_path: Path, providers: _FixtureProviders) -> None:
+    """Run the existing review/risk/propagation services against one SQLite case."""
+
+    review_repository = SqliteFmeaRepository(database_path)
+    source = ReviewSourceSnapshot.build(
+        row_id=providers.row.row_id,
+        source_record_version=providers.row.record_version,
+        candidate_id="candidate-fuel-pressure",
+        item_label="Fuel filter",
+        function_label="Fuel pressure control",
+        template_id="fuel-combustion-fmea-full",
+        template_version="1.0.0",
+        profile_id="fuel-combustion-fmea-row",
+        profile_version="1.0.0",
+        generation_run_id="generation-fuel-pressure",
+        requested_evidence_profile=EvidenceSelectionProfile.RAG_ONLY,
+        resolved_evidence_profile=EvidenceSelectionProfile.RAG_ONLY,
+        evidence_types=(CitationType.TEXT,),
+        trace_id="trace-fuel-pressure",
+        retrieval_warnings=(),
+        retrieval_incomplete=False,
+        field_claim_statuses=(
+            ("failure_mode", ClaimStatus.KNOWN),
+            ("effects", ClaimStatus.KNOWN),
+        ),
+    )
+    review_repository.save_review_candidate_bundle(
+        ReviewCandidateBundle(
+            analysis=providers.analysis,
+            evidence_pack=providers.pack,
+            rows=(providers.row,),
+            source_snapshots=(source,),
+        ),
+        ActorContext("fixture-candidate-generator", ActorType.SYSTEM, frozenset(), WORKSPACE_ID),
+    )
+    id_counts: dict[str, int] = {}
+
+    def id_factory(prefix: str) -> str:
+        id_counts[prefix] = id_counts.get(prefix, 0) + 1
+        return f"{prefix}-{id_counts[prefix]}"
+
+    review_service = ReviewService(review_repository, clock=lambda: TIMESTAMP, id_factory=id_factory)
+    review_service.submit_decision(
+        ReviewDecisionCommand(
+            row_id=providers.row.row_id,
+            expected_record_version=providers.row.record_version,
+            idempotency_key=_key(740),
+            action=ReviewAction.ACCEPT,
+            suggestion_id=None,
+            reason_code=ReviewReasonCode.ACCEPT_AS_IS,
+            reason="Human reviewer accepts the supported row.",
+            edits=(),
+            evidence_requests=(),
+            unresolved_acknowledgements=(),
+        ),
+        _actor("human-reviewer", "reviewer"),
+    )
+    accepted_row = review_repository.get_row(providers.row.row_id, WORKSPACE_ID)
+    if accepted_row is None:
+        raise AcceptanceRunError("PUBLICATION_SOURCE_SEED_INCOMPLETE")
+
+    registry_root = database_path.parent / "immutable-registries"
+    domain_source = (_REPO_ROOT / "domain_packs" / "fuel-combustion" / "manifest.yaml").read_bytes()
+    scoring_source = (_REPO_ROOT / "domain_packs" / "fuel-combustion" / "scoring" / "sod-rpn-1.0.0.yaml").read_bytes()
+    domain_pack = load_domain_pack_manifest(domain_source)
+    scoring_pack = load_scoring_rule_pack(scoring_source)
+    domain_registry = FileDomainPackRegistry(registry_root / "domain")
+    scoring_registry = FileScoringRuleRegistry(registry_root / "scoring")
+    domain_registry.register(domain_pack, domain_source)
+    scoring_registry.register(scoring_pack, scoring_source)
+    risk_repository = SqliteRiskRepository(database_path)
+    risk_repository.register_pack_snapshots(
+        WORKSPACE_ID,
+        domain_pack,
+        domain_source,
+        scoring_pack,
+        scoring_source,
+        TIMESTAMP,
+    )
+    assistance_repository = SqliteAssistanceRepository(database_path)
+    assistance_repository.initialize()
+    risk_service = RiskAssessmentService(
+        risk_repository,
+        assistance_repository=assistance_repository,
+        domain_pack_registry=domain_registry,
+        scoring_rule_registry=scoring_registry,
+        generator=_AcceptanceRiskSuggestionGenerator(),
+        context_provider=_AcceptanceRiskContextProvider(review_repository),
+        clock=lambda: TIMESTAMP,
+    )
+    template_id, template_version = providers.artifacts.template_identities[0].artifact_id, providers.artifacts.template_identities[0].version
+    proposed_risk = risk_service.propose(
+        StartRiskProposalCommand(
+            row_id=accepted_row.row_id,
+            expected_record_version=accepted_row.record_version,
+            evidence_pack_id=providers.pack.pack_id,
+            domain_pack_id=domain_pack.pack_id,
+            domain_pack_version=domain_pack.version,
+            template_id=template_id,
+            template_version=template_version,
+            rule_pack_id=scoring_pack.rule_pack_id,
+            rule_pack_version=scoring_pack.version,
+            idempotency_key=_key(741),
+        ),
+        ActorContext("model-risk-fixture", ActorType.MODEL, frozenset(), WORKSPACE_ID),
+    )
+    confirmed = risk_service.confirm(
+        ConfirmRiskCommand(
+            row_id=accepted_row.row_id,
+            proposal_id=proposed_risk.proposal_id or "",
+            expected_assessment_version=1,
+            idempotency_key=_key(742),
+        ),
+        ActorContext("human-risk-reviewer", ActorType.HUMAN, frozenset({"risk_reviewer"}), WORKSPACE_ID),
+    )
+    providers.row = review_repository.get_row(accepted_row.row_id, WORKSPACE_ID) or accepted_row
+    providers.risk = confirmed.assessment
+
+    from scripts.run_fmea_full_acceptance import _load_helper
+
+    propagation = _load_helper("propagation_slice").run_propagation(
+        database_path=database_path,
+        analysis=providers.analysis,
+        row=providers.row,
+        assessment=providers.risk,
+        evidence_pack=providers.pack,
+        registry_root=registry_root,
+    )
+    providers.graph = propagation.graph
+
+
 def _actor(actor_id: str, role: str) -> ActorContext:
     return ActorContext(actor_id, ActorType.HUMAN, frozenset({role}), WORKSPACE_ID)
 
@@ -515,10 +768,34 @@ def _readiness_item(report: object) -> object:
 def _governance_counts(database_path: Path) -> dict[str, int]:
     connection = sqlite3.connect(database_path)
     try:
-        return {
+        counts = {
             table: int(connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
-            for table in _GOVERNANCE_COUNT_TABLES
+            for table in _GOVERNANCE_COUNT_TABLES[:-2]
         }
+        governance_event_types = (
+            "revision.assembled",
+            "approval.submitted",
+            "approval.approved",
+            "publication.published",
+            "publication.superseded",
+            "approval.withdrawn",
+            "publication.withdrawn",
+        )
+        placeholders = ",".join("?" for _ in governance_event_types)
+        counts["fmea_outbox_events"] = int(
+            connection.execute(
+                f"SELECT COUNT(*) FROM fmea_outbox_events WHERE event_type IN ({placeholders})",
+                governance_event_types,
+            ).fetchone()[0]
+        )
+        counts["idempotency_records"] = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM idempotency_records AS idem "
+                "WHERE EXISTS (SELECT 1 FROM fmea_audit_events AS audit "
+                "WHERE audit.idempotency_scope=idem.scope_key)",
+            ).fetchone()[0]
+        )
+        return counts
     finally:
         connection.close()
 
@@ -667,6 +944,7 @@ def _execute_lifecycle(database_path: Path, providers: _FixtureProviders) -> dic
     repository = SqliteGovernanceRepository(database_path)
     repository.initialize()
     _seed_analysis(database_path, providers.analysis)
+    _persist_authoritative_publication_sources(database_path, providers)
     runtime = build_workspace_governance_runtime(
         GovernanceRepositoryProviders(
             analysis=providers,
@@ -987,8 +1265,25 @@ def _artifact_payloads(database_path: Path, lifecycle: dict[str, object], artifa
         if isinstance(event, dict):
             item["event_hash"] = canonical_hash(event, prefixed=True)
         audits.append(item)
-    outbox = _read_table(database_path, "fmea_outbox_events", json_column="payload_json")
-    idempotency = _read_table(database_path, "idempotency_records", json_column="response_json")
+    outbox = [
+        item
+        for item in _read_table(database_path, "fmea_outbox_events", json_column="payload_json")
+        if item.get("event_type") in {
+            "revision.assembled",
+            "approval.submitted",
+            "approval.approved",
+            "publication.published",
+            "publication.superseded",
+            "approval.withdrawn",
+            "publication.withdrawn",
+        }
+    ]
+    governance_scopes = {str(item.get("idempotency_scope")) for item in audits}
+    idempotency = [
+        item
+        for item in _read_table(database_path, "idempotency_records", json_column="response_json")
+        if str(item.get("scope_key")) in governance_scopes
+    ]
     provenance_profiles = _collection("provenance_profiles", lifecycle["profile_records"].values())
     provenance_profiles["retrieval_call_count"] = lifecycle["retrieval_call_count"]
     revisions = lifecycle["revisions"]
@@ -1047,7 +1342,14 @@ def run_acceptance(*, output_root: str | Path | None = None) -> AcceptanceRun:
         lifecycle = _execute_lifecycle(database_path, providers)
         payloads = _artifact_payloads(database_path, lifecycle, artifact_id)
         summary = dict(lifecycle["summary"])
-        summary.update({"schema_version": SCHEMA_VERSION, "resource_type": "summary", "artifact_id": artifact_id})
+        summary.update(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "resource_type": "summary",
+                "artifact_id": artifact_id,
+                "publication_body_schema_version": PUBLICATION_BODY_SCHEMA_VERSION,
+            }
+        )
         summary["model_publication_count"] = _model_publication_count(payloads["audits.json"])
         for name in ARTIFACT_NAMES:
             if name == "acceptance-summary.json":

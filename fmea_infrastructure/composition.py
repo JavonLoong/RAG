@@ -657,7 +657,10 @@ def build_workspace_governance_runtime(  # noqa: C901 - authority remains factor
                 return self._unverified_report(revision)
             return _evaluate_readiness(self, revision, context)
 
-    resolved_source = RuntimeGovernanceSource(providers)
+    resolved_providers = providers
+    if resolved_providers.publication_reviews is None and isinstance(repository, SqliteGovernanceRepository):
+        resolved_providers = replace(resolved_providers, publication_reviews=repository)
+    resolved_source = RuntimeGovernanceSource(resolved_providers)
     generator = assistance_generator or OfflineGovernanceAssistanceGenerator()
     assembler = RuntimeRevisionAssembler()
     readiness_policy = RuntimePublicationReadinessPolicy()
@@ -766,6 +769,8 @@ def build_default_workspace_governance_runtime(
         acknowledgements=unavailable,
         retrieval=unavailable,
     )
+    if resolved_providers.publication_reviews is None and isinstance(repository, SqliteGovernanceRepository):
+        resolved_providers = replace(resolved_providers, publication_reviews=repository)
     return build_workspace_governance_runtime(
         resolved_providers,
         repository=repository,

@@ -9,6 +9,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from uuid import NAMESPACE_URL, uuid5
 
+from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import (
     MAX_SUPERSESSION_TRAVERSAL,
     ApprovalDecision,
@@ -44,6 +45,7 @@ from .governance_contracts import (
     PreparedRevision,
     PreparedSupersession,
     PublicationResult,
+    PublicationSourceBinding,
     PublicationWithdrawalResult,
     PublishCommand,
     RevisionResult,
@@ -54,8 +56,10 @@ from .governance_contracts import (
     WithdrawPublicationCommand,
     canonical_governance_payload,
     governance_payload_hash,
+    publication_body_content_hash,
 )
 from .ports import ApprovalWithdrawalResult, GovernanceHistoryPage, GovernanceRepository, GovernanceSourcePort
+from .publication_body import PublicationBody
 from .review_contracts import ActorContext, AuditEvent, IdempotencyScope, VersionSet, idempotency_key_hash
 from .review_errors import ReviewError
 from .revision_assembler import (
@@ -67,7 +71,12 @@ from .revision_assembler import (
     RevisionAssembler,
 )
 from .risk_contracts import OutboxEvent, outbox_payload_hash
-from .snapshot_contracts import NormalizedFmeaSnapshot, NormalizedSnapshotInput, build_normalized_snapshot
+from .snapshot_contracts import (
+    PUBLICATION_BODY_SCHEMA_VERSION,
+    NormalizedFmeaSnapshot,
+    NormalizedSnapshotInput,
+    build_normalized_snapshot,
+)
 
 Clock = Callable[[], str]
 IdFactory = Callable[[str], str]
@@ -109,7 +118,13 @@ _GOVERNANCE_CODES = frozenset({
     "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE",
     "FMEA_GOVERNANCE_WORKSPACE_CONFIGURATION_INVALID",
     "FMEA_PRECONDITION_REQUIRED",
+    "FMEA_PUBLICATION_BODY_STALE",
+    "FMEA_PUBLICATION_BODY_INCOMPLETE",
+    "FMEA_PUBLICATION_BODY_UNSAFE",
 })
+_PUBLICATION_BODY_CODES = frozenset(
+    {"FMEA_PUBLICATION_BODY_STALE", "FMEA_PUBLICATION_BODY_INCOMPLETE", "FMEA_PUBLICATION_BODY_UNSAFE"}
+)
 _ROLE_QUERY = frozenset({"reviewer", "approver", "publisher"})
 _MAX_SUPERSESSION_DEPTH = MAX_SUPERSESSION_TRAVERSAL
 
@@ -142,6 +157,12 @@ def _map_repository_error(
 ) -> GovernanceServiceError:
     if isinstance(exc, GovernanceServiceError):
         return exc
+    if isinstance(exc, FmeaDomainError):
+        code = str(exc).split(":", 1)[0]
+        if code in _PUBLICATION_BODY_CODES:
+            return _error(code, "authoritative publication body cannot be published")
+        if fallback in _PUBLICATION_BODY_CODES:
+            return _error(fallback, "authoritative publication body cannot be published")
     if isinstance(exc, ReviewError):
         mapped = {
             "FMEA_IDEMPOTENCY_CONFLICT": "FMEA_GOVERNANCE_IDEMPOTENCY_CONFLICT",
@@ -151,7 +172,13 @@ def _map_repository_error(
         return _error(mapped, "governance persistence rejected the request", retryable=exc.retryable)
     if isinstance(exc, ValueError) and "cursor" in str(exc).casefold():
         return _error("FMEA_GOVERNANCE_CURSOR_INVALID", "governance history cursor is invalid")
-    return _error(fallback, "governance persistence is unavailable", retryable=True)
+    return _error(
+        fallback,
+        "authoritative publication body cannot be published"
+        if fallback in _PUBLICATION_BODY_CODES
+        else "governance persistence is unavailable",
+        retryable=fallback not in _PUBLICATION_BODY_CODES,
+    )
 
 
 def _raise_mapped(exc: Exception, fallback: str = "FMEA_GOVERNANCE_STORAGE_UNAVAILABLE") -> None:
@@ -790,37 +817,22 @@ class RevisionGovernanceService:
         manifest_id: str,
         readiness: PublicationReadinessReport,
         created_at: str,
-    ) -> NormalizedFmeaSnapshot:
-        self._inputs(revision.analysis_id, revision.workspace_id)
-        rows = tuple(
-            {"row_id": row_id, "record_version": version, "row_hash": _export_hash(row_hash)}
-            for row_id, version, row_hash in revision.row_versions
-        )
-        risks = tuple(
-            {
-                "assessment_id": assessment_id,
-                "record_version": version,
-                "assessment_hash": _export_hash(record_hash),
-            }
-            for assessment_id, version, record_hash in revision.risk_versions
-        )
-        propagation = (
-            None
-            if revision.propagation_graph_revision_id is None
-            else {
-                "graph_revision_id": revision.propagation_graph_revision_id,
-                "graph_hash": _export_hash(revision.propagation_graph_hash or ""),
-            }
-        )
-        evidence = tuple(
-            {"pack_id": pack_id, "pack_hash": _export_hash(pack_hash)}
-            for pack_id, pack_hash in revision.evidence_pack_hashes
-        )
+    ) -> tuple[NormalizedFmeaSnapshot, PublicationSourceBinding]:
+        inputs = self._inputs(revision.analysis_id, revision.workspace_id)
+        if self._source is None:
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: governance source is not configured")
+        try:
+            body = self._source.build_publication_body(revision, inputs)
+        except Exception as exc:
+            _raise_mapped(exc, "FMEA_PUBLICATION_BODY_INCOMPLETE")
+        if not isinstance(body, PublicationBody):
+            raise _error("FMEA_PUBLICATION_BODY_INCOMPLETE", "authoritative publication body is invalid")
 
         def identity(value: tuple[str, str, str]) -> tuple[str, str, str]:
             return value[0], value[1], _export_hash(value[2])
 
         version_manifest = {
+            "body_schema_version": PUBLICATION_BODY_SCHEMA_VERSION,
             "analysis_hash": _export_hash(revision.analysis_hash),
             "domain_pack_identity": identity(revision.domain_pack_identity),
             "template_identities": tuple(identity(item) for item in revision.template_identities),
@@ -844,18 +856,11 @@ class RevisionGovernanceService:
             publication_revision_hash=revision.revision_hash,
             publication_workspace_id=revision.workspace_id,
             publication_analysis_id=revision.analysis_id,
-            rows=rows,
-            risk_records=risks,
-            propagation=propagation,
-            evidence_summary=evidence,
-            decision_summary=(
-                {
-                    "decision_id": approval.approval_id,
-                    "status": approval.status.value,
-                    "revision_id": approval.revision_id,
-                    "revision_hash": _export_hash(approval.revision_hash),
-                },
-            ),
+            rows=body.rows,
+            risk_records=body.risk_records,
+            propagation=body.propagation,
+            evidence_summary=body.evidence_summary,
+            decision_summary=body.decision_summary,
             version_manifest=version_manifest,
             audit_summary={
                 "approval_id": approval.approval_id,
@@ -864,7 +869,60 @@ class RevisionGovernanceService:
             },
             created_at=created_at,
         )
-        return build_normalized_snapshot(source)
+        snapshot = build_normalized_snapshot(source)
+        try:
+            if len(body.review_authorities) != len(body.decision_summary):
+                raise ValueError("body review authority receipts are incomplete")
+            review_bindings = body.review_authorities
+            graph_binding = (
+                None
+                if body.propagation is None
+                else (
+                    str(body.propagation["graph_revision_id"]),
+                    int(body.propagation["record_version"]),
+                    revision.propagation_graph_hash or "",
+                )
+            )
+            binding = PublicationSourceBinding(
+                analysis_id=revision.analysis_id,
+                analysis_record_version=revision.analysis_record_version,
+                analysis_hash=revision.analysis_hash,
+                domain_pack_identity=revision.domain_pack_identity,
+                template_identities=revision.template_identities,
+                scoring_rule_identities=revision.scoring_rule_identities,
+                propagation_rule_identity=revision.propagation_rule_identity,
+                artifact_source_bindings=tuple(
+                    sorted(
+                        (
+                            identity.artifact_type,
+                            identity.artifact_id,
+                            identity.version,
+                            identity.source_hash,
+                        )
+                        for identity in (
+                            inputs.domain_pack_identity,
+                            *inputs.template_identities,
+                            *inputs.scoring_rule_identities,
+                            *(() if inputs.propagation_rule_identity is None else (inputs.propagation_rule_identity,)),
+                        )
+                    )
+                ),
+                row_versions=revision.row_versions,
+                risk_versions=revision.risk_versions,
+                propagation=graph_binding,
+                evidence_pack_hashes=revision.evidence_pack_hashes,
+                review_bindings=review_bindings,
+                body_hash=publication_body_content_hash(
+                    snapshot.rows,
+                    snapshot.risk_records,
+                    snapshot.propagation,
+                    snapshot.evidence_summary,
+                    snapshot.decision_summary,
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: body source binding is incomplete") from exc
+        return snapshot, binding
 
     def publish(self, command: PublishCommand, actor: ActorContext) -> PublicationResult:
         self._authorize(actor, "publisher", "FMEA_GOVERNANCE_PUBLICATION_FORBIDDEN")
@@ -917,8 +975,14 @@ class RevisionGovernanceService:
         publication_id = self._stable_id("publication", scope)
         manifest_id = self._stable_id("manifest", scope)
         created_at = self._clock()
-        snapshot = self._snapshot(state.revision, approval, publication_id, manifest_id, readiness, created_at)
+        try:
+            snapshot, source_binding = self._snapshot(
+                state.revision, approval, publication_id, manifest_id, readiness, created_at
+            )
+        except Exception as exc:
+            _raise_mapped(exc, "FMEA_PUBLICATION_BODY_INCOMPLETE")
         version_manifest = {
+            "body_schema_version": PUBLICATION_BODY_SCHEMA_VERSION,
             "revision_hash": state.revision.revision_hash,
             "analysis_hash": state.revision.analysis_hash,
             "domain_pack_identity": state.revision.domain_pack_identity,
@@ -1055,6 +1119,7 @@ class RevisionGovernanceService:
             audit,
             outbox,
             eligibility,
+            source_binding,
         )
         result = self._commit(
             self._repository.commit_publication,

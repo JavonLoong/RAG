@@ -18,6 +18,7 @@ from core_domain.fmea.propagation import PropagationEdge, PropagationGraphRevisi
 from core_domain.fmea.scoring import RiskAssessment, RiskAssessmentRecord, ScoreDimension
 from core_domain.fmea.states import PropagationStatus, ReviewStatus, RiskStatus
 from core_domain.fmea.value_objects import EvidencePack, EvidenceRef, validate_evidence_lineage
+from fmea_application.governance_contracts import PublicationReviewAuthority
 from fmea_application.revision_assembler import GovernanceInputs
 from fmea_application.snapshot_contracts import _freeze_export_value
 
@@ -708,6 +709,7 @@ class PublicationReviewRecord:
     record_version: int
     row_hash: str
     public_fields: Mapping[str, object]
+    authority: PublicationReviewAuthority | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("decision_id", "workspace_id", "analysis_id", "row_id"):
@@ -717,6 +719,38 @@ class PublicationReviewRecord:
         if not isinstance(self.public_fields, Mapping):
             raise FmeaDomainError("public_fields must be a mapping")  # noqa: TRY003
         object.__setattr__(self, "public_fields", _freeze_mapping(self.public_fields))
+        if self.authority is not None and not isinstance(self.authority, PublicationReviewAuthority):
+            raise FmeaDomainError("authority must be a PublicationReviewAuthority")  # noqa: TRY003
+
+
+def _publication_body_mappings(value: object, field_name: str) -> tuple[Mapping[str, object], ...]:
+    if isinstance(value, str | bytes) or value is None:
+        raise FmeaDomainError(f"{field_name} must be a sequence")  # noqa: TRY003
+    try:
+        items: tuple[object, ...] = tuple(value)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
+    projected: list[Mapping[str, object]] = []
+    for item in items:
+        if not isinstance(item, Mapping):
+            raise FmeaDomainError(f"{field_name} must contain mappings")  # noqa: TRY003
+        frozen = _freeze(item)
+        if not isinstance(frozen, Mapping):  # pragma: no cover
+            raise FmeaDomainError(f"{field_name} must contain mappings")  # noqa: TRY003
+        projected.append(frozen)
+    return tuple(projected)
+
+
+def _publication_body_authorities(value: object) -> tuple[PublicationReviewAuthority, ...]:
+    authorities = tuple(value)  # type: ignore[arg-type]
+    if any(not isinstance(authority, PublicationReviewAuthority) for authority in authorities):
+        raise FmeaDomainError("review_authorities must contain typed authority receipts")  # noqa: TRY003
+    normalized = tuple(sorted(authorities, key=lambda authority: authority.decision_id))
+    if normalized != authorities:
+        raise FmeaDomainError("review_authorities must be sorted")  # noqa: TRY003
+    if len({authority.decision_id for authority in authorities}) != len(authorities):
+        raise FmeaDomainError("review_authorities must be unique")  # noqa: TRY003
+    return authorities
 
 
 @dataclass(frozen=True, slots=True)
@@ -728,27 +762,11 @@ class PublicationBody:
     propagation: Mapping[str, object] | None
     evidence_summary: tuple[Mapping[str, object], ...]
     decision_summary: tuple[Mapping[str, object], ...]
+    review_authorities: tuple[PublicationReviewAuthority, ...] = ()
 
     def __post_init__(self) -> None:
-        def mappings(value: object, field_name: str) -> tuple[Mapping[str, object], ...]:
-            if isinstance(value, str | bytes) or value is None:
-                raise FmeaDomainError(f"{field_name} must be a sequence")  # noqa: TRY003
-            try:
-                items: tuple[object, ...] = tuple(value)  # type: ignore[arg-type]
-            except TypeError as exc:
-                raise FmeaDomainError(f"{field_name} must be a sequence") from exc  # noqa: TRY003
-            projected: list[Mapping[str, object]] = []
-            for item in items:
-                if not isinstance(item, Mapping):
-                    raise FmeaDomainError(f"{field_name} must contain mappings")  # noqa: TRY003
-                frozen = _freeze(item)
-                if not isinstance(frozen, Mapping):  # pragma: no cover
-                    raise FmeaDomainError(f"{field_name} must contain mappings")  # noqa: TRY003
-                projected.append(frozen)
-            return tuple(projected)
-
-        object.__setattr__(self, "rows", mappings(self.rows, "rows"))
-        object.__setattr__(self, "risk_records", mappings(self.risk_records, "risk_records"))
+        object.__setattr__(self, "rows", _publication_body_mappings(self.rows, "rows"))
+        object.__setattr__(self, "risk_records", _publication_body_mappings(self.risk_records, "risk_records"))
         if self.propagation is not None and not isinstance(self.propagation, Mapping):
             raise FmeaDomainError("propagation must be a mapping or None")  # noqa: TRY003
         frozen_propagation = None if self.propagation is None else _freeze(self.propagation)
@@ -759,8 +777,9 @@ class PublicationBody:
             "propagation",
             frozen_propagation,
         )
-        object.__setattr__(self, "evidence_summary", mappings(self.evidence_summary, "evidence_summary"))
-        object.__setattr__(self, "decision_summary", mappings(self.decision_summary, "decision_summary"))
+        object.__setattr__(self, "evidence_summary", _publication_body_mappings(self.evidence_summary, "evidence_summary"))
+        object.__setattr__(self, "decision_summary", _publication_body_mappings(self.decision_summary, "decision_summary"))
+        object.__setattr__(self, "review_authorities", _publication_body_authorities(self.review_authorities))
 
 
 def _project_publication_body(
@@ -802,12 +821,16 @@ def _project_publication_body(
     )
     projected_graph = None if graph is None else _project_graph(graph, rows)
     projected_reviews = _verify_reviews(tuple(review_records), rows, revision)
+    authorities = tuple(record.authority for record in review_records)
+    if any(authority is not None for authority in authorities) and any(authority is None for authority in authorities):
+        _incomplete("review authority receipts must be complete")
     return PublicationBody(
         rows=projected_rows,
         risk_records=projected_risks,
         propagation=projected_graph,
         evidence_summary=_project_evidence(packs, referenced_evidence),
         decision_summary=projected_reviews,
+        review_authorities=tuple(authority for authority in authorities if authority is not None),
     )
 
 

@@ -15,6 +15,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any, NoReturn, cast
 
+from core_domain.fmea.errors import FmeaDomainError
 from core_domain.fmea.governance import (
     MAX_SUPERSESSION_TRAVERSAL,
     ApprovalDecision,
@@ -53,6 +54,8 @@ from fmea_application.governance_contracts import (
     PreparedRevision,
     PreparedSupersession,
     PublicationResult,
+    PublicationReviewAuthority,
+    PublicationSourceBinding,
     PublicationWithdrawalResult,
     PublishCommand,
     ReadinessReportRecord,
@@ -66,16 +69,33 @@ from fmea_application.governance_contracts import (
     WithdrawPublicationCommand,
     canonical_governance_payload,
     governance_payload_hash,
+    publication_body_content_hash,
 )
 from fmea_application.ports import ApprovalWithdrawalResult, GovernanceHistoryPage
-from fmea_application.review_contracts import AuditEvent, IdempotencyScope, encode_review_json, idempotency_key_hash
+from fmea_application.publication_body import (
+    PublicationReviewRecord,
+    _project_evidence,
+    _project_graph,
+    _project_risk_record,
+    _project_row,
+    _verify_pack,
+    _verify_reviews,
+)
+from fmea_application.review_contracts import (
+    AuditEvent,
+    IdempotencyScope,
+    ReviewAction,
+    decode_review_decision_record,
+    encode_review_json,
+    idempotency_key_hash,
+)
 from fmea_application.review_errors import ReviewError
 from fmea_application.revision_assembler import PublicationReadinessReport
 from fmea_application.risk_contracts import OutboxEvent, canonical_json, outbox_payload_hash
 from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, snapshot_content_hash
 
 from .repository_sqlite import SqliteFmeaRepository
-from .sqlite_codec import decode_audit_event, load_strict_json
+from .sqlite_codec import audit_event_json_matches, decode_audit_event, load_strict_json
 
 _MAX_BUSY_TIMEOUT_MS = 60_000
 _KIND_TYPES: dict[str, type[object]] = {
@@ -451,6 +471,182 @@ class SqliteGovernanceRepository:
     def _fail(self, step: str) -> None:
         if self._fault_injector is not None:
             self._fault_injector(step)
+
+    @staticmethod
+    def _publication_body_failure(code: str, message: str) -> NoReturn:
+        raise FmeaDomainError(f"{code}: {message}")
+
+    def load_publication_reviews(
+        self, revision: FmeaRevision, *, _connection: sqlite3.Connection | None = None
+    ) -> tuple[PublicationReviewRecord, ...]:
+        """Resolve accepted human row reviews from their decision/audit records."""
+
+        if not isinstance(revision, FmeaRevision):
+            self._publication_body_failure("FMEA_PUBLICATION_BODY_INCOMPLETE", "revision source is invalid")
+        connection = self._connect() if _connection is None else _connection
+        try:
+            result: list[PublicationReviewRecord] = []
+            for row_id, expected_version, expected_hash in revision.row_versions:
+                persisted_row = connection.execute(
+                    "SELECT * FROM fmea_rows WHERE row_id=? AND workspace_id=? AND analysis_id=?",
+                    (row_id, revision.workspace_id, revision.analysis_id),
+                ).fetchone()
+                if persisted_row is None:
+                    self._publication_body_failure("FMEA_PUBLICATION_BODY_INCOMPLETE", "a selected review row is missing")
+                try:
+                    row = SqliteFmeaRepository._decode_row_record(persisted_row)
+                except Exception as exc:
+                    raise FmeaDomainError(
+                        "FMEA_PUBLICATION_BODY_STALE: a selected review row failed integrity validation"
+                    ) from exc
+                if (
+                    row.record_version != expected_version
+                    or canonical_hash(row).removeprefix("sha256:") != expected_hash.removeprefix("sha256:")
+                    or row.review_status.value != "accepted"
+                ):
+                    self._publication_body_failure("FMEA_PUBLICATION_BODY_STALE", "a selected review row is stale")
+
+                decision_rows = connection.execute(
+                    "SELECT * FROM review_decisions WHERE decision_id IN "
+                    "(SELECT decision_id FROM audit_events WHERE row_id=? AND workspace_id=? AND applied_record_version=?) "
+                    "AND row_id=? AND workspace_id=? AND record_version=?",
+                    (row_id, revision.workspace_id, expected_version, row_id, revision.workspace_id, expected_version),
+                ).fetchall()
+                if len(decision_rows) != 1:
+                    self._publication_body_failure(
+                        "FMEA_PUBLICATION_BODY_INCOMPLETE",
+                        "the selected row has no unique persisted review decision",
+                    )
+                decision_row = decision_rows[0]
+                try:
+                    decision = decode_review_decision_record(str(decision_row["decision_json"]))
+                except Exception as exc:
+                    raise FmeaDomainError(
+                        "FMEA_PUBLICATION_BODY_INCOMPLETE: persisted review decision is invalid"
+                    ) from exc
+                if (
+                    decision_row["decision_id"] != decision.decision_id
+                    or decision_row["row_id"] != decision.row_id
+                    or decision_row["workspace_id"] != revision.workspace_id
+                    or decision_row["previous_record_version"] != decision.previous_record_version
+                    or decision_row["record_version"] != decision.record_version
+                    or decision_row["actor_id"] != decision.actor_id
+                    or decision_row["action"] != decision.action.value
+                    or decision_row["reason_code"] != decision.reason_code.value
+                    or decision_row["created_at"] != decision.created_at
+                    or decision.action not in {ReviewAction.ACCEPT, ReviewAction.MODIFY_AND_ACCEPT}
+                ):
+                    self._publication_body_failure("FMEA_PUBLICATION_BODY_INCOMPLETE", "review authority is invalid")
+
+                audit_rows = connection.execute(
+                    "SELECT * FROM audit_events WHERE decision_id=? AND row_id=? AND workspace_id=?",
+                    (decision.decision_id, row_id, revision.workspace_id),
+                ).fetchall()
+                if len(audit_rows) != 1:
+                    self._publication_body_failure(
+                        "FMEA_PUBLICATION_BODY_INCOMPLETE", "the selected review has no unique bound audit event"
+                    )
+                audit_row = audit_rows[0]
+                try:
+                    audit = decode_audit_event(audit_row["event_json"])
+                except Exception as exc:
+                    raise FmeaDomainError(
+                        "FMEA_PUBLICATION_BODY_INCOMPLETE: bound review audit event is invalid"
+                    ) from exc
+                if (
+                    not audit_event_json_matches(audit_row["event_json"], audit)
+                    or audit.actor_type is not ActorType.HUMAN
+                    or "reviewer" not in audit.actor_roles
+                    or audit.event_id != audit_row["event_id"]
+                    or audit.workspace_id != revision.workspace_id
+                    or audit.actor_id != decision.actor_id
+                    or audit.command != "review.decision"
+                    or audit.action is not decision.action
+                    or audit.reason_code is not decision.reason_code
+                    or audit.reason != decision.reason
+                    or audit.analysis_id != revision.analysis_id
+                    or audit.row_id != row_id
+                    or audit.decision_id != decision.decision_id
+                    or audit.expected_record_version != decision.previous_record_version
+                    or audit.applied_record_version != decision.record_version
+                    or audit.before_hash is None
+                    or audit.after_hash != persisted_row["row_hash"]
+                    or audit_row["actor_type"] != ActorType.HUMAN.value
+                    or audit_row["command"] != "review.decision"
+                    or audit_row["action"] != decision.action.value
+                    or audit_row["decision_id"] != decision.decision_id
+                    or audit_row["expected_record_version"] != decision.previous_record_version
+                    or audit_row["applied_record_version"] != decision.record_version
+                    or audit_row["before_hash"] != audit.before_hash
+                    or audit_row["after_hash"] != audit.after_hash
+                    or audit_row["created_at"] != audit.occurred_at_server
+                    or decision.created_at != audit.occurred_at_server
+                ):
+                    self._publication_body_failure("FMEA_PUBLICATION_BODY_INCOMPLETE", "review audit authority is invalid")
+                authority = PublicationReviewAuthority(
+                    decision_id=decision.decision_id,
+                    row_id=row_id,
+                    decision_record_version=decision.record_version,
+                    row_hash=expected_hash,
+                    decision_hash=canonical_hash(decision, prefixed=True),
+                    reviewer_actor_id=decision.actor_id,
+                    decision_action=decision.action.value,
+                    decision_reason_code=decision.reason_code.value,
+                    decision_reason=decision.reason,
+                    decision_created_at=decision.created_at,
+                    audit_event_id=audit.event_id,
+                    audit_event_hash=canonical_hash(audit, prefixed=True),
+                    audit_actor_id=audit.actor_id,
+                    audit_actor_type=audit.actor_type.value,
+                    audit_actor_roles=tuple(sorted(audit.actor_roles)),
+                    audit_command=audit.command,
+                    audit_action=audit.action.value if audit.action is not None else "none",
+                    audit_reason_code=audit.reason_code.value if audit.reason_code is not None else "none",
+                    audit_reason=audit.reason,
+                    audit_before_hash=audit.before_hash,
+                    audit_after_hash=audit.after_hash,
+                    audit_created_at=audit.occurred_at_server,
+                )
+                result.append(
+                    PublicationReviewRecord(
+                        decision_id=decision.decision_id,
+                        workspace_id=revision.workspace_id,
+                        analysis_id=revision.analysis_id,
+                        row_id=row_id,
+                        record_version=decision.record_version,
+                        row_hash=expected_hash,
+                        public_fields={
+                            "role_category": "human_reviewer",
+                            "decision": "accepted",
+                            "reason": decision.reason,
+                            "decided_at": audit.occurred_at_server,
+                        },
+                        authority=authority,
+                    )
+                )
+            return tuple(result)
+        except FmeaDomainError:
+            raise
+        except sqlite3.OperationalError as exc:
+            raise FmeaDomainError(
+                "FMEA_PUBLICATION_BODY_INCOMPLETE: required publication review source is unavailable"
+            ) from exc
+        finally:
+            if _connection is None:
+                connection.close()
+
+    @classmethod
+    def _load_publication_reviews_from_connection(
+        cls, connection: sqlite3.Connection, revision: FmeaRevision
+    ) -> tuple[PublicationReviewRecord, ...]:
+        """Resolve review authority through the canonical SQLite implementation.
+
+        Body preparation may use a provider seam, but commit-time revalidation
+        must independently decode the persisted decision and audit event.
+        """
+
+        resolver = object.__new__(SqliteGovernanceRepository)
+        return SqliteGovernanceRepository.load_publication_reviews(resolver, revision, _connection=connection)
 
     @staticmethod
     def _workspace(value: object) -> str:
@@ -2231,17 +2427,17 @@ class SqliteGovernanceRepository:
             snapshot = cls._snapshot_from_connection(connection, publication.snapshot_id, workspace_id)
             approval = cls._approval_from_connection(connection, publication.approval_id, workspace_id)
             revision = cls._revision_from_connection(connection, publication.revision_id, workspace_id)
-            expected_version_manifest_hash = canonical_hash(
-                {
-                    "revision_hash": revision.revision_hash,
-                    "analysis_hash": revision.analysis_hash,
-                    "domain_pack_identity": revision.domain_pack_identity,
-                    "template_identities": revision.template_identities,
-                    "scoring_rule_identities": revision.scoring_rule_identities,
-                    "propagation_rule_identity": revision.propagation_rule_identity,
-                },
-                prefixed=True,
-            )
+            version_manifest_body: dict[str, object] = {
+                "revision_hash": revision.revision_hash,
+                "analysis_hash": revision.analysis_hash,
+                "domain_pack_identity": revision.domain_pack_identity,
+                "template_identities": revision.template_identities,
+                "scoring_rule_identities": revision.scoring_rule_identities,
+                "propagation_rule_identity": revision.propagation_rule_identity,
+            }
+            if snapshot.version_manifest.get("body_schema_version") is not None:
+                version_manifest_body["body_schema_version"] = snapshot.version_manifest["body_schema_version"]
+            expected_version_manifest_hash = canonical_hash(version_manifest_body, prefixed=True)
             expected_manifest_hash = canonical_hash(
                 {
                     "manifest_id": manifest.manifest_id,
@@ -2369,6 +2565,195 @@ class SqliteGovernanceRepository:
                     "Publication authority chain is missing or invalid.",
                 )
 
+    def _revalidate_publication_sources(
+        self, connection: sqlite3.Connection, prepared: PreparedPublication
+    ) -> None:
+        """Re-read every publication source on the transaction's connection."""
+
+        from fmea_infrastructure.propagation_repository_sqlite import SqlitePropagationRepository
+        from fmea_infrastructure.risk_repository_sqlite import SqliteRiskRepository
+
+        marker = prepared.snapshot.version_manifest.get("body_schema_version")
+        if marker is None:
+            return
+        if marker != "graphrag.fmea.body.v1" or not isinstance(prepared.source_binding, PublicationSourceBinding):
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_INCOMPLETE: publication source binding is missing")
+        binding = prepared.source_binding
+        if binding.body_hash != publication_body_content_hash(
+            prepared.snapshot.rows,
+            prepared.snapshot.risk_records,
+            prepared.snapshot.propagation,
+            prepared.snapshot.evidence_summary,
+            prepared.snapshot.decision_summary,
+        ):
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_UNSAFE: publication body hash is not source-bound")
+        if (
+            binding.analysis_id != prepared.revision.analysis_id
+            or binding.analysis_record_version != prepared.revision.analysis_record_version
+            or binding.analysis_hash.removeprefix("sha256:")
+            != prepared.revision.analysis_hash.removeprefix("sha256:")
+            or binding.domain_pack_identity != prepared.revision.domain_pack_identity
+            or binding.template_identities != prepared.revision.template_identities
+            or binding.scoring_rule_identities != prepared.revision.scoring_rule_identities
+            or binding.propagation_rule_identity != prepared.revision.propagation_rule_identity
+            or binding.row_versions != prepared.revision.row_versions
+            or binding.risk_versions != prepared.revision.risk_versions
+            or binding.evidence_pack_hashes != prepared.revision.evidence_pack_hashes
+        ):
+            raise FmeaDomainError("FMEA_PUBLICATION_BODY_STALE: immutable source identity differs from revision")
+
+        def stale(message: str) -> NoReturn:
+            raise FmeaDomainError(f"FMEA_PUBLICATION_BODY_STALE: {message}")
+
+        try:
+            analysis_row = connection.execute(
+                "SELECT * FROM fmea_analyses WHERE analysis_id=? AND workspace_id=?",
+                (prepared.revision.analysis_id, prepared.revision.workspace_id),
+            ).fetchone()
+            if analysis_row is None:
+                stale("authoritative analysis is missing")
+            analysis = SqliteFmeaRepository._decode_analysis_record(analysis_row)
+            if (
+                analysis.record_version != binding.analysis_record_version
+                or canonical_hash(analysis).removeprefix("sha256:") != binding.analysis_hash.removeprefix("sha256:")
+            ):
+                stale("authoritative analysis changed")
+
+            current_rows = connection.execute(
+                "SELECT * FROM fmea_rows WHERE workspace_id=? AND analysis_id=?",
+                (prepared.revision.workspace_id, prepared.revision.analysis_id),
+            ).fetchall()
+            current_row_ids = {str(row["row_id"]) for row in current_rows}
+            expected_row_ids = {row_id for row_id, _version, _hash in binding.row_versions}
+            if current_row_ids != expected_row_ids:
+                stale("selected row set changed")
+            authoritative_rows: dict[str, Any] = {}
+            for persisted_row in current_rows:
+                row = SqliteFmeaRepository._decode_row_record(persisted_row)
+                expected = next((item for item in binding.row_versions if item[0] == row.row_id), None)
+                if expected is None or row.record_version != expected[1] or canonical_hash(row) != expected[2]:
+                    stale("selected row content changed")
+                authoritative_rows[row.row_id] = row
+
+            risk_rows = connection.execute(
+                "SELECT a.* FROM fmea_risk_assessments AS a "
+                "JOIN fmea_rows AS r ON r.row_id=a.row_id AND r.workspace_id=a.workspace_id "
+                "WHERE a.workspace_id=? AND r.analysis_id=?",
+                (prepared.revision.workspace_id, prepared.revision.analysis_id),
+            ).fetchall()
+            expected_risks = {assessment_id: (version, record_hash) for assessment_id, version, record_hash in binding.risk_versions}
+            if {str(row["assessment_id"]) for row in risk_rows} != set(expected_risks):
+                stale("selected risk assessment set changed")
+            authoritative_risks: dict[str, Any] = {}
+            for risk_row in risk_rows:
+                risk = SqliteRiskRepository._decode_assessment(risk_row)
+                expected = expected_risks[risk.assessment_id]
+                if risk.record_version != expected[0] or canonical_hash(risk) != expected[1]:
+                    stale("selected risk assessment changed")
+                authoritative_risks[risk.assessment_id] = risk
+
+            graph_row = connection.execute(
+                "SELECT * FROM fmea_propagation_graph_revisions "
+                "WHERE workspace_id=? AND analysis_id=? "
+                "ORDER BY record_version DESC, graph_revision_id DESC LIMIT 1",
+                (prepared.revision.workspace_id, prepared.revision.analysis_id),
+            ).fetchone()
+            graph = None
+            if binding.propagation is None:
+                if graph_row is not None:
+                    stale("an unselected propagation graph is present")
+            else:
+                if graph_row is None or graph_row["graph_revision_id"] != binding.propagation[0]:
+                    stale("selected propagation graph is missing")
+                graph = SqlitePropagationRepository._decode_graph_row(
+                    connection, graph_row, prepared.revision.workspace_id
+                )
+                if graph.record_version != binding.propagation[1] or canonical_hash(graph) != binding.propagation[2]:
+                    stale("selected propagation graph changed")
+
+            expected_packs = dict(binding.evidence_pack_hashes)
+            authoritative_packs: dict[str, Any] = {}
+            if expected_packs:
+                for pack_id, expected_hash in expected_packs.items():
+                    pack_row = connection.execute(
+                        "SELECT * FROM evidence_packs WHERE pack_id=? AND workspace_id=?",
+                        (pack_id, prepared.revision.workspace_id),
+                    ).fetchone()
+                    if pack_row is None:
+                        stale("selected evidence pack is missing")
+                    pack = SqliteFmeaRepository._decode_pack_record(pack_row)
+                    if pack.pack_hash.removeprefix("sha256:") != expected_hash.removeprefix("sha256:"):
+                        stale("selected evidence pack changed")
+                    authoritative_packs[pack_id] = pack
+
+            reviews: tuple[PublicationReviewRecord, ...] = ()
+            if binding.review_bindings:
+                reviews = SqliteGovernanceRepository._load_publication_reviews_from_connection(
+                    connection, prepared.revision
+                )
+                actual_reviews = tuple(record.authority for record in reviews)
+                if actual_reviews != binding.review_bindings:
+                    stale("selected human review authority changed")
+
+            for pack in authoritative_packs.values():
+                _verify_pack(pack, authoritative_packs, prepared.revision.workspace_id)
+
+            referenced_evidence: set[str] = set()
+            for row in authoritative_rows.values():
+                referenced_evidence.update(evidence_id for _, ids in row.field_evidence for evidence_id in ids)
+                referenced_evidence.update(claim_id for claim in row.field_claims for claim_id in claim.evidence_ids)
+            for risk in authoritative_risks.values():
+                referenced_evidence.update(
+                    evidence_id for dimension in risk.dimensions for evidence_id in dimension.evidence_ids
+                )
+                if risk.derived is not None:
+                    referenced_evidence.update(risk.derived.evidence_ids)
+            if graph is not None:
+                referenced_evidence.update(evidence_id for edge in graph.edges for evidence_id in edge.evidence_ids)
+
+            expected_body_rows = tuple(
+                _project_row(authoritative_rows[row_id], row_hash)
+                for row_id, _version, row_hash in binding.row_versions
+            )
+            expected_body_risks = tuple(
+                _project_risk_record(authoritative_risks[assessment_id], record_hash)
+                for assessment_id, _version, record_hash in binding.risk_versions
+            )
+            expected_body_propagation = None if graph is None else _project_graph(graph, authoritative_rows)
+            expected_body_evidence = _project_evidence(authoritative_packs, referenced_evidence)
+            expected_body_decisions = _verify_reviews(reviews, authoritative_rows, prepared.revision)
+            expected_body_hash = publication_body_content_hash(
+                expected_body_rows,
+                expected_body_risks,
+                expected_body_propagation,
+                expected_body_evidence,
+                expected_body_decisions,
+            )
+            if binding.body_hash != expected_body_hash:
+                raise FmeaDomainError(  # noqa: TRY301
+                    "FMEA_PUBLICATION_BODY_UNSAFE: publication body is not source-projected"
+                )
+            if (
+                prepared.snapshot.rows != expected_body_rows
+                or prepared.snapshot.risk_records != expected_body_risks
+                or prepared.snapshot.propagation != expected_body_propagation
+                or prepared.snapshot.evidence_summary != expected_body_evidence
+                or prepared.snapshot.decision_summary != expected_body_decisions
+            ):
+                raise FmeaDomainError(  # noqa: TRY301
+                    "FMEA_PUBLICATION_BODY_UNSAFE: publication body differs from source projection"
+                )
+        except FmeaDomainError:
+            raise
+        except sqlite3.OperationalError as exc:
+            raise FmeaDomainError(
+                "FMEA_PUBLICATION_BODY_INCOMPLETE: required publication source table is unavailable"
+            ) from exc
+        except (ReviewError, TypeError, ValueError) as exc:
+            raise FmeaDomainError(
+                "FMEA_PUBLICATION_BODY_STALE: required publication source failed integrity validation"
+            ) from exc
+
     @classmethod
     def _write_publication(
         cls,
@@ -2380,17 +2765,17 @@ class SqliteGovernanceRepository:
         current_head = cls._current_publication_audit_head_from_connection(connection, meta.workspace_id)
         if prepared.manifest.previous_audit_chain_head != current_head:
             _error("FMEA_VERSION_CONFLICT", "Publication audit predecessor is stale.")
-        expected_version_manifest_hash = canonical_hash(
-            {
-                "revision_hash": prepared.revision.revision_hash,
-                "analysis_hash": prepared.revision.analysis_hash,
-                "domain_pack_identity": prepared.revision.domain_pack_identity,
-                "template_identities": prepared.revision.template_identities,
-                "scoring_rule_identities": prepared.revision.scoring_rule_identities,
-                "propagation_rule_identity": prepared.revision.propagation_rule_identity,
-            },
-            prefixed=True,
-        )
+        version_manifest_body: dict[str, object] = {
+            "revision_hash": prepared.revision.revision_hash,
+            "analysis_hash": prepared.revision.analysis_hash,
+            "domain_pack_identity": prepared.revision.domain_pack_identity,
+            "template_identities": prepared.revision.template_identities,
+            "scoring_rule_identities": prepared.revision.scoring_rule_identities,
+            "propagation_rule_identity": prepared.revision.propagation_rule_identity,
+        }
+        if prepared.snapshot.version_manifest.get("body_schema_version") is not None:
+            version_manifest_body["body_schema_version"] = prepared.snapshot.version_manifest["body_schema_version"]
+        expected_version_manifest_hash = canonical_hash(version_manifest_body, prefixed=True)
         expected_manifest_hash = canonical_hash(
             {
                 "manifest_id": prepared.manifest.manifest_id,
@@ -2882,10 +3267,16 @@ class SqliteGovernanceRepository:
             if replay is not None:
                 connection.execute("COMMIT")
                 return replay
+            if kind == "publication" and value.snapshot.version_manifest.get("body_schema_version") is None:
+                raise FmeaDomainError(  # noqa: TRY301
+                    "FMEA_PUBLICATION_BODY_INCOMPLETE: new publications require an authoritative body"
+                )
             self._insert_idempotency(connection, value.scope, value.payload_hash, value.audit.occurred_at_server)
             self._fail("idempotency.reserve")
             self._insert_audit(connection, value.audit, value.scope, value.payload_hash, meta)
             self._fail("audit")
+            if kind == "publication":
+                self._revalidate_publication_sources(connection, value)
             result = self._writer(connection, value, meta, self._fail)
             self._insert_outbox(connection, value.outbox, value.scope, meta, self._lifecycle_event_type(kind, value))
             self._insert_event_binding(connection, meta, result)

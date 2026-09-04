@@ -170,6 +170,174 @@ def governance_payload_hash(payload: object) -> str:
 canonical_payload_hash = governance_payload_hash
 
 
+def publication_body_content_hash(
+    rows: object,
+    risk_records: object,
+    propagation: object,
+    evidence_summary: object,
+    decision_summary: object,
+) -> str:
+    return canonical_hash(
+        {
+            "rows": rows,
+            "risk_records": risk_records,
+            "propagation": propagation,
+            "evidence_summary": evidence_summary,
+            "decision_summary": decision_summary,
+        },
+        prefixed=True,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class PublicationReviewAuthority:
+    """Private receipt binding a public review projection to its audit authority."""
+
+    decision_id: str
+    row_id: str
+    decision_record_version: int
+    row_hash: str
+    decision_hash: str
+    reviewer_actor_id: str
+    decision_action: str
+    decision_reason_code: str
+    decision_reason: str
+    decision_created_at: str
+    audit_event_id: str
+    audit_event_hash: str
+    audit_actor_id: str
+    audit_actor_type: str
+    audit_actor_roles: tuple[str, ...]
+    audit_command: str
+    audit_action: str
+    audit_reason_code: str
+    audit_reason: str
+    audit_before_hash: str
+    audit_after_hash: str
+    audit_created_at: str
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "decision_id",
+            "row_id",
+            "reviewer_actor_id",
+            "decision_action",
+            "decision_reason_code",
+            "decision_reason",
+            "decision_created_at",
+            "audit_event_id",
+            "audit_actor_id",
+            "audit_actor_type",
+            "audit_command",
+            "audit_action",
+            "audit_reason_code",
+            "audit_reason",
+            "audit_created_at",
+        ):
+            object.__setattr__(self, field_name, _text(getattr(self, field_name), field_name))
+        for field_name in ("decision_record_version",):
+            object.__setattr__(self, field_name, _positive(getattr(self, field_name), field_name))
+        for field_name in ("row_hash", "decision_hash", "audit_event_hash", "audit_before_hash", "audit_after_hash"):
+            object.__setattr__(self, field_name, _hash(getattr(self, field_name), field_name))
+        roles = tuple(self.audit_actor_roles)
+        if (
+            not roles
+            or any(not isinstance(role, str) or not role.strip() for role in roles)
+            or roles != tuple(sorted(set(roles)))
+            or "reviewer" not in roles
+        ):
+            raise ValueError("audit_actor_roles must contain the reviewer role")
+        object.__setattr__(self, "audit_actor_roles", roles)
+        if (
+            self.audit_actor_id != self.reviewer_actor_id
+            or self.audit_actor_type != "human"
+            or self.audit_command != "review.decision"
+            or self.audit_action != self.decision_action
+            or self.audit_reason_code != self.decision_reason_code
+            or self.audit_reason != self.decision_reason
+            or self.audit_created_at != self.decision_created_at
+        ):
+            raise ValueError("review decision and audit authority are inconsistent")
+
+
+def _publication_binding_identities(
+    value: object, field_name: str, *, optional: bool = False
+) -> tuple[tuple[str, str, str], ...] | None:
+    if value is None and optional:
+        return None
+    if isinstance(value, str | bytes) or value is None:
+        raise ValueError(f"{field_name} must be a sequence")
+    result: list[tuple[str, str, str]] = []
+    for item in tuple(value):  # type: ignore[arg-type]
+        if not isinstance(item, tuple | list) or len(item) != 3:
+            raise ValueError(f"{field_name} must contain triples")
+        result.append((_text(item[0], field_name), _text(item[1], field_name), _hash(item[2], field_name)))
+    normalized = tuple(result)
+    if normalized != tuple(sorted(normalized)) or len(set(normalized)) != len(normalized):
+        raise ValueError(f"{field_name} must be sorted and unique")
+    return normalized
+
+
+def _publication_binding_identity(
+    value: object, field_name: str, *, optional: bool = False
+) -> tuple[str, str, str] | None:
+    if value is None and optional:
+        return None
+    if isinstance(value, tuple | list) and len(value) == 3 and not any(
+        isinstance(item, tuple | list) for item in value
+    ):
+        return _publication_binding_identities((value,), field_name)[0]  # type: ignore[arg-type]
+    normalized = _publication_binding_identities(value, field_name, optional=optional)
+    if normalized is None or len(normalized) != 1:
+        raise ValueError(f"{field_name} must contain exactly one identity")
+    return normalized[0]
+
+
+def _publication_binding_artifacts(value: object) -> tuple[tuple[str, str, str, str], ...]:
+    if isinstance(value, str | bytes) or value is None:
+        raise ValueError("artifact_source_bindings must be a sequence")
+    result: list[tuple[str, str, str, str]] = []
+    for item in tuple(value):  # type: ignore[arg-type]
+        if not isinstance(item, tuple | list) or len(item) != 4:
+            raise ValueError("artifact_source_bindings must contain quadruples")
+        result.append(
+            (
+                _text(item[0], "artifact_source_bindings"),
+                _text(item[1], "artifact_source_bindings"),
+                _text(item[2], "artifact_source_bindings"),
+                _hash(item[3], "artifact_source_bindings"),
+            )
+        )
+    normalized = tuple(sorted(result))
+    if normalized != tuple(result) or len(set(result)) != len(result):
+        raise ValueError("artifact_source_bindings must be sorted and unique")
+    return normalized
+
+
+def _publication_binding_triples(value: object, field_name: str) -> tuple[tuple[str, int, str], ...]:
+    if isinstance(value, str | bytes) or value is None:
+        raise ValueError(f"{field_name} must be a sequence")
+    result: list[tuple[str, int, str]] = []
+    for item in tuple(value):  # type: ignore[arg-type]
+        if not isinstance(item, tuple | list) or len(item) != 3:
+            raise ValueError(f"{field_name} must contain triples")
+        result.append((_text(item[0], field_name), _positive(item[1], field_name), _hash(item[2], field_name)))
+    normalized = tuple(result)
+    if normalized != tuple(sorted(normalized)) or len({item[0] for item in normalized}) != len(normalized):
+        raise ValueError(f"{field_name} must be sorted and unique")
+    return normalized
+
+
+def _publication_binding_reviews(value: object) -> tuple[PublicationReviewAuthority, ...]:
+    reviews = tuple(value)  # type: ignore[arg-type]
+    if any(not isinstance(item, PublicationReviewAuthority) for item in reviews):
+        raise ValueError("review_bindings must contain typed publication review authority")
+    normalized = tuple(sorted(reviews, key=lambda item: item.decision_id))
+    if len({item.decision_id for item in normalized}) != len(normalized):
+        raise ValueError("review_bindings must be unique")
+    return normalized
+
+
 @dataclass(frozen=True, slots=True)
 class RevisionAssemblyRequest:
     analysis_id: str
@@ -667,6 +835,47 @@ class PreparedApprovalWithdrawal:
 
 
 @dataclass(frozen=True, slots=True)
+class PublicationSourceBinding:
+    """Internal proof of the authoritative sources used to build a body."""
+
+    analysis_id: str
+    analysis_record_version: int
+    analysis_hash: str
+    domain_pack_identity: tuple[str, str, str]
+    template_identities: tuple[tuple[str, str, str], ...]
+    scoring_rule_identities: tuple[tuple[str, str, str], ...]
+    propagation_rule_identity: tuple[str, str, str] | None
+    artifact_source_bindings: tuple[tuple[str, str, str, str], ...]
+    row_versions: tuple[tuple[str, int, str], ...]
+    risk_versions: tuple[tuple[str, int, str], ...]
+    propagation: tuple[str, int, str] | None
+    evidence_pack_hashes: tuple[tuple[str, str], ...]
+    review_bindings: tuple[PublicationReviewAuthority, ...]
+    body_hash: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "analysis_id", _text(self.analysis_id, "analysis_id"))
+        object.__setattr__(self, "analysis_record_version", _positive(self.analysis_record_version, "analysis_record_version"))
+        object.__setattr__(self, "analysis_hash", _hash(self.analysis_hash, "analysis_hash"))
+        object.__setattr__(self, "domain_pack_identity", _publication_binding_identity(self.domain_pack_identity, "domain_pack_identity"))
+        object.__setattr__(self, "template_identities", _publication_binding_identities(self.template_identities, "template_identities"))
+        object.__setattr__(self, "scoring_rule_identities", _publication_binding_identities(self.scoring_rule_identities, "scoring_rule_identities"))
+        object.__setattr__(
+            self,
+            "propagation_rule_identity",
+            _publication_binding_identity(self.propagation_rule_identity, "propagation_rule_identity", optional=True),
+        )
+        object.__setattr__(self, "artifact_source_bindings", _publication_binding_artifacts(self.artifact_source_bindings))
+        object.__setattr__(self, "row_versions", _publication_binding_triples(self.row_versions, "row_versions"))
+        object.__setattr__(self, "risk_versions", _publication_binding_triples(self.risk_versions, "risk_versions"))
+        if self.propagation is not None:
+            object.__setattr__(self, "propagation", _publication_binding_triples((self.propagation,), "propagation")[0])
+        object.__setattr__(self, "evidence_pack_hashes", _hash_pairs(self.evidence_pack_hashes, "evidence_pack_hashes"))
+        object.__setattr__(self, "review_bindings", _publication_binding_reviews(self.review_bindings))
+        object.__setattr__(self, "body_hash", _hash(self.body_hash, "body_hash"))
+
+
+@dataclass(frozen=True, slots=True)
 class PreparedPublication:
     scope: IdempotencyScope
     payload_hash: str
@@ -681,6 +890,7 @@ class PreparedPublication:
     audit: AuditEvent
     outbox: OutboxEvent
     export_eligibility: ExportEligibilityRecord
+    source_binding: PublicationSourceBinding | None = None
 
     @property
     def payload(self) -> Mapping[str, object]:
@@ -707,6 +917,45 @@ class PreparedPublication:
             raise ValueError("publication/snapshot types are invalid")
         if not isinstance(self.export_eligibility, ExportEligibilityRecord):
             raise ValueError("publication export eligibility type is invalid")
+        if "body_schema_version" in self.snapshot.version_manifest and not isinstance(
+            self.source_binding, PublicationSourceBinding
+        ):
+            raise ValueError("body publication requires an internal source binding")
+        if self.source_binding is not None and (
+                self.source_binding.analysis_id != self.revision.analysis_id
+                or self.source_binding.analysis_record_version != self.revision.analysis_record_version
+                or self.source_binding.analysis_hash.removeprefix("sha256:")
+                != self.revision.analysis_hash.removeprefix("sha256:")
+                or self.source_binding.domain_pack_identity != self.revision.domain_pack_identity
+                or self.source_binding.template_identities != self.revision.template_identities
+                or self.source_binding.scoring_rule_identities != self.revision.scoring_rule_identities
+                or self.source_binding.propagation_rule_identity != self.revision.propagation_rule_identity
+                or self.source_binding.row_versions != self.revision.row_versions
+                or self.source_binding.risk_versions != self.revision.risk_versions
+                or (
+                    self.source_binding.propagation is None
+                    if self.revision.propagation_graph_revision_id is not None
+                    else self.source_binding.propagation is not None
+                )
+                or (
+                    self.source_binding.propagation is not None
+                    and (
+                        self.source_binding.propagation[0] != self.revision.propagation_graph_revision_id
+                        or self.source_binding.propagation[2].removeprefix("sha256:")
+                        != (self.revision.propagation_graph_hash or "").removeprefix("sha256:")
+                    )
+                )
+                or self.source_binding.evidence_pack_hashes != self.revision.evidence_pack_hashes
+                or self.source_binding.body_hash
+                != publication_body_content_hash(
+                    self.snapshot.rows,
+                    self.snapshot.risk_records,
+                    self.snapshot.propagation,
+                    self.snapshot.evidence_summary,
+                    self.snapshot.decision_summary,
+                )
+            ):
+            raise ValueError("publication source binding is invalid")
         object.__setattr__(
             self, "revision_record_version", _positive(self.revision_record_version, "revision_record_version")
         )
@@ -1033,6 +1282,8 @@ __all__ = [
     "PreparedRevision",
     "PreparedSupersession",
     "PublicationResult",
+    "PublicationReviewAuthority",
+    "PublicationSourceBinding",
     "PublicationWithdrawalResult",
     "PublishCommand",
     "ReadinessReportRecord",
@@ -1047,4 +1298,5 @@ __all__ = [
     "canonical_governance_payload",
     "canonical_payload_hash",
     "governance_payload_hash",
+    "publication_body_content_hash",
 ]
