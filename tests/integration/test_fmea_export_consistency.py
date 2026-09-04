@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+# ruff: noqa: RUF001
 import io
 import json
 from collections.abc import Iterable
-from dataclasses import fields
+from dataclasses import fields, replace
 from html import unescape
 from zipfile import ZipFile
 
@@ -12,12 +13,16 @@ import orjson
 import pytest
 from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 from docx import Document
+from docx.oxml.ns import qn
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 
-from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, snapshot_content_hash
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, build_normalized_snapshot, snapshot_content_hash
 from fmea_infrastructure.export_docx import DocxFmeaExporter
 from fmea_infrastructure.export_json import CanonicalJsonExporter
 from fmea_infrastructure.export_xlsx import XlsxFmeaExporter
 from tests.fmea_governance_fixtures import make_fmea_revision, make_normalized_snapshot, make_readiness_issue
+from tests.unit.test_fmea_snapshot_contracts import _marked_publication_body_source
 
 MARKER = "DRAFT PREVIEW — NOT PUBLISHED"
 FORMAT_MEDIA_TYPES = {
@@ -99,25 +104,40 @@ def _parse_docx_typed_table(table) -> list[dict[str, object]]:
     return _parse_typed_table(tuple(tuple(cell.text for cell in row.cells) for row in table.rows))
 
 
+def _canonical_docx_tables(document: Document) -> dict[str, Table]:
+    tables: dict[str, Table] = {}
+    pending_name: str | None = None
+    for element in document.element.body.iterchildren():
+        if element.tag == qn("w:p"):
+            paragraph_text = Paragraph(element, document).text
+            prefix = "Canonical table: "
+            pending_name = paragraph_text.removeprefix(prefix) if paragraph_text.startswith(prefix) else None
+        elif element.tag == qn("w:tbl") and pending_name is not None:
+            tables[pending_name] = Table(element, document)
+            pending_name = None
+    return tables
+
+
 def _parse_docx(payload: bytes) -> dict[str, object]:
     document = Document(io.BytesIO(payload))
-    tables = iter(document.tables)
-    manifest_table = next(tables)
+    tables = _canonical_docx_tables(document)
+    assert set(tables) >= {"Manifest", "FMEA", "Risk", "Propagation", "Evidence", "Decisions", "Unresolved"}
+    manifest_table = tables["Manifest"]
     manifest = {
         row.cells[0].text: _decode_cell(row.cells[1].text, row.cells[2].text) for row in manifest_table.rows[1:]
     }
     result: dict[str, object] = {key: manifest[key] for key in ENVELOPE_KEYS}
     result.update({
-        "rows": _parse_docx_typed_table(next(tables)),
-        "risk_records": _parse_docx_typed_table(next(tables)),
+        "rows": _parse_docx_typed_table(tables["FMEA"]),
+        "risk_records": _parse_docx_typed_table(tables["Risk"]),
         "propagation": None,
     })
-    propagation_rows = _parse_docx_typed_table(next(tables))
+    propagation_rows = _parse_docx_typed_table(tables["Propagation"])
     result["propagation"] = propagation_rows[0] if propagation_rows else None
     result.update({
-        "evidence_summary": _parse_docx_typed_table(next(tables)),
-        "decision_summary": _parse_docx_typed_table(next(tables)),
-        "unresolved_items": _parse_docx_typed_table(next(tables)),
+        "evidence_summary": _parse_docx_typed_table(tables["Evidence"]),
+        "decision_summary": _parse_docx_typed_table(tables["Decisions"]),
+        "unresolved_items": _parse_docx_typed_table(tables["Unresolved"]),
         "version_manifest": manifest["version_manifest"],
         "audit_summary": manifest["audit_summary"],
     })
@@ -145,6 +165,102 @@ def _forge_snapshot(snapshot: NormalizedFmeaSnapshot, **overrides: object) -> No
     for field_name, value in overrides.items():
         object.__setattr__(forged, field_name, value)
     return forged
+
+
+def _readable_snapshot() -> NormalizedFmeaSnapshot:
+    source = _marked_publication_body_source()
+    row = dict(source.rows[0])
+    row.update({
+        "item_id": "燃料过滤器",
+        "function_id": "稳定供油",
+        "failure_mode": "燃料滤清器堵塞",
+        "causes": ("杂质积聚", "低温结蜡", "维护周期过长"),
+        "effects": ("供油压力下降", "燃烧不稳定"),
+        "controls": ("压差监测",),
+        "actions": ("清洁或更换滤芯",),
+        "field_evidence": (
+            {"field_key": "failure_mode", "evidence_ids": ("evidence-1",)},
+            {"field_key": "causes", "evidence_ids": ("evidence-1",)},
+        ),
+        "field_support": (
+            {"field_key": "failure_mode", "support_status": "supported"},
+            {"field_key": "causes", "support_status": "supported"},
+        ),
+        "extension_values": (
+            {"field_key": "fuel.pressure_drop", "value_type": "decimal", "value": "48.2000"},
+            {"field_key": "vendor.unrecognized", "value_type": "string", "value": "keep this exact"},
+        ),
+    })
+    evidence_ref = {
+        "evidence_id": "evidence-1",
+        "document_id": "manual-1",
+        "document_version": "7",
+        "content_hash": "c" * 64,
+        "evidence_hash": "d" * 64,
+        "locator": {"page": 12, "span": 3},
+        "quote": "滤清器堵塞会造成燃料压力下降，维护记录应核对更换周期。" * 8,
+        "source_type": "primary_document",
+        "source_trust": "trusted",
+    }
+    risk = {
+        "assessment_id": "assessment-1",
+        "assessment_hash": "e" * 64,
+        "workspace_id": source.publication_workspace_id,
+        "row_id": "row-1",
+        "source_record_version": 1,
+        "evidence_pack_id": "pack-1",
+        "domain_pack_id": "fuel-domain",
+        "domain_pack_version": "1.0.0",
+        "rule_pack_id": "fuel-sod-rpn",
+        "rule_pack_version": "1.0.0",
+        "status": "confirmed",
+        "dimensions": (
+            {
+                "name": "severity",
+                "value": 3,
+                "evidence_ids": ("evidence-1",),
+                "reason": "原生确认记录",
+                "uncertainty": None,
+            },
+        ),
+        "derived": {"rpn": 12, "evidence_ids": ("evidence-1",)},
+        "proposal_id": None,
+        "invalidated_reason": None,
+        "record_version": 1,
+        "confirmation_basis": None,
+    }
+    decision = dict(source.decision_summary[0])
+    decision.update({"row_id": "row-1", "record_version": 1, "row_hash": "a" * 64})
+    layout = {
+        "template_identity": {"template_id": "fuel-fmea", "version": "1.0.0", "template_hash": "a" * 64},
+        "columns": [
+            {"field_key": "failure_mode", "label": "故障模式", "value_type": "string", "value_path": ("row", "failure_mode")},
+            {"field_key": "causes", "label": "原因", "value_type": "string[]", "value_path": ("row", "causes")},
+            {"field_key": "effects", "label": "影响", "value_type": "string[]", "value_path": ("row", "effects")},
+            {"field_key": "actions", "label": "措施", "value_type": "string[]", "value_path": ("row", "actions")},
+            {
+                "field_key": "fuel.pressure_drop",
+                "label": "压降",
+                "value_type": "decimal",
+                "value_path": ("extension_values", "fuel.pressure_drop"),
+            },
+        ],
+    }
+    return build_normalized_snapshot(
+        replace(
+            source,
+            rows=(row,),
+            risk_records=(risk,),
+            evidence_summary=({**source.evidence_summary[0], "refs": (evidence_ref,)},),
+            decision_summary=(decision,),
+            version_manifest={
+                **source.version_manifest,
+                "body_schema_version": "graphrag.fmea.body.v1",
+                "template_identities": (("fuel-fmea", "1.0.0", "a" * 64),),
+                "report_layout": layout,
+            },
+        )
+    )
 
 
 def _scan_office_package(payload: bytes) -> tuple[tuple[str, ...], dict[str, int]]:
@@ -241,6 +357,53 @@ def test_json_xlsx_docx_share_all_snapshot_semantics() -> None:
     _assert_format_identity(docx_view, "docx")
 
 
+def test_readable_office_bodies_keep_real_content_while_machine_decoders_remain_lossless() -> None:
+    snapshot = _readable_snapshot()
+    expected = _semantic_json(snapshot)
+    xlsx_payload = XlsxFmeaExporter().render(snapshot)
+    docx_payload = DocxFmeaExporter().render(snapshot)
+
+    assert _without_format_identity(_parse_xlsx(xlsx_payload)) == _without_format_identity(expected)
+    assert _without_format_identity(_parse_docx(docx_payload)) == _without_format_identity(expected)
+
+    workbook = openpyxl.load_workbook(io.BytesIO(xlsx_payload), data_only=False, read_only=False)
+    body_text = "\n".join(str(value) for row in workbook["正文"].iter_rows(values_only=True) for value in row if value is not None)
+    detail_text = "\n".join(
+        str(value) for row in workbook["正文详情"].iter_rows(values_only=True) for value in row if value is not None
+    )
+    docx = Document(io.BytesIO(docx_payload))
+    docx_text = "\n".join(paragraph.text for paragraph in docx.paragraphs) + "\n" + "\n".join(
+        cell.text for table in docx.tables for row in table.rows for cell in row.cells
+    )
+
+    quote = str(snapshot.evidence_summary[0]["refs"][0]["quote"])
+    assert "燃料滤清器堵塞" in body_text
+    assert "48.2000" in body_text
+    assert "vendor.unrecognized" in detail_text
+    assert "keep this exact" in detail_text
+    assert quote in detail_text
+    assert detail_text.count(quote) == 1
+    assert "evidence-1.quote" in detail_text
+    assert "evidence-1.document_id" in detail_text
+    assert "assessment-1" in detail_text
+    assert "assessment-1.assessment_id" in detail_text
+    assert "assessment-1.derived.rpn" in detail_text
+    assert "decision-1.decision" in detail_text
+    assert "复核" in detail_text
+    assert "燃料滤清器堵塞" in docx_text
+    assert "48.2000" in docx_text
+    assert "vendor.unrecognized" in docx_text
+    assert quote in docx_text
+    assert "evidence-1.quote" in docx_text
+    assert "evidence-1.document_id" in docx_text
+    docx_reading_text = "\n".join(paragraph.text for paragraph in docx.paragraphs)
+    assert docx_reading_text.count(quote) == 1
+    assert "assessment-1" in docx_text
+    assert "assessment-1.assessment_id" in docx_text
+    assert "assessment-1.derived.rpn" in docx_text
+    assert "decision-1.decision" in docx_text
+
+
 def test_empty_optional_parts_round_trip_without_fabrication() -> None:
     snapshot = make_normalized_snapshot(
         revision=make_fmea_revision(unresolved_items=()),
@@ -303,7 +466,7 @@ def test_draft_marker_is_visible_in_all_formats_and_absent_from_published() -> N
 def test_office_packages_scan_every_member_and_only_contain_generated_preview_marker() -> None:
     snapshot = make_normalized_snapshot()
     for exporter, expected_hits in (
-        (XlsxFmeaExporter(), {"xl/worksheets/sheet1.xml": 1}),
+        (XlsxFmeaExporter(), {"xl/worksheets/sheet3.xml": 1}),
         (DocxFmeaExporter(), {"word/document.xml": 2}),
     ):
         published = exporter.render(snapshot, draft_preview=False)

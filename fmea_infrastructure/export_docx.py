@@ -1,5 +1,7 @@
 """Presentation-only DOCX rendering for normalized FMEA snapshots."""
 
+# ruff: noqa: RUF001
+
 from __future__ import annotations
 
 import io
@@ -12,8 +14,10 @@ import orjson
 from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
 
+from fmea_application.report_view import build_report_view
 from fmea_application.snapshot_contracts import (
     DRAFT_PREVIEW_MARKER,
     NormalizedFmeaSnapshot,
@@ -27,6 +31,8 @@ _MAX_COLUMNS: Final = 256
 _TYPES_COLUMN: Final = "__types__"
 _RESERVED_HEADERS: Final = frozenset({"Identity", _TYPES_COLUMN})
 _REL_NS: Final = "http://schemas.openxmlformats.org/package/2006/relationships"
+_READABLE_MAIN_MAX_COLUMNS: Final = 3
+_EAST_ASIA_FONT: Final = "Microsoft YaHei"
 
 
 class DocxExportError(ValueError):
@@ -100,12 +106,18 @@ def _cell_text(value: str) -> str:
     return value
 
 
-def _set_cell_text(cell, value: str) -> None:
+def _set_run_font(run) -> None:
+    run.font.name = _EAST_ASIA_FONT
+    run._element.get_or_add_rPr().get_or_add_rFonts().set(qn("w:eastAsia"), _EAST_ASIA_FONT)
+
+
+def _set_cell_text(cell, value: str, *, font_size: int = 9) -> None:
     cell.text = _cell_text(value)
     for paragraph in cell.paragraphs:
         paragraph.paragraph_format.space_after = Pt(0)
         for run in paragraph.runs:
-            run.font.size = Pt(9)
+            run.font.size = Pt(font_size)
+            _set_run_font(run)
 
 
 def _identity(record: Mapping[str, object], identity_field: str | None, index: int) -> str:
@@ -131,10 +143,38 @@ def _record_columns(records: Sequence[Mapping[str, object]]) -> list[str]:
     return columns
 
 
+def _add_heading(document: Document, text: str, *, level: int):
+    paragraph = document.add_heading(text, level=level)
+    paragraph_properties = paragraph._p.get_or_add_pPr()
+    paragraph_border = paragraph_properties.find(qn("w:pBdr"))
+    if paragraph_border is not None:
+        paragraph_properties.remove(paragraph_border)
+    for run in paragraph.runs:
+        run.font.color.rgb = RGBColor(0, 0, 0)
+        run.font.underline = False
+        _set_run_font(run)
+    return paragraph
+
+
+def _remove_style_paragraph_borders(document: Document) -> None:
+    for style in document.styles:
+        style_properties = style._element.find(qn("w:pPr"))
+        if style_properties is None:
+            continue
+        paragraph_border = style_properties.find(qn("w:pBdr"))
+        if paragraph_border is not None:
+            style_properties.remove(paragraph_border)
+
+
 def _append_manifest(document: Document, projection: Mapping[str, object]) -> None:
-    document.add_heading("Manifest", level=1)
+    _add_heading(document, "Canonical table: Manifest", level=1)
     table = document.add_table(rows=1, cols=3)
     table.style = "Table Grid"
+    table.autofit = False
+    for column, width in zip(table.columns, (1.2, 4.3, 0.7), strict=True):
+        column.width = Inches(width)
+        for cell in column.cells:
+            cell.width = Inches(width)
     for cell, value in zip(table.rows[0].cells, ("Key", "Value", "Type"), strict=True):
         _set_cell_text(cell, value)
     metadata: tuple[tuple[str, object], ...] = (
@@ -197,6 +237,190 @@ def _append_typed_table(
         _set_cell_text(row[-1], _json_text(types))
 
 
+def _plain_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {str(key): _plain_value(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        return [_plain_value(item) for item in value]
+    return value
+
+
+def _human_text(value: object) -> str:
+    if value is None:
+        return "（无）"
+    if isinstance(value, str):
+        if value == "":
+            return "（空字符串）"
+        if not value.strip():
+            return "（空白字符串）"
+        return value
+    if isinstance(value, Mapping):
+        if not value:
+            return "（空对象）"
+        return _json_text(_plain_value(value))
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        if not value:
+            return "（空列表）"
+        return "；".join(_human_text(item) for item in value)
+    return str(value)
+
+
+def _readable_columns(view) -> tuple[object, ...]:
+    return tuple(view.columns[:_READABLE_MAIN_MAX_COLUMNS])
+
+
+def _detail_row(detail: Mapping[str, object]) -> Mapping[str, object]:
+    row = detail.get("row")
+    return row if isinstance(row, Mapping) else detail
+
+
+def _detail_risks(detail: Mapping[str, object], row: Mapping[str, object]) -> tuple[Mapping[str, object], ...]:
+    row_id = row.get("row_id")
+    record_version = row.get("record_version")
+    records = detail.get("risk_records", ())
+    if not isinstance(records, Sequence) or isinstance(records, str | bytes):
+        return ()
+    return tuple(
+        risk
+        for risk in records
+        if isinstance(risk, Mapping)
+        and risk.get("row_id") == row_id
+        and risk.get("source_record_version") == record_version
+    )
+
+
+def _detail_evidence_ids(row: Mapping[str, object]) -> tuple[str, ...]:
+    result: set[str] = set()
+    bindings = row.get("field_evidence", ())
+    if isinstance(bindings, Sequence) and not isinstance(bindings, str | bytes):
+        for binding in bindings:
+            if not isinstance(binding, Mapping):
+                continue
+            evidence_ids = binding.get("evidence_ids", ())
+            if isinstance(evidence_ids, Sequence) and not isinstance(evidence_ids, str | bytes):
+                result.update(str(evidence_id) for evidence_id in evidence_ids)
+    return tuple(sorted(result))
+
+
+def _append_readable_main(document: Document, view, *, title: str) -> None:
+    _add_heading(document, title, level=1)
+    columns = _readable_columns(view)
+    headers = [column.label for column in columns]
+    table = document.add_table(rows=1, cols=len(headers))
+    table.style = "Table Grid"
+    for cell, header in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, str(header), font_size=11)
+    for values in view.rows:
+        display_values = [_human_text(values[column.field_key]) for column in columns]
+        cells = table.add_row().cells
+        for cell, value in zip(cells, display_values, strict=True):
+            _set_cell_text(cell, value, font_size=11)
+
+
+def _append_readable_paragraph(document: Document, text: str) -> None:
+    paragraph = document.add_paragraph()
+    paragraph.paragraph_format.space_after = Pt(6)
+    run = paragraph.add_run(_cell_text(text))
+    run.font.size = Pt(11)
+    _set_run_font(run)
+
+
+def _append_mapping_paragraphs(document: Document, prefix: str, value: object) -> None:
+    if isinstance(value, Mapping):
+        if not value:
+            _append_readable_paragraph(document, f"{prefix}：（空对象）")
+            return
+        for key, item in value.items():
+            field = f"{prefix}.{key}" if prefix else str(key)
+            _append_mapping_paragraphs(document, field, item)
+        return
+    if (
+        isinstance(value, Sequence)
+        and not isinstance(value, str | bytes)
+        and value
+        and all(isinstance(item, Mapping) for item in value)
+    ):
+        for index, item in enumerate(value, start=1):
+            _append_mapping_paragraphs(document, f"{prefix}[{index}]", item)
+        return
+    _append_readable_paragraph(document, f"{prefix}：{_human_text(value)}")
+
+
+def _append_row_details(document: Document, view) -> None:  # noqa: C901
+    _add_heading(document, "逐行详情", level=1)
+    for row_index, detail in enumerate(view.details):
+        row = _detail_row(detail)
+        row_id = _human_text(row.get("row_id"))
+        record_version = _human_text(row.get("record_version"))
+        _add_heading(document, f"行ID：{row_id}（记录版本：{record_version}）", level=2)
+        declared_keys = set()
+        values = view.rows[row_index]
+        for column in view.columns:
+            declared_keys.add(column.field_key)
+            _append_readable_paragraph(
+                document,
+                f"{column.label} [{column.field_key}]：{_human_text(values[column.field_key])}",
+            )
+        for key, value in row.items():
+            if key == "extension_values" or key in declared_keys:
+                continue
+            _append_readable_paragraph(document, f"{key}：{_human_text(value)}")
+        extension_values = row.get("extension_values", ())
+        if isinstance(extension_values, Sequence) and not isinstance(extension_values, str | bytes):
+            for extension in extension_values:
+                if isinstance(extension, Mapping):
+                    _append_readable_paragraph(
+                        document,
+                        f"扩展字段 {extension.get('field_key')}（{extension.get('value_type')}）："
+                        f"{_human_text(extension.get('value'))}",
+                    )
+        for risk in _detail_risks(detail, row):
+            _append_mapping_paragraphs(document, f"评分 {risk.get('assessment_id')}", risk)
+        for decision in detail.get("decision_summary", ()):
+            if isinstance(decision, Mapping):
+                _append_mapping_paragraphs(document, f"复核 {decision.get('decision_id')}", decision)
+
+
+def _append_global_details(document: Document, view, projection: Mapping[str, object]) -> None:  # noqa: C901
+    seen_packs: set[str] = set()
+    seen_evidence: set[object] = set()
+    summaries = [detail.get("evidence_summary", ()) for detail in view.details]
+    if not summaries:
+        summaries = [projection["evidence_summary"]]
+    _add_heading(document, "共享证据", level=1)
+    for summary in summaries:
+        if not isinstance(summary, Sequence) or isinstance(summary, str | bytes):
+            continue
+        for pack in summary:
+            if not isinstance(pack, Mapping):
+                continue
+            pack_id = _human_text(pack.get("pack_id"))
+            if pack_id not in seen_packs:
+                seen_packs.add(pack_id)
+                pack_without_refs = {key: value for key, value in pack.items() if key != "refs"}
+                _append_mapping_paragraphs(document, f"证据包 {pack_id}", pack_without_refs)
+            refs = pack.get("refs", ())
+            if not isinstance(refs, Sequence) or isinstance(refs, str | bytes):
+                continue
+            for reference in refs:
+                if not isinstance(reference, Mapping):
+                    continue
+                identity = reference.get("evidence_id")
+                if not isinstance(identity, str):
+                    identity = _json_text(_plain_value(reference))
+                if identity in seen_evidence:
+                    continue
+                seen_evidence.add(identity)
+                _append_mapping_paragraphs(document, f"证据 {identity}", reference)
+    if not view.details:
+        for decision in projection["decision_summary"]:
+            if isinstance(decision, Mapping):
+                _append_mapping_paragraphs(document, f"复核 {decision.get('decision_id')}", decision)
+    if projection["propagation"] is not None:
+        _add_heading(document, "传播", level=1)
+        _append_mapping_paragraphs(document, "传播", projection["propagation"])
+
+
 def _append_section(
     document: Document,
     title: str,
@@ -204,7 +428,7 @@ def _append_section(
     *,
     identity_field: str | None,
 ) -> None:
-    document.add_heading(title, level=1)
+    _add_heading(document, f"Canonical table: {title}", level=1)
     _append_typed_table(document, records, identity_field=identity_field)
 
 
@@ -271,13 +495,28 @@ class DocxFmeaExporter:
             )
             _validate_export_value(projection)
             _validate_office_value(projection)
+            report_view = build_report_view(snapshot)
             document = Document()
+            _remove_style_paragraph_borders(document)
             document.core_properties.title = "FMEA Export"
-            title = document.add_heading("FMEA Export", level=0)
+            title = _add_heading(document, "FMEA Export", level=0)
             title.alignment = WD_ALIGN_PARAGRAPH.CENTER
             if resolved_preview:
                 marker = document.add_paragraph(DRAFT_PREVIEW_MARKER)
                 marker.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            readable_title = (
+                "FMEA 正文"
+                if projection["version_manifest"].get("body_schema_version") is not None
+                else "FMEA 摘要（旧快照兼容视图）"
+            )
+            _append_readable_main(document, report_view, title=readable_title)
+            if report_view.details:
+                _append_row_details(document, report_view)
+            else:
+                _add_heading(document, "逐行详情", level=1)
+                _append_readable_paragraph(document, "旧快照仅包含摘要视图，未声明可用的逐行正文。")
+            _append_global_details(document, report_view, projection)
+            _add_heading(document, "机器附录", level=1)
             _append_manifest(document, projection)
             _append_section(document, "FMEA", projection["rows"], identity_field="row_id")
             _append_section(document, "Risk", projection["risk_records"], identity_field="assessment_id")

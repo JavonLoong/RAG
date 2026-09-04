@@ -1,8 +1,12 @@
 """Presentation-only XLSX rendering for normalized FMEA snapshots."""
 
+# ruff: noqa: RUF001
+
 from __future__ import annotations
 
 import io
+import math
+import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Final, NoReturn
 from xml.etree.ElementTree import ParseError
@@ -14,6 +18,7 @@ from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from fmea_application.report_view import build_report_view
 from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot, revalidate_normalized_snapshot
 
 from .export_json import _snapshot_projection, _validate_export_value
@@ -25,6 +30,20 @@ _MIN_WIDTH: Final = 12
 _WIDTH_SAMPLE_ROWS: Final = 32
 _TYPES_COLUMN: Final = "__types__"
 _RESERVED_HEADERS: Final = frozenset({"Identity", _TYPES_COLUMN})
+_READABLE_MAIN_MAX_COLUMNS: Final = 6
+_READABLE_MAIN_EXTRA_HEADERS: Final = ("评分摘要", "复核状态", "证据编号")
+_READABLE_DETAIL_TEXT_PART_SIZE: Final = 400
+_READABLE_DETAIL_CONTINUATION_THRESHOLD: Final = 400
+_READABLE_PREFERRED_FIELDS: Final = (
+    "item_id",
+    "function_id",
+    "failure_mode",
+    "causes",
+    "effects",
+    "controls",
+    "barriers",
+    "actions",
+)
 
 
 class XlsxExportError(ValueError):
@@ -210,7 +229,277 @@ def _append_typed_table(
             encoded, value_type = _value_encoding(record[key])
             types[key] = value_type
             _set_string_cell(worksheet.cell(row_index, column_index), encoded)
-        _set_string_cell(worksheet.cell(row_index, len(headers)), _json_text(types))
+            _set_string_cell(worksheet.cell(row_index, len(headers)), _json_text(types))
+
+
+def _plain_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {str(key): _plain_value(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        return [_plain_value(item) for item in value]
+    return value
+
+
+def _human_text(value: object) -> str:
+    if value is None:
+        return "（无）"
+    if isinstance(value, str):
+        if value == "":
+            return "（空字符串）"
+        if not value.strip():
+            return "（空白字符串）"
+        return value
+    if isinstance(value, Mapping):
+        if not value:
+            return "（空对象）"
+        return _json_text(_plain_value(value))
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes):
+        if not value:
+            return "（空列表）"
+        return "；".join(_human_text(item) for item in value)
+    return str(value)
+
+
+def _readable_columns(view) -> tuple[object, ...]:
+    available = tuple(view.columns)
+    selected: list[object] = []
+    for field_key in _READABLE_PREFERRED_FIELDS:
+        selected.extend(column for column in available if column.field_key == field_key)
+    selected.extend(column for column in available if column not in selected)
+    return tuple(selected[:_READABLE_MAIN_MAX_COLUMNS])
+
+
+def _detail_row(detail: Mapping[str, object]) -> Mapping[str, object]:
+    row = detail.get("row")
+    return row if isinstance(row, Mapping) else detail
+
+
+def _detail_risks(detail: Mapping[str, object], row: Mapping[str, object]) -> tuple[Mapping[str, object], ...]:
+    row_id = row.get("row_id")
+    record_version = row.get("record_version")
+    records = detail.get("risk_records", ())
+    if not isinstance(records, Sequence) or isinstance(records, str | bytes):
+        return ()
+    return tuple(
+        risk
+        for risk in records
+        if isinstance(risk, Mapping)
+        and risk.get("row_id") == row_id
+        and risk.get("source_record_version") == record_version
+    )
+
+
+def _detail_evidence_ids(row: Mapping[str, object]) -> tuple[str, ...]:
+    result: set[str] = set()
+    bindings = row.get("field_evidence", ())
+    if isinstance(bindings, Sequence) and not isinstance(bindings, str | bytes):
+        for binding in bindings:
+            if not isinstance(binding, Mapping):
+                continue
+            evidence_ids = binding.get("evidence_ids", ())
+            if isinstance(evidence_ids, Sequence) and not isinstance(evidence_ids, str | bytes):
+                result.update(str(evidence_id) for evidence_id in evidence_ids)
+    return tuple(sorted(result))
+
+
+def _risk_summary(risks: Sequence[Mapping[str, object]]) -> str:
+    summaries: list[str] = []
+    for risk in risks:
+        parts = [str(risk["assessment_id"]), str(risk["status"])]
+        derived = risk.get("derived")
+        if isinstance(derived, Mapping):
+            for key in ("rpn", "priority"):
+                if key in derived:
+                    parts.append(f"{key}={_human_text(derived[key])}")
+        summaries.append("；".join(parts))
+    return " | ".join(summaries)
+
+
+def _append_readable_main(worksheet, view) -> None:
+    columns = _readable_columns(view)
+    headers = [column.label for column in columns] + list(_READABLE_MAIN_EXTRA_HEADERS)
+    for column_index, header in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column_index), str(header))
+    details_by_index = view.details
+    for row_index, values in enumerate(view.rows, start=2):
+        detail = details_by_index[row_index - 2] if row_index - 2 < len(details_by_index) else {}
+        row = _detail_row(detail) if isinstance(detail, Mapping) else {}
+        risks = _detail_risks(detail, row) if isinstance(detail, Mapping) else ()
+        display_values = [_human_text(values[column.field_key]) for column in columns]
+        display_values.extend((
+            _risk_summary(risks),
+            _human_text(row.get("review_status")),
+            "、".join(_detail_evidence_ids(row)),
+        ))
+        for column_index, value in enumerate(display_values, start=1):
+            _set_string_cell(worksheet.cell(row_index, column_index), value)
+
+
+def _append_detail_record(
+    worksheet,
+    row_id: str,
+    record_version: object,
+    detail_type: str,
+    field: str,
+    value: object,
+    *,
+    continuation: bool = False,
+) -> None:
+    text = _human_text(value)
+    parts = (
+        tuple(text[index:index + _READABLE_DETAIL_TEXT_PART_SIZE] for index in range(0, len(text), _READABLE_DETAIL_TEXT_PART_SIZE))
+        if continuation and len(text) > _READABLE_DETAIL_CONTINUATION_THRESHOLD
+        else (text,)
+    )
+    for part_index, part in enumerate(parts, start=1):
+        field_name = field if len(parts) == 1 else f"{field} [part {part_index}/{len(parts)}]"
+        values = (row_id, _human_text(record_version), detail_type, field_name, part)
+        row_index = worksheet.max_row + 1
+        for column_index, item in enumerate(values, start=1):
+            _set_string_cell(worksheet.cell(row_index, column_index), item)
+
+
+def _append_mapping_fields(
+    worksheet,
+    row_id: str,
+    record_version: object,
+    detail_type: str,
+    prefix: str,
+    value: object,
+) -> None:
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            field = f"{prefix}.{key}" if prefix else str(key)
+            _append_mapping_fields(worksheet, row_id, record_version, detail_type, field, item)
+        return
+    if (
+        isinstance(value, Sequence)
+        and not isinstance(value, str | bytes)
+        and value
+        and all(isinstance(item, Mapping) for item in value)
+    ):
+        for index, item in enumerate(value, start=1):
+            _append_mapping_fields(worksheet, row_id, record_version, detail_type, f"{prefix}[{index}]", item)
+        return
+    _append_detail_record(
+        worksheet,
+        row_id,
+        record_version,
+        detail_type,
+        prefix,
+        value,
+        continuation=prefix.rsplit(".", 1)[-1] == "quote",
+    )
+
+
+def _append_readable_details(worksheet, view, projection: Mapping[str, object]) -> None:  # noqa: C901
+    headers = ("行ID", "记录版本", "详情类型", "字段", "内容")
+    for column_index, header in enumerate(headers, start=1):
+        _set_string_cell(worksheet.cell(1, column_index), header)
+
+    for detail in view.details:
+        row = _detail_row(detail)
+        row_id = _human_text(row.get("row_id"))
+        record_version = row.get("record_version")
+        for key, value in row.items():
+            if key in {"extension_values", "field_evidence", "field_support", "field_claims"}:
+                continue
+            _append_detail_record(worksheet, row_id, record_version, "正文", str(key), value)
+        extension_values = row.get("extension_values", ())
+        if isinstance(extension_values, Sequence) and not isinstance(extension_values, str | bytes):
+            for extension in extension_values:
+                if isinstance(extension, Mapping):
+                    _append_detail_record(
+                        worksheet,
+                        row_id,
+                        record_version,
+                        "扩展字段",
+                        _human_text(extension.get("field_key")),
+                        extension.get("value"),
+                    )
+        for field_name, detail_type in (
+            ("field_evidence", "证据绑定"),
+            ("field_support", "字段支持"),
+            ("field_claims", "字段声明"),
+        ):
+            value = row.get(field_name)
+            if value:
+                _append_detail_record(worksheet, row_id, record_version, detail_type, field_name, value)
+        for risk in _detail_risks(detail, row):
+            _append_mapping_fields(
+                worksheet,
+                row_id,
+                record_version,
+                "评分",
+                _human_text(risk.get("assessment_id")),
+                risk,
+            )
+        for decision in detail.get("decision_summary", ()):
+            if isinstance(decision, Mapping):
+                _append_mapping_fields(
+                    worksheet,
+                    row_id,
+                    record_version,
+                    "复核",
+                    _human_text(decision.get("decision_id")),
+                    decision,
+                )
+
+    seen_packs: set[str] = set()
+    seen_evidence: set[object] = set()
+    summaries = [detail.get("evidence_summary", ()) for detail in view.details]
+    if not summaries:
+        summaries = [projection["evidence_summary"]]
+    for summary in summaries:
+        if not isinstance(summary, Sequence) or isinstance(summary, str | bytes):
+            continue
+        for pack in summary:
+            if not isinstance(pack, Mapping):
+                continue
+            pack_id = _human_text(pack.get("pack_id"))
+            if pack_id not in seen_packs:
+                seen_packs.add(pack_id)
+                pack_without_refs = {key: value for key, value in pack.items() if key != "refs"}
+                _append_mapping_fields(worksheet, "", "", "共享证据包", f"pack.{pack_id}", pack_without_refs)
+            refs = pack.get("refs", ())
+            if not isinstance(refs, Sequence) or isinstance(refs, str | bytes):
+                continue
+            for reference in refs:
+                if not isinstance(reference, Mapping):
+                    continue
+                identity = reference.get("evidence_id")
+                if not isinstance(identity, str):
+                    identity = _json_text(_plain_value(reference))
+                if identity in seen_evidence:
+                    continue
+                seen_evidence.add(identity)
+                _append_mapping_fields(worksheet, "", "", "证据", identity, reference)
+
+    for decision in () if view.details else projection["decision_summary"]:
+        if isinstance(decision, Mapping):
+            _append_mapping_fields(worksheet, "", "", "复核", "decision", decision)
+    if projection["propagation"] is not None:
+        _append_mapping_fields(worksheet, "", "", "传播", "propagation", projection["propagation"])
+
+
+def _display_width(value: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(character) in {"W", "F", "A"} else 1 for character in value)
+
+
+def _style_readable_sheet(worksheet) -> None:
+    _style_sheet(worksheet)
+    for row_index in range(2, worksheet.max_row + 1):
+        lines = 1
+        for column in range(1, worksheet.max_column + 1):
+            value = worksheet.cell(row_index, column).value
+            if value is None:
+                continue
+            width = worksheet.column_dimensions[get_column_letter(column)].width or _MIN_WIDTH
+            lines += sum(
+                max(1, math.ceil(_display_width(line) / max(1, width)))
+                for line in str(value).splitlines()
+            ) - 1
+        worksheet.row_dimensions[row_index].height = min(409.5, max(36, 15 * lines))
 
 
 def _validate_package_xml(name: str, raw: bytes) -> None:
@@ -278,11 +567,16 @@ class XlsxFmeaExporter:
             )
             _validate_export_value(projection)
             _validate_office_value(projection)
+            report_view = build_report_view(snapshot)
             workbook = openpyxl.Workbook()
-            manifest = workbook.active
-            manifest.title = "Manifest"
+            readable = workbook.active
+            readable.title = "正文"
+            readable_details = workbook.create_sheet("正文详情")
+            manifest = workbook.create_sheet("Manifest")
             for sheet_name in ("FMEA", "Risk", "Propagation", "Evidence", "Decisions", "Unresolved"):
                 workbook.create_sheet(sheet_name)
+            _append_readable_main(readable, report_view)
+            _append_readable_details(readable_details, report_view, projection)
             _append_manifest(manifest, projection)
             _append_typed_table(workbook["FMEA"], projection["rows"], identity_field="row_id")
             _append_typed_table(workbook["Risk"], projection["risk_records"], identity_field="assessment_id")
@@ -291,7 +585,9 @@ class XlsxFmeaExporter:
             _append_typed_table(workbook["Evidence"], projection["evidence_summary"], identity_field="pack_id")
             _append_typed_table(workbook["Decisions"], projection["decision_summary"], identity_field="decision_id")
             _append_typed_table(workbook["Unresolved"], projection["unresolved_items"], identity_field=None)
-            for worksheet in workbook.worksheets:
+            _style_readable_sheet(readable)
+            _style_readable_sheet(readable_details)
+            for worksheet in workbook.worksheets[2:]:
                 _style_sheet(worksheet)
             buffer = io.BytesIO()
             workbook.save(buffer)

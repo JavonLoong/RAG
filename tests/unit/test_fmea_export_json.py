@@ -133,6 +133,24 @@ def test_json_export_projects_complete_normalized_snapshot_semantics() -> None:
     assert body["audit_summary"] == dict(snapshot.audit_summary)
 
 
+def test_marked_body_chunks_match_render_without_losing_body_fields() -> None:
+    from tests.integration.test_fmea_export_consistency import _readable_snapshot
+
+    snapshot = _readable_snapshot()
+    exporter = CanonicalJsonExporter()
+
+    rendered = exporter.render(snapshot)
+    chunked = b"".join(exporter.iter_chunks(snapshot, chunk_size=17))
+    body = orjson.loads(chunked)
+
+    assert chunked == rendered
+    assert body["rows"][0]["failure_mode"] == "燃料滤清器堵塞"
+    assert body["rows"][0]["extension_values"][1]["field_key"] == "vendor.unrecognized"
+    assert body["risk_records"][0]["row_id"] == "row-1"
+    assert body["risk_records"][0]["source_record_version"] == body["rows"][0]["record_version"]
+    assert body["evidence_summary"][0]["refs"][0]["quote"]
+
+
 def test_json_preview_has_explicit_non_published_identity_and_source_provenance() -> None:
     snapshot = make_normalized_snapshot()
 
