@@ -830,7 +830,12 @@ def _project_publication_body(
         propagation=projected_graph,
         evidence_summary=_project_evidence(packs, referenced_evidence),
         decision_summary=projected_reviews,
-        review_authorities=tuple(authority for authority in authorities if authority is not None),
+        review_authorities=tuple(
+            sorted(
+                (authority for authority in authorities if authority is not None),
+                key=lambda authority: authority.decision_id,
+            )
+        ),
     )
 
 

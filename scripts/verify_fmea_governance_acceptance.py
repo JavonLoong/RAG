@@ -25,6 +25,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from core_domain.fmea.governance import canonical_hash, canonical_json_bytes
+from fmea_application.snapshot_contracts import NormalizedFmeaSnapshot
 
 SCHEMA_VERSION = "graphrag.fmea.governance.acceptance.v1"
 PUBLICATION_BODY_SCHEMA_VERSION = "graphrag.fmea.body.v1"
@@ -328,6 +329,35 @@ def _expected_manifest_version_hash(revision: dict[str, object], *, body_schema_
 def _verify_new_publication_body(
     snapshot: dict[str, object], revision: dict[str, object]
 ) -> None:
+    try:
+        NormalizedFmeaSnapshot(**snapshot)  # type: ignore[arg-type]
+    except Exception:
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID") from None
+
+    def revision_versions(value: object) -> dict[str, tuple[object, object]]:
+        if not isinstance(value, list):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        result: dict[str, tuple[object, object]] = {}
+        for item in value:
+            if not isinstance(item, list) or len(item) != 3 or not isinstance(item[0], str):
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            if item[0] in result:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            result[item[0]] = (item[1], item[2])
+        return result
+
+    def revision_hashes(value: object) -> dict[str, object]:
+        if not isinstance(value, list):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        result: dict[str, object] = {}
+        for item in value:
+            if not isinstance(item, list) or len(item) != 2 or not isinstance(item[0], str):
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            if item[0] in result:
+                raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+            result[item[0]] = item[1]
+        return result
+
     rows = snapshot.get("rows")
     risks = snapshot.get("risk_records")
     evidence = snapshot.get("evidence_summary")
@@ -337,44 +367,48 @@ def _verify_new_publication_body(
         not isinstance(rows, list)
         or not isinstance(risks, list)
         or not isinstance(evidence, list)
-        or not isinstance(propagation, dict)
+        or (propagation is not None and not isinstance(propagation, dict))
         or not isinstance(decisions, list)
         or snapshot.get("row_count") != len(rows)
     ):
         raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
 
-    expected_rows = {str(item[0]): item for item in revision.get("row_versions", []) if isinstance(item, list)}
-    if len(expected_rows) != len(rows) or {
-        str(item.get("row_id")) for item in rows if isinstance(item, dict)
-    } != set(expected_rows):
+    expected_rows = revision_versions(revision.get("row_versions"))
+    row_ids = {item.get("row_id") for item in rows if isinstance(item, dict)}
+    if len(row_ids) != len(rows) or row_ids != set(expected_rows):
         raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
     for row in rows:
         if not isinstance(row, dict):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
-        expected = expected_rows.get(str(row.get("row_id")))
-        if expected is None or row.get("record_version") != expected[1] or not _same_hash(row.get("row_hash"), expected[2]):
+        row_id = row.get("row_id")
+        expected = expected_rows.get(row_id) if isinstance(row_id, str) else None
+        if expected is None or row.get("record_version") != expected[0] or not _same_hash(row.get("row_hash"), expected[1]):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
 
-    expected_risks = {str(item[0]): item for item in revision.get("risk_versions", []) if isinstance(item, list)}
-    if len(expected_risks) != len(risks):
+    expected_risks = revision_versions(revision.get("risk_versions"))
+    risk_ids = {item.get("assessment_id") for item in risks if isinstance(item, dict)}
+    if len(risk_ids) != len(risks) or risk_ids != set(expected_risks):
         raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
     for risk in risks:
         if not isinstance(risk, dict):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
-        expected = expected_risks.get(str(risk.get("assessment_id")))
-        if expected is None or risk.get("record_version") != expected[1] or not _same_hash(
-            risk.get("assessment_hash"), expected[2]
+        assessment_id = risk.get("assessment_id")
+        expected = expected_risks.get(assessment_id) if isinstance(assessment_id, str) else None
+        if expected is None or risk.get("record_version") != expected[0] or not _same_hash(
+            risk.get("assessment_hash"), expected[1]
         ):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
 
-    expected_evidence = {str(item[0]): item for item in revision.get("evidence_pack_hashes", []) if isinstance(item, list)}
-    if len(expected_evidence) != len(evidence):
+    expected_evidence = revision_hashes(revision.get("evidence_pack_hashes"))
+    evidence_ids = {item.get("pack_id") for item in evidence if isinstance(item, dict)}
+    if len(evidence_ids) != len(evidence) or evidence_ids != set(expected_evidence):
         raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
     for pack in evidence:
         if not isinstance(pack, dict):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
-        expected = expected_evidence.get(str(pack.get("pack_id")))
-        if expected is None or not _same_hash(pack.get("pack_hash"), expected[1]) or not isinstance(pack.get("refs"), list):
+        pack_id = pack.get("pack_id")
+        expected = expected_evidence.get(pack_id) if isinstance(pack_id, str) else None
+        if expected is None or not _same_hash(pack.get("pack_hash"), expected) or not isinstance(pack.get("refs"), list):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
         for ref in pack["refs"]:
             if not isinstance(ref, dict) or not all(
@@ -386,23 +420,40 @@ def _verify_new_publication_body(
     if graph_revision_id is None:
         if propagation is not None:
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
-    elif (
-        propagation.get("graph_revision_id") != graph_revision_id
-        or not isinstance(propagation.get("topology_hash"), str)
-    ):
-        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
     else:
-        _normal_hash(propagation["topology_hash"])
-    if not decisions:
-        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
-    for decision in decisions:
-        if not isinstance(decision, dict) or (
-            decision.get("record_type") != "row_review"
-            or decision.get("decision") != "accepted"
-            or decision.get("role_category") != "human_reviewer"
-            or not isinstance(decision.get("decision_id"), str)
+        if (
+            not isinstance(propagation, dict)
+            or propagation.get("graph_revision_id") != graph_revision_id
+            or not isinstance(propagation.get("topology_hash"), str)
         ):
             raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        _normal_hash(propagation["topology_hash"])
+
+    decision_ids: set[str] = set()
+    decision_row_ids: set[str] = set()
+    for decision in decisions:
+        if not isinstance(decision, dict):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        decision_id = decision.get("decision_id")
+        row_id = decision.get("row_id")
+        expected = expected_rows.get(row_id) if isinstance(row_id, str) else None
+        if (
+            not isinstance(decision_id, str)
+            or decision_id in decision_ids
+            or not isinstance(row_id, str)
+            or row_id in decision_row_ids
+            or expected is None
+            or decision.get("record_type") != "row_review"
+            or decision.get("record_version") != expected[0]
+            or not _same_hash(decision.get("row_hash"), expected[1])
+            or decision.get("decision") != "accepted"
+            or decision.get("role_category") != "human_reviewer"
+        ):
+            raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
+        decision_ids.add(decision_id)
+        decision_row_ids.add(row_id)
+    if decision_row_ids != set(expected_rows):
+        raise _VerificationFailure("FMEA_SNAPSHOT_BINDING_INVALID")
 
 
 def _expected_audit_chain_head(

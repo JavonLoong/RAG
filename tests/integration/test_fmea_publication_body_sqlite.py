@@ -52,12 +52,16 @@ def _production_pack(pack):
 
 
 class _PersistedInputProvider:
-    def __init__(self, repository: SqliteFmeaRepository) -> None:
+    def __init__(self, repository: SqliteFmeaRepository, *, row_ids: tuple[str, ...] = ("row-1",)) -> None:
         self.repository = repository
+        self.row_ids = row_ids
 
     def list_rows(self, _analysis_id: str, _workspace_id: str):
-        row = self.repository.get_row("row-1", _workspace_id)
-        return () if row is None else (row,)
+        return tuple(
+            row
+            for row_id in self.row_ids
+            if (row := self.repository.get_row(row_id, _workspace_id)) is not None
+        )
 
     def list_evidence_packs(self, _analysis_id: str, _workspace_id: str):
         pack = self.repository.get_evidence_pack("pack-1", _workspace_id)
@@ -75,6 +79,9 @@ def _persisted_body_runtime(
     governance_repository_type=SqliteGovernanceRepository,
     publication_reviews=None,
     persist_review_decision=True,
+    additional_review_rows=(),
+    additional_review_sources=(),
+    decision_ids=(),
 ):
     import fmea_governance_fixtures as governance_fixtures
     from fmea_review_fixtures import make_decision_command
@@ -87,16 +94,20 @@ def _persisted_body_runtime(
     review_repository.initialize()
     pack = _production_pack(fixture_pack)
     row = replace(fixture_review_row, evidence_pack_id=pack.pack_id)
+    review_rows = (row, *additional_review_rows)
+    review_sources = (fixture_review_source, *additional_review_sources)
+    if len(review_rows) != len(review_sources):
+        raise ValueError
     source_inputs = governance_fixtures.make_governance_inputs(
-        rows=(replace(row, review_status=ReviewStatus.ACCEPTED, record_version=2),),
+        rows=tuple(replace(item, review_status=ReviewStatus.ACCEPTED, record_version=2) for item in review_rows),
         evidence_packs=(pack,),
     )
     review_repository.save_review_candidate_bundle(
         ReviewCandidateBundle(
             analysis=source_inputs.analysis.analysis,
             evidence_pack=pack,
-            rows=(row,),
-            source_snapshots=(fixture_review_source,),
+            rows=review_rows,
+            source_snapshots=review_sources,
         ),
         fixture_system_actor,
     )
@@ -104,13 +115,23 @@ def _persisted_body_runtime(
 
     def id_factory(prefix: str) -> str:
         ids[prefix] = ids.get(prefix, 0) + 1
+        if prefix == "decision" and ids[prefix] <= len(decision_ids):
+            return decision_ids[ids[prefix] - 1]
         return f"{prefix}-publication-test-{ids[prefix]}"
 
-    ReviewService(
+    review_service = ReviewService(
         review_repository,
         clock=lambda: "2026-09-04T00:00:00Z",
         id_factory=id_factory,
-    ).submit_decision(make_decision_command(), fixture_human_reviewer)
+    )
+    for index, review_row in enumerate(review_rows, start=1):
+        review_service.submit_decision(
+            make_decision_command(
+                row_id=review_row.row_id,
+                idempotency_key=f"00000000-0000-4000-8000-0000000000{10 + index:02d}",
+            ),
+            fixture_human_reviewer,
+        )
     accepted_row = review_repository.get_row(row.row_id, row.analysis_id.replace("analysis", "ws"))
     assert accepted_row is not None
 
@@ -121,8 +142,8 @@ def _persisted_body_runtime(
             ReviewCandidateBundle(
                 analysis=source_inputs.analysis.analysis,
                 evidence_pack=pack,
-                rows=(row,),
-                source_snapshots=(fixture_review_source,),
+                rows=review_rows,
+                source_snapshots=review_sources,
             ),
             fixture_system_actor,
         )
@@ -149,7 +170,7 @@ def _persisted_body_runtime(
         review_repository = target_repository
 
     providers = governance_fixtures._INPUT_PROVIDERS[id(source_inputs._source_attestation)]
-    persisted = _PersistedInputProvider(review_repository)
+    persisted = _PersistedInputProvider(review_repository, row_ids=tuple(item.row_id for item in review_rows))
     providers = replace(
         providers,
         review=persisted,
@@ -172,6 +193,9 @@ def _prepare_real_publication(
     *,
     governance_repository_type=SqliteGovernanceRepository,
     publication_reviews=None,
+    additional_review_rows=(),
+    additional_review_sources=(),
+    decision_ids=(),
 ):
     import fmea_governance_fixtures as governance_fixtures
 
@@ -192,6 +216,9 @@ def _prepare_real_publication(
         fixture_human_reviewer,
         governance_repository_type=governance_repository_type,
         publication_reviews=publication_reviews,
+        additional_review_rows=additional_review_rows,
+        additional_review_sources=additional_review_sources,
+        decision_ids=decision_ids,
     )
 
     class _AlwaysReady:
@@ -580,6 +607,37 @@ def test_sqlite_runtime_publishes_real_body_and_replays_immutable_snapshot(
     replayed_snapshot = service.get_snapshot(replay.publication_id, publisher)
     assert replay.replayed is True
     assert replayed_snapshot.snapshot_hash == snapshot.snapshot_hash
+
+
+def test_two_row_publication_normalizes_reversed_decision_id_authority_order(
+    tmp_path: Path,
+    fixture_pack,
+    fixture_review_row,
+    fixture_review_source,
+    fixture_system_actor,
+    fixture_human_reviewer,
+) -> None:
+    from fmea_review_fixtures import make_review_source
+
+    second_row = replace(fixture_review_row, row_id="row-2", item_id="filter-2")
+    second_source = make_review_source(row_id="row-2", candidate_id="candidate-2")
+    _runtime, _repository, _accepted_row, _pack, service, command, publisher = _prepare_real_publication(
+        tmp_path,
+        fixture_pack,
+        fixture_review_row,
+        fixture_review_source,
+        fixture_system_actor,
+        fixture_human_reviewer,
+        additional_review_rows=(second_row,),
+        additional_review_sources=(second_source,),
+        decision_ids=("decision-z", "decision-a"),
+    )
+
+    published = service.publish(command, publisher)
+    snapshot = service.get_snapshot(published.publication_id, publisher)
+
+    assert tuple(item["decision_id"] for item in snapshot.decision_summary) == ("decision-a", "decision-z")
+    assert {item["row_id"] for item in snapshot.decision_summary} == {"row-1", "row-2"}
 
 
 def test_missing_persisted_review_record_blocks_body_projection(

@@ -2691,7 +2691,12 @@ class SqliteGovernanceRepository:
                 reviews = SqliteGovernanceRepository._load_publication_reviews_from_connection(
                     connection, prepared.revision
                 )
-                actual_reviews = tuple(record.authority for record in reviews)
+                actual_reviews = tuple(
+                    sorted(
+                        (record.authority for record in reviews),
+                        key=lambda authority: authority.decision_id,
+                    )
+                )
                 if actual_reviews != binding.review_bindings:
                     stale("selected human review authority changed")
 
